@@ -259,58 +259,58 @@ interface AIProviderOption {
  * Returns the recommended TTS provider + voice locale for a sub-region.
  * Follows master routing: Azure Neural (global) / Qwen3-TTS (CJK).
  */
-function getSubRegionTTSProvider(regionCode: string): { provider: string; locale: string; label: string } {
+function getSubRegionTTSProvider(regionCode: string): { provider: string; locale: string; label: string; voiceId: string; voiceName: string } {
   const r = regionCode?.toUpperCase() || '';
-  const ttsMap: Record<string, { provider: string; locale: string; label: string }> = {
+  const ttsMap: Record<string, { provider: string; locale: string; label: string; voiceId: string; voiceName: string }> = {
     // NAM
-    'NAM_US': { provider: 'Azure Neural', locale: 'en-US', label: 'Azure Neural (en-US)' },
-    'NAM_CA': { provider: 'Azure Neural', locale: 'en-CA / fr-CA', label: 'Azure Neural (en-CA, fr-CA)' },
+    'NAM_US': { provider: 'Azure Neural', locale: 'en-US', label: 'Azure Neural (en-US)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' },
+    'NAM_CA': { provider: 'Azure Neural', locale: 'en-CA', label: 'Azure Neural (en-CA, fr-CA)', voiceId: 'en-CA-ClaraNeural', voiceName: 'Clara (Canadian English)' },
     // EU
-    'EU_WEST': { provider: 'Azure Neural', locale: 'en-GB', label: 'Azure Neural (en-GB)' },
-    'EU_DACH': { provider: 'Azure Neural', locale: 'de-DE / de-AT / de-CH', label: 'Azure Neural (de-DE/AT/CH)' },
-    'EU_FRANCE': { provider: 'Azure Neural', locale: 'fr-FR / fr-BE', label: 'Azure Neural (fr-FR/BE)' },
-    'EU_IBERIA': { provider: 'Azure Neural', locale: 'es-ES / pt-PT', label: 'Azure Neural (es-ES, pt-PT)' },
-    'EU_NORDIC': { provider: 'Azure Neural', locale: 'sv-SE / nb-NO / da-DK / fi-FI', label: 'Azure Neural (Nordic)' },
-    'EU_EAST': { provider: 'Azure Neural', locale: 'pl-PL / cs-CZ / ro-RO / hu-HU', label: 'Azure Neural (Eastern EU)' },
+    'EU_WEST': { provider: 'Azure Neural', locale: 'en-GB', label: 'Azure Neural (en-GB)', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)' },
+    'EU_DACH': { provider: 'Azure Neural', locale: 'de-DE', label: 'Azure Neural (de-DE/AT/CH)', voiceId: 'de-DE-KatjaNeural', voiceName: 'Katja (German)' },
+    'EU_FRANCE': { provider: 'Azure Neural', locale: 'fr-FR', label: 'Azure Neural (fr-FR/BE)', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French)' },
+    'EU_IBERIA': { provider: 'Azure Neural', locale: 'es-ES', label: 'Azure Neural (es-ES, pt-PT)', voiceId: 'es-ES-ElviraNeural', voiceName: 'Elvira (Spanish)' },
+    'EU_NORDIC': { provider: 'Azure Neural', locale: 'sv-SE', label: 'Azure Neural (Nordic)', voiceId: 'sv-SE-SofieNeural', voiceName: 'Sofie (Swedish)' },
+    'EU_EAST': { provider: 'Azure Neural', locale: 'pl-PL', label: 'Azure Neural (Eastern EU)', voiceId: 'pl-PL-ZofiaNeural', voiceName: 'Zofia (Polish)' },
     // LATAM
-    'LATAM_BRAZIL': { provider: 'Azure Neural', locale: 'pt-BR', label: 'Azure Neural (pt-BR)' },
-    'LATAM_MEXICO': { provider: 'Azure Neural', locale: 'es-MX', label: 'Azure Neural (es-MX)' },
-    'LATAM_ANDEAN': { provider: 'Azure Neural', locale: 'es-CO / es-PE', label: 'Azure Neural (es-CO/PE)' },
-    'LATAM_CONESUR': { provider: 'Azure Neural', locale: 'es-AR / es-CL', label: 'Azure Neural (es-AR/CL)' },
-    'LATAM_CARIB': { provider: 'Azure Neural', locale: 'es-DO / es-VE', label: 'Azure Neural (es-DO/VE)' },
+    'LATAM_BRAZIL': { provider: 'Azure Neural', locale: 'pt-BR', label: 'Azure Neural (pt-BR)', voiceId: 'pt-BR-FranciscaNeural', voiceName: 'Francisca (Brazilian Portuguese)' },
+    'LATAM_MEXICO': { provider: 'Azure Neural', locale: 'es-MX', label: 'Azure Neural (es-MX)', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)' },
+    'LATAM_ANDEAN': { provider: 'Azure Neural', locale: 'es-CO', label: 'Azure Neural (es-CO/PE)', voiceId: 'es-CO-SalomeNeural', voiceName: 'Salome (Colombian Spanish)' },
+    'LATAM_CONESUR': { provider: 'Azure Neural', locale: 'es-AR', label: 'Azure Neural (es-AR/CL)', voiceId: 'es-AR-ElenaNeural', voiceName: 'Elena (Argentine Spanish)' },
+    'LATAM_CARIB': { provider: 'Azure Neural', locale: 'es-DO', label: 'Azure Neural (es-DO/VE)', voiceId: 'es-DO-RamonaNeural', voiceName: 'Ramona (Dominican Spanish)' },
     // MENA
-    'MENA_GULF': { provider: 'Azure Neural', locale: 'ar-SA / ar-AE', label: 'Azure Neural (ar-SA/AE)' },
-    'MENA_EGYPT': { provider: 'Azure Neural', locale: 'ar-EG', label: 'Azure Neural (ar-EG)' },
-    'MENA_LEVANT': { provider: 'Azure Neural', locale: 'ar-JO / ar-IQ', label: 'Azure Neural (ar-JO/IQ)' },
-    'MENA_MAGHREB': { provider: 'Azure Neural', locale: 'ar-MA / fr-MA', label: 'Azure Neural (ar-MA, fr-MA)' },
-    'MENA_MSA': { provider: 'Azure Neural', locale: 'ar-SA', label: 'Azure Neural (MSA)' },
+    'MENA_GULF': { provider: 'Azure Neural', locale: 'ar-SA', label: 'Azure Neural (ar-SA/AE)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Saudi Arabic)' },
+    'MENA_EGYPT': { provider: 'Azure Neural', locale: 'ar-EG', label: 'Azure Neural (ar-EG)', voiceId: 'ar-EG-SalmaNeural', voiceName: 'Salma (Egyptian Arabic)' },
+    'MENA_LEVANT': { provider: 'Azure Neural', locale: 'ar-JO', label: 'Azure Neural (ar-JO/IQ)', voiceId: 'ar-JO-SanaNeural', voiceName: 'Sana (Jordanian Arabic)' },
+    'MENA_MAGHREB': { provider: 'Azure Neural', locale: 'ar-MA', label: 'Azure Neural (ar-MA, fr-MA)', voiceId: 'ar-MA-MounaNeural', voiceName: 'Mouna (Moroccan Arabic)' },
+    'MENA_MSA': { provider: 'Azure Neural', locale: 'ar-SA', label: 'Azure Neural (MSA)', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (MSA)' },
     // Pakistan & Bangladesh
-    'PAKISTAN': { provider: 'Azure Neural', locale: 'ur-PK', label: 'Azure Neural (ur-PK)' },
-    'BANGLADESH': { provider: 'Azure Neural', locale: 'bn-BD', label: 'Azure Neural (bn-BD)' },
+    'PAKISTAN': { provider: 'Azure Neural', locale: 'ur-PK', label: 'Azure Neural (ur-PK)', voiceId: 'ur-PK-UzmaNeural', voiceName: 'Uzma (Urdu)' },
+    'BANGLADESH': { provider: 'Azure Neural', locale: 'bn-BD', label: 'Azure Neural (bn-BD)', voiceId: 'bn-BD-NabanitaNeural', voiceName: 'Nabanita (Bengali)' },
     // India
-    'INDIA_NORTH': { provider: 'Azure Neural', locale: 'hi-IN', label: 'Azure Neural (hi-IN)' },
-    'INDIA_SOUTH': { provider: 'Azure Neural', locale: 'ta-IN / te-IN', label: 'Azure Neural (ta/te-IN)' },
-    'INDIA_WEST': { provider: 'Azure Neural', locale: 'mr-IN / gu-IN', label: 'Azure Neural (mr/gu-IN)' },
-    'INDIA_EAST': { provider: 'Azure Neural', locale: 'bn-IN', label: 'Azure Neural (bn-IN)' },
-    'INDIA_PAN': { provider: 'Azure Neural', locale: 'en-IN', label: 'Azure Neural (en-IN)' },
+    'INDIA_NORTH': { provider: 'Azure Neural', locale: 'hi-IN', label: 'Azure Neural (hi-IN)', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)' },
+    'INDIA_SOUTH': { provider: 'Azure Neural', locale: 'ta-IN', label: 'Azure Neural (ta/te-IN)', voiceId: 'ta-IN-PallaviNeural', voiceName: 'Pallavi (Tamil)' },
+    'INDIA_WEST': { provider: 'Azure Neural', locale: 'mr-IN', label: 'Azure Neural (mr/gu-IN)', voiceId: 'mr-IN-AarohiNeural', voiceName: 'Aarohi (Marathi)' },
+    'INDIA_EAST': { provider: 'Azure Neural', locale: 'bn-IN', label: 'Azure Neural (bn-IN)', voiceId: 'bn-IN-TanishaaNeural', voiceName: 'Tanishaa (Bengali India)' },
+    'INDIA_PAN': { provider: 'Azure Neural', locale: 'en-IN', label: 'Azure Neural (en-IN)', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)' },
     // SEA
-    'SEA_MALAY': { provider: 'Azure Neural', locale: 'ms-MY / id-ID', label: 'Azure Neural (ms-MY, id-ID)' },
-    'SEA_THAI': { provider: 'Azure Neural', locale: 'th-TH', label: 'Azure Neural (th-TH)' },
-    'SEA_VIET': { provider: 'Azure Neural', locale: 'vi-VN', label: 'Azure Neural (vi-VN)' },
-    'SEA_PHIL': { provider: 'Azure Neural', locale: 'fil-PH', label: 'Azure Neural (fil-PH)' },
-    'SEA_PAN': { provider: 'Azure Neural', locale: 'en-SG', label: 'Azure Neural (en-SG)' },
+    'SEA_MALAY': { provider: 'Azure Neural', locale: 'ms-MY', label: 'Azure Neural (ms-MY, id-ID)', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)' },
+    'SEA_THAI': { provider: 'Azure Neural', locale: 'th-TH', label: 'Azure Neural (th-TH)', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)' },
+    'SEA_VIET': { provider: 'Azure Neural', locale: 'vi-VN', label: 'Azure Neural (vi-VN)', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)' },
+    'SEA_PHIL': { provider: 'Azure Neural', locale: 'fil-PH', label: 'Azure Neural (fil-PH)', voiceId: 'fil-PH-BlessicaNeural', voiceName: 'Blessica (Filipino)' },
+    'SEA_PAN': { provider: 'Azure Neural', locale: 'en-SG', label: 'Azure Neural (en-SG)', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)' },
     // CJK — Qwen3-TTS primary
-    'CJK_CN': { provider: 'Qwen3-TTS', locale: 'zh-CN', label: 'Qwen3-TTS (zh-CN)' },
-    'CJK_TW': { provider: 'Azure Neural', locale: 'zh-TW', label: 'Azure Neural (zh-TW)' },
-    'CJK_JP': { provider: 'Qwen3-TTS', locale: 'ja-JP', label: 'Qwen3-TTS (ja-JP)' },
-    'CJK_KR': { provider: 'Azure Neural', locale: 'ko-KR', label: 'Azure Neural (ko-KR)' },
+    'CJK_CN': { provider: 'Qwen3-TTS', locale: 'zh-CN', label: 'Qwen3-TTS (zh-CN)', voiceId: 'longwan', voiceName: 'Longwan (Mandarin)' },
+    'CJK_TW': { provider: 'Azure Neural', locale: 'zh-TW', label: 'Azure Neural (zh-TW)', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)' },
+    'CJK_JP': { provider: 'Qwen3-TTS', locale: 'ja-JP', label: 'Qwen3-TTS (ja-JP)', voiceId: 'longyue', voiceName: 'Longyue (Japanese)' },
+    'CJK_KR': { provider: 'Azure Neural', locale: 'ko-KR', label: 'Azure Neural (ko-KR)', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)' },
     // Africa
-    'AFRICA_WEST': { provider: 'Azure Neural', locale: 'yo-NG / en-NG', label: 'Azure Neural (yo/en-NG)' },
-    'AFRICA_EAST': { provider: 'Azure Neural', locale: 'sw-KE', label: 'Azure Neural (sw-KE)' },
-    'AFRICA_SOUTH': { provider: 'Azure Neural', locale: 'zu-ZA / en-ZA', label: 'Azure Neural (zu/en-ZA)' },
-    'AFRICA_FRANCO': { provider: 'Azure Neural', locale: 'fr-SN / fr-CD', label: 'Azure Neural (fr-SN/CD)' },
+    'AFRICA_WEST': { provider: 'Azure Neural', locale: 'en-NG', label: 'Azure Neural (yo/en-NG)', voiceId: 'en-NG-EzinneNeural', voiceName: 'Ezinne (Nigerian English)' },
+    'AFRICA_EAST': { provider: 'Azure Neural', locale: 'sw-KE', label: 'Azure Neural (sw-KE)', voiceId: 'sw-KE-ZuriNeural', voiceName: 'Zuri (Swahili)' },
+    'AFRICA_SOUTH': { provider: 'Azure Neural', locale: 'en-ZA', label: 'Azure Neural (zu/en-ZA)', voiceId: 'en-ZA-LeahNeural', voiceName: 'Leah (South African English)' },
+    'AFRICA_FRANCO': { provider: 'Azure Neural', locale: 'fr-SN', label: 'Azure Neural (fr-SN/CD)', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French - Africa)' },
   };
-  return ttsMap[r] || { provider: 'Azure Neural', locale: 'en-US', label: 'Azure Neural (Default)' };
+  return ttsMap[r] || { provider: 'Azure Neural', locale: 'en-US', label: 'Azure Neural (Default)', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)' };
 }
 
 function getZoneAIProviders(regionCode: string): AIProviderOption[] {
@@ -630,9 +630,9 @@ export const LandingPageScriptsPanel: React.FC = () => {
           positioning_angles: baseScript.positioning_angles,
           target_personas: baseScript.target_personas,
           emotional_tones: baseScript.emotional_tones,
-          tts_provider: baseScript.tts_provider,
-          tts_voice_id: baseScript.tts_voice_id,
-          tts_voice_name: baseScript.tts_voice_name,
+          tts_provider: baseScript.tts_provider || getSubRegionTTSProvider(baseScript.region_code).provider,
+          tts_voice_id: baseScript.tts_voice_id || getSubRegionTTSProvider(baseScript.region_code).voiceId,
+          tts_voice_name: baseScript.tts_voice_name || getSubRegionTTSProvider(baseScript.region_code).voiceName,
           tts_speed: baseScript.tts_speed,
           tts_pitch: baseScript.tts_pitch,
           version: baseScript.version,
@@ -668,14 +668,17 @@ export const LandingPageScriptsPanel: React.FC = () => {
         return;
       }
 
-      console.log(`[TTS Generate] Script: ${script.region_code}, Provider: ${ttsInfo.provider}, Locale: ${ttsInfo.locale}, Mode: ${mode}`);
+      console.log(`[TTS Generate] Script: ${script.region_code}, Provider: ${ttsInfo.provider}, Voice: ${ttsInfo.voiceId}, Locale: ${ttsInfo.locale}, Mode: ${mode}`);
+
+      const resolvedProvider = script.tts_provider || (ttsInfo.provider === 'Qwen3-TTS' ? 'alibaba' : 'azure');
+      const resolvedVoiceId = script.tts_voice_id || ttsInfo.voiceId;
 
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
           text,
           languageCode: script.language_code,
-          provider: script.tts_provider || (ttsInfo.provider === 'Qwen3-TTS' ? 'alibaba' : 'azure'),
-          voiceId: script.tts_voice_id,
+          provider: resolvedProvider,
+          voiceId: resolvedVoiceId,
           speed: script.tts_speed || 1.0,
           tier: 'premium',
           regionCode: script.region_code,
@@ -694,8 +697,8 @@ export const LandingPageScriptsPanel: React.FC = () => {
           region_code: script.region_code,
           language_code: script.language_code,
           tts_provider: data?.provider || ttsInfo.provider,
-          tts_voice_id: data?.voice || script.tts_voice_id,
-          tts_voice_name: data?.voiceName || script.tts_voice_name,
+          tts_voice_id: data?.voice || resolvedVoiceId,
+          tts_voice_name: data?.voiceName || ttsInfo.voiceName,
           tts_locale: ttsInfo.locale,
           tts_speed: script.tts_speed || 1.0,
           audio_url: audioUrl,
@@ -721,6 +724,8 @@ export const LandingPageScriptsPanel: React.FC = () => {
           audio_duration_seconds: data?.durationSeconds,
           audio_generated_at: new Date().toISOString(),
           tts_provider: data?.provider || ttsInfo.provider,
+          tts_voice_id: data?.voice || resolvedVoiceId,
+          tts_voice_name: data?.voiceName || ttsInfo.voiceName,
           updated_at: new Date().toISOString(),
         } as any)
         .eq('id', script.id);
@@ -830,9 +835,9 @@ export const LandingPageScriptsPanel: React.FC = () => {
           positioning_angles: baseScript.positioning_angles,
           target_personas: baseScript.target_personas,
           emotional_tones: baseScript.emotional_tones,
-          tts_provider: baseScript.tts_provider,
-          tts_voice_id: baseScript.tts_voice_id,
-          tts_voice_name: baseScript.tts_voice_name,
+          tts_provider: baseScript.tts_provider || getSubRegionTTSProvider(baseScript.region_code).provider,
+          tts_voice_id: baseScript.tts_voice_id || getSubRegionTTSProvider(baseScript.region_code).voiceId,
+          tts_voice_name: baseScript.tts_voice_name || getSubRegionTTSProvider(baseScript.region_code).voiceName,
           tts_speed: baseScript.tts_speed,
           tts_pitch: baseScript.tts_pitch,
           version: maxVersion + 1,
@@ -2128,8 +2133,8 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                         <ChevronDown className="w-3 h-3 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-56 p-2 z-[100001]" align="start">
-                      <ScrollArea className="max-h-48">
+                    <PopoverContent className="w-56 p-2 z-[100001] bg-popover border shadow-md" align="start" side="bottom" sideOffset={4}>
+                      <ScrollArea className="h-[280px]">
                         <div className="space-y-1">
                           {POSITIONING_ANGLE_OPTIONS.map(o => {
                             const selected = (editingScript.positioning_angles || []).includes(o);
@@ -2179,8 +2184,8 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                         <ChevronDown className="w-3 h-3 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-56 p-2 z-[100001]" align="start">
-                      <ScrollArea className="max-h-48">
+                    <PopoverContent className="w-56 p-2 z-[100001] bg-popover border shadow-md" align="start" side="bottom" sideOffset={4}>
+                      <ScrollArea className="h-[280px]">
                         <div className="space-y-1">
                           {EMOTIONAL_TONE_OPTIONS.map(o => {
                             const selected = (editingScript.emotional_tones || []).includes(o);
@@ -2230,8 +2235,8 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
                         <ChevronDown className="w-3 h-3 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-56 p-2 z-[100001]" align="start">
-                      <ScrollArea className="max-h-48">
+                    <PopoverContent className="w-56 p-2 z-[100001] bg-popover border shadow-md" align="start" side="bottom" sideOffset={4}>
+                      <ScrollArea className="h-[280px]">
                         <div className="space-y-1">
                           {(audienceOptions.length > 0 ? audienceOptions : ['Content Creators', 'Marketing Teams', 'Enterprise Teams', 'Educators', 'Healthcare Professionals']).map(o => {
                             const selected = (editingScript.target_personas || []).includes(o);
