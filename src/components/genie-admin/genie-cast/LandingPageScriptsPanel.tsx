@@ -2517,8 +2517,9 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                               return;
                                             }
                                             console.log('[TTS Play] Converting base64 to blob, length:', base64Data.length);
-                                            // Decode base64 to binary using atob + chunked Uint8Array (handles large files)
-                                            const binaryString = atob(base64Data);
+                                            // Clean base64 string (remove whitespace/newlines from chunked encoding) then decode
+                                            const cleanBase64 = base64Data.replace(/[\s\r\n]+/g, '');
+                                            const binaryString = atob(cleanBase64);
                                             const len = binaryString.length;
                                             const bytes = new Uint8Array(len);
                                             for (let i = 0; i < len; i++) {
