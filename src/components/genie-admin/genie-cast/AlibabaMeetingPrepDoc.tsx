@@ -200,6 +200,51 @@ const AGENDA_SECTIONS: AgendaItem[] = [
     ],
   },
   {
+    id: 'sg-va-gaps',
+    title: 'Singapore & Virginia Regional Gaps',
+    icon: <AlertTriangle className="w-5 h-5" />,
+    priority: 'critical',
+    duration: '10 min',
+    items: [
+      {
+        topic: 'CosyVoice v3 Flash — Locked on SG + VA',
+        currentStatus: 'Model returned ACCESS_DENIED (not MODEL_NOT_FOUND) on Singapore and Virginia. It IS deployed but not activated.',
+        question: 'Can you activate CosyVoice v3 Flash on our Singapore and Virginia API keys? This single activation unlocks international TTS coverage.',
+        expectedOutcome: 'TTS available on all 3 regions without Azure fallback for CJK.',
+      },
+      {
+        topic: 'Wanx 2.1 Image Gen — China Only',
+        currentStatus: 'Wanx 2.1 (wanx2.1-t2i-turbo) works on Beijing but is not deployed on Singapore or Virginia.',
+        question: 'Can Wanx 2.1 be enabled internationally? If not, is cross-region (SG/VA calling Beijing endpoint) supported and reliable?',
+        expectedOutcome: 'Image generation available globally or confirmed cross-region strategy.',
+      },
+      {
+        topic: 'Paraformer & SenseVoice STT — Beijing Only',
+        currentStatus: 'Both STT models return errors on SG/VA. Paraformer needs async mode. SenseVoice returns Access Denied.',
+        question: 'Any plans to deploy Paraformer or SenseVoice on Singapore? Async mode activation needed for Paraformer on Beijing.',
+        expectedOutcome: 'STT coverage beyond Deepgram fallback for CJK languages.',
+      },
+      {
+        topic: 'Sambert TTS (REST) — Beijing Only',
+        currentStatus: 'Sambert REST TTS is not deployed on SG/VA. Only available on Beijing but Access Denied.',
+        question: 'Can Sambert be activated on Beijing as a REST-compatible TTS alternative to WebSocket-only CosyVoice?',
+        expectedOutcome: 'REST-based TTS fallback compatible with Supabase Edge Functions (Deno).',
+      },
+      {
+        topic: 'Batch Operation Activation (All Regions)',
+        currentStatus: 'Async models (Wan 2.6 T2I/T2V) require manual Batch Operation activation in the Alibaba console.',
+        question: 'Can we activate Batch Operations on all 3 regions during this meeting? Which specific models need it?',
+        expectedOutcome: 'All async video/image generation services fully operational.',
+      },
+      {
+        topic: 'Free Quota → Pay-as-you-go Billing',
+        currentStatus: 'Free Quota toggle may still be enabled, which causes service interruptions when quota is exhausted.',
+        question: 'Can we confirm pay-as-you-go billing is active on all 3 API keys (SG, VA, Beijing)?',
+        expectedOutcome: 'No service interruptions due to quota limits.',
+      },
+    ],
+  },
+  {
     id: 'beijing',
     title: 'Beijing Region Activation & Access',
     icon: <Globe className="w-5 h-5" />,
@@ -355,7 +400,7 @@ function generateMeetingPDF() {
   y += 7;
   pdf.text('Estimated Duration: ~70 minutes', margin, y);
   y += 7;
-  pdf.text('Sections: 6  |  Topics: 27', margin, y);
+  pdf.text('Sections: 7  |  Topics: 33+', margin, y);
   y += 12;
 
   // Divider
@@ -522,13 +567,18 @@ function generateMeetingPDF() {
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
   const actions = [
-    ['Enable CosyVoice v2 in Singapore (or confirm Beijing-only)', 'Alibaba'],
-    ['Activate Batch Operations for async models (Beijing)', 'Alibaba'],
+    ['Activate CosyVoice v3 Flash on Singapore + Virginia keys', 'Alibaba'],
+    ['Activate CosyVoice v2 in Singapore (or confirm Beijing-only)', 'Alibaba'],
+    ['Activate Sambert REST TTS on Beijing', 'Alibaba'],
+    ['Activate Batch Operations for async models (all 3 regions)', 'Alibaba'],
+    ['Enable Wanx 2.1 Image Gen on SG/VA or confirm cross-region', 'Alibaba'],
+    ['Activate Paraformer STT async mode on Beijing', 'Alibaba'],
+    ['Activate SenseVoice STT on Beijing', 'Alibaba'],
+    ['Disable Free Quota toggle → enable pay-as-you-go (all keys)', 'Both'],
     ['Test viseme data from CosyVoice v2', 'Engineering'],
     ['Full-body digital human API access', 'Alibaba'],
     ['3D generation service evaluation', 'Both'],
     ['Volume pricing proposal', 'Alibaba'],
-    ['Transition free quota to production billing', 'Engineering'],
     ['API key consolidation (3 to 2 keys)', 'Both'],
   ];
 
