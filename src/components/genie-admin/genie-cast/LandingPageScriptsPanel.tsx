@@ -3137,8 +3137,10 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                            <div className="flex-1 min-w-0 space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <Badge className={cn("text-[10px]", typeCfg.color)}>{typeCfg.label}</Badge>
-                              {isTTS && (
-                                <Badge className="text-[9px] bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300">🎙 TTS</Badge>
+                              {isTTS ? (
+                                <Badge className="text-[9px] bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300 font-semibold">🎙 TTS Audio</Badge>
+                              ) : (
+                                <Badge className="text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-semibold">📝 Script</Badge>
                               )}
                               {note.section_target && note.section_target !== 'general' && (
                                 <Badge variant="outline" className="text-[10px]">→ {note.section_target}</Badge>
