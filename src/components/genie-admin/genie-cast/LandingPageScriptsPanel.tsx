@@ -2968,9 +2968,9 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     <Zap className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold">Generate Improved Version</p>
+                    <p className="text-sm font-semibold">Generate Improved Script Version</p>
                     <p className="text-[10px] text-muted-foreground">
-                      AI analyzes all open feedback using zone-routed providers. Select a script and optionally override the recommended AI provider.
+                      AI rewrites the <strong>script text</strong> using zone-routed LLM providers (not TTS). TTS audio is regenerated separately in the TTS Preview tab.
                     </p>
                   </div>
                 </div>
@@ -3039,7 +3039,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   return (
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <Label className="text-[10px] text-muted-foreground font-medium">AI Provider</Label>
+                        <Label className="text-[10px] text-muted-foreground font-medium">AI Provider <span className="text-blue-600 dark:text-blue-400">(for Script Rewrite — not TTS)</span></Label>
                         {recommended && (
                           <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
                             ⭐ {recommended.name} recommended for {script?.region_display_name || 'this region'}
@@ -3128,7 +3128,12 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   const ttsInfo = scriptRef ? getSubRegionTTSProvider(scriptRef.region_code) : null;
                   const isTTS = note.note_type === 'tts_feedback';
                   return (
-                    <Card key={note.id} className={cn("overflow-hidden", isTTS && "border-violet-200 dark:border-violet-800")}>
+                    <Card key={note.id} className={cn(
+                      "overflow-hidden border-l-4",
+                      isTTS 
+                        ? "border-l-violet-500 border-violet-200 dark:border-violet-800 bg-violet-50/30 dark:bg-violet-950/10" 
+                        : "border-l-blue-500 border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10"
+                    )}>
                       <CardContent className="py-3 px-4">
                         <div className="flex items-start gap-3">
                           <div className={cn("flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center", typeCfg.color)}>
