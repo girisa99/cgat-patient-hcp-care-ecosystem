@@ -12,9 +12,66 @@
  *  4. null (no script available)
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { RegionSlug } from '@/config/regionalLandingConfig';
+
+// ── Playback Analytics (Cast analytics pipeline: narration-playback-track) ──
+const getVisitorSessionId = (): string => {
+  const key = 'genie_visitor_session';
+  let sessionId = sessionStorage.getItem(key);
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    sessionStorage.setItem(key, sessionId);
+  }
+  return sessionId;
+};
+
+const getDeviceType = (): string => {
+  const w = window.innerWidth;
+  if (w < 768) return 'mobile';
+  if (w < 1024) return 'tablet';
+  return 'desktop';
+};
+
+const trackPlaybackEvent = async (params: {
+  scriptId?: string;
+  ttsAudioId?: string;
+  regionCode: string;
+  subRegionCode?: string;
+  languageCode?: string;
+  eventType: 'play' | 'pause' | 'complete' | 'error';
+  playbackDurationMs?: number;
+  totalAudioDurationMs?: number;
+  completionPercentage?: number;
+  ttsProvider?: string;
+  ttsVoiceId?: string;
+}) => {
+  try {
+    await supabase.from('narration_playback_events').insert({
+      script_id: params.scriptId || null,
+      tts_audio_id: params.ttsAudioId || null,
+      region_code: params.regionCode,
+      sub_region_code: params.subRegionCode || null,
+      language_code: params.languageCode || null,
+      event_type: params.eventType,
+      playback_duration_ms: params.playbackDurationMs || null,
+      total_audio_duration_ms: params.totalAudioDurationMs || null,
+      completion_percentage: params.completionPercentage || null,
+      visitor_session_id: getVisitorSessionId(),
+      visitor_device_type: getDeviceType(),
+      visitor_browser: navigator.userAgent.slice(0, 100),
+      landing_page_path: window.location.pathname,
+      referrer_url: document.referrer || null,
+      tts_provider: params.ttsProvider || null,
+      tts_voice_id: params.ttsVoiceId || null,
+      pipeline_category: 'analytics',
+      pipeline_id: 'narration-playback-track',
+    });
+  } catch (err) {
+    console.warn('[PlaybackAnalytics] Failed to track event:', err);
+  }
+};
 
 // ── Region slug → script region_code mapping ──
 // Maps landing page region slugs to the codes used in regional_narration_scripts
@@ -182,8 +239,10 @@ export const useRegionalLandingNarration = (
     };
   }, [audioEl]);
 
+  // Track playback start time for duration calculation
+  const playStartRef = useRef<number>(0);
+
   const playNarration = useCallback(() => {
-    // Determine audio URL: prefer tts_audio_versions, fallback to script.generated_audio_url
     const audioUrl = ttsAudio?.audio_url || script?.generated_audio_url;
     if (!audioUrl) {
       console.warn('[LandingNarration] No audio URL available');
@@ -197,24 +256,75 @@ export const useRegionalLandingNarration = (
     }
 
     const audio = new Audio(audioUrl);
-    audio.onended = () => setIsPlaying(false);
+    playStartRef.current = Date.now();
+
+    // Track play event
+    trackPlaybackEvent({
+      scriptId: script?.id,
+      ttsAudioId: ttsAudio?.id,
+      regionCode: script?.region_code || regionSlug,
+      languageCode: script?.language_code,
+      eventType: 'play',
+      ttsProvider: ttsAudio?.tts_provider || script?.tts_provider || undefined,
+      ttsVoiceId: ttsAudio?.tts_voice_id || undefined,
+    });
+
+    audio.onended = () => {
+      setIsPlaying(false);
+      const durationMs = Date.now() - playStartRef.current;
+      trackPlaybackEvent({
+        scriptId: script?.id,
+        ttsAudioId: ttsAudio?.id,
+        regionCode: script?.region_code || regionSlug,
+        languageCode: script?.language_code,
+        eventType: 'complete',
+        playbackDurationMs: durationMs,
+        totalAudioDurationMs: Math.round(audio.duration * 1000),
+        completionPercentage: 100,
+        ttsProvider: ttsAudio?.tts_provider || script?.tts_provider || undefined,
+        ttsVoiceId: ttsAudio?.tts_voice_id || undefined,
+      });
+    };
+
     audio.onerror = () => {
       console.error('[LandingNarration] Audio playback error');
       setIsPlaying(false);
+      trackPlaybackEvent({
+        scriptId: script?.id,
+        ttsAudioId: ttsAudio?.id,
+        regionCode: script?.region_code || regionSlug,
+        eventType: 'error',
+      });
     };
     
     setAudioEl(audio);
     setIsPlaying(true);
     audio.play().catch(() => setIsPlaying(false));
-  }, [ttsAudio, script, audioEl]);
+  }, [ttsAudio, script, audioEl, regionSlug]);
 
   const stopNarration = useCallback(() => {
     if (audioEl) {
+      const durationMs = Date.now() - playStartRef.current;
+      const totalMs = audioEl.duration ? Math.round(audioEl.duration * 1000) : 0;
+      const pct = totalMs > 0 ? Math.round((durationMs / totalMs) * 10000) / 100 : 0;
+      
+      trackPlaybackEvent({
+        scriptId: script?.id,
+        ttsAudioId: ttsAudio?.id,
+        regionCode: script?.region_code || regionSlug,
+        languageCode: script?.language_code,
+        eventType: 'pause',
+        playbackDurationMs: durationMs,
+        totalAudioDurationMs: totalMs,
+        completionPercentage: Math.min(pct, 100),
+        ttsProvider: ttsAudio?.tts_provider || script?.tts_provider || undefined,
+      });
+
       audioEl.pause();
       audioEl.src = '';
     }
     setIsPlaying(false);
-  }, [audioEl]);
+  }, [audioEl, script, ttsAudio, regionSlug]);
 
   return {
     script,
