@@ -86,7 +86,10 @@ const REGION_OPTIONS = [
   { code: 'EU', name: 'Europe', flag: '🇪🇺' },
   { code: 'LATAM', name: 'Latin America', flag: '🌎' },
   { code: 'MENA', name: 'Middle East & North Africa', flag: '🌍' },
-  { code: 'AFRICA', name: 'Sub-Saharan Africa', flag: '🌍' },
+  { code: 'AFRICA_WEST', name: 'West Africa (Nigeria, Ghana)', flag: '🇳🇬' },
+  { code: 'AFRICA_EAST', name: 'East Africa (Kenya, Tanzania)', flag: '🇰🇪' },
+  { code: 'AFRICA_SOUTH', name: 'Southern Africa (South Africa)', flag: '🇿🇦' },
+  { code: 'AFRICA_FRANCO', name: 'Francophone Africa (Senegal, DRC)', flag: '🇸🇳' },
   { code: 'INDIA', name: 'India & South Asia', flag: '🇮🇳' },
   { code: 'SEA', name: 'Southeast Asia', flag: '🌏' },
   { code: 'CJK', name: 'China, Japan & Korea', flag: '🌏' },
@@ -155,12 +158,15 @@ interface AIProviderOption {
  * Follows master-provider-routing-registry: Claude Zone → claude-4, Alibaba Zone → qwen-max, Gemini Zone → gemini-3-pro
  */
 function getZoneAIProviders(regionCode: string): AIProviderOption[] {
+  const r = regionCode?.toUpperCase();
+  
+  // Determine zone and sub-zone for fallback selection
   const zone = (() => {
-    const r = regionCode?.toUpperCase();
     if (['NAM', 'EU', 'LATAM'].includes(r)) return 'western';
     if (['CJK'].includes(r)) return 'cjk';
     if (['MENA'].includes(r)) return 'mena';
-    if (['INDIA', 'SEA', 'AFRICA'].includes(r)) return 'india';
+    if (['INDIA', 'SEA'].includes(r)) return 'india';
+    if (r?.startsWith('AFRICA')) return 'africa';
     return 'western';
   })();
 
@@ -172,13 +178,36 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     { id: 'deepseek', name: 'DeepSeek V3', model: 'deepseek-v3', zone: 'fallback', isRecommended: false, reason: 'Cost-effective alternative — good for bulk script generation' },
   ];
 
-  // Mark the recommended provider based on zone
-  const zoneMap: Record<string, string> = { western: 'claude', cjk: 'alibaba', mena: 'alibaba', india: 'gemini' };
+  // Zone → primary provider, with sub-region-specific fallback ordering
+  const zoneMap: Record<string, string> = {
+    western: 'claude',
+    cjk: 'alibaba',
+    mena: 'alibaba',
+    india: 'gemini',
+    africa: 'gemini', // Gemini 3 Pro primary for ALL Africa sub-regions
+  };
   const recommended = zoneMap[zone] || 'claude';
+  
+  // Sub-region fallback preferences (affects sort order after recommended)
+  const africaFallbackOrder: Record<string, string[]> = {
+    'AFRICA_WEST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'AFRICA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'AFRICA_SOUTH': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+    'AFRICA_FRANCO': ['gemini', 'alibaba', 'openai', 'claude', 'deepseek'],
+  };
+  
+  const fallbackOrder = africaFallbackOrder[r];
   
   return providers
     .map(p => ({ ...p, isRecommended: p.id === recommended }))
-    .sort((a, b) => (b.isRecommended ? 1 : 0) - (a.isRecommended ? 1 : 0));
+    .sort((a, b) => {
+      if (a.isRecommended && !b.isRecommended) return -1;
+      if (!a.isRecommended && b.isRecommended) return 1;
+      if (fallbackOrder) {
+        return fallbackOrder.indexOf(a.id) - fallbackOrder.indexOf(b.id);
+      }
+      return 0;
+    });
 }
 
 // ─── Main Component ──────────────────────────────────────────────────
