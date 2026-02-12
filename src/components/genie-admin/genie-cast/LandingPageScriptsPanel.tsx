@@ -2084,21 +2084,89 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
     setShowEditor(true);
   }, []);
 
+  // ── Create Region-Specific English Base ──
+  const handleCreateRegionEnglishBase = useCallback((regionCode: string, regionName: string) => {
+    setEditingScript(null);
+    setShowEditor(false);
+    const globalBase = scripts.find(s => s.region_code === 'ENGLISH_BASE' && s.is_english_base && s.status === 'active');
+    setEditingScript({
+      id: `new-region-base-${Date.now()}`,
+      region_code: regionCode.toLowerCase(),
+      region_display_name: `${regionName} English Base`,
+      language_code: 'en',
+      language_display_name: 'English',
+      hook: globalBase?.hook || '',
+      problem_statement: globalBase?.problem_statement || '',
+      solution: globalBase?.solution || '',
+      cta: globalBase?.cta || '',
+      positioning_angles: globalBase?.positioning_angles || [],
+      target_personas: globalBase?.target_personas || [],
+      emotional_tones: globalBase?.emotional_tones || [],
+      tts_provider: 'azure',
+      tts_voice_id: 'en-US-JennyNeural',
+      tts_voice_name: 'Jenny (US English)',
+      tts_speed: 1.0,
+      tts_pitch: 'default',
+      background_music_url: null,
+      background_music_volume: null,
+      generated_audio_url: null,
+      audio_duration_seconds: null,
+      audio_generated_at: null,
+      version: 1,
+      status: 'draft',
+      is_default: false,
+      variant_label: null,
+      impression_count: null,
+      play_count: null,
+      completion_rate: null,
+      created_by: null,
+      approved_by: null,
+      approved_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      llm_provider: null,
+      llm_model: null,
+      llm_temperature: null,
+      llm_token_count: null,
+      llm_prompt_template: null,
+      routing_decision: null,
+      routing_confidence_score: null,
+      routing_zone: null,
+      generation_timestamp: null,
+      is_english_base: true,
+      english_base_script_id: null,
+      full_script: null,
+    } as NarrationScript);
+    setShowEditor(true);
+    toast.info(`📝 Creating English Base for ${regionName}. ${globalBase ? 'Pre-filled from Global English Base — customize for this region.' : 'Write region-specific English content.'}`);
+  }, [scripts]);
+
   const handleSaveEnglishBase = useCallback(async () => {
     if (!editingScript) return;
     
     try {
       if (editingScript.id.startsWith('new-')) {
-        // Create new English base
+        // Create new English base (global or region-specific)
+        const isRegionBase = editingScript.id.startsWith('new-region-base-');
+        const targetRegionCode = isRegionBase ? editingScript.region_code : 'ENGLISH_BASE';
+        const targetDisplayName = isRegionBase ? editingScript.region_display_name : 'English (Source)';
+
         const maxVersion = scripts
-          .filter(s => s.region_code === 'ENGLISH_BASE')
+          .filter(s => s.region_code === targetRegionCode)
           .reduce((max, s) => Math.max(max, s.version), 0);
+
+        // Determine routing zone from region code
+        const zoneMap: Record<string, string> = {
+          'latam': 'latam', 'mena': 'mena', 'india': 'india',
+          'cjk': 'cjk', 'sea': 'sea', 'africa': 'africa',
+          'eu': 'western', 'nam': 'western', 'ENGLISH_BASE': 'western',
+        };
 
         const { error } = await supabase
           .from('regional_narration_scripts')
           .insert({
-            region_code: 'ENGLISH_BASE',
-            region_display_name: 'English (Source)',
+            region_code: targetRegionCode,
+            region_display_name: targetDisplayName,
             language_code: 'en',
             language_display_name: 'English',
             hook: editingScript.hook,
@@ -2109,19 +2177,19 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
             target_personas: editingScript.target_personas,
             emotional_tones: editingScript.emotional_tones,
             tts_provider: 'azure',
-            tts_voice_id: 'en-US-JennyNeural',
-            tts_voice_name: 'Jenny (US English)',
+            tts_voice_id: editingScript.tts_voice_id || 'en-US-JennyNeural',
+            tts_voice_name: editingScript.tts_voice_name || 'Jenny (US English)',
             tts_speed: 1.0,
             version: maxVersion + 1,
             status: 'draft',
             is_english_base: true,
             llm_provider: null,
-            routing_zone: 'western',
+            routing_zone: zoneMap[targetRegionCode] || 'western',
             generation_timestamp: new Date().toISOString(),
           } as any);
 
         if (error) throw error;
-        toast.success('English Base Script created (v' + (maxVersion + 1) + ')');
+        toast.success(`${isRegionBase ? targetDisplayName : 'English Base Script'} created (v${maxVersion + 1})`);
       } else {
         // Update existing English base
         const { error } = await supabase
@@ -2206,25 +2274,42 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
     }
   }, [englishBaseScript, fetchScripts]);
 
-  // ── Auto-expand English base to all 38 sub-regions ──
+  // ── Auto-expand English base to all sub-regions (prefers region-specific base) ──
   const handleAutoExpandAndTranscreate = useCallback(async (baseScript: NarrationScript) => {
     try {
-      // ⭐ Query DB for the latest active English base, not the parameter (which might be stale)
-      const { data: latestEnglishBase } = await supabase
-        .from('regional_narration_scripts')
-        .select('*')
-        .eq('is_english_base', true)
-        .eq('status', 'active')
-        .order('version', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (!latestEnglishBase) {
-        toast.error('No active English Base Script found');
-        return;
-      }
+      // ⭐ Prefer the passed baseScript if it's an active English base, otherwise query DB
+      let sourceScript: NarrationScript;
+      if (baseScript.is_english_base && baseScript.status === 'active') {
+        sourceScript = baseScript;
+      } else {
+        // Try region-specific English base first
+        const regionCode = baseScript.region_code?.toLowerCase();
+        const { data: regionBase } = await supabase
+          .from('regional_narration_scripts')
+          .select('*')
+          .eq('region_code', regionCode)
+          .eq('is_english_base', true)
+          .eq('status', 'active')
+          .order('version', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      const sourceScript = latestEnglishBase as NarrationScript;
+        const latestEnglishBase = regionBase || (await supabase
+          .from('regional_narration_scripts')
+          .select('*')
+          .eq('region_code', 'ENGLISH_BASE')
+          .eq('is_english_base', true)
+          .eq('status', 'active')
+          .order('version', { ascending: false })
+          .limit(1)
+          .single()).data;
+
+        if (!latestEnglishBase) {
+          toast.error('No active English Base Script found');
+          return;
+        }
+        sourceScript = latestEnglishBase as NarrationScript;
+      }
 
       // Collect all leaf-level region codes from REGION_HIERARCHY (including per-country grandchildren)
       const subRegionCodes: string[] = [];
@@ -2480,20 +2565,34 @@ EMOTIONAL TONES: ${emotionalTones}
       childNode.children.forEach(gc => leafChildren.push(gc));
     }
 
-    // ⭐ ALWAYS query DB for latest active English base, not stale React state
-    const { data: latestEnglishBase } = await supabase
+    // ⭐ Prefer region-specific English base, fallback to global ENGLISH_BASE
+    const regionParentCode = parentCode.split('_')[0].toLowerCase(); // e.g., 'latam', 'mena'
+    const { data: regionEnglishBase } = await supabase
       .from('regional_narration_scripts')
       .select('*')
+      .eq('region_code', regionParentCode)
       .eq('is_english_base', true)
       .eq('status', 'active')
       .order('version', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
+
+    const latestEnglishBase = regionEnglishBase || (await supabase
+      .from('regional_narration_scripts')
+      .select('*')
+      .eq('region_code', 'ENGLISH_BASE')
+      .eq('is_english_base', true)
+      .eq('status', 'active')
+      .order('version', { ascending: false })
+      .limit(1)
+      .single()).data;
     
     if (!latestEnglishBase) {
-      toast.error('No approved English Base Script found. Approve the English Base first.');
+      toast.error(`No approved English Base Script found for ${groupName}. Create and approve a region-specific English Base first.`);
       return;
     }
+    
+    console.log(`[Expand] Using ${regionEnglishBase ? 'region-specific' : 'global'} English base for ${groupName}`);
 
     // Use the latest English base as the source
     const sourceScript = latestEnglishBase as NarrationScript;
@@ -3009,6 +3108,10 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   : 0;
                 const isExpanding = expandingRegion === regionCode;
 
+                // Check if this region has its own English base
+                const hasRegionEnglishBase = isParentLevel && regionScripts.some(s => s.is_english_base && s.language_code === 'en');
+                const hasActiveRegionEnglishBase = isParentLevel && regionScripts.some(s => s.is_english_base && s.language_code === 'en' && s.status === 'active');
+
                 return (
                   <Card key={regionCode} className="overflow-hidden">
                     <CardHeader className="py-3 bg-muted/30">
@@ -3024,16 +3127,40 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                               {existingSubRegionCount}/{totalLeafCount} sub-regions
                             </Badge>
                           )}
+                          {/* English Base status badge for parent regions */}
+                          {isParentLevel && hasRegionEnglishBase && (
+                            <Badge variant={hasActiveRegionEnglishBase ? "default" : "outline"} className="text-[10px] gap-1">
+                              📝 {hasActiveRegionEnglishBase ? 'EN Base ✓' : 'EN Base (draft)'}
+                            </Badge>
+                          )}
+                          {isParentLevel && !hasRegionEnglishBase && (
+                            <Badge variant="outline" className="text-[10px] gap-1 text-amber-600 border-amber-300">
+                              ⚠ No EN Base
+                            </Badge>
+                          )}
                         </CardTitle>
                         <div className="flex items-center gap-1">
+                          {/* Create English Base — for parent regions missing one */}
+                          {isParentLevel && !hasRegionEnglishBase && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7 gap-1"
+                              onClick={() => handleCreateRegionEnglishBase(regionCode, regionInfo?.name || regionCode)}
+                            >
+                              <Plus className="w-3 h-3" />
+                              Create EN Base
+                            </Button>
+                          )}
                           {/* Expand to Sub-Regions button — ALWAYS visible for parent regions with children */}
                           {hasSubRegions ? (
                             <Button
                               size="sm"
                               variant={existingSubRegionCount < totalLeafCount ? "default" : "outline"}
                               className="text-xs h-7 gap-1"
-                              disabled={isExpanding}
+                              disabled={isExpanding || (!hasActiveRegionEnglishBase && !scripts.some(s => s.region_code === 'ENGLISH_BASE' && s.is_english_base && s.status === 'active'))}
                               onClick={() => handleExpandToSubRegions(regionScripts[0])}
+                              title={!hasActiveRegionEnglishBase ? 'Create and approve an English Base first' : undefined}
                             >
                               {isExpanding ? (
                                 <RefreshCw className="w-3 h-3 animate-spin" />
@@ -3063,6 +3190,15 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                 <History className="w-3.5 h-3.5 mr-2" />
                                 New Version
                               </DropdownMenuItem>
+                              {isParentLevel && !hasRegionEnglishBase && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleCreateRegionEnglishBase(regionCode, regionInfo?.name || regionCode)}>
+                                    <Plus className="w-3.5 h-3.5 mr-2" />
+                                    Create Region English Base
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                               {hasSubRegions && (
                                 <>
                                   <DropdownMenuSeparator />
