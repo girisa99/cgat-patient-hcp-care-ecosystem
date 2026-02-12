@@ -593,7 +593,7 @@ export const PipelineOutputGallery: React.FC<PipelineOutputGalleryProps> = ({ in
                   <Badge className="bg-accent/20 text-accent border-accent/30 text-[9px]">1-Click</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">
-                  This output can be transcreated into 140+ languages with zone-routed AI — not just translated, but culturally adapted.
+                  This output can be transcreated into 50+ languages with zone-routed AI — not just translated, but culturally adapted.
                 </p>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {blogItem.multiLangPreview.map((lang) => (

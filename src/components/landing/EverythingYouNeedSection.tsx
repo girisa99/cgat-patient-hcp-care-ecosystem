@@ -44,8 +44,8 @@ const WhyGenieTab: React.FC<{ config: RegionalConfig }> = ({ config }) => {
           <span className="text-primary font-semibold">built for them</span>.
         </p>
         <div className="flex flex-wrap justify-center gap-2 text-sm">
-          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🗣️ 140+ Languages</span>
-          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🌍 8 Regions</span>
+          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🗣️ 50+ Languages, 140+ Dialects</span>
+          <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🌍 15 Regions</span>
           <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">🎯 Cultural Context</span>
           <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-full font-medium">📋 Regional Compliance</span>
         </div>
@@ -268,7 +268,7 @@ export const EverythingYouNeedSection: React.FC<EverythingYouNeedSectionProps> =
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
             One platform — from idea to globally distributed content in{' '}
-            <span className="text-primary font-semibold">140+ languages</span>.
+            <span className="text-primary font-semibold">50+ languages</span>.
             See why teams in <span className="text-primary font-semibold">{config.hero.regionName}</span> choose Genie.
           </p>
         </motion.div>
@@ -323,7 +323,7 @@ export const EverythingYouNeedSection: React.FC<EverythingYouNeedSectionProps> =
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
         >
-          <strong>50+ industries</strong> · <strong>140+ languages</strong> · <strong>19 AI providers</strong> · 
+          <strong>50+ industries</strong> · <strong>50+ languages, 140+ dialects</strong> · <strong>19 AI providers</strong> · 
           <strong> 206 pipelines</strong> — Your content, your market, your language.
         </motion.p>
       </div>

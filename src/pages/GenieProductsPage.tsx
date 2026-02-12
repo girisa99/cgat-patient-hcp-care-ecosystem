@@ -101,7 +101,7 @@ const GenieProductsPage: React.FC = () => {
       <div className="container max-w-6xl py-12">
         <div className="text-center mb-12">
           <Badge variant="secondary" className="mb-4">
-            7 Products • 206+ Pipelines • 140+ Languages
+            7 Products • 206+ Pipelines • 50+ Languages
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight mb-4">
             The Complete Genie Suite

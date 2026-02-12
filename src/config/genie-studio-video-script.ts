@@ -80,7 +80,7 @@ I am the Genie of Genie Suite, and unlike my cousin who grants only THREE wishes
 
 *gestures grandly as logos appear*
 
-Behold! Seven magical products. 206 transformation pipelines. 19 world-class AI providers. Support for 140+ languages in their TRUE dialects – not that robotic translation nonsense.
+Behold! Seven magical products. 206 transformation pipelines. 19 world-class AI providers. Support for 50+ languages in their TRUE dialects – not that robotic translation nonsense.
 
 Whether you're in Tokyo, Dubai, São Paulo, or anywhere in between... your wish is LITERALLY my command.
 

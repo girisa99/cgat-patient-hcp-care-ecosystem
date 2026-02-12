@@ -326,7 +326,7 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
     id: 'studio',
     name: 'Genie Suite',
     tagline: 'Mind to Media',
-    description: 'The complete AI creative suite. 7 products, 206 pipelines, 140+ languages.',
+    description: 'The complete AI creative suite. 7 products, 206 pipelines, 50+ languages.',
     emoji: '🎨',
     color: 'from-indigo-500 to-violet-500',
     bgColor: 'bg-indigo-50 dark:bg-indigo-950/20',
@@ -460,7 +460,7 @@ export const GENIE_SUITE = {
   name: 'Genie Suite',
   domain: 'GenieAISuite.com',
   tagline: 'Mind to Media',
-  description: 'The complete AI creative suite. 7 products, 206 pipelines, 140+ languages.',
+  description: 'The complete AI creative suite. 7 products, 206 pipelines, 50+ languages.',
   logos: {
     banner: genieStudioBanner,
     horizontal: genieStudioHorizontal

@@ -1029,7 +1029,7 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
                   <Lock className="h-4 w-4 text-primary-foreground" />
                 </div>
                 <p className="text-xs text-muted-foreground flex-1">
-                  <strong className="text-foreground">Unlock the full experience.</strong> Custom branding, real avatars, interactive 3D, PPTX/PDF export & 140+ languages.
+                  <strong className="text-foreground">Unlock the full experience.</strong> Custom branding, real avatars, interactive 3D, PPTX/PDF export & 50+ languages.
                 </p>
                 <Button size="sm" variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground text-xs shrink-0">
                   Sign Up
