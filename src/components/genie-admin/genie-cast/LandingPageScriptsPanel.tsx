@@ -2251,29 +2251,43 @@ EMOTIONAL TONES: ${emotionalTones}
   // ── Expand a parent-level script to its sub-regions (manual trigger) ──
 
   const handleExpandToSubRegions = useCallback(async (parentScript: NarrationScript) => {
-    // Find the region group for this script (match parent groupCode OR child code)
     const parentCode = parentScript.region_code.toUpperCase();
-    const group = REGION_HIERARCHY.find(g => 
+    
+    // First check: is this a parent-level group code (e.g., MENA, EU, INDIA)?
+    const isParentLevel = REGION_HIERARCHY.some(g => 
       g.groupCode === parentCode || g.groupCode.toLowerCase() === parentScript.region_code
-    ) || REGION_HIERARCHY.find(g => 
-      g.children.some(c => c.code === parentCode || c.code === parentScript.region_code)
     );
     
-    if (!group || group.children.length === 0) {
-      toast.error('This region has no sub-regions to expand to.');
-      return;
-    }
-
-    // Collect all LEAF-level children (grandchildren if they exist, otherwise direct children)
-    const leafChildren: RegionChild[] = [];
-    group.children.forEach(child => {
-      if (child.children && child.children.length > 0) {
-        // Has per-country grandchildren — expand to country level
-        child.children.forEach(gc => leafChildren.push(gc));
-      } else {
-        leafChildren.push(child);
+    let leafChildren: RegionChild[] = [];
+    let groupName = '';
+    
+    if (isParentLevel) {
+      // Parent-level: expand to all leaf children of this group
+      const group = REGION_HIERARCHY.find(g => g.groupCode === parentCode || g.groupCode.toLowerCase() === parentScript.region_code);
+      if (!group || group.children.length === 0) {
+        toast.error('This region has no sub-regions to expand to.');
+        return;
       }
-    });
+      groupName = group.groupName;
+      group.children.forEach(child => {
+        if (child.children && child.children.length > 0) {
+          child.children.forEach(gc => leafChildren.push(gc));
+        } else {
+          leafChildren.push(child);
+        }
+      });
+    } else {
+      // Child-level: check if THIS child has country-level grandchildren (e.g., EU_DACH → EU_DE, EU_AT)
+      const childNode = REGION_HIERARCHY.flatMap(g => g.children).find(c => 
+        c.code === parentCode || c.code === parentScript.region_code
+      );
+      if (!childNode || !childNode.children || childNode.children.length === 0) {
+        toast.error('This sub-region has no further country-level children to expand to.');
+        return;
+      }
+      groupName = childNode.name;
+      childNode.children.forEach(gc => leafChildren.push(gc));
+    }
 
     // Query DB fresh to avoid stale React state causing duplicates
     const leafCodes = leafChildren.map(c => c.code);
@@ -2292,7 +2306,7 @@ EMOTIONAL TONES: ${emotionalTones}
     }
 
     setExpandingRegion(parentScript.region_code);
-    toast.info(`🌍 Expanding to ${missingSubRegions.length} sub-regions for ${group.groupName}...`);
+    toast.info(`🌍 Expanding to ${missingSubRegions.length} sub-regions for ${groupName}...`);
 
     try {
       const BATCH_SIZE = 3;
@@ -2438,7 +2452,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
         }
       }
 
-      toast.success(`🌍 Expanded to ${created}/${missingSubRegions.length} sub-regions for ${group.groupName}!`);
+      toast.success(`🌍 Expanded to ${created}/${missingSubRegions.length} sub-regions for ${groupName}!`);
       fetchScripts();
     } catch (err) {
       console.error('[ExpandSub] Error:', err);
@@ -2737,17 +2751,26 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
             ) : (
               Object.entries(groupedByRegion).map(([regionCode, regionScripts]) => {
                 const regionInfo = REGION_OPTIONS.find(r => r.code === regionCode);
-                // Check if this is a parent-level script that has sub-regions
-                // OR if it's a sub-region whose parent group has other children
-                const parentGroup = REGION_HIERARCHY.find(g => 
+                // Check if this is a parent-level script (matches a groupCode) that has sub-regions
+                const isParentLevel = REGION_HIERARCHY.some(g => 
                   g.groupCode === regionCode.toUpperCase() || g.groupCode.toLowerCase() === regionCode
-                ) || REGION_HIERARCHY.find(g => 
-                  g.children.some(c => c.code === regionCode || c.code === regionCode.toUpperCase())
                 );
-                const hasSubRegions = parentGroup && parentGroup.children.length > 0;
-                // Count leaf-level children (grandchildren if they exist)
+                const parentGroup = isParentLevel 
+                  ? REGION_HIERARCHY.find(g => g.groupCode === regionCode.toUpperCase() || g.groupCode.toLowerCase() === regionCode)
+                  : null;
+                
+                // Also check if this is a sub-region that itself has country-level children (e.g., EU_DACH → EU_DE, EU_AT, EU_CH)
+                const childWithGrandchildren = !isParentLevel
+                  ? REGION_HIERARCHY.flatMap(g => g.children).find(c => 
+                      (c.code === regionCode || c.code === regionCode.toUpperCase()) && c.children && c.children.length > 0
+                    )
+                  : null;
+                
+                const hasSubRegions = (parentGroup && parentGroup.children.length > 0) || (childWithGrandchildren != null);
+                
+                // Count leaf-level children
                 const leafChildren: RegionChild[] = [];
-                if (hasSubRegions && parentGroup) {
+                if (parentGroup && parentGroup.children.length > 0) {
                   parentGroup.children.forEach(child => {
                     if (child.children && child.children.length > 0) {
                       child.children.forEach(gc => leafChildren.push(gc));
@@ -2755,6 +2778,8 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                       leafChildren.push(child);
                     }
                   });
+                } else if (childWithGrandchildren?.children) {
+                  childWithGrandchildren.children.forEach(gc => leafChildren.push(gc));
                 }
                 const totalLeafCount = leafChildren.length;
                 const existingSubRegionCount = hasSubRegions 
