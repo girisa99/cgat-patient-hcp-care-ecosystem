@@ -2275,11 +2275,15 @@ EMOTIONAL TONES: ${emotionalTones}
       }
     });
 
-    // Check which leaf regions already have NON-archived scripts
-    const existingSubRegions = scripts
-      .filter(s => s.status !== 'archived' && leafChildren.some(c => c.code === s.region_code))
-      .map(s => s.region_code);
+    // Query DB fresh to avoid stale React state causing duplicates
+    const leafCodes = leafChildren.map(c => c.code);
+    const { data: existingDbScripts } = await supabase
+      .from('regional_narration_scripts')
+      .select('region_code')
+      .in('region_code', leafCodes)
+      .neq('status', 'archived');
 
+    const existingSubRegions = (existingDbScripts || []).map(s => s.region_code);
     const missingSubRegions = leafChildren.filter(c => !existingSubRegions.includes(c.code));
 
     if (missingSubRegions.length === 0) {
