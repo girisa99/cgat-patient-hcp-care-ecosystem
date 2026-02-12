@@ -1,18 +1,26 @@
 /**
  * CENTRALIZED REGIONAL ROUTING REGISTRY
- * Single source of truth for all LLM, TTS, and voice mappings across 48+ regions.
+ * Single source of truth for all LLM, TTS, voice, language, and zone mappings across 82+ regions.
+ * 
+ * CROSS-PLATFORM: Used by Genie Cast, Genie Deck, Landing Pages, IP Detection, and Demos.
+ * ALL routing decisions MUST import from this file — no hardcoded zone logic elsewhere.
  * 
  * Structure:
  * - REGION_LLM_ROUTING: Parent-level LLM providers + fallback chains
  * - getZoneAIProviders(): Sub-region AI provider options with hybrid overrides
  * - getRegionVoiceOptions(): Regional voice selections per TTS provider
+ * - getZoneFromLanguage(): Language code → zone mapping
+ * - getZoneFromRegion(): Region string → zone mapping
+ * - getZoneFromCountry(): ISO country code → zone mapping
+ * - isRTLLanguage(): RTL script detection
+ * - toLangBCP47(): Short lang code → BCP47 locale
  * 
  * Alignment:
- * - Master Provider Routing Registry (v5)
- * - EU, LATAM, NAM: Claude 4 (Anthropic)
+ * - Master Provider Routing Registry (v6)
+ * - EU, LATAM, NAM, Oceania, Turkey: Claude 4 (Anthropic)
  * - CJK, MENA_GULF, MENA_MSA: Qwen Max (Alibaba)
  * - India, SEA, Africa, Bangladesh: Gemini 3 Pro
- * - Pakistan: GPT-4o (OpenAI)
+ * - Pakistan, Caribbean, Eastern Europe, Central Asia: GPT-4o (OpenAI)
  * - DeepSeek: Fallback chain only (never primary)
  */
 
@@ -585,4 +593,325 @@ export function normalizeTTSProvider(displayProvider: string): string {
   if (p.includes('qwen') || p.includes('alibaba')) return 'qwen3';
   if (p.includes('eleven')) return 'elevenlabs';
   return 'azure';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. CROSS-PLATFORM UTILITIES — Zone detection, RTL, BCP47, language mapping
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Zone type for cross-platform routing */
+export type RegionalZone = 
+  | 'western' | 'cjk' | 'mena' | 'india' | 'africa'
+  | 'oceania' | 'turkey' | 'caribbean' | 'eastern_europe' | 'central_asia'
+  | 'pakistan' | 'bangladesh' | 'sea' | 'fallback';
+
+/** Language → Zone mapping (most precise detection method) */
+const LANGUAGE_ZONE_MAP: Record<string, RegionalZone> = {
+  // CJK
+  zh: 'cjk', ja: 'cjk', ko: 'cjk',
+  // MENA / RTL
+  ar: 'mena', he: 'mena', fa: 'mena',
+  // India / South Asia
+  hi: 'india', ta: 'india', te: 'india', bn: 'india', mr: 'india',
+  gu: 'india', kn: 'india', ml: 'india', pa: 'india', or: 'india',
+  // Pakistan & Bangladesh (separate zones)
+  ur: 'pakistan',
+  // SEA
+  id: 'sea', vi: 'sea', th: 'sea', ms: 'sea', fil: 'sea', my: 'sea',
+  // Africa
+  sw: 'africa', yo: 'africa', am: 'africa', ha: 'africa', ig: 'africa', zu: 'africa',
+  // Turkey
+  tr: 'turkey',
+  // Caucasus / Central Asia
+  ka: 'central_asia', hy: 'central_asia', az: 'central_asia',
+  kk: 'central_asia', uz: 'central_asia',
+  // Eastern Europe
+  uk: 'eastern_europe', sr: 'eastern_europe', bg: 'eastern_europe', hr: 'eastern_europe',
+  // Western / EU (default for Latin-script European languages)
+  en: 'western', es: 'western', fr: 'western', de: 'western', it: 'western',
+  pt: 'western', nl: 'western', pl: 'western', ro: 'western', cs: 'western',
+  hu: 'western', sv: 'western', nb: 'western', da: 'western', fi: 'western',
+};
+
+/** ISO country code → Zone mapping for IP-based detection */
+const COUNTRY_ZONE_MAP: Record<string, RegionalZone> = {
+  // NAM
+  US: 'western', CA: 'western',
+  // EU
+  GB: 'western', DE: 'western', FR: 'western', IT: 'western', ES: 'western',
+  NL: 'western', BE: 'western', PT: 'western', PL: 'western', SE: 'western',
+  NO: 'western', DK: 'western', FI: 'western', AT: 'western', CH: 'western',
+  IE: 'western', CZ: 'western', RO: 'western', HU: 'western',
+  // P1: Eastern Europe
+  UA: 'eastern_europe', RS: 'eastern_europe', BG: 'eastern_europe', HR: 'eastern_europe',
+  BA: 'eastern_europe', ME: 'eastern_europe', MK: 'eastern_europe', AL: 'eastern_europe',
+  // Caucasus & Central Asia
+  GE: 'central_asia', AM: 'central_asia', AZ: 'central_asia',
+  KZ: 'central_asia', UZ: 'central_asia', TM: 'central_asia', KG: 'central_asia', TJ: 'central_asia',
+  // Turkey
+  TR: 'turkey',
+  // MENA / GCC
+  SA: 'mena', AE: 'mena', KW: 'mena', QA: 'mena', BH: 'mena', OM: 'mena',
+  EG: 'mena', JO: 'mena', LB: 'mena', IQ: 'mena',
+  MA: 'mena', DZ: 'mena', TN: 'mena', LY: 'mena', YE: 'mena',
+  // South Asia
+  IN: 'india', PK: 'pakistan', BD: 'bangladesh', LK: 'india', NP: 'india',
+  // SEA
+  ID: 'sea', TH: 'sea', VN: 'sea', MY: 'sea', PH: 'sea', SG: 'sea',
+  MM: 'sea', KH: 'sea', LA: 'sea',
+  // CJK
+  CN: 'cjk', JP: 'cjk', KR: 'cjk', TW: 'cjk', HK: 'cjk',
+  // LATAM
+  BR: 'western', MX: 'western', AR: 'western', CO: 'western', CL: 'western',
+  PE: 'western', VE: 'western', EC: 'western', UY: 'western', PY: 'western',
+  // Caribbean
+  JM: 'caribbean', TT: 'caribbean', BS: 'caribbean', HT: 'caribbean',
+  DO: 'western', PR: 'western', CU: 'western', // Spanish Caribbean stays with LATAM
+  // Africa
+  NG: 'africa', KE: 'africa', ZA: 'africa', GH: 'africa', ET: 'africa',
+  TZ: 'africa', UG: 'africa', RW: 'africa', SN: 'africa', CM: 'africa',
+  // Oceania
+  AU: 'oceania', NZ: 'oceania',
+};
+
+/**
+ * Get zone from language code (most precise routing method)
+ * Used by demos, Deck wizard, and content generation
+ */
+export function getZoneFromLanguage(lang: string): RegionalZone {
+  const short = lang?.split('-')[0]?.toLowerCase();
+  return LANGUAGE_ZONE_MAP[short] || 'western';
+}
+
+/**
+ * Get zone from region string (fuzzy matching for backward compatibility)
+ * Handles both registry codes (NAM_US) and display strings (North America)
+ */
+export function getZoneFromRegion(region: string): RegionalZone {
+  if (!region) return 'western';
+  const r = region.toLowerCase();
+  if (r.startsWith('nam') || r.includes('north_america')) return 'western';
+  if (r.startsWith('eu') && !r.includes('ukraine') && !r.includes('balkans') && !r.includes('caucasus')) return 'western';
+  if (r.startsWith('latam') || r.includes('latin')) return 'western';
+  if (r.startsWith('cjk') || r.includes('china') || r.includes('japan') || r.includes('korea')) return 'cjk';
+  if (r.startsWith('mena') || r.includes('arab') || r.includes('middle')) return 'mena';
+  if (r.startsWith('india') || r.includes('south_asia')) return 'india';
+  if (r === 'pakistan') return 'pakistan';
+  if (r === 'bangladesh') return 'bangladesh';
+  if (r.startsWith('sea') || r.includes('southeast')) return 'sea';
+  if (r.startsWith('africa')) return 'africa';
+  if (r.startsWith('oceania') || r.includes('australia')) return 'oceania';
+  if (r === 'turkey') return 'turkey';
+  if (r.startsWith('caribbean')) return 'caribbean';
+  if (r.includes('ukraine') || r.includes('balkans') || r.includes('eurasia')) return 'eastern_europe';
+  if (r.includes('caucasus') || r.includes('central_asia') || r.startsWith('asia_central')) return 'central_asia';
+  return 'western';
+}
+
+/**
+ * Get zone from ISO country code (for IP-based detection)
+ */
+export function getZoneFromCountry(countryCode: string): RegionalZone {
+  return COUNTRY_ZONE_MAP[countryCode?.toUpperCase()] || 'western';
+}
+
+/** RTL script detection */
+export function isRTLLanguage(lang: string): boolean {
+  const short = lang?.split('-')[0]?.toLowerCase();
+  return ['ar', 'he', 'fa', 'ur'].includes(short);
+}
+
+/** Map short language code to BCP47 locale for TTS */
+export function toLangBCP47(lang: string): string {
+  const BCP47_MAP: Record<string, string> = {
+    en: 'en-US', ar: 'ar-SA', hi: 'hi-IN', zh: 'zh-CN',
+    ja: 'ja-JP', ko: 'ko-KR', es: 'es-ES', fr: 'fr-FR',
+    de: 'de-DE', pt: 'pt-BR', it: 'it-IT', nl: 'nl-NL',
+    tr: 'tr-TR', pl: 'pl-PL', sw: 'sw-KE', yo: 'yo-NG',
+    bn: 'bn-IN', ta: 'ta-IN', te: 'te-IN', id: 'id-ID',
+    vi: 'vi-VN', th: 'th-TH', ms: 'ms-MY', ur: 'ur-PK',
+    mr: 'mr-IN', gu: 'gu-IN', kn: 'kn-IN', ml: 'ml-IN',
+    pa: 'pa-IN', or: 'or-IN', uk: 'uk-UA', sr: 'sr-RS',
+    bg: 'bg-BG', ka: 'ka-GE', hy: 'hy-AM', az: 'az-AZ',
+    kk: 'kk-KZ', uz: 'uz-UZ', ro: 'ro-RO', cs: 'cs-CZ',
+    hu: 'hu-HU', sv: 'sv-SE', nb: 'nb-NO', da: 'da-DK',
+    fi: 'fi-FI', he: 'he-IL', fa: 'fa-IR', am: 'am-ET',
+    fil: 'fil-PH', ha: 'ha-NG',
+  };
+  return BCP47_MAP[lang] || `${lang}-${lang.toUpperCase()}`;
+}
+
+/** Standard demo language options (used across landing pages and demos) */
+export const DEMO_LANGUAGE_OPTIONS = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
+  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', flag: '🇫🇷' },
+  { code: 'de', name: 'German', flag: '🇩🇪' },
+  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
+  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+  { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
+  { code: 'ko', name: 'Korean', flag: '🇰🇷' },
+  { code: 'sw', name: 'Swahili', flag: '🇰🇪' },
+  { code: 'bn', name: 'Bengali', flag: '🇧🇩' },
+  { code: 'tr', name: 'Turkish', flag: '🇹🇷' },
+  { code: 'ur', name: 'Urdu', flag: '🇵🇰' },
+  { code: 'vi', name: 'Vietnamese', flag: '🇻🇳' },
+  { code: 'th', name: 'Thai', flag: '🇹🇭' },
+  { code: 'id', name: 'Indonesian', flag: '🇮🇩' },
+  { code: 'uk', name: 'Ukrainian', flag: '🇺🇦' },
+];
+
+/** 
+ * Cross-platform provider config (display metadata for UI cards/badges)
+ * Maps zone → multimodal provider stack with display names and colors
+ */
+export interface ZoneProviderDisplay {
+  zone: RegionalZone;
+  llmProvider: string;
+  llmModel: string;
+  ttsProvider: string;
+  imageProvider: string;
+  videoProvider: string;
+  avatarProvider: string;
+  translationProvider: string;
+  displayProviders: string[];
+  displayColors: string[];
+}
+
+export const ZONE_PROVIDER_DISPLAY: Record<string, ZoneProviderDisplay> = {
+  western: {
+    zone: 'western', llmProvider: 'claude', llmModel: 'claude-4',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'deepl',
+    displayProviders: ['Claude 4', 'Azure Neural', 'Vertex Veo 3', 'DeepL'],
+    displayColors: ['from-amber-500/80 to-amber-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+  },
+  cjk: {
+    zone: 'cjk', llmProvider: 'alibaba', llmModel: 'qwen-max',
+    ttsProvider: 'alibaba_qwen3_tts', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'qwen_mt',
+    displayProviders: ['Qwen Max', 'Qwen3-TTS', 'Vertex Veo 3', 'Qwen-MT'],
+    displayColors: ['from-orange-500/80 to-orange-600/80', 'from-amber-500/80 to-amber-600/80', 'from-blue-500/80 to-blue-600/80', 'from-red-500/80 to-red-600/80'],
+  },
+  mena: {
+    zone: 'mena', llmProvider: 'alibaba', llmModel: 'qwen-max',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'azure_translator',
+    displayProviders: ['Qwen Max', 'Azure Neural (7 Arabic)', 'Vertex Veo 3', 'Azure Translator'],
+    displayColors: ['from-orange-500/80 to-orange-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-emerald-500/80 to-emerald-600/80'],
+  },
+  india: {
+    zone: 'india', llmProvider: 'gemini', llmModel: 'gemini-3-pro',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+  africa: {
+    zone: 'africa', llmProvider: 'gemini', llmModel: 'gemini-3-pro',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+  oceania: {
+    zone: 'oceania', llmProvider: 'claude', llmModel: 'claude-4',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'deepl',
+    displayProviders: ['Claude 4', 'Azure Neural', 'Vertex Veo 3', 'DeepL'],
+    displayColors: ['from-amber-500/80 to-amber-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+  },
+  turkey: {
+    zone: 'turkey', llmProvider: 'claude', llmModel: 'claude-4',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'deepl',
+    displayProviders: ['Claude 4', 'Azure Neural', 'Vertex Veo 3', 'DeepL'],
+    displayColors: ['from-amber-500/80 to-amber-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-cyan-500/80 to-cyan-600/80'],
+  },
+  caribbean: {
+    zone: 'caribbean', llmProvider: 'openai', llmModel: 'gpt-4o',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['GPT-4o', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+  eastern_europe: {
+    zone: 'eastern_europe', llmProvider: 'openai', llmModel: 'gpt-4o',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['GPT-4o', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+  central_asia: {
+    zone: 'central_asia', llmProvider: 'openai', llmModel: 'gpt-4o',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['GPT-4o', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+  pakistan: {
+    zone: 'pakistan', llmProvider: 'openai', llmModel: 'gpt-4o',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['GPT-4o', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+  bangladesh: {
+    zone: 'bangladesh', llmProvider: 'gemini', llmModel: 'gemini-3-pro',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+  sea: {
+    zone: 'sea', llmProvider: 'gemini', llmModel: 'gemini-3-pro',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+  fallback: {
+    zone: 'fallback', llmProvider: 'openai', llmModel: 'gpt-4o',
+    ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+    videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+    translationProvider: 'google_translate',
+    displayProviders: ['GPT-4o (Fallback)', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+    displayColors: ['from-emerald-500/80 to-emerald-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+  },
+};
+
+/**
+ * Get full provider display config for a zone (used by demo cards, badges, wizard)
+ */
+export function getZoneProviderDisplay(zone: RegionalZone): ZoneProviderDisplay {
+  return ZONE_PROVIDER_DISPLAY[zone] || ZONE_PROVIDER_DISPLAY.fallback;
+}
+
+/**
+ * Get provider display config from language code (convenience wrapper)
+ */
+export function getProviderDisplayFromLanguage(lang: string): ZoneProviderDisplay {
+  return getZoneProviderDisplay(getZoneFromLanguage(lang));
+}
+
+/**
+ * Get provider display config from region string (convenience wrapper)
+ */
+export function getProviderDisplayFromRegion(region: string): ZoneProviderDisplay {
+  return getZoneProviderDisplay(getZoneFromRegion(region));
 }
