@@ -7,16 +7,56 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // ============================================
+    // JWT AUTHENTICATION — Validate user identity
+    // ============================================
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[DeploymentManager] Authenticated user: ${user.id}`);
+
+    // ============================================
+    // AUTHORIZATION — Require admin role
+    // ============================================
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: adminCheck } = await supabase
+      .rpc('user_has_role', { check_user_id: user.id, role_name: 'superAdmin' });
+
+    if (!adminCheck) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { action, environmentId, deploymentData } = await req.json();
 
     console.log('Deployment manager action:', { action, environmentId });
@@ -36,7 +76,7 @@ serve(async (req) => {
     
     switch (action) {
       case 'deploy':
-        result = await deployToEnvironment(environment, deploymentData);
+        result = await deployToEnvironment(supabase, environment, deploymentData);
         break;
       case 'rollback':
         result = await rollbackDeployment(environment, deploymentData);
@@ -64,11 +104,10 @@ serve(async (req) => {
   }
 });
 
-async function deployToEnvironment(environment: any, deploymentData: any) {
+async function deployToEnvironment(supabase: any, environment: any, deploymentData: any) {
   console.log('Deploying to environment:', environment.environment_type);
   
   try {
-    // Update environment status to deploying
     await supabase
       .from('deployment_environments')
       .update({
@@ -77,10 +116,8 @@ async function deployToEnvironment(environment: any, deploymentData: any) {
       })
       .eq('id', environment.id);
 
-    // Simulate deployment process based on cloud provider
     const deploymentResult = await performDeployment(environment, deploymentData);
 
-    // Update environment with deployment results
     await supabase
       .from('deployment_environments')
       .update({
@@ -93,7 +130,6 @@ async function deployToEnvironment(environment: any, deploymentData: any) {
     return deploymentResult;
 
   } catch (error) {
-    // Update environment status to failed
     await supabase
       .from('deployment_environments')
       .update({
@@ -107,12 +143,10 @@ async function deployToEnvironment(environment: any, deploymentData: any) {
 }
 
 async function performDeployment(environment: any, deploymentData: any) {
-  const { cloud_provider, region, infrastructure_config } = environment;
+  const { cloud_provider, region } = environment;
   
   console.log(`Deploying to ${cloud_provider} in ${region}`);
   
-  // Mock deployment implementation
-  // In a real implementation, this would integrate with cloud provider APIs
   switch (cloud_provider) {
     case 'supabase':
       return await deployToSupabase(environment, deploymentData);
@@ -132,7 +166,7 @@ async function performDeployment(environment: any, deploymentData: any) {
   }
 }
 
-async function deployToSupabase(environment: any, deploymentData: any) {
+async function deployToSupabase(environment: any, _deploymentData: any) {
   return {
     success: true,
     message: 'Successfully deployed to Supabase',
@@ -142,7 +176,7 @@ async function deployToSupabase(environment: any, deploymentData: any) {
   };
 }
 
-async function deployToAWS(environment: any, deploymentData: any) {
+async function deployToAWS(environment: any, _deploymentData: any) {
   return {
     success: true,
     message: 'Successfully deployed to AWS',
@@ -152,7 +186,7 @@ async function deployToAWS(environment: any, deploymentData: any) {
   };
 }
 
-async function deployToGCP(environment: any, deploymentData: any) {
+async function deployToGCP(environment: any, _deploymentData: any) {
   return {
     success: true,
     message: 'Successfully deployed to Google Cloud',
@@ -162,7 +196,7 @@ async function deployToGCP(environment: any, deploymentData: any) {
   };
 }
 
-async function deployToAzure(environment: any, deploymentData: any) {
+async function deployToAzure(environment: any, _deploymentData: any) {
   return {
     success: true,
     message: 'Successfully deployed to Azure',
@@ -172,7 +206,7 @@ async function deployToAzure(environment: any, deploymentData: any) {
   };
 }
 
-async function rollbackDeployment(environment: any, deploymentData: any) {
+async function rollbackDeployment(environment: any, _deploymentData: any) {
   console.log('Rolling back deployment for environment:', environment.id);
   
   return {
@@ -193,7 +227,7 @@ async function getDeploymentStatus(environment: any) {
   };
 }
 
-async function getDeploymentLogs(environment: any, deploymentData: any) {
+async function getDeploymentLogs(environment: any, _deploymentData: any) {
   return {
     logs: [
       { timestamp: new Date().toISOString(), level: 'info', message: 'Deployment started' },

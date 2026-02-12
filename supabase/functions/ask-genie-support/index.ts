@@ -114,7 +114,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, sessionId, userId, userTier, conversationHistory = [] }: SupportRequest = await req.json();
+    const { message, sessionId, userTier, conversationHistory = [] }: SupportRequest = await req.json();
     
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
@@ -123,9 +123,35 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[AskGenieSupport] Processing message: "${message.substring(0, 50)}..." | Session: ${sessionId || 'new'}`);
+    // ============================================
+    // JWT AUTHENTICATION — Validate user identity
+    // ============================================
+    const authHeader = req.headers.get('Authorization');
+    let authenticatedUserId: string | null = null;
 
-    // Initialize Supabase client for logging
+    if (authHeader?.startsWith('Bearer ')) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await authClient.auth.getUser(token);
+      authenticatedUserId = user?.id || null;
+    }
+
+    // Require authentication for persistent sessions (database writes)
+    if (sessionId && !authenticatedUserId) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required for persistent sessions' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[AskGenieSupport] Processing message | Session: ${sessionId || 'new'} | User: ${authenticatedUserId || 'anonymous'}`);
+
+    // Initialize Supabase service client for logging
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
