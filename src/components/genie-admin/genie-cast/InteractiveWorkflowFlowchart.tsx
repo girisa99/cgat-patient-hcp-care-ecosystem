@@ -48,15 +48,17 @@ const REGION_CONFIGS: Record<string, RegionConfig> = {
       { code: 'INDIA_PAN', lang: 'Indian English', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-IN' },
     ],
   },
-  CJK: {
-    label: 'CJK',
-    subRegions: [
-      { code: 'CJK_CN', lang: 'Mandarin', llm: 'Qwen Max', ttsProvider: 'Qwen3-TTS', ttsLocale: 'longwan' },
-      { code: 'CJK_TW', lang: 'Traditional Chinese', llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'zh-TW' },
-      { code: 'CJK_JP', lang: 'Japanese', llm: 'Qwen Max', ttsProvider: 'Qwen3-TTS', ttsLocale: 'longyue' },
-      { code: 'CJK_KR', lang: 'Korean', llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'ko-KR' },
-    ],
-  },
+   CJK: {
+     label: 'CJK',
+     subRegions: [
+       { code: 'CJK_PAN_EN', lang: 'Pan-CJK English', llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'en-HK' },
+       { code: 'CJK_CN', lang: 'Mandarin', llm: 'Qwen Max', ttsProvider: 'Qwen3-TTS', ttsLocale: 'longwan' },
+       { code: 'CJK_HK', lang: 'Cantonese', llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'zh-HK' },
+       { code: 'CJK_TW', lang: 'Traditional Chinese', llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'zh-TW' },
+       { code: 'CJK_JP', lang: 'Japanese', llm: 'GPT-4o', ttsProvider: 'Qwen3-TTS', ttsLocale: 'longyue' },
+       { code: 'CJK_KR', lang: 'Korean', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ko-KR' },
+     ],
+   },
   MENA: {
     label: 'MENA',
     subRegions: [
@@ -95,16 +97,20 @@ const REGION_CONFIGS: Record<string, RegionConfig> = {
       { code: 'NAM_CA', lang: 'EN+FR Canada', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-CA' },
     ],
   },
-  SEA: {
-    label: 'SEA',
-    subRegions: [
-      { code: 'SEA_MALAY', lang: 'Malay/Indo', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'ms-MY' },
-      { code: 'SEA_THAI', lang: 'Thai', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'th-TH' },
-      { code: 'SEA_VIET', lang: 'Vietnamese', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'vi-VN' },
-      { code: 'SEA_PHIL', lang: 'Filipino', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'fil-PH' },
-      { code: 'SEA_PAN', lang: 'SEA English', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-SG' },
-    ],
-  },
+   SEA: {
+     label: 'SEA',
+     subRegions: [
+       { code: 'SEA_PAN_EN', lang: 'ASEAN English', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-SG' },
+       { code: 'SEA_THAI', lang: 'Thai', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'th-TH' },
+       { code: 'SEA_VIET', lang: 'Vietnamese', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'vi-VN' },
+       { code: 'SEA_KHMER', lang: 'Khmer', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'km-KH' },
+       { code: 'SEA_LAO', lang: 'Lao', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'lo-LA' },
+       { code: 'SEA_MYAN', lang: 'Burmese', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'my-MM' },
+       { code: 'SEA_ID', lang: 'Indonesian', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'id-ID' },
+       { code: 'SEA_MY', lang: 'Malay', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'ms-MY' },
+       { code: 'SEA_PH', lang: 'Filipino', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'fil-PH' },
+     ],
+   },
   STANDALONE: {
     label: 'STANDALONE',
     subRegions: [
