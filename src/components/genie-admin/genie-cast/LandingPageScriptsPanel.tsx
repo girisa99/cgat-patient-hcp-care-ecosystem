@@ -2611,16 +2611,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            {scripts.length} scripts
-          </Badge>
-          <Badge variant="outline" className="text-xs">
-            {scripts.filter(s => s.status === 'active').length} active
-          </Badge>
-          <Button size="sm" variant="outline" onClick={fetchScripts} className="gap-1">
-            <RefreshCw className="w-3.5 h-3.5" />
-            Refresh
-          </Button>
+          {/* Intentionally empty — metrics moved to contextual stats bar below */}
         </div>
       </div>
 
@@ -2741,29 +2732,23 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
         ))}
       </div>
 
-      {/* ─── Summary Stats Bar (Latest Versions Only) ─── */}
+      {/* ─── Summary Stats Bar — Contextual to Active Sub-Tab ─── */}
       {(() => {
         const latestScripts = latestVersionScripts;
 
         const totalLatest = latestScripts.length;
         const activeScripts = latestScripts.filter(s => s.status === 'active').length;
         const reviewScripts = latestScripts.filter(s => s.status === 'review').length;
-        // Only count drafts where the LATEST version for that region is draft (not superseded old versions)
         const draftScripts = latestScripts.filter(s => s.status === 'draft').length;
-        const withTTS = latestScripts.filter(s => s.generated_audio_url).length;
-        const withoutTTS = totalLatest - withTTS;
 
-        // ── Collect expected leaf-level sub-region codes (NOT parent EN bases, NOT intermediate zones) ──
+        // ── Collect expected leaf-level sub-region codes ──
         const expectedLeafCodes: string[] = [];
         const expectedParentCodes: string[] = [];
-        const intermediateZoneCodes = new Set<string>(); // EU_DACH, INDIA_NORTH, etc.
         REGION_HIERARCHY.forEach(group => {
           expectedParentCodes.push(group.groupCode.toLowerCase());
           if (group.children.length > 0) {
             group.children.forEach(child => {
               if (child.children && child.children.length > 0) {
-                // This is an intermediate zone (EU_DACH, INDIA_NORTH) — don't count as leaf
-                intermediateZoneCodes.add(child.code);
                 child.children.forEach(gc => expectedLeafCodes.push(gc.code));
               } else {
                 expectedLeafCodes.push(child.code);
@@ -2772,11 +2757,29 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
           }
         });
 
+        // ── TTS coverage: check tts_audio_versions for completed TTS per region ──
+        const ttsCompletedRegions = new Set(
+          ttsVersions
+            .filter(v => v.status === 'completed' && v.audio_url)
+            .map(v => v.region_code)
+        );
+        // Also count scripts with generated_audio_url as TTS done
+        latestScripts.forEach(s => {
+          if (s.generated_audio_url) ttsCompletedRegions.add(s.region_code);
+        });
+
+        const allRegionCodes = [...expectedLeafCodes, ...expectedParentCodes];
+        const ttsDoneCount = allRegionCodes.filter(c => ttsCompletedRegions.has(c)).length;
+        const regionsMissingTTS = latestScripts.filter(s => 
+          s.status === 'active' && !ttsCompletedRegions.has(s.region_code)
+        );
+
         // ── Coverage: leaf sub-regions with active/review latest scripts ──
         const coveredCodes = new Set(latestScripts.filter(s => s.status === 'active' || s.status === 'review').map(s => s.region_code));
         const totalLeafRegions = expectedLeafCodes.length;
         const coveredLeafRegions = expectedLeafCodes.filter(c => coveredCodes.has(c)).length;
         const missingLeafRegions = totalLeafRegions - coveredLeafRegions;
+        const coveragePct = totalLeafRegions > 0 ? Math.round((coveredLeafRegions / totalLeafRegions) * 100) : 0;
 
         // ── EN Base coverage ──
         const totalParentGroups = REGION_HIERARCHY.length;
@@ -2788,81 +2791,130 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
           );
         }).length;
 
-        // ── Separate "real" latest scripts from superseded intermediate/old versions ──
-        // Only count scripts that are either: leaf sub-regions, parent EN bases, or single-node regions
-        const meaningfulLatest = latestScripts.filter(s => 
-          expectedLeafCodes.includes(s.region_code) || 
-          expectedParentCodes.includes(s.region_code) ||
-          REGION_HIERARCHY.some(g => g.children.length === 0 && g.groupCode === s.region_code)
-        );
-        const meaningfulTotal = meaningfulLatest.length;
-
-        const coveragePct = totalLeafRegions > 0 ? Math.round((coveredLeafRegions / totalLeafRegions) * 100) : 0;
-
-        return (
-          <div className="flex items-center gap-3 flex-wrap rounded-lg border border-border bg-muted/30 px-4 py-2.5">
-            {/* Scripts (latest only, meaningful) */}
-            <div className="flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold">{meaningfulTotal}</span>
-              <span className="text-xs text-muted-foreground">Scripts</span>
-              {totalLatest !== meaningfulTotal && (
-                <span className="text-[10px] text-muted-foreground">({totalLatest} incl. zones)</span>
+        // ─── REGIONAL SCRIPTS TAB stats ───
+        if (subTab === 'scripts') {
+          return (
+            <div className="flex items-center gap-3 flex-wrap rounded-lg border border-border bg-muted/30 px-4 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-xs font-semibold">{activeScripts}</span>
+                <span className="text-xs text-muted-foreground">Active</span>
+              </div>
+              {reviewScripts > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span className="text-xs font-medium">{reviewScripts}</span>
+                  <span className="text-xs text-muted-foreground">Review</span>
+                </div>
+              )}
+              {draftScripts > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground" />
+                  <span className="text-xs font-medium">{draftScripts}</span>
+                  <span className="text-xs text-muted-foreground">Draft</span>
+                </div>
+              )}
+              <Separator orientation="vertical" className="h-4" />
+              <div className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-semibold">{coveredLeafRegions}/{totalLeafRegions}</span>
+                <span className="text-xs text-muted-foreground">Sub-Regions ({coveragePct}%)</span>
+              </div>
+              {missingLeafRegions > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-red-500">{missingLeafRegions}</span>
+                  <span className="text-xs text-muted-foreground">Missing</span>
+                </div>
+              )}
+              <Separator orientation="vertical" className="h-4" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold">{parentGroupsWithENBase}/{totalParentGroups}</span>
+                <span className="text-xs text-muted-foreground">EN Bases</span>
+              </div>
+              {regionsMissingTTS.length > 0 && (
+                <>
+                  <Separator orientation="vertical" className="h-4" />
+                  <div className="flex items-center gap-1.5">
+                    <Headphones className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-xs font-medium text-amber-600">{regionsMissingTTS.length}</span>
+                    <span className="text-xs text-muted-foreground">Missing TTS</span>
+                  </div>
+                </>
               )}
             </div>
-            <Separator orientation="vertical" className="h-4" />
-            {/* Status breakdown — latest version only */}
+          );
+        }
+
+        // ─── TTS PREVIEW TAB stats ───
+        if (subTab === 'tts-preview') {
+          const activeWithTTS = latestScripts.filter(s => s.status === 'active' && ttsCompletedRegions.has(s.region_code)).length;
+          const activeTotal = activeScripts;
+          const ttsPendingList = regionsMissingTTS;
+          const ttsPct = activeTotal > 0 ? Math.round((activeWithTTS / activeTotal) * 100) : 0;
+
+          return (
+            <div className="flex items-center gap-3 flex-wrap rounded-lg border border-border bg-muted/30 px-4 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <Headphones className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-semibold">{activeWithTTS}/{activeTotal}</span>
+                <span className="text-xs text-muted-foreground">TTS Complete ({ttsPct}%)</span>
+              </div>
+              {ttsPendingList.length > 0 && (
+                <>
+                  <Separator orientation="vertical" className="h-4" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium text-amber-600">{ttsPendingList.length}</span>
+                    <span className="text-xs text-muted-foreground">Pending TTS</span>
+                  </div>
+                  <Separator orientation="vertical" className="h-4" />
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-muted-foreground">Missing:</span>
+                    {ttsPendingList.slice(0, 5).map(s => (
+                      <Badge key={s.id} variant="outline" className="text-[9px] px-1.5 py-0">
+                        {s.region_display_name || s.region_code}
+                      </Badge>
+                    ))}
+                    {ttsPendingList.length > 5 && (
+                      <span className="text-[10px] text-muted-foreground">+{ttsPendingList.length - 5} more</span>
+                    )}
+                  </div>
+                </>
+              )}
+              <Separator orientation="vertical" className="h-4" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold">{ttsVersions.length}</span>
+                <span className="text-xs text-muted-foreground">Total TTS Versions</span>
+              </div>
+            </div>
+          );
+        }
+
+        // ─── DEFAULT (workflow / versions / feedback) — compact overview ───
+        return (
+          <div className="flex items-center gap-3 flex-wrap rounded-lg border border-border bg-muted/30 px-4 py-2.5">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-xs font-medium">{activeScripts}</span>
+              <span className="text-xs font-semibold">{activeScripts}</span>
               <span className="text-xs text-muted-foreground">Active</span>
             </div>
-            {reviewScripts > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span className="text-xs font-medium">{reviewScripts}</span>
-                <span className="text-xs text-muted-foreground">Review</span>
-              </div>
-            )}
-            {draftScripts > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-muted-foreground" />
-                <span className="text-xs font-medium">{draftScripts}</span>
-                <span className="text-xs text-muted-foreground">Draft</span>
-              </div>
-            )}
             <Separator orientation="vertical" className="h-4" />
-            {/* TTS */}
-            <div className="flex items-center gap-1.5">
-              <Headphones className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold">{withTTS}</span>
-              <span className="text-xs text-muted-foreground">TTS Done</span>
-            </div>
-            {withoutTTS > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-amber-600">{withoutTTS}</span>
-                <span className="text-xs text-muted-foreground">Pending TTS</span>
-              </div>
-            )}
-            <Separator orientation="vertical" className="h-4" />
-            {/* Sub-region coverage */}
             <div className="flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-xs font-semibold">{coveredLeafRegions}/{totalLeafRegions}</span>
-              <span className="text-xs text-muted-foreground">Sub-Regions ({coveragePct}%)</span>
+              <span className="text-xs text-muted-foreground">Sub-Regions</span>
             </div>
-            {missingLeafRegions > 0 && (
+            <Separator orientation="vertical" className="h-4" />
+            <div className="flex items-center gap-1.5">
+              <Headphones className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs font-semibold">{ttsDoneCount}</span>
+              <span className="text-xs text-muted-foreground">TTS Done</span>
+            </div>
+            {regionsMissingTTS.length > 0 && (
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-red-500">{missingLeafRegions}</span>
-                <span className="text-xs text-muted-foreground">Missing</span>
+                <span className="text-xs font-medium text-amber-600">{regionsMissingTTS.length}</span>
+                <span className="text-xs text-muted-foreground">Pending TTS</span>
               </div>
             )}
-            <Separator orientation="vertical" className="h-4" />
-            {/* EN Base coverage */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold">{parentGroupsWithENBase}/{totalParentGroups}</span>
-              <span className="text-xs text-muted-foreground">EN Bases</span>
-            </div>
           </div>
         );
       })()}
