@@ -2002,10 +2002,12 @@ INSTRUCTIONS:
   // ── Expand a parent-level script to its sub-regions (manual trigger) ──
 
   const handleExpandToSubRegions = useCallback(async (parentScript: NarrationScript) => {
-    // Find the region group for this script
+    // Find the region group for this script (match parent groupCode OR child code)
     const parentCode = parentScript.region_code.toUpperCase();
     const group = REGION_HIERARCHY.find(g => 
       g.groupCode === parentCode || g.groupCode.toLowerCase() === parentScript.region_code
+    ) || REGION_HIERARCHY.find(g => 
+      g.children.some(c => c.code === parentCode || c.code === parentScript.region_code)
     );
     
     if (!group || group.children.length === 0) {
