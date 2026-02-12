@@ -651,7 +651,8 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'zh-HK', label: 'Azure Neural', voiceId: 'zh-HK-WanLungNeural', voiceName: 'WanLung (Cantonese)', gender: 'male' },
     ],
     'CJK_TW': [
-      { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)', gender: 'female', isDefault: true },
+      { provider: 'qwen3', locale: 'zh-TW', label: 'Qwen3-TTS', voiceId: 'longhua', voiceName: 'Longhua (Traditional Chinese)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)', gender: 'female' },
       { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural', voiceId: 'zh-TW-YunJheNeural', voiceName: 'YunJhe (Traditional Chinese)', gender: 'male' },
     ],
     'CJK_JP': [
@@ -660,7 +661,8 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'ja-JP', label: 'Azure Neural', voiceId: 'ja-JP-KeitaNeural', voiceName: 'Keita (Japanese)', gender: 'male' },
     ],
     'CJK_KR': [
-      { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)', gender: 'female', isDefault: true },
+      { provider: 'qwen3', locale: 'ko-KR', label: 'Qwen3-TTS', voiceId: 'longfei', voiceName: 'Longfei (Korean)', gender: 'male', isDefault: true },
+      { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)', gender: 'female' },
       { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-InJoonNeural', voiceName: 'InJoon (Korean)', gender: 'male' },
       { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-BongJinNeural', voiceName: 'BongJin (Korean)', gender: 'male' },
     ],
@@ -785,7 +787,8 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)', gender: 'female', isDefault: true },
     ],
     'CJK': [
-      { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Chinese)', gender: 'female', isDefault: true },
+      { provider: 'qwen3', locale: 'zh-CN', label: 'Qwen3-TTS', voiceId: 'longwan', voiceName: 'Longwan (Chinese)', gender: 'male', isDefault: true },
+      { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Chinese)', gender: 'female' },
     ],
   };
   if (voiceOptionsMap[r]) return voiceOptionsMap[r];
