@@ -730,16 +730,24 @@ async function generateGoogleTTS(text: string, languageCode?: string, voice?: st
   const GOOGLE_API_KEY = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!GOOGLE_API_KEY) throw new Error('Google API key not configured');
 
-  const lang = languageCode || 'en-US';
+  // Google TTS uses different language codes for Chinese: cmn-CN, cmn-TW (not zh-CN, zh-TW)
+  const GOOGLE_LANG_MAP: Record<string, string> = {
+    'zh-CN': 'cmn-CN',
+    'zh-TW': 'cmn-TW',
+    'zh': 'cmn-CN',
+  };
+  const lang = GOOGLE_LANG_MAP[languageCode || ''] || languageCode || 'en-US';
+  
   // Only use voice if it looks like a valid Google voice (e.g., 'en-US-Neural2-D')
   // Reject Qwen/Alibaba voice names like 'longhua', 'longfei' etc.
   const isGoogleVoice = voice && /^[a-z]{2,3}-[A-Z]{2}/.test(voice);
-  // Not all languages have Neural2-D; use known defaults for CJK
+  
+  // Use Wavenet for CJK (Neural2 doesn't exist for cmn-CN/cmn-TW), Neural2 for others
   const GOOGLE_VOICE_DEFAULTS: Record<string, string> = {
-    'zh-TW': 'zh-TW-Neural2-B',  // Only A/B/C exist for zh-TW
-    'zh-CN': 'zh-CN-Neural2-B',  // Only A/B/C exist for zh-CN (D does not exist)
-    'ja-JP': 'ja-JP-Neural2-B',  // Safe default
-    'ko-KR': 'ko-KR-Neural2-A',  // Only A/B/C exist for ko-KR
+    'cmn-CN': 'cmn-CN-Wavenet-A',  // No Neural2 for cmn-CN; Wavenet A=Female
+    'cmn-TW': 'cmn-TW-Wavenet-A',  // No Neural2 for cmn-TW; Wavenet A=Female
+    'ja-JP': 'ja-JP-Neural2-B',    // Neural2 exists for ja-JP (A-D)
+    'ko-KR': 'ko-KR-Neural2-A',    // Neural2 exists for ko-KR (A-C)
   };
   const defaultVoice = GOOGLE_VOICE_DEFAULTS[lang] || `${lang}-Neural2-D`;
   const selectedVoice = isGoogleVoice ? voice : defaultVoice;
