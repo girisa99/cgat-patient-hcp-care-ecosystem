@@ -83,8 +83,10 @@ import { ABTestingPanel } from './ABTestingPanel';
 import { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
 import { AlibabaMeetingPrepDoc } from './AlibabaMeetingPrepDoc';
 
-// Import sub-components from parent panel
-import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, type VideoStyleType } from './index';
+// Import sub-components DIRECTLY to avoid circular dependency (index.ts re-exports this file)
+import { GenieCastOverview } from './GenieCastOverview';
+import { VideoStyleCards, type VideoStyleType } from './VideoStyleCards';
+import { AIProviderShowcase } from './AIProviderShowcase';
 import { MultiScreenshotGallery, type ProductGallery } from '../MultiScreenshotGallery';
 import { VideoGenerationMatrix } from '../VideoGenerationMatrix';
 import { MessagingGeneratorPanel } from '../MessagingGeneratorPanel';
