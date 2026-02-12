@@ -2096,11 +2096,27 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
     const regionGroup = REGION_HIERARCHY.find(g => g.groupCode === regionCode.toUpperCase() || g.groupCode.toLowerCase() === regionCode);
     const subRegionNames = regionGroup?.children?.map(c => c.name).join(', ') || regionName;
 
+    // Region-specific LLM routing per master routing registry
+    const REGION_LLM_ROUTING: Record<string, { provider: string; model: string }> = {
+      'latam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514' },
+      'eu': { provider: 'anthropic', model: 'claude-sonnet-4-20250514' },
+      'nam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514' },
+      'mena': { provider: 'openai', model: 'gpt-4o' },
+      'india': { provider: 'gemini', model: 'gemini-2.5-pro' },
+      'sea': { provider: 'gemini', model: 'gemini-2.5-pro' },
+      'africa': { provider: 'gemini', model: 'gemini-2.5-pro' },
+      'cjk': { provider: 'openai', model: 'gpt-4o' },
+      'pakistan': { provider: 'openai', model: 'gpt-4o' },
+      'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro' },
+    };
+    const regionKey = regionCode.toLowerCase();
+    const llmRoute = REGION_LLM_ROUTING[regionKey] || { provider: 'openai', model: 'gpt-4o' };
+
     let adaptedContent = { hook: '', problem_statement: '', solution: '', cta: '' };
 
     if (globalBase?.hook) {
       // Use AI to transcreate content for the target region
-      toast.info(`🤖 Adapting English Base for ${regionName} using AI...`);
+      toast.info(`🤖 Adapting English Base for ${regionName} using ${llmRoute.provider}...`);
       try {
         const prompt = `You are a healthcare marketing transcreation expert. You have a global English marketing script for a healthcare AI platform. Your task is to ADAPT this script specifically for the ${regionName} market (covering: ${subRegionNames}).
 
@@ -2127,8 +2143,8 @@ Respond in EXACTLY this JSON format (no markdown, no code blocks):
 
         const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
-            provider: 'openai',
-            model: 'gpt-4o-mini',
+            provider: llmRoute.provider,
+            model: llmRoute.model,
             action: 'generate',
             prompt,
             temperature: 0.7,
@@ -2205,8 +2221,8 @@ Respond in EXACTLY this JSON format (no markdown, no code blocks):
       approved_at: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      llm_provider: 'openai',
-      llm_model: 'gpt-4o-mini',
+      llm_provider: llmRoute.provider,
+      llm_model: llmRoute.model,
       llm_temperature: 0.7,
       llm_token_count: null,
       llm_prompt_template: 'region-english-base-adaptation',
