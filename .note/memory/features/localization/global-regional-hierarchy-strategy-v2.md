@@ -1,0 +1,6 @@
+# Memory: features/localization/global-regional-hierarchy-strategy-v2
+Updated: just now
+
+Genie Studio utilizes a 3-level regional hierarchy (Parent > Zone > Leaf) for localized transcreation, covering over 80 region/locale codes. 1) Europe: 15 country nodes across 6 zones. 2) India: 12 language nodes across 5 zones. 3) CJK: Flattened into 4 codes (CJK_CN, CJK_TW, CJK_JP, CJK_KR); CJK_CN includes China, HK, and Macau. 4) Southeast Asia: Aligned to 5 codes (SEA_MALAY, SEA_THAI, SEA_VIET, SEA_PHIL, SEA_PAN); SEA_PAN serves as the regional English base. 5) MENA & LATAM: Flat 5-sub-region models. 6) P0 Expansion: Includes Oceania (OCEANIA_AU, OCEANIA_NZ — flat), Turkey (single node). 7) P1 Expansion: Includes Caribbean (CARIBBEAN_EN, CARIBBEAN_FR — flat, separate from LATAM_CARIB), Eurasia (EU_UKRAINE, EU_BALKANS, EU_CAUCASUS — flat), and Central Asia (ASIA_CENTRAL_KZ, ASIA_CENTRAL_UZ, ASIA_CENTRAL_AZ, ASIA_CENTRAL_AM, ASIA_CENTRAL_GE — flat). All P0/P1 regions use flat structure (like MENA/LATAM). Each parent region gets a region-specific English base for transcreation. All hierarchies are strictly aligned with database 'valid_region' constraints. Security linter warnings are pre-existing (not from this migration).
+
+Last Updated: 2026-02-12
