@@ -741,9 +741,9 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
                   {[
                     { value: stats.audienceReach, label: 'Audience Reach' },
                     { value: stats.dialects || stats.languages, label: stats.dialects ? 'Dialects' : 'Languages' },
-                    { value: stats.costSavings, label: 'Cost Savings' },
-                    { value: stats.localMetric.value, label: stats.localMetric.label },
-                  ].map((stat, i) => (
+                    { value: stats.costSavings || '60%+', label: 'Cost Savings' },
+                    { value: stats.localMetric?.value || 'N/A', label: stats.localMetric?.label || 'Local Metric' },
+                  ].filter(s => s.value).map((stat, i) => (
                     <motion.div
                       key={stat.label}
                       className="text-center p-4 bg-black/50 backdrop-blur-xl rounded-2xl border border-white/20 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/20"
