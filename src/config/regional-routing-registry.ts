@@ -31,16 +31,23 @@ export interface LLMRoute {
  * Fallback chains ensure automatic escalation if primary unavailable
  */
 export const REGION_LLM_ROUTING: Record<string, LLMRoute> = {
-  'latam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
-  'eu': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
-  'nam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
-  'mena': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
-  'india': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
-  'sea': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'claude → openai/gpt-4o → deepseek' },
-  'africa': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'claude → openai/gpt-4o → deepseek' },
-  'cjk': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
-  'pakistan': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
-  'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
+   'latam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
+   'eu': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
+   'nam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
+   'mena': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
+   'india': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
+   'sea': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'claude → openai/gpt-4o → deepseek' },
+   'africa': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'claude → openai/gpt-4o → deepseek' },
+   'cjk': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
+   'pakistan': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
+   'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
+   // P0: Oceania & Turkey
+   'oceania': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
+   'turkey': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
+   // P1: Extended Caribbean & Eastern Europe
+   'caribbean': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
+   'eastern_europe': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → deepseek → gemini' },
+   'central_asia': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -61,13 +68,18 @@ export interface AIProviderOption {
  * Sub-region overrides can override these defaults for specific countries/languages
  */
 const ZONE_PRIMARY_MAP: Record<string, string> = {
-  western: 'claude',
-  cjk: 'alibaba',
-  mena: 'openai',
-  pakistan: 'openai',
-  bangladesh: 'gemini',
-  india: 'gemini',
-  africa: 'gemini',
+   western: 'claude',
+   cjk: 'alibaba',
+   mena: 'openai',
+   pakistan: 'openai',
+   bangladesh: 'gemini',
+   india: 'gemini',
+   africa: 'gemini',
+   oceania: 'claude',
+   turkey: 'claude',
+   caribbean: 'openai',
+   eastern_europe: 'openai',
+   central_asia: 'openai',
 };
 
 /**
@@ -75,19 +87,29 @@ const ZONE_PRIMARY_MAP: Record<string, string> = {
  * Enables country-specific or language-specific provider selection
  */
 const SUB_REGION_OVERRIDES: Record<string, string> = {
-  // MENA hybrid
-  'MENA_GULF': 'alibaba',
-  'MENA_EGYPT': 'openai',
-  'MENA_LEVANT': 'openai',
-  'MENA_MAGHREB': 'claude',
-  'MENA_MSA': 'alibaba',
-  // EU hybrid — Nordic/Eastern use Claude (per v5 routing)
-  'EU_NORDIC': 'claude',
-  'EU_EAST': 'claude',
-  'EU_FI': 'openai', // Finnish: GPT-4o for superior morphology handling
-  // LATAM hybrid — Andean/Caribbean use GPT-4o
-  'LATAM_ANDEAN': 'openai',
-  'LATAM_CARIB': 'openai',
+   // MENA hybrid
+   'MENA_GULF': 'alibaba',
+   'MENA_EGYPT': 'openai',
+   'MENA_LEVANT': 'openai',
+   'MENA_MAGHREB': 'claude',
+   'MENA_MSA': 'alibaba',
+   // EU hybrid — Nordic/Eastern use Claude (per v5 routing)
+   'EU_NORDIC': 'claude',
+   'EU_EAST': 'claude',
+   'EU_FI': 'openai', // Finnish: GPT-4o for superior morphology handling
+   // LATAM hybrid — Andean/Caribbean use GPT-4o
+   'LATAM_ANDEAN': 'openai',
+   'LATAM_CARIB': 'openai',
+   // P0: Oceania
+   'OCEANIA_AU': 'claude',
+   'OCEANIA_NZ': 'claude',
+   // P1: Extended regions
+   'CARIBBEAN_EN': 'openai',
+   'CARIBBEAN_FR': 'openai',
+   'EU_UKRAINE': 'openai',
+   'EU_BALKANS': 'openai',
+   'EU_CAUCASUS': 'openai',
+   'ASIA_CENTRAL': 'openai',
 };
 
 /**
@@ -95,80 +117,97 @@ const SUB_REGION_OVERRIDES: Record<string, string> = {
  * Primary provider is injected first, then fallback chain follows this order
  */
 const SUB_REGION_FALLBACK_ORDER: Record<string, string[]> = {
-  // NAM
-  'NAM_US': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
-  'NAM_CA': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
-  // EU
-  'EU_WEST': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
-  'EU_DE': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_AT': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_CH': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_DACH': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_FR': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_BE_FR': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_FRANCE': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_ES': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'EU_PT': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'EU_IBERIA': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'EU_SE': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'EU_NO': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'EU_DK': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'EU_FI': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
-  'EU_NORDIC': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'EU_PL': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_CZ': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_RO': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_HU': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  'EU_EAST': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
-  // LATAM
-  'LATAM_BRAZIL': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'LATAM_MEXICO': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'LATAM_ANDEAN': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
-  'LATAM_CONESUR': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-  'LATAM_CARIB': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
-  // Africa
-  'AFRICA_WEST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'AFRICA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'AFRICA_SOUTH': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-  'AFRICA_FRANCO': ['gemini', 'alibaba', 'openai', 'claude', 'deepseek'],
-  // Pakistan & Bangladesh
-  'PAKISTAN': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
-  'BANGLADESH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  // India
-  'INDIA_NORTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_SOUTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_WEST': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-  'INDIA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-  'INDIA_NORTH_HI': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_NORTH_UR': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_NORTH_PA': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_SOUTH_TA': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_SOUTH_TE': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_SOUTH_KN': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_SOUTH_ML': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_WEST_MR': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-  'INDIA_WEST_GU': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-  'INDIA_EAST_BN': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_EAST_OR': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'INDIA_PAN_EN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-  // SEA
-  'SEA_MALAY': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'SEA_THAI': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'SEA_VIET': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-  'SEA_PHIL': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-  'SEA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-  // CJK
-  'CJK_CN': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
-  'CJK_JP': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
-  'CJK_KR': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
-  'CJK_TW': ['alibaba', 'claude', 'openai', 'gemini', 'deepseek'],
-  // MENA
-  'MENA_GULF': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
-  'MENA_EGYPT': ['openai', 'alibaba', 'claude', 'gemini', 'deepseek'],
-  'MENA_LEVANT': ['openai', 'alibaba', 'claude', 'gemini', 'deepseek'],
-  'MENA_MAGHREB': ['claude', 'openai', 'alibaba', 'gemini', 'deepseek'],
-  'MENA_MSA': ['alibaba', 'claude', 'openai', 'gemini', 'deepseek'],
+   // NAM
+   'NAM_US': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
+   'NAM_CA': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
+   // EU
+   'EU_WEST': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
+   'EU_DE': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_AT': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_CH': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_DACH': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_FR': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_BE_FR': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_FRANCE': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_ES': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'EU_PT': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'EU_IBERIA': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'EU_SE': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'EU_NO': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'EU_DK': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'EU_FI': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+   'EU_NORDIC': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'EU_PL': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_CZ': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_RO': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_HU': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   'EU_EAST': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+   // P1: Extended Eastern Europe
+   'EU_UKRAINE': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
+   'EU_BALKANS': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
+   'EU_CAUCASUS': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
+   // LATAM
+   'LATAM_BRAZIL': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'LATAM_MEXICO': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'LATAM_ANDEAN': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+   'LATAM_CONESUR': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'LATAM_CARIB': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+   // P1: Extended Caribbean
+   'CARIBBEAN_EN': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+   'CARIBBEAN_FR': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+   // Africa
+   'AFRICA_WEST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'AFRICA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'AFRICA_SOUTH': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+   'AFRICA_FRANCO': ['gemini', 'alibaba', 'openai', 'claude', 'deepseek'],
+   // Pakistan & Bangladesh
+   'PAKISTAN': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
+   'BANGLADESH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   // India
+   'INDIA_NORTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_SOUTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_WEST': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+   'INDIA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+   'INDIA_NORTH_HI': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_NORTH_UR': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_NORTH_PA': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_SOUTH_TA': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_SOUTH_TE': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_SOUTH_KN': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_SOUTH_ML': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_WEST_MR': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+   'INDIA_WEST_GU': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+   'INDIA_EAST_BN': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_EAST_OR': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'INDIA_PAN_EN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+   // SEA
+   'SEA_MALAY': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'SEA_THAI': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'SEA_VIET': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+   'SEA_PHIL': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+   'SEA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+   // P0: Oceania
+   'OCEANIA_AU': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   'OCEANIA_NZ': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   // P1: Central Asia & Turkey
+   'ASIA_CENTRAL_KZ': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+   'ASIA_CENTRAL_UZ': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+   'ASIA_CENTRAL_AZ': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
+   'ASIA_CENTRAL_AM': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+   'ASIA_CENTRAL_GE': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
+   'TURKEY': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+   // CJK
+   'CJK_CN': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
+   'CJK_JP': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
+   'CJK_KR': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
+   'CJK_TW': ['alibaba', 'claude', 'openai', 'gemini', 'deepseek'],
+   // MENA
+   'MENA_GULF': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
+   'MENA_EGYPT': ['openai', 'alibaba', 'claude', 'gemini', 'deepseek'],
+   'MENA_LEVANT': ['openai', 'alibaba', 'claude', 'gemini', 'deepseek'],
+   'MENA_MAGHREB': ['claude', 'openai', 'alibaba', 'gemini', 'deepseek'],
+   'MENA_MSA': ['alibaba', 'claude', 'openai', 'gemini', 'deepseek'],
 };
 
 /**
@@ -439,32 +478,97 @@ export const REGION_VOICE_OPTIONS: Record<string, VoiceOption[]> = {
     { provider: 'azure', locale: 'en-PH', label: 'Azure Neural', voiceId: 'en-PH-RosaNeural', voiceName: 'Rosa (Philippine English)', gender: 'female', isDefault: true },
     { provider: 'azure', locale: 'en-PH', label: 'Azure Neural', voiceId: 'en-PH-JamesNeural', voiceName: 'James (Philippine English)', gender: 'male' },
   ],
-  // CJK
-  'CJK_CN': [
-    { provider: 'qwen3', locale: 'zh-CN', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-cn-male', voiceName: 'Qwen3 Mandarin (Male)', gender: 'male', isDefault: true },
-    { provider: 'qwen3', locale: 'zh-CN', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-cn-female', voiceName: 'Qwen3 Mandarin (Female)', gender: 'female' },
-    { provider: 'qwen3', locale: 'zh-HK', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-hk-male', voiceName: 'Qwen3 Cantonese (Male)', gender: 'male' },
-  ],
-  'CJK_TW': [
-    { provider: 'qwen3', locale: 'zh-TW', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-tw-male', voiceName: 'Qwen3 Traditional Chinese (Male)', gender: 'male', isDefault: true },
-    { provider: 'qwen3', locale: 'zh-TW', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-tw-female', voiceName: 'Qwen3 Traditional Chinese (Female)', gender: 'female' },
-  ],
-  'CJK_JP': [
-    { provider: 'qwen3', locale: 'ja-JP', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-ja-male', voiceName: 'Qwen3 Japanese (Male)', gender: 'male', isDefault: true },
-    { provider: 'qwen3', locale: 'ja-JP', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-ja-female', voiceName: 'Qwen3 Japanese (Female)', gender: 'female' },
-  ],
-  'CJK_KR': [
-    { provider: 'qwen3', locale: 'ko-KR', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-ko-male', voiceName: 'Qwen3 Korean (Male)', gender: 'male', isDefault: true },
-    { provider: 'qwen3', locale: 'ko-KR', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-ko-female', voiceName: 'Qwen3 Korean (Female)', gender: 'female' },
-  ],
+   // P0: Oceania
+   'OCEANIA_AU': [
+     { provider: 'azure', locale: 'en-AU', label: 'Azure Neural', voiceId: 'en-AU-NatashaNeural', voiceName: 'Natasha (Australian English)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'en-AU', label: 'Azure Neural', voiceId: 'en-AU-WilliamNeural', voiceName: 'William (Australian English)', gender: 'male' },
+     { provider: 'azure', locale: 'en-AU', label: 'Azure Neural', voiceId: 'en-AU-AnnetteNeural', voiceName: 'Annette (Australian English)', gender: 'female' },
+   ],
+   'OCEANIA_NZ': [
+     { provider: 'azure', locale: 'en-NZ', label: 'Azure Neural', voiceId: 'en-NZ-MitchellNeural', voiceName: 'Mitchell (New Zealand English)', gender: 'male', isDefault: true },
+     { provider: 'azure', locale: 'en-NZ', label: 'Azure Neural', voiceId: 'en-NZ-MollyNeural', voiceName: 'Molly (New Zealand English)', gender: 'female' },
+   ],
+   // P0: Turkey
+   'TURKEY': [
+     { provider: 'azure', locale: 'tr-TR', label: 'Azure Neural', voiceId: 'tr-TR-EmelNeural', voiceName: 'Emel (Turkish)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'tr-TR', label: 'Azure Neural', voiceId: 'tr-TR-AhmetNeural', voiceName: 'Ahmet (Turkish)', gender: 'male' },
+   ],
+   // P1: Extended Caribbean (English & French)
+   'CARIBBEAN_EN': [
+     { provider: 'azure', locale: 'en-JM', label: 'Azure Neural', voiceId: 'en-JM-RichardNeural', voiceName: 'Richard (Jamaican English)', gender: 'male', isDefault: true },
+     { provider: 'azure', locale: 'en-TT', label: 'Azure Neural', voiceId: 'en-TT-ChristopherNeural', voiceName: 'Christopher (Trinidad & Tobago)', gender: 'male' },
+   ],
+   'CARIBBEAN_FR': [
+     { provider: 'azure', locale: 'fr-HT', label: 'Azure Neural', voiceId: 'fr-HT-StellaNeural', voiceName: 'Stella (Haitian French)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'fr-HT', label: 'Azure Neural', voiceId: 'fr-HT-JeanNeural', voiceName: 'Jean (Haitian French)', gender: 'male' },
+   ],
+   // P1: Eastern Europe & Central Asia
+   'EU_UKRAINE': [
+     { provider: 'azure', locale: 'uk-UA', label: 'Azure Neural', voiceId: 'uk-UA-OstapNeural', voiceName: 'Ostap (Ukrainian)', gender: 'male', isDefault: true },
+     { provider: 'azure', locale: 'uk-UA', label: 'Azure Neural', voiceId: 'uk-UA-YevhenNeural', voiceName: 'Yevhen (Ukrainian)', gender: 'male' },
+   ],
+   'EU_BALKANS': [
+     { provider: 'azure', locale: 'sr-RS', label: 'Azure Neural', voiceId: 'sr-RS-NikolaNeural', voiceName: 'Nikola (Serbian)', gender: 'male', isDefault: true },
+     { provider: 'azure', locale: 'bg-BG', label: 'Azure Neural', voiceId: 'bg-BG-BorislavNeural', voiceName: 'Borislav (Bulgarian)', gender: 'male' },
+   ],
+   'EU_CAUCASUS': [
+     { provider: 'azure', locale: 'ka-GE', label: 'Azure Neural', voiceId: 'ka-GE-EkaNeural', voiceName: 'Eka (Georgian)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'hy-AM', label: 'Azure Neural', voiceId: 'hy-AM-AnahitNeural', voiceName: 'Anahit (Armenian)', gender: 'female' },
+   ],
+   'ASIA_CENTRAL_KZ': [
+     { provider: 'azure', locale: 'kk-KZ', label: 'Azure Neural', voiceId: 'kk-KZ-AigulNeural', voiceName: 'Aigul (Kazakh)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'kk-KZ', label: 'Azure Neural', voiceId: 'kk-KZ-DauletNeural', voiceName: 'Daulet (Kazakh)', gender: 'male' },
+   ],
+   'ASIA_CENTRAL_UZ': [
+     { provider: 'azure', locale: 'uz-UZ', label: 'Azure Neural', voiceId: 'uz-UZ-MadiyarNeural', voiceName: 'Madiyar (Uzbek)', gender: 'male', isDefault: true },
+     { provider: 'azure', locale: 'uz-UZ', label: 'Azure Neural', voiceId: 'uz-UZ-OqiljonNeural', voiceName: 'Oqiljon (Uzbek)', gender: 'male' },
+   ],
+   'ASIA_CENTRAL_AZ': [
+     { provider: 'azure', locale: 'az-AZ', label: 'Azure Neural', voiceId: 'az-AZ-BanuNeural', voiceName: 'Banu (Azerbaijani)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'az-AZ', label: 'Azure Neural', voiceId: 'az-AZ-IbrahimNeural', voiceName: 'Ibrahim (Azerbaijani)', gender: 'male' },
+   ],
+   'ASIA_CENTRAL_AM': [
+     { provider: 'azure', locale: 'hy-AM', label: 'Azure Neural', voiceId: 'hy-AM-AnahitNeural', voiceName: 'Anahit (Armenian)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'hy-AM', label: 'Azure Neural', voiceId: 'hy-AM-HaykNeural', voiceName: 'Hayk (Armenian)', gender: 'male' },
+   ],
+   'ASIA_CENTRAL_GE': [
+     { provider: 'azure', locale: 'ka-GE', label: 'Azure Neural', voiceId: 'ka-GE-EkaNeural', voiceName: 'Eka (Georgian)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'ka-GE', label: 'Azure Neural', voiceId: 'ka-GE-GiorgiNeural', voiceName: 'Giorgi (Georgian)', gender: 'male' },
+   ],
+   // CJK
+   'CJK_CN': [
+     { provider: 'qwen3', locale: 'zh-CN', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-cn-male', voiceName: 'Qwen3 Mandarin (Male)', gender: 'male', isDefault: true },
+     { provider: 'qwen3', locale: 'zh-CN', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-cn-female', voiceName: 'Qwen3 Mandarin (Female)', gender: 'female' },
+     { provider: 'qwen3', locale: 'zh-HK', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-hk-male', voiceName: 'Qwen3 Cantonese (Male)', gender: 'male' },
+   ],
+   'CJK_TW': [
+     { provider: 'qwen3', locale: 'zh-TW', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-tw-male', voiceName: 'Qwen3 Traditional Chinese (Male)', gender: 'male', isDefault: true },
+     { provider: 'qwen3', locale: 'zh-TW', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-tw-female', voiceName: 'Qwen3 Traditional Chinese (Female)', gender: 'female' },
+   ],
+   'CJK_JP': [
+     { provider: 'qwen3', locale: 'ja-JP', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-ja-male', voiceName: 'Qwen3 Japanese (Male)', gender: 'male', isDefault: true },
+     { provider: 'qwen3', locale: 'ja-JP', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-ja-female', voiceName: 'Qwen3 Japanese (Female)', gender: 'female' },
+   ],
+   'CJK_KR': [
+     { provider: 'qwen3', locale: 'ko-KR', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-ko-male', voiceName: 'Qwen3 Korean (Male)', gender: 'male', isDefault: true },
+     { provider: 'qwen3', locale: 'ko-KR', label: 'Alibaba Qwen3-TTS', voiceId: 'qwen-3-ko-female', voiceName: 'Qwen3 Korean (Female)', gender: 'female' },
+   ],
 };
 
 /**
  * Get regional voice options (provider + locale + voice IDs)
+ * Falls back to NAM_US if region not found
  */
 export function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
-  const r = regionCode?.toUpperCase() || '';
-  return REGION_VOICE_OPTIONS[r] || REGION_VOICE_OPTIONS['NAM_US'];
+   const r = regionCode?.toUpperCase() || '';
+   return REGION_VOICE_OPTIONS[r] || REGION_VOICE_OPTIONS['NAM_US'];
+}
+
+/**
+ * Get all available region codes (for registry validation/listing)
+ */
+export function getAllRegionCodes(): string[] {
+   return Object.keys(REGION_VOICE_OPTIONS).sort();
 }
 
 /**
