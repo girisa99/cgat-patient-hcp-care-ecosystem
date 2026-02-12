@@ -70,7 +70,11 @@ export type RegionalZone =
   | 'latam'          // Latin America
   | 'africa'         // Sub-Saharan Africa
   | 'north_america'  // US, Canada
-  | 'oceania';       // Australia, NZ
+  | 'oceania'        // Australia, NZ
+  | 'turkey'         // Turkey
+  | 'caribbean'      // English & French Caribbean
+  | 'eastern_europe' // Ukraine, Balkans
+  | 'central_asia';  // Kazakhstan, Uzbekistan, Caucasus
 
 export interface OutputFormatConfig {
   id: OutputFormat;
@@ -585,6 +589,42 @@ export const REGIONAL_DETECTION_CONFIGS: RegionalDetectionConfig[] = [
     defaultLanguage: 'en',
     defaultIndustries: ['technology', 'healthcare', 'education'],
     voiceProvider: 'elevenlabs',
+    avatarStyle: 'professional_western',
+  },
+  // P0: Turkey
+  {
+    zone: 'turkey',
+    countries: ['TR'],
+    defaultLanguage: 'tr',
+    defaultIndustries: ['technology', 'manufacturing', 'tourism'],
+    voiceProvider: 'azure',
+    avatarStyle: 'professional_western',
+  },
+  // P1: Caribbean
+  {
+    zone: 'caribbean',
+    countries: ['JM', 'TT', 'BS', 'HT', 'BB', 'GY'],
+    defaultLanguage: 'en',
+    defaultIndustries: ['tourism', 'finance', 'education'],
+    voiceProvider: 'azure',
+    avatarStyle: 'professional_western',
+  },
+  // P1: Eastern Europe
+  {
+    zone: 'eastern_europe',
+    countries: ['UA', 'RS', 'BG', 'HR', 'BA', 'ME', 'MK', 'AL'],
+    defaultLanguage: 'en',
+    defaultIndustries: ['technology', 'education', 'manufacturing'],
+    voiceProvider: 'azure',
+    avatarStyle: 'professional_western',
+  },
+  // P1: Central Asia & Caucasus
+  {
+    zone: 'central_asia',
+    countries: ['KZ', 'UZ', 'AZ', 'GE', 'AM', 'TM', 'KG', 'TJ'],
+    defaultLanguage: 'en',
+    defaultIndustries: ['energy', 'government', 'technology'],
+    voiceProvider: 'azure',
     avatarStyle: 'professional_western',
   },
 ];

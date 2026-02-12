@@ -101,6 +101,10 @@ const REGION_LABELS: Record<RegionalZone, string> = {
   africa: 'Africa',
   north_america: 'North America',
   oceania: 'Australia & Pacific',
+  turkey: 'Turkey',
+  caribbean: 'Caribbean',
+  eastern_europe: 'Eastern Europe & Balkans',
+  central_asia: 'Central Asia & Caucasus',
 };
 
 export const IPBasedIndustryShowcase: React.FC = () => {
