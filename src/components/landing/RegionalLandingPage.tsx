@@ -637,10 +637,9 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             animate={{ scale: [1, 1.06] }}
             transition={{ duration: 12, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
           />
-          {/* Netflix/Apple-style gradient — strong center overlay for text legibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/50" />
-          <div className="absolute inset-0 bg-black/25" />
-          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
+          {/* Gradient overlay — lighter to keep hero images visible */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/60 to-transparent" />
         </motion.div>
       </AnimatePresence>
 
