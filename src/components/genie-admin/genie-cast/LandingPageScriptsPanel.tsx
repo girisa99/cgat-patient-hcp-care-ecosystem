@@ -40,6 +40,49 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { ScriptProductionWorkflowDiagram } from './ScriptProductionWorkflowDiagram';
+import { PROVIDER_CHAR_LIMITS } from '@/services/marketing/frameworkMessagingEngine';
+
+// ─── Script Character Count + Duration Helpers ───────────────────────
+/** Compute full script text from sections */
+function getScriptText(script: { hook: string; problem_statement: string; solution: string; cta: string; full_script?: string | null }): string {
+  return script.full_script || `${script.hook}\n\n${script.problem_statement}\n\n${script.solution}\n\n${script.cta}`;
+}
+
+/** Estimate audio duration: ~13 chars/sec for CJK, ~15 chars/sec for others */
+function estimateAudioDuration(charCount: number, regionCode: string): number {
+  const isCJK = /^CJK|^cjk/i.test(regionCode || '');
+  const charsPerSec = isCJK ? 13 : 15;
+  return Math.round(charCount / charsPerSec);
+}
+
+/** Get TTS provider for a region */
+function getTTSProviderForRegion(regionCode: string): string {
+  return /^CJK_CN|^CJK_JP|^cjk_cn|^cjk_jp/i.test(regionCode || '') ? 'qwen3-tts-flash' : 'azure';
+}
+
+/** Render inline char count badge with duration estimate */
+function ScriptCharBadge({ script, regionCode }: { script: { hook: string; problem_statement: string; solution: string; cta: string; full_script?: string | null }; regionCode: string }) {
+  const text = getScriptText(script);
+  const charCount = text.trim().length;
+  const duration = estimateAudioDuration(charCount, regionCode);
+  const provider = getTTSProviderForRegion(regionCode);
+  const limits = PROVIDER_CHAR_LIMITS[provider] || PROVIDER_CHAR_LIMITS.default;
+  const isOver = charCount > limits.soft;
+  const isCritical = charCount > limits.hard;
+
+  return (
+    <span className={cn(
+      "text-[9px] px-1.5 py-0 rounded border inline-flex items-center gap-1",
+      isCritical ? "bg-destructive/10 text-destructive border-destructive/30" :
+      isOver ? "bg-warning/10 text-warning border-warning/30" :
+      "bg-muted text-muted-foreground border-border"
+    )}>
+      📝 {charCount.toLocaleString()} chars • ~{duration}s audio
+      {isOver && !isCritical && " ⚡"}
+      {isCritical && " ⚠️"}
+    </span>
+  );
+}
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface NarrationScript {
@@ -1253,6 +1296,16 @@ export const LandingPageScriptsPanel: React.FC = () => {
       if (!text.trim()) {
         toast.error('Script has no content to generate TTS');
         return;
+      }
+
+      // Warn user if script exceeds provider soft/hard limits (but allow generation)
+      const ttsProviderKey = getTTSProviderForRegion(script.region_code);
+      const charLimits = PROVIDER_CHAR_LIMITS[ttsProviderKey] || PROVIDER_CHAR_LIMITS.default;
+      const scriptCharCount = text.trim().length;
+      if (scriptCharCount > charLimits.hard) {
+        toast.warning(`Script has ${scriptCharCount.toLocaleString()} chars — exceeds ${ttsProviderKey} hard limit (${charLimits.hard.toLocaleString()}). Generation may fail or timeout.`, { duration: 6000 });
+      } else if (scriptCharCount > charLimits.soft) {
+        toast.warning(`Script has ${scriptCharCount.toLocaleString()} chars — over optimal limit (${charLimits.soft.toLocaleString()}). Generation may be slower due to chunking.`, { duration: 4000 });
       }
 
       // Check for user-selected voice override, otherwise use default routing
@@ -2717,6 +2770,10 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
             <div>
               <span className="font-medium">CTA:</span> {englishBaseScript.cta}
             </div>
+            {/* Character count + estimated audio duration */}
+            <div className="pt-2 border-t">
+              <ScriptCharBadge script={englishBaseScript} regionCode={englishBaseScript.region_code} />
+            </div>
           </CardContent>
         </Card>
       ) : (
@@ -3097,6 +3154,8 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                         </Badge>
                                       ))}
                                     </div>
+                                    {/* Character count + estimated audio duration */}
+                                    <ScriptCharBadge script={script} regionCode={script.region_code} />
                                   </div>
                                 </div>
 
@@ -3277,6 +3336,18 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                         💬 {ttsFeedbackCount} TTS note{ttsFeedbackCount !== 1 ? 's' : ''}
                                       </Badge>
                                     )}
+                                  </div>
+                                  {/* Character count + duration + provider limit warning */}
+                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                    <ScriptCharBadge script={script} regionCode={script.region_code} />
+                                    {(() => {
+                                      const ct = getScriptText(script).trim().length;
+                                      const prov = getTTSProviderForRegion(script.region_code);
+                                      const lim = PROVIDER_CHAR_LIMITS[prov] || PROVIDER_CHAR_LIMITS.default;
+                                      if (ct > lim.hard) return <span className="text-[9px] text-destructive">⚠️ Exceeds {prov} hard limit ({lim.hard.toLocaleString()}) — generation may fail</span>;
+                                      if (ct > lim.soft) return <span className="text-[9px] text-warning">⚡ Over optimal limit ({lim.soft.toLocaleString()}) — may be slow</span>;
+                                      return null;
+                                    })()}
                                   </div>
                                   {latestTTS && (
                                     <p className="text-[9px] text-muted-foreground mt-0.5">
