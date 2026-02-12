@@ -213,21 +213,11 @@ const REGION_HIERARCHY: RegionGroup[] = [
   {
     groupCode: 'SEA', groupName: 'Southeast Asia', groupFlag: '🌏',
     children: [
-      { code: 'SEA_MAINLAND', name: 'Mainland SEA', flag: '🌏', children: [
-        { code: 'SEA_THAI', name: 'Thailand (ไทย)', flag: '🇹🇭' },
-        { code: 'SEA_VIET', name: 'Vietnam (Tiếng Việt)', flag: '🇻🇳' },
-        { code: 'SEA_KHMER', name: 'Cambodia (ខ្មែរ)', flag: '🇰🇭' },
-        { code: 'SEA_LAO', name: 'Laos (ລາວ)', flag: '🇱🇦' },
-        { code: 'SEA_MYANMAR', name: 'Myanmar (မြန်မာ)', flag: '🇲🇲' },
-      ]},
-      { code: 'SEA_MARITIME', name: 'Maritime SEA', flag: '🌊', children: [
-        { code: 'SEA_ID', name: 'Indonesia (Bahasa Indonesia)', flag: '🇮🇩' },
-        { code: 'SEA_MY', name: 'Malaysia (Bahasa Melayu)', flag: '🇲🇾' },
-        { code: 'SEA_PHIL', name: 'Philippines (Filipino)', flag: '🇵🇭' },
-      ]},
-      { code: 'SEA_PAN', name: 'Pan-SEA (English)', flag: '🇸🇬', children: [
-        { code: 'SEA_PAN_EN', name: 'ASEAN English', flag: '🇸🇬' },
-      ]},
+      { code: 'SEA_MALAY', name: 'Malaysia & Indonesia (Malay)', flag: '🇲🇾' },
+      { code: 'SEA_THAI', name: 'Thailand (ไทย)', flag: '🇹🇭' },
+      { code: 'SEA_VIET', name: 'Vietnam (Tiếng Việt)', flag: '🇻🇳' },
+      { code: 'SEA_PHIL', name: 'Philippines (Filipino/Taglish)', flag: '🇵🇭' },
+      { code: 'SEA_PAN', name: 'Pan-SEA / Singapore (English)', flag: '🇸🇬' },
     ],
   },
   {
@@ -634,16 +624,13 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-PrabhatNeural', voiceName: 'Prabhat (Indian English)', gender: 'male' },
       { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-AashiNeural', voiceName: 'Aashi (Indian English)', gender: 'female' },
     ],
-    // SEA — Parent sub-regions (fallback voices)
-    'SEA_MAINLAND': [
-      { provider: 'azure', locale: 'th-TH', label: 'Azure Neural', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)', gender: 'female' },
+    // SEA — 5 sub-regions matching DB constraint
+    'SEA_MALAY': [
+      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-OsmanNeural', voiceName: 'Osman (Malay)', gender: 'male' },
+      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)', gender: 'female' },
+      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-ArdiNeural', voiceName: 'Ardi (Indonesian)', gender: 'male' },
     ],
-    'SEA_MARITIME': [
-      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)', gender: 'female' },
-    ],
-    // SEA leaf nodes
     'SEA_THAI': [
       { provider: 'azure', locale: 'th-TH', label: 'Azure Neural', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'th-TH', label: 'Azure Neural', voiceId: 'th-TH-NiwatNeural', voiceName: 'Niwat (Thai)', gender: 'male' },
@@ -653,35 +640,11 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural', voiceId: 'vi-VN-NamMinhNeural', voiceName: 'NamMinh (Vietnamese)', gender: 'male' },
     ],
-    'SEA_KHMER': [
-      { provider: 'azure', locale: 'km-KH', label: 'Azure Neural', voiceId: 'km-KH-SreymomNeural', voiceName: 'Sreymom (Khmer)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'km-KH', label: 'Azure Neural', voiceId: 'km-KH-PisethNeural', voiceName: 'Piseth (Khmer)', gender: 'male' },
-    ],
-    'SEA_LAO': [
-      { provider: 'azure', locale: 'lo-LA', label: 'Azure Neural', voiceId: 'lo-LA-KeomanyNeural', voiceName: 'Keomany (Lao)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'lo-LA', label: 'Azure Neural', voiceId: 'lo-LA-ChanthavongNeural', voiceName: 'Chanthavong (Lao)', gender: 'male' },
-    ],
-    'SEA_MYANMAR': [
-      { provider: 'azure', locale: 'my-MM', label: 'Azure Neural', voiceId: 'my-MM-NilarNeural', voiceName: 'Nilar (Myanmar)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'my-MM', label: 'Azure Neural', voiceId: 'my-MM-ThihaNeural', voiceName: 'Thiha (Myanmar)', gender: 'male' },
-    ],
-    'SEA_ID': [
-      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-ArdiNeural', voiceName: 'Ardi (Indonesian)', gender: 'male' },
-    ],
-    'SEA_MY': [
-      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-OsmanNeural', voiceName: 'Osman (Malay)', gender: 'male' },
-    ],
     'SEA_PHIL': [
       { provider: 'azure', locale: 'fil-PH', label: 'Azure Neural', voiceId: 'fil-PH-BlessicaNeural', voiceName: 'Blessica (Filipino)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'fil-PH', label: 'Azure Neural', voiceId: 'fil-PH-AngeloNeural', voiceName: 'Angelo (Filipino)', gender: 'male' },
     ],
     'SEA_PAN': [
-      { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-WayneNeural', voiceName: 'Wayne (Singapore English)', gender: 'male' },
-    ],
-    'SEA_PAN_EN': [
       { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-WayneNeural', voiceName: 'Wayne (Singapore English)', gender: 'male' },
     ],
@@ -975,19 +938,12 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'INDIA_EAST_BN': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'INDIA_EAST_OR': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'INDIA_PAN_EN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-    // SEA sub-regions
-    'SEA_MAINLAND': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-    'SEA_MARITIME': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    // SEA sub-regions (5 DB-valid codes)
+    'SEA_MALAY': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_THAI': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_VIET': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-    'SEA_KHMER': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-    'SEA_LAO': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-    'SEA_MYANMAR': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-    'SEA_ID': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-    'SEA_MY': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_PHIL': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     'SEA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-    'SEA_PAN_EN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     // CJK sub-regions
     'CJK_CHINA': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
     'CJK_CN': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
@@ -2301,9 +2257,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
             'INDIA_WEST_MR': 'mr', 'INDIA_WEST_GU': 'gu',
             'INDIA_EAST_BN': 'bn', 'INDIA_EAST_OR': 'or',
             'INDIA_PAN_EN': 'en',
-            'SEA_MAINLAND': 'th', 'SEA_MARITIME': 'id',
-            'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_KHMER': 'km', 'SEA_LAO': 'lo', 'SEA_MYANMAR': 'my',
-            'SEA_ID': 'id', 'SEA_MY': 'ms', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en', 'SEA_PAN_EN': 'en',
+            'SEA_MALAY': 'ms', 'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en',
             'CJK_CHINA': 'zh', 'CJK_CN': 'zh', 'CJK_HK': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
             'CJK_PAN': 'en', 'CJK_PAN_EN': 'en',
           };
