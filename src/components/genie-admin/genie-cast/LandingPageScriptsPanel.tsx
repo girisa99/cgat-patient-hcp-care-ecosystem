@@ -2113,7 +2113,31 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
 
       toast.success('✅ English Base Script approved!');
 
-      // Step 2: Trigger auto-expand to all 38 sub-regions with transcreation
+      // ⭐ Step 2: Mark all TTS audio using OLD versions of regional scripts as 'outdated'
+      // Find all regional scripts linked to this English base
+      const { data: regionalScripts } = await supabase
+        .from('regional_narration_scripts')
+        .select('id, region_code, version')
+        .eq('english_base_script_id', englishBaseScript.id);
+
+      if (regionalScripts && regionalScripts.length > 0) {
+        // Mark all TTS for these old script versions as outdated
+        const scriptIds = regionalScripts.map(s => s.id);
+        await supabase
+          .from('tts_audio_versions')
+          .update({ 
+            metadata: { 
+              tts_status: 'outdated',
+              reason: 'Parent English base script updated',
+              outdated_at: new Date().toISOString()
+            } 
+          } as any)
+          .in('script_id', scriptIds);
+      }
+
+      toast.info('⚠️ Existing TTS audio marked as outdated. New versions will be created upon transcript re-generation.');
+
+      // Step 3: Trigger auto-expand to all 38 sub-regions with transcreation
       await handleAutoExpandAndTranscreate(englishBaseScript);
 
       fetchScripts();
@@ -2126,6 +2150,23 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
   // ── Auto-expand English base to all 38 sub-regions ──
   const handleAutoExpandAndTranscreate = useCallback(async (baseScript: NarrationScript) => {
     try {
+      // ⭐ Query DB for the latest active English base, not the parameter (which might be stale)
+      const { data: latestEnglishBase } = await supabase
+        .from('regional_narration_scripts')
+        .select('*')
+        .eq('is_english_base', true)
+        .eq('status', 'active')
+        .order('version', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (!latestEnglishBase) {
+        toast.error('No active English Base Script found');
+        return;
+      }
+
+      const sourceScript = latestEnglishBase as NarrationScript;
+
       // Collect all leaf-level region codes from REGION_HIERARCHY (including per-country grandchildren)
       const subRegionCodes: string[] = [];
       REGION_HIERARCHY.forEach(group => {
@@ -2144,7 +2185,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
         }
       });
 
-      console.log(`[AutoExpand] Starting transcreation for ${subRegionCodes.length} sub-regions`);
+      console.log(`[AutoExpand] Starting transcreation for ${subRegionCodes.length} sub-regions from English base v${sourceScript.version}`);
 
       // For each sub-region, call ai-universal-processor to transcreate the script
       const transcreationPromises = subRegionCodes.map(async (subRegionCode) => {
@@ -2190,26 +2231,32 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
             'SEA_MALAY': 'ms', 'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en',
             'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
           };
-          const languageCode = languageMap[subRegionCode] || 'en';
+           const languageCode = languageMap[subRegionCode] || 'en';
 
-          const maxVersion = scripts
-            .filter(s => s.region_code === subRegionCode)
-            .reduce((max, s) => Math.max(max, s.version), 0);
+           // ⭐ Query DB for max version of this region (not React state which may be stale)
+           const { data: existingScripts } = await supabase
+             .from('regional_narration_scripts')
+             .select('version')
+             .eq('region_code', subRegionCode)
+             .order('version', { ascending: false })
+             .limit(1);
+           
+           const maxVersion = existingScripts && existingScripts.length > 0 ? existingScripts[0].version : 0;
 
-          // Build transcreation prompt with active metadata injection
-          const positioningAngles = baseScript.positioning_angles?.join(', ') || 'value-driven';
-          const emotionalTones = baseScript.emotional_tones?.join(', ') || 'professional';
-          const targetPersonas = baseScript.target_personas?.join(', ') || 'general business audience';
-          
-          const transcreationPrompt = `You are a world-class localization expert specializing in regional cultural adaptation.
+           // ⭐ Use latest English base, not parameter
+           const positioningAngles = sourceScript.positioning_angles?.join(', ') || 'value-driven';
+           const emotionalTones = sourceScript.emotional_tones?.join(', ') || 'professional';
+           const targetPersonas = sourceScript.target_personas?.join(', ') || 'general business audience';
+           
+           const transcreationPrompt = `You are a world-class localization expert specializing in regional cultural adaptation.
 
 TASK: Transcreate (not translate) the following marketing script for ${regionOption.name}. Adapt cultural context, idioms, and emotional resonance while maintaining the Hook → Problem → Solution → CTA structure.
 
-ORIGINAL SCRIPT (English Base):
-HOOK: ${baseScript.hook}
-PROBLEM: ${baseScript.problem_statement}
-SOLUTION: ${baseScript.solution}
-CTA: ${baseScript.cta}
+ORIGINAL SCRIPT (English Base v${sourceScript.version}):
+HOOK: ${sourceScript.hook}
+PROBLEM: ${sourceScript.problem_statement}
+SOLUTION: ${sourceScript.solution}
+CTA: ${sourceScript.cta}
 
 TARGET REGION: ${regionOption.name}
 TARGET LANGUAGE: ${languageCode}
@@ -2235,75 +2282,75 @@ EMOTIONAL TONES: ${emotionalTones}
 7. Return ONLY valid JSON (no markdown):
 {"hook":"transcreated hook","problem_statement":"transcreated problem","solution":"transcreated solution","cta":"transcreated cta","cultural_adaptations":"list of key cultural changes made"}`;
 
-          // Call transcreation API
-          const response = await supabase.functions.invoke('ai-universal-processor', {
-            body: {
-              action: 'generate_text',
-              provider: provider.id,
-              model: provider.model,
-              prompt: transcreationPrompt,
-              systemPrompt: 'You are a regional script transcreation expert. Return ONLY valid JSON, no markdown fences.',
-              context: {
-                region: subRegionCode,
-                language: languageCode,
-                zone: routingZone,
-              },
-            },
-          });
+           // Call transcreation API
+           const response = await supabase.functions.invoke('ai-universal-processor', {
+             body: {
+               action: 'generate_text',
+               provider: provider.id,
+               model: provider.model,
+               prompt: transcreationPrompt,
+               systemPrompt: 'You are a regional script transcreation expert. Return ONLY valid JSON, no markdown fences.',
+               context: {
+                 region: subRegionCode,
+                 language: languageCode,
+                 zone: routingZone,
+               },
+             },
+           });
 
-          if (response.error) {
-            console.error(`[AutoExpand] Transcreation failed for ${subRegionCode}:`, response.error);
-            return;
-          }
+           if (response.error) {
+             console.error(`[AutoExpand] Transcreation failed for ${subRegionCode}:`, response.error);
+             return;
+           }
 
-          // Parse transcreated content
-          const content = response.data?.content || response.data?.text || '';
-          let transcreated;
-          try {
-            const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            transcreated = JSON.parse(cleaned);
-          } catch (parseErr) {
-            console.error(`[AutoExpand] Parse error for ${subRegionCode}:`, parseErr);
-            return;
-          }
+           // Parse transcreated content
+           const content = response.data?.content || response.data?.text || '';
+           let transcreated;
+           try {
+             const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+             transcreated = JSON.parse(cleaned);
+           } catch (parseErr) {
+             console.error(`[AutoExpand] Parse error for ${subRegionCode}:`, parseErr);
+             return;
+           }
 
-          // Get TTS provider for this sub-region
-          const ttsProvider = getSubRegionTTSProvider(subRegionCode);
+           // Get TTS provider for this sub-region
+           const ttsProvider = getSubRegionTTSProvider(subRegionCode);
 
-          // Insert transcreated script
-          const { error: insertError } = await supabase
-            .from('regional_narration_scripts')
-            .insert({
-              region_code: subRegionCode,
-              region_display_name: regionOption.name,
-              language_code: languageCode,
-              language_display_name: regionOption.name,
-              hook: transcreated.hook || baseScript.hook,
-              problem_statement: transcreated.problem_statement || baseScript.problem_statement,
-              solution: transcreated.solution || baseScript.solution,
-              cta: transcreated.cta || baseScript.cta,
-              positioning_angles: baseScript.positioning_angles,
-              target_personas: baseScript.target_personas,
-              emotional_tones: baseScript.emotional_tones,
-              tts_provider: ttsProvider.provider,
-              tts_voice_id: ttsProvider.voiceId,
-              tts_voice_name: ttsProvider.voiceName,
-              tts_speed: baseScript.tts_speed || 1.0,
-              tts_pitch: baseScript.tts_pitch || 'default',
-              version: maxVersion + 1,
-              status: 'draft',
-              is_english_base: false,
-              english_base_script_id: baseScript.id,
-              llm_provider: provider.id,
-              llm_model: provider.model,
-              llm_temperature: 0.7,
-              llm_token_count: response.data?.usage?.totalTokens || null,
-              llm_prompt_template: 'regional_transcreation_v1',
-              routing_decision: `Zone-optimized: ${provider.name} selected for ${regionOption.name} (${parentZone})`,
-              routing_confidence_score: provider.isRecommended ? 0.95 : 0.75,
-              routing_zone: routingZone,
-              generation_timestamp: new Date().toISOString(),
-            } as any);
+           // Insert transcreated script
+           const { error: insertError } = await supabase
+             .from('regional_narration_scripts')
+             .insert({
+               region_code: subRegionCode,
+               region_display_name: regionOption.name,
+               language_code: languageCode,
+               language_display_name: regionOption.name,
+               hook: transcreated.hook || sourceScript.hook,
+               problem_statement: transcreated.problem_statement || sourceScript.problem_statement,
+               solution: transcreated.solution || sourceScript.solution,
+               cta: transcreated.cta || sourceScript.cta,
+               positioning_angles: sourceScript.positioning_angles,
+               target_personas: sourceScript.target_personas,
+               emotional_tones: sourceScript.emotional_tones,
+               tts_provider: ttsProvider.provider,
+               tts_voice_id: ttsProvider.voiceId,
+               tts_voice_name: ttsProvider.voiceName,
+               tts_speed: sourceScript.tts_speed || 1.0,
+               tts_pitch: sourceScript.tts_pitch || 'default',
+               version: maxVersion + 1,
+               status: 'draft',
+               is_english_base: false,
+               english_base_script_id: sourceScript.id,  // ⭐ Link to latest English base
+               llm_provider: provider.id,
+               llm_model: provider.model,
+               llm_temperature: 0.7,
+               llm_token_count: response.data?.usage?.totalTokens || null,
+               llm_prompt_template: 'regional_transcreation_v1',
+               routing_decision: `Zone-optimized: ${provider.name} selected for ${regionOption.name} (${parentZone})`,
+               routing_confidence_score: provider.isRecommended ? 0.95 : 0.75,
+               routing_zone: routingZone,
+               generation_timestamp: new Date().toISOString(),
+             } as any);
 
           if (insertError) {
             console.error(`[AutoExpand] Insert failed for ${subRegionCode}:`, insertError);
@@ -2374,6 +2421,24 @@ EMOTIONAL TONES: ${emotionalTones}
       childNode.children.forEach(gc => leafChildren.push(gc));
     }
 
+    // ⭐ ALWAYS query DB for latest active English base, not stale React state
+    const { data: latestEnglishBase } = await supabase
+      .from('regional_narration_scripts')
+      .select('*')
+      .eq('is_english_base', true)
+      .eq('status', 'active')
+      .order('version', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (!latestEnglishBase) {
+      toast.error('No approved English Base Script found. Approve the English Base first.');
+      return;
+    }
+
+    // Use the latest English base as the source
+    const sourceScript = latestEnglishBase as NarrationScript;
+
     // Query DB fresh to avoid stale React state causing duplicates
     const leafCodes = leafChildren.map(c => c.code);
     const { data: existingDbScripts } = await supabase
@@ -2440,19 +2505,20 @@ EMOTIONAL TONES: ${emotionalTones}
             const routingZone = zoneMap[parentZone] || 'western';
 
             // Transcreation prompt with active metadata injection
-            const subPositioning = parentScript.positioning_angles?.join(', ') || 'value-driven';
-            const subTones = parentScript.emotional_tones?.join(', ') || 'professional';
-            const subPersonas = parentScript.target_personas?.join(', ') || 'general business audience';
+            // ⭐ Use latest English base, not the React state passed in
+            const subPositioning = sourceScript.positioning_angles?.join(', ') || 'value-driven';
+            const subTones = sourceScript.emotional_tones?.join(', ') || 'professional';
+            const subPersonas = sourceScript.target_personas?.join(', ') || 'general business audience';
             
             const prompt = `You are a world-class localization expert specializing in regional cultural adaptation.
 
 TASK: Transcreate (not translate) the following marketing script for ${child.name}. Adapt cultural context, idioms, and emotional resonance while maintaining the Hook → Problem → Solution → CTA structure.
 
 ORIGINAL SCRIPT:
-HOOK: ${parentScript.hook}
-PROBLEM: ${parentScript.problem_statement}
-SOLUTION: ${parentScript.solution}
-CTA: ${parentScript.cta}
+HOOK: ${sourceScript.hook}
+PROBLEM: ${sourceScript.problem_statement}
+SOLUTION: ${sourceScript.solution}
+CTA: ${sourceScript.cta}
 
 TARGET REGION: ${child.name}
 TARGET LANGUAGE: ${languageCode}
@@ -2516,7 +2582,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                 version: 1,
                 status: 'draft',
                 is_english_base: false,
-                english_base_script_id: parentScript.id,
+                english_base_script_id: sourceScript.id,  // ⭐ Link to latest English base
                 llm_provider: provider.id,
                 llm_model: provider.model,
                 llm_temperature: 0.7,
