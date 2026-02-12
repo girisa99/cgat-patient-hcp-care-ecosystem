@@ -2730,24 +2730,73 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
         ))}
       </div>
 
-      {/* ─── Summary Stats Bar ─── */}
+      {/* ─── Summary Stats Bar (Latest Versions Only) ─── */}
       {(() => {
         const nonArchived = scripts.filter(s => s.status !== 'archived');
-        const totalScripts = nonArchived.length;
-        const activeScripts = nonArchived.filter(s => s.status === 'active').length;
-        const draftScripts = nonArchived.filter(s => s.status === 'draft').length;
-        const reviewScripts = nonArchived.filter(s => s.status === 'review').length;
-        const withTTS = nonArchived.filter(s => s.generated_audio_url).length;
-        const withoutTTS = totalScripts - withTTS;
-        const uniqueRegions = new Set(nonArchived.map(s => s.region_code)).size;
+
+        // ── Deduplicate: keep only the LATEST version per region_code ──
+        const latestByRegion = new Map<string, typeof nonArchived[0]>();
+        nonArchived.forEach(s => {
+          const existing = latestByRegion.get(s.region_code);
+          if (!existing || s.version > existing.version) {
+            latestByRegion.set(s.region_code, s);
+          }
+        });
+        const latestScripts = Array.from(latestByRegion.values());
+
+        const totalLatest = latestScripts.length;
+        const activeScripts = latestScripts.filter(s => s.status === 'active').length;
+        const draftScripts = latestScripts.filter(s => s.status === 'draft').length;
+        const reviewScripts = latestScripts.filter(s => s.status === 'review').length;
+        const withTTS = latestScripts.filter(s => s.generated_audio_url).length;
+        const withoutTTS = totalLatest - withTTS;
+
+        // ── Collect ALL expected leaf-level codes from REGION_HIERARCHY ──
+        const allExpectedLeafCodes: string[] = [];
+        REGION_HIERARCHY.forEach(group => {
+          // Parent-level EN base code
+          allExpectedLeafCodes.push(group.groupCode.toLowerCase());
+          if (group.children.length > 0) {
+            group.children.forEach(child => {
+              if (child.children && child.children.length > 0) {
+                child.children.forEach(gc => allExpectedLeafCodes.push(gc.code));
+              } else {
+                allExpectedLeafCodes.push(child.code);
+              }
+            });
+          }
+        });
+
+        // ── Coverage analysis: which leaf codes have a latest active/review script? ──
+        const coveredCodes = new Set(latestScripts.filter(s => s.status === 'active' || s.status === 'review').map(s => s.region_code));
+        const leafCodesOnly = allExpectedLeafCodes.filter(c => !REGION_HIERARCHY.some(g => g.groupCode.toLowerCase() === c)); // exclude parent EN base codes
+        const totalLeafRegions = leafCodesOnly.length;
+        const coveredLeafRegions = leafCodesOnly.filter(c => coveredCodes.has(c) || coveredCodes.has(c.toLowerCase())).length;
+        const missingLeafRegions = totalLeafRegions - coveredLeafRegions;
+
+        // ── EN Base coverage ──
+        const totalParentGroups = REGION_HIERARCHY.length;
+        const parentGroupsWithENBase = REGION_HIERARCHY.filter(group => {
+          const parentCode = group.groupCode.toLowerCase();
+          const hasBase = nonArchived.some(s => 
+            s.is_english_base && s.language_code === 'en' && 
+            (s.region_code === parentCode || s.region_code === group.groupCode)
+          );
+          return hasBase;
+        }).length;
+
+        const coveragePct = totalLeafRegions > 0 ? Math.round((coveredLeafRegions / totalLeafRegions) * 100) : 0;
+
         return (
           <div className="flex items-center gap-3 flex-wrap rounded-lg border border-border bg-muted/30 px-4 py-2.5">
+            {/* Scripts (latest only) */}
             <div className="flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold">{totalScripts}</span>
-              <span className="text-xs text-muted-foreground">Scripts</span>
+              <span className="text-xs font-semibold">{totalLatest}</span>
+              <span className="text-xs text-muted-foreground">Latest Scripts</span>
             </div>
             <Separator orientation="vertical" className="h-4" />
+            {/* Status breakdown */}
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span className="text-xs font-medium">{activeScripts}</span>
@@ -2764,20 +2813,36 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
               <span className="text-xs text-muted-foreground">Draft</span>
             </div>
             <Separator orientation="vertical" className="h-4" />
+            {/* TTS */}
             <div className="flex items-center gap-1.5">
               <Headphones className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-xs font-semibold">{withTTS}</span>
               <span className="text-xs text-muted-foreground">TTS Done</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">{withoutTTS}</span>
-              <span className="text-xs text-muted-foreground">Pending TTS</span>
-            </div>
+            {withoutTTS > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-amber-600">{withoutTTS}</span>
+                <span className="text-xs text-muted-foreground">Pending TTS</span>
+              </div>
+            )}
             <Separator orientation="vertical" className="h-4" />
+            {/* Coverage */}
             <div className="flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold">{uniqueRegions}</span>
-              <span className="text-xs text-muted-foreground">Regions</span>
+              <span className="text-xs font-semibold">{coveredLeafRegions}/{totalLeafRegions}</span>
+              <span className="text-xs text-muted-foreground">Regions ({coveragePct}%)</span>
+            </div>
+            {missingLeafRegions > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-red-500">{missingLeafRegions}</span>
+                <span className="text-xs text-muted-foreground">Missing</span>
+              </div>
+            )}
+            <Separator orientation="vertical" className="h-4" />
+            {/* EN Base coverage */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold">{parentGroupsWithENBase}/{totalParentGroups}</span>
+              <span className="text-xs text-muted-foreground">EN Bases</span>
             </div>
           </div>
         );
