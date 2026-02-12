@@ -186,11 +186,28 @@ const REGION_HIERARCHY: RegionGroup[] = [
   {
     groupCode: 'INDIA', groupName: 'India', groupFlag: '🇮🇳',
     children: [
-      { code: 'INDIA_NORTH', name: 'North India (Hindi Belt)', flag: '🇮🇳' },
-      { code: 'INDIA_SOUTH', name: 'South India (Dravidian)', flag: '🇮🇳' },
-      { code: 'INDIA_WEST', name: 'West India (Maharashtra, Gujarat)', flag: '🇮🇳' },
-      { code: 'INDIA_EAST', name: 'East India (Bengal, Odisha)', flag: '🇮🇳' },
-      { code: 'INDIA_PAN', name: 'Pan-India (English)', flag: '🇮🇳' },
+      { code: 'INDIA_NORTH', name: 'North India (Hindi Belt)', flag: '🇮🇳', children: [
+        { code: 'INDIA_NORTH_HI', name: 'Hindi (हिन्दी)', flag: '🇮🇳' },
+        { code: 'INDIA_NORTH_UR', name: 'Urdu (اردو)', flag: '🇮🇳' },
+        { code: 'INDIA_NORTH_PA', name: 'Punjabi (ਪੰਜਾਬੀ)', flag: '🇮🇳' },
+      ]},
+      { code: 'INDIA_SOUTH', name: 'South India (Dravidian)', flag: '🇮🇳', children: [
+        { code: 'INDIA_SOUTH_TA', name: 'Tamil (தமிழ்)', flag: '🇮🇳' },
+        { code: 'INDIA_SOUTH_TE', name: 'Telugu (తెలుగు)', flag: '🇮🇳' },
+        { code: 'INDIA_SOUTH_KN', name: 'Kannada (ಕನ್ನಡ)', flag: '🇮🇳' },
+        { code: 'INDIA_SOUTH_ML', name: 'Malayalam (മലയാളം)', flag: '🇮🇳' },
+      ]},
+      { code: 'INDIA_WEST', name: 'West India (Maharashtra, Gujarat)', flag: '🇮🇳', children: [
+        { code: 'INDIA_WEST_MR', name: 'Marathi (मराठी)', flag: '🇮🇳' },
+        { code: 'INDIA_WEST_GU', name: 'Gujarati (ગુજરાતી)', flag: '🇮🇳' },
+      ]},
+      { code: 'INDIA_EAST', name: 'East India (Bengal, Odisha)', flag: '🇮🇳', children: [
+        { code: 'INDIA_EAST_BN', name: 'Bengali (বাংলা)', flag: '🇮🇳' },
+        { code: 'INDIA_EAST_OR', name: 'Odia (ଓଡ଼ିଆ)', flag: '🇮🇳' },
+      ]},
+      { code: 'INDIA_PAN', name: 'Pan-India (English)', flag: '🇮🇳', children: [
+        { code: 'INDIA_PAN_EN', name: 'Indian English', flag: '🇮🇳' },
+      ]},
     ],
   },
   {
@@ -530,28 +547,73 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'bn-BD', label: 'Azure Neural', voiceId: 'bn-BD-NabanitaNeural', voiceName: 'Nabanita (Bengali)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'bn-BD', label: 'Azure Neural', voiceId: 'bn-BD-PradeepNeural', voiceName: 'Pradeep (Bengali)', gender: 'male' },
     ],
-    // India
+    // India - parent sub-regions (fallback voices)
     'INDIA_NORTH': [
       { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-MadhurNeural', voiceName: 'Madhur (Hindi)', gender: 'male' },
-      { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)', gender: 'female' },
     ],
     'INDIA_SOUTH': [
       { provider: 'azure', locale: 'ta-IN', label: 'Azure Neural', voiceId: 'ta-IN-PallaviNeural', voiceName: 'Pallavi (Tamil)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'ta-IN', label: 'Azure Neural', voiceId: 'ta-IN-ValluvarNeural', voiceName: 'Valluvar (Tamil)', gender: 'male' },
-      { provider: 'azure', locale: 'te-IN', label: 'Azure Neural', voiceId: 'te-IN-ShrutiNeural', voiceName: 'Shruti (Telugu)', gender: 'female' },
-      { provider: 'azure', locale: 'kn-IN', label: 'Azure Neural', voiceId: 'kn-IN-SapnaNeural', voiceName: 'Sapna (Kannada)', gender: 'female' },
     ],
     'INDIA_WEST': [
       { provider: 'azure', locale: 'mr-IN', label: 'Azure Neural', voiceId: 'mr-IN-AarohiNeural', voiceName: 'Aarohi (Marathi)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'mr-IN', label: 'Azure Neural', voiceId: 'mr-IN-ManoharNeural', voiceName: 'Manohar (Marathi)', gender: 'male' },
-      { provider: 'azure', locale: 'gu-IN', label: 'Azure Neural', voiceId: 'gu-IN-DhwaniNeural', voiceName: 'Dhwani (Gujarati)', gender: 'female' },
     ],
     'INDIA_EAST': [
       { provider: 'azure', locale: 'bn-IN', label: 'Azure Neural', voiceId: 'bn-IN-TanishaaNeural', voiceName: 'Tanishaa (Bengali India)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'bn-IN', label: 'Azure Neural', voiceId: 'bn-IN-BashkarNeural', voiceName: 'Bashkar (Bengali India)', gender: 'male' },
     ],
     'INDIA_PAN': [
+      { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-PrabhatNeural', voiceName: 'Prabhat (Indian English)', gender: 'male' },
+    ],
+    // India per-language leaf nodes
+    'INDIA_NORTH_HI': [
+      { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-MadhurNeural', voiceName: 'Madhur (Hindi)', gender: 'male' },
+    ],
+    'INDIA_NORTH_UR': [
+      { provider: 'azure', locale: 'ur-IN', label: 'Azure Neural', voiceId: 'ur-IN-GulNeural', voiceName: 'Gul (Urdu)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ur-IN', label: 'Azure Neural', voiceId: 'ur-IN-SalmanNeural', voiceName: 'Salman (Urdu)', gender: 'male' },
+    ],
+    'INDIA_NORTH_PA': [
+      { provider: 'azure', locale: 'pa-IN', label: 'Azure Neural', voiceId: 'pa-IN-GurpreetNeural', voiceName: 'Gurpreet (Punjabi)', gender: 'male', isDefault: true },
+      { provider: 'azure', locale: 'pa-IN', label: 'Azure Neural', voiceId: 'pa-IN-OjasNeural', voiceName: 'Ojas (Punjabi)', gender: 'female' },
+    ],
+    'INDIA_SOUTH_TA': [
+      { provider: 'azure', locale: 'ta-IN', label: 'Azure Neural', voiceId: 'ta-IN-PallaviNeural', voiceName: 'Pallavi (Tamil)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ta-IN', label: 'Azure Neural', voiceId: 'ta-IN-ValluvarNeural', voiceName: 'Valluvar (Tamil)', gender: 'male' },
+    ],
+    'INDIA_SOUTH_TE': [
+      { provider: 'azure', locale: 'te-IN', label: 'Azure Neural', voiceId: 'te-IN-ShrutiNeural', voiceName: 'Shruti (Telugu)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'te-IN', label: 'Azure Neural', voiceId: 'te-IN-MohanNeural', voiceName: 'Mohan (Telugu)', gender: 'male' },
+    ],
+    'INDIA_SOUTH_KN': [
+      { provider: 'azure', locale: 'kn-IN', label: 'Azure Neural', voiceId: 'kn-IN-SapnaNeural', voiceName: 'Sapna (Kannada)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'kn-IN', label: 'Azure Neural', voiceId: 'kn-IN-GaganNeural', voiceName: 'Gagan (Kannada)', gender: 'male' },
+    ],
+    'INDIA_SOUTH_ML': [
+      { provider: 'azure', locale: 'ml-IN', label: 'Azure Neural', voiceId: 'ml-IN-SobhanaNeural', voiceName: 'Sobhana (Malayalam)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ml-IN', label: 'Azure Neural', voiceId: 'ml-IN-MidhunNeural', voiceName: 'Midhun (Malayalam)', gender: 'male' },
+    ],
+    'INDIA_WEST_MR': [
+      { provider: 'azure', locale: 'mr-IN', label: 'Azure Neural', voiceId: 'mr-IN-AarohiNeural', voiceName: 'Aarohi (Marathi)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'mr-IN', label: 'Azure Neural', voiceId: 'mr-IN-ManoharNeural', voiceName: 'Manohar (Marathi)', gender: 'male' },
+    ],
+    'INDIA_WEST_GU': [
+      { provider: 'azure', locale: 'gu-IN', label: 'Azure Neural', voiceId: 'gu-IN-DhwaniNeural', voiceName: 'Dhwani (Gujarati)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'gu-IN', label: 'Azure Neural', voiceId: 'gu-IN-NiranjanNeural', voiceName: 'Niranjan (Gujarati)', gender: 'male' },
+    ],
+    'INDIA_EAST_BN': [
+      { provider: 'azure', locale: 'bn-IN', label: 'Azure Neural', voiceId: 'bn-IN-TanishaaNeural', voiceName: 'Tanishaa (Bengali India)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'bn-IN', label: 'Azure Neural', voiceId: 'bn-IN-BashkarNeural', voiceName: 'Bashkar (Bengali India)', gender: 'male' },
+    ],
+    'INDIA_EAST_OR': [
+      { provider: 'azure', locale: 'or-IN', label: 'Azure Neural', voiceId: 'or-IN-SubhasiniNeural', voiceName: 'Subhasini (Odia)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'or-IN', label: 'Azure Neural', voiceId: 'or-IN-SukeshtNeural', voiceName: 'Sukesht (Odia)', gender: 'male' },
+    ],
+    'INDIA_PAN_EN': [
       { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-PrabhatNeural', voiceName: 'Prabhat (Indian English)', gender: 'male' },
       { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-AashiNeural', voiceName: 'Aashi (Indian English)', gender: 'female' },
@@ -831,12 +893,25 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     // Pakistan & Bangladesh
     'PAKISTAN': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
     'BANGLADESH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
-    // India sub-regions
+    // India sub-regions (parent)
     'INDIA_NORTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'INDIA_SOUTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'INDIA_WEST': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     'INDIA_EAST': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'INDIA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+    // India per-language leaf nodes
+    'INDIA_NORTH_HI': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_NORTH_UR': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_NORTH_PA': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_SOUTH_TA': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_SOUTH_TE': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_SOUTH_KN': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_SOUTH_ML': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_WEST_MR': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+    'INDIA_WEST_GU': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+    'INDIA_EAST_BN': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_EAST_OR': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'INDIA_PAN_EN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     // SEA sub-regions
     'SEA_MALAY': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_THAI': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
@@ -2104,7 +2179,13 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
             'MENA_GULF': 'ar', 'MENA_EGYPT': 'ar', 'MENA_LEVANT': 'ar', 'MENA_MAGHREB': 'ar', 'MENA_MSA': 'ar',
             'AFRICA_WEST': 'en', 'AFRICA_EAST': 'sw', 'AFRICA_SOUTH': 'en', 'AFRICA_FRANCO': 'fr',
             'PAKISTAN': 'ur', 'BANGLADESH': 'bn',
-            'INDIA_NORTH': 'hi', 'INDIA_SOUTH': 'ta', 'INDIA_WEST': 'gu', 'INDIA_EAST': 'bn', 'INDIA_PAN': 'en',
+            'INDIA_NORTH': 'hi', 'INDIA_SOUTH': 'ta', 'INDIA_WEST': 'mr', 'INDIA_EAST': 'bn', 'INDIA_PAN': 'en',
+            // India per-language codes
+            'INDIA_NORTH_HI': 'hi', 'INDIA_NORTH_UR': 'ur', 'INDIA_NORTH_PA': 'pa',
+            'INDIA_SOUTH_TA': 'ta', 'INDIA_SOUTH_TE': 'te', 'INDIA_SOUTH_KN': 'kn', 'INDIA_SOUTH_ML': 'ml',
+            'INDIA_WEST_MR': 'mr', 'INDIA_WEST_GU': 'gu',
+            'INDIA_EAST_BN': 'bn', 'INDIA_EAST_OR': 'or',
+            'INDIA_PAN_EN': 'en',
             'SEA_MALAY': 'ms', 'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en',
             'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
           };
@@ -2337,7 +2418,13 @@ EMOTIONAL TONES: ${emotionalTones}
               'EU_PL': 'pl', 'EU_CZ': 'cs', 'EU_RO': 'ro', 'EU_HU': 'hu',
               'LATAM_BRAZIL': 'pt-BR', 'LATAM_MEXICO': 'es', 'LATAM_ANDEAN': 'es', 'LATAM_CONESUR': 'es', 'LATAM_CARIB': 'es',
               'MENA_GULF': 'ar', 'MENA_EGYPT': 'ar', 'MENA_LEVANT': 'ar', 'MENA_MAGHREB': 'ar', 'MENA_MSA': 'ar',
-              'INDIA_NORTH': 'hi', 'INDIA_SOUTH': 'ta', 'INDIA_WEST': 'gu', 'INDIA_EAST': 'bn', 'INDIA_PAN': 'en',
+              'INDIA_NORTH': 'hi', 'INDIA_SOUTH': 'ta', 'INDIA_WEST': 'mr', 'INDIA_EAST': 'bn', 'INDIA_PAN': 'en',
+              // India per-language codes
+              'INDIA_NORTH_HI': 'hi', 'INDIA_NORTH_UR': 'ur', 'INDIA_NORTH_PA': 'pa',
+              'INDIA_SOUTH_TA': 'ta', 'INDIA_SOUTH_TE': 'te', 'INDIA_SOUTH_KN': 'kn', 'INDIA_SOUTH_ML': 'ml',
+              'INDIA_WEST_MR': 'mr', 'INDIA_WEST_GU': 'gu',
+              'INDIA_EAST_BN': 'bn', 'INDIA_EAST_OR': 'or',
+              'INDIA_PAN_EN': 'en',
               'SEA_MALAY': 'ms', 'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en',
               'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
             };
