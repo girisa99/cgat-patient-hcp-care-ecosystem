@@ -4,17 +4,12 @@
  * Manages state and passes to GenieCastConsolidatedTabs
  */
 
-import React, { useState, useCallback, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { VideoStyleType } from './VideoStyleCards';
 import type { ProductGallery } from '../MultiScreenshotGallery';
 import { toast } from 'sonner';
-import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { GenieCastConsolidatedTabs } from './GenieCastConsolidatedTabs';
 
-// Lazy load the heavy consolidated tabs to prevent render blocking
-const GenieCastConsolidatedTabs = React.lazy(() => 
-  import('./GenieCastConsolidatedTabs').then(m => ({ default: m.GenieCastConsolidatedTabs }))
-);
 type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish' | 'landing';
 
 // Storage keys for persistence
@@ -109,23 +104,16 @@ export const GenieCastHub: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <Suspense fallback={
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="ml-3 text-muted-foreground">Loading Genie Cast...</span>
-        </div>
-      }>
-        <GenieCastConsolidatedTabs
-          selectedVideoStyles={selectedVideoStyles}
-          onStylesChange={handleStylesChange}
-          screenshotGalleries={screenshotGalleries}
-          onGalleriesUpdated={handleGalleriesUpdated}
-          totalScreenshots={totalScreenshots}
-          onGenerate={handleGenerate}
-          isGenerating={isGenerating}
-          defaultTab="create"
-        />
-      </Suspense>
+      <GenieCastConsolidatedTabs
+        selectedVideoStyles={selectedVideoStyles}
+        onStylesChange={handleStylesChange}
+        screenshotGalleries={screenshotGalleries}
+        onGalleriesUpdated={handleGalleriesUpdated}
+        totalScreenshots={totalScreenshots}
+        onGenerate={handleGenerate}
+        isGenerating={isGenerating}
+        defaultTab="create"
+      />
     </div>
   );
 };

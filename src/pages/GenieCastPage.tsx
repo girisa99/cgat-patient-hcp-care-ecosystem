@@ -1,19 +1,18 @@
 /**
  * GENIE CAST PAGE
  * Dedicated standalone page for Genie Cast — first-class route.
- * Includes error boundary + load timeout to prevent infinite loading hangs.
+ * Includes error boundary to prevent crashes from propagating.
+ * 
+ * CRITICAL: No lazy loading — direct import to prevent loading failures.
  */
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React from 'react';
 import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
-import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { GenieCastHub } from '@/components/genie-admin/genie-cast/GenieCastHub';
 
-const GenieCastHub = React.lazy(() => 
-  import('@/components/genie-admin/genie-cast/GenieCastHub')
-);
-
-// Error boundary for catching render errors in lazy-loaded components
+// Error boundary for catching render errors
 class GenieCastErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; error?: Error }
@@ -45,44 +44,13 @@ class GenieCastErrorBoundary extends React.Component<
   }
 }
 
-// Loading fallback with timeout detection
-const LoadingFallback: React.FC = () => {
-  const [isStuck, setIsStuck] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsStuck(true), 12000); // 12s timeout
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isStuck) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="w-8 h-8 text-amber-500" />
-        <p className="text-sm text-muted-foreground">Loading is taking longer than expected.</p>
-        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-          <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Reload Page
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      <span className="ml-3 text-muted-foreground">Loading Genie Cast...</span>
-    </div>
-  );
-};
-
 const GenieCastPage: React.FC = () => {
   return (
     <GenieStudioLayout variant="sidebar" requireAuth={true}>
       <GenieCastErrorBoundary>
-        <Suspense fallback={<LoadingFallback />}>
-          <div className="p-2 sm:p-4 h-full min-h-[calc(100vh-4rem)]">
-            <GenieCastHub />
-          </div>
-        </Suspense>
+        <div className="p-2 sm:p-4 h-full min-h-[calc(100vh-4rem)]">
+          <GenieCastHub />
+        </div>
       </GenieCastErrorBoundary>
     </GenieStudioLayout>
   );
