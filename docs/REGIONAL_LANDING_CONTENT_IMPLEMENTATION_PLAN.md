@@ -138,19 +138,64 @@ Database-driven regional landing pages replacing hardcoded TypeScript constants,
 
 ---
 
-## Phase B1/B2 — Asset Schema & Pipeline
+## Phase B1 — Asset Schema ✅ COMPLETE
 
-**JSONB `assets` structure (planned):**
+### JSONB `assets` Structure (Locked)
+
+**File:** `src/types/regional-assets.ts`
+
 ```json
 {
-  "hero_image": { "url": "...", "alt": "...", "format": "webp" },
-  "hero_video": { "url": "...", "poster": "...", "duration": 30 },
-  "avatar_3d": { "model_url": "...", "animation": "idle" },
-  "og_image": { "url": "...", "width": 1200, "height": 630 },
-  "brand_logo": { "url": "...", "variant": "dark" }
+  "hero_image": {
+    "url": "...",
+    "alt": "...",
+    "format": "webp|jpg|png|avif",
+    "width": 1920,
+    "height": 1080,
+    "size_kb": 500
+  },
+  "hero_video": {
+    "url": "...",
+    "poster": "...",
+    "duration": 30,
+    "format": "mp4|webm|mov",
+    "auto_play": true,
+    "loop": true
+  },
+  "avatar_3d": {
+    "model_url": "...",
+    "animation": "idle|talking|gesturing",
+    "format": "glb|gltf|fbx",
+    "has_morphs": true
+  },
+  "og_image": {
+    "url": "...",
+    "width": 1200,
+    "height": 630,
+    "alt": "..."
+  },
+  "brand_logo": {
+    "url": "...",
+    "variant": "dark|light|mono|full-color",
+    "format": "svg|png|webp"
+  }
 }
 ```
-*Not locked yet — will finalize in Phase B1.*
+
+### Key Principles
+- **URL-Only Storage**: All asset columns store CDN/blob URLs, NEVER binary data
+- **Validation**: TypeScript types + runtime validators ensure schema compliance
+- **Extensibility**: Additional assets can be added to the collection without schema migration
+- **Metadata**: Each asset includes format, dimensions, and source tracking for analytics
+
+### Included Utilities
+- `validateRegionalAssets()` — Type guard for JSONB validation
+- `createImageAsset()`, `createVideoAsset()`, `createOGImageAsset()` — Builder functions
+- `mergeAssets()` — Fallback asset layering (region → parent → base)
+
+---
+
+## Phase B2 — Asset Pipeline
 
 ---
 
