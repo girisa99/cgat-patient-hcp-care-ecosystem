@@ -84,6 +84,14 @@ const REGION_SLUG_TO_CODES: Record<RegionSlug, string[]> = {
    apac: ['CJK_PAN_EN', 'CJK_CN', 'CJK_HK', 'CJK_TW', 'CJK_JP', 'CJK_KR', 'SEA_PAN_EN', 'SEA_THAI', 'SEA_VIET', 'SEA_KHMER', 'SEA_LAO', 'SEA_MYAN', 'SEA_ID', 'SEA_MY', 'SEA_PH', 'apac'],
    latam: ['LATAM_BRAZIL', 'LATAM_MEXICO', 'LATAM_ANDEAN', 'LATAM_CONESUR', 'LATAM_CARIB', 'latam'],
    caribbean: ['LATAM_CARIB', 'caribbean'],
+   // P0: Oceania & Turkey
+   oceania: ['OCEANIA_AU', 'OCEANIA_NZ', 'oceania'],
+   turkey: ['TRK_TR', 'turkey'],
+   pakistan: ['PKG_PK', 'pakistan'],
+   bangladesh: ['BNG_BD', 'bangladesh'],
+   // P1: Eastern Europe, Central Asia
+   eastern_europe: ['EU_UKRAINE', 'EU_BALKANS', 'EU_CAUCASUS', 'eastern_europe'],
+   central_asia: ['ASIA_CENTRAL_KZ', 'ASIA_CENTRAL_UZ', 'ASIA_CENTRAL_AZ', 'ASIA_CENTRAL_AM', 'ASIA_CENTRAL_GE', 'central_asia'],
  };
 
 export interface LandingNarrationScript {
