@@ -287,6 +287,43 @@ const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'CJK_KR', name: 'South Korea (한국어)', flag: '🇰🇷' },
     ],
   },
+  // P0: Oceania & Turkey
+  {
+    groupCode: 'OCEANIA', groupName: 'Oceania', groupFlag: '🌏',
+    children: [
+      { code: 'OCEANIA_AU', name: 'Australia', flag: '🇦🇺' },
+      { code: 'OCEANIA_NZ', name: 'New Zealand', flag: '🇳🇿' },
+    ],
+  },
+  { groupCode: 'TURKEY', groupName: 'Turkey (Türkçe)', groupFlag: '🇹🇷', children: [] },
+  // P1: Extended Caribbean
+  {
+    groupCode: 'CARIBBEAN', groupName: 'Caribbean', groupFlag: '🌴',
+    children: [
+      { code: 'CARIBBEAN_EN', name: 'English Caribbean (Jamaica, T&T, Bahamas)', flag: '🇯🇲' },
+      { code: 'CARIBBEAN_FR', name: 'French Caribbean (Haiti, Martinique)', flag: '🇭🇹' },
+    ],
+  },
+  // P1: Extended Eastern Europe & Caucasus (flat — added separately from EU core)
+  {
+    groupCode: 'EURASIA', groupName: 'Eastern Europe & Caucasus', groupFlag: '🌍',
+    children: [
+      { code: 'EU_UKRAINE', name: 'Ukraine (Українська)', flag: '🇺🇦' },
+      { code: 'EU_BALKANS', name: 'Balkans (Serbia, Bulgaria, Croatia)', flag: '🇷🇸' },
+      { code: 'EU_CAUCASUS', name: 'Caucasus (Georgia, Armenia)', flag: '🇬🇪' },
+    ],
+  },
+  // P1: Central Asia
+  {
+    groupCode: 'CENTRAL_ASIA', groupName: 'Central Asia', groupFlag: '🌏',
+    children: [
+      { code: 'ASIA_CENTRAL_KZ', name: 'Kazakhstan (Қазақ)', flag: '🇰🇿' },
+      { code: 'ASIA_CENTRAL_UZ', name: 'Uzbekistan (Oʻzbek)', flag: '🇺🇿' },
+      { code: 'ASIA_CENTRAL_AZ', name: 'Azerbaijan (Azərbaycan)', flag: '🇦🇿' },
+      { code: 'ASIA_CENTRAL_AM', name: 'Armenia (Հայերեն)', flag: '🇦🇲' },
+      { code: 'ASIA_CENTRAL_GE', name: 'Georgia (ქართული)', flag: '🇬🇪' },
+    ],
+  },
 ];
 
 // Flatten for backward compatibility — includes parent-level (lowercase), sub-region codes, AND per-country codes
