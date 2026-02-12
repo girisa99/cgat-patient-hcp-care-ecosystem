@@ -17,6 +17,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useRegionalLandingNarration } from '@/hooks/useRegionalLandingNarration';
 import { useGeoNarrationResolver } from '@/hooks/useGeoNarrationResolver';
+import { useRegionalLandingContent } from '@/hooks/useRegionalLandingContent';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -1178,6 +1179,14 @@ const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => {
 // ============================================
 // MAIN COMPONENT — Unified Landing Page
 // ============================================
+// Slug → DB region code mapping
+const SLUG_TO_REGION_CODE: Record<string, string> = {
+  nam: 'NAM', europe: 'WESTERN', mena: 'MENA', india: 'IND',
+  africa: 'AFR', apac: 'APAC', latam: 'LATAM', caribbean: 'CARIB',
+  oceania: 'WESTERN', turkey: 'TURKEY', pakistan: 'IND',
+  bangladesh: 'IND', eastern_europe: 'EUR_EASTERN', central_asia: 'MENA',
+};
+
 export const RegionalLandingPage: React.FC = () => {
   const { region } = useParams<{ region: string }>();
   const [searchParams] = useSearchParams();
@@ -1188,17 +1197,47 @@ export const RegionalLandingPage: React.FC = () => {
   const regionSlug = region as RegionSlug;
   const config = REGIONAL_CONFIGS[regionSlug];
 
+  // Phase A3: DB-driven content with fallback to constants
+  const dbRegionCode = SLUG_TO_REGION_CODE[regionSlug] || 'WESTERN';
+  const { content: dbContent, variants: dbVariants, fallbackTier, deviceType, isRTL: dbIsRTL } = useRegionalLandingContent(dbRegionCode);
+
   if (!config) {
     // Auto-detect and redirect
     const detected = detectRegionFromTimezone();
     return <Navigate to={`/genie-landing/${detected}`} replace />;
   }
 
+  // Merge DB content over hardcoded config when available (DB wins)
+  const mergedConfig: RegionalConfig = dbContent ? {
+    ...config,
+    hero: {
+      ...config.hero,
+      englishHeadline: dbContent.headline || config.hero.englishHeadline,
+      englishSubheadline: dbContent.subheadline || config.hero.englishSubheadline,
+      isRTL: dbContent.rtl_enabled ?? config.hero.isRTL,
+    },
+    cta: {
+      ...config.cta,
+      primary: dbContent.cta_primary_text || config.cta.primary,
+      secondary: dbContent.cta_secondary_text || config.cta.secondary,
+    },
+    welcomeScript: dbContent.welcome_script || config.welcomeScript,
+  } : config;
+
+  // Use device-aware variants for mobile headlines when DB content exists
+  const heroHeadline = deviceType === 'mobile' && dbVariants
+    ? dbVariants.headlineMobile
+    : mergedConfig.hero.englishHeadline;
+
+  const heroSubheadline = deviceType === 'mobile' && dbVariants
+    ? dbVariants.subheadlineMobile
+    : mergedConfig.hero.englishSubheadline;
+
   return (
-    <main className={`min-h-screen bg-background text-foreground ${config.hero.isRTL ? 'rtl' : 'ltr'}`}>
-      <RegionalSEOHead config={config} currentSlug={regionSlug} />
-      <RegionalNavbar config={config} />
-      <HeroCarousel config={config} productContext={productContext} regionSlug={regionSlug} />
+    <main className={`min-h-screen bg-background text-foreground ${mergedConfig.hero.isRTL ? 'rtl' : 'ltr'}`}>
+      <RegionalSEOHead config={mergedConfig} currentSlug={regionSlug} />
+      <RegionalNavbar config={mergedConfig} />
+      <HeroCarousel config={mergedConfig} productContext={productContext} regionSlug={regionSlug} />
       <RegionNavigator currentSlug={regionSlug} />
 
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
@@ -1226,7 +1265,7 @@ export const RegionalLandingPage: React.FC = () => {
       </section>
 
       {/* Industry Showcases — See It In Action */}
-      <IndustryShowcases region={regionSlug} config={config} />
+      <IndustryShowcases region={regionSlug} config={mergedConfig} />
 
       {/* Regional Pricing */}
       <section id="pricing">
@@ -1236,7 +1275,7 @@ export const RegionalLandingPage: React.FC = () => {
       {/* Dogfooding Proof */}
       <DogfoodingProof />
       
-      <RegionalCTAFooter config={config} />
+      <RegionalCTAFooter config={mergedConfig} />
     </main>
   );
 };

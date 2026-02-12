@@ -17,7 +17,7 @@ Database-driven regional landing pages replacing hardcoded TypeScript constants,
 |-------|------|-------|--------|------------|
 | **A1** | DB Foundation | `regional_landing_content` table + RLS + indexes | ✅ DONE | — |
 | **A2** | Hook + Fallback + Device-Aware | `useRegionalLandingContent` hook with 3-tier fallback + device variants + mobile caching | ✅ DONE | A1 |
-| **A3** | Component Integration | Wire `RegionalLandingPage.tsx` to read from DB instead of constants | ⏳ | A2 |
+| **A3** | Component Integration | Wire `RegionalLandingPage.tsx` to read from DB instead of constants | ✅ DONE | A2 |
 | **B1** | Asset Schema | Define JSONB structure for images, videos, 3D, avatars per region | ⏳ | A1 |
 | **B2** | Asset Pipeline | Upload/CDN integration, asset management UI | ⏳ | B1 |
 | **C1** | Content QA Agent | Agentic AI to validate brand tone, missing fields, SEO | ⏳ | A3 |
