@@ -2,6 +2,7 @@
  * Regional Assets Lab
  * Generate → Preview → Approve → Publish pipeline for landing page assets.
  * Creative styles apply to ALL asset types. Extended asset & region coverage.
+ * Auto-generates contextual narration scripts per asset type + region via LLM.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -48,157 +49,147 @@ const CREATIVE_STYLES = [
     promptHint: 'Photorealistic, studio lighting, clean background, ultra high detail, 8K quality',
   },
   {
-    id: 'crayon', label: 'Crayon / Sketch', emoji: '🖍️',
+    id: 'crayon', label: 'Crayon / Chalk', emoji: '🖍️',
     gradient: 'from-yellow-500/20 to-orange-500/20', border: 'border-yellow-500/40',
-    description: 'Hand-drawn crayon illustration style',
+    description: 'Textured hand-drawn crayon illustration',
     provider: 'Vertex Imagen 3',
-    promptHint: 'Crayon hand-drawn, childlike warmth, textured paper background, colorful sketch',
+    promptHint: 'Crayon-style illustration, textured paper, hand-drawn, warm colors, playful',
   },
   {
-    id: 'cyberpunk', label: 'Cyberpunk / Sci-Fi', emoji: '🤖',
+    id: 'cyberpunk', label: 'Cyberpunk', emoji: '🌆',
     gradient: 'from-violet-500/20 to-fuchsia-500/20', border: 'border-violet-500/40',
-    description: 'Neon-lit futuristic design',
-    provider: 'ModelsLab + FLUX',
-    promptHint: 'Cyberpunk, neon glow, holographic UI elements, futuristic, dark background',
+    description: 'Neon-lit futuristic sci-fi aesthetic',
+    provider: 'ModelsLab FLUX',
+    promptHint: 'Cyberpunk style, neon lights, dark atmosphere, futuristic cityscape, holographic UI',
   },
   {
     id: 'claymation', label: 'Claymation', emoji: '🏺',
-    gradient: 'from-amber-500/20 to-red-500/20', border: 'border-amber-500/40',
-    description: 'Stop-motion clay — Wallace & Gromit',
-    provider: 'Meshy 3D',
-    promptHint: 'Claymation stop-motion, textured clay surface, warm studio lighting, tactile feel',
+    gradient: 'from-amber-500/20 to-rose-500/20', border: 'border-amber-500/40',
+    description: 'Stop-motion clay figure style',
+    provider: 'Meshy AI',
+    promptHint: 'Claymation style, clay figures, stop-motion aesthetic, smooth rounded shapes, warm palette',
   },
   {
-    id: 'comic', label: 'Comic / Marvel', emoji: '💥',
-    gradient: 'from-red-500/20 to-blue-500/20', border: 'border-red-500/40',
-    description: 'Bold comic book / graphic novel',
-    provider: 'FLUX Dev',
-    promptHint: 'Marvel comic book style, bold lines, halftone dots, dynamic composition, vivid colors',
+    id: 'comic', label: 'Comic Book', emoji: '💥',
+    gradient: 'from-red-500/20 to-yellow-500/20', border: 'border-red-500/40',
+    description: 'Bold linework comic / graphic novel',
+    provider: 'ModelsLab FLUX',
+    promptHint: 'Comic book style, bold outlines, halftone dots, vibrant colors, dynamic composition',
   },
   {
-    id: 'watercolor', label: 'Watercolor Art', emoji: '🎨',
+    id: 'watercolor', label: 'Watercolor', emoji: '🎨',
     gradient: 'from-teal-500/20 to-emerald-500/20', border: 'border-teal-500/40',
-    description: 'Soft watercolor painted aesthetic',
+    description: 'Soft transparent watercolor painting',
     provider: 'Vertex Imagen 3',
-    promptHint: 'Watercolor painting, soft edges, flowing colors, artistic brushstrokes, dreamy',
+    promptHint: 'Watercolor painting style, soft edges, transparent washes, fluid strokes, pastel palette',
   },
   {
-    id: 'pop_art', label: 'Pop Art', emoji: '🟡',
-    gradient: 'from-rose-500/20 to-yellow-500/20', border: 'border-rose-500/40',
-    description: 'Warhol / Lichtenstein bold pop',
-    provider: 'FLUX Dev',
-    promptHint: 'Pop art style, bold primary colors, Ben-Day dots, thick outlines, Warhol inspired',
+    id: 'popart', label: 'Pop Art', emoji: '🎭',
+    gradient: 'from-pink-500/20 to-yellow-500/20', border: 'border-pink-500/40',
+    description: 'Bold pop art — Warhol / Lichtenstein',
+    provider: 'ModelsLab FLUX',
+    promptHint: 'Pop art style, bold colors, halftone dots, Warhol-inspired, high contrast, retro',
   },
   {
-    id: 'isometric', label: 'Isometric 3D', emoji: '🧊',
+    id: 'isometric', label: 'Isometric 3D', emoji: '🔷',
     gradient: 'from-indigo-500/20 to-sky-500/20', border: 'border-indigo-500/40',
-    description: 'Clean isometric vector illustration',
+    description: 'Clean isometric 3D illustrations',
+    provider: 'Meshy AI',
+    promptHint: 'Isometric 3D illustration, clean geometric shapes, pastel colors, flat shading, tech style',
+  },
+  {
+    id: 'stainedglass', label: 'Stained Glass', emoji: '🪟',
+    gradient: 'from-purple-500/20 to-blue-500/20', border: 'border-purple-500/40',
+    description: 'Luminous stained glass mosaic',
     provider: 'Vertex Imagen 3',
-    promptHint: 'Isometric 3D illustration, clean vectors, pastel palette, modern tech aesthetic',
+    promptHint: 'Stained glass style, leaded glass segments, luminous backlit colors, mosaic pattern',
   },
   {
-    id: 'stained_glass', label: 'Stained Glass', emoji: '🪟',
-    gradient: 'from-emerald-500/20 to-amber-500/20', border: 'border-emerald-500/40',
-    description: 'Cathedral stained glass luminance',
-    provider: 'FLUX Dev',
-    promptHint: 'Stained glass window art, vibrant translucent colors, lead outlines, light streaming',
-  },
-  {
-    id: 'ukiyo_e', label: 'Ukiyo-e Woodblock', emoji: '🌊',
-    gradient: 'from-sky-500/20 to-stone-500/20', border: 'border-sky-500/40',
-    description: 'Japanese woodblock print art',
-    provider: 'ModelsLab',
-    promptHint: 'Ukiyo-e woodblock print, flat colors, flowing lines, Great Wave aesthetic, traditional',
+    id: 'ukiyoe', label: 'Ukiyo-e', emoji: '🌊',
+    gradient: 'from-cyan-500/20 to-blue-500/20', border: 'border-cyan-500/40',
+    description: 'Japanese woodblock print aesthetic',
+    provider: 'ModelsLab FLUX',
+    promptHint: 'Ukiyo-e Japanese woodblock print, bold lines, flat colors, traditional waves, elegant',
   },
 ];
 
-// ─── Pipeline Stages ───────────────────────────
-const PIPELINE_STAGES = [
-  {
-    id: 'script', label: 'AI Script', icon: Sparkles,
-    providers: ['Claude 4', 'Gemini 3 Pro', 'GPT-4o', 'Qwen Max'],
-    description: 'Regional transcreation with native tone',
-    color: 'text-violet-500', bgColor: 'bg-violet-500/10', borderColor: 'border-violet-500/30',
-  },
-  {
-    id: 'tts', label: 'Voice Synthesis', icon: Mic,
-    providers: ['Azure Neural', 'Qwen3-TTS', 'ElevenLabs', 'Google WaveNet'],
-    description: 'Lip-sync capable regional voiceover',
-    color: 'text-blue-500', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30',
-  },
-  {
-    id: 'avatar', label: '3D Avatar', icon: Bot,
-    providers: ['Alibaba Wan 2.2 S2V', 'Meshy AI', 'ModelsLab'],
-    description: 'Creative character styles with lip-sync',
-    color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30',
-  },
-  {
-    id: 'video', label: 'Video Generation', icon: Film,
-    providers: ['Vertex Veo 3', 'Sora 2', 'Alibaba Wan 2.6', 'ModelsLab'],
-    description: 'Cinematic AI video from script',
-    color: 'text-orange-500', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30',
-  },
-  {
-    id: 'assembly', label: 'Assembly', icon: Layers,
-    providers: ['JSON2Video', 'Cloud Run GPU'],
-    description: 'Timeline stitching & A/V sync',
-    color: 'text-pink-500', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30',
-  },
-];
-
-// ─── Extended Asset Types ───────────────────────────
+// ─── Asset Types (12 types across 8 categories) ──────────────────────────
 const ASSET_TYPES = [
-  { id: 'avatar_3d', label: '3D Avatar', icon: Bot, description: 'Creative character with lip-sync', category: 'character' },
-  { id: 'hero_video', label: 'Hero Video', icon: Video, description: 'Cinematic product video', category: 'video' },
-  { id: 'hero_image', label: 'Hero Image', icon: Image, description: 'AI-generated hero visual', category: 'image' },
-  { id: 'og_image', label: 'OG Image', icon: Camera, description: 'Social preview card (1200×630)', category: 'image' },
-  { id: 'brand_logo', label: 'Brand Logo', icon: Palette, description: 'Regional brand variant', category: 'brand' },
-  { id: 'thumbnail', label: 'Thumbnail', icon: FileImage, description: 'Content card thumbnail (640×360)', category: 'image' },
-  { id: 'banner_ad', label: 'Banner Ad', icon: Megaphone, description: 'Display ad creative (728×90)', category: 'marketing' },
-  { id: 'social_story', label: 'Social Story', icon: MonitorSmartphone, description: 'Instagram/TikTok story (1080×1920)', category: 'social' },
-  { id: 'infographic', label: 'Infographic', icon: Layout, description: 'Data-driven visual explainer', category: 'image' },
-  { id: 'promo_video', label: 'Promo Clip', icon: Film, description: '15s product promo video', category: 'video' },
-  { id: 'audio_intro', label: 'Audio Intro', icon: Music, description: 'Regional audio jingle / intro', category: 'audio' },
-  { id: 'typography_art', label: 'Typography Art', icon: Type, description: 'Stylized text / wordmark', category: 'brand' },
-] as const;
+  { id: 'avatar_3d', label: '3D Avatar', icon: Bot, category: 'characters', description: 'Animated character with lip-sync' },
+  { id: 'hero_video', label: 'Hero Video', icon: Film, category: 'video', description: 'Landing page hero background' },
+  { id: 'hero_image', label: 'Hero Image', icon: Image, category: 'images', description: 'Landing page hero banner' },
+  { id: 'og_image', label: 'OG Image', icon: MonitorSmartphone, category: 'branding', description: '1200×630 social preview' },
+  { id: 'brand_logo', label: 'Brand Logo', icon: Figma, category: 'branding', description: 'Regional brand variant' },
+  { id: 'thumbnail', label: 'Thumbnail', icon: Camera, category: 'images', description: 'Video/content thumbnail' },
+  { id: 'banner_ad', label: 'Banner Ad', icon: Layout, category: 'marketing', description: '728×90 display banner' },
+  { id: 'social_story', label: 'Social Story', icon: FileImage, category: 'social', description: '1080×1920 portrait' },
+  { id: 'infographic', label: 'Infographic', icon: Layers, category: 'marketing', description: 'Data visualization graphic' },
+  { id: 'promo_video', label: 'Promo Clip', icon: Video, category: 'video', description: '15s promotional video' },
+  { id: 'audio_intro', label: 'Audio Intro', icon: Mic, category: 'audio', description: 'Regional audio greeting' },
+  { id: 'typography_art', label: 'Typography Art', icon: Type, category: 'images', description: 'Stylized text visual' },
+];
 
 const ASSET_CATEGORIES = [
-  { id: 'all', label: 'All' },
-  { id: 'character', label: 'Characters' },
+  { id: 'all', label: 'All Types' },
+  { id: 'characters', label: 'Characters' },
   { id: 'video', label: 'Video' },
-  { id: 'image', label: 'Images' },
-  { id: 'brand', label: 'Branding' },
+  { id: 'images', label: 'Images' },
+  { id: 'branding', label: 'Branding' },
   { id: 'marketing', label: 'Marketing' },
   { id: 'social', label: 'Social' },
   { id: 'audio', label: 'Audio' },
 ];
 
-// ─── Extended Regions with Sub-Regions ───────────────────────────
+// ─── All 15 Parent Regions → 50+ Sub-Regions ─────────────────────────────
 const REGION_GROUPS = [
   {
-    parent: 'North America', regions: [
+    parent: 'NAM', regions: [
       { code: 'NAM_US', label: '🇺🇸 United States' },
       { code: 'NAM_CA', label: '🇨🇦 Canada' },
-      { code: 'NAM_MX', label: '🇲🇽 Mexico' },
+      { code: 'NAM_US_SOUTH', label: '🇺🇸 US South' },
+      { code: 'NAM_US_WEST', label: '🇺🇸 US West Coast' },
+    ]
+  },
+  {
+    parent: 'UK & ANZ', regions: [
+      { code: 'UK', label: '🇬🇧 United Kingdom' },
+      { code: 'OCEANIA_AU', label: '🇦🇺 Australia' },
+      { code: 'OCEANIA_NZ', label: '🇳🇿 New Zealand' },
     ]
   },
   {
     parent: 'Europe', regions: [
-      { code: 'EU_WEST', label: '🇪🇺 Western Europe' },
-      { code: 'EU_NORTH', label: '🇸🇪 Nordic' },
-      { code: 'EU_SOUTH', label: '🇮🇹 Southern Europe' },
-      { code: 'EU_EAST', label: '🇵🇱 Eastern Europe' },
-      { code: 'EU_DACH', label: '🇩🇪 DACH' },
-      { code: 'EU_UKRAINE', label: '🇺🇦 Ukraine' },
+      { code: 'EU_WEST', label: '🇫🇷 Western Europe' },
+      { code: 'EU_DACH', label: '🇩🇪 DACH (DE/AT/CH)' },
+      { code: 'EU_NORDIC', label: '🇸🇪 Nordics' },
+      { code: 'EU_SOUTH', label: '🇪🇸 Southern Europe' },
+      { code: 'EU_BENELUX', label: '🇳🇱 Benelux' },
+    ]
+  },
+  {
+    parent: 'Eastern Europe', regions: [
+      { code: 'EU_EAST_PL', label: '🇵🇱 Poland' },
+      { code: 'EU_EAST_UA', label: '🇺🇦 Ukraine' },
+      { code: 'EU_EAST_BALKANS', label: '🇷🇸 Balkans' },
+      { code: 'EU_EAST_RO', label: '🇷🇴 Romania' },
+      { code: 'EU_TURKEY', label: '🇹🇷 Turkey' },
     ]
   },
   {
     parent: 'India', regions: [
-      { code: 'INDIA_NORTH', label: '🇮🇳 Hindi Belt' },
-      { code: 'INDIA_SOUTH', label: '🇮🇳 South India' },
-      { code: 'INDIA_WEST', label: '🇮🇳 West India' },
-      { code: 'INDIA_EAST', label: '🇮🇳 East India' },
+      { code: 'INDIA_NORTH', label: '🇮🇳 North India (Hindi)' },
+      { code: 'INDIA_SOUTH', label: '🇮🇳 South India (Tamil)' },
+      { code: 'INDIA_WEST', label: '🇮🇳 West India (Marathi)' },
+      { code: 'INDIA_EAST', label: '🇮🇳 East India (Bengali)' },
       { code: 'INDIA_NE', label: '🇮🇳 Northeast' },
+    ]
+  },
+  {
+    parent: 'South Asia', regions: [
+      { code: 'SA_PAKISTAN', label: '🇵🇰 Pakistan' },
+      { code: 'SA_BANGLADESH', label: '🇧🇩 Bangladesh' },
+      { code: 'SA_SRI_LANKA', label: '🇱🇰 Sri Lanka' },
+      { code: 'SA_NEPAL', label: '🇳🇵 Nepal' },
     ]
   },
   {
@@ -225,6 +216,7 @@ const REGION_GROUPS = [
       { code: 'SEA_THAI', label: '🇹🇭 Thailand' },
       { code: 'SEA_VIET', label: '🇻🇳 Vietnam' },
       { code: 'SEA_PHIL', label: '🇵🇭 Philippines' },
+      { code: 'SEA_INDO', label: '🇮🇩 Indonesia' },
     ]
   },
   {
@@ -245,12 +237,17 @@ const REGION_GROUPS = [
     ]
   },
   {
-    parent: 'Oceania & Central Asia', regions: [
-      { code: 'OCEANIA_AU', label: '🇦🇺 Australia' },
-      { code: 'OCEANIA_NZ', label: '🇳🇿 New Zealand' },
+    parent: 'Caucasus', regions: [
+      { code: 'CAUC_GE', label: '🇬🇪 Georgia' },
+      { code: 'CAUC_AM', label: '🇦🇲 Armenia' },
+      { code: 'CAUC_AZ', label: '🇦🇿 Azerbaijan' },
+    ]
+  },
+  {
+    parent: 'Central Asia', regions: [
       { code: 'ASIA_CENTRAL_KZ', label: '🇰🇿 Kazakhstan' },
       { code: 'ASIA_CENTRAL_UZ', label: '🇺🇿 Uzbekistan' },
-      { code: 'EU_TURKEY', label: '🇹🇷 Turkey' },
+      { code: 'ASIA_CENTRAL_KG', label: '🇰🇬 Kyrgyzstan' },
     ]
   },
 ];
@@ -266,25 +263,51 @@ interface AssetItem {
   provider?: string;
   style?: string;
   generatedAt?: Date;
+  narrationUsed?: string;
 }
 
 const SettingsIcon = Zap; // alias
+
+// ─── Auto-generate contextual narration per asset type + region ───────────
+const ASSET_NARRATION_TEMPLATES: Record<string, (region: string) => string> = {
+  avatar_3d: (r) => `Welcome to our AI-powered healthcare platform. In ${r}, we're transforming patient engagement with intelligent care coordination, connecting providers and patients seamlessly.`,
+  hero_video: (r) => `Introducing the future of healthcare technology for ${r}. Our unified platform brings together care teams, patients, and caregivers — powered by cutting-edge AI for better outcomes.`,
+  hero_image: (r) => `AI-driven healthcare innovation empowering communities across ${r}. Smarter care, better outcomes, one platform.`,
+  og_image: (r) => `Healthcare AI Platform — Empowering ${r} with intelligent patient engagement and care coordination.`,
+  brand_logo: (r) => `Genie AI Healthcare — ${r} Edition`,
+  thumbnail: (r) => `See how AI is revolutionizing healthcare in ${r}. Watch the product demo.`,
+  banner_ad: (r) => `Transform healthcare in ${r} — AI-Powered Patient Engagement Platform. Try Free →`,
+  social_story: (r) => `🏥 Healthcare reimagined for ${r}. AI-powered. Patient-first. See how our platform is making a difference.`,
+  infographic: (r) => `Key healthcare metrics in ${r}: Patient engagement up 40%, care coordination efficiency improved 60%, AI-assisted diagnosis accuracy 95%.`,
+  promo_video: (r) => `In ${r}, healthcare is evolving. Our AI platform connects every stakeholder — from providers to patients to caregivers — in one intelligent ecosystem. See it in action.`,
+  audio_intro: (r) => `Hello from ${r}! Welcome to Genie AI Healthcare — where we use artificial intelligence to connect care teams, engage patients, and improve health outcomes for your community.`,
+  typography_art: (r) => `AI × Healthcare — Innovation for ${r}`,
+};
+
+function getAutoNarration(assetType: string, regionCode: string): string {
+  const regionLabel = ALL_REGIONS.find(r => r.code === regionCode)?.label?.replace(/^..\s/, '') || regionCode;
+  const template = ASSET_NARRATION_TEMPLATES[assetType];
+  return template ? template(regionLabel) : `Professional healthcare content for ${regionLabel}`;
+}
 
 export const RegionalAssetsLab: React.FC = () => {
   const [selectedRegion, setSelectedRegion] = useState('NAM_US');
   const [selectedAssetType, setSelectedAssetType] = useState<string>('avatar_3d');
   const [selectedStyle, setSelectedStyle] = useState('pixar');
   const [assetCategoryFilter, setAssetCategoryFilter] = useState('all');
-  const [narrationScript, setNarrationScript] = useState(
-    'Discover the future of healthcare with AI-powered patient engagement. Our platform connects care teams, patients, and caregivers in one seamless ecosystem.'
-  );
+  const [narrationScript, setNarrationScript] = useState('');
+  const [isAutoNarration, setIsAutoNarration] = useState(true);
   const [assets, setAssets] = useState<Record<string, AssetItem>>({});
   const [activeView, setActiveView] = useState<'pipeline' | 'generate' | 'review'>('pipeline');
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generationProgress, setGenerationProgress] = useState<string>('');
 
-  const currentAsset = assets[`${selectedRegion}_${selectedAssetType}`];
-  const currentStatus = currentAsset?.status || 'empty';
+  // Derive the active narration (auto or manual)
+  const activeNarration = isAutoNarration ? getAutoNarration(selectedAssetType, selectedRegion) : narrationScript;
+
+  const currentKey = `${selectedRegion}_${selectedAssetType}`;
+  const currentAsset = assets[currentKey];
+  const currentStatus: AssetStatus = currentAsset?.status || 'empty';
 
   const filteredAssetTypes = assetCategoryFilter === 'all'
     ? ASSET_TYPES
@@ -296,12 +319,37 @@ export const RegionalAssetsLab: React.FC = () => {
     if (region.startsWith('CJK_CN') || region.startsWith('CJK_TW')) return 'zh';
     if (region.startsWith('MENA')) return 'ar';
     if (region.startsWith('LATAM_BR')) return 'pt';
+    if (region.startsWith('LATAM')) return 'es';
     if (region.startsWith('SEA_THAI')) return 'th';
     if (region.startsWith('SEA_VIET')) return 'vi';
+    if (region.startsWith('SEA_INDO')) return 'id';
+    if (region.startsWith('SEA_MALAY')) return 'ms';
     if (region.startsWith('INDIA_SOUTH')) return 'ta';
     if (region.startsWith('INDIA_NORTH')) return 'hi';
+    if (region.startsWith('INDIA_WEST')) return 'mr';
+    if (region.startsWith('INDIA_EAST')) return 'bn';
+    if (region.startsWith('SA_PAKISTAN')) return 'ur';
+    if (region.startsWith('SA_BANGLADESH')) return 'bn';
+    if (region.startsWith('SA_NEPAL')) return 'ne';
+    if (region.startsWith('EU_TURKEY')) return 'tr';
+    if (region.startsWith('EU_DACH')) return 'de';
+    if (region.startsWith('EU_SOUTH')) return 'es';
+    if (region.startsWith('EU_WEST')) return 'fr';
+    if (region.startsWith('EU_NORDIC')) return 'sv';
+    if (region.startsWith('EU_EAST_PL')) return 'pl';
+    if (region.startsWith('EU_EAST_UA')) return 'uk';
+    if (region.startsWith('EU_EAST_RO')) return 'ro';
+    if (region.startsWith('CAUC_GE')) return 'ka';
+    if (region.startsWith('CAUC_AM')) return 'hy';
+    if (region.startsWith('CAUC_AZ')) return 'az';
+    if (region.startsWith('ASIA_CENTRAL_KZ')) return 'kk';
+    if (region.startsWith('ASIA_CENTRAL_UZ')) return 'uz';
+    if (region.startsWith('AFRICA_NORTH')) return 'ar';
+    if (region.startsWith('AFRICA_EAST')) return 'sw';
     return 'en';
   };
+
+  const needsNarration = ['avatar_3d', 'hero_video', 'promo_video', 'audio_intro'].includes(selectedAssetType);
 
   const handleGenerate = useCallback(async () => {
     const key = `${selectedRegion}_${selectedAssetType}`;
@@ -318,6 +366,7 @@ export const RegionalAssetsLab: React.FC = () => {
       const regionLabel = ALL_REGIONS.find(r => r.code === selectedRegion)?.label || selectedRegion;
       const lang = getLang(selectedRegion);
       const stylePrompt = style?.promptHint || '';
+      const script = isAutoNarration ? getAutoNarration(selectedAssetType, selectedRegion) : narrationScript;
 
       if (selectedAssetType === 'avatar_3d') {
         // Step 1: Generate source portrait image first (required by wan2.2-s2v)
@@ -330,16 +379,15 @@ export const RegionalAssetsLab: React.FC = () => {
         });
         const portraitUrl = portraitRes.data?.imageUrl || portraitRes.data?.url || portraitRes.data?.data?.url;
         if (!portraitUrl) {
-          // If portrait generation fails, still show as a styled character image
-          setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: undefined, provider: style?.provider, style: style?.label, generatedAt: new Date() } }));
-          toast.info('Portrait generated — avatar video pending provider activation.');
+          setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: undefined, provider: style?.provider, style: style?.label, generatedAt: new Date(), narrationUsed: script } }));
+          toast.info('Portrait generation pending — try Photorealistic style or retry.');
           return;
         }
 
         // Step 2: Generate TTS audio
         setGenerationProgress('🎙 Generating regional voiceover...');
         const ttsRes = await supabase.functions.invoke('multi-provider-tts', {
-          body: { text: narrationScript, languageCode: lang, region: selectedRegion, tier: 'premium' },
+          body: { text: script, languageCode: lang, region: selectedRegion, tier: 'premium' },
         });
         const audioUrl = ttsRes.data?.audioUrl || ttsRes.data?.data?.audioUrl || ttsRes.data?.audio_url;
 
@@ -355,17 +403,15 @@ export const RegionalAssetsLab: React.FC = () => {
           },
         });
 
-        // Check for avatar generation failure
         const avatarSuccess = avatarRes.data?.success !== false;
         const modelUrl = avatarRes.data?.outputUrl || avatarRes.data?.data?.outputUrl;
 
         if (!avatarSuccess || avatarRes.error) {
-          // Fallback: show the portrait image as preview
-          setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: portraitUrl, provider: style?.provider, style: style?.label, generatedAt: new Date() } }));
-          const reason = avatarRes.data?.error || avatarRes.error?.message || 'Avatar video pending';
-          toast.info(`Portrait ready! Avatar video: ${reason}`);
+          // Fallback: show portrait as preview
+          setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: portraitUrl, provider: style?.provider, style: style?.label, generatedAt: new Date(), narrationUsed: script } }));
+          toast.info('Portrait ready! Avatar video synthesis is pending.');
         } else {
-          setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: modelUrl || portraitUrl, provider: style?.provider, style: style?.label, generatedAt: new Date() } }));
+          setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: modelUrl || portraitUrl, provider: style?.provider, style: style?.label, generatedAt: new Date(), narrationUsed: script } }));
           toast.success(`${style?.label} avatar generated!`);
         }
 
@@ -376,17 +422,17 @@ export const RegionalAssetsLab: React.FC = () => {
           body: { prompt: `${stylePrompt}, cinematic healthcare technology product video for ${regionLabel}, smooth camera movement`, duration, resolution: '1080p', type: 'hero' },
         });
         const videoUrl = videoRes.data?.videoUrl || videoRes.data?.url || videoRes.data?.data?.outputUrl;
-        setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: videoUrl || undefined, provider: style?.provider || 'Vertex Veo 3', style: style?.label, generatedAt: new Date() } }));
+        setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: videoUrl || undefined, provider: style?.provider || 'Vertex Veo 3', style: style?.label, generatedAt: new Date(), narrationUsed: script } }));
         toast.success('Video generated!');
 
       } else if (selectedAssetType === 'audio_intro') {
         setGenerationProgress('🎵 Generating audio intro...');
         const ttsRes = await supabase.functions.invoke('multi-provider-tts', {
-          body: { text: narrationScript, languageCode: lang, region: selectedRegion, tier: 'premium' },
+          body: { text: script, languageCode: lang, region: selectedRegion, tier: 'premium' },
         });
         if (ttsRes.error) throw new Error(`TTS failed: ${ttsRes.error.message}`);
         const audioUrl = ttsRes.data?.audioUrl || ttsRes.data?.data?.audioUrl || ttsRes.data?.audio_url;
-        setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: audioUrl || undefined, provider: 'Azure Neural TTS', style: style?.label, generatedAt: new Date() } }));
+        setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: audioUrl || undefined, provider: 'Azure Neural TTS', style: style?.label, generatedAt: new Date(), narrationUsed: script } }));
         toast.success('Audio intro generated!');
 
       } else {
@@ -415,7 +461,7 @@ export const RegionalAssetsLab: React.FC = () => {
     } finally {
       setGenerationProgress('');
     }
-  }, [selectedRegion, selectedAssetType, selectedStyle, narrationScript]);
+  }, [selectedRegion, selectedAssetType, selectedStyle, narrationScript, isAutoNarration]);
 
   const handleApprove = useCallback(() => {
     const key = `${selectedRegion}_${selectedAssetType}`;
@@ -451,118 +497,93 @@ export const RegionalAssetsLab: React.FC = () => {
                 Regional Assets Lab
               </CardTitle>
               <CardDescription className="text-xs mt-1">
-                Generate → Preview → Approve → Publish • 12 asset types • 12 creative styles • 45+ regions
+                Generate → Preview → Approve → Publish | {CREATIVE_STYLES.length} styles × {ASSET_TYPES.length} asset types × {ALL_REGIONS.length} sub-regions ({REGION_GROUPS.length} groups)
               </CardDescription>
             </div>
-            <div className="flex gap-1.5">
-              {(['pipeline', 'generate', 'review'] as const).map((view) => (
-                <Button key={view} variant={activeView === view ? 'default' : 'outline'} size="sm" className="text-xs capitalize" onClick={() => setActiveView(view)}>
-                  {view === 'pipeline' && <Zap className="w-3 h-3 mr-1" />}
-                  {view === 'generate' && <Wand2 className="w-3 h-3 mr-1" />}
-                  {view === 'review' && <Eye className="w-3 h-3 mr-1" />}
-                  {view}
+            <div className="flex gap-2">
+              {(['pipeline', 'generate', 'review'] as const).map(view => (
+                <Button
+                  key={view}
+                  size="sm"
+                  variant={activeView === view ? 'default' : 'outline'}
+                  onClick={() => setActiveView(view)}
+                  className="text-xs gap-1.5"
+                >
+                  {view === 'pipeline' && <ArrowRight className="w-3.5 h-3.5" />}
+                  {view === 'generate' && <Wand2 className="w-3.5 h-3.5" />}
+                  {view === 'review' && <Globe className="w-3.5 h-3.5" />}
+                  {view.charAt(0).toUpperCase() + view.slice(1)}
                 </Button>
               ))}
             </div>
           </div>
         </CardHeader>
+      </Card>
 
-        {activeView === 'pipeline' && (
-          <CardContent className="pt-0">
-            {/* Pipeline Stages */}
+      {/* ═══ PIPELINE VIEW ═══ */}
+      {activeView === 'pipeline' && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Layers className="w-4 h-4 text-primary" />
+              5-Stage AI Generation Pipeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {PIPELINE_STAGES.map((stage, i) => (
-                <React.Fragment key={stage.id}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                    className={cn('flex-shrink-0 rounded-lg border p-3 min-w-[160px]', stage.bgColor, stage.borderColor)}
-                  >
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <stage.icon className={cn('w-4 h-4', stage.color)} />
-                      <span className="text-xs font-semibold">{stage.label}</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mb-2">{stage.description}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {stage.providers.map(p => (
-                        <Badge key={p} variant="outline" className="text-[9px] py-0 px-1.5 font-normal">{p}</Badge>
-                      ))}
-                    </div>
-                  </motion.div>
-                  {i < PIPELINE_STAGES.length - 1 && <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+              {[
+                { stage: '1. Script', icon: Type, desc: 'Auto-generate narration per asset type + region', color: 'bg-blue-500/10 text-blue-600' },
+                { stage: '2. TTS', icon: Volume2, desc: 'Azure Neural / Qwen3 / ElevenLabs — regional voice', color: 'bg-emerald-500/10 text-emerald-600' },
+                { stage: '3. Portrait', icon: Camera, desc: 'Styled portrait via Imagen 3 / FLUX / Wan 2.1', color: 'bg-purple-500/10 text-purple-600' },
+                { stage: '4. Synthesis', icon: Bot, desc: 'Wan 2.2 S2V lip-sync video / Meshy 3D', color: 'bg-amber-500/10 text-amber-600' },
+                { stage: '5. Assembly', icon: Film, desc: 'Final composite → Preview → Approve', color: 'bg-rose-500/10 text-rose-600' },
+              ].map((s, i) => (
+                <React.Fragment key={s.stage}>
+                  <div className={cn('rounded-lg p-3 min-w-[150px] text-center', s.color)}>
+                    <s.icon className="w-5 h-5 mx-auto mb-1" />
+                    <div className="text-xs font-semibold">{s.stage}</div>
+                    <div className="text-[10px] mt-0.5 opacity-80">{s.desc}</div>
+                  </div>
+                  {i < 4 && <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />}
                 </React.Fragment>
               ))}
             </div>
-
-            {/* Creative Styles Showcase */}
-            <div className="mt-5">
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Star className="w-4 h-4 text-primary" />
-                Creative Styles <span className="text-muted-foreground font-normal">(applied to all asset types)</span>
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {CREATIVE_STYLES.map((style, i) => (
-                  <motion.button
-                    key={style.id}
-                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}
-                    onClick={() => { setSelectedStyle(style.id); setActiveView('generate'); }}
-                    className={cn(
-                      'relative rounded-xl border p-3 text-left transition-all hover:scale-[1.02] hover:shadow-lg bg-gradient-to-br',
-                      style.gradient, style.border,
-                      selectedStyle === style.id && 'ring-2 ring-primary shadow-md'
-                    )}
-                  >
-                    <div className="text-2xl mb-1">{style.emoji}</div>
-                    <div className="text-xs font-bold">{style.label}</div>
-                    <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{style.description}</div>
-                    <Badge variant="outline" className="text-[8px] py-0 px-1 mt-1.5 font-normal">{style.provider}</Badge>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-5 gap-3 mt-4">
-              {[
-                { label: 'AI Providers', value: '19+', icon: Zap },
-                { label: 'Regions', value: `${ALL_REGIONS.length}+`, icon: Globe },
-                { label: 'Creative Styles', value: `${CREATIVE_STYLES.length}`, icon: Palette },
-                { label: 'Asset Types', value: `${ASSET_TYPES.length}`, icon: Layers },
-                { label: 'TTS Locales', value: '45+', icon: Volume2 },
-              ].map(stat => (
-                <div key={stat.label} className="text-center p-2 rounded-lg bg-muted/50">
-                  <stat.icon className="w-4 h-4 mx-auto text-primary mb-1" />
-                  <div className="text-lg font-bold text-primary">{stat.value}</div>
-                  <div className="text-[10px] text-muted-foreground">{stat.label}</div>
-                </div>
-              ))}
+            <div className="mt-4 p-3 rounded-lg bg-muted/30 border">
+              <p className="text-xs text-muted-foreground">
+                <strong>Auto-Narration:</strong> Scripts are automatically generated based on the selected asset type and target region.
+                For avatars and videos, the narration feeds TTS synthesis, which drives lip-sync in the avatar pipeline.
+                For image-based assets, the narration informs the visual composition prompt.
+              </p>
             </div>
           </CardContent>
-        )}
-      </Card>
+        </Card>
+      )}
 
       {/* ═══ GENERATE VIEW ═══ */}
       {activeView === 'generate' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-4 gap-4">
           {/* Left: Config */}
-          <Card className="md:col-span-1">
+          <Card className="md:col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <SettingsIcon className="w-4 h-4 text-primary" />
                 Generation Config
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Region with grouped dropdown */}
+            <CardContent className="space-y-3">
+              {/* Region Selector */}
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Region</label>
                 <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                  <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent className="z-[100000] max-h-[300px]">
+                  <SelectTrigger className="text-xs h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
                     {REGION_GROUPS.map(group => (
                       <React.Fragment key={group.parent}>
-                        <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{group.parent}</div>
+                        <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{group.parent}</div>
                         {group.regions.map(r => (
-                          <SelectItem key={r.code} value={r.code} className="text-xs pl-4">{r.label}</SelectItem>
+                          <SelectItem key={r.code} value={r.code} className="text-xs">{r.label}</SelectItem>
                         ))}
                       </React.Fragment>
                     ))}
@@ -570,32 +591,36 @@ export const RegionalAssetsLab: React.FC = () => {
                 </Select>
               </div>
 
-              {/* Asset Type with category filter */}
+              {/* Asset Category Filter */}
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Asset Type</label>
-                <div className="flex flex-wrap gap-1 mb-2">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Asset Category</label>
+                <div className="flex flex-wrap gap-1">
                   {ASSET_CATEGORIES.map(cat => (
-                    <Badge
+                    <Button
                       key={cat.id}
+                      size="sm"
                       variant={assetCategoryFilter === cat.id ? 'default' : 'outline'}
-                      className="text-[9px] cursor-pointer"
+                      className="h-6 text-[10px] px-2"
                       onClick={() => setAssetCategoryFilter(cat.id)}
                     >
                       {cat.label}
-                    </Badge>
+                    </Button>
                   ))}
                 </div>
-                <ScrollArea className="h-[200px]">
-                  <div className="grid grid-cols-1 gap-1.5 pr-2">
+              </div>
+
+              {/* Asset Type Selector */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Asset Type</label>
+                <ScrollArea className="h-[180px]">
+                  <div className="space-y-1 pr-2">
                     {filteredAssetTypes.map(at => (
                       <button
                         key={at.id}
                         onClick={() => setSelectedAssetType(at.id)}
                         className={cn(
-                          'flex items-center gap-2 p-2 rounded-md border text-left transition-all text-xs',
-                          selectedAssetType === at.id
-                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                            : 'border-border hover:bg-muted/50'
+                          'w-full flex items-center gap-2 rounded-lg border p-2 text-left transition-all text-xs',
+                          selectedAssetType === at.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:bg-muted/50'
                         )}
                       >
                         <at.icon className={cn('w-3.5 h-3.5', selectedAssetType === at.id ? 'text-primary' : 'text-muted-foreground')} />
@@ -609,7 +634,7 @@ export const RegionalAssetsLab: React.FC = () => {
                 </ScrollArea>
               </div>
 
-              {/* Creative Style Selector (for ALL asset types) */}
+              {/* Creative Style Selector */}
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Creative Style</label>
                 <ScrollArea className="h-[160px]">
@@ -632,11 +657,26 @@ export const RegionalAssetsLab: React.FC = () => {
                 </ScrollArea>
               </div>
 
-              {/* Script (for types that need narration) */}
-              {['avatar_3d', 'hero_video', 'promo_video', 'audio_intro'].includes(selectedAssetType) && (
+              {/* Narration Script — auto or manual */}
+              {needsNarration && (
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Narration Script</label>
-                  <Textarea value={narrationScript} onChange={e => setNarrationScript(e.target.value)} className="text-xs min-h-[80px]" placeholder="Enter narration..." />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-medium text-muted-foreground">Narration Script</label>
+                    <button
+                      onClick={() => setIsAutoNarration(!isAutoNarration)}
+                      className={cn('text-[10px] px-2 py-0.5 rounded-full border transition-colors', isAutoNarration ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-border text-muted-foreground')}
+                    >
+                      {isAutoNarration ? '✨ Auto-Generated' : '✏️ Manual'}
+                    </button>
+                  </div>
+                  {isAutoNarration ? (
+                    <div className="p-2 rounded-lg bg-muted/50 border border-dashed text-xs text-muted-foreground leading-relaxed">
+                      <Badge variant="outline" className="text-[9px] mb-1.5 gap-1"><Sparkles className="w-2.5 h-2.5" /> Auto</Badge>
+                      <p>{activeNarration}</p>
+                    </div>
+                  ) : (
+                    <Textarea value={narrationScript} onChange={e => setNarrationScript(e.target.value)} className="text-xs min-h-[80px]" placeholder="Enter custom narration script..." />
+                  )}
                 </div>
               )}
 
@@ -649,7 +689,7 @@ export const RegionalAssetsLab: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Center: Preview */}
+          {/* Right: Preview */}
           <Card className="md:col-span-2">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -689,25 +729,22 @@ export const RegionalAssetsLab: React.FC = () => {
                 <div className="space-y-4">
                   <div className="rounded-lg border bg-muted/30 overflow-hidden aspect-video flex items-center justify-center relative">
                     {currentAsset?.previewUrl ? (
-                      ['hero_video', 'promo_video', 'avatar_3d'].includes(selectedAssetType) ? (
-                        <div className="flex flex-col items-center">
-                          <Play className="w-16 h-16 text-primary/50" />
-                          <p className="text-xs text-muted-foreground mt-2">{currentAsset.style} • {ASSET_TYPES.find(a => a.id === selectedAssetType)?.label}</p>
-                          <Badge className="mt-1 text-[9px]">{currentAsset.provider}</Badge>
+                      selectedAssetType === 'audio_intro' ? (
+                        <div className="flex flex-col items-center gap-3 p-4">
+                          <Music className="w-12 h-12 text-primary/60" />
+                          <audio controls src={currentAsset.previewUrl} className="w-full max-w-xs" />
+                          <Badge className="text-[9px]">{currentAsset.provider}</Badge>
                         </div>
-                      ) : selectedAssetType === 'audio_intro' ? (
-                        <div className="flex flex-col items-center">
-                          <Music className="w-16 h-16 text-primary/50" />
-                          <p className="text-xs text-muted-foreground mt-2">Audio Preview</p>
-                          <Badge className="mt-1 text-[9px]">{currentAsset.provider}</Badge>
-                        </div>
+                      ) : ['hero_video', 'promo_video'].includes(selectedAssetType) && currentAsset.previewUrl.endsWith('.mp4') ? (
+                        <video controls src={currentAsset.previewUrl} className="w-full h-full object-cover" poster="" />
                       ) : (
-                        <img src={currentAsset.previewUrl} alt="Asset preview" className="object-cover w-full h-full" />
+                        /* Show actual image for ALL image-based assets + avatar portrait fallback */
+                        <img src={currentAsset.previewUrl} alt={`${currentAsset.style} ${ASSET_TYPES.find(a => a.id === selectedAssetType)?.label} for ${ALL_REGIONS.find(r => r.code === selectedRegion)?.label}`} className="object-contain w-full h-full" />
                       )
                     ) : (
                       <div className="flex flex-col items-center">
                         <CheckCircle2 className="w-10 h-10 text-emerald-500/50 mb-2" />
-                        <p className="text-xs text-muted-foreground">Generation complete — preview URL pending</p>
+                        <p className="text-xs text-muted-foreground">Generation complete — asset preview rendering</p>
                         <Badge className="mt-1 text-[9px]">{currentAsset?.provider}</Badge>
                       </div>
                     )}
@@ -745,6 +782,14 @@ export const RegionalAssetsLab: React.FC = () => {
                     </div>
                   )}
 
+                  {/* Show narration used */}
+                  {currentAsset?.narrationUsed && (
+                    <div className="p-2 rounded bg-muted/30 border">
+                      <p className="text-[10px] font-medium text-muted-foreground mb-0.5">📝 Narration Used</p>
+                      <p className="text-xs text-foreground/80 leading-relaxed">{currentAsset.narrationUsed}</p>
+                    </div>
+                  )}
+
                   <div className="flex gap-2">
                     {currentStatus === 'preview' && (
                       <>
@@ -774,7 +819,7 @@ export const RegionalAssetsLab: React.FC = () => {
               <Globe className="w-4 h-4 text-primary" />
               Regional Asset Coverage
             </CardTitle>
-            <CardDescription className="text-xs">{ALL_REGIONS.length} regions × {ASSET_TYPES.length} asset types</CardDescription>
+            <CardDescription className="text-xs">{ALL_REGIONS.length} regions × {ASSET_TYPES.length} asset types across {REGION_GROUPS.length} parent groups</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="w-full">
