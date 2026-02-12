@@ -2479,11 +2479,11 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                           )}
                         </CardTitle>
                         <div className="flex items-center gap-1">
-                          {/* Expand to Sub-Regions button — ALWAYS visible for parent regions */}
-                          {hasSubRegions && (
+                          {/* Expand to Sub-Regions button — ALWAYS visible for parent regions with children */}
+                          {hasSubRegions ? (
                             <Button
                               size="sm"
-                              variant={existingSubRegionCount < parentGroup.children.length ? "default" : "outline"}
+                              variant={existingSubRegionCount < (parentGroup?.children?.length ?? 0) ? "default" : "outline"}
                               className="text-xs h-7 gap-1"
                               disabled={isExpanding}
                               onClick={() => handleExpandToSubRegions(regionScripts[0])}
@@ -2495,12 +2495,12 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                               )}
                               {isExpanding 
                                 ? 'Expanding...' 
-                                : existingSubRegionCount < parentGroup.children.length
-                                  ? `Expand to ${parentGroup.children.length - existingSubRegionCount} Sub-Regions`
-                                  : `Re-expand ${parentGroup.children.length} Sub-Regions`
+                                : existingSubRegionCount < (parentGroup?.children?.length ?? 0)
+                                  ? `Expand to ${(parentGroup?.children?.length ?? 0) - existingSubRegionCount} Sub-Regions`
+                                  : `Re-expand ${parentGroup?.children?.length ?? 0} Sub-Regions`
                               }
                             </Button>
-                          )}
+                          ) : null}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -2524,7 +2524,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                     disabled={isExpanding}
                                   >
                                     <Globe className="w-3.5 h-3.5 mr-2" />
-                                    {existingSubRegionCount < parentGroup.children.length
+                                    {existingSubRegionCount < (parentGroup?.children?.length ?? 0)
                                       ? 'Expand to Sub-Regions'
                                       : 'Re-expand Sub-Regions'}
                                   </DropdownMenuItem>
