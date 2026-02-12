@@ -2746,72 +2746,90 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
 
         const totalLatest = latestScripts.length;
         const activeScripts = latestScripts.filter(s => s.status === 'active').length;
-        const draftScripts = latestScripts.filter(s => s.status === 'draft').length;
         const reviewScripts = latestScripts.filter(s => s.status === 'review').length;
+        // Only count drafts where the LATEST version for that region is draft (not superseded old versions)
+        const draftScripts = latestScripts.filter(s => s.status === 'draft').length;
         const withTTS = latestScripts.filter(s => s.generated_audio_url).length;
         const withoutTTS = totalLatest - withTTS;
 
-        // ── Collect ALL expected leaf-level codes from REGION_HIERARCHY ──
-        const allExpectedLeafCodes: string[] = [];
+        // ── Collect expected leaf-level sub-region codes (NOT parent EN bases, NOT intermediate zones) ──
+        const expectedLeafCodes: string[] = [];
+        const expectedParentCodes: string[] = [];
+        const intermediateZoneCodes = new Set<string>(); // EU_DACH, INDIA_NORTH, etc.
         REGION_HIERARCHY.forEach(group => {
-          // Parent-level EN base code
-          allExpectedLeafCodes.push(group.groupCode.toLowerCase());
+          expectedParentCodes.push(group.groupCode.toLowerCase());
           if (group.children.length > 0) {
             group.children.forEach(child => {
               if (child.children && child.children.length > 0) {
-                child.children.forEach(gc => allExpectedLeafCodes.push(gc.code));
+                // This is an intermediate zone (EU_DACH, INDIA_NORTH) — don't count as leaf
+                intermediateZoneCodes.add(child.code);
+                child.children.forEach(gc => expectedLeafCodes.push(gc.code));
               } else {
-                allExpectedLeafCodes.push(child.code);
+                expectedLeafCodes.push(child.code);
               }
             });
           }
         });
 
-        // ── Coverage analysis: which leaf codes have a latest active/review script? ──
+        // ── Coverage: leaf sub-regions with active/review latest scripts ──
         const coveredCodes = new Set(latestScripts.filter(s => s.status === 'active' || s.status === 'review').map(s => s.region_code));
-        const leafCodesOnly = allExpectedLeafCodes.filter(c => !REGION_HIERARCHY.some(g => g.groupCode.toLowerCase() === c)); // exclude parent EN base codes
-        const totalLeafRegions = leafCodesOnly.length;
-        const coveredLeafRegions = leafCodesOnly.filter(c => coveredCodes.has(c) || coveredCodes.has(c.toLowerCase())).length;
+        const totalLeafRegions = expectedLeafCodes.length;
+        const coveredLeafRegions = expectedLeafCodes.filter(c => coveredCodes.has(c)).length;
         const missingLeafRegions = totalLeafRegions - coveredLeafRegions;
 
         // ── EN Base coverage ──
         const totalParentGroups = REGION_HIERARCHY.length;
         const parentGroupsWithENBase = REGION_HIERARCHY.filter(group => {
           const parentCode = group.groupCode.toLowerCase();
-          const hasBase = nonArchived.some(s => 
+          return nonArchived.some(s => 
             s.is_english_base && s.language_code === 'en' && 
             (s.region_code === parentCode || s.region_code === group.groupCode)
           );
-          return hasBase;
         }).length;
+
+        // ── Separate "real" latest scripts from superseded intermediate/old versions ──
+        // Only count scripts that are either: leaf sub-regions, parent EN bases, or single-node regions
+        const meaningfulLatest = latestScripts.filter(s => 
+          expectedLeafCodes.includes(s.region_code) || 
+          expectedParentCodes.includes(s.region_code) ||
+          REGION_HIERARCHY.some(g => g.children.length === 0 && g.groupCode === s.region_code)
+        );
+        const meaningfulTotal = meaningfulLatest.length;
 
         const coveragePct = totalLeafRegions > 0 ? Math.round((coveredLeafRegions / totalLeafRegions) * 100) : 0;
 
         return (
           <div className="flex items-center gap-3 flex-wrap rounded-lg border border-border bg-muted/30 px-4 py-2.5">
-            {/* Scripts (latest only) */}
+            {/* Scripts (latest only, meaningful) */}
             <div className="flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold">{totalLatest}</span>
-              <span className="text-xs text-muted-foreground">Latest Scripts</span>
+              <span className="text-xs font-semibold">{meaningfulTotal}</span>
+              <span className="text-xs text-muted-foreground">Scripts</span>
+              {totalLatest !== meaningfulTotal && (
+                <span className="text-[10px] text-muted-foreground">({totalLatest} incl. zones)</span>
+              )}
             </div>
             <Separator orientation="vertical" className="h-4" />
-            {/* Status breakdown */}
+            {/* Status breakdown — latest version only */}
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span className="text-xs font-medium">{activeScripts}</span>
               <span className="text-xs text-muted-foreground">Active</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              <span className="text-xs font-medium">{reviewScripts}</span>
-              <span className="text-xs text-muted-foreground">Review</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-slate-400" />
-              <span className="text-xs font-medium">{draftScripts}</span>
-              <span className="text-xs text-muted-foreground">Draft</span>
-            </div>
+            {reviewScripts > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span className="text-xs font-medium">{reviewScripts}</span>
+                <span className="text-xs text-muted-foreground">Review</span>
+              </div>
+            )}
+            {draftScripts > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-muted-foreground" />
+                <span className="text-xs font-medium">{draftScripts}</span>
+                <span className="text-xs text-muted-foreground">Draft</span>
+              </div>
+            )}
             <Separator orientation="vertical" className="h-4" />
             {/* TTS */}
             <div className="flex items-center gap-1.5">
@@ -2826,11 +2844,11 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
               </div>
             )}
             <Separator orientation="vertical" className="h-4" />
-            {/* Coverage */}
+            {/* Sub-region coverage */}
             <div className="flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-xs font-semibold">{coveredLeafRegions}/{totalLeafRegions}</span>
-              <span className="text-xs text-muted-foreground">Regions ({coveragePct}%)</span>
+              <span className="text-xs text-muted-foreground">Sub-Regions ({coveragePct}%)</span>
             </div>
             {missingLeafRegions > 0 && (
               <div className="flex items-center gap-1.5">
