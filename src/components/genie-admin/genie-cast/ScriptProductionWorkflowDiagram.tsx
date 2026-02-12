@@ -35,25 +35,25 @@ const STAGES = [
     title: 'Regional Transcreation (38 Sub-Regions)',
     icon: GitBranch,
     color: 'bg-purple-500',
-    description: 'English base auto-expands into 38 sub-regions using zone-routed LLMs with hybrid sub-region overrides',
+    description: 'English base auto-expands into 48+ leaf nodes (via zone grouping) using zone-routed LLMs with hybrid sub-region overrides',
     routing: [
        { zone: 'NAM / EU_WEST / EU_DACH / EU_FRANCE / EU_IBERIA / LATAM_BRAZIL / LATAM_MEXICO / LATAM_CONESUR / MENA_MAGHREB / SEA_PH / SEA_PAN_EN', provider: 'Claude 4', fallback: 'GPT-4o → Gemini → DeepSeek' },
        { zone: 'CJK_CN / CJK_HK / CJK_TW / CJK_JP / CJK_KR / CJK_PAN_EN / MENA_GULF / MENA_MSA', provider: 'Qwen Max', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
-       { zone: 'INDIA (5) / SEA (6 Mainland) / AFRICA (4) / BANGLADESH', provider: 'Gemini 3 Pro', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
+       { zone: 'INDIA (5 zones → 12 leaves) / SEA (6 Mainland) / AFRICA (4) / BANGLADESH', provider: 'Gemini 3 Pro', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
        { zone: 'EU_NORDIC / EU_EAST / LATAM_ANDEAN / LATAM_CARIB / MENA_EGYPT / MENA_LEVANT / PAKISTAN / CJK_JP / CJK_KR', provider: 'GPT-4o', fallback: 'Claude 4 / Qwen Max → DeepSeek' },
      ],
      subRegions: {
-       'Europe (6)': ['EU_WEST → Claude 4', 'EU_DACH → Claude 4', 'EU_FRANCE → Claude 4', 'EU_IBERIA → Claude 4', 'EU_NORDIC → GPT-4o', 'EU_EAST → GPT-4o'],
+       'Europe (6 zones → 15 leaves)': ['EU_WEST → Claude 4', 'EU_DACH (DE/AT/CH) → Claude 4', 'EU_FRANCE → Claude 4', 'EU_IBERIA (ES/PT/IT) → Claude 4', 'EU_NORDIC (SE/NO/DK/FI) → GPT-4o', 'EU_EAST (PL/CZ/RO/GR) → GPT-4o'],
        'LATAM (5)': ['LATAM_BRAZIL → Claude 4', 'LATAM_MEXICO → Claude 4', 'LATAM_CONESUR → Claude 4', 'LATAM_ANDEAN → GPT-4o', 'LATAM_CARIB → GPT-4o'],
        'NAM (2)': ['NAM_US → Claude 4', 'NAM_CA → Claude 4'],
        'CJK (6)': ['CJK_PAN_EN → Qwen Max', 'CJK_CN → Qwen Max', 'CJK_HK → Qwen Max', 'CJK_TW → Qwen Max', 'CJK_JP → GPT-4o', 'CJK_KR → GPT-4o'],
        'MENA (5)': ['MENA_GULF → Qwen Max', 'MENA_MSA → Qwen Max', 'MENA_MAGHREB → Claude 4', 'MENA_EGYPT → GPT-4o', 'MENA_LEVANT → GPT-4o'],
-       'India (5)': ['INDIA_NORTH → Gemini 3', 'INDIA_SOUTH → Gemini 3', 'INDIA_WEST → Gemini 3', 'INDIA_EAST → Gemini 3', 'INDIA_PAN → Gemini 3'],
+       'India (5 zones → 12 leaves)': ['INDIA_NORTH (Hi/Ur/Pa) → Gemini 3', 'INDIA_SOUTH (Ta/Te/Kn/Ml) → Gemini 3', 'INDIA_WEST (Mr/Gu) → Gemini 3', 'INDIA_EAST (Bn/Od) → Gemini 3', 'INDIA_PAN (En) → Gemini 3'],
        'SEA (9)': ['SEA_PAN_EN → Claude 4', 'SEA_THAI → Gemini 3', 'SEA_VIET → Gemini 3', 'SEA_KHMER → Gemini 3', 'SEA_LAO → Gemini 3', 'SEA_MYAN → Gemini 3', 'SEA_ID → Gemini 3', 'SEA_MY → Gemini 3', 'SEA_PH → Claude 4'],
        'Standalone (2)': ['PAKISTAN → GPT-4o', 'BANGLADESH → Gemini 3'],
        'Africa (4)': ['AFRICA_EAST → Gemini 3', 'AFRICA_WEST → Gemini 3', 'AFRICA_SOUTH → Gemini 3', 'AFRICA_FRANCO → Gemini 3'],
      },
-    outputs: ['38 regional scripts', 'Cultural adaptation + local idioms + formality registers'],
+    outputs: ['48+ regional leaf scripts', 'Cultural adaptation + local idioms + formality registers'],
     gate: 'Each sub-region enters independent review cycle',
   },
   {
@@ -238,12 +238,12 @@ const MermaidFlowDiagram: React.FC = () => {
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              {
-                llm: 'Claude 4', emoji: '🧠', color: 'blue',
-                zones: ['NAM_US', 'NAM_CA', 'EU_WEST', 'EU_DACH', 'EU_FRANCE', 'EU_IBERIA', 'LATAM_BRAZIL', 'LATAM_MEXICO', 'LATAM_CONESUR', 'MENA_MAGHREB'],
-                count: 10, note: 'Western/EU/LATAM + Maghreb'
-              },
+             {[
+               {
+                 llm: 'Claude 4', emoji: '🧠', color: 'blue',
+                 zones: ['NAM_US', 'NAM_CA', 'EU ×15', 'LATAM_BRAZIL', 'LATAM_MEXICO', 'LATAM_CONESUR', 'MENA_MAGHREB', 'SEA_PAN_EN', 'SEA_PH'],
+                 count: 14, note: 'Western/EU(15)/LATAM + SEA English/PH'
+               },
                {
                  llm: 'Qwen Max', emoji: '🇨🇳', color: 'orange',
                  zones: ['CJK_PAN_EN', 'CJK_CN', 'CJK_HK', 'CJK_TW', 'MENA_GULF', 'MENA_MSA'],
@@ -251,8 +251,8 @@ const MermaidFlowDiagram: React.FC = () => {
                },
                {
                  llm: 'Gemini 3 Pro', emoji: '🌏', color: 'emerald',
-                 zones: ['INDIA ×5', 'SEA ×9', 'AFRICA ×4', 'BANGLADESH'],
-                 count: 19, note: 'India/SEA/Africa/Bangladesh'
+                 zones: ['INDIA ×12', 'SEA ×9', 'AFRICA ×4', 'BANGLADESH'],
+                 count: 26, note: 'India (12 lang)/SEA/Africa/Bangladesh'
                },
                {
                  llm: 'GPT-4o', emoji: '🔄', color: 'violet',
