@@ -214,25 +214,34 @@ const REGION_HIERARCHY: RegionGroup[] = [
   },
 ];
 
-// Flatten for backward compatibility — includes both parent-level (lowercase) and sub-region codes
+// Flatten for backward compatibility — includes parent-level (lowercase), sub-region codes, AND per-country codes
 const REGION_OPTIONS = REGION_HIERARCHY.flatMap(g =>
   g.children.length > 0
     ? [
         // Add parent-level entry with lowercase code for DB compatibility
         { code: g.groupCode.toLowerCase(), name: g.groupName, flag: g.groupFlag },
-        ...g.children,
+        ...g.children.flatMap(c =>
+          c.children && c.children.length > 0
+            ? [c, ...c.children] // Include sub-region + its country children
+            : [c]
+        ),
       ]
     : [{ code: g.groupCode, name: g.groupName, flag: g.groupFlag },
        { code: g.groupCode.toLowerCase(), name: g.groupName, flag: g.groupFlag }]
 );
 
-// Get all codes for a group — includes the parent groupCode (both cases) + children codes
+// Get all codes for a group — includes the parent groupCode (both cases) + children codes + grandchildren codes
 // DB stores lowercase parent codes (africa, cjk) while hierarchy uses uppercase sub-region codes (AFRICA_WEST)
 const getGroupCodes = (group: RegionGroup): string[] => {
   const parentCode = group.groupCode;
   const parentLower = parentCode.toLowerCase();
   if (group.children.length > 0) {
-    return [parentCode, parentLower, ...group.children.map(c => c.code)];
+    const childCodes = group.children.flatMap(c =>
+      c.children && c.children.length > 0
+        ? [c.code, ...c.children.map(gc => gc.code)]
+        : [c.code]
+    );
+    return [parentCode, parentLower, ...childCodes];
   }
   return [parentCode, parentLower];
 };
@@ -1938,11 +1947,18 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
   // ── Auto-expand English base to all 38 sub-regions ──
   const handleAutoExpandAndTranscreate = useCallback(async (baseScript: NarrationScript) => {
     try {
-      // Collect all sub-region codes from REGION_HIERARCHY
+      // Collect all leaf-level region codes from REGION_HIERARCHY (including per-country grandchildren)
       const subRegionCodes: string[] = [];
       REGION_HIERARCHY.forEach(group => {
         if (group.children.length > 0) {
-          group.children.forEach(child => subRegionCodes.push(child.code));
+          group.children.forEach(child => {
+            if (child.children && child.children.length > 0) {
+              // Has per-country children — expand to country level, not sub-region level
+              child.children.forEach(gc => subRegionCodes.push(gc.code));
+            } else {
+              subRegionCodes.push(child.code);
+            }
+          });
         } else {
           // Groups without children (Pakistan, Bangladesh)
           subRegionCodes.push(group.groupCode);
