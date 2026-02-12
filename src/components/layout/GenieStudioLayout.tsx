@@ -78,20 +78,27 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
   const { getUpgradePromptForPath } = useGenieStudioNavigation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // CRITICAL: Use localStorage fast-path to avoid redirect during auth session restore
+  // This prevents the "hard refresh sends to auth page" bug for known internal users
+  const hasCachedInternalStatus = localStorage.getItem('genie_studio_is_internal') === 'true';
+
   useEffect(() => {
     if (!isLoading && requireAuth && !isAuthenticated) {
-      // CRITICAL FIX: Preserve full URL (pathname + search params) for redirect back
-      // This prevents losing ?tab=genie-cast when auth redirects
+      if (hasCachedInternalStatus) {
+        // Session expired — clear stale cache and redirect to auth
+        console.warn('⚠️ GenieStudioLayout: Cached internal status stale, clearing and redirecting');
+        localStorage.removeItem('genie_studio_is_internal');
+      }
       navigate('/genie-studio-auth', { 
         state: { from: location.pathname + location.search },
         replace: true,
       });
     }
-  }, [isAuthenticated, isLoading, requireAuth, navigate, location.pathname, location.search]);
+  }, [isAuthenticated, isLoading, requireAuth, navigate, location.pathname, location.search, hasCachedInternalStatus]);
 
   // CRITICAL FIX: Don't unmount the entire layout during auth loading
-  // Only block the content area, keep sidebar visible to prevent "tab disappearing" bug
-  const isAuthBlocked = requireAuth && !isLoading && !isAuthenticated;
+  // Keep sidebar visible during session restore for known internal users
+  const isAuthBlocked = requireAuth && !isLoading && !isAuthenticated && !hasCachedInternalStatus;
   
   if (isAuthBlocked) {
     return null;

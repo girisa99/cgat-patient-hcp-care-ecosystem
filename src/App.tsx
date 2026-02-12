@@ -244,9 +244,14 @@ const AppContent = () => {
               <Route path="/genie-cast" element={<GenieCastPage />} />
               
               {/* Root path - Dashboard redirect */}
+              {/* CRITICAL: Use localStorage fast-path for internal users during auth restore */}
               <Route path="/" element={
                 isAuthenticated ? (
                   <SmartDefaultRoute userRoles={userRoles} />
+                ) : isLoading && localStorage.getItem('genie_studio_is_internal') === 'true' ? (
+                  <PageLoading message="Restoring session..." />
+                ) : isLoading ? (
+                  <PageLoading message="Initializing..." />
                 ) : (
                   <Navigate to="/genie-landing" replace />
                 )
