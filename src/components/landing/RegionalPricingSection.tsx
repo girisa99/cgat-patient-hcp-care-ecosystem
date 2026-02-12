@@ -29,7 +29,13 @@ const REGIONAL_PRICING: Record<RegionSlug, {
   africa: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard', 'M-Pesa', 'Flutterwave'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
   apac: { currency: 'JPY', symbol: '¥', multiplier: 150, paymentMethods: ['Visa', 'Mastercard', 'JCB', 'Alipay', 'WeChat Pay'], savingsLabel: '月額¥18,000節約 — 7つのツール比較' },
   latam: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard', 'Pix', 'Mercado Pago'], savingsLabel: 'Ahorra $121/mes vs 7 herramientas separadas' },
-  caribbean: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
+   caribbean: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
+   oceania: { currency: 'AUD', symbol: '$', multiplier: 1.5, paymentMethods: ['Visa', 'Mastercard', 'PayPal'], savingsLabel: 'Save $180/mo vs 7 separate tools' },
+   turkey: { currency: 'TRY', symbol: '₺', multiplier: 32, paymentMethods: ['Visa', 'Mastercard', 'Troy'], savingsLabel: '₺3,872/ay Tasarruf Edin' },
+   pakistan: { currency: 'PKR', symbol: 'Rs', multiplier: 278, paymentMethods: ['Visa', 'Mastercard', 'JazzCash', 'Easypaisa'], savingsLabel: 'Rs 33,600/ماه بچائیں' },
+   bangladesh: { currency: 'BDT', symbol: '৳', multiplier: 104, paymentMethods: ['Visa', 'Mastercard', 'bKash', 'Nagad'], savingsLabel: '৳12,584/মাস বাঁচান' },
+   eastern_europe: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard', 'Wise', 'Local'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
+   central_asia: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard', 'Wise'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
 };
 
 const BASE_TIERS = [
