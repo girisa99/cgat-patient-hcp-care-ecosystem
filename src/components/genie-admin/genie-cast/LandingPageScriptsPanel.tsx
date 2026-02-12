@@ -313,6 +313,67 @@ function classifyTTSFeedbackRoute(selectedAreas: string[]): { route: 'voice_only
   return { route: 'voice_only', label: '🎙 Voice-Only → TTS Regeneration', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700' };
 }
 
+// ═══ Emotional Tone → TTS Voice Style Resolver ═══
+// Maps emotional tones to voice synthesis parameters for natural-sounding delivery
+interface VoiceStyleSettings {
+  stability: number;      // 0-1: lower = more expressive, higher = more consistent
+  similarity_boost: number; // 0-1: voice match fidelity
+  style: number;           // 0-1: style exaggeration
+  speed: number;           // 0.7-1.2: speech rate
+  azureProsody: { rate: string; pitch: string; volume: string }; // SSML prosody
+}
+
+const TONE_VOICE_PRESETS: Record<string, Partial<VoiceStyleSettings>> = {
+  'inspiring': { stability: 0.4, style: 0.5, speed: 0.95, azureProsody: { rate: '-5%', pitch: '+5%', volume: '+10%' } },
+  'inspiring-respectful': { stability: 0.45, style: 0.4, speed: 0.92, azureProsody: { rate: '-8%', pitch: '+3%', volume: '+5%' } },
+  'compassionate': { stability: 0.55, style: 0.3, speed: 0.88, azureProsody: { rate: '-12%', pitch: '-3%', volume: '-5%' } },
+  'urgent': { stability: 0.35, style: 0.6, speed: 1.1, azureProsody: { rate: '+10%', pitch: '+8%', volume: '+15%' } },
+  'professional': { stability: 0.65, style: 0.15, speed: 1.0, azureProsody: { rate: '0%', pitch: '0%', volume: '0%' } },
+  'warm': { stability: 0.5, style: 0.35, speed: 0.93, azureProsody: { rate: '-5%', pitch: '-2%', volume: '0%' } },
+  'authoritative': { stability: 0.7, style: 0.2, speed: 0.95, azureProsody: { rate: '-3%', pitch: '-5%', volume: '+10%' } },
+  'friendly': { stability: 0.4, style: 0.45, speed: 1.02, azureProsody: { rate: '+2%', pitch: '+5%', volume: '+5%' } },
+  'empathetic': { stability: 0.5, style: 0.35, speed: 0.9, azureProsody: { rate: '-10%', pitch: '-2%', volume: '-5%' } },
+  'energetic': { stability: 0.3, style: 0.55, speed: 1.08, azureProsody: { rate: '+8%', pitch: '+10%', volume: '+10%' } },
+  'calm': { stability: 0.7, style: 0.1, speed: 0.88, azureProsody: { rate: '-12%', pitch: '-5%', volume: '-10%' } },
+  'motivational': { stability: 0.35, style: 0.5, speed: 1.0, azureProsody: { rate: '0%', pitch: '+8%', volume: '+10%' } },
+  'Inspirational': { stability: 0.4, style: 0.5, speed: 0.95, azureProsody: { rate: '-5%', pitch: '+5%', volume: '+10%' } },
+  'Compassionate': { stability: 0.55, style: 0.3, speed: 0.88, azureProsody: { rate: '-12%', pitch: '-3%', volume: '-5%' } },
+};
+
+function resolveEmotionalToneToVoiceStyle(tones: string[]): VoiceStyleSettings {
+  const base: VoiceStyleSettings = {
+    stability: 0.5, similarity_boost: 0.75, style: 0.2, speed: 1.0,
+    azureProsody: { rate: '0%', pitch: '0%', volume: '0%' },
+  };
+  if (!tones || tones.length === 0) return base;
+
+  // Average all tone presets for multi-select
+  const matched = tones.map(t => TONE_VOICE_PRESETS[t]).filter(Boolean);
+  if (matched.length === 0) return base;
+
+  const avg = (field: keyof Omit<VoiceStyleSettings, 'azureProsody'>) => {
+    const vals = matched.map(m => m[field] as number).filter(v => v !== undefined);
+    return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : base[field] as number;
+  };
+
+  // Average prosody percentages
+  const parsePercent = (s: string) => parseInt(s.replace('%', '').replace('+', ''), 10) || 0;
+  const avgProsody = (field: 'rate' | 'pitch' | 'volume') => {
+    const vals = matched.map(m => m.azureProsody?.[field]).filter(Boolean) as string[];
+    if (vals.length === 0) return '0%';
+    const avgVal = Math.round(vals.map(parsePercent).reduce((a, b) => a + b, 0) / vals.length);
+    return avgVal >= 0 ? `+${avgVal}%` : `${avgVal}%`;
+  };
+
+  return {
+    stability: Math.round(avg('stability') * 100) / 100,
+    similarity_boost: base.similarity_boost,
+    style: Math.round(avg('style') * 100) / 100,
+    speed: Math.round(avg('speed') * 100) / 100,
+    azureProsody: { rate: avgProsody('rate'), pitch: avgProsody('pitch'), volume: avgProsody('volume') },
+  };
+}
+
 
 interface AIProviderOption {
   id: string;
@@ -1122,7 +1183,10 @@ export const LandingPageScriptsPanel: React.FC = () => {
       const resolvedVoiceName = selectedVoice?.voiceName || ttsInfo.voiceName;
       const resolvedLocale = selectedVoice?.locale || ttsInfo.locale;
 
-      console.log(`[TTS Generate] Script: ${script.region_code}, Provider: ${resolvedProvider}, Voice: ${resolvedVoiceId}, Name: ${resolvedVoiceName}, Locale: ${resolvedLocale}, Mode: ${mode}, Override: ${!!selectedVoice}`);
+      // ═══ Resolve emotional tone → voice style settings for TTS ═══
+      const toneSettings = resolveEmotionalToneToVoiceStyle(script.emotional_tones || []);
+      
+      console.log(`[TTS Generate] Script: ${script.region_code}, Provider: ${resolvedProvider}, Voice: ${resolvedVoiceId}, Name: ${resolvedVoiceName}, Locale: ${resolvedLocale}, Mode: ${mode}, Override: ${!!selectedVoice}, ToneStyle: ${JSON.stringify(toneSettings)}`);
 
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
@@ -1130,9 +1194,10 @@ export const LandingPageScriptsPanel: React.FC = () => {
           languageCode: resolvedLocale || script.language_code,
           provider: resolvedProvider,
           voice: resolvedVoiceId,
-          speed: script.tts_speed || 1.0,
+          speed: toneSettings.speed,
           tier: 'premium',
           region: script.region_code,
+          voiceStyle: toneSettings,
         },
       });
 
@@ -2011,7 +2076,11 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
             .filter(s => s.region_code === subRegionCode)
             .reduce((max, s) => Math.max(max, s.version), 0);
 
-          // Build transcreation prompt
+          // Build transcreation prompt with active metadata injection
+          const positioningAngles = baseScript.positioning_angles?.join(', ') || 'value-driven';
+          const emotionalTones = baseScript.emotional_tones?.join(', ') || 'professional';
+          const targetPersonas = baseScript.target_personas?.join(', ') || 'general business audience';
+          
           const transcreationPrompt = `You are a world-class localization expert specializing in regional cultural adaptation.
 
 TASK: Transcreate (not translate) the following marketing script for ${regionOption.name}. Adapt cultural context, idioms, and emotional resonance while maintaining the Hook → Problem → Solution → CTA structure.
@@ -2024,16 +2093,26 @@ CTA: ${baseScript.cta}
 
 TARGET REGION: ${regionOption.name}
 TARGET LANGUAGE: ${languageCode}
-POSITIONING: ${baseScript.positioning_angles?.join(', ') || 'value-driven'}
-PERSONAS: ${baseScript.target_personas?.join(', ') || 'general'}
-TONE: ${baseScript.emotional_tones?.join(', ') || 'professional'}
 
-INSTRUCTIONS:
+═══ CREATIVE DIRECTION (MUST ACTIVELY INFLUENCE OUTPUT) ═══
+
+POSITIONING ANGLES: ${positioningAngles}
+→ The script MUST emphasize these value propositions throughout. Weave them into the problem statement as pain points and into the solution as direct benefits. For example, if "accessibility" is listed, highlight barriers to access in the problem and how the solution removes them.
+
+TARGET PERSONAS: ${targetPersonas}
+→ Write AS IF speaking directly to these specific people. Use vocabulary, concerns, and aspirations that resonate with their professional context. Reference their daily challenges and goals. A "Healthcare CTO" cares about compliance and integration; an "Entrepreneur" cares about speed and cost.
+
+EMOTIONAL TONES: ${emotionalTones}
+→ The overall voice and rhythm of the script MUST reflect these tones. If "inspiring" — use aspirational language and forward-looking statements. If "compassionate" — acknowledge struggles genuinely before presenting solutions. If "urgent" — create momentum with short sentences and clear stakes. The tone should be felt, not just stated.
+
+═══ STRUCTURAL INSTRUCTIONS ═══
 1. Adapt all cultural references to resonate with ${regionOption.name}
 2. Use local idioms and colloquialisms where appropriate
-3. Maintain the original emotional tones
-4. Keep the Hook → Problem → Solution → CTA structure
-5. Return ONLY valid JSON (no markdown):
+3. The Hook must grab attention using the emotional tone specified above
+4. The Problem must speak to the persona's specific frustrations, aligned with positioning angles
+5. The Solution must demonstrate value through the lens of the positioning angles
+6. The CTA must match the emotional tone (inspiring → aspirational CTA, urgent → action-oriented CTA)
+7. Return ONLY valid JSON (no markdown):
 {"hook":"transcreated hook","problem_statement":"transcreated problem","solution":"transcreated solution","cta":"transcreated cta","cultural_adaptations":"list of key cultural changes made"}`;
 
           // Call transcreation API
@@ -2216,7 +2295,11 @@ INSTRUCTIONS:
             const parentZone = child.code.split('_')[0];
             const routingZone = zoneMap[parentZone] || 'western';
 
-            // Transcreation prompt
+            // Transcreation prompt with active metadata injection
+            const subPositioning = parentScript.positioning_angles?.join(', ') || 'value-driven';
+            const subTones = parentScript.emotional_tones?.join(', ') || 'professional';
+            const subPersonas = parentScript.target_personas?.join(', ') || 'general business audience';
+            
             const prompt = `You are a world-class localization expert specializing in regional cultural adaptation.
 
 TASK: Transcreate (not translate) the following marketing script for ${child.name}. Adapt cultural context, idioms, and emotional resonance while maintaining the Hook → Problem → Solution → CTA structure.
@@ -2229,8 +2312,17 @@ CTA: ${parentScript.cta}
 
 TARGET REGION: ${child.name}
 TARGET LANGUAGE: ${languageCode}
-POSITIONING: ${parentScript.positioning_angles?.join(', ') || 'value-driven'}
-TONE: ${parentScript.emotional_tones?.join(', ') || 'professional'}
+
+═══ CREATIVE DIRECTION (MUST ACTIVELY INFLUENCE OUTPUT) ═══
+
+POSITIONING ANGLES: ${subPositioning}
+→ Emphasize these value propositions throughout. Weave into the problem as pain points and solution as benefits.
+
+TARGET PERSONAS: ${subPersonas}
+→ Write AS IF speaking directly to these people. Use their vocabulary, concerns, and aspirations.
+
+EMOTIONAL TONES: ${subTones}
+→ The voice and rhythm MUST reflect these tones. If "inspiring" — aspirational language. If "compassionate" — acknowledge struggles. If "urgent" — short sentences, clear stakes.
 
 Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"...","cta":"..."}`;
 
