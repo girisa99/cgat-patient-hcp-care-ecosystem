@@ -750,7 +750,7 @@ export const LandingPageScriptsPanel: React.FC = () => {
     return new Set(filteredScripts.map(s => s.id));
   }, [filteredScripts]);
 
-  // ── Group by region ──
+  // ── Group by region (filtered — for displaying script rows) ──
   const groupedByRegion = useMemo(() => {
     const groups: Record<string, NarrationScript[]> = {};
     filteredScripts.forEach(s => {
@@ -759,6 +759,16 @@ export const LandingPageScriptsPanel: React.FC = () => {
     });
     return groups;
   }, [filteredScripts]);
+
+  // ── Group by region (ALL non-archived — for region card headers, badges, counts) ──
+  const allGroupedByRegion = useMemo(() => {
+    const groups: Record<string, NarrationScript[]> = {};
+    scripts.filter(s => s.status !== 'archived').forEach(s => {
+      if (!groups[s.region_code]) groups[s.region_code] = [];
+      groups[s.region_code].push(s);
+    });
+    return groups;
+  }, [scripts]);
 
   // ── Create variant ──
   const handleCreateVariant = useCallback(async (baseScript: NarrationScript, variantLabel: string) => {
@@ -2868,7 +2878,9 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
               </Card>
             ) : (
               <>
-              {Object.entries(groupedByRegion).map(([regionCode, regionScripts]) => {
+              {Object.entries(allGroupedByRegion).map(([regionCode, allRegionScripts]) => {
+                // Scripts matching current filter (for display)
+                const regionScripts = groupedByRegion[regionCode] || [];
                 const regionInfo = REGION_OPTIONS.find(r => r.code === regionCode);
                 // Check if this is a parent-level script (matches a groupCode) that has sub-regions
                 const isParentLevel = REGION_HIERARCHY.some(g => 
@@ -2906,8 +2918,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   : 0;
                 const isExpanding = expandingRegion === regionCode;
 
-                // Check if this region has its own English base — use ALL scripts (not filtered) to avoid status filter hiding the base
-                const allRegionScripts = scripts.filter(s => s.region_code === regionCode && s.status !== 'archived');
+                // Check if this region has its own English base — use allRegionScripts from the outer scope
                 const hasRegionEnglishBase = isParentLevel && allRegionScripts.some(s => s.is_english_base && s.language_code === 'en');
                 const hasActiveRegionEnglishBase = isParentLevel && allRegionScripts.some(s => s.is_english_base && s.language_code === 'en' && s.status === 'active');
 
@@ -2919,7 +2930,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                           <span className="text-lg">{regionInfo?.flag}</span>
                           {regionInfo?.name || regionCode}
                           <Badge variant="outline" className="text-[10px] ml-2">
-                            {regionScripts.length} script{regionScripts.length > 1 ? 's' : ''}
+                            {allRegionScripts.length} script{allRegionScripts.length > 1 ? 's' : ''}
                           </Badge>
                           {hasSubRegions && (
                             <Badge variant="secondary" className="text-[10px]">
@@ -3227,11 +3238,13 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   </Card>
                 );
               })}
-              {/* ─── Empty region cards for groups with NO scripts yet ─── */}
-              {(filterStatus === 'all' || filterStatus === 'draft') && REGION_HIERARCHY
+              {/* ─── Empty region cards for groups with NO scripts at all (not just filtered out) ─── */}
+              {REGION_HIERARCHY
                 .filter(group => {
                   const codes = getGroupCodes(group);
-                  return !codes.some(c => groupedByRegion[c] || groupedByRegion[c.toLowerCase()]);
+                  // Check against ALL non-archived scripts, not the filtered view
+                  const hasAnyScripts = scripts.some(s => s.status !== 'archived' && codes.some(c => c === s.region_code || c.toLowerCase() === s.region_code));
+                  return !hasAnyScripts;
                 })
                 .map(group => {
                   const isSingleNode = group.children.length === 0;
