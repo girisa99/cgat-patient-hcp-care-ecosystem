@@ -1633,6 +1633,11 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
       'cjk': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
       'pakistan': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
       'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
+      'turkey': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
+      'oceania': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
+      'caribbean': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
+      'eurasia': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
+      'central_asia': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
     };
     const regionKey = regionCode.toLowerCase();
     const llmRoute = REGION_LLM_ROUTING[regionKey] || { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' };
@@ -1781,6 +1786,9 @@ Respond in EXACTLY this JSON format (no markdown, no code blocks):
           'latam': 'latam', 'mena': 'mena', 'india': 'india',
           'cjk': 'cjk', 'sea': 'sea', 'africa': 'africa',
           'eu': 'western', 'nam': 'western', 'ENGLISH_BASE': 'western',
+          'pakistan': 'mena', 'bangladesh': 'india',
+          'turkey': 'western', 'oceania': 'western',
+          'caribbean': 'latam', 'eurasia': 'western', 'central_asia': 'western',
         };
 
         const { error } = await supabase
@@ -2274,6 +2282,11 @@ EMOTIONAL TONES: ${emotionalTones}
               'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_KHMER': 'km', 'SEA_LAO': 'lo', 'SEA_MYANMAR': 'my',
               'SEA_ID': 'id', 'SEA_MY': 'ms', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en', 'SEA_PAN_EN': 'en',
               'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
+              // P0/P1 regions
+              'OCEANIA_AU': 'en', 'OCEANIA_NZ': 'en',
+              'CARIBBEAN_EN': 'en', 'CARIBBEAN_FR': 'fr',
+              'EU_UKRAINE': 'uk', 'EU_BALKANS': 'sr', 'EU_CAUCASUS': 'ka',
+              'ASIA_CENTRAL_KZ': 'kk', 'ASIA_CENTRAL_UZ': 'uz', 'ASIA_CENTRAL_AZ': 'az', 'ASIA_CENTRAL_AM': 'hy', 'ASIA_CENTRAL_GE': 'ka',
             };
             const languageCode = languageMap[child.code] || 'en';
 
@@ -2281,6 +2294,8 @@ EMOTIONAL TONES: ${emotionalTones}
               'NAM': 'western', 'EU': 'western', 'LATAM': 'latam',
               'CJK': 'cjk', 'MENA': 'mena', 'INDIA': 'india',
               'SEA': 'sea', 'AFRICA': 'africa',
+              'OCEANIA': 'western', 'CARIBBEAN': 'latam',
+              'EURASIA': 'western', 'ASIA': 'western',
             };
             const parentZone = child.code.split('_')[0];
             const routingZone = zoneMap[parentZone] || 'western';
@@ -2838,7 +2853,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
               <div className="flex items-center justify-center py-20">
                 <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
-            ) : Object.keys(groupedByRegion).length === 0 ? (
+            ) : (filterStatus !== 'all' && filterStatus !== 'draft' && Object.keys(groupedByRegion).length === 0) ? (
               <Card className="border-dashed">
                 <CardContent className="py-12 text-center">
                   <Globe className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
@@ -2846,7 +2861,8 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                 </CardContent>
               </Card>
             ) : (
-              Object.entries(groupedByRegion).map(([regionCode, regionScripts]) => {
+              <>
+              {Object.entries(groupedByRegion).map(([regionCode, regionScripts]) => {
                 const regionInfo = REGION_OPTIONS.find(r => r.code === regionCode);
                 // Check if this is a parent-level script (matches a groupCode) that has sub-regions
                 const isParentLevel = REGION_HIERARCHY.some(g => 
@@ -3203,7 +3219,59 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     </CardContent>
                   </Card>
                 );
-              })
+              })}
+              {/* ─── Empty region cards for groups with NO scripts yet ─── */}
+              {(filterStatus === 'all' || filterStatus === 'draft') && REGION_HIERARCHY
+                .filter(group => {
+                  const codes = getGroupCodes(group);
+                  return !codes.some(c => groupedByRegion[c] || groupedByRegion[c.toLowerCase()]);
+                })
+                .map(group => {
+                  const isSingleNode = group.children.length === 0;
+                  const singleLang = SINGLE_NODE_LANGUAGE_MAP[group.groupCode];
+                  return (
+                    <Card key={`empty-${group.groupCode}`} className="overflow-hidden border-dashed">
+                      <CardHeader className="py-3 bg-muted/20">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <span className="text-lg">{group.groupFlag}</span>
+                            {group.groupName}
+                            <Badge variant="outline" className="text-[10px] ml-2">0 scripts</Badge>
+                            {!isSingleNode && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                0/{group.children.reduce((acc, c) => acc + (c.children?.length || 1), 0)} sub-regions
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-[10px] gap-1 text-amber-600 border-amber-300">
+                              ⚠ No EN Base
+                            </Badge>
+                          </CardTitle>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="text-xs h-7 gap-1"
+                              onClick={() => handleCreateRegionEnglishBase(group.groupCode.toLowerCase(), group.groupName)}
+                            >
+                              <Plus className="w-3 h-3" />
+                              Create EN Base
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="py-6 text-center">
+                        <Globe className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
+                        <p className="text-xs text-muted-foreground">
+                          {isSingleNode 
+                            ? `Create an English Base, then generate ${singleLang?.languageName || 'local'} script`
+                            : `Create an English Base to enable expansion to ${group.children.length} sub-regions`
+                          }
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </>
             )}
           </motion.div>
         )}
