@@ -557,14 +557,38 @@ Make it more detailed, engaging, and optimized for AI generation.`;
           response = await callClaude(model || 'claude-3-5-haiku-20241022', prompt, systemPrompt, temperature, maxTokens);
           break;
         case 'gemini':
-          response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
+          try {
+            response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
+          } catch (geminiErr) {
+            const errMsg = geminiErr instanceof Error ? geminiErr.message : String(geminiErr);
+            if (errMsg.includes('429') || errMsg.includes('rate limit') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+              console.warn(`[UniversalAI] Gemini rate limited, auto-falling back to OpenAI/Claude`);
+              try {
+                response = await callOpenAI('gpt-4o-mini', prompt, systemPrompt || '', temperature, maxTokens);
+              } catch {
+                response = await callClaude('claude-3-5-haiku-20241022', prompt, systemPrompt || '', temperature, maxTokens);
+              }
+            } else {
+              throw geminiErr;
+            }
+          }
           break;
         case 'alibaba':
           response = await callAlibabaLLM(model || 'qwen-turbo', prompt, systemPrompt, temperature, maxTokens);
           break;
         default:
           console.log(`[UniversalAI] Auto-selecting gemini for provider: ${provider}`);
-          response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
+          try {
+            response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
+          } catch (defaultErr) {
+            const errMsg = defaultErr instanceof Error ? defaultErr.message : String(defaultErr);
+            if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+              console.warn(`[UniversalAI] Default gemini rate limited, falling back`);
+              response = await callOpenAI('gpt-4o-mini', prompt, systemPrompt || '', temperature, maxTokens);
+            } else {
+              throw defaultErr;
+            }
+          }
       }
     }
 
@@ -876,6 +900,52 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
       }
     }),
   });
+
+  // Handle 429 rate limiting - retry with exponential backoff then fallback to other providers
+  if (!response.ok && response.status === 429) {
+    console.warn(`[Gemini] Rate limited (429). Retrying with backoff...`);
+    
+    // Retry up to 2 times with backoff
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const delay = attempt * 1500; // 1.5s, 3s
+      console.log(`[Gemini] Retry attempt ${attempt} after ${delay}ms`);
+      await new Promise(r => setTimeout(r, delay));
+      
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: fullPrompt }] }],
+          generationConfig: {
+            temperature: temperature ?? 0.7,
+            maxOutputTokens: maxTokens ?? 4096
+          }
+        }),
+      });
+      
+      if (response.ok) {
+        console.log(`[Gemini] Retry attempt ${attempt} succeeded`);
+        break;
+      }
+      
+      if (response.status !== 429) break; // Different error, stop retrying
+    }
+    
+    // If still 429, try fallback to OpenAI or Claude
+    if (!response.ok && response.status === 429) {
+      console.warn(`[Gemini] Still rate limited after retries. Falling back to OpenAI...`);
+      const openaiKey = Deno.env.get('OPENAI_API_KEY');
+      if (openaiKey) {
+        return await callOpenAI('gpt-4o-mini', prompt, systemPrompt || '', temperature, maxTokens);
+      }
+      const claudeKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('CLAUDE_API_KEY');
+      if (claudeKey) {
+        return await callClaude('claude-3-5-haiku-20241022', prompt, systemPrompt || '', temperature, maxTokens);
+      }
+      // No fallback available
+      throw new Error('Gemini rate limited (429) and no fallback providers available. Please try again in a moment.');
+    }
+  }
 
   // If model not found, retry with fallback models
   if (!response.ok && response.status === 404) {
