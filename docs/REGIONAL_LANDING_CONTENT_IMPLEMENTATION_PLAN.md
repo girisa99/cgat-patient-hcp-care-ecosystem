@@ -195,7 +195,36 @@ Database-driven regional landing pages replacing hardcoded TypeScript constants,
 
 ---
 
-## Phase B2 — Asset Pipeline
+## Phase B2a — Storage Bucket + Upload Service ✅ COMPLETE
+
+### Storage Bucket: `regional-landing-assets`
+- **Public bucket** for CDN-served assets
+- **RLS Policies**: Authenticated users can upload/update/delete; everyone can read
+- **Path convention**: `{region_code}/{asset_type}/{filename}`
+  - Example: `NAM_US/hero_image/hero_1718234567.webp`
+
+### Upload Service: `src/services/regionalAssetService.ts`
+
+| Function | Purpose |
+|----------|---------|
+| `uploadRegionalAsset()` | Core upload → returns public URL + storage path |
+| `uploadHeroImage()` | Upload + returns typed `ImageAsset` |
+| `uploadBrandLogo()` | Upload + returns typed `LogoAsset` |
+| `uploadOGImage()` | Upload + returns typed `OGImageAsset` (1200×630) |
+| `uploadHeroVideo()` | Upload + returns typed `VideoAsset` |
+| `updateRegionalAssets()` | Patch `assets` JSONB on `regional_landing_content` row |
+| `deleteRegionalAsset()` | Delete single file from storage |
+| `deleteAllRegionAssets()` | Delete all assets for a region code |
+| `listRegionAssets()` | List files for a region + asset type |
+
+### Key Design Decisions
+- **Upsert by default**: Re-uploads replace existing files (no timestamp duplication)
+- **Merge, don't replace**: `updateRegionalAssets()` patches JSONB, preserving existing assets
+- **Cast infrastructure reuse**: Avatar 3D generation deferred to B2b (leverages existing Genie Cast pipeline)
+
+---
+
+## Phase B2b — Avatar + Cast Pipeline Integration ⏳ PENDING
 
 ---
 
