@@ -229,6 +229,11 @@ export function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     if (r?.startsWith('SEA')) return 'india';
     if (r?.startsWith('INDIA')) return 'india';
     if (r?.startsWith('AFRICA')) return 'africa';
+    if (r?.startsWith('OCEANIA')) return 'oceania';
+    if (r === 'TURKEY') return 'turkey';
+    if (r?.startsWith('CARIBBEAN')) return 'caribbean';
+    if (r?.startsWith('EURASIA') || r === 'EU_UKRAINE' || r === 'EU_BALKANS' || r === 'EU_CAUCASUS') return 'eastern_europe';
+    if (r?.startsWith('ASIA_CENTRAL') || r?.startsWith('CENTRAL_ASIA')) return 'central_asia';
     return 'western';
   })();
 
