@@ -2085,22 +2085,101 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
   }, []);
 
   // ── Create Region-Specific English Base ──
-  const handleCreateRegionEnglishBase = useCallback((regionCode: string, regionName: string) => {
+  const handleCreateRegionEnglishBase = useCallback(async (regionCode: string, regionName: string) => {
     setEditingScript(null);
     setShowEditor(false);
     // Try global ENGLISH_BASE first, then fall back to any active English base script
     const globalBase = scripts.find(s => s.region_code === 'ENGLISH_BASE' && s.is_english_base && s.status === 'active')
       || scripts.find(s => s.is_english_base && s.status === 'active' && s.language_code === 'en');
+
+    // Build region context for AI adaptation
+    const regionGroup = REGION_HIERARCHY.find(g => g.groupCode === regionCode.toUpperCase() || g.groupCode.toLowerCase() === regionCode);
+    const subRegionNames = regionGroup?.children?.map(c => c.name).join(', ') || regionName;
+
+    let adaptedContent = { hook: '', problem_statement: '', solution: '', cta: '' };
+
+    if (globalBase?.hook) {
+      // Use AI to transcreate content for the target region
+      toast.info(`🤖 Adapting English Base for ${regionName} using AI...`);
+      try {
+        const prompt = `You are a healthcare marketing transcreation expert. You have a global English marketing script for a healthcare AI platform. Your task is to ADAPT this script specifically for the ${regionName} market (covering: ${subRegionNames}).
+
+IMPORTANT RULES:
+- The output must remain in ENGLISH — do NOT translate to other languages
+- Adapt cultural references, healthcare system context, and value propositions for ${regionName}
+- Reference relevant healthcare challenges, regulations, or market dynamics specific to this region
+- Keep the same general structure (Hook, Problem, Solution, CTA) but make every section feel native to ${regionName}
+- Do NOT mention languages or regions that are NOT part of ${regionName}
+- Maintain similar length to the original
+
+ORIGINAL GLOBAL SCRIPT:
+
+HOOK: ${globalBase.hook}
+
+PROBLEM: ${globalBase.problem_statement}
+
+SOLUTION: ${globalBase.solution}
+
+CTA: ${globalBase.cta}
+
+Respond in EXACTLY this JSON format (no markdown, no code blocks):
+{"hook": "...", "problem_statement": "...", "solution": "...", "cta": "..."}`;
+
+        const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
+          body: {
+            provider: 'openai',
+            model: 'gpt-4o-mini',
+            action: 'generate',
+            prompt,
+            temperature: 0.7,
+            max_tokens: 2000,
+          },
+        });
+
+        if (!aiError && aiResult?.content) {
+          try {
+            // Try to parse JSON from the AI response
+            const rawContent = typeof aiResult.content === 'string' ? aiResult.content : JSON.stringify(aiResult.content);
+            const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              adaptedContent = {
+                hook: parsed.hook || globalBase.hook,
+                problem_statement: parsed.problem_statement || globalBase.problem_statement,
+                solution: parsed.solution || globalBase.solution,
+                cta: parsed.cta || globalBase.cta,
+              };
+              toast.success(`✅ AI-adapted content for ${regionName} — review and customize further.`);
+            } else {
+              throw new Error('No JSON found in response');
+            }
+          } catch (parseErr) {
+            console.warn('[RegionBase] Failed to parse AI response, using global base:', parseErr);
+            adaptedContent = { hook: globalBase.hook, problem_statement: globalBase.problem_statement, solution: globalBase.solution, cta: globalBase.cta };
+            toast.warning(`⚠ AI adaptation failed to parse — pre-filled from global base. Please customize manually.`);
+          }
+        } else {
+          console.warn('[RegionBase] AI adaptation failed:', aiError);
+          adaptedContent = { hook: globalBase.hook, problem_statement: globalBase.problem_statement, solution: globalBase.solution, cta: globalBase.cta };
+          toast.warning(`⚠ AI adaptation unavailable — pre-filled from global base. Please customize for ${regionName}.`);
+        }
+      } catch (err) {
+        console.warn('[RegionBase] AI call error:', err);
+        adaptedContent = { hook: globalBase.hook, problem_statement: globalBase.problem_statement, solution: globalBase.solution, cta: globalBase.cta };
+        toast.warning(`⚠ AI adaptation error — pre-filled from global base. Please customize manually.`);
+      }
+    }
+
     setEditingScript({
       id: `new-region-base-${Date.now()}`,
       region_code: regionCode.toLowerCase(),
       region_display_name: `${regionName} English Base`,
       language_code: 'en',
       language_display_name: 'English',
-      hook: globalBase?.hook || '',
-      problem_statement: globalBase?.problem_statement || '',
-      solution: globalBase?.solution || '',
-      cta: globalBase?.cta || '',
+      hook: adaptedContent.hook,
+      problem_statement: adaptedContent.problem_statement,
+      solution: adaptedContent.solution,
+      cta: adaptedContent.cta,
       positioning_angles: globalBase?.positioning_angles || [],
       target_personas: globalBase?.target_personas || [],
       emotional_tones: globalBase?.emotional_tones || [],
@@ -2126,21 +2205,20 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
       approved_at: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      llm_provider: null,
-      llm_model: null,
-      llm_temperature: null,
+      llm_provider: 'openai',
+      llm_model: 'gpt-4o-mini',
+      llm_temperature: 0.7,
       llm_token_count: null,
-      llm_prompt_template: null,
-      routing_decision: null,
-      routing_confidence_score: null,
-      routing_zone: null,
-      generation_timestamp: null,
+      llm_prompt_template: 'region-english-base-adaptation',
+      routing_decision: `AI-adapted global English base for ${regionName}`,
+      routing_confidence_score: 0.85,
+      routing_zone: regionCode.toLowerCase(),
+      generation_timestamp: new Date().toISOString(),
       is_english_base: true,
       english_base_script_id: null,
       full_script: null,
     } as NarrationScript);
     setShowEditor(true);
-    toast.info(`📝 Creating English Base for ${regionName}. ${globalBase ? 'Pre-filled from Global English Base — customize for this region.' : 'Write region-specific English content.'}`);
   }, [scripts]);
 
   const handleSaveEnglishBase = useCallback(async () => {
