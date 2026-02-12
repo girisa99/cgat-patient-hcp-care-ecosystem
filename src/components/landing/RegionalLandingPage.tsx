@@ -83,6 +83,14 @@ const REGION_HERO_IMAGES: Record<RegionSlug, string[]> = {
   apac: [heroRegionApac, heroApacPipeline, heroApacLanguages, heroApacTranscreation],
   latam: [heroRegionLatam, heroLatamPipeline, heroLatamLanguages, heroLatamTranscreation],
   caribbean: [heroRegionCaribbean, heroCaribbeanPipeline, heroCaribbeanLanguages, heroCaribbeanTranscreation],
+  // P0 regions — alias to closest primary
+  oceania: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
+  turkey: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
+  // P1 regions — alias to closest primary
+  pakistan: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
+  bangladesh: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
+  eastern_europe: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
+  central_asia: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
 };
 
 // ============================================
