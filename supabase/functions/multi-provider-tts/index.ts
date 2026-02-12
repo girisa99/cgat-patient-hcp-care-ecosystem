@@ -730,9 +730,9 @@ async function generateGoogleTTS(text: string, languageCode?: string, voice?: st
   const isGoogleVoice = voice && /^[a-z]{2,3}-[A-Z]{2}/.test(voice);
   // Not all languages have Neural2-D; use known defaults for CJK
   const GOOGLE_VOICE_DEFAULTS: Record<string, string> = {
-    'zh-TW': 'zh-TW-Neural2-B',  // Female, only A/B/C exist for zh-TW
-    'zh-CN': 'zh-CN-Neural2-D',
-    'ja-JP': 'ja-JP-Neural2-D',
+    'zh-TW': 'zh-TW-Neural2-B',  // Only A/B/C exist for zh-TW
+    'zh-CN': 'zh-CN-Neural2-B',  // Only A/B/C exist for zh-CN (D does not exist)
+    'ja-JP': 'ja-JP-Neural2-B',  // Safe default
     'ko-KR': 'ko-KR-Neural2-A',  // Only A/B/C exist for ko-KR
   };
   const defaultVoice = GOOGLE_VOICE_DEFAULTS[lang] || `${lang}-Neural2-D`;
