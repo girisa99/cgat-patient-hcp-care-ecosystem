@@ -213,20 +213,36 @@ const REGION_HIERARCHY: RegionGroup[] = [
   {
     groupCode: 'SEA', groupName: 'Southeast Asia', groupFlag: '🌏',
     children: [
-      { code: 'SEA_MALAY', name: 'Malaysia & Indonesia', flag: '🇲🇾' },
-      { code: 'SEA_THAI', name: 'Thailand', flag: '🇹🇭' },
-      { code: 'SEA_VIET', name: 'Vietnam', flag: '🇻🇳' },
-      { code: 'SEA_PHIL', name: 'Philippines', flag: '🇵🇭' },
-      { code: 'SEA_PAN', name: 'Pan-SEA (Singapore)', flag: '🇸🇬' },
+      { code: 'SEA_MAINLAND', name: 'Mainland SEA', flag: '🌏', children: [
+        { code: 'SEA_THAI', name: 'Thailand (ไทย)', flag: '🇹🇭' },
+        { code: 'SEA_VIET', name: 'Vietnam (Tiếng Việt)', flag: '🇻🇳' },
+        { code: 'SEA_KHMER', name: 'Cambodia (ខ្មែរ)', flag: '🇰🇭' },
+        { code: 'SEA_LAO', name: 'Laos (ລາວ)', flag: '🇱🇦' },
+        { code: 'SEA_MYANMAR', name: 'Myanmar (မြန်မာ)', flag: '🇲🇲' },
+      ]},
+      { code: 'SEA_MARITIME', name: 'Maritime SEA', flag: '🌊', children: [
+        { code: 'SEA_ID', name: 'Indonesia (Bahasa Indonesia)', flag: '🇮🇩' },
+        { code: 'SEA_MY', name: 'Malaysia (Bahasa Melayu)', flag: '🇲🇾' },
+        { code: 'SEA_PHIL', name: 'Philippines (Filipino)', flag: '🇵🇭' },
+      ]},
+      { code: 'SEA_PAN', name: 'Pan-SEA (English)', flag: '🇸🇬', children: [
+        { code: 'SEA_PAN_EN', name: 'ASEAN English', flag: '🇸🇬' },
+      ]},
     ],
   },
   {
     groupCode: 'CJK', groupName: 'China, Japan & Korea', groupFlag: '🌏',
     children: [
-      { code: 'CJK_CN', name: 'China (Mainland, HK, Macau)', flag: '🇨🇳' },
-      { code: 'CJK_TW', name: 'Taiwan (Traditional Chinese)', flag: '🇹🇼' },
-      { code: 'CJK_JP', name: 'Japan', flag: '🇯🇵' },
-      { code: 'CJK_KR', name: 'South Korea', flag: '🇰🇷' },
+      { code: 'CJK_CHINA', name: 'China', flag: '🇨🇳', children: [
+        { code: 'CJK_CN', name: 'Mandarin (普通话)', flag: '🇨🇳' },
+        { code: 'CJK_HK', name: 'Cantonese (粵語)', flag: '🇭🇰' },
+        { code: 'CJK_TW', name: 'Taiwan (繁體中文)', flag: '🇹🇼' },
+      ]},
+      { code: 'CJK_JP', name: 'Japan (日本語)', flag: '🇯🇵' },
+      { code: 'CJK_KR', name: 'South Korea (한국어)', flag: '🇰🇷' },
+      { code: 'CJK_PAN', name: 'Pan-CJK (English)', flag: '🌏', children: [
+        { code: 'CJK_PAN_EN', name: 'CJK English', flag: '🌏' },
+      ]},
     ],
   },
 ];
@@ -618,12 +634,16 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-PrabhatNeural', voiceName: 'Prabhat (Indian English)', gender: 'male' },
       { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-AashiNeural', voiceName: 'Aashi (Indian English)', gender: 'female' },
     ],
-    // SEA
-    'SEA_MALAY': [
-      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-OsmanNeural', voiceName: 'Osman (Malay)', gender: 'male' },
-      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)', gender: 'female' },
+    // SEA — Parent sub-regions (fallback voices)
+    'SEA_MAINLAND': [
+      { provider: 'azure', locale: 'th-TH', label: 'Azure Neural', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)', gender: 'female' },
     ],
+    'SEA_MARITIME': [
+      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)', gender: 'female' },
+    ],
+    // SEA leaf nodes
     'SEA_THAI': [
       { provider: 'azure', locale: 'th-TH', label: 'Azure Neural', voiceId: 'th-TH-PremwadeeNeural', voiceName: 'Premwadee (Thai)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'th-TH', label: 'Azure Neural', voiceId: 'th-TH-NiwatNeural', voiceName: 'Niwat (Thai)', gender: 'male' },
@@ -633,6 +653,26 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural', voiceId: 'vi-VN-HoaiMyNeural', voiceName: 'HoaiMy (Vietnamese)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'vi-VN', label: 'Azure Neural', voiceId: 'vi-VN-NamMinhNeural', voiceName: 'NamMinh (Vietnamese)', gender: 'male' },
     ],
+    'SEA_KHMER': [
+      { provider: 'azure', locale: 'km-KH', label: 'Azure Neural', voiceId: 'km-KH-SreymomNeural', voiceName: 'Sreymom (Khmer)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'km-KH', label: 'Azure Neural', voiceId: 'km-KH-PisethNeural', voiceName: 'Piseth (Khmer)', gender: 'male' },
+    ],
+    'SEA_LAO': [
+      { provider: 'azure', locale: 'lo-LA', label: 'Azure Neural', voiceId: 'lo-LA-KeomanyNeural', voiceName: 'Keomany (Lao)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'lo-LA', label: 'Azure Neural', voiceId: 'lo-LA-ChanthavongNeural', voiceName: 'Chanthavong (Lao)', gender: 'male' },
+    ],
+    'SEA_MYANMAR': [
+      { provider: 'azure', locale: 'my-MM', label: 'Azure Neural', voiceId: 'my-MM-NilarNeural', voiceName: 'Nilar (Myanmar)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'my-MM', label: 'Azure Neural', voiceId: 'my-MM-ThihaNeural', voiceName: 'Thiha (Myanmar)', gender: 'male' },
+    ],
+    'SEA_ID': [
+      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-GadisNeural', voiceName: 'Gadis (Indonesian)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'id-ID', label: 'Azure Neural', voiceId: 'id-ID-ArdiNeural', voiceName: 'Ardi (Indonesian)', gender: 'male' },
+    ],
+    'SEA_MY': [
+      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-YasminNeural', voiceName: 'Yasmin (Malay)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ms-MY', label: 'Azure Neural', voiceId: 'ms-MY-OsmanNeural', voiceName: 'Osman (Malay)', gender: 'male' },
+    ],
     'SEA_PHIL': [
       { provider: 'azure', locale: 'fil-PH', label: 'Azure Neural', voiceId: 'fil-PH-BlessicaNeural', voiceName: 'Blessica (Filipino)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'fil-PH', label: 'Azure Neural', voiceId: 'fil-PH-AngeloNeural', voiceName: 'Angelo (Filipino)', gender: 'male' },
@@ -641,11 +681,25 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-WayneNeural', voiceName: 'Wayne (Singapore English)', gender: 'male' },
     ],
-    // CJK
+    'SEA_PAN_EN': [
+      { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-WayneNeural', voiceName: 'Wayne (Singapore English)', gender: 'male' },
+    ],
+    // CJK — Parent sub-regions
+    'CJK_CHINA': [
+      { provider: 'qwen3', locale: 'zh-CN', label: 'Qwen3-TTS', voiceId: 'longwan', voiceName: 'Longwan (Mandarin)', gender: 'male', isDefault: true },
+      { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Mandarin)', gender: 'female' },
+    ],
+    // CJK leaf nodes
     'CJK_CN': [
       { provider: 'qwen3', locale: 'zh-CN', label: 'Qwen3-TTS', voiceId: 'longwan', voiceName: 'Longwan (Mandarin)', gender: 'male', isDefault: true },
       { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Mandarin)', gender: 'female' },
       { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-YunxiNeural', voiceName: 'Yunxi (Mandarin)', gender: 'male' },
+    ],
+    'CJK_HK': [
+      { provider: 'azure', locale: 'zh-HK', label: 'Azure Neural', voiceId: 'zh-HK-HiuMaanNeural', voiceName: 'HiuMaan (Cantonese)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'zh-HK', label: 'Azure Neural', voiceId: 'zh-HK-WanLungNeural', voiceName: 'WanLung (Cantonese)', gender: 'male' },
+      { provider: 'azure', locale: 'zh-HK', label: 'Azure Neural', voiceId: 'zh-HK-HiuGaaiNeural', voiceName: 'HiuGaai (Cantonese)', gender: 'female' },
     ],
     'CJK_TW': [
       { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)', gender: 'female', isDefault: true },
@@ -660,6 +714,14 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-InJoonNeural', voiceName: 'InJoon (Korean)', gender: 'male' },
       { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-BongJinNeural', voiceName: 'BongJin (Korean)', gender: 'male' },
+    ],
+    'CJK_PAN': [
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-GuyNeural', voiceName: 'Guy (US English)', gender: 'male' },
+    ],
+    'CJK_PAN_EN': [
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-GuyNeural', voiceName: 'Guy (US English)', gender: 'male' },
     ],
     // Africa
     'AFRICA_WEST': [
@@ -914,16 +976,27 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'INDIA_EAST_OR': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'INDIA_PAN_EN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     // SEA sub-regions
-    'SEA_MALAY': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_MAINLAND': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_MARITIME': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_THAI': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_VIET': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_KHMER': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_LAO': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_MYANMAR': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_ID': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SEA_MY': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_PHIL': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     'SEA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
+    'SEA_PAN_EN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     // CJK sub-regions
+    'CJK_CHINA': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
     'CJK_CN': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
+    'CJK_HK': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'CJK_JP': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'CJK_KR': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'CJK_TW': ['alibaba', 'claude', 'openai', 'gemini', 'deepseek'],
+    'CJK_PAN': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
+    'CJK_PAN_EN': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
     // MENA sub-regions
     'MENA_GULF': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'MENA_EGYPT': ['openai', 'alibaba', 'claude', 'gemini', 'deepseek'],
@@ -2228,8 +2301,11 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
             'INDIA_WEST_MR': 'mr', 'INDIA_WEST_GU': 'gu',
             'INDIA_EAST_BN': 'bn', 'INDIA_EAST_OR': 'or',
             'INDIA_PAN_EN': 'en',
-            'SEA_MALAY': 'ms', 'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en',
-            'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
+            'SEA_MAINLAND': 'th', 'SEA_MARITIME': 'id',
+            'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_KHMER': 'km', 'SEA_LAO': 'lo', 'SEA_MYANMAR': 'my',
+            'SEA_ID': 'id', 'SEA_MY': 'ms', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en', 'SEA_PAN_EN': 'en',
+            'CJK_CHINA': 'zh', 'CJK_CN': 'zh', 'CJK_HK': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
+            'CJK_PAN': 'en', 'CJK_PAN_EN': 'en',
           };
            const languageCode = languageMap[subRegionCode] || 'en';
 
@@ -2491,8 +2567,11 @@ EMOTIONAL TONES: ${emotionalTones}
               'INDIA_WEST_MR': 'mr', 'INDIA_WEST_GU': 'gu',
               'INDIA_EAST_BN': 'bn', 'INDIA_EAST_OR': 'or',
               'INDIA_PAN_EN': 'en',
-              'SEA_MALAY': 'ms', 'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en',
-              'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
+              'SEA_MAINLAND': 'th', 'SEA_MARITIME': 'id',
+              'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_KHMER': 'km', 'SEA_LAO': 'lo', 'SEA_MYANMAR': 'my',
+              'SEA_ID': 'id', 'SEA_MY': 'ms', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en', 'SEA_PAN_EN': 'en',
+              'CJK_CHINA': 'zh', 'CJK_CN': 'zh', 'CJK_HK': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
+              'CJK_PAN': 'en', 'CJK_PAN_EN': 'en',
             };
             const languageCode = languageMap[child.code] || 'en';
 
