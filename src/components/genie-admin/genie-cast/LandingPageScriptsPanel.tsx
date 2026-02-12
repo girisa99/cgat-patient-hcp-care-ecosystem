@@ -2195,7 +2195,13 @@ EMOTIONAL TONES: ${emotionalTones}
     }
 
     // ⭐ Prefer region-specific English base, fallback to global ENGLISH_BASE
-    const regionParentCode = parentCode.split('_')[0].toLowerCase(); // e.g., 'latam', 'mena'
+    // Resolve parent code: find the matching REGION_HIERARCHY group and use its groupCode
+    const matchedGroup = REGION_HIERARCHY.find(g => 
+      g.groupCode === parentCode || g.groupCode.toLowerCase() === parentScript.region_code
+    );
+    const regionParentCode = matchedGroup 
+      ? matchedGroup.groupCode.toLowerCase()  // e.g., 'central_asia', 'latam', 'mena'
+      : parentCode.split('_')[0].toLowerCase(); // fallback for non-parent codes
     const { data: regionEnglishBase } = await supabase
       .from('regional_narration_scripts')
       .select('*')
