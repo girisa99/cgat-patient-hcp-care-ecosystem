@@ -94,11 +94,18 @@ interface NarrationScript {
 
 type ScriptStatus = 'draft' | 'review' | 'active' | 'archived';
 
+interface RegionChild {
+  code: string;
+  name: string;
+  flag: string;
+  children?: RegionChild[];
+}
+
 interface RegionGroup {
   groupCode: string;
   groupName: string;
   groupFlag: string;
-  children: { code: string; name: string; flag: string }[];
+  children: RegionChild[];
 }
 
 const REGION_HIERARCHY: RegionGroup[] = [
@@ -113,11 +120,36 @@ const REGION_HIERARCHY: RegionGroup[] = [
     groupCode: 'EU', groupName: 'Europe', groupFlag: '🇪🇺',
     children: [
       { code: 'EU_WEST', name: 'UK & Ireland', flag: '🇬🇧' },
-      { code: 'EU_DACH', name: 'DACH (Germany, Austria, Switzerland)', flag: '🇩🇪' },
-      { code: 'EU_FRANCE', name: 'France & Francophone', flag: '🇫🇷' },
-      { code: 'EU_IBERIA', name: 'Spain & Portugal', flag: '🇪🇸' },
-      { code: 'EU_NORDIC', name: 'Nordics (Sweden, Norway, Denmark, Finland)', flag: '🇸🇪' },
-      { code: 'EU_EAST', name: 'Eastern Europe (Poland, Czech, Romania, Hungary)', flag: '🇵🇱' },
+      // DACH sub-region → per-country children
+      { code: 'EU_DACH', name: 'DACH (Germany, Austria, Switzerland)', flag: '🇩🇪', children: [
+        { code: 'EU_DE', name: 'Germany', flag: '🇩🇪' },
+        { code: 'EU_AT', name: 'Austria', flag: '🇦🇹' },
+        { code: 'EU_CH', name: 'Switzerland', flag: '🇨🇭' },
+      ]},
+      // France sub-region → per-country children
+      { code: 'EU_FRANCE', name: 'France & Francophone', flag: '🇫🇷', children: [
+        { code: 'EU_FR', name: 'France', flag: '🇫🇷' },
+        { code: 'EU_BE_FR', name: 'Belgium (French)', flag: '🇧🇪' },
+      ]},
+      // Iberia sub-region → per-country children
+      { code: 'EU_IBERIA', name: 'Spain & Portugal', flag: '🇪🇸', children: [
+        { code: 'EU_ES', name: 'Spain', flag: '🇪🇸' },
+        { code: 'EU_PT', name: 'Portugal', flag: '🇵🇹' },
+      ]},
+      // Nordic sub-region → per-country children
+      { code: 'EU_NORDIC', name: 'Nordics (Sweden, Norway, Denmark, Finland)', flag: '🇸🇪', children: [
+        { code: 'EU_SE', name: 'Sweden', flag: '🇸🇪' },
+        { code: 'EU_NO', name: 'Norway', flag: '🇳🇴' },
+        { code: 'EU_DK', name: 'Denmark', flag: '🇩🇰' },
+        { code: 'EU_FI', name: 'Finland', flag: '🇫🇮' },
+      ]},
+      // Eastern Europe sub-region → per-country children
+      { code: 'EU_EAST', name: 'Eastern Europe (Poland, Czech, Romania, Hungary)', flag: '🇵🇱', children: [
+        { code: 'EU_PL', name: 'Poland', flag: '🇵🇱' },
+        { code: 'EU_CZ', name: 'Czech Republic', flag: '🇨🇿' },
+        { code: 'EU_RO', name: 'Romania', flag: '🇷🇴' },
+        { code: 'EU_HU', name: 'Hungary', flag: '🇭🇺' },
+      ]},
     ],
   },
   {
@@ -533,6 +565,68 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-GuyNeural', voiceName: 'Guy (US English)', gender: 'male' },
     ],
+    // EU sub-regions — per-country voices
+    'EU_DE': [
+      { provider: 'azure', locale: 'de-DE', label: 'Azure Neural', voiceId: 'de-DE-KatjaNeural', voiceName: 'Katja (German - Germany)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'de-DE', label: 'Azure Neural', voiceId: 'de-DE-ConradNeural', voiceName: 'Conrad (German - Germany)', gender: 'male' },
+    ],
+    'EU_AT': [
+      { provider: 'azure', locale: 'de-AT', label: 'Azure Neural', voiceId: 'de-AT-IngridNeural', voiceName: 'Ingrid (German - Austria)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'de-AT', label: 'Azure Neural', voiceId: 'de-AT-JonasNeural', voiceName: 'Jonas (German - Austria)', gender: 'male' },
+    ],
+    'EU_CH': [
+      { provider: 'azure', locale: 'de-CH', label: 'Azure Neural', voiceId: 'de-CH-LeniNeural', voiceName: 'Leni (German - Switzerland)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'de-CH', label: 'Azure Neural', voiceId: 'de-CH-JanNeural', voiceName: 'Jan (German - Switzerland)', gender: 'male' },
+    ],
+    'EU_FR': [
+      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-DeniseNeural', voiceName: 'Denise (French - France)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-HenriNeural', voiceName: 'Henri (French - France)', gender: 'male' },
+      { provider: 'azure', locale: 'fr-FR', label: 'Azure Neural', voiceId: 'fr-FR-EloiseNeural', voiceName: 'Eloise (French - Young)', gender: 'female' },
+    ],
+    'EU_BE_FR': [
+      { provider: 'azure', locale: 'fr-BE', label: 'Azure Neural', voiceId: 'fr-BE-CharlineNeural', voiceName: 'Charline (Belgian French)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'fr-BE', label: 'Azure Neural', voiceId: 'fr-BE-JeromeNeural', voiceName: 'Jerome (Belgian French)', gender: 'male' },
+    ],
+    'EU_ES': [
+      { provider: 'azure', locale: 'es-ES', label: 'Azure Neural', voiceId: 'es-ES-ElviraNeural', voiceName: 'Elvira (Spanish - Spain)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'es-ES', label: 'Azure Neural', voiceId: 'es-ES-AlvaroNeural', voiceName: 'Alvaro (Spanish - Spain)', gender: 'male' },
+    ],
+    'EU_PT': [
+      { provider: 'azure', locale: 'pt-PT', label: 'Azure Neural', voiceId: 'pt-PT-DuarteNeural', voiceName: 'Duarte (Portuguese - Portugal)', gender: 'male', isDefault: true },
+      { provider: 'azure', locale: 'pt-PT', label: 'Azure Neural', voiceId: 'pt-PT-RaquelNeural', voiceName: 'Raquel (Portuguese - Portugal)', gender: 'female' },
+    ],
+    'EU_SE': [
+      { provider: 'azure', locale: 'sv-SE', label: 'Azure Neural', voiceId: 'sv-SE-SofieNeural', voiceName: 'Sofie (Swedish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'sv-SE', label: 'Azure Neural', voiceId: 'sv-SE-MattiasNeural', voiceName: 'Mattias (Swedish)', gender: 'male' },
+    ],
+    'EU_NO': [
+      { provider: 'azure', locale: 'nb-NO', label: 'Azure Neural', voiceId: 'nb-NO-PernilleNeural', voiceName: 'Pernille (Norwegian - Bokmål)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'nb-NO', label: 'Azure Neural', voiceId: 'nb-NO-FinnNeural', voiceName: 'Finn (Norwegian - Bokmål)', gender: 'male' },
+    ],
+    'EU_DK': [
+      { provider: 'azure', locale: 'da-DK', label: 'Azure Neural', voiceId: 'da-DK-ChristelNeural', voiceName: 'Christel (Danish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'da-DK', label: 'Azure Neural', voiceId: 'da-DK-JeppeNeural', voiceName: 'Jeppe (Danish)', gender: 'male' },
+    ],
+    'EU_FI': [
+      { provider: 'azure', locale: 'fi-FI', label: 'Azure Neural', voiceId: 'fi-FI-NooraNeural', voiceName: 'Noora (Finnish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'fi-FI', label: 'Azure Neural', voiceId: 'fi-FI-HarriNeural', voiceName: 'Harri (Finnish)', gender: 'male' },
+    ],
+    'EU_PL': [
+      { provider: 'azure', locale: 'pl-PL', label: 'Azure Neural', voiceId: 'pl-PL-AgnieszkaNeural', voiceName: 'Agnieszka (Polish)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'pl-PL', label: 'Azure Neural', voiceId: 'pl-PL-MarekNeural', voiceName: 'Marek (Polish)', gender: 'male' },
+    ],
+    'EU_CZ': [
+      { provider: 'azure', locale: 'cs-CZ', label: 'Azure Neural', voiceId: 'cs-CZ-VlastaNeural', voiceName: 'Vlasta (Czech)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'cs-CZ', label: 'Azure Neural', voiceId: 'cs-CZ-AntoninNeural', voiceName: 'Antonin (Czech)', gender: 'male' },
+    ],
+    'EU_RO': [
+      { provider: 'azure', locale: 'ro-RO', label: 'Azure Neural', voiceId: 'ro-RO-AlinaNeural', voiceName: 'Alina (Romanian)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ro-RO', label: 'Azure Neural', voiceId: 'ro-RO-EmilNeural', voiceName: 'Emil (Romanian)', gender: 'male' },
+    ],
+    'EU_HU': [
+      { provider: 'azure', locale: 'hu-HU', label: 'Azure Neural', voiceId: 'hu-HU-NoemiNeural', voiceName: 'Noemi (Hungarian)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'hu-HU', label: 'Azure Neural', voiceId: 'hu-HU-TamasNeural', voiceName: 'Tamas (Hungarian)', gender: 'male' },
+    ],
     'EU': [
       { provider: 'azure', locale: 'en-GB', label: 'Azure Neural', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'en-GB', label: 'Azure Neural', voiceId: 'en-GB-RyanNeural', voiceName: 'Ryan (British English)', gender: 'male' },
@@ -630,10 +724,25 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'NAM_CA': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
     // EU sub-regions
     'EU_WEST': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
+    'EU_DE': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+    'EU_AT': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+    'EU_CH': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
     'EU_DACH': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+    'EU_FR': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+    'EU_BE_FR': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
     'EU_FRANCE': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+    'EU_ES': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+    'EU_PT': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
     'EU_IBERIA': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+    'EU_SE': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+    'EU_NO': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+    'EU_DK': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+    'EU_FI': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
     'EU_NORDIC': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
+    'EU_PL': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
+    'EU_CZ': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
+    'EU_RO': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
+    'EU_HU': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
     'EU_EAST': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
     // LATAM sub-regions
     'LATAM_BRAZIL': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
