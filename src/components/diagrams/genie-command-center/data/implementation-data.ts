@@ -147,7 +147,7 @@ export const implementationPhases: ImplementationPhase[] = [
       { name: 'External Integrations (8 scenarios)', status: 'pending' },
       { name: 'Enterprise Features (18 scenarios)', status: 'pending' },
       // Original P4
-      { name: 'Multi-Language Support (140+ languages)', status: 'pending' },
+      { name: 'Multi-Language Support (50+ languages, 140+ dialects)', status: 'pending' },
       { name: 'Real-time Collaboration', status: 'pending' },
       { name: 'Version Control & History', status: 'pending' },
       { name: 'Recovery & Error Handling', status: 'pending' },

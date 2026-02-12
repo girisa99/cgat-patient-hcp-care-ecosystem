@@ -82,7 +82,7 @@ const prdRequirements = {
     { id: 'PRD-037', name: 'B-Roll Library Integration', status: 'pending', segment: 'All', scenarios: '14' },
   ],
   P4: [
-    { id: 'PRD-040', name: 'Multi-Language Support (140+ languages)', status: 'pending', segment: 'All', scenarios: '51-54' },
+    { id: 'PRD-040', name: 'Multi-Language Support (50+ languages, 140+ dialects)', status: 'pending', segment: 'All', scenarios: '51-54' },
     { id: 'PRD-041', name: 'Real-time Collaboration', status: 'pending', segment: 'Enterprise', scenarios: '55-57' },
     { id: 'PRD-042', name: 'Version Control & History', status: 'pending', segment: 'All', scenarios: '59-60' },
     { id: 'PRD-043', name: 'HIPAA Full Compliance', status: 'pending', segment: 'Healthcare', scenarios: '45' },

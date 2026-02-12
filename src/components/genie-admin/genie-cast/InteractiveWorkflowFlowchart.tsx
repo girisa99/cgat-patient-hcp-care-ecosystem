@@ -111,11 +111,44 @@ const REGION_CONFIGS: Record<string, RegionConfig> = {
        { code: 'SEA_PH', lang: 'Filipino', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'fil-PH' },
      ],
    },
-  STANDALONE: {
+   STANDALONE: {
     label: 'STANDALONE',
     subRegions: [
       { code: 'PAKISTAN', lang: 'Urdu', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ur-PK' },
       { code: 'BANGLADESH', lang: 'Bengali', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'bn-BD' },
+      { code: 'TURKEY', lang: 'Turkish', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'tr-TR' },
+    ],
+  },
+  OCEANIA: {
+    label: 'OCEANIA',
+    subRegions: [
+      { code: 'OCEANIA_AU', lang: 'Australian English', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-AU' },
+      { code: 'OCEANIA_NZ', lang: 'NZ English', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-NZ' },
+    ],
+  },
+  CARIBBEAN: {
+    label: 'CARIBBEAN',
+    subRegions: [
+      { code: 'CARIBBEAN_EN', lang: 'English Caribbean', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'en-JM' },
+      { code: 'CARIBBEAN_FR', lang: 'French Caribbean', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'fr-HT' },
+    ],
+  },
+  EURASIA: {
+    label: 'EURASIA',
+    subRegions: [
+      { code: 'EU_UKRAINE', lang: 'Ukrainian', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'uk-UA' },
+      { code: 'EU_BALKANS', lang: 'Serbian/Bulgarian', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'sr-RS' },
+      { code: 'EU_CAUCASUS', lang: 'Georgian/Armenian', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ka-GE' },
+    ],
+  },
+  CENTRAL_ASIA: {
+    label: 'CENTRAL ASIA',
+    subRegions: [
+      { code: 'ASIA_CENTRAL_KZ', lang: 'Kazakh', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'kk-KZ' },
+      { code: 'ASIA_CENTRAL_UZ', lang: 'Uzbek', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'uz-UZ' },
+      { code: 'ASIA_CENTRAL_AZ', lang: 'Azerbaijani', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'az-AZ' },
+      { code: 'ASIA_CENTRAL_AM', lang: 'Armenian', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'hy-AM' },
+      { code: 'ASIA_CENTRAL_GE', lang: 'Georgian', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ka-GE' },
     ],
   },
 };

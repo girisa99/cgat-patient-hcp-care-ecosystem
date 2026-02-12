@@ -389,7 +389,7 @@ const COMPETITORS: Competitor[] = [
     name: 'Synthesia', 
     segment: 'smb', 
     type: 'Direct', 
-    strengths: ['AI avatars', 'Enterprise trust', '140+ languages'], 
+    strengths: ['AI avatars', 'Enterprise trust', '50+ languages'], 
     weaknesses: ['Expensive', 'No audio/voice work', 'Template constraints'], 
     pricing: '$22-67/mo', 
     threat: 'High',
