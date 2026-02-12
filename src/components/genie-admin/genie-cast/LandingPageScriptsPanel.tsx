@@ -2453,8 +2453,11 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
               Object.entries(groupedByRegion).map(([regionCode, regionScripts]) => {
                 const regionInfo = REGION_OPTIONS.find(r => r.code === regionCode);
                 // Check if this is a parent-level script that has sub-regions
+                // OR if it's a sub-region whose parent group has other children
                 const parentGroup = REGION_HIERARCHY.find(g => 
                   g.groupCode === regionCode.toUpperCase() || g.groupCode.toLowerCase() === regionCode
+                ) || REGION_HIERARCHY.find(g => 
+                  g.children.some(c => c.code === regionCode || c.code === regionCode.toUpperCase())
                 );
                 const hasSubRegions = parentGroup && parentGroup.children.length > 0;
                 const existingSubRegionCount = hasSubRegions 
