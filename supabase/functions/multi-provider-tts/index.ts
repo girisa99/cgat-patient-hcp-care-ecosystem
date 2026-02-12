@@ -725,7 +725,10 @@ async function generateGoogleTTS(text: string, languageCode?: string, voice?: st
   if (!GOOGLE_API_KEY) throw new Error('Google API key not configured');
 
   const lang = languageCode || 'en-US';
-  const selectedVoice = voice || `${lang}-Neural2-D`;
+  // Only use voice if it looks like a valid Google voice (e.g., 'en-US-Neural2-D')
+  // Reject Qwen/Alibaba voice names like 'longhua', 'longfei' etc.
+  const isGoogleVoice = voice && /^[a-z]{2,3}-[A-Z]{2}/.test(voice);
+  const selectedVoice = isGoogleVoice ? voice : `${lang}-Neural2-D`;
 
   // Chunk by BYTES not chars — Google limit is 5000 bytes, multi-byte scripts need this
   const chunks = chunkTextByBytes(text, GOOGLE_MAX_BYTES);
@@ -1135,15 +1138,26 @@ serve(async (req) => {
     - Is ElevenLabs Region: ${ELEVENLABS_REGIONS.includes(region)}
   - Available Providers: ${providers.filter(p => p.available).map(p => p.id).join(', ')}`);
 
+    // Normalize provider aliases (UI sends 'qwen3' but internal ID is 'alibaba')
+    const providerAliases: Record<string, TTSProvider> = {
+      'qwen3': 'alibaba',
+      'qwen': 'alibaba',
+      'qwen3-tts': 'alibaba',
+      'cosyvoice': 'alibaba',
+    };
+    const normalizedProvider = request.provider 
+      ? (providerAliases[request.provider] || request.provider) as TTSProvider
+      : undefined;
+
     // Determine optimal provider
     let routing: TTSRouting;
-    if (request.provider) {
-      const available = providers.find(p => p.id === request.provider && p.available);
+    if (normalizedProvider) {
+      const available = providers.find(p => p.id === normalizedProvider && p.available);
       if (!available) {
-        console.warn(`⚠️ Requested provider ${request.provider} not available, using fallback`);
+        console.warn(`⚠️ Requested provider ${request.provider} (normalized: ${normalizedProvider}) not available, using fallback`);
         routing = selectTTSProvider(region, languageCode, tier);
       } else {
-        routing = { provider: request.provider, cost: 0.015, zone: 'manual', quality: 'standard' };
+        routing = { provider: normalizedProvider, cost: 0.015, zone: 'manual', quality: 'standard' };
       }
     } else {
       routing = selectTTSProvider(region, languageCode, tier);
