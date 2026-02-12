@@ -358,6 +358,13 @@ const getGroupCodes = (group: RegionGroup): string[] => {
   return [parentCode, parentLower];
 };
 
+// Single-node regions: language info for "Generate Local Script" workflow
+const SINGLE_NODE_LANGUAGE_MAP: Record<string, { languageCode: string; languageName: string; ttsLocale: string }> = {
+  'TURKEY': { languageCode: 'tr', languageName: 'Turkish (Türkçe)', ttsLocale: 'tr-TR' },
+  'PAKISTAN': { languageCode: 'ur', languageName: 'Urdu (اردو)', ttsLocale: 'ur-PK' },
+  'BANGLADESH': { languageCode: 'bn', languageName: 'Bengali (বাংলা)', ttsLocale: 'bn-BD' },
+};
+
 const POSITIONING_ANGLE_OPTIONS = [
   'Speed & Efficiency', 'Cost Savings', 'Innovation', 'Simplicity',
   'Enterprise Scale', 'Security & Compliance', 'AI-Powered', 'Time-to-Market',
@@ -2393,6 +2400,161 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
     }
   }, [scripts, fetchScripts]);
 
+  // ── Generate Local Language Script for single-node regions (Turkey, Pakistan, Bangladesh) ──
+  const handleGenerateLocalScript = useCallback(async (regionCode: string, regionName: string) => {
+    const upperCode = regionCode.toUpperCase();
+    const langInfo = SINGLE_NODE_LANGUAGE_MAP[upperCode];
+    if (!langInfo) {
+      toast.error('No language mapping found for this region.');
+      return;
+    }
+
+    // Find the active English base for this region
+    const regionEnBase = scripts.find(s => 
+      (s.region_code === regionCode.toLowerCase() || s.region_code === upperCode) 
+      && s.is_english_base && s.status === 'active'
+    );
+    const globalEnBase = scripts.find(s => s.region_code === 'ENGLISH_BASE' && s.is_english_base && s.status === 'active');
+    const englishBase = regionEnBase || globalEnBase;
+
+    if (!englishBase) {
+      toast.error(`No approved English Base found for ${regionName}. Create and approve an EN Base first.`);
+      return;
+    }
+
+    // Check if local script already exists
+    const existingLocal = scripts.find(s => 
+      (s.region_code === regionCode.toLowerCase() || s.region_code === upperCode) 
+      && !s.is_english_base && s.language_code === langInfo.languageCode
+      && s.status !== 'archived'
+    );
+    if (existingLocal) {
+      toast.info(`A ${langInfo.languageName} script already exists for ${regionName}.`);
+      return;
+    }
+
+    setExpandingRegion(regionCode);
+    toast.info(`🌍 Generating ${langInfo.languageName} script for ${regionName}...`);
+
+    try {
+      const providers = getZoneAIProviders(upperCode);
+      const provider = providers.find(p => p.isRecommended) || providers[0];
+      const ttsProvider = getSubRegionTTSProvider(upperCode);
+
+      const REGION_LLM_ROUTING: Record<string, { provider: string; model: string }> = {
+        'turkey': { provider: 'anthropic', model: 'claude-sonnet-4-20250514' },
+        'pakistan': { provider: 'openai', model: 'gpt-4o' },
+        'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro' },
+      };
+      const llmRoute = REGION_LLM_ROUTING[regionCode.toLowerCase()] || { provider: provider?.id || 'openai', model: provider?.model || 'gpt-4o' };
+
+      const subPositioning = englishBase.positioning_angles?.join(', ') || 'value-driven';
+      const subTones = englishBase.emotional_tones?.join(', ') || 'professional';
+      const subPersonas = englishBase.target_personas?.join(', ') || 'general business audience';
+
+      const prompt = `You are a world-class localization expert specializing in regional cultural adaptation.
+
+TASK: Transcreate (not translate) the following marketing script into ${langInfo.languageName} for ${regionName}. Adapt cultural context, idioms, and emotional resonance while maintaining the Hook → Problem → Solution → CTA structure.
+
+ORIGINAL SCRIPT:
+HOOK: ${englishBase.hook}
+PROBLEM: ${englishBase.problem_statement}
+SOLUTION: ${englishBase.solution}
+CTA: ${englishBase.cta}
+
+TARGET REGION: ${regionName}
+TARGET LANGUAGE: ${langInfo.languageName} (${langInfo.languageCode})
+
+═══ CREATIVE DIRECTION (MUST ACTIVELY INFLUENCE OUTPUT) ═══
+
+POSITIONING ANGLES: ${subPositioning}
+→ Emphasize these value propositions throughout.
+
+TARGET PERSONAS: ${subPersonas}
+→ Write AS IF speaking directly to these people.
+
+EMOTIONAL TONES: ${subTones}
+→ The voice and rhythm MUST reflect these tones.
+
+Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"...","cta":"..."}`;
+
+      const response = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          action: 'generate_text',
+          provider: llmRoute.provider,
+          model: llmRoute.model,
+          prompt,
+          systemPrompt: 'You are a regional script transcreation expert. Return ONLY valid JSON.',
+        },
+      });
+
+      if (response.error) {
+        console.error(`[LocalScript] Transcreation failed for ${upperCode}:`, response.error);
+        toast.error(`Failed to generate ${langInfo.languageName} script.`);
+        return;
+      }
+
+      const content = response.data?.content || response.data?.text || '';
+      let transcreated;
+      try {
+        const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        transcreated = JSON.parse(cleaned);
+      } catch {
+        console.error(`[LocalScript] Parse error for ${upperCode}`);
+        toast.error('Failed to parse AI response.');
+        return;
+      }
+
+      const zoneMap: Record<string, string> = { 'TURKEY': 'western', 'PAKISTAN': 'mena', 'BANGLADESH': 'india' };
+
+      const { error: insertError } = await supabase
+        .from('regional_narration_scripts')
+        .insert({
+          region_code: upperCode,
+          region_display_name: regionName,
+          language_code: langInfo.languageCode,
+          language_display_name: langInfo.languageName,
+          hook: transcreated.hook || englishBase.hook,
+          problem_statement: transcreated.problem_statement || englishBase.problem_statement,
+          solution: transcreated.solution || englishBase.solution,
+          cta: transcreated.cta || englishBase.cta,
+          positioning_angles: englishBase.positioning_angles,
+          target_personas: englishBase.target_personas,
+          emotional_tones: englishBase.emotional_tones,
+          tts_provider: ttsProvider.provider,
+          tts_voice_id: ttsProvider.voiceId,
+          tts_voice_name: ttsProvider.voiceName,
+          tts_speed: englishBase.tts_speed || 1.0,
+          version: 1,
+          status: 'draft',
+          is_english_base: false,
+          english_base_script_id: englishBase.id,
+          llm_provider: llmRoute.provider,
+          llm_model: llmRoute.model,
+          llm_temperature: 0.7,
+          llm_prompt_template: 'single_node_local_script_v1',
+          routing_decision: `Single-node local script: ${llmRoute.provider} for ${regionName} (${langInfo.languageName})`,
+          routing_confidence_score: 0.9,
+          routing_zone: zoneMap[upperCode] || 'western',
+          generation_timestamp: new Date().toISOString(),
+        } as any);
+
+      if (insertError) {
+        console.error(`[LocalScript] Insert failed for ${upperCode}:`, insertError);
+        toast.error(`Failed to save ${langInfo.languageName} script.`);
+        return;
+      }
+
+      toast.success(`✅ Generated ${langInfo.languageName} script for ${regionName}!`);
+      fetchScripts();
+    } catch (err) {
+      console.error('[LocalScript] Error:', err);
+      toast.error('Failed to generate local script.');
+    } finally {
+      setExpandingRegion(null);
+    }
+  }, [scripts, fetchScripts]);
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -2789,6 +2951,34 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                               }
                             </Button>
                           ) : null}
+                          {/* Generate Local Script — for single-node regions (Turkey, Pakistan, Bangladesh) */}
+                          {isParentLevel && !hasSubRegions && SINGLE_NODE_LANGUAGE_MAP[regionCode.toUpperCase()] && (
+                            (() => {
+                              const singleLang = SINGLE_NODE_LANGUAGE_MAP[regionCode.toUpperCase()];
+                              const hasLocalScript = regionScripts.some(s => !s.is_english_base && s.language_code === singleLang.languageCode && s.status !== 'archived');
+                              return hasActiveRegionEnglishBase ? (
+                                <Button
+                                  size="sm"
+                                  variant={hasLocalScript ? "outline" : "default"}
+                                  className="text-xs h-7 gap-1"
+                                  disabled={isExpanding}
+                                  onClick={() => handleGenerateLocalScript(regionCode, regionInfo?.name || regionCode)}
+                                >
+                                  {isExpanding ? (
+                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Globe className="w-3 h-3" />
+                                  )}
+                                  {isExpanding 
+                                    ? 'Generating...' 
+                                    : hasLocalScript 
+                                      ? `Regenerate ${singleLang.languageName.split(' ')[0]}`
+                                      : `Generate ${singleLang.languageName.split(' ')[0]} Script`
+                                  }
+                                </Button>
+                              ) : null;
+                            })()
+                          )}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -2824,6 +3014,19 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                                     {existingSubRegionCount < (parentGroup?.children?.length ?? 0)
                                       ? 'Expand to Sub-Regions'
                                       : 'Re-expand Sub-Regions'}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {/* Generate Local Script — dropdown option for single-node regions */}
+                              {isParentLevel && !hasSubRegions && SINGLE_NODE_LANGUAGE_MAP[regionCode.toUpperCase()] && hasActiveRegionEnglishBase && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={() => handleGenerateLocalScript(regionCode, regionInfo?.name || regionCode)}
+                                    disabled={isExpanding}
+                                  >
+                                    <Globe className="w-3.5 h-3.5 mr-2" />
+                                    Generate {SINGLE_NODE_LANGUAGE_MAP[regionCode.toUpperCase()].languageName.split(' ')[0]} Script
                                   </DropdownMenuItem>
                                 </>
                               )}
