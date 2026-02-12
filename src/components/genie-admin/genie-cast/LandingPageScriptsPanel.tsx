@@ -2730,6 +2730,59 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
         ))}
       </div>
 
+      {/* ─── Summary Stats Bar ─── */}
+      {(() => {
+        const nonArchived = scripts.filter(s => s.status !== 'archived');
+        const totalScripts = nonArchived.length;
+        const activeScripts = nonArchived.filter(s => s.status === 'active').length;
+        const draftScripts = nonArchived.filter(s => s.status === 'draft').length;
+        const reviewScripts = nonArchived.filter(s => s.status === 'review').length;
+        const withTTS = nonArchived.filter(s => s.generated_audio_url).length;
+        const withoutTTS = totalScripts - withTTS;
+        const uniqueRegions = new Set(nonArchived.map(s => s.region_code)).size;
+        return (
+          <div className="flex items-center gap-3 flex-wrap rounded-lg border border-border bg-muted/30 px-4 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs font-semibold">{totalScripts}</span>
+              <span className="text-xs text-muted-foreground">Scripts</span>
+            </div>
+            <Separator orientation="vertical" className="h-4" />
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-xs font-medium">{activeScripts}</span>
+              <span className="text-xs text-muted-foreground">Active</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="text-xs font-medium">{reviewScripts}</span>
+              <span className="text-xs text-muted-foreground">Review</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-slate-400" />
+              <span className="text-xs font-medium">{draftScripts}</span>
+              <span className="text-xs text-muted-foreground">Draft</span>
+            </div>
+            <Separator orientation="vertical" className="h-4" />
+            <div className="flex items-center gap-1.5">
+              <Headphones className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs font-semibold">{withTTS}</span>
+              <span className="text-xs text-muted-foreground">TTS Done</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium text-muted-foreground">{withoutTTS}</span>
+              <span className="text-xs text-muted-foreground">Pending TTS</span>
+            </div>
+            <Separator orientation="vertical" className="h-4" />
+            <div className="flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs font-semibold">{uniqueRegions}</span>
+              <span className="text-xs text-muted-foreground">Regions</span>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
