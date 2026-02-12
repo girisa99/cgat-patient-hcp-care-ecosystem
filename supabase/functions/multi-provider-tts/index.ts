@@ -843,7 +843,6 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   };
   
   for (const model of qwenModels) {
-    const textChunks = chunkTextByChars(text, QWEN3_CHUNK_LIMIT);
     const textChunks = chunkTextByChars(text, modelMaxChars);
     
     
