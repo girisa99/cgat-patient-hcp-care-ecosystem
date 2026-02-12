@@ -67,6 +67,13 @@ interface TTSRequest {
   speed?: number;
   pitch?: number;
   jobId?: string; // For polling job status
+  voiceStyle?: {
+    stability?: number;
+    similarity_boost?: number;
+    style?: number;
+    speed?: number;
+    azureProsody?: { rate?: string; pitch?: string; volume?: string };
+  };
 }
 
 interface TTSRouting {
@@ -376,7 +383,7 @@ function selectTTSProvider(region: string, languageCode: string, tier: string = 
 // PROVIDER IMPLEMENTATIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function generateElevenLabsTTS(text: string, voice?: string, speed?: number): Promise<ArrayBuffer> {
+async function generateElevenLabsTTS(text: string, voice?: string, speed?: number, voiceStyle?: TTSRequest['voiceStyle']): Promise<ArrayBuffer> {
   const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
   if (!ELEVENLABS_API_KEY) throw new Error('ElevenLabs API key not configured');
 
@@ -385,7 +392,7 @@ async function generateElevenLabsTTS(text: string, voice?: string, speed?: numbe
   // Use smaller chunk size to reduce per-chunk memory
   const effectiveChunkSize = Math.min(ELEVENLABS_MAX_CHARS, 3000);
   const chunks = chunkTextBySentences(text, effectiveChunkSize);
-  console.log(`🎤 ElevenLabs: Processing ${chunks.length} chunk(s), total ${text.length} chars`);
+  console.log(`🎤 ElevenLabs: Processing ${chunks.length} chunk(s), total ${text.length} chars, voiceStyle: ${JSON.stringify(voiceStyle || {})}`);
   
   // For very long content (>5 chunks), process sequentially and limit total
   const maxChunks = 10; // Limit to ~30k chars to stay within memory
@@ -411,10 +418,10 @@ async function generateElevenLabsTTS(text: string, voice?: string, speed?: numbe
         text: chunk,
         model_id: 'eleven_turbo_v2_5',
         voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0.3,
-          speed: speed || 1.0,
+          stability: voiceStyle?.stability ?? 0.5,
+          similarity_boost: voiceStyle?.similarity_boost ?? 0.75,
+          style: voiceStyle?.style ?? 0.3,
+          speed: voiceStyle?.speed ?? speed ?? 1.0,
         },
         // Request stitching for smooth transitions (using shorter context to save memory)
         ...(i > 0 && { previous_text: processChunks[i - 1].slice(-100) }),
@@ -484,7 +491,7 @@ async function generateOpenAITTS(text: string, voice?: string, speed?: number): 
   return chunks.length === 1 ? audioBuffers[0] : await concatenateAudioBuffers(audioBuffers);
 }
 
-async function generateAzureTTS(text: string, languageCode?: string, voice?: string): Promise<ArrayBuffer> {
+async function generateAzureTTS(text: string, languageCode?: string, voice?: string, voiceStyle?: TTSRequest['voiceStyle']): Promise<ArrayBuffer> {
   const AZURE_SPEECH_KEY = Deno.env.get('AZURE_SPEECH_KEY');
   const AZURE_SPEECH_REGION = Deno.env.get('AZURE_SPEECH_REGION') || 'eastus';
   if (!AZURE_SPEECH_KEY) throw new Error('Azure Speech key not configured');
@@ -632,7 +639,15 @@ async function generateAzureTTS(text: string, languageCode?: string, voice?: str
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;');
 
-    const ssml = `<speak version='1.0' xml:lang='${lang}'><voice name='${selectedVoice}'>${escapedText}</voice></speak>`;
+    // Build SSML with optional prosody from emotional tone mapping
+    const prosody = voiceStyle?.azureProsody;
+    const hasProsody = prosody && (prosody.rate !== '0%' || prosody.pitch !== '0%' || prosody.volume !== '0%');
+    
+    const ssml = hasProsody
+      ? `<speak version='1.0' xml:lang='${lang}'><voice name='${selectedVoice}'><prosody rate='${prosody.rate || '0%'}' pitch='${prosody.pitch || '0%'}' volume='${prosody.volume || '0%'}'>${escapedText}</prosody></voice></speak>`
+      : `<speak version='1.0' xml:lang='${lang}'><voice name='${selectedVoice}'>${escapedText}</voice></speak>`;
+    
+    console.log(`☁️ Azure SSML prosody: ${hasProsody ? JSON.stringify(prosody) : 'default'}`);
 
     const response = await fetch(
       `https://${AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`,
@@ -889,11 +904,11 @@ async function processTTSBackground(
     const generateWithProvider = async (provider: TTSProvider): Promise<ArrayBuffer> => {
       switch (provider) {
         case 'elevenlabs':
-          return await generateElevenLabsTTS(request.text, request.voice, request.speed);
+          return await generateElevenLabsTTS(request.text, request.voice, request.speed, request.voiceStyle);
         case 'openai':
           return await generateOpenAITTS(request.text, request.voice, request.speed);
         case 'azure':
-          return await generateAzureTTS(request.text, request.languageCode || 'en-US', request.voice);
+          return await generateAzureTTS(request.text, request.languageCode || 'en-US', request.voice, request.voiceStyle);
         case 'google':
           return await generateGoogleTTS(request.text, request.languageCode || 'en-US', request.voice);
         case 'alibaba':
@@ -1138,11 +1153,11 @@ serve(async (req) => {
     const generateWithProvider = async (provider: TTSProvider): Promise<ArrayBuffer> => {
       switch (provider) {
         case 'elevenlabs':
-          return await generateElevenLabsTTS(request.text, request.voice, request.speed);
+          return await generateElevenLabsTTS(request.text, request.voice, request.speed, request.voiceStyle);
         case 'openai':
           return await generateOpenAITTS(request.text, request.voice, request.speed);
         case 'azure':
-          return await generateAzureTTS(request.text, languageCode, request.voice);
+          return await generateAzureTTS(request.text, languageCode, request.voice, request.voiceStyle);
         case 'google':
           return await generateGoogleTTS(request.text, languageCode, request.voice);
         case 'alibaba':
