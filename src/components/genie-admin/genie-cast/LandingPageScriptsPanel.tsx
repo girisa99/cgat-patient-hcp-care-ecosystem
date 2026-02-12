@@ -2906,9 +2906,10 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   : 0;
                 const isExpanding = expandingRegion === regionCode;
 
-                // Check if this region has its own English base
-                const hasRegionEnglishBase = isParentLevel && regionScripts.some(s => s.is_english_base && s.language_code === 'en');
-                const hasActiveRegionEnglishBase = isParentLevel && regionScripts.some(s => s.is_english_base && s.language_code === 'en' && s.status === 'active');
+                // Check if this region has its own English base — use ALL scripts (not filtered) to avoid status filter hiding the base
+                const allRegionScripts = scripts.filter(s => s.region_code === regionCode && s.status !== 'archived');
+                const hasRegionEnglishBase = isParentLevel && allRegionScripts.some(s => s.is_english_base && s.language_code === 'en');
+                const hasActiveRegionEnglishBase = isParentLevel && allRegionScripts.some(s => s.is_english_base && s.language_code === 'en' && s.status === 'active');
 
                 return (
                   <Card key={regionCode} className="overflow-hidden">
