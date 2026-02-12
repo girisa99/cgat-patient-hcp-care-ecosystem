@@ -82,6 +82,7 @@ import { ABTestingPanel } from './ABTestingPanel';
 // Import Landing Page Scripts
 import { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
 import { AlibabaMeetingPrepDoc } from './AlibabaMeetingPrepDoc';
+import { RegionalAssetsLab } from './RegionalAssetsLab';
 
 // Import sub-components DIRECTLY to avoid circular dependency (index.ts re-exports this file)
 import { GenieCastOverview } from './GenieCastOverview';
@@ -228,6 +229,7 @@ const TAB_DEFINITIONS = {
     inactiveColor: 'border-teal-300 text-teal-700 hover:bg-teal-50',
     subTabs: [
       { id: 'scripts', label: 'Landing Page Scripts', icon: FileText, description: 'Hero narration scripts' },
+      { id: 'assets-lab', label: 'Assets Lab', icon: Image, description: 'Generate & publish regional assets' },
       { id: 'meeting-prep', label: 'Meeting Prep', icon: FileText, description: 'Partner meeting documents' },
     ],
   },
@@ -1399,6 +1401,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         <TabsContent value="landing" className="mt-4 space-y-6">
           {subTabs.landing === 'meeting-prep' ? (
             <AlibabaMeetingPrepDoc />
+          ) : subTabs.landing === 'assets-lab' ? (
+            <RegionalAssetsLab />
           ) : (
             <LandingPageScriptsPanel />
           )}
