@@ -40,10 +40,22 @@ interface SmartDefaultRouteProps {
 
 export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles, isInternal }) => {
   const location = useLocation();
-  const [targetRoute, setTargetRoute] = useState<string | null>(null);
-  const [isCheckingGenieUser, setIsCheckingGenieUser] = useState(true);
+  const [targetRoute, setTargetRoute] = useState<string | null>(() => {
+    // FAST PATH: Use cached internal user status to avoid spinner/blank screen
+    const cachedIsInternal = localStorage.getItem('genie_studio_is_internal');
+    if (cachedIsInternal === 'true') return '/genie-cast';
+    return null;
+  });
+  const [isCheckingGenieUser, setIsCheckingGenieUser] = useState(() => {
+    // Skip async check if we already have a cached route
+    const cachedIsInternal = localStorage.getItem('genie_studio_is_internal');
+    return cachedIsInternal !== 'true';
+  });
 
   useEffect(() => {
+    // If we already resolved from cache, skip the async DB check
+    if (targetRoute && !isCheckingGenieUser) return;
+
     const determineRoute = async () => {
       // First, check if this user is a Genie Studio internal user
       // This takes priority over healthcare roles
@@ -58,9 +70,9 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles,
             .maybeSingle();
 
           // If user is Genie Studio internal user, route to /genie-cast
-          // PERMANENT FIX: Genie Cast is now a standalone route, no longer a tab
           if (genieUser?.is_internal) {
             console.log('🎯 SmartDefaultRoute: Genie Studio internal user detected, routing to /genie-cast');
+            localStorage.setItem('genie_studio_is_internal', 'true');
             setTargetRoute('/genie-cast');
             setIsCheckingGenieUser(false);
             return;
@@ -83,13 +95,11 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles,
       // Check if we have a stored route from before refresh
       const lastRoute = localStorage.getItem(ROUTE_STORAGE_KEY);
       
-      // Check if the last route is still valid (should be persisted)
       if (lastRoute && shouldPersistRoute(lastRoute)) {
-        // Validate the stored route isn't stale (within last 24 hours)
         const routeData = localStorage.getItem('lovable_route_timestamp');
         if (routeData) {
           const timestamp = parseInt(routeData, 10);
-          const isRecent = Date.now() - timestamp < 24 * 60 * 60 * 1000; // 24 hours
+          const isRecent = Date.now() - timestamp < 24 * 60 * 60 * 1000;
           
           if (isRecent) {
             setTargetRoute(lastRoute);
@@ -98,12 +108,12 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles,
         }
       }
       
-      // Fall back to role-based default (with internal user check)
+      // Fall back to role-based default
       setTargetRoute(getDefaultRouteForRoles(normalizeRoles(userRoles), isInternal));
     };
 
     determineRoute();
-  }, [userRoles, isInternal]);
+  }, [userRoles, isInternal, targetRoute, isCheckingGenieUser]);
 
   // Save current route when navigating
   useEffect(() => {

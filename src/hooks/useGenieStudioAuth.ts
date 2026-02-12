@@ -221,9 +221,41 @@ export function useGenieStudioAuth() {
     }
   }, [fetchGenieUserProfile]);
 
-  // Initialize auth state
+  // Initialize auth state — single profile fetch to prevent race conditions
   useEffect(() => {
     let mounted = true;
+    let profileFetchInProgress = false;
+
+    const loadProfile = async (user: User) => {
+      // Prevent duplicate concurrent fetches (race between onAuthStateChange + getSession)
+      if (profileFetchInProgress) return;
+      profileFetchInProgress = true;
+      
+      try {
+        let genieUser = await fetchGenieUserProfile(user.id);
+        if (!genieUser) {
+          genieUser = await createGenieUserProfile(user);
+        }
+
+        if (mounted) {
+          if (genieUser) {
+            localStorage.setItem(INTERNAL_USER_CACHE_KEY, String(genieUser.is_internal));
+          }
+          setState(prev => ({
+            ...prev,
+            genieUser,
+            hasMarketingAccess: !!genieUser?.marketing_access?.is_active,
+            isInternalUser: genieUser?.is_internal || false,
+            isLoading: false,
+          }));
+        }
+      } catch (e) {
+        console.error('❌ Profile load error:', e);
+        if (mounted) setState(prev => ({ ...prev, isLoading: false }));
+      } finally {
+        profileFetchInProgress = false;
+      }
+    };
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -237,36 +269,13 @@ export function useGenieStudioAuth() {
           isAuthenticated: !!session?.user,
         }));
 
-        // Defer profile fetch to avoid deadlock
         if (session?.user) {
-          setTimeout(async () => {
-            if (!mounted) return;
-            let genieUser = await fetchGenieUserProfile(session.user.id);
-            
-            // Create profile if doesn't exist
-            if (!genieUser) {
-              genieUser = await createGenieUserProfile(session.user);
-            }
-
-            if (mounted && genieUser) {
-              // Cache internal user status to prevent navigation flicker on refresh
-              localStorage.setItem(INTERNAL_USER_CACHE_KEY, String(genieUser.is_internal));
-              
-              setState(prev => ({
-                ...prev,
-                genieUser,
-                hasMarketingAccess: !!genieUser.marketing_access?.is_active,
-                isInternalUser: genieUser.is_internal,
-                isLoading: false,
-              }));
-            } else if (mounted) {
-              setState(prev => ({ ...prev, isLoading: false }));
-            }
+          // Defer to avoid Supabase deadlock, but use shared guard
+          setTimeout(() => {
+            if (mounted) loadProfile(session.user);
           }, 0);
         } else {
-          // Clear cache on logout
           localStorage.removeItem(INTERNAL_USER_CACHE_KEY);
-          
           setState(prev => ({
             ...prev,
             genieUser: null,
@@ -290,29 +299,9 @@ export function useGenieStudioAuth() {
       }));
 
       if (session?.user) {
-        let genieUser = await fetchGenieUserProfile(session.user.id);
-        if (!genieUser) {
-          genieUser = await createGenieUserProfile(session.user);
-        }
-
-        if (mounted) {
-          // Cache internal user status
-          if (genieUser) {
-            localStorage.setItem(INTERNAL_USER_CACHE_KEY, String(genieUser.is_internal));
-          }
-          
-          setState(prev => ({
-            ...prev,
-            genieUser,
-            hasMarketingAccess: !!genieUser?.marketing_access?.is_active,
-            isInternalUser: genieUser?.is_internal || false,
-            isLoading: false,
-          }));
-        }
+        await loadProfile(session.user);
       } else {
-        if (mounted) {
-          setState(prev => ({ ...prev, isLoading: false }));
-        }
+        if (mounted) setState(prev => ({ ...prev, isLoading: false }));
       }
     });
 
