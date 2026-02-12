@@ -535,6 +535,10 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
     ],
     'EU': [
       { provider: 'azure', locale: 'en-GB', label: 'Azure Neural', voiceId: 'en-GB-SoniaNeural', voiceName: 'Sonia (British English)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'en-GB', label: 'Azure Neural', voiceId: 'en-GB-RyanNeural', voiceName: 'Ryan (British English)', gender: 'male' },
+      { provider: 'azure', locale: 'en-GB', label: 'Azure Neural', voiceId: 'en-GB-LibbyNeural', voiceName: 'Libby (British English)', gender: 'female' },
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)', gender: 'female' },
+      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-GuyNeural', voiceName: 'Guy (US English)', gender: 'male' },
     ],
     'LATAM': [
       { provider: 'azure', locale: 'es-MX', label: 'Azure Neural', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)', gender: 'female', isDefault: true },
