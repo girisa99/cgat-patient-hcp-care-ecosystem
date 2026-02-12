@@ -843,8 +843,9 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'MENA_MAGHREB': 'claude',
     'MENA_MSA': 'alibaba',
     // EU hybrid — Nordic/Eastern use GPT-4o (better smaller language coverage)
-    'EU_NORDIC': 'openai',
-    'EU_EAST': 'openai',
+    'EU_NORDIC': 'claude',
+    'EU_EAST': 'claude',
+    'EU_FI': 'openai', // Finnish: GPT-4o for superior morphology handling
     // LATAM hybrid — Andean/Caribbean use GPT-4o (better less-resourced Spanish dialects)
     'LATAM_ANDEAN': 'openai',
     'LATAM_CARIB': 'openai',
@@ -869,16 +870,16 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'EU_ES': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
     'EU_PT': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
     'EU_IBERIA': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
-    'EU_SE': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
-    'EU_NO': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
-    'EU_DK': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
-    'EU_FI': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
-    'EU_NORDIC': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'],
-    'EU_PL': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
-    'EU_CZ': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
-    'EU_RO': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
-    'EU_HU': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
-    'EU_EAST': ['openai', 'claude', 'deepseek', 'gemini', 'alibaba'],
+    'EU_SE': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+    'EU_NO': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+    'EU_DK': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+    'EU_FI': ['openai', 'claude', 'gemini', 'deepseek', 'alibaba'], // GPT-4o primary for Finnish
+    'EU_NORDIC': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
+    'EU_PL': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+    'EU_CZ': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+    'EU_RO': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+    'EU_HU': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
+    'EU_EAST': ['claude', 'openai', 'deepseek', 'gemini', 'alibaba'],
     // LATAM sub-regions
     'LATAM_BRAZIL': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
     'LATAM_MEXICO': ['claude', 'openai', 'gemini', 'deepseek', 'alibaba'],
