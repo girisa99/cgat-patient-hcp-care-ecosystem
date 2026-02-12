@@ -71,8 +71,8 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Only fetch user data once per session
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // Fetch user data on any session event (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED)
+          if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             setTimeout(() => {
               if (mounted) {
                 fetchUserProfile(session.user.id);
