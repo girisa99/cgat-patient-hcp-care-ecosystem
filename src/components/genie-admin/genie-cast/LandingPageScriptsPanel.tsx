@@ -1203,7 +1203,42 @@ export const LandingPageScriptsPanel: React.FC = () => {
 
       if (error) throw error;
 
-      const audioUrl = data?.audioUrl || (data?.audioContent ? `data:audio/mpeg;base64,${data.audioContent}` : null);
+      // Handle background job processing for long texts (>3000 chars)
+      let audioUrl: string | null = null;
+      if (data?.jobId && data?.status === 'processing') {
+        console.log(`[TTS Generate] Background job started: ${data.jobId}, polling for result...`);
+        toast.info(`Generating TTS for ${script.region_display_name}... (long text, processing in background)`);
+        
+        // Poll tts_jobs table until complete (max 120s)
+        const maxPollTime = 120_000;
+        const pollInterval = 3_000;
+        const startTime = Date.now();
+        
+        while (Date.now() - startTime < maxPollTime) {
+          await new Promise(r => setTimeout(r, pollInterval));
+          const { data: jobData } = await supabase
+            .from('tts_jobs')
+            .select('status, audio_url, error')
+            .eq('id', data.jobId)
+            .single();
+          
+          if (jobData?.status === 'complete' && jobData?.audio_url) {
+            audioUrl = jobData.audio_url;
+            console.log(`[TTS Generate] Background job complete: ${audioUrl}`);
+            break;
+          }
+          if (jobData?.status === 'error' || jobData?.error) {
+            throw new Error(jobData?.error || 'Background TTS generation failed');
+          }
+          console.log(`[TTS Generate] Polling job ${data.jobId}... status: ${jobData?.status}`);
+        }
+        
+        if (!audioUrl) {
+          throw new Error('TTS generation timed out after 120 seconds');
+        }
+      } else {
+        audioUrl = data?.audioUrl || (data?.audioContent ? `data:audio/mpeg;base64,${data.audioContent}` : null);
+      }
 
       // Store TTS version in tts_audio_versions (never overwrites — append only)
       const { error: versionError } = await supabase
