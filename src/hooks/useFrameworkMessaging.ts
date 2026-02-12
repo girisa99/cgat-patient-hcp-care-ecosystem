@@ -3,6 +3,8 @@
  * 
  * Provides framework-aware messaging for Genie Cast production pipeline.
  * Connects audience selection → framework matrix → script composition → thumbnails.
+ * 
+ * Includes provider-aware character limits and warnings for TTS generation.
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -14,6 +16,7 @@ import {
   type FrameworkConfig,
   AUDIENCE_FRAMEWORK_MATRIX,
   PRODUCT_MESSAGING,
+  PROVIDER_CHAR_LIMITS,
 } from '@/services/marketing/frameworkMessagingEngine';
 import type { PoweredByData } from '@/components/genie-admin/genie-cast/PoweredByEndCard';
 
@@ -43,6 +46,7 @@ interface UseFrameworkMessagingReturn {
   audienceSegments: AudienceSegment[];
   productList: typeof PRODUCT_MESSAGING;
   frameworkMatrix: typeof AUDIENCE_FRAMEWORK_MATRIX;
+  getProviderLimits: (provider: string) => { soft: number; hard: number; warning: string };
 }
 
 export function useFrameworkMessaging(): UseFrameworkMessagingReturn {
@@ -149,6 +153,10 @@ export function useFrameworkMessaging(): UseFrameworkMessagingReturn {
     });
   }, [selectedAudience, scriptComposition]);
 
+  const getProviderLimits = useCallback((provider: string) => {
+    return PROVIDER_CHAR_LIMITS[provider] || PROVIDER_CHAR_LIMITS.default;
+  }, []);
+
   return {
     selectedAudience,
     messaging,
@@ -165,5 +173,6 @@ export function useFrameworkMessaging(): UseFrameworkMessagingReturn {
     audienceSegments,
     productList: PRODUCT_MESSAGING,
     frameworkMatrix: AUDIENCE_FRAMEWORK_MATRIX,
+    getProviderLimits,
   };
 }

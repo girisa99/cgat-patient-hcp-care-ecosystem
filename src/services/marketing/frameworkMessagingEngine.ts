@@ -88,7 +88,31 @@ export interface FrameworkScriptComposition {
   poweredByModels: Record<string, string>;
   messagingTier: MessagingTier;
   frameworkUsed: string;
+  characterCount: number;
+  charLimitWarning?: string;
 }
+
+/**
+ * Provider-specific character limits for TTS generation
+ * Limits are per-provider, not per-script language
+ */
+export const PROVIDER_CHAR_LIMITS: Record<string, { soft: number; hard: number; warning: string }> = {
+  'qwen3-tts-flash': {
+    soft: 2500, // Optimal: ~5 chunks of 500 chars
+    hard: 4000, // Absolute max before high risk of timeout
+    warning: 'Qwen3-TTS has a 600-character per-request limit (we chunk at 500). Scripts exceeding 2500 chars will require 5+ API calls and may face timeouts. Maximum supported: 4000 chars.',
+  },
+  'azure': {
+    soft: 5000,
+    hard: 10000,
+    warning: 'Azure Neural TTS supports long-form content up to 10,000 characters, but optimal performance is under 5000 chars.',
+  },
+  'default': {
+    soft: 3000,
+    hard: 5000,
+    warning: 'Recommended character limit is 3000 for stable TTS generation.',
+  },
+};
 
 // ============================================================================
 // Audience → Framework Matrix (from Playbook)
@@ -333,6 +357,20 @@ class FrameworkMessagingEngine {
 
     // Compose full script
     const fullScript = scenes.map(s => s.script).join('\n\n');
+    
+    // Calculate character count and determine warnings
+    const charCount = fullScript.length;
+    const isCJK = ['zh', 'ja', 'ko'].some(code => languageCode.startsWith(code));
+    const ttsProvider = isCJK ? 'qwen3-tts-flash' : 'azure';
+    
+    const providerLimits = PROVIDER_CHAR_LIMITS[ttsProvider] || PROVIDER_CHAR_LIMITS.default;
+    let charLimitWarning: string | undefined;
+    
+    if (charCount > providerLimits.hard) {
+      charLimitWarning = `⚠️ ALERT: Script exceeds ${ttsProvider} hard limit (${providerLimits.hard} chars). Current: ${charCount} chars. ${providerLimits.warning}`;
+    } else if (charCount > providerLimits.soft) {
+      charLimitWarning = `⚡ WARNING: Script approaches soft limit. Optimal: ≤${providerLimits.soft} chars, Current: ${charCount} chars. Generation may be slower.`;
+    }
 
     // Determine powered-by products
     const poweredByProducts = this.determinePoweredByProducts(productId);
@@ -345,6 +383,8 @@ class FrameworkMessagingEngine {
       poweredByModels,
       messagingTier: productId === 'studio' ? 'ecosystem' : 'product',
       frameworkUsed: `${framework.primary}+${framework.secondary}`,
+      characterCount: charCount,
+      charLimitWarning,
     };
   }
 
