@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useRegionalLandingNarration } from '@/hooks/useRegionalLandingNarration';
+import { useGeoNarrationResolver } from '@/hooks/useGeoNarrationResolver';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -504,14 +505,23 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
   const [isWelcomePlaying, setIsWelcomePlaying] = React.useState(false);
   const [isSlideAudioPlaying, setIsSlideAudioPlaying] = React.useState(false);
 
+  // ── Auto-detect sub-region via IP + timezone with VPN protection ──
+  const { 
+    subRegionCode: autoSubRegion, 
+    vpnDetected, 
+    riskScore: geoRiskScore,
+    bypassReasons: geoBypassReasons,
+  } = useGeoNarrationResolver();
+
   // ── DB-driven regional narration (approved scripts + pre-generated TTS) ──
+  // Pass auto-detected sub-region for precise narration; null if VPN detected (falls back to parent)
   const { 
     script: dbNarrationScript, 
     ttsAudio: dbTtsAudio, 
     playNarration: playDbNarration, 
     stopNarration: stopDbNarration, 
     isPlaying: isDbPlaying 
-  } = useRegionalLandingNarration(regionSlug);
+  } = useRegionalLandingNarration(regionSlug, autoSubRegion || undefined);
 
   const heroImages = REGION_HERO_IMAGES[regionSlug] || REGION_HERO_IMAGES.nam;
 
