@@ -2088,7 +2088,9 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
   const handleCreateRegionEnglishBase = useCallback((regionCode: string, regionName: string) => {
     setEditingScript(null);
     setShowEditor(false);
-    const globalBase = scripts.find(s => s.region_code === 'ENGLISH_BASE' && s.is_english_base && s.status === 'active');
+    // Try global ENGLISH_BASE first, then fall back to any active English base script
+    const globalBase = scripts.find(s => s.region_code === 'ENGLISH_BASE' && s.is_english_base && s.status === 'active')
+      || scripts.find(s => s.is_english_base && s.status === 'active' && s.language_code === 'en');
     setEditingScript({
       id: `new-region-base-${Date.now()}`,
       region_code: regionCode.toLowerCase(),
