@@ -117,12 +117,12 @@ const PRODUCT_EXTENDED: Record<string, {
   },
   mind: {
     pipelines: 30,
-    positioning: 'Enhances scripts with AI editing, Text-to-Speech voiceovers in 140+ languages, voice cloning with emotion control, and background music — the intelligent layer between script and production.',
+    positioning: 'Enhances scripts with AI editing, Text-to-Speech voiceovers in 50+ languages, voice cloning with emotion control, and background music — the intelligent layer between script and production.',
     storyBrand: 'Your scripts deserve a voice that resonates. Mind makes every word count in every language.',
     jtbd: 'Enhance my scripts with the right voice, tone, and language for any audience.',
     videoPlaceholderTitle: 'Watch Genie Mind transform scripts with neural TTS and voice cloning',
     keyBenefits: [
-      { icon: <Mic className="h-4 w-4" />, title: 'Neural TTS in 140+ Languages', detail: 'Azure Neural voices with native prosody and regional accent matching' },
+      { icon: <Mic className="h-4 w-4" />, title: 'Neural TTS in 50+ Languages', detail: 'Azure Neural voices with native prosody and regional accent matching' },
       { icon: <Brain className="h-4 w-4" />, title: 'AI Script Editing', detail: 'Tone, style, and audience-aware AI suggestions to refine your content' },
       { icon: <Sparkles className="h-4 w-4" />, title: 'Voice Cloning + Emotion', detail: 'Clone any voice with emotion control and dialect-specific nuances' },
       { icon: <Globe className="h-4 w-4" />, title: 'Zone-Routed AI', detail: 'Claude for Western, Qwen for CJK, Gemini for India/SEA — always the optimal provider' },
@@ -259,7 +259,7 @@ const PRODUCT_EXTENDED: Record<string, {
     keyBenefits: [
       { icon: <Layers className="h-4 w-4" />, title: 'All Products, One Platform', detail: 'Spark + Mind + Vibe + Deck + Hub + Cast — unified under a single orchestrator' },
       { icon: <Workflow className="h-4 w-4" />, title: 'Cross-Product Workflows', detail: 'Seamlessly chain pipelines across products — script → voice → video → slides → publish' },
-      { icon: <Globe className="h-4 w-4" />, title: '206 Pipelines, 140+ Languages', detail: 'Access every pipeline across all products with 5-zone AI routing for optimal performance' },
+      { icon: <Globe className="h-4 w-4" />, title: '206 Pipelines, 50+ Languages', detail: 'Access every pipeline across all products with 5-zone AI routing for optimal performance' },
       { icon: <Cpu className="h-4 w-4" />, title: 'A2A Agent Coordination', detail: 'AI agents from each product collaborate intelligently to deliver end-to-end results' },
     ],
     coreCapabilities: ['Master Orchestration', 'Cross-Product Workflows', 'Unified Asset Library', 'Project Organization', '206 Pipeline Access', 'A2A Agent Coordination', '5-Zone Regional Routing', 'Enterprise Integration', 'Team Collaboration', 'Analytics Dashboard'],
@@ -527,7 +527,7 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
                       <span className="hidden sm:inline">•</span>
                       <span>{extendedData.aiProviders.length} AI providers</span>
                       <span className="hidden sm:inline">•</span>
-                      <span>140+ languages</span>
+                      <span>50+ languages</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Link to="/explore">

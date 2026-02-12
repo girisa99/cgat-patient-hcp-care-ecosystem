@@ -116,8 +116,8 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     hero: {
       nativeHeadline: 'Mind to Media — For Every Industry',
       englishHeadline: 'Mind to Media — For Every Industry',
-      nativeSubheadline: 'AI-powered content production across 50+ industries in 140+ languages',
-      englishSubheadline: 'AI-powered content production across 50+ industries in 140+ languages',
+      nativeSubheadline: 'AI-powered content production across 50+ industries in 50+ languages',
+      englishSubheadline: 'AI-powered content production across 50+ industries in 50+ languages',
       theme: 'Universal Creative Platform',
       flag: '🇺🇸',
       regionName: 'North America',
@@ -143,7 +143,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
     ],
     seo: {
       title: 'Genie Suite — AI Video Production Platform | Mind to Media',
-      description: 'Transform ideas into professional videos with 206 AI pipelines, 19 providers, and 140+ languages. Start free with 50 credits.',
+      description: 'Transform ideas into professional videos with 206 AI pipelines, 19 providers, and 50+ languages. Start free with 50 credits.',
       keywords: ['AI video production', 'content creation platform', 'video marketing', 'AI-powered videos', 'enterprise video'],
       hreflang: 'en-US',
       ogLocale: 'en_US',
@@ -171,7 +171,7 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
       ],
       capabilityDepth: [
         'Only platform with auto-routed AI across 19 providers per task',
-        'Only platform producing enterprise video in 140+ languages from a single prompt',
+        'Only platform producing enterprise video in 50+ languages from a single prompt',
         'Only platform combining AI avatars, lip-sync, 3D, and transcreation in one pipeline',
       ],
       heroBadge: '19 AI Providers. One Platform.',

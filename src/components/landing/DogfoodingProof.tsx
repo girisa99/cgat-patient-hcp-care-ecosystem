@@ -31,7 +31,7 @@ const PLATFORM_HIGHLIGHTS = [
     type: 'Regional Transcreation',
     icon: Globe,
     what: 'All 8 regional landing pages — transcreated, not translated, by Genie Mind',
-    provider: '140+ Languages Supported',
+    provider: '50+ Languages, 140+ Dialects',
     confidence: 94,
   },
   {
@@ -52,7 +52,7 @@ const PLATFORM_HIGHLIGHTS = [
 
 const WHAT_WE_SUPPORT = [
   'End-to-end video production from script to screen',
-  'Cultural transcreation across 140+ languages',
+  'Cultural transcreation across 50+ languages and 140+ dialects',
   'AI avatar presenters with native lip-sync',
   'Brand-consistent content at global scale',
   'Compliance-ready outputs for regulated industries',
@@ -149,7 +149,7 @@ export const DogfoodingProof: React.FC = () => {
         {/* Bottom branded strip */}
         <div className="mt-8 p-6 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 rounded-2xl border border-primary/20 text-center">
           <p className="text-lg text-foreground">
-            🎯 <strong>7 Products · 206 Pipelines · 19 AI Providers · 140+ Languages</strong>
+            🎯 <strong>7 Products · 206 Pipelines · 19 AI Providers · 50+ Languages, 140+ Dialects</strong>
           </p>
           <p className="text-muted-foreground mt-2">
             One platform that speaks your language, understands your market, and scales with your ambition.

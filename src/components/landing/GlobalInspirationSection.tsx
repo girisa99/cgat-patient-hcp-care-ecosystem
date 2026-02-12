@@ -109,7 +109,7 @@ export const GlobalInspirationSection: React.FC = () => {
         <div className="flex flex-wrap justify-center gap-4 mb-10">
           <div className="px-4 py-2 bg-primary/5 border border-primary/20 rounded-full text-sm">
             <span className="font-bold text-primary">We Support</span>
-            <span className="text-muted-foreground"> — 140+ Languages & Dialects</span>
+            <span className="text-muted-foreground"> — 50+ Languages, 140+ Dialects</span>
           </div>
           <div className="px-4 py-2 bg-primary/5 border border-primary/20 rounded-full text-sm">
             <span className="font-bold text-primary">We Deliver</span>

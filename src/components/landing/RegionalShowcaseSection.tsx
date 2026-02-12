@@ -223,7 +223,7 @@ export const RegionalShowcaseSection: React.FC<RegionalShowcaseSectionProps> = (
         >
           <p className="text-sm text-muted-foreground">
             These are just examples — Genie Suite supports <strong>50+ industries</strong> across{' '}
-            <strong>140+ languages</strong>. Your content, your market, your language.
+            <strong>50+ languages, 140+ dialects</strong>. Your content, your market, your language.
           </p>
         </motion.div>
       </div>

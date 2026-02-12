@@ -32,7 +32,7 @@ const CAPABILITIES = [
     items: [
       { name: 'AI Avatar', icon: User, tier: 'Pro', desc: 'Photorealistic digital presenters that represent your brand across every market' },
       { name: 'Full-Body Avatar', icon: User, tier: 'Enterprise', desc: 'Complete body motion capture — your global spokesperson, available 24/7' },
-      { name: 'Lip-Sync', icon: Mic2, tier: 'Pro', desc: 'Pixel-perfect mouth sync across 140+ languages — your avatar speaks natively' },
+      { name: 'Lip-Sync', icon: Mic2, tier: 'Pro', desc: 'Pixel-perfect mouth sync across 50+ languages — your avatar speaks natively' },
     ]
   },
   {
@@ -64,7 +64,7 @@ const CAPABILITIES = [
 const VALUE_PROPOSITIONS = [
   {
     name: 'One Brand Voice, Every Language',
-    description: 'Produce content once — Genie transcreates it for 140+ languages while keeping your brand tone consistent.',
+    description: 'Produce content once — Genie transcreates it for 50+ languages while keeping your brand tone consistent.',
     steps: ['Your Script', 'AI Transcreation', 'Regional TTS', 'Lip-Synced Video'],
     icon: Globe,
   },

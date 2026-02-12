@@ -405,7 +405,7 @@ export const CombinationShowcase: React.FC<CombinationShowcaseProps> = ({ indust
                   ))}
                   <div className="flex items-center gap-1 ml-auto">
                     <Globe className="h-3 w-3 text-accent" />
-                    <span className="text-[8px] text-accent font-medium">→ 140+ Languages</span>
+                    <span className="text-[8px] text-accent font-medium">→ 50+ Languages</span>
                   </div>
                 </div>
 

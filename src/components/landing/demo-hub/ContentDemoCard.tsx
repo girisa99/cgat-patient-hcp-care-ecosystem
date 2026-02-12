@@ -298,7 +298,7 @@ Respond in valid JSON format: { "headline": "...", "body": "...", "cta": "..."${
               <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
                 <Lock className="h-4 w-4 text-primary flex-shrink-0" />
                 <p className="text-xs text-muted-foreground flex-1">
-                  <strong className="text-foreground">Want full campaigns?</strong> Sign up to generate complete multi-channel campaigns with A/B variants in 140+ languages.
+                  <strong className="text-foreground">Want full campaigns?</strong> Sign up to generate complete multi-channel campaigns with A/B variants in 50+ languages.
                 </p>
               </div>
             </motion.div>

@@ -447,7 +447,7 @@ Respond in valid JSON format: { "scenes": [{ "sceneNumber": 1, "visual": "...", 
                         { icon: '🎬', label: 'AI Video Render', desc: 'Vertex Veo 3' },
                         { icon: '🗣️', label: 'Voice + Lip-sync', desc: 'Azure Neural TTS' },
                         { icon: '👤', label: 'AI Presenter', desc: 'Alibaba Wan 2.2' },
-                        { icon: '🌍', label: '140+ Languages', desc: 'Transcreated' },
+                        { icon: '🌍', label: '50+ Languages', desc: 'Transcreated' },
                         { icon: '📱', label: 'Mobile Export', desc: '9:16 format' },
                         { icon: '🎵', label: 'Music + SFX', desc: 'AI-generated' },
                       ].map(item => (

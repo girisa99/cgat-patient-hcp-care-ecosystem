@@ -45,7 +45,7 @@ export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
   onGetStarted,
   onWatchDemo,
   totalVideos = 100,
-  totalLanguages = 14,
+  totalLanguages = 50,
   className,
 }) => {
   return (

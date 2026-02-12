@@ -321,7 +321,7 @@ const INDUSTRY_CONTEXT: Record<string, {
 
 // Unique capabilities that set the platform apart
 const DIFFERENTIATORS = [
-  { icon: User, name: 'AI Avatars', desc: 'Photorealistic digital presenters in 140+ languages — lip-synced natively', tier: 'Pro' },
+  { icon: User, name: 'AI Avatars', desc: 'Photorealistic digital presenters in 50+ languages — lip-synced natively', tier: 'Pro' },
   { icon: Box, name: 'Text-to-3D', desc: 'Product descriptions → interactive 3D models in minutes', tier: 'Pro' },
   { icon: Music, name: 'Voice Clone', desc: 'Your brand voice, cloned and ready for every language and region', tier: 'Pro' },
   { icon: Image, name: 'AI Image Gen', desc: 'Studio-quality visuals from text — no stock photos needed', tier: 'Free' },
@@ -386,9 +386,9 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
           {/* Stats ribbon */}
           <div className="flex items-center justify-center gap-6 sm:gap-10 mt-8">
             {[
-              { value: '15', label: 'AI Providers' },
+              { value: '19', label: 'AI Providers' },
               { value: '206', label: 'Pipelines' },
-              { value: '140+', label: 'Languages' },
+              { value: '50+', label: 'Languages' },
               { value: '50+', label: 'Industries' },
             ].map((stat, i) => (
               <motion.div
@@ -843,7 +843,7 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
             Every industry gets the same{' '}
             <span className="text-foreground font-medium">19 AI providers</span>,{' '}
             <span className="text-foreground font-medium">206 pipelines</span>, and{' '}
-            <span className="text-foreground font-medium">140+ language</span> transcreation — 
+            <span className="text-foreground font-medium">50+ language</span> transcreation — 
             customized for your market, compliance, and audience.
           </p>
         </div>

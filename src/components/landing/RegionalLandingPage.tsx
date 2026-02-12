@@ -1015,7 +1015,7 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
         <div className="flex items-center justify-center gap-3 mb-4">
           <Globe className="w-4 h-4 text-primary" />
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            8 Global Regions · 140+ Languages
+            15 Global Regions · 50+ Languages
           </span>
           <Globe className="w-4 h-4 text-primary" />
         </div>
@@ -1080,7 +1080,7 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
       </h2>
       
       <p className="text-xl text-muted-foreground mb-2 max-w-2xl mx-auto">
-        We speak 140+ languages. We understand 50+ industries. We guide you from idea to global distribution.
+        We speak 50+ languages across 140+ dialects. We understand 50+ industries. We guide you from idea to global distribution.
       </p>
       <p className="text-lg text-primary font-semibold mb-8">
         💰 {config.comparisonSavings}
@@ -1218,7 +1218,7 @@ export const RegionalLandingPage: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4 text-sm px-4 py-1">
-              7 Products • 206 Pipelines • 19 AI Providers • 140+ Languages
+              7 Products • 206 Pipelines • 19 AI Providers • 50+ Languages
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
               The Genie Suite — Mind to Media
