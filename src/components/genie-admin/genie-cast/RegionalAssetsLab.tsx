@@ -2,85 +2,147 @@
  * Regional Assets Lab
  * Generate → Preview → Approve → Publish pipeline for landing page assets.
  * Covers: 3D Avatars, Hero Videos, Hero Images, OG Images, Brand Logos.
- * Showcases the best-of-world pipeline capabilities.
+ * Showcases creative character styles & best-of-world pipeline capabilities.
  */
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Video, Image, Globe, Volume2, Play, CheckCircle2,
-  Eye, Upload, Wand2, RotateCcw, Send, Loader2, Bot, Film,
+  Eye, Wand2, RotateCcw, Send, Loader2, Bot, Film,
   Camera, Palette, Box, Mic, ArrowRight, BadgeCheck, Clock,
-  Zap, Shield, Star, Layers
+  Zap, Layers, Star
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useRegionalAvatarGeneration } from '@/hooks/useRegionalAvatarGeneration';
+import { supabase } from '@/integrations/supabase/client';
 
-// ─── Pipeline Provider Cards ───────────────────────────────
+// ─── Creative Avatar Style Cards ───────────────────────────
+const AVATAR_STYLES = [
+  {
+    id: 'pixar',
+    label: 'Pixar 3D',
+    emoji: '🎬',
+    gradient: 'from-blue-500/20 to-cyan-500/20',
+    border: 'border-blue-500/40',
+    description: 'Warm cinematic 3D — Toy Story / Inside Out',
+    provider: 'Meshy AI + Wan 2.2',
+    promptHint: 'Pixar-style 3D animated character, warm lighting, expressive eyes, soft shadows',
+  },
+  {
+    id: 'anime',
+    label: 'Anime / Ghibli',
+    emoji: '✨',
+    gradient: 'from-pink-500/20 to-purple-500/20',
+    border: 'border-pink-500/40',
+    description: 'Hand-drawn Japanese anime aesthetic',
+    provider: 'ModelsLab Anime',
+    promptHint: 'Studio Ghibli anime style character, watercolor textures, expressive, detailed hair',
+  },
+  {
+    id: 'photorealistic',
+    label: 'Photorealistic',
+    emoji: '📸',
+    gradient: 'from-slate-500/20 to-zinc-500/20',
+    border: 'border-slate-500/40',
+    description: 'Hyper-real human presenter with lip-sync',
+    provider: 'Alibaba Wan 2.2 S2V',
+    promptHint: 'Photorealistic professional presenter, studio lighting, clean background',
+  },
+  {
+    id: 'crayon',
+    label: 'Crayon / Sketch',
+    emoji: '🖍️',
+    gradient: 'from-yellow-500/20 to-orange-500/20',
+    border: 'border-yellow-500/40',
+    description: 'Hand-drawn crayon illustration style',
+    provider: 'Vertex Imagen 3',
+    promptHint: 'Crayon hand-drawn character, childlike warmth, textured paper background, colorful',
+  },
+  {
+    id: 'cyberpunk',
+    label: 'Cyberpunk / Sci-Fi',
+    emoji: '🤖',
+    gradient: 'from-violet-500/20 to-fuchsia-500/20',
+    border: 'border-violet-500/40',
+    description: 'Neon-lit futuristic character design',
+    provider: 'ModelsLab + FLUX',
+    promptHint: 'Cyberpunk character, neon glow, holographic UI elements, futuristic cityscape',
+  },
+  {
+    id: 'claymation',
+    label: 'Claymation',
+    emoji: '🏺',
+    gradient: 'from-amber-500/20 to-red-500/20',
+    border: 'border-amber-500/40',
+    description: 'Stop-motion clay figure — Wallace & Gromit',
+    provider: 'Meshy 3D',
+    promptHint: 'Claymation stop-motion character, textured clay surface, warm studio lighting',
+  },
+  {
+    id: 'comic',
+    label: 'Comic / Marvel',
+    emoji: '💥',
+    gradient: 'from-red-500/20 to-blue-500/20',
+    border: 'border-red-500/40',
+    description: 'Bold comic book hero / graphic novel',
+    provider: 'FLUX Dev',
+    promptHint: 'Marvel comic book style character, bold lines, halftone dots, dynamic pose',
+  },
+  {
+    id: 'watercolor',
+    label: 'Watercolor Art',
+    emoji: '🎨',
+    gradient: 'from-teal-500/20 to-emerald-500/20',
+    border: 'border-teal-500/40',
+    description: 'Soft watercolor painted character',
+    provider: 'Vertex Imagen 3',
+    promptHint: 'Watercolor painted character, soft edges, flowing colors, artistic brushstrokes',
+  },
+];
+
+// ─── Pipeline Stages ───────────────────────────
 const PIPELINE_STAGES = [
   {
-    id: 'script',
-    label: 'AI Script',
-    icon: Sparkles,
+    id: 'script', label: 'AI Script', icon: Sparkles,
     providers: ['Claude 4', 'Gemini 3 Pro', 'GPT-4o', 'Qwen Max'],
     description: 'Regional transcreation with native tone',
-    color: 'text-violet-500',
-    bgColor: 'bg-violet-500/10',
-    borderColor: 'border-violet-500/30',
+    color: 'text-violet-500', bgColor: 'bg-violet-500/10', borderColor: 'border-violet-500/30',
   },
   {
-    id: 'tts',
-    label: 'Voice Synthesis',
-    icon: Mic,
+    id: 'tts', label: 'Voice Synthesis', icon: Mic,
     providers: ['Azure Neural', 'Qwen3-TTS', 'ElevenLabs', 'Google WaveNet'],
     description: 'Lip-sync capable regional voiceover',
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/30',
+    color: 'text-blue-500', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30',
   },
   {
-    id: 'avatar',
-    label: '3D Avatar',
-    icon: Bot,
+    id: 'avatar', label: '3D Avatar', icon: Bot,
     providers: ['Alibaba Wan 2.2 S2V', 'Meshy AI', 'ModelsLab'],
-    description: 'Photorealistic lip-synced avatars',
-    color: 'text-emerald-500',
-    bgColor: 'bg-emerald-500/10',
-    borderColor: 'border-emerald-500/30',
+    description: 'Creative character styles with lip-sync',
+    color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30',
   },
   {
-    id: 'video',
-    label: 'Video Generation',
-    icon: Film,
+    id: 'video', label: 'Video Generation', icon: Film,
     providers: ['Vertex Veo 3', 'Sora 2', 'Alibaba Wan 2.6', 'ModelsLab'],
     description: 'Cinematic AI video from script',
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-500/10',
-    borderColor: 'border-orange-500/30',
+    color: 'text-orange-500', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30',
   },
   {
-    id: 'assembly',
-    label: 'Assembly',
-    icon: Layers,
+    id: 'assembly', label: 'Assembly', icon: Layers,
     providers: ['JSON2Video', 'Cloud Run GPU'],
     description: 'Timeline stitching & A/V sync',
-    color: 'text-pink-500',
-    bgColor: 'bg-pink-500/10',
-    borderColor: 'border-pink-500/30',
+    color: 'text-pink-500', bgColor: 'bg-pink-500/10', borderColor: 'border-pink-500/30',
   },
 ];
 
 const ASSET_TYPES = [
-  { id: 'avatar_3d', label: '3D Avatar', icon: Bot, description: 'Lip-synced talking avatar for hero' },
+  { id: 'avatar_3d', label: '3D Avatar', icon: Bot, description: 'Creative character with lip-sync' },
   { id: 'hero_video', label: 'Hero Video', icon: Video, description: 'Cinematic product video' },
   { id: 'hero_image', label: 'Hero Image', icon: Image, description: 'AI-generated hero visual' },
   { id: 'og_image', label: 'OG Image', icon: Camera, description: 'Social preview card (1200×630)' },
@@ -105,73 +167,192 @@ interface AssetItem {
   status: AssetStatus;
   previewUrl?: string;
   provider?: string;
+  style?: string;
   generatedAt?: Date;
 }
+
+// Provider mapping for each asset type
+const ASSET_PROVIDERS: Record<string, { provider: string; edgeFunction: string; description: string }> = {
+  avatar_3d: { provider: 'Alibaba Wan 2.2 S2V', edgeFunction: 'alibaba-avatar-generator', description: 'Speech-to-Video avatar' },
+  hero_video: { provider: 'Vertex Veo 3', edgeFunction: 'ai-video-generator', description: 'Cinematic AI video' },
+  hero_image: { provider: 'Vertex Imagen 3', edgeFunction: 'ai-image-generator', description: 'AI hero image' },
+  og_image: { provider: 'Gemini 3 Pro', edgeFunction: 'ai-image-generator', description: 'OG social card' },
+  brand_logo: { provider: 'FLUX Dev', edgeFunction: 'ai-image-generator', description: 'Brand variant logo' },
+};
 
 export const RegionalAssetsLab: React.FC = () => {
   const [selectedRegion, setSelectedRegion] = useState('NAM_US');
   const [selectedAssetType, setSelectedAssetType] = useState<string>('avatar_3d');
+  const [selectedAvatarStyle, setSelectedAvatarStyle] = useState('pixar');
   const [narrationScript, setNarrationScript] = useState(
     'Discover the future of healthcare with AI-powered patient engagement. Our platform connects care teams, patients, and caregivers in one seamless ecosystem.'
   );
   const [assets, setAssets] = useState<Record<string, AssetItem>>({});
   const [activeView, setActiveView] = useState<'pipeline' | 'generate' | 'review'>('pipeline');
-
-  const avatarGen = useRegionalAvatarGeneration();
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationProgress, setGenerationProgress] = useState<string>('');
 
   const currentAsset = assets[`${selectedRegion}_${selectedAssetType}`];
   const currentStatus = currentAsset?.status || 'empty';
 
   const handleGenerate = useCallback(async () => {
     const key = `${selectedRegion}_${selectedAssetType}`;
+    setGenerationError(null);
 
     setAssets(prev => ({
       ...prev,
       [key]: { type: selectedAssetType, status: 'generating' },
     }));
 
-    if (selectedAssetType === 'avatar_3d') {
-      const result = await avatarGen.generateAvatar({
-        contentId: `content-${selectedRegion}`,
-        regionCode: selectedRegion,
-        narrationScript,
-        language: selectedRegion.startsWith('CJK') ? 'ja' : selectedRegion.startsWith('MENA') ? 'ar' : 'en',
-      });
+    try {
+      // Check auth
+      const { data: authData } = await supabase.auth.getSession();
+      const token = authData.session?.access_token;
 
-      if (result) {
+      if (!token) {
+        throw new Error('Please log in first to generate assets. Navigate to /auth to sign in.');
+      }
+
+      const style = AVATAR_STYLES.find(s => s.id === selectedAvatarStyle);
+      const providerInfo = ASSET_PROVIDERS[selectedAssetType];
+      const lang = selectedRegion.startsWith('CJK') ? 'ja' : selectedRegion.startsWith('MENA') ? 'ar' : 'en';
+
+      if (selectedAssetType === 'avatar_3d') {
+        // Step 1: TTS
+        setGenerationProgress('🎙 Generating regional voiceover...');
+        const ttsRes = await supabase.functions.invoke('multi-provider-tts', {
+          body: {
+            text: narrationScript,
+            languageCode: lang,
+            region: selectedRegion,
+            tier: 'premium',
+          },
+        });
+
+        if (ttsRes.error) throw new Error(`TTS failed: ${ttsRes.error.message}`);
+        const audioUrl = ttsRes.data?.audioUrl || ttsRes.data?.data?.audioUrl || ttsRes.data?.audio_url;
+        if (!audioUrl) throw new Error('No audio URL from TTS');
+
+        // Step 2: Avatar generation
+        setGenerationProgress(`🤖 Creating ${style?.label || '3D'} avatar...`);
+        const avatarRes = await supabase.functions.invoke('alibaba-avatar-generator', {
+          body: {
+            model: 'wan2.2-s2v',
+            audioUrl,
+            prompt: style?.promptHint || 'Professional 3D avatar',
+            perspective: 'bust',
+            duration: 10,
+            fps: 30,
+            resolution: '1080p',
+          },
+        });
+
+        const modelUrl = avatarRes.data?.outputUrl || avatarRes.data?.data?.outputUrl;
+
         setAssets(prev => ({
           ...prev,
           [key]: {
             type: selectedAssetType,
             status: 'preview',
-            previewUrl: result.model_url,
-            provider: 'Alibaba Wan 2.2 S2V',
+            previewUrl: modelUrl || undefined,
+            provider: style?.provider || providerInfo.provider,
+            style: style?.label,
             generatedAt: new Date(),
           },
         }));
-        toast.success('Avatar generated! Review and approve to publish.');
-      } else {
+        toast.success(`${style?.label} avatar generated! Review and approve.`);
+
+      } else if (selectedAssetType === 'hero_image' || selectedAssetType === 'og_image') {
+        setGenerationProgress('🎨 Generating AI image...');
+        const width = selectedAssetType === 'og_image' ? 1200 : 1920;
+        const height = selectedAssetType === 'og_image' ? 630 : 1080;
+        
+        const imgRes = await supabase.functions.invoke('ai-image-generator', {
+          body: {
+            prompt: `Professional healthcare technology hero image for ${REGIONS.find(r => r.code === selectedRegion)?.label}, modern gradient, clean design`,
+            width,
+            height,
+            style: 'photorealistic',
+          },
+        });
+
+        const imgUrl = imgRes.data?.imageUrl || imgRes.data?.url || imgRes.data?.data?.url;
+
         setAssets(prev => ({
           ...prev,
-          [key]: { type: selectedAssetType, status: 'empty' },
+          [key]: {
+            type: selectedAssetType,
+            status: 'preview',
+            previewUrl: imgUrl || undefined,
+            provider: providerInfo.provider,
+            generatedAt: new Date(),
+          },
         }));
+        toast.success(`${selectedAssetType === 'og_image' ? 'OG Image' : 'Hero Image'} generated!`);
+
+      } else if (selectedAssetType === 'hero_video') {
+        setGenerationProgress('🎬 Generating cinematic video...');
+        const videoRes = await supabase.functions.invoke('ai-video-generator', {
+          body: {
+            prompt: `Cinematic healthcare technology product video for ${REGIONS.find(r => r.code === selectedRegion)?.label}, smooth camera movement, modern UI showcase`,
+            duration: 10,
+            resolution: '1080p',
+            type: 'hero',
+          },
+        });
+
+        const videoUrl = videoRes.data?.videoUrl || videoRes.data?.url || videoRes.data?.data?.outputUrl;
+
+        setAssets(prev => ({
+          ...prev,
+          [key]: {
+            type: selectedAssetType,
+            status: 'preview',
+            previewUrl: videoUrl || undefined,
+            provider: providerInfo.provider,
+            generatedAt: new Date(),
+          },
+        }));
+        toast.success('Hero video generated!');
+
+      } else {
+        // brand_logo
+        setGenerationProgress('🎨 Generating brand logo variant...');
+        const logoRes = await supabase.functions.invoke('ai-image-generator', {
+          body: {
+            prompt: `Minimalist healthcare brand logo, clean vector style, ${REGIONS.find(r => r.code === selectedRegion)?.label} market`,
+            width: 512,
+            height: 512,
+            style: 'logo',
+          },
+        });
+
+        const logoUrl = logoRes.data?.imageUrl || logoRes.data?.url || logoRes.data?.data?.url;
+
+        setAssets(prev => ({
+          ...prev,
+          [key]: {
+            type: selectedAssetType,
+            status: 'preview',
+            previewUrl: logoUrl || undefined,
+            provider: providerInfo.provider,
+            generatedAt: new Date(),
+          },
+        }));
+        toast.success('Brand logo generated!');
       }
-    } else {
-      // Simulate for other asset types (future pipeline integration)
-      await new Promise(r => setTimeout(r, 3000));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Generation failed';
+      setGenerationError(msg);
       setAssets(prev => ({
         ...prev,
-        [key]: {
-          type: selectedAssetType,
-          status: 'preview',
-          previewUrl: `https://placehold.co/1200x630/1a1a2e/ffffff?text=${selectedAssetType}+Preview`,
-          provider: selectedAssetType === 'hero_video' ? 'Vertex Veo 3' : 'Gemini 3 Pro',
-          generatedAt: new Date(),
-        },
+        [key]: { type: selectedAssetType, status: 'empty' },
       }));
-      toast.success(`${selectedAssetType} generated! Review and approve.`);
+      toast.error(msg);
+    } finally {
+      setGenerationProgress('');
     }
-  }, [selectedRegion, selectedAssetType, narrationScript, avatarGen]);
+  }, [selectedRegion, selectedAssetType, selectedAvatarStyle, narrationScript]);
 
   const handleApprove = useCallback(() => {
     const key = `${selectedRegion}_${selectedAssetType}`;
@@ -217,13 +398,13 @@ export const RegionalAssetsLab: React.FC = () => {
               </CardDescription>
             </div>
             <div className="flex gap-1.5">
-              {['pipeline', 'generate', 'review'].map((view) => (
+              {(['pipeline', 'generate', 'review'] as const).map((view) => (
                 <Button
                   key={view}
                   variant={activeView === view ? 'default' : 'outline'}
                   size="sm"
                   className="text-xs capitalize"
-                  onClick={() => setActiveView(view as any)}
+                  onClick={() => setActiveView(view)}
                 >
                   {view === 'pipeline' && <Zap className="w-3 h-3 mr-1" />}
                   {view === 'generate' && <Wand2 className="w-3 h-3 mr-1" />}
@@ -235,9 +416,9 @@ export const RegionalAssetsLab: React.FC = () => {
           </div>
         </CardHeader>
 
-        {/* Pipeline Stages Visual */}
         {activeView === 'pipeline' && (
           <CardContent className="pt-0">
+            {/* Pipeline Stages */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {PIPELINE_STAGES.map((stage, i) => (
                 <React.Fragment key={stage.id}>
@@ -245,10 +426,7 @@ export const RegionalAssetsLab: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.08 }}
-                    className={cn(
-                      'flex-shrink-0 rounded-lg border p-3 min-w-[160px]',
-                      stage.bgColor, stage.borderColor
-                    )}
+                    className={cn('flex-shrink-0 rounded-lg border p-3 min-w-[160px]', stage.bgColor, stage.borderColor)}
                   >
                     <div className="flex items-center gap-2 mb-1.5">
                       <stage.icon className={cn('w-4 h-4', stage.color)} />
@@ -257,9 +435,7 @@ export const RegionalAssetsLab: React.FC = () => {
                     <p className="text-[10px] text-muted-foreground mb-2">{stage.description}</p>
                     <div className="flex flex-wrap gap-1">
                       {stage.providers.map((p) => (
-                        <Badge key={p} variant="outline" className="text-[9px] py-0 px-1.5 font-normal">
-                          {p}
-                        </Badge>
+                        <Badge key={p} variant="outline" className="text-[9px] py-0 px-1.5 font-normal">{p}</Badge>
                       ))}
                     </div>
                   </motion.div>
@@ -270,12 +446,45 @@ export const RegionalAssetsLab: React.FC = () => {
               ))}
             </div>
 
+            {/* ═══ AVATAR STYLE SHOWCASE ═══ */}
+            <div className="mt-5">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <Star className="w-4 h-4 text-primary" />
+                Creative Character Styles
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {AVATAR_STYLES.map((style, i) => (
+                  <motion.button
+                    key={style.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() => {
+                      setSelectedAvatarStyle(style.id);
+                      setSelectedAssetType('avatar_3d');
+                      setActiveView('generate');
+                    }}
+                    className={cn(
+                      'relative rounded-xl border p-3 text-left transition-all hover:scale-[1.02] hover:shadow-lg',
+                      'bg-gradient-to-br', style.gradient, style.border,
+                      selectedAvatarStyle === style.id && 'ring-2 ring-primary shadow-md'
+                    )}
+                  >
+                    <div className="text-2xl mb-1">{style.emoji}</div>
+                    <div className="text-xs font-bold">{style.label}</div>
+                    <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{style.description}</div>
+                    <Badge variant="outline" className="text-[8px] py-0 px-1 mt-1.5 font-normal">{style.provider}</Badge>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
             {/* Capability Stats */}
             <div className="grid grid-cols-4 gap-3 mt-4">
               {[
                 { label: 'AI Providers', value: '19+', icon: Zap },
                 { label: 'Regional Zones', value: '82+', icon: Globe },
-                { label: 'Video Styles', value: '21+', icon: Film },
+                { label: 'Character Styles', value: '8+', icon: Bot },
                 { label: 'TTS Locales', value: '45+', icon: Volume2 },
               ].map(stat => (
                 <div key={stat.label} className="text-center p-2 rounded-lg bg-muted/50">
@@ -296,7 +505,7 @@ export const RegionalAssetsLab: React.FC = () => {
           <Card className="md:col-span-1">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Settings2Icon className="w-4 h-4 text-primary" />
+                <SettingsIcon className="w-4 h-4 text-primary" />
                 Generation Config
               </CardTitle>
             </CardHeader>
@@ -341,6 +550,31 @@ export const RegionalAssetsLab: React.FC = () => {
                 </div>
               </div>
 
+              {/* Avatar Style Selector */}
+              {selectedAssetType === 'avatar_3d' && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Character Style</label>
+                  <ScrollArea className="h-[180px]">
+                    <div className="grid grid-cols-2 gap-1.5 pr-2">
+                      {AVATAR_STYLES.map(style => (
+                        <button
+                          key={style.id}
+                          onClick={() => setSelectedAvatarStyle(style.id)}
+                          className={cn(
+                            'rounded-lg border p-2 text-left transition-all text-xs bg-gradient-to-br',
+                            style.gradient, style.border,
+                            selectedAvatarStyle === style.id && 'ring-2 ring-primary'
+                          )}
+                        >
+                          <span className="text-lg">{style.emoji}</span>
+                          <div className="text-[10px] font-semibold mt-0.5">{style.label}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
               {/* Script */}
               {(selectedAssetType === 'avatar_3d' || selectedAssetType === 'hero_video') && (
                 <div>
@@ -373,8 +607,8 @@ export const RegionalAssetsLab: React.FC = () => {
                 )}
               </Button>
 
-              {avatarGen.error && (
-                <p className="text-xs text-destructive">{avatarGen.error}</p>
+              {generationError && (
+                <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">{generationError}</p>
               )}
             </CardContent>
           </Card>
@@ -414,17 +648,13 @@ export const RegionalAssetsLab: React.FC = () => {
                   </motion.div>
                   <p className="text-sm font-medium">AI Pipeline Active</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {avatarGen.progress === 'generating_audio' && '🎙 Generating regional voiceover...'}
-                    {avatarGen.progress === 'generating_avatar' && '🤖 Creating 3D avatar with lip-sync...'}
-                    {!avatarGen.progress || avatarGen.progress === 'idle' ? 'Processing with best available providers...' : ''}
+                    {generationProgress || 'Processing with best available providers...'}
                   </p>
-                  <div className="flex gap-2 mt-4">
-                    {PIPELINE_STAGES.slice(0, 3).map((s, i) => (
-                      <Badge key={s.id} variant="outline" className={cn('text-[9px]', i === 1 ? 'animate-pulse border-primary' : '')}>
-                        {s.providers[0]}
-                      </Badge>
-                    ))}
-                  </div>
+                  {selectedAssetType === 'avatar_3d' && (
+                    <Badge variant="outline" className="mt-3 text-[10px]">
+                      {AVATAR_STYLES.find(s => s.id === selectedAvatarStyle)?.label} Style
+                    </Badge>
+                  )}
                 </div>
               )}
 
@@ -436,17 +666,22 @@ export const RegionalAssetsLab: React.FC = () => {
                       selectedAssetType === 'hero_video' || selectedAssetType === 'avatar_3d' ? (
                         <div className="flex flex-col items-center">
                           <Play className="w-16 h-16 text-primary/50" />
-                          <p className="text-xs text-muted-foreground mt-2">Video/Avatar Preview</p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {currentAsset.style ? `${currentAsset.style} Avatar` : 'Video'} Preview
+                          </p>
                           <Badge className="mt-1 text-[9px]">{currentAsset.provider}</Badge>
                         </div>
                       ) : (
                         <img src={currentAsset.previewUrl} alt="Asset preview" className="object-cover w-full h-full" />
                       )
                     ) : (
-                      <p className="text-xs text-muted-foreground">Preview not available</p>
+                      <div className="flex flex-col items-center">
+                        <CheckCircle2 className="w-10 h-10 text-emerald-500/50 mb-2" />
+                        <p className="text-xs text-muted-foreground">Generation complete — preview URL pending provider callback</p>
+                        <Badge className="mt-1 text-[9px]">{currentAsset?.provider}</Badge>
+                      </div>
                     )}
 
-                    {/* Status overlay */}
                     {currentStatus === 'published' && (
                       <div className="absolute top-2 right-2">
                         <Badge className="bg-emerald-500 text-white text-[10px] gap-1">
@@ -517,7 +752,7 @@ export const RegionalAssetsLab: React.FC = () => {
         </div>
       )}
 
-      {/* ═══ REVIEW VIEW: Regional Coverage Matrix ═══ */}
+      {/* ═══ REVIEW VIEW ═══ */}
       {activeView === 'review' && (
         <Card>
           <CardHeader className="pb-2">
@@ -525,9 +760,7 @@ export const RegionalAssetsLab: React.FC = () => {
               <Globe className="w-4 h-4 text-primary" />
               Regional Asset Coverage
             </CardTitle>
-            <CardDescription className="text-xs">
-              Track generation, approval and publication status per region
-            </CardDescription>
+            <CardDescription className="text-xs">Track generation, approval and publication status per region</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -571,8 +804,6 @@ export const RegionalAssetsLab: React.FC = () => {
                 </tbody>
               </table>
             </div>
-
-            {/* Legend */}
             <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-muted-foreground/40" /> Empty</span>
               <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 text-amber-500" /> Generating</span>
@@ -587,8 +818,7 @@ export const RegionalAssetsLab: React.FC = () => {
   );
 };
 
-// Small icon helper to avoid importing Settings2 collision
-const Settings2Icon = ({ className }: { className?: string }) => (
+const SettingsIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>
   </svg>
