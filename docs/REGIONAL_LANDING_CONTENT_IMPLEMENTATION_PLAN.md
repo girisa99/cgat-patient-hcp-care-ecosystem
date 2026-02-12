@@ -1,7 +1,7 @@
 # Regional Landing Content — Implementation Plan
 
 > **Last Updated:** 2026-02-12
-> **Status:** Phase A1 ✅ COMPLETE | Phases A2–D ⏳ PENDING
+> **Status:** Phase A1 ✅ COMPLETE | Phase A2 ✅ COMPLETE | Phases A3–D ⏳ PENDING
 
 ---
 
@@ -16,7 +16,7 @@ Database-driven regional landing pages replacing hardcoded TypeScript constants,
 | Phase | Name | Scope | Status | Depends On |
 |-------|------|-------|--------|------------|
 | **A1** | DB Foundation | `regional_landing_content` table + RLS + indexes | ✅ DONE | — |
-| **A2** | Hook + Fallback | `useRegionalLandingContent` hook with Sub-Region → Parent → English fallback | ⏳ | A1 |
+| **A2** | Hook + Fallback + Device-Aware | `useRegionalLandingContent` hook with 3-tier fallback + device variants + mobile caching | ✅ DONE | A1 |
 | **A3** | Component Integration | Wire `RegionalLandingPage.tsx` to read from DB instead of constants | ⏳ | A2 |
 | **B1** | Asset Schema | Define JSONB structure for images, videos, 3D, avatars per region | ⏳ | A1 |
 | **B2** | Asset Pipeline | Upload/CDN integration, asset management UI | ⏳ | B1 |
@@ -95,14 +95,38 @@ Database-driven regional landing pages replacing hardcoded TypeScript constants,
 
 ---
 
-## Phase A2 — Hook + Fallback (NEXT)
+## Phase A2 — Hook + Fallback + Device-Aware ✅ COMPLETE
 
-### `useRegionalLandingContent(regionSlug)`
+### `useRegionalLandingContent(regionCode)`
+- **File:** `src/hooks/useRegionalLandingContent.ts`
 - Query `regional_landing_content` for the given region code
-- Fallback hierarchy: **Sub-Region → Parent Region → ENGLISH_BASE**
-- Uses `regional-routing-registry.ts` for zone → parent mapping
-- Returns content + loading state + fallback indicator
-- Caches via React Query with 5-min stale time
+- Fallback hierarchy: **Sub-Region → Parent Region → WESTERN (English Base)**
+- Uses `SUB_REGION_TO_PARENT` mapping aligned with `regional-routing-registry.ts`
+- Returns content + loading state + fallback tier indicator
+- Caches via React Query with device-optimized stale times
+
+### Device-Aware Features
+| Feature | Mobile | Tablet | Desktop |
+|---------|--------|--------|---------|
+| Stale time | 10 min | 5 min | 5 min |
+| GC time | 30 min | 15 min | 15 min |
+| Headline | Condensed (≤50 chars) | Full | Full |
+| Subheadline | Condensed (≤80 chars) | Full | Full |
+| RTL support | ✅ | ✅ | ✅ |
+
+### Return Interface
+```typescript
+{
+  content: RegionalLandingRow | null;    // Best-match DB row
+  variants: DeviceContentVariant | null; // Mobile/desktop text variants
+  fallbackTier: 'exact' | 'parent' | 'base' | null;
+  deviceType: 'mobile' | 'tablet' | 'desktop';
+  isRTL: boolean;
+  isLoading: boolean;
+  error: Error | null;
+  isFetched: boolean;
+}
+```
 
 ---
 
