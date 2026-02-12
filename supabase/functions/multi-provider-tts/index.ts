@@ -728,7 +728,15 @@ async function generateGoogleTTS(text: string, languageCode?: string, voice?: st
   // Only use voice if it looks like a valid Google voice (e.g., 'en-US-Neural2-D')
   // Reject Qwen/Alibaba voice names like 'longhua', 'longfei' etc.
   const isGoogleVoice = voice && /^[a-z]{2,3}-[A-Z]{2}/.test(voice);
-  const selectedVoice = isGoogleVoice ? voice : `${lang}-Neural2-D`;
+  // Not all languages have Neural2-D; use known defaults for CJK
+  const GOOGLE_VOICE_DEFAULTS: Record<string, string> = {
+    'zh-TW': 'zh-TW-Neural2-B',  // Female, only A/B/C exist for zh-TW
+    'zh-CN': 'zh-CN-Neural2-D',
+    'ja-JP': 'ja-JP-Neural2-D',
+    'ko-KR': 'ko-KR-Neural2-A',  // Only A/B/C exist for ko-KR
+  };
+  const defaultVoice = GOOGLE_VOICE_DEFAULTS[lang] || `${lang}-Neural2-D`;
+  const selectedVoice = isGoogleVoice ? voice : defaultVoice;
 
   // Chunk by BYTES not chars — Google limit is 5000 bytes, multi-byte scripts need this
   const chunks = chunkTextByBytes(text, GOOGLE_MAX_BYTES);
@@ -796,67 +804,96 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   console.log(`🌸 Alibaba TTS: lang="${languageCode}", voice="${selectedVoice}", keys=${configs.map(c => c.region).join(',')}`);
 
   // PATH 1: Try Qwen TTS (qwen3-tts-flash then qwen2-tts) via REST on each region
+  // qwen3-tts-flash has a 600-char input limit, so we must chunk
+  const QWEN3_MAX_CHARS = 580; // Leave margin below 600
   const qwenModels = ['qwen3-tts-flash', 'qwen2-tts'];
+  
+  // Helper to chunk text by character count for Qwen
+  const chunkTextByChars = (t: string, maxChars: number): string[] => {
+    if (t.length <= maxChars) return [t];
+    const chunks: string[] = [];
+    let remaining = t;
+    while (remaining.length > 0) {
+      if (remaining.length <= maxChars) { chunks.push(remaining); break; }
+      // Find last sentence-ending punctuation within limit
+      let splitIdx = -1;
+      for (let i = Math.min(remaining.length - 1, maxChars - 1); i >= maxChars * 0.5; i--) {
+        if ('。．.！!？?；;，,、\n'.includes(remaining[i])) { splitIdx = i + 1; break; }
+      }
+      if (splitIdx === -1) splitIdx = maxChars;
+      chunks.push(remaining.substring(0, splitIdx));
+      remaining = remaining.substring(splitIdx);
+    }
+    return chunks;
+  };
+  
   for (const model of qwenModels) {
+    const maxChars = model === 'qwen3-tts-flash' ? QWEN3_MAX_CHARS : 5000;
+    const textChunks = chunkTextByChars(text, maxChars);
+    
     for (const config of configs) {
       try {
-        console.log(`🎤 [Path 1] ${model} REST on ${config.region}: ${config.restBase}`);
+        console.log(`🎤 [Path 1] ${model} REST on ${config.region}: ${config.restBase} (${textChunks.length} chunks)`);
         const endpoint = `${config.restBase}/services/aigc/multimodal-generation/generation`;
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${config.key}`,
-            'Content-Type': 'application/json',
-            'X-DashScope-Async': 'disable',
-          },
-          body: JSON.stringify({
-            model: model,
-            input: {
-              text: text,
+        const chunkBuffers: ArrayBuffer[] = [];
+        
+        for (let ci = 0; ci < textChunks.length; ci++) {
+          console.log(`🎤 ${model} chunk ${ci+1}/${textChunks.length}: ${textChunks[ci].length} chars`);
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${config.key}`,
+              'Content-Type': 'application/json',
+              'X-DashScope-Async': 'disable',
             },
-            parameters: {
-              voice: selectedVoice,
-              speed: 1.0,
-            },
-          }),
-        });
+            body: JSON.stringify({
+              model: model,
+              input: {
+                text: textChunks[ci],
+              },
+              parameters: {
+                voice: selectedVoice,
+                speed: 1.0,
+              },
+            }),
+          });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`${model} error on ${config.region} (${response.status}): ${errorText}`);
-        }
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`${model} error on ${config.region} (${response.status}): ${errorText}`);
+          }
 
-        const result = await response.json();
-        
-        // Extract audio from response - Qwen TTS returns output.audio.url and output.audio.data
-        const audioData = result.output?.audio?.data;
-        const audioUrl = result.output?.audio?.url || result.output?.audio_url;
-        
-        if (audioData && audioData.length > 0) {
-          const binaryString = atob(audioData);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+          const result = await response.json();
+          
+          // Extract audio from response
+          const audioData = result.output?.audio?.data;
+          const audioUrl = result.output?.audio?.url || result.output?.audio_url;
+          
+          if (audioData && audioData.length > 0) {
+            const binaryString = atob(audioData);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let j = 0; j < binaryString.length; j++) {
+              bytes[j] = binaryString.charCodeAt(j);
+            }
+            if (bytes.length === 0) throw new Error(`${model} returned empty audio chunk ${ci+1}`);
+            chunkBuffers.push(bytes.buffer);
+          } else if (audioUrl) {
+            const audioResponse = await fetch(audioUrl);
+            if (!audioResponse.ok) throw new Error('Failed to download Qwen TTS audio');
+            const buffer = await audioResponse.arrayBuffer();
+            if (buffer.byteLength === 0) throw new Error(`${model} audio download empty chunk ${ci+1}`);
+            chunkBuffers.push(buffer);
+          } else {
+            throw new Error(`${model} returned no audio data on ${config.region} chunk ${ci+1}`);
           }
-          if (bytes.length === 0) {
-            throw new Error(`${model} returned empty audio on ${config.region}`);
-          }
-          console.log(`✅ ${model} REST succeeded on ${config.region}: ${bytes.length} bytes`);
-          return bytes.buffer;
         }
         
-        if (audioUrl) {
-          const audioResponse = await fetch(audioUrl);
-          if (!audioResponse.ok) throw new Error('Failed to download Qwen TTS audio');
-          const buffer = await audioResponse.arrayBuffer();
-          if (buffer.byteLength === 0) {
-            throw new Error(`${model} audio download empty on ${config.region}`);
-          }
-          console.log(`✅ ${model} REST succeeded on ${config.region}: ${buffer.byteLength} bytes`);
-          return buffer;
-        }
-        
-        throw new Error(`${model} returned no audio data on ${config.region}`);
+        // All chunks succeeded for this model+region
+        const finalBuffer = chunkBuffers.length === 1 
+          ? chunkBuffers[0] 
+          : await concatenateAudioBuffers(chunkBuffers);
+        console.log(`✅ ${model} REST succeeded on ${config.region}: ${finalBuffer.byteLength} bytes (${textChunks.length} chunks)`);
+        return finalBuffer;
       } catch (err) {
         console.warn(`⚠️ ${model} REST failed on ${config.region}: ${(err as Error).message}`);
       }
