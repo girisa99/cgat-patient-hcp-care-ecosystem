@@ -89,23 +89,25 @@ interface TTSRouting {
 
 const OPENAI_MAX_CHARS = 3800; // Leave buffer below 4096 limit
 const ELEVENLABS_MAX_CHARS = 4800; // ElevenLabs limit ~5000
-const GOOGLE_MAX_CHARS = 4800; // Google limit ~5000
+const GOOGLE_MAX_BYTES = 4800; // Google limit is 5000 BYTES, not chars
 const AZURE_MAX_CHARS = 4000; // Azure SSML limit
+
+/**
+ * Get UTF-8 byte length of a string
+ */
+function getByteLength(str: string): number {
+  return new TextEncoder().encode(str).byteLength;
+}
 
 /**
  * Smart text chunking that preserves sentence boundaries
  * Handles multiple scripts: Latin, Devanagari (Hindi), Telugu, Arabic, CJK
+ * @param maxChars - limit in characters (used for char-based APIs)
  */
 function chunkTextBySentences(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
   
   const chunks: string[] = [];
-  // Split on sentence endings for multiple scripts:
-  // - Latin: . ! ?
-  // - Hindi/Devanagari: । (Devanagari Danda)
-  // - Telugu: ।
-  // - Chinese/Japanese: 。！？
-  // - Arabic: ؟
   const sentences = text.split(/(?<=[.!?।॥。！？؟])\s*/);
   let currentChunk = '';
   
@@ -117,7 +119,6 @@ function chunkTextBySentences(text: string, maxChars: number): string[] {
         chunks.push(currentChunk.trim());
       }
       
-      // Handle very long sentences by word splitting
       if (sentence.length > maxChars) {
         const words = sentence.split(/\s+/);
         let wordChunk = '';
@@ -125,7 +126,6 @@ function chunkTextBySentences(text: string, maxChars: number): string[] {
           const wordTestLength = wordChunk ? wordChunk.length + 1 + word.length : word.length;
           if (wordTestLength > maxChars) {
             if (wordChunk) chunks.push(wordChunk.trim());
-            // If single word exceeds limit, force split by characters
             if (word.length > maxChars) {
               for (let i = 0; i < word.length; i += maxChars) {
                 chunks.push(word.slice(i, i + maxChars));
@@ -150,6 +150,53 @@ function chunkTextBySentences(text: string, maxChars: number): string[] {
   if (currentChunk.trim()) chunks.push(currentChunk.trim());
   
   console.log(`📝 Chunked ${text.length} chars into ${chunks.length} chunks`);
+  return chunks;
+}
+
+/**
+ * Byte-aware text chunking for APIs with byte limits (e.g. Google TTS 5000 bytes)
+ * Multi-byte scripts like Punjabi, Bengali, Hindi can be 3 bytes per char in UTF-8
+ */
+function chunkTextByBytes(text: string, maxBytes: number): string[] {
+  if (getByteLength(text) <= maxBytes) return [text];
+  
+  const chunks: string[] = [];
+  const sentences = text.split(/(?<=[.!?।॥。！？؟])\s*/);
+  let currentChunk = '';
+  
+  for (const sentence of sentences) {
+    const candidate = currentChunk ? currentChunk + ' ' + sentence : sentence;
+    
+    if (getByteLength(candidate) > maxBytes) {
+      if (currentChunk) {
+        chunks.push(currentChunk.trim());
+      }
+      
+      // Handle single sentence exceeding byte limit
+      if (getByteLength(sentence) > maxBytes) {
+        const words = sentence.split(/\s+/);
+        let wordChunk = '';
+        for (const word of words) {
+          const wordCandidate = wordChunk ? wordChunk + ' ' + word : word;
+          if (getByteLength(wordCandidate) > maxBytes) {
+            if (wordChunk) chunks.push(wordChunk.trim());
+            wordChunk = word;
+          } else {
+            wordChunk = wordCandidate;
+          }
+        }
+        currentChunk = wordChunk;
+      } else {
+        currentChunk = sentence;
+      }
+    } else {
+      currentChunk = candidate;
+    }
+  }
+  
+  if (currentChunk.trim()) chunks.push(currentChunk.trim());
+  
+  console.log(`📝 Byte-chunked ${text.length} chars (${getByteLength(text)} bytes) into ${chunks.length} chunks`);
   return chunks;
 }
 
@@ -680,9 +727,9 @@ async function generateGoogleTTS(text: string, languageCode?: string, voice?: st
   const lang = languageCode || 'en-US';
   const selectedVoice = voice || `${lang}-Neural2-D`;
 
-  // Chunk if needed
-  const chunks = chunkTextBySentences(text, GOOGLE_MAX_CHARS);
-  console.log(`🌐 Google: Processing ${chunks.length} chunk(s), total ${text.length} chars`);
+  // Chunk by BYTES not chars — Google limit is 5000 bytes, multi-byte scripts need this
+  const chunks = chunkTextByBytes(text, GOOGLE_MAX_BYTES);
+  console.log(`🌐 Google: Processing ${chunks.length} chunk(s), total ${text.length} chars (${getByteLength(text)} bytes)`);
   
   const audioBuffers: ArrayBuffer[] = [];
   
