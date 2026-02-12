@@ -1991,6 +1991,12 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
           const languageMap: Record<string, string> = {
             'NAM_US': 'en', 'NAM_CA': 'fr',
             'EU_WEST': 'en', 'EU_DACH': 'de', 'EU_FRANCE': 'fr', 'EU_IBERIA': 'es', 'EU_NORDIC': 'sv', 'EU_EAST': 'pl',
+            // EU per-country codes
+            'EU_DE': 'de', 'EU_AT': 'de', 'EU_CH': 'de',
+            'EU_FR': 'fr', 'EU_BE_FR': 'fr',
+            'EU_ES': 'es', 'EU_PT': 'pt',
+            'EU_SE': 'sv', 'EU_NO': 'nb', 'EU_DK': 'da', 'EU_FI': 'fi',
+            'EU_PL': 'pl', 'EU_CZ': 'cs', 'EU_RO': 'ro', 'EU_HU': 'hu',
             'LATAM_BRAZIL': 'pt-BR', 'LATAM_MEXICO': 'es', 'LATAM_ANDEAN': 'es', 'LATAM_CONESUR': 'es', 'LATAM_CARIB': 'es',
             'MENA_GULF': 'ar', 'MENA_EGYPT': 'ar', 'MENA_LEVANT': 'ar', 'MENA_MAGHREB': 'ar', 'MENA_MSA': 'ar',
             'AFRICA_WEST': 'en', 'AFRICA_EAST': 'sw', 'AFRICA_SOUTH': 'en', 'AFRICA_FRANCO': 'fr',
@@ -2144,15 +2150,26 @@ INSTRUCTIONS:
       return;
     }
 
-    // Check which sub-regions already have NON-archived scripts
+    // Collect all LEAF-level children (grandchildren if they exist, otherwise direct children)
+    const leafChildren: RegionChild[] = [];
+    group.children.forEach(child => {
+      if (child.children && child.children.length > 0) {
+        // Has per-country grandchildren — expand to country level
+        child.children.forEach(gc => leafChildren.push(gc));
+      } else {
+        leafChildren.push(child);
+      }
+    });
+
+    // Check which leaf regions already have NON-archived scripts
     const existingSubRegions = scripts
-      .filter(s => s.status !== 'archived' && group.children.some(c => c.code === s.region_code))
+      .filter(s => s.status !== 'archived' && leafChildren.some(c => c.code === s.region_code))
       .map(s => s.region_code);
 
-    const missingSubRegions = group.children.filter(c => !existingSubRegions.includes(c.code));
+    const missingSubRegions = leafChildren.filter(c => !existingSubRegions.includes(c.code));
 
     if (missingSubRegions.length === 0) {
-      toast.info(`All ${group.children.length} sub-regions already have scripts.`);
+      toast.info(`All ${leafChildren.length} leaf-level sub-regions already have scripts.`);
       return;
     }
 
@@ -2177,6 +2194,12 @@ INSTRUCTIONS:
               'AFRICA_WEST': 'en', 'AFRICA_EAST': 'sw', 'AFRICA_SOUTH': 'en', 'AFRICA_FRANCO': 'fr',
               'NAM_US': 'en', 'NAM_CA': 'fr',
               'EU_WEST': 'en', 'EU_DACH': 'de', 'EU_FRANCE': 'fr', 'EU_IBERIA': 'es', 'EU_NORDIC': 'sv', 'EU_EAST': 'pl',
+              // EU per-country codes
+              'EU_DE': 'de', 'EU_AT': 'de', 'EU_CH': 'de',
+              'EU_FR': 'fr', 'EU_BE_FR': 'fr',
+              'EU_ES': 'es', 'EU_PT': 'pt',
+              'EU_SE': 'sv', 'EU_NO': 'nb', 'EU_DK': 'da', 'EU_FI': 'fi',
+              'EU_PL': 'pl', 'EU_CZ': 'cs', 'EU_RO': 'ro', 'EU_HU': 'hu',
               'LATAM_BRAZIL': 'pt-BR', 'LATAM_MEXICO': 'es', 'LATAM_ANDEAN': 'es', 'LATAM_CONESUR': 'es', 'LATAM_CARIB': 'es',
               'MENA_GULF': 'ar', 'MENA_EGYPT': 'ar', 'MENA_LEVANT': 'ar', 'MENA_MAGHREB': 'ar', 'MENA_MSA': 'ar',
               'INDIA_NORTH': 'hi', 'INDIA_SOUTH': 'ta', 'INDIA_WEST': 'gu', 'INDIA_EAST': 'bn', 'INDIA_PAN': 'en',
@@ -2591,8 +2614,20 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                   g.children.some(c => c.code === regionCode || c.code === regionCode.toUpperCase())
                 );
                 const hasSubRegions = parentGroup && parentGroup.children.length > 0;
+                // Count leaf-level children (grandchildren if they exist)
+                const leafChildren: RegionChild[] = [];
+                if (hasSubRegions && parentGroup) {
+                  parentGroup.children.forEach(child => {
+                    if (child.children && child.children.length > 0) {
+                      child.children.forEach(gc => leafChildren.push(gc));
+                    } else {
+                      leafChildren.push(child);
+                    }
+                  });
+                }
+                const totalLeafCount = leafChildren.length;
                 const existingSubRegionCount = hasSubRegions 
-                  ? parentGroup.children.filter(c => scripts.some(s => s.region_code === c.code && s.status !== 'archived')).length 
+                  ? leafChildren.filter(c => scripts.some(s => s.region_code === c.code && s.status !== 'archived')).length 
                   : 0;
                 const isExpanding = expandingRegion === regionCode;
 
@@ -2608,7 +2643,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                           </Badge>
                           {hasSubRegions && (
                             <Badge variant="secondary" className="text-[10px]">
-                              {existingSubRegionCount}/{parentGroup.children.length} sub-regions
+                              {existingSubRegionCount}/{totalLeafCount} sub-regions
                             </Badge>
                           )}
                         </CardTitle>
@@ -2617,7 +2652,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                           {hasSubRegions ? (
                             <Button
                               size="sm"
-                              variant={existingSubRegionCount < (parentGroup?.children?.length ?? 0) ? "default" : "outline"}
+                              variant={existingSubRegionCount < totalLeafCount ? "default" : "outline"}
                               className="text-xs h-7 gap-1"
                               disabled={isExpanding}
                               onClick={() => handleExpandToSubRegions(regionScripts[0])}
@@ -2629,9 +2664,9 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                               )}
                               {isExpanding 
                                 ? 'Expanding...' 
-                                : existingSubRegionCount < (parentGroup?.children?.length ?? 0)
-                                  ? `Expand to ${(parentGroup?.children?.length ?? 0) - existingSubRegionCount} Sub-Regions`
-                                  : `Re-expand ${parentGroup?.children?.length ?? 0} Sub-Regions`
+                                : existingSubRegionCount < totalLeafCount
+                                  ? `Expand to ${totalLeafCount - existingSubRegionCount} Sub-Regions`
+                                  : `Re-expand ${totalLeafCount} Sub-Regions`
                               }
                             </Button>
                           ) : null}
