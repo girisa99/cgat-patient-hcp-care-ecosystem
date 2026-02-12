@@ -4689,7 +4689,14 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
             <Button variant="outline" onClick={() => setShowEditor(false)}>
               Cancel
             </Button>
-            <Button onClick={() => editingScript && handleSaveScript(editingScript)}>
+            <Button onClick={() => {
+              if (!editingScript) return;
+              if (editingScript.id.startsWith('new-')) {
+                handleSaveEnglishBase();
+              } else {
+                handleSaveScript(editingScript);
+              }
+            }}>
               Save Changes
             </Button>
           </DialogFooter>
