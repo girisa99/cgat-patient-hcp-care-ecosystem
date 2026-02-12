@@ -1,0 +1,4 @@
+# Memory: features/genie-cast/regional-assets-lab
+Updated: just now
+
+The 'Regional Assets Lab' in Genie Cast manages a 'Generate → Preview → Approve → Publish' workflow for 12 asset types: 3D Avatars, Hero Videos, Hero Images, OG Images, Brand Logos, Thumbnails, Banner Ads, Social Stories, Infographics, Promo Clips, Audio Intros, and Typography Art. It features 12 creative styles (Pixar 3D, Anime/Ghibli, Photorealistic, Crayon, Cyberpunk, Claymation, Comic, Watercolor, Pop Art, Isometric 3D, Stained Glass, Ukiyo-e) that apply universally to ALL asset types. The lab covers 45+ regions organized in 9 parent groups (NAM, Europe, India, MENA, CJK, SEA, LATAM, Africa, Oceania/Central Asia) with sub-region granularity. Asset types are filterable by 8 categories (Characters, Video, Images, Branding, Marketing, Social, Audio). The lab visualizes the 5-stage AI pipeline and uses Supabase Edge Functions for secure generation.
