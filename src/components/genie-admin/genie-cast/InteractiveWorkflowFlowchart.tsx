@@ -38,16 +38,16 @@ const REGION_CONFIGS: Record<string, RegionConfig> = {
       { code: 'AFRICA_FRANCO', lang: 'French (Francophone)', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'fr-SN' },
     ],
   },
-  INDIA: {
-    label: 'INDIA',
-    subRegions: [
-      { code: 'INDIA_NORTH', lang: 'Hindi', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'hi-IN' },
-      { code: 'INDIA_SOUTH', lang: 'Tamil/Telugu', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'ta-IN' },
-      { code: 'INDIA_WEST', lang: 'Marathi', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'mr-IN' },
-      { code: 'INDIA_EAST', lang: 'Bengali', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'bn-IN' },
-      { code: 'INDIA_PAN', lang: 'Indian English', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-IN' },
-    ],
-  },
+   INDIA: {
+     label: 'INDIA',
+     subRegions: [
+       { code: 'INDIA_NORTH', lang: 'Hindi/Urdu/Punjabi (3)', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'hi-IN' },
+       { code: 'INDIA_SOUTH', lang: 'Tamil/Telugu/Kannada/Malayalam (4)', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'ta-IN' },
+       { code: 'INDIA_WEST', lang: 'Marathi/Gujarati (2)', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'mr-IN' },
+       { code: 'INDIA_EAST', lang: 'Bengali/Odia (2)', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'bn-IN' },
+       { code: 'INDIA_PAN', lang: 'Indian English (1)', llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-IN' },
+     ],
+   },
    CJK: {
      label: 'CJK',
      subRegions: [
@@ -69,17 +69,17 @@ const REGION_CONFIGS: Record<string, RegionConfig> = {
       { code: 'MENA_MSA', lang: 'Formal Arabic', llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'ar-SA' },
     ],
   },
-  EU: {
-    label: 'EUROPE',
-    subRegions: [
-      { code: 'EU_WEST', lang: 'British English', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-GB' },
-      { code: 'EU_DACH', lang: 'German', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'de-DE' },
-      { code: 'EU_FRANCE', lang: 'French', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'fr-FR' },
-      { code: 'EU_IBERIA', lang: 'Spanish/Portuguese', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-ES' },
-      { code: 'EU_NORDIC', lang: 'Nordic', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'sv-SE' },
-      { code: 'EU_EAST', lang: 'Polish/Czech', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'pl-PL' },
-    ],
-  },
+   EU: {
+     label: 'EUROPE',
+     subRegions: [
+       { code: 'EU_WEST', lang: 'British English (1)', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-GB' },
+       { code: 'EU_DACH', lang: 'DE/AT/CH (3)', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'de-DE' },
+       { code: 'EU_FRANCE', lang: 'French (1)', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'fr-FR' },
+       { code: 'EU_IBERIA', lang: 'ES/PT/IT (3)', llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-ES' },
+       { code: 'EU_NORDIC', lang: 'SE/NO/DK/FI (4)', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'sv-SE' },
+       { code: 'EU_EAST', lang: 'PL/CZ/RO/GR (4)', llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'pl-PL' },
+     ],
+   },
   LATAM: {
     label: 'LATAM',
     subRegions: [
