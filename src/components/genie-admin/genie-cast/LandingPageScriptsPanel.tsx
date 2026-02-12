@@ -2096,21 +2096,23 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
     const regionGroup = REGION_HIERARCHY.find(g => g.groupCode === regionCode.toUpperCase() || g.groupCode.toLowerCase() === regionCode);
     const subRegionNames = regionGroup?.children?.map(c => c.name).join(', ') || regionName;
 
-    // Region-specific LLM routing per master routing registry
-    const REGION_LLM_ROUTING: Record<string, { provider: string; model: string }> = {
-      'latam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514' },
-      'eu': { provider: 'anthropic', model: 'claude-sonnet-4-20250514' },
-      'nam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514' },
-      'mena': { provider: 'openai', model: 'gpt-4o' },
-      'india': { provider: 'gemini', model: 'gemini-2.5-pro' },
-      'sea': { provider: 'gemini', model: 'gemini-2.5-pro' },
-      'africa': { provider: 'gemini', model: 'gemini-2.5-pro' },
-      'cjk': { provider: 'openai', model: 'gpt-4o' },
-      'pakistan': { provider: 'openai', model: 'gpt-4o' },
-      'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro' },
+    // Region-specific LLM routing per master routing registry (v5)
+    // Primary: Claude (EU/LATAM/NAM), Alibaba Qwen Max (CJK/MENA), Gemini (India/SEA/Africa), GPT-4o (Pakistan)
+    // DeepSeek: fallback chain only (never primary)
+    const REGION_LLM_ROUTING: Record<string, { provider: string; model: string; fallback: string }> = {
+      'latam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
+      'eu': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
+      'nam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
+      'mena': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
+      'india': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
+      'sea': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'claude → openai/gpt-4o → deepseek' },
+      'africa': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'claude → openai/gpt-4o → deepseek' },
+      'cjk': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
+      'pakistan': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
+      'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
     };
     const regionKey = regionCode.toLowerCase();
-    const llmRoute = REGION_LLM_ROUTING[regionKey] || { provider: 'openai', model: 'gpt-4o' };
+    const llmRoute = REGION_LLM_ROUTING[regionKey] || { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' };
 
     let adaptedContent = { hook: '', problem_statement: '', solution: '', cta: '' };
 
