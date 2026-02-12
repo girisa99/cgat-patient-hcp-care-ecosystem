@@ -937,9 +937,8 @@ export function BlueprintTemplatesGrid({
                     // On image error, fall back to gradient
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
-                    target.parentElement?.classList.add(
-                      categoryGradients[blueprint.category] || categoryGradients.marketing
-                    );
+                    const gradientClasses = (categoryGradients[blueprint.category] || categoryGradients.marketing).split(' ');
+                    target.parentElement?.classList.add(...gradientClasses);
                   }}
                 />
                 
