@@ -19436,6 +19436,66 @@ export type Database = {
         }
         Relationships: []
       }
+      regional_landing_content: {
+        Row: {
+          assets: Json | null
+          created_at: string | null
+          created_by: string | null
+          cta_primary_text: string | null
+          cta_primary_url: string | null
+          cta_secondary_text: string | null
+          cta_secondary_url: string | null
+          headline: string
+          id: string
+          language_code: string | null
+          region_code: string
+          rtl_enabled: boolean | null
+          status: string | null
+          subheadline: string | null
+          updated_at: string | null
+          version: number | null
+          welcome_script: string | null
+        }
+        Insert: {
+          assets?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          cta_primary_text?: string | null
+          cta_primary_url?: string | null
+          cta_secondary_text?: string | null
+          cta_secondary_url?: string | null
+          headline: string
+          id?: string
+          language_code?: string | null
+          region_code: string
+          rtl_enabled?: boolean | null
+          status?: string | null
+          subheadline?: string | null
+          updated_at?: string | null
+          version?: number | null
+          welcome_script?: string | null
+        }
+        Update: {
+          assets?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          cta_primary_text?: string | null
+          cta_primary_url?: string | null
+          cta_secondary_text?: string | null
+          cta_secondary_url?: string | null
+          headline?: string
+          id?: string
+          language_code?: string | null
+          region_code?: string
+          rtl_enabled?: boolean | null
+          status?: string | null
+          subheadline?: string | null
+          updated_at?: string | null
+          version?: number | null
+          welcome_script?: string | null
+        }
+        Relationships: []
+      }
       regional_narration_scripts: {
         Row: {
           approved_at: string | null
