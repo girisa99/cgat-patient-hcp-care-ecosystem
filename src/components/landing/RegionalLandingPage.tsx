@@ -501,8 +501,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
   const [showVoicePicker, setShowVoicePicker] = React.useState(false);
   const voiceOptions = REGION_VOICES[regionSlug] || REGION_VOICES.nam;
   const [selectedVoice, setSelectedVoice] = React.useState(voiceOptions[0]);
-  // Track whether we're playing the welcome overview vs per-slide audio
-  const [isWelcomePlaying, setIsWelcomePlaying] = React.useState(false);
+  // Track whether per-slide audio is playing (manual-only, no auto-play)
   const [isSlideAudioPlaying, setIsSlideAudioPlaying] = React.useState(false);
 
   // ── Auto-detect sub-region via IP + timezone with VPN protection ──
@@ -560,55 +559,25 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
     },
   ];
 
-  // ── Welcome voiceover: auto-play on first visit ──
-  // Prefers pre-generated DB narration TTS, falls back to real-time generation
-  const welcomePlayedRef = React.useRef(false);
-  React.useEffect(() => {
-    if (welcomePlayedRef.current) return;
-    const storageKey = `genie_welcome_played_${regionSlug}`;
-    if (localStorage.getItem(storageKey)) return;
-    
-    // Delay slightly so page renders first
-    const timer = setTimeout(() => {
-      welcomePlayedRef.current = true;
-      setIsWelcomePlaying(true);
-      
-      // If we have a pre-generated DB narration with TTS audio, play that
-      if (dbTtsAudio?.audio_url || dbNarrationScript?.generated_audio_url) {
-        playDbNarration();
-      } else {
-        // Fallback to real-time TTS generation
-        speak(config.welcomeScript, selectedVoice.code, regionSlug, 'welcome');
-      }
-      localStorage.setItem(storageKey, Date.now().toString());
-    }, 2000);
-    
-    return () => clearTimeout(timer);
-  }, [regionSlug]);
+  // ── Audio is manual-only — NO auto-play on page load ──
+  // Users click the play button to start narration
 
-  // Track when welcome audio finishes (either DB or real-time)
+  // Carousel auto-advance: pause only during per-slide audio
   React.useEffect(() => {
-    if (isWelcomePlaying && !isSpeaking && !isDbPlaying) {
-      setIsWelcomePlaying(false);
-    }
-  }, [isSpeaking, isDbPlaying, isWelcomePlaying]);
-
-  // Track when per-slide audio finishes
-  React.useEffect(() => {
-    if (isSlideAudioPlaying && !isSpeaking && !isDbPlaying) {
-      setIsSlideAudioPlaying(false);
-    }
-  }, [isSpeaking, isSlideAudioPlaying]);
-
-  // Carousel auto-advance: pause only during per-slide audio, NOT during welcome
-  React.useEffect(() => {
-    if (isSlideAudioPlaying) return; // Pause carousel only for per-slide audio
+    if (isSlideAudioPlaying) return;
     const timer = setInterval(() => {
       setDirection(1);
       setCurrent((prev) => (prev + 1) % slides.length);
     }, 10000);
     return () => clearInterval(timer);
   }, [slides.length, isSlideAudioPlaying]);
+
+  // Track when per-slide audio finishes
+  React.useEffect(() => {
+    if (isSlideAudioPlaying && !isSpeaking && !isDbPlaying) {
+      setIsSlideAudioPlaying(false);
+    }
+  }, [isSpeaking, isDbPlaying, isSlideAudioPlaying]);
   
 
   const goTo = (index: number) => {
@@ -921,11 +890,14 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
               setShowVoicePicker(false);
               const isAnyPlaying = isSpeaking || isDbPlaying;
               if (isAnyPlaying) {
+                // Stop ALL audio sources to prevent parallel playback
                 stop();
                 stopDbNarration();
-                setIsWelcomePlaying(false);
                 setIsSlideAudioPlaying(false);
               } else {
+                // Stop any lingering audio first, then start fresh
+                stop();
+                stopDbNarration();
                 setIsSlideAudioPlaying(true);
                 // If DB narration has pre-generated TTS audio, play it
                 if (dbTtsAudio?.audio_url || dbNarrationScript?.generated_audio_url) {
