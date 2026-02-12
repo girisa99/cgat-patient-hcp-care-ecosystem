@@ -434,7 +434,10 @@ async function generateElevenLabsTTS(text: string, voice?: string, speed?: numbe
   const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
   if (!ELEVENLABS_API_KEY) throw new Error('ElevenLabs API key not configured');
 
-  const voiceId = voice || 'JBFqnCBsd6RMkjVDRZzb'; // George
+  // Only use voice if it looks like an ElevenLabs voice ID (alphanumeric, 20+ chars)
+  // Reject Alibaba voice names like 'longwan', 'longhua' etc.
+  const isElevenLabsVoice = voice && voice.length >= 15 && /^[a-zA-Z0-9]+$/.test(voice);
+  const voiceId = (isElevenLabsVoice ? voice : null) || 'JBFqnCBsd6RMkjVDRZzb'; // George
   
   // Use smaller chunk size to reduce per-chunk memory
   const effectiveChunkSize = Math.min(ELEVENLABS_MAX_CHARS, 3000);
@@ -661,7 +664,10 @@ async function generateAzureTTS(text: string, languageCode?: string, voice?: str
     'af-ZA': 'af-ZA-AdriNeural',
   };
   
-  const selectedVoice = voice || voiceMap[normalizedLang] || voiceMap['en-US'];
+  // Only use voice if it looks like a valid Azure voice (e.g., 'zh-CN-XiaoxiaoNeural')
+  // Reject Alibaba voice names like 'longwan', 'longhua' etc.
+  const isAzureVoice = voice && voice.includes('Neural');
+  const selectedVoice = (isAzureVoice ? voice : null) || voiceMap[normalizedLang] || voiceMap['en-US'];
   
   console.log(`🎤 Azure TTS: Using voice "${selectedVoice}" for language "${normalizedLang}"`);
   
