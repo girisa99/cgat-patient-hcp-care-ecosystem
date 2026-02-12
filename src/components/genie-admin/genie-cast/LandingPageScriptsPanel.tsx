@@ -2987,16 +2987,30 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
               <div className="flex items-center justify-center py-20">
                 <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
-            ) : (filterStatus !== 'all' && filterStatus !== 'draft' && Object.keys(groupedByRegion).length === 0) ? (
-              <Card className="border-dashed">
-                <CardContent className="py-12 text-center">
-                  <Globe className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">No scripts found matching filters</p>
-                </CardContent>
-              </Card>
             ) : (
               <>
-              {Object.entries(allGroupedByRegion).map(([regionCode, allRegionScripts]) => {
+              {/* When a status filter is active, only show regions that have scripts matching that filter */}
+              {(() => {
+                // Determine which region codes to iterate
+                const regionEntries = filterStatus !== 'all'
+                  ? Object.entries(groupedByRegion) // Only regions with matching scripts
+                  : Object.entries(allGroupedByRegion); // All regions with any non-archived scripts
+                
+                if (regionEntries.length === 0 && filterStatus !== 'all') {
+                  return (
+                    <Card className="border-dashed">
+                      <CardContent className="py-12 text-center">
+                        <Globe className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-sm text-muted-foreground">No scripts found with status "{filterStatus}"</p>
+                        <p className="text-xs text-muted-foreground mt-1">Try selecting "All Statuses" to see all regions</p>
+                      </CardContent>
+                    </Card>
+                  );
+                }
+
+                return regionEntries.map(([regionCode, _entryScripts]) => {
+                // All non-archived scripts for this region (for badges/counts)
+                const allRegionScripts = allGroupedByRegion[regionCode] || _entryScripts;
                 // Scripts matching current filter (for display)
                 const regionScripts = groupedByRegion[regionCode] || [];
                 const regionInfo = REGION_OPTIONS.find(r => r.code === regionCode);
@@ -3355,9 +3369,10 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
                     </CardContent>
                   </Card>
                 );
-              })}
-              {/* ─── Empty region cards for groups with NO scripts at all (not just filtered out) ─── */}
-              {REGION_HIERARCHY
+              });
+              })()}
+              {/* ─── Empty region cards for groups with NO scripts at all — only when viewing "All Statuses" ─── */}
+              {filterStatus === 'all' && REGION_HIERARCHY
                 .filter(group => {
                   const codes = getGroupCodes(group);
                   // Check against ALL non-archived scripts, not the filtered view
