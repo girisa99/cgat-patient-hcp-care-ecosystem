@@ -725,12 +725,23 @@ export const LandingPageScriptsPanel: React.FC = () => {
   }, [notes]);
 
   // ── Filtered scripts — case-insensitive matching for region codes ──
+  // ── Latest-version-per-region dedup (used by filters AND stats) ──
+  const latestVersionScripts = useMemo(() => {
+    const latestByRegion = new Map<string, NarrationScript>();
+    scripts.forEach(s => {
+      if (s.status === 'archived') return;
+      const existing = latestByRegion.get(s.region_code);
+      if (!existing || s.version > existing.version) {
+        latestByRegion.set(s.region_code, s);
+      }
+    });
+    return Array.from(latestByRegion.values());
+  }, [scripts]);
+
   const filteredScripts = useMemo(() => {
     const lowerFilterRegions = filterRegions.map(r => r.toLowerCase());
-    return scripts
+    return latestVersionScripts
       .filter(s => {
-        // Never show archived scripts in any view
-        if (s.status === 'archived') return false;
         if (filterRegions.length > 0 && !lowerFilterRegions.includes(s.region_code.toLowerCase())) return false;
         if (filterStatus !== 'all' && s.status !== filterStatus) return false;
         return true;
@@ -741,9 +752,9 @@ export const LandingPageScriptsPanel: React.FC = () => {
         const orderA = statusOrder[a.status] ?? 3;
         const orderB = statusOrder[b.status] ?? 3;
         if (orderA !== orderB) return orderA - orderB;
-        return b.version - a.version; // Within same status, newest first
+        return b.version - a.version;
       });
-  }, [scripts, filterRegions, filterStatus]);
+  }, [latestVersionScripts, filterRegions, filterStatus]);
 
   // ── Set of script IDs that pass the current region/status filter ──
   const regionFilteredNoteIds = useMemo(() => {
@@ -760,15 +771,15 @@ export const LandingPageScriptsPanel: React.FC = () => {
     return groups;
   }, [filteredScripts]);
 
-  // ── Group by region (ALL non-archived — for region card headers, badges, counts) ──
+  // ── Group by region (ALL latest non-archived — for region card headers, badges, counts) ──
   const allGroupedByRegion = useMemo(() => {
     const groups: Record<string, NarrationScript[]> = {};
-    scripts.filter(s => s.status !== 'archived').forEach(s => {
+    latestVersionScripts.forEach(s => {
       if (!groups[s.region_code]) groups[s.region_code] = [];
       groups[s.region_code].push(s);
     });
     return groups;
-  }, [scripts]);
+  }, [latestVersionScripts]);
 
   // ── Create variant ──
   const handleCreateVariant = useCallback(async (baseScript: NarrationScript, variantLabel: string) => {
@@ -2732,17 +2743,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
 
       {/* ─── Summary Stats Bar (Latest Versions Only) ─── */}
       {(() => {
-        const nonArchived = scripts.filter(s => s.status !== 'archived');
-
-        // ── Deduplicate: keep only the LATEST version per region_code ──
-        const latestByRegion = new Map<string, typeof nonArchived[0]>();
-        nonArchived.forEach(s => {
-          const existing = latestByRegion.get(s.region_code);
-          if (!existing || s.version > existing.version) {
-            latestByRegion.set(s.region_code, s);
-          }
-        });
-        const latestScripts = Array.from(latestByRegion.values());
+        const latestScripts = latestVersionScripts;
 
         const totalLatest = latestScripts.length;
         const activeScripts = latestScripts.filter(s => s.status === 'active').length;
@@ -2781,7 +2782,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
         const totalParentGroups = REGION_HIERARCHY.length;
         const parentGroupsWithENBase = REGION_HIERARCHY.filter(group => {
           const parentCode = group.groupCode.toLowerCase();
-          return nonArchived.some(s => 
+          return latestScripts.some(s => 
             s.is_english_base && s.language_code === 'en' && 
             (s.region_code === parentCode || s.region_code === group.groupCode)
           );
