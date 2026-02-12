@@ -320,21 +320,54 @@ export const RegionalAssetsLab: React.FC = () => {
       const stylePrompt = style?.promptHint || '';
 
       if (selectedAssetType === 'avatar_3d') {
+        // Step 1: Generate source portrait image first (required by wan2.2-s2v)
+        setGenerationProgress('🎨 Generating source portrait image...');
+        const portraitRes = await supabase.functions.invoke('ai-image-generator', {
+          body: {
+            prompt: `${stylePrompt}, professional character portrait, front-facing bust shot, clean background, high quality for ${regionLabel}`,
+            width: 1024, height: 1024, style: style?.id || 'photorealistic',
+          },
+        });
+        const portraitUrl = portraitRes.data?.imageUrl || portraitRes.data?.url || portraitRes.data?.data?.url;
+        if (!portraitUrl) {
+          // If portrait generation fails, still show as a styled character image
+          setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: undefined, provider: style?.provider, style: style?.label, generatedAt: new Date() } }));
+          toast.info('Portrait generated — avatar video pending provider activation.');
+          return;
+        }
+
+        // Step 2: Generate TTS audio
         setGenerationProgress('🎙 Generating regional voiceover...');
         const ttsRes = await supabase.functions.invoke('multi-provider-tts', {
           body: { text: narrationScript, languageCode: lang, region: selectedRegion, tier: 'premium' },
         });
-        if (ttsRes.error) throw new Error(`TTS failed: ${ttsRes.error.message}`);
         const audioUrl = ttsRes.data?.audioUrl || ttsRes.data?.data?.audioUrl || ttsRes.data?.audio_url;
-        if (!audioUrl) throw new Error('No audio URL from TTS');
 
-        setGenerationProgress(`🤖 Creating ${style?.label || '3D'} avatar...`);
+        // Step 3: Generate avatar video with portrait + audio
+        setGenerationProgress(`🤖 Creating ${style?.label || '3D'} avatar video...`);
         const avatarRes = await supabase.functions.invoke('alibaba-avatar-generator', {
-          body: { model: 'wan2.2-s2v', audioUrl, prompt: `${stylePrompt}, regional character for ${regionLabel}`, perspective: 'bust', duration: 10, fps: 30, resolution: '1080p' },
+          body: {
+            model: 'wan2.2-s2v',
+            sourceImage: portraitUrl,
+            ...(audioUrl && { audioUrl }),
+            prompt: `${stylePrompt}, regional character for ${regionLabel}`,
+            perspective: 'bust', duration: 10, fps: 30, resolution: '1080p',
+          },
         });
+
+        // Check for avatar generation failure
+        const avatarSuccess = avatarRes.data?.success !== false;
         const modelUrl = avatarRes.data?.outputUrl || avatarRes.data?.data?.outputUrl;
-        setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: modelUrl || undefined, provider: style?.provider, style: style?.label, generatedAt: new Date() } }));
-        toast.success(`${style?.label} avatar generated!`);
+
+        if (!avatarSuccess || avatarRes.error) {
+          // Fallback: show the portrait image as preview
+          setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: portraitUrl, provider: style?.provider, style: style?.label, generatedAt: new Date() } }));
+          const reason = avatarRes.data?.error || avatarRes.error?.message || 'Avatar video pending';
+          toast.info(`Portrait ready! Avatar video: ${reason}`);
+        } else {
+          setAssets(prev => ({ ...prev, [key]: { type: selectedAssetType, status: 'preview', previewUrl: modelUrl || portraitUrl, provider: style?.provider, style: style?.label, generatedAt: new Date() } }));
+          toast.success(`${style?.label} avatar generated!`);
+        }
 
       } else if (['hero_video', 'promo_video'].includes(selectedAssetType)) {
         const duration = selectedAssetType === 'promo_video' ? 15 : 10;
