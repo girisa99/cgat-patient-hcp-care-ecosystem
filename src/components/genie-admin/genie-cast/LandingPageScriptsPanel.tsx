@@ -223,16 +223,10 @@ const REGION_HIERARCHY: RegionGroup[] = [
   {
     groupCode: 'CJK', groupName: 'China, Japan & Korea', groupFlag: '🌏',
     children: [
-      { code: 'CJK_CHINA', name: 'China', flag: '🇨🇳', children: [
-        { code: 'CJK_CN', name: 'Mandarin (普通话)', flag: '🇨🇳' },
-        { code: 'CJK_HK', name: 'Cantonese (粵語)', flag: '🇭🇰' },
-        { code: 'CJK_TW', name: 'Taiwan (繁體中文)', flag: '🇹🇼' },
-      ]},
+      { code: 'CJK_CN', name: 'China / HK / Macau (普通话/粵語)', flag: '🇨🇳' },
+      { code: 'CJK_TW', name: 'Taiwan (繁體中文)', flag: '🇹🇼' },
       { code: 'CJK_JP', name: 'Japan (日本語)', flag: '🇯🇵' },
       { code: 'CJK_KR', name: 'South Korea (한국어)', flag: '🇰🇷' },
-      { code: 'CJK_PAN', name: 'Pan-CJK (English)', flag: '🌏', children: [
-        { code: 'CJK_PAN_EN', name: 'CJK English', flag: '🌏' },
-      ]},
     ],
   },
 ];
@@ -648,21 +642,13 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-LunaNeural', voiceName: 'Luna (Singapore English)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'en-SG', label: 'Azure Neural', voiceId: 'en-SG-WayneNeural', voiceName: 'Wayne (Singapore English)', gender: 'male' },
     ],
-    // CJK — Parent sub-regions
-    'CJK_CHINA': [
-      { provider: 'qwen3', locale: 'zh-CN', label: 'Qwen3-TTS', voiceId: 'longwan', voiceName: 'Longwan (Mandarin)', gender: 'male', isDefault: true },
-      { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Mandarin)', gender: 'female' },
-    ],
-    // CJK leaf nodes
+    // CJK leaf nodes (DB-allowed: CJK_CN, CJK_TW, CJK_JP, CJK_KR)
     'CJK_CN': [
       { provider: 'qwen3', locale: 'zh-CN', label: 'Qwen3-TTS', voiceId: 'longwan', voiceName: 'Longwan (Mandarin)', gender: 'male', isDefault: true },
       { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-XiaoxiaoNeural', voiceName: 'Xiaoxiao (Mandarin)', gender: 'female' },
       { provider: 'azure', locale: 'zh-CN', label: 'Azure Neural', voiceId: 'zh-CN-YunxiNeural', voiceName: 'Yunxi (Mandarin)', gender: 'male' },
-    ],
-    'CJK_HK': [
-      { provider: 'azure', locale: 'zh-HK', label: 'Azure Neural', voiceId: 'zh-HK-HiuMaanNeural', voiceName: 'HiuMaan (Cantonese)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'zh-HK', label: 'Azure Neural', voiceId: 'zh-HK-HiuMaanNeural', voiceName: 'HiuMaan (Cantonese)', gender: 'female' },
       { provider: 'azure', locale: 'zh-HK', label: 'Azure Neural', voiceId: 'zh-HK-WanLungNeural', voiceName: 'WanLung (Cantonese)', gender: 'male' },
-      { provider: 'azure', locale: 'zh-HK', label: 'Azure Neural', voiceId: 'zh-HK-HiuGaaiNeural', voiceName: 'HiuGaai (Cantonese)', gender: 'female' },
     ],
     'CJK_TW': [
       { provider: 'azure', locale: 'zh-TW', label: 'Azure Neural', voiceId: 'zh-TW-HsiaoChenNeural', voiceName: 'HsiaoChen (Traditional Chinese)', gender: 'female', isDefault: true },
@@ -677,14 +663,6 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-SunHiNeural', voiceName: 'SunHi (Korean)', gender: 'female', isDefault: true },
       { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-InJoonNeural', voiceName: 'InJoon (Korean)', gender: 'male' },
       { provider: 'azure', locale: 'ko-KR', label: 'Azure Neural', voiceId: 'ko-KR-BongJinNeural', voiceName: 'BongJin (Korean)', gender: 'male' },
-    ],
-    'CJK_PAN': [
-      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-GuyNeural', voiceName: 'Guy (US English)', gender: 'male' },
-    ],
-    'CJK_PAN_EN': [
-      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-JennyNeural', voiceName: 'Jenny (US English)', gender: 'female', isDefault: true },
-      { provider: 'azure', locale: 'en-US', label: 'Azure Neural', voiceId: 'en-US-GuyNeural', voiceName: 'Guy (US English)', gender: 'male' },
     ],
     // Africa
     'AFRICA_WEST': [
@@ -944,15 +922,11 @@ function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     'SEA_VIET': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
     'SEA_PHIL': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
     'SEA_PAN': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
-    // CJK sub-regions
-    'CJK_CHINA': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
+    // CJK sub-regions (DB-allowed only)
     'CJK_CN': ['alibaba', 'openai', 'gemini', 'claude', 'deepseek'],
-    'CJK_HK': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'CJK_JP': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'CJK_KR': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'CJK_TW': ['alibaba', 'claude', 'openai', 'gemini', 'deepseek'],
-    'CJK_PAN': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
-    'CJK_PAN_EN': ['claude', 'openai', 'gemini', 'alibaba', 'deepseek'],
     // MENA sub-regions
     'MENA_GULF': ['alibaba', 'openai', 'claude', 'gemini', 'deepseek'],
     'MENA_EGYPT': ['openai', 'alibaba', 'claude', 'gemini', 'deepseek'],
@@ -2258,8 +2232,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
             'INDIA_EAST_BN': 'bn', 'INDIA_EAST_OR': 'or',
             'INDIA_PAN_EN': 'en',
             'SEA_MALAY': 'ms', 'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en',
-            'CJK_CHINA': 'zh', 'CJK_CN': 'zh', 'CJK_HK': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
-            'CJK_PAN': 'en', 'CJK_PAN_EN': 'en',
+            'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
           };
            const languageCode = languageMap[subRegionCode] || 'en';
 
@@ -2524,8 +2497,7 @@ EMOTIONAL TONES: ${emotionalTones}
               'SEA_MAINLAND': 'th', 'SEA_MARITIME': 'id',
               'SEA_THAI': 'th', 'SEA_VIET': 'vi', 'SEA_KHMER': 'km', 'SEA_LAO': 'lo', 'SEA_MYANMAR': 'my',
               'SEA_ID': 'id', 'SEA_MY': 'ms', 'SEA_PHIL': 'tl', 'SEA_PAN': 'en', 'SEA_PAN_EN': 'en',
-              'CJK_CHINA': 'zh', 'CJK_CN': 'zh', 'CJK_HK': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
-              'CJK_PAN': 'en', 'CJK_PAN_EN': 'en',
+              'CJK_CN': 'zh', 'CJK_TW': 'zh', 'CJK_JP': 'ja', 'CJK_KR': 'ko',
             };
             const languageCode = languageMap[child.code] || 'en';
 
