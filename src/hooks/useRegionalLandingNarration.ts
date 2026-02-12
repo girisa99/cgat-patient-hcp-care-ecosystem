@@ -76,15 +76,15 @@ const trackPlaybackEvent = async (params: {
 // ── Region slug → script region_code mapping ──
 // Maps landing page region slugs to the codes used in regional_narration_scripts
 const REGION_SLUG_TO_CODES: Record<RegionSlug, string[]> = {
-  nam: ['NAM_US', 'NAM_CA', 'nam'],
-  europe: ['EU_WEST', 'EU_DACH', 'EU_NORDIC', 'EU_EAST', 'EU_SOUTH', 'europe'],
-  mena: ['MENA_GULF', 'MENA_EGYPT', 'MENA_LEVANT', 'MENA_MSA', 'MENA_MAGHREB', 'mena'],
-  india: ['INDIA_NORTH', 'INDIA_SOUTH', 'INDIA_EAST', 'INDIA_WEST', 'INDIA_PAN', 'india'],
-  africa: ['AFRICA_WEST', 'AFRICA_EAST', 'AFRICA_SOUTH', 'AFRICA_FRANCO', 'africa'],
-  apac: ['CJK_CN', 'CJK_TW', 'CJK_JP', 'CJK_KR', 'SEA_MALAY', 'SEA_THAI', 'SEA_VIET', 'SEA_FILIPINO', 'SEA_SG', 'apac'],
-  latam: ['LATAM_BRAZIL', 'LATAM_MEXICO', 'LATAM_ANDEAN', 'LATAM_RIOPLATENSE', 'LATAM_CARIB', 'latam'],
-  caribbean: ['LATAM_CARIB', 'caribbean'],
-};
+   nam: ['NAM_US', 'NAM_CA', 'nam'],
+   europe: ['EU_WEST', 'EU_DACH', 'EU_NORDIC', 'EU_EAST', 'EU_SOUTH', 'europe'],
+   mena: ['MENA_GULF', 'MENA_EGYPT', 'MENA_LEVANT', 'MENA_MSA', 'MENA_MAGHREB', 'mena'],
+   india: ['INDIA_NORTH', 'INDIA_SOUTH', 'INDIA_EAST', 'INDIA_WEST', 'INDIA_PAN', 'india'],
+   africa: ['AFRICA_WEST', 'AFRICA_EAST', 'AFRICA_SOUTH', 'AFRICA_FRANCO', 'africa'],
+   apac: ['CJK_PAN_EN', 'CJK_CN', 'CJK_HK', 'CJK_TW', 'CJK_JP', 'CJK_KR', 'SEA_PAN_EN', 'SEA_THAI', 'SEA_VIET', 'SEA_KHMER', 'SEA_LAO', 'SEA_MYAN', 'SEA_ID', 'SEA_MY', 'SEA_PH', 'apac'],
+   latam: ['LATAM_BRAZIL', 'LATAM_MEXICO', 'LATAM_ANDEAN', 'LATAM_CONESUR', 'LATAM_CARIB', 'latam'],
+   caribbean: ['LATAM_CARIB', 'caribbean'],
+ };
 
 export interface LandingNarrationScript {
   id: string;

@@ -37,22 +37,22 @@ const STAGES = [
     color: 'bg-purple-500',
     description: 'English base auto-expands into 38 sub-regions using zone-routed LLMs with hybrid sub-region overrides',
     routing: [
-      { zone: 'NAM / EU_WEST / EU_DACH / EU_FRANCE / EU_IBERIA / LATAM_BRAZIL / LATAM_MEXICO / LATAM_CONESUR / MENA_MAGHREB', provider: 'Claude 4', fallback: 'GPT-4o → Gemini → DeepSeek' },
-      { zone: 'CJK_CN / CJK_TW / CJK_JP / CJK_KR / MENA_GULF / MENA_MSA', provider: 'Qwen Max', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
-      { zone: 'INDIA (5) / SEA (5) / AFRICA (4) / BANGLADESH', provider: 'Gemini 3 Pro', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
-      { zone: 'EU_NORDIC / EU_EAST / LATAM_ANDEAN / LATAM_CARIB / MENA_EGYPT / MENA_LEVANT / PAKISTAN', provider: 'GPT-4o', fallback: 'Claude 4 / Qwen Max → DeepSeek' },
-    ],
-    subRegions: {
-      'Europe (6)': ['EU_WEST → Claude 4', 'EU_DACH → Claude 4', 'EU_FRANCE → Claude 4', 'EU_IBERIA → Claude 4', 'EU_NORDIC → GPT-4o', 'EU_EAST → GPT-4o'],
-      'LATAM (5)': ['LATAM_BRAZIL → Claude 4', 'LATAM_MEXICO → Claude 4', 'LATAM_CONESUR → Claude 4', 'LATAM_ANDEAN → GPT-4o', 'LATAM_CARIB → GPT-4o'],
-      'NAM (2)': ['NAM_US → Claude 4', 'NAM_CA → Claude 4'],
-      'CJK (4)': ['CJK_CN → Qwen Max', 'CJK_TW → Qwen Max', 'CJK_JP → Qwen Max', 'CJK_KR → Qwen Max'],
-      'MENA (5)': ['MENA_GULF → Qwen Max', 'MENA_MSA → Qwen Max', 'MENA_MAGHREB → Claude 4', 'MENA_EGYPT → GPT-4o', 'MENA_LEVANT → GPT-4o'],
-      'India (5)': ['INDIA_NORTH → Gemini 3', 'INDIA_SOUTH → Gemini 3', 'INDIA_WEST → Gemini 3', 'INDIA_EAST → Gemini 3', 'INDIA_PAN → Gemini 3'],
-      'SEA (5)': ['SEA_MALAY → Gemini 3', 'SEA_THAI → Gemini 3', 'SEA_VIET → Gemini 3', 'SEA_PHIL → Gemini 3', 'SEA_PAN → Gemini 3'],
-      'Standalone (2)': ['PAKISTAN → GPT-4o', 'BANGLADESH → Gemini 3'],
-      'Africa (4)': ['AFRICA_EAST → Gemini 3', 'AFRICA_WEST → Gemini 3', 'AFRICA_SOUTH → Gemini 3', 'AFRICA_FRANCO → Gemini 3'],
-    },
+       { zone: 'NAM / EU_WEST / EU_DACH / EU_FRANCE / EU_IBERIA / LATAM_BRAZIL / LATAM_MEXICO / LATAM_CONESUR / MENA_MAGHREB / SEA_PH / SEA_PAN_EN', provider: 'Claude 4', fallback: 'GPT-4o → Gemini → DeepSeek' },
+       { zone: 'CJK_CN / CJK_HK / CJK_TW / CJK_JP / CJK_KR / CJK_PAN_EN / MENA_GULF / MENA_MSA', provider: 'Qwen Max', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
+       { zone: 'INDIA (5) / SEA (6 Mainland) / AFRICA (4) / BANGLADESH', provider: 'Gemini 3 Pro', fallback: 'GPT-4o → Claude 4 → DeepSeek' },
+       { zone: 'EU_NORDIC / EU_EAST / LATAM_ANDEAN / LATAM_CARIB / MENA_EGYPT / MENA_LEVANT / PAKISTAN / CJK_JP / CJK_KR', provider: 'GPT-4o', fallback: 'Claude 4 / Qwen Max → DeepSeek' },
+     ],
+     subRegions: {
+       'Europe (6)': ['EU_WEST → Claude 4', 'EU_DACH → Claude 4', 'EU_FRANCE → Claude 4', 'EU_IBERIA → Claude 4', 'EU_NORDIC → GPT-4o', 'EU_EAST → GPT-4o'],
+       'LATAM (5)': ['LATAM_BRAZIL → Claude 4', 'LATAM_MEXICO → Claude 4', 'LATAM_CONESUR → Claude 4', 'LATAM_ANDEAN → GPT-4o', 'LATAM_CARIB → GPT-4o'],
+       'NAM (2)': ['NAM_US → Claude 4', 'NAM_CA → Claude 4'],
+       'CJK (6)': ['CJK_PAN_EN → Qwen Max', 'CJK_CN → Qwen Max', 'CJK_HK → Qwen Max', 'CJK_TW → Qwen Max', 'CJK_JP → GPT-4o', 'CJK_KR → GPT-4o'],
+       'MENA (5)': ['MENA_GULF → Qwen Max', 'MENA_MSA → Qwen Max', 'MENA_MAGHREB → Claude 4', 'MENA_EGYPT → GPT-4o', 'MENA_LEVANT → GPT-4o'],
+       'India (5)': ['INDIA_NORTH → Gemini 3', 'INDIA_SOUTH → Gemini 3', 'INDIA_WEST → Gemini 3', 'INDIA_EAST → Gemini 3', 'INDIA_PAN → Gemini 3'],
+       'SEA (9)': ['SEA_PAN_EN → Claude 4', 'SEA_THAI → Gemini 3', 'SEA_VIET → Gemini 3', 'SEA_KHMER → Gemini 3', 'SEA_LAO → Gemini 3', 'SEA_MYAN → Gemini 3', 'SEA_ID → Gemini 3', 'SEA_MY → Gemini 3', 'SEA_PH → Claude 4'],
+       'Standalone (2)': ['PAKISTAN → GPT-4o', 'BANGLADESH → Gemini 3'],
+       'Africa (4)': ['AFRICA_EAST → Gemini 3', 'AFRICA_WEST → Gemini 3', 'AFRICA_SOUTH → Gemini 3', 'AFRICA_FRANCO → Gemini 3'],
+     },
     outputs: ['38 regional scripts', 'Cultural adaptation + local idioms + formality registers'],
     gate: 'Each sub-region enters independent review cycle',
   },
@@ -76,10 +76,10 @@ const STAGES = [
     color: 'bg-green-500',
     description: 'Auto-triggered when script status → Active, routed via getSubRegionTTSProvider()',
     routing: [
-      { zone: 'NAM / EU / LATAM / MENA / India / SEA / Africa / Pakistan / Bangladesh', provider: 'Azure Neural (34+ locales)', fallback: 'Viseme lip-sync data for all' },
-      { zone: 'CJK_CN (Mandarin) + CJK_JP (Japanese)', provider: 'Qwen3-TTS (Singapore hub)', fallback: 'longwan / longyue voices' },
-      { zone: 'CJK_KR (Korean) + CJK_TW (Traditional Chinese)', provider: 'Azure Neural', fallback: 'ko-KR-SunHiNeural / zh-TW-HsiaoChenNeural' },
-      { zone: 'Premium / Voice Clone', provider: 'ElevenLabs (never primary)', fallback: 'Qwen3-TTS → Azure Custom' },
+       { zone: 'NAM / EU / LATAM / MENA / India / SEA / Africa / Pakistan / Bangladesh', provider: 'Azure Neural (34+ locales)', fallback: 'Viseme lip-sync data for all' },
+       { zone: 'CJK_CN (Mandarin) + CJK_JP (Japanese)', provider: 'Qwen3-TTS (Singapore hub)', fallback: 'longwan / longyue voices' },
+       { zone: 'CJK_HK (Cantonese) + CJK_TW (Traditional) + CJK_KR (Korean)', provider: 'Azure Neural', fallback: 'zh-HK / zh-TW / ko-KR locales' },
+       { zone: 'Premium / Voice Clone', provider: 'ElevenLabs (never primary)', fallback: 'Qwen3-TTS → Azure Custom' },
     ],
     outputs: ['Audio versions (append-only, never overwritten)', 'Provider + voice + locale + duration metadata', 'Auto-increment version numbering per script'],
     gate: 'Audio versions retained indefinitely for audit trail',
@@ -244,21 +244,21 @@ const MermaidFlowDiagram: React.FC = () => {
                 zones: ['NAM_US', 'NAM_CA', 'EU_WEST', 'EU_DACH', 'EU_FRANCE', 'EU_IBERIA', 'LATAM_BRAZIL', 'LATAM_MEXICO', 'LATAM_CONESUR', 'MENA_MAGHREB'],
                 count: 10, note: 'Western/EU/LATAM + Maghreb'
               },
-              {
-                llm: 'Qwen Max', emoji: '🇨🇳', color: 'orange',
-                zones: ['CJK_CN', 'CJK_TW', 'CJK_JP', 'CJK_KR', 'MENA_GULF', 'MENA_MSA'],
-                count: 6, note: 'CJK + Formal Arabic'
-              },
-              {
-                llm: 'Gemini 3 Pro', emoji: '🌏', color: 'emerald',
-                zones: ['INDIA ×5', 'SEA ×5', 'AFRICA ×4', 'BANGLADESH'],
-                count: 15, note: 'India/SEA/Africa/Bangladesh'
-              },
-              {
-                llm: 'GPT-4o', emoji: '🔄', color: 'violet',
-                zones: ['EU_NORDIC', 'EU_EAST', 'LATAM_ANDEAN', 'LATAM_CARIB', 'MENA_EGYPT', 'MENA_LEVANT', 'PAKISTAN'],
-                count: 7, note: 'Hybrid overrides'
-              },
+               {
+                 llm: 'Qwen Max', emoji: '🇨🇳', color: 'orange',
+                 zones: ['CJK_PAN_EN', 'CJK_CN', 'CJK_HK', 'CJK_TW', 'MENA_GULF', 'MENA_MSA'],
+                 count: 6, note: 'CJK + Formal Arabic'
+               },
+               {
+                 llm: 'Gemini 3 Pro', emoji: '🌏', color: 'emerald',
+                 zones: ['INDIA ×5', 'SEA ×9', 'AFRICA ×4', 'BANGLADESH'],
+                 count: 19, note: 'India/SEA/Africa/Bangladesh'
+               },
+               {
+                 llm: 'GPT-4o', emoji: '🔄', color: 'violet',
+                 zones: ['EU_NORDIC', 'EU_EAST', 'LATAM_ANDEAN', 'LATAM_CARIB', 'MENA_EGYPT', 'MENA_LEVANT', 'PAKISTAN', 'CJK_JP', 'CJK_KR'],
+                 count: 9, note: 'Hybrid overrides + CJK fallback'
+               },
             ].map((zone) => (
               <div key={zone.llm} className="rounded-lg border p-3 bg-muted/30">
                 <div className="flex items-center justify-between mb-1">
