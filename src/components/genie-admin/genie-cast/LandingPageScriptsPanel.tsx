@@ -708,7 +708,10 @@ function getRegionVoiceOptions(regionCode: string): VoiceOption[] {
       { provider: 'azure', locale: 'es-MX', label: 'Azure Neural', voiceId: 'es-MX-DaliaNeural', voiceName: 'Dalia (Mexican Spanish)', gender: 'female', isDefault: true },
     ],
     'MENA': [
-      { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Arabic)', gender: 'female', isDefault: true },
+      { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural', voiceId: 'ar-SA-FaridNeural', voiceName: 'Farid (Saudi Arabic - MENA Accent)', gender: 'male', isDefault: true },
+      { provider: 'azure', locale: 'ar-SA', label: 'Azure Neural', voiceId: 'ar-SA-ZariyahNeural', voiceName: 'Zariyah (Saudi Arabic)', gender: 'female' },
+      { provider: 'azure', locale: 'ar-AE', label: 'Azure Neural', voiceId: 'ar-AE-FatimaNeural', voiceName: 'Fatima (UAE Arabic)', gender: 'female' },
+      { provider: 'azure', locale: 'ar-EG', label: 'Azure Neural', voiceId: 'ar-EG-ShakirNeural', voiceName: 'Shakir (Egyptian Arabic)', gender: 'male' },
     ],
     'INDIA': [
       { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)', gender: 'female', isDefault: true },
