@@ -818,12 +818,10 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   console.log(`🌸 Alibaba TTS: lang="${languageCode}", voice="${selectedVoice}", keys=${configs.map(c => c.region).join(',')}`);
 
   // PATH 1: Try Qwen TTS (qwen3-tts-flash then qwen2-tts) via REST on each region
-  // qwen3-tts-flash has a strict 600 char limit per request; qwen2-tts supports up to 5000
-  const QWEN_MODEL_LIMITS: Record<string, number> = {
-    'qwen3-tts-flash': 500, // API says [0,600] but use 500 for safety with CJK multi-byte
-    'qwen2-tts': 5000,
-  };
-  const qwenModels = ['qwen3-tts-flash', 'qwen2-tts'];
+  // qwen3-tts-flash has a strict 600 char limit per request — we chunk at 500 for CJK safety
+  // qwen2-tts is offline (returns "Model not exist") — removed from fallback chain
+  const QWEN3_CHUNK_LIMIT = 500;
+  const qwenModels = ['qwen3-tts-flash'];
   
   // Helper to chunk text by character count for Qwen
   const chunkTextByChars = (t: string, maxChars: number): string[] => {
@@ -845,7 +843,7 @@ async function generateAlibabaTTS(text: string, languageCode?: string, voice?: s
   };
   
   for (const model of qwenModels) {
-    const modelMaxChars = QWEN_MODEL_LIMITS[model] || 500;
+    const textChunks = chunkTextByChars(text, QWEN3_CHUNK_LIMIT);
     const textChunks = chunkTextByChars(text, modelMaxChars);
     
     
