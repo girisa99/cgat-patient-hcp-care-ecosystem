@@ -45,6 +45,8 @@ import {
 import { useCreateMode } from '@/hooks/useCreateMode';
 import { useRegionalDetection } from '@/hooks/useRegionalDetection';
 import { useProductContext } from '@/hooks/useProductContext';
+import { useContentPool } from '@/hooks/useContentPool';
+import { ProductSelector } from './ProductSelector';
 import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -270,8 +272,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
 
+  // Content Pool - unified data layer for all tabs
+  const { pool, isLoading: isPoolLoading } = useContentPool();
+
   // Product context for loading associated assets
   const productContext = useProductContext(castSession.session.selectedProductId);
+
+  // Handle product selection from the top-bar picker
+  const handleProductSelect = useCallback((productId: string) => {
+    castSession.selectProduct(productId);
+  }, [castSession]);
 
   // Initialize regional context on mount or when detection completes
   // NOTE: castSession.setRegionalContext is stable (useCallback), but castSession object
@@ -369,6 +379,13 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           <Film className="w-4 h-4 text-primary" />
           <span className="text-sm font-semibold">Genie Cast</span>
         </div>
+        <Separator orientation="vertical" className="h-5" />
+        <ProductSelector
+          products={pool?.products || []}
+          selectedProductId={castSession.session.selectedProductId}
+          onProductChange={handleProductSelect}
+          isLoading={isPoolLoading}
+        />
       </div>
 
       {/* Main 3-Tab Navigation */}
