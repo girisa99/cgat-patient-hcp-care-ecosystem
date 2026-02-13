@@ -2,47 +2,42 @@
  * Content Pool Scene Enricher (P5)
  * 
  * Injects product-specific context into blueprint scenes:
- * - Brand assets (logo, colors, typography)
- * - Product metadata (tagline, value propositions, key features)
+ * - Product metadata (name, tagline, features, category)
+ * - Brand assets (logos per product)
+ * - Audience personas (pain points, messaging angles)
  * - Approved regional scripts (if available)
- * - Messaging frameworks (AIDA, StoryBrand, JTBD, etc.)
- * - Target audience persona data
  * 
- * Purpose: Ensures all generated scenes maintain brand consistency
- * and product-specific context throughout the production lifecycle.
+ * Aligned to actual DB schema for marketing_products, marketing_brand_assets,
+ * marketing_audiences tables.
  */
 
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
-import type { ContentPoolContext, ContentPoolProduct, ContentPoolBrandAsset, ContentPoolAudience, ContentPoolRegionalScript } from '@/hooks/useContentPool';
+import type { ContentPoolContext, ContentPoolProduct, ContentPoolAudience } from '@/hooks/useContentPool';
 
 export interface EnrichedBlueprintScene extends BlueprintScene {
-  // Injected context
   productContext?: {
     productId: string;
     productName: string;
     tagline: string;
-    keyFeatures: string[];
-    valuePropositions: string[];
-    positioningStatement: string;
+    category: string;
+    features: string[];
+    primaryColor: string;
+    secondaryColor: string;
+    icon: string;
   };
   
   brandContext?: {
     logoUrl?: string;
     primaryColor: string;
     secondaryColor: string;
-    accentColor: string;
-    fontDisplay: string;
-    fontBody: string;
-    voiceTone: string;
   };
   
   audienceContext?: {
-    personaName: string;
+    label: string;
     industry: string;
-    jobTitle: string;
+    description: string;
     painPoints: string[];
-    successMetrics: string[];
-    preferredFramework: string;
+    messagingAngles: string[];
   };
   
   regionalContext?: {
@@ -53,7 +48,6 @@ export interface EnrichedBlueprintScene extends BlueprintScene {
     ttsProviderRecommended?: string;
   };
   
-  // AI prompting context
   enrichedPromptContext?: {
     brand: string;
     audience: string;
@@ -63,9 +57,6 @@ export interface EnrichedBlueprintScene extends BlueprintScene {
   };
 }
 
-/**
- * Enriches a blueprint scene with product, brand, audience, and regional context
- */
 export function enrichSceneWithContext(
   scene: BlueprintScene,
   contentPool: ContentPoolContext,
@@ -74,54 +65,43 @@ export function enrichSceneWithContext(
   language?: string,
   audienceFramework?: string
 ): EnrichedBlueprintScene {
-  
-  // 1. Get product context
   const product = productId ? contentPool.getProductById(productId) : null;
-  
-  // 2. Get brand assets (user's or system default)
-  const brandAsset = contentPool.brandAssets;
-  
-  // 3. Get audience based on framework preference
+  const brandAssets = productId ? contentPool.getBrandAssetsForProduct(productId) : [];
+  const primaryAsset = brandAssets.find(a => a.is_primary) || brandAssets[0];
   const audiences = contentPool.audiences;
   const selectedAudience = audienceFramework
     ? contentPool.getAudienceByFramework(audienceFramework)[0]
     : audiences[0];
-  
-  // 4. Get regional script if available
   const regionalScript = productId && region
     ? contentPool.getScriptForRegion(productId, region)
     : null;
-  
-  // 5. Build enriched scene
-  const enrichedScene: EnrichedBlueprintScene = {
+
+  return {
     ...scene,
     
     productContext: product ? {
       productId: product.id,
       productName: product.name,
-      tagline: product.tagline,
-      keyFeatures: product.key_features || [],
-      valuePropositions: product.value_propositions || [],
-      positioningStatement: product.positioning_statement || '',
+      tagline: product.tagline || '',
+      category: product.category || '',
+      features: product.features || [],
+      primaryColor: product.primary_color || '',
+      secondaryColor: product.secondary_color || '',
+      icon: product.icon || '',
     } : undefined,
     
-    brandContext: brandAsset ? {
-      logoUrl: brandAsset.logo_light_url || undefined,
-      primaryColor: brandAsset.primary_color,
-      secondaryColor: brandAsset.secondary_color,
-      accentColor: brandAsset.accent_color,
-      fontDisplay: brandAsset.font_family_display,
-      fontBody: brandAsset.font_family_body,
-      voiceTone: brandAsset.voice_tone,
+    brandContext: product ? {
+      logoUrl: primaryAsset?.asset_url,
+      primaryColor: product.primary_color || '',
+      secondaryColor: product.secondary_color || '',
     } : undefined,
     
     audienceContext: selectedAudience ? {
-      personaName: selectedAudience.persona_name,
+      label: selectedAudience.label,
       industry: selectedAudience.industry,
-      jobTitle: selectedAudience.job_title,
+      description: selectedAudience.description || '',
       painPoints: selectedAudience.pain_points || [],
-      successMetrics: selectedAudience.success_metrics || [],
-      preferredFramework: selectedAudience.preferred_framework,
+      messagingAngles: selectedAudience.messaging_angles || [],
     } : undefined,
     
     regionalContext: {
@@ -134,19 +114,14 @@ export function enrichSceneWithContext(
     
     enrichedPromptContext: {
       brand: product?.name || 'Genie',
-      audience: selectedAudience?.persona_name || 'General Audience',
-      framework: selectedAudience?.preferred_framework || 'StoryBrand',
+      audience: selectedAudience?.label || 'General Audience',
+      framework: selectedAudience?.messaging_angles?.[0] || 'StoryBrand',
       region: region || 'global',
-      tone: brandAsset?.voice_tone || 'professional',
+      tone: product?.category || 'professional',
     },
   };
-  
-  return enrichedScene;
 }
 
-/**
- * Batch enrich multiple scenes with product context
- */
 export function enrichScenesWithContext(
   scenes: BlueprintScene[],
   contentPool: ContentPoolContext,
@@ -156,21 +131,10 @@ export function enrichScenesWithContext(
   audienceFramework?: string
 ): EnrichedBlueprintScene[] {
   return scenes.map(scene =>
-    enrichSceneWithContext(
-      scene,
-      contentPool,
-      productId,
-      region,
-      language,
-      audienceFramework
-    )
+    enrichSceneWithContext(scene, contentPool, productId, region, language, audienceFramework)
   );
 }
 
-/**
- * Generate an AI-ready prompt context from enriched scenes
- * Used by AISceneCustomizer to route to LLM with full context
- */
 export function generateAIPromptContext(
   enrichedScenes: EnrichedBlueprintScene[],
   selectedVideoStyle?: string
@@ -183,29 +147,25 @@ export function generateAIPromptContext(
     `Target Audience: ${firstScene.enrichedPromptContext?.audience || 'General'}`,
     `Messaging Framework: ${firstScene.enrichedPromptContext?.framework || 'StoryBrand'}`,
     `Region: ${firstScene.enrichedPromptContext?.region || 'Global'}`,
-    `Voice Tone: ${firstScene.enrichedPromptContext?.tone || 'Professional'}`,
+    `Tone: ${firstScene.enrichedPromptContext?.tone || 'Professional'}`,
     `Video Style: ${selectedVideoStyle || 'Cinematic'}`,
   ];
   
-  if (firstScene.productContext?.keyFeatures?.length) {
-    parts.push(`Key Features: ${firstScene.productContext.keyFeatures.join(', ')}`);
-  }
-  
-  if (firstScene.productContext?.valuePropositions?.length) {
-    parts.push(`Value Propositions: ${firstScene.productContext.valuePropositions.join(', ')}`);
+  if (firstScene.productContext?.features?.length) {
+    parts.push(`Key Features: ${firstScene.productContext.features.join(', ')}`);
   }
   
   if (firstScene.audienceContext?.painPoints?.length) {
     parts.push(`Audience Pain Points: ${firstScene.audienceContext.painPoints.join(', ')}`);
   }
   
+  if (firstScene.audienceContext?.messagingAngles?.length) {
+    parts.push(`Messaging Angles: ${firstScene.audienceContext.messagingAngles.join(', ')}`);
+  }
+  
   return parts.join('\n');
 }
 
-/**
- * Extract script template from regional context if available
- * Falls back to blueprint's native template if no regional script exists
- */
 export function getScriptForScene(
   scene: EnrichedBlueprintScene,
   useRegionalIfAvailable: boolean = true
@@ -213,26 +173,14 @@ export function getScriptForScene(
   if (useRegionalIfAvailable && scene.regionalContext?.approvedScript) {
     return scene.regionalContext.approvedScript;
   }
-  
   return scene.script_template || '';
 }
 
-/**
- * Build a summary of enriched context for UI display
- */
-export function getEnrichmentSummary(
-  enrichedScene: EnrichedBlueprintScene
-): {
-  productName?: string;
-  brandTone?: string;
-  audience?: string;
-  region?: string;
-  hasApprovedScript: boolean;
-} {
+export function getEnrichmentSummary(enrichedScene: EnrichedBlueprintScene) {
   return {
     productName: enrichedScene.productContext?.productName,
-    brandTone: enrichedScene.brandContext?.voiceTone,
-    audience: enrichedScene.audienceContext?.personaName,
+    category: enrichedScene.productContext?.category,
+    audience: enrichedScene.audienceContext?.label,
     region: enrichedScene.regionalContext?.region,
     hasApprovedScript: !!enrichedScene.regionalContext?.approvedScript,
   };

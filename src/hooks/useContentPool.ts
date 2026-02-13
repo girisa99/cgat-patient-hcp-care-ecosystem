@@ -3,10 +3,10 @@
  * 
  * Single hook that aggregates:
  * 1. Product metadata (8 Genie products for internal, or subscriber's products)
- * 2. Brand assets (logos, colors, typography)
- * 3. Regional scripts (transcreated per language + region)
- * 4. TTS audio versions (pre-generated, cached per voice)
- * 5. Messaging context (frameworks, CTAs, value props per persona)
+ * 2. Brand assets (logos per product)
+ * 3. Audiences (personas with messaging angles)
+ * 4. Regional scripts (transcreated per language + region)
+ * 5. TTS audio versions (pre-generated, cached per voice)
  * 
  * Serves both:
  * - Internal Mode: Genie Suite marketing (is_system_default = true)
@@ -16,11 +16,11 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 // ============================================================================
-// TYPES - Complete Content Pool Schema
+// TYPES - Aligned to actual DB schema
 // ============================================================================
 
 export interface ContentPoolProduct {
@@ -28,63 +28,57 @@ export interface ContentPoolProduct {
   name: string;
   tagline: string;
   description: string;
-  created_by: string | null;
+  user_id: string | null;
   is_system_default: boolean;
-  categories: string[];
-  target_industries: string[];
-  key_features: string[];
-  value_propositions: string[];
-  screenshots_asset_keys: string[];
-  positioning_statement: string;
-  competitive_advantage: string;
+  is_active: boolean;
+  category: string;
+  icon: string;
+  features: string[];
+  primary_color: string;
+  secondary_color: string;
+  sort_order: number;
 }
 
 export interface ContentPoolBrandAsset {
   id: string;
-  created_by: string | null;
-  is_system_default: boolean;
-  logo_light_url: string | null;
-  logo_dark_url: string | null;
-  primary_color: string; // HSL
-  secondary_color: string;
-  accent_color: string;
-  font_family_display: string;
-  font_family_body: string;
-  voice_tone: string; // 'professional', 'friendly', 'edgy', etc.
-  brand_guidelines_url: string | null;
-  compliance_rules: Record<string, unknown>;
+  product_id: string;
+  user_id: string | null;
+  asset_type: string;
+  asset_url: string;
+  asset_metadata: Record<string, unknown>;
+  is_primary: boolean;
 }
 
 export interface ContentPoolAudience {
   id: string;
-  created_by: string | null;
+  user_id: string | null;
   is_system_default: boolean;
-  persona_name: string;
+  is_active: boolean;
+  label: string;
+  description: string;
   industry: string;
-  job_title: string;
   pain_points: string[];
-  success_metrics: string[];
-  preferred_framework: 'StoryBrand' | 'AIDA' | 'JTBD' | 'STP' | '4Es' | 'BlueOcean';
-  language_complexity: 'technical' | 'business' | 'casual';
+  messaging_angles: string[];
+  sort_order: number;
 }
 
 export interface ContentPoolRegionalScript {
   id: string;
   product_id: string;
-  region_code: string; // e.g., 'LATAM', 'LATAM_MX', 'MENA_SA'
-  language_code: string; // BCP47 e.g., 'es-MX', 'ar-SA'
+  region_code: string;
+  language_code: string;
   script_type: 'english_base' | 'transcreated' | 'regional_variant';
-  content: string; // Full narration script
+  content: string;
   character_count: number;
   estimated_duration_seconds: number;
-  framework_tags: string[]; // ['aida_attention', 'storybrand_guide', etc.]
+  framework_tags: string[];
   status: 'draft' | 'feedback' | 'approved' | 'active';
   created_at: string;
   updated_at: string;
   llm_provider: string;
   llm_model: string;
-  routing_confidence_score: number; // 0.0-1.0
-  routing_zone: string; // 'western', 'latam', 'mena', 'cjk', 'india', etc.
+  routing_confidence_score: number;
+  routing_zone: string;
 }
 
 export interface ContentPoolTTSAudio {
@@ -94,7 +88,7 @@ export interface ContentPoolTTSAudio {
   voice_id: string;
   voice_name: string;
   voice_gender: 'male' | 'female' | 'neutral';
-  provider: string; // 'azure', 'google', 'eleven_labs', 'alibaba', etc.
+  provider: string;
   audio_url: string;
   duration_ms: number;
   generated_at: string;
@@ -102,63 +96,63 @@ export interface ContentPoolTTSAudio {
 }
 
 export interface ContentPoolContext {
-  // Primary data
   products: ContentPoolProduct[];
-  brandAssets: ContentPoolBrandAsset | null;
+  brandAssets: ContentPoolBrandAsset[];
   audiences: ContentPoolAudience[];
-  
-  // Production data
   regionalScripts: ContentPoolRegionalScript[];
   ttsAudio: ContentPoolTTSAudio[];
   
-  // Convenience helpers
   selectedProductId: string | null;
   selectedRegionCode: string | null;
   selectedLanguageCode: string | null;
   
-  // Lookup functions
   getProductById: (id: string) => ContentPoolProduct | undefined;
   getScriptsForProduct: (productId: string) => ContentPoolRegionalScript[];
   getScriptForRegion: (productId: string, regionCode: string) => ContentPoolRegionalScript | undefined;
   getTTSForScript: (scriptId: string) => ContentPoolTTSAudio[];
   getAudienceByFramework: (framework: string) => ContentPoolAudience[];
+  getBrandAssetsForProduct: (productId: string) => ContentPoolBrandAsset[];
 }
 
 // ============================================================================
-// FETCH LOGIC - Aggregates all tables into unified context
+// FETCH LOGIC - Aligned to actual table schemas
 // ============================================================================
 
 const fetchContentPool = async (userId: string): Promise<ContentPoolContext> => {
   const productsData: ContentPoolProduct[] = [];
+  const brandAssetsData: ContentPoolBrandAsset[] = [];
   const audiencesData: ContentPoolAudience[] = [];
   const scriptsData: ContentPoolRegionalScript[] = [];
   const ttsData: ContentPoolTTSAudio[] = [];
-  let brandData: ContentPoolBrandAsset | null = null;
 
   try {
-    // Fetch all products (system defaults + user's)
-    const { data: pd } = await (supabase as any)
+    // Fetch products (system defaults + user's) — use correct column names
+    const { data: pd } = await supabase
       .from('marketing_products')
       .select('*')
-      .or(`is_system_default.eq.true,created_by.eq.${userId}`);
-    if (pd) productsData.push(...(pd as ContentPoolProduct[]));
+      .eq('is_active', true)
+      .or(`is_system_default.eq.true,user_id.eq.${userId}`)
+      .order('sort_order', { ascending: true });
+    if (pd) productsData.push(...(pd as unknown as ContentPoolProduct[]));
 
-    // Fetch brand assets (system + user's)
-    const { data: bd } = await (supabase as any)
-      .from('marketing_brand_assets')
-      .select('*')
-      .or(`is_system_default.eq.true,created_by.eq.${userId}`)
-      .order('is_system_default', { ascending: false })
-      .limit(1)
-      .single();
-    if (bd) brandData = bd as ContentPoolBrandAsset;
+    // Fetch brand assets for those products
+    if (productsData.length > 0) {
+      const productIds = productsData.map(p => p.id);
+      const { data: bd } = await supabase
+        .from('marketing_brand_assets')
+        .select('*')
+        .in('product_id', productIds);
+      if (bd) brandAssetsData.push(...(bd as unknown as ContentPoolBrandAsset[]));
+    }
 
-    // Fetch audiences
-    const { data: ad } = await (supabase as any)
+    // Fetch audiences (system defaults + user's)
+    const { data: ad } = await supabase
       .from('marketing_audiences')
       .select('*')
-      .or(`is_system_default.eq.true,created_by.eq.${userId}`);
-    if (ad) audiencesData.push(...(ad as ContentPoolAudience[]));
+      .eq('is_active', true)
+      .or(`is_system_default.eq.true,user_id.eq.${userId}`)
+      .order('sort_order', { ascending: true });
+    if (ad) audiencesData.push(...(ad as unknown as ContentPoolAudience[]));
 
     // Fetch regional scripts
     const { data: sd } = await (supabase as any)
@@ -178,7 +172,7 @@ const fetchContentPool = async (userId: string): Promise<ContentPoolContext> => 
 
   return {
     products: productsData,
-    brandAssets: brandData,
+    brandAssets: brandAssetsData,
     audiences: audiencesData,
     regionalScripts: scriptsData,
     ttsAudio: ttsData,
@@ -186,7 +180,6 @@ const fetchContentPool = async (userId: string): Promise<ContentPoolContext> => 
     selectedRegionCode: null,
     selectedLanguageCode: null,
     
-    // Helpers
     getProductById: (id: string) => productsData.find(p => p.id === id),
     getScriptsForProduct: (productId: string) => 
       scriptsData.filter(s => s.product_id === productId),
@@ -195,7 +188,9 @@ const fetchContentPool = async (userId: string): Promise<ContentPoolContext> => 
     getTTSForScript: (scriptId: string) =>
       ttsData.filter(t => t.script_id === scriptId),
     getAudienceByFramework: (framework: string) =>
-      audiencesData.filter(a => a.preferred_framework === framework),
+      audiencesData.filter(a => a.messaging_angles?.includes(framework)),
+    getBrandAssetsForProduct: (productId: string) =>
+      brandAssetsData.filter(b => b.product_id === productId),
   };
 };
 
@@ -205,10 +200,8 @@ const fetchContentPool = async (userId: string): Promise<ContentPoolContext> => 
 
 export const useContentPool = () => {
   const [userId, setUserId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
   const queryKey = ['content_pool', userId];
 
-  // Get user ID on mount
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUserId(user?.id || null);
@@ -219,7 +212,7 @@ export const useContentPool = () => {
     queryKey,
     queryFn: () => fetchContentPool(userId || ''),
     enabled: !!userId,
-    staleTime: 10 * 60 * 1000, // 10 min cache
+    staleTime: 10 * 60 * 1000,
   });
 
   const pool = query.data;
@@ -230,7 +223,6 @@ export const useContentPool = () => {
     error: query.error,
     refetch: query.refetch,
     
-    // Mutations for future use
     updateProductContext: (productId: string, regionCode: string, languageCode: string) => {
       if (!pool) return null;
       return {
