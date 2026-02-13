@@ -1,10 +1,11 @@
 /**
- * Create Template Dialog - Portal-based dropdowns
- * Uses React Portal to render dropdowns outside dialog for proper z-index and scroll
+ * CreateTemplateDialog — 7-Step Progressive Wizard
+ * 
+ * Steps: Describe → Category → Styles → Capabilities → Platforms → Regions → Review
+ * Uses DB-driven hooks (useCastRegistry) with live token estimation.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,41 +19,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Plus,
-  ArrowLeft,
-  Wand2,
-  Copy,
-  Layers,
-  Sparkles,
-  Globe2,
-  Loader2,
-  Check,
-  Languages,
-  Search,
-  ChevronDown,
-  X,
-  ArrowRight,
+  Plus, ArrowLeft, ArrowRight, Wand2, Layers, Sparkles,
+  Globe2, Loader2, Check, Languages, Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { VideoBlueprint } from '@/hooks/useVideoBlueprints';
-import { useVideoBlueprints } from '@/hooks/useVideoBlueprints';
 import {
   AI_PROVIDERS_REGISTRY,
   getDefaultZoneProviders,
-  type AIProviderEntry,
   type AIProviderCategory,
 } from '@/config/aiProvidersConfig';
 import {
   MASTER_REGION_GROUPS,
-  LANGUAGE_NAMES as SHARED_LANGUAGE_NAMES,
   getLanguagesForRegions,
   buildRegionDropdownOptions,
   toggleParentRegion,
 } from '@/config/regionConfig';
+import {
+  useCastStyles,
+  useCastCapabilities,
+  useCastStyleCapabilityMap,
+  useCastStylePlatforms,
+  deriveCapabilities,
+  derivePlatforms,
+  estimateTokens,
+} from '@/hooks/useCastRegistry';
+import { PortalDropdown } from './create-wizard/PortalDropdown';
+import { WizardProgress, WIZARD_STEPS } from './create-wizard/WizardProgress';
+import { WizardTokenBadge } from './create-wizard/WizardTokenBadge';
+
+// ============================================
+// CONFIG
+// ============================================
 
 export interface CreateTemplateInitialContext {
   product?: string;
@@ -64,14 +65,11 @@ export interface CreateTemplateInitialContext {
 interface CreateTemplateDialogProps {
   onCreated?: () => void;
   templateToClone?: VideoBlueprint | null;
-  /** Controlled open state from parent (e.g., SmartTemplateRecommender fallback CTA) */
   externalOpen?: boolean;
   onExternalOpenChange?: (open: boolean) => void;
-  /** Pre-fill context from SmartTemplateRecommender when no matches found */
   initialContext?: CreateTemplateInitialContext | null;
 }
 
-// Categories
 const TEMPLATE_CATEGORIES = [
   { value: 'marketing', label: 'Marketing', icon: '📈' },
   { value: 'educational', label: 'Educational', icon: '📚' },
@@ -95,44 +93,7 @@ const TEMPLATE_CATEGORIES = [
   { value: 'technology', label: 'Technology', icon: '💻' },
 ];
 
-// Video styles
-const VIDEO_STYLES = [
-  // Video
-  { value: 'photorealistic', label: 'Photorealistic', icon: '📸' },
-  { value: 'hyper_real', label: 'Hyper-Realistic 4K', icon: '🎥' },
-  { value: 'product_hero', label: 'Product Hero', icon: '🛍️' },
-  { value: 'pixar_disney', label: 'Pixar/Disney', icon: '🎪' },
-  { value: 'talking_head', label: 'Talking Head', icon: '👤' },
-  { value: 'anime', label: 'Anime', icon: '🎌' },
-  { value: 'whiteboard', label: 'Whiteboard', icon: '📝' },
-  { value: 'explainer', label: 'Explainer', icon: '💡' },
-  { value: 'motion_graphics', label: 'Motion Graphics', icon: '✨' },
-  { value: 'documentary', label: 'Documentary', icon: '🎬' },
-  { value: 'kinetic_typography', label: 'Kinetic Typography', icon: '🔤' },
-  { value: 'cinematic', label: 'Cinematic', icon: '🎞️' },
-  { value: 'stop_motion', label: 'Stop Motion', icon: '🎭' },
-  { value: 'sketch_animation', label: 'Sketch Animation', icon: '✏️' },
-  // PPT / Deck / Slides
-  { value: 'ppt_animation', label: 'PPT/Deck Animation', icon: '📊' },
-  { value: 'ppt_slides', label: 'PPT Slides (Static)', icon: '📑' },
-  { value: 'pitch_deck', label: 'Pitch Deck', icon: '📋' },
-  { value: 'report_deck', label: 'Report/Data Deck', icon: '📈' },
-  // Asset Lab outputs
-  { value: 'banner_static', label: 'Static Banner', icon: '🖼️' },
-  { value: 'banner_animated', label: 'Animated Banner', icon: '🎆' },
-  { value: 'infographic', label: 'Infographic', icon: '📊' },
-  { value: 'social_card', label: 'Social Media Card', icon: '🃏' },
-  { value: 'email_header', label: 'Email Header', icon: '📧' },
-  { value: 'blog_hero', label: 'Blog Hero Image', icon: '📰' },
-  // 3D / Avatar / VR
-  { value: '3d_product', label: '3D Product Showcase', icon: '🧊' },
-  { value: 'vr_experience', label: 'VR/AR Experience', icon: '🥽' },
-  { value: 'avatar_presenter', label: 'Avatar Presenter', icon: '🧑' },
-];
-
-// Platforms — expanded with asset lab & content platforms
 const PLATFORM_OPTIONS = [
-  // Social Video
   { value: 'tiktok', label: 'TikTok (9:16)', icon: '📱' },
   { value: 'instagram_reels', label: 'Instagram Reels (9:16)', icon: '📱' },
   { value: 'instagram_feed', label: 'Instagram Feed (1:1)', icon: '📷' },
@@ -143,59 +104,21 @@ const PLATFORM_OPTIONS = [
   { value: 'linkedin', label: 'LinkedIn (16:9)', icon: '💼' },
   { value: 'x_twitter', label: 'X/Twitter (16:9)', icon: '🐦' },
   { value: 'snapchat', label: 'Snapchat (9:16)', icon: '👻' },
-  // Content & Web
   { value: 'landing_page', label: 'Landing Page', icon: '🌐' },
   { value: 'blog_post', label: 'Blog Post', icon: '📝' },
   { value: 'email_campaign', label: 'Email Campaign', icon: '📧' },
   { value: 'newsletter', label: 'Newsletter', icon: '📰' },
-  // Presentation
   { value: 'presentation', label: 'Presentation/PPT', icon: '📊' },
   { value: 'webinar', label: 'Webinar', icon: '🎥' },
-  // Digital Ads
   { value: 'google_ads', label: 'Google Ads', icon: '🔍' },
   { value: 'meta_ads', label: 'Meta Ads', icon: '📢' },
   { value: 'display_ads', label: 'Display Ads (Banner)', icon: '🖼️' },
-  // Other
   { value: 'whatsapp', label: 'WhatsApp', icon: '💬' },
   { value: 'tv_broadcast', label: 'TV/Broadcast (16:9)', icon: '📺' },
 ];
 
-// AI Capabilities — expanded
-const AI_CAPABILITIES = [
-  { value: 'text_to_video', label: 'Text-to-Video', icon: '📹' },
-  { value: 'image_to_video', label: 'Image-to-Video', icon: '🎞️' },
-  { value: '3d_generation', label: '3D Generation', icon: '🧊' },
-  { value: 'avatar', label: 'Avatar/Talking Head', icon: '👤' },
-  { value: 'lipsync', label: 'Lipsync', icon: '👄' },
-  { value: 'tts', label: 'TTS Voiceover', icon: '🎙️' },
-  { value: 'music_gen', label: 'Music Generation', icon: '🎵' },
-  { value: 'video_effects', label: 'Video Effects/VFX', icon: '✨' },
-  { value: 'text_to_image', label: 'Text-to-Image', icon: '🖼️' },
-  { value: 'ppt_generation', label: 'PPT/Slide Generation', icon: '📊' },
-  { value: 'transcreation', label: 'Regional Transcreation', icon: '🌍' },
-  { value: 'voice_cloning', label: 'Voice Cloning', icon: '🔊' },
-  { value: 'background_removal', label: 'Background Removal', icon: '🪄' },
-  { value: 'ar_vr', label: 'AR/VR Rendering', icon: '🥽' },
-  { value: 'subtitles_cc', label: 'Auto Subtitles/CC', icon: '💬' },
-];
-
-// Regions & Languages now imported from shared @/config/regionConfig
-// Use MASTER_REGION_GROUPS, getLanguagesForRegions, buildRegionDropdownOptions, toggleParentRegion
-
-// ============================================
-// AI Providers - Following Master Routing Registry
-// Locked defaults based on 4-zone regional routing
-// ============================================
-// Zone defaults and dropdown format now imported from @/config/aiProvidersConfig
 const DEFAULT_ZONE_PROVIDERS = getDefaultZoneProviders();
 
-const AI_PROVIDERS = AI_PROVIDERS_REGISTRY.map(p => ({
-  value: p.value,
-  label: p.label,
-  icon: p.icon,
-}));
-
-// Category labels
 const PROVIDER_CATEGORIES: Record<AIProviderCategory, string> = {
   video: '🎬 Video Generation',
   tts: '🔊 Text-to-Speech',
@@ -207,414 +130,22 @@ const PROVIDER_CATEGORIES: Record<AIProviderCategory, string> = {
 };
 
 // ============================================
-// Portal-based Dropdown with search and scroll
+// MAIN COMPONENT
 // ============================================
-interface PortalDropdownProps {
-  label: string;
-  icon?: React.ReactNode;
-  options: { value: string; label: string; icon?: string }[];
-  selected: string[];
-  onToggle: (value: string) => void;
-  multi?: boolean;
-  placeholder?: string;
-  maxHeight?: number;
-}
 
-const PortalDropdown: React.FC<PortalDropdownProps> = ({
-  label,
-  icon,
-  options,
-  selected,
-  onToggle,
-  multi = true,
-  placeholder = 'Select...',
-  maxHeight = 280,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
-  
-  const selectedLabels = options.filter(o => selected.includes(o.value));
-  
-  // Filtered options
-  const filteredOptions = options.filter(opt => 
-    opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    opt.value.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Recalculate position continuously while open (handles dialog scroll)
-  const updatePosition = useCallback(() => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const openAbove = spaceBelow < maxHeight + 20 && rect.top > spaceBelow;
-      setPosition({
-        top: openAbove ? rect.top - Math.min(maxHeight + 50, rect.top - 8) : rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-      });
-    }
-  }, [maxHeight]);
-
-  // Update position when opened and on scroll/resize
-  useEffect(() => {
-    if (isOpen) {
-      updatePosition();
-      // Listen for scroll on any ancestor (captures dialog scroll)
-      const scrollHandler = () => updatePosition();
-      window.addEventListener('scroll', scrollHandler, true);
-      window.addEventListener('resize', scrollHandler);
-      return () => {
-        window.removeEventListener('scroll', scrollHandler, true);
-        window.removeEventListener('resize', scrollHandler);
-      };
-    }
-  }, [isOpen, updatePosition]);
-
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        triggerRef.current && !triggerRef.current.contains(target) &&
-        dropdownRef.current && !dropdownRef.current.contains(target)
-      ) {
-        setIsOpen(false);
-        setSearchQuery('');
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  // Close on escape
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-        setSearchQuery('');
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('keydown', handleEsc);
-    }
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [isOpen]);
-
-  const handleItemClick = (value: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onToggle(value);
-    if (!multi) {
-      setIsOpen(false);
-      setSearchQuery('');
-    }
-  };
-
-  const dropdownContent = isOpen ? createPortal(
-    <div
-      ref={dropdownRef}
-      className="fixed bg-popover border rounded-lg shadow-xl overflow-hidden"
-      style={{
-        top: position.top,
-        left: position.left,
-        width: position.width,
-        zIndex: 999999,
-      }}
-    >
-      {/* Search input for long lists */}
-      {options.length > 10 && (
-        <div className="p-2 border-b bg-muted/30">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              autoFocus
-            />
-          </div>
-        </div>
-      )}
-      <div 
-        className="overflow-y-auto p-1"
-        style={{ maxHeight }}
-      >
-        {filteredOptions.length > 0 ? (
-          filteredOptions.map(opt => (
-            <div
-              key={opt.value}
-              onMouseDown={(e) => handleItemClick(opt.value, e)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 text-sm rounded-md cursor-pointer transition-colors",
-                selected.includes(opt.value) 
-                  ? "bg-primary/10 text-primary" 
-                  : "hover:bg-accent"
-              )}
-            >
-              <div className={cn(
-                "w-4 h-4 rounded border flex items-center justify-center shrink-0",
-                selected.includes(opt.value) 
-                  ? "bg-primary border-primary" 
-                  : "border-muted-foreground/30"
-              )}>
-                {selected.includes(opt.value) && (
-                  <Check className="h-3 w-3 text-primary-foreground" />
-                )}
-              </div>
-              {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-              <span className="truncate">{opt.label}</span>
-            </div>
-          ))
-        ) : (
-          <div className="py-6 text-center text-sm text-muted-foreground">
-            No options found
-          </div>
-        )}
-      </div>
-      {multi && selected.length > 0 && (
-        <div className="p-2 border-t bg-muted/30 text-xs text-muted-foreground">
-          {selected.length} selected
-        </div>
-      )}
-    </div>,
-    document.body
-  ) : null;
-
-  return (
-    <div className="space-y-2">
-      <Label className="flex items-center gap-2 text-sm">
-        {icon}
-        {label}
-      </Label>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "w-full flex items-center justify-between gap-2 px-3 py-2 min-h-10 text-left",
-          "border rounded-md bg-background",
-          "hover:bg-accent/50 transition-colors",
-          isOpen && "ring-2 ring-primary"
-        )}
-      >
-        {selectedLabels.length > 0 ? (
-          <div className="flex flex-wrap gap-1 pr-4 flex-1">
-            {selectedLabels.slice(0, 3).map(opt => (
-              <Badge key={opt.value} variant="secondary" className="text-xs">
-                {opt.icon && <span className="mr-1">{opt.icon}</span>}
-                {opt.label}
-              </Badge>
-            ))}
-            {selectedLabels.length > 3 && (
-              <Badge variant="outline" className="text-xs">+{selectedLabels.length - 3}</Badge>
-            )}
-          </div>
-        ) : (
-          <span className="text-muted-foreground">{placeholder}</span>
-        )}
-        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", isOpen && "rotate-180")} />
-      </button>
-      {dropdownContent}
-    </div>
-  );
-};
-
-// ============================================
-// Portal-based Clone Template Dropdown
-// ============================================
-interface PortalCloneDropdownProps {
-  templates: VideoBlueprint[];
-  selected: VideoBlueprint | null;
-  onSelect: (t: VideoBlueprint) => void;
-}
-
-const PortalCloneDropdown: React.FC<PortalCloneDropdownProps> = ({
-  templates,
-  selected,
-  onSelect,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
-
-  // Filtered templates
-  const filteredTemplates = templates.filter(t =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Update position when opened
-  useEffect(() => {
-    if (isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-      });
-    }
-  }, [isOpen]);
-
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        triggerRef.current && !triggerRef.current.contains(target) &&
-        dropdownRef.current && !dropdownRef.current.contains(target)
-      ) {
-        setIsOpen(false);
-        setSearchQuery('');
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  // Close on escape
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-        setSearchQuery('');
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('keydown', handleEsc);
-    }
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [isOpen]);
-
-  const handleSelect = (template: VideoBlueprint) => {
-    onSelect(template);
-    setIsOpen(false);
-    setSearchQuery('');
-  };
-
-  const dropdownContent = isOpen ? createPortal(
-    <div
-      ref={dropdownRef}
-      className="fixed bg-popover border rounded-lg shadow-xl overflow-hidden"
-      style={{
-        top: position.top,
-        left: position.left,
-        width: position.width,
-        zIndex: 999999,
-      }}
-    >
-      <div className="p-2 border-b bg-muted/30">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search templates..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            autoFocus
-          />
-        </div>
-      </div>
-      <div 
-        className="overflow-y-auto p-1"
-        style={{ maxHeight: '300px' }}
-      >
-        {filteredTemplates.length > 0 ? (
-          filteredTemplates.map(t => (
-            <div
-              key={t.id}
-              onClick={() => handleSelect(t)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2.5 text-sm rounded-md cursor-pointer transition-colors",
-                selected?.id === t.id 
-                  ? "bg-primary/10 text-primary" 
-                  : "hover:bg-accent"
-              )}
-            >
-              <div className={cn(
-                "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
-                selected?.id === t.id 
-                  ? "bg-primary border-primary" 
-                  : "border-muted-foreground/30"
-              )}>
-                {selected?.id === t.id && (
-                  <Check className="h-2.5 w-2.5 text-primary-foreground" />
-                )}
-              </div>
-              <Badge variant="outline" className="text-[10px] shrink-0">{t.category}</Badge>
-              <span className="flex-1 truncate">{t.name}</span>
-            </div>
-          ))
-        ) : (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            No templates found for "{searchQuery}"
-          </div>
-        )}
-      </div>
-      <div className="p-2 border-t bg-muted/30 text-xs text-muted-foreground">
-        {filteredTemplates.length} of {templates.length} templates
-      </div>
-    </div>,
-    document.body
-  ) : null;
-
-  return (
-    <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "w-full flex items-center justify-between gap-2 px-3 py-2.5 min-h-10 text-left",
-          "border rounded-md bg-background",
-          "hover:bg-accent/50 transition-colors",
-          isOpen && "ring-2 ring-primary"
-        )}
-      >
-        {selected ? (
-          <div className="flex items-center gap-2 flex-1">
-            <Badge variant="secondary">{selected.category}</Badge>
-            <span className="truncate">{selected.name}</span>
-          </div>
-        ) : (
-          <span className="text-muted-foreground">Search {templates.length} templates...</span>
-        )}
-        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", isOpen && "rotate-180")} />
-      </button>
-      {dropdownContent}
-    </>
-  );
-};
-
-// ============================================
-// Main Component — Single AI-First Flow
-// ============================================
 export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen, onExternalOpenChange, initialContext }: CreateTemplateDialogProps) {
   const { toast } = useToast();
-  const { blueprints } = useVideoBlueprints();
   const [internalOpen, setInternalOpen] = useState(false);
-  
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = (value: boolean) => {
     if (onExternalOpenChange) onExternalOpenChange(value);
     setInternalOpen(value);
   };
+
   const [creating, setCreating] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
-  // Two-stage flow: 'describe' → 'review'
-  const [stage, setStage] = useState<'describe' | 'review'>('describe');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
   // Form state
   const [formData, setFormData] = useState({
@@ -630,68 +161,118 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     aiPrompt: '',
   });
 
-  // Pre-fill from intent context when dialog opens
+  // ═══ DB-DRIVEN HOOKS ═══
+  const { data: dbStyles = [] } = useCastStyles();
+  const { data: dbCapabilities = [] } = useCastCapabilities();
+  const { data: styleCapMap = [] } = useCastStyleCapabilityMap(formData.videoStyles);
+  const { data: stylePlatformMap = [] } = useCastStylePlatforms(formData.videoStyles);
+
+  // Convert DB styles to dropdown options
+  const styleOptions = useMemo(() =>
+    dbStyles.map(s => ({ value: s.value, label: s.label, icon: s.icon, description: s.description || undefined })),
+    [dbStyles]
+  );
+
+  // Convert DB capabilities to dropdown options
+  const capabilityOptions = useMemo(() =>
+    dbCapabilities.map(c => ({ value: c.value, label: c.label, icon: c.icon, description: c.description || undefined })),
+    [dbCapabilities]
+  );
+
+  // Auto-derive capabilities when styles change
+  const derivedCaps = useMemo(() => {
+    if (formData.videoStyles.length === 0 || styleCapMap.length === 0) return null;
+    return deriveCapabilities(formData.videoStyles, styleCapMap);
+  }, [formData.videoStyles, styleCapMap]);
+
+  // Auto-derive platforms when styles change
+  const derivedPlatforms = useMemo(() => {
+    if (formData.videoStyles.length === 0 || stylePlatformMap.length === 0) return null;
+    return derivePlatforms(formData.videoStyles, stylePlatformMap);
+  }, [formData.videoStyles, stylePlatformMap]);
+
+  // Auto-apply derived capabilities
+  useEffect(() => {
+    if (derivedCaps && derivedCaps.required.length > 0) {
+      setFormData(prev => {
+        const merged = new Set([...prev.capabilities, ...derivedCaps.required]);
+        return { ...prev, capabilities: [...merged] };
+      });
+    }
+  }, [derivedCaps?.required.join(',')]);
+
+  // Auto-apply derived platforms
+  useEffect(() => {
+    if (derivedPlatforms && derivedPlatforms.recommended.length > 0 && formData.platforms.length === 0) {
+      setFormData(prev => ({
+        ...prev,
+        platforms: derivedPlatforms.recommended,
+      }));
+    }
+  }, [derivedPlatforms?.recommended.join(',')]);
+
+  // Token estimation
+  const tokenEstimate = useMemo(() => {
+    if (formData.videoStyles.length === 0 || formData.capabilities.length === 0) return null;
+    return estimateTokens(
+      formData.videoStyles,
+      formData.capabilities,
+      dbCapabilities,
+      styleCapMap,
+      formData.platforms.length,
+      formData.regions.length,
+    );
+  }, [formData.videoStyles, formData.capabilities, formData.platforms.length, formData.regions.length, dbCapabilities, styleCapMap]);
+
+  // Regions & languages
+  const regionOptions = buildRegionDropdownOptions();
+  const availableLanguages = getLanguagesForRegions(formData.regions);
+
+  useEffect(() => {
+    const validLangCodes = availableLanguages.map(l => l.value);
+    setFormData(prev => ({
+      ...prev,
+      languages: prev.languages.filter(l => validLangCodes.includes(l)).length > 0
+        ? prev.languages.filter(l => validLangCodes.includes(l))
+        : validLangCodes.slice(0, 1) as string[],
+    }));
+  }, [formData.regions.join(',')]);
+
+  // Pre-fill from context
   useEffect(() => {
     if (open && initialContext) {
       const productToCategoryMap: Record<string, string> = {
         saas: 'technology', healthcare: 'healthcare', education: 'educational',
         ecommerce: 'retail', finance: 'finance', travel: 'travel',
         food: 'hospitality', corporate: 'corporate', entertainment: 'entertainment',
-        smb: 'smb', marketing: 'marketing', social: 'marketing',
-        creative: 'entertainment', enterprise: 'corporate', events: 'corporate',
+        smb: 'smb', marketing: 'marketing',
       };
       const category = productToCategoryMap[initialContext.product || ''] || formData.category;
-
       const promptParts = [
         initialContext.product && `for ${initialContext.product} industry`,
         initialContext.audience && `targeting ${initialContext.audience.replace(/_/g, ' ')}`,
         initialContext.platform && `optimized for ${initialContext.platform}`,
         initialContext.goal && `focused on: ${initialContext.goal}`,
       ].filter(Boolean);
-
-      const aiPrompt = promptParts.length > 0
-        ? `Create a video template ${promptParts.join(', ')}`
-        : '';
-
+      const aiPrompt = promptParts.length > 0 ? `Create a video template ${promptParts.join(', ')}` : '';
       setFormData(prev => ({
-        ...prev,
-        category,
-        aiPrompt,
-        name: initialContext.goal
-          ? `${(initialContext.goal as string).split(' — ')[0]} Template`
-          : prev.name,
-        description: initialContext.goal
-          ? `Custom template ${promptParts.join(', ')}`
-          : prev.description,
+        ...prev, category, aiPrompt,
+        name: initialContext.goal ? `${(initialContext.goal as string).split(' — ')[0]} Template` : prev.name,
+        description: initialContext.goal ? `Custom template ${promptParts.join(', ')}` : prev.description,
       }));
-      setStage('describe');
+      setCurrentStep(0);
     }
   }, [open, initialContext]);
 
   // Reset on close
   useEffect(() => {
     if (!open) {
-      setStage('describe');
+      setCurrentStep(0);
+      setCompletedSteps(new Set());
     }
   }, [open]);
 
-  // Build flat region options from shared config
-  const regionOptions = buildRegionDropdownOptions();
-
-  // Get all available languages based on selected regions
-  const availableLanguages = getLanguagesForRegions(formData.regions);
-
-  // Update languages when regions change
-  useEffect(() => {
-    const validLangCodes = availableLanguages.map(l => l.value);
-    setFormData(prev => ({
-      ...prev,
-      languages: prev.languages.filter(l => validLangCodes.includes(l)).length > 0 
-        ? prev.languages.filter(l => validLangCodes.includes(l))
-        : validLangCodes.slice(0, 1) as string[],
-    }));
-  }, [formData.regions.join(',')]);
-
+  // Helpers
   const toggleArrayItem = (key: keyof typeof formData, item: string) => {
     setFormData(prev => ({
       ...prev,
@@ -701,11 +282,18 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     }));
   };
 
-  const setSingleValue = (key: keyof typeof formData, item: string) => {
-    setFormData(prev => ({ ...prev, [key]: item }));
+  const markStepComplete = (step: number) => {
+    setCompletedSteps(prev => new Set([...prev, step]));
   };
 
-  // AI Generation — enhances the prompt and populates all fields
+  const goNext = () => {
+    markStepComplete(currentStep);
+    setCurrentStep(prev => Math.min(prev + 1, WIZARD_STEPS.length - 1));
+  };
+
+  const goBack = () => setCurrentStep(prev => Math.max(prev - 1, 0));
+
+  // AI Generation
   const generateWithAI = async () => {
     if (!formData.aiPrompt.trim()) {
       toast({ title: 'Please describe what template you want', variant: 'destructive' });
@@ -714,8 +302,8 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     setAiGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-template-ai', {
-        body: { 
-          prompt: formData.aiPrompt, 
+        body: {
+          prompt: formData.aiPrompt,
           region: formData.regions[0] || 'western',
           context: {
             selectedCapabilities: formData.capabilities,
@@ -731,75 +319,41 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       if (error) throw error;
       if (data?.template) {
         const t = data.template;
-        // Map AI region codes to our MASTER_REGION_GROUPS codes
         const regionCodeMap: Record<string, string[]> = {
-          western: ['NAM', 'NAM_US', 'NAM_CA'],
-          europe: ['EUR', 'EUR_WEST', 'EUR_NORTH'],
-          cjk: ['CJK', 'CJK_JP', 'CJK_KR', 'CJK_CN'],
-          india: ['INDIA', 'INDIA_NORTH', 'INDIA_SOUTH'],
-          mena: ['MENA', 'MENA_GCC', 'MENA_LEVANT'],
-          africa: ['AFRICA', 'AFRICA_WEST', 'AFRICA_EAST'],
-          latam: ['LATAM', 'LATAM_BR', 'LATAM_MX'],
-          sea: ['SEA', 'SEA_ID', 'SEA_PH'],
+          western: ['NAM', 'NAM_US', 'NAM_CA'], europe: ['EUR', 'EUR_WEST', 'EUR_NORTH'],
+          cjk: ['CJK', 'CJK_JP', 'CJK_KR', 'CJK_CN'], india: ['INDIA', 'INDIA_NORTH', 'INDIA_SOUTH'],
+          mena: ['MENA', 'MENA_GCC', 'MENA_LEVANT'], africa: ['AFRICA', 'AFRICA_WEST', 'AFRICA_EAST'],
+          latam: ['LATAM', 'LATAM_BR', 'LATAM_MX'], sea: ['SEA', 'SEA_ID', 'SEA_PH'],
           global: ['NAM', 'NAM_US', 'EUR', 'INDIA', 'MENA', 'CJK'],
-          caribbean: ['CARIBBEAN'],
-          pakistan: ['PAKISTAN'],
-          oceania: ['OCEANIA'],
-          central_asia: ['CENTRAL_ASIA'],
-          russia: ['EASTERN_EUR'],
+          caribbean: ['CARIBBEAN'], pakistan: ['PAKISTAN'], oceania: ['OCEANIA'],
+          central_asia: ['CENTRAL_ASIA'], russia: ['EASTERN_EUR'],
         };
-        const mappedRegions = (t.regions || []).flatMap((r: string) => 
+        const mappedRegions = (t.regions || []).flatMap((r: string) =>
           regionCodeMap[r] || (MASTER_REGION_GROUPS.some(g => g.parent === r || g.regions.some(sr => sr.code === r)) ? [r] : [])
         );
-
-        setFormData(prev => {
-          const finalRegions = mappedRegions.length > 0 ? [...new Set(mappedRegions)] : prev.regions;
-          return {
-            ...prev,
-            name: t.name || prev.name,
-            description: t.description || prev.description,
-            category: t.category || prev.category,
-            videoStyles: Array.isArray(t.videoStyles) && t.videoStyles.length > 0 
-              ? t.videoStyles 
-              : (t.videoStyle ? [t.videoStyle] : prev.videoStyles),
-            capabilities: Array.isArray(t.capabilities) && t.capabilities.length > 0 ? t.capabilities : prev.capabilities,
-            regions: finalRegions as string[],
-            platforms: Array.isArray(t.platforms) && t.platforms.length > 0 ? t.platforms : prev.platforms,
-            languages: Array.isArray(t.languages) && t.languages.length > 0 ? t.languages : prev.languages,
-          };
-        });
+        setFormData(prev => ({
+          ...prev,
+          name: t.name || prev.name,
+          description: t.description || prev.description,
+          category: t.category || prev.category,
+          videoStyles: Array.isArray(t.videoStyles) && t.videoStyles.length > 0
+            ? t.videoStyles : (t.videoStyle ? [t.videoStyle] : prev.videoStyles),
+          capabilities: Array.isArray(t.capabilities) && t.capabilities.length > 0 ? t.capabilities : prev.capabilities,
+          regions: mappedRegions.length > 0 ? [...new Set(mappedRegions)] as string[] : prev.regions,
+          platforms: Array.isArray(t.platforms) && t.platforms.length > 0 ? t.platforms : prev.platforms,
+          languages: Array.isArray(t.languages) && t.languages.length > 0 ? t.languages : prev.languages,
+        }));
       }
-      setStage('review');
+      // Jump to review (step 6)
+      setCompletedSteps(new Set([0, 1, 2, 3, 4, 5]));
+      setCurrentStep(6);
       toast({ title: '✨ AI configured your template', description: 'Review and adjust the settings below.' });
     } catch (err: any) {
-      // On AI failure, still advance to review with what we have
-      setStage('review');
+      setCompletedSteps(new Set([0]));
+      setCurrentStep(1);
       toast({ title: 'AI generation failed — configure manually', description: err.message, variant: 'destructive' });
     } finally {
       setAiGenerating(false);
-    }
-  };
-
-  // Skip AI, go straight to manual review
-  const skipToManual = () => {
-    setStage('review');
-  };
-
-  // Generate a thumbnail via ai-image-generator
-  const generateThumbnail = async (name: string, category: string, styles: string[]): Promise<string | null> => {
-    try {
-      const prompt = `Professional video template thumbnail for "${name}". Category: ${category}. Style: ${styles.join(', ')}. Modern, vibrant, cinematic quality. 16:9 aspect ratio. No text.`;
-      const { data, error } = await supabase.functions.invoke('ai-image-generator', {
-        body: { prompt, size: '1024x576', quality: 'high', style_intent: styles[0] || 'cinematic' }
-      });
-      if (error || !data?.imageUrl) {
-        console.warn('Thumbnail generation failed, using placeholder', error);
-        return null;
-      }
-      return data.imageUrl;
-    } catch (err) {
-      console.warn('Thumbnail generation error:', err);
-      return null;
     }
   };
 
@@ -812,10 +366,17 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     setCreating(true);
     try {
       const { data: user } = await supabase.auth.getUser();
-      
-      // Generate unique thumbnail
-      const thumbnailUrl = await generateThumbnail(formData.name, formData.category, formData.videoStyles);
-      
+
+      // Thumbnail generation
+      let thumbnailUrl: string | null = null;
+      try {
+        const prompt = `Professional video template thumbnail for "${formData.name}". Category: ${formData.category}. Style: ${formData.videoStyles.join(', ')}. Modern, vibrant, cinematic quality. 16:9 aspect ratio. No text.`;
+        const { data, error } = await supabase.functions.invoke('ai-image-generator', {
+          body: { prompt, size: '1024x576', quality: 'high', style_intent: formData.videoStyles[0] || 'cinematic' }
+        });
+        if (!error && data?.imageUrl) thumbnailUrl = data.imageUrl;
+      } catch { /* thumbnail optional */ }
+
       const templateData = {
         name: formData.name,
         description: formData.description,
@@ -830,11 +391,9 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
           languages: formData.languages,
           regions: formData.regions,
           capabilities: formData.capabilities,
+          tokenEstimate: tokenEstimate?.totalTokens || null,
         },
-        style_preset: {
-          style: formData.videoStyles[0] || 'motion_graphics',
-          capabilities: formData.capabilities,
-        },
+        style_preset: { style: formData.videoStyles[0] || 'motion_graphics', capabilities: formData.capabilities },
         style_intent: formData.videoStyles[0] || 'motion_graphics',
         target_regions: formData.regions,
         tone_modifier: formData.category,
@@ -865,6 +424,19 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
 
   const isExternallyControlled = externalOpen !== undefined;
 
+  // ═══ STEP VALIDATION ═══
+  const canProceed = useCallback((step: number): boolean => {
+    switch (step) {
+      case 0: return formData.aiPrompt.trim().length > 0 || formData.name.trim().length > 0;
+      case 1: return formData.name.trim().length > 0 && formData.category.length > 0;
+      case 2: return formData.videoStyles.length > 0;
+      case 3: return formData.capabilities.length > 0;
+      case 4: return formData.platforms.length > 0;
+      case 5: return formData.regions.length > 0 && formData.languages.length > 0;
+      default: return true;
+    }
+  }, [formData]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen} modal={false}>
       {!isExternallyControlled && (
@@ -875,7 +447,6 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
           </Button>
         </DialogTrigger>
       )}
-      {/* Manual backdrop since modal={false} removes default overlay */}
       {open && <div className="fixed inset-0 bg-black/50 z-[99997]" onClick={() => setOpen(false)} />}
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-visible" style={{ zIndex: 99998 }}>
         <DialogHeader>
@@ -883,18 +454,27 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
             <Layers className="h-5 w-5 text-primary" />
             Create Custom Template
           </DialogTitle>
-          <DialogDescription>
-            {stage === 'describe'
-              ? 'Describe your template — AI will configure everything for you'
-              : 'Review and adjust the AI-configured settings'}
+          <DialogDescription className="text-xs">
+            Step {currentStep + 1} of {WIZARD_STEPS.length}: {WIZARD_STEPS[currentStep]?.label}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto pr-2" style={{ maxHeight: 'calc(85vh - 180px)' }}>
-          {/* ═══ STAGE 1: DESCRIBE ═══ */}
-          {stage === 'describe' && (
+        {/* Step Progress */}
+        <WizardProgress
+          currentStep={currentStep}
+          completedSteps={completedSteps}
+          onStepClick={setCurrentStep}
+        />
+
+        {/* Token Estimate (always visible after step 3) */}
+        {currentStep >= 3 && tokenEstimate && (
+          <WizardTokenBadge estimate={tokenEstimate} className="mx-1" />
+        )}
+
+        <div className="flex-1 overflow-y-auto pr-2" style={{ maxHeight: 'calc(85vh - 260px)' }}>
+          {/* ═══ STEP 0: DESCRIBE ═══ */}
+          {currentStep === 0 && (
             <div className="space-y-4 mt-2">
-              {/* Context Banner — shows what intent was passed */}
               {initialContext?.goal && (
                 <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 flex items-center gap-3">
                   <Sparkles className="h-4 w-4 text-primary shrink-0" />
@@ -904,11 +484,10 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                   </div>
                 </div>
               )}
-
               <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <Wand2 className="h-4 w-4 text-primary" />
-                  Describe your template and AI will auto-configure category, style, platforms, regions, and providers
+                  Describe your template — AI will auto-configure everything, or skip to manual
                 </p>
                 <Textarea
                   placeholder="E.g., Create a TikTok product demo template with 3D avatar for Indian Telugu audience..."
@@ -919,61 +498,150 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 <div className="flex gap-2">
                   <Button onClick={generateWithAI} disabled={aiGenerating || !formData.aiPrompt.trim()} className="flex-1 gap-2">
                     {aiGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                    {aiGenerating ? 'AI Configuring...' : 'Generate & Configure'}
+                    {aiGenerating ? 'AI Configuring...' : 'Generate & Configure All'}
                   </Button>
-                  <Button variant="outline" onClick={skipToManual} disabled={aiGenerating}>
-                    Configure Manually
+                  <Button variant="outline" onClick={goNext} disabled={aiGenerating}>
+                    Configure Manually <ArrowRight className="ml-1 h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ═══ STAGE 2: REVIEW & EDIT ═══ */}
-          {stage === 'review' && (
+          {/* ═══ STEP 1: CATEGORY & NAME ═══ */}
+          {currentStep === 1 && (
             <div className="space-y-4 mt-2">
-              {/* Back to describe */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
-                onClick={() => setStage('describe')}
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to prompt
-              </Button>
-
-              {/* Name + Category */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Template Name</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="My Custom Template"
-                  />
-                </div>
-                <PortalDropdown
-                  label="Category"
-                  options={TEMPLATE_CATEGORIES}
-                  selected={[formData.category]}
-                  onToggle={(v) => setSingleValue('category', v)}
-                  multi={false}
-                  placeholder="Select category"
+              <div className="space-y-2">
+                <Label>Template Name *</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="My Custom Template"
+                  autoFocus
                 />
               </div>
-
-              {/* Video Styles (Multi-Select) */}
               <PortalDropdown
-                label="Video Styles"
-                options={VIDEO_STYLES}
-                selected={formData.videoStyles}
-                onToggle={(v) => toggleArrayItem('videoStyles', v)}
-                multi={true}
-                placeholder="Select one or more styles"
+                label="Category *"
+                options={TEMPLATE_CATEGORIES}
+                selected={[formData.category]}
+                onToggle={(v) => setFormData(prev => ({ ...prev, category: v }))}
+                multi={false}
+                placeholder="Select category"
               />
+              <div className="space-y-2">
+                <Label>Description (optional)</Label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="What is this template for..."
+                  className="min-h-[60px]"
+                />
+              </div>
+            </div>
+          )}
 
-              {/* Platforms */}
+          {/* ═══ STEP 2: VIDEO STYLES (DB-driven) ═══ */}
+          {currentStep === 2 && (
+            <div className="space-y-4 mt-2">
+              <div className="p-3 border rounded-lg bg-muted/30 flex items-center gap-2 text-xs text-muted-foreground">
+                <Zap className="h-4 w-4 text-primary shrink-0" />
+                Select styles to auto-derive AI capabilities, platforms, and token costs from the registry
+              </div>
+              {dbStyles.length > 0 ? (
+                <PortalDropdown
+                  label={`Video Styles (${dbStyles.length} available from registry)`}
+                  options={styleOptions}
+                  selected={formData.videoStyles}
+                  onToggle={(v) => toggleArrayItem('videoStyles', v)}
+                  multi={true}
+                  placeholder="Select one or more styles"
+                  maxHeight={360}
+                />
+              ) : (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+                  Loading styles from registry...
+                </div>
+              )}
+              {/* Selected styles summary */}
+              {formData.videoStyles.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {formData.videoStyles.map(sv => {
+                    const style = dbStyles.find(s => s.value === sv);
+                    return style ? (
+                      <Badge key={sv} variant="secondary" className="text-xs gap-1">
+                        {style.icon} {style.label}
+                        <span className="text-muted-foreground/60 ml-1">{style.base_token_cost}t</span>
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ═══ STEP 3: AI CAPABILITIES (auto-derived) ═══ */}
+          {currentStep === 3 && (
+            <div className="space-y-4 mt-2">
+              {derivedCaps && derivedCaps.required.length > 0 && (
+                <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 space-y-2">
+                  <p className="text-xs font-medium text-primary flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" /> Auto-derived from selected styles
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {derivedCaps.required.map(cv => {
+                      const cap = dbCapabilities.find(c => c.value === cv);
+                      return cap ? (
+                        <Badge key={cv} className="text-xs gap-1 bg-primary/10 text-primary border-primary/30">
+                          {cap.icon} {cap.label} <span className="text-primary/60">required</span>
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                  {derivedCaps.optional.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {derivedCaps.optional.map(cv => {
+                        const cap = dbCapabilities.find(c => c.value === cv);
+                        return cap ? (
+                          <Badge key={cv} variant="outline" className="text-xs gap-1">
+                            {cap.icon} {cap.label} <span className="text-muted-foreground/60">optional</span>
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+              <PortalDropdown
+                label="AI Capabilities"
+                icon={<Sparkles className="h-4 w-4" />}
+                options={capabilityOptions}
+                selected={formData.capabilities}
+                onToggle={(v) => toggleArrayItem('capabilities', v)}
+                multi={true}
+                placeholder="Add or remove capabilities"
+              />
+            </div>
+          )}
+
+          {/* ═══ STEP 4: PLATFORMS (auto-derived) ═══ */}
+          {currentStep === 4 && (
+            <div className="space-y-4 mt-2">
+              {derivedPlatforms && derivedPlatforms.recommended.length > 0 && (
+                <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 space-y-1">
+                  <p className="text-xs font-medium text-primary flex items-center gap-1.5">
+                    <Globe2 className="h-3.5 w-3.5" /> Recommended for selected styles
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {derivedPlatforms.recommended.map(pid => {
+                      const plat = PLATFORM_OPTIONS.find(p => p.value === pid);
+                      return plat ? (
+                        <Badge key={pid} className="text-xs bg-primary/10 text-primary border-primary/30">{plat.icon} {plat.label}</Badge>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
               <PortalDropdown
                 label="Target Platforms"
                 icon={<Globe2 className="h-4 w-4" />}
@@ -983,42 +651,29 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 multi={true}
                 placeholder="Select platforms"
               />
+            </div>
+          )}
 
-              {/* AI Capabilities */}
-              <PortalDropdown
-                label="AI Capabilities"
-                icon={<Sparkles className="h-4 w-4" />}
-                options={AI_CAPABILITIES}
-                selected={formData.capabilities}
-                onToggle={(v) => toggleArrayItem('capabilities', v)}
-                multi={true}
-                placeholder="Select capabilities"
-              />
-
-              {/* Regions with Sub-Regions */}
+          {/* ═══ STEP 5: REGIONS & LANGUAGES ═══ */}
+          {currentStep === 5 && (
+            <div className="space-y-4 mt-2">
               <PortalDropdown
                 label="Target Regions & Sub-Regions"
                 icon={<Globe2 className="h-4 w-4" />}
                 options={regionOptions}
                 selected={formData.regions}
                 onToggle={(v) => {
-                  // Check if it's a parent region
                   const isParent = MASTER_REGION_GROUPS.some(g => g.parent === v);
                   if (isParent) {
-                    setFormData(prev => ({
-                      ...prev,
-                      regions: toggleParentRegion(v, prev.regions),
-                    }));
+                    setFormData(prev => ({ ...prev, regions: toggleParentRegion(v, prev.regions) }));
                   } else {
                     toggleArrayItem('regions', v);
                   }
                 }}
                 multi={true}
-                placeholder="Select regions & sub-regions"
+                placeholder="Select regions"
                 maxHeight={360}
               />
-
-              {/* Languages */}
               {availableLanguages.length > 0 && (
                 <PortalDropdown
                   label={`Languages (${availableLanguages.length} available)`}
@@ -1031,19 +686,16 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                   maxHeight={320}
                 />
               )}
-
-              {/* AI Providers — grouped by category */}
+              {/* AI Providers */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm">
-                  <Wand2 className="h-4 w-4" />
-                  AI Providers
+                  <Wand2 className="h-4 w-4" /> AI Providers
                 </Label>
                 <div className="text-xs text-muted-foreground mb-2 p-2 bg-muted/30 rounded-md border flex items-center gap-2">
                   <span className="text-primary">🌍</span>
-                  <span>Zone suggests defaults (★) — you can freely toggle any provider on/off. Only selected providers will be used.</span>
+                  Zone suggests defaults (★) — toggle any provider on/off
                 </div>
-                {/* Grouped by category */}
-                <div className="space-y-3 max-h-[320px] overflow-y-auto border rounded-md p-2">
+                <div className="space-y-3 max-h-[280px] overflow-y-auto border rounded-md p-2">
                   {(Object.keys(PROVIDER_CATEGORIES) as AIProviderCategory[]).map(cat => {
                     const catProviders = AI_PROVIDERS_REGISTRY.filter(p => p.category === cat);
                     if (catProviders.length === 0) return null;
@@ -1052,7 +704,6 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                         <p className="text-xs font-semibold text-muted-foreground px-1">{PROVIDER_CATEGORIES[cat]}</p>
                         {catProviders.map(provider => {
                           const isSelected = formData.providers.includes(provider.value);
-                          const isZoneDefault = provider.isDefault;
                           return (
                             <div
                               key={provider.value}
@@ -1070,9 +721,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                               </div>
                               <span className="shrink-0">{provider.icon}</span>
                               <span className="flex-1 truncate">{provider.label}</span>
-                              {isZoneDefault && <span className="text-xs text-amber-500" title="Zone suggested default">★</span>}
-                              {provider.zones && <Badge variant="outline" className="text-[9px] shrink-0">{provider.zones.join(',')}</Badge>}
-                              <Badge variant="outline" className="text-[10px] shrink-0">P{provider.priority}</Badge>
+                              {provider.isDefault && <span className="text-xs text-amber-500">★</span>}
                             </div>
                           );
                         })}
@@ -1080,56 +729,105 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                     );
                   })}
                 </div>
-                {/* Selected summary */}
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {formData.providers
-                    .map(v => AI_PROVIDERS_REGISTRY.find(p => p.value === v))
-                    .filter(Boolean)
-                    .sort((a, b) => (a?.priority || 99) - (b?.priority || 99))
-                    .slice(0, 5)
-                    .map(provider => (
-                      <Badge 
-                        key={provider!.value} 
-                        variant={provider!.isDefault ? "default" : "secondary"}
-                        className={cn(
-                          "text-xs",
-                          provider!.isDefault && "bg-primary/20 text-primary border-primary/30"
-                        )}
-                      >
-                        {provider!.isDefault && <span className="mr-1">★</span>}
-                        {provider!.icon} {provider!.label.split(' (')[0]}
-                      </Badge>
-                    ))}
-                  {formData.providers.length > 5 && (
-                    <Badge variant="outline" className="text-xs">+{formData.providers.length - 5} more</Badge>
-                  )}
+              </div>
+            </div>
+          )}
+
+          {/* ═══ STEP 6: REVIEW ═══ */}
+          {currentStep === 6 && (
+            <div className="space-y-4 mt-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 border rounded-lg space-y-1">
+                  <p className="text-xs text-muted-foreground">Name</p>
+                  <p className="text-sm font-medium">{formData.name || '—'}</p>
+                </div>
+                <div className="p-3 border rounded-lg space-y-1">
+                  <p className="text-xs text-muted-foreground">Category</p>
+                  <p className="text-sm font-medium">{TEMPLATE_CATEGORIES.find(c => c.value === formData.category)?.label || formData.category}</p>
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="space-y-2">
-                <Label>Description (optional)</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="What is this template for..."
-                  className="min-h-[60px]"
-                />
+              {/* Styles */}
+              <div className="p-3 border rounded-lg space-y-2">
+                <p className="text-xs text-muted-foreground">Video Styles ({formData.videoStyles.length})</p>
+                <div className="flex flex-wrap gap-1">
+                  {formData.videoStyles.map(sv => {
+                    const style = dbStyles.find(s => s.value === sv);
+                    return <Badge key={sv} variant="secondary" className="text-xs">{style?.icon} {style?.label || sv}</Badge>;
+                  })}
+                  {formData.videoStyles.length === 0 && <span className="text-xs text-muted-foreground">None selected</span>}
+                </div>
               </div>
+
+              {/* Capabilities */}
+              <div className="p-3 border rounded-lg space-y-2">
+                <p className="text-xs text-muted-foreground">AI Capabilities ({formData.capabilities.length})</p>
+                <div className="flex flex-wrap gap-1">
+                  {formData.capabilities.map(cv => {
+                    const cap = dbCapabilities.find(c => c.value === cv);
+                    return <Badge key={cv} variant="outline" className="text-xs">{cap?.icon} {cap?.label || cv}</Badge>;
+                  })}
+                </div>
+              </div>
+
+              {/* Platforms + Regions */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 border rounded-lg space-y-2">
+                  <p className="text-xs text-muted-foreground">Platforms ({formData.platforms.length})</p>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.platforms.slice(0, 4).map(pv => {
+                      const plat = PLATFORM_OPTIONS.find(p => p.value === pv);
+                      return <Badge key={pv} variant="secondary" className="text-[10px]">{plat?.icon} {plat?.label || pv}</Badge>;
+                    })}
+                    {formData.platforms.length > 4 && <Badge variant="outline" className="text-[10px]">+{formData.platforms.length - 4}</Badge>}
+                  </div>
+                </div>
+                <div className="p-3 border rounded-lg space-y-2">
+                  <p className="text-xs text-muted-foreground">Regions ({formData.regions.length}) · Languages ({formData.languages.length})</p>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.regions.slice(0, 3).map(r => <Badge key={r} variant="secondary" className="text-[10px]">{r}</Badge>)}
+                    {formData.regions.length > 3 && <Badge variant="outline" className="text-[10px]">+{formData.regions.length - 3}</Badge>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Token Estimate */}
+              {tokenEstimate && <WizardTokenBadge estimate={tokenEstimate} />}
+
+              {/* Edit name if needed */}
+              {!formData.name.trim() && (
+                <div className="space-y-2 p-3 border rounded-lg border-destructive/30 bg-destructive/5">
+                  <Label className="text-destructive text-xs">Template name is required</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter template name"
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer Navigation */}
         <div className="flex justify-between gap-2 pt-4 border-t mt-auto">
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
           <div className="flex gap-2">
-            {stage === 'review' && (
-              <Button
-                onClick={createTemplate}
-                disabled={creating || !formData.name.trim()}
-                className="gap-2"
-              >
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+            {currentStep > 0 && (
+              <Button variant="ghost" size="sm" onClick={goBack} className="gap-1">
+                <ArrowLeft className="h-3.5 w-3.5" /> Back
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {currentStep < 6 && currentStep > 0 && (
+              <Button onClick={goNext} disabled={!canProceed(currentStep)} className="gap-1" size="sm">
+                Next <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {currentStep === 6 && (
+              <Button onClick={createTemplate} disabled={creating || !formData.name.trim()} className="gap-2">
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 {creating ? 'Creating...' : 'Create Template'}
               </Button>
