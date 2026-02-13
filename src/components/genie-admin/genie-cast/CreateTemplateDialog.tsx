@@ -40,6 +40,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { VideoBlueprint } from '@/hooks/useVideoBlueprints';
 import { useVideoBlueprints } from '@/hooks/useVideoBlueprints';
+import {
+  MASTER_REGION_GROUPS,
+  LANGUAGE_NAMES as SHARED_LANGUAGE_NAMES,
+  getLanguagesForRegions,
+  buildRegionDropdownOptions,
+  toggleParentRegion,
+} from '@/config/regionConfig';
 
 export interface CreateTemplateInitialContext {
   product?: string;
@@ -166,172 +173,8 @@ const AI_CAPABILITIES = [
   { value: 'subtitles_cc', label: 'Auto Subtitles/CC', icon: '💬' },
 ];
 
-// Expanded Regions with sub-regions and comprehensive languages
-interface RegionConfig {
-  value: string;
-  label: string;
-  icon: string;
-  languages: string[];
-  subRegions?: { value: string; label: string; icon: string; languages: string[] }[];
-}
-
-const REGIONS: RegionConfig[] = [
-  { 
-    value: 'western', label: 'Western/US', icon: '🇺🇸', 
-    languages: ['en', 'es_mx', 'es_us', 'fr_ca'],
-    subRegions: [
-      { value: 'western_us_east', label: 'US East Coast', icon: '🗽', languages: ['en', 'es_us'] },
-      { value: 'western_us_west', label: 'US West Coast', icon: '🌉', languages: ['en', 'es_us'] },
-      { value: 'western_us_south', label: 'US South', icon: '🤠', languages: ['en', 'es_us'] },
-      { value: 'western_canada', label: 'Canada', icon: '🇨🇦', languages: ['en', 'fr_ca'] },
-    ]
-  },
-  { 
-    value: 'europe', label: 'Europe', icon: '🇪🇺', 
-    languages: ['en_gb', 'de', 'de_at', 'de_ch', 'fr', 'fr_be', 'fr_ch', 'it', 'es', 'pt_pt', 'nl', 'nl_be', 'pl', 'cs', 'sk', 'hu', 'ro', 'bg', 'el', 'sv', 'da', 'no', 'fi', 'et', 'lv', 'lt', 'sl', 'hr', 'sr', 'bs', 'mk', 'sq', 'uk', 'be', 'ru', 'ga', 'cy', 'gd', 'mt', 'lb', 'is', 'fo', 'ca', 'gl', 'eu', 'ast'],
-    subRegions: [
-      { value: 'europe_western', label: 'Western Europe', icon: '🇫🇷', languages: ['fr', 'de', 'nl', 'en_gb', 'es'] },
-      { value: 'europe_northern', label: 'Northern Europe', icon: '🇸🇪', languages: ['sv', 'da', 'no', 'fi', 'is'] },
-      { value: 'europe_southern', label: 'Southern Europe', icon: '🇮🇹', languages: ['it', 'es', 'pt_pt', 'el', 'mt'] },
-      { value: 'europe_eastern', label: 'Eastern Europe', icon: '🇵🇱', languages: ['pl', 'cs', 'sk', 'hu', 'ro', 'bg', 'uk', 'ru'] },
-      { value: 'europe_balkans', label: 'Balkans', icon: '🇷🇸', languages: ['sr', 'hr', 'bs', 'sl', 'mk', 'sq'] },
-      { value: 'europe_baltics', label: 'Baltics', icon: '🇱🇹', languages: ['lt', 'lv', 'et'] },
-    ]
-  },
-  { 
-    value: 'cjk', label: 'CJK', icon: '🇨🇳', 
-    languages: ['zh_cn', 'zh_tw', 'zh_hk', 'ja', 'ko', 'mn'],
-    subRegions: [
-      { value: 'cjk_china', label: 'China (Mainland)', icon: '🇨🇳', languages: ['zh_cn'] },
-      { value: 'cjk_taiwan', label: 'Taiwan', icon: '🇹🇼', languages: ['zh_tw'] },
-      { value: 'cjk_hongkong', label: 'Hong Kong', icon: '🇭🇰', languages: ['zh_hk'] },
-      { value: 'cjk_japan', label: 'Japan', icon: '🇯🇵', languages: ['ja'] },
-      { value: 'cjk_korea', label: 'Korea', icon: '🇰🇷', languages: ['ko'] },
-    ]
-  },
-  { 
-    value: 'india', label: 'India', icon: '🇮🇳', 
-    languages: ['hi', 'en_in', 'te', 'kn', 'ta', 'mr', 'bn', 'gu', 'ml', 'pa', 'or', 'as', 'ks', 'ne', 'sd', 'ur', 'si', 'dv', 'bho', 'mai', 'kok', 'doi', 'mni', 'sat'],
-    subRegions: [
-      { value: 'india_north', label: 'North India', icon: '🏔️', languages: ['hi', 'pa', 'ur', 'ks', 'doi'] },
-      { value: 'india_south', label: 'South India', icon: '🌴', languages: ['te', 'kn', 'ta', 'ml'] },
-      { value: 'india_east', label: 'East India', icon: '🌊', languages: ['bn', 'or', 'as', 'mni', 'sat'] },
-      { value: 'india_west', label: 'West India', icon: '🏖️', languages: ['mr', 'gu', 'kok', 'sd'] },
-      { value: 'india_pan', label: 'Pan-India', icon: '🇮🇳', languages: ['hi', 'en_in'] },
-    ]
-  },
-  { 
-    value: 'mena', label: 'MENA', icon: '🇸🇦', 
-    languages: ['ar_sa', 'ar_eg', 'ar_ae', 'ar_ma', 'ar_dz', 'ar_tn', 'ar_lb', 'ar_jo', 'ar_iq', 'ar_kw', 'ar_bh', 'ar_qa', 'ar_om', 'ar_ye', 'ar_ly', 'ar_sd', 'he', 'fa', 'ps', 'ku', 'tr', 'az'],
-    subRegions: [
-      { value: 'mena_gcc', label: 'GCC States', icon: '🇦🇪', languages: ['ar_sa', 'ar_ae', 'ar_kw', 'ar_bh', 'ar_qa', 'ar_om'] },
-      { value: 'mena_levant', label: 'Levant', icon: '🇱🇧', languages: ['ar_lb', 'ar_jo', 'ar_iq'] },
-      { value: 'mena_north_africa', label: 'North Africa', icon: '🇲🇦', languages: ['ar_ma', 'ar_dz', 'ar_tn', 'ar_ly', 'ar_eg'] },
-      { value: 'mena_iran', label: 'Iran/Afghanistan', icon: '🇮🇷', languages: ['fa', 'ps', 'ku'] },
-      { value: 'mena_turkey', label: 'Turkey/Azerbaijan', icon: '🇹🇷', languages: ['tr', 'az'] },
-    ]
-  },
-  { 
-    value: 'sea', label: 'Southeast Asia', icon: '🇸🇬', 
-    languages: ['id', 'ms', 'th', 'vi', 'fil', 'tl', 'my', 'km', 'lo', 'jv', 'su', 'ceb', 'ilo', 'war', 'bcl'],
-    subRegions: [
-      { value: 'sea_mainland', label: 'Mainland SEA', icon: '🇹🇭', languages: ['th', 'vi', 'my', 'km', 'lo'] },
-      { value: 'sea_maritime', label: 'Maritime SEA', icon: '🇮🇩', languages: ['id', 'ms', 'jv', 'su'] },
-      { value: 'sea_philippines', label: 'Philippines', icon: '🇵🇭', languages: ['fil', 'tl', 'ceb', 'ilo', 'war', 'bcl'] },
-    ]
-  },
-  { 
-    value: 'latam', label: 'Latin America', icon: '🇧🇷', 
-    languages: ['es_ar', 'es_mx', 'es_co', 'es_cl', 'es_pe', 'es_ve', 'es_ec', 'es_bo', 'es_py', 'es_uy', 'es_cr', 'es_pa', 'es_cu', 'es_do', 'es_pr', 'es_gt', 'es_hn', 'es_sv', 'es_ni', 'pt_br', 'ht', 'gn', 'qu', 'ay'],
-    subRegions: [
-      { value: 'latam_brazil', label: 'Brazil', icon: '🇧🇷', languages: ['pt_br'] },
-      { value: 'latam_southern_cone', label: 'Southern Cone', icon: '🇦🇷', languages: ['es_ar', 'es_cl', 'es_uy', 'es_py'] },
-      { value: 'latam_andean', label: 'Andean', icon: '🏔️', languages: ['es_co', 'es_pe', 'es_ec', 'es_bo', 'es_ve', 'qu', 'ay'] },
-      { value: 'latam_central', label: 'Central America', icon: '🇨🇷', languages: ['es_cr', 'es_pa', 'es_gt', 'es_hn', 'es_sv', 'es_ni'] },
-      { value: 'latam_caribbean', label: 'Caribbean', icon: '🏝️', languages: ['es_cu', 'es_do', 'es_pr', 'ht'] },
-    ]
-  },
-  { 
-    value: 'africa', label: 'Africa', icon: '🌍', 
-    languages: ['en_za', 'en_ng', 'en_ke', 'en_gh', 'af', 'zu', 'xh', 'st', 'tn', 'sw', 'am', 'om', 'ti', 'so', 'ha', 'ig', 'yo', 'rw', 'mg', 'sn', 'nd', 'ny', 'lg'],
-    subRegions: [
-      { value: 'africa_west', label: 'West Africa', icon: '🇳🇬', languages: ['en_ng', 'en_gh', 'ha', 'ig', 'yo'] },
-      { value: 'africa_east', label: 'East Africa', icon: '🇰🇪', languages: ['en_ke', 'sw', 'am', 'om', 'ti', 'so', 'rw', 'lg'] },
-      { value: 'africa_south', label: 'Southern Africa', icon: '🇿🇦', languages: ['en_za', 'af', 'zu', 'xh', 'st', 'tn', 'sn', 'nd', 'ny'] },
-      { value: 'africa_central', label: 'Central Africa', icon: '🌍', languages: ['fr', 'sw', 'mg'] },
-    ]
-  },
-  { 
-    value: 'oceania', label: 'Oceania', icon: '🇦🇺', 
-    languages: ['en_au', 'en_nz', 'mi', 'sm', 'to', 'fj', 'ty', 'haw'],
-    subRegions: [
-      { value: 'oceania_aus', label: 'Australia', icon: '🇦🇺', languages: ['en_au'] },
-      { value: 'oceania_nz', label: 'New Zealand', icon: '🇳🇿', languages: ['en_nz', 'mi'] },
-      { value: 'oceania_pacific', label: 'Pacific Islands', icon: '🏝️', languages: ['sm', 'to', 'fj', 'ty', 'haw'] },
-    ]
-  },
-];
-
-// Comprehensive Language names (140+ languages)
-const LANGUAGE_NAMES: Record<string, string> = {
-  // English variants
-  en: 'English (US)', en_us: 'English (US)', en_gb: 'English (UK)', en_au: 'English (Australia)', 
-  en_nz: 'English (New Zealand)', en_in: 'English (India)', en_za: 'English (South Africa)',
-  en_ng: 'English (Nigeria)', en_ke: 'English (Kenya)', en_gh: 'English (Ghana)',
-  // Spanish variants
-  es: 'Spanish (Spain)', es_mx: 'Spanish (Mexico)', es_us: 'Spanish (US)', es_ar: 'Spanish (Argentina)',
-  es_co: 'Spanish (Colombia)', es_cl: 'Spanish (Chile)', es_pe: 'Spanish (Peru)', es_ve: 'Spanish (Venezuela)',
-  es_ec: 'Spanish (Ecuador)', es_bo: 'Spanish (Bolivia)', es_py: 'Spanish (Paraguay)', es_uy: 'Spanish (Uruguay)',
-  es_cr: 'Spanish (Costa Rica)', es_pa: 'Spanish (Panama)', es_cu: 'Spanish (Cuba)', es_do: 'Spanish (Dominican Rep)',
-  es_pr: 'Spanish (Puerto Rico)', es_gt: 'Spanish (Guatemala)', es_hn: 'Spanish (Honduras)',
-  es_sv: 'Spanish (El Salvador)', es_ni: 'Spanish (Nicaragua)',
-  // Portuguese variants
-  pt: 'Portuguese', pt_br: 'Portuguese (Brazil)', pt_pt: 'Portuguese (Portugal)',
-  // French variants
-  fr: 'French (France)', fr_ca: 'French (Canada)', fr_be: 'French (Belgium)', fr_ch: 'French (Switzerland)',
-  // German variants
-  de: 'German (Germany)', de_at: 'German (Austria)', de_ch: 'German (Switzerland)',
-  // Chinese variants
-  zh: 'Chinese', zh_cn: 'Chinese (Simplified)', zh_tw: 'Chinese (Traditional)', zh_hk: 'Chinese (Hong Kong)',
-  // Arabic variants (7 dialects)
-  ar: 'Arabic (Standard)', ar_sa: 'Arabic (Saudi)', ar_eg: 'Arabic (Egyptian)', ar_ae: 'Arabic (UAE)',
-  ar_ma: 'Arabic (Moroccan)', ar_dz: 'Arabic (Algerian)', ar_tn: 'Arabic (Tunisian)', ar_lb: 'Arabic (Lebanese)',
-  ar_jo: 'Arabic (Jordanian)', ar_iq: 'Arabic (Iraqi)', ar_kw: 'Arabic (Kuwaiti)', ar_bh: 'Arabic (Bahraini)',
-  ar_qa: 'Arabic (Qatari)', ar_om: 'Arabic (Omani)', ar_ye: 'Arabic (Yemeni)', ar_ly: 'Arabic (Libyan)',
-  ar_sd: 'Arabic (Sudanese)',
-  // Dutch variants
-  nl: 'Dutch (Netherlands)', nl_be: 'Dutch (Belgium/Flemish)',
-  // European languages
-  it: 'Italian', pl: 'Polish', cs: 'Czech', sk: 'Slovak', hu: 'Hungarian',
-  ro: 'Romanian', bg: 'Bulgarian', el: 'Greek', sv: 'Swedish', da: 'Danish',
-  no: 'Norwegian', fi: 'Finnish', et: 'Estonian', lv: 'Latvian', lt: 'Lithuanian',
-  sl: 'Slovenian', hr: 'Croatian', sr: 'Serbian', bs: 'Bosnian', mk: 'Macedonian',
-  sq: 'Albanian', uk: 'Ukrainian', be: 'Belarusian', ru: 'Russian',
-  ga: 'Irish', cy: 'Welsh', gd: 'Scottish Gaelic', mt: 'Maltese', lb: 'Luxembourgish',
-  is: 'Icelandic', fo: 'Faroese', ca: 'Catalan', gl: 'Galician', eu: 'Basque', ast: 'Asturian',
-  // CJK
-  ja: 'Japanese', ko: 'Korean', mn: 'Mongolian',
-  // Indian languages (24+)
-  hi: 'Hindi', te: 'Telugu', kn: 'Kannada', ta: 'Tamil', mr: 'Marathi', bn: 'Bengali',
-  gu: 'Gujarati', ml: 'Malayalam', pa: 'Punjabi', or: 'Odia', as: 'Assamese',
-  ks: 'Kashmiri', ne: 'Nepali', sd: 'Sindhi', ur: 'Urdu', si: 'Sinhala', dv: 'Dhivehi',
-  bho: 'Bhojpuri', mai: 'Maithili', kok: 'Konkani', doi: 'Dogri', mni: 'Manipuri', sat: 'Santali',
-  // MENA
-  he: 'Hebrew', fa: 'Persian/Farsi', ps: 'Pashto', ku: 'Kurdish', tr: 'Turkish', az: 'Azerbaijani',
-  // Southeast Asian
-  id: 'Indonesian', ms: 'Malay', th: 'Thai', vi: 'Vietnamese', fil: 'Filipino', tl: 'Tagalog',
-  my: 'Burmese', km: 'Khmer', lo: 'Lao', jv: 'Javanese', su: 'Sundanese',
-  ceb: 'Cebuano', ilo: 'Ilocano', war: 'Waray', bcl: 'Bikol',
-  // Latin American indigenous
-  ht: 'Haitian Creole', gn: 'Guaraní', qu: 'Quechua', ay: 'Aymara',
-  // African languages
-  af: 'Afrikaans', zu: 'Zulu', xh: 'Xhosa', st: 'Sotho', tn: 'Tswana',
-  sw: 'Swahili', am: 'Amharic', om: 'Oromo', ti: 'Tigrinya', so: 'Somali',
-  ha: 'Hausa', ig: 'Igbo', yo: 'Yoruba', rw: 'Kinyarwanda', mg: 'Malagasy',
-  sn: 'Shona', nd: 'Ndebele', ny: 'Chewa', lg: 'Luganda',
-  // Oceanian
-  mi: 'Māori', sm: 'Samoan', to: 'Tongan', fj: 'Fijian', ty: 'Tahitian', haw: 'Hawaiian',
-};
+// Regions & Languages now imported from shared @/config/regionConfig
+// Use MASTER_REGION_GROUPS, getLanguagesForRegions, buildRegionDropdownOptions, toggleParentRegion
 
 // ============================================
 // AI Providers - Following Master Routing Registry
@@ -848,7 +691,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     category: 'marketing',
     videoStyle: 'motion_graphics',
     capabilities: [] as string[],
-    regions: ['western'] as string[],
+    regions: ['NAM', 'NAM_US', 'NAM_CA', 'NAM_US_SOUTH', 'NAM_US_WEST'] as string[],
     languages: ['en'] as string[],
     providers: DEFAULT_LOCKED_PROVIDERS,
     platforms: ['youtube', 'tiktok'] as string[],
@@ -900,38 +743,11 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     }
   }, [open]);
 
-  // Build flat region options with sub-regions for dropdown
-  const regionOptions = REGIONS.flatMap(r => {
-    const parent = { value: r.value, label: `${r.icon} ${r.label}`, icon: r.icon };
-    const subs = (r.subRegions || []).map(sr => ({
-      value: sr.value,
-      label: `  ↳ ${sr.icon} ${sr.label}`,
-      icon: sr.icon,
-    }));
-    return [parent, ...subs];
-  });
+  // Build flat region options from shared config
+  const regionOptions = buildRegionDropdownOptions();
 
-  // Get all available languages based on selected regions (including sub-region languages)
-  const availableLanguages = [...new Set(
-    REGIONS
-      .filter(r => formData.regions.includes(r.value) || 
-        r.subRegions?.some(sr => formData.regions.includes(sr.value))
-      )
-      .flatMap(r => {
-        let langs = [...r.languages];
-        // Also add sub-region specific languages
-        r.subRegions?.forEach(sr => {
-          if (formData.regions.includes(r.value) || formData.regions.includes(sr.value)) {
-            langs.push(...sr.languages);
-          }
-        });
-        return langs;
-      })
-  )].map(code => ({
-    value: code,
-    label: LANGUAGE_NAMES[code] || code,
-    icon: ''
-  })).sort((a, b) => a.label.localeCompare(b.label));
+  // Get all available languages based on selected regions
+  const availableLanguages = getLanguagesForRegions(formData.regions);
 
   // Update languages when regions change
   useEffect(() => {
@@ -940,7 +756,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       ...prev,
       languages: prev.languages.filter(l => validLangCodes.includes(l)).length > 0 
         ? prev.languages.filter(l => validLangCodes.includes(l))
-        : validLangCodes.slice(0, 1),
+        : validLangCodes.slice(0, 1) as string[],
     }));
   }, [formData.regions.join(',')]);
 
@@ -1041,7 +857,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       onCreated?.();
       setFormData({
         name: '', description: '', category: 'marketing', videoStyle: 'motion_graphics',
-        capabilities: [], regions: ['western'], languages: ['en'],
+        capabilities: [], regions: ['NAM', 'NAM_US', 'NAM_CA', 'NAM_US_SOUTH', 'NAM_US_WEST'], languages: ['en'],
         providers: DEFAULT_LOCKED_PROVIDERS, platforms: ['youtube', 'tiktok'], aiPrompt: '',
       });
     } catch (err: any) {
@@ -1190,24 +1006,13 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 options={regionOptions}
                 selected={formData.regions}
                 onToggle={(v) => {
-                  // If toggling a parent region, also toggle all sub-regions
-                  const parentRegion = REGIONS.find(r => r.value === v);
-                  if (parentRegion?.subRegions) {
-                    const subValues = parentRegion.subRegions.map(sr => sr.value);
-                    const isSelected = formData.regions.includes(v);
-                    if (isSelected) {
-                      // Deselect parent + all subs
-                      setFormData(prev => ({
-                        ...prev,
-                        regions: prev.regions.filter(r => r !== v && !subValues.includes(r))
-                      }));
-                    } else {
-                      // Select parent + all subs
-                      setFormData(prev => ({
-                        ...prev,
-                        regions: [...new Set([...prev.regions, v, ...subValues])]
-                      }));
-                    }
+                  // Check if it's a parent region
+                  const isParent = MASTER_REGION_GROUPS.some(g => g.parent === v);
+                  if (isParent) {
+                    setFormData(prev => ({
+                      ...prev,
+                      regions: toggleParentRegion(v, prev.regions),
+                    }));
                   } else {
                     toggleArrayItem('regions', v);
                   }
