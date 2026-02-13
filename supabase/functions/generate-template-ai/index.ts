@@ -166,8 +166,11 @@ pixar_style, anime_style, ppt_animation, slideshow, voice_clone, viseme_sync,
 animatediff, svd, character_animation, video_extend, video_upscale, 
 multi_language, regional_tts, avatar_lipsync, realtime_stt
 
-## Available Regions (14 total):
-western, europe, cjk, india, mena, africa, latam, sea, caribbean, pakistan, indonesia, russia, central_asia, oceania
+## Available Regions (use these EXACT codes):
+NAM, NAM_US, NAM_CA, NAM_US_SOUTH, NAM_US_WEST, EUR, EUR_WEST, EUR_NORTH, EUR_SOUTH, EUR_CENTRAL, INDIA, INDIA_NORTH, INDIA_SOUTH, INDIA_EAST, INDIA_WEST, MENA, MENA_GCC, MENA_LEVANT, MENA_NORTH_AFRICA, MENA_EGYPT, CJK, CJK_JP, CJK_KR, CJK_CN, LATAM, LATAM_BR, LATAM_MX, SEA, SEA_ID, SEA_PH, AFRICA, AFRICA_WEST, AFRICA_EAST, OCEANIA, TURKEY, PAKISTAN, BANGLADESH, CARIBBEAN, EASTERN_EUR, CENTRAL_ASIA
+
+## Available Languages (BCP47 codes):
+en, es, fr, de, pt, it, nl, pl, ru, ja, ko, zh, hi, ta, te, kn, ml, bn, gu, mr, pa, ur, ar, he, tr, id, ms, th, vi, sw, ha, yo, ig, am, zu, fil, my, km, lo, si, ne, ka, az, uk, ro, cs, hu, sk, bg, hr, sr, el, da, sv, fi, nb, ca, eu, gl
 
 ## Available Industries (40+ total):
 TECHNOLOGY: saas, software, ai_ml, cybersecurity, cloud, fintech, edtech, healthtech
@@ -197,7 +200,9 @@ Return a JSON object with this exact structure:
   "category": "one from the 21 categories above",
   "videoStyle": "one from the 43 styles above",
   "capabilities": ["array from 25 capabilities - include at least 3-5 relevant ones"],
-  "regions": ["array from 14 regions - include relevant target regions"],
+  "regions": ["array using EXACT region codes above - include parent AND sub-regions"],
+  "languages": ["array using BCP47 codes above - match the selected regions"],
+  "platforms": ["from: tiktok, instagram_reels, instagram_feed, instagram_stories, youtube, youtube_shorts, facebook, linkedin, x_twitter, snapchat, landing_page, blog_post, email_campaign, newsletter, presentation, webinar, google_ads, meta_ads, display_ads, whatsapp, tv_broadcast"],
   "duration": 60,
   "industries": ["array from industries - be specific"],
   "aiProviders": {
@@ -228,7 +233,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<string | null
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: `${TEMPLATE_GENERATION_PROMPT}\n\nUser request: ${prompt}` }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
+        generationConfig: { temperature: 0.9, maxOutputTokens: 2000 }
       }),
     });
 
