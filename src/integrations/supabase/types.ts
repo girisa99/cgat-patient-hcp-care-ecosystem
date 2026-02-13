@@ -4622,6 +4622,68 @@ export type Database = {
         }
         Relationships: []
       }
+      content_intents: {
+        Row: {
+          category: string
+          created_at: string
+          default_styles: string[] | null
+          description: string
+          icon: string | null
+          id: string
+          intent_key: string
+          is_active: boolean
+          is_system_default: boolean
+          label: string
+          metadata: Json | null
+          parent_intent_id: string | null
+          sort_order: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          default_styles?: string[] | null
+          description: string
+          icon?: string | null
+          id?: string
+          intent_key: string
+          is_active?: boolean
+          is_system_default?: boolean
+          label: string
+          metadata?: Json | null
+          parent_intent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          default_styles?: string[] | null
+          description?: string
+          icon?: string | null
+          id?: string
+          intent_key?: string
+          is_active?: boolean
+          is_system_default?: boolean
+          label?: string
+          metadata?: Json | null
+          parent_intent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_intents_parent_intent_id_fkey"
+            columns: ["parent_intent_id"]
+            isOneToOne: false
+            referencedRelation: "content_intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_shares: {
         Row: {
           content_id: string

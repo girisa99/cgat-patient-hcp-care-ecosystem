@@ -53,7 +53,8 @@ export { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
 export { HeroBannerCarouselMode, HERO_BANNER_SLIDES } from './HeroBannerCarouselMode';
 
 export { WorkflowContextBanner } from './WorkflowContextBanner';
-export { CreateContextSelector, CONTENT_INTENT_REGISTRY, getIntentById, getIntentsByCategory, type ContentIntent } from './CreateContextSelector';
+export { CreateContextSelector, type ContentIntent } from './CreateContextSelector';
+export { useContentIntents } from '@/hooks/useContentIntents';
 
 // Re-export shared authoring components for convenience
 export { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';

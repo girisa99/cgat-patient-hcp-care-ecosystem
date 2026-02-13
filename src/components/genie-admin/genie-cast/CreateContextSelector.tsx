@@ -22,46 +22,10 @@ import {
 import { Sparkles, Globe, LayoutTemplate } from 'lucide-react';
 import type { UseRegionalDetectionReturn } from '@/hooks/useRegionalDetection';
 import type { UseProductContextReturn } from '@/hooks/useProductContext';
+import { useContentIntents, type ContentIntent } from '@/hooks/useContentIntents';
 
-// ============================================================================
-// INTENT REGISTRY — Database-ready, extensible without code changes
-// ============================================================================
-
-export interface ContentIntent {
-  id: string;
-  label: string;
-  description: string;
-  category: 'marketing' | 'education' | 'enterprise' | 'social';
-  defaultStyles?: string[];
-}
-
-/**
- * Content intent registry. In future, this will be loaded from a DB table
- * (e.g., `content_intents`). For now, defined as a typed constant for
- * immediate use with zero hardcoding in components.
- */
-export const CONTENT_INTENT_REGISTRY: ContentIntent[] = [
-  { id: 'product-demo', label: 'Product Demo', description: 'Showcase product features', category: 'marketing', defaultStyles: ['product_demo'] },
-  { id: 'hero-banner', label: 'Hero Banner', description: 'Landing page hero video', category: 'marketing', defaultStyles: ['hook_videos'] },
-  { id: 'educational', label: 'Educational', description: 'Training & learning content', category: 'education', defaultStyles: ['educational'] },
-  { id: 'testimonial', label: 'Testimonial', description: 'Customer success stories', category: 'marketing', defaultStyles: ['ugc_avatar_photorealistic'] },
-  { id: 'case-study', label: 'Case Study', description: 'In-depth customer stories', category: 'enterprise', defaultStyles: ['smart_storytelling'] },
-  { id: 'social-short', label: 'Social Short', description: 'Short-form social content', category: 'social', defaultStyles: ['hook_videos'] },
-  { id: 'how-to', label: 'How-To Guide', description: 'Step-by-step tutorials', category: 'education', defaultStyles: ['educational'] },
-  { id: 'thought-leadership', label: 'Thought Leadership', description: 'Industry expert content', category: 'enterprise', defaultStyles: ['smart_storytelling'] },
-  { id: 'explainer', label: 'Explainer', description: 'Concept explainer video', category: 'education', defaultStyles: ['educational', 'animation_3d_explainer'] },
-  { id: 'internal-comms', label: 'Internal Comms', description: 'Company announcements', category: 'enterprise', defaultStyles: ['corporate_training'] },
-  { id: 'event-promo', label: 'Event Promo', description: 'Event promotion & recap', category: 'marketing', defaultStyles: ['event_recap'] },
-  { id: 'investor-update', label: 'Investor Update', description: 'Stakeholder communications', category: 'enterprise', defaultStyles: ['investor_pitch'] },
-];
-
-/** Get intent by ID */
-export const getIntentById = (id: string): ContentIntent | undefined =>
-  CONTENT_INTENT_REGISTRY.find(i => i.id === id);
-
-/** Get intents by category */
-export const getIntentsByCategory = (category: ContentIntent['category']): ContentIntent[] =>
-  CONTENT_INTENT_REGISTRY.filter(i => i.category === category);
+// Re-export for backward compatibility
+export type { ContentIntent } from '@/hooks/useContentIntents';
 
 // ============================================================================
 // COMPONENT PROPS
@@ -101,7 +65,8 @@ export const CreateContextSelector: React.FC<CreateContextSelectorProps> = ({
   onIntentSelected,
   className,
 }) => {
-  const selectedIntentData = selectedIntent ? getIntentById(selectedIntent) : null;
+  const { intents, getByKey } = useContentIntents();
+  const selectedIntentData = selectedIntent ? getByKey(selectedIntent) : null;
 
   return (
     <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${className || ''}`}>
@@ -127,8 +92,8 @@ export const CreateContextSelector: React.FC<CreateContextSelectorProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">— Select Intent —</SelectItem>
-              {CONTENT_INTENT_REGISTRY.map((intent) => (
-                <SelectItem key={intent.id} value={intent.id}>
+              {intents.map((intent) => (
+                <SelectItem key={intent.intent_key} value={intent.intent_key}>
                   {intent.label}
                 </SelectItem>
               ))}

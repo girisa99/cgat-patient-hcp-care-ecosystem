@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { CONTENT_INTENT_REGISTRY, type ContentIntent, getIntentsByCategory } from '../CreateContextSelector';
+import { useContentIntents, type ContentIntent } from '@/hooks/useContentIntents';
 
 interface IntentSelectorProps {
   selectedIntent: string | null;
@@ -44,8 +44,9 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
   onIntentConfirmed,
   className,
 }) => {
+  const { intents, getByKey, getByCategory } = useContentIntents();
   const selectedIntentData = selectedIntent
-    ? CONTENT_INTENT_REGISTRY.find(i => i.id === selectedIntent)
+    ? getByKey(selectedIntent)
     : null;
 
   return (
@@ -81,15 +82,15 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
             </SelectTrigger>
             <SelectContent className="z-[100000]">
               {CATEGORY_ORDER.map((category) => {
-                const intents = getIntentsByCategory(category);
-                if (intents.length === 0) return null;
+                const categoryIntents = getByCategory(category);
+                if (categoryIntents.length === 0) return null;
                 return (
                   <SelectGroup key={category}>
                     <SelectLabel className="text-xs font-semibold">
                       {CATEGORY_LABELS[category]}
                     </SelectLabel>
-                    {intents.map((intent) => (
-                      <SelectItem key={intent.id} value={intent.id}>
+                    {categoryIntents.map((intent) => (
+                      <SelectItem key={intent.intent_key} value={intent.intent_key}>
                         <div className="flex items-center gap-2">
                           <span>{intent.label}</span>
                           <span className="text-muted-foreground text-xs">— {intent.description}</span>
@@ -112,7 +113,7 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
                 <span className="font-medium">{selectedIntentData.label}</span>
-                {selectedIntentData.defaultStyles?.slice(0, 1).map(s => (
+                {selectedIntentData.default_styles?.slice(0, 1).map(s => (
                   <Badge key={s} variant="secondary" className="text-[10px]">
                     {s.replace(/_/g, ' ')}
                   </Badge>
