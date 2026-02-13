@@ -552,7 +552,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, region, preferredProvider } = await req.json();
+    const { prompt, region, preferredProvider, context, seed } = await req.json();
 
     if (!prompt || typeof prompt !== 'string') {
       return new Response(
@@ -561,17 +561,44 @@ serve(async (req) => {
       );
     }
 
+    // Build enriched prompt with user selections for unique results
+    const contextParts: string[] = [`User request: ${prompt}`];
+    if (context?.selectedCapabilities?.length) {
+      contextParts.push(`User has selected these AI capabilities: ${context.selectedCapabilities.join(', ')}`);
+    }
+    if (context?.selectedVideoStyles?.length) {
+      contextParts.push(`User prefers these video styles: ${context.selectedVideoStyles.join(', ')}`);
+    }
+    if (context?.selectedPlatforms?.length) {
+      contextParts.push(`Target platforms: ${context.selectedPlatforms.join(', ')}`);
+    }
+    if (context?.selectedRegions?.length) {
+      contextParts.push(`Target regions: ${context.selectedRegions.join(', ')}`);
+    }
+    if (context?.selectedLanguages?.length) {
+      contextParts.push(`Target languages: ${context.selectedLanguages.join(', ')}`);
+    }
+    if (context?.category) {
+      contextParts.push(`Preferred category: ${context.category}`);
+    }
+    // Add uniqueness seed
+    contextParts.push(`Generation seed (use this to ensure unique creative output): ${seed || Date.now()}`);
+    contextParts.push(`IMPORTANT: Generate a UNIQUE and CREATIVE template. Do NOT repeat generic names like "Hero Banner Template". Use the seed to vary your output.`);
+    
+    const enrichedPrompt = contextParts.join('\n');
+
     console.log("🤖 Generating template via Universal AI Hub...");
     console.log("📝 Prompt:", prompt.substring(0, 100) + "...");
     console.log("🌍 Region:", region || 'global');
     console.log("⭐ Preferred provider:", preferredProvider || 'auto');
+    console.log("🎯 Context keys:", context ? Object.keys(context).join(', ') : 'none');
 
     // Get available providers
     const availableProviders = getAvailableProviders();
     console.log("✅ Available providers:", JSON.stringify(availableProviders));
 
-    // Use Universal AI Hub routing (NOT Lovable AI)
-    const { content, provider, providersChecked } = await generateWithUniversalAIHub(prompt);
+    // Use Universal AI Hub routing with enriched prompt
+    const { content, provider, providersChecked } = await generateWithUniversalAIHub(enrichedPrompt);
 
     if (!content) {
       // Return a smart default template if all providers fail

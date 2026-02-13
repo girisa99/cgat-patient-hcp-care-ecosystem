@@ -689,7 +689,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     name: '',
     description: '',
     category: 'marketing',
-    videoStyle: 'motion_graphics',
+    videoStyles: ['motion_graphics'] as string[],
     capabilities: [] as string[],
     regions: ['NAM', 'NAM_US', 'NAM_CA', 'NAM_US_SOUTH', 'NAM_US_WEST'] as string[],
     languages: ['en'] as string[],
@@ -782,7 +782,19 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     setAiGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-template-ai', {
-        body: { prompt: formData.aiPrompt, region: formData.regions[0] || 'western' }
+        body: { 
+          prompt: formData.aiPrompt, 
+          region: formData.regions[0] || 'western',
+          context: {
+            selectedCapabilities: formData.capabilities,
+            selectedVideoStyles: formData.videoStyles,
+            selectedPlatforms: formData.platforms,
+            selectedRegions: formData.regions,
+            selectedLanguages: formData.languages,
+            category: formData.category,
+          },
+          seed: Date.now(),
+        }
       });
       if (error) throw error;
       if (data?.template) {
@@ -815,7 +827,9 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
             name: t.name || prev.name,
             description: t.description || prev.description,
             category: t.category || prev.category,
-            videoStyle: t.videoStyle || prev.videoStyle,
+            videoStyles: Array.isArray(t.videoStyles) && t.videoStyles.length > 0 
+              ? t.videoStyles 
+              : (t.videoStyle ? [t.videoStyle] : prev.videoStyles),
             capabilities: Array.isArray(t.capabilities) && t.capabilities.length > 0 ? t.capabilities : prev.capabilities,
             regions: finalRegions as string[],
             platforms: Array.isArray(t.platforms) && t.platforms.length > 0 ? t.platforms : prev.platforms,
@@ -854,9 +868,9 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
         category: formData.category,
         estimated_duration_seconds: 60,
         target_platform: formData.platforms,
-        industry_tags: [formData.category, formData.videoStyle],
+        industry_tags: [formData.category, ...formData.videoStyles],
         default_settings: {
-          videoStyle: formData.videoStyle,
+          videoStyles: formData.videoStyles,
           providers: formData.providers,
           platforms: formData.platforms,
           languages: formData.languages,
@@ -864,13 +878,13 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
           capabilities: formData.capabilities,
         },
         style_preset: {
-          style: formData.videoStyle,
+          style: formData.videoStyles[0] || 'motion_graphics',
           capabilities: formData.capabilities,
         },
-        style_intent: formData.videoStyle,
+        style_intent: formData.videoStyles[0] || 'motion_graphics',
         target_regions: formData.regions,
         tone_modifier: formData.category,
-        aesthetic_keywords: [formData.videoStyle, ...formData.capabilities],
+        aesthetic_keywords: [...formData.videoStyles, ...formData.capabilities],
         is_system_default: false,
         created_by: user?.user?.id || null,
         is_active: true,
@@ -883,7 +897,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       setOpen(false);
       onCreated?.();
       setFormData({
-        name: '', description: '', category: 'marketing', videoStyle: 'motion_graphics',
+        name: '', description: '', category: 'marketing', videoStyles: ['motion_graphics'],
         capabilities: [], regions: ['NAM', 'NAM_US', 'NAM_CA', 'NAM_US_SOUTH', 'NAM_US_WEST'], languages: ['en'],
         providers: DEFAULT_LOCKED_PROVIDERS, platforms: ['youtube', 'tiktok'], aiPrompt: '',
       });
@@ -994,14 +1008,14 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 />
               </div>
 
-              {/* Video Style */}
+              {/* Video Styles (Multi-Select) */}
               <PortalDropdown
-                label="Video Style"
+                label="Video Styles"
                 options={VIDEO_STYLES}
-                selected={[formData.videoStyle]}
-                onToggle={(v) => setSingleValue('videoStyle', v)}
-                multi={false}
-                placeholder="Select style"
+                selected={formData.videoStyles}
+                onToggle={(v) => toggleArrayItem('videoStyles', v)}
+                multi={true}
+                placeholder="Select one or more styles"
               />
 
               {/* Platforms */}
