@@ -52,6 +52,7 @@ export {
 } from './GenieCastConsolidatedTabs';
 
 export { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
+export { HeroBannerCarouselMode, HERO_BANNER_SLIDES } from './HeroBannerCarouselMode';
 
 export { WorkflowContextBanner } from './WorkflowContextBanner';
 
