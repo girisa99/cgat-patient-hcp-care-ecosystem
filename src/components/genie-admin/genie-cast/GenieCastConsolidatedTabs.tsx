@@ -388,14 +388,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           ))}
         </TabsList>
 
-        {/* Workflow Context Banner - Shows active selections */}
-        <WorkflowContextBanner
-          session={castSession.session}
-          currentSubTab={currentSubTab}
-          onNavigate={handleBannerNavigate}
-          onResetSession={castSession.resetSession}
-          className="mt-4"
-        />
+        {/* Workflow Context Banner - Only show on PRODUCE/PUBLISH (CREATE uses guided wizard instead) */}
+        {activeMainTab !== 'create' && (
+          <WorkflowContextBanner
+            session={castSession.session}
+            currentSubTab={currentSubTab}
+            onNavigate={handleBannerNavigate}
+            onResetSession={castSession.resetSession}
+            className="mt-4"
+          />
+        )}
 
         {/* Sub-Tab Navigation — GUIDED for CREATE (no tabs shown), normal for PRODUCE/PUBLISH */}
         {activeMainTab !== 'create' && (
@@ -439,25 +441,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="create" className="mt-4 space-y-4">
           {/* GUIDED WIZARD: Show only the current step based on session state */}
-          {(() => {
-            const hasIntent = !!castSession.session.selectedIntent;
-            const hasTemplate = !!castSession.session.selectedTemplate;
-            const hasMessaging = !!castSession.session.approvedMessaging;
 
-            // Auto-determine which step the user should be on
-            const guidedStep = !hasIntent ? 'intent' 
-              : !hasTemplate ? 'templates'
-              : !hasMessaging ? 'messaging'
-              : 'assets';
-
-            // Sync sub-tab to guided step (if user hasn't manually navigated ahead)
-            // The WorkflowContextBanner handles back-navigation
-
-            return null; // Just sets up the guided step variable
-          })()}
-
-          {/* STEP 1: Intent (compact dropdown) */}
-          {!castSession.session.selectedIntent && currentSubTab === 'intent' && (
+          {/* STEP 1: Intent (compact dropdown) — only show if no intent AND no template yet */}
+          {!castSession.session.selectedIntent && !castSession.session.selectedTemplate && (
             <motion.div
               key="intent"
               initial={{ opacity: 0, y: 10 }}
@@ -472,12 +458,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           )}
 
           {/* STEP 1 DONE: Show intent as completed inline, allow change */}
-          {castSession.session.selectedIntent && (
+          {(castSession.session.selectedIntent || castSession.session.selectedTemplate) && (
             <div className="flex items-center gap-3 text-sm px-1">
               <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0">✓</div>
               <span className="text-muted-foreground">Intent:</span>
               <Badge variant="secondary" className="text-xs">
-                {CONTENT_INTENT_REGISTRY.find(i => i.id === castSession.session.selectedIntent)?.label || castSession.session.selectedIntent}
+                {castSession.session.selectedIntent 
+                  ? (CONTENT_INTENT_REGISTRY.find(i => i.id === castSession.session.selectedIntent)?.label || castSession.session.selectedIntent)
+                  : 'Auto-detected'}
               </Badge>
               <Button
                 variant="link"
@@ -494,8 +482,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           )}
 
           <AnimatePresence mode="wait">
-            {/* ── STEP 2: TEMPLATES ── Only visible after intent selected */}
-            {currentSubTab === 'templates' && castSession.session.selectedIntent && (
+            {/* ── STEP 2: TEMPLATES ── Visible after intent selected OR if template already exists */}
+            {currentSubTab === 'templates' && (castSession.session.selectedIntent || castSession.session.selectedTemplate) && (
               <motion.div
                 key="templates"
                 initial={{ opacity: 0, x: -20 }}
