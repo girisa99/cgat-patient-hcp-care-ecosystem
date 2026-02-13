@@ -9,6 +9,8 @@ import {
   CONTENT_TYPE_A2A_ROUTING,
   GlobalTierLevel
 } from "../_shared/generationContext.ts";
+import { generateImageWithRouting } from "../_shared/image-providers.ts";
+import { generateVideoWithRouting } from "../_shared/video-providers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -303,24 +305,24 @@ serve(async (req) => {
     // IMAGE GENERATION ACTION (Gemini Direct API)
     // ============================================
     if (action === 'image_generation') {
-      console.log(`[UniversalAI] Image generation - Provider: ${provider || 'gemini'}`);
+      const { style_intent: imgStyleIntent, region: imgRegion } = requestBody as any;
+      console.log(`[UniversalAI] Image generation via shared module - Style: ${imgStyleIntent || style || 'default'}, Provider: ${provider || 'auto'}`);
       
-      let imageResult;
-      if (provider === 'alibaba') {
-        imageResult = await callAlibabaImage(model || 'wan2.6-t2i', prompt, aspectRatio);
-      } else {
-        imageResult = await callGeminiImage(
-          model || 'gemini-2.0-flash-exp',
-          prompt,
-          systemPrompt,
-          aspectRatio,
-          style
-        );
-      }
+      const imageResult = await generateImageWithRouting(
+        prompt,
+        imgStyleIntent || style || undefined,
+        provider || undefined,
+        { model, aspectRatio, style, size: aspectRatio ? undefined : '1024x1024' }
+      );
       
       return new Response(JSON.stringify({
-        ...imageResult,
-        images: imageResult.imageUrl ? [{ image_url: { url: imageResult.imageUrl } }] : [],
+        content: imageResult.imageUrl,
+        imageUrl: imageResult.imageUrl,
+        isImage: true,
+        images: [{ image_url: { url: imageResult.imageUrl } }],
+        provider: imageResult.provider,
+        model: imageResult.model,
+        providerChain: imageResult.providerChain,
         timestamp: new Date().toISOString(),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -331,15 +333,19 @@ serve(async (req) => {
     // VIDEO GENERATION ACTION (Alibaba Wan 2.6 T2V)
     // ============================================
     if (action === 'generate_video') {
-      const { duration: videoDuration, aspectRatio: videoAR } = requestBody as any;
-      console.log(`[UniversalAI] Video generation - Provider: ${provider || 'alibaba'}`);
+      const { duration: videoDuration, aspectRatio: videoAR, style_intent: videoStyleIntent } = requestBody as any;
+      console.log(`[UniversalAI] Video generation via shared module - Provider: ${provider || 'auto'}`);
       
       try {
-        const videoResult = await callAlibabaVideo(
-          model || 'wan2.6-t2v',
+        const videoResult = await generateVideoWithRouting(
           prompt,
-          videoDuration || 5,
-          videoAR || aspectRatio || '16:9'
+          videoStyleIntent || style || undefined,
+          provider || undefined,
+          {
+            model,
+            duration: videoDuration || 5,
+            aspectRatio: videoAR || aspectRatio || '16:9',
+          }
         );
         
         return new Response(JSON.stringify({
@@ -524,27 +530,24 @@ Make it more detailed, engaging, and optimized for AI generation.`;
     }
     // Route image generation based on provider preference - Direct API calls
     else if (imageGeneration) {
-      console.log(`[UniversalAI] Image generation request - Provider: ${provider}, Model: ${model}`);
+      console.log(`[UniversalAI] Image generation (flag) via shared module - Provider: ${provider}, Model: ${model}`);
       
-      // Try provider-specific image generation first
       try {
-        if (provider === 'openai') {
-          // Use DALL-E for OpenAI
-          response = await callOpenAIImage(model || 'dall-e-3', prompt, aspectRatio, style);
-        } else if (provider === 'gemini') {
-          // Use Gemini image models directly
-          response = await callGeminiImage(model || 'gemini-2.0-flash-exp', prompt, systemPrompt, aspectRatio, style);
-        } else if (provider === 'alibaba') {
-          // Use Alibaba Wan 2.6 T2I
-          response = await callAlibabaImage(model || 'wan2.6-t2i', prompt, aspectRatio);
-        } else {
-          // Default: Use Gemini for image generation
-          response = await callGeminiImage(model || 'gemini-2.0-flash-exp', prompt, systemPrompt, aspectRatio, style);
-        }
+        const imgResult = await generateImageWithRouting(
+          prompt,
+          style || undefined,
+          provider || undefined,
+          { model, aspectRatio, style }
+        );
+        response = {
+          content: imgResult.imageUrl,
+          imageUrl: imgResult.imageUrl,
+          isImage: true,
+          usage: { prompt_tokens: 0, completion_tokens: 0 },
+        };
       } catch (imageError) {
-        // Fallback to OpenAI DALL-E if Gemini image generation fails
-        console.warn(`[UniversalAI] Primary image generation failed, falling back to DALL-E:`, imageError);
-        response = await callOpenAIImage('dall-e-3', prompt, aspectRatio, style);
+        console.warn(`[UniversalAI] All image providers failed:`, imageError);
+        throw imageError;
       }
     }
     // Route to appropriate handler based on provider for TEXT generation
