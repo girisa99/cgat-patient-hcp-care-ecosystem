@@ -246,10 +246,19 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   onScriptApproved,
 }) => {
   const [activeMainTab, setActiveMainTab] = useState<ConsolidatedTab>(defaultTab);
-  const [subTabs, setSubTabs] = useState<Record<ConsolidatedTab, string>>({
-    create: 'intent', // START with intent (Stage 2)
-    produce: 'generate',
-    publish: 'scheduler',
+  
+  // Smart sub-tab init: if session already has progress, skip past intent
+  const [subTabs, setSubTabs] = useState<Record<ConsolidatedTab, string>>(() => {
+    try {
+      const stored = localStorage.getItem('genie-cast-session');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // If intent or template already selected, start on templates (not intent)
+        const createSub = (parsed.selectedIntent || parsed.selectedTemplate) ? 'templates' : 'intent';
+        return { create: createSub, produce: 'generate', publish: 'scheduler' };
+      }
+    } catch {}
+    return { create: defaultSubTab || 'intent', produce: 'generate', publish: 'scheduler' };
   });
 
   // Initialize unified authoring hook for cross-functional workflow
@@ -496,7 +505,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0">✓</div>
               <span className="text-muted-foreground">Intent:</span>
               <Badge variant="secondary" className="text-xs">
-                {castSession.session.selectedIntent || 'Auto-detected'}
+                {castSession.session.selectedIntent || castSession.session.selectedTemplate?.styleIntent || castSession.session.selectedTemplate?.category || 'Select intent'}
               </Badge>
               <Button
                 variant="link"
