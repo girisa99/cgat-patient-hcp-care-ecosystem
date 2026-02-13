@@ -84,11 +84,22 @@ export function BlueprintTemplatesGrid({
   }, [onSelectBlueprint, toast]);
 
   // When a new template is created via CreateTemplateDialog, refetch and select it
-  const handleTemplateCreated = useCallback(() => {
+  const handleTemplateCreated = useCallback(async () => {
     setShowCreateDialog(false);
-    refetch(); // Refresh the blueprint list to include the new template
+    const { data: updated } = await refetch();
+    // Auto-select the most recently created template
+    if (updated && updated.length > 0) {
+      const sorted = [...updated].sort((a, b) => 
+        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      );
+      const newest = sorted[0];
+      if (newest) {
+        handleSelectTemplate(newest);
+        return;
+      }
+    }
     toast({ title: 'Template Created', description: 'Your custom template is ready. Select it to continue.' });
-  }, [refetch, toast]);
+  }, [refetch, toast, handleSelectTemplate]);
 
   const toggleComparison = (blueprintId: string) => {
     setSelectedForComparison(prev =>
@@ -308,7 +319,10 @@ export function BlueprintTemplatesGrid({
       )}
 
       {showCreateDialog && (
-        <CreateTemplateDialog onCreated={handleTemplateCreated} />
+        <CreateTemplateDialog 
+          onCreated={handleTemplateCreated}
+          initialContext={intentFilter ? { goal: intentFilter } : undefined}
+        />
       )}
 
       {showComparison && selectedForComparison.length >= 2 && (
