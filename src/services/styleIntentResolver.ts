@@ -4,11 +4,34 @@
   * Maps style_intent → provider chain based on 4-zone regional routing
   */
  
- export type StyleIntent = 
-   | 'photorealistic' | 'cinematic' | 'anime' | 'pixar-3d'
-   | 'watercolor' | 'minimalist' | 'corporate' | 'editorial'
-   | 'product-hero' | 'lifestyle' | 'documentary' | 'explainer'
-   | 'ugc-authentic' | 'luxury-fashion' | 'tech-startup';
+export type StyleIntent = 
+  // Core Production
+  | 'photorealistic' | 'cinematic' | 'anime' | 'pixar-3d'
+  | 'watercolor' | 'minimalist' | 'corporate' | 'editorial'
+  | 'product-hero' | 'lifestyle' | 'documentary' | 'explainer'
+  | 'ugc-authentic' | 'luxury-fashion' | 'tech-startup'
+  | 'crayon' | 'motion' | 'avatar' | 'lipsync' | '3d-object'
+  | 'diffusion' | 'technical-diagram'
+  // Cultural Heritage
+  | 'islamic-geometric' | 'hindu-mandala' | 'celtic-knotwork'
+  | 'african-tribal' | 'japanese-ukiyo-e' | 'chinese-ink-wash'
+  | 'persian-miniature' | 'aboriginal-dot-art' | 'mayan-aztec'
+  | 'nordic-viking' | 'ottoman-calligraphy' | 'thai-temple'
+  | 'korean-celadon' | 'moroccan-zellige' | 'byzantine-mosaic'
+  // Nature & Environment
+  | 'tropical-paradise' | 'arctic-aurora' | 'desert-dunes'
+  | 'rainforest' | 'underwater-ocean' | 'volcanic'
+  | 'savanna-wildlife' | 'himalayan' | 'mediterranean'
+  | 'cherry-blossom' | 'monsoon' | 'saharan-golden'
+  // Religious & Spiritual
+  | 'zen-meditation' | 'sufi-mystical' | 'cathedral-gothic'
+  | 'temple-sacred' | 'mosque-arabesque' | 'buddhist-serene'
+  | 'spiritual-cosmic' | 'synagogue-traditional'
+  // Regional Modern
+  | 'bollywood-vibrant' | 'k-pop-neon' | 'latin-fiesta'
+  | 'afrobeats-urban' | 'dubai-futuristic' | 'tokyo-cyberpunk'
+  | 'scandinavian-hygge' | 'mediterranean-rustic'
+  | 'brazilian-carnival' | 'nigerian-nollywood';
  
  export type ToneModifier = 'professional' | 'casual' | 'luxury' | 'playful' | 'formal' | 'warm';
  
@@ -31,7 +54,8 @@
  }
  
  // Style Intent → Image Provider Mapping (frozen per master registry)
- const STYLE_TO_IMAGE_PROVIDER: Record<StyleIntent, ProviderChain> = Object.freeze({
+// Hardcoded fallback — DB-driven video_style_registry takes priority
+const STYLE_TO_IMAGE_PROVIDER: Record<string, ProviderChain> = Object.freeze({
    'photorealistic': { primary: 'gemini-3-pro', secondary: 'vertex-imagen-3', tertiary: 'modelslab-flux', fallback: 'dalle-3' },
    'cinematic': { primary: 'vertex-veo-3', secondary: 'sora-2', tertiary: 'alibaba-wan-2.6', fallback: 'modelslab' },
    'anime': { primary: 'modelslab-anime', secondary: 'alibaba-wan-2.6', tertiary: 'replicate', fallback: 'modelslab' },
@@ -50,7 +74,7 @@
  });
  
  // Style Intent → Video Provider Mapping
- const STYLE_TO_VIDEO_PROVIDER: Record<StyleIntent, ProviderChain> = Object.freeze({
+ const STYLE_TO_VIDEO_PROVIDER: Record<string, ProviderChain> = Object.freeze({
    'photorealistic': { primary: 'vertex-veo-3', secondary: 'sora-2', tertiary: 'alibaba-wan-2.6', fallback: 'modelslab' },
    'cinematic': { primary: 'vertex-veo-3', secondary: 'sora-2', tertiary: 'alibaba-wan-2.6', fallback: 'modelslab' },
    'anime': { primary: 'alibaba-wan-2.6', secondary: 'modelslab', tertiary: 'replicate-svd', fallback: 'modelslab' },
@@ -129,7 +153,7 @@
   * Get style intent display name
   */
  export function getStyleIntentLabel(intent: StyleIntent): string {
-   const labels: Record<StyleIntent, string> = {
+   const labels: Record<string, string> = {
      'photorealistic': 'Photorealistic',
      'cinematic': 'Cinematic',
      'anime': 'Anime/Manga',
