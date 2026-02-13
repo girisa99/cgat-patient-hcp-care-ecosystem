@@ -47,6 +47,7 @@ interface BlueprintPreviewModalProps {
   onAssign?: (blueprint: VideoBlueprint, productId: string) => void;
   onRegenerateThumbnail?: (blueprintId: string, prompt: string) => void;
   isRegenerating?: boolean;
+  selectedVideoStyles?: any[]; // Pass selected styles for multi-style composition
 }
 
 export function BlueprintPreviewModal({
@@ -58,6 +59,7 @@ export function BlueprintPreviewModal({
   onAssign,
   onRegenerateThumbnail,
   isRegenerating,
+  selectedVideoStyles,
 }: BlueprintPreviewModalProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedScene, setExpandedScene] = useState<string | null>(null);
@@ -229,6 +231,7 @@ export function BlueprintPreviewModal({
                   scenes={scenes}
                   blueprintId={blueprint.id}
                   blueprintName={blueprint.name}
+                  selectedVideoStyles={selectedVideoStyles}
                 />
               </div>
             </TabsContent>

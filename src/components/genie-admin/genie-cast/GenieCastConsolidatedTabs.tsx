@@ -481,6 +481,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   }}
                   selectedBlueprintId={castSession.session.selectedTemplate?.id}
                   simpleMode={createMode.isSimple}
+                  selectedVideoStyles={selectedVideoStyles}
                 />
               </motion.div>
             )}
