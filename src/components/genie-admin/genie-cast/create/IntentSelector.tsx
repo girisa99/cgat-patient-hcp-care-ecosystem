@@ -1,17 +1,25 @@
 /**
- * INTENT SELECTOR - First step in CREATE workflow
+ * INTENT SELECTOR - Compact guided step for CREATE workflow
  * 
- * Shows all 12 content intents grouped by category.
- * User selects intent → auto-advances to Templates.
- * Returns immediately to naive users (no Apply button).
+ * Renders as a compact card with a dropdown selector (not full-screen cards).
+ * Designed for naive users: pick from dropdown → auto-advance to Templates.
  */
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ArrowRight, Check } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { CONTENT_INTENT_REGISTRY, type ContentIntent, getIntentsByCategory } from '../CreateContextSelector';
 
@@ -23,11 +31,11 @@ interface IntentSelectorProps {
 }
 
 const CATEGORY_ORDER = ['marketing', 'education', 'enterprise', 'social'] as const;
-const CATEGORY_LABELS: Record<ContentIntent['category'], { label: string; description: string }> = {
-  marketing: { label: '🎯 Marketing', description: 'Drive awareness & conversions' },
-  education: { label: '📚 Educational', description: 'Teach & train audiences' },
-  enterprise: { label: '🏢 Enterprise', description: 'Corporate & stakeholder comms' },
-  social: { label: '📱 Social', description: 'Short-form social content' },
+const CATEGORY_LABELS: Record<ContentIntent['category'], string> = {
+  marketing: '🎯 Marketing',
+  education: '📚 Educational',
+  enterprise: '🏢 Enterprise',
+  social: '📱 Social',
 };
 
 export const IntentSelector: React.FC<IntentSelectorProps> = ({
@@ -36,187 +44,91 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
   onIntentConfirmed,
   className,
 }) => {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-
-  const groupedIntents = CATEGORY_ORDER.map(category => ({
-    category,
-    label: CATEGORY_LABELS[category].label,
-    description: CATEGORY_LABELS[category].description,
-    intents: getIntentsByCategory(category),
-  })).filter(g => g.intents.length > 0);
-
-  const selectedIntentData = selectedIntent 
+  const selectedIntentData = selectedIntent
     ? CONTENT_INTENT_REGISTRY.find(i => i.id === selectedIntent)
     : null;
 
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Sparkles className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold">What are you creating?</h2>
-            <p className="text-sm text-muted-foreground">Choose your content intent to auto-filter templates</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Intent Groups */}
-      <div className="space-y-5">
-        {groupedIntents.map((group) => (
-          <motion.div
-            key={group.category}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-3"
-          >
-            {/* Category Header */}
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold">{group.label}</h3>
-              <p className="text-xs text-muted-foreground">{group.description}</p>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn('max-w-xl mx-auto', className)}
+    >
+      <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
+        <CardContent className="pt-6 space-y-4">
+          {/* Step indicator */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+              1
             </div>
+            <div>
+              <h3 className="text-lg font-semibold">What are you creating?</h3>
+              <p className="text-sm text-muted-foreground">Pick a content type to get started</p>
+            </div>
+          </div>
 
-            {/* Intent Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {group.intents.map((intent) => {
-                const isSelected = selectedIntent === intent.id;
-                const isHovered = hoveredId === intent.id;
-
+          {/* Compact dropdown selector */}
+          <Select
+            value={selectedIntent || ''}
+            onValueChange={(value) => {
+              onIntentSelect(value);
+            }}
+          >
+            <SelectTrigger className="h-12 text-base bg-background">
+              <SelectValue placeholder="Choose content type..." />
+            </SelectTrigger>
+            <SelectContent className="z-[100000]">
+              {CATEGORY_ORDER.map((category) => {
+                const intents = getIntentsByCategory(category);
+                if (intents.length === 0) return null;
                 return (
-                  <motion.button
-                    key={intent.id}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onMouseEnter={() => setHoveredId(intent.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                    onClick={() => {
-                      onIntentSelect(intent.id);
-                      // Auto-advance to templates on selection
-                      setTimeout(onIntentConfirmed, 200);
-                    }}
-                    className="text-left"
-                  >
-                    <Card
-                      className={cn(
-                        'cursor-pointer transition-all h-full',
-                        isSelected
-                          ? 'border-primary bg-primary/5 shadow-lg'
-                          : 'border-border/50 hover:border-primary/50 hover:shadow-md'
-                      )}
-                    >
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="text-base">{intent.label}</CardTitle>
-                          <AnimatePresence>
-                            {isSelected && (
-                              <motion.div
-                                initial={{ scale: 0, rotate: -180 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                exit={{ scale: 0, rotate: 180 }}
-                                transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                              >
-                                <Check className="w-5 h-5 text-primary" />
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                  <SelectGroup key={category}>
+                    <SelectLabel className="text-xs font-semibold">
+                      {CATEGORY_LABELS[category]}
+                    </SelectLabel>
+                    {intents.map((intent) => (
+                      <SelectItem key={intent.id} value={intent.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{intent.label}</span>
+                          <span className="text-muted-foreground text-xs">— {intent.description}</span>
                         </div>
-                        <CardDescription className="text-xs">
-                          {intent.description}
-                        </CardDescription>
-                      </CardHeader>
-
-                      <CardContent className="space-y-2">
-                        {/* Default styles badge */}
-                        {intent.defaultStyles && intent.defaultStyles.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {intent.defaultStyles.slice(0, 2).map((style) => (
-                              <Badge
-                                key={style}
-                                variant="secondary"
-                                className="text-[10px]"
-                              >
-                                {style.replace(/_/g, ' ')}
-                              </Badge>
-                            ))}
-                            {intent.defaultStyles.length > 2 && (
-                              <Badge variant="outline" className="text-[10px]">
-                                +{intent.defaultStyles.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Hover state: show action */}
-                        <AnimatePresence>
-                          {(isHovered || isSelected) && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -5 }}
-                              transition={{ duration: 0.2 }}
-                              className="pt-1"
-                            >
-                              <Button
-                                variant={isSelected ? 'default' : 'ghost'}
-                                size="sm"
-                                className="w-full h-7 text-xs gap-1"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  onIntentSelect(intent.id);
-                                  setTimeout(onIntentConfirmed, 200);
-                                }}
-                              >
-                                {isSelected ? 'Selected' : 'Select'}
-                                <ArrowRight className="w-3 h-3" />
-                              </Button>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </CardContent>
-                    </Card>
-                  </motion.button>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 );
               })}
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            </SelectContent>
+          </Select>
 
-      {/* Selected Intent Summary */}
-      <AnimatePresence>
-        {selectedIntentData && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="rounded-lg border border-primary/30 bg-primary/5 p-4"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-foreground">
-                  ✓ {selectedIntentData.label} selected
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Auto-filtering templates & assets for this intent. Jump to templates to continue.
-                </p>
+          {/* Selection confirmation + next step */}
+          {selectedIntentData && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="flex items-center justify-between gap-3 pt-2 border-t"
+            >
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <span className="font-medium">{selectedIntentData.label}</span>
+                {selectedIntentData.defaultStyles?.slice(0, 1).map(s => (
+                  <Badge key={s} variant="secondary" className="text-[10px]">
+                    {s.replace(/_/g, ' ')}
+                  </Badge>
+                ))}
               </div>
               <Button
                 onClick={onIntentConfirmed}
                 size="sm"
-                className="gap-1 text-xs"
+                className="gap-1.5"
               >
-                Go to Templates
-                <ArrowRight className="w-3 h-3" />
+                Next: Choose Template
+                <ArrowRight className="w-3.5 h-3.5" />
               </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            </motion.div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
 

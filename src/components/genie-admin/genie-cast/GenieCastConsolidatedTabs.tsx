@@ -98,7 +98,7 @@ import { HeroBannerCarouselMode } from './HeroBannerCarouselMode';
 // Import sub-components DIRECTLY to avoid circular dependency (index.ts re-exports this file)
 import { GenieCastOverview } from './GenieCastOverview';
 import { VideoStyleCards, type VideoStyleType } from './VideoStyleCards';
-import { CreateContextSelector } from './CreateContextSelector';
+import { CreateContextSelector, CONTENT_INTENT_REGISTRY } from './CreateContextSelector';
 import { AIProviderShowcase } from './AIProviderShowcase';
 import { MultiScreenshotGallery, type ProductGallery } from '../MultiScreenshotGallery';
 import { VideoGenerationMatrix } from '../VideoGenerationMatrix';
@@ -397,53 +397,71 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           className="mt-4"
         />
 
-        {/* Sub-Tab Navigation for Active Main Tab */}
-        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
-           {currentMainDef.subTabs.map((sub) => {
-             const isActive = currentSubTab === sub.id;
-             return (
-               <Button
-                 key={sub.id}
-                 variant="outline"
-                 size="sm"
-                 className={cn(
-                   "flex-shrink-0 gap-1.5 text-xs font-medium",
-                   isActive 
-                     ? currentMainDef.activeColor 
-                     : currentMainDef.inactiveColor
-                 )}
-                 onClick={() => setSubTab(activeMainTab, sub.id)}
-               >
-                 <sub.icon className="w-3.5 h-3.5" />
-                 {sub.label}
-               </Button>
-             );
-           })}
-           
-           {/* Pipeline indicator */}
-           <Separator orientation="vertical" className="h-6 mx-2" />
-           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-             <span className="font-medium">{activePipelines.length} active</span>
-             {inactivePipelines.length > 0 && (
-               <Badge variant="outline" className="text-[10px]">
-                 +{inactivePipelines.length} available
-               </Badge>
-             )}
-           </div>
-         </div>
+        {/* Sub-Tab Navigation — GUIDED for CREATE (no tabs shown), normal for PRODUCE/PUBLISH */}
+        {activeMainTab !== 'create' && (
+          <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
+            {currentMainDef.subTabs.map((sub) => {
+              const isActive = currentSubTab === sub.id;
+              return (
+                <Button
+                  key={sub.id}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "flex-shrink-0 gap-1.5 text-xs font-medium",
+                    isActive 
+                      ? currentMainDef.activeColor 
+                      : currentMainDef.inactiveColor
+                  )}
+                  onClick={() => setSubTab(activeMainTab, sub.id)}
+                >
+                  <sub.icon className="w-3.5 h-3.5" />
+                  {sub.label}
+                </Button>
+              );
+            })}
+            
+            {/* Pipeline indicator */}
+            <Separator orientation="vertical" className="h-6 mx-2" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-medium">{activePipelines.length} active</span>
+              {inactivePipelines.length > 0 && (
+                <Badge variant="outline" className="text-[10px]">
+                  +{inactivePipelines.length} available
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* CREATE TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="create" className="mt-4 space-y-4">
-          {/* INTENT SELECTOR (Stage 2) - First sub-tab showing 12 content intents */}
-          {currentSubTab === 'intent' && (
+          {/* GUIDED WIZARD: Show only the current step based on session state */}
+          {(() => {
+            const hasIntent = !!castSession.session.selectedIntent;
+            const hasTemplate = !!castSession.session.selectedTemplate;
+            const hasMessaging = !!castSession.session.approvedMessaging;
+
+            // Auto-determine which step the user should be on
+            const guidedStep = !hasIntent ? 'intent' 
+              : !hasTemplate ? 'templates'
+              : !hasMessaging ? 'messaging'
+              : 'assets';
+
+            // Sync sub-tab to guided step (if user hasn't manually navigated ahead)
+            // The WorkflowContextBanner handles back-navigation
+
+            return null; // Just sets up the guided step variable
+          })()}
+
+          {/* STEP 1: Intent (compact dropdown) */}
+          {!castSession.session.selectedIntent && currentSubTab === 'intent' && (
             <motion.div
               key="intent"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
             >
               <IntentSelector
                 selectedIntent={castSession.session.selectedIntent}
@@ -453,42 +471,31 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             </motion.div>
           )}
 
-          {/* Quick Start Card - only shows when no session is active */}
-          <QuickStartCard
-            hasActiveSession={!!castSession.session.selectedTemplate}
-            onQuickStart={(blueprint, styles) => {
-              castSession.selectTemplate({
-                id: blueprint.id,
-                name: blueprint.name,
-                category: blueprint.category,
-                thumbnailUrl: blueprint.thumbnail_url || undefined,
-                sceneCount: blueprint.scenes?.length || 0,
-                estimatedDuration: blueprint.estimated_duration_seconds,
-                styleIntent: (blueprint.default_settings as any)?.style_intent || 'corporate',
-              });
-              onStylesChange(styles);
-              // Jump straight to produce
-              setActiveMainTab('produce');
-              setSubTab('produce', 'generate');
-              toast.success('Quick start ready! Template & styles auto-selected.');
-            }}
-          />
-
-          {/* INTENT & REGION CONTEXT SELECTOR - Shows current selections */}
-          <CreateContextSelector
-            selectedIntent={castSession.session.selectedIntent}
-            selectedRegion={castSession.session.selectedRegion}
-            selectedProductId={castSession.session.selectedProductId}
-            regionalDetection={regionalDetection}
-            productContext={productContext}
-            onIntentChange={(intent) => castSession.selectIntent(intent)}
-            onProductChange={(productId) => castSession.selectProduct(productId)}
-            onIntentSelected={() => setSubTab('create', 'templates')}
-          />
+          {/* STEP 1 DONE: Show intent as completed inline, allow change */}
+          {castSession.session.selectedIntent && (
+            <div className="flex items-center gap-3 text-sm px-1">
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0">✓</div>
+              <span className="text-muted-foreground">Intent:</span>
+              <Badge variant="secondary" className="text-xs">
+                {CONTENT_INTENT_REGISTRY.find(i => i.id === castSession.session.selectedIntent)?.label || castSession.session.selectedIntent}
+              </Badge>
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs text-primary"
+                onClick={() => {
+                  castSession.selectIntent(null as any);
+                  setSubTab('create', 'intent');
+                }}
+              >
+                Change
+              </Button>
+            </div>
+          )}
 
           <AnimatePresence mode="wait">
-            {/* ── TEMPLATES ── First-class starting point */}
-            {currentSubTab === 'templates' && (
+            {/* ── STEP 2: TEMPLATES ── Only visible after intent selected */}
+            {currentSubTab === 'templates' && castSession.session.selectedIntent && (
               <motion.div
                 key="templates"
                 initial={{ opacity: 0, x: -20 }}
