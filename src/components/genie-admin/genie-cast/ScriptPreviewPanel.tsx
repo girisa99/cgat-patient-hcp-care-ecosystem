@@ -229,10 +229,10 @@ export function ScriptPreviewPanel({
         if (chapter.id === 'opening') {
           // Opening hook from messaging
           if (useApprovedMessaging && approvedMessaging?.hook) {
-            scriptText = `${approvedMessaging.hook} ${approvedMessaging.openingLine || 'Welcome to Genie Studio.'}`;
+            scriptText = `${approvedMessaging.hook} ${approvedMessaging.openingLine || 'Welcome to Genie Suite.'}`;
             sourceType = 'messaging';
           } else {
-            scriptText = 'Stop struggling with content creation. What if AI could do it all? Welcome to Genie Studio - where your wish is our command.';
+            scriptText = 'Stop struggling with content creation. What if AI could do it all? Welcome to Genie Suite - where your wish is our command.';
           }
         } else if (chapter.id === 'closing') {
           // Closing CTA from messaging
@@ -241,7 +241,7 @@ export function ScriptPreviewPanel({
             scriptText = `${differentiator} ${approvedMessaging.closingLine || ''} ${approvedMessaging.cta}`;
             sourceType = 'messaging';
           } else {
-            scriptText = 'The only platform with 206 AI pipelines across 70+ languages. Your wish is our command. Try Genie Studio free today.';
+            scriptText = 'The only platform with 206 AI pipelines across 70+ languages. Your wish is our command. Try Genie Suite free today.';
           }
         } else if (chapterProductId) {
           // Product-specific chapter

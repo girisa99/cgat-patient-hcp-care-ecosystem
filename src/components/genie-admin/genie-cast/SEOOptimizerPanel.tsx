@@ -169,7 +169,7 @@ export const SEOOptimizerPanel: React.FC = () => {
         description: v.description,
         tags: [], // Generate from title/description
         language_name: v.language_name,
-        product_name: 'Genie Studio',
+        product_name: 'Genie Suite',
       })) as VideoForSEO[];
     },
   });
@@ -364,8 +364,8 @@ export const SEOOptimizerPanel: React.FC = () => {
 
     // Generate optimized description
     const optimizedDesc = description.length > 0
-      ? `${description}\n\n🚀 Key Features:\n• AI-powered automation\n• Enterprise-grade security\n• 24/7 support\n\n#GenieStudio #AI #Productivity`
-      : `Discover how ${title} transforms your workflow with cutting-edge AI technology. Join thousands of professionals already using Genie Studio.\n\n🚀 Features:\n• Smart automation\n• Real-time collaboration\n• Multi-language support`;
+      ? `${description}\n\n🚀 Key Features:\n• AI-powered automation\n• Enterprise-grade security\n• 24/7 support\n\n#GenieSuite #AI #Productivity`
+      : `Discover how ${title} transforms your workflow with cutting-edge AI technology. Join thousands of professionals already using Genie Suite.\n\n🚀 Features:\n• Smart automation\n• Real-time collaboration\n• Multi-language support`;
 
     // Generate tags from context
     const allTags = [
