@@ -405,7 +405,15 @@
          },
        };
      });
-   }, []);
+    }, []);
+
+    // Direct setter for templateMapping (used when loading from customization drafts)
+    const setTemplateMapping = useCallback((mapping: TemplateMapping | null) => {
+      setState(prev => ({
+        ...prev,
+        templateMapping: mapping,
+      }));
+    }, []);
  
    const approveTemplateMapping = useCallback(() => {
      if (!state.templateMapping) return;
@@ -580,10 +588,11 @@
      setMessaging,
      approveMessaging,
  
-     // Template Mapping
-     createTemplateMapping,
-     updateSceneScript,
-     approveTemplateMapping,
+      // Template Mapping
+      createTemplateMapping,
+      setTemplateMapping,
+      updateSceneScript,
+      approveTemplateMapping,
  
      // TTS
      generateTTSForScene,

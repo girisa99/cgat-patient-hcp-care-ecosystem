@@ -65,7 +65,9 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 // Import unified authoring system
-import { useUnifiedAuthoring, type AuthoringStage } from '@/hooks/useUnifiedAuthoring';
+import { useUnifiedAuthoring, type AuthoringStage, type TemplateMapping, type SceneScript } from '@/hooks/useUnifiedAuthoring';
+import { useBlueprintDraft } from '@/hooks/useBlueprintDraft';
+import { styleIntentResolver } from '@/services/styleIntentResolver';
 import { useGenieCastSession } from '@/hooks/useGenieCastSession';
 import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
 import { RegionalDialectSelector } from '@/components/shared/RegionalDialectSelector';
@@ -313,6 +315,83 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
       );
     }
   }, [regionalDetection.detectedRegion, regionalDetection.selectedRegion, regionalDetection.isLoading, setRegionalCtx]);
+
+  // Load blueprint draft scenes for customization
+  const blueprintDraft = useBlueprintDraft(
+    castSession.session.selectedTemplate?.id ?? null,
+    [] // original scenes — draft will override if available
+  );
+
+  // Auto-populate authoring.templateMapping from draft scenes when template selected
+  const setTemplateMappingRef = authoring.setTemplateMapping;
+  React.useEffect(() => {
+    const template = castSession.session.selectedTemplate;
+    if (!template || authoring.state.templateMapping) return;
+
+    const draftScenes = blueprintDraft.scenes;
+    if (draftScenes && draftScenes.length > 0) {
+      const region = castSession.session.selectedRegion || 'global';
+      const resolved = styleIntentResolver.resolve(
+        template.styleIntent || 'corporate',
+        region as any
+      );
+
+      const sceneScripts: SceneScript[] = draftScenes.map((scene: any) => {
+        let scriptText = scene.script_template || '';
+        const messaging = castSession.session.approvedMessaging;
+        if (messaging && scriptText) {
+          scriptText = scriptText
+            .replace(/\{\{hook\}\}/g, messaging.hook || '')
+            .replace(/\{\{cta\}\}/g, messaging.cta || '')
+            .replace(/\{\{value_proposition\}\}/g, messaging.valueProposition || '')
+            .replace(/\{\{product_name\}\}/g, messaging.productId || '')
+            .replace(/\{\{benefits\}\}/g, (messaging.benefits || []).join('. '))
+            .replace(/\{\{pain_points\}\}/g, (messaging.painPoints || []).join('. '));
+        }
+        return {
+          sceneId: scene.id,
+          sceneKey: scene.scene_key,
+          title: scene.title,
+          orderIndex: scene.order_index,
+          scriptText,
+          sourceType: messaging ? 'messaging' as const : 'template' as const,
+          durationSeconds: scene.duration_seconds,
+          minDuration: scene.min_duration_seconds,
+          maxDuration: scene.max_duration_seconds,
+          ttsConfig: {
+            provider: resolved.ttsProvider,
+            speed: 1.0,
+            pitch: 1.0,
+          },
+          approvalStatus: 'draft' as const,
+        };
+      });
+
+      const mapping: TemplateMapping = {
+        templateId: template.id,
+        templateName: template.name,
+        scenes: sceneScripts,
+        totalDuration: sceneScripts.reduce((sum, s) => sum + s.durationSeconds, 0),
+        styleIntent: template.styleIntent || 'corporate',
+        resolvedProviders: {
+          image: resolved.imageProvider.primary,
+          video: resolved.videoProvider.primary,
+          tts: resolved.ttsProvider,
+          llm: resolved.llmProvider,
+        },
+      };
+
+      setTemplateMappingRef(mapping);
+      console.log('[GenieCast] Auto-populated templateMapping from draft scenes:', sceneScripts.length, 'scenes');
+    }
+  }, [
+    castSession.session.selectedTemplate?.id,
+    blueprintDraft.scenes,
+    authoring.state.templateMapping,
+    castSession.session.approvedMessaging,
+    castSession.session.selectedRegion,
+    setTemplateMappingRef,
+  ]);
 
   // Regional dialect selection state
   const [selectedDialectCodes, setSelectedDialectCodes] = useState<string[]>(['en-US']);
@@ -1092,6 +1171,55 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   showFallbackChain={true}
                   compact={false}
                 />
+
+                {/* Messaging Context Banner */}
+                {castSession.session.approvedMessaging ? (
+                  <Card className="border-primary/20 bg-primary/5">
+                    <CardContent className="py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Messaging Context Active</span>
+                          <Badge variant="outline" className="text-[10px]">Approved</Badge>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-7"
+                          onClick={() => setSubTab('create', 'messaging')}
+                        >
+                          View / Edit
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                        Hook: {castSession.session.approvedMessaging.hook?.slice(0, 100)}...
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="border-amber-300/30 bg-amber-50/20 dark:bg-amber-950/10">
+                    <CardContent className="py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-amber-600" />
+                          <span className="text-sm font-medium">No Messaging Generated</span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7 gap-1"
+                          onClick={() => setSubTab('create', 'messaging')}
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          Generate Messaging
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Generate marketing messaging first for AI to auto-fill scene scripts with hooks, CTAs, and benefits
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* AI Scene Script Generator — Suggest → Approve per scene */}
                 <SceneScriptAIPanel
