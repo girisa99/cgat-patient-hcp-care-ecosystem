@@ -43,11 +43,11 @@ interface BlueprintPreviewModalProps {
   scenes: BlueprintScene[];
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (blueprint: VideoBlueprint) => void;
+  onSelect: (blueprint: VideoBlueprint, overrides?: { targetPlatforms?: string[] }) => void;
   onAssign?: (blueprint: VideoBlueprint, productId: string) => void;
   onRegenerateThumbnail?: (blueprintId: string, prompt: string) => void;
   isRegenerating?: boolean;
-  selectedVideoStyles?: any[]; // Pass selected styles for multi-style composition
+  selectedVideoStyles?: any[];
 }
 
 export function BlueprintPreviewModal({
@@ -63,6 +63,7 @@ export function BlueprintPreviewModal({
 }: BlueprintPreviewModalProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedScene, setExpandedScene] = useState<string | null>(null);
+  const [userPlatforms, setUserPlatforms] = useState<string[]>(blueprint?.target_platform || []);
 
   // Database-backed draft persistence (replaces local state)
   const {
@@ -97,7 +98,7 @@ export function BlueprintPreviewModal({
   const thumbnailRegion = stylePreset.thumbnail_region;
 
   const handleUseTemplate = () => {
-    onSelect(blueprint);
+    onSelect(blueprint, { targetPlatforms: userPlatforms });
     onClose();
   };
 
@@ -205,11 +206,13 @@ export function BlueprintPreviewModal({
             <TabsContent value="overview" className="mt-0">
               <OverviewTab
                 scenes={draftScenes}
-                targetPlatforms={blueprint.target_platform || []}
+                targetPlatforms={userPlatforms}
+                suggestedPlatforms={blueprint.target_platform || []}
                 industryTags={blueprint.industry_tags || []}
                 expandedScene={expandedScene}
                 onExpandScene={setExpandedScene}
                 onSwitchToTimeline={() => setActiveTab('timeline')}
+                onPlatformsChange={setUserPlatforms}
                 formatDuration={formatDuration}
               />
             </TabsContent>
@@ -245,7 +248,10 @@ export function BlueprintPreviewModal({
             </TabsContent>
 
             <TabsContent value="production-config" className="mt-0">
-              <ProductionConfigTab blueprint={blueprint} />
+              <ProductionConfigTab 
+                blueprint={blueprint} 
+                selectedVideoStyles={selectedVideoStyles}
+              />
             </TabsContent>
           </Tabs>
         </div>

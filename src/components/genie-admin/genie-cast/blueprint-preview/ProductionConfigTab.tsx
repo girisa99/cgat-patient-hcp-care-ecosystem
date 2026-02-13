@@ -23,6 +23,7 @@ import type { VideoBlueprint } from '@/hooks/useVideoBlueprints';
 
 interface ProductionConfigTabProps {
   blueprint: VideoBlueprint;
+  selectedVideoStyles?: any[];
 }
 
 // Style intent display mapping
@@ -37,7 +38,7 @@ const STYLE_INTENT_CONFIG: Record<string, { label: string; color: string; descri
   retro: { label: 'Retro', color: 'bg-orange-500/20 text-orange-400', description: 'Vintage & nostalgic aesthetics' },
 };
 
-export function ProductionConfigTab({ blueprint }: ProductionConfigTabProps) {
+export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: ProductionConfigTabProps) {
   const defaultSettings = blueprint.default_settings as Record<string, any> || {};
   const stylePreset = blueprint.style_preset as Record<string, any> || {};
   const styleIntent = blueprint.style_intent || stylePreset.style_intent || 'cinematic';
@@ -47,13 +48,26 @@ export function ProductionConfigTab({ blueprint }: ProductionConfigTabProps) {
 
   const styleConfig = STYLE_INTENT_CONFIG[styleIntent] || STYLE_INTENT_CONFIG.cinematic;
 
-  // Extract capability flags
+  // Derive capabilities from both blueprint defaults AND selected video styles
+  const styleRequiresAvatar = selectedVideoStyles.some((s: any) => 
+    s?.avatarProvider || s?.id?.includes('avatar') || s?.label?.toLowerCase()?.includes('avatar')
+  );
+  const styleRequires3D = selectedVideoStyles.some((s: any) => 
+    s?.id?.includes('3d') || s?.label?.toLowerCase()?.includes('3d') || s?.label?.toLowerCase()?.includes('pixar')
+  );
+  const styleRequiresAnimation = selectedVideoStyles.some((s: any) => 
+    s?.animationProvider || s?.id?.includes('anim') || s?.label?.toLowerCase()?.includes('animated')
+  );
+  const styleRequiresLipsync = selectedVideoStyles.some((s: any) =>
+    s?.id?.includes('lipsync') || styleRequiresAvatar
+  );
+
   const capabilities = {
-    avatar: defaultSettings.avatarEnabled || false,
-    '3d': defaultSettings['3dEnabled'] || false,
-    animation: defaultSettings.animationEnabled || false,
+    avatar: defaultSettings.avatarEnabled || styleRequiresAvatar,
+    '3d': defaultSettings['3dEnabled'] || styleRequires3D,
+    animation: defaultSettings.animationEnabled || styleRequiresAnimation,
     arVr: defaultSettings.arvrEnabled || false,
-    lipsync: defaultSettings.lipsyncEnabled || false,
+    lipsync: defaultSettings.lipsyncEnabled || styleRequiresLipsync,
   };
 
   // Extract aspect ratios from platforms

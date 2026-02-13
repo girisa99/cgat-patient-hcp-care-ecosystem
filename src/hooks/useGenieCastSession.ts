@@ -30,6 +30,17 @@ export interface SelectedTemplate {
   sceneCount: number;
   estimatedDuration: number;
   styleIntent: StyleIntent;
+  // P1: Full context from blueprint
+  targetPlatforms?: string[];
+  capabilities?: {
+    avatar?: boolean;
+    '3d'?: boolean;
+    animation?: boolean;
+    arVr?: boolean;
+    lipsync?: boolean;
+  };
+  industryTags?: string[];
+  targetRegions?: string[];
 }
 
 export interface ApprovalItem {

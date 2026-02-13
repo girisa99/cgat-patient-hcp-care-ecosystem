@@ -567,6 +567,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 <BlueprintTemplatesGrid 
                   onSelectBlueprint={(blueprint) => {
                     console.log('[GenieCast] Template selected:', blueprint.name);
+                    const defaults = blueprint.default_settings as any || {};
                     castSession.selectTemplate({
                       id: blueprint.id,
                       name: blueprint.name,
@@ -574,7 +575,17 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       thumbnailUrl: blueprint.thumbnail_url || undefined,
                       sceneCount: blueprint.scenes?.length || 0,
                       estimatedDuration: blueprint.estimated_duration_seconds,
-                      styleIntent: (blueprint.default_settings as any)?.style_intent || 'corporate' as StyleIntent,
+                      styleIntent: defaults?.style_intent || 'corporate' as StyleIntent,
+                      targetPlatforms: blueprint.target_platform || [],
+                      capabilities: {
+                        avatar: defaults?.avatarEnabled || false,
+                        '3d': defaults?.['3dEnabled'] || false,
+                        animation: defaults?.animationEnabled || false,
+                        arVr: defaults?.arvrEnabled || false,
+                        lipsync: defaults?.lipsyncEnabled || false,
+                      },
+                      industryTags: blueprint.industry_tags || [],
+                      targetRegions: blueprint.target_regions || [],
                     });
                     // Stay on templates — user confirms with "Continue to Messaging"
                   }}
