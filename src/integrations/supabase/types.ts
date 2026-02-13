@@ -23410,6 +23410,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ai_preferences: {
+        Row: {
+          category_overrides: Json | null
+          created_at: string
+          id: string
+          product_scope: string | null
+          selected_providers: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_overrides?: Json | null
+          created_at?: string
+          id?: string
+          product_scope?: string | null
+          selected_providers?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_overrides?: Json | null
+          created_at?: string
+          id?: string
+          product_scope?: string | null
+          selected_providers?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_content_assets: {
         Row: {
           asset_type: string
