@@ -70,6 +70,7 @@ import { useGenieCastSession } from '@/hooks/useGenieCastSession';
 import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
 import { RegionalDialectSelector } from '@/components/shared/RegionalDialectSelector';
 import { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
+import { SceneScriptAIPanel } from '@/components/shared/SceneScriptAIPanel';
 import { AVSyncPreview } from '@/components/shared/AVSyncPreview';
 import { ApprovalDashboard } from '@/components/shared/ApprovalDashboard';
 import type { StyleIntent, RegionZone } from '@/services/styleIntentResolver';
@@ -1090,6 +1091,19 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   zone={detectTranscreationZone(selectedDialectCodes[0] || 'en-US')}
                   showFallbackChain={true}
                   compact={false}
+                />
+
+                {/* AI Scene Script Generator — Suggest → Approve per scene */}
+                <SceneScriptAIPanel
+                  mapping={authoring.state.templateMapping || null}
+                  messaging={castSession.session.approvedMessaging}
+                  capabilities={castSession.session.selectedStyles}
+                  product={selectedProductId || undefined}
+                  region={castSession.session.selectedRegion}
+                  language={castSession.session.selectedDialects?.[0]}
+                  onSceneUpdate={(sceneId, updates) => {
+                    authoring.updateSceneScript(sceneId, updates);
+                  }}
                 />
 
                 {/* Script-to-Template Mapper */}
