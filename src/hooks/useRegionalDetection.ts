@@ -19,7 +19,7 @@ interface RegionalState {
   regionName: string;
 }
 
-interface UseRegionalDetectionReturn extends RegionalState {
+export interface UseRegionalDetectionReturn extends RegionalState {
   setRegion: (code: RegionalCode) => void;
   resetToDetected: () => void;
   getLocalizedPath: (path: string) => string;
