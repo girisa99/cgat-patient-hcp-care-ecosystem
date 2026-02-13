@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { useContentIntents } from '@/hooks/useContentIntents';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,13 @@ export function BlueprintTemplatesGrid({
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
   const { blueprints, isLoading, refetch } = useVideoBlueprints();
+  const { intents } = useContentIntents();
+
+  // Resolve full intent data for richer context passing
+  const selectedIntentData = useMemo(() => {
+    if (!intentFilter) return null;
+    return intents.find(i => i.intent_key === intentFilter) || null;
+  }, [intentFilter, intents]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [previewBlueprint, setPreviewBlueprint] = useState<VideoBlueprint | null>(null);
@@ -320,7 +328,10 @@ export function BlueprintTemplatesGrid({
 
       <CreateTemplateDialog 
         onCreated={handleTemplateCreated}
-        initialContext={intentFilter ? { goal: intentFilter } : undefined}
+        initialContext={selectedIntentData ? {
+          goal: `${selectedIntentData.label} — ${selectedIntentData.description}`,
+          product: selectedIntentData.category,
+        } : intentFilter ? { goal: intentFilter } : undefined}
         externalOpen={showCreateDialog}
         onExternalOpenChange={setShowCreateDialog}
       />
