@@ -45,12 +45,16 @@ interface IntentSelectorProps {
   className?: string;
 }
 
-const CATEGORY_ORDER = ['marketing', 'education', 'enterprise', 'social'] as const;
+const CATEGORY_ORDER = ['marketing', 'education', 'enterprise', 'social', 'healthcare', 'creative', 'internal', 'events'] as const;
 const CATEGORY_LABELS: Record<string, string> = {
   marketing: '🎯 Marketing',
   education: '📚 Educational',
   enterprise: '🏢 Enterprise',
   social: '📱 Social',
+  healthcare: '🏥 Healthcare',
+  creative: '🎨 Creative & Design',
+  internal: '🔒 Internal Communications',
+  events: '🎪 Events & Webinars',
 };
 
 const CONTENT_TYPE_OPTIONS = [
@@ -258,8 +262,8 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
       </motion.div>
 
       {/* Create New Intent Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-lg z-[100001]">
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog} modal={false}>
+        <DialogContent className="sm:max-w-lg z-[100001]" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
@@ -271,14 +275,15 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* AI-assisted NL input */}
+            {/* AI-assisted description — serves as both NL input for AI AND the intent description */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Describe your intent (AI-assisted)</Label>
+              <Label className="text-sm font-medium">Description (AI-assisted)</Label>
+              <p className="text-xs text-muted-foreground">Describe what you want to create. Click the wand to auto-fill fields, or edit manually.</p>
               <div className="flex gap-2">
                 <Textarea
                   placeholder="e.g., I need animated infographics showing patient journey flows for healthcare providers..."
                   value={newIntent.nl_description}
-                  onChange={(e) => setNewIntent(prev => ({ ...prev, nl_description: e.target.value }))}
+                  onChange={(e) => setNewIntent(prev => ({ ...prev, nl_description: e.target.value, description: e.target.value }))}
                   className="min-h-[60px] text-sm"
                 />
                 <Button
@@ -287,6 +292,7 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
                   onClick={handleAnalyzeWithAI}
                   disabled={isAnalyzing || !newIntent.nl_description.trim()}
                   className="shrink-0 self-end"
+                  title="Auto-fill fields with AI"
                 >
                   {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                 </Button>
@@ -310,23 +316,13 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
                   <SelectTrigger className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="z-[100002]">
+                  <SelectContent className="z-[100002] bg-popover">
                     {CATEGORY_ORDER.map(c => (
                       <SelectItem key={c} value={c}>{CATEGORY_LABELS[c]}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Description</Label>
-              <Input
-                placeholder="Brief description of this intent"
-                value={newIntent.description}
-                onChange={(e) => setNewIntent(prev => ({ ...prev, description: e.target.value }))}
-                className="text-sm"
-              />
             </div>
 
             {/* Industry */}
@@ -336,7 +332,7 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
                 <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Any industry" />
                 </SelectTrigger>
-                <SelectContent className="z-[100002]">
+                <SelectContent className="z-[100002] bg-popover">
                   <SelectItem value="none">Any Industry</SelectItem>
                   {INDUSTRY_OPTIONS.map(i => (
                     <SelectItem key={i} value={i.toLowerCase()}>{i}</SelectItem>

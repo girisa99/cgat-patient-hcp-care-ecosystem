@@ -36,7 +36,7 @@ export interface ContentIntent {
   updated_at: string;
 }
 
-export type ContentIntentCategory = 'marketing' | 'education' | 'enterprise' | 'social';
+export type ContentIntentCategory = 'marketing' | 'education' | 'enterprise' | 'social' | 'healthcare' | 'creative' | 'internal' | 'events';
 
 // ============================================================================
 // HARDCODED FALLBACK (used only if DB is unavailable)
