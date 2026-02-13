@@ -98,7 +98,7 @@ import { HeroBannerCarouselMode } from './HeroBannerCarouselMode';
 // Import sub-components DIRECTLY to avoid circular dependency (index.ts re-exports this file)
 import { GenieCastOverview } from './GenieCastOverview';
 import { VideoStyleCards, type VideoStyleType } from './VideoStyleCards';
-import { CreateContextSelector, CONTENT_INTENT_REGISTRY } from './CreateContextSelector';
+import { CreateContextSelector } from './CreateContextSelector';
 import { AIProviderShowcase } from './AIProviderShowcase';
 import { MultiScreenshotGallery, type ProductGallery } from '../MultiScreenshotGallery';
 import { VideoGenerationMatrix } from '../VideoGenerationMatrix';
@@ -463,9 +463,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0">✓</div>
               <span className="text-muted-foreground">Intent:</span>
               <Badge variant="secondary" className="text-xs">
-                {castSession.session.selectedIntent 
-                  ? (CONTENT_INTENT_REGISTRY.find(i => i.id === castSession.session.selectedIntent)?.label || castSession.session.selectedIntent)
-                  : 'Auto-detected'}
+                {castSession.session.selectedIntent || 'Auto-detected'}
               </Badge>
               <Button
                 variant="link"
