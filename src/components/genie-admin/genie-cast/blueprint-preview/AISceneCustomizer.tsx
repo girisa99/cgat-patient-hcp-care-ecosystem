@@ -169,19 +169,22 @@ async function parsePromptWithAI(
       duration: s.duration_seconds,
     }));
 
+    const availableTypes = Object.keys(SCENE_TEMPLATES);
     const systemPrompt = `You are a video production scene sequencing assistant. Given a user prompt and current scene list, return a JSON array of intents.
 
 Current scenes:
 ${JSON.stringify(sceneContext, null, 2)}
 
-Available scene types: ${Object.keys(SCENE_TEMPLATES).join(', ')}
+Available scene types: ${availableTypes.join(', ')}
 
 Return JSON array of objects with these fields:
 - action: "add" | "remove" | "reorder" | "modify" | "duplicate"
-- sceneType: string (from available types, or null)
+- sceneType: string (MUST be one of the available scene types listed above — NEVER null or empty for "add" actions. Pick the closest match.)
 - position: "before" | "after" | "start" | "end" (for add only)
 - targetScene: string (scene type or title to position relative to)
 - description: string (human-readable summary)
+
+IMPORTANT: For "add" actions, sceneType is REQUIRED and must be one of: ${availableTypes.join(', ')}. If unsure, use "feature" as default.
 
 ONLY return valid JSON array, no other text.`;
 
@@ -313,52 +316,72 @@ function applyIntents(
   for (const intent of intents) {
     switch (intent.action) {
       case 'add': {
-        const template = SCENE_TEMPLATES[intent.sceneType || ''];
-        if (template) {
-          const newScene: BlueprintScene = {
-            id: crypto.randomUUID(),
-            blueprint_id: scenes[0]?.blueprint_id || '',
-            scene_key: `custom_${intent.sceneType}_${Date.now()}`,
-            title: template.title || 'Custom Scene',
-            description: template.description || null,
-            order_index: newScenes.length,
-            scene_type: template.scene_type || 'content',
-            script_template: template.script_template || null,
-            script_variables: [],
-            duration_seconds: template.duration_seconds || 15,
-            min_duration_seconds: template.min_duration_seconds || 5,
-            max_duration_seconds: template.max_duration_seconds || 60,
-            visual_config: {},
-            audio_config: {},
-            transition_config: {},
-            is_optional: template.is_optional ?? true,
-            is_repeatable: template.is_repeatable ?? false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-
-          if (intent.position === 'start') {
-            newScenes.unshift(newScene);
-          } else if (intent.position === 'after' && intent.targetScene) {
-            const targetIdx = newScenes.findIndex(s =>
-              s.scene_type.includes(intent.targetScene!) ||
-              s.title.toLowerCase().includes(intent.targetScene!)
-            );
-            newScenes.splice(targetIdx >= 0 ? targetIdx + 1 : newScenes.length, 0, newScene);
-          } else if (intent.position === 'before' && intent.targetScene) {
-            const targetIdx = newScenes.findIndex(s =>
-              s.scene_type.includes(intent.targetScene!) ||
-              s.title.toLowerCase().includes(intent.targetScene!)
-            );
-            newScenes.splice(targetIdx >= 0 ? targetIdx : newScenes.length, 0, newScene);
-          } else {
-            const ctaIdx = newScenes.findIndex(s => s.scene_type === 'cta' || s.scene_type === 'outro');
-            newScenes.splice(ctaIdx >= 0 ? ctaIdx : newScenes.length, 0, newScene);
+        // Resolve scene type: exact match → fuzzy match → fallback to 'feature'
+        let resolvedType = intent.sceneType || '';
+        let template = SCENE_TEMPLATES[resolvedType];
+        
+        if (!template && resolvedType) {
+          // Fuzzy match: find closest scene template key
+          const lower = resolvedType.toLowerCase().replace(/[^a-z]/g, '');
+          const templateKeys = Object.keys(SCENE_TEMPLATES);
+          const fuzzyMatch = templateKeys.find(k => 
+            k.includes(lower) || lower.includes(k) ||
+            SCENE_TEMPLATES[k].title?.toLowerCase().includes(resolvedType.toLowerCase())
+          );
+          if (fuzzyMatch) {
+            resolvedType = fuzzyMatch;
+            template = SCENE_TEMPLATES[fuzzyMatch];
           }
-          changes.push(`✅ Added "${newScene.title}" scene`);
-        } else {
-          changes.push(`⚠️ Unknown scene type: "${intent.sceneType}"`);
         }
+        
+        // Final fallback: use 'feature' template
+        if (!template) {
+          resolvedType = 'feature';
+          template = SCENE_TEMPLATES['feature'];
+          console.warn(`[AISceneCustomizer] Unknown type "${intent.sceneType}", falling back to "feature"`);
+        }
+
+        const newScene: BlueprintScene = {
+          id: crypto.randomUUID(),
+          blueprint_id: scenes[0]?.blueprint_id || '',
+          scene_key: `custom_${resolvedType}_${Date.now()}`,
+          title: template.title || 'Custom Scene',
+          description: template.description || null,
+          order_index: newScenes.length,
+          scene_type: template.scene_type || 'content',
+          script_template: template.script_template || null,
+          script_variables: [],
+          duration_seconds: template.duration_seconds || 15,
+          min_duration_seconds: template.min_duration_seconds || 5,
+          max_duration_seconds: template.max_duration_seconds || 60,
+          visual_config: {},
+          audio_config: {},
+          transition_config: {},
+          is_optional: template.is_optional ?? true,
+          is_repeatable: template.is_repeatable ?? false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        if (intent.position === 'start') {
+          newScenes.unshift(newScene);
+        } else if (intent.position === 'after' && intent.targetScene) {
+          const targetIdx = newScenes.findIndex(s =>
+            s.scene_type.includes(intent.targetScene!) ||
+            s.title.toLowerCase().includes(intent.targetScene!)
+          );
+          newScenes.splice(targetIdx >= 0 ? targetIdx + 1 : newScenes.length, 0, newScene);
+        } else if (intent.position === 'before' && intent.targetScene) {
+          const targetIdx = newScenes.findIndex(s =>
+            s.scene_type.includes(intent.targetScene!) ||
+            s.title.toLowerCase().includes(intent.targetScene!)
+          );
+          newScenes.splice(targetIdx >= 0 ? targetIdx : newScenes.length, 0, newScene);
+        } else {
+          const ctaIdx = newScenes.findIndex(s => s.scene_type === 'cta' || s.scene_type === 'outro');
+          newScenes.splice(ctaIdx >= 0 ? ctaIdx : newScenes.length, 0, newScene);
+        }
+        changes.push(`✅ Added "${newScene.title}" scene`);
         break;
       }
 
