@@ -318,12 +318,12 @@ export function BlueprintTemplatesGrid({
         />
       )}
 
-      {showCreateDialog && (
-        <CreateTemplateDialog 
-          onCreated={handleTemplateCreated}
-          initialContext={intentFilter ? { goal: intentFilter } : undefined}
-        />
-      )}
+      <CreateTemplateDialog 
+        onCreated={handleTemplateCreated}
+        initialContext={intentFilter ? { goal: intentFilter } : undefined}
+        externalOpen={showCreateDialog}
+        onExternalOpenChange={setShowCreateDialog}
+      />
 
       {showComparison && selectedForComparison.length >= 2 && (
         <TemplateComparisonView
