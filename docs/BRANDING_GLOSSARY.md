@@ -31,7 +31,7 @@
 | **Genie Vibe** | Recording Studio & Teleprompter | `vibe` |
 | **Genie Deck** | AI Presentation Generation | `deck` |
 | **Genie Hub** | Your Creative Command Center | `hub` |
-| **Genie Cast** | Distribution & Publishing | `cast` |
+| **Genie Cast** | Make It. Show It. Scale It. | `cast` |
 | **Ask Genie** | Conversational AI Assistant | `ask-genie` |
 
 **Parent Brand:** Genie AI Suite (`genieaisuite.com`)

@@ -293,7 +293,7 @@ export const HeroBannerCarouselMode: React.FC = () => {
           { name: 'Vibe', desc: 'Recording Studio & Teleprompter' },
           { name: 'Deck', desc: 'AI Presentation Generation' },
           { name: 'Hub', desc: 'Your Creative Command Center' },
-          { name: 'Cast', desc: 'Distribution & Publishing' },
+          { name: 'Cast', desc: 'Make It. Show It. Scale It.' },
           { name: 'Ask Genie', desc: 'Conversational AI Assistant' },
         ];
 
