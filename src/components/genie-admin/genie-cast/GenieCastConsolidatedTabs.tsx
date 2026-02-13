@@ -454,7 +454,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             >
               <IntentSelector
                 selectedIntent={castSession.session.selectedIntent}
-                onIntentSelect={(intent) => castSession.selectIntent(intent)}
+                onIntentSelect={(intent) => {
+                  castSession.selectIntent(intent);
+                  // Auto-advance to templates when intent is selected
+                  setSubTab('create', 'templates');
+                }}
                 onIntentConfirmed={() => setSubTab('create', 'templates')}
               />
             </motion.div>
