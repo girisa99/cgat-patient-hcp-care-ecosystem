@@ -72,6 +72,8 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
             value={selectedIntent || ''}
             onValueChange={(value) => {
               onIntentSelect(value);
+              // Auto-advance to templates after selection
+              setTimeout(onIntentConfirmed, 150);
             }}
           >
             <SelectTrigger className="h-12 text-base bg-background">
