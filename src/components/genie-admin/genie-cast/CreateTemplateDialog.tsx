@@ -853,6 +853,24 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     setStage('review');
   };
 
+  // Generate a thumbnail via ai-image-generator
+  const generateThumbnail = async (name: string, category: string, styles: string[]): Promise<string | null> => {
+    try {
+      const prompt = `Professional video template thumbnail for "${name}". Category: ${category}. Style: ${styles.join(', ')}. Modern, vibrant, cinematic quality. 16:9 aspect ratio. No text.`;
+      const { data, error } = await supabase.functions.invoke('ai-image-generator', {
+        body: { prompt, size: '1024x576', quality: 'high', style_intent: styles[0] || 'cinematic' }
+      });
+      if (error || !data?.imageUrl) {
+        console.warn('Thumbnail generation failed, using placeholder', error);
+        return null;
+      }
+      return data.imageUrl;
+    } catch (err) {
+      console.warn('Thumbnail generation error:', err);
+      return null;
+    }
+  };
+
   // Create template
   const createTemplate = async () => {
     if (!formData.name.trim()) {
@@ -862,6 +880,10 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     setCreating(true);
     try {
       const { data: user } = await supabase.auth.getUser();
+      
+      // Generate unique thumbnail
+      const thumbnailUrl = await generateThumbnail(formData.name, formData.category, formData.videoStyles);
+      
       const templateData = {
         name: formData.name,
         description: formData.description,
@@ -890,6 +912,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
         is_active: true,
         is_public: true,
         usage_count: 0,
+        ...(thumbnailUrl && { thumbnail_url: thumbnailUrl }),
       };
       const { error } = await supabase.from('video_blueprints').insert(templateData);
       if (error) throw error;
