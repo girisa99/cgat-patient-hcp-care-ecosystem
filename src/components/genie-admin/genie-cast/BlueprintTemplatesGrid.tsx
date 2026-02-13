@@ -50,7 +50,7 @@ export function BlueprintTemplatesGrid({
   intentFilter,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
-  const { blueprints, isLoading } = useVideoBlueprints();
+  const { blueprints, isLoading, refetch } = useVideoBlueprints();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [previewBlueprint, setPreviewBlueprint] = useState<VideoBlueprint | null>(null);
@@ -59,11 +59,13 @@ export function BlueprintTemplatesGrid({
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
 
-  // Get recommendations based on intent
+  // Get recommendations based on intent (or show all if browsing)
   const recommendedTemplates = useMemo(() => {
-    if (!intentFilter) return blueprints.slice(0, 12);
-    return getIntentRecommendations(blueprints, intentFilter, 8);
-  }, [blueprints, intentFilter]);
+    const source = showBrowseAll ? blueprints : (
+      intentFilter ? getIntentRecommendations(blueprints, intentFilter, 8) : blueprints.slice(0, 12)
+    );
+    return source;
+  }, [blueprints, intentFilter, showBrowseAll]);
 
   // Filter by search query
   const filteredTemplates = useMemo(() => {
@@ -76,10 +78,17 @@ export function BlueprintTemplatesGrid({
     );
   }, [recommendedTemplates, searchQuery]);
 
-  const handleSelectTemplate = (blueprint: VideoBlueprint) => {
+  const handleSelectTemplate = useCallback((blueprint: VideoBlueprint) => {
     onSelectBlueprint?.(blueprint);
-    toast({ title: `Selected: ${blueprint.name}` });
-  };
+    toast({ title: `Template Selected`, description: `"${blueprint.name}" — proceeding to messaging` });
+  }, [onSelectBlueprint, toast]);
+
+  // When a new template is created via CreateTemplateDialog, refetch and select it
+  const handleTemplateCreated = useCallback(() => {
+    setShowCreateDialog(false);
+    refetch(); // Refresh the blueprint list to include the new template
+    toast({ title: 'Template Created', description: 'Your custom template is ready. Select it to continue.' });
+  }, [refetch, toast]);
 
   const toggleComparison = (blueprintId: string) => {
     setSelectedForComparison(prev =>
@@ -104,12 +113,27 @@ export function BlueprintTemplatesGrid({
   return (
     <div className="space-y-4">
       {/* Header with Intent Context */}
-      {intentFilter && (
+      {intentFilter && !showBrowseAll && (
         <div className="flex items-center gap-2 px-4 py-3 bg-primary/10 rounded-lg border border-primary/20">
           <Sparkles className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium">
-            Showing {filteredTemplates.length} templates matched to your intent
+            Showing top {filteredTemplates.length} templates matched to your intent
           </span>
+          <span className="text-xs text-muted-foreground ml-1">
+            (scored by category, style, keywords & duration fit)
+          </span>
+        </div>
+      )}
+
+      {/* Browse All Banner */}
+      {showBrowseAll && (
+        <div className="flex items-center justify-between px-4 py-3 bg-muted rounded-lg border">
+          <span className="text-sm font-medium">
+            Browsing all {filteredTemplates.length} templates
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setShowBrowseAll(false)}>
+            ← Back to Recommendations
+          </Button>
         </div>
       )}
 
@@ -125,19 +149,19 @@ export function BlueprintTemplatesGrid({
           />
         </div>
 
-        {/* Create Custom Button - Always Visible */}
+        {/* Create Custom Template - Always Visible */}
         <Button
           onClick={() => setShowCreateDialog(true)}
-          variant="outline"
+          variant="default"
           size="sm"
           className="gap-2 shrink-0"
         >
           <Plus className="w-4 h-4" />
-          Create
+          Create Custom
         </Button>
 
-        {/* Browse All Button - When Intent Filtered */}
-        {intentFilter && (
+        {/* Browse All - When Intent Filtered & not already browsing */}
+        {intentFilter && !showBrowseAll && (
           <Button
             onClick={() => setShowBrowseAll(true)}
             variant="secondary"
@@ -153,83 +177,122 @@ export function BlueprintTemplatesGrid({
       {/* Templates Grid */}
       {filteredTemplates.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {filteredTemplates.map((blueprint) => (
-            <Card
-              key={blueprint.id}
-              className="group cursor-pointer hover:shadow-lg transition-all overflow-hidden"
-              onClick={() => handleSelectTemplate(blueprint)}
-            >
-              {/* Thumbnail */}
-              <div className="relative h-40 bg-muted overflow-hidden">
-                <img
-                  src={getEffectiveThumbnail(blueprint)}
-                  alt={blueprint.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                />
-                {intentFilter && (
+          {filteredTemplates.map((blueprint) => {
+            const isSelected = selectedBlueprintId === blueprint.id;
+            return (
+              <Card
+                key={blueprint.id}
+                className={`group cursor-pointer hover:shadow-lg transition-all overflow-hidden ${
+                  isSelected ? 'ring-2 ring-primary' : ''
+                }`}
+                onClick={() => handleSelectTemplate(blueprint)}
+              >
+                {/* Thumbnail */}
+                <div className="relative h-40 bg-muted overflow-hidden">
+                  <img
+                    src={getEffectiveThumbnail(blueprint)}
+                    alt={blueprint.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
                   <Checkbox
                     checked={selectedForComparison.includes(blueprint.id)}
                     onCheckedChange={() => toggleComparison(blueprint.id)}
                     onClick={(e) => e.stopPropagation()}
                     className="absolute top-2 right-2"
                   />
-                )}
-              </div>
-
-              <CardContent className="p-3 space-y-2">
-                <div>
-                  <h3 className="font-semibold text-sm line-clamp-1">{blueprint.name}</h3>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {blueprint.description || 'No description'}
-                  </p>
                 </div>
 
-                <div className="flex gap-1">
-                  <Badge variant="secondary" className="text-xs">
-                    {blueprint.category}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {Math.round(blueprint.estimated_duration_seconds / 60)}m
-                  </Badge>
-                </div>
+                <CardContent className="p-3 space-y-2">
+                  <div>
+                    <h3 className="font-semibold text-sm line-clamp-1">{blueprint.name}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {blueprint.description || 'No description'}
+                    </p>
+                  </div>
 
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPreviewBlueprint(blueprint);
-                  }}
-                >
-                  Preview
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex gap-1 flex-wrap">
+                    <Badge variant="secondary" className="text-xs">
+                      {blueprint.category}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {blueprint.estimated_duration_seconds >= 60 
+                        ? `${Math.round(blueprint.estimated_duration_seconds / 60)}m` 
+                        : `${blueprint.estimated_duration_seconds}s`}
+                    </Badge>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewBlueprint(blueprint);
+                      }}
+                    >
+                      Preview
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectTemplate(blueprint);
+                      }}
+                    >
+                      Use This
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">No templates match your search</p>
-          <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Create Custom Template Instead
-          </Button>
+        <div className="text-center py-12 space-y-4">
+          <div className="text-muted-foreground">
+            <p className="text-lg font-medium mb-1">No templates found</p>
+            <p className="text-sm">Try a different search or create a custom template</p>
+          </div>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Create Custom Template
+            </Button>
+            {intentFilter && (
+              <Button variant="outline" onClick={() => setShowBrowseAll(true)}>
+                Browse All Templates
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
       {/* Comparison Bar */}
       {selectedForComparison.length > 0 && (
-        <div className="fixed bottom-4 right-4 bg-card border rounded-lg shadow-lg p-4 space-y-3">
+        <div className="fixed bottom-4 right-4 bg-card border rounded-lg shadow-lg p-4 space-y-3 z-50">
           <p className="text-sm font-medium">
-            {selectedForComparison.length} selected for comparison
+            {selectedForComparison.length}/3 selected for comparison
           </p>
-          <Button
-            onClick={() => setShowComparison(true)}
-            className="w-full gap-2"
-          >
-            Compare
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedForComparison([])}
+            >
+              Clear
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setShowComparison(true)}
+              disabled={selectedForComparison.length < 2}
+              className="gap-1"
+            >
+              Compare
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -245,14 +308,17 @@ export function BlueprintTemplatesGrid({
       )}
 
       {showCreateDialog && (
-        <CreateTemplateDialog onCreated={() => setShowCreateDialog(false)} />
+        <CreateTemplateDialog onCreated={handleTemplateCreated} />
       )}
 
-      {showComparison && selectedForComparison.length > 0 && (
+      {showComparison && selectedForComparison.length >= 2 && (
         <TemplateComparisonView
           isOpen={true}
           blueprints={blueprints.filter(b => selectedForComparison.includes(b.id))}
-          onClose={() => setShowComparison(false)}
+          onClose={() => {
+            setShowComparison(false);
+            setSelectedForComparison([]);
+          }}
           onSelect={handleSelectTemplate}
         />
       )}
@@ -260,5 +326,4 @@ export function BlueprintTemplatesGrid({
   );
 }
 
-// Fix: Add Checkbox import
 import { Checkbox } from '@/components/ui/checkbox';
