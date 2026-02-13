@@ -4624,12 +4624,17 @@ export type Database = {
       }
       content_intents: {
         Row: {
+          ai_analysis_data: Json | null
+          ai_analyzed: boolean
+          capability_requirements: string[] | null
           category: string
+          content_type: string
           created_at: string
           default_styles: string[] | null
           description: string
           icon: string | null
           id: string
+          industry_tags: string[] | null
           intent_key: string
           is_active: boolean
           is_system_default: boolean
@@ -4641,12 +4646,17 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          ai_analysis_data?: Json | null
+          ai_analyzed?: boolean
+          capability_requirements?: string[] | null
           category?: string
+          content_type?: string
           created_at?: string
           default_styles?: string[] | null
           description: string
           icon?: string | null
           id?: string
+          industry_tags?: string[] | null
           intent_key: string
           is_active?: boolean
           is_system_default?: boolean
@@ -4658,12 +4668,17 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          ai_analysis_data?: Json | null
+          ai_analyzed?: boolean
+          capability_requirements?: string[] | null
           category?: string
+          content_type?: string
           created_at?: string
           default_styles?: string[] | null
           description?: string
           icon?: string | null
           id?: string
+          industry_tags?: string[] | null
           intent_key?: string
           is_active?: boolean
           is_system_default?: boolean
