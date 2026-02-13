@@ -16,27 +16,38 @@ import {
   ArrowRight, BadgeCheck, Zap, ChevronLeft, ChevronRight,
   Image, Layers, Languages, Palette, Users, Play, Mic,
   Video, Box, BarChart3, Cpu, Monitor, MessageSquare,
-  Lightbulb, GraduationCap, Building2, Heart, Briefcase,
-  type LucideIcon,
+  Lightbulb, GraduationCap, Building2, Heart, Briefcase, Star,
+  RotateCcw, type LucideIcon,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { REGION_LLM_ROUTING } from '@/config/regional-routing-registry';
 
-// ─── GENIE SUITE PRODUCT LINEUP ─────────────────────────────────────────
+// ─── PRODUCT LOGO IMPORTS ───────────────────────────────────────────────
+import sparkLogo from '@/assets/logos/products/genie-spark.png';
+import mindLogo from '@/assets/logos/products/genie-mind.png';
+import vibeLogo from '@/assets/logos/products/genie-vibe.png';
+import deckLogo from '@/assets/logos/products/genie-deck.png';
+import hubLogo from '@/assets/logos/products/genie-arc.png'; // Hub (legacy: arc)
+import castLogo from '@/assets/logos/products/genie-cast.png';
+import askGenieLogo from '@/assets/logos/products/ask-genie.png';
+import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo-v2.png';
+
+// ─── GENIE SUITE PRODUCT LINEUP (with actual logos) ─────────────────────
 const GENIE_PRODUCTS = [
-  { name: 'Spark', icon: Lightbulb, color: 'text-amber-500', desc: 'Idea to Content' },
-  { name: 'Mind', icon: Cpu, color: 'text-purple-500', desc: 'AI Knowledge Engine' },
-  { name: 'Vibe', icon: Monitor, color: 'text-blue-500', desc: 'Visual Editor' },
-  { name: 'Deck', icon: Layers, color: 'text-emerald-500', desc: 'Presentation AI' },
-  { name: 'Hub', icon: Building2, color: 'text-orange-500', desc: 'Central Command' },
-  { name: 'Cast', icon: Video, color: 'text-pink-500', desc: 'Video Production' },
-  { name: 'Ask Genie', icon: MessageSquare, color: 'text-cyan-500', desc: 'AI Assistant' },
+  { name: 'Spark', logo: sparkLogo, desc: 'Idea to Content' },
+  { name: 'Mind', logo: mindLogo, desc: 'AI Knowledge Engine' },
+  { name: 'Vibe', logo: vibeLogo, desc: 'Visual Editor' },
+  { name: 'Deck', logo: deckLogo, desc: 'Presentation AI' },
+  { name: 'Hub', logo: hubLogo, desc: 'Central Command' },
+  { name: 'Cast', logo: castLogo, desc: 'Video Production' },
+  { name: 'Ask Genie', logo: askGenieLogo, desc: 'AI Assistant' },
 ];
 
 // ─── AI PLATFORM STATS ──────────────────────────────────────────────────
@@ -270,6 +281,7 @@ function getLLMInfo(regionCode: string) {
 
 // ─── COMPONENT ──────────────────────────────────────────────────────────
 export const HeroBannerCarouselMode: React.FC = () => {
+  const [primaryStyle, setPrimaryStyle] = useState('photorealistic');
   const [selectedStyles, setSelectedStyles] = useState<string[]>(['photorealistic']);
   const [regionCarousels, setRegionCarousels] = useState<Record<string, RegionCarousel>>({});
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
@@ -278,9 +290,15 @@ export const HeroBannerCarouselMode: React.FC = () => {
   const [scriptOverrides, setScriptOverrides] = useState<Record<string, Partial<Record<SlideId, string>>>>({});
 
   const toggleStyle = (id: string) => {
+    if (id === primaryStyle) return; // Can't remove primary
     setSelectedStyles(prev =>
       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
     );
+  };
+
+  const setPrimary = (id: string) => {
+    setPrimaryStyle(id);
+    setSelectedStyles(prev => prev.includes(id) ? prev : [id, ...prev]);
   };
 
   const getOrCreateCarousel = (regionCode: string): RegionCarousel => {
@@ -301,7 +319,7 @@ export const HeroBannerCarouselMode: React.FC = () => {
     setActiveRegion(regionCode);
     const llm = getLLMInfo(regionCode);
     const regionLabel = PARENT_REGIONS.find(r => r.code === regionCode)?.label?.replace(/^.\s/, '') || regionCode;
-    const primaryStyle = selectedStyles[0];
+    const activeStyle = primaryStyle;
 
     // Initialize as generating
     setRegionCarousels(prev => ({
@@ -463,24 +481,59 @@ Modern premium design, wide 16:9 aspect ratio, rich composition with multiple la
               </CardDescription>
             </div>
           </div>
-          {/* Multi-select creative styles */}
+          {/* Primary + Alternate creative styles */}
           <div className="mt-3">
-            <p className="text-[10px] text-muted-foreground mb-1.5 font-medium">🎨 Creative Styles (multi-select)</p>
+            <div className="flex items-center gap-2 mb-1.5">
+              <p className="text-[10px] text-muted-foreground font-medium">🎨 Primary Style</p>
+              <Badge variant="outline" className="text-[9px]">
+                {CREATIVE_STYLES.find(s => s.id === primaryStyle)?.emoji} {CREATIVE_STYLES.find(s => s.id === primaryStyle)?.label}
+              </Badge>
+            </div>
             <div className="flex flex-wrap gap-1.5">
-              {CREATIVE_STYLES.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => toggleStyle(s.id)}
-                  className={cn(
-                    'px-2.5 py-1 rounded-md text-[11px] border transition-all',
-                    selectedStyles.includes(s.id)
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
-                  )}
-                >
-                  {s.emoji} {s.label}
-                </button>
-              ))}
+              {CREATIVE_STYLES.map(s => {
+                const isPrimary = s.id === primaryStyle;
+                const isAlternate = selectedStyles.includes(s.id) && !isPrimary;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setPrimary(s.id)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-md text-[11px] border transition-all relative',
+                      isPrimary
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md ring-2 ring-primary/30'
+                        : isAlternate
+                          ? 'bg-accent text-accent-foreground border-accent shadow-sm'
+                          : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+                    )}
+                  >
+                    {isPrimary && <Star className="w-2.5 h-2.5 inline mr-0.5 fill-current" />}
+                    {s.emoji} {s.label}
+                  </button>
+                );
+              })}
+            </div>
+            {/* Alternate styles (quick-swap after generation) */}
+            <div className="flex items-center gap-2 mt-2">
+              <p className="text-[10px] text-muted-foreground font-medium">🔄 Alternates (quick-swap)</p>
+              <div className="flex flex-wrap gap-1">
+                {CREATIVE_STYLES.filter(s => s.id !== primaryStyle).map(s => {
+                  const selected = selectedStyles.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => toggleStyle(s.id)}
+                      className={cn(
+                        'px-2 py-0.5 rounded text-[10px] border transition-all',
+                        selected
+                          ? 'bg-accent/50 text-accent-foreground border-accent/50'
+                          : 'bg-transparent text-muted-foreground border-border/50 hover:bg-muted/30'
+                      )}
+                    >
+                      {s.emoji} {selected ? '✓' : '+'}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -705,17 +758,33 @@ Modern premium design, wide 16:9 aspect ratio, rich composition with multiple la
                         <p className="text-sm text-white/80 mb-3">{activeSlide.subheadline}</p>
                       )}
 
-                      {/* Genie Suite Product Icons (Slide 1 & 4) */}
+                      {/* Genie Suite Product Logos (Slide 1 & 4) */}
                       {activeSlideConfig?.genieContent.showProducts && (
-                        <div className="flex gap-2 mb-3">
-                          {GENIE_PRODUCTS.map(p => (
-                            <div key={p.name} className="flex flex-col items-center" title={`${p.name}: ${p.desc}`}>
-                              <div className="w-7 h-7 rounded-lg bg-white/15 backdrop-blur flex items-center justify-center">
-                                <p.icon className={cn('w-3.5 h-3.5', p.color)} />
-                              </div>
-                              <span className="text-[8px] text-white/70 mt-0.5">{p.name}</span>
-                            </div>
-                          ))}
+                        <div className="mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <img src={genieSuiteLogo} alt="Genie Suite" className="h-5 object-contain brightness-0 invert opacity-80" />
+                            <span className="text-[9px] text-white/50 font-medium">Mind to Media</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <TooltipProvider delayDuration={200}>
+                              {GENIE_PRODUCTS.map(p => (
+                                <Tooltip key={p.name}>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex flex-col items-center cursor-default">
+                                      <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-sm border border-white/10 flex items-center justify-center p-1">
+                                        <img src={p.logo} alt={p.name} className="w-full h-full object-contain" />
+                                      </div>
+                                      <span className="text-[7px] text-white/60 mt-0.5 font-medium">{p.name}</span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="bottom" className="text-[10px]">
+                                    <p className="font-semibold">{p.name}</p>
+                                    <p className="text-muted-foreground">{p.desc}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ))}
+                            </TooltipProvider>
+                          </div>
                         </div>
                       )}
 
@@ -848,6 +917,33 @@ Modern premium design, wide 16:9 aspect ratio, rich composition with multiple la
                   )}
                   {activeSlide?.styleUsed && (
                     <Badge variant="outline" className="text-[9px] gap-1"><Palette className="w-2.5 h-2.5" /> {activeSlide.styleUsed}</Badge>
+                  )}
+                  {/* Alternate style quick-swap */}
+                  {activeSlide?.status === 'preview' && selectedStyles.length > 1 && (
+                    <div className="mt-2 pt-2 border-t border-border/50">
+                      <p className="text-[9px] text-muted-foreground mb-1 font-medium flex items-center gap-1">
+                        <RotateCcw className="w-2.5 h-2.5" /> Quick-swap to alternate style
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedStyles.filter(s => s !== primaryStyle).map(altId => {
+                          const altStyle = CREATIVE_STYLES.find(s => s.id === altId);
+                          return altStyle ? (
+                            <Button
+                              key={altId}
+                              size="sm"
+                              variant="outline"
+                              className="text-[9px] h-6 px-2 gap-1"
+                              onClick={() => {
+                                setPrimary(altId);
+                                toast.info(`Switched to ${altStyle.label} — regenerate to apply`);
+                              }}
+                            >
+                              {altStyle.emoji} {altStyle.label}
+                            </Button>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
 
