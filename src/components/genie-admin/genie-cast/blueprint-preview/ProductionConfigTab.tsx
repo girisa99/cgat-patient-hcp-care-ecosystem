@@ -1,6 +1,6 @@
 /**
  * Blueprint Preview Modal - Production Config Preview Tab
- * Structured read-only summary replacing raw JSON dump
+ * Structured read-only summary with all data properly displayed
  * Shows what users will configure in Production Setup
  */
 
@@ -16,6 +16,10 @@ import {
   Wand2,
   Volume2,
   Box,
+  Clock,
+  Target,
+  Layers,
+  Zap,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -76,8 +80,16 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
     if (['tiktok', 'instagram_reels', 'youtube_shorts'].includes(p)) aspectRatios.add('9:16');
     if (['youtube', 'linkedin', 'facebook'].includes(p)) aspectRatios.add('16:9');
     if (['instagram_post', 'twitter'].includes(p)) aspectRatios.add('1:1');
+    if (['landing_page'].includes(p)) aspectRatios.add('21:9');
+    if (['instagram_post'].includes(p)) aspectRatios.add('4:5');
+    if (['digital_signage'].includes(p)) aspectRatios.add('32:9');
   });
   if (aspectRatios.size === 0) aspectRatios.add('16:9');
+
+  // Extract more data from blueprint
+  const scenes = blueprint.scenes || [];
+  const category = blueprint.category || 'general';
+  const industryTags = blueprint.industry_tags || [];
 
   return (
     <div className="p-6 space-y-6">
@@ -87,6 +99,30 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
           <Settings2 className="h-3.5 w-3.5" />
           This preview shows the template's default configuration. All settings can be customized in <span className="font-medium text-foreground">Production Setup</span> after selecting this template.
         </p>
+      </div>
+
+      {/* Quick Summary Row */}
+      <div className="grid grid-cols-4 gap-3">
+        <div className="bg-card/50 rounded-lg p-3 border border-border/50 text-center">
+          <Clock className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+          <p className="text-lg font-bold">{blueprint.estimated_duration_seconds}s</p>
+          <p className="text-[10px] text-muted-foreground">Duration</p>
+        </div>
+        <div className="bg-card/50 rounded-lg p-3 border border-border/50 text-center">
+          <Target className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+          <p className="text-lg font-bold">{blueprint.target_platform?.length || 0}</p>
+          <p className="text-[10px] text-muted-foreground">Platforms</p>
+        </div>
+        <div className="bg-card/50 rounded-lg p-3 border border-border/50 text-center">
+          <Layers className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+          <p className="text-lg font-bold capitalize">{category}</p>
+          <p className="text-[10px] text-muted-foreground">Category</p>
+        </div>
+        <div className="bg-card/50 rounded-lg p-3 border border-border/50 text-center">
+          <Zap className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+          <p className="text-lg font-bold">{Object.values(capabilities).filter(Boolean).length}</p>
+          <p className="text-[10px] text-muted-foreground">Capabilities</p>
+        </div>
       </div>
 
       {/* Style Intent */}
@@ -108,6 +144,20 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
             <span className="text-xs text-muted-foreground">Tone:</span>
             <Badge variant="outline" className="text-xs capitalize">{toneModifier}</Badge>
           </div>
+
+          {/* Selected Video Styles */}
+          {selectedVideoStyles.length > 0 && (
+            <div>
+              <span className="text-xs text-muted-foreground block mb-1.5">Selected Video Styles</span>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedVideoStyles.map((style: any, idx: number) => (
+                  <Badge key={idx} variant="secondary" className="text-[10px]">
+                    {style?.title || style?.label || style?.id || `Style ${idx + 1}`}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Aesthetic Keywords */}
           {aestheticKeywords.length > 0 && (
@@ -178,11 +228,39 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
             </div>
             <div>
               <span className="text-xs text-muted-foreground block mb-1">Platforms</span>
-              <p className="text-sm font-medium">{blueprint.target_platform?.length || 0} targeted</p>
+              <div className="flex flex-wrap gap-1">
+                {(blueprint.target_platform || []).slice(0, 4).map(p => (
+                  <Badge key={p} variant="outline" className="text-[10px] capitalize">
+                    {p.replace(/_/g, ' ')}
+                  </Badge>
+                ))}
+                {(blueprint.target_platform?.length || 0) > 4 && (
+                  <Badge variant="outline" className="text-[10px]">
+                    +{(blueprint.target_platform?.length || 0) - 4} more
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Industry Tags */}
+      {industryTags.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Industry Tags
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            {industryTags.map((tag: string, idx: number) => (
+              <Badge key={idx} variant="outline" className="text-xs capitalize">
+                {tag.replace(/_/g, ' ')}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Regional Support */}
       <div>
@@ -210,6 +288,28 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
           )}
         </div>
       </div>
+
+      {/* Default Settings (Raw) */}
+      {Object.keys(defaultSettings).length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Settings2 className="h-4 w-4" />
+            Template Defaults
+          </h3>
+          <div className="bg-card/50 rounded-lg p-4 border border-border/50">
+            <div className="grid grid-cols-2 gap-3">
+              {Object.entries(defaultSettings).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                  <Badge variant="outline" className="text-[10px]">
+                    {typeof value === 'boolean' ? (value ? '✅' : '❌') : String(value)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* What's Customizable Note */}
       <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">

@@ -107,10 +107,12 @@ export function BlueprintPreviewModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose} modal={false}>
       <DialogContent 
         className="max-w-5xl p-0 bg-background/95 backdrop-blur-xl border-border/50 !flex !flex-col overflow-hidden"
         style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+        onInteractOutside={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
       >
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto min-h-0">
@@ -231,7 +233,7 @@ export function BlueprintPreviewModal({
             <TabsContent value="preview" className="mt-0">
               <div className="p-6">
                 <QuickPreviewGenerator
-                  scenes={scenes}
+                  scenes={draftScenes}
                   blueprintId={blueprint.id}
                   blueprintName={blueprint.name}
                   selectedVideoStyles={selectedVideoStyles}
@@ -244,6 +246,7 @@ export function BlueprintPreviewModal({
                 blueprint={blueprint}
                 onRegenerateThumbnail={handleRegenerateThumbnail}
                 isRegenerating={isRegenerating}
+                region={blueprint.target_regions?.[0] || 'global'}
               />
             </TabsContent>
 
