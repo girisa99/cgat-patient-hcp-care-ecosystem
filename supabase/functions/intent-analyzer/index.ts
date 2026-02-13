@@ -1,12 +1,14 @@
 /**
  * INTENT ANALYZER - Agentic AI for Intelligent Intent Classification
  * 
- * Uses the existing shared routing infrastructure:
- * - _shared/api-keys.ts → LLM provider fallback chain
- * - _shared/style-intent-routing.ts → Style intent → provider mapping
- * - Vertex AI JWT auth → Gemini 3.0 Flash via aiplatform.googleapis.com
+ * Full 7-provider LLM fallback chain matching ecosystem routing:
+ * Vertex Gemini 2.5 Flash → Vertex Gemini 2.0 → Consumer Gemini → 
+ * Alibaba Qwen-Max → OpenAI → DeepSeek → Claude
  * 
- * Provider chain: Vertex Gemini 3.0 → Consumer Gemini 2.0 → OpenAI → Claude
+ * Uses shared infrastructure:
+ * - _shared/api-keys.ts → Key retrieval with fallback aliases
+ * - _shared/style-intent-routing.ts → Style intent validation
+ * - Vertex AI JWT auth → Same pattern as image/video providers
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -43,7 +45,7 @@ You MUST respond with a JSON object containing:
 RESPOND ONLY with valid JSON. No markdown, no explanation.`;
 
 // ============================================================================
-// VERTEX AI JWT AUTH (reuses pattern from _shared/image-providers.ts)
+// VERTEX AI JWT AUTH (shared pattern from _shared/image-providers.ts)
 // ============================================================================
 
 async function getVertexAccessToken(sa: any): Promise<string> {
@@ -79,10 +81,10 @@ async function getVertexAccessToken(sa: any): Promise<string> {
 }
 
 // ============================================================================
-// PROVIDER-SPECIFIC LLM CALL IMPLEMENTATIONS
+// PROVIDER-SPECIFIC LLM IMPLEMENTATIONS
 // ============================================================================
 
-async function callVertexGemini(description: string): Promise<any> {
+async function callVertexGemini(model: string, description: string): Promise<any> {
   const saJson = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT');
   if (!saJson) throw new Error('GOOGLE_VERTEX_SERVICE_ACCOUNT not configured');
 
@@ -90,7 +92,6 @@ async function callVertexGemini(description: string): Promise<any> {
   const token = await getVertexAccessToken(sa);
   const projectId = sa.project_id;
   const location = 'us-central1';
-  const model = 'gemini-2.0-flash-001'; // Vertex-available model
 
   const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
 
@@ -112,12 +113,12 @@ async function callVertexGemini(description: string): Promise<any> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Vertex Gemini error ${response.status}: ${errorText}`);
+    throw new Error(`Vertex ${model} error ${response.status}: ${errorText.slice(0, 200)}`);
   }
 
   const result = await response.json();
   const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Vertex Gemini returned empty response');
+  if (!text) throw new Error(`Vertex ${model} returned empty response`);
   return JSON.parse(text);
 }
 
@@ -140,13 +141,53 @@ async function callGeminiConsumer(apiKey: string, model: string, description: st
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Gemini ${model} error ${response.status}: ${errorText}`);
+    throw new Error(`Gemini ${model} error ${response.status}: ${errorText.slice(0, 200)}`);
   }
 
   const result = await response.json();
   const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Gemini returned empty response');
   return JSON.parse(text);
+}
+
+async function callAlibaba(apiKey: string, description: string): Promise<any> {
+  // Alibaba DashScope REST API (native, per infrastructure standards)
+  const response = await fetch(
+    'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'qwen-max',
+        input: {
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: description },
+          ],
+        },
+        parameters: {
+          temperature: 0.3,
+          result_format: 'message',
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Alibaba Qwen error ${response.status}: ${errorText.slice(0, 200)}`);
+  }
+
+  const result = await response.json();
+  const text = result.output?.choices?.[0]?.message?.content;
+  if (!text) throw new Error('Alibaba Qwen returned empty response');
+  
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Alibaba Qwen did not return valid JSON');
+  return JSON.parse(jsonMatch[0]);
 }
 
 async function callOpenAI(apiKey: string, description: string): Promise<any> {
@@ -169,12 +210,41 @@ async function callOpenAI(apiKey: string, description: string): Promise<any> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`OpenAI error ${response.status}: ${errorText}`);
+    throw new Error(`OpenAI error ${response.status}: ${errorText.slice(0, 200)}`);
   }
 
   const result = await response.json();
   const text = result.choices?.[0]?.message?.content;
   if (!text) throw new Error('OpenAI returned empty response');
+  return JSON.parse(text);
+}
+
+async function callDeepSeek(apiKey: string, description: string): Promise<any> {
+  const response = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: description },
+      ],
+      temperature: 0.3,
+      response_format: { type: 'json_object' },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`DeepSeek error ${response.status}: ${errorText.slice(0, 200)}`);
+  }
+
+  const result = await response.json();
+  const text = result.choices?.[0]?.message?.content;
+  if (!text) throw new Error('DeepSeek returned empty response');
   return JSON.parse(text);
 }
 
@@ -196,7 +266,7 @@ async function callClaude(apiKey: string, description: string): Promise<any> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Claude error ${response.status}: ${errorText}`);
+    throw new Error(`Claude error ${response.status}: ${errorText.slice(0, 200)}`);
   }
 
   const result = await response.json();
@@ -209,9 +279,8 @@ async function callClaude(apiKey: string, description: string): Promise<any> {
 }
 
 // ============================================================================
-// UNIFIED LLM CALL WITH FALLBACK CHAIN
-// Uses same pattern as ai-universal-processor resilience:
-// Vertex Gemini (primary) → Consumer Gemini 2.0 (backup) → OpenAI → Claude
+// FULL 7-PROVIDER FALLBACK CHAIN
+// Matches ecosystem routing: Vertex → Consumer Gemini → Alibaba → OpenAI → DeepSeek → Claude
 // ============================================================================
 
 interface LLMResult {
@@ -232,18 +301,28 @@ async function analyzeWithFallbackChain(description: string): Promise<LLMResult>
     model: string;
   }> = [];
 
-  // 1. Vertex AI Gemini (primary - uses service account JWT, same as image/video gen)
+  // 1. Vertex AI - Gemini 2.5 Flash (deep thinking, quality-critical)
   const vertexSA = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT');
   if (vertexSA) {
     fallbackChain.push({
-      id: 'vertex_gemini',
-      call: () => callVertexGemini(description),
+      id: 'vertex_gemini_2.5_flash',
+      call: () => callVertexGemini('gemini-2.5-flash', description),
       provider: 'google-vertex',
-      model: 'gemini-2.0-flash-001',
+      model: 'gemini-2.5-flash',
     });
   }
 
-  // 2. Consumer Gemini 2.0 Flash (backup - uses API key)
+  // 2. Vertex AI - Gemini 2.0 Flash (speed backup)
+  if (vertexSA) {
+    fallbackChain.push({
+      id: 'vertex_gemini_2.0',
+      call: () => callVertexGemini('gemini-2.0-flash-001', description),
+      provider: 'google-vertex',
+      model: 'gemini-2.0-flash',
+    });
+  }
+
+  // 3. Consumer Gemini 2.0 Flash (API key backup)
   const geminiKey = getGeminiKey();
   if (geminiKey) {
     fallbackChain.push({
@@ -254,7 +333,18 @@ async function analyzeWithFallbackChain(description: string): Promise<LLMResult>
     });
   }
 
-  // 3. OpenAI (fallback)
+  // 4. Alibaba Qwen-Max (CJK/MENA zone primary per regional routing)
+  const alibabaKey = getApiKey('ALIBABA_SINGAPORE_API_KEY', 'ALIBABA_API_KEY');
+  if (alibabaKey) {
+    fallbackChain.push({
+      id: 'alibaba_qwen',
+      call: () => callAlibaba(alibabaKey, description),
+      provider: 'alibaba',
+      model: 'qwen-max',
+    });
+  }
+
+  // 5. OpenAI GPT-4o-mini (fallback)
   const openaiKey = getOpenAIKey();
   if (openaiKey) {
     fallbackChain.push({
@@ -265,7 +355,18 @@ async function analyzeWithFallbackChain(description: string): Promise<LLMResult>
     });
   }
 
-  // 4. Claude (fallback)
+  // 6. DeepSeek (cross-platform fallback per routing policy)
+  const deepseekKey = getApiKey('DEEPSEEK_API_KEY');
+  if (deepseekKey) {
+    fallbackChain.push({
+      id: 'deepseek',
+      call: () => callDeepSeek(deepseekKey, description),
+      provider: 'deepseek',
+      model: 'deepseek-chat',
+    });
+  }
+
+  // 7. Claude (final fallback)
   const claudeKey = getClaudeKey();
   if (claudeKey) {
     fallbackChain.push({
@@ -277,18 +378,20 @@ async function analyzeWithFallbackChain(description: string): Promise<LLMResult>
   }
 
   if (fallbackChain.length === 0) {
-    throw new Error('No AI providers configured. Set GOOGLE_VERTEX_SERVICE_ACCOUNT, GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.');
+    throw new Error('No AI providers configured. Set GOOGLE_VERTEX_SERVICE_ACCOUNT, GEMINI_API_KEY, ALIBABA_SINGAPORE_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, or ANTHROPIC_API_KEY.');
   }
+
+  console.log(`[intent-analyzer] Chain: ${fallbackChain.map(e => e.id).join(' → ')} (${fallbackChain.length} providers)`);
 
   for (let i = 0; i < fallbackChain.length; i++) {
     const entry = fallbackChain[i];
     attempts.push(entry.id);
     
     try {
-      console.log(`[intent-analyzer] Trying provider: ${entry.id} (${entry.model})`);
+      console.log(`[intent-analyzer] Trying: ${entry.id} (${entry.model})`);
       const analysis = await entry.call();
       
-      console.log(`[intent-analyzer] ✅ Success with ${entry.id}`);
+      console.log(`[intent-analyzer] ✅ Success: ${entry.id}`);
       return {
         analysis,
         provider: entry.provider,
@@ -339,6 +442,7 @@ serve(async (req) => {
         model: result.model,
         fallback_used: result.fallback_used,
         attempts: result.attempts,
+        chain_depth: result.attempts.length,
         available_styles_count: AVAILABLE_STYLES.length,
       },
       analyzed_at: new Date().toISOString(),
