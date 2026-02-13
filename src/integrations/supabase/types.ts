@@ -3849,6 +3849,252 @@ export type Database = {
           },
         ]
       }
+      cast_ai_capabilities: {
+        Row: {
+          base_token_cost: number | null
+          category: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_system_default: boolean | null
+          label: string
+          sort_order: number | null
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          base_token_cost?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_default?: boolean | null
+          label: string
+          sort_order?: number | null
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          base_token_cost?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_default?: boolean | null
+          label?: string
+          sort_order?: number | null
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      cast_capability_provider_map: {
+        Row: {
+          capability_value: string
+          created_at: string
+          fallback_order: number | null
+          id: string
+          is_active: boolean | null
+          provider_label: string
+          provider_value: string
+          zone: string | null
+        }
+        Insert: {
+          capability_value: string
+          created_at?: string
+          fallback_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          provider_label: string
+          provider_value: string
+          zone?: string | null
+        }
+        Update: {
+          capability_value?: string
+          created_at?: string
+          fallback_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          provider_label?: string
+          provider_value?: string
+          zone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_capability_provider_map_capability_value_fkey"
+            columns: ["capability_value"]
+            isOneToOne: false
+            referencedRelation: "cast_ai_capabilities"
+            referencedColumns: ["value"]
+          },
+        ]
+      }
+      cast_intent_style_map: {
+        Row: {
+          created_at: string
+          id: string
+          intent_value: string
+          relevance_score: number | null
+          sort_order: number | null
+          style_value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intent_value: string
+          relevance_score?: number | null
+          sort_order?: number | null
+          style_value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intent_value?: string
+          relevance_score?: number | null
+          sort_order?: number | null
+          style_value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_intent_style_map_style_value_fkey"
+            columns: ["style_value"]
+            isOneToOne: false
+            referencedRelation: "cast_video_styles"
+            referencedColumns: ["value"]
+          },
+        ]
+      }
+      cast_style_capability_map: {
+        Row: {
+          capability_value: string
+          created_at: string
+          id: string
+          is_required: boolean | null
+          priority: number | null
+          style_value: string
+          token_multiplier: number | null
+        }
+        Insert: {
+          capability_value: string
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          priority?: number | null
+          style_value: string
+          token_multiplier?: number | null
+        }
+        Update: {
+          capability_value?: string
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          priority?: number | null
+          style_value?: string
+          token_multiplier?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_style_capability_map_capability_value_fkey"
+            columns: ["capability_value"]
+            isOneToOne: false
+            referencedRelation: "cast_ai_capabilities"
+            referencedColumns: ["value"]
+          },
+          {
+            foreignKeyName: "cast_style_capability_map_style_value_fkey"
+            columns: ["style_value"]
+            isOneToOne: false
+            referencedRelation: "cast_video_styles"
+            referencedColumns: ["value"]
+          },
+        ]
+      }
+      cast_style_platform_map: {
+        Row: {
+          created_at: string
+          id: string
+          is_recommended: boolean | null
+          platform_id: string
+          sort_order: number | null
+          style_value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_recommended?: boolean | null
+          platform_id: string
+          sort_order?: number | null
+          style_value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_recommended?: boolean | null
+          platform_id?: string
+          sort_order?: number | null
+          style_value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_style_platform_map_style_value_fkey"
+            columns: ["style_value"]
+            isOneToOne: false
+            referencedRelation: "cast_video_styles"
+            referencedColumns: ["value"]
+          },
+        ]
+      }
+      cast_video_styles: {
+        Row: {
+          base_token_cost: number | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_system_default: boolean | null
+          label: string
+          sort_order: number | null
+          style_group: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          base_token_cost?: number | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_default?: boolean | null
+          label: string
+          sort_order?: number | null
+          style_group?: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          base_token_cost?: number | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_default?: boolean | null
+          label?: string
+          sort_order?: number | null
+          style_group?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       clinical_trials: {
         Row: {
           actual_completion_date: string | null
