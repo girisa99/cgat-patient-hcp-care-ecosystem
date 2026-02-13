@@ -79,9 +79,27 @@ interface BlueprintTemplatesGridProps {
   selectedBlueprintId?: string;
   /** Simple mode: shows only top 12 popular templates, no filters or admin tools */
   simpleMode?: boolean;
+  /** Intent-based filter: shows top 8 templates matching the selected intent, with search + Browse All */
+  intentFilter?: string | null;
   /** Selected video styles for multi-style composition updates */
   selectedVideoStyles?: any[];
 }
+
+/** Maps content intents to blueprint category keywords for auto-filtering */
+const INTENT_TO_CATEGORIES: Record<string, string[]> = {
+  'product-demo': ['marketing', 'corporate', 'saas'],
+  'hero-banner': ['marketing', 'animation', 'image_to_video'],
+  'educational': ['educational', 'animation', 'ppt'],
+  'testimonial': ['marketing', 'avatar', 'storytelling'],
+  'case-study': ['corporate', 'storytelling', 'marketing'],
+  'social-short': ['entertainment', 'animation', 'marketing'],
+  'how-to': ['educational', 'animation', 'ppt'],
+  'thought-leadership': ['corporate', 'storytelling', 'avatar'],
+  'explainer': ['educational', 'animation', '3d'],
+  'internal-comms': ['corporate', 'announcement', 'ppt'],
+  'event-promo': ['marketing', 'entertainment', 'animation'],
+  'investor-update': ['corporate', 'ppt', 'storytelling'],
+};
 
 // Extended category icons including new categories
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -318,6 +336,7 @@ export function BlueprintTemplatesGrid({
   onSelectBlueprint,
   selectedBlueprintId,
   simpleMode = false,
+  intentFilter,
   selectedVideoStyles,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
@@ -349,6 +368,10 @@ export function BlueprintTemplatesGrid({
   // Comparison state
   const [comparisonIds, setComparisonIds] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
+
+  // Intent-guided mode: allow expanding to full library
+  const [showAllTemplates, setShowAllTemplates] = useState(false);
+  const isIntentGuided = !!intentFilter && !showAllTemplates;
 
   // Create Template from Recommender fallback state
   const [createFromRecommender, setCreateFromRecommender] = useState(false);
@@ -566,6 +589,27 @@ export function BlueprintTemplatesGrid({
 
   // Filter blueprints - fully wired with all filters
   const filteredBlueprints = useMemo(() => {
+    // Intent-guided mode: filter by intent categories, limit to 8
+    if (isIntentGuided && intentFilter) {
+      const categories = INTENT_TO_CATEGORIES[intentFilter] || [];
+      let intentFiltered = blueprints.filter(bp => 
+        categories.some(cat => bp.category.toLowerCase().includes(cat))
+      );
+      // Apply search within intent results
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        intentFiltered = intentFiltered.filter(bp =>
+          bp.name.toLowerCase().includes(query) ||
+          bp.description?.toLowerCase().includes(query) ||
+          bp.industry_tags?.some(tag => tag.toLowerCase().includes(query))
+        );
+      }
+      // Sort by usage and limit to 8
+      return [...intentFiltered]
+        .sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0))
+        .slice(0, 8);
+    }
+
     // Simple mode: just return top 12 by popularity
     if (simpleMode) {
       return [...blueprints]
@@ -674,7 +718,7 @@ export function BlueprintTemplatesGrid({
     }
 
     return filtered;
-  }, [blueprints, activeCategory, searchQuery, capabilityFilter, regionFilter, industryFilter, combinationFilter, deviceFilter, aiProviderFilter, simpleMode]);
+  }, [blueprints, activeCategory, searchQuery, capabilityFilter, regionFilter, industryFilter, combinationFilter, deviceFilter, aiProviderFilter, simpleMode, isIntentGuided, intentFilter]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -738,8 +782,40 @@ export function BlueprintTemplatesGrid({
 
   return (
     <div className="space-y-4">
+      {/* Intent-guided mode header */}
+      {isIntentGuided && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">Recommended Templates</span>
+              <Badge variant="secondary" className="text-[10px]">{filteredBlueprints.length} matches</Badge>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-xs gap-1"
+              onClick={() => setShowAllTemplates(true)}
+            >
+              <Search className="h-3 w-3" />
+              Browse All ({blueprints.length})
+            </Button>
+          </div>
+          {/* Simple search within intent results */}
+          <div className="relative max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search within recommendations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 pl-8 text-sm"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Simple mode header */}
-      {simpleMode && (
+      {simpleMode && !isIntentGuided && (
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium">Popular Templates</span>
@@ -747,8 +823,8 @@ export function BlueprintTemplatesGrid({
         </div>
       )}
 
-      {/* Smart Template Recommender - Advanced only */}
-      {!simpleMode && (
+      {/* Smart Template Recommender - Advanced only, not in intent-guided mode */}
+      {!simpleMode && !isIntentGuided && (
         <SmartTemplateRecommender
           blueprints={blueprints}
           onSelectBlueprint={(bp) => setPreviewBlueprintId(bp.id)}
@@ -760,7 +836,7 @@ export function BlueprintTemplatesGrid({
       )}
 
       {/* Hidden CreateTemplateDialog triggered by SmartTemplateRecommender fallback CTA */}
-      {!simpleMode && (
+      {!simpleMode && !isIntentGuided && (
         <CreateTemplateDialog
           onCreated={() => {
             refetch();
@@ -777,7 +853,7 @@ export function BlueprintTemplatesGrid({
       )}
 
       {/* Comparison Bar - Advanced only */}
-      {!simpleMode && comparisonIds.length > 0 && (
+      {!simpleMode && !isIntentGuided && comparisonIds.length > 0 && (
         <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg p-2">
           <Badge variant="outline" className="text-xs">
             {comparisonIds.length}/3 selected
@@ -806,7 +882,7 @@ export function BlueprintTemplatesGrid({
       )}
 
       {/* Header with Actions - Advanced only */}
-      {!simpleMode && (
+      {!simpleMode && !isIntentGuided && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-wrap">
               {/* Create Template Button */}
@@ -863,7 +939,7 @@ export function BlueprintTemplatesGrid({
       )}
 
       {/* Smart Filter Bar - Advanced only */}
-      {!simpleMode && (
+      {!simpleMode && !isIntentGuided && (
         <TemplateFilterBar
           filters={filterState}
           onFiltersChange={handleFiltersChange}
@@ -916,18 +992,20 @@ export function BlueprintTemplatesGrid({
               )}
               onClick={() => setPreviewBlueprintId(blueprint.id)}
             >
-              {/* Compare checkbox */}
-              <div
-                className="absolute top-2 left-2 z-10"
-                onClick={e => e.stopPropagation()}
-              >
-                <Checkbox
-                  checked={comparisonIds.includes(blueprint.id)}
-                  onCheckedChange={() => toggleCompare(blueprint.id)}
-                  className="h-4 w-4 bg-background/80 border-border"
-                  disabled={!comparisonIds.includes(blueprint.id) && comparisonIds.length >= 3}
-                />
-              </div>
+              {/* Compare checkbox - hidden in intent-guided mode */}
+              {!isIntentGuided && (
+                <div
+                  className="absolute top-2 left-2 z-10"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Checkbox
+                    checked={comparisonIds.includes(blueprint.id)}
+                    onCheckedChange={() => toggleCompare(blueprint.id)}
+                    className="h-4 w-4 bg-background/80 border-border"
+                    disabled={!comparisonIds.includes(blueprint.id) && comparisonIds.length >= 3}
+                  />
+                </div>
+              )}
               {/* Thumbnail Area - AI Generated, Placeholder, or Gradient Fallback */}
               <div className="h-36 flex items-center justify-center relative overflow-hidden">
                 {/* Always show an image - either actual thumbnail or category placeholder */}
@@ -1005,23 +1083,25 @@ export function BlueprintTemplatesGrid({
                     <Play className="h-4 w-4" />
                     Preview
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="gap-2 bg-background/80"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      queueThumbnailGeneration(blueprint.id);
-                    }}
-                    disabled={generatingId === blueprint.id}
-                  >
-                    {generatingId === blueprint.id ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Wand2 className="h-4 w-4" />
-                    )}
-                    {blueprint.thumbnail_url ? 'Regen' : 'Generate'}
-                  </Button>
+                  {!isIntentGuided && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="gap-2 bg-background/80"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        queueThumbnailGeneration(blueprint.id);
+                      }}
+                      disabled={generatingId === blueprint.id}
+                    >
+                      {generatingId === blueprint.id ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-4 w-4" />
+                      )}
+                      {blueprint.thumbnail_url ? 'Regen' : 'Generate'}
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -1081,11 +1161,38 @@ export function BlueprintTemplatesGrid({
 
       {/* No Results */}
       {!isLoading && !error && filteredBlueprints.length === 0 && blueprints.length > 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No templates match your search</p>
-          <Button variant="ghost" onClick={() => { setSearchQuery(''); setActiveCategory('all'); }} className="mt-2">
-            Clear Filters
-          </Button>
+        <div className="flex flex-col items-center justify-center py-10 space-y-4">
+          <div className="p-3 rounded-full bg-muted">
+            <Search className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-sm font-medium">No templates match {isIntentGuided ? 'this intent' : 'your search'}</p>
+            <p className="text-xs text-muted-foreground">
+              {isIntentGuided 
+                ? 'Try browsing the full library or create a custom template'
+                : 'Try adjusting your filters or search terms'}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {isIntentGuided ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1.5"
+                  onClick={() => setShowAllTemplates(true)}
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  Browse All Templates
+                </Button>
+                <CreateTemplateDialog onCreated={refetch} />
+              </>
+            ) : (
+              <Button variant="ghost" onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}>
+                Clear Filters
+              </Button>
+            )}
+          </div>
         </div>
       )}
 

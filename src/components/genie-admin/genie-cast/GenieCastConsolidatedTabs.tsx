@@ -509,6 +509,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   }}
                   selectedBlueprintId={castSession.session.selectedTemplate?.id}
                   simpleMode={createMode.isSimple}
+                  intentFilter={castSession.session.selectedIntent}
                   selectedVideoStyles={selectedVideoStyles}
                 />
               </motion.div>
