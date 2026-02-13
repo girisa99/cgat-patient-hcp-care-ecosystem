@@ -786,15 +786,42 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       });
       if (error) throw error;
       if (data?.template) {
-        setFormData(prev => ({
-          ...prev,
-          name: data.template.name || prev.name,
-          description: data.template.description || prev.description,
-          category: data.template.category || prev.category,
-          videoStyle: data.template.videoStyle || prev.videoStyle,
-          capabilities: data.template.capabilities || prev.capabilities,
-          regions: data.template.regions || prev.regions,
-        }));
+        const t = data.template;
+        // Map AI region codes to our MASTER_REGION_GROUPS codes
+        const regionCodeMap: Record<string, string[]> = {
+          western: ['NAM', 'NAM_US', 'NAM_CA'],
+          europe: ['EUR', 'EUR_WEST', 'EUR_NORTH'],
+          cjk: ['CJK', 'CJK_JP', 'CJK_KR', 'CJK_CN'],
+          india: ['INDIA', 'INDIA_NORTH', 'INDIA_SOUTH'],
+          mena: ['MENA', 'MENA_GCC', 'MENA_LEVANT'],
+          africa: ['AFRICA', 'AFRICA_WEST', 'AFRICA_EAST'],
+          latam: ['LATAM', 'LATAM_BR', 'LATAM_MX'],
+          sea: ['SEA', 'SEA_ID', 'SEA_PH'],
+          global: ['NAM', 'NAM_US', 'EUR', 'INDIA', 'MENA', 'CJK'],
+          caribbean: ['CARIBBEAN'],
+          pakistan: ['PAKISTAN'],
+          oceania: ['OCEANIA'],
+          central_asia: ['CENTRAL_ASIA'],
+          russia: ['EASTERN_EUR'],
+        };
+        const mappedRegions = (t.regions || []).flatMap((r: string) => 
+          regionCodeMap[r] || (MASTER_REGION_GROUPS.some(g => g.parent === r || g.regions.some(sr => sr.code === r)) ? [r] : [])
+        );
+
+        setFormData(prev => {
+          const finalRegions = mappedRegions.length > 0 ? [...new Set(mappedRegions)] : prev.regions;
+          return {
+            ...prev,
+            name: t.name || prev.name,
+            description: t.description || prev.description,
+            category: t.category || prev.category,
+            videoStyle: t.videoStyle || prev.videoStyle,
+            capabilities: Array.isArray(t.capabilities) && t.capabilities.length > 0 ? t.capabilities : prev.capabilities,
+            regions: finalRegions as string[],
+            platforms: Array.isArray(t.platforms) && t.platforms.length > 0 ? t.platforms : prev.platforms,
+            languages: Array.isArray(t.languages) && t.languages.length > 0 ? t.languages : prev.languages,
+          };
+        });
       }
       setStage('review');
       toast({ title: '✨ AI configured your template', description: 'Review and adjust the settings below.' });
