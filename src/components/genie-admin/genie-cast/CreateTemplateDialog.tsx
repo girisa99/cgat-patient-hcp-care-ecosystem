@@ -84,6 +84,7 @@ const TEMPLATE_CATEGORIES = [
 
 // Video styles
 const VIDEO_STYLES = [
+  // Video
   { value: 'photorealistic', label: 'Photorealistic', icon: '📸' },
   { value: 'hyper_real', label: 'Hyper-Realistic 4K', icon: '🎥' },
   { value: 'product_hero', label: 'Product Hero', icon: '🛍️' },
@@ -93,45 +94,182 @@ const VIDEO_STYLES = [
   { value: 'whiteboard', label: 'Whiteboard', icon: '📝' },
   { value: 'explainer', label: 'Explainer', icon: '💡' },
   { value: 'motion_graphics', label: 'Motion Graphics', icon: '✨' },
-  { value: 'documentary', label: 'Documentary', icon: '🎥' },
-  { value: 'kinetic_typography', label: 'Kinetic Typography', icon: '📝' },
-  { value: 'ppt_animation', label: 'PPT Animation', icon: '📊' },
+  { value: 'documentary', label: 'Documentary', icon: '🎬' },
+  { value: 'kinetic_typography', label: 'Kinetic Typography', icon: '🔤' },
+  { value: 'cinematic', label: 'Cinematic', icon: '🎞️' },
+  { value: 'stop_motion', label: 'Stop Motion', icon: '🎭' },
+  { value: 'sketch_animation', label: 'Sketch Animation', icon: '✏️' },
+  // PPT / Deck / Slides
+  { value: 'ppt_animation', label: 'PPT/Deck Animation', icon: '📊' },
+  { value: 'ppt_slides', label: 'PPT Slides (Static)', icon: '📑' },
+  { value: 'pitch_deck', label: 'Pitch Deck', icon: '📋' },
+  { value: 'report_deck', label: 'Report/Data Deck', icon: '📈' },
+  // Asset Lab outputs
+  { value: 'banner_static', label: 'Static Banner', icon: '🖼️' },
+  { value: 'banner_animated', label: 'Animated Banner', icon: '🎆' },
+  { value: 'infographic', label: 'Infographic', icon: '📊' },
+  { value: 'social_card', label: 'Social Media Card', icon: '🃏' },
+  { value: 'email_header', label: 'Email Header', icon: '📧' },
+  { value: 'blog_hero', label: 'Blog Hero Image', icon: '📰' },
+  // 3D / Avatar / VR
+  { value: '3d_product', label: '3D Product Showcase', icon: '🧊' },
+  { value: 'vr_experience', label: 'VR/AR Experience', icon: '🥽' },
+  { value: 'avatar_presenter', label: 'Avatar Presenter', icon: '🧑' },
 ];
 
-// Platforms
+// Platforms — expanded with asset lab & content platforms
 const PLATFORM_OPTIONS = [
-  { value: 'tiktok', label: 'TikTok (9:16)', icon: '' },
-  { value: 'instagram_reels', label: 'Instagram Reels (9:16)', icon: '' },
-  { value: 'instagram_feed', label: 'Instagram Feed (1:1)', icon: '' },
-  { value: 'youtube', label: 'YouTube (16:9)', icon: '' },
-  { value: 'youtube_shorts', label: 'YouTube Shorts (9:16)', icon: '' },
-  { value: 'facebook', label: 'Facebook (16:9)', icon: '' },
-  { value: 'linkedin', label: 'LinkedIn (16:9)', icon: '' },
+  // Social Video
+  { value: 'tiktok', label: 'TikTok (9:16)', icon: '📱' },
+  { value: 'instagram_reels', label: 'Instagram Reels (9:16)', icon: '📱' },
+  { value: 'instagram_feed', label: 'Instagram Feed (1:1)', icon: '📷' },
+  { value: 'instagram_stories', label: 'Instagram Stories (9:16)', icon: '📸' },
+  { value: 'youtube', label: 'YouTube (16:9)', icon: '▶️' },
+  { value: 'youtube_shorts', label: 'YouTube Shorts (9:16)', icon: '⚡' },
+  { value: 'facebook', label: 'Facebook (16:9)', icon: '👍' },
+  { value: 'linkedin', label: 'LinkedIn (16:9)', icon: '💼' },
+  { value: 'x_twitter', label: 'X/Twitter (16:9)', icon: '🐦' },
+  { value: 'snapchat', label: 'Snapchat (9:16)', icon: '👻' },
+  // Content & Web
+  { value: 'landing_page', label: 'Landing Page', icon: '🌐' },
+  { value: 'blog_post', label: 'Blog Post', icon: '📝' },
+  { value: 'email_campaign', label: 'Email Campaign', icon: '📧' },
+  { value: 'newsletter', label: 'Newsletter', icon: '📰' },
+  // Presentation
+  { value: 'presentation', label: 'Presentation/PPT', icon: '📊' },
+  { value: 'webinar', label: 'Webinar', icon: '🎥' },
+  // Digital Ads
+  { value: 'google_ads', label: 'Google Ads', icon: '🔍' },
+  { value: 'meta_ads', label: 'Meta Ads', icon: '📢' },
+  { value: 'display_ads', label: 'Display Ads (Banner)', icon: '🖼️' },
+  // Other
+  { value: 'whatsapp', label: 'WhatsApp', icon: '💬' },
+  { value: 'tv_broadcast', label: 'TV/Broadcast (16:9)', icon: '📺' },
 ];
 
-// AI Capabilities
+// AI Capabilities — expanded
 const AI_CAPABILITIES = [
   { value: 'text_to_video', label: 'Text-to-Video', icon: '📹' },
   { value: 'image_to_video', label: 'Image-to-Video', icon: '🎞️' },
   { value: '3d_generation', label: '3D Generation', icon: '🧊' },
-  { value: 'avatar', label: 'Avatar', icon: '👤' },
+  { value: 'avatar', label: 'Avatar/Talking Head', icon: '👤' },
   { value: 'lipsync', label: 'Lipsync', icon: '👄' },
   { value: 'tts', label: 'TTS Voiceover', icon: '🎙️' },
   { value: 'music_gen', label: 'Music Generation', icon: '🎵' },
-  { value: 'video_effects', label: 'Video Effects', icon: '✨' },
+  { value: 'video_effects', label: 'Video Effects/VFX', icon: '✨' },
+  { value: 'text_to_image', label: 'Text-to-Image', icon: '🖼️' },
+  { value: 'ppt_generation', label: 'PPT/Slide Generation', icon: '📊' },
+  { value: 'transcreation', label: 'Regional Transcreation', icon: '🌍' },
+  { value: 'voice_cloning', label: 'Voice Cloning', icon: '🔊' },
+  { value: 'background_removal', label: 'Background Removal', icon: '🪄' },
+  { value: 'ar_vr', label: 'AR/VR Rendering', icon: '🥽' },
+  { value: 'subtitles_cc', label: 'Auto Subtitles/CC', icon: '💬' },
 ];
 
-// Expanded Regions with comprehensive languages
-const REGIONS = [
-  { value: 'western', label: 'Western/US', icon: '🇺🇸', languages: ['en', 'es_mx', 'es_us', 'fr_ca'] },
-  { value: 'europe', label: 'Europe', icon: '🇪🇺', languages: ['en_gb', 'de', 'de_at', 'de_ch', 'fr', 'fr_be', 'fr_ch', 'it', 'es', 'pt_pt', 'nl', 'nl_be', 'pl', 'cs', 'sk', 'hu', 'ro', 'bg', 'el', 'sv', 'da', 'no', 'fi', 'et', 'lv', 'lt', 'sl', 'hr', 'sr', 'bs', 'mk', 'sq', 'uk', 'be', 'ru', 'ga', 'cy', 'gd', 'mt', 'lb', 'is', 'fo', 'ca', 'gl', 'eu', 'ast'] },
-  { value: 'cjk', label: 'CJK', icon: '🇨🇳', languages: ['zh_cn', 'zh_tw', 'zh_hk', 'ja', 'ko', 'mn'] },
-  { value: 'india', label: 'India', icon: '🇮🇳', languages: ['hi', 'en_in', 'te', 'kn', 'ta', 'mr', 'bn', 'gu', 'ml', 'pa', 'or', 'as', 'ks', 'ne', 'sd', 'ur', 'si', 'dv', 'bho', 'mai', 'kok', 'doi', 'mni', 'sat'] },
-  { value: 'mena', label: 'MENA', icon: '🇸🇦', languages: ['ar_sa', 'ar_eg', 'ar_ae', 'ar_ma', 'ar_dz', 'ar_tn', 'ar_lb', 'ar_jo', 'ar_iq', 'ar_kw', 'ar_bh', 'ar_qa', 'ar_om', 'ar_ye', 'ar_ly', 'ar_sd', 'he', 'fa', 'ps', 'ku', 'tr', 'az'] },
-  { value: 'sea', label: 'Southeast Asia', icon: '🇸🇬', languages: ['id', 'ms', 'th', 'vi', 'fil', 'tl', 'my', 'km', 'lo', 'jv', 'su', 'ceb', 'ilo', 'war', 'bcl'] },
-  { value: 'latam', label: 'Latin America', icon: '🇧🇷', languages: ['es_ar', 'es_mx', 'es_co', 'es_cl', 'es_pe', 'es_ve', 'es_ec', 'es_bo', 'es_py', 'es_uy', 'es_cr', 'es_pa', 'es_cu', 'es_do', 'es_pr', 'es_gt', 'es_hn', 'es_sv', 'es_ni', 'pt_br', 'ht', 'gn', 'qu', 'ay'] },
-  { value: 'africa', label: 'Africa', icon: '🌍', languages: ['en_za', 'en_ng', 'en_ke', 'en_gh', 'af', 'zu', 'xh', 'st', 'tn', 'sw', 'am', 'om', 'ti', 'so', 'ha', 'ig', 'yo', 'rw', 'mg', 'sn', 'nd', 'ny', 'lg'] },
-  { value: 'oceania', label: 'Oceania', icon: '🇦🇺', languages: ['en_au', 'en_nz', 'mi', 'sm', 'to', 'fj', 'ty', 'haw'] },
+// Expanded Regions with sub-regions and comprehensive languages
+interface RegionConfig {
+  value: string;
+  label: string;
+  icon: string;
+  languages: string[];
+  subRegions?: { value: string; label: string; icon: string; languages: string[] }[];
+}
+
+const REGIONS: RegionConfig[] = [
+  { 
+    value: 'western', label: 'Western/US', icon: '🇺🇸', 
+    languages: ['en', 'es_mx', 'es_us', 'fr_ca'],
+    subRegions: [
+      { value: 'western_us_east', label: 'US East Coast', icon: '🗽', languages: ['en', 'es_us'] },
+      { value: 'western_us_west', label: 'US West Coast', icon: '🌉', languages: ['en', 'es_us'] },
+      { value: 'western_us_south', label: 'US South', icon: '🤠', languages: ['en', 'es_us'] },
+      { value: 'western_canada', label: 'Canada', icon: '🇨🇦', languages: ['en', 'fr_ca'] },
+    ]
+  },
+  { 
+    value: 'europe', label: 'Europe', icon: '🇪🇺', 
+    languages: ['en_gb', 'de', 'de_at', 'de_ch', 'fr', 'fr_be', 'fr_ch', 'it', 'es', 'pt_pt', 'nl', 'nl_be', 'pl', 'cs', 'sk', 'hu', 'ro', 'bg', 'el', 'sv', 'da', 'no', 'fi', 'et', 'lv', 'lt', 'sl', 'hr', 'sr', 'bs', 'mk', 'sq', 'uk', 'be', 'ru', 'ga', 'cy', 'gd', 'mt', 'lb', 'is', 'fo', 'ca', 'gl', 'eu', 'ast'],
+    subRegions: [
+      { value: 'europe_western', label: 'Western Europe', icon: '🇫🇷', languages: ['fr', 'de', 'nl', 'en_gb', 'es'] },
+      { value: 'europe_northern', label: 'Northern Europe', icon: '🇸🇪', languages: ['sv', 'da', 'no', 'fi', 'is'] },
+      { value: 'europe_southern', label: 'Southern Europe', icon: '🇮🇹', languages: ['it', 'es', 'pt_pt', 'el', 'mt'] },
+      { value: 'europe_eastern', label: 'Eastern Europe', icon: '🇵🇱', languages: ['pl', 'cs', 'sk', 'hu', 'ro', 'bg', 'uk', 'ru'] },
+      { value: 'europe_balkans', label: 'Balkans', icon: '🇷🇸', languages: ['sr', 'hr', 'bs', 'sl', 'mk', 'sq'] },
+      { value: 'europe_baltics', label: 'Baltics', icon: '🇱🇹', languages: ['lt', 'lv', 'et'] },
+    ]
+  },
+  { 
+    value: 'cjk', label: 'CJK', icon: '🇨🇳', 
+    languages: ['zh_cn', 'zh_tw', 'zh_hk', 'ja', 'ko', 'mn'],
+    subRegions: [
+      { value: 'cjk_china', label: 'China (Mainland)', icon: '🇨🇳', languages: ['zh_cn'] },
+      { value: 'cjk_taiwan', label: 'Taiwan', icon: '🇹🇼', languages: ['zh_tw'] },
+      { value: 'cjk_hongkong', label: 'Hong Kong', icon: '🇭🇰', languages: ['zh_hk'] },
+      { value: 'cjk_japan', label: 'Japan', icon: '🇯🇵', languages: ['ja'] },
+      { value: 'cjk_korea', label: 'Korea', icon: '🇰🇷', languages: ['ko'] },
+    ]
+  },
+  { 
+    value: 'india', label: 'India', icon: '🇮🇳', 
+    languages: ['hi', 'en_in', 'te', 'kn', 'ta', 'mr', 'bn', 'gu', 'ml', 'pa', 'or', 'as', 'ks', 'ne', 'sd', 'ur', 'si', 'dv', 'bho', 'mai', 'kok', 'doi', 'mni', 'sat'],
+    subRegions: [
+      { value: 'india_north', label: 'North India', icon: '🏔️', languages: ['hi', 'pa', 'ur', 'ks', 'doi'] },
+      { value: 'india_south', label: 'South India', icon: '🌴', languages: ['te', 'kn', 'ta', 'ml'] },
+      { value: 'india_east', label: 'East India', icon: '🌊', languages: ['bn', 'or', 'as', 'mni', 'sat'] },
+      { value: 'india_west', label: 'West India', icon: '🏖️', languages: ['mr', 'gu', 'kok', 'sd'] },
+      { value: 'india_pan', label: 'Pan-India', icon: '🇮🇳', languages: ['hi', 'en_in'] },
+    ]
+  },
+  { 
+    value: 'mena', label: 'MENA', icon: '🇸🇦', 
+    languages: ['ar_sa', 'ar_eg', 'ar_ae', 'ar_ma', 'ar_dz', 'ar_tn', 'ar_lb', 'ar_jo', 'ar_iq', 'ar_kw', 'ar_bh', 'ar_qa', 'ar_om', 'ar_ye', 'ar_ly', 'ar_sd', 'he', 'fa', 'ps', 'ku', 'tr', 'az'],
+    subRegions: [
+      { value: 'mena_gcc', label: 'GCC States', icon: '🇦🇪', languages: ['ar_sa', 'ar_ae', 'ar_kw', 'ar_bh', 'ar_qa', 'ar_om'] },
+      { value: 'mena_levant', label: 'Levant', icon: '🇱🇧', languages: ['ar_lb', 'ar_jo', 'ar_iq'] },
+      { value: 'mena_north_africa', label: 'North Africa', icon: '🇲🇦', languages: ['ar_ma', 'ar_dz', 'ar_tn', 'ar_ly', 'ar_eg'] },
+      { value: 'mena_iran', label: 'Iran/Afghanistan', icon: '🇮🇷', languages: ['fa', 'ps', 'ku'] },
+      { value: 'mena_turkey', label: 'Turkey/Azerbaijan', icon: '🇹🇷', languages: ['tr', 'az'] },
+    ]
+  },
+  { 
+    value: 'sea', label: 'Southeast Asia', icon: '🇸🇬', 
+    languages: ['id', 'ms', 'th', 'vi', 'fil', 'tl', 'my', 'km', 'lo', 'jv', 'su', 'ceb', 'ilo', 'war', 'bcl'],
+    subRegions: [
+      { value: 'sea_mainland', label: 'Mainland SEA', icon: '🇹🇭', languages: ['th', 'vi', 'my', 'km', 'lo'] },
+      { value: 'sea_maritime', label: 'Maritime SEA', icon: '🇮🇩', languages: ['id', 'ms', 'jv', 'su'] },
+      { value: 'sea_philippines', label: 'Philippines', icon: '🇵🇭', languages: ['fil', 'tl', 'ceb', 'ilo', 'war', 'bcl'] },
+    ]
+  },
+  { 
+    value: 'latam', label: 'Latin America', icon: '🇧🇷', 
+    languages: ['es_ar', 'es_mx', 'es_co', 'es_cl', 'es_pe', 'es_ve', 'es_ec', 'es_bo', 'es_py', 'es_uy', 'es_cr', 'es_pa', 'es_cu', 'es_do', 'es_pr', 'es_gt', 'es_hn', 'es_sv', 'es_ni', 'pt_br', 'ht', 'gn', 'qu', 'ay'],
+    subRegions: [
+      { value: 'latam_brazil', label: 'Brazil', icon: '🇧🇷', languages: ['pt_br'] },
+      { value: 'latam_southern_cone', label: 'Southern Cone', icon: '🇦🇷', languages: ['es_ar', 'es_cl', 'es_uy', 'es_py'] },
+      { value: 'latam_andean', label: 'Andean', icon: '🏔️', languages: ['es_co', 'es_pe', 'es_ec', 'es_bo', 'es_ve', 'qu', 'ay'] },
+      { value: 'latam_central', label: 'Central America', icon: '🇨🇷', languages: ['es_cr', 'es_pa', 'es_gt', 'es_hn', 'es_sv', 'es_ni'] },
+      { value: 'latam_caribbean', label: 'Caribbean', icon: '🏝️', languages: ['es_cu', 'es_do', 'es_pr', 'ht'] },
+    ]
+  },
+  { 
+    value: 'africa', label: 'Africa', icon: '🌍', 
+    languages: ['en_za', 'en_ng', 'en_ke', 'en_gh', 'af', 'zu', 'xh', 'st', 'tn', 'sw', 'am', 'om', 'ti', 'so', 'ha', 'ig', 'yo', 'rw', 'mg', 'sn', 'nd', 'ny', 'lg'],
+    subRegions: [
+      { value: 'africa_west', label: 'West Africa', icon: '🇳🇬', languages: ['en_ng', 'en_gh', 'ha', 'ig', 'yo'] },
+      { value: 'africa_east', label: 'East Africa', icon: '🇰🇪', languages: ['en_ke', 'sw', 'am', 'om', 'ti', 'so', 'rw', 'lg'] },
+      { value: 'africa_south', label: 'Southern Africa', icon: '🇿🇦', languages: ['en_za', 'af', 'zu', 'xh', 'st', 'tn', 'sn', 'nd', 'ny'] },
+      { value: 'africa_central', label: 'Central Africa', icon: '🌍', languages: ['fr', 'sw', 'mg'] },
+    ]
+  },
+  { 
+    value: 'oceania', label: 'Oceania', icon: '🇦🇺', 
+    languages: ['en_au', 'en_nz', 'mi', 'sm', 'to', 'fj', 'ty', 'haw'],
+    subRegions: [
+      { value: 'oceania_aus', label: 'Australia', icon: '🇦🇺', languages: ['en_au'] },
+      { value: 'oceania_nz', label: 'New Zealand', icon: '🇳🇿', languages: ['en_nz', 'mi'] },
+      { value: 'oceania_pacific', label: 'Pacific Islands', icon: '🏝️', languages: ['sm', 'to', 'fj', 'ty', 'haw'] },
+    ]
+  },
 ];
 
 // Comprehensive Language names (140+ languages)
@@ -762,16 +900,38 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     }
   }, [open]);
 
-  // Get all available languages based on selected regions
+  // Build flat region options with sub-regions for dropdown
+  const regionOptions = REGIONS.flatMap(r => {
+    const parent = { value: r.value, label: `${r.icon} ${r.label}`, icon: r.icon };
+    const subs = (r.subRegions || []).map(sr => ({
+      value: sr.value,
+      label: `  ↳ ${sr.icon} ${sr.label}`,
+      icon: sr.icon,
+    }));
+    return [parent, ...subs];
+  });
+
+  // Get all available languages based on selected regions (including sub-region languages)
   const availableLanguages = [...new Set(
     REGIONS
-      .filter(r => formData.regions.includes(r.value))
-      .flatMap(r => r.languages)
+      .filter(r => formData.regions.includes(r.value) || 
+        r.subRegions?.some(sr => formData.regions.includes(sr.value))
+      )
+      .flatMap(r => {
+        let langs = [...r.languages];
+        // Also add sub-region specific languages
+        r.subRegions?.forEach(sr => {
+          if (formData.regions.includes(r.value) || formData.regions.includes(sr.value)) {
+            langs.push(...sr.languages);
+          }
+        });
+        return langs;
+      })
   )].map(code => ({
     value: code,
     label: LANGUAGE_NAMES[code] || code,
     icon: ''
-  }));
+  })).sort((a, b) => a.label.localeCompare(b.label));
 
   // Update languages when regions change
   useEffect(() => {
@@ -894,7 +1054,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
   const isExternallyControlled = externalOpen !== undefined;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} modal={false}>
       {!isExternallyControlled && (
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2">
@@ -903,6 +1063,8 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
           </Button>
         </DialogTrigger>
       )}
+      {/* Manual backdrop since modal={false} removes default overlay */}
+      {open && <div className="fixed inset-0 bg-black/50 z-[99997]" onClick={() => setOpen(false)} />}
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-visible" style={{ zIndex: 99998 }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -1021,15 +1183,38 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 placeholder="Select capabilities"
               />
 
-              {/* Regions */}
+              {/* Regions with Sub-Regions */}
               <PortalDropdown
-                label="Target Regions"
+                label="Target Regions & Sub-Regions"
                 icon={<Globe2 className="h-4 w-4" />}
-                options={REGIONS.map(r => ({ value: r.value, label: r.label, icon: r.icon }))}
+                options={regionOptions}
                 selected={formData.regions}
-                onToggle={(v) => toggleArrayItem('regions', v)}
+                onToggle={(v) => {
+                  // If toggling a parent region, also toggle all sub-regions
+                  const parentRegion = REGIONS.find(r => r.value === v);
+                  if (parentRegion?.subRegions) {
+                    const subValues = parentRegion.subRegions.map(sr => sr.value);
+                    const isSelected = formData.regions.includes(v);
+                    if (isSelected) {
+                      // Deselect parent + all subs
+                      setFormData(prev => ({
+                        ...prev,
+                        regions: prev.regions.filter(r => r !== v && !subValues.includes(r))
+                      }));
+                    } else {
+                      // Select parent + all subs
+                      setFormData(prev => ({
+                        ...prev,
+                        regions: [...new Set([...prev.regions, v, ...subValues])]
+                      }));
+                    }
+                  } else {
+                    toggleArrayItem('regions', v);
+                  }
+                }}
                 multi={true}
-                placeholder="Select regions"
+                placeholder="Select regions & sub-regions"
+                maxHeight={360}
               />
 
               {/* Languages */}
