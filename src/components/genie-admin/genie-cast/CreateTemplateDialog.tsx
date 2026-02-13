@@ -331,17 +331,34 @@ const PortalDropdown: React.FC<PortalDropdownProps> = ({
     opt.value.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Update position when opened
-  useEffect(() => {
-    if (isOpen && triggerRef.current) {
+  // Recalculate position continuously while open (handles dialog scroll)
+  const updatePosition = useCallback(() => {
+    if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openAbove = spaceBelow < maxHeight + 20 && rect.top > spaceBelow;
       setPosition({
-        top: rect.bottom + 4,
+        top: openAbove ? rect.top - Math.min(maxHeight + 50, rect.top - 8) : rect.bottom + 4,
         left: rect.left,
         width: rect.width,
       });
     }
-  }, [isOpen]);
+  }, [maxHeight]);
+
+  // Update position when opened and on scroll/resize
+  useEffect(() => {
+    if (isOpen) {
+      updatePosition();
+      // Listen for scroll on any ancestor (captures dialog scroll)
+      const scrollHandler = () => updatePosition();
+      window.addEventListener('scroll', scrollHandler, true);
+      window.addEventListener('resize', scrollHandler);
+      return () => {
+        window.removeEventListener('scroll', scrollHandler, true);
+        window.removeEventListener('resize', scrollHandler);
+      };
+    }
+  }, [isOpen, updatePosition]);
 
   // Close on outside click
   useEffect(() => {
@@ -375,7 +392,9 @@ const PortalDropdown: React.FC<PortalDropdownProps> = ({
     return () => document.removeEventListener('keydown', handleEsc);
   }, [isOpen]);
 
-  const handleItemClick = (value: string) => {
+  const handleItemClick = (value: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     onToggle(value);
     if (!multi) {
       setIsOpen(false);
@@ -418,7 +437,7 @@ const PortalDropdown: React.FC<PortalDropdownProps> = ({
           filteredOptions.map(opt => (
             <div
               key={opt.value}
-              onClick={() => handleItemClick(opt.value)}
+              onMouseDown={(e) => handleItemClick(opt.value, e)}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 text-sm rounded-md cursor-pointer transition-colors",
                 selected.includes(opt.value) 
@@ -838,11 +857,17 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
           providers: formData.providers,
           platforms: formData.platforms,
           languages: formData.languages,
+          regions: formData.regions,
+          capabilities: formData.capabilities,
         },
         style_preset: {
           style: formData.videoStyle,
           capabilities: formData.capabilities,
         },
+        style_intent: formData.videoStyle,
+        target_regions: formData.regions,
+        tone_modifier: formData.category,
+        aesthetic_keywords: [formData.videoStyle, ...formData.capabilities],
         is_system_default: false,
         created_by: user?.user?.id || null,
         is_active: true,
