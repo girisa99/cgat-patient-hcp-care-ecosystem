@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus,
+  ArrowLeft,
   Wand2,
   Copy,
   Layers,
@@ -666,14 +667,13 @@ const PortalCloneDropdown: React.FC<PortalCloneDropdownProps> = ({
 };
 
 // ============================================
-// Main Component
+// Main Component — Single AI-First Flow
 // ============================================
 export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen, onExternalOpenChange, initialContext }: CreateTemplateDialogProps) {
   const { toast } = useToast();
   const { blueprints } = useVideoBlueprints();
   const [internalOpen, setInternalOpen] = useState(false);
   
-  // Use external open if provided, otherwise internal
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = (value: boolean) => {
     if (onExternalOpenChange) onExternalOpenChange(value);
@@ -681,50 +681,35 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
   };
   const [creating, setCreating] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>(templateToClone ? 'clone' : 'ai');
-  const [selectedCloneTemplate, setSelectedCloneTemplate] = useState<VideoBlueprint | null>(templateToClone || null);
+  // Two-stage flow: 'describe' → 'review'
+  const [stage, setStage] = useState<'describe' | 'review'>('describe');
 
   // Form state
   const [formData, setFormData] = useState({
-    name: templateToClone?.name ? `${templateToClone.name} (Copy)` : '',
-    description: templateToClone?.description || '',
-    category: templateToClone?.category || 'marketing',
+    name: '',
+    description: '',
+    category: 'marketing',
     videoStyle: 'motion_graphics',
     capabilities: [] as string[],
     regions: ['western'] as string[],
     languages: ['en'] as string[],
-    providers: ['openai', 'elevenlabs'] as string[],
+    providers: DEFAULT_LOCKED_PROVIDERS,
     platforms: ['youtube', 'tiktok'] as string[],
     aiPrompt: '',
   });
 
-  // Initialize providers with defaults on mount
-  useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      providers: DEFAULT_LOCKED_PROVIDERS,
-    }));
-  }, []);
-
-  // Pre-fill from SmartTemplateRecommender context when dialog opens externally
+  // Pre-fill from intent context when dialog opens
   useEffect(() => {
     if (open && initialContext) {
       const productToCategoryMap: Record<string, string> = {
         saas: 'technology', healthcare: 'healthcare', education: 'educational',
         ecommerce: 'retail', finance: 'finance', travel: 'travel',
         food: 'hospitality', corporate: 'corporate', entertainment: 'entertainment',
-        smb: 'smb',
+        smb: 'smb', marketing: 'marketing', social: 'marketing',
+        creative: 'entertainment', enterprise: 'corporate', events: 'corporate',
       };
-      const platformMap: Record<string, string[]> = {
-        youtube: ['youtube'], tiktok: ['tiktok'], instagram: ['instagram'],
-        linkedin: ['linkedin'], facebook: ['facebook'], website: ['website'],
-        presentation: ['presentation'], email: ['email'],
-      };
-
       const category = productToCategoryMap[initialContext.product || ''] || formData.category;
-      const platforms = platformMap[initialContext.platform || ''] || formData.platforms;
 
-      // Build a smart AI prompt from the context
       const promptParts = [
         initialContext.product && `for ${initialContext.product} industry`,
         initialContext.audience && `targeting ${initialContext.audience.replace(/_/g, ' ')}`,
@@ -739,16 +724,24 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       setFormData(prev => ({
         ...prev,
         category,
-        platforms,
         aiPrompt,
+        name: initialContext.goal
+          ? `${(initialContext.goal as string).split(' — ')[0]} Template`
+          : prev.name,
+        description: initialContext.goal
+          ? `Custom template ${promptParts.join(', ')}`
+          : prev.description,
       }));
-
-      // Auto-switch to AI tab since we have context to generate from
-      if (aiPrompt) {
-        setActiveTab('ai');
-      }
+      setStage('describe');
     }
   }, [open, initialContext]);
+
+  // Reset on close
+  useEffect(() => {
+    if (!open) {
+      setStage('describe');
+    }
+  }, [open]);
 
   // Get all available languages based on selected regions
   const availableLanguages = [...new Set(
@@ -761,7 +754,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     icon: ''
   }));
 
-  // Update languages when regions change - keep valid ones
+  // Update languages when regions change
   useEffect(() => {
     const validLangCodes = availableLanguages.map(l => l.value);
     setFormData(prev => ({
@@ -772,7 +765,6 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     }));
   }, [formData.regions.join(',')]);
 
-  // Toggle array helper
   const toggleArrayItem = (key: keyof typeof formData, item: string) => {
     setFormData(prev => ({
       ...prev,
@@ -782,23 +774,11 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     }));
   };
 
-  // Set single value
   const setSingleValue = (key: keyof typeof formData, item: string) => {
     setFormData(prev => ({ ...prev, [key]: item }));
   };
 
-  // Select template to clone
-  const selectTemplateToClone = (template: VideoBlueprint) => {
-    setSelectedCloneTemplate(template);
-    setFormData(prev => ({
-      ...prev,
-      name: `${template.name} (Copy)`,
-      description: template.description || '',
-      category: template.category,
-    }));
-  };
-
-  // AI Generation
+  // AI Generation — enhances the prompt and populates all fields
   const generateWithAI = async () => {
     if (!formData.aiPrompt.trim()) {
       toast({ title: 'Please describe what template you want', variant: 'destructive' });
@@ -820,14 +800,21 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
           capabilities: data.template.capabilities || prev.capabilities,
           regions: data.template.regions || prev.regions,
         }));
-        setActiveTab('visual');
-        toast({ title: '✨ Generated!', description: 'Review configuration in Manual tab.' });
       }
+      setStage('review');
+      toast({ title: '✨ AI configured your template', description: 'Review and adjust the settings below.' });
     } catch (err: any) {
-      toast({ title: 'Generation failed', description: err.message, variant: 'destructive' });
+      // On AI failure, still advance to review with what we have
+      setStage('review');
+      toast({ title: 'AI generation failed — configure manually', description: err.message, variant: 'destructive' });
     } finally {
       setAiGenerating(false);
     }
+  };
+
+  // Skip AI, go straight to manual review
+  const skipToManual = () => {
+    setStage('review');
   };
 
   // Create template
@@ -867,11 +854,10 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       toast({ title: 'Template created!', description: formData.name });
       setOpen(false);
       onCreated?.();
-      // Reset
       setFormData({
         name: '', description: '', category: 'marketing', videoStyle: 'motion_graphics',
         capabilities: [], regions: ['western'], languages: ['en'],
-        providers: ['openai', 'elevenlabs'], platforms: ['youtube', 'tiktok'], aiPrompt: '',
+        providers: DEFAULT_LOCKED_PROVIDERS, platforms: ['youtube', 'tiktok'], aiPrompt: '',
       });
     } catch (err: any) {
       toast({ title: 'Failed to create template', description: err.message, variant: 'destructive' });
@@ -884,7 +870,6 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {/* Only show trigger button when NOT externally controlled */}
       {!isExternallyControlled && (
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2">
@@ -897,85 +882,68 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
-            Create New Template
+            Create Custom Template
           </DialogTitle>
-          <DialogDescription>Choose a method to create your template</DialogDescription>
+          <DialogDescription>
+            {stage === 'describe'
+              ? 'Describe your template — AI will configure everything for you'
+              : 'Review and adjust the AI-configured settings'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto pr-2" style={{ maxHeight: 'calc(85vh - 180px)' }}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-            <TabsList className="grid grid-cols-3 w-full">
-              <TabsTrigger value="ai" className="gap-1.5 text-xs">
-                <Wand2 className="h-3.5 w-3.5" />
-                AI-Assisted
-              </TabsTrigger>
-              <TabsTrigger value="clone" className="gap-1.5 text-xs">
-                <Copy className="h-3.5 w-3.5" />
-                Clone
-              </TabsTrigger>
-              <TabsTrigger value="visual" className="gap-1.5 text-xs">
-                <Layers className="h-3.5 w-3.5" />
-                Manual
-              </TabsTrigger>
-            </TabsList>
+          {/* ═══ STAGE 1: DESCRIBE ═══ */}
+          {stage === 'describe' && (
+            <div className="space-y-4 mt-2">
+              {/* Context Banner — shows what intent was passed */}
+              {initialContext?.goal && (
+                <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 flex items-center gap-3">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Creating from intent:</p>
+                    <p className="text-sm font-medium truncate">{initialContext.goal}</p>
+                  </div>
+                </div>
+              )}
 
-            {/* AI Tab */}
-            <TabsContent value="ai" className="mt-4">
               <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  Describe your template and AI will configure it
+                  <Wand2 className="h-4 w-4 text-primary" />
+                  Describe your template and AI will auto-configure category, style, platforms, regions, and providers
                 </p>
                 <Textarea
                   placeholder="E.g., Create a TikTok product demo template with 3D avatar for Indian Telugu audience..."
                   value={formData.aiPrompt}
                   onChange={(e) => setFormData(prev => ({ ...prev, aiPrompt: e.target.value }))}
-                  className="min-h-[100px] bg-background"
+                  className="min-h-[120px] bg-background"
                 />
-                <Button onClick={generateWithAI} disabled={aiGenerating || !formData.aiPrompt.trim()} className="w-full gap-2">
-                  {aiGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {aiGenerating ? 'Generating...' : 'Generate & Review'}
-                  <ArrowRight className="h-4 w-4 ml-auto" />
-                </Button>
-              </div>
-            </TabsContent>
-
-            {/* Clone Tab */}
-            <TabsContent value="clone" className="mt-4 space-y-4">
-              <div className="space-y-2">
-                <Label>Select template to clone</Label>
-                <PortalCloneDropdown
-                  templates={blueprints}
-                  selected={selectedCloneTemplate}
-                  onSelect={selectTemplateToClone}
-                />
-              </div>
-
-              {selectedCloneTemplate && (
-                <div className="space-y-4">
-                  <div className="p-3 border rounded-lg bg-muted/30 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Cloning from:</p>
-                      <p className="font-medium">{selectedCloneTemplate.name}</p>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedCloneTemplate(null)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>New Template Name</Label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="My Template (Copy)"
-                    />
-                  </div>
+                <div className="flex gap-2">
+                  <Button onClick={generateWithAI} disabled={aiGenerating || !formData.aiPrompt.trim()} className="flex-1 gap-2">
+                    {aiGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {aiGenerating ? 'AI Configuring...' : 'Generate & Configure'}
+                  </Button>
+                  <Button variant="outline" onClick={skipToManual} disabled={aiGenerating}>
+                    Configure Manually
+                  </Button>
                 </div>
-              )}
-            </TabsContent>
+              </div>
+            </div>
+          )}
 
-            {/* Manual Tab */}
-            <TabsContent value="visual" className="mt-4 space-y-4 pb-4">
+          {/* ═══ STAGE 2: REVIEW & EDIT ═══ */}
+          {stage === 'review' && (
+            <div className="space-y-4 mt-2">
+              {/* Back to describe */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-muted-foreground hover:text-foreground -ml-2"
+                onClick={() => setStage('describe')}
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back to prompt
+              </Button>
+
               {/* Name + Category */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -1006,7 +974,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 placeholder="Select style"
               />
 
-              {/* Platforms - Multi-select */}
+              {/* Platforms */}
               <PortalDropdown
                 label="Target Platforms"
                 icon={<Globe2 className="h-4 w-4" />}
@@ -1017,7 +985,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 placeholder="Select platforms"
               />
 
-              {/* AI Capabilities - Multi-select */}
+              {/* AI Capabilities */}
               <PortalDropdown
                 label="AI Capabilities"
                 icon={<Sparkles className="h-4 w-4" />}
@@ -1028,7 +996,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 placeholder="Select capabilities"
               />
 
-              {/* Regions - Multi-select */}
+              {/* Regions */}
               <PortalDropdown
                 label="Target Regions"
                 icon={<Globe2 className="h-4 w-4" />}
@@ -1039,7 +1007,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 placeholder="Select regions"
               />
 
-              {/* Languages - Multi-select */}
+              {/* Languages */}
               {availableLanguages.length > 0 && (
                 <PortalDropdown
                   label={`Languages (${availableLanguages.length} available)`}
@@ -1053,7 +1021,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 />
               )}
 
-              {/* AI Providers - With Routing Defaults Locked */}
+              {/* AI Providers */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm">
                   <Wand2 className="h-4 w-4" />
@@ -1068,10 +1036,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                   options={AI_PROVIDERS}
                   selected={formData.providers}
                   onToggle={(v) => {
-                    // Prevent removing locked providers
-                    if (LOCKED_PROVIDER_VALUES.includes(v) && formData.providers.includes(v)) {
-                      return; // Can't remove locked providers
-                    }
+                    if (LOCKED_PROVIDER_VALUES.includes(v) && formData.providers.includes(v)) return;
                     toggleArrayItem('providers', v);
                   }}
                   multi={true}
@@ -1113,21 +1078,25 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                   className="min-h-[60px]"
                 />
               </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 pt-4 border-t mt-auto">
+        <div className="flex justify-between gap-2 pt-4 border-t mt-auto">
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button
-            onClick={createTemplate}
-            disabled={creating || !formData.name.trim() || (activeTab === 'clone' && !selectedCloneTemplate)}
-            className="gap-2"
-          >
-            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            {creating ? 'Creating...' : 'Create Template'}
-          </Button>
+          <div className="flex gap-2">
+            {stage === 'review' && (
+              <Button
+                onClick={createTemplate}
+                disabled={creating || !formData.name.trim()}
+                className="gap-2"
+              >
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {creating ? 'Creating...' : 'Create Template'}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
