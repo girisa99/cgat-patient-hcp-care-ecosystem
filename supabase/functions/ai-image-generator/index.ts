@@ -1,5 +1,8 @@
 import { corsHeaders } from '../_shared/cors.ts';
 
+// ============================================================================
+// API KEYS
+// ============================================================================
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const HUGGING_FACE_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
 const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_TOKEN') || Deno.env.get('REPLICATE_API_KEY');
@@ -7,31 +10,88 @@ const ALIBABA_SG_KEY = Deno.env.get('ALIBABA_SINGAPORE_API_KEY');
 const ALIBABA_VA_KEY = Deno.env.get('ALIBABA_API_KEY');
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_API_KEY');
 const MODELSLAB_API_KEY = Deno.env.get('MODELSLAB_API_KEY');
+const GOOGLE_VERTEX_SA = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT');
 
 // ============================================================================
-// PROVIDER FALLBACK CHAIN (matches platform routing architecture)
-// Primary: Gemini → Alibaba → ModelsLab → HuggingFace → Replicate → OpenAI
+// STYLE-INTENT → IMAGE PROVIDER ROUTING
+// Mirrors src/services/styleIntentResolver.ts STYLE_TO_IMAGE_PROVIDER
 // ============================================================================
 
-const FALLBACK_CHAIN: string[] = [
-  'gemini',
-  'alibaba',
-  'modelslab',
-  'huggingface',
-  'replicate',
-  'openai',
-];
+type StyleIntent = 
+  | 'photorealistic' | 'cinematic' | 'anime' | 'pixar-3d'
+  | 'watercolor' | 'minimalist' | 'corporate' | 'editorial'
+  | 'product-hero' | 'lifestyle' | 'documentary' | 'explainer'
+  | 'ugc-authentic' | 'luxury-fashion' | 'tech-startup';
 
-function getAvailableProviders(): string[] {
-  const available: string[] = [];
-  if (GEMINI_API_KEY) available.push('gemini');
-  if (ALIBABA_SG_KEY || ALIBABA_VA_KEY) available.push('alibaba');
-  if (MODELSLAB_API_KEY) available.push('modelslab');
-  if (HUGGING_FACE_TOKEN) available.push('huggingface');
-  if (REPLICATE_API_KEY) available.push('replicate');
-  if (OPENAI_API_KEY) available.push('openai');
-  return available;
+interface ProviderChain {
+  primary: string;
+  secondary: string;
+  tertiary: string;
+  fallback: string;
 }
+
+const STYLE_TO_IMAGE_PROVIDER: Record<StyleIntent, ProviderChain> = {
+  'photorealistic': { primary: 'gemini', secondary: 'vertex-imagen', tertiary: 'modelslab', fallback: 'openai' },
+  'cinematic':      { primary: 'gemini', secondary: 'modelslab', tertiary: 'alibaba', fallback: 'openai' },
+  'anime':          { primary: 'modelslab', secondary: 'alibaba', tertiary: 'replicate', fallback: 'huggingface' },
+  'pixar-3d':       { primary: 'alibaba', secondary: 'modelslab', tertiary: 'gemini', fallback: 'openai' },
+  'watercolor':     { primary: 'modelslab', secondary: 'gemini', tertiary: 'alibaba', fallback: 'openai' },
+  'minimalist':     { primary: 'gemini', secondary: 'modelslab', tertiary: 'huggingface', fallback: 'openai' },
+  'corporate':      { primary: 'gemini', secondary: 'vertex-imagen', tertiary: 'modelslab', fallback: 'openai' },
+  'editorial':      { primary: 'vertex-imagen', secondary: 'gemini', tertiary: 'modelslab', fallback: 'openai' },
+  'product-hero':   { primary: 'gemini', secondary: 'vertex-imagen', tertiary: 'modelslab', fallback: 'openai' },
+  'lifestyle':      { primary: 'modelslab', secondary: 'gemini', tertiary: 'replicate', fallback: 'openai' },
+  'documentary':    { primary: 'vertex-imagen', secondary: 'gemini', tertiary: 'modelslab', fallback: 'openai' },
+  'explainer':      { primary: 'gemini', secondary: 'modelslab', tertiary: 'huggingface', fallback: 'openai' },
+  'ugc-authentic':  { primary: 'modelslab', secondary: 'gemini', tertiary: 'alibaba', fallback: 'openai' },
+  'luxury-fashion': { primary: 'vertex-imagen', secondary: 'gemini', tertiary: 'modelslab', fallback: 'openai' },
+  'tech-startup':   { primary: 'gemini', secondary: 'modelslab', tertiary: 'replicate', fallback: 'openai' },
+};
+
+// Default chain when no style_intent is provided
+const DEFAULT_CHAIN: ProviderChain = {
+  primary: 'gemini', secondary: 'alibaba', tertiary: 'modelslab', fallback: 'huggingface'
+};
+
+// ============================================================================
+// PROVIDER AVAILABILITY CHECK
+// ============================================================================
+
+function isProviderAvailable(provider: string): boolean {
+  switch (provider) {
+    case 'gemini': return !!GEMINI_API_KEY;
+    case 'vertex-imagen': return !!GOOGLE_VERTEX_SA;
+    case 'openai': return !!OPENAI_API_KEY;
+    case 'alibaba': return !!(ALIBABA_SG_KEY || ALIBABA_VA_KEY);
+    case 'modelslab': return !!MODELSLAB_API_KEY;
+    case 'huggingface': return !!HUGGING_FACE_TOKEN;
+    case 'replicate': return !!REPLICATE_API_KEY;
+    default: return false;
+  }
+}
+
+function resolveProviderOrder(styleIntent?: string, explicitProvider?: string): string[] {
+  // If explicit provider requested, try it first then fall through chain
+  const chain = (styleIntent && STYLE_TO_IMAGE_PROVIDER[styleIntent as StyleIntent]) 
+    ? STYLE_TO_IMAGE_PROVIDER[styleIntent as StyleIntent] 
+    : DEFAULT_CHAIN;
+
+  const ordered = explicitProvider
+    ? [explicitProvider, chain.primary, chain.secondary, chain.tertiary, chain.fallback]
+    : [chain.primary, chain.secondary, chain.tertiary, chain.fallback];
+
+  // Deduplicate and filter to available
+  const seen = new Set<string>();
+  return ordered.filter(p => {
+    if (seen.has(p)) return false;
+    seen.add(p);
+    return isProviderAvailable(p);
+  });
+}
+
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -41,7 +101,9 @@ Deno.serve(async (req) => {
   try {
     const { 
       prompt, 
-      provider: requestedProvider,
+      provider: explicitProvider,
+      style_intent,
+      region,
       model,
       size = '1024x1024',
       quality = 'high',
@@ -49,47 +111,29 @@ Deno.serve(async (req) => {
       negative_prompt,
       style,
       ref_image_url,
-      use_fallback = true, // Enable fallback by default
     } = await req.json();
 
     if (!prompt) {
       throw new Error('Prompt is required');
     }
 
-    const availableProviders = getAvailableProviders();
-    console.log(`🎨 [AI Image] Available providers: [${availableProviders.join(', ')}]`);
+    const providerOrder = resolveProviderOrder(style_intent, explicitProvider);
 
-    // Build ordered provider list: requested first, then fallback chain
-    let providerOrder: string[];
-    if (requestedProvider && !use_fallback) {
-      // Explicit provider, no fallback
-      providerOrder = [requestedProvider];
-    } else if (requestedProvider) {
-      // Explicit provider + fallback chain
-      providerOrder = [requestedProvider, ...FALLBACK_CHAIN.filter(p => p !== requestedProvider)];
-    } else {
-      // Default: use full fallback chain
-      providerOrder = [...FALLBACK_CHAIN];
-    }
-
-    // Filter to only available providers
-    providerOrder = providerOrder.filter(p => availableProviders.includes(p));
+    console.log(`🎨 [AI Image] Style: ${style_intent || 'default'}, Region: ${region || 'global'}, Chain: [${providerOrder.join(' → ')}]`);
 
     if (providerOrder.length === 0) {
-      throw new Error('No image generation providers configured. Please add API keys for at least one provider.');
+      throw new Error('No image generation providers available. Configure at least one API key.');
     }
-
-    console.log(`🎨 [AI Image] Provider order: [${providerOrder.join(' → ')}]`);
 
     const options = { size, quality, output_format, negative_prompt, style, ref_image_url, model };
     let lastError: Error | null = null;
 
     for (const provider of providerOrder) {
       try {
-        console.log(`🎨 [AI Image] Trying provider: ${provider}`);
+        console.log(`🎨 [AI Image] Trying: ${provider}`);
         const imageUrl = await generateImage(provider, prompt, options);
         
-        console.log(`✅ [AI Image] Success with provider: ${provider}`);
+        console.log(`✅ [AI Image] Success: ${provider}`);
         return new Response(JSON.stringify({ 
           imageUrl,
           mediaUrl: imageUrl,
@@ -101,25 +145,24 @@ Deno.serve(async (req) => {
             size,
             quality,
             output_format,
+            style_intent: style_intent || 'default',
+            region: region || 'global',
+            provider_chain: providerOrder,
             timestamp: new Date().toISOString(),
-            fallback_used: provider !== (requestedProvider || FALLBACK_CHAIN[0]),
           }
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        console.warn(`⚠️ [AI Image] Provider ${provider} failed: ${lastError.message}`);
-        // Continue to next provider
+        console.warn(`⚠️ [AI Image] ${provider} failed: ${lastError.message}`);
       }
     }
 
-    // All providers failed
-    throw lastError || new Error('All image generation providers failed');
+    throw lastError || new Error('All image providers failed');
 
   } catch (error) {
     console.error('AI Image Generator Error:', error);
-    
     return new Response(
       JSON.stringify({ 
         error: (error instanceof Error ? error.message : 'Image generation failed'),
@@ -135,94 +178,148 @@ Deno.serve(async (req) => {
 // ============================================================================
 
 async function generateImage(
-  provider: string, 
-  prompt: string, 
-  options: {
-    model?: string; size?: string; quality?: string; output_format?: string;
-    negative_prompt?: string; style?: string; ref_image_url?: string;
-  }
+  provider: string, prompt: string,
+  options: { model?: string; size?: string; quality?: string; output_format?: string;
+    negative_prompt?: string; style?: string; ref_image_url?: string }
 ): Promise<string> {
   switch (provider) {
     case 'gemini':
       return generateWithGemini(prompt, options.model, options.size);
-
+    case 'vertex-imagen':
+      return generateWithVertexImagen(prompt, options.size);
     case 'openai':
-      if (!OPENAI_API_KEY) throw new Error('OpenAI API key not configured');
+      if (!OPENAI_API_KEY) throw new Error('OpenAI key missing');
       return generateWithOpenAI(prompt, options.model || 'gpt-image-1', options.size || '1024x1024', options.quality || 'high', options.output_format || 'png');
-
     case 'huggingface':
-      if (!HUGGING_FACE_TOKEN) throw new Error('HuggingFace token not configured');
+      if (!HUGGING_FACE_TOKEN) throw new Error('HuggingFace token missing');
       return generateWithHuggingFace(prompt, options.model || 'black-forest-labs/FLUX.1-schnell');
-
     case 'replicate':
-      if (!REPLICATE_API_KEY) throw new Error('Replicate API key not configured');
+      if (!REPLICATE_API_KEY) throw new Error('Replicate key missing');
       return generateWithReplicate(prompt, options.model || 'black-forest-labs/flux-schnell');
-
-    case 'alibaba':
-    case 'alibaba-wan': {
-      const alibabaKey = ALIBABA_SG_KEY || ALIBABA_VA_KEY;
-      if (!alibabaKey) throw new Error('Alibaba API key not configured');
-      return generateWithAlibaba(prompt, options.model || 'wan2.1-t2i-turbo', alibabaKey, options);
+    case 'alibaba': {
+      const key = ALIBABA_SG_KEY || ALIBABA_VA_KEY;
+      if (!key) throw new Error('Alibaba key missing');
+      return generateWithAlibaba(prompt, options.model || 'wan2.1-t2i-turbo', key, options);
     }
-
-    case 'alibaba-qwen':
-    case 'qwen-image': {
-      const qwenKey = ALIBABA_SG_KEY || ALIBABA_VA_KEY;
-      if (!qwenKey) throw new Error('Alibaba API key not configured for Qwen Image');
-      return generateWithQwenImage(prompt, qwenKey, { ref_image_url: options.ref_image_url });
-    }
-
     case 'modelslab':
-      if (!MODELSLAB_API_KEY) throw new Error('ModelsLab API key not configured');
+      if (!MODELSLAB_API_KEY) throw new Error('ModelsLab key missing');
       return generateWithModelsLab(prompt, options.model || 'flux', options.size);
-
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }
 }
 
 // ============================================================================
-// GEMINI (Imagen) - Primary provider
+// GEMINI (Imagen via Gemini API)
 // ============================================================================
 
 async function generateWithGemini(prompt: string, model?: string, size?: string): Promise<string> {
-  if (!GEMINI_API_KEY) throw new Error('Gemini API key not configured');
-
+  if (!GEMINI_API_KEY) throw new Error('Gemini key missing');
   const geminiModel = model || 'gemini-2.0-flash-exp';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${GEMINI_API_KEY}`;
 
-  console.log(`🌟 [Gemini Image] Model: ${geminiModel}`);
+  console.log(`🌟 [Gemini] Model: ${geminiModel}`);
 
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{
-        parts: [{ text: `Generate an image: ${prompt}` }]
-      }],
-      generationConfig: {
-        responseModalities: ['IMAGE', 'TEXT'],
-        responseMimeType: 'text/plain',
-      },
+      contents: [{ parts: [{ text: `Generate an image: ${prompt}` }] }],
+      generationConfig: { responseModalities: ['IMAGE', 'TEXT'], responseMimeType: 'text/plain' },
     }),
   });
 
   if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`Gemini Image Error: ${response.status} - ${errorData}`);
+    const errText = await response.text();
+    throw new Error(`Gemini Error: ${response.status} - ${errText}`);
   }
 
   const data = await response.json();
-  
-  // Extract inline image data from Gemini response
   const parts = data.candidates?.[0]?.content?.parts || [];
   for (const part of parts) {
     if (part.inlineData?.mimeType?.startsWith('image/')) {
       return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
     }
   }
-
   throw new Error('No image returned from Gemini');
+}
+
+// ============================================================================
+// VERTEX AI IMAGEN 3.0
+// ============================================================================
+
+async function generateWithVertexImagen(prompt: string, size?: string): Promise<string> {
+  if (!GOOGLE_VERTEX_SA) throw new Error('Vertex service account missing');
+
+  const sa = JSON.parse(GOOGLE_VERTEX_SA);
+  const token = await getVertexAccessToken(sa);
+  const projectId = sa.project_id;
+  const model = 'imagen-3.0-generate-002';
+  const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${model}:predict`;
+
+  console.log(`🖼️ [Vertex Imagen] Model: ${model}`);
+
+  // Parse aspect ratio from size
+  const [w, h] = (size || '1024x1024').split('x').map(Number);
+  let aspectRatio = '1:1';
+  if (w > h) aspectRatio = '16:9';
+  else if (h > w) aspectRatio = '9:16';
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      instances: [{ prompt }],
+      parameters: { sampleCount: 1, aspectRatio },
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Vertex Imagen Error: ${response.status} - ${errText}`);
+  }
+
+  const data = await response.json();
+  const b64 = data.predictions?.[0]?.bytesBase64Encoded;
+  if (b64) return `data:image/png;base64,${b64}`;
+  throw new Error('No image returned from Vertex Imagen');
+}
+
+// JWT for Vertex AI
+async function getVertexAccessToken(sa: any): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const payload = btoa(JSON.stringify({
+    iss: sa.client_email,
+    scope: 'https://www.googleapis.com/auth/cloud-platform',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  }));
+
+  const signInput = `${header}.${payload}`;
+  const keyData = sa.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '');
+  const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', binaryKey, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(signInput));
+  const sig64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const jwt = `${header}.${payload}.${sig64}`;
+
+  const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+
+  if (!tokenResp.ok) throw new Error(`Vertex auth failed: ${tokenResp.status}`);
+  const tokenData = await tokenResp.json();
+  return tokenData.access_token;
 }
 
 // ============================================================================
@@ -231,95 +328,66 @@ async function generateWithGemini(prompt: string, model?: string, size?: string)
 
 async function generateWithModelsLab(prompt: string, model: string, size?: string): Promise<string> {
   const [width, height] = (size || '1024x1024').split('x').map(Number);
-
   console.log(`🔮 [ModelsLab] Model: ${model}, Size: ${width}x${height}`);
 
   const response = await fetch('https://modelslab.com/api/v6/images/text2img', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      key: MODELSLAB_API_KEY,
-      model_id: model,
-      prompt,
-      width,
-      height,
-      samples: 1,
-      safety_checker: true,
+      key: MODELSLAB_API_KEY, model_id: model, prompt,
+      width, height, samples: 1, safety_checker: true,
     }),
   });
 
   if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`ModelsLab Error: ${response.status} - ${errorData}`);
+    const errText = await response.text();
+    throw new Error(`ModelsLab Error: ${response.status} - ${errText}`);
   }
 
   const data = await response.json();
-
   if (data.status === 'processing' && data.fetch_result) {
-    // Poll for result
     for (let i = 0; i < 30; i++) {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      const pollResp = await fetch(data.fetch_result, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await new Promise(r => setTimeout(r, 3000));
+      const poll = await fetch(data.fetch_result, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: MODELSLAB_API_KEY }),
       });
-      const pollData = await pollResp.json();
-      if (pollData.status === 'success' && pollData.output?.length > 0) {
-        return pollData.output[0];
-      }
-      if (pollData.status === 'failed') {
-        throw new Error(`ModelsLab generation failed: ${pollData.message || 'Unknown'}`);
-      }
+      const pData = await poll.json();
+      if (pData.status === 'success' && pData.output?.length > 0) return pData.output[0];
+      if (pData.status === 'failed') throw new Error(`ModelsLab failed: ${pData.message}`);
     }
-    throw new Error('ModelsLab generation timed out');
+    throw new Error('ModelsLab timed out');
   }
-
-  if (data.output && data.output.length > 0) {
-    return data.output[0];
-  }
-
-  throw new Error('No image returned from ModelsLab');
+  if (data.output?.length > 0) return data.output[0];
+  throw new Error('No image from ModelsLab');
 }
 
 // ============================================================================
 // OPENAI (DALL-E / GPT Image)
 // ============================================================================
 
-async function generateWithOpenAI(
-  prompt: string, 
-  model: string, 
-  size: string, 
-  quality: string, 
-  output_format: string
-): Promise<string> {
-  const requestBody: any = { model, prompt, n: 1, size };
-
+async function generateWithOpenAI(prompt: string, model: string, size: string, quality: string, output_format: string): Promise<string> {
+  const body: any = { model, prompt, n: 1, size };
   if (model === 'gpt-image-1') {
-    requestBody.quality = quality;
-    requestBody.output_format = output_format;
+    body.quality = quality;
+    body.output_format = output_format;
   } else {
-    requestBody.response_format = 'url';
-    if (model === 'dall-e-3') {
-      requestBody.quality = quality === 'high' ? 'hd' : 'standard';
-    }
+    body.response_format = 'url';
+    if (model === 'dall-e-3') body.quality = quality === 'high' ? 'hd' : 'standard';
   }
 
-  const response = await fetch('https://api.openai.com/v1/images/generations', {
+  const resp = await fetch('https://api.openai.com/v1/images/generations', {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
+    headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   });
 
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`OpenAI API Error: ${response.status} - ${errorData}`);
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`OpenAI Error: ${resp.status} - ${errText}`);
   }
 
-  const data = await response.json();
+  const data = await resp.json();
   if (model === 'gpt-image-1') {
     return data.data[0].b64_json ? `data:image/${output_format};base64,${data.data[0].b64_json}` : data.data[0].url;
   }
@@ -331,26 +399,18 @@ async function generateWithOpenAI(
 // ============================================================================
 
 async function generateWithHuggingFace(prompt: string, model: string): Promise<string> {
-  const response = await fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
+  const resp = await fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${HUGGING_FACE_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      inputs: prompt,
-      parameters: { num_inference_steps: 4, guidance_scale: 1.0 }
-    }),
+    headers: { 'Authorization': `Bearer ${HUGGING_FACE_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 4, guidance_scale: 1.0 } }),
   });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`HuggingFace API Error: ${response.status} - ${errorData}`);
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`HuggingFace Error: ${resp.status} - ${errText}`);
   }
-
-  const arrayBuffer = await response.arrayBuffer();
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-  return `data:image/png;base64,${base64}`;
+  const buf = await resp.arrayBuffer();
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+  return `data:image/png;base64,${b64}`;
 }
 
 // ============================================================================
@@ -358,46 +418,28 @@ async function generateWithHuggingFace(prompt: string, model: string): Promise<s
 // ============================================================================
 
 async function generateWithReplicate(prompt: string, model: string): Promise<string> {
-  const response = await fetch('https://api.replicate.com/v1/predictions', {
+  const resp = await fetch('https://api.replicate.com/v1/predictions', {
     method: 'POST',
-    headers: {
-      'Authorization': `Token ${REPLICATE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Authorization': `Token ${REPLICATE_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       version: getReplicateVersion(model),
-      input: {
-        prompt,
-        go_fast: true,
-        megapixels: "1",
-        num_outputs: 1,
-        aspect_ratio: "1:1",
-        output_format: "webp",
-        output_quality: 80,
-        num_inference_steps: 4
-      }
+      input: { prompt, go_fast: true, megapixels: '1', num_outputs: 1, aspect_ratio: '1:1', output_format: 'webp', output_quality: 80, num_inference_steps: 4 },
     }),
   });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`Replicate API Error: ${response.status} - ${errorData}`);
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Replicate Error: ${resp.status} - ${errText}`);
   }
 
-  const prediction = await response.json();
-  let result = prediction;
+  let result = await resp.json();
   while (result.status === 'starting' || result.status === 'processing') {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
+    await new Promise(r => setTimeout(r, 1000));
+    const poll = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
       headers: { 'Authorization': `Token ${REPLICATE_API_KEY}` },
     });
-    result = await pollResponse.json();
+    result = await poll.json();
   }
-
-  if (result.status === 'failed') {
-    throw new Error(`Replicate generation failed: ${result.error}`);
-  }
-
+  if (result.status === 'failed') throw new Error(`Replicate failed: ${result.error}`);
   return result.output[0];
 }
 
@@ -410,119 +452,39 @@ async function generateWithAlibaba(
   options: { size?: string; negative_prompt?: string; style?: string; ref_image_url?: string }
 ): Promise<string> {
   const baseUrl = 'https://dashscope-intl.aliyuncs.com/api/v1';
-  const endpoint = `${baseUrl}/services/aigc/text2image/image-synthesis`;
   const [width, height] = (options.size || '1024x1024').split('x').map(Number);
 
   console.log(`🌸 [Alibaba T2I] Model: ${model}`);
 
-  const response = await fetch(endpoint, {
+  const resp = await fetch(`${baseUrl}/services/aigc/text2image/image-synthesis`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'X-DashScope-Async': 'enable',
-    },
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'X-DashScope-Async': 'enable' },
     body: JSON.stringify({
       model,
-      input: {
-        prompt,
-        ...(options.negative_prompt && { negative_prompt: options.negative_prompt }),
-        ...(options.ref_image_url && { ref_img: options.ref_image_url }),
-      },
-      parameters: {
-        size: `${width}*${height}`,
-        n: 1,
-        ...(options.style && { style: options.style }),
-      },
+      input: { prompt, ...(options.negative_prompt && { negative_prompt: options.negative_prompt }), ...(options.ref_image_url && { ref_img: options.ref_image_url }) },
+      parameters: { size: `${width}*${height}`, n: 1, ...(options.style && { style: options.style }) },
     }),
   });
 
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`Alibaba T2I Error: ${response.status} - ${errorData}`);
-  }
+  if (!resp.ok) { const t = await resp.text(); throw new Error(`Alibaba T2I Error: ${resp.status} - ${t}`); }
 
-  const result = await response.json();
+  const result = await resp.json();
   const taskId = result.output?.task_id;
-  if (!taskId) throw new Error('No task ID returned from Alibaba T2I');
+  if (!taskId) throw new Error('No task ID from Alibaba');
 
-  const statusUrl = `${baseUrl}/tasks/${taskId}`;
   for (let i = 0; i < 60; i++) {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const pollResponse = await fetch(statusUrl, {
-      headers: { 'Authorization': `Bearer ${apiKey}` },
-    });
-    if (!pollResponse.ok) continue;
-    const statusData = await pollResponse.json();
-
-    if (statusData.output?.task_status === 'SUCCEEDED') {
-      const results = statusData.output?.results;
-      if (results?.length > 0) return results[0].url || results[0].b64_image;
-      throw new Error('No image in Alibaba T2I response');
-    } else if (statusData.output?.task_status === 'FAILED') {
-      throw new Error(`Alibaba T2I failed: ${statusData.output?.message || 'Unknown error'}`);
+    await new Promise(r => setTimeout(r, 2000));
+    const poll = await fetch(`${baseUrl}/tasks/${taskId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+    if (!poll.ok) continue;
+    const s = await poll.json();
+    if (s.output?.task_status === 'SUCCEEDED') {
+      const r = s.output?.results;
+      if (r?.length > 0) return r[0].url || r[0].b64_image;
+      throw new Error('No image in Alibaba response');
     }
+    if (s.output?.task_status === 'FAILED') throw new Error(`Alibaba failed: ${s.output?.message}`);
   }
-  throw new Error('Alibaba T2I generation timed out');
-}
-
-// ============================================================================
-// ALIBABA QWEN IMAGE EDIT
-// ============================================================================
-
-async function generateWithQwenImage(
-  prompt: string, apiKey: string,
-  options: { ref_image_url?: string }
-): Promise<string> {
-  const baseUrl = 'https://dashscope-intl.aliyuncs.com/api/v1';
-  const endpoint = `${baseUrl}/services/aigc/image2image/image-synthesis`;
-
-  const payload: any = {
-    model: 'wanx2.1-imageedit',
-    input: { prompt },
-    parameters: { n: 1 },
-  };
-  if (options.ref_image_url) {
-    payload.input.base_image_url = options.ref_image_url;
-  }
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'X-DashScope-Async': 'enable',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`Qwen Image Error: ${response.status} - ${errorData}`);
-  }
-
-  const result = await response.json();
-  const taskId = result.output?.task_id;
-  if (!taskId) throw new Error('No task ID returned from Qwen Image');
-
-  const statusUrl = `${baseUrl}/tasks/${taskId}`;
-  for (let i = 0; i < 60; i++) {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const pollResponse = await fetch(statusUrl, {
-      headers: { 'Authorization': `Bearer ${apiKey}` },
-    });
-    if (!pollResponse.ok) continue;
-    const statusData = await pollResponse.json();
-
-    if (statusData.output?.task_status === 'SUCCEEDED') {
-      const results = statusData.output?.results;
-      if (results?.length > 0) return results[0].url || results[0].b64_image;
-      throw new Error('No image in Qwen Image response');
-    } else if (statusData.output?.task_status === 'FAILED') {
-      throw new Error(`Qwen Image failed: ${statusData.output?.message || 'Unknown error'}`);
-    }
-  }
-  throw new Error('Qwen Image generation timed out');
+  throw new Error('Alibaba T2I timed out');
 }
 
 // ============================================================================
@@ -530,21 +492,21 @@ async function generateWithQwenImage(
 // ============================================================================
 
 function getDefaultModel(provider: string): string {
-  switch (provider) {
-    case 'gemini': return 'gemini-2.0-flash-exp';
-    case 'openai': return 'gpt-image-1';
-    case 'huggingface': return 'black-forest-labs/FLUX.1-schnell';
-    case 'replicate': return 'black-forest-labs/flux-schnell';
-    case 'alibaba': case 'alibaba-wan': return 'wan2.1-t2i-turbo';
-    case 'alibaba-qwen': case 'qwen-image': return 'qwen-image-edit';
-    case 'modelslab': return 'flux';
-    default: return 'gemini-2.0-flash-exp';
-  }
+  const map: Record<string, string> = {
+    'gemini': 'gemini-2.0-flash-exp',
+    'vertex-imagen': 'imagen-3.0-generate-002',
+    'openai': 'gpt-image-1',
+    'huggingface': 'black-forest-labs/FLUX.1-schnell',
+    'replicate': 'black-forest-labs/flux-schnell',
+    'alibaba': 'wan2.1-t2i-turbo',
+    'modelslab': 'flux',
+  };
+  return map[provider] || 'gemini-2.0-flash-exp';
 }
 
 function getReplicateVersion(model: string): string {
-  const versionMap: Record<string, string> = {
-    'black-forest-labs/flux-schnell': 'f2ab8a5569070ad23ec7c3df5b2e7b5a56f81b0afe2c3a1bb6bbf44eef2ab95e'
+  const map: Record<string, string> = {
+    'black-forest-labs/flux-schnell': 'f2ab8a5569070ad23ec7c3df5b2e7b5a56f81b0afe2c3a1bb6bbf44eef2ab95e',
   };
-  return versionMap[model] || versionMap['black-forest-labs/flux-schnell'];
+  return map[model] || map['black-forest-labs/flux-schnell'];
 }
