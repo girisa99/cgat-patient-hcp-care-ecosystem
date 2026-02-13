@@ -197,10 +197,28 @@ export const useVideoBlueprints = () => {
     }
   });
 
+  // Delete blueprint (soft-delete by setting is_active = false)
+  const deleteBlueprintMutation = useMutation({
+    mutationFn: async (blueprintId: string) => {
+      console.log('🗑️ Deleting blueprint:', blueprintId);
+      const { error } = await supabase
+        .from('video_blueprints')
+        .update({ is_active: false })
+        .eq('id', blueprintId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['video-blueprints'] });
+      toast({ title: 'Template deleted' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
   // Increment usage count
   const trackUsageMutation = useMutation({
     mutationFn: async (blueprintId: string) => {
-      // Simple increment by fetching current count and updating
       const { data: current } = await supabase
         .from('video_blueprints')
         .select('usage_count')
@@ -257,5 +275,7 @@ export const useVideoBlueprints = () => {
     assignBlueprint: assignBlueprintMutation.mutate,
     isAssigning: assignBlueprintMutation.isPending,
     trackUsage: trackUsageMutation.mutate,
+    deleteBlueprint: deleteBlueprintMutation.mutate,
+    isDeleting: deleteBlueprintMutation.isPending,
   };
 };

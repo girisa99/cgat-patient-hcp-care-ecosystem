@@ -15,6 +15,7 @@ import {
   Sparkles,
   Plus,
   ArrowRight,
+  Trash2,
 } from 'lucide-react';
 import { useVideoBlueprints, type VideoBlueprint } from '@/hooks/useVideoBlueprints';
 import { BlueprintPreviewModal } from './BlueprintPreviewModal';
@@ -52,7 +53,7 @@ export function BlueprintTemplatesGrid({
   selectedVideoStyles,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
-  const { blueprints, isLoading, refetch } = useVideoBlueprints();
+  const { blueprints, isLoading, refetch, deleteBlueprint, isDeleting } = useVideoBlueprints();
   const { intents } = useContentIntents();
 
   // Resolve full intent data for richer context passing
@@ -266,6 +267,22 @@ export function BlueprintTemplatesGrid({
                     >
                       Use This
                     </Button>
+                    {!blueprint.is_system_default && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                        disabled={isDeleting}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete "${blueprint.name}"?`)) {
+                            deleteBlueprint(blueprint.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

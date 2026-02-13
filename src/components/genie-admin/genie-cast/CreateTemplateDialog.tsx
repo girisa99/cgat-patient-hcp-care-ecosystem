@@ -246,12 +246,12 @@ const AI_PROVIDERS_REGISTRY: AIProviderEntry[] = [
   { value: 'elevenlabs_clone', label: 'ElevenLabs Voice Clone', icon: '🔊', category: 'audio', priority: 3, isDefault: false },
 ];
 
-// Get default locked providers
+// Only truly locked providers are pre-selected (core routing defaults)
 const DEFAULT_LOCKED_PROVIDERS = AI_PROVIDERS_REGISTRY
-  .filter(p => p.isDefault)
+  .filter(p => p.locked)
   .map(p => p.value);
 
-// Providers that cannot be removed
+// Providers that cannot be removed (locked = true)
 const LOCKED_PROVIDER_VALUES = AI_PROVIDERS_REGISTRY
   .filter(p => p.locked)
   .map(p => p.value);
@@ -689,12 +689,12 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     name: '',
     description: '',
     category: 'marketing',
-    videoStyles: ['motion_graphics'] as string[],
+    videoStyles: [] as string[],
     capabilities: [] as string[],
-    regions: ['NAM', 'NAM_US', 'NAM_CA', 'NAM_US_SOUTH', 'NAM_US_WEST'] as string[],
+    regions: ['NAM', 'NAM_US', 'NAM_CA'] as string[],
     languages: ['en'] as string[],
-    providers: DEFAULT_LOCKED_PROVIDERS,
-    platforms: ['youtube', 'tiktok'] as string[],
+    providers: [...DEFAULT_LOCKED_PROVIDERS],
+    platforms: [] as string[],
     aiPrompt: '',
   });
 
@@ -920,9 +920,9 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       setOpen(false);
       onCreated?.();
       setFormData({
-        name: '', description: '', category: 'marketing', videoStyles: ['motion_graphics'],
-        capabilities: [], regions: ['NAM', 'NAM_US', 'NAM_CA', 'NAM_US_SOUTH', 'NAM_US_WEST'], languages: ['en'],
-        providers: DEFAULT_LOCKED_PROVIDERS, platforms: ['youtube', 'tiktok'], aiPrompt: '',
+        name: '', description: '', category: 'marketing', videoStyles: [],
+        capabilities: [], regions: ['NAM', 'NAM_US', 'NAM_CA'], languages: ['en'],
+        providers: [...DEFAULT_LOCKED_PROVIDERS], platforms: [], aiPrompt: '',
       });
     } catch (err: any) {
       toast({ title: 'Failed to create template', description: err.message, variant: 'destructive' });
@@ -1100,34 +1100,64 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                 />
               )}
 
-              {/* AI Providers */}
+              {/* AI Providers — grouped by category */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm">
                   <Wand2 className="h-4 w-4" />
-                  AI Providers (4-Zone Routing)
+                  AI Providers
                 </Label>
                 <div className="text-xs text-muted-foreground mb-2 p-2 bg-muted/30 rounded-md border flex items-center gap-2">
                   <span className="text-primary">🔒</span>
-                  <span>Locked providers follow the master routing strategy. You can add optional providers.</span>
+                  <span>Locked providers (🔒) are core defaults and cannot be removed. Toggle optional providers as needed.</span>
                 </div>
-                <PortalDropdown
-                  label=""
-                  options={AI_PROVIDERS}
-                  selected={formData.providers}
-                  onToggle={(v) => {
-                    if (LOCKED_PROVIDER_VALUES.includes(v) && formData.providers.includes(v)) return;
-                    toggleArrayItem('providers', v);
-                  }}
-                  multi={true}
-                  placeholder="Select providers"
-                  maxHeight={360}
-                />
-                <div className="flex flex-wrap gap-1 mt-2">
+                {/* Grouped by category */}
+                <div className="space-y-3 max-h-[320px] overflow-y-auto border rounded-md p-2">
+                  {(Object.keys(PROVIDER_CATEGORIES) as ProviderCategory[]).map(cat => {
+                    const catProviders = AI_PROVIDERS_REGISTRY.filter(p => p.category === cat);
+                    if (catProviders.length === 0) return null;
+                    return (
+                      <div key={cat} className="space-y-1">
+                        <p className="text-xs font-semibold text-muted-foreground px-1">{PROVIDER_CATEGORIES[cat]}</p>
+                        {catProviders.map(provider => {
+                          const isSelected = formData.providers.includes(provider.value);
+                          const isLocked = provider.locked && isSelected;
+                          return (
+                            <div
+                              key={provider.value}
+                              onClick={() => {
+                                if (isLocked) return; // can't uncheck locked
+                                toggleArrayItem('providers', provider.value);
+                              }}
+                              className={cn(
+                                "flex items-center gap-2 px-2 py-1.5 text-sm rounded cursor-pointer transition-colors",
+                                isSelected ? "bg-primary/10 text-primary" : "hover:bg-accent",
+                                isLocked && "opacity-80 cursor-not-allowed"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                                isSelected ? "bg-primary border-primary" : "border-muted-foreground/30"
+                              )}>
+                                {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                              </div>
+                              <span className="shrink-0">{provider.icon}</span>
+                              <span className="flex-1 truncate">{provider.label}</span>
+                              {provider.locked && <span className="text-xs">🔒</span>}
+                              <Badge variant="outline" className="text-[10px] shrink-0">P{provider.priority}</Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Selected summary */}
+                <div className="flex flex-wrap gap-1 mt-1">
                   {formData.providers
                     .map(v => AI_PROVIDERS_REGISTRY.find(p => p.value === v))
                     .filter(Boolean)
                     .sort((a, b) => (a?.priority || 99) - (b?.priority || 99))
-                    .slice(0, 6)
+                    .slice(0, 5)
                     .map(provider => (
                       <Badge 
                         key={provider!.value} 
@@ -1141,8 +1171,8 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                         {provider!.icon} {provider!.label.replace('🔒 ', '').split(' (')[0]}
                       </Badge>
                     ))}
-                  {formData.providers.length > 6 && (
-                    <Badge variant="outline" className="text-xs">+{formData.providers.length - 6} more</Badge>
+                  {formData.providers.length > 5 && (
+                    <Badge variant="outline" className="text-xs">+{formData.providers.length - 5} more</Badge>
                   )}
                 </div>
               </div>
