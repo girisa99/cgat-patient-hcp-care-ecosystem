@@ -1,10 +1,11 @@
 /**
  * Blueprint Preview Modal - AI Models Tab
  * Shows real providers from MASTER_ECOSYSTEM_REGISTRY, per-task routing, 
- * interactive zone display, and prompt-based thumbnail regeneration
+ * interactive zone display, prompt-based thumbnail regeneration,
+ * AND per-task provider override dropdowns with auto-suggest based on region
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Cpu,
   Globe2,
@@ -18,16 +19,26 @@ import {
   Sparkles,
   RefreshCw,
   Send,
+  ChevronDown,
+  Check,
+  Info,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
   MASTER_AI_PROVIDERS,
   ZONE_ROUTING_CONFIG,
   getProvidersByCapability,
+  getZoneForRegion,
   type ProviderCapability,
   type RoutingZone,
   type AIProviderEntry,
@@ -38,6 +49,12 @@ interface AIModelsTabProps {
   blueprint: VideoBlueprint;
   onRegenerateThumbnail?: (prompt: string) => void;
   isRegenerating?: boolean;
+  /** User's selected region for auto-suggest */
+  region?: string;
+  /** Callback when user overrides provider per capability */
+  onProviderOverrides?: (overrides: Record<string, string>) => void;
+  /** Current provider overrides */
+  providerOverrides?: Record<string, string>;
 }
 
 // Capability display configuration
@@ -75,16 +92,45 @@ export function AIModelsTab({
   blueprint,
   onRegenerateThumbnail,
   isRegenerating = false,
+  region,
+  onProviderOverrides,
+  providerOverrides = {},
 }: AIModelsTabProps) {
   const [activeZone, setActiveZone] = useState<RoutingZone | 'all'>('all');
   const [thumbnailPrompt, setThumbnailPrompt] = useState('');
   const [showPromptInput, setShowPromptInput] = useState(false);
+  const [localOverrides, setLocalOverrides] = useState<Record<string, string>>(providerOverrides);
+
+  // Detect zone from region
+  const detectedZone = useMemo(() => {
+    if (!region || region === 'global') return 'fallback';
+    return getZoneForRegion(region);
+  }, [region]);
 
   // Get all active providers from registry
   const activeProviders = useMemo(() => 
     MASTER_AI_PROVIDERS.filter(p => p.status === 'active' && p.wiredToGenieCast),
     []
   );
+
+  // Get recommended (auto-suggested) provider for a capability based on zone
+  const getRecommendedProvider = useCallback((capability: ProviderCapability): AIProviderEntry | undefined => {
+    const zoneConfig = ZONE_ROUTING_CONFIG[detectedZone];
+    const providers = activeProviders
+      .filter(p => p.capabilities.includes(capability))
+      .sort((a, b) => {
+        // Prefer providers in the detected zone
+        const aInZone = a.zones.includes(detectedZone) ? 1 : 0;
+        const bInZone = b.zones.includes(detectedZone) ? 1 : 0;
+        if (aInZone !== bInZone) return bInZone - aInZone;
+        // Then by tier
+        const tierOrder = { primary: 0, specialized: 1, fallback: 2, deprecated: 3 };
+        if (tierOrder[a.tier] !== tierOrder[b.tier]) return tierOrder[a.tier] - tierOrder[b.tier];
+        // Then by quality
+        return b.qualityScore - a.qualityScore;
+      });
+    return providers[0];
+  }, [activeProviders, detectedZone]);
 
   // Group providers by capability for current view
   const getProvidersForCapability = (capability: ProviderCapability) => {
@@ -98,10 +144,15 @@ export function AIModelsTab({
     });
   };
 
+  const handleProviderChange = (capability: string, providerId: string) => {
+    const updated = { ...localOverrides, [capability]: providerId };
+    setLocalOverrides(updated);
+    onProviderOverrides?.(updated);
+  };
+
   // Extract thumbnail provider info from style_preset
   const stylePreset = blueprint.style_preset as any || {};
   const thumbnailProvider = stylePreset.thumbnail_provider;
-  const thumbnailRegion = stylePreset.thumbnail_region;
   const thumbnailGeneratedAt = stylePreset.thumbnail_generated_at;
 
   const handleRegenerate = () => {
@@ -113,6 +164,127 @@ export function AIModelsTab({
 
   return (
     <div className="p-6 space-y-6">
+      {/* Auto-Suggest Banner */}
+      {region && region !== 'global' && (
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-start gap-2">
+          <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+          <div className="text-xs">
+            <span className="font-medium text-foreground">Auto-Suggest Active</span>
+            <span className="text-muted-foreground"> — Region: <span className="font-medium capitalize">{region}</span> → Zone: <span className="font-medium capitalize">{detectedZone}</span>. Recommended providers are pre-selected below. You can override any.</span>
+          </div>
+        </div>
+      )}
+
+      {/* Per-Task Provider Selection — THE KEY NEW FEATURE */}
+      <div>
+        <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+          <Zap className="h-4 w-4 text-primary" />
+          Provider Selection per Task
+          <Badge variant="outline" className="text-[10px]">Auto-Suggest + Override</Badge>
+        </h3>
+        <div className="space-y-3">
+          {CAPABILITY_SECTIONS.map(({ capability, label, icon, description }) => {
+            const providers = getProvidersForCapability(capability);
+            if (providers.length === 0) return null;
+            
+            const recommended = getRecommendedProvider(capability);
+            const selectedId = localOverrides[capability] || recommended?.id || providers[0]?.id;
+            const selectedProvider = activeProviders.find(p => p.id === selectedId);
+            const isOverridden = !!localOverrides[capability] && localOverrides[capability] !== recommended?.id;
+
+            return (
+              <div
+                key={capability}
+                className={cn(
+                  "flex items-center gap-4 p-3 rounded-lg border transition-colors",
+                  isOverridden
+                    ? "border-accent/50 bg-accent/5"
+                    : "border-border/50 bg-card/30"
+                )}
+              >
+                {/* Task Label */}
+                <div className="flex items-center gap-2 w-40 flex-shrink-0">
+                  <div className="text-muted-foreground">{icon}</div>
+                  <div>
+                    <p className="text-xs font-medium">{label}</p>
+                    <p className="text-[10px] text-muted-foreground">{description}</p>
+                  </div>
+                </div>
+
+                {/* Provider Dropdown */}
+                <div className="flex-1 min-w-0">
+                  <Select
+                    value={selectedId}
+                    onValueChange={(val) => handleProviderChange(capability, val)}
+                  >
+                    <SelectTrigger className="h-8 text-xs bg-background/80">
+                      <SelectValue placeholder="Select provider" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[100000] bg-popover border-border shadow-lg">
+                      {providers.map(p => {
+                        const isRecommended = p.id === recommended?.id;
+                        return (
+                          <SelectItem key={p.id} value={p.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{p.name}</span>
+                              <Badge variant="outline" className={cn("text-[8px] h-3.5 px-1", TIER_STYLES[p.tier])}>
+                                {p.tier}
+                              </Badge>
+                              {isRecommended && (
+                                <Badge className="text-[8px] h-3.5 px-1 bg-primary/20 text-primary border-primary/30">
+                                  ★ Suggested
+                                </Badge>
+                              )}
+                              <span className="text-[9px] text-muted-foreground ml-auto">
+                                Q:{p.qualityScore} S:{p.speedScore}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Zone Dots */}
+                <div className="flex gap-1 flex-shrink-0">
+                  {selectedProvider?.zones.map(z => (
+                    <div
+                      key={z}
+                      className={cn(
+                        "w-2.5 h-2.5 rounded-full",
+                        z === 'claude' && 'bg-blue-400',
+                        z === 'alibaba' && 'bg-orange-400',
+                        z === 'gemini' && 'bg-green-400',
+                        z === 'fallback' && 'bg-purple-400',
+                      )}
+                      title={`${z} zone`}
+                    />
+                  ))}
+                </div>
+
+                {/* Override indicator */}
+                {isOverridden && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] px-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      const updated = { ...localOverrides };
+                      delete updated[capability];
+                      setLocalOverrides(updated);
+                      onProviderOverrides?.(updated);
+                    }}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Thumbnail Generation Section */}
       <div>
         <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
@@ -155,15 +327,14 @@ export function AIModelsTab({
               </Button>
             </div>
 
-            {/* Prompt Input */}
             {showPromptInput && (
               <div className="space-y-2 pt-2 border-t border-border/30">
-                <label className="text-xs text-muted-foreground">Custom prompt (optional — leave blank for auto-generated)</label>
+                <label className="text-xs text-muted-foreground">Custom prompt (optional)</label>
                 <div className="flex gap-2">
                   <Textarea
                     value={thumbnailPrompt}
                     onChange={(e) => setThumbnailPrompt(e.target.value)}
-                    placeholder={`e.g., "Make it more futuristic with neon colors" or "Professional corporate style"`}
+                    placeholder={`e.g., "Make it more futuristic with neon colors"`}
                     className="h-16 text-xs resize-none"
                   />
                   <Button 
@@ -188,7 +359,7 @@ export function AIModelsTab({
               <Textarea
                 value={thumbnailPrompt}
                 onChange={(e) => setThumbnailPrompt(e.target.value)}
-                placeholder={`Describe the thumbnail style, e.g., "Futuristic tech interface with glowing elements"`}
+                placeholder={`Describe the thumbnail style`}
                 className="h-16 text-xs resize-none"
               />
               <Button 
@@ -223,6 +394,7 @@ export function AIModelsTab({
           {(Object.entries(ZONE_ROUTING_CONFIG) as [RoutingZone, typeof ZONE_ROUTING_CONFIG[RoutingZone]][]).map(([zone, config]) => {
             const zoneProviders = activeProviders.filter(p => p.zones.includes(zone));
             const colors = ZONE_COLORS[zone];
+            const isDetected = zone === detectedZone;
             return (
               <Button
                 key={zone}
@@ -230,11 +402,13 @@ export function AIModelsTab({
                 size="sm"
                 className={cn(
                   "h-7 text-xs",
-                  activeZone !== zone && `${colors.border}`
+                  activeZone !== zone && `${colors.border}`,
+                  isDetected && activeZone !== zone && "ring-1 ring-primary/50"
                 )}
                 onClick={() => setActiveZone(zone)}
               >
                 {config.name.split(' (')[0]} ({zoneProviders.length})
+                {isDetected && <span className="ml-1 text-[9px]">📍</span>}
               </Button>
             );
           })}
@@ -271,11 +445,11 @@ export function AIModelsTab({
         )}
       </div>
 
-      {/* Provider Grid by Capability */}
+      {/* Provider Grid by Capability (detailed view) */}
       <div>
         <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
           <Cpu className="h-4 w-4" />
-          AI Providers by Task ({activeProviders.length} Integrated)
+          All Providers by Task ({activeProviders.length} Integrated)
         </h3>
         <div className="space-y-4">
           {CAPABILITY_SECTIONS.map(({ capability, label, icon, description }) => {
@@ -290,44 +464,57 @@ export function AIModelsTab({
                   <span className="text-[10px] text-muted-foreground">— {description}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {providers.map((provider) => (
-                    <div
-                      key={provider.id}
-                      className="p-2.5 rounded-lg border border-border/50 bg-card/30 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div>
-                          <p className="text-xs font-medium truncate">{provider.name}</p>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <Badge 
-                              variant="outline" 
-                              className={cn("text-[9px] h-3.5 px-1", TIER_STYLES[provider.tier])}
-                            >
-                              {provider.tier}
-                            </Badge>
-                            <span className="text-[9px] text-muted-foreground">
-                              Q:{provider.qualityScore} S:{provider.speedScore}
-                            </span>
+                  {providers.map((provider) => {
+                    const isSelected = localOverrides[capability] === provider.id;
+                    const isRecommended = getRecommendedProvider(capability)?.id === provider.id;
+                    return (
+                      <div
+                        key={provider.id}
+                        className={cn(
+                          "p-2.5 rounded-lg border bg-card/30 flex items-center justify-between cursor-pointer transition-colors hover:border-primary/40",
+                          isSelected && "border-primary/50 bg-primary/5",
+                          isRecommended && !isSelected && "border-primary/20"
+                        )}
+                        onClick={() => handleProviderChange(capability, provider.id)}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div>
+                            <p className="text-xs font-medium truncate flex items-center gap-1">
+                              {provider.name}
+                              {isRecommended && <span className="text-primary text-[9px]">★</span>}
+                              {isSelected && <Check className="h-3 w-3 text-primary" />}
+                            </p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <Badge 
+                                variant="outline" 
+                                className={cn("text-[9px] h-3.5 px-1", TIER_STYLES[provider.tier])}
+                              >
+                                {provider.tier}
+                              </Badge>
+                              <span className="text-[9px] text-muted-foreground">
+                                Q:{provider.qualityScore} S:{provider.speedScore}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                        <div className="flex gap-1">
+                          {provider.zones.map(z => (
+                            <div
+                              key={z}
+                              className={cn(
+                                "w-2 h-2 rounded-full",
+                                z === 'claude' && 'bg-blue-400',
+                                z === 'alibaba' && 'bg-orange-400',
+                                z === 'gemini' && 'bg-green-400',
+                                z === 'fallback' && 'bg-purple-400',
+                              )}
+                              title={`${z} zone`}
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex gap-1">
-                        {provider.zones.map(z => (
-                          <div
-                            key={z}
-                            className={cn(
-                              "w-2 h-2 rounded-full",
-                              z === 'claude' && 'bg-blue-400',
-                              z === 'alibaba' && 'bg-orange-400',
-                              z === 'gemini' && 'bg-green-400',
-                              z === 'fallback' && 'bg-purple-400',
-                            )}
-                            title={`${z} zone`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
