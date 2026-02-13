@@ -422,15 +422,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             }}
           />
 
-          {/* Workflow Context Banner - persistent across all CREATE sub-tabs (Advanced only) */}
-          {createMode.isAdvanced && (
-            <WorkflowContextBanner
-              session={castSession.session}
-              currentSubTab={currentSubTab}
-              onNavigate={handleBannerNavigate}
-              onResetSession={castSession.resetSession}
-            />
-          )}
+          {/* WorkflowContextBanner removed from CREATE - belongs in later phases */}
 
           <AnimatePresence mode="wait">
             {/* ── TEMPLATES ── First-class starting point */}
