@@ -112,14 +112,12 @@ export function useGenieCastSession() {
       if (stored) {
         const parsed = JSON.parse(stored);
         return {
+          ...createDefaultSession(),
           ...parsed,
+          // Always reset selectedIntent on fresh load — user must choose each session
+          selectedIntent: null,
           createdAt: new Date(parsed.createdAt),
-          updatedAt: new Date(parsed.updatedAt),
-          approvalItems: (parsed.approvalItems || []).map((item: any) => ({
-            ...item,
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.updatedAt),
-          })),
+          updatedAt: new Date(),
         };
       }
     } catch (e) {
