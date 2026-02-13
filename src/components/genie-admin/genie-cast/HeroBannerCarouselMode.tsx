@@ -9,7 +9,7 @@
  * Slide 4: Transcreation → Promo Clip + Social Previews + Before/After
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Globe, Eye, Wand2, Loader2, CheckCircle2,
@@ -29,26 +29,14 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { REGION_LLM_ROUTING } from '@/config/regional-routing-registry';
 
-// ─── PRODUCT LOGO IMPORTS ───────────────────────────────────────────────
-import sparkLogo from '@/assets/logos/products/genie-spark.png';
-import mindLogo from '@/assets/logos/products/genie-mind.png';
-import vibeLogo from '@/assets/logos/products/genie-vibe.png';
-import deckLogo from '@/assets/logos/products/genie-deck.png';
-import hubLogo from '@/assets/logos/products/genie-arc.png'; // Hub (legacy: arc)
-import castLogo from '@/assets/logos/products/genie-cast.png';
-import askGenieLogo from '@/assets/logos/products/ask-genie.png';
-import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo-v2.png';
+// ─── GENIE SUITE PRODUCT LINEUP (logos loaded from brand-assets bucket) ───
+interface GenieProduct {
+  name: string;
+  desc: string;
+  logoUrl?: string;
+}
 
-// ─── GENIE SUITE PRODUCT LINEUP (with actual logos) ─────────────────────
-const GENIE_PRODUCTS = [
-  { name: 'Spark', logo: sparkLogo, desc: 'Idea to Content' },
-  { name: 'Mind', logo: mindLogo, desc: 'AI Knowledge Engine' },
-  { name: 'Vibe', logo: vibeLogo, desc: 'Visual Editor' },
-  { name: 'Deck', logo: deckLogo, desc: 'Presentation AI' },
-  { name: 'Hub', logo: hubLogo, desc: 'Central Command' },
-  { name: 'Cast', logo: castLogo, desc: 'Video Production' },
-  { name: 'Ask Genie', logo: askGenieLogo, desc: 'AI Assistant' },
-];
+const PRODUCT_IDS = ['spark', 'mind', 'vibe', 'deck', 'arc', 'cast', 'ask-genie'] as const;
 
 // ─── AI PLATFORM STATS ──────────────────────────────────────────────────
 const PLATFORM_STATS = [
@@ -288,6 +276,50 @@ export const HeroBannerCarouselMode: React.FC = () => {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [scriptOverrides, setScriptOverrides] = useState<Record<string, Partial<Record<SlideId, string>>>>({});
+  const [genieProducts, setGenieProducts] = useState<GenieProduct[]>([]);
+  const [productLogosLoaded, setProductLogosLoaded] = useState(false);
+
+  // Load product logos from brand-assets bucket
+  useEffect(() => {
+    const loadProductLogos = async () => {
+      try {
+        const { data: brandFiles } = await supabase.storage
+          .from('brand-assets')
+          .list('', { limit: 50 });
+
+        const products: GenieProduct[] = [
+          { name: 'Spark', desc: 'Idea to Content' },
+          { name: 'Mind', desc: 'AI Knowledge Engine' },
+          { name: 'Vibe', desc: 'Visual Editor' },
+          { name: 'Deck', desc: 'Presentation AI' },
+          { name: 'Hub', desc: 'Central Command' },
+          { name: 'Cast', desc: 'Video Production' },
+          { name: 'Ask Genie', desc: 'AI Assistant' },
+        ];
+
+        if (brandFiles) {
+          for (const product of products) {
+            const logoFile = brandFiles.find(f => 
+              f.name?.includes('logo') && 
+              f.name?.toLowerCase().includes(product.name.toLowerCase().replace(/\s+/g, '-'))
+            );
+            if (logoFile) {
+              const { data } = supabase.storage.from('brand-assets').getPublicUrl(logoFile.name);
+              product.logoUrl = data.publicUrl;
+            }
+          }
+        }
+
+        setGenieProducts(products);
+        setProductLogosLoaded(true);
+      } catch (error) {
+        console.error('Failed to load product logos:', error);
+        setProductLogosLoaded(true);
+      }
+    };
+
+    loadProductLogos();
+  }, []);
 
   const toggleStyle = (id: string) => {
     if (id === primaryStyle) return; // Can't remove primary
@@ -762,17 +794,20 @@ Modern premium design, wide 16:9 aspect ratio, rich composition with multiple la
                       {activeSlideConfig?.genieContent.showProducts && (
                         <div className="mb-3">
                           <div className="flex items-center gap-2 mb-2">
-                            <img src={genieSuiteLogo} alt="Genie Suite" className="h-5 object-contain brightness-0 invert opacity-80" />
-                            <span className="text-[9px] text-white/50 font-medium">Mind to Media</span>
+                            <span className="text-[10px] text-white/50 font-medium">🧠 Genie Suite</span>
                           </div>
                           <div className="flex gap-2">
                             <TooltipProvider delayDuration={200}>
-                              {GENIE_PRODUCTS.map(p => (
+                              {genieProducts.map(p => (
                                 <Tooltip key={p.name}>
                                   <TooltipTrigger asChild>
                                     <div className="flex flex-col items-center cursor-default">
                                       <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-sm border border-white/10 flex items-center justify-center p-1">
-                                        <img src={p.logo} alt={p.name} className="w-full h-full object-contain" />
+                                        {p.logoUrl ? (
+                                          <img src={p.logoUrl} alt={p.name} className="w-full h-full object-contain" />
+                                        ) : (
+                                          <span className="text-[9px] text-white/40 font-bold">{p.name.charAt(0)}</span>
+                                        )}
                                       </div>
                                       <span className="text-[7px] text-white/60 mt-0.5 font-medium">{p.name}</span>
                                     </div>
