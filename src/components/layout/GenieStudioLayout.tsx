@@ -145,8 +145,24 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     );
   }
 
-  // Sidebar variant - CRITICAL: sidebar ALWAYS renders, even during auth loading
-  // This prevents the "Genie Cast tab disappearing" bug
+  // STAGE 1: Hide sidebar on /genie-cast for immersive full-width experience
+  const isGenieCastRoute = location.pathname === '/genie-cast';
+  
+  if (isGenieCastRoute) {
+    // Full-width immersive layout for Genie Cast
+    return (
+      <div className="min-h-screen bg-background w-full">
+        <main className="h-full w-full">
+          <Suspense fallback={<LoadingFallback />}>
+            {mainContent}
+          </Suspense>
+        </main>
+        {showFAB && <AskGenie position="floating" />}
+      </div>
+    );
+  }
+
+  // Sidebar variant - for non-Genie-Cast routes
   return (
     <div className="min-h-screen bg-background flex w-full">
       <GenieStudioNavigation 

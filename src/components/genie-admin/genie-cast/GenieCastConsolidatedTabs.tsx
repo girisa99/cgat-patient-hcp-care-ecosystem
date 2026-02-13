@@ -141,12 +141,12 @@ import {
   calculateEcosystemMetrics,
 } from '@/config/master-ecosystem-registry';
 
-export type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish' | 'landing';
-export type CreateSubTab = 'templates' | 'messaging' | 'production';
-export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review';
-export type ManageSubTab = 'library' | 'analytics' | 'flow' | 'repurpose';
+// STAGE 1: 3-Tab Consolidated Structure (CREATE, PRODUCE, PUBLISH)
+// MANAGE and LANDING have been consolidated into PRODUCE and CREATE respectively
+export type ConsolidatedTab = 'create' | 'produce' | 'publish';
+export type CreateSubTab = 'intent' | 'templates' | 'messaging' | 'assets';
+export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review' | 'library' | 'analytics' | 'flow';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
-export type LandingSubTab = 'scripts' | 'hero-banners' | 'assets-lab' | 'meeting-prep';
 
 interface GenieCastConsolidatedTabsProps {
   // State from parent
@@ -170,49 +170,42 @@ interface GenieCastConsolidatedTabsProps {
   defaultSubTab?: string;
 }
 
+// STAGE 1: Consolidated 3-Tab Structure
+// CREATE → PRODUCE → PUBLISH (MANAGE & LANDING consolidated into these)
 const TAB_DEFINITIONS = {
   create: {
     label: 'CREATE',
     icon: Sparkles,
-    description: 'Templates, Messaging & Setup',
+    description: 'Intent, Templates, Messaging & Assets',
     activeColor: 'bg-orange-600 text-white border-orange-600',
     inactiveColor: 'border-orange-300 text-orange-700 hover:bg-orange-50',
     subTabs: [
-      { id: 'templates', label: 'Templates', icon: LayoutTemplate, description: 'Select a video blueprint' },
-      { id: 'messaging', label: 'Messaging', icon: MessageSquare, description: 'AI marketing copy generation' },
-      { id: 'production', label: 'Production Setup', icon: Settings2, description: 'Styles, Assets & Regional config' },
+      { id: 'intent', label: 'Intent', icon: Sparkles, description: 'What are you creating?' },
+      { id: 'templates', label: 'Templates', icon: LayoutTemplate, description: 'Select a blueprint' },
+      { id: 'messaging', label: 'Messaging', icon: MessageSquare, description: 'AI marketing copy & scripts' },
+      { id: 'assets', label: 'Assets', icon: Image, description: 'Hero Banners, Assets Lab, Brand Assets' },
     ],
   },
   produce: {
     label: 'PRODUCE',
     icon: Video,
-    description: 'Generate & Edit Videos',
+    description: 'Generate, Edit, Review & Manage',
     activeColor: 'bg-blue-600 text-white border-blue-600',
     inactiveColor: 'border-blue-300 text-blue-700 hover:bg-blue-50',
     subTabs: [
-      { id: 'generate', label: 'Quick Gen', icon: Play, description: 'Single video generation' },
+      { id: 'generate', label: 'Generate', icon: Play, description: 'Single or batch video generation' },
       { id: 'matrix', label: 'Matrix', icon: Grid3X3, description: 'Batch production matrix' },
       { id: 'studio', label: 'Studio', icon: Film, description: 'Timeline editor' },
       { id: 'review', label: 'Review', icon: Eye, description: 'Quality review & enhance' },
-    ],
-  },
-  manage: {
-    label: 'MANAGE',
-    icon: Layers,
-    description: 'Library & Analytics',
-    activeColor: 'bg-green-600 text-white border-green-600',
-    inactiveColor: 'border-green-300 text-green-700 hover:bg-green-50',
-    subTabs: [
       { id: 'library', label: 'Library', icon: Layers, description: 'Video content library' },
-      { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Performance metrics' },
+      { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Performance metrics & insights' },
       { id: 'flow', label: 'Flow', icon: GitBranch, description: 'Pipeline visualization' },
-      { id: 'repurpose', label: 'Repurpose', icon: FileText, description: 'Content repurposing' },
     ],
   },
   publish: {
     label: 'PUBLISH',
     icon: Share2,
-    description: 'Distribution & Scheduling',
+    description: 'Schedule, Distribute & Optimize',
     activeColor: 'bg-purple-600 text-white border-purple-600',
     inactiveColor: 'border-purple-300 text-purple-700 hover:bg-purple-50',
     subTabs: [
@@ -220,19 +213,6 @@ const TAB_DEFINITIONS = {
       { id: 'distribution', label: 'Distribute', icon: Share2, description: 'Multi-platform publishing' },
       { id: 'seo', label: 'SEO', icon: Search, description: 'Search optimization' },
       { id: 'testing', label: 'A/B Test', icon: Wand2, description: 'Variation testing' },
-    ],
-  },
-  landing: {
-    label: 'LANDING PAGE',
-    icon: Globe,
-    description: 'Hero Scripts & Narration',
-    activeColor: 'bg-teal-600 text-white border-teal-600',
-    inactiveColor: 'border-teal-300 text-teal-700 hover:bg-teal-50',
-    subTabs: [
-      { id: 'scripts', label: 'Landing Page Scripts', icon: FileText, description: 'Hero narration scripts' },
-      { id: 'hero-banners', label: 'Hero Banners', icon: Image, description: '4-slide hero carousel per region' },
-      { id: 'assets-lab', label: 'Assets Lab', icon: Image, description: 'Generate & publish regional assets' },
-      { id: 'meeting-prep', label: 'Meeting Prep', icon: FileText, description: 'Partner meeting documents' },
     ],
   },
 };
@@ -253,11 +233,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 }) => {
   const [activeMainTab, setActiveMainTab] = useState<ConsolidatedTab>(defaultTab);
   const [subTabs, setSubTabs] = useState<Record<ConsolidatedTab, string>>({
-    create: defaultSubTab || 'templates',
+    create: defaultSubTab || 'intent',
     produce: 'generate',
-    manage: 'library',
     publish: 'scheduler',
-    landing: 'scripts',
   });
 
   // Initialize unified authoring hook for cross-functional workflow
@@ -293,10 +271,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   const metrics = calculateEcosystemMetrics();
 
-  // Handle navigation from ApprovalDashboard
   const handleNavigateToStage = useCallback((
     stage: AuthoringStage, 
-    tab: 'create' | 'produce' | 'manage' | 'publish', 
+    tab: 'create' | 'produce' | 'publish', 
     subTab: string
   ) => {
     setActiveMainTab(tab as ConsolidatedTab);
@@ -1398,20 +1375,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           </AnimatePresence>
         </TabsContent>
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* LANDING PAGE TAB CONTENT */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <TabsContent value="landing" className="mt-4 space-y-6">
-          {subTabs.landing === 'meeting-prep' ? (
-            <AlibabaMeetingPrepDoc />
-          ) : subTabs.landing === 'hero-banners' ? (
-            <HeroBannerCarouselMode />
-          ) : subTabs.landing === 'assets-lab' ? (
-            <RegionalAssetsLab />
-          ) : (
-            <LandingPageScriptsPanel />
-          )}
-        </TabsContent>
+        {/* LANDING FEATURES NOW IN CREATE → ASSETS */}
       </Tabs>
     </div>
   );

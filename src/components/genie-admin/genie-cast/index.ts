@@ -46,9 +46,7 @@ export {
   type ConsolidatedTab,
   type CreateSubTab,
   type ProduceSubTab,
-  type ManageSubTab,
   type PublishSubTab,
-  type LandingSubTab,
 } from './GenieCastConsolidatedTabs';
 
 export { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
