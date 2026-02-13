@@ -49,6 +49,7 @@ export function BlueprintTemplatesGrid({
   onSelectBlueprint,
   selectedBlueprintId,
   intentFilter,
+  selectedVideoStyles,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
   const { blueprints, isLoading, refetch } = useVideoBlueprints();
@@ -86,8 +87,11 @@ export function BlueprintTemplatesGrid({
     );
   }, [recommendedTemplates, searchQuery]);
 
-  const handleSelectTemplate = useCallback((blueprint: VideoBlueprint) => {
-    onSelectBlueprint?.(blueprint);
+  const handleSelectTemplate = useCallback((blueprint: VideoBlueprint, overrides?: { targetPlatforms?: string[] }) => {
+    const enriched = overrides?.targetPlatforms 
+      ? { ...blueprint, target_platform: overrides.targetPlatforms }
+      : blueprint;
+    onSelectBlueprint?.(enriched);
     toast({ title: `Template Selected`, description: `"${blueprint.name}" — proceeding to messaging` });
   }, [onSelectBlueprint, toast]);
 
@@ -323,6 +327,7 @@ export function BlueprintTemplatesGrid({
           scenes={previewBlueprint.scenes || []}
           onClose={() => setPreviewBlueprint(null)}
           onSelect={handleSelectTemplate}
+          selectedVideoStyles={selectedVideoStyles}
         />
       )}
 

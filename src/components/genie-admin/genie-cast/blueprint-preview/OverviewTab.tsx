@@ -19,14 +19,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
+import { PlatformSelector } from './PlatformSelector';
 
 interface OverviewTabProps {
   scenes: BlueprintScene[];
   targetPlatforms: string[];
+  suggestedPlatforms: string[]; // from blueprint template
   industryTags: string[];
   expandedScene: string | null;
   onExpandScene: (sceneId: string | null) => void;
   onSwitchToTimeline: () => void;
+  onPlatformsChange?: (platforms: string[]) => void;
   formatDuration: (seconds: number) => string;
 }
 
@@ -53,10 +56,12 @@ const sceneTypeIcons: Record<string, React.ReactNode> = {
 export function OverviewTab({
   scenes,
   targetPlatforms,
+  suggestedPlatforms,
   industryTags,
   expandedScene,
   onExpandScene,
   onSwitchToTimeline,
+  onPlatformsChange,
   formatDuration,
 }: OverviewTabProps) {
   const totalDuration = scenes.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
@@ -155,25 +160,13 @@ export function OverviewTab({
         </div>
       </div>
 
-      {/* Target Platforms */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium">Target Platforms</h3>
-          <Badge variant="outline" className="text-[10px] h-5">
-            Customizable in Production Setup
-          </Badge>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {targetPlatforms.map((platform) => (
-            <Badge key={platform} variant="secondary" className="capitalize">
-              {platform.replace('_', ' ')}
-            </Badge>
-          ))}
-          {targetPlatforms.length === 0 && (
-            <span className="text-xs text-muted-foreground">No platforms specified — all formats available</span>
-          )}
-        </div>
-      </div>
+      {/* Target Platforms — Template suggests, user overrides */}
+      <PlatformSelector
+        selectedPlatforms={targetPlatforms}
+        suggestedPlatforms={suggestedPlatforms}
+        onPlatformsChange={onPlatformsChange || (() => {})}
+        readOnly={!onPlatformsChange}
+      />
 
       {/* Industry Tags */}
       {industryTags.length > 0 && (
