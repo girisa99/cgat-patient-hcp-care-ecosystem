@@ -2,9 +2,12 @@
  * Blueprint Preview Modal - Scene Timeline Tab
  * Interactive scene editing with drag-and-drop reorder, inline editing,
  * visual config toggles, add/remove/duplicate
+ * 
+ * P5 Enhancement: Scenes are enriched with Content Pool context
+ * (product metadata, brand assets, regional scripts) for consistent messaging
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -20,13 +23,14 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from '@dnd-kit/sortable';
-import { Clock } from 'lucide-react';
+import { Clock, Info, Package, Palette, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
 import { SortableSceneItem } from './SortableSceneItem';
 import { AddSceneDropdown } from './AddSceneDropdown';
 import { AISceneCustomizer } from './AISceneCustomizer';
 import { TranslationTranscreationToggle } from '../TranslationTranscreationToggle';
+import { useSceneEnrichment } from '@/hooks/useSceneEnrichment';
 import { toast } from 'sonner';
 
 interface SceneTimelineTabProps {
@@ -160,8 +164,52 @@ export function SceneTimelineTab({
     onScenesModified?.(updated, `Updated visual config for "${scenes.find(s => s.id === sceneId)?.title}"`);
   }, [scenes, onScenesModified]);
 
+  // P5: Enrich scenes with Content Pool context
+  const { enrichedScenes, enrichmentStatus, aiPromptContext } = useSceneEnrichment({
+    scenes,
+  });
+
   return (
     <div className="p-6 space-y-4">
+      {/* P5: Enrichment Context Banner */}
+      {enrichmentStatus.hasProductContext && (
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">
+              Content Pool Enriched
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-muted-foreground">
+            {enrichmentStatus.hasProductContext && (
+              <div className="flex items-center gap-1.5">
+                <Package className="h-3.5 w-3.5 text-primary" />
+                <span>Product context active</span>
+              </div>
+            )}
+            {enrichmentStatus.hasBrandContext && (
+              <div className="flex items-center gap-1.5">
+                <Palette className="h-3.5 w-3.5 text-primary" />
+                <span>Brand assets applied</span>
+              </div>
+            )}
+            {enrichmentStatus.hasAudienceContext && (
+              <div className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-primary" />
+                <span>Audience persona active</span>
+              </div>
+            )}
+            {enrichmentStatus.approvedScriptCount > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Badge variant="outline" className="text-[10px]">
+                  {enrichmentStatus.approvedScriptCount} approved scripts
+                </Badge>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Timeline Summary Bar */}
       <div className="flex items-center justify-between bg-muted/30 rounded-lg p-3 border border-border/50">
         <div className="flex items-center gap-3">
