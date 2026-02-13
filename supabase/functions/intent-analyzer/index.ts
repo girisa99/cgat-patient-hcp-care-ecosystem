@@ -2,21 +2,19 @@
  * INTENT ANALYZER - Agentic AI for Intelligent Intent Classification
  * 
  * Uses the existing shared routing infrastructure:
- * - _shared/api-keys.ts → LLM provider fallback chain (Gemini → OpenAI → Claude)
+ * - _shared/api-keys.ts → LLM provider fallback chain
  * - _shared/style-intent-routing.ts → Style intent → provider mapping
+ * - Vertex AI JWT auth → Gemini 3.0 Flash via aiplatform.googleapis.com
  * 
- * This ensures the intent analyzer uses the SAME routing as the Regional Assets Lab,
- * ai-universal-processor, and all other edge functions in the platform.
+ * Provider chain: Vertex Gemini 3.0 → Consumer Gemini 2.0 → OpenAI → Claude
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { 
-  getAIProviders, 
-  getFirstAvailableProvider, 
   getGeminiKey, 
   getOpenAIKey, 
   getClaudeKey,
-  type AIProviderConfig 
+  getApiKey,
 } from '../_shared/api-keys.ts';
 import { getAllStyleIntents } from '../_shared/style-intent-routing.ts';
 
@@ -38,17 +36,92 @@ You MUST respond with a JSON object containing:
 - content_types: Array from ["video", "infographic", "animation", "chart", "whitepaper", "statistics_card", "customer_journey", "process_flow", "presentation", "social_post"]
 - industry: Primary industry if mentioned (lowercase), or empty string
 - capability_requirements: Array from ["video_generation", "image_generation", "tts", "avatar", "3d_generation", "data_visualization", "diagram_generation", "layout_engine", "llm_generation", "pdf_export", "slide_generation", "copywriting", "motion_graphics", "lipsync"]
-- suggested_styles: Array of matching style intents from: ${AVAILABLE_STYLES.slice(0, 30).join(', ')}... (67 total styles including cultural, nature, religious, regional modern)
+- suggested_styles: Array of matching style intents from: ${AVAILABLE_STYLES.slice(0, 30).join(', ')}... (${AVAILABLE_STYLES.length} total styles including cultural, nature, religious, regional modern)
 - compliance_notes: Any industry-specific compliance considerations
 - target_audience_hint: Who this content is likely for
 
 RESPOND ONLY with valid JSON. No markdown, no explanation.`;
 
 // ============================================================================
+// VERTEX AI JWT AUTH (reuses pattern from _shared/image-providers.ts)
+// ============================================================================
+
+async function getVertexAccessToken(sa: any): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const payload = btoa(JSON.stringify({
+    iss: sa.client_email,
+    scope: 'https://www.googleapis.com/auth/cloud-platform',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now, exp: now + 3600,
+  }));
+
+  const signInput = `${header}.${payload}`;
+  const keyData = sa.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '');
+  const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', binaryKey, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(signInput));
+  const sig64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${header}.${payload}.${sig64}`,
+  });
+
+  if (!tokenResp.ok) throw new Error(`Vertex auth failed: ${tokenResp.status}`);
+  return (await tokenResp.json()).access_token;
+}
+
+// ============================================================================
 // PROVIDER-SPECIFIC LLM CALL IMPLEMENTATIONS
 // ============================================================================
 
-async function callGemini(apiKey: string, model: string, description: string): Promise<any> {
+async function callVertexGemini(description: string): Promise<any> {
+  const saJson = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT');
+  if (!saJson) throw new Error('GOOGLE_VERTEX_SERVICE_ACCOUNT not configured');
+
+  const sa = JSON.parse(saJson);
+  const token = await getVertexAccessToken(sa);
+  const projectId = sa.project_id;
+  const location = 'us-central1';
+  const model = 'gemini-2.0-flash-001'; // Vertex-available model
+
+  const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: [{ role: 'user', parts: [{ text: description }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.3,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Vertex Gemini error ${response.status}: ${errorText}`);
+  }
+
+  const result = await response.json();
+  const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Vertex Gemini returned empty response');
+  return JSON.parse(text);
+}
+
+async function callGeminiConsumer(apiKey: string, model: string, description: string): Promise<any> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
@@ -130,7 +203,6 @@ async function callClaude(apiKey: string, description: string): Promise<any> {
   const text = result.content?.[0]?.text;
   if (!text) throw new Error('Claude returned empty response');
   
-  // Claude may wrap JSON in markdown code blocks
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Claude did not return valid JSON');
   return JSON.parse(jsonMatch[0]);
@@ -138,6 +210,8 @@ async function callClaude(apiKey: string, description: string): Promise<any> {
 
 // ============================================================================
 // UNIFIED LLM CALL WITH FALLBACK CHAIN
+// Uses same pattern as ai-universal-processor resilience:
+// Vertex Gemini (primary) → Consumer Gemini 2.0 (backup) → OpenAI → Claude
 // ============================================================================
 
 interface LLMResult {
@@ -151,8 +225,6 @@ interface LLMResult {
 async function analyzeWithFallbackChain(description: string): Promise<LLMResult> {
   const attempts: string[] = [];
   
-  // Use the shared provider priority: Gemini 3.0 → Gemini 2.0 → OpenAI → Claude
-  const providers = getAIProviders();
   const fallbackChain: Array<{
     id: string;
     call: () => Promise<any>;
@@ -160,48 +232,52 @@ async function analyzeWithFallbackChain(description: string): Promise<LLMResult>
     model: string;
   }> = [];
 
-  // Gemini 3.0 Flash (primary)
-  if (providers.gemini_primary.available) {
+  // 1. Vertex AI Gemini (primary - uses service account JWT, same as image/video gen)
+  const vertexSA = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT');
+  if (vertexSA) {
     fallbackChain.push({
-      id: 'gemini_primary',
-      call: () => callGemini(providers.gemini_primary.apiKey!, providers.gemini_primary.model, description),
-      provider: 'google',
-      model: providers.gemini_primary.model,
+      id: 'vertex_gemini',
+      call: () => callVertexGemini(description),
+      provider: 'google-vertex',
+      model: 'gemini-2.0-flash-001',
     });
   }
 
-  // Gemini 2.0 Flash (backup)
-  if (providers.gemini_backup.available) {
+  // 2. Consumer Gemini 2.0 Flash (backup - uses API key)
+  const geminiKey = getGeminiKey();
+  if (geminiKey) {
     fallbackChain.push({
-      id: 'gemini_backup',
-      call: () => callGemini(providers.gemini_backup.apiKey!, providers.gemini_backup.model, description),
+      id: 'gemini_consumer',
+      call: () => callGeminiConsumer(geminiKey, 'gemini-2.0-flash', description),
       provider: 'google',
-      model: providers.gemini_backup.model,
+      model: 'gemini-2.0-flash',
     });
   }
 
-  // OpenAI (fallback)
-  if (providers.openai.available) {
+  // 3. OpenAI (fallback)
+  const openaiKey = getOpenAIKey();
+  if (openaiKey) {
     fallbackChain.push({
       id: 'openai',
-      call: () => callOpenAI(providers.openai.apiKey!, description),
+      call: () => callOpenAI(openaiKey, description),
       provider: 'openai',
-      model: providers.openai.model,
+      model: 'gpt-4o-mini',
     });
   }
 
-  // Claude (fallback)
-  if (providers.claude.available) {
+  // 4. Claude (fallback)
+  const claudeKey = getClaudeKey();
+  if (claudeKey) {
     fallbackChain.push({
       id: 'claude',
-      call: () => callClaude(providers.claude.apiKey!, description),
+      call: () => callClaude(claudeKey, description),
       provider: 'anthropic',
-      model: providers.claude.model,
+      model: 'claude-3-5-haiku',
     });
   }
 
   if (fallbackChain.length === 0) {
-    throw new Error('No AI providers configured. Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.');
+    throw new Error('No AI providers configured. Set GOOGLE_VERTEX_SERVICE_ACCOUNT, GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.');
   }
 
   for (let i = 0; i < fallbackChain.length; i++) {
@@ -212,7 +288,7 @@ async function analyzeWithFallbackChain(description: string): Promise<LLMResult>
       console.log(`[intent-analyzer] Trying provider: ${entry.id} (${entry.model})`);
       const analysis = await entry.call();
       
-      console.log(`[intent-analyzer] Success with ${entry.id}`);
+      console.log(`[intent-analyzer] ✅ Success with ${entry.id}`);
       return {
         analysis,
         provider: entry.provider,
@@ -221,8 +297,7 @@ async function analyzeWithFallbackChain(description: string): Promise<LLMResult>
         attempts,
       };
     } catch (error) {
-      console.warn(`[intent-analyzer] ${entry.id} failed:`, error.message);
-      // Continue to next provider in the chain
+      console.warn(`[intent-analyzer] ❌ ${entry.id} failed:`, error.message);
     }
   }
 
@@ -247,13 +322,11 @@ serve(async (req) => {
       });
     }
 
-    // Use the unified fallback chain from shared infrastructure
     const result = await analyzeWithFallbackChain(description);
 
-    // Enrich with available style intents from the shared routing registry
+    // Validate suggested styles against the shared routing registry
     const analysis = result.analysis;
     if (analysis.suggested_styles) {
-      // Validate suggested styles against the shared registry
       analysis.suggested_styles = analysis.suggested_styles.filter(
         (s: string) => AVAILABLE_STYLES.includes(s)
       );
