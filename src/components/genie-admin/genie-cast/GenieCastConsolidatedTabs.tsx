@@ -363,57 +363,39 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         </TabsList>
 
         {/* Sub-Tab Navigation for Active Main Tab */}
-        {activeMainTab === 'create' ? (
-          /* CREATE uses step progress + mode toggle instead of generic sub-tabs */
-          <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
-            <CreateStepProgress
-              session={castSession.session}
-              currentStep={currentSubTab as CreateStep}
-              onStepClick={(step) => setSubTab('create', step)}
-              onGoToProduce={() => {
-                setActiveMainTab('produce');
-                setSubTab('produce', 'generate');
-              }}
-              canProduce={!!castSession.session.selectedTemplate}
-              className="flex-1"
-            />
-            <CreateModeToggle mode={createMode.mode} onToggle={createMode.toggleMode} />
+        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
+          {currentMainDef.subTabs.map((sub) => {
+            const isActive = currentSubTab === sub.id;
+            return (
+              <Button
+                key={sub.id}
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "flex-shrink-0 gap-1.5 text-xs font-medium",
+                  isActive 
+                    ? currentMainDef.activeColor 
+                    : currentMainDef.inactiveColor
+                )}
+                onClick={() => setSubTab(activeMainTab, sub.id)}
+              >
+                <sub.icon className="w-3.5 h-3.5" />
+                {sub.label}
+              </Button>
+            );
+          })}
+          
+          {/* Pipeline indicator */}
+          <Separator orientation="vertical" className="h-6 mx-2" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="font-medium">{activePipelines.length} active</span>
+            {inactivePipelines.length > 0 && (
+              <Badge variant="outline" className="text-[10px]">
+                +{inactivePipelines.length} available
+              </Badge>
+            )}
           </div>
-        ) : (
-          <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
-            {currentMainDef.subTabs.map((sub) => {
-              const isActive = currentSubTab === sub.id;
-              return (
-                <Button
-                  key={sub.id}
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "flex-shrink-0 gap-1.5 text-xs font-medium",
-                    isActive 
-                      ? currentMainDef.activeColor 
-                      : currentMainDef.inactiveColor
-                  )}
-                  onClick={() => setSubTab(activeMainTab, sub.id)}
-                >
-                  <sub.icon className="w-3.5 h-3.5" />
-                  {sub.label}
-                </Button>
-              );
-            })}
-            
-            {/* Pipeline indicator */}
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="font-medium">{activePipelines.length} active</span>
-              {inactivePipelines.length > 0 && (
-                <Badge variant="outline" className="text-[10px]">
-                  +{inactivePipelines.length} available
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* CREATE TAB CONTENT */}
