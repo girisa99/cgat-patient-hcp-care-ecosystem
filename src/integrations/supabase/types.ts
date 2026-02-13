@@ -19528,6 +19528,7 @@ export type Database = {
           play_count: number | null
           positioning_angles: string[] | null
           problem_statement: string
+          product_id: string | null
           region_code: string
           region_display_name: string
           routing_confidence_score: number | null
@@ -19576,6 +19577,7 @@ export type Database = {
           play_count?: number | null
           positioning_angles?: string[] | null
           problem_statement: string
+          product_id?: string | null
           region_code: string
           region_display_name: string
           routing_confidence_score?: number | null
@@ -19624,6 +19626,7 @@ export type Database = {
           play_count?: number | null
           positioning_angles?: string[] | null
           problem_statement?: string
+          product_id?: string | null
           region_code?: string
           region_display_name?: string
           routing_confidence_score?: number | null
@@ -19647,6 +19650,13 @@ export type Database = {
             columns: ["english_base_script_id"]
             isOneToOne: false
             referencedRelation: "regional_narration_scripts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regional_narration_scripts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
             referencedColumns: ["id"]
           },
         ]
@@ -22725,6 +22735,7 @@ export type Database = {
           generation_trigger: string | null
           id: string
           language_code: string
+          product_id: string | null
           quality_score: number | null
           region_code: string
           routing_zone: string | null
@@ -22755,6 +22766,7 @@ export type Database = {
           generation_trigger?: string | null
           id?: string
           language_code?: string
+          product_id?: string | null
           quality_score?: number | null
           region_code: string
           routing_zone?: string | null
@@ -22785,6 +22797,7 @@ export type Database = {
           generation_trigger?: string | null
           id?: string
           language_code?: string
+          product_id?: string | null
           quality_score?: number | null
           region_code?: string
           routing_zone?: string | null
@@ -22800,6 +22813,13 @@ export type Database = {
           version_number?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "tts_audio_versions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tts_audio_versions_script_id_fkey"
             columns: ["script_id"]

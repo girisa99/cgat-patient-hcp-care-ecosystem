@@ -49,6 +49,9 @@ export interface GenieCastSessionState {
   createdAt: Date;
   updatedAt: Date;
   
+  // Product-first context (unified flow)
+  selectedProductId: string | null;
+  
   // CREATE stage selections
   selectedStyles: string[];
   selectedTemplate: SelectedTemplate | null;
@@ -77,6 +80,7 @@ const createDefaultSession = (): GenieCastSessionState => ({
   sessionId: crypto.randomUUID(),
   createdAt: new Date(),
   updatedAt: new Date(),
+  selectedProductId: null,
   selectedStyles: [],
   selectedTemplate: null,
   approvedMessaging: null,
@@ -142,6 +146,18 @@ export function useGenieCastSession() {
     setSession(prev => ({
       ...prev,
       ...updates,
+      updatedAt: new Date(),
+    }));
+  }, []);
+
+  // ============================================
+  // PRODUCT SELECTION (Product-First Flow)
+  // ============================================
+
+  const selectProduct = useCallback((productId: string | null) => {
+    setSession(prev => ({
+      ...prev,
+      selectedProductId: productId,
       updatedAt: new Date(),
     }));
   }, []);
@@ -446,6 +462,9 @@ export function useGenieCastSession() {
     // Session management
     resetSession,
     updateSession,
+    
+    // Product
+    selectProduct,
     
     // Template
     selectTemplate,
