@@ -11,10 +11,16 @@
  * Also returns full multi-modal provider chains (image, video, avatar, 3D)
  * per suggested style, using the shared style-intent-routing registry.
  * 
- * Uses shared infrastructure:
- * - _shared/api-keys.ts → Key retrieval with fallback aliases
- * - _shared/style-intent-routing.ts → Style + multi-modal provider routing
- * - Vertex AI JWT auth → Same pattern as image/video providers
+ * P0 FOUNDATION (Dual-Mode Ready):
+ * Analyzes user intent (NL + structured) to classify:
+ * 1. Output type (Video, PPT, Avatar, 3D, Combination)
+ * 2. Required AI capabilities (lipsync, TTS, animation, 3D, etc.)
+ * 3. Style intent + provider chains from video_style_registry
+ * 4. Suggested templates + scoring
+ * 5. Confidence score + routing recommendations
+ * 
+ * Returns standardized schema for both internal (8 Genie products) and 
+ * external (subscriber) modes.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
