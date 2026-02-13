@@ -473,6 +473,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 className="h-auto p-0 text-xs text-primary"
                 onClick={() => {
                   castSession.selectIntent(null as any);
+                  castSession.resetSession();
                   setSubTab('create', 'intent');
                 }}
               >
@@ -767,53 +768,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
 
-            {/* ── INTENT ── What are you creating? (placeholder for Stage 2) */}
-            {currentSubTab === 'intent' && (
-              <motion.div
-                key="intent"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-primary" />
-                      What are you creating?
-                    </CardTitle>
-                    <CardDescription>
-                      Select your intent to auto-filter templates, messaging, and assets
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {[
-                        { id: 'product-video', label: 'Product Video', icon: Video, desc: 'Demo, explainer, or promo video' },
-                        { id: 'hero-banner', label: 'Hero Banner', icon: Image, desc: 'Landing page hero carousel' },
-                        { id: 'social-content', label: 'Social Content', icon: Share2, desc: 'Short-form social media assets' },
-                        { id: 'landing-section', label: 'Landing Section', icon: Globe, desc: 'Regional landing page content' },
-                      ].map((intent) => (
-                        <Card 
-                          key={intent.id}
-                          className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
-                          onClick={() => {
-                            toast.info(`Intent: ${intent.label} — filtering templates...`);
-                            setSubTab('create', 'templates');
-                          }}
-                        >
-                          <CardContent className="p-4 text-center space-y-2">
-                            <intent.icon className="w-8 h-8 mx-auto text-primary" />
-                            <p className="text-sm font-medium">{intent.label}</p>
-                            <p className="text-[10px] text-muted-foreground">{intent.desc}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
+            {/* Old intent placeholder removed — guided wizard handles this */}
           </AnimatePresence>
         </TabsContent>
 
@@ -821,13 +776,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* PRODUCE TAB CONTENT (includes former MANAGE) */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="produce" className="mt-4 space-y-4">
-          {/* Workflow Context Banner - shows session context in PRODUCE */}
-          <WorkflowContextBanner
-            session={castSession.session}
-            currentSubTab={currentSubTab}
-            onNavigate={handleBannerNavigate}
-            onResetSession={castSession.resetSession}
-          />
+          {/* WorkflowContextBanner already shown at top level for non-create tabs */}
           
           <AnimatePresence mode="wait">
             {currentSubTab === 'generate' && (
