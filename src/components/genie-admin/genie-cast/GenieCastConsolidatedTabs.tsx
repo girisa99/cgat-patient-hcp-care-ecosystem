@@ -273,14 +273,17 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const productContext = useProductContext(castSession.session.selectedProductId);
 
   // Initialize regional context on mount or when detection completes
+  // NOTE: castSession.setRegionalContext is stable (useCallback), but castSession object
+  // itself changes on every state update. Use only the setter in deps to avoid infinite loop.
+  const setRegionalCtx = castSession.setRegionalContext;
   React.useEffect(() => {
     if (!regionalDetection.isLoading) {
-      castSession.setRegionalContext(
+      setRegionalCtx(
         regionalDetection.detectedRegion,
         regionalDetection.selectedRegion
       );
     }
-  }, [regionalDetection.detectedRegion, regionalDetection.selectedRegion, regionalDetection.isLoading, castSession]);
+  }, [regionalDetection.detectedRegion, regionalDetection.selectedRegion, regionalDetection.isLoading, setRegionalCtx]);
 
   // Regional dialect selection state
   const [selectedDialectCodes, setSelectedDialectCodes] = useState<string[]>(['en-US']);
