@@ -13,6 +13,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  ArrowLeft,
   Sparkles,
   Camera,
   Video,
@@ -322,9 +323,27 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   return (
     <div className="space-y-4">
-      {/* Main 4-Tab Navigation */}
+      {/* Compact navigation bar - back to Genie Studio */}
+      <div className="flex items-center gap-3 mb-4 pb-3 border-b">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => window.location.href = '/genie-studio'}
+          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Genie Studio
+        </Button>
+        <Separator orientation="vertical" className="h-5" />
+        <div className="flex items-center gap-2">
+          <Film className="w-4 h-4 text-primary" />
+          <span className="text-sm font-semibold">Genie Cast</span>
+        </div>
+      </div>
+
+      {/* Main 3-Tab Navigation */}
       <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as ConsolidatedTab)}>
-        <TabsList className="grid w-full grid-cols-5 h-auto p-1.5 bg-card border rounded-lg shadow-sm">
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1.5 bg-card border rounded-lg shadow-sm">
           {(Object.entries(TAB_DEFINITIONS) as [ConsolidatedTab, typeof TAB_DEFINITIONS.create][]).map(([key, def]) => (
             <TabsTrigger 
               key={key}
@@ -517,234 +536,258 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         updatedAt: new Date(),
                       });
                     }
-                    // Navigate to Production Setup after messaging approval
-                    setSubTab('create', 'production');
-                    toast.success('Messaging approved! Configure production setup next.');
+                    // Navigate to Assets after messaging approval
+                    setSubTab('create', 'assets');
+                    toast.success('Messaging approved! Review assets next.');
                   }}
                 />
               </motion.div>
             )}
 
-            {/* ── PRODUCTION SETUP ── Step 3: Styles + Assets + Regional (merged) */}
-            {currentSubTab === 'production' && (
+            {/* ── ASSETS ── Step 4: Hero Banners, Assets Lab, Brand Assets, Regional (consolidated from LANDING + PRODUCTION) */}
+            {currentSubTab === 'assets' && (
               <motion.div
-                key="production"
+                key="assets"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                {/* Prompt if earlier steps not done */}
-                {!castSession.session.selectedTemplate && (
-                  <Card className="border-amber-300/50 bg-amber-50/30 dark:bg-amber-950/10">
-                    <CardContent className="py-4 flex items-center gap-3">
-                      <AlertTriangle className="w-5 h-5 text-amber-600" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Complete earlier steps first</p>
-                        <p className="text-xs text-muted-foreground">Select a template and generate messaging before configuring production</p>
-                      </div>
-                      <Button size="sm" variant="outline" onClick={() => setSubTab('create', 'templates')} className="gap-1">
-                        <LayoutTemplate className="w-3.5 h-3.5" />
-                        Start with Templates
-                      </Button>
+                {/* Asset section navigation */}
+                <div className="flex items-center gap-2 border-b pb-2 overflow-x-auto">
+                  <Button
+                    variant={productionSection === 'styles' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setProductionSection('styles')}
+                    className="gap-1.5 text-xs flex-shrink-0"
+                  >
+                    <Palette className="w-3.5 h-3.5" />
+                    Video Styles
+                    {selectedVideoStyles.length > 0 && (
+                      <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedVideoStyles.length}</Badge>
+                    )}
+                  </Button>
+                  <Button
+                    variant={productionSection === 'assets' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setProductionSection('assets')}
+                    className="gap-1.5 text-xs flex-shrink-0"
+                  >
+                    <Image className="w-3.5 h-3.5" />
+                    Brand Assets
+                  </Button>
+                  <Button
+                    variant={productionSection === 'regional' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setProductionSection('regional')}
+                    className="gap-1.5 text-xs flex-shrink-0"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    Regional Config
+                    {selectedDialectCodes.length > 1 && (
+                      <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedDialectCodes.length} lang</Badge>
+                    )}
+                  </Button>
+                  <Separator orientation="vertical" className="h-5 mx-1" />
+                  <Button
+                    variant={productionSection === 'hero-banners' as any ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setProductionSection('hero-banners' as any)}
+                    className="gap-1.5 text-xs flex-shrink-0"
+                  >
+                    <Image className="w-3.5 h-3.5" />
+                    Hero Banners
+                  </Button>
+                  <Button
+                    variant={productionSection === 'assets-lab' as any ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setProductionSection('assets-lab' as any)}
+                    className="gap-1.5 text-xs flex-shrink-0"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Assets Lab
+                  </Button>
+                  <Button
+                    variant={productionSection === 'landing-scripts' as any ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setProductionSection('landing-scripts' as any)}
+                    className="gap-1.5 text-xs flex-shrink-0"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    Landing Scripts
+                  </Button>
+
+                  {/* Ready to produce */}
+                  <div className="ml-auto flex-shrink-0">
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => {
+                        setActiveMainTab('produce');
+                        setSubTab('produce', 'generate');
+                      }}
+                      className="gap-1.5 text-xs"
+                      disabled={!castSession.session.selectedTemplate}
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      Go to Produce
+                    </Button>
+                  </div>
+                </div>
+
+                {/* ─── STYLES SECTION ─── */}
+                {productionSection === 'styles' && (
+                  <div className="space-y-4">
+                    <GenieCastOverview
+                      selectedStyles={selectedVideoStyles}
+                      onStylesChange={onStylesChange}
+                      onNavigate={(tab) => {
+                        if (tab === 'messaging') {
+                          setSubTab('create', 'messaging');
+                        } else if (tab === 'generate') {
+                          setActiveMainTab('produce');
+                          setSubTab('produce', 'generate');
+                        } else if (tab === 'matrix') {
+                          setActiveMainTab('produce');
+                          setSubTab('produce', 'matrix');
+                        }
+                      }}
+                    />
+                    
+                    {/* Ecosystem Metrics Card */}
+                    <Card className="border-primary/20">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          Ecosystem Status
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-4 gap-4 text-center">
+                          <div>
+                            <div className="text-2xl font-bold text-primary">{metrics.providers.total}</div>
+                            <div className="text-xs text-muted-foreground">AI Providers</div>
+                            <div className="text-[10px] text-muted-foreground">{metrics.providers.wiredToGenieCast} wired</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-primary">{metrics.videoStyles.total}</div>
+                            <div className="text-xs text-muted-foreground">Video Styles</div>
+                            <div className="text-[10px] text-muted-foreground">{metrics.videoStyles.popular} popular</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-primary">{metrics.pipelines.active}</div>
+                            <div className="text-xs text-muted-foreground">Active Pipelines</div>
+                            <div className="text-[10px] text-muted-foreground">of {metrics.pipelines.total}</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-primary">{metrics.zones}</div>
+                            <div className="text-xs text-muted-foreground">Regional Zones</div>
+                            <div className="text-[10px] text-muted-foreground">4-zone routing</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {/* ─── BRAND ASSETS SECTION ─── */}
+                {productionSection === 'assets' && (
+                  <BrandAssetsPanel 
+                    selectedProductId={selectedProductId}
+                  />
+                )}
+
+                {/* ─── REGIONAL CONFIG SECTION ─── */}
+                {productionSection === 'regional' && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-primary" />
+                        Regional Output Configuration
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Select target regions and dialects for transcreation
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <RegionalDialectSelector
+                        onDialectsChange={handleDialectChange}
+                        selectedDialects={selectedDialectCodes}
+                      />
                     </CardContent>
                   </Card>
                 )}
 
-                {/* ═══ SIMPLE MODE: Compact summary card ═══ */}
-                {createMode.isSimple && castSession.session.selectedTemplate && (
-                  <Card className="border-primary/20">
-                    <CardContent className="py-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                          <Settings2 className="w-4 h-4 text-primary" />
-                          Production Defaults Applied
-                        </h3>
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setActiveMainTab('produce');
-                            setSubTab('produce', 'generate');
-                          }}
-                          className="gap-1.5 text-xs"
-                        >
-                          <Play className="w-3.5 h-3.5" />
-                          Go to Produce
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="rounded-lg bg-muted/50 p-2.5 text-center">
-                          <Palette className="w-4 h-4 mx-auto text-primary mb-1" />
-                          <div className="text-xs font-medium">{selectedVideoStyles.length || 5} Styles</div>
-                          <div className="text-[10px] text-muted-foreground">Auto-selected</div>
-                        </div>
-                        <div className="rounded-lg bg-muted/50 p-2.5 text-center">
-                          <Image className="w-4 h-4 mx-auto text-primary mb-1" />
-                          <div className="text-xs font-medium">Brand Assets</div>
-                          <div className="text-[10px] text-muted-foreground">From product</div>
-                        </div>
-                        <div className="rounded-lg bg-muted/50 p-2.5 text-center">
-                          <Globe className="w-4 h-4 mx-auto text-primary mb-1" />
-                          <div className="text-xs font-medium">English (US)</div>
-                          <div className="text-[10px] text-muted-foreground">Default region</div>
-                        </div>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground text-center">
-                        Switch to <strong>Advanced</strong> mode to customize styles, assets, and regional config
-                      </p>
-                    </CardContent>
-                  </Card>
+                {/* ─── HERO BANNERS (from LANDING) ─── */}
+                {(productionSection as string) === 'hero-banners' && (
+                  <HeroBannerCarouselMode />
                 )}
 
-                {/* ═══ ADVANCED MODE: Full Production Setup ═══ */}
-                {createMode.isAdvanced && (
-                  <>
-                    {/* Internal section navigation for Production Setup */}
-                    <div className="flex items-center gap-2 border-b pb-2">
-                      <Button
-                        variant={productionSection === 'styles' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setProductionSection('styles')}
-                        className="gap-1.5 text-xs"
-                      >
-                        <Palette className="w-3.5 h-3.5" />
-                        Video Styles
-                        {selectedVideoStyles.length > 0 && (
-                          <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedVideoStyles.length}</Badge>
-                        )}
-                      </Button>
-                      <Button
-                        variant={productionSection === 'assets' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setProductionSection('assets')}
-                        className="gap-1.5 text-xs"
-                      >
-                        <Image className="w-3.5 h-3.5" />
-                        Brand Assets
-                      </Button>
-                      <Button
-                        variant={productionSection === 'regional' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setProductionSection('regional')}
-                        className="gap-1.5 text-xs"
-                      >
-                        <Globe className="w-3.5 h-3.5" />
-                        Regional Config
-                        {selectedDialectCodes.length > 1 && (
-                          <Badge variant="secondary" className="text-[9px] px-1 h-4 ml-1">{selectedDialectCodes.length} lang</Badge>
-                        )}
-                      </Button>
+                {/* ─── ASSETS LAB (from LANDING) ─── */}
+                {(productionSection as string) === 'assets-lab' && (
+                  <RegionalAssetsLab />
+                )}
 
-                      {/* Ready to produce indicator */}
-                      <div className="ml-auto">
-                        <Button
-                          size="sm"
-                          variant="default"
+                {/* ─── LANDING SCRIPTS (from LANDING) ─── */}
+                {(productionSection as string) === 'landing-scripts' && (
+                  <LandingPageScriptsPanel />
+                )}
+              </motion.div>
+            )}
+
+            {/* ── INTENT ── What are you creating? (placeholder for Stage 2) */}
+            {currentSubTab === 'intent' && (
+              <motion.div
+                key="intent"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      What are you creating?
+                    </CardTitle>
+                    <CardDescription>
+                      Select your intent to auto-filter templates, messaging, and assets
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { id: 'product-video', label: 'Product Video', icon: Video, desc: 'Demo, explainer, or promo video' },
+                        { id: 'hero-banner', label: 'Hero Banner', icon: Image, desc: 'Landing page hero carousel' },
+                        { id: 'social-content', label: 'Social Content', icon: Share2, desc: 'Short-form social media assets' },
+                        { id: 'landing-section', label: 'Landing Section', icon: Globe, desc: 'Regional landing page content' },
+                      ].map((intent) => (
+                        <Card 
+                          key={intent.id}
+                          className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
                           onClick={() => {
-                            setActiveMainTab('produce');
-                            setSubTab('produce', 'generate');
+                            toast.info(`Intent: ${intent.label} — filtering templates...`);
+                            setSubTab('create', 'templates');
                           }}
-                          className="gap-1.5 text-xs"
-                          disabled={!castSession.session.selectedTemplate}
                         >
-                          <Play className="w-3.5 h-3.5" />
-                          Go to Produce
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* ─── STYLES SECTION ─── */}
-                    {productionSection === 'styles' && (
-                      <div className="space-y-4">
-                        <GenieCastOverview
-                          selectedStyles={selectedVideoStyles}
-                          onStylesChange={onStylesChange}
-                          onNavigate={(tab) => {
-                            if (tab === 'messaging') {
-                              setSubTab('create', 'messaging');
-                            } else if (tab === 'generate') {
-                              setActiveMainTab('produce');
-                              setSubTab('produce', 'generate');
-                            } else if (tab === 'matrix') {
-                              setActiveMainTab('produce');
-                              setSubTab('produce', 'matrix');
-                            }
-                          }}
-                        />
-                        
-                        {/* Ecosystem Metrics Card */}
-                        <Card className="border-primary/20">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm flex items-center gap-2">
-                              <Sparkles className="w-4 h-4 text-primary" />
-                              Ecosystem Status
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-4 gap-4 text-center">
-                              <div>
-                                <div className="text-2xl font-bold text-primary">{metrics.providers.total}</div>
-                                <div className="text-xs text-muted-foreground">AI Providers</div>
-                                <div className="text-[10px] text-muted-foreground">{metrics.providers.wiredToGenieCast} wired</div>
-                              </div>
-                              <div>
-                                <div className="text-2xl font-bold text-primary">{metrics.videoStyles.total}</div>
-                                <div className="text-xs text-muted-foreground">Video Styles</div>
-                                <div className="text-[10px] text-muted-foreground">{metrics.videoStyles.popular} popular</div>
-                              </div>
-                              <div>
-                                <div className="text-2xl font-bold text-primary">{metrics.pipelines.active}</div>
-                                <div className="text-xs text-muted-foreground">Active Pipelines</div>
-                                <div className="text-[10px] text-muted-foreground">of {metrics.pipelines.total}</div>
-                              </div>
-                              <div>
-                                <div className="text-2xl font-bold text-primary">{metrics.zones}</div>
-                                <div className="text-xs text-muted-foreground">Regional Zones</div>
-                                <div className="text-[10px] text-muted-foreground">4-zone routing</div>
-                              </div>
-                            </div>
+                          <CardContent className="p-4 text-center space-y-2">
+                            <intent.icon className="w-8 h-8 mx-auto text-primary" />
+                            <p className="text-sm font-medium">{intent.label}</p>
+                            <p className="text-[10px] text-muted-foreground">{intent.desc}</p>
                           </CardContent>
                         </Card>
-                      </div>
-                    )}
-
-                    {/* ─── BRAND ASSETS SECTION ─── */}
-                    {productionSection === 'assets' && (
-                      <BrandAssetsPanel 
-                        selectedProductId={selectedProductId}
-                      />
-                    )}
-
-                    {/* ─── REGIONAL CONFIG SECTION ─── */}
-                    {productionSection === 'regional' && (
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <Globe className="w-4 h-4 text-primary" />
-                            Regional Output Configuration
-                          </CardTitle>
-                          <CardDescription className="text-xs">
-                            Select target regions and dialects for transcreation (One Template → Many Videos)
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <RegionalDialectSelector
-                            onDialectsChange={handleDialectChange}
-                            selectedDialects={selectedDialectCodes}
-                          />
-                        </CardContent>
-                      </Card>
-                    )}
-                  </>
-                )}
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
             )}
           </AnimatePresence>
         </TabsContent>
 
         {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* PRODUCE TAB CONTENT */}
+        {/* PRODUCE TAB CONTENT (includes former MANAGE) */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="produce" className="mt-4 space-y-4">
           {/* Workflow Context Banner - shows session context in PRODUCE */}
@@ -837,7 +880,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       selectedLanguage={selectedDialectCodes[0]?.split('-')[0] || 'en'}
                       onNavigateToOverview={() => {
                         setActiveMainTab('create');
-                        setSubTab('create', 'production');
+                        setSubTab('create', 'assets');
                       }}
                       avatarGender={avatarGender}
                       onAvatarGenderChange={setAvatarGender}
@@ -887,7 +930,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 <VideoGenerationMatrix 
                   onNavigateToScreenshots={() => {
                     setActiveMainTab('create');
-                    setSubTab('create', 'production');
+                    setSubTab('create', 'assets');
                     setProductionSection('assets');
                   }}
                 />
@@ -1251,14 +1294,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 </Card>
               </motion.div>
             )}
-          </AnimatePresence>
-        </TabsContent>
-
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* MANAGE TAB CONTENT */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <TabsContent value="manage" className="mt-4 space-y-6">
-          <AnimatePresence mode="wait">
+            
+            {/* ── LIBRARY (from MANAGE) ── */}
             {currentSubTab === 'library' && (
               <motion.div
                 key="library"
@@ -1282,6 +1319,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
             
+            {/* ── ANALYTICS (from MANAGE) ── */}
             {currentSubTab === 'analytics' && (
               <motion.div
                 key="analytics"
@@ -1294,6 +1332,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
             
+            {/* ── FLOW (from MANAGE) ── */}
             {currentSubTab === 'flow' && (
               <motion.div
                 key="flow"
@@ -1303,18 +1342,6 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
               >
                 <GenieCastFlowDiagram />
-              </motion.div>
-            )}
-            
-            {currentSubTab === 'repurpose' && (
-              <motion.div
-                key="repurpose"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ContentRepurposingPanel />
               </motion.div>
             )}
           </AnimatePresence>
