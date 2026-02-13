@@ -79,6 +79,8 @@ interface BlueprintTemplatesGridProps {
   selectedBlueprintId?: string;
   /** Simple mode: shows only top 12 popular templates, no filters or admin tools */
   simpleMode?: boolean;
+  /** Selected video styles for multi-style composition updates */
+  selectedVideoStyles?: any[];
 }
 
 // Extended category icons including new categories
@@ -316,6 +318,7 @@ export function BlueprintTemplatesGrid({
   onSelectBlueprint,
   selectedBlueprintId,
   simpleMode = false,
+  selectedVideoStyles,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
   const {
@@ -1093,6 +1096,7 @@ export function BlueprintTemplatesGrid({
         isOpen={!!previewBlueprintId && !!previewBlueprint}
         onClose={() => setPreviewBlueprintId(null)}
         onSelect={handleSelectBlueprint}
+        selectedVideoStyles={selectedVideoStyles}
       />
 
       {/* Comparison Modal */}

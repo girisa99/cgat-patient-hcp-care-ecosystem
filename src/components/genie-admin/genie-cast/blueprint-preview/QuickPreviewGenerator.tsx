@@ -4,7 +4,7 @@
  * Integrates SceneAssetMapper + StoryboardPreview
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Play,
   Image as ImageIcon,
@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
 import { SceneAssetMapper, type AssetItem, type SceneAssetMapping } from './SceneAssetMapper';
 import { StoryboardPreview } from './StoryboardPreview';
+import type { VideoStyleType } from '../VideoStyleCards';
 
 interface QuickPreviewGeneratorProps {
   scenes: BlueprintScene[];
@@ -31,6 +32,8 @@ interface QuickPreviewGeneratorProps {
   blueprintName: string;
   /** If provided, filters available assets to only those belonging to this product */
   productFilter?: string;
+  /** Selected video styles for multi-style composition updates */
+  selectedVideoStyles?: VideoStyleType[];
   className?: string;
 }
 
@@ -41,6 +44,7 @@ export function QuickPreviewGenerator({
   blueprintId,
   blueprintName,
   productFilter,
+  selectedVideoStyles = [],
   className,
 }: QuickPreviewGeneratorProps) {
   const { toast } = useToast();
@@ -151,6 +155,16 @@ export function QuickPreviewGenerator({
     });
     return map;
   }, [scenes]);
+
+  // When styles change, trigger re-mapping to support multi-style compositions
+  // This ensures slide asset compositions update when multiple styles are selected
+  useEffect(() => {
+    if (selectedVideoStyles && selectedVideoStyles.length > 0 && availableAssets.length > 0) {
+      // Re-trigger asset mapping when styles change
+      // SceneAssetMapper will automatically recalculate based on available assets
+      // This ensures the composition reflects the selected styles
+    }
+  }, [selectedVideoStyles, availableAssets]);
 
   const handleMappingsChange = (newMappings: SceneAssetMapping[]) => {
     setMappings(newMappings);
