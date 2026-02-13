@@ -42,6 +42,8 @@ import {
   Volume2,
 } from 'lucide-react';
 import { useCreateMode } from '@/hooks/useCreateMode';
+import { useRegionalDetection } from '@/hooks/useRegionalDetection';
+import { useProductContext } from '@/hooks/useProductContext';
 import { QuickStartCard, CreateStepProgress, CreateModeToggle, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +51,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -256,6 +265,22 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   // Initialize session state for CREATE → PRODUCE data handoff
   const castSession = useGenieCastSession();
 
+  // Regional detection for auto-region context
+  const regionalDetection = useRegionalDetection();
+
+  // Product context for loading associated assets
+  const productContext = useProductContext(castSession.session.selectedProductId);
+
+  // Initialize regional context on mount or when detection completes
+  React.useEffect(() => {
+    if (!regionalDetection.isLoading) {
+      castSession.setRegionalContext(
+        regionalDetection.detectedRegion,
+        regionalDetection.selectedRegion
+      );
+    }
+  }, [regionalDetection.detectedRegion, regionalDetection.selectedRegion, regionalDetection.isLoading, castSession]);
+
   // Regional dialect selection state
   const [selectedDialectCodes, setSelectedDialectCodes] = useState<string[]>(['en-US']);
   const [avatarGender, setAvatarGender] = useState<'male' | 'female'>('female');
@@ -422,7 +447,93 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             }}
           />
 
-          {/* WorkflowContextBanner removed from CREATE - belongs in later phases */}
+          {/* INTENT & REGION CONTEXT SELECTOR (Stage 1.5) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Intent Selector */}
+            <Card className="border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Content Intent
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Select value={castSession.session.selectedIntent || ''} onValueChange={(value) => {
+                  castSession.selectIntent(value || null);
+                  // Auto-navigate to templates with intent context
+                  if (value) setSubTab('create', 'templates');
+                }}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Select intent..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="product-demo">Product Demo</SelectItem>
+                    <SelectItem value="hero-banner">Hero Banner</SelectItem>
+                    <SelectItem value="educational">Educational</SelectItem>
+                    <SelectItem value="testimonial">Testimonial</SelectItem>
+                    <SelectItem value="case-study">Case Study</SelectItem>
+                    <SelectItem value="social-short">Social Short</SelectItem>
+                    <SelectItem value="how-to">How-To Guide</SelectItem>
+                    <SelectItem value="thought-leadership">Thought Leadership</SelectItem>
+                  </SelectContent>
+                </Select>
+                {castSession.session.selectedIntent && (
+                  <p className="text-xs text-muted-foreground">
+                    ✓ Intent selected: <strong>{castSession.session.selectedIntent}</strong>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Region Context */}
+            <Card className="border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  Region
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-xs space-y-1">
+                  <p className="text-muted-foreground">Detected: <span className="font-semibold">{regionalDetection.regionName}</span></p>
+                  <p className="text-muted-foreground">Selected: <span className="font-semibold">{castSession.session.selectedRegion}</span></p>
+                </div>
+                {regionalDetection.isRTL && (
+                  <Badge variant="outline" className="text-[10px]">RTL Layout</Badge>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Product Context */}
+            <Card className="border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <LayoutTemplate className="w-4 h-4" />
+                  Product
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Select value={castSession.session.selectedProductId || ''} onValueChange={(value) => {
+                  castSession.selectProduct(value || null);
+                }}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Select product..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Full Suite</SelectItem>
+                    {productContext.allProducts.map(prod => (
+                      <SelectItem key={prod.id} value={prod.id}>{prod.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {castSession.session.selectedProductId && productContext.product && (
+                  <p className="text-xs text-muted-foreground">
+                    ✓ {productContext.summary.totalAssets} assets available
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
           <AnimatePresence mode="wait">
             {/* ── TEMPLATES ── First-class starting point */}
