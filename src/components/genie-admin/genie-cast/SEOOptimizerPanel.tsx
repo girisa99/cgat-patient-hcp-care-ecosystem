@@ -169,7 +169,7 @@ export const SEOOptimizerPanel: React.FC = () => {
         description: v.description,
         tags: [], // Generate from title/description
         language_name: v.language_name,
-        product_name: 'Genie Suite',
+        product_name: products?.[0]?.name || 'Genie Suite',
       })) as VideoForSEO[];
     },
   });
@@ -363,9 +363,10 @@ export const SEOOptimizerPanel: React.FC = () => {
       : `${powerWords[Math.floor(Math.random() * powerWords.length)]} ${title}`;
 
     // Generate optimized description
+    const brandName = products?.[0]?.name || 'Genie Suite';
     const optimizedDesc = description.length > 0
-      ? `${description}\n\n🚀 Key Features:\n• AI-powered automation\n• Enterprise-grade security\n• 24/7 support\n\n#GenieSuite #AI #Productivity`
-      : `Discover how ${title} transforms your workflow with cutting-edge AI technology. Join thousands of professionals already using Genie Suite.\n\n🚀 Features:\n• Smart automation\n• Real-time collaboration\n• Multi-language support`;
+      ? `${description}\n\n🚀 Key Features:\n• AI-powered automation\n• Enterprise-grade security\n• 24/7 support\n\n#${brandName.replace(/\s+/g, '')} #AI #Productivity`
+      : `Discover how ${title} transforms your workflow with cutting-edge AI technology. Join thousands of professionals already using ${brandName}.\n\n🚀 Features:\n• Smart automation\n• Real-time collaboration\n• Multi-language support`;
 
     // Generate tags from context
     const allTags = [

@@ -109,14 +109,15 @@ const VOICE_OPTIONS = {
   ],
 };
 
-// Default chapter templates
+// Default chapter templates - dynamically built from Content Pool products when available
+// These serve as a fallback structure; actual product names come from the DB
 const DEFAULT_CHAPTERS = [
   { id: 'opening', name: 'Opening Hook', defaultDuration: 15 },
   { id: 'spark', name: 'Genie Spark', defaultDuration: 45 },
   { id: 'mind', name: 'Genie Mind', defaultDuration: 45 },
   { id: 'vibe', name: 'Genie Vibe', defaultDuration: 45 },
   { id: 'deck', name: 'Genie Deck', defaultDuration: 45 },
-  { id: 'arc', name: 'Genie Arc', defaultDuration: 45 },
+  { id: 'arc', name: 'Genie Hub', defaultDuration: 45 },
   { id: 'cast', name: 'Genie Cast', defaultDuration: 45 },
   { id: 'ask', name: 'Ask Genie', defaultDuration: 45 },
   { id: 'closing', name: 'Closing CTA', defaultDuration: 20 },
