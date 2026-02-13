@@ -363,7 +363,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   return (
     <div className="space-y-4">
-      {/* Compact navigation bar - back to Genie Studio */}
+      {/* Compact navigation bar - back to Genie Suite */}
       <div className="flex items-center gap-3 mb-4 pb-3 border-b">
         <Button
           variant="ghost"
@@ -372,7 +372,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" />
-          Genie Studio
+          Genie Suite
         </Button>
         <Separator orientation="vertical" className="h-5" />
         <div className="flex items-center gap-2">

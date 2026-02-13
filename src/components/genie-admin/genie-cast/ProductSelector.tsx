@@ -67,7 +67,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                 <span className="truncate max-w-[140px]">{product.name}</span>
                 {product.is_system_default && (
                   <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">
-                    Genie
+                    Internal
                   </Badge>
                 )}
               </div>
