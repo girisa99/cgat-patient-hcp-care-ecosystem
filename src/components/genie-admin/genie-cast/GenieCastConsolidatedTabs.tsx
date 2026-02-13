@@ -283,6 +283,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     castSession.selectProduct(productId);
   }, [castSession]);
 
+  // Auto-select first product if none selected and products are loaded
+  const selectProduct = castSession.selectProduct;
+  React.useEffect(() => {
+    if (!isPoolLoading && pool?.products?.length && !castSession.session.selectedProductId) {
+      selectProduct(pool.products[0].id);
+    }
+  }, [isPoolLoading, pool?.products, castSession.session.selectedProductId, selectProduct]);
+
   // Initialize regional context on mount or when detection completes
   // NOTE: castSession.setRegionalContext is stable (useCallback), but castSession object
   // itself changes on every state update. Use only the setter in deps to avoid infinite loop.
