@@ -51,6 +51,9 @@ export interface GenieCastSessionState {
   
   // Product-first context (unified flow)
   selectedProductId: string | null;
+  selectedIntent: string | null; // e.g., 'product-demo', 'hero-banner', 'educational'
+  detectedRegion: string; // Auto-detected region from browser
+  selectedRegion: string; // User-selected region (may override detection)
   
   // CREATE stage selections
   selectedStyles: string[];
@@ -81,6 +84,9 @@ const createDefaultSession = (): GenieCastSessionState => ({
   createdAt: new Date(),
   updatedAt: new Date(),
   selectedProductId: null,
+  selectedIntent: null,
+  detectedRegion: 'en', // Default to English
+  selectedRegion: 'en',
   selectedStyles: [],
   selectedTemplate: null,
   approvedMessaging: null,
@@ -151,13 +157,30 @@ export function useGenieCastSession() {
   }, []);
 
   // ============================================
-  // PRODUCT SELECTION (Product-First Flow)
+  // PRODUCT & INTENT SELECTION (Product-First Flow)
   // ============================================
 
   const selectProduct = useCallback((productId: string | null) => {
     setSession(prev => ({
       ...prev,
       selectedProductId: productId,
+      updatedAt: new Date(),
+    }));
+  }, []);
+
+  const selectIntent = useCallback((intent: string | null) => {
+    setSession(prev => ({
+      ...prev,
+      selectedIntent: intent,
+      updatedAt: new Date(),
+    }));
+  }, []);
+
+  const setRegionalContext = useCallback((detectedRegion: string, selectedRegion: string) => {
+    setSession(prev => ({
+      ...prev,
+      detectedRegion,
+      selectedRegion,
       updatedAt: new Date(),
     }));
   }, []);
@@ -463,8 +486,10 @@ export function useGenieCastSession() {
     resetSession,
     updateSession,
     
-    // Product
+    // Product & Intent
     selectProduct,
+    selectIntent,
+    setRegionalContext,
     
     // Template
     selectTemplate,
