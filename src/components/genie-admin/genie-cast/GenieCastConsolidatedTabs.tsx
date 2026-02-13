@@ -14,6 +14,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
+  ArrowRight,
   Sparkles,
   Camera,
   Video,
@@ -496,7 +497,56 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
+                {/* Selected Template Confirmation Card */}
+                {castSession.session.selectedTemplate && (
+                  <Card className="border-primary/30 bg-primary/5">
+                    <CardContent className="py-4 flex items-center gap-4">
+                      {castSession.session.selectedTemplate.thumbnailUrl && (
+                        <img
+                          src={castSession.session.selectedTemplate.thumbnailUrl}
+                          alt={castSession.session.selectedTemplate.name}
+                          className="w-16 h-10 rounded object-cover shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{castSession.session.selectedTemplate.name}</p>
+                        <div className="flex gap-2 mt-1">
+                          <Badge variant="secondary" className="text-[10px]">{castSession.session.selectedTemplate.category}</Badge>
+                          {castSession.session.selectedTemplate.sceneCount > 0 && (
+                            <Badge variant="outline" className="text-[10px]">{castSession.session.selectedTemplate.sceneCount} scenes</Badge>
+                          )}
+                          {castSession.session.selectedTemplate.estimatedDuration > 0 && (
+                            <Badge variant="outline" className="text-[10px]">
+                              {castSession.session.selectedTemplate.estimatedDuration >= 60
+                                ? `${Math.round(castSession.session.selectedTemplate.estimatedDuration / 60)}m`
+                                : `${castSession.session.selectedTemplate.estimatedDuration}s`}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => castSession.selectTemplate(null as any)}
+                        >
+                          Change
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => setSubTab('create', 'messaging')}
+                        >
+                          Continue to Messaging
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <BlueprintTemplatesGrid 
                   onSelectBlueprint={(blueprint) => {
                     console.log('[GenieCast] Template selected:', blueprint.name);
@@ -509,8 +559,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       estimatedDuration: blueprint.estimated_duration_seconds,
                       styleIntent: (blueprint.default_settings as any)?.style_intent || 'corporate' as StyleIntent,
                     });
-                    // Navigate to Messaging after template selection
-                    setSubTab('create', 'messaging');
+                    // Stay on templates — user confirms with "Continue to Messaging"
                   }}
                   selectedBlueprintId={castSession.session.selectedTemplate?.id}
                   simpleMode={createMode.isSimple}
@@ -528,7 +577,17 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-              >
+               >
+                {/* Back to Templates */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 mb-3 text-muted-foreground hover:text-foreground"
+                  onClick={() => setSubTab('create', 'templates')}
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to Templates
+                </Button>
                 {/* Prompt to select template first if not selected */}
                 {!castSession.session.selectedTemplate && (
                   <Card className="mb-4 border-amber-300/50 bg-amber-50/30 dark:bg-amber-950/10">
@@ -592,6 +651,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
+                {/* Back to Messaging */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 mb-3 text-muted-foreground hover:text-foreground"
+                  onClick={() => setSubTab('create', 'messaging')}
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to Messaging
+                </Button>
                 {/* Asset section navigation */}
                 <div className="flex items-center gap-2 border-b pb-2 overflow-x-auto">
                   <Button
