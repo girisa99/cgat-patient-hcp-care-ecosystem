@@ -44,7 +44,7 @@ import {
 import { useCreateMode } from '@/hooks/useCreateMode';
 import { useRegionalDetection } from '@/hooks/useRegionalDetection';
 import { useProductContext } from '@/hooks/useProductContext';
-import { QuickStartCard, CreateStepProgress, CreateModeToggle, type CreateStep } from './create';
+import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -244,7 +244,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 }) => {
   const [activeMainTab, setActiveMainTab] = useState<ConsolidatedTab>(defaultTab);
   const [subTabs, setSubTabs] = useState<Record<ConsolidatedTab, string>>({
-    create: defaultSubTab || 'intent',
+    create: 'intent', // START with intent (Stage 2)
     produce: 'generate',
     publish: 'scheduler',
   });
@@ -388,45 +388,71 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           ))}
         </TabsList>
 
+        {/* Workflow Context Banner - Shows active selections */}
+        <WorkflowContextBanner
+          session={castSession.session}
+          currentSubTab={currentSubTab}
+          onNavigate={handleBannerNavigate}
+          onResetSession={castSession.resetSession}
+          className="mt-4"
+        />
+
         {/* Sub-Tab Navigation for Active Main Tab */}
         <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
-          {currentMainDef.subTabs.map((sub) => {
-            const isActive = currentSubTab === sub.id;
-            return (
-              <Button
-                key={sub.id}
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "flex-shrink-0 gap-1.5 text-xs font-medium",
-                  isActive 
-                    ? currentMainDef.activeColor 
-                    : currentMainDef.inactiveColor
-                )}
-                onClick={() => setSubTab(activeMainTab, sub.id)}
-              >
-                <sub.icon className="w-3.5 h-3.5" />
-                {sub.label}
-              </Button>
-            );
-          })}
-          
-          {/* Pipeline indicator */}
-          <Separator orientation="vertical" className="h-6 mx-2" />
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-medium">{activePipelines.length} active</span>
-            {inactivePipelines.length > 0 && (
-              <Badge variant="outline" className="text-[10px]">
-                +{inactivePipelines.length} available
-              </Badge>
-            )}
-          </div>
-        </div>
+           {currentMainDef.subTabs.map((sub) => {
+             const isActive = currentSubTab === sub.id;
+             return (
+               <Button
+                 key={sub.id}
+                 variant="outline"
+                 size="sm"
+                 className={cn(
+                   "flex-shrink-0 gap-1.5 text-xs font-medium",
+                   isActive 
+                     ? currentMainDef.activeColor 
+                     : currentMainDef.inactiveColor
+                 )}
+                 onClick={() => setSubTab(activeMainTab, sub.id)}
+               >
+                 <sub.icon className="w-3.5 h-3.5" />
+                 {sub.label}
+               </Button>
+             );
+           })}
+           
+           {/* Pipeline indicator */}
+           <Separator orientation="vertical" className="h-6 mx-2" />
+           <div className="flex items-center gap-2 text-xs text-muted-foreground">
+             <span className="font-medium">{activePipelines.length} active</span>
+             {inactivePipelines.length > 0 && (
+               <Badge variant="outline" className="text-[10px]">
+                 +{inactivePipelines.length} available
+               </Badge>
+             )}
+           </div>
+         </div>
 
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* CREATE TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="create" className="mt-4 space-y-4">
+          {/* INTENT SELECTOR (Stage 2) - First sub-tab showing 12 content intents */}
+          {currentSubTab === 'intent' && (
+            <motion.div
+              key="intent"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <IntentSelector
+                selectedIntent={castSession.session.selectedIntent}
+                onIntentSelect={(intent) => castSession.selectIntent(intent)}
+                onIntentConfirmed={() => setSubTab('create', 'templates')}
+              />
+            </motion.div>
+          )}
+
           {/* Quick Start Card - only shows when no session is active */}
           <QuickStartCard
             hasActiveSession={!!castSession.session.selectedTemplate}
@@ -448,7 +474,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             }}
           />
 
-          {/* INTENT & REGION CONTEXT SELECTOR (Stage 1.5) — modular, reusable component */}
+          {/* INTENT & REGION CONTEXT SELECTOR - Shows current selections */}
           <CreateContextSelector
             selectedIntent={castSession.session.selectedIntent}
             selectedRegion={castSession.session.selectedRegion}
