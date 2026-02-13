@@ -17780,6 +17780,39 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_tier_access: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          max_monthly_publishes: number | null
+          platform_category: string
+          platform_key: string
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          max_monthly_publishes?: number | null
+          platform_category: string
+          platform_key: string
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          max_monthly_publishes?: number | null
+          platform_category?: string
+          platform_key?: string
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       presentation_shares: {
         Row: {
           id: string
@@ -21161,6 +21194,30 @@ export type Database = {
         }
         Relationships: []
       }
+      storage_tier_quotas: {
+        Row: {
+          created_at: string
+          id: string
+          max_storage_bytes: number
+          retention_days: number | null
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_storage_bytes: number
+          retention_days?: number | null
+          tier: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_storage_bytes?: number
+          retention_days?: number | null
+          tier?: string
+        }
+        Relationships: []
+      }
       subscription_modules: {
         Row: {
           category: string | null
@@ -23352,6 +23409,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_content_assets: {
+        Row: {
+          asset_type: string
+          created_at: string
+          expires_at: string | null
+          file_name: string
+          file_size_bytes: number
+          id: string
+          is_internal: boolean
+          metadata: Json | null
+          mime_type: string | null
+          product_id: string | null
+          storage_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          expires_at?: string | null
+          file_name: string
+          file_size_bytes?: number
+          id?: string
+          is_internal?: boolean
+          metadata?: Json | null
+          mime_type?: string | null
+          product_id?: string | null
+          storage_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          expires_at?: string | null
+          file_name?: string
+          file_size_bytes?: number
+          id?: string
+          is_internal?: boolean
+          metadata?: Json | null
+          mime_type?: string | null
+          product_id?: string | null
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_content_assets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_conversations: {
         Row: {
