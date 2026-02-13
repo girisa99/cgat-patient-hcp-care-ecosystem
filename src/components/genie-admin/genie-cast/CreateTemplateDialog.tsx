@@ -195,46 +195,46 @@ interface AIProviderEntry {
 
 const AI_PROVIDERS_REGISTRY: AIProviderEntry[] = [
   // VIDEO GENERATION - Veo 3 → Sora 2 → Wan 2.6
-  { value: 'vertex_veo3', label: 'Vertex Veo 3 (P1)', icon: '🎬', category: 'video', priority: 1, isDefault: true, locked: true, zones: ['global'] },
-  { value: 'sora2', label: 'Sora 2 (P2)', icon: '🌟', category: 'video', priority: 2, isDefault: true, zones: ['western'] },
-  { value: 'alibaba_wan26', label: 'Alibaba Wan 2.6 (P3)', icon: '🌊', category: 'video', priority: 3, isDefault: true, zones: ['cjk'] },
+  { value: 'vertex_veo3', label: 'Vertex Veo 3', icon: '🎬', category: 'video', priority: 1, isDefault: true, zones: ['global'] },
+  { value: 'sora2', label: 'Sora 2', icon: '🌟', category: 'video', priority: 2, isDefault: false, zones: ['western'] },
+  { value: 'alibaba_wan26', label: 'Alibaba Wan 2.6', icon: '🌊', category: 'video', priority: 3, isDefault: false, zones: ['cjk'] },
   { value: 'modelslab', label: 'ModelsLab AnimateDiff', icon: '🎞️', category: 'video', priority: 4, isDefault: false },
   { value: 'replicate_svd', label: 'Replicate SVD', icon: '📹', category: 'video', priority: 5, isDefault: false },
   
   // TTS - Azure Neural (Primary) → Qwen3-TTS (CJK)
-  { value: 'azure_neural', label: 'Azure Neural TTS (P1)', icon: '🔊', category: 'tts', priority: 1, isDefault: true, locked: true, zones: ['western', 'europe', 'mena', 'india', 'latam', 'africa'] },
-  { value: 'alibaba_qwen3_tts', label: 'Alibaba Qwen3-TTS (P1-CJK)', icon: '🗣️', category: 'tts', priority: 1, isDefault: true, zones: ['cjk'] },
-  { value: 'elevenlabs', label: 'ElevenLabs (P3)', icon: '🎙️', category: 'tts', priority: 3, isDefault: false },
+  { value: 'azure_neural', label: 'Azure Neural TTS', icon: '🔊', category: 'tts', priority: 1, isDefault: true, zones: ['western', 'europe', 'mena', 'india', 'latam', 'africa'] },
+  { value: 'alibaba_qwen3_tts', label: 'Alibaba Qwen3-TTS', icon: '🗣️', category: 'tts', priority: 1, isDefault: false, zones: ['cjk'] },
+  { value: 'elevenlabs', label: 'ElevenLabs', icon: '🎙️', category: 'tts', priority: 3, isDefault: false },
   { value: 'google_tts', label: 'Google Cloud TTS', icon: '📢', category: 'tts', priority: 4, isDefault: false },
   { value: 'amazon_polly', label: 'Amazon Polly', icon: '🔈', category: 'tts', priority: 5, isDefault: false },
   { value: 'openai_tts', label: 'OpenAI TTS', icon: '🎤', category: 'tts', priority: 6, isDefault: false },
 
   // LLM - Gemini 3 → GPT-4o → Claude → Qwen → DeepSeek
-  { value: 'gemini3_pro', label: 'Gemini 3.0 Pro (P1)', icon: '🔮', category: 'llm', priority: 1, isDefault: true, locked: true, zones: ['global'] },
-  { value: 'openai_gpt4o', label: 'OpenAI GPT-4o (P2)', icon: '🧠', category: 'llm', priority: 2, isDefault: true },
-  { value: 'claude_35', label: 'Claude 3.5 Sonnet (P3)', icon: '🎭', category: 'llm', priority: 3, isDefault: false },
-  { value: 'alibaba_qwen', label: 'Alibaba Qwen-Max (P4)', icon: '🌊', category: 'llm', priority: 4, isDefault: false, zones: ['cjk'] },
-  { value: 'deepseek_v3', label: 'DeepSeek V3 (P5)', icon: '🔍', category: 'llm', priority: 5, isDefault: false },
+  { value: 'gemini3_pro', label: 'Gemini 3.0 Pro', icon: '🔮', category: 'llm', priority: 1, isDefault: true, zones: ['global'] },
+  { value: 'openai_gpt4o', label: 'OpenAI GPT-4o', icon: '🧠', category: 'llm', priority: 2, isDefault: false },
+  { value: 'claude_35', label: 'Claude 3.5 Sonnet', icon: '🎭', category: 'llm', priority: 3, isDefault: false },
+  { value: 'alibaba_qwen', label: 'Alibaba Qwen-Max', icon: '🌊', category: 'llm', priority: 4, isDefault: false, zones: ['cjk'] },
+  { value: 'deepseek_v3', label: 'DeepSeek V3', icon: '🔍', category: 'llm', priority: 5, isDefault: false },
   { value: 'gemini3_flash', label: 'Gemini 3.0 Flash', icon: '⚡', category: 'llm', priority: 6, isDefault: false },
 
   // IMAGE - Gemini 3 Pro → Imagen 3 → FLUX Pro
-  { value: 'gemini3_image', label: 'Gemini 3 Pro Image (P1)', icon: '🖼️', category: 'image', priority: 1, isDefault: true, locked: true },
-  { value: 'vertex_imagen3', label: 'Vertex Imagen 3 (P2)', icon: '🎨', category: 'image', priority: 2, isDefault: true },
-  { value: 'flux_pro', label: 'FLUX Pro (P3)', icon: '✨', category: 'image', priority: 3, isDefault: false },
+  { value: 'gemini3_image', label: 'Gemini 3 Pro Image', icon: '🖼️', category: 'image', priority: 1, isDefault: true },
+  { value: 'vertex_imagen3', label: 'Vertex Imagen 3', icon: '🎨', category: 'image', priority: 2, isDefault: false },
+  { value: 'flux_pro', label: 'FLUX Pro', icon: '✨', category: 'image', priority: 3, isDefault: false },
   { value: 'stability_sdxl', label: 'Stability SDXL', icon: '🌈', category: 'image', priority: 4, isDefault: false },
   { value: 'midjourney', label: 'Midjourney', icon: '🎆', category: 'image', priority: 5, isDefault: false },
-  { value: 'openai_dalle', label: 'OpenAI DALL-E 3 (Fallback)', icon: '🖌️', category: 'image', priority: 6, isDefault: false },
+  { value: 'openai_dalle', label: 'OpenAI DALL-E 3', icon: '🖌️', category: 'image', priority: 6, isDefault: false },
 
   // 3D/VR/AR - Meshy AI (Primary) → Alibaba 3D
-  { value: 'meshy_ai', label: 'Meshy AI (P1)', icon: '🧊', category: '3d', priority: 1, isDefault: true, locked: true },
-  { value: 'alibaba_3d', label: 'Alibaba 3D (P2)', icon: '🔺', category: '3d', priority: 2, isDefault: true, zones: ['cjk'] },
+  { value: 'meshy_ai', label: 'Meshy AI', icon: '🧊', category: '3d', priority: 1, isDefault: true },
+  { value: 'alibaba_3d', label: 'Alibaba 3D', icon: '🔺', category: '3d', priority: 2, isDefault: false, zones: ['cjk'] },
   { value: 'rodin_gen1', label: 'Rodin Gen-1', icon: '🗿', category: '3d', priority: 3, isDefault: false },
   { value: 'tripo3d', label: 'Tripo3D AI', icon: '🔷', category: '3d', priority: 4, isDefault: false },
   { value: 'modelslab_3d', label: 'ModelsLab 3D', icon: '📦', category: '3d', priority: 5, isDefault: false },
 
   // AVATAR - Wan 2.2 S2V → OmniAvatar → HeyGen
-  { value: 'alibaba_wan22', label: 'Alibaba Wan 2.2 S2V (P1)', icon: '👤', category: 'avatar', priority: 1, isDefault: true, locked: true },
-  { value: 'omni_avatar', label: 'OmniAvatar (P2)', icon: '🧑', category: 'avatar', priority: 2, isDefault: true },
+  { value: 'alibaba_wan22', label: 'Alibaba Wan 2.2 S2V', icon: '👤', category: 'avatar', priority: 1, isDefault: true },
+  { value: 'omni_avatar', label: 'OmniAvatar', icon: '🧑', category: 'avatar', priority: 2, isDefault: false },
   { value: 'tao_avatar', label: 'TaoAvatar', icon: '👥', category: 'avatar', priority: 3, isDefault: false, zones: ['cjk'] },
   { value: 'heygen', label: 'HeyGen', icon: '🎭', category: 'avatar', priority: 4, isDefault: false },
   { value: 'synthesia', label: 'Synthesia', icon: '📺', category: 'avatar', priority: 5, isDefault: false },
@@ -246,20 +246,15 @@ const AI_PROVIDERS_REGISTRY: AIProviderEntry[] = [
   { value: 'elevenlabs_clone', label: 'ElevenLabs Voice Clone', icon: '🔊', category: 'audio', priority: 3, isDefault: false },
 ];
 
-// Only truly locked providers are pre-selected (core routing defaults)
-const DEFAULT_LOCKED_PROVIDERS = AI_PROVIDERS_REGISTRY
-  .filter(p => p.locked)
-  .map(p => p.value);
-
-// Providers that cannot be removed (locked = true)
-const LOCKED_PROVIDER_VALUES = AI_PROVIDERS_REGISTRY
-  .filter(p => p.locked)
+// Zone-suggested defaults: only P1 providers with isDefault=true are pre-selected
+const DEFAULT_ZONE_PROVIDERS = AI_PROVIDERS_REGISTRY
+  .filter(p => p.isDefault)
   .map(p => p.value);
 
 // Format for dropdown with category grouping
 const AI_PROVIDERS = AI_PROVIDERS_REGISTRY.map(p => ({
   value: p.value,
-  label: p.locked ? `🔒 ${p.label}` : p.label,
+  label: p.label,
   icon: p.icon,
 }));
 
@@ -693,7 +688,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     capabilities: [] as string[],
     regions: ['NAM', 'NAM_US', 'NAM_CA'] as string[],
     languages: ['en'] as string[],
-    providers: [...DEFAULT_LOCKED_PROVIDERS],
+    providers: [...DEFAULT_ZONE_PROVIDERS],
     platforms: [] as string[],
     aiPrompt: '',
   });
@@ -922,7 +917,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       setFormData({
         name: '', description: '', category: 'marketing', videoStyles: [],
         capabilities: [], regions: ['NAM', 'NAM_US', 'NAM_CA'], languages: ['en'],
-        providers: [...DEFAULT_LOCKED_PROVIDERS], platforms: [], aiPrompt: '',
+        providers: [...DEFAULT_ZONE_PROVIDERS], platforms: [], aiPrompt: '',
       });
     } catch (err: any) {
       toast({ title: 'Failed to create template', description: err.message, variant: 'destructive' });
@@ -1107,8 +1102,8 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                   AI Providers
                 </Label>
                 <div className="text-xs text-muted-foreground mb-2 p-2 bg-muted/30 rounded-md border flex items-center gap-2">
-                  <span className="text-primary">🔒</span>
-                  <span>Locked providers (🔒) are core defaults and cannot be removed. Toggle optional providers as needed.</span>
+                  <span className="text-primary">🌍</span>
+                  <span>Zone suggests defaults (★) — you can freely toggle any provider on/off. Only selected providers will be used.</span>
                 </div>
                 {/* Grouped by category */}
                 <div className="space-y-3 max-h-[320px] overflow-y-auto border rounded-md p-2">
@@ -1120,18 +1115,14 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                         <p className="text-xs font-semibold text-muted-foreground px-1">{PROVIDER_CATEGORIES[cat]}</p>
                         {catProviders.map(provider => {
                           const isSelected = formData.providers.includes(provider.value);
-                          const isLocked = provider.locked && isSelected;
+                          const isZoneDefault = provider.isDefault;
                           return (
                             <div
                               key={provider.value}
-                              onClick={() => {
-                                if (isLocked) return; // can't uncheck locked
-                                toggleArrayItem('providers', provider.value);
-                              }}
+                              onClick={() => toggleArrayItem('providers', provider.value)}
                               className={cn(
                                 "flex items-center gap-2 px-2 py-1.5 text-sm rounded cursor-pointer transition-colors",
-                                isSelected ? "bg-primary/10 text-primary" : "hover:bg-accent",
-                                isLocked && "opacity-80 cursor-not-allowed"
+                                isSelected ? "bg-primary/10 text-primary" : "hover:bg-accent"
                               )}
                             >
                               <div className={cn(
@@ -1142,7 +1133,8 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                               </div>
                               <span className="shrink-0">{provider.icon}</span>
                               <span className="flex-1 truncate">{provider.label}</span>
-                              {provider.locked && <span className="text-xs">🔒</span>}
+                              {isZoneDefault && <span className="text-xs text-amber-500" title="Zone suggested default">★</span>}
+                              {provider.zones && <Badge variant="outline" className="text-[9px] shrink-0">{provider.zones.join(',')}</Badge>}
                               <Badge variant="outline" className="text-[10px] shrink-0">P{provider.priority}</Badge>
                             </div>
                           );
@@ -1161,14 +1153,14 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
                     .map(provider => (
                       <Badge 
                         key={provider!.value} 
-                        variant={provider!.locked ? "default" : "secondary"}
+                        variant={provider!.isDefault ? "default" : "secondary"}
                         className={cn(
                           "text-xs",
-                          provider!.locked && "bg-primary/20 text-primary border-primary/30"
+                          provider!.isDefault && "bg-primary/20 text-primary border-primary/30"
                         )}
                       >
-                        {provider!.locked && <span className="mr-1">🔒</span>}
-                        {provider!.icon} {provider!.label.replace('🔒 ', '').split(' (')[0]}
+                        {provider!.isDefault && <span className="mr-1">★</span>}
+                        {provider!.icon} {provider!.label.split(' (')[0]}
                       </Badge>
                     ))}
                   {formData.providers.length > 5 && (
