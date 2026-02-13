@@ -24257,6 +24257,96 @@ export type Database = {
         }
         Relationships: []
       }
+      video_style_registry: {
+        Row: {
+          aesthetic_keywords: string[] | null
+          avatar_providers: Json
+          category: string
+          created_at: string
+          created_by: string | null
+          cultural_tags: string[] | null
+          default_resolution: string | null
+          description: string | null
+          display_name: string
+          id: string
+          image_providers: Json
+          is_active: boolean
+          is_system_default: boolean
+          lipsync_providers: Json
+          motion_providers: Json
+          preview_thumbnail_url: string | null
+          requires_premium: boolean
+          sort_order: number | null
+          style_key: string
+          subcategory: string | null
+          supported_aspect_ratios: string[] | null
+          supported_formats: Json
+          target_regions: string[] | null
+          three_d_providers: Json
+          tone_modifier: string | null
+          updated_at: string
+          video_providers: Json
+        }
+        Insert: {
+          aesthetic_keywords?: string[] | null
+          avatar_providers?: Json
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          cultural_tags?: string[] | null
+          default_resolution?: string | null
+          description?: string | null
+          display_name: string
+          id?: string
+          image_providers?: Json
+          is_active?: boolean
+          is_system_default?: boolean
+          lipsync_providers?: Json
+          motion_providers?: Json
+          preview_thumbnail_url?: string | null
+          requires_premium?: boolean
+          sort_order?: number | null
+          style_key: string
+          subcategory?: string | null
+          supported_aspect_ratios?: string[] | null
+          supported_formats?: Json
+          target_regions?: string[] | null
+          three_d_providers?: Json
+          tone_modifier?: string | null
+          updated_at?: string
+          video_providers?: Json
+        }
+        Update: {
+          aesthetic_keywords?: string[] | null
+          avatar_providers?: Json
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          cultural_tags?: string[] | null
+          default_resolution?: string | null
+          description?: string | null
+          display_name?: string
+          id?: string
+          image_providers?: Json
+          is_active?: boolean
+          is_system_default?: boolean
+          lipsync_providers?: Json
+          motion_providers?: Json
+          preview_thumbnail_url?: string | null
+          requires_premium?: boolean
+          sort_order?: number | null
+          style_key?: string
+          subcategory?: string | null
+          supported_aspect_ratios?: string[] | null
+          supported_formats?: Json
+          target_regions?: string[] | null
+          three_d_providers?: Json
+          tone_modifier?: string | null
+          updated_at?: string
+          video_providers?: Json
+        }
+        Relationships: []
+      }
       vision_analysis_logs: {
         Row: {
           ai_model: string | null

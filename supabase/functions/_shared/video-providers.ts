@@ -4,7 +4,7 @@
  * All video generation implementations in one place.
  * Imported by: ai-universal-processor, ai-image-generator (for motion)
  * 
- * Providers: Alibaba Wan 2.6 T2V, Vertex Veo, Replicate, ModelsLab AnimateDiff
+ * Providers: Alibaba Wan 2.6 T2V, Vertex Veo, Sora 2, Replicate, ModelsLab AnimateDiff
  */
 
 import { type VideoProvider, resolveVideoProviderOrder } from './style-intent-routing.ts';
@@ -28,6 +28,7 @@ const videoKeys = {
   vertexSA: () => getKey('GOOGLE_VERTEX_SERVICE_ACCOUNT'),
   replicate: () => getKey('REPLICATE_API_TOKEN', 'REPLICATE_API_KEY'),
   modelslab: () => getKey('MODELSLAB_API_KEY'),
+  openai: () => getKey('OPENAI_API_KEY'),
 };
 
 // ============================================================================
@@ -38,6 +39,7 @@ export function isVideoProviderAvailable(provider: VideoProvider): boolean {
   switch (provider) {
     case 'alibaba-wan': return !!videoKeys.alibaba();
     case 'vertex-veo': return !!videoKeys.vertexSA();
+    case 'sora-2': return !!videoKeys.openai();
     case 'replicate': return !!videoKeys.replicate();
     case 'modelslab-animate': return !!videoKeys.modelslab();
     default: return false;
@@ -111,6 +113,7 @@ async function generateVideoWithProvider(
   switch (provider) {
     case 'alibaba-wan': return generateWithAlibabaWan(prompt, options);
     case 'vertex-veo': return generateWithVertexVeo(prompt, options);
+    case 'sora-2': return generateWithSora2(prompt, options);
     case 'replicate': return generateWithReplicateVideo(prompt, options);
     case 'modelslab-animate': return generateWithModelsLabAnimate(prompt, options);
     default: throw new Error(`Unsupported video provider: ${provider}`);
@@ -177,6 +180,57 @@ async function generateWithVertexVeo(prompt: string, options: VideoGenOptions): 
   
   // For now, delegate to Alibaba as Veo quota is limited
   throw new Error('Vertex Veo: quota-limited, delegating to fallback');
+}
+
+// ============================================================================
+// SORA 2 (OpenAI Video)
+// ============================================================================
+
+async function generateWithSora2(prompt: string, options: VideoGenOptions): Promise<Omit<VideoGenResult, 'providerChain'>> {
+  const apiKey = videoKeys.openai();
+  if (!apiKey) throw new Error('OpenAI key missing for Sora 2');
+
+  const model = options.model || 'sora';
+  const aspectMap: Record<string, string> = {
+    '16:9': '1920x1080', '9:16': '1080x1920', '1:1': '1080x1080',
+  };
+  const size = aspectMap[options.aspectRatio || '16:9'] || '1920x1080';
+
+  const response = await fetch('https://api.openai.com/v1/videos/generations', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      prompt,
+      size,
+      duration: options.duration || 5,
+    }),
+  });
+
+  if (!response.ok) throw new Error(`Sora 2 Error: ${response.status} - ${await response.text()}`);
+
+  const data = await response.json();
+
+  // Sora returns video URL directly or as async task
+  if (data.data?.[0]?.url) {
+    return {
+      videoUrl: data.data[0].url,
+      provider: 'sora-2',
+      model,
+      status: 'succeeded',
+    };
+  }
+
+  return {
+    taskId: data.id,
+    provider: 'sora-2',
+    model,
+    status: 'processing',
+    pollUrl: data.poll_url || `https://api.openai.com/v1/videos/generations/${data.id}`,
+  };
 }
 
 // ============================================================================
