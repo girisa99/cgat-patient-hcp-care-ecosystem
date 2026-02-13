@@ -125,8 +125,9 @@ export function useGenieCastSession() {
         return {
           ...createDefaultSession(),
           ...parsed,
-          // Always reset selectedIntent on fresh load — user must choose each session
-          selectedIntent: null,
+          // Preserve selectedIntent across refreshes so user doesn't lose progress
+          selectedIntent: parsed.selectedIntent || null,
+          selectedProductId: parsed.selectedProductId || null,
           createdAt: new Date(parsed.createdAt),
           updatedAt: new Date(),
         };
