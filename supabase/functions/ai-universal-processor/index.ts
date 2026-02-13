@@ -516,6 +516,124 @@ Make it more detailed, engaging, and optimized for AI generation.`;
       }
     }
 
+    // ============================================
+    // GENERATE SCENE SCRIPTS ACTION
+    // AI Suggest → User Approve per scene
+    // Takes messaging + template scenes + capabilities → per-scene scripts
+    // ============================================
+    if (action === 'generate_scene_scripts') {
+      const body = requestBody as any;
+      const {
+        sceneKey, sceneTitle, sceneType, scriptTemplate,
+        messaging, capabilities, product, region, language,
+        durationSeconds, previousSceneScript, nextSceneTitle,
+      } = body;
+
+      console.log(`[UniversalAI] Scene script generation: scene=${sceneKey}, type=${sceneType}, lang=${language || 'en'}`);
+
+      const messagingContext = messaging ? `
+APPROVED MESSAGING CONTEXT:
+- Hook: ${messaging.hook || 'N/A'}
+- Value Proposition: ${messaging.valueProposition || 'N/A'}
+- Pain Points: ${(messaging.painPoints || []).join('; ')}
+- Benefits: ${(messaging.benefits || []).join('; ')}
+- Differentiators: ${(messaging.differentiators || []).join('; ')}
+- CTA: ${messaging.cta || 'N/A'}
+- Short Script (30s): ${messaging.shortScript || 'N/A'}
+` : '';
+
+      const capabilityContext = capabilities?.length
+        ? `\nENABLED CAPABILITIES: ${capabilities.join(', ')} — incorporate visual/audio direction notes for these.`
+        : '';
+
+      const flowContext = [
+        previousSceneScript ? `PREVIOUS SCENE ended with: "${previousSceneScript.slice(-100)}"` : '',
+        nextSceneTitle ? `NEXT SCENE will be: "${nextSceneTitle}"` : '',
+      ].filter(Boolean).join('\n');
+
+      const scenePrompt = `You are a professional video script writer for marketing content.
+
+Generate a scene script for the following scene in a video production.
+
+SCENE: "${sceneTitle}" (key: ${sceneKey})
+TYPE: ${sceneType || 'content'}
+DURATION: ${durationSeconds || 15} seconds (~${Math.round((durationSeconds || 15) * 2.5)} words)
+${product ? `PRODUCT: ${product}` : ''}
+${region ? `TARGET REGION: ${region}` : ''}
+${language && language !== 'en' ? `LANGUAGE: Write in ${language} (transcreate, don't translate)` : ''}
+${scriptTemplate ? `TEMPLATE PATTERN: ${scriptTemplate}` : ''}
+${messagingContext}
+${capabilityContext}
+${flowContext}
+
+RULES:
+1. Write ONLY the voiceover/narration script text (no stage directions)
+2. Match the exact duration — aim for ${Math.round((durationSeconds || 15) * 2.5)} words
+3. If template has {{variables}}, fill them with messaging content
+4. Maintain natural flow from previous scene
+5. For hook scenes: be attention-grabbing in first 3 words
+6. For CTA scenes: be clear, actionable, urgent
+7. For feature/demo scenes: lead with benefit, then explain
+8. For testimonial scenes: use authentic conversational tone
+
+Return ONLY valid JSON:
+{
+  "scriptText": "The actual voiceover script text...",
+  "visualDirection": "Brief visual guidance for this scene (e.g., product screenshot, avatar talking, motion graphics)",
+  "variablesFilled": { "variable_name": "filled_value" },
+  "suggestedDuration": ${durationSeconds || 15},
+  "toneNote": "energetic|professional|conversational|etc"
+}`;
+
+      const targetProvider = provider || 'gemini';
+      const targetModel = model || 'gemini-2.0-flash';
+
+      try {
+        let result;
+        if (targetProvider === 'openai') {
+          result = await callOpenAI(targetModel, scenePrompt, '', 0.7, 800);
+        } else if (targetProvider === 'claude') {
+          result = await callClaude(targetModel, scenePrompt, '', 0.7, 800);
+        } else if (targetProvider === 'alibaba') {
+          result = await callAlibabaLLM(targetModel, scenePrompt, '', 0.7, 800);
+        } else {
+          result = await callGemini(targetModel, scenePrompt, '', 0.7, 800);
+        }
+
+        // Parse JSON from response
+        let parsed;
+        try {
+          const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+          parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { scriptText: result.content };
+        } catch {
+          parsed = { scriptText: result.content.replace(/```json?\n?|\n?```/g, '').trim() };
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          sceneKey,
+          sceneTitle,
+          ...parsed,
+          provider: targetProvider,
+          model: targetModel,
+          usage: result.usage,
+          timestamp: new Date().toISOString(),
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (err) {
+        console.error(`[UniversalAI] Scene script generation failed:`, err);
+        return new Response(JSON.stringify({
+          success: false,
+          sceneKey,
+          error: err instanceof Error ? err.message : 'Scene script generation failed',
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Validate required parameters for generation requests
     if (!provider || !prompt) {
       throw new Error('Missing required parameters: provider or prompt');
