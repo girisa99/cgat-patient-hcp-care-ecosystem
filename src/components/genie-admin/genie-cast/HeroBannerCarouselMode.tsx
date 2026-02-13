@@ -36,7 +36,7 @@ interface GenieProduct {
   logoUrl?: string;
 }
 
-const PRODUCT_IDS = ['spark', 'mind', 'vibe', 'deck', 'arc', 'cast', 'ask-genie'] as const;
+const PRODUCT_IDS = ['spark', 'mind', 'vibe', 'deck', 'hub', 'cast', 'ask-genie'] as const;
 
 // ─── AI PLATFORM STATS ──────────────────────────────────────────────────
 const PLATFORM_STATS = [
@@ -288,13 +288,13 @@ export const HeroBannerCarouselMode: React.FC = () => {
           .list('', { limit: 50 });
 
         const products: GenieProduct[] = [
-          { name: 'Spark', desc: 'Idea to Content' },
-          { name: 'Mind', desc: 'AI Knowledge Engine' },
-          { name: 'Vibe', desc: 'Visual Editor' },
-          { name: 'Deck', desc: 'Presentation AI' },
-          { name: 'Hub', desc: 'Central Command' },
-          { name: 'Cast', desc: 'Video Production' },
-          { name: 'Ask Genie', desc: 'AI Assistant' },
+          { name: 'Spark', desc: 'AI-Powered Ideation' },
+          { name: 'Mind', desc: 'Script Writing & Enhancement' },
+          { name: 'Vibe', desc: 'Recording Studio & Teleprompter' },
+          { name: 'Deck', desc: 'AI Presentation Generation' },
+          { name: 'Hub', desc: 'Your Creative Command Center' },
+          { name: 'Cast', desc: 'Distribution & Publishing' },
+          { name: 'Ask Genie', desc: 'Conversational AI Assistant' },
         ];
 
         if (brandFiles) {
