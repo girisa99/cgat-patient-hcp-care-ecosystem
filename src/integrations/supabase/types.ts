@@ -6929,6 +6929,7 @@ export type Database = {
           hooks: string[] | null
           id: string
           is_approved: boolean | null
+          is_english_base: boolean | null
           jtbd_job_statement: string | null
           jtbd_outcome_metrics: string[] | null
           keywords: string[] | null
@@ -6939,10 +6940,14 @@ export type Database = {
           meta_description: string | null
           opening_line: string | null
           pain_points: string[] | null
+          parent_messaging_id: string | null
           product_id: string | null
           production_capability: string | null
+          region_code: string | null
           request_id: string | null
+          routing_zone: string | null
           short_script: string | null
+          status: string | null
           storybrand_character: string | null
           storybrand_failure: string | null
           storybrand_guide: string | null
@@ -6950,6 +6955,7 @@ export type Database = {
           storybrand_problem: string | null
           storybrand_success: string | null
           sub_hook: string | null
+          sub_region_code: string | null
           transition_phrases: string[] | null
           updated_at: string
           user_id: string | null
@@ -6989,6 +6995,7 @@ export type Database = {
           hooks?: string[] | null
           id?: string
           is_approved?: boolean | null
+          is_english_base?: boolean | null
           jtbd_job_statement?: string | null
           jtbd_outcome_metrics?: string[] | null
           keywords?: string[] | null
@@ -6999,10 +7006,14 @@ export type Database = {
           meta_description?: string | null
           opening_line?: string | null
           pain_points?: string[] | null
+          parent_messaging_id?: string | null
           product_id?: string | null
           production_capability?: string | null
+          region_code?: string | null
           request_id?: string | null
+          routing_zone?: string | null
           short_script?: string | null
+          status?: string | null
           storybrand_character?: string | null
           storybrand_failure?: string | null
           storybrand_guide?: string | null
@@ -7010,6 +7021,7 @@ export type Database = {
           storybrand_problem?: string | null
           storybrand_success?: string | null
           sub_hook?: string | null
+          sub_region_code?: string | null
           transition_phrases?: string[] | null
           updated_at?: string
           user_id?: string | null
@@ -7049,6 +7061,7 @@ export type Database = {
           hooks?: string[] | null
           id?: string
           is_approved?: boolean | null
+          is_english_base?: boolean | null
           jtbd_job_statement?: string | null
           jtbd_outcome_metrics?: string[] | null
           keywords?: string[] | null
@@ -7059,10 +7072,14 @@ export type Database = {
           meta_description?: string | null
           opening_line?: string | null
           pain_points?: string[] | null
+          parent_messaging_id?: string | null
           product_id?: string | null
           production_capability?: string | null
+          region_code?: string | null
           request_id?: string | null
+          routing_zone?: string | null
           short_script?: string | null
+          status?: string | null
           storybrand_character?: string | null
           storybrand_failure?: string | null
           storybrand_guide?: string | null
@@ -7070,6 +7087,7 @@ export type Database = {
           storybrand_problem?: string | null
           storybrand_success?: string | null
           sub_hook?: string | null
+          sub_region_code?: string | null
           transition_phrases?: string[] | null
           updated_at?: string
           user_id?: string | null
@@ -7077,7 +7095,15 @@ export type Database = {
           value_propositions?: string[] | null
           version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ecosystem_messaging_parent_messaging_id_fkey"
+            columns: ["parent_messaging_id"]
+            isOneToOne: false
+            referencedRelation: "ecosystem_messaging"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       editor_drafts: {
         Row: {
@@ -14460,12 +14486,18 @@ export type Database = {
           id: string
           industry: string | null
           is_active: boolean | null
+          is_english_base: boolean | null
           is_featured: boolean | null
           language_code: string
           language_name: string
+          parent_video_id: string | null
           placement: string
           published_at: string | null
           region: string
+          region_code: string | null
+          routing_zone: string | null
+          status: string | null
+          sub_region_code: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string | null
@@ -14488,12 +14520,18 @@ export type Database = {
           id?: string
           industry?: string | null
           is_active?: boolean | null
+          is_english_base?: boolean | null
           is_featured?: boolean | null
           language_code?: string
           language_name?: string
+          parent_video_id?: string | null
           placement?: string
           published_at?: string | null
           region?: string
+          region_code?: string | null
+          routing_zone?: string | null
+          status?: string | null
+          sub_region_code?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string | null
@@ -14516,19 +14554,33 @@ export type Database = {
           id?: string
           industry?: string | null
           is_active?: boolean | null
+          is_english_base?: boolean | null
           is_featured?: boolean | null
           language_code?: string
           language_name?: string
+          parent_video_id?: string | null
           placement?: string
           published_at?: string | null
           region?: string
+          region_code?: string | null
+          routing_zone?: string | null
+          status?: string | null
+          sub_region_code?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string | null
           video_url?: string
           view_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "landing_page_videos_parent_video_id_fkey"
+            columns: ["parent_video_id"]
+            isOneToOne: false
+            referencedRelation: "landing_page_videos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       legal_documents: {
         Row: {
@@ -14924,8 +14976,15 @@ export type Database = {
           asset_url: string | null
           created_at: string | null
           id: string
+          is_english_base: boolean | null
           is_primary: boolean | null
+          language_code: string | null
+          parent_asset_id: string | null
           product_id: string | null
+          region_code: string | null
+          routing_zone: string | null
+          status: string | null
+          sub_region_code: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -14935,8 +14994,15 @@ export type Database = {
           asset_url?: string | null
           created_at?: string | null
           id?: string
+          is_english_base?: boolean | null
           is_primary?: boolean | null
+          language_code?: string | null
+          parent_asset_id?: string | null
           product_id?: string | null
+          region_code?: string | null
+          routing_zone?: string | null
+          status?: string | null
+          sub_region_code?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -14946,12 +15012,26 @@ export type Database = {
           asset_url?: string | null
           created_at?: string | null
           id?: string
+          is_english_base?: boolean | null
           is_primary?: boolean | null
+          language_code?: string | null
+          parent_asset_id?: string | null
           product_id?: string | null
+          region_code?: string | null
+          routing_zone?: string | null
+          status?: string | null
+          sub_region_code?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "marketing_brand_assets_parent_asset_id_fkey"
+            columns: ["parent_asset_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_brand_assets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marketing_brand_assets_product_id_fkey"
             columns: ["product_id"]
@@ -15325,13 +15405,19 @@ export type Database = {
           file_size_bytes: number | null
           file_type: string
           id: string
+          is_english_base: boolean | null
+          language_code: string | null
           metadata: Json | null
           name: string
           parent_asset_id: string | null
           pipeline_id: string | null
           project_id: string | null
+          region_code: string | null
           resolution: string | null
+          routing_zone: string | null
+          status: string | null
           storage_path: string
+          sub_region_code: string | null
           thumbnail_url: string | null
           type: string
           updated_at: string
@@ -15345,13 +15431,19 @@ export type Database = {
           file_size_bytes?: number | null
           file_type: string
           id?: string
+          is_english_base?: boolean | null
+          language_code?: string | null
           metadata?: Json | null
           name: string
           parent_asset_id?: string | null
           pipeline_id?: string | null
           project_id?: string | null
+          region_code?: string | null
           resolution?: string | null
+          routing_zone?: string | null
+          status?: string | null
           storage_path: string
+          sub_region_code?: string | null
           thumbnail_url?: string | null
           type: string
           updated_at?: string
@@ -15365,13 +15457,19 @@ export type Database = {
           file_size_bytes?: number | null
           file_type?: string
           id?: string
+          is_english_base?: boolean | null
+          language_code?: string | null
           metadata?: Json | null
           name?: string
           parent_asset_id?: string | null
           pipeline_id?: string | null
           project_id?: string | null
+          region_code?: string | null
           resolution?: string | null
+          routing_zone?: string | null
+          status?: string | null
           storage_path?: string
+          sub_region_code?: string | null
           thumbnail_url?: string | null
           type?: string
           updated_at?: string
@@ -25308,19 +25406,27 @@ export type Database = {
           id: string
           industry_tags: string[] | null
           is_active: boolean | null
+          is_english_base: boolean | null
           is_public: boolean | null
           is_system_default: boolean | null
           jtbd_outcomes: Json | null
+          language_code: string | null
           messaging_tier: string | null
           name: string
+          parent_blueprint_id: string | null
           powered_by_config: Json | null
           preview_video_url: string | null
           primary_model: string | null
+          product_id: string | null
+          region_code: string | null
           regional_variants: Json | null
+          routing_zone: string | null
           secondary_models: string[] | null
+          status: string | null
           storybrand_mapping: Json | null
           style_intent: string | null
           style_preset: Json | null
+          sub_region_code: string | null
           supported_dialects: Json | null
           target_audience_segments: string[] | null
           target_platform: string[] | null
@@ -25349,19 +25455,27 @@ export type Database = {
           id?: string
           industry_tags?: string[] | null
           is_active?: boolean | null
+          is_english_base?: boolean | null
           is_public?: boolean | null
           is_system_default?: boolean | null
           jtbd_outcomes?: Json | null
+          language_code?: string | null
           messaging_tier?: string | null
           name: string
+          parent_blueprint_id?: string | null
           powered_by_config?: Json | null
           preview_video_url?: string | null
           primary_model?: string | null
+          product_id?: string | null
+          region_code?: string | null
           regional_variants?: Json | null
+          routing_zone?: string | null
           secondary_models?: string[] | null
+          status?: string | null
           storybrand_mapping?: Json | null
           style_intent?: string | null
           style_preset?: Json | null
+          sub_region_code?: string | null
           supported_dialects?: Json | null
           target_audience_segments?: string[] | null
           target_platform?: string[] | null
@@ -25390,19 +25504,27 @@ export type Database = {
           id?: string
           industry_tags?: string[] | null
           is_active?: boolean | null
+          is_english_base?: boolean | null
           is_public?: boolean | null
           is_system_default?: boolean | null
           jtbd_outcomes?: Json | null
+          language_code?: string | null
           messaging_tier?: string | null
           name?: string
+          parent_blueprint_id?: string | null
           powered_by_config?: Json | null
           preview_video_url?: string | null
           primary_model?: string | null
+          product_id?: string | null
+          region_code?: string | null
           regional_variants?: Json | null
+          routing_zone?: string | null
           secondary_models?: string[] | null
+          status?: string | null
           storybrand_mapping?: Json | null
           style_intent?: string | null
           style_preset?: Json | null
+          sub_region_code?: string | null
           supported_dialects?: Json | null
           target_audience_segments?: string[] | null
           target_platform?: string[] | null
@@ -25414,7 +25536,15 @@ export type Database = {
           updated_at?: string
           usage_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "video_blueprints_parent_blueprint_id_fkey"
+            columns: ["parent_blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "video_blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       video_style_registry: {
         Row: {
