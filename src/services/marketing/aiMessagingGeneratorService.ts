@@ -132,6 +132,7 @@ export const TARGET_AUDIENCES = [
   { id: 'travelers', label: 'Travel & Hospitality', painPoints: ['destination marketing', 'multilingual content', 'seasonal campaigns'] },
 ];
 
+// Legacy hardcoded competitor data — kept as fallback only
 export const COMPETITOR_DATABASE = [
   { id: 'canva', name: 'Canva', category: 'design', weakness: 'Limited AI generation' },
   { id: 'beautiful_ai', name: 'Beautiful.AI', category: 'presentations', weakness: 'No video output' },
@@ -142,6 +143,110 @@ export const COMPETITOR_DATABASE = [
   { id: 'pictory', name: 'Pictory', category: 'video', weakness: 'Basic editing only' },
   { id: 'descript', name: 'Descript', category: 'video', weakness: 'Steep learning curve' },
 ];
+
+// ============================================================================
+// DB-DRIVEN KNOWLEDGE LOADER
+// ============================================================================
+
+export interface ProductKnowledge {
+  value_proposition: string | null;
+  positioning_statement: string | null;
+  tagline: string | null;
+  elevator_pitch: string | null;
+  pain_points: string[];
+  key_benefits: string[];
+  use_cases: string[];
+  differentiators: string[];
+  competitive_edge: string | null;
+  regional_positioning: Record<string, any>;
+  regional_pain_points: Record<string, any>;
+  regional_benefits: Record<string, any>;
+}
+
+export interface CompetitorEntry {
+  competitor_category: string;
+  competitor_weakness: string | null;
+  our_advantage: string;
+  battle_card: string | null;
+  positioning_against: string | null;
+  scope: string;
+  region_code: string | null;
+}
+
+/**
+ * Load product knowledge from DB (product_knowledge_registry).
+ * Falls back to hardcoded GENIE_PRODUCTS if no DB entry exists.
+ */
+async function loadProductKnowledge(productDbId: string): Promise<ProductKnowledge | null> {
+  try {
+    const { data, error } = await supabase
+      .from('product_knowledge_registry')
+      .select('*')
+      .eq('product_id', productDbId)
+      .eq('is_current', true)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return {
+      value_proposition: data.value_proposition,
+      positioning_statement: data.positioning_statement,
+      tagline: data.tagline,
+      elevator_pitch: data.elevator_pitch,
+      pain_points: (data.pain_points as string[]) || [],
+      key_benefits: (data.key_benefits as string[]) || [],
+      use_cases: (data.use_cases as string[]) || [],
+      differentiators: (data.differentiators as string[]) || [],
+      competitive_edge: data.competitive_edge,
+      regional_positioning: (data.regional_positioning as Record<string, any>) || {},
+      regional_pain_points: (data.regional_pain_points as Record<string, any>) || {},
+      regional_benefits: (data.regional_benefits as Record<string, any>) || {},
+    };
+  } catch (e) {
+    console.warn('[AIMessaging] Failed to load product knowledge from DB:', e);
+    return null;
+  }
+}
+
+/**
+ * Load competitor landscape from DB for a given product.
+ * Never exposes competitor names in AI output — only our_advantage and positioning.
+ */
+async function loadCompetitorLandscape(productDbId: string, regionCode?: string): Promise<CompetitorEntry[]> {
+  try {
+    let query = supabase
+      .from('competitor_landscape')
+      .select('competitor_category, competitor_weakness, our_advantage, battle_card, positioning_against, scope, region_code')
+      .eq('product_id', productDbId)
+      .eq('is_active', true);
+
+    // Include global + regional if region specified
+    if (regionCode) {
+      query = query.or(`scope.eq.global,region_code.eq.${regionCode}`);
+    }
+
+    const { data, error } = await query;
+    if (error || !data) return [];
+    return data as CompetitorEntry[];
+  } catch (e) {
+    console.warn('[AIMessaging] Failed to load competitors from DB:', e);
+    return [];
+  }
+}
+
+/**
+ * Resolve product DB UUID from GenieProductId key.
+ */
+const PRODUCT_KEY_TO_DB_ID: Record<string, string> = {
+  spark: '8526e2cc-3db2-4d5f-9d17-34cff668743b',
+  mind: 'c7e199a9-08d7-4fd8-9388-53d60e1e96a4',
+  vibe: '021192bf-c66f-4c36-a015-579840928c56',
+  deck: '23ac1d25-03c3-43f2-9dbc-53ee0c389b77',
+  arc: '8fd4faae-bd5b-4bc9-825a-3484db800fd3',
+  cast: '63f0fc4b-411b-4f9c-8df6-0fac366e4735',
+  ask_genie: '63a1f612-133b-40ba-adbe-84403d7b1498',
+  studio: '3da815ca-3801-41dc-b9e4-8451c5d38590',
+};
 
 // ============================================================================
 // AI MESSAGING GENERATOR SERVICE
@@ -203,51 +308,75 @@ class AIMessagingGeneratorService {
       ? product.features.find(f => f.id === request.featureId)
       : null;
 
+    // === DB-DRIVEN KNOWLEDGE (subscriber-safe) ===
+    const productDbId = PRODUCT_KEY_TO_DB_ID[request.productId];
+    const [dbKnowledge, dbCompetitors] = await Promise.all([
+      productDbId ? loadProductKnowledge(productDbId) : Promise.resolve(null),
+      productDbId ? loadCompetitorLandscape(productDbId) : Promise.resolve([]),
+    ]);
+
     // Get audience pain points
     const audiencePainPoints = request.targetAudience
       .map(a => TARGET_AUDIENCES.find(t => t.id === a))
       .filter(Boolean)
       .flatMap(a => a!.painPoints);
 
-    // Get competitor weaknesses
-    const competitorWeaknesses = (request.competitors || [])
-      .map(c => COMPETITOR_DATABASE.find(comp => comp.id === c))
-      .filter(Boolean)
-      .map(c => c!.weakness);
+    // Competitor advantages from DB (never expose names, only our advantages)
+    const competitorAdvantages = dbCompetitors.map(c => c.our_advantage);
+    const competitorWeaknesses = dbCompetitors.map(c => c.competitor_weakness).filter(Boolean) as string[];
+    // Fallback to hardcoded if no DB entries
+    if (competitorAdvantages.length === 0) {
+      const fallbackWeaknesses = (request.competitors || [])
+        .map(c => COMPETITOR_DATABASE.find(comp => comp.id === c))
+        .filter(Boolean)
+        .map(c => c!.weakness);
+      competitorWeaknesses.push(...fallbackWeaknesses);
+    }
 
     // Generate using AI
     try {
-      // Build comprehensive prompt with rich product context
+      // Build comprehensive prompt — prefer DB knowledge, fallback to hardcoded
       const p = product as any;
+      const k = dbKnowledge; // DB-driven knowledge (null if not available)
+      
       const productContext = [
-        `Product: ${p.name} — "${p.tagline}"`,
+        `Product: ${p.name} — "${k?.tagline || p.tagline}"`,
         `Category: ${p.category}`,
-        p.description ? `Description: ${p.description}` : '',
-        p.valueProposition ? `Value Proposition: ${p.valueProposition}` : '',
-        p.positioning ? `Positioning: ${p.positioning}` : '',
-        p.keyBenefits ? `Key Benefits: ${p.keyBenefits.join('; ')}` : '',
-        p.useCases ? `Use Cases: ${p.useCases.join('; ')}` : '',
-        p.competitiveEdge ? `Competitive Edge: ${p.competitiveEdge}` : '',
-        p.painPoints ? `Product Pain Points Addressed: ${p.painPoints.join('; ')}` : '',
+        `Description: ${k?.elevator_pitch || p.description || ''}`,
+        `Value Proposition: ${k?.value_proposition || p.valueProposition || ''}`,
+        `Positioning: ${k?.positioning_statement || p.positioning || ''}`,
+        `Key Benefits: ${(k?.key_benefits || p.keyBenefits || []).join('; ')}`,
+        `Use Cases: ${(k?.use_cases || p.useCases || []).join('; ')}`,
+        `Competitive Edge: ${k?.competitive_edge || p.competitiveEdge || ''}`,
+        `Pain Points Addressed: ${(k?.pain_points || p.painPoints || []).join('; ')}`,
+        `Differentiators: ${(k?.differentiators || []).join('; ')}`,
       ].filter(line => !line.endsWith(': ')).join('\n');
 
-      const messagingPrompt = `You are an expert B2B/SaaS marketing strategist for the Genie Suite — an 8-product AI content creation ecosystem ("Mind to Media"). Generate compelling, product-specific marketing messaging.
+      // Build competitive differentiation context (never mention competitor names!)
+      const competitiveContext = competitorAdvantages.length > 0
+        ? `\n=== COMPETITIVE DIFFERENTIATION (do NOT mention competitor names) ===\nOur Key Advantages:\n${competitorAdvantages.map((a, i) => `${i + 1}. ${a}`).join('\n')}`
+        : competitorWeaknesses.length > 0
+          ? `\nCompetitor Weaknesses to Exploit (do NOT name competitors): ${competitorWeaknesses.join(', ')}`
+          : '';
+
+      const messagingPrompt = `You are an expert B2B/SaaS marketing strategist. Generate compelling, product-specific marketing messaging.
 
 === PRODUCT CONTEXT ===
 ${productContext}
+${competitiveContext}
 
 === TARGET ===
 Feature Focus: ${feature?.name || p.name}
 Messaging Type: ${request.type}
 Audience Pain Points: ${audiencePainPoints.join(', ') || 'General content creators and marketing teams'}
-${competitorWeaknesses.length > 0 ? `Competitor Weaknesses to Exploit: ${competitorWeaknesses.join(', ')}` : ''}
 
 === ECOSYSTEM CONTEXT ===
-Genie Suite is an 8-product AI platform: Spark (ideation), Mind (scripting), Vibe (video production), Deck (presentations), Hub (project management), Cast (publishing & distribution), Ask Genie (AI assistant), and Genie Suite (the unified platform). All products share context and intelligence. 200+ AI pipelines, 30+ AI providers, 14+ languages.
+This product is part of the Genie Suite — an 8-product AI content creation ecosystem ("Mind to Media"): Spark (ideation), Mind (scripting), Vibe (video production), Deck (presentations), Hub (project management), Cast (publishing & distribution), Ask Genie (AI assistant), and Genie Suite (the unified platform). All products share context and intelligence. 200+ AI pipelines, 30+ AI providers, 50+ languages, 62+ sub-regions.
 
 === INSTRUCTIONS ===
 - Make messaging SPECIFIC to ${p.name}, not generic AI tool copy
 - Reference the product's unique capabilities and positioning
+- NEVER mention competitor names — only highlight our unique advantages and differentiation
 - Address the specific audience pain points with concrete solutions
 - Use the competitive edge to create differentiated messaging
 - Scripts should tell a compelling story, not just list features
