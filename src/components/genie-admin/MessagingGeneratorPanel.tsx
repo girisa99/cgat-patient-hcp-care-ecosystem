@@ -157,6 +157,7 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
   const [selectedCapability, setSelectedCapability] = useState<ProductionCapability | 'auto'>(
     initialProductionCapability || 'auto'
   );
+  const [secondaryCapability, setSecondaryCapability] = useState<ProductionCapability | 'none'>('none');
   // Batch generation state
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
@@ -377,6 +378,7 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
       targetAudience: selectedAudiences,
       competitors: selectedCompetitors,
       productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+      secondaryProductionCapability: secondaryCapability !== 'none' ? secondaryCapability : undefined,
       regionCode: selectedTranscreationRegions.length > 0 ? selectedTranscreationRegions[0] : 'EN_US',
       subRegionCode: selectedTranscreationRegions.length > 1 ? selectedTranscreationRegions[1] : undefined,
       isEnglishBase: true,
@@ -426,7 +428,8 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
           type: messagingType,
           targetAudience: selectedAudiences,
           competitors: selectedCompetitors,
-          productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+           productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+           secondaryProductionCapability: secondaryCapability !== 'none' ? secondaryCapability : undefined,
           regionCode: selectedTranscreationRegions.length > 0 ? selectedTranscreationRegions[0] : 'EN_US',
           subRegionCode: selectedTranscreationRegions.length > 1 ? selectedTranscreationRegions[1] : undefined,
           isEnglishBase: true,
@@ -488,7 +491,8 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
           type: 'product',
           targetAudience: [job.audienceId],
           competitors: [],
-          productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+           productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+           secondaryProductionCapability: secondaryCapability !== 'none' ? secondaryCapability : undefined,
           regionCode: selectedTranscreationRegions.length > 0 ? selectedTranscreationRegions[0] : 'EN_US',
           subRegionCode: selectedTranscreationRegions.length > 1 ? selectedTranscreationRegions[1] : undefined,
           isEnglishBase: true,
@@ -1199,15 +1203,19 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
 
                 {/* Regional transcreation is handled by the global RegionSelector in the header */}
 
-                {/* Production Context Selector */}
+                {/* Production Context Selector — Primary + Secondary */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
                     <Film className="w-3.5 h-3.5" />
-                    Production Context
+                    Primary Production Context
                   </Label>
                   <Select 
                     value={selectedCapability} 
-                    onValueChange={(v) => setSelectedCapability(v as ProductionCapability | 'auto')}
+                    onValueChange={(v) => {
+                      setSelectedCapability(v as ProductionCapability | 'auto');
+                      // Clear secondary if same as new primary
+                      if (v === secondaryCapability) setSecondaryCapability('none');
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Auto-detect from template" />
@@ -1246,6 +1254,42 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
                     </Button>
                   )}
                 </div>
+
+                {/* Secondary Production Context */}
+                {selectedCapability !== 'auto' && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium flex items-center gap-2 text-muted-foreground">
+                      <Film className="w-3 h-3" />
+                      Secondary Context <span className="text-[10px]">(optional)</span>
+                    </Label>
+                    <Select 
+                      value={secondaryCapability} 
+                      onValueChange={(v) => setSecondaryCapability(v as ProductionCapability | 'none')}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100000]">
+                        <SelectItem value="none">
+                          <span className="text-xs">None</span>
+                        </SelectItem>
+                        {Object.entries(PRODUCTION_CONTEXT_TONES)
+                          .filter(([key]) => key !== selectedCapability)
+                          .map(([key, config]) => (
+                            <SelectItem key={key} value={key}>
+                              <span className="text-xs">{config.name}</span>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {secondaryCapability !== 'none' && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Output primarily follows <strong>{PRODUCTION_CONTEXT_TONES[selectedCapability as ProductionCapability]?.name}</strong>, 
+                        with subtle adaptability for <strong>{PRODUCTION_CONTEXT_TONES[secondaryCapability]?.name}</strong>
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Generate Button */}
                 <Button 
@@ -1350,6 +1394,7 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
                         targetAudience: audienceId.split(','),
                         competitors: selectedCompetitors,
                         productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+                        secondaryProductionCapability: secondaryCapability !== 'none' ? secondaryCapability : undefined,
                       });
                     }}
                     isGenerating={isGenerating || isBatchGenerating}
@@ -1487,6 +1532,7 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
                 targetAudience: [audienceId],
                 competitors: selectedCompetitors,
                 productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+                secondaryProductionCapability: secondaryCapability !== 'none' ? secondaryCapability : undefined,
               });
             }}
             isGenerating={isGenerating}
@@ -1523,6 +1569,7 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
                 targetAudience: [audienceId],
                 competitors: selectedCompetitors,
                 productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+                secondaryProductionCapability: secondaryCapability !== 'none' ? secondaryCapability : undefined,
               });
             }}
             isGenerating={isGenerating}
