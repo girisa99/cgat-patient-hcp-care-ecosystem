@@ -126,19 +126,27 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
     aiMessagingGeneratorService.getPendingApprovals()
   );
 
-  // Load persisted messaging from DB on mount
+  // Load persisted messaging from DB on mount (both approved and pending)
   useEffect(() => {
     aiMessagingGeneratorService.loadPersistedMessaging().then(loaded => {
       if (loaded.length > 0 && !latestMessaging) {
-        setLatestMessaging(loaded[0]);
-        setLatestVariants(loaded);
-        console.log(`[useAIMessaging] Loaded ${loaded.length} persisted messaging entries`);
+        const approved = loaded.filter(m => m.isApproved);
+        const pending = loaded.filter(m => m.status === 'pending');
+        if (approved.length > 0) {
+          setLatestMessaging(approved[0]);
+          setLatestVariants(approved);
+        }
+        console.log(`[useAIMessaging] Loaded ${loaded.length} entries (${approved.length} approved, ${pending.length} pending)`);
       }
+      // Refresh pending from hydrated cache
+      setPendingApprovals(aiMessagingGeneratorService.getPendingApprovals());
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const refreshPendingApprovals = useCallback(() => {
-    setPendingApprovals(aiMessagingGeneratorService.getPendingApprovals());
+  const refreshPendingApprovals = useCallback(async () => {
+    // Refresh from DB to stay in sync (end-to-end DB-backed like scripts/TTS)
+    const { requests } = await aiMessagingGeneratorService.loadPendingFromDb();
+    setPendingApprovals(requests);
   }, []);
 
   // Generate single messaging
@@ -171,7 +179,7 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
       
       setLatestMessaging(messaging);
       setLatestVariants([messaging]);
-      refreshPendingApprovals();
+      await refreshPendingApprovals();
       
       if (showNotifications) {
         toast.success('Messaging generated! Awaiting approval.', {
@@ -226,7 +234,7 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
       setLatestVariants(variants);
       setLatestMessaging(variants[0] || null);
       setVariantProgress({ current: variants.length, total: opts.variantCount });
-      refreshPendingApprovals();
+      await refreshPendingApprovals();
       
       if (showNotifications) {
         toast.success(`${variants.length} variants generated! Awaiting approval.`);
@@ -248,7 +256,7 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
   const approveMessaging = useCallback(async (requestId: string, approvedBy: string) => {
     try {
       await aiMessagingGeneratorService.approveMessaging(requestId, approvedBy);
-      refreshPendingApprovals();
+      await refreshPendingApprovals();
       if (showNotifications) toast.success('Messaging approved & saved!');
     } catch (error) {
       console.error('[useAIMessaging] Approval failed:', error);
@@ -257,10 +265,10 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
   }, [showNotifications, refreshPendingApprovals]);
 
   // Reject messaging
-  const rejectMessaging = useCallback((requestId: string, reason: string) => {
+  const rejectMessaging = useCallback(async (requestId: string, reason: string) => {
     try {
       aiMessagingGeneratorService.rejectMessaging(requestId, reason);
-      refreshPendingApprovals();
+      await refreshPendingApprovals();
       if (showNotifications) toast.info('Messaging rejected. Regenerate with feedback.');
     } catch (error) {
       console.error('[useAIMessaging] Rejection failed:', error);

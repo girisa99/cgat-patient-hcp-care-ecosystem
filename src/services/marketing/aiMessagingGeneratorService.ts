@@ -597,18 +597,19 @@ class AIMessagingGeneratorService {
   }
 
   /**
-   * Load previously approved messaging from database into memory cache
+   * Load previously persisted messaging from database into memory cache.
+   * Loads BOTH approved AND pending entries (matching script/TTS pattern).
    */
   async loadPersistedMessaging(): Promise<GeneratedMessaging[]> {
     if (this.hasLoadedFromDb) {
-      return Array.from(this.generatedMessaging.values()).filter(m => m.isApproved);
+      return Array.from(this.generatedMessaging.values());
     }
 
     try {
       const { data, error } = await supabase
         .from('ecosystem_messaging')
         .select('*')
-        .eq('is_approved', true)
+        .in('status', ['approved', 'pending'])
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -616,54 +617,130 @@ class AIMessagingGeneratorService {
         return [];
       }
 
-      const loaded: GeneratedMessaging[] = (data || []).map((row: any) => ({
-        requestId: row.request_id || row.id,
-        productId: row.product_id || '',
-        featureId: row.feature_id || undefined,
-        headline: row.headline || row.hero_narrative || '',
-        hook: row.hook || (row.hooks?.[0]) || '',
-        subHook: row.sub_hook || '',
-        cta: row.cta || (row.ctas?.[0]) || '',
-        ctaSecondary: row.cta_secondary || '',
-        valueProposition: row.value_proposition || (row.value_propositions?.[0]) || '',
-        painPoints: row.pain_points || [],
-        benefits: row.benefits || [],
-        differentiators: row.differentiators || [],
-        openingLine: row.opening_line || '',
-        closingLine: row.closing_line || '',
-        transitionPhrases: row.transition_phrases || [],
-        shortScript: row.short_script || '',
-        mediumScript: row.medium_script || '',
-        longScript: row.long_script || '',
-        hashtags: row.hashtags || [],
-        keywords: row.keywords || [],
-        metaDescription: row.meta_description || '',
-        confidence: row.confidence || 0,
-        generatedBy: row.generated_by || 'ai',
-        version: row.version || 1,
-        isApproved: true,
-        creativeAngle: row.creative_angle || undefined,
-        productionCapability: row.production_capability || undefined,
-        // Regional hierarchy
-        regionCode: row.region_code || 'EN_US',
-        subRegionCode: row.sub_region_code || undefined,
-        isEnglishBase: row.is_english_base ?? true,
-        parentMessagingId: row.parent_messaging_id || undefined,
-        routingZone: row.routing_zone || undefined,
-        status: row.status || 'approved',
-      }));
+      const loaded: GeneratedMessaging[] = (data || []).map((row: any) => this.mapDbRowToMessaging(row));
 
       // Cache in memory
       loaded.forEach(m => {
         this.generatedMessaging.set(m.requestId, m);
       });
 
+      // Also hydrate pendingRequests for pending items so getPendingApprovals() works
+      loaded.filter(m => m.status === 'pending').forEach(m => {
+        if (!this.pendingRequests.has(m.requestId)) {
+          this.pendingRequests.set(m.requestId, {
+            id: m.requestId,
+            productId: m.productId as GenieProductId,
+            featureId: m.featureId,
+            type: 'product',
+            targetAudience: [],
+            status: 'pending_approval',
+            generatedAt: new Date(),
+            regionCode: m.regionCode,
+            subRegionCode: m.subRegionCode,
+            creativeAngle: m.creativeAngle,
+            productionCapability: m.productionCapability,
+            isEnglishBase: m.isEnglishBase,
+            parentMessagingId: m.parentMessagingId,
+            routingZone: m.routingZone,
+          });
+        }
+      });
+
       this.hasLoadedFromDb = true;
-      console.log(`[AIMessaging] Loaded ${loaded.length} persisted messaging from database`);
+      console.log(`[AIMessaging] Loaded ${loaded.length} messaging from DB (${loaded.filter(m => m.status === 'pending').length} pending, ${loaded.filter(m => m.isApproved).length} approved)`);
       return loaded;
     } catch (err) {
       console.error('[AIMessaging] Load error:', err);
       return [];
+    }
+  }
+
+  /**
+   * Map a DB row from ecosystem_messaging to GeneratedMessaging
+   */
+  private mapDbRowToMessaging(row: any): GeneratedMessaging {
+    return {
+      requestId: row.request_id || row.id,
+      productId: row.product_id || '',
+      featureId: row.feature_id || undefined,
+      headline: row.headline || row.hero_narrative || '',
+      hook: row.hook || (row.hooks?.[0]) || '',
+      subHook: row.sub_hook || '',
+      cta: row.cta || (row.ctas?.[0]) || '',
+      ctaSecondary: row.cta_secondary || '',
+      valueProposition: row.value_proposition || (row.value_propositions?.[0]) || '',
+      painPoints: row.pain_points || [],
+      benefits: row.benefits || [],
+      differentiators: row.differentiators || [],
+      openingLine: row.opening_line || '',
+      closingLine: row.closing_line || '',
+      transitionPhrases: row.transition_phrases || [],
+      shortScript: row.short_script || '',
+      mediumScript: row.medium_script || '',
+      longScript: row.long_script || '',
+      hashtags: row.hashtags || [],
+      keywords: row.keywords || [],
+      metaDescription: row.meta_description || '',
+      confidence: row.confidence || 0,
+      generatedBy: row.generated_by || 'ai',
+      version: row.version || 1,
+      isApproved: row.is_approved || row.status === 'approved',
+      creativeAngle: row.creative_angle || undefined,
+      productionCapability: row.production_capability || undefined,
+      regionCode: row.region_code || 'EN_US',
+      subRegionCode: row.sub_region_code || undefined,
+      isEnglishBase: row.is_english_base ?? true,
+      parentMessagingId: row.parent_messaging_id || undefined,
+      routingZone: row.routing_zone || undefined,
+      status: row.status || 'approved',
+    };
+  }
+
+  /**
+   * Load pending messaging from DB (for refresh calls)
+   */
+  async loadPendingFromDb(): Promise<{ requests: MessagingRequest[]; messaging: GeneratedMessaging[] }> {
+    try {
+      const { data, error } = await supabase
+        .from('ecosystem_messaging')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[AIMessaging] Failed to load pending from DB:', error);
+        return { requests: this.getPendingApprovals(), messaging: [] };
+      }
+
+      const pendingMessaging = (data || []).map((row: any) => this.mapDbRowToMessaging(row));
+
+      // Hydrate into memory caches
+      pendingMessaging.forEach(m => {
+        this.generatedMessaging.set(m.requestId, m);
+        if (!this.pendingRequests.has(m.requestId)) {
+          this.pendingRequests.set(m.requestId, {
+            id: m.requestId,
+            productId: m.productId as GenieProductId,
+            featureId: m.featureId,
+            type: 'product',
+            targetAudience: [m.regionCode || 'general'],
+            status: 'pending_approval',
+            generatedAt: new Date(),
+            regionCode: m.regionCode,
+            subRegionCode: m.subRegionCode,
+            creativeAngle: m.creativeAngle,
+            productionCapability: m.productionCapability,
+            isEnglishBase: m.isEnglishBase,
+            parentMessagingId: m.parentMessagingId,
+            routingZone: m.routingZone,
+          });
+        }
+      });
+
+      return { requests: this.getPendingApprovals(), messaging: pendingMessaging };
+    } catch (err) {
+      console.error('[AIMessaging] loadPendingFromDb error:', err);
+      return { requests: this.getPendingApprovals(), messaging: [] };
     }
   }
 
