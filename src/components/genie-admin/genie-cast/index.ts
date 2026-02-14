@@ -2,7 +2,7 @@
  * Genie Cast Components - Rich video production studio UI
  * 
  * Consolidated 4-Tab Structure:
- * - CREATE: Templates, Messaging, Production Setup (Styles + Assets + Regional)
+ * - CREATE: Intent, Messaging, Templates, Production Setup (Styles + Assets + Regional)
  * - PRODUCE: Generate, Matrix (Video Batch), Studio, Review
  * - MANAGE: Library, Analytics, Flow, Repurpose
  * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing

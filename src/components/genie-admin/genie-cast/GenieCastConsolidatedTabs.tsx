@@ -2,7 +2,7 @@
  * GENIE CAST CONSOLIDATED 4-TAB STRUCTURE
  *
  * Consolidates 10+ scattered tabs into unified workflow:
- * - CREATE: Templates, Messaging, Production Setup (Styles + Assets + Regional)
+ * - CREATE: Intent, Messaging, Templates, Production Setup (Styles + Assets + Regional)
  * - PRODUCE: Generate, Matrix, Studio Editor, Review
  * - MANAGE: Library, Analytics, Flow, Content Repurposing
  * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing
@@ -161,7 +161,7 @@ import {
 // STAGE 1: 3-Tab Consolidated Structure (CREATE, PRODUCE, PUBLISH)
 // MANAGE and LANDING have been consolidated into PRODUCE and CREATE respectively
 export type ConsolidatedTab = 'create' | 'produce' | 'publish';
-export type CreateSubTab = 'intent' | 'templates' | 'messaging' | 'assets';
+export type CreateSubTab = 'intent' | 'messaging' | 'templates' | 'assets';
 export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review' | 'library' | 'analytics' | 'flow';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
 
@@ -193,13 +193,13 @@ const TAB_DEFINITIONS = {
   create: {
     label: 'CREATE',
     icon: Sparkles,
-    description: 'Intent, Templates, Messaging & Assets',
+    description: 'Intent, Messaging, Templates & Assets',
     activeColor: 'bg-orange-600 text-white border-orange-600',
     inactiveColor: 'border-orange-300 text-orange-700 hover:bg-orange-50',
     subTabs: [
       { id: 'intent', label: 'Intent', icon: Sparkles, description: 'What are you creating?' },
-      { id: 'templates', label: 'Templates', icon: LayoutTemplate, description: 'Select a blueprint' },
       { id: 'messaging', label: 'Messaging', icon: MessageSquare, description: 'AI marketing copy & scripts' },
+      { id: 'templates', label: 'Templates', icon: LayoutTemplate, description: 'Select a blueprint' },
       { id: 'assets', label: 'Assets', icon: Image, description: 'Hero Banners, Assets Lab, Brand Assets' },
     ],
   },
@@ -256,8 +256,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
       const stored = localStorage.getItem('genie-cast-session');
       if (stored) {
         const parsed = JSON.parse(stored);
-        // If intent or template already selected, start on templates (not intent)
-        const createSub = (parsed.selectedIntent || parsed.selectedTemplate) ? 'templates' : 'intent';
+        // If messaging approved, go to templates; if intent selected, go to messaging
+        const hasMessaging = parsed.approvedMessaging;
+        const createSub = hasMessaging ? 'templates' : (parsed.selectedIntent || parsed.selectedTemplate) ? 'messaging' : 'intent';
         return { create: createSub, produce: 'generate', publish: 'scheduler' };
       }
     } catch {}
@@ -571,10 +572,10 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 selectedIntent={castSession.session.selectedIntent}
                 onIntentSelect={(intent) => {
                   castSession.selectIntent(intent);
-                  // Auto-advance to templates when intent is selected
-                  setSubTab('create', 'templates');
+                  // Auto-advance to messaging when intent is selected
+                  setSubTab('create', 'messaging');
                 }}
-                onIntentConfirmed={() => setSubTab('create', 'templates')}
+                onIntentConfirmed={() => setSubTab('create', 'messaging')}
               />
             </motion.div>
           )}
@@ -603,8 +604,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           )}
 
           <AnimatePresence mode="wait">
-            {/* ── STEP 2: TEMPLATES ── Visible after intent selected OR if template already exists */}
-            {currentSubTab === 'templates' && (castSession.session.selectedIntent || castSession.session.selectedTemplate) && (
+            {/* ── STEP 3: TEMPLATES ── Visible after messaging approved OR if template already exists */}
+            {currentSubTab === 'templates' && (castSession.session.selectedIntent || castSession.session.selectedTemplate || castSession.session.approvedMessaging) && (
               <motion.div
                 key="templates"
                 initial={{ opacity: 0, x: -20 }}
@@ -613,6 +614,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
+                {/* Back to Messaging */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 mb-3 text-muted-foreground hover:text-foreground"
+                  onClick={() => setSubTab('create', 'messaging')}
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to Messaging
+                </Button>
                 {/* Selected Template Confirmation Card */}
                 {castSession.session.selectedTemplate && (
                   <Card className="border-primary/30 bg-primary/5">
@@ -651,9 +662,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         <Button
                           size="sm"
                           className="gap-1.5"
-                          onClick={() => setSubTab('create', 'messaging')}
+                          onClick={() => setSubTab('create', 'assets')}
                         >
-                          Continue to Messaging
+                          Continue to Assets
                           <ArrowRight className="w-3.5 h-3.5" />
                         </Button>
                       </div>
@@ -684,7 +695,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       industryTags: blueprint.industry_tags || [],
                       targetRegions: blueprint.target_regions || [],
                     });
-                    // Stay on templates — user confirms with "Continue to Messaging"
+                    // Stay on templates — user confirms with "Continue to Assets"
                   }}
                   selectedBlueprintId={castSession.session.selectedTemplate?.id}
                   simpleMode={createMode.isSimple}
@@ -703,37 +714,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
                >
-                {/* Back to Templates */}
+                {/* Back to Intent */}
                 <Button
                   variant="ghost"
                   size="sm"
                   className="gap-1.5 mb-3 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSubTab('create', 'templates')}
+                  onClick={() => setSubTab('create', 'intent')}
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to Templates
+                  Back to Intent
                 </Button>
-                {/* Prompt to select template first if not selected */}
-                {!castSession.session.selectedTemplate && (
-                  <Card className="mb-4 border-amber-300/50 bg-amber-50/30 dark:bg-amber-950/10">
-                    <CardContent className="py-4 flex items-center gap-3">
-                      <LayoutTemplate className="w-5 h-5 text-amber-600" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">No template selected yet</p>
-                        <p className="text-xs text-muted-foreground">Select a template first for better messaging alignment</p>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => setSubTab('create', 'templates')}
-                        className="gap-1"
-                      >
-                        <LayoutTemplate className="w-3.5 h-3.5" />
-                        Select Template
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
 
                 {/* MessagingGeneratorPanel ONLY - no AuthoringStageIndicator or RegionalDialectSelector here */}
                 <MessagingGeneratorPanel 
@@ -769,9 +759,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         updatedAt: new Date(),
                       });
                     }
-                    // Navigate to Assets after messaging approval
-                    setSubTab('create', 'assets');
-                    toast.success('Messaging approved! Review assets next.');
+                    // Navigate to Templates after messaging approval
+                    setSubTab('create', 'templates');
+                    toast.success('Messaging approved! Select a template next.');
                   }}
                 />
               </motion.div>
@@ -787,15 +777,15 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                {/* Back to Messaging */}
+                {/* Back to Templates */}
                 <Button
                   variant="ghost"
                   size="sm"
                   className="gap-1.5 mb-3 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSubTab('create', 'messaging')}
+                  onClick={() => setSubTab('create', 'templates')}
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to Messaging
+                  Back to Templates
                 </Button>
                 {/* Asset section navigation */}
                 <div className="flex items-center gap-2 border-b pb-2 overflow-x-auto">
