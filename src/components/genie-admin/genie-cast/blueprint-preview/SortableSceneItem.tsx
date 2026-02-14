@@ -2,6 +2,8 @@
  * Sortable Scene Item
  * Individual scene card with drag-and-drop, inline editing, visual config toggles
  * Used within SceneTimelineTab with @dnd-kit/sortable
+ * 
+ * Capabilities now pull from cast_ai_capabilities DB table for full coverage
  */
 
 import React, { useState, useCallback } from 'react';
@@ -25,6 +27,11 @@ import {
   Wand2,
   Glasses,
   Mic,
+  Film,
+  Image as ImageIcon,
+  Languages,
+  Volume2,
+  Mic2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,6 +40,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
+import { useCastCapabilities } from '@/hooks/useCastRegistry';
 
 interface SortableSceneItemProps {
   scene: BlueprintScene;
@@ -89,14 +97,33 @@ const sceneTypeIcons: Record<string, React.ReactNode> = {
   outro: <CheckCircle2 className="h-3 w-3" />,
 };
 
-// Visual capability toggles
-const VISUAL_CAPABILITIES = [
-  { key: 'avatarEnabled', label: 'Avatar', icon: <User className="h-3 w-3" /> },
-  { key: '3dEnabled', label: '3D', icon: <Box className="h-3 w-3" /> },
-  { key: 'animationEnabled', label: 'Animation', icon: <Wand2 className="h-3 w-3" /> },
-  { key: 'arvrEnabled', label: 'AR/VR', icon: <Glasses className="h-3 w-3" /> },
-  { key: 'lipsyncEnabled', label: 'Lipsync', icon: <Mic className="h-3 w-3" /> },
-];
+// Icon mapping for dynamic capabilities from DB
+const CAPABILITY_ICON_MAP: Record<string, React.ReactNode> = {
+  avatar_generation: <User className="h-3 w-3" />,
+  '3d_generation': <Box className="h-3 w-3" />,
+  animation: <Wand2 className="h-3 w-3" />,
+  video_generation: <Film className="h-3 w-3" />,
+  image_generation: <ImageIcon className="h-3 w-3" />,
+  tts: <Volume2 className="h-3 w-3" />,
+  lip_sync: <Mic2 className="h-3 w-3" />,
+  voice_cloning: <Mic className="h-3 w-3" />,
+  translation: <Languages className="h-3 w-3" />,
+  transcription: <FileText className="h-3 w-3" />,
+};
+
+// Map DB capability values to visual_config keys
+const CAPABILITY_TO_CONFIG_KEY: Record<string, string> = {
+  avatar_generation: 'avatarEnabled',
+  '3d_generation': '3dEnabled',
+  animation: 'animationEnabled',
+  lip_sync: 'lipsyncEnabled',
+  video_generation: 'videoEnabled',
+  image_generation: 'imageEnabled',
+  tts: 'ttsEnabled',
+  voice_cloning: 'voiceCloningEnabled',
+  translation: 'translationEnabled',
+  transcription: 'transcriptionEnabled',
+};
 
 export function SortableSceneItem({
   scene,
@@ -114,6 +141,9 @@ export function SortableSceneItem({
 }: SortableSceneItemProps) {
   const [isEditingScript, setIsEditingScript] = useState(false);
   const [editedScript, setEditedScript] = useState(scene.script_template || '');
+
+  // Fetch full capabilities from DB
+  const { data: dbCapabilities = [] } = useCastCapabilities();
 
   const {
     attributes,
@@ -309,13 +339,14 @@ export function SortableSceneItem({
           {/* Visual Config Toggles (P1) */}
           {isEditable && (
             <div className="space-y-2">
-              <h4 className="text-xs font-medium text-muted-foreground">Scene Capabilities</h4>
+              <h4 className="text-xs font-medium text-muted-foreground">Scene Capabilities ({dbCapabilities.length})</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {VISUAL_CAPABILITIES.map(({ key, label, icon }) => {
-                  const isEnabled = !!(scene.visual_config as any)?.[key];
+                {dbCapabilities.map((cap) => {
+                  const configKey = CAPABILITY_TO_CONFIG_KEY[cap.value] || `${cap.value}Enabled`;
+                  const isEnabled = !!(scene.visual_config as any)?.[configKey];
                   return (
                     <div
-                      key={key}
+                      key={cap.value}
                       className={cn(
                         "flex items-center gap-2 p-2 rounded-md border transition-colors",
                         isEnabled
@@ -325,13 +356,13 @@ export function SortableSceneItem({
                     >
                       <Switch
                         checked={isEnabled}
-                        onCheckedChange={(checked) => handleVisualToggle(key, checked)}
+                        onCheckedChange={(checked) => handleVisualToggle(configKey, checked)}
                         className="scale-75"
                       />
                       <div className="flex items-center gap-1.5 text-xs">
-                        {icon}
+                        {CAPABILITY_ICON_MAP[cap.value] || <Sparkles className="h-3 w-3" />}
                         <span className={isEnabled ? 'text-foreground' : 'text-muted-foreground'}>
-                          {label}
+                          {cap.label}
                         </span>
                       </div>
                     </div>

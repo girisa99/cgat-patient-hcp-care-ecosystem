@@ -20,11 +20,18 @@ import {
   Target,
   Layers,
   Zap,
+  User,
+  Mic,
+  Image as ImageIcon,
+  Film,
+  Languages,
+  FileText,
+  Mic2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { VideoBlueprint } from '@/hooks/useVideoBlueprints';
-
+import { useCastCapabilities } from '@/hooks/useCastRegistry';
 interface ProductionConfigTabProps {
   blueprint: VideoBlueprint;
   selectedVideoStyles?: any[];
@@ -61,6 +68,31 @@ const STYLE_INTENT_CONFIG: Record<string, { label: string; color: string; descri
   vr_experience: { label: 'VR/AR', color: 'bg-violet-500/20 text-violet-400', description: 'Immersive experience' },
 };
 
+// Icon mapping for dynamic capabilities from DB
+const CAPABILITY_ICON_MAP: Record<string, React.ReactNode> = {
+  avatar_generation: <User className="h-5 w-5 mx-auto mb-1 text-primary" />,
+  '3d_generation': <Box className="h-5 w-5 mx-auto mb-1 text-primary" />,
+  animation: <Wand2 className="h-5 w-5 mx-auto mb-1 text-primary" />,
+  video_generation: <Film className="h-5 w-5 mx-auto mb-1 text-primary" />,
+  image_generation: <ImageIcon className="h-5 w-5 mx-auto mb-1 text-primary" />,
+  tts: <Volume2 className="h-5 w-5 mx-auto mb-1 text-primary" />,
+  lip_sync: <Mic2 className="h-5 w-5 mx-auto mb-1 text-primary" />,
+  voice_cloning: <Mic className="h-5 w-5 mx-auto mb-1 text-primary" />,
+  translation: <Languages className="h-5 w-5 mx-auto mb-1 text-primary" />,
+  transcription: <FileText className="h-5 w-5 mx-auto mb-1 text-primary" />,
+};
+
+// Helper to format default_settings values for display (no raw JSON)
+function formatSettingValue(value: unknown): string {
+  if (typeof value === 'boolean') return value ? '✅' : '❌';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (Array.isArray(value)) return value.join(', ');
+  if (value === null || value === undefined) return '—';
+  // For objects, show a summary instead of raw JSON
+  return `${Object.keys(value as object).length} settings`;
+}
+
 export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: ProductionConfigTabProps) {
   const defaultSettings = blueprint.default_settings as Record<string, any> || {};
   const stylePreset = blueprint.style_preset as Record<string, any> || {};
@@ -71,7 +103,10 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
 
   const styleConfig = STYLE_INTENT_CONFIG[styleIntent] || STYLE_INTENT_CONFIG.cinematic;
 
-  // Derive capabilities from both blueprint defaults AND selected video styles
+  // Fetch full capabilities list from DB
+  const { data: dbCapabilities = [] } = useCastCapabilities();
+
+  // Derive which capabilities are enabled from blueprint defaults + selected styles
   const styleRequiresAvatar = selectedVideoStyles.some((s: any) => 
     s?.avatarProvider || s?.id?.includes('avatar') || s?.label?.toLowerCase()?.includes('avatar')
   );
@@ -85,13 +120,28 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
     s?.id?.includes('lipsync') || styleRequiresAvatar
   );
 
-  const capabilities = {
-    avatar: defaultSettings.avatarEnabled || styleRequiresAvatar,
-    '3d': defaultSettings['3dEnabled'] || styleRequires3D,
+  // Map DB capabilities to enabled state using blueprint defaults + style derivation
+  const capabilityEnabledMap: Record<string, boolean> = {
+    avatar_generation: defaultSettings.avatarEnabled || styleRequiresAvatar,
+    '3d_generation': defaultSettings['3dEnabled'] || styleRequires3D,
     animation: defaultSettings.animationEnabled || styleRequiresAnimation,
-    arVr: defaultSettings.arvrEnabled || false,
-    lipsync: defaultSettings.lipsyncEnabled || styleRequiresLipsync,
+    lip_sync: defaultSettings.lipsyncEnabled || styleRequiresLipsync,
+    video_generation: !!(defaultSettings.videoProvider),
+    image_generation: true, // always available
+    tts: true, // always available
+    voice_cloning: false,
+    translation: true,
+    transcription: false,
   };
+
+  // Also check the capabilities array from default_settings
+  const settingsCapabilities = (defaultSettings.capabilities as string[]) || [];
+  settingsCapabilities.forEach(cap => {
+    const normalizedKey = cap.replace(/-/g, '_').replace('ar_vr', 'ar_vr').replace('text_to_3d', '3d_generation').replace('image_to_3d', '3d_generation');
+    if (normalizedKey in capabilityEnabledMap) {
+      capabilityEnabledMap[normalizedKey] = true;
+    }
+  });
 
   // Extract aspect ratios from platforms
   const aspectRatios = new Set<string>();
@@ -139,7 +189,7 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
         </div>
         <div className="bg-card/50 rounded-lg p-3 border border-border/50 text-center">
           <Zap className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-          <p className="text-lg font-bold">{Object.values(capabilities).filter(Boolean).length}</p>
+          <p className="text-lg font-bold">{Object.values(capabilityEnabledMap).filter(Boolean).length}</p>
           <p className="text-[10px] text-muted-foreground">Capabilities</p>
         </div>
       </div>
@@ -194,34 +244,33 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
         </div>
       </div>
 
-      {/* Capabilities */}
+      {/* Capabilities — Full list from DB */}
       <div>
         <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
           <Sparkles className="h-4 w-4" />
-          Capabilities
+          Capabilities ({dbCapabilities.length})
         </h3>
         <div className="grid grid-cols-5 gap-2">
-          {Object.entries(capabilities).map(([key, enabled]) => (
-            <div
-              key={key}
-              className={cn(
-                "rounded-lg p-3 border text-center transition-colors",
-                enabled 
-                  ? "bg-primary/5 border-primary/30" 
-                  : "bg-muted/20 border-border/30 opacity-50"
-              )}
-            >
-              {key === 'avatar' && <Sparkles className="h-5 w-5 mx-auto mb-1 text-primary" />}
-              {key === '3d' && <Box className="h-5 w-5 mx-auto mb-1 text-primary" />}
-              {key === 'animation' && <Wand2 className="h-5 w-5 mx-auto mb-1 text-primary" />}
-              {key === 'arVr' && <Globe2 className="h-5 w-5 mx-auto mb-1 text-primary" />}
-              {key === 'lipsync' && <Volume2 className="h-5 w-5 mx-auto mb-1 text-primary" />}
-              <p className="text-[10px] font-medium capitalize">{key === 'arVr' ? 'AR/VR' : key === '3d' ? '3D' : key}</p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">
-                {enabled ? '✅ Enabled' : '—'}
-              </p>
-            </div>
-          ))}
+          {dbCapabilities.map((cap) => {
+            const isEnabled = capabilityEnabledMap[cap.value] ?? false;
+            return (
+              <div
+                key={cap.value}
+                className={cn(
+                  "rounded-lg p-3 border text-center transition-colors",
+                  isEnabled 
+                    ? "bg-primary/5 border-primary/30" 
+                    : "bg-muted/20 border-border/30 opacity-50"
+                )}
+              >
+                {CAPABILITY_ICON_MAP[cap.value] || <Sparkles className="h-5 w-5 mx-auto mb-1 text-primary" />}
+                <p className="text-[10px] font-medium">{cap.label}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">
+                  {isEnabled ? '✅ Enabled' : '—'}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -320,8 +369,8 @@ export function ProductionConfigTab({ blueprint, selectedVideoStyles = [] }: Pro
               {Object.entries(defaultSettings).map(([key, value]) => (
                 <div key={key} className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                  <Badge variant="outline" className="text-[10px]">
-                    {typeof value === 'boolean' ? (value ? '✅' : '❌') : String(value)}
+                  <Badge variant="outline" className="text-[10px] max-w-[200px] truncate">
+                    {formatSettingValue(value)}
                   </Badge>
                 </div>
               ))}
