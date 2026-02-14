@@ -63,8 +63,9 @@ import { cn } from '@/lib/utils';
 import { useAIMessaging } from '@/hooks/useAIMessaging';
 import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
 import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/productVersionTrackingService';
+import { PRODUCTION_CONTEXT_TONES, type ProductionCapability } from '@/services/marketing/aiMessagingGeneratorService';
 import { audienceRelevanceService } from '@/services/audienceRelevanceService';
-import { ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Film } from 'lucide-react';
 import { VirtualizedMessagingMatrix } from './genie-cast/VirtualizedMessagingMatrix';
 import { toast } from 'sonner';
 
@@ -73,6 +74,8 @@ interface MessagingGeneratorPanelProps {
   onMessagingApproved?: (productId: string, messaging: any) => void;
   /** Pre-selected product from the top-bar ProductSelector */
   initialProductId?: string;
+  /** Pre-selected production capability from template/asset labs */
+  initialProductionCapability?: ProductionCapability;
 }
 
 // Product color map
@@ -109,6 +112,7 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
   className,
   onMessagingApproved,
   initialProductId,
+  initialProductionCapability,
 }) => {
   const {
     generateMessaging,
@@ -148,7 +152,9 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
   const [selectedAudiences, setSelectedAudiences] = useState<string[]>(['content_creators']);
   const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
   const [messagingType, setMessagingType] = useState<'product' | 'feature' | 'comparison' | 'tutorial'>('product');
-  
+  const [selectedCapability, setSelectedCapability] = useState<ProductionCapability | 'auto'>(
+    initialProductionCapability || 'auto'
+  );
   // Batch generation state
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
@@ -194,6 +200,12 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
     }
   }, [initialProductId, products, generationMode]);
 
+  // Sync production capability from template/asset labs
+  React.useEffect(() => {
+    if (initialProductionCapability) {
+      setSelectedCapability(initialProductionCapability);
+    }
+  }, [initialProductionCapability]);
   // Auto-select all products when mode changes to 'all_products'
   React.useEffect(() => {
     if (generationMode === 'all_products') {
@@ -362,6 +374,7 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
       type: messagingType,
       targetAudience: selectedAudiences,
       competitors: selectedCompetitors,
+      productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
     });
   };
 
@@ -408,6 +421,7 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
           type: messagingType,
           targetAudience: selectedAudiences,
           competitors: selectedCompetitors,
+          productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
         });
 
         // Update with success
@@ -466,6 +480,7 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
           type: 'product',
           targetAudience: [job.audienceId],
           competitors: [],
+          productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
         });
 
         setBatchJobs(prev => prev.map(j => 
@@ -1172,6 +1187,54 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
                 </Card>
 
                 {/* Regional transcreation is handled by the global RegionSelector in the header */}
+
+                {/* Production Context Selector */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Film className="w-3.5 h-3.5" />
+                    Production Context
+                  </Label>
+                  <Select 
+                    value={selectedCapability} 
+                    onValueChange={(v) => setSelectedCapability(v as ProductionCapability | 'auto')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Auto-detect from template" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[100000]">
+                      <SelectItem value="auto">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-3 h-3 text-primary" />
+                          Auto (from template/style)
+                        </div>
+                      </SelectItem>
+                      {Object.entries(PRODUCTION_CONTEXT_TONES).map(([key, config]) => (
+                        <SelectItem key={key} value={key}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs">{config.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground">
+                    {selectedCapability === 'auto' 
+                      ? 'Will adapt tone based on selected template style'
+                      : PRODUCTION_CONTEXT_TONES[selectedCapability as ProductionCapability]?.description || ''
+                    }
+                  </p>
+                  {initialProductionCapability && selectedCapability !== initialProductionCapability && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1 text-primary"
+                      onClick={() => setSelectedCapability(initialProductionCapability)}
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Reset to template default ({PRODUCTION_CONTEXT_TONES[initialProductionCapability]?.name})
+                    </Button>
+                  )}
+                </div>
 
                 {/* Generate Button */}
                 <Button 

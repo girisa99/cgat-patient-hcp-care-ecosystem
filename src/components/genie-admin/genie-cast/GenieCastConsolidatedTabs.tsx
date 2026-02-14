@@ -118,6 +118,7 @@ import { BrandAssetsPanel } from './BrandAssetsPanel';
 import { BlueprintTemplatesGrid } from './BlueprintTemplatesGrid';
 import { WorkflowContextBanner } from './WorkflowContextBanner';
 import { StyleDrivenProductionConfig, deriveProductionRequirements, estimateGenerationTime } from './StyleDrivenProductionConfig';
+import { type ProductionCapability } from '@/services/marketing/aiMessagingGeneratorService';
 import { ScriptPreviewPanel } from './ScriptPreviewPanel';
 import { TranslationTranscreationToggle } from './TranslationTranscreationToggle';
 
@@ -464,6 +465,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const selectedProductId = castSession.session.approvedMessaging?.productId || 
     castSession.session.selectedTemplate?.category || undefined;
 
+  // Derive production capability from template capabilities
+  const derivedProductionCapability = useMemo((): ProductionCapability | undefined => {
+    const caps = castSession.session.selectedTemplate?.capabilities;
+    if (!caps) return undefined;
+    if (caps.avatar || caps.lipsync) return 'avatar_lipsync';
+    if (caps['3d'] || caps.arVr) return '3d_vr';
+    if (caps.animation) return 'motion_graphics';
+    return undefined;
+  }, [castSession.session.selectedTemplate?.capabilities]);
+
   return (
     <div className="space-y-4">
       {/* Compact navigation bar - back to Genie Suite */}
@@ -745,6 +756,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     };
                     return nameToKey[selectedProd.name] || undefined;
                   })()}
+                  initialProductionCapability={derivedProductionCapability}
                   onMessagingApproved={(productId, messaging) => {
                     console.log('[GenieCast] Messaging approved for', productId);
                     if (messaging) {
