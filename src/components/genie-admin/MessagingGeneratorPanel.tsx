@@ -151,8 +151,10 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   
-  // AI suggestions toggle
+  // AI suggestions
   const [showAISuggestions, setShowAISuggestions] = useState(false);
+  const [isLoadingAISuggestions, setIsLoadingAISuggestions] = useState(false);
+  const [aiSuggestedGroups, setAiSuggestedGroups] = useState<{ label: string; ids: string[]; reason: string }[]>([]);
   
   // UI state
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
@@ -196,6 +198,52 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
       setSelectedProducts([selectedProduct]);
     }
   }, [generationMode, selectedProduct]);
+
+  // Generate AI-powered audience suggestions based on context
+  const generateAISuggestions = useCallback(async () => {
+    setIsLoadingAISuggestions(true);
+    try {
+      const productName = products[selectedProduct]?.name || selectedProduct;
+      const competitorNames = selectedCompetitors.map(c => {
+        const found = competitors.find((comp: any) => comp.id === c);
+        return found?.name || c;
+      });
+      const audienceList = targetAudiences.map((a: any) => `${a.id}: ${a.label}`).join(', ');
+      const prompt = `Based on this campaign context, suggest 3-4 target audience groups (each with 2-4 specific audience segments). Product: ${productName}. Campaign Type: ${messagingType}. Competitors: ${competitorNames.length > 0 ? competitorNames.join(', ') : 'N/A'}. Available Audiences: ${audienceList}. Return ONLY valid JSON array like: [{"label":"Group Name","ids":["audience_id_1","audience_id_2"],"reason":"Why this group fits"}]. IMPORTANT: Only use audience IDs from the Available Audiences list.`;
+
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: { action: 'generate_marketing_messaging', provider: 'anthropic', prompt, systemPrompt: 'You are a marketing strategist. Return ONLY a valid JSON array, no markdown fences.' },
+      });
+      if (error) throw error;
+      const content = data?.content || data?.data?.content || '';
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const groups = JSON.parse(jsonMatch[0]);
+        const validGroups = groups.map((g: any) => ({
+          label: g.label,
+          ids: (g.ids || []).filter((id: string) => targetAudiences.some((a: any) => a.id === id)),
+          reason: g.reason || '',
+        })).filter((g: any) => g.ids.length > 0);
+        setAiSuggestedGroups(validGroups);
+      }
+    } catch (err) {
+      console.error('[MessagingGenerator] AI suggestion failed:', err);
+      setAiSuggestedGroups([
+        { label: 'Creator Focus', ids: targetAudiences.slice(0, 3).map((a: any) => a.id), reason: 'Top content creation audiences' },
+        { label: 'Business Focus', ids: targetAudiences.slice(3, 6).map((a: any) => a.id), reason: 'Business decision-makers' },
+      ]);
+    } finally {
+      setIsLoadingAISuggestions(false);
+    }
+  }, [selectedProduct, selectedCompetitors, messagingType, products, competitors, targetAudiences]);
+
+  // Auto-trigger AI suggestions when panel opens
+  useEffect(() => {
+    if (showAISuggestions && aiSuggestedGroups.length === 0) {
+      generateAISuggestions();
+    }
+  }, [showAISuggestions]);
 
   // Get approved messaging for all products
   const approvedByProduct = useMemo(() => {
@@ -883,42 +931,75 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                     </div>
                   </div>
                   
-                  {/* AI Suggestions Panel */}
+                  {/* AI-Powered Suggestions Panel */}
                   {showAISuggestions && (
-                    <Card className="border-primary/20 bg-primary/5 p-3">
-                      <p className="text-xs font-medium flex items-center gap-1.5 mb-2">
-                        <Lightbulb className="w-3.5 h-3.5 text-primary" />
-                        AI Recommended Groups — click to add to selection
-                      </p>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {[
-                          { label: 'Creator Focus', ids: ['content_creators', 'influencers', 'knowledge_sharers'] },
-                          { label: 'Business Focus', ids: ['marketing_teams', 'sales_teams', 'agencies_freelancers'] },
-                          { label: 'Enterprise Focus', ids: ['enterprise_teams', 'product_managers', 'executive_leadership'] },
-                          { label: 'All Audiences', ids: targetAudiences.map(a => a.id) },
-                        ].map(group => {
-                          const allSelected = group.ids.every(id => selectedAudiences.includes(id));
-                          return (
+                    <Card className="border-primary/20 bg-primary/5 p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-medium flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-primary" />
+                          AI Recommended Audiences
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[10px] gap-1"
+                          onClick={() => {
+                            setAiSuggestedGroups([]);
+                            generateAISuggestions();
+                          }}
+                          disabled={isLoadingAISuggestions}
+                        >
+                          <RefreshCw className={cn("w-3 h-3", isLoadingAISuggestions && "animate-spin")} />
+                          {isLoadingAISuggestions ? 'Analyzing...' : 'Refresh'}
+                        </Button>
+                      </div>
+
+                      {isLoadingAISuggestions ? (
+                        <div className="space-y-2">
+                          <Progress value={45} className="h-1" />
+                          <p className="text-[10px] text-muted-foreground">
+                            Analyzing product, competitors & regions for best audience fit...
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {aiSuggestedGroups.map(group => {
+                            const allSelected = group.ids.every(id => selectedAudiences.includes(id));
+                            return (
+                              <div key={group.label} className="flex items-start gap-2">
+                                <Button
+                                  variant={allSelected ? 'default' : 'outline'}
+                                  size="sm"
+                                  className="text-[10px] h-7 shrink-0"
+                                  onClick={() => {
+                                    if (allSelected) {
+                                      setSelectedAudiences(prev => prev.filter(id => !group.ids.includes(id)));
+                                    } else {
+                                      setSelectedAudiences(prev => [...new Set([...prev, ...group.ids])]);
+                                    }
+                                  }}
+                                >
+                                  {allSelected ? '✓ ' : ''}{group.label}
+                                </Button>
+                                <p className="text-[10px] text-muted-foreground pt-1">{group.reason}</p>
+                              </div>
+                            );
+                          })}
+                          {aiSuggestedGroups.length > 0 && (
                             <Button
-                              key={group.label}
-                              variant={allSelected ? 'default' : 'outline'}
+                              variant="outline"
                               size="sm"
-                              className="text-[10px] h-7"
+                              className="text-[10px] h-7 w-full"
                               onClick={() => {
-                                if (allSelected) {
-                                  // Deselect this group
-                                  setSelectedAudiences(prev => prev.filter(id => !group.ids.includes(id)));
-                                } else {
-                                  // Add to existing selection (merge, not replace)
-                                  setSelectedAudiences(prev => [...new Set([...prev, ...group.ids])]);
-                                }
+                                const allIds = aiSuggestedGroups.flatMap(g => g.ids);
+                                setSelectedAudiences(prev => [...new Set([...prev, ...allIds])]);
                               }}
                             >
-                              {allSelected ? '✓ ' : ''}{group.label}
+                              Apply All AI Suggestions
                             </Button>
-                          );
-                        })}
-                      </div>
+                          )}
+                        </div>
+                      )}
                     </Card>
                   )}
                   
