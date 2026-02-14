@@ -23,6 +23,151 @@ export type CreativeAngle =
   | 'provocative_question' 
   | 'industry_specific';
 
+// ============================================================================
+// PRODUCTION CONTEXT TONES — Maps production capability to messaging style
+// ============================================================================
+
+export type ProductionCapability = 
+  | 'avatar_lipsync'
+  | '3d_vr'
+  | 'ppt_slides'
+  | 'motion_graphics'
+  | 'stock_remix'
+  | 'banner_static';
+
+export interface ProductionToneConfig {
+  name: string;
+  description: string;
+  toneDirective: string;
+  scriptConstraints: {
+    maxSentenceLength: number;
+    preferredFormat: string;
+    avoidPatterns: string[];
+  };
+}
+
+export const PRODUCTION_CONTEXT_TONES: Record<ProductionCapability, ProductionToneConfig> = {
+  avatar_lipsync: {
+    name: 'Avatar + Lipsync',
+    description: 'Conversational tone optimized for avatar speech and lip synchronization',
+    toneDirective: `PRODUCTION TONE: AVATAR + LIPSYNC
+- Write as if a real person is speaking directly to camera
+- Use conversational, first-person tone ("I", "you", "we")
+- Sentences MUST be under 15 words for clean lipsync timing
+- Avoid complex compound sentences — use simple subject-verb-object
+- Include natural pauses with "..." and breath marks
+- Use rhetorical questions to create engagement
+- Script should feel like a TED Talk or vlog, not an ad
+- Avoid jargon — use everyday language
+- Add emotional inflection cues: [pause], [emphasis], [smile]`,
+    scriptConstraints: {
+      maxSentenceLength: 15,
+      preferredFormat: 'conversational_monologue',
+      avoidPatterns: ['bullet points', 'numbered lists', 'technical jargon'],
+    },
+  },
+  '3d_vr': {
+    name: '3D / VR',
+    description: 'Immersive, spatial language for 3D environments and VR experiences',
+    toneDirective: `PRODUCTION TONE: 3D / VR IMMERSIVE
+- Write in immersive, spatial language — "step into", "explore", "surround yourself"
+- Use present tense and second person ("you are standing in...")
+- Create a sense of space, depth, and discovery
+- Sentences can be longer and more descriptive for environmental narration
+- Include sensory language: visual, tactile, auditory
+- Reference perspective and movement: "look up", "turn around", "zoom in"
+- Avoid flat/static descriptions — everything should feel dynamic
+- Script should read like a guided experience, not a product demo`,
+    scriptConstraints: {
+      maxSentenceLength: 25,
+      preferredFormat: 'immersive_narration',
+      avoidPatterns: ['click here', 'button', 'link below'],
+    },
+  },
+  ppt_slides: {
+    name: 'PPT / Slides',
+    description: 'Bullet-point friendly, data-heavy, executive presentation tone',
+    toneDirective: `PRODUCTION TONE: PPT / SLIDES
+- Write in concise, executive-friendly language
+- Headlines must be under 8 words — punchy and declarative
+- Use bullet-point-friendly phrases, not paragraphs
+- Include data points, percentages, and metrics prominently
+- Structure for visual hierarchy: Title → Subtitle → 3 Key Points → Takeaway
+- Use "power words" for slides: Impact, Growth, ROI, Transform, Accelerate
+- Avoid long narratives — every word must earn its place
+- CTA should be boardroom-ready: "Let's discuss", "Schedule a deep-dive"
+- Scripts should work as speaker notes beneath slide content`,
+    scriptConstraints: {
+      maxSentenceLength: 12,
+      preferredFormat: 'bullet_executive',
+      avoidPatterns: ['once upon a time', 'imagine if', 'long storytelling'],
+    },
+  },
+  motion_graphics: {
+    name: 'Motion Graphics',
+    description: 'Punchy, rhythmic, action-verb heavy for animated content',
+    toneDirective: `PRODUCTION TONE: MOTION GRAPHICS
+- Write punchy, rhythmic copy that syncs with animated transitions
+- Use strong action verbs: Launch, Build, Scale, Crush, Ignite, Accelerate
+- Sentences should be 5-10 words MAX — one idea per frame
+- Create a musical cadence: short-short-LONG, short-short-LONG
+- Use parallel structure for visual consistency
+- Include kinetic language: "zoom", "snap", "transform", "reveal"
+- Headlines should work as standalone text-on-screen moments
+- Think of each line as a motion keyframe — impactful and self-contained
+- Avoid complex sentences — each phrase should POP on screen`,
+    scriptConstraints: {
+      maxSentenceLength: 10,
+      preferredFormat: 'kinetic_text',
+      avoidPatterns: ['paragraphs', 'complex sentences', 'passive voice'],
+    },
+  },
+  stock_remix: {
+    name: 'Stock Remix',
+    description: 'Narrative voiceover style for stock footage with music overlay',
+    toneDirective: `PRODUCTION TONE: STOCK REMIX / VOICEOVER
+- Write as a narrative voiceover accompanying cinematic stock footage
+- Use storytelling arc: Setup → Tension → Resolution → Inspiration
+- Pacing should complement visual cuts — vary sentence length
+- Include emotional beats that align with music cues
+- Use universal, aspirational language that works with diverse footage
+- Avoid product-specific visuals references — let footage tell the visual story
+- Script should work even if the viewer only HEARS it (podcast-friendly)
+- Add [MUSIC SWELL], [CUT], [MONTAGE] cues for editing alignment
+- Closing should leave a lasting emotional impression`,
+    scriptConstraints: {
+      maxSentenceLength: 20,
+      preferredFormat: 'narrative_voiceover',
+      avoidPatterns: ['click', 'screenshot', 'UI reference'],
+    },
+  },
+  banner_static: {
+    name: 'Banner / Static',
+    description: 'Ultra-concise headline + subline for static image banners',
+    toneDirective: `PRODUCTION TONE: BANNER / STATIC IMAGE
+- Ultra-concise: Headline MAX 6 words, Subline MAX 12 words
+- Every character must earn its place — ruthless editing
+- Write for INSTANT comprehension — 2-second scan time
+- Use high-contrast language: "Not X. Y." or "Stop X. Start Y."
+- CTA must be 2-3 words: "Try Free", "Start Now", "Get Started"
+- Headlines should create curiosity gap or bold claim
+- Avoid articles (a, an, the) where possible
+- Think billboard on a highway — if they can't read it at 60mph, it's too long
+- For multi-banner sets, create connected narrative across banners`,
+    scriptConstraints: {
+      maxSentenceLength: 6,
+      preferredFormat: 'ultra_concise_headline',
+      avoidPatterns: ['long descriptions', 'complex ideas', 'multiple clauses'],
+    },
+  },
+};
+
+/** Get production tone config, returns null if no context specified */
+export function getProductionTone(capability?: ProductionCapability): ProductionToneConfig | null {
+  if (!capability) return null;
+  return PRODUCTION_CONTEXT_TONES[capability] || null;
+}
+
 export const CREATIVE_ANGLES: Record<CreativeAngle, {
   name: string;
   description: string;
@@ -114,6 +259,7 @@ export interface MessagingRequest {
   variantCount?: number; // 1-6 variants
   regionCode?: string;  // For zone-based LLM routing
   creativeAngle?: CreativeAngle; // Auto-assigned per variant
+  productionCapability?: ProductionCapability; // Production context tone
   status: 'pending' | 'generating' | 'pending_approval' | 'approved' | 'rejected';
   generatedAt?: Date;
   approvedAt?: Date;
@@ -160,6 +306,7 @@ export interface GeneratedMessaging {
   version: number;
   isApproved: boolean;
   creativeAngle?: CreativeAngle;
+  productionCapability?: ProductionCapability;
   variantIndex?: number;
 }
 
@@ -450,6 +597,7 @@ class AIMessagingGeneratorService {
       variantCount?: number;
       regionCode?: string;
       creativeAngle?: CreativeAngle;
+      productionCapability?: ProductionCapability;
     }
   ): MessagingRequest {
     const id = `msg_${productId}_${Date.now()}`;
@@ -465,6 +613,7 @@ class AIMessagingGeneratorService {
       variantCount: options.variantCount || 1,
       regionCode: options.regionCode,
       creativeAngle: options.creativeAngle,
+      productionCapability: options.productionCapability,
       status: 'pending',
     };
 
@@ -620,6 +769,11 @@ ${isEcosystemProduct
 - Leverage current industry trends for timely relevance
 - All output must feel like it was crafted by a Cannes Lions-winning creative director
 ${request.creativeAngle ? `\n=== CREATIVE ANGLE (MUST FOLLOW) ===\n${CREATIVE_ANGLES[request.creativeAngle].promptDirective}\n` : ''}
+${(() => {
+  const tone = getProductionTone(request.productionCapability);
+  if (!tone) return '';
+  return `\n=== PRODUCTION CONTEXT TONE (MUST ADAPT ALL OUTPUT TO THIS FORMAT) ===\n${tone.toneDirective}\n\nSCRIPT CONSTRAINTS:\n- Max sentence length: ${tone.scriptConstraints.maxSentenceLength} words\n- Preferred format: ${tone.scriptConstraints.preferredFormat}\n- AVOID: ${tone.scriptConstraints.avoidPatterns.join(', ')}\n`;
+})()}
 Generate the following in JSON format:
 {
   "headline": "Compelling headline under 60 chars specific to ${p.name}",
@@ -707,6 +861,7 @@ Generate the following in JSON format:
       competitors?: string[];
       variantCount: number;
       regionCode?: string;
+      productionCapability?: ProductionCapability;
     }
   ): Promise<GeneratedMessaging[]> {
     const count = Math.max(1, Math.min(6, options.variantCount));
@@ -722,11 +877,13 @@ Generate the following in JSON format:
         ...options,
         creativeAngle: angles[i],
         regionCode: options.regionCode,
+        productionCapability: options.productionCapability,
       });
       
       try {
         const messaging = await this.generateMessaging(request.id);
         messaging.creativeAngle = angles[i];
+        messaging.productionCapability = options.productionCapability;
         messaging.variantIndex = i + 1;
         results.push(messaging);
       } catch (error) {
