@@ -41,6 +41,7 @@ interface UseAIMessagingReturn {
       regionCode?: string;
       subRegionCode?: string;
       productionCapability?: ProductionCapability;
+      secondaryProductionCapability?: ProductionCapability;
       isEnglishBase?: boolean;
       parentMessagingId?: string;
       routingZone?: string;
@@ -60,6 +61,7 @@ interface UseAIMessagingReturn {
       regionCode?: string;
       subRegionCode?: string;
       productionCapability?: ProductionCapability;
+      secondaryProductionCapability?: ProductionCapability;
       isEnglishBase?: boolean;
       parentMessagingId?: string;
       routingZone?: string;
@@ -161,6 +163,7 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
       regionCode?: string;
       subRegionCode?: string;
       productionCapability?: ProductionCapability;
+      secondaryProductionCapability?: ProductionCapability;
       isEnglishBase?: boolean;
       parentMessagingId?: string;
       routingZone?: string;

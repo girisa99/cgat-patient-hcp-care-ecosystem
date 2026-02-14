@@ -5,6 +5,39 @@
 
 import type { ShowType, ProductionStage, ShowWithParticipants, ShowAsset, ShowParticipant } from './shows';
 import type { ScriptMode } from './projects';
+import type { ProductionCapability } from '@/services/marketing/aiMessagingGeneratorService';
+
+/**
+ * Maps ShowType to default ProductionCapability for auto-deriving context
+ */
+export const SHOW_TYPE_TO_PRODUCTION_CAPABILITY: Partial<Record<ShowType, { primary: ProductionCapability; secondary?: ProductionCapability }>> = {
+  // Media Productions
+  podcast: { primary: 'stock_remix', secondary: 'avatar_lipsync' },
+  webcast: { primary: 'avatar_lipsync', secondary: 'ppt_slides' },
+  interview: { primary: 'avatar_lipsync', secondary: 'stock_remix' },
+  panel: { primary: 'avatar_lipsync', secondary: 'stock_remix' },
+  tutorial: { primary: 'avatar_lipsync', secondary: 'motion_graphics' },
+  broadcast: { primary: 'stock_remix', secondary: 'motion_graphics' },
+  // Business Meetings
+  discovery_call: { primary: 'avatar_lipsync' },
+  sales_meeting: { primary: 'ppt_slides', secondary: 'avatar_lipsync' },
+  project_kickoff: { primary: 'ppt_slides' },
+  status_update: { primary: 'ppt_slides' },
+  consultation: { primary: 'avatar_lipsync' },
+  // Events
+  workshop: { primary: 'ppt_slides', secondary: 'motion_graphics' },
+  webinar: { primary: 'ppt_slides', secondary: 'avatar_lipsync' },
+  conference: { primary: 'ppt_slides', secondary: 'motion_graphics' },
+  training_session: { primary: 'avatar_lipsync', secondary: 'ppt_slides' },
+  // Genie Studio Demos
+  genie_studio_full: { primary: 'motion_graphics', secondary: 'avatar_lipsync' },
+  genie_spark_demo: { primary: 'motion_graphics', secondary: 'banner_static' },
+  genie_arc_demo: { primary: 'motion_graphics' },
+  genie_mind_demo: { primary: 'avatar_lipsync', secondary: 'stock_remix' },
+  genie_vibe_demo: { primary: 'motion_graphics', secondary: '3d_vr' },
+  genie_suite_overview: { primary: 'motion_graphics', secondary: 'ppt_slides' },
+  other: { primary: 'stock_remix' },
+};
 
 /**
  * Maps ShowType to ScriptMode for unified configuration

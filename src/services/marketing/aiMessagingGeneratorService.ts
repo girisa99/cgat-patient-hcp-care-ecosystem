@@ -260,7 +260,8 @@ export interface MessagingRequest {
   regionCode?: string;  // For zone-based LLM routing
   subRegionCode?: string; // Sub-region from hierarchy (e.g., INDIA_NORTH)
   creativeAngle?: CreativeAngle; // Auto-assigned per variant
-  productionCapability?: ProductionCapability; // Production context tone
+  productionCapability?: ProductionCapability; // Primary production context tone
+  secondaryProductionCapability?: ProductionCapability; // Secondary context (subtle constraints)
   isEnglishBase?: boolean; // true = English master, false = regional child
   parentMessagingId?: string; // FK to English master entry
   routingZone?: string; // LLM/TTS routing zone
@@ -760,6 +761,7 @@ class AIMessagingGeneratorService {
       subRegionCode?: string;
       creativeAngle?: CreativeAngle;
       productionCapability?: ProductionCapability;
+      secondaryProductionCapability?: ProductionCapability;
       isEnglishBase?: boolean;
       parentMessagingId?: string;
       routingZone?: string;
@@ -780,6 +782,7 @@ class AIMessagingGeneratorService {
       subRegionCode: options.subRegionCode,
       creativeAngle: options.creativeAngle,
       productionCapability: options.productionCapability,
+      secondaryProductionCapability: options.secondaryProductionCapability,
       isEnglishBase: options.isEnglishBase ?? true,
       parentMessagingId: options.parentMessagingId,
       routingZone: options.routingZone,
@@ -939,9 +942,18 @@ ${isEcosystemProduct
 - All output must feel like it was crafted by a Cannes Lions-winning creative director
 ${request.creativeAngle ? `\n=== CREATIVE ANGLE (MUST FOLLOW) ===\n${CREATIVE_ANGLES[request.creativeAngle].promptDirective}\n` : ''}
 ${(() => {
-  const tone = getProductionTone(request.productionCapability);
-  if (!tone) return '';
-  return `\n=== PRODUCTION CONTEXT TONE (MUST ADAPT ALL OUTPUT TO THIS FORMAT) ===\n${tone.toneDirective}\n\nSCRIPT CONSTRAINTS:\n- Max sentence length: ${tone.scriptConstraints.maxSentenceLength} words\n- Preferred format: ${tone.scriptConstraints.preferredFormat}\n- AVOID: ${tone.scriptConstraints.avoidPatterns.join(', ')}\n`;
+  const primaryTone = getProductionTone(request.productionCapability);
+  const secondaryTone = getProductionTone(request.secondaryProductionCapability);
+  if (!primaryTone && !secondaryTone) return '';
+  
+  let block = '';
+  if (primaryTone) {
+    block += `\n=== PRIMARY PRODUCTION CONTEXT TONE (MUST ADAPT ALL OUTPUT TO THIS FORMAT) ===\n${primaryTone.toneDirective}\n\nSCRIPT CONSTRAINTS:\n- Max sentence length: ${primaryTone.scriptConstraints.maxSentenceLength} words\n- Preferred format: ${primaryTone.scriptConstraints.preferredFormat}\n- AVOID: ${primaryTone.scriptConstraints.avoidPatterns.join(', ')}\n`;
+  }
+  if (secondaryTone && secondaryTone !== primaryTone) {
+    block += `\n=== SECONDARY PRODUCTION CONTEXT (apply subtle influence, do NOT override primary) ===\nSecondary format: ${secondaryTone.name}\n- Also consider: ${secondaryTone.scriptConstraints.preferredFormat} readability\n- Secondary max sentence length: ${secondaryTone.scriptConstraints.maxSentenceLength} words (use as soft guide)\n- The output should PRIMARILY follow the primary tone above, but be adaptable enough to work in ${secondaryTone.name} format with minor edits.\n`;
+  }
+  return block;
 })()}
 Generate the following in JSON format:
 {
