@@ -79,6 +79,7 @@ export const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'MENA_LEVANT', name: 'Levant (Lebanon, Jordan, Iraq)', flag: '🇱🇧' },
       { code: 'MENA_MAGHREB', name: 'Maghreb (Morocco, Algeria, Tunisia)', flag: '🇲🇦' },
       { code: 'MENA_MSA', name: 'Pan-Arab (Modern Standard Arabic)', flag: '🕌' },
+      { code: 'MENA_ISRAEL', name: 'Israel (עברית)', flag: '🇮🇱' },
     ],
   },
   {
