@@ -505,18 +505,18 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
     toast.success(`Matrix generation complete: ${successCount}/${jobs.length} combinations`);
   };
 
-  const handleApprove = (requestId: string) => {
-    approveMessaging(requestId, 'admin');
+  const handleApprove = async (requestId: string) => {
+    await approveMessaging(requestId, 'admin');
     const pending = pendingApprovals.find(p => p.id === requestId);
     if (pending && onMessagingApproved) {
       onMessagingApproved(pending.productId, latestMessaging);
     }
   };
 
-  const handleApproveAll = () => {
-    pendingApprovals.forEach(pending => {
-      approveMessaging(pending.id, 'admin');
-    });
+  const handleApproveAll = async () => {
+    for (const pending of pendingApprovals) {
+      await approveMessaging(pending.id, 'admin');
+    }
     toast.success(`Approved ${pendingApprovals.length} messaging items`);
   };
 

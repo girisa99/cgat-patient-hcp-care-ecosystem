@@ -5,7 +5,7 @@
  * with approval workflow integration and multi-variant support.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   aiMessagingGeneratorService,
   type MessagingRequest,
@@ -61,8 +61,8 @@ interface UseAIMessagingReturn {
   /** Get pending approval requests */
   pendingApprovals: MessagingRequest[];
   
-  /** Approve messaging */
-  approveMessaging: (requestId: string, approvedBy: string) => void;
+  /** Approve messaging (persists to database) */
+  approveMessaging: (requestId: string, approvedBy: string) => Promise<void>;
   
   /** Reject messaging */
   rejectMessaging: (requestId: string, reason: string) => void;
@@ -114,6 +114,17 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
   const [pendingApprovals, setPendingApprovals] = useState<MessagingRequest[]>(
     aiMessagingGeneratorService.getPendingApprovals()
   );
+
+  // Load persisted messaging from DB on mount
+  useEffect(() => {
+    aiMessagingGeneratorService.loadPersistedMessaging().then(loaded => {
+      if (loaded.length > 0 && !latestMessaging) {
+        setLatestMessaging(loaded[0]);
+        setLatestVariants(loaded);
+        console.log(`[useAIMessaging] Loaded ${loaded.length} persisted messaging entries`);
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshPendingApprovals = useCallback(() => {
     setPendingApprovals(aiMessagingGeneratorService.getPendingApprovals());
@@ -214,12 +225,12 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
     }
   }, [showNotifications, refreshPendingApprovals]);
 
-  // Approve messaging
-  const approveMessaging = useCallback((requestId: string, approvedBy: string) => {
+  // Approve messaging (now async - persists to DB)
+  const approveMessaging = useCallback(async (requestId: string, approvedBy: string) => {
     try {
-      aiMessagingGeneratorService.approveMessaging(requestId, approvedBy);
+      await aiMessagingGeneratorService.approveMessaging(requestId, approvedBy);
       refreshPendingApprovals();
-      if (showNotifications) toast.success('Messaging approved!');
+      if (showNotifications) toast.success('Messaging approved & saved!');
     } catch (error) {
       console.error('[useAIMessaging] Approval failed:', error);
       if (showNotifications) toast.error('Failed to approve messaging');

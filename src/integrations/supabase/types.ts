@@ -6905,33 +6905,57 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audience_segment: string
+          benefits: string[] | null
+          closing_line: string | null
+          confidence: number | null
           created_at: string
+          creative_angle: string | null
+          cta: string | null
+          cta_secondary: string | null
           ctas: string[] | null
           differentiators: string[] | null
+          feature_id: string | null
           four_es_evangelism: string | null
           four_es_everyplace: string | null
           four_es_exchange: string | null
           four_es_experience: string | null
           framework_type: string
+          generated_by: string | null
           guide_positioning: string | null
+          hashtags: string[] | null
+          headline: string | null
           hero_narrative: string | null
+          hook: string | null
           hooks: string[] | null
           id: string
           is_approved: boolean | null
           jtbd_job_statement: string | null
           jtbd_outcome_metrics: string[] | null
+          keywords: string[] | null
           language_code: string | null
+          long_script: string | null
+          medium_script: string | null
           messaging_tier: string
+          meta_description: string | null
+          opening_line: string | null
           pain_points: string[] | null
           product_id: string | null
+          production_capability: string | null
+          request_id: string | null
+          short_script: string | null
           storybrand_character: string | null
           storybrand_failure: string | null
           storybrand_guide: string | null
           storybrand_plan: string | null
           storybrand_problem: string | null
           storybrand_success: string | null
+          sub_hook: string | null
+          transition_phrases: string[] | null
           updated_at: string
+          user_id: string | null
+          value_proposition: string | null
           value_propositions: string[] | null
+          version: number | null
         }
         Insert: {
           aida_action?: string | null
@@ -6941,33 +6965,57 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audience_segment: string
+          benefits?: string[] | null
+          closing_line?: string | null
+          confidence?: number | null
           created_at?: string
+          creative_angle?: string | null
+          cta?: string | null
+          cta_secondary?: string | null
           ctas?: string[] | null
           differentiators?: string[] | null
+          feature_id?: string | null
           four_es_evangelism?: string | null
           four_es_everyplace?: string | null
           four_es_exchange?: string | null
           four_es_experience?: string | null
           framework_type?: string
+          generated_by?: string | null
           guide_positioning?: string | null
+          hashtags?: string[] | null
+          headline?: string | null
           hero_narrative?: string | null
+          hook?: string | null
           hooks?: string[] | null
           id?: string
           is_approved?: boolean | null
           jtbd_job_statement?: string | null
           jtbd_outcome_metrics?: string[] | null
+          keywords?: string[] | null
           language_code?: string | null
+          long_script?: string | null
+          medium_script?: string | null
           messaging_tier?: string
+          meta_description?: string | null
+          opening_line?: string | null
           pain_points?: string[] | null
           product_id?: string | null
+          production_capability?: string | null
+          request_id?: string | null
+          short_script?: string | null
           storybrand_character?: string | null
           storybrand_failure?: string | null
           storybrand_guide?: string | null
           storybrand_plan?: string | null
           storybrand_problem?: string | null
           storybrand_success?: string | null
+          sub_hook?: string | null
+          transition_phrases?: string[] | null
           updated_at?: string
+          user_id?: string | null
+          value_proposition?: string | null
           value_propositions?: string[] | null
+          version?: number | null
         }
         Update: {
           aida_action?: string | null
@@ -6977,33 +7025,57 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audience_segment?: string
+          benefits?: string[] | null
+          closing_line?: string | null
+          confidence?: number | null
           created_at?: string
+          creative_angle?: string | null
+          cta?: string | null
+          cta_secondary?: string | null
           ctas?: string[] | null
           differentiators?: string[] | null
+          feature_id?: string | null
           four_es_evangelism?: string | null
           four_es_everyplace?: string | null
           four_es_exchange?: string | null
           four_es_experience?: string | null
           framework_type?: string
+          generated_by?: string | null
           guide_positioning?: string | null
+          hashtags?: string[] | null
+          headline?: string | null
           hero_narrative?: string | null
+          hook?: string | null
           hooks?: string[] | null
           id?: string
           is_approved?: boolean | null
           jtbd_job_statement?: string | null
           jtbd_outcome_metrics?: string[] | null
+          keywords?: string[] | null
           language_code?: string | null
+          long_script?: string | null
+          medium_script?: string | null
           messaging_tier?: string
+          meta_description?: string | null
+          opening_line?: string | null
           pain_points?: string[] | null
           product_id?: string | null
+          production_capability?: string | null
+          request_id?: string | null
+          short_script?: string | null
           storybrand_character?: string | null
           storybrand_failure?: string | null
           storybrand_guide?: string | null
           storybrand_plan?: string | null
           storybrand_problem?: string | null
           storybrand_success?: string | null
+          sub_hook?: string | null
+          transition_phrases?: string[] | null
           updated_at?: string
+          user_id?: string | null
+          value_proposition?: string | null
           value_propositions?: string[] | null
+          version?: number | null
         }
         Relationships: []
       }
