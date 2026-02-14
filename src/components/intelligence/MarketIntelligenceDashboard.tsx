@@ -4,12 +4,68 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useCompetitiveIntelligence } from '@/hooks/useCompetitiveIntelligence';
 import { COMPETITOR_CATEGORIES } from '@/services/competitiveIntelligenceService';
 import {
   Target, TrendingUp, Shield, Zap, Brain, Globe, BarChart3,
-  AlertTriangle, CheckCircle, ExternalLink, Loader2, Search
+  AlertTriangle, CheckCircle, ExternalLink, Loader2, Search, MapPin
 } from 'lucide-react';
+
+// ============================================================================
+// REGION HIERARCHY (mirrors platform's 15 parent → 62+ sub-regions)
+// ============================================================================
+
+const REGION_HIERARCHY: Record<string, { label: string; subRegions: { id: string; label: string }[] }> = {
+  global: { label: '🌍 Global', subRegions: [] },
+  north_america: { label: '🇺🇸 North America', subRegions: [
+    { id: 'us', label: 'United States' }, { id: 'canada', label: 'Canada' }, { id: 'mexico', label: 'Mexico' },
+  ]},
+  europe: { label: '🇪🇺 Europe', subRegions: [
+    { id: 'uk', label: 'UK' }, { id: 'germany', label: 'Germany' }, { id: 'france', label: 'France' },
+    { id: 'spain', label: 'Spain' }, { id: 'italy', label: 'Italy' }, { id: 'nordics', label: 'Nordics' },
+    { id: 'benelux', label: 'Benelux' }, { id: 'eastern_europe', label: 'Eastern Europe' },
+  ]},
+  mena: { label: '🕌 MENA', subRegions: [
+    { id: 'uae', label: 'UAE' }, { id: 'saudi', label: 'Saudi Arabia' }, { id: 'egypt', label: 'Egypt' },
+    { id: 'qatar', label: 'Qatar' }, { id: 'kuwait', label: 'Kuwait' }, { id: 'morocco', label: 'Morocco' },
+  ]},
+  india: { label: '🇮🇳 India', subRegions: [
+    { id: 'north_india', label: 'North India' }, { id: 'south_india', label: 'South India' },
+    { id: 'east_india', label: 'East India' }, { id: 'west_india', label: 'West India' },
+    { id: 'pan_india', label: 'Pan-India' },
+  ]},
+  sea: { label: '🌏 Southeast Asia', subRegions: [
+    { id: 'singapore', label: 'Singapore' }, { id: 'malaysia', label: 'Malaysia' },
+    { id: 'indonesia', label: 'Indonesia' }, { id: 'thailand', label: 'Thailand' },
+    { id: 'philippines', label: 'Philippines' }, { id: 'vietnam', label: 'Vietnam' },
+  ]},
+  cjk: { label: '🇯🇵 CJK', subRegions: [
+    { id: 'japan', label: 'Japan' }, { id: 'korea', label: 'Korea' },
+    { id: 'china', label: 'China' }, { id: 'hong_kong', label: 'Hong Kong' }, { id: 'taiwan', label: 'Taiwan' },
+  ]},
+  latam: { label: '🌎 LATAM', subRegions: [
+    { id: 'brazil', label: 'Brazil' }, { id: 'argentina', label: 'Argentina' },
+    { id: 'colombia', label: 'Colombia' }, { id: 'chile', label: 'Chile' },
+  ]},
+  africa: { label: '🌍 Africa', subRegions: [
+    { id: 'south_africa', label: 'South Africa' }, { id: 'nigeria', label: 'Nigeria' },
+    { id: 'kenya', label: 'Kenya' }, { id: 'ghana', label: 'Ghana' },
+  ]},
+  oceania: { label: '🇦🇺 Oceania', subRegions: [
+    { id: 'australia', label: 'Australia' }, { id: 'new_zealand', label: 'New Zealand' },
+  ]},
+  central_asia: { label: '🏔️ Central Asia', subRegions: [
+    { id: 'turkey', label: 'Turkey' }, { id: 'pakistan', label: 'Pakistan' },
+    { id: 'bangladesh', label: 'Bangladesh' }, { id: 'kazakhstan', label: 'Kazakhstan' },
+  ]},
+};
 
 const ANALYSIS_TYPES = [
   { id: 'positioning', label: 'Positioning Strategy', icon: Target },
@@ -24,15 +80,64 @@ export const MarketIntelligenceDashboard: React.FC = () => {
   const { competitors, featureMatrix, usps, trends, analyses, stats, isLoading, runAnalysis } = useCompetitiveIntelligence();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedRegion, setSelectedRegion] = useState('global');
+  const [selectedSubRegion, setSelectedSubRegion] = useState<string | null>(null);
 
   const filteredCompetitors = selectedCategory
     ? competitors.filter(c => c.category === selectedCategory)
     : competitors;
 
   const differentiators = featureMatrix.filter(f => f.is_differentiator);
+  const currentRegionData = REGION_HIERARCHY[selectedRegion];
+
+  const handleRunAnalysis = (typeId: string) => {
+    runAnalysis.mutate({
+      type: typeId,
+      scope: selectedRegion,
+      filter: selectedSubRegion || undefined,
+    });
+  };
 
   return (
     <div className="space-y-6">
+      {/* Region Selector */}
+      <Card className="border-border">
+        <CardContent className="py-3 px-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Analysis Scope:</span>
+            </div>
+            <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setSelectedSubRegion(null); }}>
+              <SelectTrigger className="w-[200px] text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(REGION_HIERARCHY).map(([key, val]) => (
+                  <SelectItem key={key} value={key}>{val.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {currentRegionData?.subRegions.length > 0 && (
+              <Select value={selectedSubRegion || 'all'} onValueChange={(v) => setSelectedSubRegion(v === 'all' ? null : v)}>
+                <SelectTrigger className="w-[180px] text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sub-Regions</SelectItem>
+                  {currentRegionData.subRegions.map(sr => (
+                    <SelectItem key={sr.id} value={sr.id}>{sr.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Badge variant="outline" className="text-[10px]">
+              {selectedRegion === 'global' ? 'Global Analysis' : `${currentRegionData?.label}${selectedSubRegion ? ` → ${currentRegionData?.subRegions.find(s => s.id === selectedSubRegion)?.label}` : ''}`}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Header Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard icon={<Globe className="h-4 w-4" />} label="Competitors Tracked" value={stats?.totalCompetitors || 0} />
@@ -50,7 +155,7 @@ export const MarketIntelligenceDashboard: React.FC = () => {
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
 
-        {/* ── Competitors Tab ─────────────────────────────────── */}
+        {/* ── Competitors Tab */}
         <TabsContent value="overview" className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Badge
@@ -117,7 +222,7 @@ export const MarketIntelligenceDashboard: React.FC = () => {
           </ScrollArea>
         </TabsContent>
 
-        {/* ── Feature Matrix Tab ──────────────────────────────── */}
+        {/* ── Feature Matrix Tab */}
         <TabsContent value="matrix" className="space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="h-4 w-4 text-primary" />
@@ -145,7 +250,7 @@ export const MarketIntelligenceDashboard: React.FC = () => {
                           <span className="text-[10px] text-muted-foreground">{feat.genie_product}</span>
                           <div className="flex gap-1 ml-auto">
                             {Object.entries(feat.competitor_scores || {}).slice(0, 4).map(([name, score]) => (
-              <Badge key={name} variant="outline" className={`text-[8px] py-0 ${score === 'none' ? 'text-destructive' : score === 'partial' ? 'text-muted-foreground' : 'text-primary'}`}>
+                              <Badge key={name} variant="outline" className={`text-[8px] py-0 ${score === 'none' ? 'text-destructive' : score === 'partial' ? 'text-muted-foreground' : 'text-primary'}`}>
                                 {name}: {score as string}
                               </Badge>
                             ))}
@@ -164,7 +269,7 @@ export const MarketIntelligenceDashboard: React.FC = () => {
           </ScrollArea>
         </TabsContent>
 
-        {/* ── USPs Tab ────────────────────────────────────────── */}
+        {/* ── USPs Tab */}
         <TabsContent value="usps" className="space-y-4">
           <ScrollArea className="h-[500px]">
             <div className="space-y-3">
@@ -215,7 +320,7 @@ export const MarketIntelligenceDashboard: React.FC = () => {
           </ScrollArea>
         </TabsContent>
 
-        {/* ── AI Analysis Tab ─────────────────────────────────── */}
+        {/* ── AI Analysis Tab */}
         <TabsContent value="analysis" className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {ANALYSIS_TYPES.map(type => (
@@ -223,7 +328,7 @@ export const MarketIntelligenceDashboard: React.FC = () => {
                 key={type.id}
                 size="sm"
                 variant="outline"
-                onClick={() => runAnalysis.mutate({ type: type.id, scope: 'global' })}
+                onClick={() => handleRunAnalysis(type.id)}
                 disabled={runAnalysis.isPending}
                 className="text-xs"
               >
@@ -243,6 +348,12 @@ export const MarketIntelligenceDashboard: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[9px]">{analysis.analysis_type}</Badge>
                         <Badge variant="secondary" className="text-[9px]">{analysis.model_used}</Badge>
+                        {analysis.scope && analysis.scope !== 'global' && (
+                          <Badge variant="default" className="text-[9px]">
+                            <MapPin className="h-2 w-2 mr-0.5" />
+                            {analysis.scope}{analysis.scope_filter ? ` → ${analysis.scope_filter}` : ''}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
@@ -279,14 +390,14 @@ export const MarketIntelligenceDashboard: React.FC = () => {
               {analyses.length === 0 && (
                 <div className="text-center py-10 text-muted-foreground">
                   <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No analyses yet. Click a button above to generate AI market analysis.</p>
+                  <p className="text-sm">No analyses yet. Select a region and click a button above to generate AI market analysis.</p>
                 </div>
               )}
             </div>
           </ScrollArea>
         </TabsContent>
 
-        {/* ── Trends Tab ──────────────────────────────────────── */}
+        {/* ── Trends Tab */}
         <TabsContent value="trends" className="space-y-4">
           <ScrollArea className="h-[500px]">
             <div className="space-y-2">
@@ -322,8 +433,7 @@ export const MarketIntelligenceDashboard: React.FC = () => {
   );
 };
 
-// ── Stat Card ──────────────────────────────────────────────────────────
-
+// ── Stat Card
 const StatCard: React.FC<{
   icon: React.ReactNode;
   label: string;
