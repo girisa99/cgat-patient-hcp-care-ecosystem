@@ -78,6 +78,9 @@ interface UseAIMessagingReturn {
   /** Get approved messaging for product/feature */
   getApprovedMessaging: (productId: string, featureId?: string) => GeneratedMessaging | null;
   
+  /** Get generated messaging by request ID */
+  getMessagingForRequest: (requestId: string) => GeneratedMessaging | null;
+  
   /** Generate battle card vs competitor */
   generateBattleCard: (productId: GenieProductId, competitorId: string) => CompetitorAnalysis | null;
   
@@ -268,6 +271,10 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
     return aiMessagingGeneratorService.getApprovedMessaging(productId, featureId);
   }, []);
 
+  const getMessagingForRequest = useCallback((requestId: string) => {
+    return aiMessagingGeneratorService.getMessaging(requestId);
+  }, []);
+
   const generateBattleCard = useCallback((productId: GenieProductId, competitorId: string) => {
     return aiMessagingGeneratorService.generateBattleCard(productId, competitorId);
   }, []);
@@ -279,6 +286,7 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
     approveMessaging,
     rejectMessaging,
     getApprovedMessaging,
+    getMessagingForRequest,
     generateBattleCard,
     targetAudiences: TARGET_AUDIENCES,
     competitors: COMPETITOR_DATABASE,

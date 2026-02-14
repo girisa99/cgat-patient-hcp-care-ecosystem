@@ -121,6 +121,7 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
     approveMessaging,
     rejectMessaging,
     getApprovedMessaging,
+    getMessagingForRequest,
     targetAudiences,
     competitors,
     frameworks,
@@ -1449,28 +1450,31 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
         {/* Pending Approval Tab */}
         <TabsContent value="pending" className="space-y-6 mt-6">
           <MessagingDataTable
-            entries={pendingApprovals.map(request => ({
-              id: request.id,
-              productId: request.productId,
-              audienceId: request.targetAudience?.[0] || 'general',
-              audienceLabel: request.targetAudience?.map((id: string) => {
-                const aud = targetAudiences.find((a: any) => a.id === id);
-                return aud?.label || id;
-              }).join(', ') || 'General',
-              regionCode: 'en_master',
-              regionLabel: 'English Master',
-              status: 'pending' as MessagingStatus,
-              currentVersion: 1,
-              versions: [{
-                version: 1,
-                messaging: latestMessaging?.requestId === request.id ? latestMessaging : null,
+            entries={pendingApprovals.map(request => {
+              const reqMsg = getMessagingForRequest(request.id) || (latestMessaging?.requestId === request.id ? latestMessaging : null);
+              return {
+                id: request.id,
+                productId: request.productId,
+                audienceId: request.targetAudience?.[0] || 'general',
+                audienceLabel: request.targetAudience?.map((id: string) => {
+                  const aud = targetAudiences.find((a: any) => a.id === id);
+                  return aud?.label || id;
+                }).join(', ') || 'General',
+                regionCode: 'en_master',
+                regionLabel: 'English Master',
                 status: 'pending' as MessagingStatus,
+                currentVersion: 1,
+                versions: [{
+                  version: 1,
+                  messaging: reqMsg,
+                  status: 'pending' as MessagingStatus,
+                  createdAt: request.generatedAt?.toISOString?.() || new Date().toISOString(),
+                }],
+                messaging: reqMsg || undefined,
                 createdAt: request.generatedAt?.toISOString?.() || new Date().toISOString(),
-              }],
-              messaging: latestMessaging?.requestId === request.id ? latestMessaging : undefined,
-              createdAt: request.generatedAt?.toISOString?.() || new Date().toISOString(),
-              requestId: request.id,
-            }))}
+                requestId: request.id,
+              };
+            })}
             onApprove={(_, requestId) => {
               if (requestId) handleApprove(requestId);
             }}
