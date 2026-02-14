@@ -4356,6 +4356,71 @@ export type Database = {
         }
         Relationships: []
       }
+      competitor_landscape: {
+        Row: {
+          battle_card: string | null
+          competitor_category: string
+          competitor_name: string
+          competitor_weakness: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_system_default: boolean
+          our_advantage: string
+          positioning_against: string | null
+          product_id: string | null
+          region_code: string | null
+          scope: string
+          sub_region_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          battle_card?: string | null
+          competitor_category: string
+          competitor_name: string
+          competitor_weakness?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_system_default?: boolean
+          our_advantage: string
+          positioning_against?: string | null
+          product_id?: string | null
+          region_code?: string | null
+          scope?: string
+          sub_region_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          battle_card?: string | null
+          competitor_category?: string
+          competitor_name?: string
+          competitor_weakness?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_system_default?: boolean
+          our_advantage?: string
+          positioning_against?: string | null
+          product_id?: string | null
+          region_code?: string | null
+          scope?: string
+          sub_region_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_landscape_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_reports: {
         Row: {
           compliance_score: number
@@ -18561,6 +18626,89 @@ export type Database = {
             columns: ["blueprint_id"]
             isOneToOne: false
             referencedRelation: "video_blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_knowledge_registry: {
+        Row: {
+          competitive_category: string | null
+          competitive_edge: string | null
+          created_at: string
+          created_by: string | null
+          differentiators: Json | null
+          elevator_pitch: string | null
+          id: string
+          is_current: boolean
+          is_system_default: boolean
+          key_benefits: Json | null
+          pain_points: Json | null
+          positioning_statement: string | null
+          product_id: string
+          regional_benefits: Json | null
+          regional_pain_points: Json | null
+          regional_positioning: Json | null
+          status: string
+          tagline: string | null
+          updated_at: string
+          use_cases: Json | null
+          value_proposition: string | null
+          version: number
+        }
+        Insert: {
+          competitive_category?: string | null
+          competitive_edge?: string | null
+          created_at?: string
+          created_by?: string | null
+          differentiators?: Json | null
+          elevator_pitch?: string | null
+          id?: string
+          is_current?: boolean
+          is_system_default?: boolean
+          key_benefits?: Json | null
+          pain_points?: Json | null
+          positioning_statement?: string | null
+          product_id: string
+          regional_benefits?: Json | null
+          regional_pain_points?: Json | null
+          regional_positioning?: Json | null
+          status?: string
+          tagline?: string | null
+          updated_at?: string
+          use_cases?: Json | null
+          value_proposition?: string | null
+          version?: number
+        }
+        Update: {
+          competitive_category?: string | null
+          competitive_edge?: string | null
+          created_at?: string
+          created_by?: string | null
+          differentiators?: Json | null
+          elevator_pitch?: string | null
+          id?: string
+          is_current?: boolean
+          is_system_default?: boolean
+          key_benefits?: Json | null
+          pain_points?: Json | null
+          positioning_statement?: string | null
+          product_id?: string
+          regional_benefits?: Json | null
+          regional_pain_points?: Json | null
+          regional_positioning?: Json | null
+          status?: string
+          tagline?: string | null
+          updated_at?: string
+          use_cases?: Json | null
+          value_proposition?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_knowledge_registry_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products"
             referencedColumns: ["id"]
           },
         ]
