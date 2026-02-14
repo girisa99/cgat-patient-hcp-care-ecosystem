@@ -9,6 +9,95 @@ import { supabase } from '@/integrations/supabase/client';
 import { featureDiscoveryService, MESSAGING_TEMPLATES, type CustomMessaging } from './featureDiscoveryService';
 import { JOURNEY_TEMPLATES, FRAMEWORK_TEMPLATES } from './aiGenerationIntegration';
 import { GENIE_PRODUCTS, type GenieProductId } from './productVersionTrackingService';
+import { ZONE_ROUTING_CONFIG, type RoutingZone } from '@/config/master-ecosystem-registry';
+
+// ============================================================================
+// CREATIVE ANGLE SYSTEM
+// ============================================================================
+
+export type CreativeAngle = 
+  | 'emotional_story' 
+  | 'data_authority' 
+  | 'pain_transformation' 
+  | 'social_proof' 
+  | 'provocative_question' 
+  | 'industry_specific';
+
+export const CREATIVE_ANGLES: Record<CreativeAngle, {
+  name: string;
+  description: string;
+  promptDirective: string;
+}> = {
+  emotional_story: {
+    name: 'Emotional Story',
+    description: 'Human-centered narrative with emotional arc',
+    promptDirective: `ANGLE: EMOTIONAL STORY — Write as a compelling human narrative. Start with a relatable person in a real situation. Build tension around their struggle. Show the transformation moment. End with emotional payoff. Example tone: "She had 3 hours before the investor pitch. No slides. No script. Then she opened Genie." Use sensory language, specific details, and emotional beats.`,
+  },
+  data_authority: {
+    name: 'Data & Authority',
+    description: 'Stats-driven positioning with authority signals',
+    promptDirective: `ANGLE: DATA & AUTHORITY — Lead with compelling statistics and metrics. Use specific numbers, percentages, and comparisons. Position as industry-defining. Example tone: "200+ AI pipelines. 50+ languages. 62+ sub-regions. The numbers don't lie." Include concrete ROI metrics, time savings data, and market position. Sound authoritative, not salesy.`,
+  },
+  pain_transformation: {
+    name: 'Pain → Transformation',
+    description: 'Agitate the problem, reveal the solution dramatically',
+    promptDirective: `ANGLE: PAIN → TRANSFORMATION — Start with a visceral description of the audience's biggest pain point. Make them feel it. Then pivot dramatically with "But what if..." or "Until now..." Show the complete before/after transformation. Example tone: "Drowning in 7 separate tools? Fragmented workflows? Missed deadlines? One ecosystem. Done." Make the contrast stark and undeniable.`,
+  },
+  social_proof: {
+    name: 'Social Proof & Vision',
+    description: 'Community-driven with aspirational positioning',
+    promptDirective: `ANGLE: SOCIAL PROOF & VISION — Lead with community momentum and aspirational positioning. Reference the movement, the community, the future being built. Example tone: "Join 10,000+ creators who stopped compromising. The future of content isn't coming — it's here." Use collective language ("we", "together", "movement"), reference early adopters, and paint an aspirational future state.`,
+  },
+  provocative_question: {
+    name: 'Provocative Question',
+    description: 'Challenge assumptions with bold questions',
+    promptDirective: `ANGLE: PROVOCATIVE QUESTION — Open with a bold, assumption-challenging question that stops the scroll. Make the reader question their current approach. Example tone: "What if your next campaign took 10 minutes instead of 10 days?" or "Why are you still paying for 7 tools when one does it all?" Follow up with the undeniable answer. Create cognitive dissonance.`,
+  },
+  industry_specific: {
+    name: 'Industry-Specific',
+    description: 'Tailored to selected audience vertical with domain language',
+    promptDirective: `ANGLE: INDUSTRY-SPECIFIC — Use the selected audience's industry jargon, workflows, and specific pain points. Reference their actual daily challenges and tools. If Healthcare: mention HIPAA, patient education, clinical training. If Enterprise: mention compliance, governance, ROI reporting. If Creator: mention algorithm changes, content burnout, monetization. Sound like an insider, not a vendor.`,
+  },
+};
+
+/** Get the optimal creative angles for a given variant count */
+export function getCreativeAnglesForCount(count: number): CreativeAngle[] {
+  const ordered: CreativeAngle[] = [
+    'emotional_story',
+    'data_authority', 
+    'pain_transformation',
+    'social_proof',
+    'provocative_question',
+    'industry_specific',
+  ];
+  return ordered.slice(0, Math.min(count, ordered.length));
+}
+
+/** Resolve zone-based LLM provider for messaging generation */
+function getMessagingProvider(regionCode?: string): { provider: string; model: string } {
+  // Default to fallback zone if no region
+  if (!regionCode) {
+    return { provider: 'openai', model: 'gpt-4o' };
+  }
+
+  // Find the zone for this region
+  for (const [zone, config] of Object.entries(ZONE_ROUTING_CONFIG)) {
+    if (config.regions.some(r => regionCode.toUpperCase().includes(r.toUpperCase()))) {
+      switch (config.primaryLLM) {
+        case 'claude':
+          return { provider: 'claude', model: 'claude-sonnet-4-20250514' };
+        case 'alibaba':
+          return { provider: 'alibaba', model: 'qwen-max' };
+        case 'gemini':
+          return { provider: 'gemini', model: 'gemini-2.5-pro' };
+        default:
+          return { provider: 'openai', model: 'gpt-4o' };
+      }
+    }
+  }
+  
+  return { provider: 'openai', model: 'gpt-4o' };
+}
 
 // ============================================================================
 // TYPES
@@ -22,6 +111,9 @@ export interface MessagingRequest {
   type: 'product' | 'feature' | 'comparison' | 'tutorial';
   targetAudience: string[];
   competitors?: string[];
+  variantCount?: number; // 1-6 variants
+  regionCode?: string;  // For zone-based LLM routing
+  creativeAngle?: CreativeAngle; // Auto-assigned per variant
   status: 'pending' | 'generating' | 'pending_approval' | 'approved' | 'rejected';
   generatedAt?: Date;
   approvedAt?: Date;
@@ -67,6 +159,8 @@ export interface GeneratedMessaging {
   generatedBy: string;
   version: number;
   isApproved: boolean;
+  creativeAngle?: CreativeAngle;
+  variantIndex?: number;
 }
 
 export interface CompetitorAnalysis {
@@ -353,6 +447,9 @@ class AIMessagingGeneratorService {
       type: MessagingRequest['type'];
       targetAudience: string[];
       competitors?: string[];
+      variantCount?: number;
+      regionCode?: string;
+      creativeAngle?: CreativeAngle;
     }
   ): MessagingRequest {
     const id = `msg_${productId}_${Date.now()}`;
@@ -365,6 +462,9 @@ class AIMessagingGeneratorService {
       type: options.type,
       targetAudience: options.targetAudience,
       competitors: options.competitors,
+      variantCount: options.variantCount || 1,
+      regionCode: options.regionCode,
+      creativeAngle: options.creativeAngle,
       status: 'pending',
     };
 
@@ -519,7 +619,7 @@ ${isEcosystemProduct
 - Use power words: Transform, Unleash, Dominate, Revolutionize, Command, Ignite
 - Leverage current industry trends for timely relevance
 - All output must feel like it was crafted by a Cannes Lions-winning creative director
-
+${request.creativeAngle ? `\n=== CREATIVE ANGLE (MUST FOLLOW) ===\n${CREATIVE_ANGLES[request.creativeAngle].promptDirective}\n` : ''}
 Generate the following in JSON format:
 {
   "headline": "Compelling headline under 60 chars specific to ${p.name}",
@@ -534,18 +634,25 @@ Generate the following in JSON format:
   "openingLine": "Video/script opening line that hooks in 3 seconds",
   "closingLine": "Memorable closing line with brand recall",
   "transitionPhrases": ["3 transition phrases for video scripts"],
+  "shortScript": "Complete 30-second script (4-5 sentences) following the creative angle",
   "hashtags": ["5 relevant hashtags"],
   "keywords": ["5 SEO keywords"],
   "metaDescription": "SEO meta description under 160 chars",
   "confidence": 0.85
 }`;
 
+      // Zone-based routing — use the 4-zone config from master-ecosystem-registry
+      const routing = getMessagingProvider(request.regionCode);
+      console.log(`[AIMessaging] Zone routing: region=${request.regionCode || 'default'} → provider=${routing.provider}, model=${routing.model}`);
+
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
-          provider: 'openai',
-          model: 'gpt-4o',
+          provider: routing.provider,
+          model: routing.model,
           prompt: messagingPrompt,
           action: 'generate_marketing_messaging',
+          temperature: 0.9, // High creativity for diverse messaging
+          maxTokens: 4000,
           productName: p.name,
           productTagline: p.tagline,
           productDescription: p.description || undefined,
@@ -584,6 +691,51 @@ Generate the following in JSON format:
       this.generatedMessaging.set(requestId, messaging);
       return messaging;
     }
+  }
+
+  /**
+   * Generate multiple messaging variants with different creative angles.
+   * Uses zone-based LLM routing and assigns a unique angle per variant.
+   */
+  async generateMessagingVariants(
+    productId: GenieProductId,
+    options: {
+      featureId?: string;
+      featureName?: string;
+      type: MessagingRequest['type'];
+      targetAudience: string[];
+      competitors?: string[];
+      variantCount: number;
+      regionCode?: string;
+    }
+  ): Promise<GeneratedMessaging[]> {
+    const count = Math.max(1, Math.min(6, options.variantCount));
+    const angles = getCreativeAnglesForCount(count);
+    
+    console.log(`[AIMessaging] Generating ${count} variants with angles: ${angles.join(', ')}`);
+
+    const results: GeneratedMessaging[] = [];
+    
+    // Generate variants sequentially to avoid rate limiting
+    for (let i = 0; i < count; i++) {
+      const request = this.createRequest(productId, {
+        ...options,
+        creativeAngle: angles[i],
+        regionCode: options.regionCode,
+      });
+      
+      try {
+        const messaging = await this.generateMessaging(request.id);
+        messaging.creativeAngle = angles[i];
+        messaging.variantIndex = i + 1;
+        results.push(messaging);
+      } catch (error) {
+        console.warn(`[AIMessaging] Variant ${i + 1} (${angles[i]}) failed:`, error);
+      }
+    }
+    
+    console.log(`[AIMessaging] Generated ${results.length}/${count} variants successfully`);
+    return results;
   }
 
   /**

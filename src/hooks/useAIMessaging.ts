@@ -2,7 +2,7 @@
  * useAIMessaging Hook
  * 
  * React hook for generating and managing AI-powered marketing messaging
- * with approval workflow integration.
+ * with approval workflow integration and multi-variant support.
  */
 
 import { useState, useCallback } from 'react';
@@ -11,9 +11,12 @@ import {
   type MessagingRequest,
   type GeneratedMessaging,
   type CompetitorAnalysis,
+  type CreativeAngle,
   TARGET_AUDIENCES,
   COMPETITOR_DATABASE,
   MESSAGING_FRAMEWORKS,
+  CREATIVE_ANGLES,
+  getCreativeAnglesForCount,
 } from '@/services/marketing/aiMessagingGeneratorService';
 import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/productVersionTrackingService';
 import { toast } from 'sonner';
@@ -33,8 +36,23 @@ interface UseAIMessagingReturn {
       type: 'product' | 'feature' | 'comparison' | 'tutorial';
       targetAudience: string[];
       competitors?: string[];
+      regionCode?: string;
     }
   ) => Promise<GeneratedMessaging | null>;
+  
+  /** Generate multiple messaging variants with different creative angles */
+  generateVariants: (
+    productId: GenieProductId,
+    options: {
+      featureId?: string;
+      featureName?: string;
+      type: 'product' | 'feature' | 'comparison' | 'tutorial';
+      targetAudience: string[];
+      competitors?: string[];
+      variantCount: number;
+      regionCode?: string;
+    }
+  ) => Promise<GeneratedMessaging[]>;
   
   /** Get pending approval requests */
   pendingApprovals: MessagingRequest[];
@@ -60,6 +78,9 @@ interface UseAIMessagingReturn {
   /** Messaging frameworks */
   frameworks: typeof MESSAGING_FRAMEWORKS;
   
+  /** Creative angles */
+  creativeAngles: typeof CREATIVE_ANGLES;
+  
   /** Available products */
   products: typeof GENIE_PRODUCTS;
   
@@ -68,6 +89,12 @@ interface UseAIMessagingReturn {
   
   /** Latest generated messaging */
   latestMessaging: GeneratedMessaging | null;
+  
+  /** All generated variants from last batch */
+  latestVariants: GeneratedMessaging[];
+  
+  /** Generation progress for variants */
+  variantProgress: { current: number; total: number };
 }
 
 export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessagingReturn {
@@ -75,16 +102,17 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [latestMessaging, setLatestMessaging] = useState<GeneratedMessaging | null>(null);
+  const [latestVariants, setLatestVariants] = useState<GeneratedMessaging[]>([]);
+  const [variantProgress, setVariantProgress] = useState({ current: 0, total: 0 });
   const [pendingApprovals, setPendingApprovals] = useState<MessagingRequest[]>(
     aiMessagingGeneratorService.getPendingApprovals()
   );
 
-  // Refresh pending approvals
   const refreshPendingApprovals = useCallback(() => {
     setPendingApprovals(aiMessagingGeneratorService.getPendingApprovals());
   }, []);
 
-  // Generate messaging
+  // Generate single messaging
   const generateMessaging = useCallback(async (
     productId: GenieProductId,
     opts: {
@@ -93,22 +121,22 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
       type: 'product' | 'feature' | 'comparison' | 'tutorial';
       targetAudience: string[];
       competitors?: string[];
+      regionCode?: string;
     }
   ): Promise<GeneratedMessaging | null> => {
     setIsGenerating(true);
     
     try {
-      // Create request
       const request = aiMessagingGeneratorService.createRequest(productId, opts);
       
       if (showNotifications) {
         toast.info(`Generating messaging for ${GENIE_PRODUCTS[productId].name}...`);
       }
       
-      // Generate messaging
       const messaging = await aiMessagingGeneratorService.generateMessaging(request.id);
       
       setLatestMessaging(messaging);
+      setLatestVariants([messaging]);
       refreshPendingApprovals();
       
       if (showNotifications) {
@@ -129,20 +157,63 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
     }
   }, [showNotifications, refreshPendingApprovals]);
 
+  // Generate multiple variants
+  const generateVariants = useCallback(async (
+    productId: GenieProductId,
+    opts: {
+      featureId?: string;
+      featureName?: string;
+      type: 'product' | 'feature' | 'comparison' | 'tutorial';
+      targetAudience: string[];
+      competitors?: string[];
+      variantCount: number;
+      regionCode?: string;
+    }
+  ): Promise<GeneratedMessaging[]> => {
+    setIsGenerating(true);
+    setVariantProgress({ current: 0, total: opts.variantCount });
+    setLatestVariants([]);
+    
+    try {
+      if (showNotifications) {
+        const angles = getCreativeAnglesForCount(opts.variantCount);
+        toast.info(`Generating ${opts.variantCount} variants for ${GENIE_PRODUCTS[productId].name}`, {
+          description: `Angles: ${angles.map(a => CREATIVE_ANGLES[a].name).join(', ')}`,
+        });
+      }
+      
+      const variants = await aiMessagingGeneratorService.generateMessagingVariants(productId, opts);
+      
+      setLatestVariants(variants);
+      setLatestMessaging(variants[0] || null);
+      setVariantProgress({ current: variants.length, total: opts.variantCount });
+      refreshPendingApprovals();
+      
+      if (showNotifications) {
+        toast.success(`${variants.length} variants generated! Awaiting approval.`);
+      }
+      
+      return variants;
+    } catch (error) {
+      console.error('[useAIMessaging] Variant generation failed:', error);
+      if (showNotifications) {
+        toast.error('Failed to generate variants');
+      }
+      return [];
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [showNotifications, refreshPendingApprovals]);
+
   // Approve messaging
   const approveMessaging = useCallback((requestId: string, approvedBy: string) => {
     try {
       aiMessagingGeneratorService.approveMessaging(requestId, approvedBy);
       refreshPendingApprovals();
-      
-      if (showNotifications) {
-        toast.success('Messaging approved!');
-      }
+      if (showNotifications) toast.success('Messaging approved!');
     } catch (error) {
       console.error('[useAIMessaging] Approval failed:', error);
-      if (showNotifications) {
-        toast.error('Failed to approve messaging');
-      }
+      if (showNotifications) toast.error('Failed to approve messaging');
     }
   }, [showNotifications, refreshPendingApprovals]);
 
@@ -151,27 +222,23 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
     try {
       aiMessagingGeneratorService.rejectMessaging(requestId, reason);
       refreshPendingApprovals();
-      
-      if (showNotifications) {
-        toast.info('Messaging rejected. Regenerate with feedback.');
-      }
+      if (showNotifications) toast.info('Messaging rejected. Regenerate with feedback.');
     } catch (error) {
       console.error('[useAIMessaging] Rejection failed:', error);
     }
   }, [showNotifications, refreshPendingApprovals]);
 
-  // Get approved messaging
   const getApprovedMessaging = useCallback((productId: string, featureId?: string) => {
     return aiMessagingGeneratorService.getApprovedMessaging(productId, featureId);
   }, []);
 
-  // Generate battle card
   const generateBattleCard = useCallback((productId: GenieProductId, competitorId: string) => {
     return aiMessagingGeneratorService.generateBattleCard(productId, competitorId);
   }, []);
 
   return {
     generateMessaging,
+    generateVariants,
     pendingApprovals,
     approveMessaging,
     rejectMessaging,
@@ -180,9 +247,12 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
     targetAudiences: TARGET_AUDIENCES,
     competitors: COMPETITOR_DATABASE,
     frameworks: MESSAGING_FRAMEWORKS,
+    creativeAngles: CREATIVE_ANGLES,
     products: GENIE_PRODUCTS,
     isGenerating,
     latestMessaging,
+    latestVariants,
+    variantProgress,
   };
 }
 
