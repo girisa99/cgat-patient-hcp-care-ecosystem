@@ -440,6 +440,44 @@ class AIMessagingGeneratorService {
           ? `\nCompetitor Weaknesses to Exploit (do NOT name competitors): ${competitorWeaknesses.join(', ')}`
           : '';
 
+      // Detect if this is the unified Genie Suite product (ecosystem-level messaging)
+      const isEcosystemProduct = p.id === 'studio' || p.name === 'Genie Suite';
+
+      const ecosystemPositioning = isEcosystemProduct ? `
+=== ECOSYSTEM-LEVEL POSITIONING (THIS IS THE UNIFIED PLATFORM, NOT A SINGLE PRODUCT) ===
+Genie Suite is NOT just another AI tool — it is the ONLY unified ecosystem that takes you from Mind to Media.
+It combines 7 specialized products into ONE seamless creative command center:
+
+1. **Genie Spark** — AI Ideation Engine: Turn a blank page into a full creative brief in seconds
+2. **Genie Mind** — Script Writing & Enhancement: Professional scripts with emotional arc, pacing, and audience hooks
+3. **Genie Vibe** — Video Production Studio: Multi-modal video generation (Avatar, 3D, Motion Graphics, Stock Remix)
+4. **Genie Deck** — Presentation Intelligence: AI-powered pitch decks, sales presentations, and training modules
+5. **Genie Hub** — Creative Command Center: Project management, asset library, team collaboration
+6. **Genie Cast** — Publishing & Distribution: Multi-platform publishing with transcreation for 50+ languages
+7. **Ask Genie** — AI Creative Coach: Real-time guidance across every product and workflow
+
+THE ECOSYSTEM ADVANTAGE (emphasize this heavily):
+- No other platform offers this. Competitors sell ONE tool. We sell the ENTIRE creative workflow.
+- Shared intelligence: What you create in Spark flows into Mind, which feeds Vibe, which publishes via Cast.
+- 200+ AI pipelines, 30+ AI providers, 50+ languages, 62+ sub-regions, 140+ regional dialects
+- One subscription replaces 5-7 separate tools ($500+/month savings)
+- Enterprise-grade: SOC2-ready, HIPAA-aligned, multi-tenant, role-based access
+
+HERO-LEVEL MESSAGING EXAMPLES (match this caliber):
+- "One Ecosystem. Every Creative Need. Zero Compromise."
+- "Stop Juggling 7 Tools. Command One Suite."
+- "From Spark of Idea to Global Campaign — Without Leaving Genie."
+- "The World's First Mind-to-Media AI Ecosystem"
+- "Create in English. Publish in 50 Languages. Dominate Every Market."
+
+LANDING PAGE ANGLE:
+- This messaging will be used on hero banners, landing pages, and marketing campaigns
+- It must convey the FULL POWER of the ecosystem, not just one feature
+- Show the JOURNEY: Idea → Script → Video → Presentation → Publish → Analyze
+- Emphasize the elimination of tool fragmentation and creative bottlenecks
+- Position against the market: "While others sell hammers, we built the entire workshop"
+` : '';
+
       const messagingPrompt = `You are a world-class creative director and marketing strategist at a top agency. Generate BOLD, emotionally resonant, and strategically differentiated messaging that makes people stop scrolling.
 
 === PRODUCT CONTEXT ===
@@ -448,6 +486,7 @@ ${competitiveContext}
 ${enrichedCompetitors}
 ${marketIntel}
 ${trendIntel}
+${ecosystemPositioning}
 
 === TARGET ===
 Feature Focus: ${feature?.name || p.name}
@@ -455,12 +494,23 @@ Messaging Type: ${request.type}
 Audience Pain Points: ${audiencePainPoints.join(', ') || 'General content creators and marketing teams'}
 
 === ECOSYSTEM CONTEXT ===
-This product is part of the Genie Suite — an 8-product AI content creation ecosystem ("Mind to Media"): Spark (ideation), Mind (scripting), Vibe (video production), Deck (presentations), Hub (project management), Cast (publishing & distribution), Ask Genie (AI assistant), and Genie Suite (the unified platform). All products share context and intelligence. 200+ AI pipelines, 30+ AI providers, 50+ languages, 62+ sub-regions.
+${isEcosystemProduct
+  ? 'THIS IS THE UNIFIED GENIE SUITE PLATFORM. Generate messaging that showcases the FULL ECOSYSTEM — all 7 products working together as one seamless creative command center. Do NOT treat this as a single tool. Show the complete Mind-to-Media journey. Every headline, hook, and script must convey ecosystem-level power and differentiation.'
+  : `This product is part of the Genie Suite — an 8-product AI content creation ecosystem ("Mind to Media"): Spark (ideation), Mind (scripting), Vibe (video production), Deck (presentations), Hub (project management), Cast (publishing & distribution), Ask Genie (AI assistant), and Genie Suite (the unified platform). All products share context and intelligence. 200+ AI pipelines, 30+ AI providers, 50+ languages, 62+ sub-regions.`
+}
 
 === CREATIVE MANDATE ===
 - Write like Apple's creative team meets Nike's emotional storytelling — BOLD, VISCERAL, UNFORGETTABLE
-- Make messaging SPECIFIC to ${p.name}, not generic AI tool copy
-- Reference the product's unique capabilities and positioning
+${isEcosystemProduct
+  ? `- This is for LANDING PAGES and HERO BANNERS — messaging must be EPIC, ecosystem-level, and convey the full Mind-to-Media journey
+- Show how 7 products work as ONE unified platform — the creative workflow revolution
+- Emphasize the elimination of tool fragmentation: "One ecosystem replaces 7 separate subscriptions"
+- Highlight shared intelligence across products: ideas flow seamlessly from Spark → Mind → Vibe → Cast
+- Include global reach: 50+ languages, 62+ sub-regions, 140+ dialects
+- Position as category-defining: "The world's first Mind-to-Media AI ecosystem"`
+  : `- Make messaging SPECIFIC to ${p.name}, not generic AI tool copy
+- Reference the product's unique capabilities and positioning`
+}
 - NEVER mention competitor names — only highlight our unique advantages and differentiation
 - Address specific audience pain points with EMOTIONALLY charged solutions
 - Use competitive intelligence to create razor-sharp differentiation
