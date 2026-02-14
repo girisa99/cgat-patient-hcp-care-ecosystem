@@ -23,7 +23,7 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from '@dnd-kit/sortable';
-import { Clock, Info, Package, Palette, Users } from 'lucide-react';
+import { Clock, Info, Package, Palette, Users, MessageSquareWarning } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
 import { SortableSceneItem } from './SortableSceneItem';
@@ -230,6 +230,21 @@ export function SceneTimelineTab({
                 </Badge>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Messaging Gate — prompt user if no approved messaging exists */}
+      {!approvedMessaging && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 flex items-start gap-3">
+          <MessageSquareWarning className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              No approved messaging yet
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Scene scripts use placeholders like <code className="bg-muted px-1 rounded text-[10px]">{'{{hook}}'}</code> and <code className="bg-muted px-1 rounded text-[10px]">{'{{cta}}'}</code> that auto-fill from your approved messaging. Generate and approve messaging in the <strong>Messaging</strong> tab first for best results.
+            </p>
           </div>
         </div>
       )}
