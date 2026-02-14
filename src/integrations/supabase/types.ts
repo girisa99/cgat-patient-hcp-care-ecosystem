@@ -20009,6 +20009,7 @@ export type Database = {
           background_music_url: string | null
           background_music_volume: number | null
           completion_rate: number | null
+          content_type: string
           created_at: string
           created_by: string | null
           cta: string
@@ -20029,6 +20030,7 @@ export type Database = {
           llm_provider: string | null
           llm_temperature: number | null
           llm_token_count: number | null
+          messaging_data: Json | null
           play_count: number | null
           positioning_angles: string[] | null
           problem_statement: string
@@ -20040,6 +20042,7 @@ export type Database = {
           routing_zone: string | null
           solution: string
           status: string
+          target_audiences: string[] | null
           target_personas: string[] | null
           tts_pitch: string | null
           tts_provider: string | null
@@ -20058,6 +20061,7 @@ export type Database = {
           background_music_url?: string | null
           background_music_volume?: number | null
           completion_rate?: number | null
+          content_type?: string
           created_at?: string
           created_by?: string | null
           cta: string
@@ -20078,6 +20082,7 @@ export type Database = {
           llm_provider?: string | null
           llm_temperature?: number | null
           llm_token_count?: number | null
+          messaging_data?: Json | null
           play_count?: number | null
           positioning_angles?: string[] | null
           problem_statement: string
@@ -20089,6 +20094,7 @@ export type Database = {
           routing_zone?: string | null
           solution: string
           status?: string
+          target_audiences?: string[] | null
           target_personas?: string[] | null
           tts_pitch?: string | null
           tts_provider?: string | null
@@ -20107,6 +20113,7 @@ export type Database = {
           background_music_url?: string | null
           background_music_volume?: number | null
           completion_rate?: number | null
+          content_type?: string
           created_at?: string
           created_by?: string | null
           cta?: string
@@ -20127,6 +20134,7 @@ export type Database = {
           llm_provider?: string | null
           llm_temperature?: number | null
           llm_token_count?: number | null
+          messaging_data?: Json | null
           play_count?: number | null
           positioning_angles?: string[] | null
           problem_statement?: string
@@ -20138,6 +20146,7 @@ export type Database = {
           routing_zone?: string | null
           solution?: string
           status?: string
+          target_audiences?: string[] | null
           target_personas?: string[] | null
           tts_pitch?: string | null
           tts_provider?: string | null
