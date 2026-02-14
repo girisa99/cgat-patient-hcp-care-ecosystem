@@ -4421,6 +4421,90 @@ export type Database = {
           },
         ]
       }
+      competitor_profiles: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_users: string | null
+          founded_year: number | null
+          funding_status: string | null
+          id: string
+          is_active: boolean
+          key_features: string[] | null
+          languages_supported: number | null
+          last_scraped_at: string | null
+          logo_url: string | null
+          name: string
+          pricing_model: string | null
+          pricing_range: string | null
+          regions_active: string[] | null
+          scraped_data: Json | null
+          strengths: string[] | null
+          subcategories: string[] | null
+          tagline: string | null
+          target_market: string[] | null
+          updated_at: string
+          weaknesses: string[] | null
+          website_url: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_users?: string | null
+          founded_year?: number | null
+          funding_status?: string | null
+          id?: string
+          is_active?: boolean
+          key_features?: string[] | null
+          languages_supported?: number | null
+          last_scraped_at?: string | null
+          logo_url?: string | null
+          name: string
+          pricing_model?: string | null
+          pricing_range?: string | null
+          regions_active?: string[] | null
+          scraped_data?: Json | null
+          strengths?: string[] | null
+          subcategories?: string[] | null
+          tagline?: string | null
+          target_market?: string[] | null
+          updated_at?: string
+          weaknesses?: string[] | null
+          website_url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_users?: string | null
+          founded_year?: number | null
+          funding_status?: string | null
+          id?: string
+          is_active?: boolean
+          key_features?: string[] | null
+          languages_supported?: number | null
+          last_scraped_at?: string | null
+          logo_url?: string | null
+          name?: string
+          pricing_model?: string | null
+          pricing_range?: string | null
+          regions_active?: string[] | null
+          scraped_data?: Json | null
+          strengths?: string[] | null
+          subcategories?: string[] | null
+          tagline?: string | null
+          target_market?: string[] | null
+          updated_at?: string
+          weaknesses?: string[] | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       compliance_reports: {
         Row: {
           compliance_score: number
@@ -8724,6 +8808,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feature_comparison_matrix: {
+        Row: {
+          competitor_scores: Json | null
+          created_at: string
+          feature_category: string
+          feature_name: string
+          genie_capability: string
+          genie_details: string | null
+          genie_product: string
+          id: string
+          importance_weight: number | null
+          is_differentiator: boolean
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          competitor_scores?: Json | null
+          created_at?: string
+          feature_category: string
+          feature_name: string
+          genie_capability: string
+          genie_details?: string | null
+          genie_product: string
+          id?: string
+          importance_weight?: number | null
+          is_differentiator?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          competitor_scores?: Json | null
+          created_at?: string
+          feature_category?: string
+          feature_name?: string
+          genie_capability?: string
+          genie_details?: string | null
+          genie_product?: string
+          id?: string
+          importance_weight?: number | null
+          is_differentiator?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       feedback: {
         Row: {
@@ -14485,6 +14614,66 @@ export type Database = {
           quality_certifications?: string[] | null
           regulatory_status?: Json | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      market_analysis_results: {
+        Row: {
+          analysis_type: string
+          confidence_score: number | null
+          created_at: string
+          created_by: string | null
+          data_sources: string[] | null
+          detailed_analysis: Json
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_insights: string[] | null
+          model_used: string | null
+          recommendations: string[] | null
+          scope: string
+          scope_filter: string | null
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          analysis_type: string
+          confidence_score?: number | null
+          created_at?: string
+          created_by?: string | null
+          data_sources?: string[] | null
+          detailed_analysis?: Json
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_insights?: string[] | null
+          model_used?: string | null
+          recommendations?: string[] | null
+          scope?: string
+          scope_filter?: string | null
+          summary: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          analysis_type?: string
+          confidence_score?: number | null
+          created_at?: string
+          created_by?: string | null
+          data_sources?: string[] | null
+          detailed_analysis?: Json
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_insights?: string[] | null
+          model_used?: string | null
+          recommendations?: string[] | null
+          scope?: string
+          scope_filter?: string | null
+          summary?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -23258,6 +23447,57 @@ export type Database = {
           },
         ]
       }
+      trend_monitoring_log: {
+        Row: {
+          action_taken: string | null
+          affected_competitors: string[] | null
+          affected_products: string[] | null
+          created_at: string
+          description: string
+          detected_at: string
+          id: string
+          impact_level: string
+          is_addressed: boolean
+          raw_data: Json | null
+          source: string
+          source_url: string | null
+          title: string
+          trend_type: string
+        }
+        Insert: {
+          action_taken?: string | null
+          affected_competitors?: string[] | null
+          affected_products?: string[] | null
+          created_at?: string
+          description: string
+          detected_at?: string
+          id?: string
+          impact_level?: string
+          is_addressed?: boolean
+          raw_data?: Json | null
+          source: string
+          source_url?: string | null
+          title: string
+          trend_type: string
+        }
+        Update: {
+          action_taken?: string | null
+          affected_competitors?: string[] | null
+          affected_products?: string[] | null
+          created_at?: string
+          description?: string
+          detected_at?: string
+          id?: string
+          impact_level?: string
+          is_addressed?: boolean
+          raw_data?: Json | null
+          source?: string
+          source_url?: string | null
+          title?: string
+          trend_type?: string
+        }
+        Relationships: []
+      }
       tts_audio_cache: {
         Row: {
           audio_base64: string
@@ -24515,6 +24755,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      usp_registry: {
+        Row: {
+          competitors_lacking: string[] | null
+          created_at: string
+          id: string
+          is_validated: boolean
+          market_segment: string | null
+          product_id: string
+          strength_score: number | null
+          supporting_evidence: string[] | null
+          updated_at: string
+          usp_statement: string
+          validated_by: string | null
+        }
+        Insert: {
+          competitors_lacking?: string[] | null
+          created_at?: string
+          id?: string
+          is_validated?: boolean
+          market_segment?: string | null
+          product_id: string
+          strength_score?: number | null
+          supporting_evidence?: string[] | null
+          updated_at?: string
+          usp_statement: string
+          validated_by?: string | null
+        }
+        Update: {
+          competitors_lacking?: string[] | null
+          created_at?: string
+          id?: string
+          is_validated?: boolean
+          market_segment?: string | null
+          product_id?: string
+          strength_score?: number | null
+          supporting_evidence?: string[] | null
+          updated_at?: string
+          usp_statement?: string
+          validated_by?: string | null
+        }
+        Relationships: []
       }
       validation_documentation: {
         Row: {

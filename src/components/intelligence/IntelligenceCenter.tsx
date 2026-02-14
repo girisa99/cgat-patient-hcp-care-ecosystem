@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MarketIntelligenceDashboard } from '@/components/intelligence/MarketIntelligenceDashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -136,14 +137,19 @@ export const IntelligenceCenter: React.FC = () => {
       )}
 
       <Tabs defaultValue="recommendations" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="recommendations">
             Recommendations ({recommendations.filter(r => r.status === 'pending').length})
           </TabsTrigger>
           <TabsTrigger value="patterns">User Patterns</TabsTrigger>
           <TabsTrigger value="journey">Journey Analytics</TabsTrigger>
           <TabsTrigger value="insights">AI Insights</TabsTrigger>
+          <TabsTrigger value="market">Market Intelligence</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="market">
+          <MarketIntelligenceDashboard />
+        </TabsContent>
 
         <TabsContent value="recommendations" className="space-y-4">
           <div className="grid gap-4">
