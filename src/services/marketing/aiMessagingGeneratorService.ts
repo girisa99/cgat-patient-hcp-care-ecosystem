@@ -258,8 +258,12 @@ export interface MessagingRequest {
   competitors?: string[];
   variantCount?: number; // 1-6 variants
   regionCode?: string;  // For zone-based LLM routing
+  subRegionCode?: string; // Sub-region from hierarchy (e.g., INDIA_NORTH)
   creativeAngle?: CreativeAngle; // Auto-assigned per variant
   productionCapability?: ProductionCapability; // Production context tone
+  isEnglishBase?: boolean; // true = English master, false = regional child
+  parentMessagingId?: string; // FK to English master entry
+  routingZone?: string; // LLM/TTS routing zone
   status: 'pending' | 'generating' | 'pending_approval' | 'approved' | 'rejected';
   generatedAt?: Date;
   approvedAt?: Date;
@@ -308,6 +312,14 @@ export interface GeneratedMessaging {
   creativeAngle?: CreativeAngle;
   productionCapability?: ProductionCapability;
   variantIndex?: number;
+  
+  // Regional Hierarchy (parent→child)
+  regionCode?: string;
+  subRegionCode?: string;
+  isEnglishBase?: boolean;
+  parentMessagingId?: string;
+  routingZone?: string;
+  status?: string; // draft → pending → approved → active → archived
 }
 
 export interface CompetitorAnalysis {
@@ -632,6 +644,13 @@ class AIMessagingGeneratorService {
         isApproved: true,
         creativeAngle: row.creative_angle || undefined,
         productionCapability: row.production_capability || undefined,
+        // Regional hierarchy
+        regionCode: row.region_code || 'EN_US',
+        subRegionCode: row.sub_region_code || undefined,
+        isEnglishBase: row.is_english_base ?? true,
+        parentMessagingId: row.parent_messaging_id || undefined,
+        routingZone: row.routing_zone || undefined,
+        status: row.status || 'approved',
       }));
 
       // Cache in memory
@@ -661,8 +680,12 @@ class AIMessagingGeneratorService {
       competitors?: string[];
       variantCount?: number;
       regionCode?: string;
+      subRegionCode?: string;
       creativeAngle?: CreativeAngle;
       productionCapability?: ProductionCapability;
+      isEnglishBase?: boolean;
+      parentMessagingId?: string;
+      routingZone?: string;
     }
   ): MessagingRequest {
     const id = `msg_${productId}_${Date.now()}`;
@@ -676,9 +699,13 @@ class AIMessagingGeneratorService {
       targetAudience: options.targetAudience,
       competitors: options.competitors,
       variantCount: options.variantCount || 1,
-      regionCode: options.regionCode,
+      regionCode: options.regionCode || 'EN_US',
+      subRegionCode: options.subRegionCode,
       creativeAngle: options.creativeAngle,
       productionCapability: options.productionCapability,
+      isEnglishBase: options.isEnglishBase ?? true,
+      parentMessagingId: options.parentMessagingId,
+      routingZone: options.routingZone,
       status: 'pending',
     };
 
@@ -926,7 +953,11 @@ Generate the following in JSON format:
       competitors?: string[];
       variantCount: number;
       regionCode?: string;
+      subRegionCode?: string;
       productionCapability?: ProductionCapability;
+      isEnglishBase?: boolean;
+      parentMessagingId?: string;
+      routingZone?: string;
     }
   ): Promise<GeneratedMessaging[]> {
     const count = Math.max(1, Math.min(6, options.variantCount));
@@ -1042,6 +1073,13 @@ Generate the following in JSON format:
       generatedBy: hasAIContent ? 'ai-universal-processor' : 'template-fallback',
       version: 1,
       isApproved: false,
+      // Regional hierarchy from request
+      regionCode: request.regionCode || 'EN_US',
+      subRegionCode: request.subRegionCode,
+      isEnglishBase: request.isEnglishBase ?? true,
+      parentMessagingId: request.parentMessagingId,
+      routingZone: request.routingZone,
+      status: 'pending',
     };
   }
 
@@ -1089,6 +1127,13 @@ Generate the following in JSON format:
       generatedBy: 'template-fallback',
       version: 1,
       isApproved: false,
+      // Regional hierarchy from request
+      regionCode: request.regionCode || 'EN_US',
+      subRegionCode: request.subRegionCode,
+      isEnglishBase: request.isEnglishBase ?? true,
+      parentMessagingId: request.parentMessagingId,
+      routingZone: request.routingZone,
+      status: 'pending',
     };
   }
 
@@ -1221,6 +1266,13 @@ Generate the following in JSON format:
           version: messaging.version,
           creative_angle: messaging.creativeAngle || null,
           production_capability: messaging.productionCapability || null,
+          // Regional hierarchy columns
+          region_code: request.regionCode || 'EN_US',
+          sub_region_code: request.subRegionCode || null,
+          is_english_base: request.isEnglishBase ?? true,
+          parent_messaging_id: request.parentMessagingId || null,
+          routing_zone: request.routingZone || null,
+          status: 'approved',
           is_approved: true,
           approved_by: approvedBy,
           approved_at: new Date().toISOString(),
