@@ -888,38 +888,36 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                     <Card className="border-primary/20 bg-primary/5 p-3">
                       <p className="text-xs font-medium flex items-center gap-1.5 mb-2">
                         <Lightbulb className="w-3.5 h-3.5 text-primary" />
-                        AI Recommended Combinations
+                        AI Recommended Groups — click to add to selection
                       </p>
-                      <div className="space-y-1.5 text-xs text-muted-foreground">
-                        <p>• <strong>Consolidated:</strong> Single message covering all audiences (good for unified campaigns)</p>
-                        <p>• <strong>Segmented:</strong> Separate messaging per audience (best for targeted campaigns)</p>
-                        <p>• <strong>Hybrid:</strong> Group similar audiences (Content Creators + Influencers, Enterprise + Product Managers)</p>
-                      </div>
-                      <div className="flex gap-2 mt-3">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-[10px] h-7"
-                          onClick={() => setSelectedAudiences(['content_creators', 'influencers', 'knowledge_sharers'])}
-                        >
-                          Creator Focus
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-[10px] h-7"
-                          onClick={() => setSelectedAudiences(['marketing_teams', 'sales_teams', 'agencies_freelancers'])}
-                        >
-                          Business Focus
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-[10px] h-7"
-                          onClick={() => setSelectedAudiences(['enterprise_teams', 'product_managers', 'executive_leadership'])}
-                        >
-                          Enterprise Focus
-                        </Button>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {[
+                          { label: 'Creator Focus', ids: ['content_creators', 'influencers', 'knowledge_sharers'] },
+                          { label: 'Business Focus', ids: ['marketing_teams', 'sales_teams', 'agencies_freelancers'] },
+                          { label: 'Enterprise Focus', ids: ['enterprise_teams', 'product_managers', 'executive_leadership'] },
+                          { label: 'All Audiences', ids: targetAudiences.map(a => a.id) },
+                        ].map(group => {
+                          const allSelected = group.ids.every(id => selectedAudiences.includes(id));
+                          return (
+                            <Button
+                              key={group.label}
+                              variant={allSelected ? 'default' : 'outline'}
+                              size="sm"
+                              className="text-[10px] h-7"
+                              onClick={() => {
+                                if (allSelected) {
+                                  // Deselect this group
+                                  setSelectedAudiences(prev => prev.filter(id => !group.ids.includes(id)));
+                                } else {
+                                  // Add to existing selection (merge, not replace)
+                                  setSelectedAudiences(prev => [...new Set([...prev, ...group.ids])]);
+                                }
+                              }}
+                            >
+                              {allSelected ? '✓ ' : ''}{group.label}
+                            </Button>
+                          );
+                        })}
                       </div>
                     </Card>
                   )}
