@@ -4,7 +4,7 @@ export { AIModelsTab } from './AIModelsTab';
 export { ProductionConfigTab } from './ProductionConfigTab';
 export { AISceneCustomizer } from './AISceneCustomizer';
 export { AddSceneDropdown } from './AddSceneDropdown';
-export { SortableSceneItem } from './SortableSceneItem';
+export { SortableSceneItem, type ApprovedMessagingContext } from './SortableSceneItem';
 export { SceneAssetMapper } from './SceneAssetMapper';
 export { StoryboardPreview } from './StoryboardPreview';
 export { QuickPreviewGenerator } from './QuickPreviewGenerator';

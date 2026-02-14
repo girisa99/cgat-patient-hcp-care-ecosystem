@@ -33,6 +33,8 @@ import { TranslationTranscreationToggle } from '../TranslationTranscreationToggl
 import { useSceneEnrichment } from '@/hooks/useSceneEnrichment';
 import { toast } from 'sonner';
 
+import type { ApprovedMessagingContext } from './SortableSceneItem';
+
 interface SceneTimelineTabProps {
   scenes: BlueprintScene[];
   expandedScene: string | null;
@@ -46,6 +48,12 @@ interface SceneTimelineTabProps {
   region?: string;
   /** Show transcreation toggle in scene timeline */
   showTranscreation?: boolean;
+  /** Approved messaging for resolving {{variables}} in scenes */
+  approvedMessaging?: ApprovedMessagingContext | null;
+  /** Selected product name */
+  productName?: string;
+  /** Product screenshots/assets for per-scene thumbnails */
+  productAssets?: Array<{ id: string; url: string; type: string }>;
 }
 
 export function SceneTimelineTab({
@@ -58,6 +66,9 @@ export function SceneTimelineTab({
   language = 'en',
   region = 'global',
   showTranscreation = false,
+  approvedMessaging,
+  productName,
+  productAssets = [],
 }: SceneTimelineTabProps) {
   const [durationOverrides, setDurationOverrides] = useState<Record<string, number>>({});
 
@@ -66,6 +77,19 @@ export function SceneTimelineTab({
   };
 
   const totalDuration = scenes.reduce((sum, s) => sum + getEffectiveDuration(s), 0);
+
+  // Auto-assign product asset thumbnails to scenes
+  const sceneThumbnails = useMemo(() => {
+    if (productAssets.length === 0) return {};
+    const map: Record<string, string> = {};
+    scenes.forEach((scene, i) => {
+      if (productAssets.length > 0) {
+        const asset = productAssets[i % productAssets.length];
+        map[scene.id] = (asset as any).thumbnailUrl || (asset as any).public_url || asset.url;
+      }
+    });
+    return map;
+  }, [scenes, productAssets]);
 
   // ====== DND-KIT SENSORS ======
   const sensors = useSensors(
@@ -250,6 +274,9 @@ export function SceneTimelineTab({
                 onDuplicateScene={handleDuplicateScene}
                 onScriptChange={handleScriptChange}
                 onVisualConfigChange={handleVisualConfigChange}
+                approvedMessaging={approvedMessaging}
+                productName={productName}
+                sceneThumbnailUrl={sceneThumbnails[scene.id]}
               />
             ))}
           </div>

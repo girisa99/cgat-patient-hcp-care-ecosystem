@@ -42,6 +42,17 @@ import { cn } from '@/lib/utils';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
 import { useCastCapabilities } from '@/hooks/useCastRegistry';
 
+export interface ApprovedMessagingContext {
+  hook?: string;
+  cta?: string;
+  valueProposition?: string;
+  benefits?: string[];
+  painPoints?: string[];
+  differentiators?: string[];
+  shortScript?: string;
+  productId?: string;
+}
+
 interface SortableSceneItemProps {
   scene: BlueprintScene;
   index: number;
@@ -55,6 +66,12 @@ interface SortableSceneItemProps {
   onDuplicateScene: (sceneId: string) => void;
   onScriptChange: (sceneId: string, script: string) => void;
   onVisualConfigChange: (sceneId: string, config: Record<string, any>) => void;
+  /** Approved messaging for resolving {{variables}} in script previews */
+  approvedMessaging?: ApprovedMessagingContext | null;
+  /** Product name for display */
+  productName?: string;
+  /** Thumbnail URL for this scene (from product assets) */
+  sceneThumbnailUrl?: string;
 }
 
 const sceneTypeColors: Record<string, string> = {
@@ -125,6 +142,20 @@ const CAPABILITY_TO_CONFIG_KEY: Record<string, string> = {
   transcription: 'transcriptionEnabled',
 };
 
+/** Resolve {{variable}} placeholders with approved messaging values */
+function resolveScriptVariables(script: string, messaging?: ApprovedMessagingContext | null, productName?: string): string {
+  if (!script || !messaging) return script;
+  return script
+    .replace(/\{\{hook\}\}/g, messaging.hook || '{{hook}}')
+    .replace(/\{\{cta\}\}/g, messaging.cta || '{{cta}}')
+    .replace(/\{\{value_proposition\}\}/g, messaging.valueProposition || '{{value_proposition}}')
+    .replace(/\{\{product_name\}\}/g, productName || messaging.productId || '{{product_name}}')
+    .replace(/\{\{benefits\}\}/g, (messaging.benefits || []).join('. ') || '{{benefits}}')
+    .replace(/\{\{pain_points\}\}/g, (messaging.painPoints || []).join('. ') || '{{pain_points}}')
+    .replace(/\{\{differentiators\}\}/g, (messaging.differentiators || []).join('. ') || '{{differentiators}}')
+    .replace(/\{\{short_script\}\}/g, messaging.shortScript || '{{short_script}}');
+}
+
 export function SortableSceneItem({
   scene,
   index,
@@ -138,6 +169,9 @@ export function SortableSceneItem({
   onDuplicateScene,
   onScriptChange,
   onVisualConfigChange,
+  approvedMessaging,
+  productName,
+  sceneThumbnailUrl,
 }: SortableSceneItemProps) {
   const [isEditingScript, setIsEditingScript] = useState(false);
   const [editedScript, setEditedScript] = useState(scene.script_template || '');
@@ -205,9 +239,16 @@ export function SortableSceneItem({
               <GripVertical className="h-4 w-4 text-muted-foreground/50" />
             </div>
           )}
-          <div className="w-8 h-8 rounded-full bg-background/50 flex items-center justify-center text-sm font-medium">
-            {index + 1}
-          </div>
+          {/* Scene thumbnail from product assets */}
+          {sceneThumbnailUrl ? (
+            <div className="w-10 h-10 rounded overflow-hidden border border-border/50 flex-shrink-0">
+              <img src={sceneThumbnailUrl} alt={scene.title} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-background/50 flex items-center justify-center text-sm font-medium">
+              {index + 1}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               {sceneTypeIcons[scene.scene_type]}
@@ -217,6 +258,9 @@ export function SortableSceneItem({
               )}
               {scene.is_repeatable && (
                 <Badge variant="outline" className="text-[10px] h-4 border-primary/30 text-primary">Repeatable</Badge>
+              )}
+              {productName && (
+                <Badge variant="secondary" className="text-[10px] h-4">{productName}</Badge>
               )}
             </div>
             <p className="text-xs opacity-70 capitalize">{scene.scene_type}</p>
@@ -313,8 +357,8 @@ export function SortableSceneItem({
                   </div>
                 </div>
               ) : (
-                <p className="text-sm bg-background/50 p-3 rounded-md font-mono text-muted-foreground">
-                  {scene.script_template}
+                <p className="text-sm bg-background/50 p-3 rounded-md font-mono text-muted-foreground whitespace-pre-wrap">
+                  {resolveScriptVariables(scene.script_template || '', approvedMessaging, productName)}
                 </p>
               )}
             </div>

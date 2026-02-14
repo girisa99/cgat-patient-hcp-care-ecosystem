@@ -32,6 +32,8 @@ import {
 import { cn } from '@/lib/utils';
 import type { VideoBlueprint, BlueprintScene } from '@/hooks/useVideoBlueprints';
 import { useBlueprintDraft } from '@/hooks/useBlueprintDraft';
+import { useGenieCastSession } from '@/hooks/useGenieCastSession';
+import { useProductContext } from '@/hooks/useProductContext';
 import { OverviewTab } from './blueprint-preview/OverviewTab';
 import { SceneTimelineTab } from './blueprint-preview/SceneTimelineTab';
 import { AIModelsTab } from './blueprint-preview/AIModelsTab';
@@ -64,6 +66,10 @@ export function BlueprintPreviewModal({
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedScene, setExpandedScene] = useState<string | null>(null);
   const [userPlatforms, setUserPlatforms] = useState<string[]>(blueprint?.target_platform || []);
+
+  // Product context for scene enrichment
+  const { session } = useGenieCastSession();
+  const productCtx = useProductContext(session.selectedProductId);
 
   // Database-backed draft persistence (replaces local state)
   const {
@@ -227,6 +233,13 @@ export function BlueprintPreviewModal({
                 formatDuration={formatDuration}
                 isEditable={true}
                 onScenesModified={handleScenesModified}
+                approvedMessaging={session.approvedMessaging}
+                productName={productCtx.product?.name}
+                productAssets={productCtx.assets.map(a => ({
+                  id: a.id,
+                  url: a.public_url || a.storage_path || '',
+                  type: 'screenshot',
+                }))}
               />
             </TabsContent>
 
