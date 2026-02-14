@@ -18562,6 +18562,45 @@ export type Database = {
           },
         ]
       }
+      product_audience_relevance: {
+        Row: {
+          audience_id: string
+          created_at: string
+          feedback_count: number
+          id: string
+          last_feedback_at: string | null
+          negative_feedback: number
+          positive_feedback: number
+          product_id: string
+          relevance_score: number
+          updated_at: string
+        }
+        Insert: {
+          audience_id: string
+          created_at?: string
+          feedback_count?: number
+          id?: string
+          last_feedback_at?: string | null
+          negative_feedback?: number
+          positive_feedback?: number
+          product_id: string
+          relevance_score?: number
+          updated_at?: string
+        }
+        Update: {
+          audience_id?: string
+          created_at?: string
+          feedback_count?: number
+          id?: string
+          last_feedback_at?: string | null
+          negative_feedback?: number
+          positive_feedback?: number
+          product_id?: string
+          relevance_score?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_chain_metadata: {
         Row: {
           ai_models_used: Json

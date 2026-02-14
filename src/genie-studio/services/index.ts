@@ -30,6 +30,10 @@ export { confidenceLoopEngine } from '@/services/executionEngines/ConfidenceLoop
 export { labelStudioService, useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
 export type { TrainingEvent, InlineHint } from '@/services/labelStudioBackgroundService';
 
+// Audience Relevance Learning (Option B+C)
+export { audienceRelevanceService } from '@/services/audienceRelevanceService';
+export type { AudienceRelevanceScore } from '@/services/audienceRelevanceService';
+
 // Ask Genie Knowledge Base (updated with 181 pipelines + editing)
 export { 
   askGeniePipelineKnowledgeBase,
