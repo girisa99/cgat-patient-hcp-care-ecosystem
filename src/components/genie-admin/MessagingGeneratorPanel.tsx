@@ -67,6 +67,8 @@ import { toast } from 'sonner';
 interface MessagingGeneratorPanelProps {
   className?: string;
   onMessagingApproved?: (productId: string, messaging: any) => void;
+  /** Pre-selected product from the top-bar ProductSelector */
+  initialProductId?: string;
 }
 
 // Product color map
@@ -117,6 +119,7 @@ interface BatchJob {
 export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = ({
   className,
   onMessagingApproved,
+  initialProductId,
 }) => {
   const {
     generateMessaging,
@@ -146,9 +149,13 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
   const [generationMode, setGenerationMode] = useState<GenerationMode>('single');
   const [transcreationMode, setTranscreationMode] = useState<TranscreationMode>('deferred');
   
-  // Single product selection
-  const [selectedProduct, setSelectedProduct] = useState<GenieProductId>('spark');
-  const [selectedProducts, setSelectedProducts] = useState<GenieProductId[]>(['spark']);
+  // Single product selection — sync with top-bar ProductSelector
+  const [selectedProduct, setSelectedProduct] = useState<GenieProductId>(
+    (initialProductId && initialProductId in products) ? initialProductId as GenieProductId : 'spark'
+  );
+  const [selectedProducts, setSelectedProducts] = useState<GenieProductId[]>(
+    [(initialProductId && initialProductId in products) ? initialProductId as GenieProductId : 'spark']
+  );
   const [selectedAudiences, setSelectedAudiences] = useState<string[]>(['content_creators']);
   const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
   const [messagingType, setMessagingType] = useState<'product' | 'feature' | 'comparison' | 'tutorial'>('product');
@@ -164,6 +171,16 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
   // UI state
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'generate' | 'pending' | 'approved' | 'matrix'>('generate');
+
+  // Sync with top-bar product selector when it changes
+  React.useEffect(() => {
+    if (initialProductId && initialProductId in products) {
+      setSelectedProduct(initialProductId as GenieProductId);
+      if (generationMode === 'single') {
+        setSelectedProducts([initialProductId as GenieProductId]);
+      }
+    }
+  }, [initialProductId, products, generationMode]);
 
   // Auto-select all products when mode changes to 'all_products'
   React.useEffect(() => {

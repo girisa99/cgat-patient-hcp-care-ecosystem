@@ -217,27 +217,55 @@ class AIMessagingGeneratorService {
 
     // Generate using AI
     try {
-      // Build comprehensive prompt for messaging generation
-      const messagingPrompt = `Generate comprehensive marketing messaging for ${product.name} (${product.tagline}).
+      // Build comprehensive prompt with rich product context
+      const p = product as any;
+      const productContext = [
+        `Product: ${p.name} — "${p.tagline}"`,
+        `Category: ${p.category}`,
+        p.description ? `Description: ${p.description}` : '',
+        p.valueProposition ? `Value Proposition: ${p.valueProposition}` : '',
+        p.positioning ? `Positioning: ${p.positioning}` : '',
+        p.keyBenefits ? `Key Benefits: ${p.keyBenefits.join('; ')}` : '',
+        p.useCases ? `Use Cases: ${p.useCases.join('; ')}` : '',
+        p.competitiveEdge ? `Competitive Edge: ${p.competitiveEdge}` : '',
+        p.painPoints ? `Product Pain Points Addressed: ${p.painPoints.join('; ')}` : '',
+      ].filter(line => !line.endsWith(': ')).join('\n');
 
-Target: ${feature?.name || product.name}
-Type: ${request.type}
-Audience Pain Points: ${audiencePainPoints.join(', ')}
-${competitorWeaknesses.length > 0 ? `Competitor Weaknesses to Address: ${competitorWeaknesses.join(', ')}` : ''}
+      const messagingPrompt = `You are an expert B2B/SaaS marketing strategist for the Genie Suite — an 8-product AI content creation ecosystem ("Mind to Media"). Generate compelling, product-specific marketing messaging.
+
+=== PRODUCT CONTEXT ===
+${productContext}
+
+=== TARGET ===
+Feature Focus: ${feature?.name || p.name}
+Messaging Type: ${request.type}
+Audience Pain Points: ${audiencePainPoints.join(', ') || 'General content creators and marketing teams'}
+${competitorWeaknesses.length > 0 ? `Competitor Weaknesses to Exploit: ${competitorWeaknesses.join(', ')}` : ''}
+
+=== ECOSYSTEM CONTEXT ===
+Genie Suite is an 8-product AI platform: Spark (ideation), Mind (scripting), Vibe (video production), Deck (presentations), Hub (project management), Cast (publishing & distribution), Ask Genie (AI assistant), and Genie Suite (the unified platform). All products share context and intelligence. 200+ AI pipelines, 30+ AI providers, 14+ languages.
+
+=== INSTRUCTIONS ===
+- Make messaging SPECIFIC to ${p.name}, not generic AI tool copy
+- Reference the product's unique capabilities and positioning
+- Address the specific audience pain points with concrete solutions
+- Use the competitive edge to create differentiated messaging
+- Scripts should tell a compelling story, not just list features
+- All output must feel like it was written by a senior marketing strategist who deeply knows this product
 
 Generate the following in JSON format:
 {
-  "headline": "Compelling headline under 60 chars",
-  "hook": "Attention-grabbing opening hook",
-  "subHook": "Supporting sub-hook",
+  "headline": "Compelling headline under 60 chars specific to ${p.name}",
+  "hook": "Attention-grabbing opening hook that references a specific ${p.name} capability",
+  "subHook": "Supporting sub-hook with concrete value",
   "cta": "Primary call to action",
   "ctaSecondary": "Secondary call to action",
-  "valueProposition": "Core value proposition",
-  "painPoints": ["3 audience pain points addressed"],
-  "benefits": ["3 key benefits"],
-  "differentiators": ["3 competitive differentiators"],
-  "openingLine": "Video/script opening line",
-  "closingLine": "Memorable closing line",
+  "valueProposition": "Core value proposition specific to ${p.name}",
+  "painPoints": ["3 specific audience pain points that ${p.name} solves"],
+  "benefits": ["3 concrete benefits with metrics where possible"],
+  "differentiators": ["3 competitive differentiators unique to ${p.name}"],
+  "openingLine": "Video/script opening line that hooks in 3 seconds",
+  "closingLine": "Memorable closing line with brand recall",
   "transitionPhrases": ["3 transition phrases for video scripts"],
   "hashtags": ["5 relevant hashtags"],
   "keywords": ["5 SEO keywords"],
@@ -251,9 +279,11 @@ Generate the following in JSON format:
           model: 'gpt-4o-mini',
           prompt: messagingPrompt,
           action: 'generate_marketing_messaging',
-          productName: product.name,
-          productTagline: product.tagline,
-          featureName: feature?.name || product.name,
+          productName: p.name,
+          productTagline: p.tagline,
+          productDescription: p.description || undefined,
+          productPositioning: p.positioning || undefined,
+          featureName: feature?.name || p.name,
           type: request.type,
           audiencePainPoints,
           competitorWeaknesses,
