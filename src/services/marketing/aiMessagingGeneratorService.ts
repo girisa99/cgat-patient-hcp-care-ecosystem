@@ -595,7 +595,46 @@ Generate the following in JSON format:
     product: typeof GENIE_PRODUCTS[GenieProductId],
     feature: { id: string; name: string } | null
   ): GeneratedMessaging {
-    const aiContent = data?.content || data?.messaging || {};
+    // Robustly extract AI content - handle string JSON, nested objects, etc.
+    let aiContent: any = {};
+    
+    try {
+      const rawContent = data?.content || data?.messaging || data?.data?.content || data;
+      
+      if (typeof rawContent === 'string') {
+        // Try to extract JSON from string (may have markdown code fences)
+        const jsonMatch = rawContent.match(/```json\s*([\s\S]*?)\s*```/) 
+          || rawContent.match(/```\s*([\s\S]*?)\s*```/)
+          || rawContent.match(/(\{[\s\S]*\})/);
+        if (jsonMatch?.[1]) {
+          aiContent = JSON.parse(jsonMatch[1]);
+        } else {
+          aiContent = JSON.parse(rawContent);
+        }
+      } else if (typeof rawContent === 'object' && rawContent !== null) {
+        // Check if it's already structured with messaging fields
+        if (rawContent.headline || rawContent.hook) {
+          aiContent = rawContent;
+        } else if (rawContent.content) {
+          // Nested content field
+          aiContent = typeof rawContent.content === 'string' 
+            ? JSON.parse(rawContent.content) 
+            : rawContent.content;
+        } else {
+          aiContent = rawContent;
+        }
+      }
+      
+      console.log('[AIMessaging] Parsed AI content keys:', Object.keys(aiContent));
+    } catch (parseError) {
+      console.warn('[AIMessaging] Failed to parse AI response as JSON:', parseError);
+      console.log('[AIMessaging] Raw data type:', typeof data, 'Keys:', data ? Object.keys(data) : 'null');
+    }
+
+    const hasAIContent = aiContent.headline || aiContent.hook || aiContent.valueProposition;
+    if (!hasAIContent) {
+      console.warn('[AIMessaging] AI content empty or unparseable, falling back to templates');
+    }
     
     return {
       requestId: request.id,
@@ -617,16 +656,16 @@ Generate the following in JSON format:
       closingLine: aiContent.closingLine || `Start creating with ${product.name} today.`,
       transitionPhrases: aiContent.transitionPhrases || ['But that\'s not all...', 'Here\'s where it gets interesting...', 'Watch this...'],
       
-      shortScript: this.generateScript('short', product, feature),
-      mediumScript: this.generateScript('medium', product, feature),
-      longScript: this.generateScript('long', product, feature),
+      shortScript: aiContent.shortScript || this.generateScript('short', product, feature),
+      mediumScript: aiContent.mediumScript || this.generateScript('medium', product, feature),
+      longScript: aiContent.longScript || this.generateScript('long', product, feature),
       
       hashtags: aiContent.hashtags || this.generateHashtags(product, feature),
       keywords: aiContent.keywords || [product.name.toLowerCase(), 'ai', 'content creation', 'automation'],
       metaDescription: aiContent.metaDescription || `${product.name}: ${product.tagline}. Transform your content workflow with AI.`,
       
       confidence: aiContent.confidence || 0.85,
-      generatedBy: 'ai-universal-processor',
+      generatedBy: hasAIContent ? 'ai-universal-processor' : 'template-fallback',
       version: 1,
       isApproved: false,
     };
@@ -680,22 +719,37 @@ Generate the following in JSON format:
   }
 
   private generateHeadline(product: typeof GENIE_PRODUCTS[GenieProductId], feature: { name: string } | null): string {
-    const templates = [
-      `${feature?.name || product.name}: ${product.tagline}`,
-      `Transform Your Workflow with ${product.name}`,
-      `${product.name} - AI That Actually Works`,
-      `Stop Wasting Time. Start Using ${product.name}.`,
-    ];
+    const isEcosystem = product.name === 'Genie Suite' || (product as any).id === 'studio';
+    const templates = isEcosystem 
+      ? [
+          'One Ecosystem. Every Creative Need. Zero Compromise.',
+          'The World\'s First Mind-to-Media AI Ecosystem',
+          'Stop Juggling 7 Tools. Command One Suite.',
+          'From Spark of Idea to Global Campaign — One Platform.',
+        ]
+      : [
+          `${feature?.name || product.name}: ${product.tagline}`,
+          `Transform Your Workflow with ${product.name}`,
+          `${product.name} - AI That Actually Works`,
+        ];
     return templates[Math.floor(Math.random() * templates.length)];
   }
 
   private generateHook(product: typeof GENIE_PRODUCTS[GenieProductId], feature: { name: string } | null): string {
-    const templates = [
-      `In 30 seconds, I'll show you how ${product.name} changed everything`,
-      `What if ${feature?.name || 'AI content creation'} was this easy?`,
-      `Stop struggling with ${feature?.name?.toLowerCase() || 'content'}. Watch this.`,
-      `The secret weapon top creators use for ${feature?.name?.toLowerCase() || 'professional content'}`,
-    ];
+    const isEcosystem = product.name === 'Genie Suite' || (product as any).id === 'studio';
+    const templates = isEcosystem
+      ? [
+          'What if one platform could replace your entire creative stack? Spark → Mind → Vibe → Cast. Watch.',
+          '7 AI products. 200+ pipelines. 50+ languages. One ecosystem. This changes everything.',
+          'You\'re paying for 7 separate tools. We built them all into one. Here\'s proof.',
+          'From blank page to global campaign in minutes. Not a demo. Not a promise. Reality.',
+        ]
+      : [
+          `In 30 seconds, I'll show you how ${product.name} changed everything`,
+          `What if ${feature?.name || 'AI content creation'} was this easy?`,
+          `Stop struggling with ${feature?.name?.toLowerCase() || 'content'}. Watch this.`,
+          `The secret weapon top creators use for ${feature?.name?.toLowerCase() || 'professional content'}`,
+        ];
     return templates[Math.floor(Math.random() * templates.length)];
   }
 
