@@ -47,6 +47,8 @@ import { useRegionalDetection } from '@/hooks/useRegionalDetection';
 import { useProductContext } from '@/hooks/useProductContext';
 import { useContentPool } from '@/hooks/useContentPool';
 import { ProductSelector } from './ProductSelector';
+import { GlobalRegionSelector } from './GlobalRegionSelector';
+import { useGenieCastRegions } from '@/hooks/useGenieCastRegions';
 import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -285,6 +287,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
 
+  // Global persistent multi-region selection (header-level context)
+  const genieCastRegions = useGenieCastRegions();
+
   // Content Pool - unified data layer for all tabs
   const { pool, isLoading: isPoolLoading } = useContentPool();
 
@@ -484,6 +489,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           onProductChange={handleProductSelect}
           isLoading={isPoolLoading}
         />
+        <Separator orientation="vertical" className="h-5" />
+        <GlobalRegionSelector regions={genieCastRegions} />
       </div>
 
       {/* Main 3-Tab Navigation */}

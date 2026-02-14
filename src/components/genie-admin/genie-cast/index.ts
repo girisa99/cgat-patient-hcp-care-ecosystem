@@ -54,7 +54,9 @@ export { HeroBannerCarouselMode, HERO_BANNER_SLIDES } from './HeroBannerCarousel
 
 export { WorkflowContextBanner } from './WorkflowContextBanner';
 export { CreateContextSelector, type ContentIntent } from './CreateContextSelector';
+export { GlobalRegionSelector } from './GlobalRegionSelector';
 export { useContentIntents } from '@/hooks/useContentIntents';
+export { useGenieCastRegions, type UseGenieCastRegionsReturn, type ResolvedRegionContext } from '@/hooks/useGenieCastRegions';
 
 // Re-export shared authoring components for convenience
 export { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';
