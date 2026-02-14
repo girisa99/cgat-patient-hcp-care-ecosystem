@@ -12,10 +12,12 @@ import {
   type GeneratedMessaging,
   type CompetitorAnalysis,
   type CreativeAngle,
+  type ProductionCapability,
   TARGET_AUDIENCES,
   COMPETITOR_DATABASE,
   MESSAGING_FRAMEWORKS,
   CREATIVE_ANGLES,
+  PRODUCTION_CONTEXT_TONES,
   getCreativeAnglesForCount,
 } from '@/services/marketing/aiMessagingGeneratorService';
 import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/productVersionTrackingService';
@@ -37,6 +39,7 @@ interface UseAIMessagingReturn {
       targetAudience: string[];
       competitors?: string[];
       regionCode?: string;
+      productionCapability?: ProductionCapability;
     }
   ) => Promise<GeneratedMessaging | null>;
   
@@ -51,6 +54,7 @@ interface UseAIMessagingReturn {
       competitors?: string[];
       variantCount: number;
       regionCode?: string;
+      productionCapability?: ProductionCapability;
     }
   ) => Promise<GeneratedMessaging[]>;
   
@@ -80,6 +84,9 @@ interface UseAIMessagingReturn {
   
   /** Creative angles */
   creativeAngles: typeof CREATIVE_ANGLES;
+  
+  /** Production context tones */
+  productionTones: typeof PRODUCTION_CONTEXT_TONES;
   
   /** Available products */
   products: typeof GENIE_PRODUCTS;
@@ -122,6 +129,7 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
       targetAudience: string[];
       competitors?: string[];
       regionCode?: string;
+      productionCapability?: ProductionCapability;
     }
   ): Promise<GeneratedMessaging | null> => {
     setIsGenerating(true);
@@ -168,6 +176,7 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
       competitors?: string[];
       variantCount: number;
       regionCode?: string;
+      productionCapability?: ProductionCapability;
     }
   ): Promise<GeneratedMessaging[]> => {
     setIsGenerating(true);
@@ -248,6 +257,7 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
     competitors: COMPETITOR_DATABASE,
     frameworks: MESSAGING_FRAMEWORKS,
     creativeAngles: CREATIVE_ANGLES,
+    productionTones: PRODUCTION_CONTEXT_TONES,
     products: GENIE_PRODUCTS,
     isGenerating,
     latestMessaging,
