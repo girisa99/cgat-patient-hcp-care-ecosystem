@@ -17,6 +17,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRegionalDetection } from '@/hooks/useRegionalDetection';
+import { MASTER_REGION_GROUPS, toggleParentRegion, getLanguagesForRegions, type RegionGroupConfig } from '@/config/regionConfig';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -86,23 +87,8 @@ const PRODUCT_COLORS: Record<GenieProductId, string> = {
 // All 7 main products (excluding studio as it's the hub)
 const MAIN_PRODUCTS: GenieProductId[] = ['spark', 'mind', 'vibe', 'deck', 'arc', 'cast', 'ask_genie'];
 
-// Supported languages for transcreation
-const TRANSCREATION_LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
-  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
-  { code: 'ko', name: 'Korean', flag: '🇰🇷' },
-  { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-  { code: 'fr', name: 'French', flag: '🇫🇷' },
-  { code: 'de', name: 'German', flag: '🇩🇪' },
-  { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
-  { code: 'hi', name: 'Hindi', flag: '🇮🇳' },
-  { code: 'bn', name: 'Bengali', flag: '🇧🇩' },
-  { code: 'ur', name: 'Urdu', flag: '🇵🇰' },
-  { code: 'id', name: 'Indonesian', flag: '🇮🇩' },
-  { code: 'sw', name: 'Swahili', flag: '🇰🇪' },
-];
+// Transcreation languages are now derived from MASTER_REGION_GROUPS via regionConfig.ts
+// No hardcoded TRANSCREATION_LANGUAGES — uses Parent → Sub-Region expandable selector
 
 type GenerationMode = 'single' | 'all_products' | 'matrix';
 type TranscreationMode = 'english_only' | 'immediate' | 'deferred';
@@ -170,7 +156,27 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
   
   // UI state
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set());
+  const [selectedTranscreationRegions, setSelectedTranscreationRegions] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'generate' | 'pending' | 'approved' | 'matrix'>('generate');
+
+  // Derived languages from selected regions
+  const derivedLanguages = useMemo(
+    () => getLanguagesForRegions(selectedTranscreationRegions),
+    [selectedTranscreationRegions]
+  );
+
+  // Toggle parent region (selects/deselects all children)
+  const handleToggleParentRegion = useCallback((parentName: string) => {
+    setSelectedTranscreationRegions(prev => toggleParentRegion(parentName, prev));
+  }, []);
+
+  // Toggle individual sub-region
+  const handleToggleSubRegion = useCallback((code: string) => {
+    setSelectedTranscreationRegions(prev =>
+      prev.includes(code) ? prev.filter(r => r !== code) : [...prev, code]
+    );
+  }, []);
 
   // Sync with top-bar product selector when it changes
   React.useEffect(() => {
@@ -990,7 +996,7 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="immediate" id="immediate" />
                       <Label htmlFor="immediate" className="text-sm cursor-pointer flex items-center gap-2">
-                        Immediate (14 languages)
+                        Immediate Transcreation
                         <Badge variant="outline" className="text-[10px]">More credits</Badge>
                       </Label>
                     </div>
@@ -1001,16 +1007,104 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                       </Label>
                     </div>
                   </RadioGroup>
+
+                  {/* Parent-First Expandable Region Selector */}
                   {transcreationMode === 'immediate' && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {TRANSCREATION_LANGUAGES.slice(0, 8).map(lang => (
-                        <Badge key={lang.code} variant="secondary" className="text-[10px]">
-                          {lang.flag} {lang.name}
-                        </Badge>
-                      ))}
-                      <Badge variant="outline" className="text-[10px]">
-                        +{TRANSCREATION_LANGUAGES.length - 8} more
-                      </Badge>
+                    <div className="space-y-2 mt-2">
+                      <p className="text-[10px] text-muted-foreground">
+                        Select parent regions → expand to customize sub-regions
+                      </p>
+                      <ScrollArea className="max-h-[200px]">
+                        <div className="space-y-1">
+                          {MASTER_REGION_GROUPS.map((group) => {
+                            const subCodes = group.regions.map(r => r.code);
+                            const isParentSelected = selectedTranscreationRegions.includes(group.parent);
+                            const selectedSubCount = subCodes.filter(c => selectedTranscreationRegions.includes(c)).length;
+                            const isExpanded = expandedRegions.has(group.parent);
+
+                            return (
+                              <div key={group.parent} className="border rounded-md overflow-hidden">
+                                {/* Parent Region Row */}
+                                <div className="flex items-center gap-2 px-2 py-1.5 bg-muted/30 hover:bg-muted/50 transition-colors">
+                                  <Checkbox
+                                    id={`region-${group.parent}`}
+                                    checked={isParentSelected}
+                                    onCheckedChange={() => handleToggleParentRegion(group.parent)}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="flex items-center gap-1.5 flex-1 text-left"
+                                    onClick={() => setExpandedRegions(prev => {
+                                      const next = new Set(prev);
+                                      next.has(group.parent) ? next.delete(group.parent) : next.add(group.parent);
+                                      return next;
+                                    })}
+                                  >
+                                    <span className="text-sm">{group.icon}</span>
+                                    <Label className="text-xs font-medium cursor-pointer flex-1">{group.parent}</Label>
+                                    {selectedSubCount > 0 && (
+                                      <Badge variant="secondary" className="text-[9px] h-4 px-1">
+                                        {selectedSubCount}/{group.regions.length}
+                                      </Badge>
+                                    )}
+                                    {isExpanded ? (
+                                      <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                                    ) : (
+                                      <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                                    )}
+                                  </button>
+                                </div>
+
+                                {/* Sub-Region Children */}
+                                {isExpanded && (
+                                  <div className="pl-6 py-1 space-y-0.5 bg-background/50">
+                                    {group.regions.map((sub) => (
+                                      <div key={sub.code} className="flex items-center gap-2 px-2 py-0.5">
+                                        <Checkbox
+                                          id={`sub-${sub.code}`}
+                                          checked={selectedTranscreationRegions.includes(sub.code)}
+                                          onCheckedChange={() => handleToggleSubRegion(sub.code)}
+                                        />
+                                        <Label htmlFor={`sub-${sub.code}`} className="text-[11px] cursor-pointer flex-1">
+                                          {sub.label}
+                                        </Label>
+                                        <span className="text-[9px] text-muted-foreground">
+                                          {sub.languages.length} lang{sub.languages.length > 1 ? 's' : ''}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+
+                      {/* Derived Languages Summary */}
+                      {derivedLanguages.length > 0 && (
+                        <div className="space-y-1 pt-1">
+                          <p className="text-[10px] font-medium text-muted-foreground">
+                            {derivedLanguages.length} languages from {selectedTranscreationRegions.filter(r => 
+                              MASTER_REGION_GROUPS.some(g => g.parent === r)
+                            ).length} region{selectedTranscreationRegions.filter(r => 
+                              MASTER_REGION_GROUPS.some(g => g.parent === r)
+                            ).length !== 1 ? 's' : ''}
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {derivedLanguages.slice(0, 10).map(lang => (
+                              <Badge key={lang.value} variant="secondary" className="text-[9px]">
+                                {lang.label}
+                              </Badge>
+                            ))}
+                            {derivedLanguages.length > 10 && (
+                              <Badge variant="outline" className="text-[9px]">
+                                +{derivedLanguages.length - 10} more
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
