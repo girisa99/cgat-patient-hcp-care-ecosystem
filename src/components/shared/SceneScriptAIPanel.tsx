@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { UseSceneScriptGeneratorOptions } from '@/hooks/useSceneScriptGenerator';
-import { useSceneScriptGenerator } from '@/hooks/useSceneScriptGenerator';
+import { useSceneScriptGenerator, getSmartMessagingAssignment } from '@/hooks/useSceneScriptGenerator';
 import type { SceneScript, TemplateMapping, MessagingContent } from '@/hooks/useUnifiedAuthoring';
 
 interface SceneScriptAIPanelProps {
@@ -194,6 +194,28 @@ export const SceneScriptAIPanel: React.FC<SceneScriptAIPanelProps> = ({
                 ))}
               </div>
             )}
+
+            {/* AI-Smart Messaging Assignment */}
+            {messaging && (() => {
+              const sceneType = currentScene.sceneKey.replace(/^custom_/, '').replace(/_\d+$/, '');
+              const assignment = getSmartMessagingAssignment(sceneType);
+              return (
+                <div className="p-2 bg-accent/30 rounded border border-accent/50 space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    <span className="text-[10px] font-medium text-foreground/80">Smart Assignment</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {assignment.elements.map(el => (
+                      <Badge key={el} variant="outline" className="text-[9px] bg-primary/5 border-primary/20">
+                        {el.replace(/([A-Z])/g, ' $1').trim()}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">{assignment.reasoning}</p>
+                </div>
+              );
+            })()}
 
             {/* Template Pattern (if exists) */}
             {currentScene.scriptText && (
