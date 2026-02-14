@@ -39,7 +39,11 @@ interface UseAIMessagingReturn {
       targetAudience: string[];
       competitors?: string[];
       regionCode?: string;
+      subRegionCode?: string;
       productionCapability?: ProductionCapability;
+      isEnglishBase?: boolean;
+      parentMessagingId?: string;
+      routingZone?: string;
     }
   ) => Promise<GeneratedMessaging | null>;
   
@@ -54,7 +58,11 @@ interface UseAIMessagingReturn {
       competitors?: string[];
       variantCount: number;
       regionCode?: string;
+      subRegionCode?: string;
       productionCapability?: ProductionCapability;
+      isEnglishBase?: boolean;
+      parentMessagingId?: string;
+      routingZone?: string;
     }
   ) => Promise<GeneratedMessaging[]>;
   
@@ -140,7 +148,11 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
       targetAudience: string[];
       competitors?: string[];
       regionCode?: string;
+      subRegionCode?: string;
       productionCapability?: ProductionCapability;
+      isEnglishBase?: boolean;
+      parentMessagingId?: string;
+      routingZone?: string;
     }
   ): Promise<GeneratedMessaging | null> => {
     setIsGenerating(true);
@@ -187,7 +199,11 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
       competitors?: string[];
       variantCount: number;
       regionCode?: string;
+      subRegionCode?: string;
       productionCapability?: ProductionCapability;
+      isEnglishBase?: boolean;
+      parentMessagingId?: string;
+      routingZone?: string;
     }
   ): Promise<GeneratedMessaging[]> => {
     setIsGenerating(true);

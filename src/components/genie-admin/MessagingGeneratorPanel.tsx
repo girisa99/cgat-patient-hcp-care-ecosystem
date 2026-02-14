@@ -376,6 +376,9 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
       targetAudience: selectedAudiences,
       competitors: selectedCompetitors,
       productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+      regionCode: selectedTranscreationRegions.length > 0 ? selectedTranscreationRegions[0] : 'EN_US',
+      subRegionCode: selectedTranscreationRegions.length > 1 ? selectedTranscreationRegions[1] : undefined,
+      isEnglishBase: true,
     });
   };
 
@@ -423,6 +426,9 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
           targetAudience: selectedAudiences,
           competitors: selectedCompetitors,
           productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+          regionCode: selectedTranscreationRegions.length > 0 ? selectedTranscreationRegions[0] : 'EN_US',
+          subRegionCode: selectedTranscreationRegions.length > 1 ? selectedTranscreationRegions[1] : undefined,
+          isEnglishBase: true,
         });
 
         // Update with success
@@ -482,6 +488,9 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
           targetAudience: [job.audienceId],
           competitors: [],
           productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+          regionCode: selectedTranscreationRegions.length > 0 ? selectedTranscreationRegions[0] : 'EN_US',
+          subRegionCode: selectedTranscreationRegions.length > 1 ? selectedTranscreationRegions[1] : undefined,
+          isEnglishBase: true,
         });
 
         setBatchJobs(prev => prev.map(j => 
