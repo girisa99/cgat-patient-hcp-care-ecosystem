@@ -12,7 +12,6 @@ max_rows = 1000
 
 [auth]
 enabled = true
-port = 54324
 site_url = "http://localhost:5173"
 additional_redirect_urls = ["https://ithspbabhmdntioslfqe.supabase.co"]
 jwt_expiry = 3600
