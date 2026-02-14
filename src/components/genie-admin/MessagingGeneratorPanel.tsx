@@ -61,6 +61,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useAIMessaging } from '@/hooks/useAIMessaging';
+import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
 import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/productVersionTrackingService';
 import { audienceRelevanceService } from '@/services/audienceRelevanceService';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
@@ -811,6 +812,21 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
             Approved
           </Badge>
         )}
+      </div>
+
+      {/* RLHF Feedback for generated messaging */}
+      <div className="pt-2 border-t">
+        <InlineTrainAIFeedback
+          data={{
+            context: 'content_generation',
+            product: (messaging.productId || selectedProduct || 'spark') as any,
+            contentId: messaging.id || `msg_${messaging.headline?.slice(0, 20)}`,
+            originalContent: `Headline: ${messaging.headline}\nHook: ${messaging.hook}\nCTA: ${messaging.cta}\nValue Prop: ${messaging.valueProposition}`,
+            metadata: { messagingType, audiences: selectedAudiences },
+          }}
+          variant="compact"
+          showTextFeedback={true}
+        />
       </div>
     </div>
   );
