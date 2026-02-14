@@ -235,6 +235,84 @@ async function loadCompetitorLandscape(productDbId: string, regionCode?: string)
 }
 
 /**
+ * Load enriched competitor profiles from the intelligence DB (seeded from Command Center).
+ * Returns aggregated competitive intelligence for stronger messaging differentiation.
+ */
+async function loadEnrichedCompetitorProfiles(): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('competitor_profiles')
+      .select('name, category, strengths, weaknesses, revenue_estimate, genie_differentiator, video_editing_rating, ai_capabilities_rating, ease_of_use_rating')
+      .limit(15) as { data: any[] | null; error: any };
+
+    if (error || !data || data.length === 0) return '';
+
+    const lines = data.map((c: any) => {
+      const ratings = [
+        c.video_editing_rating ? `Video:${c.video_editing_rating}/10` : '',
+        c.ai_capabilities_rating ? `AI:${c.ai_capabilities_rating}/10` : '',
+        c.ease_of_use_rating ? `Ease:${c.ease_of_use_rating}/10` : '',
+      ].filter(Boolean).join(', ');
+      return `- ${c.category || 'Direct'}: Weakness="${c.weaknesses?.[0] || 'N/A'}" | Our Edge="${c.genie_differentiator || 'Full ecosystem'}" | Their Ratings: ${ratings || 'N/A'}`;
+    });
+
+    return `\n=== COMPETITIVE INTELLIGENCE (${data.length} competitors analyzed, never mention names) ===\n${lines.join('\n')}`;
+  } catch (e) {
+    console.warn('[AIMessaging] Failed to load enriched competitor profiles:', e);
+    return '';
+  }
+}
+
+/**
+ * Load market segment intelligence for audience-aware messaging.
+ */
+async function loadMarketSegmentIntelligence(audienceIds: string[]): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('market_segments')
+      .select('segment_name, tam_value, pain_points, messaging_themes, pricing_sensitivity, decision_drivers, buying_triggers')
+      .limit(8) as { data: any[] | null; error: any };
+
+    if (error || !data || data.length === 0) return '';
+
+    const relevantSegments = data.slice(0, 5);
+    const lines = relevantSegments.map((s: any) => {
+      const painPoints = Array.isArray(s.pain_points) ? (s.pain_points as string[]).slice(0, 3).join('; ') : '';
+      const themes = Array.isArray(s.messaging_themes) ? (s.messaging_themes as string[]).slice(0, 3).join('; ') : '';
+      const triggers = Array.isArray(s.buying_triggers) ? (s.buying_triggers as string[]).slice(0, 2).join('; ') : '';
+      return `- ${s.segment_name}: Pain="${painPoints}" | Themes="${themes}" | Triggers="${triggers}" | TAM=$${s.tam_value || 'N/A'}`;
+    });
+
+    return `\n=== MARKET INTELLIGENCE ===\n${lines.join('\n')}`;
+  } catch (e) {
+    console.warn('[AIMessaging] Failed to load market segments:', e);
+    return '';
+  }
+}
+
+/**
+ * Load trending industry insights for timely, relevant messaging.
+ */
+async function loadTrendIntelligence(): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('trend_monitoring_log')
+      .select('trend_name, trend_category, impact_assessment, relevance_score')
+      .gte('relevance_score', 7)
+      .order('relevance_score', { ascending: false })
+      .limit(5) as { data: any[] | null; error: any };
+
+    if (error || !data || data.length === 0) return '';
+
+    const lines = data.map((t: any) => `- ${t.trend_name} (${t.trend_category}): ${t.impact_assessment || 'High impact'}`);
+    return `\n=== INDUSTRY TRENDS (leverage these for timely messaging) ===\n${lines.join('\n')}`;
+  } catch (e) {
+    console.warn('[AIMessaging] Failed to load trends:', e);
+    return '';
+  }
+}
+
+/**
  * Resolve product DB UUID from GenieProductId key.
  */
 const PRODUCT_KEY_TO_DB_ID: Record<string, string> = {
@@ -310,9 +388,12 @@ class AIMessagingGeneratorService {
 
     // === DB-DRIVEN KNOWLEDGE (subscriber-safe) ===
     const productDbId = PRODUCT_KEY_TO_DB_ID[request.productId];
-    const [dbKnowledge, dbCompetitors] = await Promise.all([
+    const [dbKnowledge, dbCompetitors, enrichedCompetitors, marketIntel, trendIntel] = await Promise.all([
       productDbId ? loadProductKnowledge(productDbId) : Promise.resolve(null),
       productDbId ? loadCompetitorLandscape(productDbId) : Promise.resolve([]),
+      loadEnrichedCompetitorProfiles(),
+      loadMarketSegmentIntelligence(request.targetAudience),
+      loadTrendIntelligence(),
     ]);
 
     // Get audience pain points
@@ -359,11 +440,14 @@ class AIMessagingGeneratorService {
           ? `\nCompetitor Weaknesses to Exploit (do NOT name competitors): ${competitorWeaknesses.join(', ')}`
           : '';
 
-      const messagingPrompt = `You are an expert B2B/SaaS marketing strategist. Generate compelling, product-specific marketing messaging.
+      const messagingPrompt = `You are a world-class creative director and marketing strategist at a top agency. Generate BOLD, emotionally resonant, and strategically differentiated messaging that makes people stop scrolling.
 
 === PRODUCT CONTEXT ===
 ${productContext}
 ${competitiveContext}
+${enrichedCompetitors}
+${marketIntel}
+${trendIntel}
 
 === TARGET ===
 Feature Focus: ${feature?.name || p.name}
@@ -373,14 +457,18 @@ Audience Pain Points: ${audiencePainPoints.join(', ') || 'General content creato
 === ECOSYSTEM CONTEXT ===
 This product is part of the Genie Suite — an 8-product AI content creation ecosystem ("Mind to Media"): Spark (ideation), Mind (scripting), Vibe (video production), Deck (presentations), Hub (project management), Cast (publishing & distribution), Ask Genie (AI assistant), and Genie Suite (the unified platform). All products share context and intelligence. 200+ AI pipelines, 30+ AI providers, 50+ languages, 62+ sub-regions.
 
-=== INSTRUCTIONS ===
+=== CREATIVE MANDATE ===
+- Write like Apple's creative team meets Nike's emotional storytelling — BOLD, VISCERAL, UNFORGETTABLE
 - Make messaging SPECIFIC to ${p.name}, not generic AI tool copy
 - Reference the product's unique capabilities and positioning
 - NEVER mention competitor names — only highlight our unique advantages and differentiation
-- Address the specific audience pain points with concrete solutions
-- Use the competitive edge to create differentiated messaging
-- Scripts should tell a compelling story, not just list features
-- All output must feel like it was written by a senior marketing strategist who deeply knows this product
+- Address specific audience pain points with EMOTIONALLY charged solutions
+- Use competitive intelligence to create razor-sharp differentiation
+- Scripts should tell a COMPELLING STORY with tension, transformation, and triumph
+- Every headline must pass the "Would I stop scrolling?" test
+- Use power words: Transform, Unleash, Dominate, Revolutionize, Command, Ignite
+- Leverage current industry trends for timely relevance
+- All output must feel like it was crafted by a Cannes Lions-winning creative director
 
 Generate the following in JSON format:
 {
@@ -405,7 +493,7 @@ Generate the following in JSON format:
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'openai',
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o',
           prompt: messagingPrompt,
           action: 'generate_marketing_messaging',
           productName: p.name,
