@@ -127,13 +127,17 @@ const fetchContentPool = async (userId: string): Promise<ContentPoolContext> => 
 
   try {
     // Fetch products (system defaults + user's) — use correct column names
-    const { data: pd } = await supabase
+    const { data: pd, error: pdError } = await supabase
       .from('marketing_products')
       .select('*')
       .eq('is_active', true)
       .or(`is_system_default.eq.true,user_id.eq.${userId}`)
       .order('sort_order', { ascending: true });
-    if (pd) productsData.push(...(pd as unknown as ContentPoolProduct[]));
+    if (pdError) console.error('[useContentPool] Products fetch error:', pdError);
+    if (pd) {
+      productsData.push(...(pd as unknown as ContentPoolProduct[]));
+      console.log('[useContentPool] Loaded', pd.length, 'products');
+    }
 
     // Fetch brand assets for those products
     if (productsData.length > 0) {
@@ -167,7 +171,7 @@ const fetchContentPool = async (userId: string): Promise<ContentPoolContext> => 
       .select('*');
     if (td) ttsData.push(...(td as ContentPoolTTSAudio[]));
   } catch (error) {
-    console.warn('[useContentPool] Fetch error, using fallback:', error);
+    console.error('[useContentPool] Fetch error, using fallback:', error);
   }
 
   return {
@@ -203,9 +207,22 @@ export const useContentPool = () => {
   const queryKey = ['content_pool', userId];
 
   useEffect(() => {
+    // Get initial user
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id || null);
+      if (user?.id) {
+        setUserId(user.id);
+        console.log('[useContentPool] User resolved:', user.id);
+      }
     });
+    
+    // Also listen for auth state changes (covers delayed auth)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const uid = session?.user?.id || null;
+      setUserId(uid);
+      if (uid) console.log('[useContentPool] Auth state changed, user:', uid);
+    });
+    
+    return () => subscription.unsubscribe();
   }, []);
 
   const query = useQuery({
