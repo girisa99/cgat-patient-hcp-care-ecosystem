@@ -644,7 +644,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => castSession.selectTemplate(null as any)}
+                          onClick={() => castSession.clearTemplate()}
                         >
                           Change
                         </Button>
