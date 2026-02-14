@@ -737,6 +737,17 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
                 {/* MessagingGeneratorPanel ONLY - no AuthoringStageIndicator or RegionalDialectSelector here */}
                 <MessagingGeneratorPanel 
+                  initialProductId={(() => {
+                    // Map database product name to GENIE_PRODUCTS key
+                    const selectedProd = pool?.products?.find(p => p.id === castSession.session.selectedProductId);
+                    if (!selectedProd) return undefined;
+                    const nameToKey: Record<string, string> = {
+                      'Genie Spark': 'spark', 'Genie Mind': 'mind', 'Genie Vibe': 'vibe',
+                      'Genie Deck': 'deck', 'Genie Hub': 'arc', 'Genie Cast': 'cast',
+                      'Ask Genie': 'ask_genie', 'Genie Suite': 'studio',
+                    };
+                    return nameToKey[selectedProd.name] || undefined;
+                  })()}
                   onMessagingApproved={(productId, messaging) => {
                     console.log('[GenieCast] Messaging approved for', productId);
                     if (messaging) {
