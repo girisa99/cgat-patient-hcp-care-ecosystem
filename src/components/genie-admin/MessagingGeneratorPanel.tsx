@@ -962,27 +962,35 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
                           {aiSuggestedGroups.map(group => {
                             const allSelected = group.ids.every(id => selectedAudiences.includes(id));
                             return (
-                              <div key={group.label} className="flex items-start gap-2">
-                                <Button
-                                  variant={allSelected ? 'default' : 'outline'}
-                                  size="sm"
-                                  className="text-[10px] h-7 shrink-0"
-                                  onClick={() => {
-                                    if (allSelected) {
-                                      setSelectedAudiences(prev => prev.filter(id => !group.ids.includes(id)));
-                                    } else {
-                                      setSelectedAudiences(prev => [...new Set([...prev, ...group.ids])]);
-                                    }
-                                  }}
-                                >
-                                  {allSelected ? '✓ ' : ''}{group.label}
-                                </Button>
-                                <p className="text-[10px] text-muted-foreground pt-1">{group.reason}</p>
-                              </div>
+                              <button
+                                key={group.label}
+                                className={cn(
+                                  "w-full text-left rounded-md border p-2 transition-colors cursor-pointer",
+                                  allSelected
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border bg-background hover:bg-muted/50"
+                                )}
+                                onClick={() => {
+                                  if (allSelected) {
+                                    setSelectedAudiences(prev => prev.filter(id => !group.ids.includes(id)));
+                                  } else {
+                                    setSelectedAudiences(prev => [...new Set([...prev, ...group.ids])]);
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  {allSelected && <CheckCircle className="w-3 h-3 text-primary shrink-0" />}
+                                  <span className="text-[11px] font-medium truncate">{group.label}</span>
+                                  <span className="text-[9px] text-muted-foreground ml-auto shrink-0">
+                                    {group.ids.length} audience{group.ids.length !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 leading-tight">{group.reason}</p>
+                              </button>
                             );
                           })}
                           {aiSuggestedGroups.length > 0 && (
