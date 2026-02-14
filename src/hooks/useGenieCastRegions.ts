@@ -2,43 +2,43 @@
  * useGenieCastRegions - Persistent Multi-Region Selection for Genie Cast
  * 
  * Global region context that persists across CREATE → PRODUCE → PUBLISH tabs.
- * Supports multi-region batch selection with parent→sub-region hierarchy.
- * All downstream operations (LLM routing, TTS, templates, publishing) inherit this context.
+ * Uses the same 3-level REGION_HIERARCHY as LandingPageScriptsPanel.
+ * Supports multi-region batch selection with parent→zone→country hierarchy.
  * 
- * Uses localStorage for persistence across tab changes and refreshes.
+ * All downstream operations (LLM routing, TTS, templates, publishing) inherit this context.
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  MASTER_REGION_GROUPS,
-  ALL_REGIONS,
-  toggleParentRegion,
-  getRegionAIRouting,
-  getLanguagesForRegions,
-  type RegionGroupConfig,
-  type SubRegionConfig,
-} from '@/config/regionConfig';
+  REGION_HIERARCHY,
+  getGroupAllCodes,
+  getGroupLeafCount,
+  getGroupSelectedCount,
+  getAllSelectableCodes,
+  getTotalLeafCount,
+  type RegionGroup,
+  type RegionChild,
+} from '@/config/regionHierarchy';
+
+// Re-export types for consumer convenience
+export type { RegionGroup, RegionChild } from '@/config/regionHierarchy';
 
 // ─── Types ─────────────────────────────────────────────────────────────
 
 export interface RegionSelection {
-  /** All selected codes (parent names + sub-region codes) */
   selectedCodes: string[];
-  /** Timestamp of last update */
   updatedAt: string;
 }
 
 export interface ResolvedRegionContext {
-  /** Parent region names that are fully selected (all subs included) */
+  /** Parent groups that are fully selected */
   selectedParents: string[];
-  /** Individual sub-region codes selected */
-  selectedSubRegions: SubRegionConfig[];
-  /** Aggregated languages across all selected regions */
-  languages: { value: string; label: string }[];
-  /** Per-region AI routing map: regionCode → { llm, ttsProvider, ttsLocale } */
-  routingMap: Record<string, { llm: string; ttsProvider: string; ttsLocale: string }>;
-  /** Total count of selected sub-regions */
-  totalSubRegions: number;
+  /** All selected leaf/zone codes */
+  selectedLeafCodes: string[];
+  /** Total count of selected leaves */
+  totalSelected: number;
+  /** Total possible leaves */
+  totalAvailable: number;
   /** Whether any region is selected */
   hasSelection: boolean;
 }
@@ -76,130 +76,139 @@ export function useGenieCastRegions() {
     }
   }, [selectedCodes]);
 
-  // Toggle a parent region (selects/deselects all sub-regions)
-  const toggleParent = useCallback((parentName: string) => {
-    setSelectedCodes(prev => toggleParentRegion(parentName, prev));
-  }, []);
-
-  // Toggle a single sub-region
-  const toggleSubRegion = useCallback((subCode: string) => {
+  // Toggle an entire parent group (selects/deselects ALL descendants)
+  const toggleGroup = useCallback((group: RegionGroup) => {
     setSelectedCodes(prev => {
-      if (prev.includes(subCode)) {
-        // Also remove parent if it was selected
-        const group = MASTER_REGION_GROUPS.find(g =>
-          g.regions.some(r => r.code === subCode)
-        );
-        const parentName = group?.parent;
-        return prev.filter(c => c !== subCode && c !== parentName);
+      const allCodes = getGroupAllCodes(group);
+      const isFullySelected = allCodes.every(c => prev.includes(c));
+      if (isFullySelected) {
+        return prev.filter(c => !allCodes.includes(c));
       } else {
-        // Add sub-region; if all subs now selected, also add parent
-        const newCodes = [...prev, subCode];
-        const group = MASTER_REGION_GROUPS.find(g =>
-          g.regions.some(r => r.code === subCode)
-        );
-        if (group) {
-          const allSubsSelected = group.regions.every(r => newCodes.includes(r.code));
-          if (allSubsSelected && !newCodes.includes(group.parent)) {
-            newCodes.push(group.parent);
-          }
-        }
-        return newCodes;
+        return [...new Set([...prev, ...allCodes])];
       }
     });
   }, []);
 
-  // Set specific selection (for programmatic use)
+  // Toggle a zone (mid-level: includes its children if any)
+  const toggleZone = useCallback((zone: RegionChild) => {
+    setSelectedCodes(prev => {
+      const zoneCodes = zone.children
+        ? [zone.code, ...zone.children.map(c => c.code)]
+        : [zone.code];
+      const isFullySelected = zoneCodes.every(c => prev.includes(c));
+      if (isFullySelected) {
+        return prev.filter(c => !zoneCodes.includes(c));
+      } else {
+        return [...new Set([...prev, ...zoneCodes])];
+      }
+    });
+  }, []);
+
+  // Toggle a single leaf node
+  const toggleLeaf = useCallback((code: string) => {
+    setSelectedCodes(prev =>
+      prev.includes(code)
+        ? prev.filter(c => c !== code)
+        : [...prev, code]
+    );
+  }, []);
+
+  // Clear all
+  const clearAll = useCallback(() => setSelectedCodes([]), []);
+
+  // Select all
+  const selectAll = useCallback(() => {
+    setSelectedCodes(getAllSelectableCodes());
+  }, []);
+
+  // Set specific selection
   const setSelection = useCallback((codes: string[]) => {
     setSelectedCodes(codes);
   }, []);
 
-  // Clear all selections
-  const clearAll = useCallback(() => {
-    setSelectedCodes([]);
-  }, []);
-
-  // Select all regions
-  const selectAll = useCallback(() => {
-    const allCodes = MASTER_REGION_GROUPS.flatMap(g => [
-      g.parent,
-      ...g.regions.map(r => r.code),
-    ]);
-    setSelectedCodes(allCodes);
-  }, []);
-
-  // Resolved context — computed from selections
+  // Resolved context
   const resolved: ResolvedRegionContext = useMemo(() => {
-    const selectedParents = MASTER_REGION_GROUPS
-      .filter(g => selectedCodes.includes(g.parent))
-      .map(g => g.parent);
+    const totalAvailable = getTotalLeafCount();
+    const selectedParents = REGION_HIERARCHY
+      .filter(g => {
+        const leafCount = getGroupLeafCount(g);
+        const selCount = getGroupSelectedCount(g, selectedCodes);
+        return selCount === leafCount && leafCount > 0;
+      })
+      .map(g => g.groupCode);
 
-    const selectedSubRegions = ALL_REGIONS.filter(r => selectedCodes.includes(r.code));
-    
-    const languages = getLanguagesForRegions(selectedCodes);
-
-    const routingMap: Record<string, { llm: string; ttsProvider: string; ttsLocale: string }> = {};
-    selectedSubRegions.forEach(sub => {
-      routingMap[sub.code] = getRegionAIRouting(sub.code);
+    // Gather all selected leaf codes (not parent group codes)
+    const selectedLeafCodes = REGION_HIERARCHY.flatMap(g => {
+      if (g.children.length === 0) {
+        return (selectedCodes.includes(g.groupCode) || selectedCodes.includes(g.groupCode.toLowerCase()))
+          ? [g.groupCode]
+          : [];
+      }
+      return g.children.flatMap(c => {
+        if (c.children && c.children.length > 0) {
+          return c.children.filter(gc => selectedCodes.includes(gc.code)).map(gc => gc.code);
+        }
+        return selectedCodes.includes(c.code) ? [c.code] : [];
+      });
     });
 
     return {
       selectedParents,
-      selectedSubRegions,
-      languages,
-      routingMap,
-      totalSubRegions: selectedSubRegions.length,
-      hasSelection: selectedSubRegions.length > 0,
+      selectedLeafCodes,
+      totalSelected: selectedLeafCodes.length,
+      totalAvailable,
+      hasSelection: selectedLeafCodes.length > 0,
     };
   }, [selectedCodes]);
 
-  // Check if a parent is fully selected (all subs selected)
-  const isParentFullySelected = useCallback((parentName: string): boolean => {
-    const group = MASTER_REGION_GROUPS.find(g => g.parent === parentName);
-    if (!group) return false;
-    return group.regions.every(r => selectedCodes.includes(r.code));
-  }, [selectedCodes]);
-
-  // Check if a parent is partially selected (some subs selected)
-  const isParentPartiallySelected = useCallback((parentName: string): boolean => {
-    const group = MASTER_REGION_GROUPS.find(g => g.parent === parentName);
-    if (!group) return false;
-    const selectedCount = group.regions.filter(r => selectedCodes.includes(r.code)).length;
-    return selectedCount > 0 && selectedCount < group.regions.length;
-  }, [selectedCodes]);
-
-  // Get summary label for display
+  // Summary label for display
   const summaryLabel = useMemo((): string => {
-    if (resolved.totalSubRegions === 0) return 'No regions';
-    if (resolved.totalSubRegions === ALL_REGIONS.length) return 'All regions';
-    
-    if (resolved.selectedParents.length === 1 && resolved.totalSubRegions <= 6) {
-      return `${resolved.selectedParents[0]} (${resolved.totalSubRegions})`;
+    if (resolved.totalSelected === 0) return 'No regions';
+    if (resolved.totalSelected === resolved.totalAvailable) return `All regions (${resolved.totalAvailable})`;
+    if (resolved.selectedParents.length === 1 && resolved.totalSelected <= 8) {
+      const group = REGION_HIERARCHY.find(g => g.groupCode === resolved.selectedParents[0]);
+      return `${group?.groupName || resolved.selectedParents[0]} (${resolved.totalSelected})`;
     }
     if (resolved.selectedParents.length > 0) {
-      return `${resolved.selectedParents.length} regions (${resolved.totalSubRegions} sub)`;
+      return `${resolved.selectedParents.length} regions (${resolved.totalSelected} sub)`;
     }
-    return `${resolved.totalSubRegions} sub-region${resolved.totalSubRegions > 1 ? 's' : ''}`;
+    return `${resolved.totalSelected} sub-region${resolved.totalSelected > 1 ? 's' : ''}`;
   }, [resolved]);
 
+  // Check group selection status
+  const getGroupStatus = useCallback((group: RegionGroup): 'all' | 'partial' | 'none' => {
+    const leafCount = getGroupLeafCount(group);
+    const selCount = getGroupSelectedCount(group, selectedCodes);
+    if (selCount === 0) return 'none';
+    if (selCount === leafCount) return 'all';
+    return 'partial';
+  }, [selectedCodes]);
+
+  // Check zone selection status
+  const getZoneStatus = useCallback((zone: RegionChild): 'all' | 'partial' | 'none' => {
+    if (!zone.children || zone.children.length === 0) {
+      return selectedCodes.includes(zone.code) ? 'all' : 'none';
+    }
+    const total = zone.children.length;
+    const selected = zone.children.filter(c => selectedCodes.includes(c.code)).length;
+    if (selected === 0) return 'none';
+    if (selected === total) return 'all';
+    return 'partial';
+  }, [selectedCodes]);
+
   return {
-    // State
     selectedCodes,
     resolved,
     summaryLabel,
-    
-    // Actions
-    toggleParent,
-    toggleSubRegion,
-    setSelection,
+    toggleGroup,
+    toggleZone,
+    toggleLeaf,
     clearAll,
     selectAll,
-    
-    // Helpers
-    isParentFullySelected,
-    isParentPartiallySelected,
-    
-    // Static data
-    regionGroups: MASTER_REGION_GROUPS,
+    setSelection,
+    getGroupStatus,
+    getZoneStatus,
+    hierarchy: REGION_HIERARCHY,
   };
 }
 
