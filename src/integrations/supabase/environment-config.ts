@@ -30,10 +30,9 @@ const SUPABASE_CONFIGS: Record<Environment, SupabaseEnvironmentConfig> = {
     label: 'DEV (genie-suite-dev)',
   },
   uat: {
-    // TODO: Replace with genie-suite-uat project credentials
-    url: 'https://REPLACE_WITH_UAT_PROJECT_REF.supabase.co',
-    anonKey: 'REPLACE_WITH_UAT_ANON_KEY',
-    projectRef: 'REPLACE_WITH_UAT_PROJECT_REF',
+    url: 'https://epqsuaccpafjoqwtpajo.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwcXN1YWNjcGFmam9xd3RwYWpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwODI0MTAsImV4cCI6MjA4NjY1ODQxMH0.SCF8u1izAOhb3OcAVO4ilKJ8ANCoDNcANhxrn-RFTto',
+    projectRef: 'epqsuaccpafjoqwtpajo',
     label: 'UAT (genie-suite-uat)',
   },
   production: {
