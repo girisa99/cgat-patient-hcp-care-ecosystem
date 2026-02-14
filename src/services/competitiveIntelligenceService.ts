@@ -249,6 +249,8 @@ class CompetitiveIntelligenceService {
         analysisType,
         scope,
         scopeFilter,
+        region: scope,
+        subRegion: scopeFilter,
       }
     });
 
