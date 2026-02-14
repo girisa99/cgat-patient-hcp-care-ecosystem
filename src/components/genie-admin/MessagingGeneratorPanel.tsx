@@ -209,9 +209,47 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
         return found?.name || c;
       });
       const audienceList = targetAudiences.map((a: any) => `${a.id}: ${a.label}`).join(', ');
-      const prompt = `Based on this campaign context, suggest 3-4 target audience groups (each with 2-4 specific audience segments). Product: ${productName}. Campaign Type: ${messagingType}. Competitors: ${competitorNames.length > 0 ? competitorNames.join(', ') : 'N/A'}. Available Audiences: ${audienceList}. Return ONLY valid JSON array like: [{"label":"Group Name","ids":["audience_id_1","audience_id_2"],"reason":"Why this group fits"}]. IMPORTANT: Only use audience IDs from the Available Audiences list.`;
-
+      
+      // Fetch product knowledge from database to enrich the AI prompt
       const { supabase } = await import('@/integrations/supabase/client');
+      const { data: productKnowledge } = await supabase
+        .from('product_knowledge_registry')
+        .select('value_proposition, pain_points, key_benefits, use_cases, positioning_statement, differentiators')
+        .eq('product_id', selectedProduct)
+        .eq('is_current', true)
+        .single();
+
+      // Build enriched context from product knowledge
+      let enrichedContext = `Product: ${productName}\nCampaign Type: ${messagingType}\nCompetitors: ${competitorNames.length > 0 ? competitorNames.join(', ') : 'None'}\n`;
+      
+      if (productKnowledge) {
+        enrichedContext += `\nProduct Strategy Context:\n`;
+        if (productKnowledge.value_proposition) enrichedContext += `- Value Proposition: ${productKnowledge.value_proposition}\n`;
+        if (productKnowledge.positioning_statement) enrichedContext += `- Positioning: ${productKnowledge.positioning_statement}\n`;
+        if (productKnowledge.pain_points && Array.isArray(productKnowledge.pain_points)) {
+          enrichedContext += `- Pain Points Solved: ${productKnowledge.pain_points.join(', ')}\n`;
+        }
+        if (productKnowledge.key_benefits && Array.isArray(productKnowledge.key_benefits)) {
+          enrichedContext += `- Key Benefits: ${productKnowledge.key_benefits.join(', ')}\n`;
+        }
+        if (productKnowledge.use_cases && Array.isArray(productKnowledge.use_cases)) {
+          enrichedContext += `- Primary Use Cases: ${productKnowledge.use_cases.join(', ')}\n`;
+        }
+        if (productKnowledge.differentiators) enrichedContext += `- Differentiators: ${productKnowledge.differentiators}\n`;
+      }
+
+      const prompt = `Based on this campaign context and product knowledge, suggest 3-4 target audience groups that best align with the product's value proposition, benefits, and use cases.
+
+${enrichedContext}
+Available Audiences: ${audienceList}
+
+For each suggestion, provide:
+- label: the audience group name
+- ids: array of audience IDs from the Available Audiences list
+- reason: why this group is ideal for this campaign given the product's positioning and pain points it solves (max 2 sentences, be specific about alignment)
+
+Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"reason":"Why this group fits"}].`;
+
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: { action: 'generate_marketing_messaging', provider: 'anthropic', prompt, systemPrompt: 'You are a marketing strategist. Return ONLY a valid JSON array, no markdown fences.' },
       });
