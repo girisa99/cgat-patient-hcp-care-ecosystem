@@ -451,8 +451,18 @@ export const MessagingDataTable: React.FC<MessagingDataTableProps> = ({
                     {showActions && (
                       <>
                         {parent.messaging && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDetailEntry(parent)} title="View detail">
+                          <Button
+                            variant={parent.status === 'pending' ? 'outline' : 'ghost'}
+                            size="sm"
+                            className={cn(
+                              "h-7 gap-1 text-[10px]",
+                              parent.status === 'pending' ? "px-2 border-primary/30 text-primary hover:bg-primary/10" : "w-7 px-0"
+                            )}
+                            onClick={() => setDetailEntry(parent)}
+                            title="View messaging detail"
+                          >
                             <Eye className="w-3.5 h-3.5" />
+                            {parent.status === 'pending' && <span>View</span>}
                           </Button>
                         )}
                         {parent.messaging && (
