@@ -67,6 +67,7 @@ import { PRODUCTION_CONTEXT_TONES, type ProductionCapability } from '@/services/
 import { audienceRelevanceService } from '@/services/audienceRelevanceService';
 import { ThumbsUp, ThumbsDown, Film } from 'lucide-react';
 import { VirtualizedMessagingMatrix } from './genie-cast/VirtualizedMessagingMatrix';
+import { MessagingDataTable, type MessagingEntry, type MessagingStatus } from './genie-cast/MessagingDataTable';
 import { toast } from 'sonner';
 
 interface MessagingGeneratorPanelProps {
@@ -1284,49 +1285,66 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
-                  {latestMessaging ? 'Generated Messaging' : 'Preview'}
+                  {latestMessaging ? 'Generated Messaging' : batchJobs.length > 0 ? 'Batch Results' : 'Preview'}
                 </CardTitle>
                 <CardDescription>
                   {latestMessaging 
                     ? `Generated for ${products[latestMessaging.productId as GenieProductId]?.name || latestMessaging.productId}`
-                    : 'Configure options and click Generate to create messaging'
+                    : batchJobs.length > 0 
+                      ? `${batchJobs.filter(j => j.status === 'complete').length}/${batchJobs.length} complete`
+                      : 'Configure options and click Generate to create messaging'
                   }
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {latestMessaging ? (
+                {/* Single product - show full card */}
+                {latestMessaging && generationMode === 'single' ? (
                   <ScrollArea className="h-[600px] pr-4">
                     {renderMessagingCard(latestMessaging)}
                   </ScrollArea>
                 ) : batchJobs.length > 0 ? (
-                  <ScrollArea className="h-[600px] pr-4">
-                    <div className="space-y-3">
-                      {batchJobs.map(job => (
-                        <div 
-                          key={job.id}
-                          className={cn(
-                            "p-3 rounded-lg border flex items-center gap-3",
-                            job.status === 'complete' && "border-green-200 bg-green-50/30",
-                            job.status === 'error' && "border-red-200 bg-red-50/30",
-                            job.status === 'generating' && "border-blue-200 bg-blue-50/30",
-                            job.status === 'pending' && "border-muted"
-                          )}
-                        >
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: PRODUCT_COLORS[job.productId] }}
-                          />
-                          <span className="font-medium text-sm flex-1">
-                            {products[job.productId]?.name}
-                          </span>
-                          {job.status === 'generating' && <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />}
-                          {job.status === 'complete' && <CheckCircle className="w-4 h-4 text-green-500" />}
-                          {job.status === 'error' && <XCircle className="w-4 h-4 text-red-500" />}
-                          {job.status === 'pending' && <Clock className="w-4 h-4 text-muted-foreground" />}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                  /* Multi-product - show compact table grid */
+                  <MessagingDataTable
+                    entries={batchJobs.map(job => ({
+                      id: job.id,
+                      productId: job.productId,
+                      audienceId: job.audienceId,
+                      audienceLabel: job.audienceId.split(',').map(id => {
+                        const aud = targetAudiences.find((a: any) => a.id === id);
+                        return aud?.label || id;
+                      }).join(', '),
+                      regionCode: 'en_master',
+                      regionLabel: 'English Master',
+                      status: (job.status === 'complete' ? 'pending' : job.status === 'error' ? 'rejected' : 'draft') as MessagingStatus,
+                      currentVersion: 1,
+                      versions: job.messaging ? [{
+                        version: 1,
+                        messaging: job.messaging,
+                        status: 'pending' as MessagingStatus,
+                        createdAt: new Date().toISOString(),
+                      }] : [],
+                      messaging: job.messaging || undefined,
+                      createdAt: new Date().toISOString(),
+                    }))}
+                    onApprove={(id) => {
+                      const job = batchJobs.find(j => j.id === id);
+                      if (job?.messaging) {
+                        // Find the pending approval for this product
+                        const pending = pendingApprovals.find(p => p.productId === job.productId);
+                        if (pending) handleApprove(pending.id);
+                      }
+                    }}
+                    onRegenerate={(_, productId, audienceId) => {
+                      generateMessaging(productId, {
+                        type: messagingType,
+                        targetAudience: audienceId.split(','),
+                        competitors: selectedCompetitors,
+                        productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+                      });
+                    }}
+                    isGenerating={isGenerating || isBatchGenerating}
+                    emptyMessage="No results yet"
+                  />
                 ) : (
                   <div className="text-center py-16 text-muted-foreground">
                     <Wand2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
@@ -1421,142 +1439,84 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
 
         {/* Pending Approval Tab */}
         <TabsContent value="pending" className="space-y-6 mt-6">
-          {pendingApprovals.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-16 text-muted-foreground">
-                <Clock className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                <p>No pending approvals</p>
-                <p className="text-sm">Generate messaging and it will appear here for approval</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {pendingApprovals.length} item(s) pending approval
-                </span>
-                <Button onClick={handleApproveAll} variant="outline" className="gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Approve All
-                </Button>
-              </div>
-              <div className="space-y-4">
-                {pendingApprovals.map(request => {
-                  const product = products[request.productId];
-                  const messaging = latestMessaging?.requestId === request.id ? latestMessaging : null;
-                  
-                  return (
-                    <Card key={request.id}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: PRODUCT_COLORS[request.productId] }}
-                            />
-                            {product?.name || request.productId}
-                            <Badge variant="secondary" className="ml-2">
-                              {request.type}
-                            </Badge>
-                          </CardTitle>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => rejectMessaging(request.id, 'Not suitable')}
-                              className="gap-1 text-red-600 hover:text-red-700"
-                            >
-                              <XCircle className="w-3 h-3" />
-                              Reject
-                            </Button>
-                            <Button 
-                              size="sm"
-                              onClick={() => handleApprove(request.id)}
-                              className="gap-1"
-                            >
-                              <CheckCircle className="w-3 h-3" />
-                              Approve
-                            </Button>
-                          </div>
-                        </div>
-                        <CardDescription>
-                          Generated {request.generatedAt?.toLocaleString() || 'recently'} • 
-                          Audiences: {request.targetAudience.join(', ')}
-                        </CardDescription>
-                      </CardHeader>
-                      {messaging && (
-                        <CardContent>
-                          <ScrollArea className="h-[400px] pr-4">
-                            {renderMessagingCard(messaging)}
-                          </ScrollArea>
-                        </CardContent>
-                      )}
-                    </Card>
-                  );
-                })}
-              </div>
-            </>
-          )}
+          <MessagingDataTable
+            entries={pendingApprovals.map(request => ({
+              id: request.id,
+              productId: request.productId,
+              audienceId: request.targetAudience?.[0] || 'general',
+              audienceLabel: request.targetAudience?.map((id: string) => {
+                const aud = targetAudiences.find((a: any) => a.id === id);
+                return aud?.label || id;
+              }).join(', ') || 'General',
+              regionCode: 'en_master',
+              regionLabel: 'English Master',
+              status: 'pending' as MessagingStatus,
+              currentVersion: 1,
+              versions: [{
+                version: 1,
+                messaging: latestMessaging?.requestId === request.id ? latestMessaging : null,
+                status: 'pending' as MessagingStatus,
+                createdAt: request.generatedAt?.toISOString?.() || new Date().toISOString(),
+              }],
+              messaging: latestMessaging?.requestId === request.id ? latestMessaging : undefined,
+              createdAt: request.generatedAt?.toISOString?.() || new Date().toISOString(),
+              requestId: request.id,
+            }))}
+            onApprove={(_, requestId) => {
+              if (requestId) handleApprove(requestId);
+            }}
+            onReject={(_, requestId) => {
+              if (requestId) rejectMessaging(requestId, 'Not suitable');
+            }}
+            onRegenerate={(_, productId, audienceId) => {
+              generateMessaging(productId, {
+                type: messagingType,
+                targetAudience: [audienceId],
+                competitors: selectedCompetitors,
+                productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+              });
+            }}
+            isGenerating={isGenerating}
+            emptyMessage="No pending approvals"
+            emptyIcon={<Clock className="w-12 h-12 mx-auto mb-4 opacity-30" />}
+          />
         </TabsContent>
 
         {/* Approved Tab */}
         <TabsContent value="approved" className="space-y-6 mt-6">
-          {Object.keys(approvedByProduct).length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-16 text-muted-foreground">
-                <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                <p>No approved messaging yet</p>
-                <p className="text-sm">Approve generated messaging to see it here</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {Object.entries(approvedByProduct).map(([productId, messaging]) => {
-                const product = products[productId as GenieProductId];
-                const isExpanded = expandedProducts.has(productId);
-                
-                return (
-                  <Collapsible
-                    key={productId}
-                    open={isExpanded}
-                    onOpenChange={() => toggleProduct(productId)}
-                  >
-                    <Card>
-                      <CollapsibleTrigger asChild>
-                        <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <div 
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: PRODUCT_COLORS[productId as GenieProductId] }}
-                              />
-                              {product?.name || productId}
-                              <Badge variant="default" className="ml-2 gap-1">
-                                <CheckCircle className="w-3 h-3" />
-                                Approved
-                              </Badge>
-                            </CardTitle>
-                            {isExpanded ? (
-                              <ChevronDown className="w-4 h-4" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4" />
-                            )}
-                          </div>
-                        </CardHeader>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <CardContent>
-                          <ScrollArea className="h-[500px] pr-4">
-                            {renderMessagingCard(messaging, true)}
-                          </ScrollArea>
-                        </CardContent>
-                      </CollapsibleContent>
-                    </Card>
-                  </Collapsible>
-                );
-              })}
-            </div>
-          )}
+          <MessagingDataTable
+            entries={Object.entries(approvedByProduct).map(([productId, messaging]) => ({
+              id: `approved_${productId}`,
+              productId: productId as GenieProductId,
+              audienceId: 'all',
+              audienceLabel: 'All Audiences',
+              regionCode: 'en_master',
+              regionLabel: 'English Master',
+              status: 'approved' as MessagingStatus,
+              currentVersion: (messaging as any)?.version || 1,
+              versions: [{
+                version: (messaging as any)?.version || 1,
+                messaging,
+                status: 'approved' as MessagingStatus,
+                createdAt: (messaging as any)?.approvedAt?.toISOString?.() || new Date().toISOString(),
+                approvedBy: 'admin',
+              }],
+              messaging,
+              createdAt: (messaging as any)?.approvedAt?.toISOString?.() || new Date().toISOString(),
+            }))}
+            onRegenerate={(_, productId, audienceId) => {
+              generateMessaging(productId, {
+                type: messagingType,
+                targetAudience: [audienceId],
+                competitors: selectedCompetitors,
+                productionCapability: selectedCapability !== 'auto' ? selectedCapability : undefined,
+              });
+            }}
+            isGenerating={isGenerating}
+            showActions={true}
+            emptyMessage="No approved messaging yet"
+            emptyIcon={<CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-30" />}
+          />
         </TabsContent>
       </Tabs>
     </div>
