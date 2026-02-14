@@ -4424,82 +4424,106 @@ export type Database = {
       competitor_profiles: {
         Row: {
           category: string
+          competitor_type: string | null
           created_at: string
           created_by: string | null
           description: string | null
+          ease_of_use_rating: number | null
           estimated_users: string | null
           founded_year: number | null
           funding_status: string | null
+          genie_differentiator: string | null
           id: string
           is_active: boolean
           key_features: string[] | null
           languages_supported: number | null
           last_scraped_at: string | null
+          learning_curve: string | null
           logo_url: string | null
           name: string
+          platforms: string[] | null
           pricing_model: string | null
           pricing_range: string | null
           regions_active: string[] | null
+          revenue_estimate: string | null
           scraped_data: Json | null
+          segment: string | null
           strengths: string[] | null
           subcategories: string[] | null
           tagline: string | null
           target_market: string[] | null
           updated_at: string
+          video_editing_rating: number | null
           weaknesses: string[] | null
           website_url: string | null
         }
         Insert: {
           category: string
+          competitor_type?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          ease_of_use_rating?: number | null
           estimated_users?: string | null
           founded_year?: number | null
           funding_status?: string | null
+          genie_differentiator?: string | null
           id?: string
           is_active?: boolean
           key_features?: string[] | null
           languages_supported?: number | null
           last_scraped_at?: string | null
+          learning_curve?: string | null
           logo_url?: string | null
           name: string
+          platforms?: string[] | null
           pricing_model?: string | null
           pricing_range?: string | null
           regions_active?: string[] | null
+          revenue_estimate?: string | null
           scraped_data?: Json | null
+          segment?: string | null
           strengths?: string[] | null
           subcategories?: string[] | null
           tagline?: string | null
           target_market?: string[] | null
           updated_at?: string
+          video_editing_rating?: number | null
           weaknesses?: string[] | null
           website_url?: string | null
         }
         Update: {
           category?: string
+          competitor_type?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          ease_of_use_rating?: number | null
           estimated_users?: string | null
           founded_year?: number | null
           funding_status?: string | null
+          genie_differentiator?: string | null
           id?: string
           is_active?: boolean
           key_features?: string[] | null
           languages_supported?: number | null
           last_scraped_at?: string | null
+          learning_curve?: string | null
           logo_url?: string | null
           name?: string
+          platforms?: string[] | null
           pricing_model?: string | null
           pricing_range?: string | null
           regions_active?: string[] | null
+          revenue_estimate?: string | null
           scraped_data?: Json | null
+          segment?: string | null
           strengths?: string[] | null
           subcategories?: string[] | null
           tagline?: string | null
           target_market?: string[] | null
           updated_at?: string
+          video_editing_rating?: number | null
           weaknesses?: string[] | null
           website_url?: string | null
         }
@@ -14674,6 +14698,105 @@ export type Database = {
           summary?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      market_segments: {
+        Row: {
+          avg_time_spent: string | null
+          buying_behavior: string | null
+          cagr: string | null
+          competition_level: string | null
+          competitor_price: string | null
+          content_importance: number | null
+          created_at: string | null
+          current_spend: string | null
+          decision_maker: string | null
+          emoji: string | null
+          entry_barrier: string | null
+          fragmentation: string | null
+          full_name: string | null
+          genie_fit: number | null
+          growth_rate: string | null
+          id: string
+          is_active: boolean | null
+          market_size: string | null
+          name: string
+          pain_points: string[] | null
+          price_threshold: string | null
+          priority: string | null
+          sam: string | null
+          segment_id: string
+          som: string | null
+          tagline: string | null
+          tam: string | null
+          updated_at: string | null
+          value_drivers: string[] | null
+          voice_of_customer: string | null
+        }
+        Insert: {
+          avg_time_spent?: string | null
+          buying_behavior?: string | null
+          cagr?: string | null
+          competition_level?: string | null
+          competitor_price?: string | null
+          content_importance?: number | null
+          created_at?: string | null
+          current_spend?: string | null
+          decision_maker?: string | null
+          emoji?: string | null
+          entry_barrier?: string | null
+          fragmentation?: string | null
+          full_name?: string | null
+          genie_fit?: number | null
+          growth_rate?: string | null
+          id?: string
+          is_active?: boolean | null
+          market_size?: string | null
+          name: string
+          pain_points?: string[] | null
+          price_threshold?: string | null
+          priority?: string | null
+          sam?: string | null
+          segment_id: string
+          som?: string | null
+          tagline?: string | null
+          tam?: string | null
+          updated_at?: string | null
+          value_drivers?: string[] | null
+          voice_of_customer?: string | null
+        }
+        Update: {
+          avg_time_spent?: string | null
+          buying_behavior?: string | null
+          cagr?: string | null
+          competition_level?: string | null
+          competitor_price?: string | null
+          content_importance?: number | null
+          created_at?: string | null
+          current_spend?: string | null
+          decision_maker?: string | null
+          emoji?: string | null
+          entry_barrier?: string | null
+          fragmentation?: string | null
+          full_name?: string | null
+          genie_fit?: number | null
+          growth_rate?: string | null
+          id?: string
+          is_active?: boolean | null
+          market_size?: string | null
+          name?: string
+          pain_points?: string[] | null
+          price_threshold?: string | null
+          priority?: string | null
+          sam?: string | null
+          segment_id?: string
+          som?: string | null
+          tagline?: string | null
+          tam?: string | null
+          updated_at?: string | null
+          value_drivers?: string[] | null
+          voice_of_customer?: string | null
         }
         Relationships: []
       }
