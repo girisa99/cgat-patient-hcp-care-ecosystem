@@ -13,6 +13,7 @@
  */
 
 import { MASTER_VIDEO_STYLES, type VideoStyleId } from '@/config/master-ecosystem-registry';
+import type { ProductionCapability } from '@/services/marketing/aiMessagingGeneratorService';
 
 // Re-export for backward compatibility
 export type VideoStyleType = VideoStyleId;
@@ -253,6 +254,72 @@ export function styleRequiresAvatar(style: VideoStyleType): boolean {
 export function styleRequires3D(style: VideoStyleType): boolean {
   const config = VIDEO_STYLE_PROVIDERS[style];
   return config.visualEffect?.includes('3d') || config.animationProvider?.includes('meshy') || false;
+}
+
+// ============================================================================
+// STYLE → PRODUCTION CAPABILITY DERIVATION
+// ============================================================================
+
+/**
+ * Derives the ProductionCapability from a video style based on its provider config.
+ * This is the bridge between Templates/Asset Labs and the Messaging Generator.
+ * 
+ * Priority order:
+ * 1. Avatar provider present → avatar_lipsync
+ * 2. 3D provider (meshy, richdreamer, modelslab-3d) → 3d_vr
+ * 3. Category is 'interactive' or has quiz/shoppable → motion_graphics (interactive kinetic)
+ * 4. Animation provider with fast/dynamic pacing → motion_graphics
+ * 5. TTS style is narrative/documentary → stock_remix
+ * 6. No video provider (static/banner contexts) → banner_static
+ * 7. Default → motion_graphics
+ */
+export function deriveProductionCapability(style: VideoStyleType): ProductionCapability {
+  const config = VIDEO_STYLE_PROVIDERS[style];
+  if (!config) return 'motion_graphics';
+
+  // Avatar + Lipsync detection
+  if (config.avatarProvider) return 'avatar_lipsync';
+
+  // 3D / VR detection
+  if (
+    config.animationProvider?.includes('meshy') ||
+    config.visualEffect?.includes('3d') ||
+    config.videoProvider?.includes('meshy') ||
+    config.videoProvider?.includes('richdreamer')
+  ) return '3d_vr';
+
+  // PPT / Slides detection — specific style IDs
+  const pptStyles: VideoStyleType[] = [
+    'investor_relations' as VideoStyleType,
+    'internal_comms' as VideoStyleType,
+    'compliance_training' as VideoStyleType,
+  ];
+  if (pptStyles.includes(style)) return 'ppt_slides';
+
+  // Narrative voiceover / stock remix
+  const narrativeTTS = ['narrative', 'documentary', 'warm'];
+  if (config.ttsStyle && narrativeTTS.includes(config.ttsStyle)) return 'stock_remix';
+
+  // Fast/dynamic pacing with animation → motion graphics
+  if (config.pacing === 'fast' || config.pacing === 'dynamic') return 'motion_graphics';
+
+  // Static / banner
+  const bannerStyles: VideoStyleType[] = [
+    'social_shorts' as VideoStyleType,
+    'ad_creative' as VideoStyleType,
+  ];
+  if (bannerStyles.includes(style)) return 'banner_static';
+
+  return 'motion_graphics';
+}
+
+/**
+ * Get all styles that map to a specific production capability.
+ * Useful for filtering style cards when a capability is pre-selected.
+ */
+export function getStylesForCapability(capability: ProductionCapability): VideoStyleType[] {
+  return Object.keys(VIDEO_STYLE_PROVIDERS)
+    .filter(style => deriveProductionCapability(style as VideoStyleType) === capability) as VideoStyleType[];
 }
 
 // Provider capabilities registry (Integrated providers only)
