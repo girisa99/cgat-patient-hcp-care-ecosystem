@@ -923,7 +923,10 @@ Generate the following in JSON format:
       
       this.generatedMessaging.set(requestId, messaging);
       
-      console.log(`[AIMessaging] Generated messaging for ${product.name}${feature ? ` - ${feature.name}` : ''}`);
+      // Persist to DB immediately with status='pending' (matches script/TTS pattern)
+      await this.persistMessagingToDb(requestId, request, messaging, 'pending');
+      
+      console.log(`[AIMessaging] Generated & persisted messaging for ${product.name}${feature ? ` - ${feature.name}` : ''}`);
       return messaging;
       
     } catch (error) {
@@ -935,6 +938,12 @@ Generate the following in JSON format:
       request.generatedAt = new Date();
       
       this.generatedMessaging.set(requestId, messaging);
+      
+      // Persist fallback to DB as well
+      await this.persistMessagingToDb(requestId, request, messaging, 'pending').catch(err => {
+        console.warn('[AIMessaging] Failed to persist fallback messaging:', err);
+      });
+      
       return messaging;
     }
   }
@@ -1199,7 +1208,78 @@ Generate the following in JSON format:
   }
 
   /**
-   * Approve generated messaging and persist to database
+   * Persist messaging to ecosystem_messaging table (called on generation, not just approval)
+   */
+  private async persistMessagingToDb(
+    requestId: string,
+    request: any,
+    messaging: GeneratedMessaging,
+    status: 'pending' | 'approved' | 'rejected'
+  ): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const row = {
+        user_id: user.id,
+        request_id: requestId,
+        product_id: messaging.productId,
+        feature_id: messaging.featureId || null,
+        audience_segment: request.targetAudience?.[0] || 'general',
+        framework_type: 'ai_generated',
+        messaging_tier: 'product',
+        headline: messaging.headline,
+        hook: messaging.hook,
+        sub_hook: messaging.subHook,
+        cta: messaging.cta,
+        cta_secondary: messaging.ctaSecondary,
+        value_proposition: messaging.valueProposition,
+        hero_narrative: messaging.headline,
+        guide_positioning: messaging.valueProposition,
+        pain_points: messaging.painPoints,
+        hooks: [messaging.hook, messaging.subHook].filter(Boolean),
+        ctas: [messaging.cta, messaging.ctaSecondary].filter(Boolean),
+        value_propositions: [messaging.valueProposition],
+        benefits: messaging.benefits,
+        differentiators: messaging.differentiators,
+        opening_line: messaging.openingLine,
+        closing_line: messaging.closingLine,
+        transition_phrases: messaging.transitionPhrases,
+        short_script: messaging.shortScript,
+        medium_script: messaging.mediumScript,
+        long_script: messaging.longScript,
+        hashtags: messaging.hashtags,
+        keywords: messaging.keywords,
+        meta_description: messaging.metaDescription,
+        confidence: messaging.confidence,
+        generated_by: messaging.generatedBy,
+        version: messaging.version,
+        creative_angle: messaging.creativeAngle || null,
+        production_capability: messaging.productionCapability || null,
+        region_code: request.regionCode || 'EN_US',
+        sub_region_code: request.subRegionCode || null,
+        is_english_base: request.isEnglishBase ?? true,
+        parent_messaging_id: request.parentMessagingId || null,
+        routing_zone: request.routingZone || null,
+        status,
+        is_approved: status === 'approved',
+        approved_by: status === 'approved' ? user.id : null,
+        approved_at: status === 'approved' ? new Date().toISOString() : null,
+      } as any;
+
+      const { error } = await supabase.from('ecosystem_messaging').insert(row);
+      if (error) {
+        console.error('[AIMessaging] Failed to persist messaging:', error);
+      } else {
+        console.log(`[AIMessaging] Persisted messaging (status=${status}) for ${request.productId}`);
+      }
+    } catch (err) {
+      console.error('[AIMessaging] DB persistence error:', err);
+    }
+  }
+
+  /**
+   * Approve generated messaging — updates existing DB row from pending → approved
    */
   async approveMessaging(requestId: string, approvedBy: string): Promise<void> {
     const request = this.pendingRequests.get(requestId);
@@ -1226,73 +1306,33 @@ Generate the following in JSON format:
       });
     }
 
-    // Persist to database
+    // Update existing DB row status from 'pending' to 'approved'
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error } = await supabase.from('ecosystem_messaging').insert({
-          user_id: user.id,
-          request_id: requestId,
-          product_id: messaging.productId,
-          feature_id: messaging.featureId || null,
-          audience_segment: request.targetAudience?.[0] || 'general',
-          framework_type: 'ai_generated',
-          messaging_tier: 'product',
-          headline: messaging.headline,
-          hook: messaging.hook,
-          sub_hook: messaging.subHook,
-          cta: messaging.cta,
-          cta_secondary: messaging.ctaSecondary,
-          value_proposition: messaging.valueProposition,
-          hero_narrative: messaging.headline,
-          guide_positioning: messaging.valueProposition,
-          pain_points: messaging.painPoints,
-          hooks: [messaging.hook, messaging.subHook].filter(Boolean),
-          ctas: [messaging.cta, messaging.ctaSecondary].filter(Boolean),
-          value_propositions: [messaging.valueProposition],
-          benefits: messaging.benefits,
-          differentiators: messaging.differentiators,
-          opening_line: messaging.openingLine,
-          closing_line: messaging.closingLine,
-          transition_phrases: messaging.transitionPhrases,
-          short_script: messaging.shortScript,
-          medium_script: messaging.mediumScript,
-          long_script: messaging.longScript,
-          hashtags: messaging.hashtags,
-          keywords: messaging.keywords,
-          meta_description: messaging.metaDescription,
-          confidence: messaging.confidence,
-          generated_by: messaging.generatedBy,
-          version: messaging.version,
-          creative_angle: messaging.creativeAngle || null,
-          production_capability: messaging.productionCapability || null,
-          // Regional hierarchy columns
-          region_code: request.regionCode || 'EN_US',
-          sub_region_code: request.subRegionCode || null,
-          is_english_base: request.isEnglishBase ?? true,
-          parent_messaging_id: request.parentMessagingId || null,
-          routing_zone: request.routingZone || null,
+      const { error } = await supabase
+        .from('ecosystem_messaging')
+        .update({
           status: 'approved',
           is_approved: true,
           approved_by: approvedBy,
           approved_at: new Date().toISOString(),
-        } as any);
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq('request_id', requestId);
 
-        if (error) {
-          console.error('[AIMessaging] Failed to persist messaging:', error);
-        } else {
-          console.log(`[AIMessaging] Persisted approved messaging to database for ${request.productId}`);
-        }
+      if (error) {
+        console.error('[AIMessaging] Failed to update messaging status:', error);
+      } else {
+        console.log(`[AIMessaging] Approved messaging in DB for ${request.productId}`);
       }
     } catch (err) {
-      console.error('[AIMessaging] DB persistence error:', err);
+      console.error('[AIMessaging] DB approval update error:', err);
     }
 
     console.log(`[AIMessaging] Approved messaging for ${request.productId}${request.featureId ? `/${request.featureId}` : ''}`);
   }
 
   /**
-   * Reject generated messaging
+   * Reject generated messaging — updates existing DB row from pending → rejected
    */
   rejectMessaging(requestId: string, reason: string): void {
     const request = this.pendingRequests.get(requestId);
@@ -1300,6 +1340,15 @@ Generate the following in JSON format:
 
     request.status = 'rejected';
     request.rejectionReason = reason;
+
+    // Update DB row status
+    supabase
+      .from('ecosystem_messaging')
+      .update({ status: 'rejected', updated_at: new Date().toISOString() } as any)
+      .eq('request_id', requestId)
+      .then(({ error }) => {
+        if (error) console.error('[AIMessaging] Failed to update rejection status:', error);
+      });
 
     console.log(`[AIMessaging] Rejected messaging for ${requestId}: ${reason}`);
   }
