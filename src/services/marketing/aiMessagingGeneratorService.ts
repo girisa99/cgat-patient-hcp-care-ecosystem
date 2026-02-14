@@ -575,12 +575,77 @@ class AIMessagingGeneratorService {
   private static instance: AIMessagingGeneratorService;
   private pendingRequests: Map<string, MessagingRequest> = new Map();
   private generatedMessaging: Map<string, GeneratedMessaging> = new Map();
+  private hasLoadedFromDb = false;
 
   static getInstance(): AIMessagingGeneratorService {
     if (!this.instance) {
       this.instance = new AIMessagingGeneratorService();
     }
     return this.instance;
+  }
+
+  /**
+   * Load previously approved messaging from database into memory cache
+   */
+  async loadPersistedMessaging(): Promise<GeneratedMessaging[]> {
+    if (this.hasLoadedFromDb) {
+      return Array.from(this.generatedMessaging.values()).filter(m => m.isApproved);
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('ecosystem_messaging')
+        .select('*')
+        .eq('is_approved', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[AIMessaging] Failed to load persisted messaging:', error);
+        return [];
+      }
+
+      const loaded: GeneratedMessaging[] = (data || []).map((row: any) => ({
+        requestId: row.request_id || row.id,
+        productId: row.product_id || '',
+        featureId: row.feature_id || undefined,
+        headline: row.headline || row.hero_narrative || '',
+        hook: row.hook || (row.hooks?.[0]) || '',
+        subHook: row.sub_hook || '',
+        cta: row.cta || (row.ctas?.[0]) || '',
+        ctaSecondary: row.cta_secondary || '',
+        valueProposition: row.value_proposition || (row.value_propositions?.[0]) || '',
+        painPoints: row.pain_points || [],
+        benefits: row.benefits || [],
+        differentiators: row.differentiators || [],
+        openingLine: row.opening_line || '',
+        closingLine: row.closing_line || '',
+        transitionPhrases: row.transition_phrases || [],
+        shortScript: row.short_script || '',
+        mediumScript: row.medium_script || '',
+        longScript: row.long_script || '',
+        hashtags: row.hashtags || [],
+        keywords: row.keywords || [],
+        metaDescription: row.meta_description || '',
+        confidence: row.confidence || 0,
+        generatedBy: row.generated_by || 'ai',
+        version: row.version || 1,
+        isApproved: true,
+        creativeAngle: row.creative_angle || undefined,
+        productionCapability: row.production_capability || undefined,
+      }));
+
+      // Cache in memory
+      loaded.forEach(m => {
+        this.generatedMessaging.set(m.requestId, m);
+      });
+
+      this.hasLoadedFromDb = true;
+      console.log(`[AIMessaging] Loaded ${loaded.length} persisted messaging from database`);
+      return loaded;
+    } catch (err) {
+      console.error('[AIMessaging] Load error:', err);
+      return [];
+    }
   }
 
   /**
@@ -1089,9 +1154,9 @@ Generate the following in JSON format:
   }
 
   /**
-   * Approve generated messaging
+   * Approve generated messaging and persist to database
    */
-  approveMessaging(requestId: string, approvedBy: string): void {
+  async approveMessaging(requestId: string, approvedBy: string): Promise<void> {
     const request = this.pendingRequests.get(requestId);
     const messaging = this.generatedMessaging.get(requestId);
     
@@ -1114,6 +1179,61 @@ Generate the following in JSON format:
         benefits: messaging.benefits,
         hashtags: messaging.hashtags,
       });
+    }
+
+    // Persist to database
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from('ecosystem_messaging').insert({
+          user_id: user.id,
+          request_id: requestId,
+          product_id: messaging.productId,
+          feature_id: messaging.featureId || null,
+          audience_segment: request.targetAudience?.[0] || 'general',
+          framework_type: 'ai_generated',
+          messaging_tier: 'product',
+          headline: messaging.headline,
+          hook: messaging.hook,
+          sub_hook: messaging.subHook,
+          cta: messaging.cta,
+          cta_secondary: messaging.ctaSecondary,
+          value_proposition: messaging.valueProposition,
+          hero_narrative: messaging.headline,
+          guide_positioning: messaging.valueProposition,
+          pain_points: messaging.painPoints,
+          hooks: [messaging.hook, messaging.subHook].filter(Boolean),
+          ctas: [messaging.cta, messaging.ctaSecondary].filter(Boolean),
+          value_propositions: [messaging.valueProposition],
+          benefits: messaging.benefits,
+          differentiators: messaging.differentiators,
+          opening_line: messaging.openingLine,
+          closing_line: messaging.closingLine,
+          transition_phrases: messaging.transitionPhrases,
+          short_script: messaging.shortScript,
+          medium_script: messaging.mediumScript,
+          long_script: messaging.longScript,
+          hashtags: messaging.hashtags,
+          keywords: messaging.keywords,
+          meta_description: messaging.metaDescription,
+          confidence: messaging.confidence,
+          generated_by: messaging.generatedBy,
+          version: messaging.version,
+          creative_angle: messaging.creativeAngle || null,
+          production_capability: messaging.productionCapability || null,
+          is_approved: true,
+          approved_by: approvedBy,
+          approved_at: new Date().toISOString(),
+        } as any);
+
+        if (error) {
+          console.error('[AIMessaging] Failed to persist messaging:', error);
+        } else {
+          console.log(`[AIMessaging] Persisted approved messaging to database for ${request.productId}`);
+        }
+      }
+    } catch (err) {
+      console.error('[AIMessaging] DB persistence error:', err);
     }
 
     console.log(`[AIMessaging] Approved messaging for ${request.productId}${request.featureId ? `/${request.featureId}` : ''}`);
