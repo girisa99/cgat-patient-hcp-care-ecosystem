@@ -62,6 +62,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { useAIMessaging } from '@/hooks/useAIMessaging';
 import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/productVersionTrackingService';
+import { audienceRelevanceService } from '@/services/audienceRelevanceService';
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { VirtualizedMessagingMatrix } from './genie-cast/VirtualizedMessagingMatrix';
 import { toast } from 'sonner';
 
@@ -154,6 +156,7 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
   // AI suggestions
   const [showAISuggestions, setShowAISuggestions] = useState(false);
   const [isLoadingAISuggestions, setIsLoadingAISuggestions] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState<Record<string, 'like' | 'dislike' | null>>({});
   const [aiSuggestedGroups, setAiSuggestedGroups] = useState<{ label: string; ids: string[]; reason: string }[]>([]);
   
   // UI state
@@ -236,6 +239,12 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
           enrichedContext += `- Primary Use Cases: ${productKnowledge.use_cases.join(', ')}\n`;
         }
         if (productKnowledge.differentiators) enrichedContext += `- Differentiators: ${productKnowledge.differentiators}\n`;
+      }
+
+      // Inject learned relevance from feedback (Option C - learning loop)
+      const relevanceContext = await audienceRelevanceService.getRelevanceContext(selectedProduct);
+      if (relevanceContext) {
+        enrichedContext += relevanceContext;
       }
 
       const prompt = `Based on this campaign context and product knowledge, suggest 3-4 target audience groups that best align with the product's value proposition, benefits, and use cases.
@@ -1028,6 +1037,47 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
                                   </span>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 leading-tight">{group.reason}</p>
+                                {/* Like/Dislike feedback buttons */}
+                                <div className="flex items-center gap-1 mt-1 justify-end" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    className={cn(
+                                      "p-0.5 rounded transition-colors",
+                                      feedbackGiven[group.label] === 'like'
+                                        ? "text-primary bg-primary/20"
+                                        : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                    )}
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      setFeedbackGiven(prev => ({ ...prev, [group.label]: 'like' }));
+                                      for (const audId of group.ids) {
+                                        await audienceRelevanceService.recordFeedback(selectedProduct, audId, true);
+                                      }
+                                      toast.success('Feedback recorded — AI will learn this preference');
+                                    }}
+                                    title="This audience fits well"
+                                  >
+                                    <ThumbsUp className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    className={cn(
+                                      "p-0.5 rounded transition-colors",
+                                      feedbackGiven[group.label] === 'dislike'
+                                        ? "text-destructive bg-destructive/20"
+                                        : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                    )}
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      setFeedbackGiven(prev => ({ ...prev, [group.label]: 'dislike' }));
+                                      for (const audId of group.ids) {
+                                        await audienceRelevanceService.recordFeedback(selectedProduct, audId, false);
+                                      }
+                                      toast.info('Feedback recorded — AI will deprioritize this audience');
+                                    }}
+                                    title="This audience doesn't fit"
+                                  >
+                                    <ThumbsDown className="w-3 h-3" />
+                                  </button>
+                                </div>
                               </button>
                             );
                           })}
