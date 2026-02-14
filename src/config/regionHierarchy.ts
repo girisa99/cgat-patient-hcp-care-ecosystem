@@ -43,21 +43,29 @@ export const REGION_HIERARCHY: RegionGroup[] = [
         { code: 'EU_FR', name: 'France', flag: '🇫🇷' },
         { code: 'EU_BE_FR', name: 'Belgium (French)', flag: '🇧🇪' },
       ]},
+      { code: 'EU_BENELUX', name: 'Benelux & Netherlands', flag: '🇳🇱', children: [
+        { code: 'EU_NL', name: 'Netherlands', flag: '🇳🇱' },
+        { code: 'EU_BE_NL', name: 'Belgium (Dutch)', flag: '🇧🇪' },
+      ]},
       { code: 'EU_IBERIA', name: 'Spain & Portugal', flag: '🇪🇸', children: [
         { code: 'EU_ES', name: 'Spain', flag: '🇪🇸' },
         { code: 'EU_PT', name: 'Portugal', flag: '🇵🇹' },
       ]},
-      { code: 'EU_NORDIC', name: 'Nordics (Sweden, Norway, Denmark, Finland)', flag: '🇸🇪', children: [
+      { code: 'EU_ITALY', name: 'Italy', flag: '🇮🇹', children: [
+        { code: 'EU_IT', name: 'Italy (Italiano)', flag: '🇮🇹' },
+      ]},
+      { code: 'EU_NORDIC', name: 'Nordics', flag: '🇸🇪', children: [
         { code: 'EU_SE', name: 'Sweden', flag: '🇸🇪' },
         { code: 'EU_NO', name: 'Norway', flag: '🇳🇴' },
         { code: 'EU_DK', name: 'Denmark', flag: '🇩🇰' },
         { code: 'EU_FI', name: 'Finland', flag: '🇫🇮' },
       ]},
-      { code: 'EU_EAST', name: 'Eastern Europe (Poland, Czech, Romania, Hungary)', flag: '🇵🇱', children: [
+      { code: 'EU_EAST', name: 'Eastern Europe', flag: '🇵🇱', children: [
         { code: 'EU_PL', name: 'Poland', flag: '🇵🇱' },
         { code: 'EU_CZ', name: 'Czech Republic', flag: '🇨🇿' },
         { code: 'EU_RO', name: 'Romania', flag: '🇷🇴' },
         { code: 'EU_HU', name: 'Hungary', flag: '🇭🇺' },
+        { code: 'EU_GR', name: 'Greece (Ελληνικά)', flag: '🇬🇷' },
       ]},
     ],
   },
@@ -93,6 +101,15 @@ export const REGION_HIERARCHY: RegionGroup[] = [
   },
   { groupCode: 'PAKISTAN', groupName: 'Pakistan (Urdu)', groupFlag: '🇵🇰', children: [] },
   { groupCode: 'BANGLADESH', groupName: 'Bangladesh (Bengali)', groupFlag: '🇧🇩', children: [] },
+  {
+    groupCode: 'SOUTH_ASIA', groupName: 'South Asia', groupFlag: '🌏',
+    children: [
+      { code: 'SA_NEPAL', name: 'Nepal (नेपाली)', flag: '🇳🇵' },
+      { code: 'SA_SRILANKA', name: 'Sri Lanka (සිංහල / தமிழ்)', flag: '🇱🇰' },
+      { code: 'SA_BHUTAN', name: 'Bhutan (རྫོང་ཁ)', flag: '🇧🇹' },
+      { code: 'SA_MALDIVES', name: 'Maldives (ދިވެހި)', flag: '🇲🇻' },
+    ],
+  },
   {
     groupCode: 'INDIA', groupName: 'India', groupFlag: '🇮🇳',
     children: [
