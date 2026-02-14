@@ -234,9 +234,12 @@ export function useGenieCastSession() {
       ...prev,
       selectedTemplate: null,
       approvalItems: prev.approvalItems.filter(item => item.stage !== 'template_selection'),
+      currentStage: 'template_selection',
       updatedAt: new Date(),
     }));
+    toast.info('Template cleared — select a new one');
   }, []);
+
 
   // ============================================
   // STYLES SELECTION (CREATE > Styles)
