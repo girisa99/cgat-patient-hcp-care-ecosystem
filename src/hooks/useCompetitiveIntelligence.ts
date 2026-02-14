@@ -47,6 +47,12 @@ export function useCompetitiveIntelligence() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const marketSegments = useQuery({
+    queryKey: ['competitive-intelligence', 'market-segments'],
+    queryFn: () => competitiveIntelligenceService.getMarketSegments(),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const runAnalysis = useMutation({
     mutationFn: ({ type, scope, filter }: { type: string; scope: string; filter?: string }) =>
       competitiveIntelligenceService.runAIAnalysis(type, scope, filter),
@@ -65,6 +71,7 @@ export function useCompetitiveIntelligence() {
     usps: usps.data || [],
     trends: trends.data || [],
     analyses: analyses.data || [],
+    marketSegments: marketSegments.data || [],
     stats: dashboardStats.data,
     isLoading: competitors.isLoading || featureMatrix.isLoading,
     runAnalysis,

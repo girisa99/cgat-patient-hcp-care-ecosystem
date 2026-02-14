@@ -94,6 +94,36 @@ export interface USPEntry {
   validated_by: string | null;
 }
 
+export interface MarketSegment {
+  id: string;
+  segment_id: string;
+  name: string;
+  full_name: string | null;
+  emoji: string | null;
+  priority: string;
+  market_size: string | null;
+  growth_rate: string | null;
+  cagr: string | null;
+  tam: string | null;
+  sam: string | null;
+  som: string | null;
+  competition_level: string | null;
+  entry_barrier: string | null;
+  genie_fit: number;
+  tagline: string | null;
+  pain_points: string[];
+  avg_time_spent: string | null;
+  fragmentation: string | null;
+  content_importance: number;
+  current_spend: string | null;
+  price_threshold: string | null;
+  competitor_price: string | null;
+  value_drivers: string[];
+  buying_behavior: string | null;
+  decision_maker: string | null;
+  voice_of_customer: string | null;
+}
+
 export interface CompetitiveContext {
   usps: USPEntry[];
   differentiators: FeatureComparison[];
@@ -280,6 +310,25 @@ class CompetitiveIntelligenceService {
 
     if (error) throw error;
     return (data || []) as unknown as TrendEntry[];
+  }
+
+  // ── Market Segments ──────────────────────────────────────────────────
+
+  async getMarketSegments(): Promise<MarketSegment[]> {
+    const cacheKey = 'market_segments';
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    const { data, error } = await supabase
+      .from('market_segments')
+      .select('*')
+      .eq('is_active', true)
+      .order('priority', { ascending: true });
+
+    if (error) throw error;
+    const result = (data || []) as unknown as MarketSegment[];
+    this.setCache(cacheKey, result);
+    return result;
   }
 
   // ── Competitive Context for AI Enrichment ───────────────────────────

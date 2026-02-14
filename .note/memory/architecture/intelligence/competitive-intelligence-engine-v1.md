@@ -5,10 +5,13 @@ Updated: just now
 
 A full-stack market research and competitive positioning system integrated into the Intelligence Center.
 
-### Database Tables (5 tables)
-1. **`competitor_profiles`** - 20+ competitors across 10 categories (AI video, PPT, podcast, translation, TTS, avatar/3D, mobile, media production, script editor, video editing). **DeepL and ElevenLabs removed** (they are our providers, not competitors). Replaced with Murf AI, Lokalise, Speechify. Beautiful.AI already tracked.
+### Database Tables (6 tables)
+1. **`competitor_profiles`** - 21 competitors across 10 categories. Enriched with Command Center data: revenue estimates, platforms, video/UX ratings, learning curves, Genie differentiators. DeepL/ElevenLabs removed (providers).
 2. **`feature_comparison_matrix`** - 12 seeded feature comparisons with competitor scores and Genie capability ratings (unique/full/partial/planned)
-3. **`market_analysis_results`** - AI-generated analyses (positioning, gap analysis, battle cards, USP narrative, SWOT, trend reports) — **now stored with region/sub-region scope**
+3. **`market_analysis_results`** - AI-generated analyses (positioning, gap analysis, battle cards, USP narrative, SWOT, trend reports) — stored with region/sub-region scope
+4. **`trend_monitoring_log`** - Market trend captures with impact levels. Seeded with 8 verified market research trends (McKinsey, Gartner, CB Insights, etc.)
+5. **`usp_registry`** - 6 validated USPs with strength scores and competitor-lacking lists
+6. **`market_segments`** - **NEW** 8 market segments (Creator, Influencer, Knowledge, SMB, Healthcare, Education, Enterprise, Traveler) with TAM/SAM/SOM, pricing intelligence, pain points, VoC quotes. Seeded from Command Center data.
 4. **`trend_monitoring_log`** - Market trend captures with impact levels and affected products
 5. **`usp_registry`** - 6 validated USPs with strength scores and competitor-lacking lists
 
