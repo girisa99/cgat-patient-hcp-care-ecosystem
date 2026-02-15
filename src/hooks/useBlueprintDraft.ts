@@ -85,9 +85,13 @@ export function useBlueprintDraft(
     };
   }, []);
 
-  // Reset when blueprint changes
+  // Track original scenes ref to avoid stale closures
+  const originalScenesRef = useRef(originalScenes);
+  originalScenesRef.current = originalScenes;
+
+  // Reset when blueprint ID changes (NOT when originalScenes ref changes)
   useEffect(() => {
-    setScenes(originalScenes);
+    setScenes(originalScenesRef.current);
     setDraftId(null);
     setHasDraft(false);
     setDraftStatus(null);
@@ -172,7 +176,8 @@ export function useBlueprintDraft(
     };
 
     loadDraft();
-  }, [blueprintId, originalScenes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blueprintId]);
 
   // Persist to DB (debounced)
   const persistToDB = useCallback(async () => {

@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
+import { getZoneForRegion, ZONE_ROUTING_CONFIG } from '@/config/master-ecosystem-registry';
 
 interface AISceneCustomizerProps {
   scenes: BlueprintScene[];
@@ -188,17 +189,26 @@ IMPORTANT: For "add" actions, sceneType is REQUIRED and must be one of: ${availa
 
 ONLY return valid JSON array, no other text.`;
 
+    // Use AI routing intelligence: resolve zone → primary LLM provider
+    const resolvedRegion = region || 'global';
+    const zone = getZoneForRegion(resolvedRegion);
+    const zoneConfig = ZONE_ROUTING_CONFIG[zone];
+    const routedProvider = zoneConfig?.primaryLLM || 'gemini';
+
+    console.log(`[AISceneCustomizer] Routing: region=${resolvedRegion} → zone=${zone} → provider=${routedProvider}`);
+
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         action: 'generate',
-        provider: 'gemini',
+        provider: routedProvider,
         prompt: prompt,
         systemPrompt,
         temperature: 0.3,
         maxTokens: 500,
         context: { 
           sceneCount: existingScenes.length, 
-          region: region || 'global',
+          region: resolvedRegion,
+          zone,
           taskType: 'scene_customization' 
         },
       },
@@ -477,7 +487,9 @@ export function AISceneCustomizer({
       const { newScenes, changes } = applyIntents(scenes, intents);
 
       if (aiUsed) {
-        changes.unshift('🤖 Parsed via AI (zone-routed LLM)');
+        const zone = getZoneForRegion(region || 'global');
+        const provider = ZONE_ROUTING_CONFIG[zone]?.primaryLLM || 'gemini';
+        changes.unshift(`🤖 Parsed via AI — Zone: ${zone} → Provider: ${provider}`);
       }
 
       setPreviousScenes(scenes);
