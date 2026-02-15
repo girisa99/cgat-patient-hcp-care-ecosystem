@@ -142,18 +142,38 @@ const CAPABILITY_TO_CONFIG_KEY: Record<string, string> = {
   transcription: 'transcriptionEnabled',
 };
 
+/** Safely convert a value to display string — prevents raw JSON/object rendering */
+function toDisplayString(val: unknown): string {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'string') return val;
+  if (Array.isArray(val)) return val.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join('. ');
+  if (typeof val === 'object') {
+    // If it's a messaging object with common fields, extract meaningfully
+    const obj = val as Record<string, unknown>;
+    if (obj.text) return String(obj.text);
+    if (obj.content) return String(obj.content);
+    if (obj.value) return String(obj.value);
+    // Last resort: pretty format but not raw JSON dump
+    return Object.entries(obj)
+      .filter(([, v]) => v !== null && v !== undefined)
+      .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
+      .join(' | ');
+  }
+  return String(val);
+}
+
 /** Resolve {{variable}} placeholders with approved messaging values */
 function resolveScriptVariables(script: string, messaging?: ApprovedMessagingContext | null, productName?: string): string {
   if (!script || !messaging) return script;
   return script
-    .replace(/\{\{hook\}\}/g, messaging.hook || '{{hook}}')
-    .replace(/\{\{cta\}\}/g, messaging.cta || '{{cta}}')
-    .replace(/\{\{value_proposition\}\}/g, messaging.valueProposition || '{{value_proposition}}')
-    .replace(/\{\{product_name\}\}/g, productName || messaging.productId || '{{product_name}}')
-    .replace(/\{\{benefits\}\}/g, (messaging.benefits || []).join('. ') || '{{benefits}}')
-    .replace(/\{\{pain_points\}\}/g, (messaging.painPoints || []).join('. ') || '{{pain_points}}')
-    .replace(/\{\{differentiators\}\}/g, (messaging.differentiators || []).join('. ') || '{{differentiators}}')
-    .replace(/\{\{short_script\}\}/g, messaging.shortScript || '{{short_script}}');
+    .replace(/\{\{hook\}\}/g, toDisplayString(messaging.hook) || '{{hook}}')
+    .replace(/\{\{cta\}\}/g, toDisplayString(messaging.cta) || '{{cta}}')
+    .replace(/\{\{value_proposition\}\}/g, toDisplayString(messaging.valueProposition) || '{{value_proposition}}')
+    .replace(/\{\{product_name\}\}/g, productName || toDisplayString(messaging.productId) || '{{product_name}}')
+    .replace(/\{\{benefits\}\}/g, toDisplayString(messaging.benefits) || '{{benefits}}')
+    .replace(/\{\{pain_points\}\}/g, toDisplayString(messaging.painPoints) || '{{pain_points}}')
+    .replace(/\{\{differentiators\}\}/g, toDisplayString(messaging.differentiators) || '{{differentiators}}')
+    .replace(/\{\{short_script\}\}/g, toDisplayString(messaging.shortScript) || '{{short_script}}');
 }
 
 export function SortableSceneItem({
