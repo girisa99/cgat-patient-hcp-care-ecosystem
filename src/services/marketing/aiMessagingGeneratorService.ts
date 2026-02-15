@@ -33,7 +33,17 @@ export type ProductionCapability =
   | 'ppt_slides'
   | 'motion_graphics'
   | 'stock_remix'
-  | 'banner_static';
+  | 'banner_static'
+  | 'avatar_generation'
+  | '3d_generation'
+  | 'animation'
+  | 'image_generation'
+  | 'lip_sync'
+  | 'transcription'
+  | 'translation'
+  | 'tts'
+  | 'video_generation'
+  | 'voice_cloning';
 
 export interface ProductionToneConfig {
   name: string;
@@ -158,6 +168,153 @@ export const PRODUCTION_CONTEXT_TONES: Record<ProductionCapability, ProductionTo
       maxSentenceLength: 6,
       preferredFormat: 'ultra_concise_headline',
       avoidPatterns: ['long descriptions', 'complex ideas', 'multiple clauses'],
+    },
+  },
+  // === DB-driven capabilities (matching cast_ai_capabilities table) ===
+  avatar_generation: {
+    name: 'Avatar Generation',
+    description: 'AI-powered avatar creation for personalized presenter-driven content',
+    toneDirective: `PRODUCTION TONE: AVATAR GENERATION
+- Write as if introducing a digital presenter or brand ambassador
+- Conversational, warm, and human-like delivery
+- Sentences under 15 words for clean avatar sync
+- Include natural pauses and breath marks
+- Use first-person perspective where appropriate`,
+    scriptConstraints: {
+      maxSentenceLength: 15,
+      preferredFormat: 'conversational_presenter',
+      avoidPatterns: ['technical jargon', 'complex sentences'],
+    },
+  },
+  '3d_generation': {
+    name: '3D Generation',
+    description: 'Spatial, immersive language for 3D model and scene creation',
+    toneDirective: `PRODUCTION TONE: 3D GENERATION
+- Use spatial, dimensional language — "explore", "rotate", "zoom into"
+- Describe objects with depth, texture, and material properties
+- Present tense, second person for immersive feel
+- Include perspective cues for 3D navigation`,
+    scriptConstraints: {
+      maxSentenceLength: 20,
+      preferredFormat: 'spatial_description',
+      avoidPatterns: ['flat descriptions', '2D references'],
+    },
+  },
+  animation: {
+    name: 'Animation',
+    description: 'Motion-synced, kinetic language for animated sequences',
+    toneDirective: `PRODUCTION TONE: ANIMATION
+- Write copy that syncs with animated transitions and keyframes
+- Punchy, rhythmic phrasing — one idea per motion beat
+- Use action verbs: Transform, Reveal, Launch, Snap, Flow
+- Each line should work as a standalone text-on-screen moment`,
+    scriptConstraints: {
+      maxSentenceLength: 10,
+      preferredFormat: 'kinetic_animation',
+      avoidPatterns: ['paragraphs', 'passive voice'],
+    },
+  },
+  image_generation: {
+    name: 'Image Generation',
+    description: 'Visual-first language for AI-generated imagery and thumbnails',
+    toneDirective: `PRODUCTION TONE: IMAGE GENERATION
+- Write visually descriptive copy that complements generated imagery
+- Headlines under 8 words — bold and declarative
+- Emphasize visual contrast and composition
+- CTA should be scannable in under 2 seconds`,
+    scriptConstraints: {
+      maxSentenceLength: 8,
+      preferredFormat: 'visual_headline',
+      avoidPatterns: ['long narratives', 'abstract concepts'],
+    },
+  },
+  lip_sync: {
+    name: 'Lip Sync',
+    description: 'Precisely timed speech for audio-visual lip synchronization',
+    toneDirective: `PRODUCTION TONE: LIP SYNC
+- Write natural speech optimized for phoneme timing
+- Simple subject-verb-object structure
+- Sentences MUST be under 12 words for clean sync
+- Avoid consonant clusters and tongue-twisters
+- Include [pause] markers for natural breathing`,
+    scriptConstraints: {
+      maxSentenceLength: 12,
+      preferredFormat: 'phoneme_optimized',
+      avoidPatterns: ['tongue-twisters', 'rapid consonants', 'complex compounds'],
+    },
+  },
+  transcription: {
+    name: 'Transcription',
+    description: 'Clear, structured language optimized for speech-to-text accuracy',
+    toneDirective: `PRODUCTION TONE: TRANSCRIPTION
+- Write clearly enunciated, well-structured sentences
+- Avoid ambiguous homophones
+- Use proper punctuation cues for transcript formatting
+- Speak at measured pace with clear word boundaries`,
+    scriptConstraints: {
+      maxSentenceLength: 18,
+      preferredFormat: 'clear_speech',
+      avoidPatterns: ['mumbled phrases', 'run-on sentences'],
+    },
+  },
+  translation: {
+    name: 'Translation',
+    description: 'Culturally neutral, translation-ready messaging for global audiences',
+    toneDirective: `PRODUCTION TONE: TRANSLATION-READY
+- Write in simple, universally translatable language
+- Avoid idioms, slang, and culture-specific references
+- Keep sentences short and structurally simple
+- Use active voice for clearer translation
+- Avoid wordplay that doesn't translate`,
+    scriptConstraints: {
+      maxSentenceLength: 15,
+      preferredFormat: 'translation_ready',
+      avoidPatterns: ['idioms', 'slang', 'cultural references', 'wordplay'],
+    },
+  },
+  tts: {
+    name: 'Text-to-Speech',
+    description: 'Natural speech patterns optimized for TTS engine output quality',
+    toneDirective: `PRODUCTION TONE: TEXT-TO-SPEECH
+- Write for natural speech synthesis — conversational flow
+- Include SSML-friendly patterns: pauses, emphasis markers
+- Avoid abbreviations — spell out numbers and acronyms
+- Sentences 10-18 words for optimal TTS pacing
+- Use varied sentence lengths for natural rhythm`,
+    scriptConstraints: {
+      maxSentenceLength: 18,
+      preferredFormat: 'tts_optimized',
+      avoidPatterns: ['abbreviations', 'special characters', 'complex numbers'],
+    },
+  },
+  video_generation: {
+    name: 'Video Generation',
+    description: 'Scene-driven narrative for AI video synthesis from text/images',
+    toneDirective: `PRODUCTION TONE: VIDEO GENERATION
+- Write scene-by-scene narrative suitable for video synthesis
+- Include visual direction cues: [WIDE SHOT], [CLOSE-UP], [TRANSITION]
+- Pace copy to match typical scene durations (3-5 seconds each)
+- Use cinematic language — show don't tell
+- Each scene should have clear visual intent`,
+    scriptConstraints: {
+      maxSentenceLength: 15,
+      preferredFormat: 'scene_narrative',
+      avoidPatterns: ['abstract concepts', 'non-visual language'],
+    },
+  },
+  voice_cloning: {
+    name: 'Voice Cloning',
+    description: 'Natural, personality-consistent speech for cloned voice output',
+    toneDirective: `PRODUCTION TONE: VOICE CLONING
+- Write in the speaker's natural cadence and vocabulary
+- Maintain consistent personality and tone throughout
+- Include breathing pauses and natural speech patterns
+- Avoid unnatural phrasing that would reveal AI generation
+- Script should sound like the speaker's authentic voice`,
+    scriptConstraints: {
+      maxSentenceLength: 16,
+      preferredFormat: 'authentic_speech',
+      avoidPatterns: ['robotic phrasing', 'unnatural transitions'],
     },
   },
 };

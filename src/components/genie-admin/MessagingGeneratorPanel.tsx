@@ -64,6 +64,7 @@ import { useAIMessaging } from '@/hooks/useAIMessaging';
 import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
 import { type GenieProductId, GENIE_PRODUCTS } from '@/services/marketing/productVersionTrackingService';
 import { PRODUCTION_CONTEXT_TONES, type ProductionCapability } from '@/services/marketing/aiMessagingGeneratorService';
+import { useCastCapabilities } from '@/hooks/useCastRegistry';
 import { audienceRelevanceService } from '@/services/audienceRelevanceService';
 import { ThumbsUp, ThumbsDown, Film } from 'lucide-react';
 import { VirtualizedMessagingMatrix } from './genie-cast/VirtualizedMessagingMatrix';
@@ -140,7 +141,9 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
     resetToDetected 
   } = useRegionalDetection();
 
-  // Generation mode
+  // Fetch DB-driven capabilities (same list as blueprint/template)
+  const { data: dbCapabilities = [] } = useCastCapabilities();
+
   const [generationMode, setGenerationMode] = useState<GenerationMode>('single');
   const [transcreationMode, setTranscreationMode] = useState<TranscreationMode>('deferred');
   
@@ -1227,7 +1230,19 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
                           Auto (from template/style)
                         </div>
                       </SelectItem>
-                      {Object.entries(PRODUCTION_CONTEXT_TONES).map(([key, config]) => (
+                      {/* DB-driven capabilities — same list as blueprint/template */}
+                      {dbCapabilities.map((cap) => (
+                        <SelectItem key={cap.value} value={cap.value}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs">{cap.label}</span>
+                            <span className="text-[10px] text-muted-foreground">{cap.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                      {/* Legacy production contexts */}
+                      {Object.entries(PRODUCTION_CONTEXT_TONES)
+                        .filter(([key]) => !dbCapabilities.some(c => c.value === key))
+                        .map(([key, config]) => (
                         <SelectItem key={key} value={key}>
                           <div className="flex items-center gap-2">
                             <span className="text-xs">{config.name}</span>
@@ -1273,8 +1288,17 @@ Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"r
                         <SelectItem value="none">
                           <span className="text-xs">None</span>
                         </SelectItem>
+                        {/* DB-driven capabilities — same as primary */}
+                        {dbCapabilities
+                          .filter(cap => cap.value !== selectedCapability)
+                          .map((cap) => (
+                            <SelectItem key={cap.value} value={cap.value}>
+                              <span className="text-xs">{cap.label}</span>
+                            </SelectItem>
+                          ))}
+                        {/* Legacy production contexts */}
                         {Object.entries(PRODUCTION_CONTEXT_TONES)
-                          .filter(([key]) => key !== selectedCapability)
+                          .filter(([key]) => key !== selectedCapability && !dbCapabilities.some(c => c.value === key))
                           .map(([key, config]) => (
                             <SelectItem key={key} value={key}>
                               <span className="text-xs">{config.name}</span>
