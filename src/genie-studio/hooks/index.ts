@@ -32,8 +32,12 @@ export { useVibeRecordingPersistence } from '@/hooks/useVibeRecordingPersistence
 export { useVibeSocialPublish } from '@/hooks/useVibeSocialPublish';
 export { useVibeThumbnails } from '@/hooks/useVibeThumbnails';
 
+// Cast production project management
+export { useCastProjects } from '@/hooks/useCastProjects';
+export { useShowCastLinks } from '@/hooks/useShowCastLinks';
+
 // AI Hub - Single Source of Truth for all AI operations
-export { 
+export {
   useUniversalAIHub,
   useContextualAIProviders,
 } from '@/hooks/useUniversalAIHub';

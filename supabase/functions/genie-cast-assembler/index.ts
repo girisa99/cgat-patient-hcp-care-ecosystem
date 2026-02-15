@@ -240,6 +240,8 @@ serve(async (req) => {
           humorLevel?: string;
         };
       } | null,
+      // Cast project persistence — when provided, creates/updates cast_generation_jobs
+      castProjectId = null as string | null,
     } = await req.json();
     
     // Create messaging context for script generation
@@ -281,6 +283,43 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Cast project persistence: create a generation job record if castProjectId provided
+    let castJobId: string | null = null;
+    if (castProjectId) {
+      try {
+        const { data: job, error: jobError } = await supabase
+          .from('cast_generation_jobs')
+          .insert({
+            project_id: castProjectId,
+            job_type: 'video',
+            language,
+            quality,
+            style_intent: videoStyle,
+            provider: `tts:${getTTSProvider(language).provider}/video:${getVideoProvider(language)}`,
+            status: 'processing',
+            started_at: new Date().toISOString(),
+            input_config: { language, quality, fullProductionMode, videoStyle, unifiedAudio },
+          })
+          .select('id')
+          .single();
+
+        if (!jobError && job) {
+          castJobId = job.id;
+          console.log(`📋 Created cast_generation_jobs record: ${castJobId}`);
+        } else if (jobError) {
+          console.warn(`⚠️ Failed to create generation job record:`, jobError.message);
+        }
+
+        // Update project status to generating
+        await supabase
+          .from('cast_projects')
+          .update({ status: 'generating' })
+          .eq('id', castProjectId);
+      } catch (persistErr) {
+        console.warn(`⚠️ Cast project persistence error (non-fatal):`, persistErr);
+      }
+    }
 
     const ttsConfig = getTTSProvider(language);
     const videoProvider = getVideoProvider(language);
@@ -629,12 +668,70 @@ serve(async (req) => {
       console.log(`⚠️ Video file pending - TTS audio ready, awaiting video assembly`);
     }
 
+    // Cast project persistence: update job and project on completion
+    if (castJobId && castProjectId) {
+      try {
+        const jobStatus = result.success ? (isPending ? 'rendering' : 'completed') : 'failed';
+        await supabase.from('cast_generation_jobs').update({
+          status: jobStatus,
+          output_url: result.videoUrl || null,
+          output_thumbnail_url: result.thumbnailUrl || null,
+          output_duration_seconds: totalDuration || null,
+          provider_job_id: assemblyResult.renderProjectId || null,
+          completed_at: jobStatus === 'completed' ? new Date().toISOString() : null,
+          output_metadata: {
+            chapters: chapterResults.map(c => ({ id: c.chapterId, product: c.product, success: c.success })),
+            providers: result.providers,
+            elapsedMs,
+          },
+        }).eq('id', castJobId);
+
+        // Update project with final output
+        if (result.success) {
+          const projectUpdate: Record<string, any> = {
+            status: isPending ? 'generating' : 'review',
+          };
+          if (result.videoUrl) projectUpdate.final_video_url = result.videoUrl;
+          if (result.thumbnailUrl) projectUpdate.thumbnail_url = result.thumbnailUrl;
+          if (totalDuration > 0) projectUpdate.total_duration_seconds = totalDuration;
+
+          await supabase.from('cast_projects').update(projectUpdate).eq('id', castProjectId);
+        }
+        console.log(`📋 Updated cast job ${castJobId} → ${jobStatus}`);
+      } catch (persistErr) {
+        console.warn(`⚠️ Cast job update error (non-fatal):`, persistErr);
+      }
+    }
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Genie Cast assembly error:', error);
+
+    // Cast project persistence: mark job as failed on error
+    if (castProjectId) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const errSupabase = createClient(supabaseUrl, supabaseKey);
+        const errorMsg = error instanceof Error ? error.message : 'Assembly failed';
+
+        // Update any processing jobs for this project
+        await errSupabase.from('cast_generation_jobs')
+          .update({ status: 'failed', error_message: errorMsg, completed_at: new Date().toISOString() })
+          .eq('project_id', castProjectId)
+          .eq('status', 'processing');
+
+        await errSupabase.from('cast_projects')
+          .update({ status: 'review' })
+          .eq('id', castProjectId);
+      } catch (_) {
+        // Best-effort persistence — don't mask the original error
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: false,

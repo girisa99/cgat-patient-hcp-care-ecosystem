@@ -30,8 +30,124 @@ serve(async (req) => {
       throw new Error('JSON2VIDEO_API_KEY not configured');
     }
 
-    const { videoId, projectId } = await req.json();
-    
+    const { videoId, projectId, castJobId } = await req.json();
+
+    // ── Cast generation job status check ──────────────────────────────
+    if (castJobId) {
+      const { data: job, error: jobError } = await supabase
+        .from('cast_generation_jobs')
+        .select('*')
+        .eq('id', castJobId)
+        .single();
+
+      if (jobError || !job) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Cast generation job not found',
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404,
+        });
+      }
+
+      // Already in a terminal state
+      if (['completed', 'failed', 'cancelled'].includes(job.status)) {
+        return new Response(JSON.stringify({
+          success: true,
+          job: {
+            id: job.id,
+            status: job.status,
+            outputUrl: job.output_url,
+            thumbnailUrl: job.output_thumbnail_url,
+            durationSeconds: job.output_duration_seconds,
+            progressPercent: job.status === 'completed' ? 100 : (job.progress_percent || 0),
+            errorMessage: job.error_message,
+          },
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Poll the external provider if we have a provider_job_id
+      if (job.provider_job_id && json2videoApiKey) {
+        const providerStatus = await checkJson2VideoStatus(job.provider_job_id, json2videoApiKey);
+
+        if (providerStatus.completed) {
+          await supabase.from('cast_generation_jobs').update({
+            status: 'completed',
+            output_url: providerStatus.videoUrl,
+            output_thumbnail_url: providerStatus.thumbnailUrl,
+            output_duration_seconds: providerStatus.duration || null,
+            progress_percent: 100,
+            completed_at: new Date().toISOString(),
+          }).eq('id', castJobId);
+
+          // Update parent cast project
+          if (job.project_id) {
+            await supabase.from('cast_projects').update({
+              status: 'review',
+              final_video_url: providerStatus.videoUrl || null,
+              thumbnail_url: providerStatus.thumbnailUrl || null,
+              total_duration_seconds: providerStatus.duration || null,
+            }).eq('id', job.project_id);
+          }
+
+          return new Response(JSON.stringify({
+            success: true,
+            job: {
+              id: castJobId,
+              status: 'completed',
+              outputUrl: providerStatus.videoUrl,
+              thumbnailUrl: providerStatus.thumbnailUrl,
+              durationSeconds: providerStatus.duration,
+              progressPercent: 100,
+            },
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else if (providerStatus.failed) {
+          await supabase.from('cast_generation_jobs').update({
+            status: 'failed',
+            error_message: providerStatus.error,
+            completed_at: new Date().toISOString(),
+          }).eq('id', castJobId);
+
+          return new Response(JSON.stringify({
+            success: false,
+            job: { id: castJobId, status: 'failed', errorMessage: providerStatus.error },
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Still processing — update progress
+        if (providerStatus.progress) {
+          await supabase.from('cast_generation_jobs').update({
+            progress_percent: providerStatus.progress,
+          }).eq('id', castJobId);
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          job: {
+            id: castJobId,
+            status: 'processing',
+            progressPercent: providerStatus.progress || job.progress_percent || 0,
+          },
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // No provider_job_id — return current DB status
+      return new Response(JSON.stringify({
+        success: true,
+        job: { id: job.id, status: job.status, progressPercent: job.progress_percent || 0 },
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // If specific video ID provided, check just that one
     if (videoId) {
       const { data: video, error } = await supabase
