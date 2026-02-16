@@ -9,8 +9,10 @@ on:
 
 jobs:
   build:
-    # Map branch names to GitHub Environments so that secrets are scoped correctly
-    environment: ${{ github.ref_name }}
+    # For push events, map branch to GitHub Environment for scoped secrets.
+    # For pull_request events, use the PR *target* branch (base_ref) so secrets
+    # resolve correctly. workflow_dispatch falls back to ref_name.
+    environment: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
     runs-on: ubuntu-latest
     # Expose secrets as env vars so step-level `if` can check them via env context
     env:
@@ -41,14 +43,17 @@ jobs:
         run: npm run build
 
       - name: Install Playwright browsers
+        if: env.HAS_E2E_SECRETS == 'true'
         run: npx playwright install --with-deps
 
       - name: Start preview server
+        if: env.HAS_E2E_SECRETS == 'true'
         run: |
           npx vite preview --port 5173 &
           npx wait-on http://localhost:5173
 
       - name: Run Playwright smoke test (auth only)
+        if: env.HAS_E2E_SECRETS == 'true'
         run: npx playwright test -g "01 Authentication"
 
       - name: Generate Playwright storage state
