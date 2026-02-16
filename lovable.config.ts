@@ -540,4 +540,4 @@ serve(async (req) => {
       enforceAccessibility: true
     }
   }
-};`
+};

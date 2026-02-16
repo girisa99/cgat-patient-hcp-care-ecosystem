@@ -21,7 +21,7 @@ export interface DuplicateCodeAlert {
 export class RealtimeFileMonitor {
   private watchedPaths: Set<string> = new Set();
   private duplicateThreshold = 0.85; // 85% similarity
-  private callbacks: Map<string, Function[]> = new Map();
+  private callbacks: Map<string, ((...args: unknown[]) => void)[]> = new Map();
   private fileCache: Map<string, string> = new Map();
 
   /**
