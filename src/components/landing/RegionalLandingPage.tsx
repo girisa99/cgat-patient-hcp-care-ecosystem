@@ -1009,198 +1009,204 @@ const LANDING_METRICS = {
 } as const;
 
 // ============================================
-// REGION NAVIGATOR — Auto-scrolling marquee with parent/child hierarchy
+// REGION NAVIGATOR — Interactive 15-region grid with expandable zones
 // ============================================
 
-import { REGION_HIERARCHY } from '@/config/regionHierarchy';
+import { REGION_HIERARCHY, type RegionGroup } from '@/config/regionHierarchy';
 
-// Primary 8 region slugs only (no expansion aliases that duplicate content)
-const PRIMARY_REGION_SLUGS: RegionSlug[] = ['nam', 'europe', 'mena', 'india', 'africa', 'apac', 'latam', 'caribbean'];
-
-// Build parent region items from REGION_HIERARCHY
-interface ParentMarqueeItem {
-  flag: string;
-  name: string;
-  childCount: number;
-  langHint?: string;
-  slug?: RegionSlug;
-}
-
-// (SubRegionMarqueeItem defined below with ZONE_LANGUAGE_HINTS)
-
-// Row 1: Only the 8 primary regions — no expansion aliases
-const PARENT_MARQUEE: ParentMarqueeItem[] = PRIMARY_REGION_SLUGS.map((slug) => {
-  const cfg = REGIONAL_CONFIGS[slug];
-  return {
-    flag: cfg.hero.flag,
-    name: cfg.hero.regionName,
-    childCount: 0, // we'll show language count instead
-    langHint: cfg.stats.languages,
-    slug,
-  };
-});
-
-// Row 2: Zone-level sub-regions with language hints (not granular leaf nodes)
-// Shows meaningful zones like "DACH", "Gulf", "North India" — not every individual country/language
-const ZONE_LANGUAGE_HINTS: Record<string, string> = {
-  // Europe
-  'UK & Ireland': 'EN', 'DACH (Germany, Austria, Switzerland)': 'DE',
-  'France & Francophone': 'FR', 'Benelux & Netherlands': 'NL',
-  'Spain & Portugal': 'ES/PT', 'Italy': 'IT',
-  'Nordics': 'SV/NO/DA/FI', 'Eastern Europe': 'PL/CZ/RO/HU/EL',
-  // LATAM
-  'Brazil (Português)': 'PT-BR', 'Mexico & Central America': 'ES-MX',
-  'Andean (Colombia, Peru, Ecuador)': 'ES', 'Southern Cone (Argentina, Chile, Uruguay)': 'ES',
-  'Caribbean (DR, PR, Cuba, Venezuela)': 'ES',
-  // MENA
-  'Gulf (UAE, Saudi, Qatar, Kuwait)': 'AR-Gulf', 'Egypt (مصري)': 'AR-EG',
-  'Levant (Lebanon, Jordan, Iraq)': 'AR-Levant', 'Maghreb (Morocco, Algeria, Tunisia)': 'AR-Maghreb',
-  'Pan-Arab (Modern Standard Arabic)': 'MSA', 'Israel (עברית)': 'HE',
-  // Africa
-  'West Africa (Nigeria, Ghana)': 'EN/YO', 'East Africa (Kenya, Tanzania)': 'SW/EN',
-  'Southern Africa (South Africa)': 'EN/ZU/AF', 'Francophone Africa (Senegal, DRC)': 'FR',
-  // India
-  'North India (Hindi Belt)': 'HI/UR/PA', 'South India (Dravidian)': 'TA/TE/KN/ML',
-  'West India (Maharashtra, Gujarat)': 'MR/GU', 'East India (Bengal, Odisha)': 'BN/OR',
-  'Pan-India (English)': 'EN-IN',
-  // SEA
-  'Malaysia & Indonesia (Malay)': 'MS/ID', 'Thailand (ไทย)': 'TH',
-  'Vietnam (Tiếng Việt)': 'VI', 'Philippines (Filipino/Taglish)': 'TL',
-  'Pan-SEA / Singapore (English)': 'EN-SG',
-  // CJK
-  'China / HK / Macau (普通话/粵語)': 'ZH-CN', 'Taiwan (繁體中文)': 'ZH-TW',
-  'Japan (日本語)': 'JA', 'South Korea (한국어)': 'KO',
-  // Oceania
-  'Australia': 'EN-AU', 'New Zealand': 'EN-NZ',
-  // Caribbean
-  'English Caribbean (Jamaica, T&T, Bahamas)': 'EN-CB', 'French Caribbean (Haiti, Martinique)': 'FR-CB',
-  // Eurasia
-  'Ukraine (Українська)': 'UK', 'Balkans (Serbia, Bulgaria, Croatia)': 'SR/BG/HR',
-  'Caucasus (Georgia, Armenia)': 'KA/HY',
-  // Central Asia
-  'Kazakhstan (Қазақ)': 'KK', 'Uzbekistan (Oʻzbek)': 'UZ', 'Azerbaijan (Azərbaycan)': 'AZ',
-  // South Asia
-  'Nepal (नेपाली)': 'NE', 'Sri Lanka (සිංහල / தமிழ்)': 'SI/TA',
-  'Bhutan (རྫོང་ཁ)': 'DZ', 'Maldives (ދިވެހި)': 'DV',
+// Language hints for zones/leaves
+const ZONE_LANG_MAP: Record<string, string> = {
+  'NAM_US': 'EN-US', 'NAM_CA': 'EN/FR',
+  'EU_WEST': 'EN', 'EU_DACH': 'DE', 'EU_FRANCE': 'FR', 'EU_BENELUX': 'NL', 'EU_IBERIA': 'ES/PT', 'EU_ITALY': 'IT', 'EU_NORDIC': 'SV/NO/DA/FI', 'EU_EAST': 'PL/CZ/RO/HU/EL',
+  'LATAM_BRAZIL': 'PT-BR', 'LATAM_MEXICO': 'ES-MX', 'LATAM_ANDEAN': 'ES', 'LATAM_CONESUR': 'ES', 'LATAM_CARIB': 'ES',
+  'MENA_GULF': 'AR-Gulf', 'MENA_EGYPT': 'AR-EG', 'MENA_LEVANT': 'AR-Levant', 'MENA_MAGHREB': 'AR-Maghreb', 'MENA_MSA': 'MSA', 'MENA_ISRAEL': 'HE',
+  'AFRICA_WEST': 'EN/YO', 'AFRICA_EAST': 'SW/EN', 'AFRICA_SOUTH': 'EN/ZU/AF', 'AFRICA_FRANCO': 'FR',
+  'INDIA_NORTH': 'HI/UR/PA', 'INDIA_SOUTH': 'TA/TE/KN/ML', 'INDIA_WEST': 'MR/GU', 'INDIA_EAST': 'BN/OR', 'INDIA_PAN': 'EN-IN',
+  'SEA_MALAY': 'MS/ID', 'SEA_THAI': 'TH', 'SEA_VIET': 'VI', 'SEA_PHIL': 'TL', 'SEA_PAN': 'EN-SG',
+  'CJK_CN': 'ZH-CN', 'CJK_TW': 'ZH-TW', 'CJK_JP': 'JA', 'CJK_KR': 'KO',
+  'OCEANIA_AU': 'EN-AU', 'OCEANIA_NZ': 'EN-NZ',
+  'CARIBBEAN_EN': 'EN-CB', 'CARIBBEAN_FR': 'FR-CB',
+  'EU_UKRAINE': 'UK', 'EU_BALKANS': 'SR/BG/HR', 'EU_CAUCASUS': 'KA/HY',
+  'ASIA_CENTRAL_KZ': 'KK', 'ASIA_CENTRAL_UZ': 'UZ', 'ASIA_CENTRAL_AZ': 'AZ',
+  'SA_NEPAL': 'NE', 'SA_SRILANKA': 'SI/TA', 'SA_BHUTAN': 'DZ', 'SA_MALDIVES': 'DV',
+  'PAKISTAN': 'UR', 'BANGLADESH': 'BN', 'TURKEY': 'TR',
 };
 
-interface SubRegionMarqueeItem {
-  flag: string;
-  name: string;
-  langHint: string;
-  parentRegion: string;
-}
+const getZoneCount = (g: RegionGroup): number => {
+  if (g.children.length === 0) return 1;
+  return g.children.length;
+};
 
-const SUB_REGION_MARQUEE: SubRegionMarqueeItem[] = (() => {
-  const seen = new Set<string>();
-  const items: SubRegionMarqueeItem[] = [];
-  for (const g of REGION_HIERARCHY) {
-    // For groups with no children (Pakistan, Bangladesh, Turkey), show them as a sub-region item
-    if (g.children.length === 0) {
-      if (!seen.has(g.groupName)) {
-        seen.add(g.groupName);
-        items.push({
-          flag: g.groupFlag,
-          name: g.groupName,
-          langHint: ZONE_LANGUAGE_HINTS[g.groupName] || '',
-          parentRegion: g.groupName,
-        });
-      }
-      continue;
-    }
-    // Show zone-level items (not leaf grandchildren)
-    for (const child of g.children) {
-      if (!seen.has(child.name)) {
-        seen.add(child.name);
-        const langCount = child.children ? child.children.length : 1;
-        items.push({
-          flag: child.flag,
-          name: child.name,
-          langHint: ZONE_LANGUAGE_HINTS[child.name] || (langCount > 1 ? `${langCount} langs` : ''),
-          parentRegion: g.groupName,
-        });
-      }
-    }
-  }
-  return items;
-})();
+const getLanguageCount = (g: RegionGroup): number => {
+  if (g.children.length === 0) return 1;
+  return g.children.reduce((sum, c) => sum + (c.children?.length || 1), 0);
+};
+
+// Map group codes to landing page slugs (where available)
+const GROUP_TO_SLUG: Record<string, RegionSlug | null> = {
+  NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena', AFRICA: 'africa',
+  INDIA: 'india', SEA: 'apac', CJK: 'apac', OCEANIA: 'oceania', TURKEY: 'turkey',
+  CARIBBEAN: 'caribbean', EURASIA: 'eastern_europe', CENTRAL_ASIA: 'central_asia',
+  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', SOUTH_ASIA: null,
+};
 
 const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug }) => {
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+
   return (
-    <section className="py-8 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" />
-      <div className="relative">
+    <section className="py-10 relative">
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-primary/5" />
+      <div className="relative max-w-6xl mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center justify-center gap-3 mb-5 px-4">
-          <Globe className="w-5 h-5 text-primary" />
-          <span className="text-sm font-bold uppercase tracking-widest text-foreground">
-            Explore Our Global Reach
-          </span>
-          <Globe className="w-5 h-5 text-primary" />
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Globe className="w-5 h-5 text-primary" />
+            <span className="text-sm font-bold uppercase tracking-widest text-foreground">
+              {REGION_HIERARCHY.length} Global Regions
+            </span>
+            <Globe className="w-5 h-5 text-primary" />
+          </div>
+          <p className="text-muted-foreground text-sm">Click any region to explore its zones, sub-regions & languages</p>
         </div>
 
-        {/* Row 1: Parent regions — scrolls left to right, pauses on hover */}
-        <div className="marquee-container relative overflow-hidden mb-3">
-          <div className="absolute left-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-          <div className="marquee-track-left flex gap-3 py-2" style={{ width: 'max-content' }}>
-            {[...PARENT_MARQUEE, ...PARENT_MARQUEE, ...PARENT_MARQUEE].map((item, i) => {
-              const isActive = item.slug === currentSlug;
-              return (
-                <Link
-                  key={`p-${i}`}
-                  to={item.slug ? `/genie-landing/${item.slug}` : '#'}
-                  className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold shrink-0 transition-colors ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30'
-                      : 'bg-card border-2 border-primary/20 text-foreground hover:border-primary/50 hover:shadow-md'
+        {/* 15-region grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {REGION_HIERARCHY.map((group) => {
+            const isExpanded = expandedGroup === group.groupCode;
+            const slug = GROUP_TO_SLUG[group.groupCode];
+            const isActiveLanding = slug === currentSlug;
+            const zoneCount = getZoneCount(group);
+            const langCount = getLanguageCount(group);
+
+            return (
+              <div key={group.groupCode} className="relative">
+                <button
+                  onClick={() => setExpandedGroup(isExpanded ? null : group.groupCode)}
+                  className={`w-full flex flex-col items-center gap-1.5 p-4 rounded-xl text-center transition-all duration-200 border-2 ${
+                    isExpanded
+                      ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/10'
+                      : isActiveLanding
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                        : 'bg-card border-border/60 hover:border-primary/40 hover:shadow-md'
                   }`}
                 >
-                  <span className="text-xl leading-none">{item.flag}</span>
-                  <span className="whitespace-nowrap">{item.name}</span>
-                  {item.langHint && (
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
-                      isActive ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-accent/10 text-accent-foreground/70'
-                    }`}>
-                      {item.langHint} langs
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Row 2: Sub-regions + countries — scrolls right to left, pauses on hover */}
-        <div className="marquee-container relative overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-          <div className="marquee-track-right flex gap-2.5 py-2" style={{ width: 'max-content' }}>
-            {[...SUB_REGION_MARQUEE, ...SUB_REGION_MARQUEE, ...SUB_REGION_MARQUEE].map((item, i) => (
-              <span
-                key={`s-${i}`}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted/60 border border-border/40 text-muted-foreground shrink-0 hover:bg-muted hover:text-foreground transition-colors whitespace-nowrap"
-              >
-                <span className="text-sm leading-none">{item.flag}</span>
-                <span>{item.name}</span>
-                {item.langHint && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
-                    {item.langHint}
+                  <span className="text-2xl leading-none">{group.groupFlag}</span>
+                  <span className={`text-xs font-bold leading-tight ${isActiveLanding && !isExpanded ? 'text-primary-foreground' : 'text-foreground'}`}>
+                    {group.groupName}
                   </span>
-                )}
-              </span>
-            ))}
-          </div>
+                  <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                      isActiveLanding && !isExpanded ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                    }`}>
+                      {zoneCount} zone{zoneCount > 1 ? 's' : ''}
+                    </span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                      isActiveLanding && !isExpanded ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-accent/10 text-accent-foreground/70'
+                    }`}>
+                      {langCount} lang{langCount > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    isExpanded ? 'rotate-180 text-primary' : isActiveLanding ? 'text-primary-foreground/60' : 'text-muted-foreground'
+                  }`} />
+                </button>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Quick-jump: only primary 8 regions (no duplicates) */}
+        {/* Expanded zone detail panel */}
+        <AnimatePresence>
+          {expandedGroup && (() => {
+            const group = REGION_HIERARCHY.find(g => g.groupCode === expandedGroup);
+            if (!group) return null;
+            const slug = GROUP_TO_SLUG[group.groupCode];
+
+            return (
+              <motion.div
+                key={expandedGroup}
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <div className="bg-card/80 backdrop-blur-md border-2 border-primary/20 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{group.groupFlag}</span>
+                      <div>
+                        <h3 className="text-base font-bold text-foreground">{group.groupName}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {getZoneCount(group)} zone{getZoneCount(group) > 1 ? 's' : ''} · {getLanguageCount(group)} language{getLanguageCount(group) > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    {slug && (
+                      <Link to={`/genie-landing/${slug}`}>
+                        <Button size="sm" variant="outline" className="text-xs border-primary/40 text-primary hover:bg-primary/10">
+                          View Landing Page <ArrowRight className="ml-1 w-3 h-3" />
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Zones & languages */}
+                  {group.children.length === 0 ? (
+                    <div className="flex items-center gap-2 p-3 bg-muted/40 rounded-lg">
+                      <span className="text-lg">{group.groupFlag}</span>
+                      <span className="text-sm font-medium text-foreground">{group.groupName}</span>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {ZONE_LANG_MAP[group.groupCode] || '1 lang'}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {group.children.map((zone) => (
+                        <div key={zone.code} className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-primary/30 transition-colors">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-base">{zone.flag}</span>
+                            <span className="text-xs font-bold text-foreground flex-1">{zone.name}</span>
+                            {ZONE_LANG_MAP[zone.code] && (
+                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0.5">
+                                {ZONE_LANG_MAP[zone.code]}
+                              </Badge>
+                            )}
+                          </div>
+                          {zone.children && zone.children.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5 pl-6">
+                              {zone.children.map((leaf) => (
+                                <span
+                                  key={leaf.code}
+                                  className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/8 text-muted-foreground border border-border/30 font-medium"
+                                >
+                                  <span className="text-xs">{leaf.flag}</span>
+                                  {leaf.name}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })()}
+        </AnimatePresence>
+
+        {/* Quick-jump pills */}
         <div className="flex flex-wrap justify-center gap-2 mt-6 px-4">
-          {PRIMARY_REGION_SLUGS.map((slug) => {
-            const r = REGIONAL_CONFIGS[slug];
+          {REGION_HIERARCHY.map((group) => {
+            const slug = GROUP_TO_SLUG[group.groupCode];
+            if (!slug) return null;
             const isActive = slug === currentSlug;
+            const cfg = REGIONAL_CONFIGS[slug];
+            if (!cfg) return null;
             return (
               <Link
-                key={slug}
+                key={group.groupCode}
                 to={`/genie-landing/${slug}`}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
                   isActive
@@ -1208,8 +1214,8 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
                     : 'bg-card/80 border border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40'
                 }`}
               >
-                <span className="leading-none">{r.hero.flag}</span>
-                <span>{r.hero.regionName}</span>
+                <span className="leading-none">{group.groupFlag}</span>
+                <span>{group.groupName}</span>
               </Link>
             );
           })}
