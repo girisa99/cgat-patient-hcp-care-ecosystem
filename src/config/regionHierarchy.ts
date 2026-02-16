@@ -185,8 +185,6 @@ export const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'ASIA_CENTRAL_KZ', name: 'Kazakhstan (Қазақ)', flag: '🇰🇿' },
       { code: 'ASIA_CENTRAL_UZ', name: 'Uzbekistan (Oʻzbek)', flag: '🇺🇿' },
       { code: 'ASIA_CENTRAL_AZ', name: 'Azerbaijan (Azərbaycan)', flag: '🇦🇿' },
-      { code: 'ASIA_CENTRAL_AM', name: 'Armenia (Հայերեն)', flag: '🇦🇲' },
-      { code: 'ASIA_CENTRAL_GE', name: 'Georgia (ქართული)', flag: '🇬🇪' },
     ],
   },
 ];
