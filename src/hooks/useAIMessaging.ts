@@ -75,7 +75,7 @@ interface UseAIMessagingReturn {
   approveMessaging: (requestId: string, approvedBy: string) => Promise<void>;
   
   /** Reject messaging */
-  rejectMessaging: (requestId: string, reason: string) => void;
+  rejectMessaging: (requestId: string, reason: string) => Promise<void>;
   
   /** Get approved messaging for product/feature */
   getApprovedMessaging: (productId: string, featureId?: string) => GeneratedMessaging | null;
@@ -270,7 +270,7 @@ export function useAIMessaging(options: UseAIMessagingOptions = {}): UseAIMessag
   // Reject messaging
   const rejectMessaging = useCallback(async (requestId: string, reason: string) => {
     try {
-      aiMessagingGeneratorService.rejectMessaging(requestId, reason);
+      await aiMessagingGeneratorService.rejectMessaging(requestId, reason);
       await refreshPendingApprovals();
       if (showNotifications) toast.info('Messaging rejected. Regenerate with feedback.');
     } catch (error) {
