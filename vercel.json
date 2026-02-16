@@ -3,7 +3,7 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm ci",
+  "installCommand": "npm install",
 
   "rewrites": [
     {
@@ -49,15 +49,5 @@
         { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     }
-  ],
-
-  "regions": ["iad1"],
-
-  "git": {
-    "deploymentEnabled": {
-      "dev": true,
-      "uat": true,
-      "main": true
-    }
-  }
+  ]
 }
