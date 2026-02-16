@@ -1053,21 +1053,34 @@ const PARENT_MARQUEE: ParentMarqueeItem[] = REGION_HIERARCHY.map(g => {
   };
 });
 
-// Row 2: All sub-regions + grandchild countries (flattened)
-const SUB_REGION_MARQUEE: SubRegionMarqueeItem[] = REGION_HIERARCHY.flatMap(g =>
-  g.children.flatMap(child => {
-    const items: SubRegionMarqueeItem[] = [
-      { flag: child.flag, name: child.name, subCount: child.children?.length || 0 },
-    ];
-    // Also add grandchild countries for richness
-    if (child.children) {
-      for (const gc of child.children) {
-        items.push({ flag: gc.flag, name: gc.name, subCount: 0 });
+// Row 2: Leaf-only sub-regions (no parent+child duplication)
+// If a zone has grandchildren, show ONLY the grandchildren (leaf countries).
+// If a zone has no children, show the zone itself.
+// Deduplicate by name to avoid cross-group overlaps (e.g., Georgia in both EURASIA & CENTRAL_ASIA).
+const SUB_REGION_MARQUEE: SubRegionMarqueeItem[] = (() => {
+  const seen = new Set<string>();
+  const items: SubRegionMarqueeItem[] = [];
+  for (const g of REGION_HIERARCHY) {
+    for (const child of g.children) {
+      if (child.children && child.children.length > 0) {
+        // Has grandchildren → show only leaf countries
+        for (const gc of child.children) {
+          if (!seen.has(gc.name)) {
+            seen.add(gc.name);
+            items.push({ flag: gc.flag, name: gc.name, subCount: 0 });
+          }
+        }
+      } else {
+        // Leaf zone → show the zone itself
+        if (!seen.has(child.name)) {
+          seen.add(child.name);
+          items.push({ flag: child.flag, name: child.name, subCount: 0 });
+        }
       }
     }
-    return items;
-  })
-);
+  }
+  return items;
+})();
 
 const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug }) => {
   return (
