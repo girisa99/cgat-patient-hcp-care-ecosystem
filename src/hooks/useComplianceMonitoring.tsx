@@ -34,16 +34,16 @@ export const useComplianceMonitoring = (config = {}) => {
       globalPromptInterceptor = new PromptGovernanceInterceptor();
 
       // Connect compliance monitor to stability system
-      globalComplianceMonitor.on('violations_detected', (event) => {
+      globalComplianceMonitor.on('violations_detected', (event: any) => {
         setViolations(prev => [...prev, ...event.violations].slice(-50)); // Keep last 50
-        
+
         // Report to stability system
         stability.addProtectionAlert(
           `Compliance violation in ${event.filePath}: ${event.violations.length} issues`
         );
       });
 
-      globalComplianceMonitor.on('compliance_audit', (results) => {
+      globalComplianceMonitor.on('compliance_audit', (results: any) => {
         setComplianceScore(results.complianceScore);
       });
 
