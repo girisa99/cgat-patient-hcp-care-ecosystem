@@ -26,9 +26,9 @@ interface RegionSwitcherNavProps {
 // Map hierarchy group codes to landing page slugs
 const GROUP_TO_SLUG: Record<string, RegionSlug | null> = {
   NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena', AFRICA: 'africa',
-  INDIA: 'india', SEA: 'apac', CJK: 'apac', OCEANIA: 'oceania', TURKEY: 'turkey',
+  INDIA: 'india', SEA: 'sea', CJK: 'cjk', OCEANIA: 'oceania', TURKEY: 'turkey',
   CARIBBEAN: 'caribbean', EURASIA: 'eastern_europe', CENTRAL_ASIA: 'central_asia',
-  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', SOUTH_ASIA: null,
+  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', SOUTH_ASIA: 'south_asia',
 };
 
 const getZoneCount = (g: RegionGroup): number => g.children.length || 1;

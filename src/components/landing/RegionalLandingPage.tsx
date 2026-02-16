@@ -83,16 +83,19 @@ const REGION_HERO_IMAGES: Record<RegionSlug, string[]> = {
   india: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
   africa: [heroRegionAfrica, heroAfricaPipeline, heroAfricaLanguages, heroAfricaTranscreation],
   apac: [heroRegionApac, heroApacPipeline, heroApacLanguages, heroApacTranscreation],
+  sea: [heroRegionApac, heroApacPipeline, heroApacLanguages, heroApacTranscreation],
+  cjk: [heroRegionApac, heroApacPipeline, heroApacLanguages, heroApacTranscreation],
   latam: [heroRegionLatam, heroLatamPipeline, heroLatamLanguages, heroLatamTranscreation],
   caribbean: [heroRegionCaribbean, heroCaribbeanPipeline, heroCaribbeanLanguages, heroCaribbeanTranscreation],
-  // P0 regions — alias to closest primary
+  // P0 regions
   oceania: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
   turkey: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
-  // P1 regions — alias to closest primary
+  // P1 regions
   pakistan: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
   bangladesh: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
   eastern_europe: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
   central_asia: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
+  south_asia: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
 };
 
 // ============================================
@@ -1045,9 +1048,9 @@ const getLanguageCount = (g: RegionGroup): number => {
 // Map group codes to landing page slugs (where available)
 const GROUP_TO_SLUG: Record<string, RegionSlug | null> = {
   NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena', AFRICA: 'africa',
-  INDIA: 'india', SEA: 'apac', CJK: 'apac', OCEANIA: 'oceania', TURKEY: 'turkey',
+  INDIA: 'india', SEA: 'sea', CJK: 'cjk', OCEANIA: 'oceania', TURKEY: 'turkey',
   CARIBBEAN: 'caribbean', EURASIA: 'eastern_europe', CENTRAL_ASIA: 'central_asia',
-  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', SOUTH_ASIA: null,
+  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', SOUTH_ASIA: 'south_asia',
 };
 
 const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug }) => {

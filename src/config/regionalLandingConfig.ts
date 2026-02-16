@@ -8,9 +8,9 @@
 // ── Types ──
 
 export type RegionSlug =
-  | 'nam' | 'europe' | 'mena' | 'india' | 'africa' | 'apac' | 'latam' | 'caribbean'
+  | 'nam' | 'europe' | 'mena' | 'india' | 'africa' | 'apac' | 'sea' | 'cjk' | 'latam' | 'caribbean'
   | 'oceania' | 'turkey'
-  | 'pakistan' | 'bangladesh' | 'eastern_europe' | 'central_asia';
+  | 'pakistan' | 'bangladesh' | 'eastern_europe' | 'central_asia' | 'south_asia';
 
 export interface RegionalShowcaseExample {
   title: string;
@@ -281,6 +281,88 @@ const africaConfig: RegionalConfig = {
   ],
 };
 
+const seaConfig: RegionalConfig = {
+  hero: {
+    flag: '🌏',
+    regionName: 'Southeast Asia',
+    theme: 'SEA Digital',
+    englishHeadline: 'AI Content Production Suite — Southeast Asia',
+    englishSubheadline: 'Malay, Thai, Vietnamese, Filipino & more.',
+    nativeHeadline: 'AI Content Production Suite',
+    nativeSubheadline: 'Digital content for SEA markets',
+  },
+  stats: { languages: '12+', dialects: '20+', audienceReach: '700M+', industries: '50+', pipelines: '206' },
+  cta: { primary: 'Start Free', secondary: 'Watch Demo', badge: 'SEA-optimized' },
+  differentiators: {
+    heroBadge: 'SEA\'s AI Content Suite',
+    firstToMarket: ['SEA language coverage', 'Mobile-first distribution', 'Social commerce content'],
+    capabilityDepth: ['Thai, Vietnamese, Indonesian TTS', 'Filipino/Taglish adaptation', 'Singapore English support'],
+    onlyHere: ['True SEA transcreation', 'Regional cultural adaptation'],
+  },
+  languageShowcase: {
+    languages: [
+      { code: 'ms-MY', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾' },
+      { code: 'th-TH', name: 'Thai', nativeName: 'ไทย', flag: '🇹🇭' },
+      { code: 'vi-VN', name: 'Vietnamese', nativeName: 'Tiếng Việt', flag: '🇻🇳' },
+      { code: 'tl-PH', name: 'Filipino', nativeName: 'Filipino', flag: '🇵🇭' },
+    ],
+    demoPhrase: 'Create stunning content in minutes',
+    demoTranslations: { 'th-TH': 'สร้างเนื้อหาที่น่าทึ่งในไม่กี่นาที', 'vi-VN': 'Tạo nội dung ấn tượng trong vài phút' },
+  },
+  seo: {
+    title: 'Genie Suite - AI Content Production | Southeast Asia',
+    description: 'AI content production for Southeast Asia. Malay, Thai, Vietnamese, Filipino support.',
+    keywords: ['SEA AI', 'Thai content', 'Vietnamese AI', 'Filipino production', 'Indonesia transcreation'],
+    hreflang: 'en',
+    ogLocale: 'en_US',
+  },
+  welcomeScript: 'Welcome to Genie Suite for Southeast Asia. Create content across Malay, Thai, Vietnamese, Filipino and more.',
+  showcaseExamples: [
+    { title: 'E-Commerce Campaign', input: 'Product catalog + brand tone', pipeline: 'Script > Voice > Video > Social', output: 'Campaigns in 5 SEA languages', industry: 'E-Commerce' },
+  ],
+};
+
+const cjkConfig: RegionalConfig = {
+  hero: {
+    flag: '🌏',
+    regionName: 'China, Japan & Korea',
+    theme: 'CJK Intelligence',
+    englishHeadline: 'AI Content Production Suite — CJK',
+    englishSubheadline: 'Chinese, Japanese, Korean mastery.',
+    nativeHeadline: 'AIコンテンツ制作スイート',
+    nativeSubheadline: '日中韓コンテンツ制作',
+  },
+  stats: { languages: '8+', dialects: '15+', audienceReach: '1.6B+', industries: '50+', pipelines: '206' },
+  cta: { primary: 'Start Free', secondary: 'Watch Demo', badge: 'CJK-optimized' },
+  differentiators: {
+    heroBadge: 'CJK AI Content Powerhouse',
+    firstToMarket: ['CJK character-perfect rendering', 'Anime/Manga style AI', 'K-beauty content styles'],
+    capabilityDepth: ['Simplified & Traditional Chinese', 'Japanese keigo adaptation', 'Korean honorific system'],
+    onlyHere: ['True CJK transcreation', 'East Asian cultural intelligence'],
+  },
+  languageShowcase: {
+    languages: [
+      { code: 'zh-CN', name: 'Chinese (Simplified)', nativeName: '简体中文', flag: '🇨🇳' },
+      { code: 'ja-JP', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
+      { code: 'ko-KR', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
+      { code: 'zh-TW', name: 'Chinese (Traditional)', nativeName: '繁體中文', flag: '🇹🇼' },
+    ],
+    demoPhrase: 'Create stunning content in minutes',
+    demoTranslations: { 'ja-JP': '数分で素晴らしいコンテンツを作成', 'zh-CN': '几分钟内创建精彩内容', 'ko-KR': '몇 분 만에 멋진 콘텐츠를 만들어 보세요' },
+  },
+  seo: {
+    title: 'Genie Suite - AI Content Production | CJK',
+    description: 'AI content production for China, Japan & Korea. Character-perfect CJK rendering.',
+    keywords: ['CJK AI', 'Japanese content', 'Chinese AI', 'Korean production', 'CJK transcreation'],
+    hreflang: 'en',
+    ogLocale: 'en_US',
+  },
+  welcomeScript: 'Welcome to Genie Suite for CJK markets. Master Chinese, Japanese and Korean content with character-perfect rendering.',
+  showcaseExamples: [
+    { title: 'Anime Marketing', input: 'Product brief + anime style', pipeline: 'Illustrate > Animate > Voice', output: 'Anime-style ads in CJK markets', industry: 'Entertainment' },
+  ],
+};
+
 const apacConfig: RegionalConfig = {
   hero: {
     flag: '🌏',
@@ -318,6 +400,45 @@ const apacConfig: RegionalConfig = {
   welcomeScript: 'Welcome to Genie Suite for Asia Pacific. Master CJK content with character-perfect rendering across 25+ languages.',
   showcaseExamples: [
     { title: 'Anime Marketing', input: 'Product brief + anime style', pipeline: 'Illustrate > Animate > Voice', output: 'Anime-style ads in CJK + SEA', industry: 'Entertainment' },
+  ],
+};
+
+const southAsiaConfig: RegionalConfig = {
+  hero: {
+    flag: '🌏',
+    regionName: 'South Asia',
+    theme: 'South Asian Voices',
+    englishHeadline: 'AI Content Production Suite — South Asia',
+    englishSubheadline: 'Nepal, Sri Lanka, Bhutan & Maldives.',
+    nativeHeadline: 'AI Content Production Suite',
+    nativeSubheadline: 'Content for South Asian markets',
+  },
+  stats: { languages: '8+', dialects: '15+', audienceReach: '200M+', industries: '50+', pipelines: '206' },
+  cta: { primary: 'Start Free', secondary: 'Watch Demo', badge: 'South Asia ready' },
+  differentiators: {
+    heroBadge: 'South Asia AI Content Suite',
+    firstToMarket: ['Nepali language AI', 'Sinhala & Tamil support', 'Dzongkha coverage'],
+    capabilityDepth: ['Multi-script rendering', 'Regional cultural adaptation', 'Low-bandwidth optimization'],
+    onlyHere: ['South Asian transcreation', 'Regional authenticity'],
+  },
+  languageShowcase: {
+    languages: [
+      { code: 'ne-NP', name: 'Nepali', nativeName: 'नेपाली', flag: '🇳🇵' },
+      { code: 'si-LK', name: 'Sinhala', nativeName: 'සිංහල', flag: '🇱🇰' },
+    ],
+    demoPhrase: 'Create stunning content in minutes',
+    demoTranslations: {},
+  },
+  seo: {
+    title: 'Genie Suite - AI Content Production | South Asia',
+    description: 'AI content production for South Asia. Nepal, Sri Lanka, Bhutan, Maldives.',
+    keywords: ['South Asia AI', 'Nepali content', 'Sinhala AI', 'South Asian transcreation'],
+    hreflang: 'en',
+    ogLocale: 'en_US',
+  },
+  welcomeScript: 'Welcome to Genie Suite for South Asia. Create content across Nepali, Sinhala, Tamil, Dzongkha and more.',
+  showcaseExamples: [
+    { title: 'Education Content', input: 'Curriculum brief', pipeline: 'Translate > Voice > Animate', output: 'Educational content in South Asian languages', industry: 'Education' },
   ],
 };
 
@@ -410,16 +531,19 @@ export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
   india: indiaConfig,
   africa: africaConfig,
   apac: apacConfig,
+  sea: seaConfig,
+  cjk: cjkConfig,
   latam: latamConfig,
   caribbean: caribbeanConfig,
-  // P0 Regions (aliased to closest primary)
+  // P0 Regions
   oceania: namConfig,
   turkey: europeConfig,
-  // P1 Regions (aliased to closest primary)
+  // P1 Regions
   pakistan: indiaConfig,
   bangladesh: indiaConfig,
   eastern_europe: europeConfig,
   central_asia: namConfig,
+  south_asia: southAsiaConfig,
 };
 
 // ── Utilities ──
