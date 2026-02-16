@@ -22,6 +22,8 @@ export default defineConfig(({ mode }) => ({
       // Lovable preview domains
       ".lovable.app",
       ".lovableproject.com",
+      // Vercel preview domains
+      ".vercel.app",
     ],
   },
   build: {

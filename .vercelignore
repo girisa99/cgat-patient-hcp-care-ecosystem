@@ -1,0 +1,33 @@
+# Supabase (backend deployed separately)
+supabase/
+
+# Capacitor native shells
+android/
+ios/
+
+# Tests
+tests/
+playwright.config.ts
+playwright-report/
+test-results/
+
+# Development tooling
+.lovable/
+scripts/
+.vscode/
+.github/
+
+# Environment files
+.env
+.env.local
+.env.cloud
+.env.example
+
+# Documentation
+*.md
+!README.md
+LICENSE
+
+# Build artifacts
+node_modules/
+dist/
