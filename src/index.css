@@ -42,6 +42,26 @@
 .animate-slide-in-right { animation: slide-in-right 0.6s ease-out; }
 .animate-zoom-in { animation: zoom-in 0.6s ease-out; }
 
+/* Region Marquee — infinite scroll with hover pause */
+@keyframes marquee-scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+@keyframes marquee-scroll-right {
+  0% { transform: translateX(-33.333%); }
+  100% { transform: translateX(0); }
+}
+.marquee-track-left {
+  animation: marquee-scroll-left 40s linear infinite;
+}
+.marquee-track-right {
+  animation: marquee-scroll-right 50s linear infinite;
+}
+.marquee-container:hover .marquee-track-left,
+.marquee-container:hover .marquee-track-right {
+  animation-play-state: paused;
+}
+
 /* Scrollbar Utilities */
 .no-scrollbar {
   -ms-overflow-style: none;

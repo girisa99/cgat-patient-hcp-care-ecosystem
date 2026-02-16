@@ -1012,67 +1012,83 @@ const LANDING_METRICS = {
 // REGION NAVIGATOR — Auto-scrolling marquee with parent/child hierarchy
 // ============================================
 
-// Build flat list of all regions+sub-regions from hierarchy for the marquee
-import { REGION_HIERARCHY, type RegionGroup, type RegionChild } from '@/config/regionHierarchy';
+import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 
-interface MarqueeItem {
+// Primary 8 region slugs only (no expansion aliases that duplicate content)
+const PRIMARY_REGION_SLUGS: RegionSlug[] = ['nam', 'europe', 'mena', 'india', 'africa', 'apac', 'latam', 'caribbean'];
+
+// Build parent region items from REGION_HIERARCHY
+interface ParentMarqueeItem {
   flag: string;
   name: string;
-  isParent: boolean;
   childCount: number;
   langHint?: string;
   slug?: RegionSlug;
 }
 
-function buildMarqueeItems(): MarqueeItem[] {
-  const items: MarqueeItem[] = [];
-  const slugLookup: Record<string, RegionSlug> = {
-    NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena',
-    AFRICA: 'africa', INDIA: 'india', SEA: 'apac', CJK: 'apac',
-    OCEANIA: 'oceania', TURKEY: 'turkey', CARIBBEAN: 'caribbean',
-    PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', EURASIA: 'eastern_europe',
-    CENTRAL_ASIA: 'central_asia', SOUTH_ASIA: 'india',
-  };
+interface SubRegionMarqueeItem {
+  flag: string;
+  name: string;
+  subCount: number;
+}
 
-  for (const group of REGION_HIERARCHY) {
-    const slug = slugLookup[group.groupCode];
-    const cfg = slug ? REGIONAL_CONFIGS[slug] : undefined;
-    // Parent
-    items.push({
-      flag: group.groupFlag,
-      name: group.groupName,
-      isParent: true,
-      childCount: group.children.length,
-      langHint: cfg?.stats.languages,
-      slug,
-    });
-    // Children (zones)
-    for (const child of group.children) {
-      items.push({
-        flag: child.flag,
-        name: child.name,
-        isParent: false,
-        childCount: child.children?.length || 0,
-      });
+const SLUG_BY_GROUP: Record<string, RegionSlug | undefined> = {
+  NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena',
+  AFRICA: 'africa', INDIA: 'india', SEA: 'apac', CJK: 'apac',
+  OCEANIA: 'oceania', TURKEY: 'turkey', CARIBBEAN: 'caribbean',
+  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', EURASIA: 'eastern_europe',
+  CENTRAL_ASIA: 'central_asia', SOUTH_ASIA: undefined,
+};
+
+// Row 1: Parent regions (15 groups from hierarchy)
+const PARENT_MARQUEE: ParentMarqueeItem[] = REGION_HIERARCHY.map(g => {
+  const slug = SLUG_BY_GROUP[g.groupCode];
+  const cfg = slug ? REGIONAL_CONFIGS[slug] : undefined;
+  return {
+    flag: g.groupFlag,
+    name: g.groupName,
+    childCount: g.children.length,
+    langHint: cfg?.stats.languages,
+    slug,
+  };
+});
+
+// Row 2: Leaf-only sub-regions (no parent+child duplication)
+// If a zone has grandchildren, show ONLY the grandchildren (leaf countries).
+// If a zone has no children, show the zone itself.
+// Deduplicate by name to avoid cross-group overlaps (e.g., Georgia in both EURASIA & CENTRAL_ASIA).
+const SUB_REGION_MARQUEE: SubRegionMarqueeItem[] = (() => {
+  const seen = new Set<string>();
+  const items: SubRegionMarqueeItem[] = [];
+  for (const g of REGION_HIERARCHY) {
+    for (const child of g.children) {
+      if (child.children && child.children.length > 0) {
+        // Has grandchildren → show only leaf countries
+        for (const gc of child.children) {
+          if (!seen.has(gc.name)) {
+            seen.add(gc.name);
+            items.push({ flag: gc.flag, name: gc.name, subCount: 0 });
+          }
+        }
+      } else {
+        // Leaf zone → show the zone itself
+        if (!seen.has(child.name)) {
+          seen.add(child.name);
+          items.push({ flag: child.flag, name: child.name, subCount: 0 });
+        }
+      }
     }
   }
   return items;
-}
-
-const MARQUEE_ITEMS = buildMarqueeItems();
+})();
 
 const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug }) => {
-  const [isPaused, setIsPaused] = React.useState(false);
-
-  // Duplicate items for seamless loop
-  const doubledItems = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
-
   return (
     <section className="py-8 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" />
-      <div className="relative max-w-7xl mx-auto px-4">
+      <div className="relative">
         {/* Header */}
-        <div className="flex items-center justify-center gap-3 mb-5">
+        <div className="flex items-center justify-center gap-3 mb-5 px-4">
           <Globe className="w-5 h-5 text-primary" />
           <span className="text-sm font-bold uppercase tracking-widest text-foreground">
             {LANDING_METRICS.regions} Global Regions · {LANDING_METRICS.subRegions}+ Sub-Regions · {LANDING_METRICS.languages} Languages
@@ -1080,76 +1096,70 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
           <Globe className="w-5 h-5 text-primary" />
         </div>
 
-        {/* Auto-scrolling marquee — pauses on hover */}
-        <div
-          className="relative overflow-hidden"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          {/* Fade edges */}
-          <div className="absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-
-          <motion.div
-            className="flex gap-3 whitespace-nowrap py-2"
-            animate={{ x: isPaused ? undefined : ['0%', '-50%'] }}
-            transition={isPaused ? { duration: 0 } : { duration: 60, repeat: Infinity, ease: 'linear' }}
-          >
-            {doubledItems.map((item, i) => {
-              if (item.isParent) {
-                // Parent region — larger, highlighted chip
-                const isActive = item.slug === currentSlug;
-                return (
-                  <Link
-                    key={`parent-${item.name}-${i}`}
-                    to={item.slug ? `/genie-landing/${item.slug}` : '#'}
-                    className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-200 shrink-0 ${
-                      isActive
-                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30 scale-105'
-                        : 'bg-card border-2 border-primary/20 text-foreground hover:border-primary/50 hover:shadow-md hover:scale-[1.02]'
-                    }`}
-                  >
-                    <span className="text-xl leading-none">{item.flag}</span>
-                    <span>{item.name}</span>
-                    {item.childCount > 0 && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
-                      }`}>
-                        {item.childCount} zones
-                      </span>
-                    )}
-                    {item.langHint && (
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                        isActive ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-accent/10 text-accent-foreground/70'
-                      }`}>
-                        {item.langHint} langs
-                      </span>
-                    )}
-                  </Link>
-                );
-              }
-              // Child/sub-region — smaller, subtler chip
+        {/* Row 1: Parent regions — scrolls left to right, pauses on hover */}
+        <div className="marquee-container relative overflow-hidden mb-3">
+          <div className="absolute left-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+          <div className="marquee-track-left flex gap-3 py-2" style={{ width: 'max-content' }}>
+            {[...PARENT_MARQUEE, ...PARENT_MARQUEE, ...PARENT_MARQUEE].map((item, i) => {
+              const isActive = item.slug === currentSlug;
               return (
-                <span
-                  key={`child-${item.name}-${i}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted/60 border border-border/40 text-muted-foreground shrink-0 hover:bg-muted hover:text-foreground transition-colors"
+                <Link
+                  key={`p-${i}`}
+                  to={item.slug ? `/genie-landing/${item.slug}` : '#'}
+                  className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold shrink-0 transition-colors ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30'
+                      : 'bg-card border-2 border-primary/20 text-foreground hover:border-primary/50 hover:shadow-md'
+                  }`}
                 >
-                  <span className="text-sm leading-none">{item.flag}</span>
-                  <span>{item.name}</span>
+                  <span className="text-xl leading-none">{item.flag}</span>
+                  <span className="whitespace-nowrap">{item.name}</span>
                   {item.childCount > 0 && (
-                    <span className="text-[9px] px-1 py-0.5 rounded bg-muted-foreground/10 text-muted-foreground">
-                      {item.childCount}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                    }`}>
+                      {item.childCount} zones
                     </span>
                   )}
-                </span>
+                  {item.langHint && (
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
+                      isActive ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-accent/10 text-accent-foreground/70'
+                    }`}>
+                      {item.langHint} langs
+                    </span>
+                  )}
+                </Link>
               );
             })}
-          </motion.div>
+          </div>
         </div>
 
-        {/* Quick-jump region pills below */}
-        <div className="flex flex-wrap justify-center gap-2 mt-5">
-          {getAllRegionSlugs().map((slug) => {
+        {/* Row 2: Sub-regions + countries — scrolls right to left, pauses on hover */}
+        <div className="marquee-container relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+          <div className="marquee-track-right flex gap-2.5 py-2" style={{ width: 'max-content' }}>
+            {[...SUB_REGION_MARQUEE, ...SUB_REGION_MARQUEE, ...SUB_REGION_MARQUEE].map((item, i) => (
+              <span
+                key={`s-${i}`}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted/60 border border-border/40 text-muted-foreground shrink-0 hover:bg-muted hover:text-foreground transition-colors whitespace-nowrap"
+              >
+                <span className="text-sm leading-none">{item.flag}</span>
+                <span>{item.name}</span>
+                {item.subCount > 0 && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/8 text-primary font-bold">
+                    {item.subCount}
+                  </span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick-jump: only primary 8 regions (no duplicates) */}
+        <div className="flex flex-wrap justify-center gap-2 mt-6 px-4">
+          {PRIMARY_REGION_SLUGS.map((slug) => {
             const r = REGIONAL_CONFIGS[slug];
             const isActive = slug === currentSlug;
             return (
