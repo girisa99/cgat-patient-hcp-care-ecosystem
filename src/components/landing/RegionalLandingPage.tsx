@@ -531,7 +531,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       badge: `${hero.flag} ${productContext ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}` : config.differentiators.heroBadge}`,
       headline: [hero.englishHeadline.split('—')[0]?.trim() + ' — ', hero.regionName],
       subtitle: hero.englishSubheadline,
-      description: `19 AI providers · 206 pipelines · ${stats.languages} languages · 50+ industries. The world's only all-in-one AI content production suite — from idea to published, region-ready media.`,
+      description: `${LANDING_METRICS.aiProviders} AI providers · ${LANDING_METRICS.pipelines} pipelines · ${LANDING_METRICS.languages} languages · ${LANDING_METRICS.industries} industries. The world's only all-in-one AI content production suite — from idea to published, region-ready media.`,
       type: 'platform' as const,
     },
     {
@@ -539,15 +539,15 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       badge: `${hero.flag} Mind to Media — ${hero.regionName}`,
       headline: ['One Prompt. ', `${hero.regionName}-Ready Content.`],
       subtitle: 'Minutes, Not Months. Zero Agencies.',
-      description: `Script, voice, avatar, 3D, video, translation — all generated from a single prompt, culturally tuned for ${hero.regionName}. No plugins. No exports. No waiting.`,
+      description: `Script, voice, avatar, 3D, video, translation — all generated from a single prompt, culturally tuned for ${hero.regionName} and its sub-regions. ${LANDING_METRICS.pipelines} pipelines. No plugins. No exports. No waiting.`,
       type: 'pipeline' as const,
     },
     {
       id: 'language',
-      badge: `${hero.flag} ${stats.languages} Languages · ${stats.dialects || '30+'} Dialects`,
+      badge: `${hero.flag} ${LANDING_METRICS.languages} Languages · ${LANDING_METRICS.dialects} Dialects · ${LANDING_METRICS.regions} Regions`,
       headline: ['Your Language. ', 'Your Market.'],
       subtitle: hero.nativeHeadline,
-      description: `Not translation — transcreation. We adapt tone, idioms, humor, and cultural context so ${hero.regionName} audiences feel you were built for them. 7 Arabic dialects. RTL-native. Zone-routed AI.`,
+      description: `Not translation — transcreation. We adapt tone, idioms, humor, and cultural context so ${hero.regionName} audiences feel you were built for them. ${LANDING_METRICS.arabicDialects} Arabic dialects. ${LANDING_METRICS.indianLanguages} Indian languages. RTL-native. Zone-routed AI.`,
       type: 'stats' as const,
     },
     {
@@ -555,7 +555,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       badge: `${hero.flag} AI Transcreation Engine`,
       headline: ['Meaning, ', 'Not Just Words.'],
       subtitle: `Cultural Intelligence at Scale for ${hero.regionName}.`,
-      description: `Translation converts words. Transcreation converts intent, emotion, and cultural context — powered by 19 zone-routed AI models. Same video, 140+ culturally authentic versions.`,
+      description: `Translation converts words. Transcreation converts intent, emotion, and cultural context — powered by ${LANDING_METRICS.aiProviders} zone-routed AI models. Same video, ${LANDING_METRICS.languages} culturally authentic versions.`,
       type: 'comparison' as const,
     },
   ];
@@ -756,10 +756,10 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             {slide.type === 'stats' && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto pt-6">
                 {[
-                  { value: '140+', label: 'Languages', icon: Languages, glow: 'shadow-blue-500/30' },
-                  { value: '30+', label: 'Dialects', icon: Mic, glow: 'shadow-violet-500/30' },
-                  { value: '8', label: 'Regions', icon: Globe, glow: 'shadow-emerald-500/30' },
-                  { value: 'RTL', label: 'Full Support', icon: Eye, glow: 'shadow-amber-500/30' },
+                  { value: LANDING_METRICS.languages, label: 'Languages', icon: Languages, glow: 'shadow-blue-500/30' },
+                  { value: LANDING_METRICS.dialects, label: 'Dialects', icon: Mic, glow: 'shadow-violet-500/30' },
+                  { value: String(LANDING_METRICS.regions), label: 'Regions', icon: Globe, glow: 'shadow-emerald-500/30' },
+                  { value: `${LANDING_METRICS.subRegions}+`, label: 'Sub-Regions', icon: Eye, glow: 'shadow-amber-500/30' },
                 ].map((stat, i) => {
                   const Icon = stat.icon;
                   return (
@@ -994,54 +994,177 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 // TranscreationShowcase removed — consolidated into EverythingYouNeedSection
 
 // ============================================
-// REGION NAVIGATOR — Compact globe strip
+// CONSISTENT METRICS — Single source of truth
 // ============================================
+const LANDING_METRICS = {
+  regions: 15,
+  subRegions: 60,
+  languages: '140+',
+  dialects: '50+',
+  aiProviders: 19,
+  pipelines: 206,
+  industries: '50+',
+  arabicDialects: 7,
+  indianLanguages: 22,
+} as const;
+
+// ============================================
+// REGION NAVIGATOR — Auto-scrolling marquee with parent/child hierarchy
+// ============================================
+
+// Build flat list of all regions+sub-regions from hierarchy for the marquee
+import { REGION_HIERARCHY, type RegionGroup, type RegionChild } from '@/config/regionHierarchy';
+
+interface MarqueeItem {
+  flag: string;
+  name: string;
+  isParent: boolean;
+  childCount: number;
+  langHint?: string;
+  slug?: RegionSlug;
+}
+
+function buildMarqueeItems(): MarqueeItem[] {
+  const items: MarqueeItem[] = [];
+  const slugLookup: Record<string, RegionSlug> = {
+    NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena',
+    AFRICA: 'africa', INDIA: 'india', SEA: 'apac', CJK: 'apac',
+    OCEANIA: 'oceania', TURKEY: 'turkey', CARIBBEAN: 'caribbean',
+    PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', EURASIA: 'eastern_europe',
+    CENTRAL_ASIA: 'central_asia', SOUTH_ASIA: 'india',
+  };
+
+  for (const group of REGION_HIERARCHY) {
+    const slug = slugLookup[group.groupCode];
+    const cfg = slug ? REGIONAL_CONFIGS[slug] : undefined;
+    // Parent
+    items.push({
+      flag: group.groupFlag,
+      name: group.groupName,
+      isParent: true,
+      childCount: group.children.length,
+      langHint: cfg?.stats.languages,
+      slug,
+    });
+    // Children (zones)
+    for (const child of group.children) {
+      items.push({
+        flag: child.flag,
+        name: child.name,
+        isParent: false,
+        childCount: child.children?.length || 0,
+      });
+    }
+  }
+  return items;
+}
+
+const MARQUEE_ITEMS = buildMarqueeItems();
+
 const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug }) => {
-  const allSlugs = getAllRegionSlugs();
+  const [isPaused, setIsPaused] = React.useState(false);
+
+  // Duplicate items for seamless loop
+  const doubledItems = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
+
   return (
-    <section className="py-6 relative overflow-hidden">
+    <section className="py-8 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" />
       <div className="relative max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <Globe className="w-4 h-4 text-primary" />
-          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            15 Global Regions · 50+ Languages
+        {/* Header */}
+        <div className="flex items-center justify-center gap-3 mb-5">
+          <Globe className="w-5 h-5 text-primary" />
+          <span className="text-sm font-bold uppercase tracking-widest text-foreground">
+            {LANDING_METRICS.regions} Global Regions · {LANDING_METRICS.subRegions}+ Sub-Regions · {LANDING_METRICS.languages} Languages
           </span>
-          <Globe className="w-4 h-4 text-primary" />
+          <Globe className="w-5 h-5 text-primary" />
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          {allSlugs.map((slug, i) => {
-            const r = REGIONAL_CONFIGS[slug];
-            const isActive = slug === currentSlug;
-            const langCount = r.languageShowcase?.languages?.length || 0;
-            return (
-              <motion.div
-                key={slug}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <Link
-                  to={`/genie-landing/${slug}`}
-                  className={`group relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30'
-                      : 'bg-card/80 backdrop-blur-sm border border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-card hover:shadow-md'
-                  }`}
+
+        {/* Auto-scrolling marquee — pauses on hover */}
+        <div
+          className="relative overflow-hidden"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
+          {/* Fade edges */}
+          <div className="absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+
+          <motion.div
+            className="flex gap-3 whitespace-nowrap py-2"
+            animate={{ x: isPaused ? undefined : ['0%', '-50%'] }}
+            transition={isPaused ? { duration: 0 } : { duration: 60, repeat: Infinity, ease: 'linear' }}
+          >
+            {doubledItems.map((item, i) => {
+              if (item.isParent) {
+                // Parent region — larger, highlighted chip
+                const isActive = item.slug === currentSlug;
+                return (
+                  <Link
+                    key={`parent-${item.name}-${i}`}
+                    to={item.slug ? `/genie-landing/${item.slug}` : '#'}
+                    className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold transition-all duration-200 shrink-0 ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30 scale-105'
+                        : 'bg-card border-2 border-primary/20 text-foreground hover:border-primary/50 hover:shadow-md hover:scale-[1.02]'
+                    }`}
+                  >
+                    <span className="text-xl leading-none">{item.flag}</span>
+                    <span>{item.name}</span>
+                    {item.childCount > 0 && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                      }`}>
+                        {item.childCount} zones
+                      </span>
+                    )}
+                    {item.langHint && (
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                        isActive ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-accent/10 text-accent-foreground/70'
+                      }`}>
+                        {item.langHint} langs
+                      </span>
+                    )}
+                  </Link>
+                );
+              }
+              // Child/sub-region — smaller, subtler chip
+              return (
+                <span
+                  key={`child-${item.name}-${i}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted/60 border border-border/40 text-muted-foreground shrink-0 hover:bg-muted hover:text-foreground transition-colors"
                 >
-                  <span className="text-lg leading-none">{r.hero.flag}</span>
-                  <span>{r.hero.regionName}</span>
-                  {langCount > 0 && (
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      isActive 
-                        ? 'bg-primary-foreground/20 text-primary-foreground' 
-                        : 'bg-primary/10 text-primary group-hover:bg-primary/20'
-                    }`}>
-                      {langCount}
+                  <span className="text-sm leading-none">{item.flag}</span>
+                  <span>{item.name}</span>
+                  {item.childCount > 0 && (
+                    <span className="text-[9px] px-1 py-0.5 rounded bg-muted-foreground/10 text-muted-foreground">
+                      {item.childCount}
                     </span>
                   )}
-                </Link>
-              </motion.div>
+                </span>
+              );
+            })}
+          </motion.div>
+        </div>
+
+        {/* Quick-jump region pills below */}
+        <div className="flex flex-wrap justify-center gap-2 mt-5">
+          {getAllRegionSlugs().map((slug) => {
+            const r = REGIONAL_CONFIGS[slug];
+            const isActive = slug === currentSlug;
+            return (
+              <Link
+                key={slug}
+                to={`/genie-landing/${slug}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-card/80 border border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40'
+                }`}
+              >
+                <span className="leading-none">{r.hero.flag}</span>
+                <span>{r.hero.regionName}</span>
+              </Link>
             );
           })}
         </div>
@@ -1070,7 +1193,7 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
       </h2>
       
       <p className="text-xl text-muted-foreground mb-2 max-w-2xl mx-auto">
-        We speak 50+ languages across 140+ dialects. We understand 50+ industries. We guide you from idea to global distribution.
+        {LANDING_METRICS.languages} languages across {LANDING_METRICS.dialects} dialects. {LANDING_METRICS.industries} industries. {LANDING_METRICS.regions} regions. From idea to global distribution.
       </p>
       <p className="text-lg text-primary font-semibold mb-8">
         💰 {config.comparisonSavings}
@@ -1246,7 +1369,7 @@ export const RegionalLandingPage: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4 text-sm px-4 py-1">
-              7 Products • 206 Pipelines • 19 AI Providers • 50+ Languages
+              7 Products · {LANDING_METRICS.pipelines} Pipelines · {LANDING_METRICS.aiProviders} AI Providers · {LANDING_METRICS.languages} Languages
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
               The Genie Suite — Mind to Media
