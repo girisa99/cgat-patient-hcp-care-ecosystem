@@ -1026,65 +1026,99 @@ interface ParentMarqueeItem {
   slug?: RegionSlug;
 }
 
+// (SubRegionMarqueeItem defined below with ZONE_LANGUAGE_HINTS)
+
+// Row 1: Only the 8 primary regions — no expansion aliases
+const PARENT_MARQUEE: ParentMarqueeItem[] = PRIMARY_REGION_SLUGS.map((slug) => {
+  const cfg = REGIONAL_CONFIGS[slug];
+  return {
+    flag: cfg.hero.flag,
+    name: cfg.hero.regionName,
+    childCount: 0, // we'll show language count instead
+    langHint: cfg.stats.languages,
+    slug,
+  };
+});
+
+// Row 2: Zone-level sub-regions with language hints (not granular leaf nodes)
+// Shows meaningful zones like "DACH", "Gulf", "North India" — not every individual country/language
+const ZONE_LANGUAGE_HINTS: Record<string, string> = {
+  // Europe
+  'UK & Ireland': 'EN', 'DACH (Germany, Austria, Switzerland)': 'DE',
+  'France & Francophone': 'FR', 'Benelux & Netherlands': 'NL',
+  'Spain & Portugal': 'ES/PT', 'Italy': 'IT',
+  'Nordics': 'SV/NO/DA/FI', 'Eastern Europe': 'PL/CZ/RO/HU/EL',
+  // LATAM
+  'Brazil (Português)': 'PT-BR', 'Mexico & Central America': 'ES-MX',
+  'Andean (Colombia, Peru, Ecuador)': 'ES', 'Southern Cone (Argentina, Chile, Uruguay)': 'ES',
+  'Caribbean (DR, PR, Cuba, Venezuela)': 'ES',
+  // MENA
+  'Gulf (UAE, Saudi, Qatar, Kuwait)': 'AR-Gulf', 'Egypt (مصري)': 'AR-EG',
+  'Levant (Lebanon, Jordan, Iraq)': 'AR-Levant', 'Maghreb (Morocco, Algeria, Tunisia)': 'AR-Maghreb',
+  'Pan-Arab (Modern Standard Arabic)': 'MSA', 'Israel (עברית)': 'HE',
+  // Africa
+  'West Africa (Nigeria, Ghana)': 'EN/YO', 'East Africa (Kenya, Tanzania)': 'SW/EN',
+  'Southern Africa (South Africa)': 'EN/ZU/AF', 'Francophone Africa (Senegal, DRC)': 'FR',
+  // India
+  'North India (Hindi Belt)': 'HI/UR/PA', 'South India (Dravidian)': 'TA/TE/KN/ML',
+  'West India (Maharashtra, Gujarat)': 'MR/GU', 'East India (Bengal, Odisha)': 'BN/OR',
+  'Pan-India (English)': 'EN-IN',
+  // SEA
+  'Malaysia & Indonesia (Malay)': 'MS/ID', 'Thailand (ไทย)': 'TH',
+  'Vietnam (Tiếng Việt)': 'VI', 'Philippines (Filipino/Taglish)': 'TL',
+  'Pan-SEA / Singapore (English)': 'EN-SG',
+  // CJK
+  'China / HK / Macau (普通话/粵語)': 'ZH-CN', 'Taiwan (繁體中文)': 'ZH-TW',
+  'Japan (日本語)': 'JA', 'South Korea (한국어)': 'KO',
+  // Oceania
+  'Australia': 'EN-AU', 'New Zealand': 'EN-NZ',
+  // Caribbean
+  'English Caribbean (Jamaica, T&T, Bahamas)': 'EN-CB', 'French Caribbean (Haiti, Martinique)': 'FR-CB',
+  // Eurasia
+  'Ukraine (Українська)': 'UK', 'Balkans (Serbia, Bulgaria, Croatia)': 'SR/BG/HR',
+  'Caucasus (Georgia, Armenia)': 'KA/HY',
+  // Central Asia
+  'Kazakhstan (Қазақ)': 'KK', 'Uzbekistan (Oʻzbek)': 'UZ', 'Azerbaijan (Azərbaycan)': 'AZ',
+  // South Asia
+  'Nepal (नेपाली)': 'NE', 'Sri Lanka (සිංහල / தமிழ்)': 'SI/TA',
+  'Bhutan (རྫོང་ཁ)': 'DZ', 'Maldives (ދިވެހި)': 'DV',
+};
+
 interface SubRegionMarqueeItem {
   flag: string;
   name: string;
-  subCount: number;
+  langHint: string;
+  parentRegion: string;
 }
 
-const SLUG_BY_GROUP: Record<string, RegionSlug | undefined> = {
-  NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena',
-  AFRICA: 'africa', INDIA: 'india', SEA: 'apac', CJK: 'apac',
-  OCEANIA: 'oceania', TURKEY: 'turkey', CARIBBEAN: 'caribbean',
-  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', EURASIA: 'eastern_europe',
-  CENTRAL_ASIA: 'central_asia', SOUTH_ASIA: undefined,
-};
-
-// Row 1: Parent regions — deduplicated by slug so groups sharing a landing page
-// (e.g., SEA + CJK → apac) appear only once. Groups with no slug are skipped.
-const PARENT_MARQUEE: ParentMarqueeItem[] = (() => {
-  const seen = new Set<string>();
-  const items: ParentMarqueeItem[] = [];
-  for (const g of REGION_HIERARCHY) {
-    const slug = SLUG_BY_GROUP[g.groupCode];
-    if (!slug) continue; // skip groups with no landing page
-    if (seen.has(slug)) continue; // skip duplicate slugs (e.g., CJK after SEA both → apac)
-    seen.add(slug);
-    const cfg = REGIONAL_CONFIGS[slug];
-    items.push({
-      flag: cfg?.hero.flag ?? g.groupFlag,
-      name: cfg?.hero.regionName ?? g.groupName,
-      childCount: g.children.length,
-      langHint: cfg?.stats.languages,
-      slug,
-    });
-  }
-  return items;
-})();
-
-// Row 2: Leaf-only sub-regions (no parent+child duplication)
-// If a zone has grandchildren, show ONLY the grandchildren (leaf countries).
-// If a zone has no children, show the zone itself.
-// Deduplicate by name to avoid cross-group overlaps (e.g., Georgia in both EURASIA & CENTRAL_ASIA).
 const SUB_REGION_MARQUEE: SubRegionMarqueeItem[] = (() => {
   const seen = new Set<string>();
   const items: SubRegionMarqueeItem[] = [];
   for (const g of REGION_HIERARCHY) {
+    // For groups with no children (Pakistan, Bangladesh, Turkey), show them as a sub-region item
+    if (g.children.length === 0) {
+      if (!seen.has(g.groupName)) {
+        seen.add(g.groupName);
+        items.push({
+          flag: g.groupFlag,
+          name: g.groupName,
+          langHint: ZONE_LANGUAGE_HINTS[g.groupName] || '',
+          parentRegion: g.groupName,
+        });
+      }
+      continue;
+    }
+    // Show zone-level items (not leaf grandchildren)
     for (const child of g.children) {
-      if (child.children && child.children.length > 0) {
-        // Has grandchildren → show only leaf countries
-        for (const gc of child.children) {
-          if (!seen.has(gc.name)) {
-            seen.add(gc.name);
-            items.push({ flag: gc.flag, name: gc.name, subCount: 0 });
-          }
-        }
-      } else {
-        // Leaf zone → show the zone itself
-        if (!seen.has(child.name)) {
-          seen.add(child.name);
-          items.push({ flag: child.flag, name: child.name, subCount: 0 });
-        }
+      if (!seen.has(child.name)) {
+        seen.add(child.name);
+        const langCount = child.children ? child.children.length : 1;
+        items.push({
+          flag: child.flag,
+          name: child.name,
+          langHint: ZONE_LANGUAGE_HINTS[child.name] || (langCount > 1 ? `${langCount} langs` : ''),
+          parentRegion: g.groupName,
+        });
       }
     }
   }
@@ -1124,13 +1158,6 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
                 >
                   <span className="text-xl leading-none">{item.flag}</span>
                   <span className="whitespace-nowrap">{item.name}</span>
-                  {item.childCount > 0 && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
-                    }`}>
-                      {item.childCount} zones
-                    </span>
-                  )}
                   {item.langHint && (
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
                       isActive ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-accent/10 text-accent-foreground/70'
@@ -1156,9 +1183,9 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
               >
                 <span className="text-sm leading-none">{item.flag}</span>
                 <span>{item.name}</span>
-                {item.subCount > 0 && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/8 text-primary font-bold">
-                    {item.subCount}
+                {item.langHint && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                    {item.langHint}
                   </span>
                 )}
               </span>
