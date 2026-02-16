@@ -1100,7 +1100,7 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
         <div className="flex items-center justify-center gap-3 mb-5 px-4">
           <Globe className="w-5 h-5 text-primary" />
           <span className="text-sm font-bold uppercase tracking-widest text-foreground">
-            {LANDING_METRICS.regions} Global Regions · {LANDING_METRICS.subRegions}+ Sub-Regions · {LANDING_METRICS.languages} Languages
+            Explore Our Global Reach
           </span>
           <Globe className="w-5 h-5 text-primary" />
         </div>
@@ -1212,7 +1212,7 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
       </h2>
       
       <p className="text-xl text-muted-foreground mb-2 max-w-2xl mx-auto">
-        {LANDING_METRICS.languages} languages across {LANDING_METRICS.dialects} dialects. {LANDING_METRICS.industries} industries. {LANDING_METRICS.regions} regions. From idea to global distribution.
+        From idea to global distribution — every format, every market, every language.
       </p>
       <p className="text-lg text-primary font-semibold mb-8">
         💰 {config.comparisonSavings}
@@ -1388,7 +1388,7 @@ export const RegionalLandingPage: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4 text-sm px-4 py-1">
-              7 Products · {LANDING_METRICS.pipelines} Pipelines · {LANDING_METRICS.aiProviders} AI Providers · {LANDING_METRICS.languages} Languages
+              7 Products · {LANDING_METRICS.pipelines} Pipelines · {LANDING_METRICS.aiProviders} AI Providers
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
               The Genie Suite — Mind to Media

@@ -52,10 +52,10 @@
   100% { transform: translateX(0); }
 }
 .marquee-track-left {
-  animation: marquee-scroll-left 40s linear infinite;
+  animation: marquee-scroll-left 90s linear infinite;
 }
 .marquee-track-right {
-  animation: marquee-scroll-right 50s linear infinite;
+  animation: marquee-scroll-right 120s linear infinite;
 }
 .marquee-container:hover .marquee-track-left,
 .marquee-container:hover .marquee-track-right {
