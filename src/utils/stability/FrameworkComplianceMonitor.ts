@@ -6,9 +6,9 @@
 
 // Browser-compatible EventEmitter
 class SimpleEventEmitter {
-  private events: Map<string, Function[]> = new Map();
+  private events: Map<string, ((...args: unknown[]) => void)[]> = new Map();
 
-  on(event: string, callback: Function) {
+  on(event: string, callback: (...args: unknown[]) => void) {
     if (!this.events.has(event)) {
       this.events.set(event, []);
     }
@@ -28,7 +28,7 @@ class SimpleEventEmitter {
     }
   }
 
-  off(event: string, callback: Function) {
+  off(event: string, callback: (...args: unknown[]) => void) {
     const callbacks = this.events.get(event);
     if (callbacks) {
       const index = callbacks.indexOf(callback);
