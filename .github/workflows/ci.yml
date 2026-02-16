@@ -41,6 +41,8 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
 
       - name: Install Playwright browsers
         if: env.HAS_E2E_SECRETS == 'true'
