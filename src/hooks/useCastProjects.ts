@@ -19,6 +19,9 @@ import type {
 } from '@/types/castProjects';
 import type { GenieCastSessionState } from '@/hooks/useGenieCastSession';
 
+// Tables/RPCs not yet in generated Supabase types — use untyped client
+const untypedSupabase = supabase as any;
+
 export function useCastProjects() {
   const [projects, setProjects] = useState<CastProjectWithRelations[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +43,7 @@ export function useCastProjects() {
         return;
       }
 
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await untypedSupabase
         .from('cast_projects')
         .select(`
           *,
@@ -86,7 +89,7 @@ export function useCastProjects() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error: rpcError } = await supabase.rpc('create_cast_project', {
+      const { data, error: rpcError } = await untypedSupabase.rpc('create_cast_project', {
         p_title: input.title,
         p_user_id: user.id,
         p_blueprint_id: input.blueprint_id ?? null,
@@ -102,7 +105,7 @@ export function useCastProjects() {
 
       // Fetch the newly created project
       const projectId = data as string;
-      const { data: newProject, error: fetchErr } = await supabase
+      const { data: newProject, error: fetchErr } = await untypedSupabase
         .from('cast_projects')
         .select('*')
         .eq('id', projectId)
@@ -126,7 +129,7 @@ export function useCastProjects() {
 
   const updateProject = async (id: string, updates: UpdateCastProjectInput) => {
     try {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await untypedSupabase
         .from('cast_projects')
         .update(updates as any)
         .eq('id', id);
@@ -148,7 +151,7 @@ export function useCastProjects() {
 
   const deleteProject = async (id: string) => {
     try {
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await untypedSupabase
         .from('cast_projects')
         .delete()
         .eq('id', id);
@@ -174,7 +177,7 @@ export function useCastProjects() {
     newStatus?: CastProjectStatus,
   ) => {
     try {
-      const { error: rpcError } = await supabase.rpc('advance_cast_project_stage', {
+      const { error: rpcError } = await untypedSupabase.rpc('advance_cast_project_stage', {
         p_project_id: id,
         p_new_stage: newStage,
         p_new_status: newStatus ?? null,
@@ -198,7 +201,7 @@ export function useCastProjects() {
 
   const getProjectJobStats = async (projectId: string): Promise<CastProjectJobStats | null> => {
     try {
-      const { data, error: rpcError } = await supabase.rpc('get_cast_project_job_stats', {
+      const { data, error: rpcError } = await untypedSupabase.rpc('get_cast_project_job_stats', {
         p_project_id: projectId,
       });
 
@@ -256,7 +259,7 @@ export function useCastProjects() {
 
         if (project) {
           // Sync remaining fields that createProject RPC doesn't cover
-          await supabase
+          await untypedSupabase
             .from('cast_projects')
             .update({
               selected_styles: session.selectedStyles,
@@ -283,7 +286,7 @@ export function useCastProjects() {
     projectId: string,
   ): Promise<Partial<GenieCastSessionState> | null> => {
     try {
-      const { data: project, error: fetchErr } = await supabase
+      const { data: project, error: fetchErr } = await untypedSupabase
         .from('cast_projects')
         .select('*')
         .eq('id', projectId)

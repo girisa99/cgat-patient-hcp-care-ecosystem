@@ -107,11 +107,11 @@ interface ScriptPanelProps {
   enhancedContent?: string | null;
   onEnhancedContentChange?: (content: string | null) => void;
   enhancementChanges?: EnhancementChange[];
-  onEnhancementChangesChange?: (changes: EnhancementChange[]) => void;
+  onEnhancementChangesChange?: React.Dispatch<React.SetStateAction<EnhancementChange[]>>;
   showChanges?: boolean;
   onShowChangesChange?: (show: boolean) => void;
   analysisResult?: AnalysisRecommendation[];
-  onAnalysisResultChange?: (result: AnalysisRecommendation[]) => void;
+  onAnalysisResultChange?: React.Dispatch<React.SetStateAction<AnalysisRecommendation[]>>;
   showAnalysis?: boolean;
   onShowAnalysisChange?: (show: boolean) => void;
 }

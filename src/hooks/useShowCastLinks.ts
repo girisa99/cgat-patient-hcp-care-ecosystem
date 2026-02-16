@@ -12,6 +12,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ShowCastLink, ShowCastLinkType } from '@/types/castProjects';
 
+// Table not yet in generated Supabase types — use untyped client to avoid TS2769
+const fromShowCastLinks = () => (supabase as any).from('show_cast_links');
+
 export function useShowCastLinks() {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,8 +24,7 @@ export function useShowCastLinks() {
 
   const getLinksForShow = useCallback(async (showId: string): Promise<ShowCastLink[]> => {
     try {
-      const { data, error } = await supabase
-        .from('show_cast_links')
+      const { data, error } = await fromShowCastLinks()
         .select('*')
         .eq('show_id', showId)
         .eq('is_active', true)
@@ -42,8 +44,7 @@ export function useShowCastLinks() {
 
   const getLinksForProject = useCallback(async (castProjectId: string): Promise<ShowCastLink[]> => {
     try {
-      const { data, error } = await supabase
-        .from('show_cast_links')
+      const { data, error } = await fromShowCastLinks()
         .select('*')
         .eq('cast_project_id', castProjectId)
         .eq('is_active', true)
@@ -70,7 +71,7 @@ export function useShowCastLinks() {
   ): Promise<string | null> => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.rpc('link_show_to_cast', {
+      const { data, error } = await (supabase as any).rpc('link_show_to_cast', {
         p_show_id: showId,
         p_cast_project_id: castProjectId,
         p_link_type: linkType,
@@ -97,8 +98,7 @@ export function useShowCastLinks() {
 
   const unlinkShowFromCast = async (linkId: string) => {
     try {
-      const { error } = await supabase
-        .from('show_cast_links')
+      const { error } = await fromShowCastLinks()
         .update({ is_active: false } as any)
         .eq('id', linkId);
 
@@ -117,8 +117,7 @@ export function useShowCastLinks() {
 
   const schedulePublish = async (linkId: string, scheduledAt: string) => {
     try {
-      const { error } = await supabase
-        .from('show_cast_links')
+      const { error } = await fromShowCastLinks()
         .update({ scheduled_publish_at: scheduledAt } as any)
         .eq('id', linkId);
 
@@ -137,8 +136,7 @@ export function useShowCastLinks() {
 
   const markPublished = async (linkId: string) => {
     try {
-      const { error } = await supabase
-        .from('show_cast_links')
+      const { error } = await fromShowCastLinks()
         .update({ published_at: new Date().toISOString() } as any)
         .eq('id', linkId);
 
