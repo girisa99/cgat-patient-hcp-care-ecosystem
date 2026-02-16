@@ -965,14 +965,20 @@ class AIMessagingGeneratorService {
       : null;
 
     // === DB-DRIVEN KNOWLEDGE (subscriber-safe) ===
+    // Use Promise.allSettled so one failing query doesn't kill the entire generation pipeline
     const productDbId = PRODUCT_KEY_TO_DB_ID[request.productId];
-    const [dbKnowledge, dbCompetitors, enrichedCompetitors, marketIntel, trendIntel] = await Promise.all([
+    const settled = await Promise.allSettled([
       productDbId ? loadProductKnowledge(productDbId) : Promise.resolve(null),
       productDbId ? loadCompetitorLandscape(productDbId) : Promise.resolve([]),
       loadEnrichedCompetitorProfiles(),
       loadMarketSegmentIntelligence(request.targetAudience),
       loadTrendIntelligence(),
     ]);
+    const dbKnowledge = settled[0].status === 'fulfilled' ? settled[0].value : null;
+    const dbCompetitors = settled[1].status === 'fulfilled' ? settled[1].value : [];
+    const enrichedCompetitors = settled[2].status === 'fulfilled' ? settled[2].value : '';
+    const marketIntel = settled[3].status === 'fulfilled' ? settled[3].value : '';
+    const trendIntel = settled[4].status === 'fulfilled' ? settled[4].value : '';
 
     // Get audience pain points
     const audiencePainPoints = request.targetAudience
@@ -1580,7 +1586,7 @@ Generate the following in JSON format:
   /**
    * Reject generated messaging — updates existing DB row from pending → rejected
    */
-  rejectMessaging(requestId: string, reason: string): void {
+  async rejectMessaging(requestId: string, reason: string): Promise<void> {
     const request = this.pendingRequests.get(requestId);
     if (!request) throw new Error(`Request not found: ${requestId}`);
 
@@ -1588,13 +1594,14 @@ Generate the following in JSON format:
     request.rejectionReason = reason;
 
     // Update DB row status
-    supabase
+    const { error } = await supabase
       .from('ecosystem_messaging')
       .update({ status: 'rejected', updated_at: new Date().toISOString() } as any)
-      .eq('request_id', requestId)
-      .then(({ error }) => {
-        if (error) console.error('[AIMessaging] Failed to update rejection status:', error);
-      });
+      .eq('request_id', requestId);
+
+    if (error) {
+      console.error('[AIMessaging] Failed to update rejection status:', error);
+    }
 
     console.log(`[AIMessaging] Rejected messaging for ${requestId}: ${reason}`);
   }
