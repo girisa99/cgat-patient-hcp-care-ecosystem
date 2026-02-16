@@ -129,11 +129,11 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({
           
           <p className="text-sm opacity-90 mb-3">
             {isExpired ? (
-              'Upgrade now to continue using Genie Studio and keep your work.'
+              'Upgrade now to continue using Genie Suite and keep your work.'
             ) : isUrgent ? (
               'Your trial ends soon! Upgrade to keep all your projects and unlock premium features.'
             ) : (
-              'Explore Genie Studio with full access. Upgrade anytime to unlock more features.'
+              'Explore Genie Suite with full access. Upgrade anytime to unlock more features.'
             )}
           </p>
 

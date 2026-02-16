@@ -224,7 +224,7 @@ export const GENIE_PRODUCT_POSITIONING: Record<string, PositioningMessage> = {
   
   arc: {
     productId: 'arc',
-    productName: 'Genie Arc (Production Hub)',
+    productName: 'Genie Hub',
     tagline: 'Agency-quality production, zero agency cost',
     valueProposition: 'Full video production suite with AI avatars, lip-sync, 3D, VR, and multi-platform publishing',
     painPoints: [

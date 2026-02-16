@@ -185,7 +185,7 @@ const PRODUCT_NAMES: Record<GenieProduct, string> = {
   'deck': 'Genie Deck',
   'mind': 'Genie Mind',
   'vibe': 'Genie Vibe',
-  'arc': 'Genie Arc / Production Hub',
+  'arc': 'Genie Hub',
   'ask-genie': 'Ask Genie',
   'hub': 'Genie Hub / Command Center',
   'general': 'General AI Assistant',

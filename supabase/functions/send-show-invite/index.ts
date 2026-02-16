@@ -177,12 +177,12 @@ const handler = async (req: Request): Promise<Response> => {
     calendarDetails += `Invited by: ${senderName || hostName}${senderEmail ? ` (${senderEmail})` : ''}\n`;
     calendarDetails += `Your Role: ${roleText}\n\n`;
     calendarDetails += `------------------------\n`;
-    calendarDetails += `Powered by Genie Studio\n`;
+    calendarDetails += `Powered by Genie Suite\n`;
     calendarDetails += `Your AI-Powered Production Platform`;
     
-    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${typeInfo.emoji} ${showTitle} - Genie Studio`)}&dates=${formatCalDate(date)}/${formatCalDate(endTime)}&details=${encodeURIComponent(calendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
-    const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(`${typeInfo.emoji} ${showTitle} - Genie Studio`)}&startdt=${date.toISOString()}&enddt=${endTime.toISOString()}&body=${encodeURIComponent(calendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
-    const yahooUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(`${typeInfo.emoji} ${showTitle} - Genie Studio`)}&st=${formatCalDate(date)}&dur=${Math.floor(durationMinutes/60).toString().padStart(2,'0')}${(durationMinutes%60).toString().padStart(2,'0')}&desc=${encodeURIComponent(calendarDetails)}&in_loc=${encodeURIComponent(joinUrl || '')}`;
+    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${typeInfo.emoji} ${showTitle} - Genie Suite`)}&dates=${formatCalDate(date)}/${formatCalDate(endTime)}&details=${encodeURIComponent(calendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
+    const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(`${typeInfo.emoji} ${showTitle} - Genie Suite`)}&startdt=${date.toISOString()}&enddt=${endTime.toISOString()}&body=${encodeURIComponent(calendarDetails)}&location=${encodeURIComponent(joinUrl || '')}`;
+    const yahooUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(`${typeInfo.emoji} ${showTitle} - Genie Suite`)}&st=${formatCalDate(date)}&dur=${Math.floor(durationMinutes/60).toString().padStart(2,'0')}${(durationMinutes%60).toString().padStart(2,'0')}&desc=${encodeURIComponent(calendarDetails)}&in_loc=${encodeURIComponent(joinUrl || '')}`;
     
     // UTF-8 to base64 helper
     const utf8ToBase64 = (str: string): string => {
@@ -199,28 +199,28 @@ const handler = async (req: Request): Promise<Response> => {
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Genie Studio//AI-Powered Production Platform//EN',
+      'PRODID:-//Genie Suite//AI-Powered Production Platform//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:REQUEST',
-      'X-WR-CALNAME:Genie Studio',
+      'X-WR-CALNAME:Genie Suite',
       'BEGIN:VEVENT',
-      `UID:${crypto.randomUUID()}@genie-studio`,
+      `UID:${crypto.randomUUID()}@genie-suite`,
       `DTSTAMP:${formatCalDate(new Date())}`,
       `DTSTART:${formatCalDate(date)}`,
       `DTEND:${formatCalDate(endTime)}`,
-      `SUMMARY:${showTitle.replace(/,/g, '\\,').replace(/;/g, '\\;')} - Genie Studio`,
+      `SUMMARY:${showTitle.replace(/,/g, '\\,').replace(/;/g, '\\;')} - Genie Suite`,
       `DESCRIPTION:${calendarDetails.replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\n/g, '\\n')}`,
       joinUrl ? `LOCATION:${joinUrl.replace(/,/g, '\\,').replace(/;/g, '\\;')}` : '',
       joinUrl ? `URL:${joinUrl}` : '',
       `ORGANIZER;CN=${hostName.replace(/,/g, '').replace(/;/g, '')}:mailto:${hostEmail || fromEmail}`,
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
-      'DESCRIPTION:Genie Studio - Your session is now active! Join 30 minutes early.',
+      'DESCRIPTION:Genie Suite - Your session is now active! Join 30 minutes early.',
       'TRIGGER:-PT30M',
       'END:VALARM',
       'BEGIN:VALARM',
       'ACTION:DISPLAY', 
-      'DESCRIPTION:Genie Studio - Session starts in 15 minutes',
+      'DESCRIPTION:Genie Suite - Session starts in 15 minutes',
       'TRIGGER:-PT15M',
       'END:VALARM',
       'END:VEVENT',
@@ -253,7 +253,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Sender display name
-    const senderDisplayName = senderName || hostName || 'Genie Studio';
+    const senderDisplayName = senderName || hostName || 'Genie Suite';
     const invitedByText = senderName && senderEmail 
       ? `<strong style="color: #1e293b;">${senderName}</strong> (<a href="mailto:${senderEmail}" style="color: #8B5CF6;">${senderEmail}</a>)` 
       : `<strong style="color: #1e293b;">${hostName}</strong>`;
@@ -284,7 +284,7 @@ const handler = async (req: Request): Promise<Response> => {
         <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 2px solid #10b981; border-radius: 16px; padding: 24px; margin: 24px 0;">
           <p style="color: #059669; margin: 0 0 12px; font-weight: 700; font-size: 16px;">📝 Script Preview</p>
           <pre style="color: #374151; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; margin: 0; max-height: 180px; overflow-y: auto; background: white; padding: 16px; border-radius: 12px; line-height: 1.6; border: 1px solid #e5e7eb;">${previewText}</pre>
-          <p style="color: #6b7280; font-size: 12px; margin: 16px 0 0; text-align: center;">✨ Full script will be available in the Genie Studio teleprompter</p>
+          <p style="color: #6b7280; font-size: 12px; margin: 16px 0 0; text-align: center;">✨ Full script will be available in the Genie Suite teleprompter</p>
         </div>
       `;
     }
@@ -407,9 +407,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Helper for common footer
     const footerHtml = `
       <div style="background: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
-        <p style="color: #7c3aed; font-size: 18px; margin: 0 0 4px; font-weight: 700;">✨ Genie Studio</p>
+        <p style="color: #7c3aed; font-size: 18px; margin: 0 0 4px; font-weight: 700;">✨ Genie Suite</p>
         <p style="color: #64748b; font-size: 13px; margin: 0 0 12px;">AI-Powered Production Platform</p>
-        <p style="color: #94a3b8; font-size: 11px; margin: 0;">This email was sent via Genie Studio</p>
+        <p style="color: #94a3b8; font-size: 11px; margin: 0;">This email was sent via Genie Suite</p>
       </div>
     `;
     
@@ -603,7 +603,7 @@ const handler = async (req: Request): Promise<Response> => {
         <tr>
           <td class="header-padding" style="background: linear-gradient(135deg, ${typeInfo.color}, #8b5cf6); padding: 36px 24px; text-align: center;">
             <div style="font-size: 44px; margin-bottom: 10px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">${typeInfo.emoji}</div>
-            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800;">Genie Studio</h1>
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800;">Genie Suite</h1>
             <p style="color: rgba(255,255,255,0.95); margin: 10px 0 16px; font-size: 15px;">You're invited as <strong>${roleText}</strong></p>
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
               <tr>
@@ -635,7 +635,7 @@ const handler = async (req: Request): Promise<Response> => {
                 Hi <strong style="color: #7c3aed;">${participantName}</strong>! 👋
               </p>
               <p class="responsive-text" style="color: #64748b; margin: 12px 0 0; font-size: 14px; line-height: 1.5; word-wrap: break-word;">
-                You've been invited to join <strong style="color: #1e293b;">"${showTitle}"</strong> on <strong style="color: #7c3aed;">Genie Studio</strong>
+                You've been invited to join <strong style="color: #1e293b;">"${showTitle}"</strong> on <strong style="color: #7c3aed;">Genie Suite</strong>
               </p>
             </div>
           </td>
@@ -786,13 +786,13 @@ const handler = async (req: Request): Promise<Response> => {
         
         ${getEmailFooter()}
       `;
-      emailHtml = getResponsiveEmailWrapper(inviteContent, `You're Invited: ${showTitle} - Genie Studio`);
+      emailHtml = getResponsiveEmailWrapper(inviteContent, `You're Invited: ${showTitle} - Genie Suite`);
     } // End of email type conditional
 
     console.log('[send-show-invite] Sending email with ICS attachment to:', to);
     
     // Configure email options with CC for host email
-    const displayFromName = senderName || hostName || 'Genie Studio';
+    const displayFromName = senderName || hostName || 'Genie Suite';
     const ccEmail = senderEmail || hostEmail;
     
     // Build attachments array - use icsBase64 already computed above (line ~191)
@@ -805,7 +805,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
     
     const emailOptions: any = {
-      from: `${displayFromName} via Genie Studio <${fromEmail}>`,
+      from: `${displayFromName} via Genie Suite <${fromEmail}>`,
       to: [to],
       subject: emailSubject,
       html: emailHtml,

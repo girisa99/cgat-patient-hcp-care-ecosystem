@@ -1,5 +1,5 @@
 /**
- * Genie Arc & Production Hub Architecture Diagram
+ * Genie Hub & Production Hub Architecture Diagram
  * Team Collaboration & Enterprise Production Center
  * Updated: 2026-01-25 - Full 119 Pipeline Integration
  */
@@ -90,7 +90,7 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
       <div className="text-center border-b border-border pb-4">
         <h2 className="text-2xl font-bold text-foreground flex items-center justify-center gap-3">
           <Users className="h-8 w-8 text-blue-500" />
-          Genie Arc & Production Hub
+          Genie Hub & Production Hub
         </h2>
         <p className="text-muted-foreground mt-2">Team Collaboration • Enterprise Production • 119 Pipeline Orchestration</p>
       </div>
@@ -133,7 +133,7 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg text-blue-700 dark:text-blue-400 flex items-center gap-2">
               <Users className="h-5 w-5" />
-              🌈 Genie Arc - Collaboration Hub
+              🌈 Genie Hub - Collaboration Hub
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -254,7 +254,7 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
     return (
       <div className="fixed inset-0 z-50 bg-background overflow-auto">
         <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
-          <h2 className="text-foreground font-semibold text-lg">Genie Arc & Production Hub Architecture</h2>
+          <h2 className="text-foreground font-semibold text-lg">Genie Hub & Production Hub Architecture</h2>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleDownloadPNG}>
               <Download className="h-4 w-4 mr-2" />
@@ -278,7 +278,7 @@ export const GenieArcProductionHubDiagram: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-foreground text-lg flex items-center gap-2">
           <Users className="h-5 w-5 text-blue-500" />
-          Genie Arc & Production Hub
+          Genie Hub & Production Hub
         </CardTitle>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsFullscreen(true)} className="gap-2">

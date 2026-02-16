@@ -67,7 +67,7 @@ const CHAPTER_SCRIPTS: Record<string, {
     title: 'The Genie Awakens',
     duration: 45,
     visualType: '3d_animated',
-    voiceover: `Ahhh... finally! Someone rubbed the lamp! I am the Genie of Genie Studio. Unlike my cousin who grants only THREE wishes... I grant UNLIMITED creative powers! Behold! Seven magical products. 206 transformation pipelines. 12 world-class AI providers. Support for 70+ languages in their TRUE dialects. Let me show you the magic...`,
+    voiceover: `Ahhh... finally! Someone rubbed the lamp! I am the Genie of Genie Suite. Unlike my cousin who grants only THREE wishes... I grant UNLIMITED creative powers! Behold! Seven magical products. 206 transformation pipelines. 12 world-class AI providers. Support for 70+ languages in their TRUE dialects. Let me show you the magic...`,
     dialectNotes: {
       ar: 'Egyptian Arabic warmth, reference 1001 Nights',
       hi: 'Bollywood dramatic flair, use जादू',
@@ -130,10 +130,10 @@ const CHAPTER_SCRIPTS: Record<string, {
   },
   arc: {
     id: 'arc',
-    title: 'Genie Arc - Your Production Journey',
+    title: 'Genie Hub - Your Creative Command Center',
     duration: 50,
     visualType: 'full_body_avatar',
-    voiceover: `Creating content is one thing. MANAGING it? That's where creators BURN OUT. Enter Arc – your production command center. Every project, every deadline – all in one view. Podcast Monday. Webcast Wednesday. TikTok Friday. Arc schedules it ALL. OPTIMIZED templates for every platform. Record. Edit. Schedule. Publish. From one place.`,
+    voiceover: `Creating content is one thing. MANAGING it? That's where creators BURN OUT. Enter Hub – your creative command center. Every project, every deadline – all in one view. Podcast Monday. Webcast Wednesday. TikTok Friday. Hub schedules it ALL. OPTIMIZED templates for every platform. Record. Edit. Schedule. Publish. From one place.`,
     dialectNotes: {
       ar: 'Ramadan/Eid calendars',
       zh: 'Douyin, WeChat, Weibo',
@@ -172,7 +172,7 @@ const CHAPTER_SCRIPTS: Record<string, {
     title: 'Your Story Awaits',
     duration: 35,
     visualType: '3d_animated',
-    voiceover: `So... that's the magic. Seven products. 206 pipelines. 12 AI partners. 70+ languages. One ecosystem. Click here. Try it FREE. Create something amazing. Whether you're a solo creator or an enterprise team – Genie Studio is ready. Your wish is our command. Now go make some magic.`,
+    voiceover: `So... that's the magic. Seven products. 206 pipelines. 12 AI partners. 70+ languages. One ecosystem. Click here. Try it FREE. Create something amazing. Whether you're a solo creator or an enterprise team – Genie Suite is ready. Your wish is our command. Now go make some magic.`,
     dialectNotes: {
       ar: 'Arabic blessing for success',
       hi: 'Hinglish encouragement',

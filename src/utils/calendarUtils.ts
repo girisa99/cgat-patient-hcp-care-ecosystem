@@ -64,7 +64,7 @@ const buildRichDescription = (event: CalendarEvent): string => {
   // Add branding
   lines.push('');
   lines.push('─────────────────────');
-  lines.push('📺 Powered by Genie Studio');
+  lines.push('📺 Powered by Genie Suite');
   lines.push('🌐 genieaiexperimentationhub.tech');
   
   return lines.join('\n');
@@ -78,7 +78,7 @@ export const getGenieMeetingDisplayUrl = (url: string): string => {
     // Extract meeting code for cleaner display
     const match = url.match(/\/meeting\/([a-z0-9-]+)/i);
     if (match) {
-      return `Genie Studio: ${match[1]}`;
+      return `Genie Suite: ${match[1]}`;
     }
   }
   return url;
@@ -163,10 +163,10 @@ export const generateIcsContent = (event: CalendarEvent, uid?: string): string =
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Genie Studio//genieaiexperimentationhub.tech//EN',
+    'PRODID:-//Genie Suite//genieaiexperimentationhub.tech//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:Genie Studio',
+    'X-WR-CALNAME:Genie Suite',
     'BEGIN:VEVENT',
     `UID:${uid || crypto.randomUUID()}@genie-studio`,
     `DTSTAMP:${formatCalendarDate(new Date())}`,
@@ -201,22 +201,22 @@ export const generateIcsContent = (event: CalendarEvent, uid?: string): string =
   lines.push(
     'BEGIN:VALARM',
     'ACTION:DISPLAY',
-    'DESCRIPTION:Genie Studio - Session starts in 24 hours',
+    'DESCRIPTION:Genie Suite - Session starts in 24 hours',
     'TRIGGER:-P1D',
     'END:VALARM',
     'BEGIN:VALARM',
     'ACTION:DISPLAY',
-    'DESCRIPTION:Genie Studio - Session starts in 1 hour',
+    'DESCRIPTION:Genie Suite - Session starts in 1 hour',
     'TRIGGER:-PT1H',
     'END:VALARM',
     'BEGIN:VALARM',
     'ACTION:DISPLAY',
-    'DESCRIPTION:Genie Studio - Session starts in 30 minutes',
+    'DESCRIPTION:Genie Suite - Session starts in 30 minutes',
     'TRIGGER:-PT30M',
     'END:VALARM',
     'BEGIN:VALARM',
     'ACTION:DISPLAY',
-    'DESCRIPTION:Genie Studio - Session starts in 15 minutes',
+    'DESCRIPTION:Genie Suite - Session starts in 15 minutes',
     'TRIGGER:-PT15M',
     'END:VALARM'
   );

@@ -191,7 +191,7 @@ Label Studio Training
 - Web Audio API studio-quality processing
 - Clip management and timeline editing
 
-#### 🎯 Genie Arc - "Script Your Success"
+#### 🎯 Genie Hub - "Your Creative Command Center"
 **Production hub for show management**
 - Show/project creation (podcasts, video series, webinars)
 - Team collaboration and scheduling

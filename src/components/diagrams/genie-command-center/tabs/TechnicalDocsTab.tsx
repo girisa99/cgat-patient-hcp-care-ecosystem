@@ -127,7 +127,7 @@ const productScenarioMapping = [
   { product: 'Genie Vibe', icon: Video, implemented: 52, total: 65, crossFunctional: ['Mind', 'Spark', 'Hub'], color: 'purple' },
   { product: 'Genie Spark', icon: Sparkles, implemented: 25, total: 35, crossFunctional: ['Mind', 'Vibe'], color: 'amber' },
   { product: 'Production Hub', icon: Users, implemented: 22, total: 32, crossFunctional: ['Arc', 'Vibe', 'Mind'], color: 'blue' },
-  { product: 'Genie Arc', icon: Layers, implemented: 18, total: 28, crossFunctional: ['Hub', 'Vibe'], color: 'indigo' },
+  { product: 'Genie Hub', icon: Layers, implemented: 18, total: 28, crossFunctional: ['Hub', 'Vibe'], color: 'indigo' },
   { product: 'Ask Genie', icon: MessageSquare, implemented: 16, total: 20, crossFunctional: ['All Products'], color: 'rose' },
 ];
 

@@ -58,7 +58,7 @@ export const GENIE_PRODUCTS = [
   { id: 'mind', name: 'Genie Mind', route: '/genie-mind', color: '#3B82F6', description: 'Script editing' },
   { id: 'vibe', name: 'Genie Vibe', route: '/genie-vibe', color: '#22C55E', description: 'Voice & audio' },
   { id: 'deck', name: 'Genie Deck', route: '/genie-deck', color: '#EAB308', description: 'Presentations' },
-  { id: 'arc', name: 'Genie Arc', route: '/genie-arc', color: '#EC4899', description: 'Scheduling' },
+  { id: 'arc', name: 'Genie Hub', route: '/genie-arc', color: '#EC4899', description: 'Scheduling' },
   { id: 'studio', name: 'Genie Studio', route: '/genie-studio', color: '#9333EA', description: 'Full dashboard' },
   { id: 'ask-genie', name: 'Ask Genie', route: '/genie-support', color: '#06B6D4', description: 'AI assistant' },
   { id: 'cast', name: 'Genie Cast', route: '/genie-admin?tab=landing-videos', color: '#EF4444', description: 'Video studio' },

@@ -112,7 +112,7 @@ export const GenieStudioInfoBanner: React.FC<GenieStudioInfoBannerProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-foreground">What is Genie Studio?</h3>
+                <h3 className="font-semibold text-foreground">What is Genie Suite?</h3>
                 <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
                   AI-Powered
                 </Badge>

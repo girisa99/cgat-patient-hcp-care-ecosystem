@@ -51,7 +51,7 @@ const p3Features: P3Feature[] = [
     icon: Scale,
     color: 'from-red-500 to-pink-500',
     status: 'complete',
-    crossFunctional: ['Genie Mind', 'Genie Vibe', 'Genie Arc'],
+    crossFunctional: ['Genie Mind', 'Genie Vibe', 'Genie Hub'],
     component: LegalReviewGate
   },
   {
@@ -81,7 +81,7 @@ const p3Features: P3Feature[] = [
     icon: BarChart3,
     color: 'from-emerald-500 to-green-500',
     status: 'complete',
-    crossFunctional: ['Genie Mind', 'Genie Vibe', 'Genie Spark', 'Genie Arc'],
+    crossFunctional: ['Genie Mind', 'Genie Vibe', 'Genie Spark', 'Genie Hub'],
     component: AdvancedAnalyticsDashboard
   },
   {
@@ -91,7 +91,7 @@ const p3Features: P3Feature[] = [
     icon: Store,
     color: 'from-amber-500 to-orange-500',
     status: 'complete',
-    crossFunctional: ['Genie Arc', 'Genie Spark'],
+    crossFunctional: ['Genie Hub', 'Genie Spark'],
     component: TemplateMarketplace
   }
 ];
@@ -100,7 +100,7 @@ const crossFunctionalMatrix = [
   { product: 'Genie Mind', features: ['Legal Review Gate', 'Bulk Operations', 'Workspace Collaboration', 'Advanced Analytics'] },
   { product: 'Genie Vibe', features: ['Legal Review Gate', 'Bulk Operations', 'Workspace Collaboration', 'Advanced Analytics'] },
   { product: 'Genie Spark', features: ['Bulk Operations', 'Workspace Collaboration', 'Advanced Analytics', 'Template Marketplace'] },
-  { product: 'Genie Arc', features: ['Legal Review Gate', 'Bulk Operations', 'Workspace Collaboration', 'Advanced Analytics', 'Template Marketplace'] },
+  { product: 'Genie Hub', features: ['Legal Review Gate', 'Bulk Operations', 'Workspace Collaboration', 'Advanced Analytics', 'Template Marketplace'] },
   { product: 'Production Hub', features: ['Bulk Operations', 'Workspace Collaboration', 'Advanced Analytics'] },
 ];
 

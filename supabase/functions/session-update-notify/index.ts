@@ -114,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
         if (resend && participant.email) {
           try {
             const emailResult = await resend.emails.send({
-              from: 'Genie Studio <noreply@resend.dev>',
+              from: 'Genie Suite <noreply@resend.dev>',
               to: [participant.email],
               subject: `Update: ${session.title} - ${activityDetails.title}`,
               html: generateUpdateEmail(session, participant, activityDetails, body.custom_message, body.new_value),

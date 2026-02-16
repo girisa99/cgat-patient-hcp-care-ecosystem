@@ -575,7 +575,7 @@ export const products: Product[] = [
   },
   {
     id: 'arc',
-    name: 'Genie Arc',
+    name: 'Genie Hub',
     tagline: 'Agent Builder & Workflows',
     description: 'Build custom agents and automation workflows.',
     icon: '🔄',

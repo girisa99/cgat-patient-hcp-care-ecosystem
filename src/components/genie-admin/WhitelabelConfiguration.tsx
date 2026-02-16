@@ -37,7 +37,7 @@ interface WhitelabelConfig {
 }
 
 const DEFAULT_CONFIG: Partial<WhitelabelConfig> = {
-  app_name: 'Genie Studio',
+  app_name: 'Genie Suite',
   primary_color: '#3B82F6',
   secondary_color: '#1F2937',
   accent_color: '#10B981',
@@ -335,7 +335,7 @@ export const WhitelabelConfiguration: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div>
-                    <Label>Hide "Powered by Genie Studio"</Label>
+                    <Label>Hide "Powered by Genie Suite"</Label>
                     <p className="text-xs text-muted-foreground">Remove the attribution from your app</p>
                   </div>
                   <Switch

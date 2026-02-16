@@ -97,8 +97,8 @@ const PRODUCT_DATA = {
     differentiator: 'Competitors offer pieces: HeyGen for avatars, Descript for editing, ElevenLabs for voice. Vibe delivers the complete pipeline at 70% lower cost.',
   },
   arc: {
-    name: 'Genie Arc',
-    tagline: 'Infinite Possibilities',
+    name: 'Genie Hub',
+    tagline: 'Your Creative Command Center',
     icon: '🎯',
     accentColor: 'blue',
     description: 'Orchestrate your production workflow with powerful scheduling, team collaboration, and show management tools built for creative teams.',

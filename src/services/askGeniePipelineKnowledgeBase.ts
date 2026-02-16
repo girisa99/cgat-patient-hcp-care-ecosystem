@@ -101,9 +101,9 @@ export const PRODUCT_KNOWLEDGE = {
   },
   arc: {
     id: 'arc',
-    name: 'Genie Arc',
-    tagline: 'Your Production Journey With Infinite Possibilities',
-    description: 'Enterprise production hub for project scheduling, Kanban workflows, and team collaboration.',
+    name: 'Genie Hub',
+    tagline: 'Your Creative Command Center',
+    description: 'Your creative command center for project scheduling, Kanban workflows, and team collaboration.',
     pipelineCount: PRODUCT_PIPELINE_SUMMARY.arc.totalAccess,
     categories: ['scheduling', 'collaboration'],
     editorMode: 'canvas',

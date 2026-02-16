@@ -20,15 +20,15 @@ const corsHeaders = {
 
 // Chapter configurations with product visuals
 const CHAPTERS = [
-  { id: 'opening', product: 'Genie Studio', duration: 45, color: '#9333EA', visualType: 'intro_animation' },
+  { id: 'opening', product: 'Genie Suite', duration: 45, color: '#9333EA', visualType: 'intro_animation' },
   { id: 'spark', product: 'Genie Spark', duration: 50, color: '#F97316', visualType: 'product_demo' },
   { id: 'mind', product: 'Genie Mind', duration: 50, color: '#3B82F6', visualType: 'product_demo' },
   { id: 'vibe', product: 'Genie Vibe', duration: 55, color: '#22C55E', visualType: 'product_demo' },
   { id: 'deck', product: 'Genie Deck', duration: 45, color: '#EAB308', visualType: 'product_demo' },
-  { id: 'arc', product: 'Genie Arc', duration: 50, color: '#EC4899', visualType: 'product_demo' },
+  { id: 'arc', product: 'Genie Hub', duration: 50, color: '#EC4899', visualType: 'product_demo' },
   { id: 'ask-genie', product: 'Ask Genie', duration: 40, color: '#06B6D4', visualType: 'product_demo' },
   { id: 'cast', product: 'Genie Cast', duration: 50, color: '#EF4444', visualType: 'product_demo' },
-  { id: 'closing', product: 'Genie Studio', duration: 30, color: '#9333EA', visualType: 'outro_animation' },
+  { id: 'closing', product: 'Genie Suite', duration: 30, color: '#9333EA', visualType: 'outro_animation' },
 ];
 
 // Product screenshot configurations - what to show during each chapter
@@ -1194,7 +1194,7 @@ function getChapterScript(
   // ═══════════════════════════════════════════════════════════════════════════════
   
   const ENGLISH_SCRIPTS: Record<string, string> = {
-    'opening': `Welcome to Genie Studio – where your ideas become reality.
+    'opening': `Welcome to Genie Suite – where your ideas become reality.
 
 Seven powerful products. 206 AI pipelines. 12 world-class providers. Over 70 languages with authentic regional voices.
 
@@ -1238,15 +1238,15 @@ Publish to YouTube, TikTok, Instagram, LinkedIn, WeChat, WhatsApp – all from o
 Real-time analytics. A/B testing. 50+ countries. 70+ languages.
 
 Your story, everywhere.`,
-    'closing': `This is Genie Studio. Seven products. 206 pipelines. Unlimited possibilities.
+    'closing': `This is Genie Suite. Seven products. 206 pipelines. Unlimited possibilities.
 
-Spark ignites ideas. Mind understands. Vibe visualizes. Deck presents. Arc perfects. Ask Genie orchestrates. Cast amplifies.
+Spark ignites ideas. Mind understands. Vibe visualizes. Deck presents. Hub perfects. Ask Genie orchestrates. Cast amplifies.
 
 Your wish is our command.`
   };
 
   const HINDI_SCRIPTS: Record<string, string> = {
-    'opening': `जीनी स्टूडियो में आपका स्वागत है – जहां आपके आइडियाज़ हकीकत बन जाते हैं।
+    'opening': `जीनी सुइट में आपका स्वागत है – जहां आपके आइडियाज़ हकीकत बन जाते हैं।
 
 सात शक्तिशाली प्रोडक्ट्स। 206 AI पाइपलाइन। 12 विश्व स्तरीय प्रोवाइडर्स। 70 से ज़्यादा भाषाएं असली क्षेत्रीय आवाज़ों के साथ।
 
@@ -1290,13 +1290,13 @@ YouTube, TikTok, Instagram, LinkedIn, WhatsApp – एक जगह से स�
 रियल-टाइम एनालिटिक्स। 50+ देश। 70+ भाषाएं।
 
 आपकी कहानी, हर जगह।`,
-    'closing': `यह है जीनी स्टूडियो। सात प्रोडक्ट्स। 206 पाइपलाइन। असीमित संभावनाएं।
+    'closing': `यह है जीनी सुइट। सात प्रोडक्ट्स। 206 पाइपलाइन। असीमित संभावनाएं।
 
 आपकी इच्छा ही हमारा आदेश है।`
   };
 
   const ARABIC_SCRIPTS: Record<string, string> = {
-    'opening': `مرحباً بك في جيني ستوديو – حيث تتحول أفكارك إلى واقع.
+    'opening': `مرحباً بك في جيني سويت – حيث تتحول أفكارك إلى واقع.
 
 سبعة منتجات قوية. 206 خط أنابيب للذكاء الاصطناعي. 12 مزودًا عالميًا. أكثر من 70 لغة بأصوات إقليمية أصيلة.
 
@@ -1336,13 +1336,13 @@ YouTube, TikTok, Instagram, LinkedIn, WhatsApp – एक जगह से स�
 تحليلات فورية. أكثر من 50 دولة. أكثر من 70 لغة.
 
 قصتك، في كل مكان.`,
-    'closing': `هذا هو جيني ستوديو. سبعة منتجات. 206 خط أنابيب. إمكانيات لا حدود لها.
+    'closing': `هذا هو جيني سويت. سبعة منتجات. 206 خط أنابيب. إمكانيات لا حدود لها.
 
 أمنيتك هي أمرنا.`
   };
 
   const CHINESE_SCRIPTS: Record<string, string> = {
-    'opening': `欢迎来到 Genie Studio – 让您的想法变为现实。
+    'opening': `欢迎来到 Genie Suite – 让您的想法变为现实。
 
 七款强大产品。206条AI管道。12家世界级供应商。70多种语言，配备真实的区域语音。
 
@@ -1364,7 +1364,7 @@ AI驱动的增强功能提升您的信息。您的语言中的真实声音，听
 专业视频制作，配备AI头像，可用任何语言自然说话。完美的口型同步。电影级质量。
 
 74条视频管道。4K分辨率。从您的手机到世界。`,
-    'closing': `这就是 Genie Studio。七款产品。206条管道。无限可能。
+    'closing': `这就是 Genie Suite。七款产品。206条管道。无限可能。
 
 您的愿望就是我们的命令。`
   };
@@ -1557,7 +1557,7 @@ function applyStyleTransformations(chapterId: string, baseScript: string, styleC
 function getHookStyleScript(chapterId: string, _baseScript: string, intensity: number): string {
   const hookScripts: Record<string, string[]> = {
     'opening': [
-      "STOP scrolling! What if I told you there's a platform that turns your wildest ideas into professional content in minutes? Welcome to Genie Studio.",
+      "STOP scrolling! What if I told you there's a platform that turns your wildest ideas into professional content in minutes? Welcome to Genie Suite.",
       "Here's something nobody's talking about: AI just made content creation 10x easier. Let me show you how.",
       "Wait! Before you spend another hour struggling with content, you NEED to see this.",
     ],
@@ -1583,7 +1583,7 @@ function getHookStyleScript(chapterId: string, _baseScript: string, intensity: n
     ],
     'arc': [
       "Your content calendar is chaos. Mine? Crystal clear. Here's the tool that changed everything.",
-      "Content creators: stop losing track of your projects. Genie Arc is your secret weapon.",
+      "Content creators: stop losing track of your projects. Genie Hub is your secret weapon.",
       "Kanban boards, calendars, team sync - all automated. Welcome to organized content creation.",
     ],
     'ask-genie': [
@@ -1598,7 +1598,7 @@ function getHookStyleScript(chapterId: string, _baseScript: string, intensity: n
     ],
     'closing': [
       "Your wish is literally our command. Start free. Start now. Your content revolution begins today.",
-      "What are you waiting for? Every second you're not using Genie Studio, you're falling behind.",
+      "What are you waiting for? Every second you're not using Genie Suite, you're falling behind.",
       "From mind to media, from idea to impact. Click below and join thousands of creators.",
     ],
   };
@@ -1615,15 +1615,15 @@ function getHookStyleScript(chapterId: string, _baseScript: string, intensity: n
  */
 function getEmotionalStoryScript(chapterId: string, _baseScript: string): string {
   const storyScripts: Record<string, string> = {
-    'opening': "Every great story starts with a spark of imagination. A moment where possibility meets purpose. Welcome to Genie Studio - where your creative journey transforms from vision to reality.",
+    'opening': "Every great story starts with a spark of imagination. A moment where possibility meets purpose. Welcome to Genie Suite - where your creative journey transforms from vision to reality.",
     'spark': "Remember the last time an idea struck you? That electric moment of inspiration? Genie Spark captures that magic, nurturing your thoughts into powerful scripts that speak to hearts and minds.",
     'mind': "Words have power. They can move mountains, change minds, inspire action. Genie Mind doesn't just enhance your scripts - it helps you find the perfect words to tell your unique story.",
     'vibe': "Behind every memorable video is a creator who dared to share their authentic self. Genie Vibe becomes your trusted studio - where your voice, your message, your story comes alive.",
     'deck': "The best presentations don't just inform - they transform. Genie Deck helps you craft visual stories that captivate audiences and leave lasting impressions.",
-    'arc': "Creating content is a journey, not a destination. Genie Arc walks beside you, organizing your creative path and keeping your team united in purpose.",
+    'arc': "Creating content is a journey, not a destination. Genie Hub walks beside you, organizing your creative path and keeping your team united in purpose.",
     'ask-genie': "We all need a guide sometimes. Someone who understands our challenges and illuminates the path forward. Ask Genie is that trusted companion, always ready to help.",
     'cast': "Your story deserves to be heard. Genie Cast carries your message across borders and platforms, connecting you with audiences who are waiting to be moved by what you create.",
-    'closing': "This is your moment. Your story. Your time to create something meaningful. From mind to media, Genie Studio is here to help you share your gift with the world.",
+    'closing': "This is your moment. Your story. Your time to create something meaningful. From mind to media, Genie Suite is here to help you share your gift with the world.",
   };
   return storyScripts[chapterId] || _baseScript;
 }
@@ -1635,8 +1635,8 @@ function getEmotionalStoryScript(chapterId: string, _baseScript: string): string
 function getPlayfulScript(chapterId: string, _baseScript: string, humorLevel: string): string {
   const playfulScripts: Record<string, { warm: string; humorous: string }> = {
     'opening': {
-      warm: "Hey there, creative friend! Ready to see something amazing? Genie Studio is like having a whole creative team in your pocket. Seven awesome tools, one super easy platform!",
-      humorous: "Okay, confession time: I used to spend HOURS making content. Then I found Genie Studio and now I have way too much free time. It's almost embarrassing!",
+      warm: "Hey there, creative friend! Ready to see something amazing? Genie Suite is like having a whole creative team in your pocket. Seven awesome tools, one super easy platform!",
+      humorous: "Okay, confession time: I used to spend HOURS making content. Then I found Genie Suite and now I have way too much free time. It's almost embarrassing!",
     },
     'spark': {
       warm: "Got an idea bouncing around in your head? Genie Spark loves those! Just share your thought and watch it bloom into a beautiful script. It's like having a creative best friend!",
@@ -1655,8 +1655,8 @@ function getPlayfulScript(chapterId: string, _baseScript: string, humorLevel: st
       humorous: "Death by PowerPoint? Not on Genie Deck's watch! Your slides will be so pretty, people will actually stay awake. Revolutionary, I know!",
     },
     'arc': {
-      warm: "Staying organized is a breeze with Genie Arc! Pretty boards, helpful calendars, and everything in its place. Your creative projects will thank you!",
-      humorous: "I used to have sticky notes EVERYWHERE. My wall looked like a crime board. Genie Arc saved my sanity and probably my wallpaper.",
+      warm: "Staying organized is a breeze with Genie Hub! Pretty boards, helpful calendars, and everything in its place. Your creative projects will thank you!",
+      humorous: "I used to have sticky notes EVERYWHERE. My wall looked like a crime board. Genie Hub saved my sanity and probably my wallpaper.",
     },
     'ask-genie': {
       warm: "Feeling a bit lost? Ask Genie is here to help! It's like having a friendly expert who never gets tired of your questions. Ask away, friend!",
@@ -1667,7 +1667,7 @@ function getPlayfulScript(chapterId: string, _baseScript: string, humorLevel: st
       humorous: "Remember manually posting to every platform? Neither do I because I blocked out that trauma. Genie Cast is my therapy now.",
     },
     'closing': {
-      warm: "Your creative journey starts here! Genie Studio is ready to be your partner in making something wonderful. Let's create together!",
+      warm: "Your creative journey starts here! Genie Suite is ready to be your partner in making something wonderful. Let's create together!",
       humorous: "So what are you waiting for? An engraved invitation? Actually, this IS your invitation. Now go make something awesome!",
     },
   };
@@ -1683,15 +1683,15 @@ function getPlayfulScript(chapterId: string, _baseScript: string, humorLevel: st
  */
 function getFastPacedScript(chapterId: string, _baseScript: string): string {
   const fastScripts: Record<string, string> = {
-    'opening': "Genie Studio. Seven products. One platform. AI-powered. Create content. Share everywhere. Start now.",
+    'opening': "Genie Suite. Seven products. One platform. AI-powered. Create content. Share everywhere. Start now.",
     'spark': "Ideas to scripts. Seconds. Not hours. Confidence scoring built-in. Professional output guaranteed. Genie Spark.",
     'mind': "AI suggestions. Real-time. Clarity fixes. Multi-language. Script enhancement. Instant. Genie Mind.",
     'vibe': "Record. Edit. Export. Pro-level. One platform. No stress. Teleprompter ready. Genie Vibe.",
     'deck': "Templates. Smart layouts. Beautiful slides. PowerPoint export. PDF ready. Seconds. Genie Deck.",
-    'arc': "Kanban. Calendar. Team sync. Automated scheduling. Content organized. Finally. Genie Arc.",
+    'arc': "Kanban. Calendar. Team sync. Automated scheduling. Content organized. Finally. Genie Hub.",
     'ask-genie': "Questions? Answered. Guidance? Instant. Features? Mastered. AI assistant. Always ready. Ask Genie.",
     'cast': "One click. All platforms. YouTube. LinkedIn. TikTok. Analytics. Growth. Genie Cast.",
-    'closing': "Your wish. Our command. Mind to media. Start free. Start now. Genie Studio.",
+    'closing': "Your wish. Our command. Mind to media. Start free. Start now. Genie Suite.",
   };
   return fastScripts[chapterId] || _baseScript;
 }
@@ -1702,15 +1702,15 @@ function getFastPacedScript(chapterId: string, _baseScript: string): string {
  */
 function getEducationalScript(chapterId: string, _baseScript: string): string {
   const eduScripts: Record<string, string> = {
-    'opening': "Welcome to this comprehensive overview of Genie Studio. Today, we'll explore seven integrated products designed to streamline your content creation workflow from ideation to distribution.",
+    'opening': "Welcome to this comprehensive overview of Genie Suite. Today, we'll explore seven integrated products designed to streamline your content creation workflow from ideation to distribution.",
     'spark': "Let's begin with Genie Spark - your ideation tool. The process is straightforward: input your concept, and the AI generates a professionally structured script. The confidence scoring system provides quantitative feedback on message clarity and engagement potential.",
     'mind': "Next, we'll examine Genie Mind, the script enhancement module. Key features include real-time AI suggestions for improving clarity, grammatical refinement, and integrated translation supporting 14 languages.",
     'vibe': "Genie Vibe serves as your recording environment. The interface includes a built-in teleprompter for seamless delivery, AI-assisted editing tools, and export options optimized for various platforms and use cases.",
     'deck': "For visual presentations, Genie Deck offers AI-designed templates and intelligent layout systems. Export options include PowerPoint and PDF formats, maintaining professional quality standards.",
-    'arc': "Project management is handled through Genie Arc. The platform provides Kanban-style boards, content calendars, and automated scheduling features to keep teams aligned and projects on track.",
+    'arc': "Project management is handled through Genie Hub. The platform provides Kanban-style boards, content calendars, and automated scheduling features to keep teams aligned and projects on track.",
     'ask-genie': "Ask Genie functions as an integrated support system. It provides contextual guidance, answers platform-specific questions, and offers tutorials for advanced feature utilization.",
     'cast': "Finally, Genie Cast manages content distribution. Single-click publishing to major platforms including YouTube, LinkedIn, and TikTok, with integrated analytics for performance tracking.",
-    'closing': "In summary, Genie Studio provides a complete content creation ecosystem. From initial concept to global distribution, each product integrates seamlessly. Begin your free trial today to experience the full workflow.",
+    'closing': "In summary, Genie Suite provides a complete content creation ecosystem. From initial concept to global distribution, each product integrates seamlessly. Begin your free trial today to experience the full workflow.",
   };
   return eduScripts[chapterId] || _baseScript;
 }
@@ -2031,7 +2031,7 @@ function buildJSON2VideoTimeline(
         scenes.push({
           comment: `${chapter.product} - Screenshot ${visualIndex + 1}/${chapterVisuals.length}`,
           duration: durationPerVisual,
-          'background-color': chapter.product === 'Genie Studio' ? '#9333EA' : '#1e293b',
+          'background-color': chapter.product === 'Genie Suite' ? '#9333EA' : '#1e293b',
           elements,
         });
       });
@@ -2087,7 +2087,7 @@ function buildJSON2VideoTimeline(
       scenes.push({
         comment: `${chapter.product} - Chapter ${chapterIndex + 1}`,
         duration: chapter.duration,
-        'background-color': chapter.product === 'Genie Studio' ? '#9333EA' : '#1e293b',
+        'background-color': chapter.product === 'Genie Suite' ? '#9333EA' : '#1e293b',
         elements,
       });
     }
@@ -2302,7 +2302,7 @@ async function tryModelsLabVideoAssembly(
         key: apiKey,
         model_id: 'animatediff-v2',
         init_image: initImage,
-        prompt: `Professional product showcase video for Genie Studio AI platform, smooth camera movement, high quality`,
+        prompt: `Professional product showcase video for Genie Suite AI platform, smooth camera movement, high quality`,
         negative_prompt: 'blurry, jittery, low quality, distorted',
         width: 1024,
         height: 576,
@@ -2435,7 +2435,7 @@ async function saveAssembledVideo(
 
   // Build title based on production mode
   const productionSuffix = params.fullProductionMode ? ' [Full Production]' : '';
-  const title = `Genie Studio - Complete Demo (${languageNames[params.language] || params.language})${productionSuffix}`;
+  const title = `Genie Suite - Complete Demo (${languageNames[params.language] || params.language})${productionSuffix}`;
   
   // Build description with enabled features
   let description = `Full 9-chapter marketing video with all products explained in ${languageNames[params.language] || params.language}.`;
@@ -2515,7 +2515,7 @@ async function generateThumbnail(
     return brandedThumbnails[language];
   }
   
-  // Fallback: Use default Genie Studio branding thumbnail
+  // Fallback: Use default Genie Suite branding thumbnail
   const fallbackThumbnail = 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/landing-videos/thumbnails/genie-studio-default.jpg';
   
   // In Phase 2: Generate dynamic thumbnail via JSON2Video still frame or AI image generation
@@ -2731,10 +2731,10 @@ async function generate3DElement(
     'Genie Mind': 'Glowing brain neural network 3D icon, blue and purple holographic gradients, futuristic tech aesthetic',
     'Genie Vibe': 'Sound wave visualization 3D icon, audio frequencies, emerald green tones, floating particles',
     'Genie Deck': 'Floating presentation slides 3D icon, stacked translucent layers, professional gold accent',
-    'Genie Arc': 'Orbital rings production hub 3D icon, interconnected nodes, pink and magenta gradient',
+    'Genie Hub': 'Orbital rings production hub 3D icon, interconnected nodes, pink and magenta gradient',
     'Ask Genie': 'Magical genie lamp 3D icon, cyan glow aura, mystical swirling smoke, golden lamp',
     'Genie Cast': 'Broadcasting tower 3D icon, emanating signal waves, red accent, global distribution sphere',
-    'Genie Studio': 'Complete creative suite 3D logo, purple gradient crystal, seven floating elements orbiting',
+    'Genie Suite': 'Complete creative suite 3D logo, purple gradient crystal, seven floating elements orbiting',
   };
   
   const prompt = prompts[product] || `${product} 3D logo icon, professional glass material design`;

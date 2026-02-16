@@ -48,7 +48,7 @@ export const SubscriptionStatus = () => {
             Subscription Status
           </CardTitle>
           <CardDescription>
-            Manage your Genie Studio subscription
+            Manage your Genie Suite subscription
           </CardDescription>
         </div>
         <Button 

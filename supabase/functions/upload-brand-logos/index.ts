@@ -22,7 +22,7 @@ const LOGO_MAPPING: Record<string, { fileName: string; displayName: string }> = 
   'mind': { fileName: 'genie-mind-logo.png', displayName: 'Genie Mind' },
   'vibe': { fileName: 'genie-vibe-logo.png', displayName: 'Genie Vibe' },
   'deck': { fileName: 'genie-deck-logo.png', displayName: 'Genie Deck' },
-  'arc': { fileName: 'genie-arc-logo.png', displayName: 'Genie Arc' },
+  'arc': { fileName: 'genie-arc-logo.png', displayName: 'Genie Hub' },
   'ask-genie': { fileName: 'ask-genie-logo.png', displayName: 'Ask Genie' },
   'cast': { fileName: 'genie-cast-logo.png', displayName: 'Genie Cast' },
 };

@@ -204,7 +204,7 @@ export const SHOW_TYPES: { id: ShowType; label: string; icon: string; category: 
   // Genie Studio Demos
   { id: 'genie_studio_full', label: 'Full Studio Demo', icon: 'Sparkles', category: 'genie_demo' },
   { id: 'genie_spark_demo', label: 'Genie Spark Demo', icon: 'Zap', category: 'genie_demo' },
-  { id: 'genie_arc_demo', label: 'Genie Arc Demo', icon: 'Film', category: 'genie_demo' },
+  { id: 'genie_arc_demo', label: 'Genie Hub Demo', icon: 'Film', category: 'genie_demo' },
   { id: 'genie_mind_demo', label: 'Genie Mind Demo', icon: 'Brain', category: 'genie_demo' },
   { id: 'genie_vibe_demo', label: 'Genie Vibe Demo', icon: 'Music', category: 'genie_demo' },
   { id: 'genie_suite_overview', label: 'Suite Overview', icon: 'Layers', category: 'genie_demo' },

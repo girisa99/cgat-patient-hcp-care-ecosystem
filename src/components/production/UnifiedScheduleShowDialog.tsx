@@ -102,7 +102,7 @@ import {
 const GENIE_DEMO_PRODUCTS = {
   genie_studio_full: {
     logo: genieStudioLogo,
-    name: 'Genie Studio',
+    name: 'Genie Suite',
     tagline: 'Mind to Media',
     color: 'from-indigo-500 to-violet-500',
   },
@@ -417,7 +417,7 @@ export function UnifiedScheduleShowDialog({
       genie_arc_demo: `Genie Hub Demo - ${demoProduct?.tagline || 'Your Creative Command Center'}`,
       genie_mind_demo: `Genie Mind Demo - ${demoProduct?.tagline || 'AI that understands'}`,
       genie_vibe_demo: `Genie Vibe Demo - ${demoProduct?.tagline || 'Script to Screen'}`,
-      genie_suite_overview: 'Genie Studio Suite - Complete Platform Overview',
+      genie_suite_overview: 'Genie Suite Suite - Complete Platform Overview',
       // Media production types
       podcast: 'Podcast Recording Session',
       webcast: 'Live Webcast Production',
@@ -1182,7 +1182,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
             <Globe className="h-4 w-4 text-primary flex-shrink-0" />
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-xs font-medium text-primary">
-                {formData.meeting_url.includes('genieaiexperimentationhub.tech') ? '🎬 Genie Studio Meeting' : 'Meeting URL'}
+                {formData.meeting_url.includes('genieaiexperimentationhub.tech') ? '🎬 Genie Suite Meeting' : 'Meeting URL'}
               </span>
               <span className="text-sm font-mono truncate">{formData.meeting_url}</span>
             </div>

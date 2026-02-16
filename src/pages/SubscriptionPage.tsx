@@ -151,7 +151,7 @@ const SubscriptionPage = () => {
                   title="Team Collaboration"
                   description="Multi-guest sessions, approval workflows, and production hub"
                   vsCompetitor="vs. Solo creator tools"
-                  advantage="Genie Arc + Production Hub"
+                  advantage="Genie Hub"
                   icon={<Users className="h-5 w-5" />}
                 />
               </div>

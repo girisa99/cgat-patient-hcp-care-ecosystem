@@ -31,11 +31,11 @@ const GENIE_KNOWLEDGE_BASE = {
     'genie-mind': 'Genie Mind focuses on script editing, enhancement, TTS, and voice work including voice cloning.',
     'genie-vibe': 'Genie Vibe covers audio/video production including recording, trimming, stitching, and multi-track editing.',
     'genie-deck': 'Genie Deck generates AI presentations and slides with various templates and export options.',
-    'genie-arc': 'Genie Arc manages project scheduling, Kanban boards, and team workflows.',
+    'genie-hub': 'Genie Hub manages project scheduling, Kanban boards, and team workflows.',
     'genie-cast': 'Genie Cast handles global distribution, 14-region localization, and marketing automation.',
   },
   tiers: {
-    free: 'Free tier includes basic access to Genie Studio and Ask Genie support.',
+    free: 'Free tier includes basic access to Genie Suite and Ask Genie support.',
     starter: 'Starter tier ($12/mo) includes access to Spark, Mind, and Deck products.',
     creator: 'Creator tier ($29/mo) adds Vibe for audio/video production.',
     pro: 'Pro tier ($59/mo) includes Analytics, advanced features, and 5 team seats.',
@@ -176,10 +176,10 @@ serve(async (req) => {
         aiResponse = "I apologize, but I'm having trouble processing your request right now. Please try again later or submit a support ticket.";
       } else {
         try {
-          const systemPrompt = `You are Ask Genie, the AI support assistant for Genie Studio - a creative content production platform.
+          const systemPrompt = `You are Ask Genie, the AI support assistant for Genie Suite - a creative content production platform.
 
 Your knowledge includes:
-- 7 products: Genie Spark (script generation), Mind (editing/TTS), Vibe (A/V production), Deck (presentations), Arc (project management), Cast (distribution), and Ask Genie (support)
+- 7 products: Genie Spark (script generation), Mind (editing/TTS), Vibe (A/V production), Deck (presentations), Hub (project management), Cast (distribution), and Ask Genie (support)
 - 6 subscription tiers: Free, Starter ($12), Creator ($29), Pro ($59), Business ($149), Enterprise
 - 206 AI pipelines across 21 categories
 

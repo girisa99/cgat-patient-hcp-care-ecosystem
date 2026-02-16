@@ -87,8 +87,8 @@ const logoAssets: ImageAsset[] = [
   // Genie Arc
   {
     id: 'arc-combined',
-    title: 'Genie Arc',
-    description: 'Your Production Journey With Infinite Possibilities (use for presentations, websites, products, icons)',
+    title: 'Genie Hub',
+    description: 'Your Creative Command Center (use for presentations, websites, products, icons)',
     src: arcCombined,
     category: 'logo',
     brand: 'arc',

@@ -598,7 +598,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
       <g transform="translate(1390, 130)">
         <rect x="0" y="0" width="180" height="120" rx="12" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="2" filter="url(#dropShadow)" />
         <rect x="0" y="0" width="180" height="35" rx="12" fill="url(#arcGrad)" />
-        <text x="90" y="24" textAnchor="middle" fill="#fff" fontSize="14" fontWeight="bold">🌈 Genie Arc</text>
+        <text x="90" y="24" textAnchor="middle" fill="#fff" fontSize="14" fontWeight="bold">🌈 Genie Hub</text>
         <text x="90" y="55" textAnchor="middle" fill="#93c5fd" fontSize="10">Team Collaboration</text>
         <text x="90" y="72" textAnchor="middle" fill="#bfdbfe" fontSize="9">• Review & Approval</text>
         <text x="90" y="86" textAnchor="middle" fill="#bfdbfe" fontSize="9">• Asset Sharing</text>
@@ -864,7 +864,7 @@ export const GenieRecordingStudioArchitectureDiagram = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  Genie Arc
+                  Genie Hub
                 </CardTitle>
                 <Badge style={{ backgroundColor: colors.p1.bg, color: colors.p1.text }}>P1</Badge>
               </CardHeader>

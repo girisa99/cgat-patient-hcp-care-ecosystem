@@ -119,7 +119,7 @@ export const DashboardWelcome: React.FC<DashboardWelcomeProps> = ({
                   </Badge>
                 </div>
                 <h2 className="text-2xl font-bold mb-2">
-                  Welcome to Genie Studio! ✨
+                  Welcome to Genie Suite! ✨
                 </h2>
                 <p className="text-muted-foreground mb-4">
                   Your AI-powered content creation hub. Create scripts, generate voiceovers, 

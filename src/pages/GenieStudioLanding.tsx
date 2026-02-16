@@ -60,7 +60,7 @@ const PRODUCTS = [
   { id: 'mind', name: 'Genie Mind', tagline: 'AI That Understands', logo: genieMindLogo, color: 'from-cyan-500 to-teal-500', pipelines: 30, desc: 'Script enhancement, TTS, translation' },
   { id: 'vibe', name: 'Genie Vibe', tagline: 'Script to Screen', logo: genieVibeLogo, color: 'from-purple-500 to-violet-500', pipelines: 74, desc: 'Video production, avatar, dubbing' },
   { id: 'deck', name: 'Genie Deck', tagline: 'Ideas to Impact', logo: genieDeckLogo, color: 'from-blue-500 to-indigo-500', pipelines: 34, desc: 'Presentations, visual design, 3D' },
-  { id: 'arc', name: 'Genie Arc', tagline: 'Your Production Journey', logo: genieArcLogo, color: 'from-red-500 to-orange-500', pipelines: 14, desc: 'Scheduling & collaboration' },
+  { id: 'arc', name: 'Genie Hub', tagline: 'Your Creative Command Center', logo: genieArcLogo, color: 'from-red-500 to-orange-500', pipelines: 14, desc: 'Scheduling & collaboration' },
   { id: 'cast', name: 'Genie Cast', tagline: 'Make It. Show It. Scale It.', logo: genieCastLogo, color: 'from-green-500 to-emerald-500', pipelines: 26, desc: 'Distribution, marketing, analytics' },
   { id: 'ask', name: 'Ask Genie', tagline: 'Your Wish is My Command', logo: askGenieLogo, color: 'from-amber-500 to-yellow-500', pipelines: 0, desc: 'AI assistant available everywhere' },
 ];

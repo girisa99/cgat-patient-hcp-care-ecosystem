@@ -453,10 +453,10 @@ const productSuite: ProductSuite[] = [
   },
   {
     id: 'arc',
-    name: 'Genie Arc',
+    name: 'Genie Hub',
     icon: '🌈',
     color: 'hsl(217, 91%, 60%)',
-    description: 'Your Production Journey With Infinite Possibilities',
+    description: 'Your Creative Command Center',
     status: 'completed',
     phase: 'P1',
     features: ['Team workspace', 'Review & approval', 'Asset sharing', 'Version control', 'Show Management'],

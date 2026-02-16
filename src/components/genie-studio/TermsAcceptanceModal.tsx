@@ -65,7 +65,7 @@ export function TermsAcceptanceModal({
             Terms of Use & Privacy Policy
           </DialogTitle>
           <DialogDescription>
-            Please review and accept the following terms before using Genie Studio content generation
+            Please review and accept the following terms before using Genie Suite content generation
           </DialogDescription>
         </DialogHeader>
 
@@ -77,7 +77,7 @@ export function TermsAcceptanceModal({
               <AlertDescription className="text-amber-700 dark:text-amber-300">
                 <p className="font-semibold mb-2">AI-Generated Content Disclaimer</p>
                 <ul className="text-sm space-y-1 list-disc pl-4">
-                  <li>All content generated through Genie Studio is <strong>purely AI-generated</strong></li>
+                  <li>All content generated through Genie Suite is <strong>purely AI-generated</strong></li>
                   <li>We are <strong>not responsible</strong> for the accuracy, completeness, or appropriateness of generated content</li>
                   <li>You must <strong>verify and review</strong> all content before use or publication</li>
                   <li>AI outputs may contain errors, biases, or inaccuracies</li>

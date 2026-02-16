@@ -13,15 +13,15 @@ const corsHeaders = {
 
 // Product branding for each chapter
 const PRODUCTS = [
-  { id: 'opening', name: 'Genie Studio', color: '#9333EA', tagline: 'Mind to Media', description: 'AI-powered creative suite with 7 products' },
+  { id: 'opening', name: 'Genie Suite', color: '#9333EA', tagline: 'Mind to Media', description: 'AI-powered creative suite with 7 products' },
   { id: 'spark', name: 'Genie Spark', color: '#F97316', tagline: 'Ignite Ideas', description: 'Transform ideas into professional scripts' },
   { id: 'mind', name: 'Genie Mind', color: '#3B82F6', tagline: 'Enhance Scripts', description: 'AI script enhancement and translation' },
   { id: 'vibe', name: 'Genie Vibe', color: '#22C55E', tagline: 'Record & Edit', description: 'Complete recording studio with teleprompter' },
   { id: 'deck', name: 'Genie Deck', color: '#EAB308', tagline: 'Create Presentations', description: 'AI-designed slides and templates' },
-  { id: 'arc', name: 'Genie Arc', color: '#EC4899', tagline: 'Manage Production', description: 'Kanban, calendar, and scheduling' },
+  { id: 'arc', name: 'Genie Hub', color: '#EC4899', tagline: 'Creative Command Center', description: 'Kanban, calendar, and scheduling' },
   { id: 'ask-genie', name: 'Ask Genie', color: '#06B6D4', tagline: 'AI Assistant', description: 'Personal AI guide for the platform' },
   { id: 'cast', name: 'Genie Cast', color: '#EF4444', tagline: 'Distribute Content', description: 'Multi-platform publishing and analytics' },
-  { id: 'closing', name: 'Genie Studio', color: '#9333EA', tagline: 'Start Creating', description: 'Your wish is our command' },
+  { id: 'closing', name: 'Genie Suite', color: '#9333EA', tagline: 'Start Creating', description: 'Your wish is our command' },
 ];
 
 serve(async (req) => {

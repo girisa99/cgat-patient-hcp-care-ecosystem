@@ -56,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
       
       try {
         await resend.emails.send({
-          from: 'Genie Studio <noreply@resend.dev>',
+          from: 'Genie Suite <noreply@resend.dev>',
           to: [session.host_email],
           subject: `⏰ Host Reminder: ${session.title} starts ${reminderType === '24h' ? 'tomorrow' : `in ${reminderType}`}`,
           html: `
@@ -129,7 +129,7 @@ const handler = async (req: Request): Promise<Response> => {
             if (participant[reminder.emailField] && !participant[reminder.sentField] && resend) {
               try {
                 await resend.emails.send({
-                  from: 'Genie Studio <noreply@resend.dev>',
+                  from: 'Genie Suite <noreply@resend.dev>',
                   to: [participant.email],
                   subject: `⏰ Reminder: ${session.title} starts ${reminder.type === '24h' ? 'tomorrow' : `in ${reminder.type}`}`,
                   html: `

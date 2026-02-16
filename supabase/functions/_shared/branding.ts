@@ -30,7 +30,7 @@ const LOGOS = {
 export const GENIE_BRANDING = {
   // Company/Platform - EXACT match to src/constants/genie-products.ts
   platform: {
-    name: 'Genie Studio',
+    name: 'Genie Suite',
     tagline: 'Mind to Media', // From GENIE_PRODUCTS.studio.tagline
     description: 'AI-Powered Production Platform',
     emoji: '🎨',
@@ -56,7 +56,7 @@ export const GENIE_BRANDING = {
    * - Genie Vibe: "Script to Screen"
    * - Genie Spark: "Ignite your Ideas"
    * - Genie Studio: "Mind to Media"
-   * - Genie Arc: "Your Production Journey With Infinite Possibilities"
+   * - Genie Hub: "Your Creative Command Center"
    */
   products: {
     mind: {
@@ -108,13 +108,13 @@ export const GENIE_BRANDING = {
       features: ['Integrated creative suite', 'Asset management', 'Cross-product workflows']
     },
     arc: {
-      name: 'Genie Arc',
-      tagline: 'Your Production Journey With Infinite Possibilities', // EXACT from central repository
+      name: 'Genie Hub',
+      tagline: 'Your Creative Command Center', // EXACT from central repository
       emoji: '🎯',
       color: '#10B981',
       gradientFrom: '#10B981', // from-emerald-500
       gradientTo: '#14B8A6', // to-teal-500
-      description: 'Orchestrate your production workflow with powerful scheduling and team collaboration.',
+      description: 'Your creative command center for scheduling, collaboration, and production workflows.',
       url: 'https://genieaiexperimentationhub.tech/genie-arc',
       logo: LOGOS.genieArc,
       features: ['Show scheduling', 'Team collaboration', 'Production pipeline']
@@ -129,7 +129,7 @@ export const GENIE_BRANDING = {
     color: '#A855F7',
     gradientFrom: '#8B5CF6', // from-violet-500
     gradientTo: '#D946EF', // to-fuchsia-500
-    description: 'Your intelligent AI companion that guides you through the entire Genie Studio experience.',
+    description: 'Your intelligent AI companion that guides you through the entire Genie Suite experience.',
     logo: LOGOS.askGenie,
   },
   
@@ -147,13 +147,13 @@ export const GENIE_BRANDING = {
   
   // Email Templates Configuration
   email: {
-    fromName: 'Genie Studio',
+    fromName: 'Genie Suite',
     fromEmail: 'info@genieaiexperimentationhub.tech',
     replyTo: 'support@genieaiexperimentationhub.tech',
     footer: {
-      powered: 'Powered by Genie Studio',
+      powered: 'Powered by Genie Suite',
       tagline: 'AI-Powered Production Platform',
-      copyright: `© ${new Date().getFullYear()} Genie Studio. All rights reserved.`
+      copyright: `© ${new Date().getFullYear()} Genie Suite. All rights reserved.`
     },
     // Responsive breakpoints for email
     styles: {
@@ -168,7 +168,7 @@ export const GENIE_BRANDING = {
     media_production: { name: 'Media Production', emoji: '🎬' },
     business_meeting: { name: 'Business Meeting', emoji: '💼' },
     event: { name: 'Event', emoji: '🎉' },
-    genie_demo: { name: 'Genie Studio Demo', emoji: '✨' },
+    genie_demo: { name: 'Genie Suite Demo', emoji: '✨' },
   },
   
   // Show type mappings
@@ -184,9 +184,9 @@ export const GENIE_BRANDING = {
     panel_discussion: { name: 'Panel Discussion', emoji: '👥', color: '#6366F1' },
     product_demo: { name: 'Product Demo', emoji: '📦', color: '#84CC16' },
     training_session: { name: 'Training Session', emoji: '📖', color: '#10B981' },
-    genie_studio_full: { name: 'Genie Studio Full Demo', emoji: '✨', color: '#8B5CF6' },
+    genie_studio_full: { name: 'Genie Suite Full Demo', emoji: '✨', color: '#8B5CF6' },
     genie_spark_demo: { name: 'Genie Spark Demo', emoji: '⚡', color: '#F59E0B' },
-    genie_arc_demo: { name: 'Genie Arc Demo', emoji: '🎬', color: '#10B981' },
+    genie_arc_demo: { name: 'Genie Hub Demo', emoji: '🎬', color: '#10B981' },
     genie_vibe_demo: { name: 'Genie Vibe Demo', emoji: '🎭', color: '#EC4899' },
     genie_mind_demo: { name: 'Genie Mind Demo', emoji: '🧠', color: '#06B6D4' },
     ask_genie_demo: { name: 'Ask Genie Demo', emoji: '🧞', color: '#A855F7' },

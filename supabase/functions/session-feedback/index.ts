@@ -98,7 +98,7 @@ const handler = async (req: Request): Promise<Response> => {
         if (participant && resend && session.host_email) {
           try {
             await resend.emails.send({
-              from: 'Genie Studio <noreply@resend.dev>',
+              from: 'Genie Suite <noreply@resend.dev>',
               to: [session.host_email],
               subject: `New feedback on "${session.title}" from ${participant.name}`,
               html: generateFeedbackNotificationEmail(session, participant, feedback, 'new'),
@@ -119,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
             for (const p of allParticipants) {
               try {
                 await resend.emails.send({
-                  from: 'Genie Studio <noreply@resend.dev>',
+                  from: 'Genie Suite <noreply@resend.dev>',
                   to: [p.email],
                   subject: `New message from host: "${session.title}"`,
                   html: generateHostMessageEmail(session, p, feedback),
@@ -188,7 +188,7 @@ const handler = async (req: Request): Promise<Response> => {
           if (resend && updated.participant?.email) {
             try {
               await resend.emails.send({
-                from: 'Genie Studio <noreply@resend.dev>',
+                from: 'Genie Suite <noreply@resend.dev>',
                 to: [updated.participant.email],
                 subject: `Response to your feedback: "${session.title}"`,
                 html: generateFeedbackNotificationEmail(session, updated.participant, updated, 'response'),
@@ -270,7 +270,7 @@ const handler = async (req: Request): Promise<Response> => {
             for (const p of participants || []) {
               try {
                 await resend.emails.send({
-                  from: 'Genie Studio <noreply@resend.dev>',
+                  from: 'Genie Suite <noreply@resend.dev>',
                   to: [p.email],
                   subject: `Status Update: "${session.title}"`,
                   html: generateStatusUpdateEmail(session, p, body.review_field, body.status),

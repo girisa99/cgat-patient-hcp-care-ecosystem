@@ -77,8 +77,8 @@ const PRODUCTS = [
   { id: 'mind', name: 'Genie Mind', color: '#3B82F6', duration: 60 },
   { id: 'vibe', name: 'Genie Vibe', color: '#22C55E', duration: 75 },
   { id: 'deck', name: 'Genie Deck', color: '#EAB308', duration: 60 },
-  { id: 'arc', name: 'Genie Arc', color: '#EC4899', duration: 60 },
-  { id: 'studio', name: 'Genie Studio', color: '#9333EA', duration: 90 },
+  { id: 'arc', name: 'Genie Hub', color: '#EC4899', duration: 60 },
+  { id: 'studio', name: 'Genie Suite', color: '#9333EA', duration: 90 },
   { id: 'ask-genie', name: 'Ask Genie', color: '#06B6D4', duration: 45 },
   { id: 'cast', name: 'Genie Cast', color: '#EF4444', duration: 60 },
 ];

@@ -3,7 +3,7 @@
 > **Version:** 1.0  
 > **Last Updated:** 2026-02-07  
 > **Status:** STRATEGIC BLUEPRINT — Pre-Implementation  
-> **Scope:** Full Hybrid Framework for Genie Studio Ecosystem Marketing via Genie Cast
+> **Scope:** Full Hybrid Framework for Genie Suite Ecosystem Marketing via Genie Cast
 
 ---
 
@@ -36,7 +36,7 @@
 
 Genie Cast serves a **unique dual purpose** that no competitor replicates:
 
-1. **Marketing Engine** — Cast produces all marketing videos for the Genie Studio ecosystem (8 products)
+1. **Marketing Engine** — Cast produces all marketing videos for the Genie Suite ecosystem (8 products)
 2. **Product Demo** — Every video Cast produces IS the proof that Cast works
 3. **SaaS Subscription Tool** — Cast will be offered to external subscribers to market THEIR products
 
@@ -80,7 +80,7 @@ This creates a **circular value loop**: Cast markets Studio → Studio includes 
 │                                                                              │
 │  ┌─────────────────────────────┐  ┌──────────────────────────────────────┐  │
 │  │   OBJECTIVE 1               │  │   OBJECTIVE 2                        │  │
-│  │   Market Genie Studio       │  │   Position Genie Cast                │  │
+│  │   Market Genie Suite       │  │   Position Genie Cast                │  │
 │  │                             │  │                                      │  │
 │  │   Cast = THE TOOL           │  │   Cast = THE SUBJECT                 │  │
 │  │   Studio = THE SUBJECT      │  │   Studio = THE CONTEXT               │  │
@@ -215,36 +215,36 @@ VERTICAL 6: SPECIALIZED INDUSTRIES (3 segments)
 For each audience, the positioning follows this pattern:
 
 > **For** [target audience] **who** [job to be done],  
-> **Genie Studio is** [category descriptor]  
+> **Genie Suite is** [category descriptor]  
 > **that** [key benefit unlike competitors].  
 > **Unlike** [competitor/alternative],  
-> **Genie Studio** [primary differentiator].  
+> **Genie Suite** [primary differentiator].  
 > *And this video was made by Genie Cast in [X] minutes.*
 
 ### Example Positioning Statements
 
 **Healthcare:**
 > For healthcare teams who need compliant patient education content,  
-> Genie Studio is the first HIPAA-aware AI content ecosystem  
+> Genie Suite is the first HIPAA-aware AI content ecosystem  
 > that turns clinical documents into localized patient videos in 70+ languages.  
 > Unlike hiring medical video producers,  
-> Genie Studio delivers in minutes, not months.  
+> Genie Suite delivers in minutes, not months.  
 > *This video was created by Genie Cast using Genie Spark for the script and Genie Vibe for the voiceover.*
 
 **Agencies:**
 > For agencies who need to scale client content without scaling headcount,  
-> Genie Studio is the white-label AI production platform  
+> Genie Suite is the white-label AI production platform  
 > that lets one person deliver what used to take a team of five.  
 > Unlike stitching together Canva, Synthesia, and Descript,  
-> Genie Studio is one unified ecosystem—CREATE, PRODUCE, MANAGE, PUBLISH.  
+> Genie Suite is one unified ecosystem—CREATE, PRODUCE, MANAGE, PUBLISH.  
 > *This entire pitch was scripted, voiced, and assembled by Genie Cast in under 10 minutes.*
 
 **Educators:**
 > For educators who struggle to keep remote learners engaged,  
-> Genie Studio is the multi-modal content creation ecosystem  
+> Genie Suite is the multi-modal content creation ecosystem  
 > that transforms lesson plans into interactive videos, presentations, and quizzes.  
 > Unlike spending weekends editing in iMovie,  
-> Genie Studio's AI handles production so you can focus on teaching.  
+> Genie Suite's AI handles production so you can focus on teaching.  
 > *Made with Genie Cast — because teachers shouldn't have to be video editors too.*
 
 ---
@@ -318,14 +318,14 @@ For each audience, the positioning follows this pattern:
 │     - External: "I can't produce videos fast enough"          │
 │     - Internal: "I feel overwhelmed and behind"               │
 │     - Philosophical: "Content shouldn't require a studio"     │
-│  3. GUIDE (Authority)    = Genie Studio ecosystem              │
+│  3. GUIDE (Authority)    = Genie Suite ecosystem              │
 │     - Empathy: "We built this because we had the same problem"│
 │     - Authority: "30+ AI models, 8 products, 206 pipelines"   │
 │  4. PLAN                 = 3-step onboarding                   │
 │     - Step 1: Choose your product (Spark/Vibe/Deck/etc.)      │
 │     - Step 2: Input your content (text, doc, PPT, URL, idea)  │
 │     - Step 3: Publish everywhere                               │
-│  5. CALL TO ACTION       = "Start creating with Genie Studio"  │
+│  5. CALL TO ACTION       = "Start creating with Genie Suite"  │
 │  6. FAILURE (Stakes)     = Falling behind competitors           │
 │  7. SUCCESS              = "10x content, same team size"        │
 │                                                               │
@@ -350,7 +350,7 @@ For each audience, the positioning follows this pattern:
 ### StoryBrand Guide Messaging: Empathy + Authority
 
 **Empathy (We understand you):**
-> "We built Genie Studio because we faced the same problem — marketing 8 products across 70+ languages to 20 different audiences. We needed a tool that didn't exist. So we built it. And we use it every day. Every video you see from us was made by Genie Cast."
+> "We built Genie Suite because we faced the same problem — marketing 8 products across 70+ languages to 20 different audiences. We needed a tool that didn't exist. So we built it. And we use it every day. Every video you see from us was made by Genie Cast."
 
 **Authority (We have the credentials):**
 > "30+ AI models. 206 production pipelines. 434 video templates. 70+ languages. 7 regional zones. And an ecosystem of 8 products that work together — from the first idea to the final publish."
@@ -385,7 +385,7 @@ Every video blueprint should tag each scene with its AIDA stage:
 |--------|------|---------|
 | 0-5 | **Attention** | Pain point hook (audience-specific) |
 | 5-15 | **Interest** | "What if you had an AI production team?" |
-| 15-20 | **Interest** | Guide intro: "Meet Genie Studio" |
+| 15-20 | **Interest** | Guide intro: "Meet Genie Suite" |
 | 20-40 | **Desire** | Product demo (Spark → Vibe → Deck → Arc) |
 | 40-48 | **Desire** | Proof: "70+ languages, 30+ AI models" |
 | 48-55 | **Action** | CTA: "Start free today" |
@@ -439,7 +439,7 @@ Every video blueprint should tag each scene with its AIDA stage:
 
 ### Blue Ocean Strategy Canvas
 
-What Genie Studio creates vs. eliminates vs. raises vs. reduces:
+What Genie Suite creates vs. eliminates vs. raises vs. reduces:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -625,7 +625,7 @@ Each scene in a video pulls from one or more of these layers:
 │  "Genie Spark: From blank canvas to brilliant content in minutes"│
 ├─────────────────────────────────────────────────────────────────┤
 │  LAYER 1: ECOSYSTEM NARRATIVE                                    │
-│  Unified story — what Genie Studio IS                            │
+│  Unified story — what Genie Suite IS                            │
 │  Source: NEW — ecosystem_messaging registry (audience-tailored)  │
 │  "8 AI products, 30+ models, 206 pipelines, 70+ languages"      │
 └─────────────────────────────────────────────────────────────────┘
@@ -662,7 +662,7 @@ Template placement: End card only
 
 STAGE 2: PRODUCT POSITIONING (Next)
 ─────────────────────────────────────
-Message: "Cast is how Genie Studio markets itself — and how you'll market your product"
+Message: "Cast is how Genie Suite markets itself — and how you'll market your product"
 Proof: Show Cast's UI, the generation pipeline, the speed
 Goal: Position Cast as a standalone subscription product
 Template placement: Dedicated scenes (1-2 per video)
@@ -788,7 +788,7 @@ Each audience gets a DIFFERENT ecosystem story, emphasizing what matters to THEM
 > **Use when:** Marketing a specific product capability  
 > **Structure:** 70% focused product, 20% ecosystem context, 10% Cast meta  
 > **Example:** "Genie Deck: Presentations That Don't Break on Export"  
-> **Ecosystem mention:** "Part of the Genie Studio ecosystem"  
+> **Ecosystem mention:** "Part of the Genie Suite ecosystem"  
 
 #### Strategy B: Workflow Combination (2-3 products)
 > **Use when:** Showing a specific workflow pipeline  
@@ -797,7 +797,7 @@ Each audience gets a DIFFERENT ecosystem story, emphasizing what matters to THEM
 > **Ecosystem mention:** "Powered by the unified Genie pipeline"  
 
 #### Strategy C: Full Ecosystem Overview
-> **Use when:** Introducing Genie Studio to new audiences  
+> **Use when:** Introducing Genie Suite to new audiences  
 > **Structure:** 60% ecosystem breadth, 20% depth on 1-2 products, 20% Cast meta  
 > **Example:** "8 AI Products. 1 Subscription. Zero Excuses."  
 > **Ecosystem mention:** IS the entire video  
@@ -825,7 +825,7 @@ Each audience gets a DIFFERENT ecosystem story, emphasizing what matters to THEM
 |-------|-----|------|-----------|-------|---------|
 | 1 | 0-5 | **Attention** | Character (Hero) | L1 (Ecosystem) | "Your clinical team spends 12 hours a week creating patient education materials" |
 | 2 | 5-15 | **Interest** | Problem (External) | L2 (Product) | "Scattered tools. Outdated content. No way to serve 70+ patient languages" |
-| 3 | 15-22 | **Interest** | Guide (Empathy) | L1 (Ecosystem) | "Genie Studio was built for healthcare teams like yours" |
+| 3 | 15-22 | **Interest** | Guide (Empathy) | L1 (Ecosystem) | "Genie Suite was built for healthcare teams like yours" |
 | 4 | 22-35 | **Desire** | Plan (Step 1-3) | L3 (Feature) | Screenshot: Spark Script Generator → "Upload your clinical protocol → Get a patient-friendly script in seconds" |
 | 5 | 35-42 | **Desire** | Success | L3 (Feature) | Screenshot: Vibe TTS → "Narrated in your patient's language — all 70+" |
 | 6 | 42-50 | **Desire** | Success | L1 (Ecosystem) | "HIPAA-compliant. 30+ AI models. Enterprise-grade" |
