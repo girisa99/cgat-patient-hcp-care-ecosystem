@@ -93,7 +93,7 @@ export function GeoComplianceProvider({ children }: { children: ReactNode }) {
 
   const checkCompliance = useCallback(async () => {
     setIsCheckingCompliance(true);
-    
+
     try {
       // Check cache first
       const cached = getCachedCompliance();
@@ -112,10 +112,41 @@ export function GeoComplianceProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Call edge function for IP geolocation
-      const { data, error } = await supabase.functions.invoke('geo-compliance-check', {
-        body: { action: 'check' }
-      });
+      // Skip edge function on localhost/dev — the function may not be deployed
+      const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocalDev) {
+        console.info('[GeoCompliance] Local development detected, skipping edge function check');
+        setState({
+          isLoading: false,
+          isBlocked: false,
+          countryCode: 'US',
+          countryName: 'United States (dev)',
+          blockReason: null,
+          error: null,
+          lastChecked: new Date()
+        });
+        setIsCheckingCompliance(false);
+        return;
+      }
+
+      // Call edge function for IP geolocation with a 5-second timeout
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
+      let data, error;
+      try {
+        const result = await supabase.functions.invoke('geo-compliance-check', {
+          body: { action: 'check' },
+        });
+        data = result.data;
+        error = result.error;
+      } catch (invokeErr) {
+        // AbortError or network failure — treat as non-blocking
+        console.warn('[GeoCompliance] Edge function timed out or unreachable:', invokeErr);
+        error = invokeErr;
+      } finally {
+        clearTimeout(timeout);
+      }
 
       if (error) {
         console.error('[GeoCompliance] Edge function error:', error);
@@ -126,7 +157,7 @@ export function GeoComplianceProvider({ children }: { children: ReactNode }) {
           countryCode: null,
           countryName: null,
           blockReason: null,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
           lastChecked: new Date()
         });
         setIsCheckingCompliance(false);
@@ -134,7 +165,7 @@ export function GeoComplianceProvider({ children }: { children: ReactNode }) {
       }
 
       const { countryCode, countryName, isBlocked, blockReason } = data;
-      
+
       // Cache the result
       if (countryCode) {
         setCachedCompliance(countryCode, countryName || 'Unknown');
