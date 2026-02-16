@@ -189,6 +189,10 @@ const REGION_HIERARCHY: RegionGroup[] = [
         { code: 'EU_FR', name: 'France', flag: '🇫🇷' },
         { code: 'EU_BE_FR', name: 'Belgium (French)', flag: '🇧🇪' },
       ]},
+      { code: 'EU_BENELUX', name: 'Benelux & Netherlands', flag: '🇳🇱', children: [
+        { code: 'EU_NL', name: 'Netherlands', flag: '🇳🇱' },
+        { code: 'EU_BE_NL', name: 'Belgium (Dutch)', flag: '🇧🇪' },
+      ]},
       // Iberia sub-region → per-country children
       { code: 'EU_IBERIA', name: 'Spain & Portugal', flag: '🇪🇸', children: [
         { code: 'EU_ES', name: 'Spain', flag: '🇪🇸' },
@@ -201,12 +205,16 @@ const REGION_HIERARCHY: RegionGroup[] = [
         { code: 'EU_DK', name: 'Denmark', flag: '🇩🇰' },
         { code: 'EU_FI', name: 'Finland', flag: '🇫🇮' },
       ]},
+      { code: 'EU_ITALY', name: 'Italy', flag: '🇮🇹', children: [
+        { code: 'EU_IT', name: 'Italy (Italiano)', flag: '🇮🇹' },
+      ]},
       // Eastern Europe sub-region → per-country children
-      { code: 'EU_EAST', name: 'Eastern Europe (Poland, Czech, Romania, Hungary)', flag: '🇵🇱', children: [
+      { code: 'EU_EAST', name: 'Eastern Europe', flag: '🇵🇱', children: [
         { code: 'EU_PL', name: 'Poland', flag: '🇵🇱' },
         { code: 'EU_CZ', name: 'Czech Republic', flag: '🇨🇿' },
         { code: 'EU_RO', name: 'Romania', flag: '🇷🇴' },
         { code: 'EU_HU', name: 'Hungary', flag: '🇭🇺' },
+        { code: 'EU_GR', name: 'Greece (Ελληνικά)', flag: '🇬🇷' },
       ]},
     ],
   },
@@ -228,6 +236,7 @@ const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'MENA_LEVANT', name: 'Levant (Lebanon, Jordan, Iraq)', flag: '🇱🇧' },
       { code: 'MENA_MAGHREB', name: 'Maghreb (Morocco, Algeria, Tunisia)', flag: '🇲🇦' },
       { code: 'MENA_MSA', name: 'Pan-Arab (Modern Standard Arabic)', flag: '🕌' },
+      { code: 'MENA_ISRAEL', name: 'Israel (עברית)', flag: '🇮🇱' },
     ],
   },
   {
@@ -241,6 +250,15 @@ const REGION_HIERARCHY: RegionGroup[] = [
   },
   { groupCode: 'PAKISTAN', groupName: 'Pakistan (Urdu)', groupFlag: '🇵🇰', children: [] },
   { groupCode: 'BANGLADESH', groupName: 'Bangladesh (Bengali)', groupFlag: '🇧🇩', children: [] },
+  {
+    groupCode: 'SOUTH_ASIA', groupName: 'South Asia', groupFlag: '🌏',
+    children: [
+      { code: 'SA_NEPAL', name: 'Nepal (नेपाली)', flag: '🇳🇵' },
+      { code: 'SA_SRILANKA', name: 'Sri Lanka (සිංහල / தமிழ்)', flag: '🇱🇰' },
+      { code: 'SA_BHUTAN', name: 'Bhutan (རྫོང་ཁ)', flag: '🇧🇹' },
+      { code: 'SA_MALDIVES', name: 'Maldives (ދިވެހި)', flag: '🇲🇻' },
+    ],
+  },
   {
     groupCode: 'INDIA', groupName: 'India', groupFlag: '🇮🇳',
     children: [
@@ -320,8 +338,6 @@ const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'ASIA_CENTRAL_KZ', name: 'Kazakhstan (Қазақ)', flag: '🇰🇿' },
       { code: 'ASIA_CENTRAL_UZ', name: 'Uzbekistan (Oʻzbek)', flag: '🇺🇿' },
       { code: 'ASIA_CENTRAL_AZ', name: 'Azerbaijan (Azərbaycan)', flag: '🇦🇿' },
-      { code: 'ASIA_CENTRAL_AM', name: 'Armenia (Հայերեն)', flag: '🇦🇲' },
-      { code: 'ASIA_CENTRAL_GE', name: 'Georgia (ქართული)', flag: '🇬🇪' },
     ],
   },
 ];
@@ -338,8 +354,7 @@ const REGION_OPTIONS = REGION_HIERARCHY.flatMap(g =>
             : [c]
         ),
       ]
-    : [{ code: g.groupCode, name: g.groupName, flag: g.groupFlag },
-       { code: g.groupCode.toLowerCase(), name: g.groupName, flag: g.groupFlag }]
+    : [{ code: g.groupCode.toLowerCase(), name: g.groupName, flag: g.groupFlag }]
 );
 
 // Get all codes for a group — includes the parent groupCode (both cases) + children codes + grandchildren codes
