@@ -1040,18 +1040,27 @@ const SLUG_BY_GROUP: Record<string, RegionSlug | undefined> = {
   CENTRAL_ASIA: 'central_asia', SOUTH_ASIA: undefined,
 };
 
-// Row 1: Parent regions (15 groups from hierarchy)
-const PARENT_MARQUEE: ParentMarqueeItem[] = REGION_HIERARCHY.map(g => {
-  const slug = SLUG_BY_GROUP[g.groupCode];
-  const cfg = slug ? REGIONAL_CONFIGS[slug] : undefined;
-  return {
-    flag: g.groupFlag,
-    name: g.groupName,
-    childCount: g.children.length,
-    langHint: cfg?.stats.languages,
-    slug,
-  };
-});
+// Row 1: Parent regions — deduplicated by slug so groups sharing a landing page
+// (e.g., SEA + CJK → apac) appear only once. Groups with no slug are skipped.
+const PARENT_MARQUEE: ParentMarqueeItem[] = (() => {
+  const seen = new Set<string>();
+  const items: ParentMarqueeItem[] = [];
+  for (const g of REGION_HIERARCHY) {
+    const slug = SLUG_BY_GROUP[g.groupCode];
+    if (!slug) continue; // skip groups with no landing page
+    if (seen.has(slug)) continue; // skip duplicate slugs (e.g., CJK after SEA both → apac)
+    seen.add(slug);
+    const cfg = REGIONAL_CONFIGS[slug];
+    items.push({
+      flag: cfg?.hero.flag ?? g.groupFlag,
+      name: cfg?.hero.regionName ?? g.groupName,
+      childCount: g.children.length,
+      langHint: cfg?.stats.languages,
+      slug,
+    });
+  }
+  return items;
+})();
 
 // Row 2: Leaf-only sub-regions (no parent+child duplication)
 // If a zone has grandchildren, show ONLY the grandchildren (leaf countries).
