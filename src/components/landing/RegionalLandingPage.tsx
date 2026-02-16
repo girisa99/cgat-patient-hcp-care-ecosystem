@@ -1053,66 +1053,61 @@ const GROUP_TO_SLUG: Record<string, RegionSlug | null> = {
 const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug }) => {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
+  // Compute totals for title
+  const totalZones = REGION_HIERARCHY.reduce((sum, g) => sum + getZoneCount(g), 0);
+  const totalLangs = REGION_HIERARCHY.reduce((sum, g) => sum + getLanguageCount(g), 0);
+
   return (
-    <section className="py-10 relative">
+    <section className="py-10 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-primary/5" />
-      <div className="relative max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
+      <div className="relative">
+        {/* Title with all stats */}
+        <div className="text-center mb-6 px-4">
+          <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
             <Globe className="w-5 h-5 text-primary" />
             <span className="text-sm font-bold uppercase tracking-widest text-foreground">
-              {REGION_HIERARCHY.length} Global Regions
+              {REGION_HIERARCHY.length} Regions · {totalZones} Zones · {totalLangs}+ Languages · {LANDING_METRICS.dialects} Dialects
             </span>
             <Globe className="w-5 h-5 text-primary" />
           </div>
           <p className="text-muted-foreground text-sm">Click any region to explore its zones, sub-regions & languages</p>
         </div>
 
-        {/* 15-region grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {REGION_HIERARCHY.map((group) => {
-            const isExpanded = expandedGroup === group.groupCode;
-            const slug = GROUP_TO_SLUG[group.groupCode];
-            const isActiveLanding = slug === currentSlug;
-            const zoneCount = getZoneCount(group);
-            const langCount = getLanguageCount(group);
+        {/* Rolling marquee — all 16 regions */}
+        <div className="marquee-container relative overflow-hidden mb-4">
+          <div className="absolute left-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+          <div className="marquee-track-left flex gap-3 py-2" style={{ width: 'max-content' }}>
+            {[...REGION_HIERARCHY, ...REGION_HIERARCHY, ...REGION_HIERARCHY].map((group, i) => {
+              const slug = GROUP_TO_SLUG[group.groupCode];
+              const isActive = slug === currentSlug;
+              const isExpanded = expandedGroup === group.groupCode;
+              const zoneCount = getZoneCount(group);
+              const langCount = getLanguageCount(group);
 
-            return (
-              <div key={group.groupCode} className="relative">
+              return (
                 <button
+                  key={`r-${i}`}
                   onClick={() => setExpandedGroup(isExpanded ? null : group.groupCode)}
-                  className={`w-full flex flex-col items-center gap-1.5 p-4 rounded-xl text-center transition-all duration-200 border-2 ${
+                  className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold shrink-0 transition-all duration-200 border-2 ${
                     isExpanded
                       ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/10'
-                      : isActiveLanding
+                      : isActive
                         ? 'bg-primary text-primary-foreground border-primary shadow-md'
-                        : 'bg-card border-border/60 hover:border-primary/40 hover:shadow-md'
+                        : 'bg-card border-border/60 hover:border-primary/40 hover:shadow-md text-foreground'
                   }`}
                 >
-                  <span className="text-2xl leading-none">{group.groupFlag}</span>
-                  <span className={`text-xs font-bold leading-tight ${isActiveLanding && !isExpanded ? 'text-primary-foreground' : 'text-foreground'}`}>
-                    {group.groupName}
+                  <span className="text-xl leading-none">{group.groupFlag}</span>
+                  <span className="whitespace-nowrap">{group.groupName}</span>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
+                    isActive && !isExpanded ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-primary/10 text-primary'
+                  }`}>
+                    {zoneCount}z · {langCount}L
                   </span>
-                  <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
-                      isActiveLanding && !isExpanded ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
-                    }`}>
-                      {zoneCount} zone{zoneCount > 1 ? 's' : ''}
-                    </span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
-                      isActiveLanding && !isExpanded ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-accent/10 text-accent-foreground/70'
-                    }`}>
-                      {langCount} lang{langCount > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                    isExpanded ? 'rotate-180 text-primary' : isActiveLanding ? 'text-primary-foreground/60' : 'text-muted-foreground'
-                  }`} />
                 </button>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* Expanded zone detail panel */}
@@ -1125,13 +1120,13 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
             return (
               <motion.div
                 key={expandedGroup}
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="overflow-hidden"
+                className="overflow-hidden max-w-6xl mx-auto px-4"
               >
-                <div className="bg-card/80 backdrop-blur-md border-2 border-primary/20 rounded-2xl p-5">
+                <div className="bg-card/80 backdrop-blur-md border-2 border-primary/20 rounded-2xl p-5 mt-2 mb-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <span className="text-2xl">{group.groupFlag}</span>
@@ -1142,13 +1137,18 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
                         </p>
                       </div>
                     </div>
-                    {slug && (
-                      <Link to={`/genie-landing/${slug}`}>
-                        <Button size="sm" variant="outline" className="text-xs border-primary/40 text-primary hover:bg-primary/10">
-                          View Landing Page <ArrowRight className="ml-1 w-3 h-3" />
-                        </Button>
-                      </Link>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {slug && (
+                        <Link to={`/genie-landing/${slug}`}>
+                          <Button size="sm" variant="outline" className="text-xs border-primary/40 text-primary hover:bg-primary/10">
+                            View Landing Page <ArrowRight className="ml-1 w-3 h-3" />
+                          </Button>
+                        </Link>
+                      )}
+                      <button onClick={() => setExpandedGroup(null)} className="text-muted-foreground hover:text-foreground p-1">
+                        <ChevronDown className="w-4 h-4 rotate-180" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Zones & languages */}
@@ -1197,7 +1197,7 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
         </AnimatePresence>
 
         {/* Quick-jump pills */}
-        <div className="flex flex-wrap justify-center gap-2 mt-6 px-4">
+        <div className="flex flex-wrap justify-center gap-2 mt-4 px-4">
           {REGION_HIERARCHY.map((group) => {
             const slug = GROUP_TO_SLUG[group.groupCode];
             if (!slug) return null;
