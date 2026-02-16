@@ -1196,30 +1196,7 @@ const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug })
           })()}
         </AnimatePresence>
 
-        {/* Quick-jump pills */}
-        <div className="flex flex-wrap justify-center gap-2 mt-4 px-4">
-          {REGION_HIERARCHY.map((group) => {
-            const slug = GROUP_TO_SLUG[group.groupCode];
-            if (!slug) return null;
-            const isActive = slug === currentSlug;
-            const cfg = REGIONAL_CONFIGS[slug];
-            if (!cfg) return null;
-            return (
-              <Link
-                key={group.groupCode}
-                to={`/genie-landing/${slug}`}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-card/80 border border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40'
-                }`}
-              >
-                <span className="leading-none">{group.groupFlag}</span>
-                <span>{group.groupName}</span>
-              </Link>
-            );
-          })}
-        </div>
+        {/* Quick-jump pills removed — marquee above already provides region navigation */}
       </div>
     </section>
   );
