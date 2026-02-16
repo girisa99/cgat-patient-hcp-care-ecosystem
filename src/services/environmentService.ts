@@ -39,6 +39,8 @@ const ENVIRONMENT_DOMAINS: Record<string, Environment> = {
 // Lovable preview domains are treated as development
 const LOVABLE_PREVIEW_PATTERN = /\.lovable\.app$/;
 const LOVABLE_PROJECT_PATTERN = /\.lovableproject\.com$/;
+// Vercel preview domains are treated as development
+const VERCEL_PREVIEW_PATTERN = /\.vercel\.app$/;
 
 class EnvironmentService {
   private cachedConfig: EnvironmentConfig | null = null;
@@ -58,8 +60,8 @@ class EnvironmentService {
       return ENVIRONMENT_DOMAINS[hostname];
     }
 
-    // Check for Lovable preview URLs
-    if (LOVABLE_PREVIEW_PATTERN.test(hostname) || LOVABLE_PROJECT_PATTERN.test(hostname)) {
+    // Check for Lovable and Vercel preview URLs
+    if (LOVABLE_PREVIEW_PATTERN.test(hostname) || LOVABLE_PROJECT_PATTERN.test(hostname) || VERCEL_PREVIEW_PATTERN.test(hostname)) {
       return 'development';
     }
 
@@ -204,6 +206,8 @@ class EnvironmentService {
       // Lovable preview URLs
       'https://*.lovable.app',
       'https://*.lovableproject.com',
+      // Vercel preview URLs
+      'https://*.vercel.app',
     ];
   }
 
