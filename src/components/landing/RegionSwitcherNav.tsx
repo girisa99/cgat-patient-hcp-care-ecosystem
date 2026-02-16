@@ -3,7 +3,7 @@
  * 
  * Floating region selector for the main landing page that links
  * to dedicated regional sub-routes (/genie-landing/:region).
- * Uses the existing REGIONAL_CONFIGS registry.
+ * Uses REGION_HIERARCHY as the single source of truth for 16 unique regions.
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -14,14 +14,28 @@ import { Badge } from '@/components/ui/badge';
 import { 
   REGIONAL_CONFIGS, 
   detectRegionFromTimezone, 
-  getAllRegionSlugs,
   type RegionSlug 
 } from '@/config/regionalLandingConfig';
+import { REGION_HIERARCHY, type RegionGroup } from '@/config/regionHierarchy';
 
 interface RegionSwitcherNavProps {
   className?: string;
   variant?: 'navbar' | 'floating';
 }
+
+// Map hierarchy group codes to landing page slugs
+const GROUP_TO_SLUG: Record<string, RegionSlug | null> = {
+  NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena', AFRICA: 'africa',
+  INDIA: 'india', SEA: 'apac', CJK: 'apac', OCEANIA: 'oceania', TURKEY: 'turkey',
+  CARIBBEAN: 'caribbean', EURASIA: 'eastern_europe', CENTRAL_ASIA: 'central_asia',
+  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', SOUTH_ASIA: null,
+};
+
+const getZoneCount = (g: RegionGroup): number => g.children.length || 1;
+const getLangCount = (g: RegionGroup): number => {
+  if (g.children.length === 0) return 1;
+  return g.children.reduce((sum, c) => sum + (c.children?.length || 1), 0);
+};
 
 export const RegionSwitcherNav: React.FC<RegionSwitcherNavProps> = ({ 
   className = '',
@@ -31,7 +45,6 @@ export const RegionSwitcherNav: React.FC<RegionSwitcherNavProps> = ({
   const [detectedRegion] = useState<RegionSlug>(detectRegionFromTimezone);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -42,8 +55,58 @@ export const RegionSwitcherNav: React.FC<RegionSwitcherNavProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const allSlugs = getAllRegionSlugs();
   const detectedConfig = REGIONAL_CONFIGS[detectedRegion];
+
+  // Compute totals
+  const totalZones = REGION_HIERARCHY.reduce((s, g) => s + getZoneCount(g), 0);
+  const totalLangs = REGION_HIERARCHY.reduce((s, g) => s + getLangCount(g), 0);
+
+  const renderRegionList = (compact: boolean) => (
+    <>
+      <div className="px-3 py-2 border-b border-border bg-muted/30">
+        <p className="text-xs font-medium text-muted-foreground">
+          Explore regional landing pages
+        </p>
+        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+          {REGION_HIERARCHY.length} Regions · {totalZones} Zones · {totalLangs}+ Languages
+        </p>
+      </div>
+      <div className={`${compact ? 'max-h-80' : 'max-h-72'} overflow-y-auto p-1`}>
+        {REGION_HIERARCHY.map((group) => {
+          const slug = GROUP_TO_SLUG[group.groupCode];
+          if (!slug) return null;
+          const isDetected = slug === detectedRegion;
+          const zones = getZoneCount(group);
+          const langs = getLangCount(group);
+
+          return (
+            <Link
+              key={group.groupCode}
+              to={`/genie-landing/${slug}`}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors group"
+            >
+              <span className="text-xl leading-none">{group.groupFlag}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                  {group.groupName}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {zones} zone{zones > 1 ? 's' : ''} · {langs} language{langs > 1 ? 's' : ''}
+                </p>
+              </div>
+              {isDetected && (
+                <Badge variant="secondary" className="text-[10px] shrink-0">
+                  Your region
+                </Badge>
+              )}
+              <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+            </Link>
+          );
+        })}
+      </div>
+    </>
+  );
 
   if (variant === 'navbar') {
     return (
@@ -66,41 +129,7 @@ export const RegionSwitcherNav: React.FC<RegionSwitcherNavProps> = ({
               transition={{ duration: 0.15 }}
               className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50"
             >
-              <div className="p-3 border-b border-border bg-muted/30">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Explore regional landing pages
-                </p>
-              </div>
-              <div className="max-h-80 overflow-y-auto p-1">
-                {allSlugs.map(slug => {
-                  const r = REGIONAL_CONFIGS[slug];
-                  const isDetected = slug === detectedRegion;
-                  return (
-                    <Link
-                      key={slug}
-                      to={`/genie-landing/${slug}`}
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors group"
-                    >
-                      <span className="text-xl">{r.hero.flag}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                          {r.hero.regionName}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {r.stats.languages} languages • {r.stats.audienceReach} reach
-                        </p>
-                      </div>
-                      {isDetected && (
-                        <Badge variant="secondary" className="text-[10px] shrink-0">
-                          Your region
-                        </Badge>
-                      )}
-                      <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                    </Link>
-                  );
-                })}
-              </div>
+              {renderRegionList(true)}
             </motion.div>
           )}
         </AnimatePresence>
@@ -120,44 +149,7 @@ export const RegionSwitcherNav: React.FC<RegionSwitcherNavProps> = ({
             transition={{ duration: 0.2 }}
             className="absolute bottom-16 right-0 w-80 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
           >
-            <div className="p-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
-              <h3 className="font-bold text-foreground text-sm">🌍 Explore Regional Pages</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Fully transcreated content for your market
-              </p>
-            </div>
-            <div className="max-h-72 overflow-y-auto p-2">
-              {allSlugs.map(slug => {
-                const r = REGIONAL_CONFIGS[slug];
-                const isDetected = slug === detectedRegion;
-                return (
-                  <Link
-                    key={slug}
-                    to={`/genie-landing/${slug}`}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted transition-colors group"
-                  >
-                    <span className="text-2xl">{r.hero.flag}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {r.hero.regionName}
-                        </p>
-                        {isDetected && (
-                          <Badge variant="secondary" className="text-[9px]">
-                            Detected
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {r.stats.languages} languages • {r.hero.theme}
-                      </p>
-                    </div>
-                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                  </Link>
-                );
-              })}
-            </div>
+            {renderRegionList(false)}
             <div className="p-3 border-t border-border bg-muted/30 text-center">
               <p className="text-[11px] text-muted-foreground">
                 Each page is culturally transcreated — not translated
