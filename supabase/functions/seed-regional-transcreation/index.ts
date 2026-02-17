@@ -543,6 +543,50 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // ── Batch async mode: fire-and-forget individual sub-region calls ──
+    if (mode === "batch_seed_subregions") {
+      const selfUrl = `${supabaseUrl}/functions/v1/seed-regional-transcreation`;
+      const regionsToFan = region_slug
+        ? REGION_META.filter(r => r.slug === region_slug)
+        : REGION_META;
+
+      const dispatched: { region: string; subRegion: string; language: string }[] = [];
+
+      for (const region of regionsToFan) {
+        if (!region.subRegions) continue;
+        for (const sr of region.subRegions) {
+          // Fire each sub-region as its own edge function call (non-blocking)
+          fetch(selfUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              mode: "seed_subregions",
+              region_slug: region.slug,
+              sub_region_code: sr.code,
+              content_type,
+              content_keys,
+              product_context,
+              throttle_ms: body.throttle_ms || 300,
+            }),
+          }).catch(err => console.error(`[batch] Failed to dispatch ${region.slug}/${sr.code}:`, err));
+
+          dispatched.push({ region: region.slug, subRegion: sr.code, language: sr.language });
+        }
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        mode: "batch_seed_subregions",
+        content_type,
+        dispatched: dispatched.length,
+        message: `Fired ${dispatched.length} async sub-region seeding jobs. Check logs for progress.`,
+        jobs: dispatched,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── Seeding modes ──
     const results: any[] = [];
     let totalGenerated = 0;
