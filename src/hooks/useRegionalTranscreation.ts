@@ -40,6 +40,23 @@ export interface UseRegionalTranscreationReturn {
   refresh: () => Promise<void>;
 }
 
+/**
+ * Hallucination guard: rejects LLM output that contains JSON blobs,
+ * explanatory meta-text, or wrong-language leakage.
+ */
+function isHallucinatedContent(value: string): boolean {
+  if (!value || value.length === 0) return true;
+  // JSON blob leaked into content
+  if (value.includes('"transcreated"') || value.includes('"cultural_tone"')) return true;
+  // Chinese explanatory text leaked into non-Chinese content
+  if (/请注意|解释|为了更符合|被截断|这样不仅/.test(value)) return true;
+  // English meta-commentary leaked
+  if (/^(Explanation|It seems|Let's correct|This vers|To better fit)/i.test(value.trim())) return true;
+  // Content is suspiciously long for a label/headline (>200 chars likely has explanation)
+  if (value.length > 300 && (value.includes('{') || value.includes('}'))) return true;
+  return false;
+}
+
 export function useRegionalTranscreation(regionSlug: RegionSlug): UseRegionalTranscreationReturn {
   const staticConfig = REGIONAL_CONFIGS[regionSlug] || REGIONAL_CONFIGS.nam;
   const [transcreatedStrings, setTranscreatedStrings] = useState<Record<string, TranscreatedContent>>({});
@@ -76,6 +93,11 @@ export function useRegionalTranscreation(regionSlug: RegionSlug): UseRegionalTra
         let latestRefresh: string | null = null;
 
         for (const row of data) {
+          // Skip hallucinated content — fall back to static config
+          if (isHallucinatedContent(row.transcreated_content)) {
+            console.warn(`[useRegionalTranscreation] Hallucination detected for ${row.content_key}, skipping`);
+            continue;
+          }
           mapped[row.content_key] = {
             key: row.content_key,
             value: row.transcreated_content,
