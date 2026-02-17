@@ -20461,6 +20461,90 @@ export type Database = {
         }
         Relationships: []
       }
+      regional_content_cache: {
+        Row: {
+          ab_variant: string | null
+          approved_at: string | null
+          approved_by: string | null
+          content_key: string
+          content_type: string
+          created_at: string
+          cultural_tone: string | null
+          dialect_variant: string | null
+          emotional_register: string | null
+          engagement_score: number | null
+          english_source: string
+          generation_metadata: Json | null
+          id: string
+          language_code: string
+          last_refreshed_at: string | null
+          llm_model: string | null
+          llm_provider: string | null
+          next_refresh_at: string | null
+          refresh_cadence: string | null
+          region_slug: string
+          status: string
+          sub_region_code: string | null
+          transcreated_content: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          ab_variant?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content_key: string
+          content_type?: string
+          created_at?: string
+          cultural_tone?: string | null
+          dialect_variant?: string | null
+          emotional_register?: string | null
+          engagement_score?: number | null
+          english_source: string
+          generation_metadata?: Json | null
+          id?: string
+          language_code?: string
+          last_refreshed_at?: string | null
+          llm_model?: string | null
+          llm_provider?: string | null
+          next_refresh_at?: string | null
+          refresh_cadence?: string | null
+          region_slug: string
+          status?: string
+          sub_region_code?: string | null
+          transcreated_content: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          ab_variant?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content_key?: string
+          content_type?: string
+          created_at?: string
+          cultural_tone?: string | null
+          dialect_variant?: string | null
+          emotional_register?: string | null
+          engagement_score?: number | null
+          english_source?: string
+          generation_metadata?: Json | null
+          id?: string
+          language_code?: string
+          last_refreshed_at?: string | null
+          llm_model?: string | null
+          llm_provider?: string | null
+          next_refresh_at?: string | null
+          refresh_cadence?: string | null
+          region_slug?: string
+          status?: string
+          sub_region_code?: string | null
+          transcreated_content?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       regional_landing_content: {
         Row: {
           assets: Json | null
