@@ -124,6 +124,24 @@ export function useRegionalTranscreation(regionSlug: RegionSlug): UseRegionalTra
       ...staticConfig.differentiators,
       heroBadge: transcreatedStrings['differentiators.heroBadge']?.value || staticConfig.differentiators.heroBadge,
     },
+    nativeSections: {
+      ...staticConfig.nativeSections,
+      ctaFooterHeadline: transcreatedStrings['nativeSections.ctaFooterHeadline']?.value || staticConfig.nativeSections.ctaFooterHeadline,
+      ctaFooterSubheadline: transcreatedStrings['nativeSections.ctaFooterSubheadline']?.value || staticConfig.nativeSections.ctaFooterSubheadline,
+      comparisonTranslationLabel: transcreatedStrings['nativeSections.comparisonTranslationLabel']?.value || staticConfig.nativeSections.comparisonTranslationLabel,
+      comparisonTranscreationLabel: transcreatedStrings['nativeSections.comparisonTranscreationLabel']?.value || staticConfig.nativeSections.comparisonTranscreationLabel,
+      comparisonTranslationExample: transcreatedStrings['nativeSections.comparisonTranslationExample']?.value || staticConfig.nativeSections.comparisonTranslationExample,
+      comparisonTranscreationExample: transcreatedStrings['nativeSections.comparisonTranscreationExample']?.value || staticConfig.nativeSections.comparisonTranscreationExample,
+      statsLanguagesLabel: transcreatedStrings['nativeSections.statsLanguagesLabel']?.value || staticConfig.nativeSections.statsLanguagesLabel,
+      statsDialectsLabel: transcreatedStrings['nativeSections.statsDialectsLabel']?.value || staticConfig.nativeSections.statsDialectsLabel,
+      statsRegionsLabel: transcreatedStrings['nativeSections.statsRegionsLabel']?.value || staticConfig.nativeSections.statsRegionsLabel,
+      statsSubRegionsLabel: transcreatedStrings['nativeSections.statsSubRegionsLabel']?.value || staticConfig.nativeSections.statsSubRegionsLabel,
+      demoHubHeadline: transcreatedStrings['nativeSections.demoHubHeadline']?.value || staticConfig.nativeSections.demoHubHeadline,
+      demoHubSubheadline: transcreatedStrings['nativeSections.demoHubSubheadline']?.value || staticConfig.nativeSections.demoHubSubheadline,
+      scheduleDemoLabel: transcreatedStrings['nativeSections.scheduleDemoLabel']?.value || staticConfig.nativeSections.scheduleDemoLabel,
+      readyForRegion: transcreatedStrings['nativeSections.readyForRegion']?.value || staticConfig.nativeSections.readyForRegion,
+      signInPrompt: transcreatedStrings['nativeSections.signInPrompt']?.value || staticConfig.nativeSections.signInPrompt,
+    },
   };
 
   return {

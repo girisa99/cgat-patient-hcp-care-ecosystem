@@ -1299,17 +1299,26 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
     <div className="relative max-w-4xl mx-auto px-4 text-center">
       <Badge variant="outline" className="mb-6 border-primary/40 text-primary">
         <Globe className="h-3 w-3 mr-1" />
-        Ready for {config.hero.regionName}
+        {config.nativeSections.readyForRegion}
       </Badge>
-      <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-        Your Audience Deserves Content
-        <br />
+      <p className="text-sm text-muted-foreground mb-2">Ready for {config.hero.regionName}</p>
+
+      {/* Native headline */}
+      <h2 className="text-4xl md:text-5xl font-bold mb-2 text-foreground">
         <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          That Feels Like Home.
+          {config.nativeSections.ctaFooterHeadline}
         </span>
       </h2>
+      {/* English subtitle */}
+      <p className="text-lg text-muted-foreground/70 italic mb-4">
+        Your Audience Deserves Content That Feels Like Home.
+      </p>
       
-      <p className="text-xl text-muted-foreground mb-2 max-w-2xl mx-auto">
+      {/* Native subheadline */}
+      <p className="text-xl text-foreground/80 mb-1 max-w-2xl mx-auto font-medium">
+        {config.nativeSections.ctaFooterSubheadline}
+      </p>
+      <p className="text-sm text-muted-foreground mb-2 max-w-2xl mx-auto">
         From idea to global distribution — every format, every market, every language.
       </p>
       <p className="text-lg text-primary font-semibold mb-8">
@@ -1325,15 +1334,18 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
         </Link>
         <Link to="/support">
           <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-6">
-            Schedule a Guided Demo
+            {config.nativeSections.scheduleDemoLabel}
           </Button>
         </Link>
       </div>
 
       <p className="text-muted-foreground text-sm mb-2">
         <Link to="/genie-studio-auth" className="text-primary hover:underline font-medium">
-          {config.cta.signIn}
+          {config.nativeSections.signInPrompt}
         </Link>
+      </p>
+      <p className="text-xs text-muted-foreground/60">
+        {config.cta.signIn}
       </p>
       <p className="text-muted-foreground text-sm">{config.cta.freeCredits}</p>
 
@@ -1496,10 +1508,19 @@ export const RegionalLandingPage: React.FC = () => {
             <Badge variant="secondary" className="mb-4 text-sm px-4 py-1">
               7 Products · {LANDING_METRICS.pipelines} Pipelines · {LANDING_METRICS.aiProviders} AI Providers
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-              The Genie Suite — Mind to Media
+            {/* Native headline */}
+            <h2 className="text-4xl md:text-5xl font-bold mb-2 text-foreground">
+              {mergedConfig.nativeSections.demoHubHeadline}
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            {/* English subtitle */}
+            <p className="text-sm text-muted-foreground/60 italic mb-3">
+              The Genie Suite — Mind to Media
+            </p>
+            {/* Native subheadline */}
+            <p className="text-xl text-foreground/80 max-w-2xl mx-auto font-medium mb-1">
+              {mergedConfig.nativeSections.demoHubSubheadline}
+            </p>
+            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
               One platform. Every format. Every language. Every market.
             </p>
           </div>
