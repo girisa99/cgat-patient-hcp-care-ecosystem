@@ -13,11 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Server, Plus, Pencil, Trash2, RefreshCw, Activity, CheckCircle, XCircle, Cpu, Wifi,
+  Play, HeartPulse, Wrench, ChevronRight,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useMCPToolExecutor } from '@/hooks/useMCPToolExecutor';
 
 interface MCPServer {
   id: string;
@@ -50,6 +53,15 @@ export const MCPServerManagementUI: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingServer, setEditingServer] = useState<MCPServer | null>(null);
   const { showSuccess, showError } = useMasterToast();
+  const mcpExecutor = useMCPToolExecutor();
+
+  // Tool execution state
+  const [toolExecOpen, setToolExecOpen] = useState(false);
+  const [toolExecServer, setToolExecServer] = useState<MCPServer | null>(null);
+  const [toolExecName, setToolExecName] = useState('');
+  const [toolExecArgs, setToolExecArgs] = useState('{}');
+  const [toolExecResult, setToolExecResult] = useState('');
+  const [discoveredTools, setDiscoveredTools] = useState<Array<{ name: string; description?: string }>>([]);
 
   // Form state
   const [form, setForm] = useState({
@@ -302,6 +314,25 @@ export const MCPServerManagementUI: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" title="Health Check" onClick={async () => {
+                      try {
+                        const result = await mcpExecutor.healthCheck(server.server_id);
+                        if (result.status === 'healthy') {
+                          showSuccess(`${server.name} is healthy (${result.latency_ms}ms)`);
+                        } else {
+                          showError(`${server.name} is unhealthy: ${result.error}`);
+                        }
+                        fetchServers();
+                      } catch {}
+                    }}>
+                      <HeartPulse className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Execute Tool" onClick={() => {
+                      setToolExecServer(server);
+                      setToolExecOpen(true);
+                    }}>
+                      <Play className="h-4 w-4" />
+                    </Button>
                     <Switch checked={server.is_active ?? false} onCheckedChange={() => toggleActive(server)} />
                     <Button variant="ghost" size="icon" onClick={() => openEdit(server)}>
                       <Pencil className="h-4 w-4" />
@@ -316,6 +347,110 @@ export const MCPServerManagementUI: React.FC = () => {
           })
         )}
       </div>
+
+      {/* Tool Execution Dialog */}
+      <Dialog open={toolExecOpen} onOpenChange={setToolExecOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="h-4 w-4" />
+              Execute Tool — {toolExecServer?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* Discover Tools */}
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={async () => {
+                if (!toolExecServer) return;
+                try {
+                  const tools = await mcpExecutor.listTools(toolExecServer.server_id);
+                  setDiscoveredTools(tools);
+                } catch {}
+              }} disabled={mcpExecutor.loading}>
+                <RefreshCw className={`h-3 w-3 mr-1 ${mcpExecutor.loading ? 'animate-spin' : ''}`} />
+                Discover Tools
+              </Button>
+              {discoveredTools.length > 0 && (
+                <Badge variant="secondary">{discoveredTools.length} tools found</Badge>
+              )}
+            </div>
+
+            {/* Tool Selection */}
+            {discoveredTools.length > 0 && (
+              <ScrollArea className="max-h-32">
+                <div className="space-y-1">
+                  {discoveredTools.map((tool) => (
+                    <button
+                      key={tool.name}
+                      className={`w-full text-left p-2 rounded border text-sm flex items-center gap-2 hover:bg-muted/50 ${
+                        toolExecName === tool.name ? 'ring-1 ring-primary bg-primary/5' : ''
+                      }`}
+                      onClick={() => setToolExecName(tool.name)}
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                      <div>
+                        <div className="font-medium">{tool.name}</div>
+                        {tool.description && <div className="text-xs text-muted-foreground">{tool.description}</div>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+
+            {/* Manual Tool Name */}
+            <div>
+              <Label>Tool Name</Label>
+              <Input
+                value={toolExecName}
+                onChange={e => setToolExecName(e.target.value)}
+                placeholder="e.g. lookup_patient"
+              />
+            </div>
+            <div>
+              <Label>Arguments (JSON)</Label>
+              <Textarea
+                value={toolExecArgs}
+                onChange={e => setToolExecArgs(e.target.value)}
+                placeholder='{"patient_id": "123"}'
+                rows={4}
+                className="font-mono text-xs"
+              />
+            </div>
+
+            {/* Execute */}
+            <Button
+              className="w-full"
+              disabled={!toolExecName || mcpExecutor.loading}
+              onClick={async () => {
+                if (!toolExecServer || !toolExecName) return;
+                try {
+                  let args = {};
+                  if (toolExecArgs.trim()) args = JSON.parse(toolExecArgs);
+                  const result = await mcpExecutor.executeTool(toolExecServer.server_id, toolExecName, args);
+                  setToolExecResult(JSON.stringify(result, null, 2));
+                  showSuccess(`Tool "${toolExecName}" executed successfully`);
+                } catch (err: any) {
+                  setToolExecResult(`Error: ${err.message}`);
+                }
+              }}
+            >
+              <Play className="h-4 w-4 mr-1" />
+              {mcpExecutor.loading ? 'Executing...' : 'Execute Tool'}
+            </Button>
+
+            {/* Result */}
+            {toolExecResult && (
+              <div>
+                <Label>Result</Label>
+                <pre className="p-3 rounded-lg bg-muted text-xs font-mono overflow-auto max-h-48 whitespace-pre-wrap">
+                  {toolExecResult}
+                </pre>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
