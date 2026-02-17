@@ -23,6 +23,7 @@ export interface RegionGroup {
 }
 
 export const REGION_HIERARCHY: RegionGroup[] = [
+  // 1. NAM — 2 zones
   {
     groupCode: 'NAM', groupName: 'North America', groupFlag: '🇺🇸',
     children: [
@@ -30,6 +31,7 @@ export const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'NAM_CA', name: 'Canada (EN + FR)', flag: '🇨🇦' },
     ],
   },
+  // 2. Europe — 8 zones
   {
     groupCode: 'EU', groupName: 'Europe', groupFlag: '🇪🇺',
     children: [
@@ -51,36 +53,38 @@ export const REGION_HIERARCHY: RegionGroup[] = [
         { code: 'EU_ES', name: 'Spain', flag: '🇪🇸' },
         { code: 'EU_PT', name: 'Portugal', flag: '🇵🇹' },
       ]},
-      { code: 'EU_ITALY', name: 'Italy', flag: '🇮🇹', children: [
-        { code: 'EU_IT', name: 'Italy (Italiano)', flag: '🇮🇹' },
-      ]},
+      { code: 'EU_ITALY', name: 'Italy', flag: '🇮🇹' },
       { code: 'EU_NORDIC', name: 'Nordics', flag: '🇸🇪', children: [
         { code: 'EU_SE', name: 'Sweden', flag: '🇸🇪' },
         { code: 'EU_NO', name: 'Norway', flag: '🇳🇴' },
         { code: 'EU_DK', name: 'Denmark', flag: '🇩🇰' },
         { code: 'EU_FI', name: 'Finland', flag: '🇫🇮' },
       ]},
-      { code: 'EU_EAST', name: 'Eastern Europe', flag: '🇵🇱', children: [
+      { code: 'EU_EAST', name: 'Eastern EU Members', flag: '🇵🇱', children: [
         { code: 'EU_PL', name: 'Poland', flag: '🇵🇱' },
         { code: 'EU_CZ', name: 'Czech Republic', flag: '🇨🇿' },
         { code: 'EU_RO', name: 'Romania', flag: '🇷🇴' },
         { code: 'EU_HU', name: 'Hungary', flag: '🇭🇺' },
-        { code: 'EU_GR', name: 'Greece (Ελληνικά)', flag: '🇬🇷' },
+        { code: 'EU_GR', name: 'Greece', flag: '🇬🇷' },
+        { code: 'EU_BG', name: 'Bulgaria', flag: '🇧🇬' },
+        { code: 'EU_SK', name: 'Slovakia', flag: '🇸🇰' },
       ]},
     ],
   },
+  // 3. Eastern Europe & Caucasus — 3 zones
   {
-    groupCode: 'LATAM', groupName: 'Latin America', groupFlag: '🌎',
+    groupCode: 'EURASIA', groupName: 'Eastern Europe & Caucasus', groupFlag: '🇺🇦',
     children: [
-      { code: 'LATAM_BRAZIL', name: 'Brazil (Português)', flag: '🇧🇷' },
-      { code: 'LATAM_MEXICO', name: 'Mexico & Central America', flag: '🇲🇽' },
-      { code: 'LATAM_ANDEAN', name: 'Andean (Colombia, Peru, Ecuador)', flag: '🇨🇴' },
-      { code: 'LATAM_CONESUR', name: 'Southern Cone (Argentina, Chile, Uruguay)', flag: '🇦🇷' },
-      { code: 'LATAM_CARIB', name: 'Caribbean (DR, PR, Cuba, Venezuela)', flag: '🇩🇴' },
+      { code: 'EU_UKRAINE', name: 'Ukraine (Українська)', flag: '🇺🇦' },
+      { code: 'EU_BALKANS', name: 'Balkans (Serbia, Croatia, Bosnia)', flag: '🇷🇸' },
+      { code: 'EU_CAUCASUS', name: 'Caucasus (Georgia, Armenia)', flag: '🇬🇪' },
     ],
   },
+  // 4. Turkey — 1 zone
+  { groupCode: 'TURKEY', groupName: 'Turkey (Türkçe)', groupFlag: '🇹🇷', children: [] },
+  // 5. MENA — 6 zones (includes Israel)
   {
-    groupCode: 'MENA', groupName: 'Middle East & North Africa', groupFlag: '🌍',
+    groupCode: 'MENA', groupName: 'Middle East & North Africa', groupFlag: '🇸🇦',
     children: [
       { code: 'MENA_GULF', name: 'Gulf (UAE, Saudi, Qatar, Kuwait)', flag: '🇦🇪' },
       { code: 'MENA_EGYPT', name: 'Egypt (مصري)', flag: '🇪🇬' },
@@ -90,6 +94,7 @@ export const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'MENA_ISRAEL', name: 'Israel (עברית)', flag: '🇮🇱' },
     ],
   },
+  // 6. Africa — 4 zones
   {
     groupCode: 'AFRICA', groupName: 'Africa', groupFlag: '🌍',
     children: [
@@ -99,17 +104,7 @@ export const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'AFRICA_FRANCO', name: 'Francophone Africa (Senegal, DRC)', flag: '🇸🇳' },
     ],
   },
-  { groupCode: 'PAKISTAN', groupName: 'Pakistan (Urdu)', groupFlag: '🇵🇰', children: [] },
-  { groupCode: 'BANGLADESH', groupName: 'Bangladesh (Bengali)', groupFlag: '🇧🇩', children: [] },
-  {
-    groupCode: 'SOUTH_ASIA', groupName: 'South Asia', groupFlag: '🌏',
-    children: [
-      { code: 'SA_NEPAL', name: 'Nepal (नेपाली)', flag: '🇳🇵' },
-      { code: 'SA_SRILANKA', name: 'Sri Lanka (සිංහල / தமிழ்)', flag: '🇱🇰' },
-      { code: 'SA_BHUTAN', name: 'Bhutan (རྫོང་ཁ)', flag: '🇧🇹' },
-      { code: 'SA_MALDIVES', name: 'Maldives (ދިވެހި)', flag: '🇲🇻' },
-    ],
-  },
+  // 7. India — 5 zones
   {
     groupCode: 'INDIA', groupName: 'India', groupFlag: '🇮🇳',
     children: [
@@ -132,11 +127,24 @@ export const REGION_HIERARCHY: RegionGroup[] = [
         { code: 'INDIA_EAST_BN', name: 'Bengali (বাংলা)', flag: '🇮🇳' },
         { code: 'INDIA_EAST_OR', name: 'Odia (ଓଡ଼ିଆ)', flag: '🇮🇳' },
       ]},
-      { code: 'INDIA_PAN', name: 'Pan-India (English)', flag: '🇮🇳', children: [
-        { code: 'INDIA_PAN_EN', name: 'Indian English', flag: '🇮🇳' },
-      ]},
+      { code: 'INDIA_PAN', name: 'Pan-India (English)', flag: '🇮🇳' },
     ],
   },
+  // 8. Pakistan — 1 zone (standalone)
+  { groupCode: 'PAKISTAN', groupName: 'Pakistan (اردو)', groupFlag: '🇵🇰', children: [] },
+  // 9. Bangladesh — 1 zone (standalone)
+  { groupCode: 'BANGLADESH', groupName: 'Bangladesh (বাংলা)', groupFlag: '🇧🇩', children: [] },
+  // 10. South Asia — 4 zones (Nepal, Sri Lanka, Bhutan, Maldives)
+  {
+    groupCode: 'SOUTH_ASIA', groupName: 'South Asia', groupFlag: '🌏',
+    children: [
+      { code: 'SA_NEPAL', name: 'Nepal (नेपाली)', flag: '🇳🇵' },
+      { code: 'SA_SRILANKA', name: 'Sri Lanka (සිංහල / தமிழ்)', flag: '🇱🇰' },
+      { code: 'SA_BHUTAN', name: 'Bhutan (རྫོང་ཁ)', flag: '🇧🇹' },
+      { code: 'SA_MALDIVES', name: 'Maldives (ދިވެހި)', flag: '🇲🇻' },
+    ],
+  },
+  // 11. Southeast Asia — 5 zones
   {
     groupCode: 'SEA', groupName: 'Southeast Asia', groupFlag: '🌏',
     children: [
@@ -147,6 +155,7 @@ export const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'SEA_PAN', name: 'Pan-SEA / Singapore (English)', flag: '🇸🇬' },
     ],
   },
+  // 12. CJK — 4 zones
   {
     groupCode: 'CJK', groupName: 'China, Japan & Korea', groupFlag: '🌏',
     children: [
@@ -156,31 +165,36 @@ export const REGION_HIERARCHY: RegionGroup[] = [
       { code: 'CJK_KR', name: 'South Korea (한국어)', flag: '🇰🇷' },
     ],
   },
+  // 13. LATAM — 5 zones (excludes standalone Caribbean)
   {
-    groupCode: 'OCEANIA', groupName: 'Oceania', groupFlag: '🌏',
+    groupCode: 'LATAM', groupName: 'Latin America', groupFlag: '🌎',
     children: [
-      { code: 'OCEANIA_AU', name: 'Australia', flag: '🇦🇺' },
-      { code: 'OCEANIA_NZ', name: 'New Zealand', flag: '🇳🇿' },
+      { code: 'LATAM_BRAZIL', name: 'Brazil (Português)', flag: '🇧🇷' },
+      { code: 'LATAM_MEXICO', name: 'Mexico & Central America', flag: '🇲🇽' },
+      { code: 'LATAM_ANDEAN', name: 'Andean (Colombia, Peru, Ecuador)', flag: '🇨🇴' },
+      { code: 'LATAM_CONESUR', name: 'Southern Cone (Argentina, Chile, Uruguay)', flag: '🇦🇷' },
+      { code: 'LATAM_CARIB', name: 'Caribbean LATAM (DR, PR, Cuba)', flag: '🇩🇴' },
     ],
   },
-  { groupCode: 'TURKEY', groupName: 'Turkey (Türkçe)', groupFlag: '🇹🇷', children: [] },
+  // 14. Caribbean — 2 zones (standalone)
   {
-    groupCode: 'CARIBBEAN', groupName: 'Caribbean', groupFlag: '🌴',
+    groupCode: 'CARIBBEAN', groupName: 'Caribbean', groupFlag: '🏝️',
     children: [
       { code: 'CARIBBEAN_EN', name: 'English Caribbean (Jamaica, T&T, Bahamas)', flag: '🇯🇲' },
       { code: 'CARIBBEAN_FR', name: 'French Caribbean (Haiti, Martinique)', flag: '🇭🇹' },
     ],
   },
+  // 15. Oceania — 2 zones
   {
-    groupCode: 'EURASIA', groupName: 'Eastern Europe & Caucasus', groupFlag: '🌍',
+    groupCode: 'OCEANIA', groupName: 'Oceania', groupFlag: '🇦🇺',
     children: [
-      { code: 'EU_UKRAINE', name: 'Ukraine (Українська)', flag: '🇺🇦' },
-      { code: 'EU_BALKANS', name: 'Balkans (Serbia, Bulgaria, Croatia)', flag: '🇷🇸' },
-      { code: 'EU_CAUCASUS', name: 'Caucasus (Georgia, Armenia)', flag: '🇬🇪' },
+      { code: 'OCEANIA_AU', name: 'Australia', flag: '🇦🇺' },
+      { code: 'OCEANIA_NZ', name: 'New Zealand', flag: '🇳🇿' },
     ],
   },
+  // 16. Central Asia — 3 zones
   {
-    groupCode: 'CENTRAL_ASIA', groupName: 'Central Asia', groupFlag: '🌏',
+    groupCode: 'CENTRAL_ASIA', groupName: 'Central Asia', groupFlag: '🇰🇿',
     children: [
       { code: 'ASIA_CENTRAL_KZ', name: 'Kazakhstan (Қазақ)', flag: '🇰🇿' },
       { code: 'ASIA_CENTRAL_UZ', name: 'Uzbekistan (Oʻzbek)', flag: '🇺🇿' },

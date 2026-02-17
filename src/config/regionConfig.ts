@@ -7,8 +7,8 @@
  * - ProductionConfigTab
  * - LandingPageScriptsPanel
  * 
- * Structure: 15 Parent Regions → 62+ Sub-Regions → 140+ Languages
- * Follows the 4-zone AI provider routing architecture.
+ * Structure: 16 Parent Regions → 56+ Zones → 75+ Languages → 50+ Dialects
+ * Follows the 5-zone AI provider routing architecture.
  */
 
 export interface SubRegionConfig {
@@ -26,147 +26,158 @@ export interface RegionGroupConfig {
   regions: SubRegionConfig[];
 }
 
-// ─── Master Region Groups: 15 Parents → 62+ Sub-Regions ─────────────────
+// ─── Master Region Groups: 16 Parents → 56+ Zones → 75+ Languages ───────
 export const MASTER_REGION_GROUPS: RegionGroupConfig[] = [
+  // 1. NAM — North America
   {
     parent: 'NAM', icon: '🇺🇸',
     regions: [
       { code: 'NAM_US', label: '🇺🇸 United States', languages: ['en'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-US' },
-      { code: 'NAM_CA', label: '🇨🇦 Canada', languages: ['en', 'fr_ca'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-CA' },
-      { code: 'NAM_US_SOUTH', label: '🇺🇸 US South', languages: ['en', 'es_us'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-US' },
-      { code: 'NAM_US_WEST', label: '🇺🇸 US West Coast', languages: ['en', 'es_us'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-US' },
+      { code: 'NAM_CA', label: '🇨🇦 Canada (EN + FR)', languages: ['en', 'fr_ca'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-CA' },
     ]
   },
-  {
-    parent: 'UK & ANZ', icon: '🇬🇧',
-    regions: [
-      { code: 'UK', label: '🇬🇧 United Kingdom', languages: ['en_gb'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-GB' },
-      { code: 'OCEANIA_AU', label: '🇦🇺 Australia', languages: ['en_au'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-AU' },
-      { code: 'OCEANIA_NZ', label: '🇳🇿 New Zealand', languages: ['en_nz', 'mi'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-NZ' },
-    ]
-  },
+  // 2. Europe (Western + Southern + Nordic + Benelux)
   {
     parent: 'Europe', icon: '🇪🇺',
     regions: [
-      { code: 'EU_WEST', label: '🇫🇷 Western Europe', languages: ['fr', 'nl', 'nl_be'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'fr-FR' },
+      { code: 'EU_WEST', label: '🇬🇧 UK & Ireland', languages: ['en_gb'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-GB' },
       { code: 'EU_DACH', label: '🇩🇪 DACH (DE/AT/CH)', languages: ['de', 'de_at', 'de_ch'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'de-DE' },
+      { code: 'EU_FRANCE', label: '🇫🇷 France & Francophone', languages: ['fr', 'fr_be'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'fr-FR' },
+      { code: 'EU_BENELUX', label: '🇳🇱 Benelux', languages: ['nl', 'nl_be', 'lb'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'nl-NL' },
+      { code: 'EU_IBERIA', label: '🇪🇸 Spain & Portugal', languages: ['es', 'pt_pt', 'ca', 'gl', 'eu'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-ES' },
+      { code: 'EU_ITALY', label: '🇮🇹 Italy', languages: ['it'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'it-IT' },
       { code: 'EU_NORDIC', label: '🇸🇪 Nordics', languages: ['sv', 'da', 'no', 'fi', 'is'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'sv-SE' },
-      { code: 'EU_SOUTH', label: '🇪🇸 Southern Europe', languages: ['es', 'it', 'pt_pt', 'el', 'mt'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-ES' },
-      { code: 'EU_BENELUX', label: '🇳🇱 Benelux', languages: ['nl', 'nl_be', 'fr_be', 'lb'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'nl-NL' },
+      { code: 'EU_EAST', label: '🇵🇱 Eastern EU', languages: ['pl', 'cs', 'hu', 'ro', 'el', 'sk', 'bg'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'pl-PL' },
     ]
   },
+  // 3. Eastern Europe & Caucasus (EURASIA)
   {
-    parent: 'Eastern Europe', icon: '🇵🇱',
+    parent: 'Eastern Europe & Caucasus', icon: '🇺🇦',
     regions: [
-      { code: 'EU_EAST_PL', label: '🇵🇱 Poland', languages: ['pl'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'pl-PL' },
-      { code: 'EU_EAST_UA', label: '🇺🇦 Ukraine', languages: ['uk'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'uk-UA' },
-      { code: 'EU_EAST_BALKANS', label: '🇷🇸 Balkans', languages: ['sr', 'hr', 'bs', 'sl', 'mk', 'sq'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'sr-RS' },
-      { code: 'EU_EAST_RO', label: '🇷🇴 Romania', languages: ['ro'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ro-RO' },
-      { code: 'EU_TURKEY', label: '🇹🇷 Turkey', languages: ['tr'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'tr-TR' },
-      { code: 'EU_BALTICS', label: '🇱🇹 Baltics', languages: ['lt', 'lv', 'et'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'lt-LT' },
+      { code: 'EU_UKRAINE', label: '🇺🇦 Ukraine', languages: ['uk'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'uk-UA' },
+      { code: 'EU_BALKANS', label: '🇷🇸 Balkans', languages: ['sr', 'hr', 'bs', 'sl', 'mk', 'sq'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'sr-RS' },
+      { code: 'EU_CAUCASUS', label: '🇬🇪 Caucasus', languages: ['ka', 'hy'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ka-GE' },
     ]
   },
+  // 4. Turkey (standalone)
   {
-    parent: 'India', icon: '🇮🇳',
+    parent: 'Turkey', icon: '🇹🇷',
     regions: [
-      { code: 'INDIA_NORTH', label: '🇮🇳 North India (Hindi)', languages: ['hi', 'pa', 'ur', 'ks', 'doi'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'hi-IN' },
-      { code: 'INDIA_SOUTH', label: '🇮🇳 South India (Tamil)', languages: ['te', 'kn', 'ta', 'ml'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'ta-IN' },
-      { code: 'INDIA_WEST', label: '🇮🇳 West India (Marathi)', languages: ['mr', 'gu', 'kok', 'sd'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'mr-IN' },
-      { code: 'INDIA_EAST', label: '🇮🇳 East India (Bengali)', languages: ['bn', 'or', 'as', 'mni', 'sat'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'bn-IN' },
-      { code: 'INDIA_NE', label: '🇮🇳 Northeast', languages: ['as', 'mni', 'bho', 'mai'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'as-IN' },
-      { code: 'INDIA_PAN', label: '🇮🇳 Pan-India', languages: ['hi', 'en_in'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'hi-IN' },
+      { code: 'TURKEY', label: '🇹🇷 Turkey', languages: ['tr', 'ku'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'tr-TR' },
     ]
   },
-  {
-    parent: 'South Asia', icon: '🌏',
-    regions: [
-      { code: 'SA_PAKISTAN', label: '🇵🇰 Pakistan', languages: ['ur', 'pa', 'sd', 'ps'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ur-PK' },
-      { code: 'SA_BANGLADESH', label: '🇧🇩 Bangladesh', languages: ['bn'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'bn-BD' },
-      { code: 'SA_SRI_LANKA', label: '🇱🇰 Sri Lanka', languages: ['si', 'ta'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'si-LK' },
-      { code: 'SA_NEPAL', label: '🇳🇵 Nepal', languages: ['ne'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ne-NP' },
-    ]
-  },
+  // 5. MENA (includes Israel)
   {
     parent: 'MENA', icon: '🇸🇦',
     regions: [
       { code: 'MENA_GULF', label: '🇦🇪 Gulf States', languages: ['ar_sa', 'ar_ae', 'ar_kw', 'ar_bh', 'ar_qa', 'ar_om'], llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'ar-SA' },
-      { code: 'MENA_LEVANT', label: '🇯🇴 Levant', languages: ['ar_lb', 'ar_jo', 'ar_iq'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-JO' },
-      { code: 'MENA_MAGHREB', label: '🇲🇦 Maghreb', languages: ['ar_ma', 'ar_dz', 'ar_tn', 'ar_ly'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-MA' },
       { code: 'MENA_EGYPT', label: '🇪🇬 Egypt', languages: ['ar_eg'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-EG' },
-      { code: 'MENA_IRAQ', label: '🇮🇶 Iraq', languages: ['ar_iq', 'ku'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-IQ' },
-      { code: 'MENA_IRAN', label: '🇮🇷 Iran/Afghanistan', languages: ['fa', 'ps'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'fa-IR' },
+      { code: 'MENA_LEVANT', label: '🇯🇴 Levant', languages: ['ar_lb', 'ar_jo', 'ar_iq'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-JO' },
+      { code: 'MENA_MAGHREB', label: '🇲🇦 Maghreb', languages: ['ar_ma', 'ar_dz', 'ar_tn'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-MA' },
+      { code: 'MENA_MSA', label: '🕌 Pan-Arab (MSA)', languages: ['ar_sa'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-SA' },
+      { code: 'MENA_ISRAEL', label: '🇮🇱 Israel', languages: ['he'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'he-IL' },
     ]
   },
-  {
-    parent: 'CJK', icon: '🇨🇳',
-    regions: [
-      { code: 'CJK_CN', label: '🇨🇳 China', languages: ['zh_cn'], llm: 'Qwen Max', ttsProvider: 'Qwen3-TTS', ttsLocale: 'longwan' },
-      { code: 'CJK_JP', label: '🇯🇵 Japan', languages: ['ja'], llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'ja-JP' },
-      { code: 'CJK_KR', label: '🇰🇷 South Korea', languages: ['ko'], llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'ko-KR' },
-      { code: 'CJK_TW', label: '🇹🇼 Taiwan', languages: ['zh_tw'], llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'zh-TW' },
-      { code: 'CJK_HK', label: '🇭🇰 Hong Kong', languages: ['zh_hk'], llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'zh-HK' },
-      { code: 'CJK_PAN_EN', label: '🌏 Pan-CJK English', languages: ['en'], llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'en-HK' },
-    ]
-  },
-  {
-    parent: 'Southeast Asia', icon: '🇸🇬',
-    regions: [
-      { code: 'SEA_PAN', label: '🌏 Pan-SEA (EN)', languages: ['en'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-SG' },
-      { code: 'SEA_MALAY', label: '🇲🇾 Malaysia', languages: ['ms'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'ms-MY' },
-      { code: 'SEA_THAI', label: '🇹🇭 Thailand', languages: ['th'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'th-TH' },
-      { code: 'SEA_VIET', label: '🇻🇳 Vietnam', languages: ['vi'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'vi-VN' },
-      { code: 'SEA_PHIL', label: '🇵🇭 Philippines', languages: ['fil', 'tl', 'ceb', 'ilo'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'fil-PH' },
-      { code: 'SEA_INDO', label: '🇮🇩 Indonesia', languages: ['id', 'jv', 'su'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'id-ID' },
-      { code: 'SEA_MYANMAR', label: '🇲🇲 Myanmar', languages: ['my'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'my-MM' },
-      { code: 'SEA_CAMBODIA', label: '🇰🇭 Cambodia', languages: ['km'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'km-KH' },
-    ]
-  },
-  {
-    parent: 'LATAM', icon: '🇧🇷',
-    regions: [
-      { code: 'LATAM_BR', label: '🇧🇷 Brazil', languages: ['pt_br'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'pt-BR' },
-      { code: 'LATAM_MX', label: '🇲🇽 Mexico', languages: ['es_mx'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-MX' },
-      { code: 'LATAM_CONE', label: '🇦🇷 Southern Cone', languages: ['es_ar', 'es_cl', 'es_uy', 'es_py'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-AR' },
-      { code: 'LATAM_ANDEAN', label: '🇨🇴 Andean', languages: ['es_co', 'es_pe', 'es_ec', 'es_bo', 'es_ve', 'qu', 'ay'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-CO' },
-      { code: 'LATAM_CARIB', label: '🇯🇲 Caribbean', languages: ['es_cu', 'es_do', 'es_pr', 'ht'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'es-DO' },
-      { code: 'LATAM_CENTRAL', label: '🇨🇷 Central America', languages: ['es_cr', 'es_pa', 'es_gt', 'es_hn', 'es_sv', 'es_ni'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-CR' },
-    ]
-  },
+  // 6. Africa
   {
     parent: 'Africa', icon: '🌍',
     regions: [
-      { code: 'AFRICA_WEST', label: '🇳🇬 West Africa', languages: ['en_ng', 'en_gh', 'ha', 'ig', 'yo'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-NG' },
-      { code: 'AFRICA_EAST', label: '🇰🇪 East Africa', languages: ['en_ke', 'sw', 'am', 'om', 'ti', 'so', 'rw', 'lg'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'sw-KE' },
-      { code: 'AFRICA_SOUTH', label: '🇿🇦 Southern Africa', languages: ['en_za', 'af', 'zu', 'xh', 'st', 'tn', 'sn', 'nd', 'ny'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'en-ZA' },
-      { code: 'AFRICA_NORTH', label: '🇪🇬 North Africa', languages: ['ar_eg', 'ar_ly', 'ar_sd'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-EG' },
+      { code: 'AFRICA_WEST', label: '🇳🇬 West Africa', languages: ['en_ng', 'ha', 'ig', 'yo'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-NG' },
+      { code: 'AFRICA_EAST', label: '🇰🇪 East Africa', languages: ['sw', 'am', 'om', 'so', 'rw'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'sw-KE' },
+      { code: 'AFRICA_SOUTH', label: '🇿🇦 Southern Africa', languages: ['af', 'zu', 'xh', 'st', 'tn'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'en-ZA' },
+      { code: 'AFRICA_FRANCO', label: '🇸🇳 Francophone Africa', languages: ['fr', 'wo'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'fr-SN' },
     ]
   },
+  // 7. India
   {
-    parent: 'Caucasus', icon: '🇬🇪',
+    parent: 'India', icon: '🇮🇳',
     regions: [
-      { code: 'CAUC_GE', label: '🇬🇪 Georgia', languages: ['ka'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ka-GE' },
-      { code: 'CAUC_AM', label: '🇦🇲 Armenia', languages: ['hy'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'hy-AM' },
-      { code: 'CAUC_AZ', label: '🇦🇿 Azerbaijan', languages: ['az'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'az-AZ' },
+      { code: 'INDIA_NORTH', label: '🇮🇳 North India', languages: ['hi', 'pa', 'ur', 'ks', 'doi'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'hi-IN' },
+      { code: 'INDIA_SOUTH', label: '🇮🇳 South India', languages: ['ta', 'te', 'kn', 'ml'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'ta-IN' },
+      { code: 'INDIA_WEST', label: '🇮🇳 West India', languages: ['mr', 'gu', 'kok', 'sd'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'mr-IN' },
+      { code: 'INDIA_EAST', label: '🇮🇳 East India', languages: ['bn', 'or', 'as'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'bn-IN' },
+      { code: 'INDIA_PAN', label: '🇮🇳 Pan-India (English)', languages: ['en_in'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'en-IN' },
     ]
   },
+  // 8. Pakistan (standalone)
+  {
+    parent: 'Pakistan', icon: '🇵🇰',
+    regions: [
+      { code: 'PAKISTAN', label: '🇵🇰 Pakistan', languages: ['ur', 'pa', 'sd', 'ps'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ur-PK' },
+    ]
+  },
+  // 9. Bangladesh (standalone)
+  {
+    parent: 'Bangladesh', icon: '🇧🇩',
+    regions: [
+      { code: 'BANGLADESH', label: '🇧🇩 Bangladesh', languages: ['bn'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'bn-BD' },
+    ]
+  },
+  // 10. South Asia (Nepal, Sri Lanka, Bhutan, Maldives)
+  {
+    parent: 'South Asia', icon: '🌏',
+    regions: [
+      { code: 'SA_NEPAL', label: '🇳🇵 Nepal', languages: ['ne'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ne-NP' },
+      { code: 'SA_SRILANKA', label: '🇱🇰 Sri Lanka', languages: ['si', 'ta'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'si-LK' },
+      { code: 'SA_BHUTAN', label: '🇧🇹 Bhutan', languages: ['dz'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'en-IN' },
+      { code: 'SA_MALDIVES', label: '🇲🇻 Maldives', languages: ['dv'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'en-IN' },
+    ]
+  },
+  // 11. Southeast Asia
+  {
+    parent: 'Southeast Asia', icon: '🌏',
+    regions: [
+      { code: 'SEA_MALAY', label: '🇲🇾 Malaysia & Indonesia', languages: ['ms', 'id', 'jv', 'su'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'ms-MY' },
+      { code: 'SEA_THAI', label: '🇹🇭 Thailand', languages: ['th'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'th-TH' },
+      { code: 'SEA_VIET', label: '🇻🇳 Vietnam', languages: ['vi'], llm: 'Gemini 3 Pro', ttsProvider: 'Azure', ttsLocale: 'vi-VN' },
+      { code: 'SEA_PHIL', label: '🇵🇭 Philippines', languages: ['fil', 'tl', 'ceb'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'fil-PH' },
+      { code: 'SEA_PAN', label: '🇸🇬 Pan-SEA / Singapore', languages: ['en'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-SG' },
+    ]
+  },
+  // 12. CJK — China, Japan & Korea
+  {
+    parent: 'CJK', icon: '🌏',
+    regions: [
+      { code: 'CJK_CN', label: '🇨🇳 China / HK / Macau', languages: ['zh_cn', 'zh_hk'], llm: 'Qwen Max', ttsProvider: 'Qwen3-TTS', ttsLocale: 'longwan' },
+      { code: 'CJK_TW', label: '🇹🇼 Taiwan', languages: ['zh_tw'], llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'zh-TW' },
+      { code: 'CJK_JP', label: '🇯🇵 Japan', languages: ['ja'], llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'ja-JP' },
+      { code: 'CJK_KR', label: '🇰🇷 South Korea', languages: ['ko'], llm: 'Qwen Max', ttsProvider: 'Azure', ttsLocale: 'ko-KR' },
+    ]
+  },
+  // 13. LATAM — Latin America (excludes Caribbean)
+  {
+    parent: 'LATAM', icon: '🌎',
+    regions: [
+      { code: 'LATAM_BRAZIL', label: '🇧🇷 Brazil', languages: ['pt_br'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'pt-BR' },
+      { code: 'LATAM_MEXICO', label: '🇲🇽 Mexico & Central America', languages: ['es_mx'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-MX' },
+      { code: 'LATAM_ANDEAN', label: '🇨🇴 Andean', languages: ['es_co', 'es_pe', 'qu', 'ay'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-CO' },
+      { code: 'LATAM_CONESUR', label: '🇦🇷 Southern Cone', languages: ['es_ar', 'es_cl', 'es_uy'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'es-AR' },
+      { code: 'LATAM_CARIB', label: '🇩🇴 Caribbean LATAM (DR, PR, Cuba)', languages: ['es_do', 'es_pr', 'es_cu'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'es-DO' },
+    ]
+  },
+  // 14. Caribbean (standalone — English, French, Creole)
+  {
+    parent: 'Caribbean', icon: '🏝️',
+    regions: [
+      { code: 'CARIBBEAN_EN', label: '🇯🇲 English Caribbean', languages: ['en'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-US' },
+      { code: 'CARIBBEAN_FR', label: '🇭🇹 French Caribbean', languages: ['fr', 'ht'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'fr-FR' },
+    ]
+  },
+  // 15. Oceania (AU, NZ, Pacific)
+  {
+    parent: 'Oceania', icon: '🇦🇺',
+    regions: [
+      { code: 'OCEANIA_AU', label: '🇦🇺 Australia', languages: ['en_au'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-AU' },
+      { code: 'OCEANIA_NZ', label: '🇳🇿 New Zealand', languages: ['en_nz', 'mi'], llm: 'Claude 4', ttsProvider: 'Azure', ttsLocale: 'en-NZ' },
+    ]
+  },
+  // 16. Central Asia
   {
     parent: 'Central Asia', icon: '🇰🇿',
     regions: [
       { code: 'ASIA_CENTRAL_KZ', label: '🇰🇿 Kazakhstan', languages: ['kk', 'ru'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'kk-KZ' },
       { code: 'ASIA_CENTRAL_UZ', label: '🇺🇿 Uzbekistan', languages: ['uz'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'uz-UZ' },
-      { code: 'ASIA_CENTRAL_KG', label: '🇰🇬 Kyrgyzstan', languages: ['ky'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ky-KG' },
-    ]
-  },
-  {
-    parent: 'Oceania', icon: '🇦🇺',
-    regions: [
-      { code: 'OCEANIA_PACIFIC', label: '🏝️ Pacific Islands', languages: ['sm', 'to', 'fj', 'ty', 'haw'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'en-AU' },
-    ]
-  },
-  {
-    parent: 'Israel & Hebrew', icon: '🇮🇱',
-    regions: [
-      { code: 'ISRAEL', label: '🇮🇱 Israel', languages: ['he'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'he-IL' },
+      { code: 'ASIA_CENTRAL_AZ', label: '🇦🇿 Azerbaijan', languages: ['az'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'az-AZ' },
     ]
   },
 ];
