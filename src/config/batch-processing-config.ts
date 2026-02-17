@@ -154,12 +154,12 @@ export const PROVIDER_RATE_LIMITS = {
     concurrentRequests: 5,
   },
   gemini: {
-    // Upgraded via Google Cloud quota adjuster (Generative Language API)
-    requestsPerMinute: 2000,
-    tokensPerMinute: 4000000,
-    concurrentRequests: 30,
-    // Throttle config: queue excess requests with 500ms spacing
-    throttle: { enabled: true, delayMs: 500, maxQueueSize: 200 },
+    // Paid Tier 3: Unlimited RPM/TPM (Generative Language API)
+    requestsPerMinute: Infinity,
+    tokensPerMinute: Infinity,
+    concurrentRequests: 50,
+    // Throttle still useful to avoid burst spikes on edge function side
+    throttle: { enabled: true, delayMs: 200, maxQueueSize: 500 },
   },
   deepseek: {
     requestsPerMinute: 120,
