@@ -34,6 +34,8 @@ import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcas
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
+import { SubRegionDialectPicker } from '@/components/landing/SubRegionDialectPicker';
+import { useRegionalTranscreation } from '@/hooks/useRegionalTranscreation';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 // Region-specific hero backgrounds — all 4 slides per region
 import heroRegionNam from '@/assets/hero-region-nam.jpg';
@@ -1455,6 +1457,14 @@ export const RegionalLandingPage: React.FC = () => {
   const dbRegionCode = SLUG_TO_REGION_CODE[regionSlug] || 'WESTERN';
   const { content: dbContent, variants: dbVariants, fallbackTier, deviceType, isRTL: dbIsRTL } = useRegionalLandingContent(dbRegionCode);
 
+  // Phase A4: Dynamic transcreation with sub-region dialect support
+  const { 
+    config: transcreatedConfig, 
+    subRegion: selectedDialect, 
+    setSubRegion: setSelectedDialect,
+    hasDynamicContent: hasTranscreation,
+  } = useRegionalTranscreation(regionSlug);
+
   if (!config) {
     // Auto-detect and redirect
     const detected = detectRegionFromTimezone();
@@ -1478,6 +1488,14 @@ export const RegionalLandingPage: React.FC = () => {
     welcomeScript: dbContent.welcome_script || config.welcomeScript,
   } : config;
 
+  // Layer transcreated nativeSections on top (transcreation cache wins over static)
+  if (hasTranscreation) {
+    mergedConfig.nativeSections = {
+      ...mergedConfig.nativeSections,
+      ...transcreatedConfig.nativeSections,
+    };
+  }
+
   // Use device-aware variants for mobile headlines when DB content exists
   const heroHeadline = deviceType === 'mobile' && dbVariants
     ? dbVariants.headlineMobile
@@ -1499,6 +1517,15 @@ export const RegionalLandingPage: React.FC = () => {
       </div>
       
       <RegionNavigator currentSlug={regionSlug} />
+
+      {/* Sub-region Dialect Picker — shows available dialects for this region */}
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <SubRegionDialectPicker
+          regionSlug={regionSlug}
+          selectedSubRegion={selectedDialect}
+          onSubRegionChange={setSelectedDialect}
+        />
+      </div>
 
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
       <section id="products" className="py-24 relative">
