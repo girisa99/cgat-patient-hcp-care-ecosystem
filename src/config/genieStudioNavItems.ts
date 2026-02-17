@@ -99,6 +99,7 @@ import {
   Package,
   Film,
   Camera,
+  Target,
 } from "lucide-react";
 
 export type SubscriptionTier = 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise';
@@ -211,6 +212,16 @@ export const genieStudioNavItems: GenieNavItem[] = [
     minTier: 'starter',
     category: 'manage',
     subCategory: 'Plan',
+  },
+  {
+    title: "Sprint Tracker",
+    url: "/genie-admin?tab=sprint-tracker",
+    icon: Target,
+    description: "Track dual-developer sprint progress, daily tasks, and standups",
+    minTier: 'free',
+    category: 'manage',
+    subCategory: 'Plan',
+    isInternal: true,
   },
   // CREATE - CONSOLIDATED into Genie Cast 4-tab structure
   // Library, Studio, Review, Assets, Scheduler all now live in Genie Cast
