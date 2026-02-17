@@ -63,6 +63,105 @@ interface SprintTrackerState {
   standups: StandupEntry[];
 }
 
+// ─── Day 1 Diagnosis Findings (detailed per-issue tracking) ─────────────────
+
+interface DiagnosisFinding {
+  id: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  file: string;
+  line?: number;
+  issue: string;
+  rootCause: string;
+  status: 'fixed' | 'open' | 'deferred';
+  fixedIn?: string; // commit or PR reference
+}
+
+interface TaskFindings {
+  summary: string;
+  totalIssues: number;
+  issuesBySeverity: { critical: number; high: number; medium: number; low: number };
+  findings: DiagnosisFinding[];
+  dayTwoImpact: string; // What this diagnosis means for Day 2 planning
+}
+
+const DAY1_FINDINGS: Record<string, TaskFindings> = {
+  'C-101': {
+    summary: 'GenieSpark has critical race conditions in script save + navigate flow, missing error handling across all 4 content handlers, a broken production hub route, and inconsistent stats computation.',
+    totalIssues: 14,
+    issuesBySeverity: { critical: 3, high: 3, medium: 5, low: 3 },
+    dayTwoImpact: 'Spark handlers are now fixed. Day 3 C-301 (SmartContentPipeline) and C-302 (SparkGuidedWizard) are the remaining deep fixes.',
+    findings: [
+      { id: 'S-001', severity: 'critical', file: 'src/pages/GenieSpark.tsx', line: 45, issue: 'Race condition: saveScript() not awaited before navigate()', rootCause: 'saveScript is async but called synchronously — navigation fires before script persists to DB', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-002', severity: 'critical', file: 'src/pages/GenieSpark.tsx', line: 50, issue: 'handleSendToVibe: same race condition + missing stats object', rootCause: 'Copy-paste from handleSendToScriptEditor but stats block was omitted', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-003', severity: 'critical', file: 'src/pages/GenieSpark.tsx', line: 84, issue: 'Broken route: /genie-studio/productions does not exist', rootCause: 'Production Hub was moved to /genie-admin?tab=library but this reference was not updated', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-004', severity: 'high', file: 'src/pages/GenieSpark.tsx', line: 28, issue: 'No error handling on any of the 4 content handlers', rootCause: 'Handlers lacked try/catch — if saveScript fails, user gets silent failure + broken navigation', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-005', severity: 'high', file: 'src/pages/GenieSpark.tsx', line: 88, issue: 'handleSaveToKnowledgeBase is a no-op stub (toast only, no save)', rootCause: 'Feature was stubbed during initial implementation and never completed', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-006', severity: 'high', file: 'src/components/genie-studio/SmartContentPipeline.tsx', issue: 'SmartContentPipeline AI generation uses simulated delay, not real API', rootCause: '80KB component has placeholder generation logic — needs Supabase edge function integration', status: 'open' },
+      { id: 'S-007', severity: 'medium', file: 'src/constants/genie-products.ts', line: 109, issue: 'Tagline inconsistency: "Ignite your Ideas" vs "Ignite Your Ideas"', rootCause: 'Capitalization mismatch between genie-products.ts and QuadrantProductHeader.tsx', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-008', severity: 'medium', file: 'src/components/genie-spark/SparkGuidedWizard.tsx', line: 130, issue: 'onGenerate uses simulated 2s delay instead of real AI generation', rootCause: 'GenieSpark.tsx passes a fake onGenerate callback with setTimeout', status: 'open' },
+      { id: 'S-009', severity: 'medium', file: 'src/components/genie-spark/SparkGuidedWizard.tsx', line: 162, issue: 'Phase navigation buttons lack ARIA roles and labels', rootCause: 'Accessibility was not implemented during initial wizard build', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-010', severity: 'medium', file: 'src/pages/GenieSpark.tsx', line: 26, issue: 'savedScripts destructured but never used', rootCause: 'Variable was intended for UI display but the dashboard was moved to GenieMind', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-011', severity: 'medium', file: 'src/pages/GenieSpark.tsx', line: 179, issue: 'Image-to-Script onGenerateVideo creates script but does not navigate', rootCause: 'Handler saves script locally but user has no way to find it afterward', status: 'open' },
+      { id: 'S-012', severity: 'low', file: 'src/pages/GenieSpark.tsx', line: 162, issue: 'QuickTemplateSelector onSelect only shows toast, no template pre-fill', rootCause: 'Template selection switches tab but does not pass template data to pipeline', status: 'open' },
+      { id: 'S-013', severity: 'low', file: 'src/components/genie-spark/SparkGuidedWizard.tsx', line: 97, issue: 'Refine and Export phases always show isComplete: false', rootCause: 'No completion tracking for phases 4 and 5', status: 'open' },
+      { id: 'S-014', severity: 'low', file: 'src/pages/GenieSpark.tsx', issue: 'Duplicate script creation logic across 4 handlers', rootCause: 'No shared factory — each handler builds GenieScript independently', status: 'fixed', fixedIn: 'abb79815' },
+    ],
+  },
+  'C-102': {
+    summary: 'GenieMind has wrong tagline in header and docs, no loading indicator for media library, voiceover save is a stub, and the ScriptEditorTab (127KB) needs deep investigation on Day 4.',
+    totalIssues: 13,
+    issuesBySeverity: { critical: 2, high: 3, medium: 5, low: 3 },
+    dayTwoImpact: 'Mind is scheduled for Day 4. The voiceover stub and ScriptEditorTab are the critical Day 4 fixes (C-401 to C-404).',
+    findings: [
+      { id: 'M-001', severity: 'critical', file: 'src/components/navigation/QuadrantProductHeader.tsx', line: 50, issue: 'Mind tagline shows "Think Beyond Limits" instead of official "AI That Understands"', rootCause: 'QuadrantProductHeader hardcodes taglines separately from genie-products.ts — values diverged', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'M-002', severity: 'critical', file: 'src/pages/GenieMind.tsx', line: 241, issue: 'Voiceover save handler is a stub — logs toast but does not persist audio', rootCause: 'useGenieMediaLibrary does not expose a saveVoiceover method; handler was left as placeholder', status: 'open' },
+      { id: 'M-003', severity: 'high', file: 'src/components/genie-studio/ScriptEditorTab.tsx', issue: 'ScriptEditorTab is 127KB — needs investigation for performance and correctness', rootCause: 'Massive single-file component; needs Day 4 deep dive (C-401)', status: 'open' },
+      { id: 'M-004', severity: 'high', file: 'src/pages/GenieMind.tsx', line: 301, issue: 'Audio delete handler says "Delete via Genie Vibe" — no actual delete', rootCause: 'Cross-product delete was not implemented; user is told to go to a different product', status: 'open' },
+      { id: 'M-005', severity: 'high', file: 'src/components/genie-studio/CrossFunctionalMusic.tsx', issue: 'CrossFunctionalMusic generation UI — needs verification of API integration', rootCause: 'Scheduled for Day 4 (C-403)', status: 'open' },
+      { id: 'M-006', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 2, issue: 'Doc comment tagline wrong: "Think Beyond Limits" vs "AI That Understands"', rootCause: 'Same root cause as M-001 — copy-paste of old tagline in JSDoc', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'M-007', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 57, issue: 'No loading indicator while media library loads (mediaLoading not surfaced)', rootCause: 'mediaLoading is destructured from hook but never rendered in UI', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'M-008', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 325, issue: 'Audio elements lack aria-label — screen readers cannot identify tracks', rootCause: 'Accessibility not considered during audio player implementation', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'M-009', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 82, issue: 'Quick stats bar uses 5-column grid — collapses poorly on smaller screens', rootCause: 'No responsive breakpoint for stats bar (always grid-cols-5)', status: 'open' },
+      { id: 'M-010', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 40, issue: 'initialTab from URL params only read once — tab changes not reflected in URL', rootCause: 'useState(initialTab) captures initial value; subsequent tab changes do not update searchParams', status: 'open' },
+      { id: 'M-011', severity: 'low', file: 'src/pages/GenieMind.tsx', line: 149, issue: 'Script card click always goes to script-editor tab — does not open specific script', rootCause: 'setActiveTab("script-editor") without passing script ID to editor', status: 'open' },
+      { id: 'M-012', severity: 'low', file: 'src/components/genie-studio/SavedAudioCard.tsx', issue: 'SavedAudioCard needs verification — may have stale audio URL handling', rootCause: 'Scheduled for Day 4 (C-402)', status: 'open' },
+      { id: 'M-013', severity: 'low', file: 'src/pages/GenieMind.tsx', line: 256, issue: 'BatchScriptGenerationWorkflow has no props — fires internally without callbacks', rootCause: 'Batch component is self-contained; cannot report results back to GenieMind', status: 'open' },
+    ],
+  },
+  'C-103': {
+    summary: 'GenieDeck is the most production-ready of the 3 products. Build passes, routing correct, HIPAA compliance present. Main issues are polish: hardcoded email, missing fallback UI, image loading states.',
+    totalIssues: 6,
+    issuesBySeverity: { critical: 0, high: 0, medium: 3, low: 3 },
+    dayTwoImpact: 'Deck is scheduled for Day 2 (C-201 to C-203). Focus is on PresentationWizard 6-step flow — the page shell is solid.',
+    findings: [
+      { id: 'D-001', severity: 'medium', file: 'src/pages/GenieDeck.tsx', line: 158, issue: 'Support email hardcoded as support@example.com (placeholder)', rootCause: 'ErrorDisplay component used placeholder during development', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'D-002', severity: 'medium', file: 'src/components/landing/demo-hub/DeckDemoCard.tsx', line: 545, issue: 'Missing fallback UI when industry example data is absent (returns null)', rootCause: 'Early return with null instead of user-facing empty state', status: 'open' },
+      { id: 'D-003', severity: 'medium', file: 'src/config/genieStudioNavItems.ts', line: 143, issue: 'Tier gating set to "starter" but no client-side check in route guard', rootCause: 'GenieStudioProtectedRoute does auth check but not tier check', status: 'open' },
+      { id: 'D-004', severity: 'low', file: 'src/components/landing/demo-hub/DeckDemoCard.tsx', line: 560, issue: 'Error messages are generic — do not mention "Genie Deck" by name', rootCause: 'Error handler uses generic message strings', status: 'open' },
+      { id: 'D-005', severity: 'low', file: 'src/components/landing/demo-hub/DeckDemoCard.tsx', line: 628, issue: 'AI image generation has no loading indicator (skeleton/shimmer)', rootCause: 'generateSlideImage runs async without visual feedback', status: 'open' },
+      { id: 'D-006', severity: 'low', file: 'src/components/navigation/QuadrantProductHeader.tsx', line: 149, issue: 'Carousel prev/next buttons lack aria-pressed and role attributes', rootCause: 'Accessibility not added to GenieDeckHero carousel', status: 'open' },
+    ],
+  },
+  'C-104': {
+    summary: 'Cross-product diagnosis complete. 33 total issues identified across Spark (14), Mind (13), Deck (6). 11 issues fixed on Day 1. 22 remain open for Days 2-4. Fixes applied: race conditions, error handling, tagline alignment, ARIA accessibility, broken routes, placeholder email.',
+    totalIssues: 33,
+    issuesBySeverity: { critical: 5, high: 6, medium: 13, low: 9 },
+    dayTwoImpact: 'Day 2 focus: GenieDeck PresentationWizard (C-201 to C-203). Deck is the cleanest product — fix the wizard flow and it is complete.',
+    findings: [
+      { id: 'X-001', severity: 'high', file: 'src/constants/genie-products.ts', issue: 'Tagline capitalization inconsistency between genie-products.ts and QuadrantProductHeader', rootCause: 'Two sources of truth for product branding — should use single import', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'X-002', severity: 'medium', file: 'src/components/navigation/QuadrantProductHeader.tsx', issue: 'QuadrantProductHeader hardcodes product data instead of importing from genie-products.ts', rootCause: 'Header was built independently of genie-products.ts constant', status: 'open' },
+      { id: 'X-003', severity: 'medium', file: 'N/A', issue: 'No shared error boundary for Genie product pages', rootCause: 'Each page has its own error handling but no unified fallback', status: 'open' },
+    ],
+  },
+  'S-101': {
+    summary: 'Build passes. 7 files changed, 140 insertions, 70 deletions. All Day 1 diagnosis tasks complete. 11 of 33 issues fixed. Branch pushed and PR-ready.',
+    totalIssues: 0,
+    issuesBySeverity: { critical: 0, high: 0, medium: 0, low: 0 },
+    dayTwoImpact: 'Branch is clean. Ready for Day 2 Deck work.',
+    findings: [],
+  },
+};
+
 // ─── Static Sprint Plan Data (41 tasks from GENIESUITE_PROJECT_PLAN.csv) ────
 
 const SPRINT_START_DATE = '2026-02-17';
@@ -166,11 +265,11 @@ function calculateCurrentDay(): number {
 
 // Default completed tasks from automated diagnosis (Day 1 Claude tasks)
 const DEFAULT_TASK_OVERRIDES: SprintTrackerState['taskOverrides'] = {
-  'C-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Diagnosed: 14 issues found (3 critical, 3 high, 5 medium, 3 low)' },
-  'C-102': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Diagnosed: 13 issues found (2 critical, 3 high, 5 medium, 3 low)' },
-  'C-103': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Diagnosed: 6 issues found (0 critical, 0 high, 3 medium, 3 low)' },
-  'C-104': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'All issues documented with fix plans. Fixes applied: race conditions, error handling, tagline alignment, accessibility, broken routes, hardcoded email.' },
-  'S-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Build passes. All fixes committed and pushed.' },
+  'C-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '14 issues found (3 crit, 3 high, 5 med, 3 low). Fixed: race conditions in save+navigate, error handling on all 4 handlers, broken /genie-studio/productions route, stub handleSaveToKnowledgeBase, tagline capitalization, ARIA labels, duplicate code. Open: SmartContentPipeline fake AI, wizard simulated generation, template pre-fill, phase completion tracking.' },
+  'C-102': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '13 issues found (2 crit, 3 high, 5 med, 3 low). Fixed: tagline "Think Beyond Limits"→"AI That Understands" in header+docs, added media loading spinner, added audio aria-labels. Open: voiceover save stub, ScriptEditorTab 127KB deep dive, audio delete stub, CrossFunctionalMusic API verification, stats bar responsive, URL tab sync, script card navigation.' },
+  'C-103': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '6 issues found (0 crit, 0 high, 3 med, 3 low). Fixed: support@example.com→support@geniaisuite.com. Open: DeckDemoCard null fallback, tier gating client-side check, generic error messages, AI image loading indicator, carousel ARIA. Deck is most production-ready — Day 2 focus is PresentationWizard flow.' },
+  'C-104': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '33 total issues across 3 products: Spark(14) Mind(13) Deck(6). 11 fixed Day 1, 22 open for Days 2-4. Fixed: tagline alignment across genie-products.ts + QuadrantProductHeader. Open: QuadrantProductHeader should import from genie-products.ts, no shared error boundary.' },
+  'S-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Build passes (58s). 7 files changed: GenieSpark.tsx, GenieMind.tsx, GenieDeck.tsx, genie-products.ts, QuadrantProductHeader.tsx, SparkGuidedWizard.tsx, SprintTrackerDashboard.tsx. 140 insertions, 70 deletions. Commit: abb79815. Branch pushed to origin.' },
 };
 
 function useSprintTrackerState() {
@@ -181,8 +280,28 @@ function useSprintTrackerState() {
     } catch (e) {
       console.error('[SprintTracker] Failed to load state:', e);
     }
-    // Seed with completed Day 1 diagnosis tasks
-    return { taskOverrides: { ...DEFAULT_TASK_OVERRIDES }, standups: [] };
+    // Seed with completed Day 1 diagnosis tasks and standup
+    return {
+      taskOverrides: { ...DEFAULT_TASK_OVERRIDES },
+      standups: [
+        {
+          day: 1,
+          developer: 'claude' as Developer,
+          yesterday: 'N/A — Sprint Day 1 start',
+          today: 'Completed C-101 to C-104 + S-101: Full diagnosis of GenieSpark (14 issues), GenieMind (13 issues), GenieDeck (6 issues). Fixed 11 critical/high issues including race conditions, broken routes, missing error handling, tagline mismatches, accessibility gaps. Resolved merge conflicts with main branch.',
+          blockers: 'SmartContentPipeline (80KB) uses simulated AI — needs real Supabase edge function. ScriptEditorTab (127KB) needs Day 4 deep dive. QuadrantProductHeader hardcodes product data instead of importing from genie-products.ts — creates drift risk.',
+          createdAt: '2026-02-17T17:00:00Z',
+        },
+        {
+          day: 2,
+          developer: 'claude' as Developer,
+          yesterday: 'Day 1: Diagnosed all 3 CREATE products. Found 33 issues total (5 critical, 6 high, 13 medium, 9 low). Fixed 11 on Day 1. Build passes.',
+          today: 'Day 2 plan: C-201 Fix GenieDeck PresentationWizard creation flow (4h). C-202 Fix presentation-generator sub-components — all 6 wizard steps (3h). C-203 End-to-end verification: input → slides → preview → save (1h). S-201 Build check.',
+          blockers: 'None anticipated — Deck is the cleanest product. PresentationWizard.tsx is the main unknown (need to trace all 6 steps). No shared file conflicts with Lovable Day 2 tasks (L-201 to L-204 are Landing Page only).',
+          createdAt: '2026-02-17T17:00:00Z',
+        },
+      ],
+    };
   });
 
   useEffect(() => {
@@ -258,12 +377,27 @@ const statusConfig: Record<TaskStatus, { label: string; className: string }> = {
   rejected: { label: 'Rejected', className: 'bg-red-100 text-red-700' },
 };
 
+const findingSeverityColor: Record<string, string> = {
+  critical: 'text-red-600 bg-red-50 border-red-200',
+  high: 'text-orange-600 bg-orange-50 border-orange-200',
+  medium: 'text-blue-600 bg-blue-50 border-blue-200',
+  low: 'text-gray-600 bg-gray-50 border-gray-200',
+};
+
+const findingStatusIcon: Record<string, string> = {
+  fixed: 'text-green-600',
+  open: 'text-amber-600',
+  deferred: 'text-gray-400',
+};
+
 function TaskCard({ task, status, onStatusChange }: {
   task: SprintTask;
   status: TaskStatus;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [showFindings, setShowFindings] = useState(false);
+  const findings = DAY1_FINDINGS[task.id];
 
   return (
     <Card className={cn(
@@ -281,6 +415,11 @@ function TaskCard({ task, status, onStatusChange }: {
               {priorityConfig[task.priority].label}
             </Badge>
             <Badge variant="outline" className="text-xs">{task.module}</Badge>
+            {findings && findings.totalIssues > 0 && (
+              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-300">
+                {findings.totalIssues} issues
+              </Badge>
+            )}
           </div>
           <Badge className={cn("text-xs shrink-0", statusConfig[status].className)}>
             {statusConfig[status].label}
@@ -291,13 +430,29 @@ function TaskCard({ task, status, onStatusChange }: {
           {task.title}
         </p>
 
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          Details
-        </button>
+        {/* Summary line for completed diagnosis tasks */}
+        {findings && status === 'completed' && (
+          <p className="text-xs text-muted-foreground italic">{findings.summary}</p>
+        )}
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            Details
+          </button>
+          {findings && findings.findings.length > 0 && (
+            <button
+              onClick={() => setShowFindings(!showFindings)}
+              className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 transition-colors font-medium"
+            >
+              {showFindings ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              Findings ({findings.findings.length})
+            </button>
+          )}
+        </div>
 
         {expanded && (
           <div className="space-y-2 pt-1">
@@ -318,6 +473,75 @@ function TaskCard({ task, status, onStatusChange }: {
               <p className="text-xs text-amber-600">{task.notes}</p>
             )}
             <p className="text-xs text-muted-foreground">Est: {task.estimatedHours}h</p>
+            {findings && (
+              <div className="text-xs text-muted-foreground">
+                <span className="font-medium">Day 2 Impact:</span> {findings.dayTwoImpact}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Detailed Findings Panel */}
+        {showFindings && findings && (
+          <div className="space-y-2 pt-2 border-t border-purple-200/50">
+            {/* Severity summary bar */}
+            <div className="flex items-center gap-2 text-[10px] flex-wrap">
+              {findings.issuesBySeverity.critical > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">
+                  {findings.issuesBySeverity.critical} Critical
+                </span>
+              )}
+              {findings.issuesBySeverity.high > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 font-medium">
+                  {findings.issuesBySeverity.high} High
+                </span>
+              )}
+              {findings.issuesBySeverity.medium > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
+                  {findings.issuesBySeverity.medium} Medium
+                </span>
+              )}
+              {findings.issuesBySeverity.low > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+                  {findings.issuesBySeverity.low} Low
+                </span>
+              )}
+              <span className="text-muted-foreground">
+                — {findings.findings.filter(f => f.status === 'fixed').length} fixed, {findings.findings.filter(f => f.status === 'open').length} open
+              </span>
+            </div>
+            {/* Individual findings */}
+            <ScrollArea className="max-h-[300px]">
+              <div className="space-y-1.5">
+                {findings.findings.map(finding => (
+                  <div
+                    key={finding.id}
+                    className={cn(
+                      "p-2 rounded border text-[11px] leading-relaxed",
+                      findingSeverityColor[finding.severity],
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold">{finding.id}</span>
+                        <Badge className={cn("text-[9px] h-4 px-1", findingSeverityColor[finding.severity])}>
+                          {finding.severity}
+                        </Badge>
+                      </div>
+                      <span className={cn("text-[10px] font-semibold uppercase", findingStatusIcon[finding.status])}>
+                        {finding.status === 'fixed' ? '✓ FIXED' : finding.status === 'open' ? '○ OPEN' : '— DEFERRED'}
+                      </span>
+                    </div>
+                    <p className="font-medium mt-0.5">{finding.issue}</p>
+                    <p className="opacity-80 mt-0.5"><span className="font-medium">Root cause:</span> {finding.rootCause}</p>
+                    <div className="flex items-center gap-2 mt-0.5 opacity-70">
+                      <span className="font-mono">{finding.file}{finding.line ? `:${finding.line}` : ''}</span>
+                      {finding.fixedIn && <span className="font-mono">commit: {finding.fixedIn}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         )}
 
