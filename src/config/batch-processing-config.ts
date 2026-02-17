@@ -154,9 +154,22 @@ export const PROVIDER_RATE_LIMITS = {
     concurrentRequests: 5,
   },
   gemini: {
-    requestsPerMinute: 1000,
-    tokensPerMinute: 1000000,
-    concurrentRequests: 20,
+    // Upgraded via Google Cloud quota adjuster (Generative Language API)
+    requestsPerMinute: 2000,
+    tokensPerMinute: 4000000,
+    concurrentRequests: 30,
+    // Throttle config: queue excess requests with 500ms spacing
+    throttle: { enabled: true, delayMs: 500, maxQueueSize: 200 },
+  },
+  deepseek: {
+    requestsPerMinute: 120,
+    tokensPerMinute: 200000,
+    concurrentRequests: 8,
+  },
+  alibaba: {
+    requestsPerMinute: 100,
+    tokensPerMinute: 150000,
+    concurrentRequests: 5,
   },
   elevenlabs: {
     requestsPerMinute: 100,
@@ -170,10 +183,6 @@ export const PROVIDER_RATE_LIMITS = {
   azure: {
     requestsPerMinute: 200,
     concurrentRequests: 10,
-  },
-  alibaba: {
-    requestsPerMinute: 100,
-    concurrentRequests: 5,
   },
   deepl: {
     requestsPerMinute: 30,
