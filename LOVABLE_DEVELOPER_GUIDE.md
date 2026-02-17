@@ -8,12 +8,23 @@
 
 ## DAILY MORNING ROUTINE (Do This Every Session Start)
 
+> **Quick Start:** Follow `LOVABLE_MORNING_CHECKLIST.md` for a streamlined, Lovable-specific checklist.
+> Claude has a separate checklist: `CLAUDE_MORNING_CHECKLIST.md` (different focus areas).
+
+### Step 0: Read Shared Changelog (NEW — Most Important)
+```
+READ: SHARED_CHANGELOG.md
+```
+This is the single source of truth for what changed overnight. Both developers update it.
+Look for entries marked "Impact on Lovable" — these tell you exactly what you need to know.
+
 ### Step 1: Read Claude's Latest Updates
 ```
 READ these files at the start of every session:
-1. GENIESUITE_DAY1_DIAGNOSIS.md — Claude's diagnosis findings (will be updated daily)
-2. GENIESUITE_PROJECT_PLAN.csv — Full sprint plan with status, findings, actual effort
-3. src/components/genie-admin/SprintTrackerDashboard.tsx — Sprint Tracker (look at SPRINT_TASKS array for your tasks, DEFAULT_TASK_OVERRIDES for Claude's completed work)
+1. SHARED_CHANGELOG.md — What shared resources changed (NEW)
+2. GENIESUITE_DAY1_DIAGNOSIS.md — Claude's diagnosis findings (will be updated daily)
+3. GENIESUITE_PROJECT_PLAN.csv — Full sprint plan with status, findings, actual effort
+4. src/components/genie-admin/SprintTrackerDashboard.tsx — Sprint Tracker (look at SPRINT_TASKS array for your tasks, DEFAULT_TASK_OVERRIDES for Claude's completed work)
 ```
 
 ### Step 2: Check Current Day's Tasks
@@ -237,6 +248,7 @@ git push
 
 Before ending your session each day:
 
+- [ ] **SHARED_CHANGELOG.md updated** with entries for any shared resources you created/modified/fixed
 - [ ] All assigned tasks for the day marked as completed (or noted as in-progress with reason)
 - [ ] `npm run build` passes
 - [ ] CSV updated with status, actual effort, and findings
