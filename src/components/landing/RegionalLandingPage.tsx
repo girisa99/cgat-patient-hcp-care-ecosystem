@@ -381,6 +381,19 @@ const REGION_VOICES: Record<string, VoiceOption[]> = {
     { code: 'fr-FR', label: 'French', nativeLabel: 'Français', azureVoice: 'fr-FR-DeniseNeural', flag: '🇫🇷' },
     { code: 'am-ET', label: 'Amharic', nativeLabel: 'አማርኛ', azureVoice: 'am-ET-MekdesNeural', flag: '🇪🇹' },
   ],
+  sea: [
+    { code: 'ms-MY', label: 'Malay', nativeLabel: 'Melayu', azureVoice: 'ms-MY-YasminNeural', flag: '🇲🇾' },
+    { code: 'id-ID', label: 'Indonesian', nativeLabel: 'Bahasa', azureVoice: 'id-ID-GadisNeural', flag: '🇮🇩' },
+    { code: 'th-TH', label: 'Thai', nativeLabel: 'ไทย', azureVoice: 'th-TH-PremwadeeNeural', flag: '🇹🇭' },
+    { code: 'vi-VN', label: 'Vietnamese', nativeLabel: 'Tiếng Việt', azureVoice: 'vi-VN-HoaiMyNeural', flag: '🇻🇳' },
+    { code: 'tl-PH', label: 'Filipino', nativeLabel: 'Filipino', azureVoice: 'fil-PH-BlessicaNeural', flag: '🇵🇭' },
+  ],
+  cjk: [
+    { code: 'zh-CN', label: 'Chinese', nativeLabel: '中文', azureVoice: 'zh-CN-XiaoxiaoNeural', flag: '🇨🇳' },
+    { code: 'ja-JP', label: 'Japanese', nativeLabel: '日本語', azureVoice: 'ja-JP-NanamiNeural', flag: '🇯🇵' },
+    { code: 'ko-KR', label: 'Korean', nativeLabel: '한국어', azureVoice: 'ko-KR-SunHiNeural', flag: '🇰🇷' },
+    { code: 'zh-TW', label: 'Traditional Chinese', nativeLabel: '繁體中文', azureVoice: 'zh-TW-HsiaoChenNeural', flag: '🇹🇼' },
+  ],
   apac: [
     { code: 'ja-JP', label: 'Japanese', nativeLabel: '日本語', azureVoice: 'ja-JP-NanamiNeural', flag: '🇯🇵' },
     { code: 'zh-CN', label: 'Chinese', nativeLabel: '中文', azureVoice: 'zh-CN-XiaoxiaoNeural', flag: '🇨🇳' },
@@ -1000,8 +1013,8 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 // CONSISTENT METRICS — Single source of truth
 // ============================================
 const LANDING_METRICS = {
-  regions: 15,
-  subRegions: 60,
+  regions: 16,
+  subRegions: 56,
   languages: '140+',
   dialects: '50+',
   aiProviders: 19,
@@ -1337,9 +1350,11 @@ const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => {
 // Slug → DB region code mapping
 const SLUG_TO_REGION_CODE: Record<string, string> = {
   nam: 'NAM', europe: 'WESTERN', mena: 'MENA', india: 'IND',
-  africa: 'AFR', apac: 'APAC', latam: 'LATAM', caribbean: 'CARIB',
+  africa: 'AFR', apac: 'APAC', sea: 'SEA', cjk: 'CJK',
+  latam: 'LATAM', caribbean: 'CARIB',
   oceania: 'WESTERN', turkey: 'TURKEY', pakistan: 'IND',
   bangladesh: 'IND', eastern_europe: 'EUR_EASTERN', central_asia: 'MENA',
+  south_asia: 'IND',
 };
 
 export const RegionalLandingPage: React.FC = () => {
