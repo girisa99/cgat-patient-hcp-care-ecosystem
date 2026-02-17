@@ -36,12 +36,13 @@ const ProductionCalendar = lazy(() => import('@/components/production/Production
 const AppointmentScheduler = lazy(() => import('@/components/arc/AppointmentScheduler').catch(() => ({ default: () => <div className="p-8 text-center text-muted-foreground">Appointments module loading...</div> })));
 const GenieCastHubMockup = lazy(() => import('./genie-cast/mockups/GenieCastHubMockup'));
 const GenieCastHub = lazy(() => import('./genie-cast/GenieCastHub'));
+const SprintTrackerDashboard = lazy(() => import('./SprintTrackerDashboard'));
 
 interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'landing-videos' | 'genie-cast-mockup' | 'genie-cast';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'landing-videos' | 'genie-cast-mockup' | 'genie-cast' | 'sprint-tracker';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -303,6 +304,13 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           {activeTab === 'genie-cast' && (
             <Suspense fallback={<TabLoading />}>
               <GenieCastHub />
+            </Suspense>
+          )}
+
+          {/* Sprint Tracker - Development Sprint Planning Dashboard */}
+          {activeTab === 'sprint-tracker' && (
+            <Suspense fallback={<TabLoading />}>
+              <SprintTrackerDashboard />
             </Suspense>
           )}
         </div>
