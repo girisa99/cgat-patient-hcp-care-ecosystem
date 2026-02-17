@@ -3,7 +3,7 @@
 > **Single Source of Truth** — Covers implementation governance, feature coverage, database audit, architecture, ops runbook, and roadmap.
 > 
 > **Last Updated:** 2026-02-17  
-> **Overall Implementation:** ~75%
+> **Overall Implementation:** ~78%
 
 ---
 
@@ -19,7 +19,7 @@
 | P1 | AI Routing Intelligence | MOSTLY DONE | **90%** | `intent-analyzer`, `ai-universal-processor`, `AIRoutingObservabilityDashboard` |
 | P2 | Multi-Model Comparison | PARTIAL | **40%** | `genie_configurations` (multi mode), `OCRVisionAIComparisonView` |
 | P3A | User-Scoped Deployments | COMPLETE | **95%** | `genie_deployments`, `EnhancedDeploymentManager`, `DeploymentHealthDashboard`, `DeploymentAnalyticsHistory` |
-| P3B | MCP & Label Studio | MOSTLY DONE | **75%** | `mcp_servers` table, `MCPServerManagementUI`, 14 LS components, `label-studio-connector` edge fn |
+| P3B | MCP & Label Studio | MOSTLY DONE | **85%** | `mcp_servers` table, `MCPServerManagementUI`, `mcp-tool-executor` edge fn, `useMCPToolExecutor`, 14 LS components, `label-studio-connector` edge fn |
 | P4 | Multi-Tenancy | NOT STARTED | **0%** | No `workspace_id` columns (by design) |
 
 ---
@@ -58,18 +58,18 @@
 
 **Built:** `genie_deployments` table, `EnhancedDeploymentManager` (multi-channel), `DeploymentFlowManager` (wizard), `deploymentFeaturePersistence` (CRUD + versioning + health + realtime), `useDeploymentHealth` hook (polling health + version management), `DeploymentHealthDashboard` (3-tab UI: health/analytics/versions), multi-environment (dev/test/uat/prod).
 
-### Phase 3B: MCP & Label Studio (75%)
+### Phase 3B: MCP & Label Studio (85%)
 
 | Missing Item | Description | Priority |
 |---|---|---|
 | ~~MCP server CRUD management UI~~ | ~~Create/edit/delete MCP servers from frontend~~ | ✅ Done |
-| MCP tool execution engine | Invoke MCP tools from agent UI | High |
-| MCP connection testing | Health check / ping MCP servers | Medium |
+| ~~MCP tool execution engine~~ | ~~`mcp-tool-executor` edge fn + `useMCPToolExecutor` hook + UI in MCPServerManagementUI~~ | ✅ Done |
+| ~~MCP connection testing~~ | ~~Health check via `mcp-tool-executor` healthCheck action~~ | ✅ Done |
 | ~~Label Studio real API integration~~ | ~~Already wired via `label-studio-connector` edge fn~~ | ✅ Done |
 | Training pipeline | Auto-export annotations → model fine-tuning | Medium |
 | MCP ↔ Agent action binding | Connect MCP tools to agent actions | Medium |
 
-**Built:** `mcp_servers` table (full schema), MCP SDK v1.15.1, `useUnifiedAgentBuilder` with `mcp_servers` state, 14 Label Studio components (analytics, sync, workflows, binding, quick actions, dashboard widget, batch ops, custom templates, annotation workflow), `LSUniversalProvider` context, `LabelStudioTrainingIntegration`.
+**Built:** `mcp_servers` table (full schema), MCP SDK v1.15.1, `mcp-tool-executor` edge function (JSON-RPC proxy to external MCP servers), `useMCPToolExecutor` hook, `MCPServerManagementUI` (CRUD + health check + tool execution), `useUnifiedAgentBuilder` with `mcp_servers` state, 14 Label Studio components, `LSUniversalProvider` context, `LabelStudioTrainingIntegration`.
 
 ### Phase 4: Multi-Tenancy (0% — Deferred)
 
