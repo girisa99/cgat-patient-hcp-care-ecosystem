@@ -76,6 +76,52 @@ import heroCaribbeanPipeline from '@/assets/hero-caribbean-pipeline.jpg';
 import heroCaribbeanLanguages from '@/assets/hero-caribbean-languages.jpg';
 import heroCaribbeanTranscreation from '@/assets/hero-caribbean-transcreation.jpg';
 
+// Unique region-specific hero images for all 9 remaining regions
+import heroRegionSea from '@/assets/hero-region-sea.jpg';
+import heroSeaPipeline from '@/assets/hero-sea-pipeline.jpg';
+import heroSeaLanguages from '@/assets/hero-sea-languages.jpg';
+import heroSeaTranscreation from '@/assets/hero-sea-transcreation.jpg';
+
+import heroRegionCjk from '@/assets/hero-region-cjk.jpg';
+import heroCjkPipeline from '@/assets/hero-cjk-pipeline.jpg';
+import heroCjkLanguages from '@/assets/hero-cjk-languages.jpg';
+import heroCjkTranscreation from '@/assets/hero-cjk-transcreation.jpg';
+
+import heroRegionOceania from '@/assets/hero-region-oceania.jpg';
+import heroOceaniaPipeline from '@/assets/hero-oceania-pipeline.jpg';
+import heroOceaniaLanguages from '@/assets/hero-oceania-languages.jpg';
+import heroOceaniaTranscreation from '@/assets/hero-oceania-transcreation.jpg';
+
+import heroRegionTurkey from '@/assets/hero-region-turkey.jpg';
+import heroTurkeyPipeline from '@/assets/hero-turkey-pipeline.jpg';
+import heroTurkeyLanguages from '@/assets/hero-turkey-languages.jpg';
+import heroTurkeyTranscreation from '@/assets/hero-turkey-transcreation.jpg';
+
+import heroRegionPakistan from '@/assets/hero-region-pakistan.jpg';
+import heroPakistanPipeline from '@/assets/hero-pakistan-pipeline.jpg';
+import heroPakistanLanguages from '@/assets/hero-pakistan-languages.jpg';
+import heroPakistanTranscreation from '@/assets/hero-pakistan-transcreation.jpg';
+
+import heroRegionBangladesh from '@/assets/hero-region-bangladesh.jpg';
+import heroBangladeshPipeline from '@/assets/hero-bangladesh-pipeline.jpg';
+import heroBangladeshLanguages from '@/assets/hero-bangladesh-languages.jpg';
+import heroBangladeshTranscreation from '@/assets/hero-bangladesh-transcreation.jpg';
+
+import heroRegionEasternEurope from '@/assets/hero-region-eastern-europe.jpg';
+import heroEasternEuropePipeline from '@/assets/hero-eastern-europe-pipeline.jpg';
+import heroEasternEuropeLanguages from '@/assets/hero-eastern-europe-languages.jpg';
+import heroEasternEuropeTranscreation from '@/assets/hero-eastern-europe-transcreation.jpg';
+
+import heroRegionCentralAsia from '@/assets/hero-region-central-asia.jpg';
+import heroCentralAsiaPipeline from '@/assets/hero-central-asia-pipeline.jpg';
+import heroCentralAsiaLanguages from '@/assets/hero-central-asia-languages.jpg';
+import heroCentralAsiaTranscreation from '@/assets/hero-central-asia-transcreation.jpg';
+
+import heroRegionSouthAsia from '@/assets/hero-region-south-asia.jpg';
+import heroSouthAsiaPipeline from '@/assets/hero-south-asia-pipeline.jpg';
+import heroSouthAsiaLanguages from '@/assets/hero-south-asia-languages.jpg';
+import heroSouthAsiaTranscreation from '@/assets/hero-south-asia-transcreation.jpg';
+
 const REGION_HERO_IMAGES: Record<RegionSlug, string[]> = {
   nam: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
   europe: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
@@ -83,19 +129,17 @@ const REGION_HERO_IMAGES: Record<RegionSlug, string[]> = {
   india: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
   africa: [heroRegionAfrica, heroAfricaPipeline, heroAfricaLanguages, heroAfricaTranscreation],
   apac: [heroRegionApac, heroApacPipeline, heroApacLanguages, heroApacTranscreation],
-  sea: [heroRegionApac, heroApacPipeline, heroApacLanguages, heroApacTranscreation],
-  cjk: [heroRegionApac, heroApacPipeline, heroApacLanguages, heroApacTranscreation],
+  sea: [heroRegionSea, heroSeaPipeline, heroSeaLanguages, heroSeaTranscreation],
+  cjk: [heroRegionCjk, heroCjkPipeline, heroCjkLanguages, heroCjkTranscreation],
   latam: [heroRegionLatam, heroLatamPipeline, heroLatamLanguages, heroLatamTranscreation],
   caribbean: [heroRegionCaribbean, heroCaribbeanPipeline, heroCaribbeanLanguages, heroCaribbeanTranscreation],
-  // P0 regions
-  oceania: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
-  turkey: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
-  // P1 regions
-  pakistan: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
-  bangladesh: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
-  eastern_europe: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
-  central_asia: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
-  south_asia: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
+  oceania: [heroRegionOceania, heroOceaniaPipeline, heroOceaniaLanguages, heroOceaniaTranscreation],
+  turkey: [heroRegionTurkey, heroTurkeyPipeline, heroTurkeyLanguages, heroTurkeyTranscreation],
+  pakistan: [heroRegionPakistan, heroPakistanPipeline, heroPakistanLanguages, heroPakistanTranscreation],
+  bangladesh: [heroRegionBangladesh, heroBangladeshPipeline, heroBangladeshLanguages, heroBangladeshTranscreation],
+  eastern_europe: [heroRegionEasternEurope, heroEasternEuropePipeline, heroEasternEuropeLanguages, heroEasternEuropeTranscreation],
+  central_asia: [heroRegionCentralAsia, heroCentralAsiaPipeline, heroCentralAsiaLanguages, heroCentralAsiaTranscreation],
+  south_asia: [heroRegionSouthAsia, heroSouthAsiaPipeline, heroSouthAsiaLanguages, heroSouthAsiaTranscreation],
 };
 
 // ============================================
