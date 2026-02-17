@@ -1,0 +1,278 @@
+/* Enhanced Tab Styles for Better Structure and Spacing */
+/* STANDARDIZED: Consistent across all diagrams - Scenarios, Visual Assets, Full Architecture */
+
+/* ============================================ */
+/* SCROLL BUTTONS - Prominent & Visible */
+/* ============================================ */
+.diagram-scroll-container {
+  @apply relative;
+}
+
+.diagram-scroll-btn {
+  @apply absolute top-1/2 -translate-y-1/2 z-20 
+    w-10 h-10 md:w-12 md:h-12 
+    flex items-center justify-center 
+    bg-primary text-primary-foreground 
+    rounded-full shadow-lg 
+    hover:bg-primary/90 hover:scale-110 
+    transition-all duration-200 
+    border-2 border-primary-foreground/20;
+}
+
+.diagram-scroll-btn-left {
+  @apply left-0 -translate-x-1/2;
+}
+
+.diagram-scroll-btn-right {
+  @apply right-0 translate-x-1/2;
+}
+
+.diagram-scroll-btn-up {
+  @apply top-0 left-1/2 -translate-x-1/2 -translate-y-1/2;
+}
+
+.diagram-scroll-btn-down {
+  @apply bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2;
+}
+
+/* ============================================ */
+/* PARENT LEVEL TABS - Top Navigation */
+/* ============================================ */
+.parent-tabs {
+  @apply flex items-center justify-start gap-2 md:gap-3 lg:gap-4 
+    p-3 md:p-4 lg:p-6 
+    bg-gradient-to-r from-background via-muted/20 to-background 
+    border-b-2 border-primary/10 
+    overflow-x-auto scrollbar-hide 
+    min-h-[56px] md:min-h-[70px] lg:min-h-[80px];
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.parent-tab-trigger {
+  @apply flex items-center gap-1.5 md:gap-2 
+    px-3 md:px-5 lg:px-6 
+    py-2 md:py-2.5 lg:py-3 
+    text-xs md:text-sm lg:text-base 
+    font-semibold rounded-lg md:rounded-xl 
+    transition-all duration-300 ease-in-out 
+    hover:bg-muted/60
+    border-2 border-transparent 
+    ring-offset-background 
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+    disabled:pointer-events-none disabled:opacity-50 
+    data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
+    data-[state=active]:border-primary/30 data-[state=active]:shadow-lg 
+    data-[state=active]:scale-105 
+    min-w-max whitespace-nowrap backdrop-blur-sm;
+}
+
+.parent-tab-content {
+  @apply mt-4 md:mt-6 lg:mt-8 
+    p-4 md:p-6 lg:p-8 
+    bg-gradient-to-br from-background to-muted/5 
+    rounded-xl md:rounded-2xl 
+    border border-border/40 shadow-lg 
+    ring-offset-background 
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+}
+
+/* ============================================ */
+/* CHILD LEVEL TABS - Sub Navigation */
+/* ============================================ */
+.child-tabs {
+  @apply flex items-center justify-start gap-1.5 md:gap-2 
+    p-2 md:p-3 
+    bg-gradient-to-r from-muted/30 to-muted/10 
+    border border-border/30 rounded-lg 
+    overflow-x-auto scrollbar-hide;
+  backdrop-filter: blur(8px);
+}
+
+.child-tab-trigger {
+  @apply flex items-center gap-1 md:gap-1.5 
+    px-2.5 md:px-4 
+    py-1.5 md:py-2 
+    text-xs md:text-sm 
+    font-medium rounded-md md:rounded-lg 
+    transition-all duration-200 
+    text-foreground hover:bg-background/60 hover:text-primary
+    border border-transparent 
+    ring-offset-background 
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+    disabled:pointer-events-none disabled:opacity-50 
+    min-w-max whitespace-nowrap;
+}
+
+.child-tab-trigger[data-state="active"] {
+  @apply bg-primary text-primary-foreground border-primary/20 shadow-md scale-105;
+}
+
+.child-tab-content {
+  @apply mt-3 md:mt-4 lg:mt-6 
+    p-3 md:p-4 lg:p-6 
+    bg-gradient-to-br from-background to-muted/5 
+    rounded-lg border border-border/30 shadow-sm 
+    ring-offset-background 
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+}
+
+/* ============================================ */
+/* DIAGRAM TABS - Standardized for all diagrams */
+/* ============================================ */
+.diagram-tabs {
+  @apply w-full;
+}
+
+.diagram-tabs-list {
+  @apply flex flex-wrap gap-1 md:gap-2 
+    p-2 md:p-3 
+    bg-card border border-border/50 rounded-lg 
+    overflow-x-auto scrollbar-hide;
+}
+
+.diagram-tab-trigger {
+  @apply flex items-center gap-1 md:gap-1.5 
+    px-2 md:px-3 lg:px-4 
+    py-1.5 md:py-2 
+    text-[10px] md:text-xs lg:text-sm 
+    font-medium rounded-md 
+    transition-all duration-200 
+    text-foreground/80 
+    hover:bg-muted hover:text-foreground
+    border border-transparent 
+    whitespace-nowrap min-w-max
+    data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
+    data-[state=active]:shadow-md;
+}
+
+.diagram-tab-content {
+  @apply mt-3 md:mt-4 animate-fade-in;
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+@media (max-width: 640px) {
+  .parent-tabs,
+  .child-tabs,
+  .diagram-tabs-list {
+    @apply -mx-2 px-2 gap-1;
+  }
+  
+  .parent-tab-trigger,
+  .child-tab-trigger,
+  .diagram-tab-trigger {
+    @apply text-[10px] px-2 py-1.5;
+  }
+}
+
+@media (max-width: 768px) {
+  .parent-tabs {
+    @apply p-3 gap-2;
+  }
+  
+  .parent-tab-trigger {
+    @apply px-3 py-2 text-xs gap-1.5;
+  }
+  
+  .parent-tab-content {
+    @apply mt-3 p-3;
+  }
+  
+  .child-tabs {
+    @apply p-2 gap-1;
+  }
+  
+  .child-tab-trigger {
+    @apply px-2 py-1.5 text-[10px];
+  }
+  
+  .child-tab-content {
+    @apply mt-3 p-3;
+  }
+  
+  .diagram-scroll-btn {
+    @apply w-8 h-8;
+  }
+}
+
+/* ============================================ */
+/* SCROLLBAR HIDE */
+/* ============================================ */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================ */
+/* ANIMATIONS */
+/* ============================================ */
+@keyframes tab-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.parent-tab-content,
+.child-tab-content,
+.diagram-tab-content {
+  animation: tab-fade-in 0.3s ease-out;
+}
+
+/* ============================================ */
+/* HOVER EFFECTS */
+/* ============================================ */
+.parent-tab-trigger:hover {
+  transform: translateY(-1px);
+}
+
+.child-tab-trigger:hover {
+  transform: translateY(-1px);
+}
+
+/* ============================================ */
+/* DIAGRAM CARD STYLES - Uniform Light Background */
+/* ============================================ */
+.diagram-card {
+  @apply bg-card border border-border/50 rounded-xl shadow-sm;
+}
+
+.diagram-card-header {
+  @apply p-4 md:p-6 border-b border-border/30;
+}
+
+.diagram-card-content {
+  @apply p-4 md:p-6;
+}
+
+.diagram-legend {
+  @apply p-3 md:p-4 rounded-lg border border-border/40 bg-muted/30;
+}
+
+.diagram-section {
+  @apply p-4 md:p-6 rounded-lg border border-border/30 bg-card;
+}

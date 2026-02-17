@@ -8,7 +8,7 @@ import {
   AlertCircle, Activity
 } from "lucide-react";
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import DashboardHeader from "@/components/layout/DashboardHeader";
+import AppLayout from '@/components/layout/AppLayout';
 import { getErrorMessage } from '@/utils/errorHandling';
 
 const ActiveVerification = () => {
@@ -27,9 +27,8 @@ const ActiveVerification = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHeader />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <AppLayout title="Active Verification">
+        <div className="max-w-7xl mx-auto">
           <Card className="border-0 shadow-sm bg-yellow-50 border-yellow-200">
             <CardHeader>
               <CardTitle className="text-yellow-800 flex items-center space-x-2">
@@ -42,15 +41,14 @@ const ActiveVerification = () => {
                 You need to be logged in to view verification data.
               </p>
             </CardContent>
-          </Card>
+           </Card>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
+    <AppLayout title="Active Verification">
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -133,7 +131,7 @@ const ActiveVerification = () => {
           </Card>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

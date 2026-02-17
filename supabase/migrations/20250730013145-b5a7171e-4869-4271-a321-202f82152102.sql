@@ -1,0 +1,71 @@
+-- Add onboarding treatment center APIs to the registry
+INSERT INTO api_integration_registry (
+  name, 
+  description, 
+  type, 
+  direction, 
+  purpose, 
+  category, 
+  base_url, 
+  version, 
+  status, 
+  lifecycle_stage,
+  endpoints_count,
+  created_by
+) VALUES 
+(
+  'Treatment Center Onboarding API',
+  'Comprehensive API for managing treatment center onboarding processes, applications, and workflow management',
+  'internal',
+  'bidirectional',
+  'Patient/Customer onboarding workflow management',
+  'onboarding',
+  '/api/onboarding',
+  '1.0.0',
+  'active',
+  'production',
+  12,
+  NULL
+),
+(
+  'Onboarding Document Management API',
+  'Document upload, validation, and management for treatment center onboarding processes',
+  'internal',
+  'inbound',
+  'Document processing and validation',
+  'onboarding',
+  '/api/onboarding/documents',
+  '1.0.0',
+  'active',
+  'production',
+  8,
+  NULL
+),
+(
+  'Customer Onboarding Notification API',
+  'Notification and communication services for customer onboarding workflows',
+  'internal',
+  'outbound',
+  'Customer communication and notifications',
+  'onboarding',
+  '/api/onboarding/notifications',
+  '1.0.0',
+  'active',
+  'production',
+  6,
+  NULL
+),
+(
+  'Onboarding Compliance Validation API',
+  'Compliance checking and validation services for treatment center onboarding',
+  'internal',
+  'bidirectional',
+  'Regulatory compliance validation',
+  'onboarding',
+  '/api/onboarding/compliance',
+  '1.0.0',
+  'active',
+  'production',
+  10,
+  NULL
+);

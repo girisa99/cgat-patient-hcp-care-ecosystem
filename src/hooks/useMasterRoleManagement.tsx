@@ -6,10 +6,12 @@
  */
 import { useMasterData } from './useMasterData';
 import { useMasterAuth } from './useMasterAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useMasterRoleManagement = () => {
-  const { modules, users, facilities, isLoading } = useMasterData();
-  const { userRoles } = useMasterAuth();
+  const { userRoles, isAuthenticated } = useMasterAuth();
+  const { modules, users, facilities, isLoading } = useMasterData(isAuthenticated);
 
   console.log('🔐 Master Role Management - Single source of truth active');
 
@@ -17,23 +19,31 @@ export const useMasterRoleManagement = () => {
   const activeModules = modules.filter(m => m.is_active);
   const activeFacilities = facilities.filter(f => f.is_active);
   
-  // Mock roles and permissions data
-  const roles = [
-    { id: '1', name: 'superAdmin', description: 'Super Administrator' },
-    { id: '2', name: 'onboardingTeam', description: 'Onboarding Team' },
-    { id: '3', name: 'patientCaregiver', description: 'Patient Caregiver' }
-  ];
+  // Fetch real roles from database
+  const { data: rolesData = [] } = useQuery({
+    queryKey: ['roles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
-  const permissions = [
-    { id: '1', name: 'user_management', description: 'Manage users' },
-    { id: '2', name: 'facility_management', description: 'Manage facilities' },
-    { id: '3', name: 'module_management', description: 'Manage modules' },
-    { id: '4', name: 'role_management', description: 'Manage roles' }
-  ];
+  const roles = rolesData;
+  const permissions = []; // Permissions not implemented yet
 
   // Role-based access
   const hasRole = (role: string) => userRoles.includes(role);
   const isAdmin = hasRole('superAdmin') || hasRole('onboardingTeam');
+  const isDemoUser = hasRole('demoUser');
+  
+  // Get demo-specific modules for demo users
+  const demoModules = modules.filter(m => m.name.startsWith('demo_'));
+  const hasDemoAccess = isDemoUser && demoModules.length > 0;
 
   return {
     // Data - now includes all required fields
@@ -52,7 +62,10 @@ export const useMasterRoleManagement = () => {
     // Access control
     hasRole,
     isAdmin,
+    isDemoUser,
     userRoles,
+    hasDemoAccess,
+    demoModules,
     
     // Meta
     meta: {

@@ -54,7 +54,7 @@ export const useSingleMasterModules = () => {
           is_active: moduleData.is_active ?? true
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -79,7 +79,7 @@ export const useSingleMasterModules = () => {
         })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

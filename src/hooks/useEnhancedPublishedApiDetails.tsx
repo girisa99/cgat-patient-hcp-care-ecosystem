@@ -21,10 +21,10 @@ export const useEnhancedPublishedApiDetails = () => {
         .from('external_api_registry')
         .select('*')
         .eq('id', apiId)
-        .single();
+        .maybeSingle();
 
-      if (externalError) {
-        console.error('❌ Error fetching external API registry:', externalError);
+      if (externalError || !externalApi) {
+        console.error('❌ Error fetching external API registry:', externalError || 'Not found');
         return null;
       }
 

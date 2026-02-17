@@ -16,7 +16,7 @@ import { ComponentAuditor } from './ComponentAuditor';
 import { ComponentPropValidator } from './ComponentPropValidator';
 import { RoleBasedUIValidator } from './RoleBasedUIValidator';
 import { AccessibilityComplianceChecker } from './AccessibilityComplianceChecker';
-import { DuplicateDetector } from './DuplicateDetector';
+import { DuplicateDetector } from '@/utils/duplicate-prevention-bridge';
 import { SimplifiedValidator } from './SimplifiedValidator';
 
 export class VerificationSummaryGenerator {

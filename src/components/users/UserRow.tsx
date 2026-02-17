@@ -40,7 +40,7 @@ export const UserRow: React.FC<UserRowProps> = React.memo(({
   onDeactivateUser,
   onDeleteUser
 }) => {
-  const roles = user.user_roles?.map((ur: any) => ur.roles?.name).filter(Boolean) || [];
+  const roles = user.user_roles?.map((ur) => ur.role?.name).filter(Boolean) || [];
   const verified = Boolean(user.email_confirmed_at);
 
   return (

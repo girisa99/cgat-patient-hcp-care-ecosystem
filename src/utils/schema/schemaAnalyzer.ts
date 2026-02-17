@@ -68,10 +68,16 @@ export const analyzeTable = async (tableName: string): Promise<SchemaAnalysis | 
     // Get record count to assess table usage
     let recordCount = 0;
     try {
-      const { count } = await supabase
-        .from(tableName as any)
-        .select('*', { count: 'exact', head: true });
-      recordCount = count || 0;
+      // Validate table name
+      const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+      if (!validTables.includes(tableName)) {
+        recordCount = 0;
+      } else {
+        const { count } = await (supabase as any)
+          .from(tableName)
+          .select('*', { count: 'exact', head: true });
+        recordCount = count || 0;
+      }
     } catch (e) {
       console.log(`Could not get record count for ${tableName}`);
     }

@@ -4,17 +4,22 @@
  * All application hooks consolidated to prevent duplication
  */
 
-// Authentication - Single Source
-export { useMasterAuth } from './useMasterAuth';
+// MASTER APPLICATION - SINGLE SOURCE OF TRUTH FOR EVERYTHING
+export { useMasterApplication } from './useMasterApplication';
 
-// User Management - Single Source  
+// Core Master Hooks (consolidated into useMasterApplication)
+export { useMasterAuth } from './useMasterAuth';
+export { useMasterData } from './useMasterData';
+export { useMasterToast } from './useMasterToast';
+
+// Legacy User Management - Single Source (use useMasterApplication instead)
 export { useMasterUserManagement } from './useMasterUserManagement';
 
 // Dashboard - Single Source (FIXED)
 export { useMasterDashboard } from './useMasterDashboard';
 
 // Patients - Single Source (FIXED - Real Data Only)
-export { useRealPatientData } from './patients/useRealPatientData';
+// Removed duplicate patient hooks - using existing useMasterUserManagement instead
 
 // Facilities - Single Source (FIXED)
 export { useMasterFacilities } from './useMasterFacilities';
@@ -28,11 +33,10 @@ export { useMasterSecurity } from './useMasterSecurity';
 // Reports - Single Source (FIXED)
 export { useMasterReports } from './useMasterReports';
 
-// Testing Suite - Single Source (FIXED)
-export { useMasterTestingSuite } from './useMasterTestingSuite';
+// Testing Suite - Ultimate Consolidated (FINAL VERSION)
+export { default as useMasterTesting } from './useMasterTesting';
 
-// Data Import - Single Source (FIXED)
-export { useMasterDataImport } from './useMasterDataImport';
+// Data Import - No longer needed (removed mock data)
 
 // API Services - Single Source
 export { useApiServices } from './useApiServices';
@@ -53,16 +57,71 @@ export { useExternalApiPublishing } from './useExternalApiPublishing';
 export { usePermissions } from './usePermissions';
 export { useUserManagementDialogs } from './useUserManagementDialogs';
 
+// Deployment & Enrollment Feature Persistence (P3)
+export { useDeploymentFeatures } from './useDeploymentFeatures';
+export { useEnrollmentAgentConfig } from './useEnrollmentAgentConfig';
+export { useEnrollmentMCPBridge } from './useEnrollmentMCPBridge';
+
+// Unified Agent Registry (Multi-UseCase Support)
+export { useAgentRegistry } from './useAgentRegistry';
+
+// Unified Agent Infrastructure Hub (Central Integration)
+export { useUnifiedAgentInfrastructure } from './useUnifiedAgentInfrastructure';
+
+// Unified AI Agent (Single hook for all agent types - Genie, Enrollment, Order, etc.)
+export { useUnifiedAIAgent } from './useUnifiedAIAgent';
+
+// Agent-Conversation Engine Mappings (Real-time status, NPI, Credentialing, Enrollment)
+export { useAgentConversationEngines } from './useAgentConversationEngines';
+
+// Unified Channel Deployments (Channels + Engines + Real-time status)
+export { useUnifiedChannelDeployments } from './useUnifiedChannelDeployments';
+
 // Routing
 export { useSimpleRouting } from './useSimpleRouting';
 export { useIntelligentRouting } from './useIntelligentRouting';
 
+// Real-time sync hooks
+export { useRealTimeRoleSync, useRoleSpecificSync, useApiSuiteSync, useAdminRoleSync } from './useRealTimeRoleSync';
+
+// Role-based testing hooks
+export { useRoleBasedTesting, useSuperAdminTesting, useHealthcareProviderTesting, useWorkflowManagerTesting } from './useRoleBasedTesting';
+export { useDocumentationVersioning, useSuperAdminVersioning, useHealthcareProviderVersioning, useFinanceTeamVersioning } from './useDocumentationVersioning';
+
+// Testing hooks
+
 // UI Hooks
 export { useToast } from './use-toast';
-export { useMasterToast } from './useMasterToast';
+
+// Mobile & Native Hooks
+export { useCapacitor } from './useCapacitor';
+export { useBiometricAuth } from './useBiometricAuth';
+export { useOfflineSync } from './useOfflineSync';
+export { useMobileFeatures } from './useMobileFeatures';
+
+// 4-Zone LLM Ecosystem Routing (IP-based auto-detection)
+export { useEcosystemRouting, ZONE_SUMMARY, COMPLETE_ROUTING_TABLE } from './useEcosystemRouting';
+
+// UNIVERSAL EXPORT - Ecosystem-wide download for all formats (PPTX, PDF, Images, HTML, JSON, etc.)
+export { useUniversalExport } from './useUniversalExport';
+
+// SINGLE SOURCE OF TRUTH: Regional Language & Bundle Management
+// useRegionalLanguage is the ONLY hook for language/region management
+// useLanguageBundles is an alias for the same hook
+export { useRegionalLanguage, useLanguageBundles } from './useRegionalLanguage';
+
+// Universal AI Hub (cross-ecosystem AI with regional routing)
+export { useUniversalAIHub } from './useUniversalAIHub';
+export { useGlobalTier } from './useGlobalTier';
 
 /**
  * ✅ SINGLE SOURCE OF TRUTH ARCHITECTURE - COMPLETE!
+ * 
+ * 🌟 MASTER APPLICATION CONSOLIDATION:
+ * - MAIN: useMasterApplication (NEW - CONSOLIDATES EVERYTHING)
+ * - Authentication: useMasterAuth (CORE)
+ * - Data Management: useMasterData (CORE)
+ * - Toast Notifications: useMasterToast (CORE)
  * 
  * 🎉 ALL MODULES CONSOLIDATED:
  * - Dashboard: useMasterDashboard (FIXED - consolidated data sources)
@@ -71,12 +130,11 @@ export { useMasterToast } from './useMasterToast';
  * - Onboarding: useMasterOnboarding (FIXED - multiple hooks consolidated)
  * - Security: useMasterSecurity (FIXED - fully consolidated)
  * - Reports: useMasterReports (FIXED - comprehensive reporting implemented)
- * - Testing Suite: useMasterTestingSuite (FIXED - consolidated)
+ * - Testing Suite: useConsolidatedTesting (FINAL - all duplicates removed)
  * - Data Import: useMasterDataImport (FIXED - consolidated)
  * - Ngrok Integration: useNgrokIntegration (FIXED - localhost verification)
  * - Modules: useSingleMasterModules (VERIFIED)
- * - User Management: useMasterUserManagement (VERIFIED)
- * - Authentication: useMasterAuth (VERIFIED)
+ * - User Management: useMasterUserManagement (LEGACY - use useMasterApplication)
  * - API Services: useApiServices (VERIFIED)
  * 
  * 🚀 ARCHITECTURE BENEFITS:

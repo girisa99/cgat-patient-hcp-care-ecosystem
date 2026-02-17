@@ -1,0 +1,300 @@
+/**
+ * Genie Command Center - Data Governance System
+ * 
+ * NOW IMPORTS FROM UNIFIED METRICS - Single Source of Truth
+ * 
+ * All values are derived from: src/genie-studio/governance/UnifiedMetrics.ts
+ * 
+ * VERIFIED GENIE-SPECIFIC COUNTS (2026-01-28):
+ * - Edge Functions: 62 (Genie-specific)
+ * - Hooks: 24 (Genie-specific)
+ * - Services: 19 (Genie-specific)
+ * - Database Tables: 42 (Genie-specific)
+ * - AI Agents: 12 (Genie-specific)
+ * - AI Providers: 13 Core Providers
+ * - Pipelines: 206 (21 categories)
+ * - Cross-Functional Capabilities: 25
+ * 
+ * LAST AUDITED: 2026-01-28
+ */
+
+import {
+  PHASES,
+  SCENARIO_METRICS,
+  PLATFORM_TOTALS,
+  GENIE_COUNTS,
+  INFRASTRUCTURE_METRICS,
+  FINANCIAL_METRICS,
+  METRICS_METADATA,
+  AI_PROVIDER_SUMMARY,
+  CONCURRENCY_CONFIG,
+  getPhaseProgress,
+  getPhaseDisplayString,
+  getScenarioDisplayString,
+  getCompletionDisplayString,
+  getCompletedPhasesString,
+  validateMetrics,
+  type PhaseData,
+} from '@/genie-studio/governance';
+
+// =============================================================================
+// RE-EXPORT METADATA
+// =============================================================================
+export const governanceMetadata = {
+  version: METRICS_METADATA.version,
+  lastUpdated: METRICS_METADATA.lastUpdated,
+  lastAuditedBy: METRICS_METADATA.lastAuditedBy,
+  nextAuditDue: METRICS_METADATA.nextAuditDue,
+  changeLog: METRICS_METADATA.changeLog,
+};
+
+// =============================================================================
+// MASTER SCENARIO COUNTS - DERIVED FROM UNIFIED METRICS
+// =============================================================================
+export interface MasterScenarioCounts {
+  phases: Record<string, PhaseData>;
+}
+
+export const masterScenarioCounts = {
+  phases: PHASES,
+  get totalScenarios() { return SCENARIO_METRICS.totalScenarios; },
+  get implementedScenarios() { return SCENARIO_METRICS.implementedScenarios; },
+  get completionPercentage() { return SCENARIO_METRICS.completionPercentage; },
+  get completedPhases() { return SCENARIO_METRICS.completedPhases; },
+};
+
+// =============================================================================
+// MASTER INFRASTRUCTURE COUNTS - GENIE-SPECIFIC (VERIFIED 2026-01-28)
+// =============================================================================
+/**
+ * Master Infrastructure Counts now include both platform totals and Genie-specific counts.
+ * GENIE_COUNTS is the primary source for Genie Studio ecosystem metrics.
+ */
+export const masterInfrastructureCounts = {
+  // Platform-wide totals (includes healthcare + shared infrastructure)
+  edgeFunctions: PLATFORM_TOTALS.edgeFunctions, // 157 total
+  customHooks: PLATFORM_TOTALS.hooks, // 280 total
+  databaseTables: PLATFORM_TOTALS.databaseTables, // 400 total
+  mobileComponents: PLATFORM_TOTALS.mobileComponents,
+  aiAgents: PLATFORM_TOTALS.aiAgents, // 15 total
+  ttsProviders: PLATFORM_TOTALS.ttsProviders,
+  products: PLATFORM_TOTALS.products, // 7 products
+  
+  // GENIE-SPECIFIC COUNTS (verified from GenieStudioRegistry.ts)
+  genie: {
+    edgeFunctions: GENIE_COUNTS.edgeFunctions, // 62
+    hooks: GENIE_COUNTS.hooks, // 24
+    services: GENIE_COUNTS.services, // 19
+    databaseTables: GENIE_COUNTS.databaseTables, // 42
+    aiAgents: GENIE_COUNTS.aiAgents, // 12
+    pages: GENIE_COUNTS.pages, // 10
+    aiProviders: GENIE_COUNTS.aiProviders, // 13
+    pipelines: GENIE_COUNTS.pipelines, // 206
+    categories: GENIE_COUNTS.categories, // 21
+    crossFunctionalCapabilities: GENIE_COUNTS.crossFunctionalCapabilities, // 25
+    supportedLanguages: GENIE_COUNTS.supportedLanguages, // 140
+  },
+  
+  // AI Provider Summary
+  aiProviders: AI_PROVIDER_SUMMARY,
+  
+  // Concurrency Configuration
+  concurrency: CONCURRENCY_CONFIG,
+  
+  // Genie-specific breakdown for UI (for backward compatibility)
+  genieSpecific: INFRASTRUCTURE_METRICS,
+  
+  // Last verification dates
+  verifiedAt: {
+    edgeFunctions: '2026-01-28',
+    customHooks: '2026-01-28',
+    databaseTables: '2026-01-28',
+    mobileComponents: '2026-01-28',
+    aiAgents: '2026-01-28',
+    aiProviders: '2026-01-28',
+  },
+};
+
+// =============================================================================
+// MASTER FINANCIAL METRICS - DERIVED FROM UNIFIED METRICS
+// =============================================================================
+export const masterFinancialMetrics = FINANCIAL_METRICS;
+
+// =============================================================================
+// GARTNER POSITIONING DATA
+// =============================================================================
+export const masterGartnerPosition = {
+  currentQuadrant: 'Visionaries' as const,
+  visionScore: 78,
+  executionScore: 52,
+  targetQuadrant: 'Leaders' as const,
+  targetVisionScore: 85,
+  targetExecutionScore: 75,
+  timelineToTarget: 'Q4 2027',
+  
+  competitors: [
+    { name: 'Adobe Premiere', quadrant: 'Leaders', vision: 80, execution: 90 },
+    { name: 'Canva', quadrant: 'Challengers', vision: 65, execution: 85 },
+    { name: 'CapCut', quadrant: 'Challengers', vision: 60, execution: 80 },
+    { name: 'Synthesia', quadrant: 'Visionaries', vision: 85, execution: 55 },
+    { name: 'Descript', quadrant: 'Visionaries', vision: 82, execution: 60 },
+    { name: 'InVideo', quadrant: 'Niche Players', vision: 50, execution: 55 },
+    { name: 'Genie Suite', quadrant: 'Visionaries', vision: 78, execution: 52 },
+  ],
+};
+
+// =============================================================================
+// VALIDATION - USE UNIFIED VALIDATOR
+// =============================================================================
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  lastChecked: string;
+}
+
+export const validateGovernanceData = (): ValidationResult => validateMetrics();
+
+// =============================================================================
+// DATA SYNC HELPERS - USE UNIFIED FUNCTIONS
+// =============================================================================
+export { 
+  getPhaseProgress,
+  getPhaseDisplayString as getPhaseProgressString,
+  getScenarioDisplayString,
+  getCompletionDisplayString,
+};
+
+// =============================================================================
+// AUDIT LOG
+// =============================================================================
+export interface AuditEntry {
+  timestamp: string;
+  action: 'UPDATE' | 'VERIFY' | 'AUDIT' | 'SYNC';
+  area: string;
+  previousValue?: string | number;
+  newValue?: string | number;
+  performedBy: string;
+  notes?: string;
+}
+
+export const recentAuditLog: AuditEntry[] = [
+  {
+    timestamp: '2026-01-28T12:00:00Z',
+    action: 'UPDATE',
+    area: 'P5 Commercialization Status',
+    previousValue: 12,
+    newValue: 38,
+    performedBy: 'Dev Team',
+    notes: 'P5 marked 100% complete: All legal compliance (ToS, Privacy, DMCA, AUP), HIPAA infrastructure (BAA, audit logs), Data Residency (10 regions), Stripe billing, and Whitelabel config verified implemented. SSO/SAML deferred.',
+  },
+  {
+    timestamp: '2026-01-28T11:00:00Z',
+    action: 'VERIFY',
+    area: 'AI Phases Implementation',
+    performedBy: 'Dev Team',
+    notes: 'Verified all AI phases complete: Phase 1 (AI Routing Intelligence) 100%, Phase 2 (Multi-Model Comparison) 100%, Phase 3B (MCP & Label Studio) 100% integrated. Phase 3A confirmed not required for Genie Studio.',
+  },
+  {
+    timestamp: '2026-01-28T10:00:00Z',
+    action: 'UPDATE',
+    area: 'P3 & P4 Status',
+    performedBy: 'Dev Team',
+    notes: 'P3 (66/66) and P4 (108/108) marked 100% complete. All analytics, collaboration, versioning, recovery, and multi-language features verified.',
+  },
+  {
+    timestamp: '2026-01-16T18:00:00Z',
+    action: 'UPDATE',
+    area: 'Stage Gate Checklist',
+    previousValue: 30,
+    newValue: 80,
+    performedBy: 'Dev Team',
+    notes: 'Expanded stage gates: Added Testing (7), Monitoring (7), Security (9), Documentation (6), DevOps (8) categories for comprehensive production readiness',
+  },
+  {
+    timestamp: '2026-01-16T16:00:00Z',
+    action: 'SYNC',
+    area: 'All Metrics & Documentation',
+    performedBy: 'System',
+    notes: 'Full consolidation: Updated all docs (OVERALL_ARCHITECTURE.md, SUITE_ARCHITECTURE_SUMMARY.md, implementation-data.ts) to match UnifiedMetrics.ts (403 scenarios)',
+  },
+  {
+    timestamp: '2026-01-16T14:00:00Z',
+    action: 'UPDATE',
+    area: 'P3 Implemented Count',
+    previousValue: 17,
+    newValue: 32,
+    performedBy: 'Dev Team',
+    notes: 'Added Quick Wins (5) + Label Studio (10) to implemented count',
+  },
+  {
+    timestamp: '2026-01-16T14:00:00Z',
+    action: 'UPDATE',
+    area: 'P3 Total Scenarios',
+    previousValue: 130,
+    newValue: 140,
+    performedBy: 'System',
+    notes: 'Added 10 Label Studio scenarios (not in original roadmap)',
+  },
+  {
+    timestamp: '2026-01-16T14:00:00Z',
+    action: 'UPDATE',
+    area: 'Total Scenarios',
+    previousValue: 393,
+    newValue: 403,
+    performedBy: 'System',
+    notes: 'Updated total after Label Studio consolidation',
+  },
+  {
+    timestamp: '2026-01-16T10:00:00Z',
+    action: 'UPDATE',
+    area: 'P3 Scenarios',
+    previousValue: 72,
+    newValue: 130,
+    performedBy: 'Dev Team',
+    notes: 'Consolidated 58 new P3 scenarios (Generation, Compliance, Analytics, Segment-Specific, Enterprise)',
+  },
+  {
+    timestamp: '2026-01-15T12:00:00Z',
+    action: 'SYNC',
+    area: 'All Metrics',
+    performedBy: 'System',
+    notes: 'Consolidated all metrics into UnifiedMetrics.ts',
+  },
+];
+
+// =============================================================================
+// UPDATE CHECKLIST
+// =============================================================================
+export const updateChecklist = [
+  { file: 'src/genie-studio/governance/UnifiedMetrics.ts', section: 'PHASES', priority: 1, description: 'Update phase totals and implemented counts (Single Source of Truth)' },
+  { file: 'src/genie-studio/governance/GenieStudioRegistry.ts', section: 'Asset lists', priority: 2, description: 'Update Genie-specific asset lists (hooks, services, edge functions)' },
+  { file: 'docs/GENIE_STUDIO_SCENARIO_MAP.md', section: 'All', priority: 3, description: 'Update documentation with scenario details' },
+  { file: 'docs/architecture/GENIE_STUDIO_OVERALL_ARCHITECTURE.md', section: 'Cross-References', priority: 4, description: 'Keep scenario count synced with UnifiedMetrics.ts' },
+  { file: 'docs/GENIE_SUITE_ARCHITECTURE_SUMMARY.md', section: 'Document Reference', priority: 4, description: 'Keep scenario count synced with UnifiedMetrics.ts' },
+  { file: 'src/components/diagrams/genie-command-center/data/implementation-data.ts', section: 'scenarioCategories', priority: 2, description: 'Update P3 category breakdown' },
+];
+
+// =============================================================================
+// GOVERNANCE SUMMARY - DERIVED FROM UNIFIED METRICS
+// =============================================================================
+export const getGovernanceSummary = () => ({
+  scenarios: {
+    total: SCENARIO_METRICS.totalScenarios,
+    implemented: SCENARIO_METRICS.implementedScenarios,
+    percentage: SCENARIO_METRICS.completionPercentage,
+    phases: PHASES,
+    completedPhases: SCENARIO_METRICS.completedPhases,
+  },
+  infrastructure: {
+    ...masterInfrastructureCounts,
+    breakdown: INFRASTRUCTURE_METRICS,
+  },
+  financials: masterFinancialMetrics,
+  gartner: masterGartnerPosition,
+  metadata: governanceMetadata,
+  validation: validateGovernanceData(),
+});
+
+// Re-export types
+export type { PhaseData };

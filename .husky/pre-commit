@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run stability framework pre-commit checks
+node scripts/pre-commit-stability-check.js
+
+# Enforce strict TypeScript checks (no emit)
+npx tsc -p tsconfig.strict-check.json --noEmit
+npx tsc -p tsconfig.strict-check.app.json --noEmit
+npx tsc -p tsconfig.strict-check.node.json --noEmit
+
+# Run lint-staged for other checks
+npx lint-staged

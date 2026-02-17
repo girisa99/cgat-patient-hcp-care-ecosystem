@@ -40,6 +40,7 @@ export type InventoryModel =
 // Fix OnboardingStep to be a string union type instead of interface
 export type OnboardingStep = 
   | 'company_info'
+  | 'distributor_selection'
   | 'business_classification' 
   | 'contacts'
   | 'ownership'
@@ -56,7 +57,9 @@ export type OnboardingStep =
   | 'financial_assessment'
   | 'credit_application'
   | 'gpo_membership'
-  | 'office_hours';
+  | 'office_hours'
+  | 'technology_integration'
+  | 'signature_workflow';
 
 export interface CompanyInfo {
   legal_name: string;
@@ -458,6 +461,10 @@ export interface TreatmentCenterOnboarding {
   ownership: OwnershipInfo;
   references: ReferencesInfo;
   
+  // Enhanced Selections with Database Relationships
+  therapy_selections?: TherapySelection[];
+  service_selections?: ServiceSelection[];
+  
   // Financial & Payment
   payment_info: PaymentInfo;
   credit_application: CreditApplicationInfo;
@@ -494,4 +501,21 @@ export interface TreatmentCenterOnboarding {
   
   // Workflow
   workflow: WorkflowInfo;
+}
+
+// New interfaces for relationship data
+export interface TherapySelection {
+  therapy_id: string;
+  therapy_name: string;
+  selection_rationale: string;
+  priority_level: 'high' | 'medium' | 'low';
+  patient_volume_estimate: number;
+}
+
+export interface ServiceSelection {
+  service_id: string;
+  service_name: string;
+  therapy_area: string;
+  selection_rationale: string;
+  custom_requirements: any;
 }

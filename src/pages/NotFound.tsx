@@ -1,5 +1,8 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Home } from 'lucide-react';
 
 const NotFound: React.FC = () => {
   console.log('❌ Not Found page rendering');
@@ -12,9 +15,14 @@ const NotFound: React.FC = () => {
         <CardHeader>
           <CardTitle>404 - Page Not Found</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <p>The page you're looking for doesn't exist.</p>
-          <a href="/" className="text-blue-600 hover:underline">Go back to dashboard</a>
+          <Button asChild>
+            <Link to="/">
+              <Home className="h-4 w-4 mr-2" />
+              Go back to dashboard
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     </div>

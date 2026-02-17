@@ -61,10 +61,10 @@ export const useDeveloperNotifications = () => {
       const { data, error } = await supabase
         .from('developer_notification_preferences')
         .select('*')
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return (data as NotificationPreferences) || {
+      if (error) throw error;
+      return (data as NotificationPreferences) ?? {
         new_apis: true,
         beta_launches: true,
         documentation_updates: false,

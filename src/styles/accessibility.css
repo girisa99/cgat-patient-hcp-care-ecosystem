@@ -1,0 +1,231 @@
+/**
+ * Accessibility Styles for Genie Studio
+ * Addresses Ralph Wiggum findings: Color Contrast, Content Readability
+ * 
+ * WCAG AA Compliant Color Contrast
+ * - Normal text: 4.5:1 minimum contrast ratio
+ * - Large text: 3:1 minimum contrast ratio
+ */
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+.high-contrast {
+  /* Override with high-contrast colors */
+  --foreground: 0 0% 0%;
+  --background: 0 0% 100%;
+  --muted-foreground: 0 0% 25%;
+  --border: 0 0% 0%;
+  
+  /* Stronger primary colors */
+  --primary: 262 90% 40%;
+  --accent: 330 90% 45%;
+  
+  /* Increase contrast for cards */
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+}
+
+.dark.high-contrast {
+  --foreground: 0 0% 100%;
+  --background: 0 0% 0%;
+  --muted-foreground: 0 0% 80%;
+  --border: 0 0% 100%;
+  
+  --primary: 262 90% 70%;
+  --accent: 330 90% 65%;
+  
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 100%;
+}
+
+.high-contrast button,
+.high-contrast a {
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.high-contrast [role="button"]:focus,
+.high-contrast a:focus,
+.high-contrast button:focus {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* ============================================
+   TEXT SIZE ADJUSTMENTS
+   ============================================ */
+.text-size-normal {
+  font-size: 1rem;
+}
+
+.text-size-large {
+  font-size: 1.125rem;
+}
+
+.text-size-large h1 { font-size: 2.5rem; }
+.text-size-large h2 { font-size: 2rem; }
+.text-size-large h3 { font-size: 1.5rem; }
+.text-size-large h4 { font-size: 1.25rem; }
+.text-size-large p, .text-size-large span, .text-size-large label { font-size: 1.125rem; }
+.text-size-large .text-sm { font-size: 1rem; }
+.text-size-large .text-xs { font-size: 0.875rem; }
+
+.text-size-extra-large {
+  font-size: 1.25rem;
+}
+
+.text-size-extra-large h1 { font-size: 3rem; }
+.text-size-extra-large h2 { font-size: 2.5rem; }
+.text-size-extra-large h3 { font-size: 1.75rem; }
+.text-size-extra-large h4 { font-size: 1.5rem; }
+.text-size-extra-large p, .text-size-extra-large span, .text-size-extra-large label { font-size: 1.25rem; }
+.text-size-extra-large .text-sm { font-size: 1.125rem; }
+.text-size-extra-large .text-xs { font-size: 1rem; }
+
+/* ============================================
+   READING MODE
+   ============================================ */
+.reading-mode {
+  /* Increase line height for better readability */
+  line-height: 1.8;
+  
+  /* Limit line length for optimal reading */
+  max-width: 75ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.reading-mode p,
+.reading-mode li {
+  line-height: 1.9;
+  letter-spacing: 0.01em;
+}
+
+.reading-mode h1,
+.reading-mode h2,
+.reading-mode h3,
+.reading-mode h4 {
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+}
+
+/* Softer background in reading mode */
+.reading-mode {
+  --background: 48 30% 96%;
+  --card: 48 30% 98%;
+}
+
+.dark.reading-mode {
+  --background: 220 20% 12%;
+  --card: 220 20% 14%;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Keep essential feedback animations but reduce intensity */
+.reduced-motion .animate-spin {
+  animation: spin 2s linear infinite !important;
+}
+
+.reduced-motion .animate-pulse {
+  animation: pulse 3s ease-in-out infinite !important;
+}
+
+/* ============================================
+   FOCUS INDICATORS (Enhanced for accessibility)
+   ============================================ */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Skip to main content link */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.5rem 1rem;
+  z-index: 9999;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ============================================
+   ERROR STATE ACCESSIBILITY
+   ============================================ */
+[aria-invalid="true"] {
+  border-color: hsl(var(--destructive)) !important;
+}
+
+[aria-invalid="true"]:focus {
+  outline-color: hsl(var(--destructive));
+  box-shadow: 0 0 0 3px hsl(var(--destructive) / 0.2);
+}
+
+/* Ensure error messages are visible */
+[role="alert"] {
+  font-weight: 500;
+}
+
+/* ============================================
+   TOOLTIP READABILITY
+   ============================================ */
+[role="tooltip"] {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+/* Glossary term styling */
+[role="term"] {
+  border-bottom: 1px dotted currentColor;
+}
+
+[role="term"]:hover,
+[role="term"]:focus {
+  background-color: hsl(var(--accent) / 0.2);
+  border-radius: 2px;
+}
+
+/* ============================================
+   SCREEN READER ONLY
+   ============================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Make sr-only content visible on focus */
+.sr-only-focusable:focus,
+.sr-only-focusable:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}

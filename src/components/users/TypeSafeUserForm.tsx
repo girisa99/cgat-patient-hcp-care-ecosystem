@@ -6,12 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMasterFormStateManager } from '@/hooks/useMasterFormStateManager';
 import type { MasterUserFormState } from '@/types/masterFormState';
+import type { MasterUserFormProps } from '@/types/userComponentTypes';
 
-interface TypeSafeUserFormProps {
-  onSubmit: (data: MasterUserFormState) => void;
-  initialData?: Partial<MasterUserFormState>;
-  isLoading?: boolean;
-}
+// Phase 1D: Using consolidated props interface - preserving isLoading functionality
+interface TypeSafeUserFormProps extends Pick<MasterUserFormProps, 'onSubmit' | 'initialData' | 'isLoading'> {}
 
 export const TypeSafeUserForm: React.FC<TypeSafeUserFormProps> = ({
   onSubmit,

@@ -55,9 +55,10 @@ export const useApiKeys = () => {
         .from('api_keys')
         .insert([keyData])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create API key: no data returned'); }
       
       await fetchApiKeys();
       showSuccess('API key created successfully');

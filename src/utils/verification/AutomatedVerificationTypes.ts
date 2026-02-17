@@ -4,6 +4,36 @@
  * Type definitions for the verification system
  */
 
+// Import types from the main types file
+import type { 
+  CodeQualityIssue, 
+  SecurityVulnerability 
+} from './types';
+
+// Additional types for automated verification
+export interface DatabaseViolation {
+  type: 'schema' | 'constraint' | 'policy' | 'data';
+  table: string;
+  description: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+}
+
+export interface SchemaViolation {
+  type: 'missing_table' | 'wrong_type' | 'missing_column' | 'constraint_violation';
+  table: string;
+  column?: string;
+  description: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+}
+
+export interface AutoFixSuggestion {
+  type: 'sql' | 'code' | 'config';
+  description: string;
+  fix: string;
+  impact: 'low' | 'medium' | 'high';
+  requiresManualReview: boolean;
+}
+
 export interface VerificationRequest {
   componentType: 'hook' | 'component' | 'module' | 'template';
   moduleName?: string;
@@ -38,23 +68,23 @@ export interface VerificationSummary {
   issuesFound?: number;
   autoFixesApplied?: number;
   databaseValidation?: {
-    violations: any[];
+    violations: DatabaseViolation[];
     autoFixesApplied?: number;
-    autoFixesAvailable?: any[];
+    autoFixesAvailable?: AutoFixSuggestion[];
   };
   codeQuality?: {
-    issues: any[];
+    issues: CodeQualityIssue[];
   };
   securityScan?: {
-    vulnerabilities: any[];
+    vulnerabilities: SecurityVulnerability[];
   };
   schemaValidation?: {
-    violations: any[];
-    autoFixesAvailable?: any[];
+    violations: SchemaViolation[];
+    autoFixesAvailable?: AutoFixSuggestion[];
   };
   securityScore?: number;
   qualityScore?: number;
-  sqlAutoFixes?: any[];
+  sqlAutoFixes?: AutoFixSuggestion[];
   highIssues?: number;
   mediumIssues?: number;
   lowIssues?: number;
@@ -87,7 +117,7 @@ export interface AutomatedVerificationConfig {
 export interface TemplateGenerationRequest {
   templateType: 'component' | 'hook' | 'page' | 'utility' | 'module' | 'api_integration';
   name: string;
-  specifications?: Record<string, any>;
+  specifications?: Record<string, unknown>;
   moduleName?: string;
   tableName?: string;
   generateTests?: boolean;

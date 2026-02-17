@@ -1,0 +1,4 @@
+ # Memory: infrastructure/genie-cast/template-system-infrastructure-constraints
+ Updated: just now
+ 
+ The template system expansion has identified four critical infrastructure bottlenecks that must be addressed for complete regional coverage: 1) RTL Layout Engine - Required for Arabic and RTL language support in video compositions; 2) CJK Typography - Requires embedding Noto Sans CJK fonts directly into the video pipeline for proper rendering in Chinese, Japanese, Korean; 3) Arabic Dialect Support - 7 distinct Arabic dialects (ar-SA, ar-AE, ar-EG, ar-MA, ar-JO, ar-IQ, ar-LB) need specific Azure Neural regional voices with viseme data for lip-sync accuracy; 4) Mobile Variant Generation - 9:16 portrait-format templates must be batch-generated from existing landscape templates. These constraints are dependencies for Phase 2 (225+ regional templates) and Phase 3 (mobile variants) of the template expansion roadmap.

@@ -1,94 +1,302 @@
+/* Import Enhanced Tab Styles */
+@import './styles/enhanced-tabs.css';
+/* Import Accessibility Styles - Ralph Wiggum Color Contrast Fix */
+@import './styles/accessibility.css';
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Gradient text animation */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Presentation Animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes zoom-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in { animation: fade-in 0.6s ease-out; }
+.animate-slide-in-left { animation: slide-in-left 0.6s ease-out; }
+.animate-slide-in-right { animation: slide-in-right 0.6s ease-out; }
+.animate-zoom-in { animation: zoom-in 0.6s ease-out; }
+
+/* Region Marquee — infinite scroll with hover pause */
+@keyframes marquee-scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+@keyframes marquee-scroll-right {
+  0% { transform: translateX(-33.333%); }
+  100% { transform: translateX(0); }
+}
+.marquee-track-left {
+  animation: marquee-scroll-left 40s linear infinite;
+}
+.marquee-track-right {
+  animation: marquee-scroll-right 50s linear infinite;
+}
+.marquee-container:hover .marquee-track-left,
+.marquee-container:hover .marquee-track-right {
+  animation-play-state: paused;
+}
+
+/* Scrollbar Utilities */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Genie Studio Brand Colors - Light Mode */
+    --background: 0 0% 99%;
+    --foreground: 250 10% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 250 10% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 250 10% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary: Genie Purple - matches logo gradient start */
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 250 5% 96%;
+    --secondary-foreground: 250 10% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 250 5% 95%;
+    --muted-foreground: 250 5% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent: Genie Pink - matches logo gradient middle */
+    --accent: 330 81% 60%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 250 10% 85%;
+    --input: 250 10% 85%;
+    --ring: 262 83% 58%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Sidebar - subtle purple tint */
+    --sidebar-background: 262 20% 98%;
+    --sidebar-foreground: 250 10% 15%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 262 20% 92%;
+    --sidebar-accent-foreground: 250 10% 15%;
+    --sidebar-border: 262 20% 90%;
+    --sidebar-ring: 262 83% 58%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Chart colors - Genie brand palette */
+    --chart-1: 262 83% 58%;
+    --chart-2: 330 81% 60%;
+    --chart-3: 24 95% 53%;
+    --chart-4: 173 58% 39%;
+    --chart-5: 199 89% 48%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar: 262 20% 98%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    --font-serif: 'Lora', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* Shadows with brand color tint */
+    --shadow-2xs: 1px 1px 0px 0px hsl(262 83% 58% / 0.1);
+    --shadow-xs: 2px 2px 0px 0px hsl(262 83% 58% / 0.1);
+    --shadow-sm: 0 1px 2px 0 hsl(262 83% 58% / 0.05);
+    --shadow: 0 1px 3px 0 hsl(262 83% 58% / 0.1), 0 1px 2px -1px hsl(262 83% 58% / 0.1);
+    --shadow-md: 0 4px 6px -1px hsl(262 83% 58% / 0.1), 0 2px 4px -2px hsl(262 83% 58% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(262 83% 58% / 0.1), 0 4px 6px -4px hsl(262 83% 58% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(262 83% 58% / 0.1), 0 8px 10px -6px hsl(262 83% 58% / 0.1);
+    --shadow-2xl: 0 25px 50px -12px hsl(262 83% 58% / 0.25);
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --tracking-normal: 0em;
+    --spacing: 0.25rem;
 
-    --sidebar-border: 220 13% 91%;
+    /* ========== INDUSTRY DIFFERENTIATION TOKENS ========== */
+    --industry-healthcare: 0 84% 60%;
+    --industry-finance: 217 91% 60%;
+    --industry-education: 262 83% 58%;
+    --industry-retail: 24 95% 53%;
+    --industry-realestate: 173 58% 39%;
+    --industry-hospitality: 330 81% 60%;
+    --industry-automotive: 250 10% 40%;
+    --industry-media: 289 67% 55%;
+    --industry-legal: 210 40% 40%;
+    --industry-government: 220 30% 50%;
+    --industry-nonprofit: 142 76% 36%;
+    --industry-technology: 199 89% 48%;
+    --industry-pharma: 174 62% 47%;
+    --industry-energy: 45 93% 47%;
+    --industry-telecom: 262 47% 50%;
+    --industry-sports: 14 86% 52%;
+    --industry-food: 35 92% 50%;
+    --industry-construction: 30 70% 45%;
+    --industry-logistics: 200 45% 45%;
+    --industry-insurance: 220 60% 50%;
+    --industry-agriculture: 100 50% 40%;
 
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* ========== STATUS / SEMANTIC TOKENS ========== */
+    --status-success: 142 76% 36%;
+    --status-warning: 45 93% 47%;
+    --status-error: 0 84% 60%;
+    --status-info: 199 89% 48%;
+    --status-pending: 24 95% 53%;
+
+    /* ========== AI PROVIDER BRAND TOKENS ========== */
+    --provider-alibaba: 24 95% 53%;
+    --provider-azure: 217 91% 60%;
+    --provider-elevenlabs: 262 83% 58%;
+    --provider-openai: 142 76% 36%;
+    --provider-claude: 24 85% 55%;
+    --provider-deepseek: 189 80% 50%;
+    --provider-gemini: 217 70% 55%;
+    --provider-meshy: 330 81% 60%;
+    --provider-modelslab: 239 84% 67%;
+    --provider-deepl: 173 58% 39%;
+    --provider-replicate: 250 5% 45%;
+    --provider-gcp: 0 84% 60%;
+    --provider-deepgram: 165 70% 45%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Genie Studio Brand Colors - Dark Mode */
+    --background: 250 15% 6%;
+    --foreground: 250 5% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 250 15% 8%;
+    --card-foreground: 250 5% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 250 15% 8%;
+    --popover-foreground: 250 5% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Primary: Genie Purple - brighter in dark mode */
+    --primary: 262 83% 65%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 250 10% 15%;
+    --secondary-foreground: 250 5% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 250 10% 15%;
+    --muted-foreground: 250 5% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Accent: Genie Pink */
+    --accent: 330 81% 60%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --border: 250 10% 20%;
+    --input: 250 10% 20%;
+    --ring: 262 83% 65%;
+
+    /* Sidebar - dark with purple tint */
+    --sidebar-background: 250 15% 8%;
+    --sidebar-foreground: 250 5% 95%;
+    --sidebar-primary: 262 83% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 262 20% 15%;
+    --sidebar-accent-foreground: 250 5% 95%;
+    --sidebar-border: 250 10% 20%;
+    --sidebar-ring: 262 83% 65%;
+
+    /* Chart colors - Genie brand palette (brighter for dark mode) */
+    --chart-1: 262 83% 65%;
+    --chart-2: 330 81% 65%;
+    --chart-3: 24 95% 58%;
+    --chart-4: 173 58% 45%;
+    --chart-5: 199 89% 55%;
+
+    --sidebar: 250 15% 8%;
+    --radius: 0.5rem;
+
+    /* Shadows with subtle purple glow */
+    --shadow-2xs: 0 1px 2px 0 hsl(262 83% 50% / 0.1);
+    --shadow-xs: 0 1px 3px 0 hsl(262 83% 50% / 0.1);
+    --shadow-sm: 0 2px 4px 0 hsl(262 83% 50% / 0.1);
+    --shadow: 0 4px 6px -1px hsl(262 83% 50% / 0.15);
+    --shadow-md: 0 6px 10px -2px hsl(262 83% 50% / 0.15);
+    --shadow-lg: 0 10px 20px -3px hsl(262 83% 50% / 0.2);
+    --shadow-xl: 0 15px 30px -5px hsl(262 83% 50% / 0.25);
+    --shadow-2xl: 0 25px 50px -12px hsl(262 83% 50% / 0.35);
+
+    /* ========== INDUSTRY TOKENS — Brighter for Dark Mode ========== */
+    --industry-healthcare: 0 84% 65%;
+    --industry-finance: 217 91% 65%;
+    --industry-education: 262 83% 65%;
+    --industry-retail: 24 95% 58%;
+    --industry-realestate: 173 58% 45%;
+    --industry-hospitality: 330 81% 65%;
+    --industry-automotive: 250 10% 55%;
+    --industry-media: 289 67% 60%;
+    --industry-legal: 210 40% 55%;
+    --industry-government: 220 30% 60%;
+    --industry-nonprofit: 142 76% 45%;
+    --industry-technology: 199 89% 55%;
+    --industry-pharma: 174 62% 52%;
+    --industry-energy: 45 93% 52%;
+    --industry-telecom: 262 47% 60%;
+    --industry-sports: 14 86% 58%;
+    --industry-food: 35 92% 55%;
+    --industry-construction: 30 70% 50%;
+    --industry-logistics: 200 45% 55%;
+    --industry-insurance: 220 60% 58%;
+    --industry-agriculture: 100 50% 50%;
+
+    /* ========== STATUS TOKENS — Brighter for Dark Mode ========== */
+    --status-success: 142 76% 45%;
+    --status-warning: 45 93% 52%;
+    --status-error: 0 84% 65%;
+    --status-info: 199 89% 55%;
+    --status-pending: 24 95% 58%;
+
+    /* ========== PROVIDER TOKENS — Brighter for Dark Mode ========== */
+    --provider-alibaba: 24 95% 58%;
+    --provider-azure: 217 91% 65%;
+    --provider-elevenlabs: 262 83% 65%;
+    --provider-openai: 142 76% 45%;
+    --provider-claude: 24 85% 60%;
+    --provider-deepseek: 189 80% 55%;
+    --provider-gemini: 217 70% 60%;
+    --provider-meshy: 330 81% 65%;
+    --provider-modelslab: 239 84% 72%;
+    --provider-deepl: 173 58% 45%;
+    --provider-replicate: 250 5% 55%;
+    --provider-gcp: 0 84% 65%;
+    --provider-deepgram: 165 70% 50%;
   }
 }
 
@@ -100,4 +308,284 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Layout Stability Protection */
+@layer utilities {
+  /* Prevent layout shifts */
+  .layout-stable {
+    contain: layout;
+    transform: translateZ(0); /* Force GPU acceleration */
+  }
+
+  /* Stable loading states */
+  .skeleton-loader {
+    @apply animate-pulse bg-muted;
+    contain: layout;
+  }
+
+  /* Reserve space for dynamic content */
+  .content-placeholder {
+    min-height: theme('spacing.12');
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Prevent text reflow */
+  .text-stable {
+    word-break: break-word;
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+
+  /* Image stability */
+  .img-stable {
+    aspect-ratio: attr(width) / attr(height);
+    object-fit: cover;
+    @apply bg-muted;
+  }
+
+  /* Grid stability */
+  .grid-stable {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: theme('spacing.4');
+  }
+
+  /* Table stability */
+  .table-stable {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .table-stable th,
+  .table-stable td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Button stability */
+  .btn-stable {
+    min-width: theme('spacing.20');
+    min-height: theme('spacing.10');
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Form stability */
+  .form-stable {
+    contain: layout;
+  }
+
+  .form-stable input,
+  .form-stable textarea,
+  .form-stable select {
+    transition: border-color 0.2s ease-in-out;
+  }
+
+  /* Custom scrollbar styles for horizontal scroll cards */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+  }
+
+  /* Snap scroll for horizontal cards */
+  .snap-x {
+    scroll-snap-type: x mandatory;
+  }
+  .snap-mandatory {
+    scroll-snap-type: mandatory;
+  }
+  .snap-center {
+    scroll-snap-align: center;
+  }
+}
+
+/* ============================================
+   WORKFLOW CANVAS & NODE STYLES
+   ============================================ */
+
+/* React Flow Canvas Background */
+.react-flow__background {
+  background-color: hsl(var(--background));
+}
+
+.react-flow__background pattern {
+  stroke: hsl(var(--border) / 0.5);
+}
+
+/* React Flow Nodes */
+.react-flow__node {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.react-flow__node:hover {
+  z-index: 10;
+}
+
+.react-flow__node.selected {
+  z-index: 20;
+}
+
+/* React Flow Edges */
+.react-flow__edge {
+  transition: stroke 0.2s ease-out;
+}
+
+.react-flow__edge-path {
+  stroke: hsl(var(--primary) / 0.5);
+  stroke-width: 2;
+  transition: stroke 0.2s ease-out, stroke-width 0.2s ease-out;
+}
+
+.react-flow__edge:hover .react-flow__edge-path,
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: hsl(var(--primary));
+  stroke-width: 3;
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 5;
+  animation: edge-flow 0.5s linear infinite;
+}
+
+@keyframes edge-flow {
+  from { stroke-dashoffset: 10; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* React Flow Handles */
+.react-flow__handle {
+  transition: transform 0.15s ease-out, background-color 0.15s ease-out;
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.3);
+}
+
+.react-flow__handle.connecting {
+  background-color: hsl(var(--primary)) !important;
+  animation: pulse-handle 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-handle {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+  50% { transform: scale(1.2); box-shadow: 0 0 0 6px hsl(var(--primary) / 0); }
+}
+
+/* React Flow Connection Line */
+.react-flow__connection-line {
+  stroke: hsl(var(--primary));
+  stroke-width: 2;
+  stroke-dasharray: 5;
+  animation: edge-flow 0.5s linear infinite;
+}
+
+/* React Flow MiniMap */
+.react-flow__minimap {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px -1px hsl(var(--foreground) / 0.1);
+}
+
+.react-flow__minimap-mask {
+  fill: hsl(var(--primary) / 0.1);
+}
+
+.react-flow__minimap-node {
+  fill: hsl(var(--primary) / 0.6);
+  stroke: hsl(var(--primary));
+  stroke-width: 1;
+}
+
+/* React Flow Controls */
+.react-flow__controls {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px -1px hsl(var(--foreground) / 0.1);
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background-color: hsl(var(--card));
+  border-bottom: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  transition: background-color 0.15s ease-out;
+}
+
+.react-flow__controls-button:hover {
+  background-color: hsl(var(--accent));
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+/* Canvas Node Animation Classes */
+.workflow-node-enter {
+  animation: node-enter 0.3s ease-out;
+}
+
+@keyframes node-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.workflow-node-pulse {
+  animation: node-pulse 2s ease-in-out infinite;
+}
+
+@keyframes node-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.2); }
+  50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0); }
+}
+
+/* Node Category Color Accents */
+.node-category-trigger { --node-accent: 239 84% 67%; }
+.node-category-action { --node-accent: 142 76% 36%; }
+.node-category-condition { --node-accent: 45 93% 47%; }
+.node-category-data { --node-accent: 199 89% 48%; }
+.node-category-ai { --node-accent: 262 83% 58%; }
+.node-category-integration { --node-accent: 340 82% 52%; }
+
+/* Workflow Canvas Panel Styles */
+.workflow-panel {
+  background-color: hsl(var(--card) / 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 15px -3px hsl(var(--foreground) / 0.1);
+}
+
+/* Animated Edge Flow */
+@keyframes edge-flow {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+
+.react-flow__edge-path {
+  stroke-dasharray: 5, 5;
+  animation: edge-flow 1s linear infinite;
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 5, 5;
+  animation: edge-flow 0.8s linear infinite;
+}
+
+/* Compact node styles */
+.compact-node {
+  font-size: 10px;
+  padding: 4px 8px;
 }

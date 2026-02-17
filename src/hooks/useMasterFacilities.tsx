@@ -8,6 +8,7 @@ import { useRealFacilities } from './useRealFacilities';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
+import type { Database } from '@/types/database.generated';
 
 export interface Facility {
   id: string;
@@ -21,6 +22,7 @@ export interface Facility {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  [key: string]: unknown; // Index signature to satisfy DataRow
 }
 
 export const useMasterFacilities = () => {
@@ -38,7 +40,7 @@ export const useMasterFacilities = () => {
         .from('facilities')
         .insert(facilityData)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -59,7 +61,7 @@ export const useMasterFacilities = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -74,13 +76,13 @@ export const useMasterFacilities = () => {
   });
 
   const deactivateFacilityMutation = useMutation({
-    mutationFn: async (facilityId: string) => {
+  mutationFn: async (facilityId: string) => {
       const { data, error } = await supabase
         .from('facilities')
         .update({ is_active: false })
         .eq('id', facilityId)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;

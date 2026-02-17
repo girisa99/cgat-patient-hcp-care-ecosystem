@@ -24,6 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+    const twilioWhatsAppNumber = Deno.env.get('TWILIO_WHATSAPP_NUMBER');
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
       throw new Error('Missing Twilio credentials');
@@ -53,6 +54,9 @@ const handler = async (req: Request): Promise<Response> => {
         break;
 
       case 'whatsapp':
+        if (!twilioWhatsAppNumber) {
+          throw new Error('WhatsApp number not configured');
+        }
         response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`, {
           method: 'POST',
           headers: {
@@ -60,7 +64,7 @@ const handler = async (req: Request): Promise<Response> => {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({
-            From: `whatsapp:${twilioPhoneNumber}`,
+            From: `whatsapp:${twilioWhatsAppNumber}`,
             To: `whatsapp:${to}`,
             Body: message,
           }),
@@ -86,8 +90,12 @@ const handler = async (req: Request): Promise<Response> => {
       case 'email':
         // Using Twilio SendGrid for email
         const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY');
+        const fromEmail = Deno.env.get('SENDGRID_FROM_EMAIL');
         if (!sendGridApiKey) {
           throw new Error('SendGrid API key not configured');
+        }
+        if (!fromEmail) {
+          throw new Error('SendGrid from email not configured');
         }
 
         response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -98,7 +106,7 @@ const handler = async (req: Request): Promise<Response> => {
           },
           body: JSON.stringify({
             personalizations: [{ to: [{ email: to }] }],
-            from: { email: 'notifications@yourdomain.com', name: 'Healthcare Portal' },
+            from: { email: fromEmail, name: 'Healthcare Portal' },
             subject: subject || 'Healthcare Portal Notification',
             content: [{ type: 'text/plain', value: message }],
           }),

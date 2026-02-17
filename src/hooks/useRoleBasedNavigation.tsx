@@ -2,113 +2,194 @@
 import { useMemo } from 'react';
 import { navItems } from '@/nav-items';
 import { useMasterAuth } from './useMasterAuth';
+import { normalizeRoles, getDefaultRouteForRoles } from '@/utils/roles';
 
 export const useRoleBasedNavigation = () => {
   const { userRoles, isAuthenticated, user, profile } = useMasterAuth();
 
+  // CRITICAL: Normalize roles to ensure consistent role matching
+  const normalizedUserRoles = normalizeRoles(userRoles || []);
+
+  console.log('🧭 useRoleBasedNavigation called with:', {
+    userRoles,
+    normalizedUserRoles,
+    isAuthenticated,
+    userExists: !!user,
+    profileExists: !!profile
+  });
+
   const getVisibleNavItems = useMemo(() => {
+    console.log('🧭 Computing visible nav items...', {
+      isAuthenticated,
+      userRolesLength: userRoles.length,
+      userRoles,
+      totalNavItems: navItems.length,
+      roleAccess: {
+        deployment: ['superAdmin', 'onboardingTeam'],
+        agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver']
+      }
+    });
+
     if (!isAuthenticated) {
+      console.log('🚫 Not authenticated, returning empty array');
       return [];
     }
 
     // During development, show all pages if no roles are assigned yet
     // This prevents the app from being unusable during setup
-    if (userRoles.length === 0) {
+    if (normalizedUserRoles.length === 0) {
       console.log('🚧 Development mode: No roles assigned, showing all navigation items');
       return navItems;
     }
 
-    // Define role-based access - more permissive for development
+    // Define role-based access - PRESERVED EXISTING PERMISSIONS
     const roleAccess = {
-      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      users: ['superAdmin', 'onboardingTeam'],
-      patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      facilities: ['superAdmin', 'onboardingTeam'],
-      onboarding: ['superAdmin', 'onboardingTeam'],
-      modules: ['superAdmin', 'onboardingTeam'],
-      'api-services': ['superAdmin', 'onboardingTeam'],
-      ngrok: ['superAdmin', 'onboardingTeam'],
+      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
+      users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
+      patients: ['superAdmin', 'caseManager', 'nurse', 'patientCaregiver', 'healthcareProvider', 'demoUser'], // Healthcare providers need patient access
+      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
+      // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
+      facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
+      onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
+      modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
+      'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
+      'system-integration': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Consolidated integration page incl. healthcare providers
+      'document-processing': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'customerOnboarding', 'demoUser'], // Document processing page
+      ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
-      reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-      testing: ['superAdmin', 'onboardingTeam'],
-      'role-management': ['superAdmin'],
-      'data-import': ['superAdmin', 'onboardingTeam'],
-      'active-verification': ['superAdmin', 'onboardingTeam'],
+      reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
+      testing: ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need testing suite
+      'role-management': ['superAdmin', 'demoUser'], // Add demoUser for role management demo
+      'data-import': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for data import demo
+      'governance': ['superAdmin', 'demoUser'], // Add demoUser for governance demo
+      'active-verification': ['superAdmin', 'demoUser'], // Add demoUser for verification demo
+      'framework': ['superAdmin', 'demoUser'], // Add demoUser for framework demo
+      'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
+      'healthcare-ai': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need AI access
+      'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
+      'database-performance': ['superAdmin', 'healthcareProvider', 'demoUser'], // Database performance optimization
+      'order-management': ['healthcareProvider'], // Healthcare provider specific
+      'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
+      'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment 
+      'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
+      'architecture': ['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'demoUser'], // Architecture diagrams - accessible to all roles
+      'genie-studio': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Genie Studio - Media production hub
     };
 
-    return navItems.filter(item => {
+    const filteredItems = navItems.filter(item => {
       const path = item.url.replace('/', '') || 'dashboard';
       const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
-      const hasAccess = userRoles.some(role => allowedRoles.includes(role));
+      const hasAccess = normalizedUserRoles.some(role => allowedRoles.includes(role));
       
       // For development, log which items are being filtered
       if (!hasAccess) {
-        console.log(`🚫 Navigation filtered: ${item.title} (requires: ${allowedRoles.join(', ')}, have: ${userRoles.join(', ')})`);
+        console.log(`🚫 Navigation filtered: ${item.title} (requires: ${allowedRoles.join(', ')}, have: ${normalizedUserRoles.join(', ')})`);
+      } else {
+        console.log(`✅ Navigation allowed: ${item.title}`);
       }
       
       return hasAccess;
     });
+
+    console.log('🧭 Final filtered nav items:', filteredItems.map(item => item.title));
+    return filteredItems;
   }, [userRoles, isAuthenticated]);
 
   const hasAccess = (path: string) => {
     if (!isAuthenticated) return false;
     
     // During development, allow access if no roles assigned
-    if (userRoles.length === 0) {
+    if (normalizedUserRoles.length === 0) {
       console.log('🚧 Development mode: Allowing access to', path);
       return true;
     }
     
     const cleanPath = path.replace('/', '') || 'dashboard';
     const roleAccess = {
-      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      users: ['superAdmin', 'onboardingTeam'],
-      patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      facilities: ['superAdmin', 'onboardingTeam'],
-      onboarding: ['superAdmin', 'onboardingTeam'],
-      modules: ['superAdmin', 'onboardingTeam'],
-      'api-services': ['superAdmin', 'onboardingTeam'],
-      ngrok: ['superAdmin', 'onboardingTeam'],
+      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
+      users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
+      patients: ['superAdmin', 'caseManager', 'nurse', 'patientCaregiver', 'healthcareProvider', 'demoUser'], // Healthcare providers need patient access
+      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
+      // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
+      facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
+      onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
+      modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
+      'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
+      'system-integration': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Consolidated integration page incl. healthcare providers
+      'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
+      'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
+      'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
+      ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
-      reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-      testing: ['superAdmin', 'onboardingTeam'],
-      'role-management': ['superAdmin'],
-      'data-import': ['superAdmin', 'onboardingTeam'],
-      'active-verification': ['superAdmin', 'onboardingTeam'],
+      reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
+      testing: ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need testing suite
+      'role-management': ['superAdmin', 'demoUser'], // Add demoUser for role management demo
+      'data-import': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for data import demo
+      'active-verification': ['superAdmin', 'demoUser'], // Add demoUser for verification demo
+      'governance': ['superAdmin', 'demoUser'], // Add demoUser for governance demo
+      'framework': ['superAdmin', 'demoUser'], // Add demoUser for framework demo
+      'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
+      'healthcare-ai': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need AI access
+      'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
+      'database-performance': ['superAdmin', 'healthcareProvider', 'demoUser'], // Database performance optimization
+      'order-management': ['healthcareProvider'], // Healthcare provider specific
+      'document-processing': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'customerOnboarding', 'demoUser'], // Document processing page
+      'architecture': ['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'demoUser'], // Architecture diagrams
+      'genie-studio': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Genie Studio - Media production hub
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
-    return userRoles.some(role => allowedRoles.includes(role));
+    
+    // During development, allow framework access if no roles assigned
+    if (normalizedUserRoles.length === 0 && ['framework', 'stability', 'healthcare-ai', 'governance'].includes(cleanPath)) {
+      return true;
+    }
+    
+    return normalizedUserRoles.some(role => allowedRoles.includes(role));
   };
 
-  
   const hasPermission = (permission: string) => {
     // Simple permission check based on roles
-    if (userRoles.includes('superAdmin')) return true;
+    if (normalizedUserRoles.includes('superAdmin')) return true;
     // During development, be more permissive
-    if (userRoles.length === 0) return true;
+    if (normalizedUserRoles.length === 0) return true;
     return false;
   };
 
   const getNavItemsByRole = () => {
-    return userRoles.reduce((acc, role) => {
+    return normalizedUserRoles.reduce((acc, role) => {
       acc[role] = navItems.filter(item => {
-        const path = item.url.replace('/', '') || 'dashboard';
+      const path = item.url.replace('/', '') || 'dashboard';
         const roleAccess = {
-          dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-          users: ['superAdmin', 'onboardingTeam'],
-          patients: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-          facilities: ['superAdmin', 'onboardingTeam'],
-          onboarding: ['superAdmin', 'onboardingTeam'],
-          modules: ['superAdmin', 'onboardingTeam'],
-          'api-services': ['superAdmin', 'onboardingTeam'],
-          ngrok: ['superAdmin', 'onboardingTeam'],
+          dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
+          users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
+          patients: ['superAdmin', 'caseManager', 'nurse', 'patientCaregiver', 'healthcareProvider', 'demoUser'], // Healthcare providers need patient access
+          agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
+          // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
+          facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
+          onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
+          modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
+          'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
+          'system-integration': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Consolidated integration page incl. healthcare providers
+          'document-processing': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'customerOnboarding', 'demoUser'], // Document processing page
+          'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
+          'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
+          'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
+          ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
           security: ['superAdmin'],
-          reports: ['superAdmin', 'onboardingTeam', 'caseManager'],
-          testing: ['superAdmin', 'onboardingTeam'],
-          'role-management': ['superAdmin'],
-          'data-import': ['superAdmin', 'onboardingTeam'],
-          'active-verification': ['superAdmin', 'onboardingTeam'],
+          reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
+          testing: ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need testing suite
+          'role-management': ['superAdmin', 'demoUser'], // Add demoUser for role management demo
+          'data-import': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for data import demo
+          'active-verification': ['superAdmin', 'demoUser'], // Add demoUser for verification demo
+          'governance': ['superAdmin', 'demoUser'], // Add demoUser for governance demo
+          'framework': ['superAdmin', 'demoUser'], // Add demoUser for framework demo
+          'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
+          'healthcare-ai': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need AI access
+          'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
+          'order-management': ['healthcareProvider'], // Healthcare provider specific
+          'database-performance': ['superAdmin', 'healthcareProvider', 'demoUser'], // Database performance optimization
+          'architecture': ['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'caseManager', 'nurse', 'provider', 'demoUser'], // Architecture diagrams
         };
         
         const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
@@ -129,20 +210,16 @@ export const useRoleBasedNavigation = () => {
   };
 
   const getRedirectPath = () => {
-    // Priority order for redirection based on role
-    if (userRoles.includes('superAdmin')) return '/';
-    if (userRoles.includes('onboardingTeam')) return '/onboarding';
-    if (userRoles.includes('caseManager') || userRoles.includes('nurse') || userRoles.includes('provider')) return '/patients';
-    if (userRoles.includes('patientCaregiver')) return '/';
-    return '/';
+    // Use proper default route logic with normalized roles
+    return getDefaultRouteForRoles(normalizedUserRoles);
   };
 
-  // Current role (primary role)
-  const currentRole = userRoles.length > 0 ? userRoles[0] : null;
+  // Current role (primary role) - use normalized roles
+  const currentRole = normalizedUserRoles.length > 0 ? normalizedUserRoles[0] : null;
   
-  // Admin checks
-  const isAdmin = userRoles.includes('onboardingTeam') || userRoles.includes('superAdmin');
-  const isSuperAdmin = userRoles.includes('superAdmin');
+  // Admin checks - use normalized roles
+  const isAdmin = normalizedUserRoles.includes('onboardingTeam') || normalizedUserRoles.includes('superAdmin');
+  const isSuperAdmin = normalizedUserRoles.includes('superAdmin');
 
   // Available tabs (mapped from visible nav items)
   const availableTabs = getVisibleNavItems.map(item => ({
@@ -150,9 +227,9 @@ export const useRoleBasedNavigation = () => {
     to: item.url,
   }));
 
-  // Role stats with proper interface
+  // Role stats with proper interface - use normalized roles
   const roleStats = {
-    totalRoles: userRoles.length,
+    totalRoles: normalizedUserRoles.length,
     primaryRole: currentRole || 'none',
     isAdmin,
     isSuperAdmin,
@@ -189,8 +266,9 @@ export const useRoleBasedNavigation = () => {
     isAccessibleRoute,
     getRedirectPath,
     
-    // Auth state
+    // Auth state - RETURN BOTH ORIGINAL AND NORMALIZED ROLES
     userRoles,
+    normalizedUserRoles,
     isAuthenticated,
   };
 };

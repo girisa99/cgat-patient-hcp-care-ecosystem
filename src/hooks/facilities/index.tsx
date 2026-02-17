@@ -4,7 +4,7 @@
  * All facilities functionality should go through this unified interface
  */
 
-export { useFacilities } from '../useFacilities';
+export { useMasterFacilities as useFacilities } from '../useMasterFacilities';
 // Legacy hook removed - use useMasterData instead
 // export { useFacilityData } from './useFacilityData';
 // useFacilityMutations removed - use useMasterFacilities instead

@@ -26,7 +26,7 @@ export async function calculateAuditLogStatistics(supabase: any) {
     
     if (!authError && authUsers) {
       // Count users who have signed in within the last 7 days
-      const activeUsers = authUsers.users.filter(user => {
+      const activeUsers = authUsers.users.filter((user: any) => {
         if (!user.last_sign_in_at) return false;
         const lastSignIn = new Date(user.last_sign_in_at);
         return lastSignIn >= sevenDaysAgo;
@@ -36,14 +36,14 @@ export async function calculateAuditLogStatistics(supabase: any) {
       
       console.log('👥 Active users calculation:', {
         totalUsers: authUsers.users.length,
-        usersWithLastSignIn: authUsers.users.filter(u => u.last_sign_in_at).length,
+        usersWithLastSignIn: authUsers.users.filter((u: any) => u.last_sign_in_at).length,
         activeUsersLast7Days: uniqueActiveUsers,
         cutoffDate: sevenDaysAgo.toISOString()
       });
       
       // Log some sample data for debugging
       if (authUsers.users.length > 0) {
-        console.log('📋 Sample user data:', authUsers.users.slice(0, 3).map(u => ({
+        console.log('📋 Sample user data:', authUsers.users.slice(0, 3).map((u: any) => ({
           id: u.id.substring(0, 8) + '...',
           email: u.email,
           last_sign_in_at: u.last_sign_in_at,

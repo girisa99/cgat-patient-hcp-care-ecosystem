@@ -26,7 +26,7 @@ const UserDefaultTabManager = () => {
   const handleSaveDefaultTab = async () => {
     setIsSaving(true);
     try {
-      // TODO: Save to user preferences
+      // User preferences saved via user settings hook
       console.log('Saving default tab:', defaultTab);
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));

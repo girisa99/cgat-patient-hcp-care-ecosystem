@@ -1,9 +1,8 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ModuleConfig {
-  tableName: string; // Simplified to avoid type recursion
+  tableName: string;
   moduleName: string;
   requiredFields: string[];
   customValidation?: (data: any) => boolean;
@@ -15,17 +14,35 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
     queryFn: async () => {
       console.log('🔍 Validating module template for:', config.moduleName);
       
-      // Fetch actual data from the table with proper typing
-      const { data, error } = await supabase
-        .from(config.tableName as any) // Cast to any to avoid type issues
-        .select('*')
-        .limit(100);
+      // Fetch actual data from the table with type safety
+      const tryTableQuery = async () => {
+        try {
+          // Use type assertion with proper validation
+          const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+          if (!validTables.includes(config.tableName)) {
+            throw new Error(`Invalid table name: ${config.tableName}`);
+          }
+          
+          // Use type assertion for dynamic table access but with validation
+          const { data, error } = await (supabase as any)
+            .from(config.tableName)
+            .select('*')
+            .limit(100);
+          
+          if (error) throw error;
+          return { data, error: null };
+        } catch (err) {
+          return { data: null, error: err };
+        }
+      };
 
-      if (error) {
-        console.error('❌ Error fetching template data:', error);
-        throw error;
+      const result = await tryTableQuery();
+      
+      if (result.error) {
+        console.error('❌ Error fetching template data:', result.error);
+        throw result.error;
       }
-
+      
       // Basic validation
       const isValid = config.requiredFields.length > 0 && 
                      config.tableName && 
@@ -34,7 +51,7 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
       return {
         isValid,
         config,
-        items: data || [],
+        items: (result.data && Array.isArray(result.data)) ? result.data : [],
         validatedAt: new Date().toISOString()
       };
     },
@@ -45,7 +62,7 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
   const items = templateQuery.data?.items || [];
 
   const searchItems = (query: string) => {
-    if (!query.trim()) return items;
+    if (!query.trim() || !Array.isArray(items)) return items;
     
     return items.filter((item: any) => {
       return Object.values(item).some((value: any) => 
@@ -55,6 +72,8 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
   };
 
   const getStatistics = () => {
+    if (!Array.isArray(items)) return { total: 0, active: 0, inactive: 0 };
+    
     return {
       total: items.length,
       active: items.filter((item: any) => item.is_active !== false).length,
@@ -63,31 +82,49 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
   };
 
   const createItem = async (itemData: any) => {
-    const { data, error } = await supabase
-      .from(config.tableName as any)
+    // Use type assertion with validation for dynamic table access
+    const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+    if (!validTables.includes(config.tableName)) {
+      throw new Error(`Invalid table name: ${config.tableName}`);
+    }
+    
+    const { data, error } = await (supabase as any)
+      .from(config.tableName)
       .insert(itemData)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
   };
 
   const updateItem = async (id: string, updates: any) => {
-    const { data, error } = await supabase
-      .from(config.tableName as any)
+    // Use type assertion with validation for dynamic table access
+    const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+    if (!validTables.includes(config.tableName)) {
+      throw new Error(`Invalid table name: ${config.tableName}`);
+    }
+    
+    const { data, error } = await (supabase as any)
+      .from(config.tableName)
       .update(updates)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
   };
 
   const deleteItem = async (id: string) => {
-    const { error } = await supabase
-      .from(config.tableName as any)
+    // Use type assertion with validation for dynamic table access
+    const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+    if (!validTables.includes(config.tableName)) {
+      throw new Error(`Invalid table name: ${config.tableName}`);
+    }
+    
+    const { error } = await (supabase as any)
+      .from(config.tableName)
       .delete()
       .eq('id', id);
 

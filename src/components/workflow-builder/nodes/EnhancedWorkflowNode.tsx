@@ -1,0 +1,471 @@
+import React, { useState, useCallback } from 'react';
+import { Handle, Position, NodeProps, NodeToolbar, NodeResizer, useReactFlow } from '@xyflow/react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { 
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import { 
+  Settings, Copy, Trash2, Info, ChevronDown, ChevronUp, 
+  Bot, Database, Brain, Zap, Eye, Link, Grid3X3, 
+  Wrench, FileText, MessageSquare, Filter, Workflow, 
+  GitBranch, Shield, Heart, Sparkles, Search, Terminal,
+  MessageCircle, Code, Cloud, Globe, Building, Flame,
+  Twitter, Layers, Edit, Table, List, CheckCircle,
+  Download, Upload, Scissors, Hash, StickyNote, Route,
+  UserCheck, Pill, Stethoscope, ShieldCheck, Activity, Play
+} from 'lucide-react';
+
+const getIconComponent = (iconName: string) => {
+  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    'bot': Bot,
+    'database': Database,
+    'brain': Brain,
+    'zap': Zap,
+    'eye': Eye,
+    'link': Link,
+    'grid-3x3': Grid3X3,
+    'wrench': Wrench,
+    'file-text': FileText,
+    'message-square': MessageSquare,
+    'filter': Filter,
+    'workflow': Workflow,
+    'settings': Settings,
+    'git-branch': GitBranch,
+    'shield': Shield,
+    'heart': Heart,
+    'sparkles': Sparkles,
+    'search': Search,
+    'terminal': Terminal,
+    'message-circle': MessageCircle,
+    'code': Code,
+    'cloud': Cloud,
+    'globe': Globe,
+    'building': Building,
+    'flame': Flame,
+    'twitter': Twitter,
+    'layers': Layers,
+    'edit': Edit,
+    'table': Table,
+    'list': List,
+    'check-circle': CheckCircle,
+    'download': Download,
+    'upload': Upload,
+    'scissors': Scissors,
+    'hash': Hash,
+    'sticky-note': StickyNote,
+    'route': Route,
+    'user-check': UserCheck,
+    'pill': Pill,
+    'stethoscope': Stethoscope,
+    'shield-check': ShieldCheck,
+    'activity': Activity,
+  };
+  
+  return iconMap[iconName] || Settings;
+};
+
+export interface EnhancedNodeData extends Record<string, unknown> {
+  label: string;
+  type_key?: string;
+  display_name?: string;
+  description?: string;
+  intent?: string; // Intent/purpose of the node
+  icon?: string;
+  color?: string;
+  capabilities?: string[];
+  requirements?: Record<string, any>;
+  default_config?: Record<string, any>;
+  configuration?: Record<string, any>;
+  category?: any;
+  isWorkflowNode?: boolean;
+  isConfigured?: boolean;
+}
+
+interface EnhancedWorkflowNodeProps extends NodeProps {
+  data: EnhancedNodeData;
+}
+
+export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
+  id,
+  data,
+  selected
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [nodeLabel, setNodeLabel] = useState(data.display_name || data.label || 'Node');
+  const { setNodes, setEdges, getNodes, getEdges } = useReactFlow();
+
+  const IconComponent = getIconComponent(data.icon || 'settings');
+  const nodeColor = data.color || '#6366f1';
+  const capabilities = data.capabilities || [];
+  const requirements = data.requirements || {};
+  const tools: string[] = (data as any).tools || [];
+  const models: string[] = (data as any).models || [];
+
+  const handleSaveLabel = (newLabel: string) => {
+    setNodeLabel(newLabel);
+    setIsEditing(false);
+    // Update node data
+    setNodes(nds => nds.map(n => n.id === id ? { ...n, data: { ...n.data, label: newLabel } } : n));
+  };
+
+  // Direct delete handler
+  const handleDelete = useCallback(() => {
+    setNodes(nds => nds.filter(n => n.id !== id));
+    setEdges(eds => eds.filter(e => e.source !== id && e.target !== id));
+  }, [id, setNodes, setEdges]);
+
+  // Direct duplicate handler
+  const handleDuplicate = useCallback(() => {
+    const node = getNodes().find(n => n.id === id);
+    if (node) {
+      const newId = `${id}-copy-${Date.now()}`;
+      const newNode = {
+        ...node,
+        id: newId,
+        position: { x: node.position.x + 50, y: node.position.y + 50 },
+        selected: false,
+      };
+      setNodes(nds => [...nds, newNode]);
+    }
+  }, [id, getNodes, setNodes]);
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className="relative">
+          {/* Node Resizer - visible when selected */}
+          <NodeResizer
+            minWidth={180}
+            minHeight={100}
+            maxWidth={400}
+            maxHeight={500}
+            isVisible={selected}
+            lineClassName="border-primary/50"
+            handleClassName="w-2 h-2 bg-background border border-primary rounded-sm"
+          />
+          
+          <div 
+            className={`
+              relative bg-card rounded-xl border-2 shadow-md min-w-[180px]
+              transition-all duration-300 ease-out workflow-node-enter
+              hover:shadow-xl hover:-translate-y-0.5
+              ${selected ? 'ring-2 ring-offset-2 ring-offset-background shadow-xl' : 'hover:border-primary/50'}
+            `}
+            style={{ 
+              borderColor: selected ? nodeColor : 'hsl(var(--border))',
+              boxShadow: selected ? `0 0 0 2px ${nodeColor}20, 0 20px 25px -5px rgba(0,0,0,0.1)` : undefined,
+              '--node-color': nodeColor
+            } as React.CSSProperties}
+          >
+      {/* Node Toolbar */}
+      {selected && (
+        <NodeToolbar isVisible position={Position.Top} className="animate-fade-in">
+          <div className="flex gap-1 bg-card/95 backdrop-blur-sm rounded-lg shadow-lg border border-border/50 p-1">
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-primary/10" onClick={handleDuplicate} aria-label="Duplicate node">
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-primary/10" onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }));
+            }} aria-label="Open configuration">
+              <Settings className="h-3 w-3" />
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-accent/30" onClick={() => {
+              window.dispatchEvent(new CustomEvent('test-node', { detail: { nodeId: id } }));
+            }} aria-label="Test node">
+              <Play className="h-3 w-3" />
+            </Button>
+            <div className="w-px h-5 bg-border my-auto" />
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-destructive/10 hover:text-destructive" onClick={handleDelete} aria-label="Delete node">
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        </NodeToolbar>
+      )}
+
+      {/* Input Handle */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="!w-3 !h-3 !border-2 !border-background transition-transform hover:scale-125"
+        style={{ backgroundColor: nodeColor }}
+      />
+
+      {/* Enhanced Node Visual State Display */}
+      <div className="p-3">
+        {/* Header with Configuration Status */}
+        <div className="flex items-center gap-2 mb-2">
+          <div 
+            className="p-1.5 rounded-md flex-shrink-0 relative"
+            style={{ 
+              backgroundColor: `${nodeColor}15`, 
+              color: nodeColor,
+              border: `1px solid ${nodeColor}30`
+            }}
+          >
+            <IconComponent className="h-4 w-4" />
+            {/* Configuration Status Indicator */}
+            {data.isConfigured && (
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" title="Configured" />
+            )}
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            {isEditing ? (
+              <input
+                type="text"
+                value={nodeLabel}
+                onChange={(e) => setNodeLabel(e.target.value)}
+                onBlur={() => handleSaveLabel(nodeLabel)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveLabel(nodeLabel);
+                  } else if (e.key === 'Escape') {
+                    setNodeLabel(data.display_name || data.label || 'Node');
+                    setIsEditing(false);
+                  }
+                }}
+                className="text-sm font-semibold bg-transparent border-none outline-none w-full"
+                autoFocus
+              />
+            ) : (
+              <h3 
+                className="text-sm font-semibold text-foreground cursor-pointer hover:text-primary"
+                onClick={() => setIsEditing(true)}
+                title="Click to edit"
+              >
+                {nodeLabel}
+              </h3>
+            )}
+          </div>
+
+          {capabilities.length > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? (
+                <ChevronUp className="h-3 w-3" />
+              ) : (
+                <ChevronDown className="h-3 w-3" />
+              )}
+            </Button>
+          )}
+        </div>
+
+        {/* Intent - Primary description of what this node does */}
+        {data.intent && (
+          <p className="text-xs text-primary/80 italic mb-2 font-medium">
+            {data.intent}
+          </p>
+        )}
+
+        {/* Description */}
+        {data.description && !data.intent && (
+          <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+            {data.description}
+          </p>
+        )}
+
+        {/* Top 3 Capabilities - Always Visible */}
+        {capabilities.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {capabilities.slice(0, 3).map((capability, index) => (
+              <Badge 
+                key={index} 
+                variant="secondary" 
+                className="text-xs px-1.5 py-0.5 font-normal"
+                style={{ 
+                  backgroundColor: `${nodeColor}10`, 
+                  color: nodeColor,
+                  border: `1px solid ${nodeColor}20`
+                }}
+              >
+                {capability.replace(/_/g, ' ')}
+              </Badge>
+            ))}
+            {capabilities.length > 3 && !isExpanded && (
+              <Badge 
+                variant="outline" 
+                className="text-xs px-1.5 py-0.5 cursor-pointer"
+                onClick={() => setIsExpanded(true)}
+                style={{ borderColor: `${nodeColor}30`, color: nodeColor }}
+              >
+                +{capabilities.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Configuration Summary */}
+        {data.configuration && Object.keys(data.configuration).length > 0 && (
+          <div className="mt-2 p-2 bg-muted/30 rounded border">
+            <div className="text-xs font-medium text-foreground mb-1">Configuration:</div>
+            <div className="space-y-1">
+              {Object.entries(data.configuration).slice(0, 2).map(([key, value]) => (
+                <div key={key} className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground truncate">{key}:</span>
+                  <span className="font-mono text-xs truncate max-w-[100px]" title={String(value)}>
+                    {String(value).length > 15 ? `${String(value).slice(0, 15)}...` : String(value)}
+                  </span>
+                </div>
+              ))}
+              {Object.keys(data.configuration).length > 2 && (
+                <div className="text-xs text-muted-foreground">
+                  +{Object.keys(data.configuration).length - 2} more settings
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Expanded Details */}
+        {isExpanded && (
+          <div className="space-y-2 border-t border-border pt-2 animate-in slide-in-from-top-1">
+            {/* All Capabilities */}
+            {capabilities.length > 3 && (
+              <div>
+                <div className="text-xs font-medium text-foreground mb-1">All Features:</div>
+                <div className="flex flex-wrap gap-1">
+                  {capabilities.slice(3).map((capability, index) => (
+                    <Badge 
+                      key={index + 3} 
+                      variant="outline" 
+                      className="text-xs px-1.5 py-0.5 font-normal"
+                      style={{ 
+                        borderColor: `${nodeColor}30`, 
+                        color: nodeColor 
+                      }}
+                    >
+                      {capability.replace(/_/g, ' ')}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tools */}
+            {tools.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-foreground mb-1">Tools:</div>
+                <div className="flex flex-wrap gap-1">
+                  {tools.map((tool, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0.5 font-normal" style={{ backgroundColor: `${nodeColor}0F`, color: nodeColor, border: `1px solid ${nodeColor}1F` }}>
+                      {tool}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Models */}
+            {models.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-foreground mb-1">Models:</div>
+                <div className="flex flex-wrap gap-1">
+                  {models.map((model, i) => (
+                    <Badge key={i} variant="outline" className="text-xs px-1.5 py-0.5 font-normal" style={{ borderColor: `${nodeColor}30`, color: nodeColor }}>
+                      {model}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Requirements */}
+            {Object.keys(requirements).length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-foreground mb-1">Requirements:</div>
+                <div className="space-y-1">
+                  {Object.entries(requirements).map(([key, value]) => (
+                    <div key={key} className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">{key.replace(/_/g, ' ')}:</span>
+                      <Badge 
+                        variant={String(value) === 'true' || String(value) === 'required' ? 'destructive' : 'secondary'} 
+                        className="text-xs"
+                      >
+                        {String(value)}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Category Info */}
+            {data.category && (
+              <div className="text-xs text-muted-foreground">
+                Category: <span className="font-medium">{data.category.display_name || data.category.name}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Output Handle */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!w-3 !h-3 !border-2 !border-background transition-transform hover:scale-125"
+        style={{ backgroundColor: nodeColor }}
+      />
+
+      {/* Left Handle for horizontal connections */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-2.5 !h-2.5 !border-2 !border-background !opacity-50 hover:!opacity-100 transition-all hover:scale-125"
+        style={{ backgroundColor: nodeColor }}
+      />
+
+      {/* Right Handle for horizontal connections */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!w-2.5 !h-2.5 !border-2 !border-background !opacity-50 hover:!opacity-100 transition-all hover:scale-125"
+        style={{ backgroundColor: nodeColor }}
+      />
+
+      {/* Connection Indicator */}
+      {data.isWorkflowNode && (
+        <div 
+          className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background animate-pulse"
+          style={{ backgroundColor: nodeColor }}
+          title="Workflow Node"
+        />
+      )}
+          </div>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem onClick={handleDuplicate}>
+          <Copy className="mr-2 h-4 w-4" />
+          Duplicate
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }))}>
+          <Settings className="mr-2 h-4 w-4" />
+          Configure
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('test-node', { detail: { nodeId: id } }))}>
+          <Play className="mr-2 h-4 w-4" />
+          Test Node
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+};

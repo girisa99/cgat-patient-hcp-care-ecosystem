@@ -1,0 +1,2631 @@
+/**
+ * Genie Vibe - Script to Screen Media Production Studio
+ * Part of Genie Studio
+ *
+ * Features:
+ * - Screen sharing with 5-second countdown
+ * - Floating teleprompter (separate window)
+ * - Script analysis & enhancement with AI
+ * - TTS with ElevenLabs/OpenAI (real API integration)
+ * - Audio sync and playback
+ * - Trim controls with undo
+ * - Recording library
+ * - Background blur
+ * - Keyboard shortcuts
+ * - Quality settings
+ * - AI Music generation
+ * - Studio Sound (podcast audio processing)
+ * - Project cost tracking
+ */
+
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { 
+  X, Library, Monitor, Camera, MonitorPlay, 
+  FileText, Music, Mic, ChevronLeft, ChevronRight,
+  FolderOpen, Sliders, Keyboard,
+  Play, Pause, Square, AudioLines, ExternalLink
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+
+// Import Genie Vibe logo - using combined version (finalized with tagline)
+import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
+
+import { 
+  useCamera, 
+  useRecording, 
+  useRecordingStream,
+  useAudioPlayback, 
+  useRecordingLibrary, 
+  useScreenShare, 
+  useScriptDraftStorage,
+  useMediaProject,
+  useStudioSound,
+  useTTSGeneration,
+  useMLBackgroundBlur,
+  useFFmpegTrim,
+  usePreloadedAudioRecorder,
+  useTeleprompterSync
+} from './hooks';
+import {
+  VideoPreview, 
+  RecordingControls,
+  RecordingLibraryPanel,
+  RecordingPreview,
+  InlineTeleprompter,
+  PreRecordingDialog,
+  CameraSetupDialog,
+  KeyboardShortcutsHelp,
+  RecordingQualitySettings,
+  ProjectSelector,
+  StudioSoundPanel,
+  PictureInPicture,
+  VideoEditorIntegration,
+  ProductionInfo,
+  AudioAssetSelector,
+  FloatingAudioMixer,
+  ContentAnalyzer,
+  VibeToMindBridge
+} from './components';
+import type { CameraSetupOptions } from './components';
+import type { RecordingStudioProps, LogoState, TeleprompterState, ScriptData, AudioTabType, EnhancementChange, AnalysisResult } from './types';
+import type { RecordingMode } from './hooks/useScreenShare';
+import type { RecordingQuality } from './components/RecordingQualitySettings';
+import { ProjectAssetBreakdown } from './components/ProjectAssetBreakdown';
+import { AvatarCreator } from './components/AvatarCreator';
+import { openPopoutRecordingStudio, type MediaItemForPopout, type ScriptItemForPopout } from '../popout';
+
+export function RecordingStudio({
+  isOpen,
+  onClose,
+  scripts: initialScripts,
+  voiceovers,
+  music,
+  selectedScriptId: initialScriptId = '',
+  selectedVoiceoverId: initialVoiceoverId = '',
+  selectedMusicId: initialMusicId = '',
+  onUploadVoiceover,
+  onUploadMusic,
+  isUploading = false,
+  productionContext,
+  onRecordingStateChange,
+}: RecordingStudioProps) {
+  // Scripts with local content management
+  const [scripts, setScripts] = useState<ScriptData[]>(initialScripts);
+  
+  // Recording mode
+  const [recordingMode, setRecordingMode] = useState<RecordingMode>('camera');
+  
+  // Selections
+  const [selectedScriptId, setSelectedScriptId] = useState(initialScriptId);
+  const [selectedVoiceoverId, setSelectedVoiceoverId] = useState(initialVoiceoverId);
+  const [selectedMusicId, setSelectedMusicId] = useState(initialMusicId);
+  
+  // Feature states
+  const [teleprompter, setTeleprompter] = useState<TeleprompterState>({
+    enabled: false, // Teleprompter opens in separate window now
+    scrollSpeed: 1.0,
+    isScrolling: false,
+  });
+  
+  const [teleprompterOpen, setTeleprompterOpen] = useState(false);
+  
+  const [logo, setLogo] = useState<LogoState>({
+    enabled: false,
+    src: null,
+    position: { x: 20, y: 20 },
+    size: 'medium',
+  });
+  
+  const [isBlurEnabled, setIsBlurEnabled] = useState(false);
+  
+  // Recording quality
+  const [recordingQuality, setRecordingQuality] = useState<RecordingQuality>('high');
+  const [ttsText, setTTSText] = useState('');
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [hasTTSAudio, setHasTTSAudio] = useState(false);
+  const [isTTSGenerating, setIsTTSGenerating] = useState(false);
+  const [ttsAudioUrl, setTTSAudioUrl] = useState<string | null>(null);
+  const [ttsProvider, setTTSProvider] = useState<'openai' | 'elevenlabs'>('openai');
+  const [activeAudioTab, setActiveAudioTab] = useState<AudioTabType>('voiceover');
+  const [selectedTTSFileId, setSelectedTTSFileId] = useState('');
+  // Script analysis/enhancement states - LIFTED from ScriptPanel to persist
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [cleanEnhancedScript, setCleanEnhancedScript] = useState<string | null>(null);
+  const [isUsingEnhancedScript, setIsUsingEnhancedScript] = useState(false);
+  
+  // Enhancement state lifted from ScriptPanel to prevent loss on re-render
+  const [enhancedScriptContent, setEnhancedScriptContent] = useState<string | null>(null);
+  const [enhancementChangesData, setEnhancementChangesData] = useState<EnhancementChange[]>([]);
+  const [showEnhancementChanges, setShowEnhancementChanges] = useState(false);
+  const [analysisResultData, setAnalysisResultData] = useState<AnalysisResult[]>([]);
+  const [showAnalysisResult, setShowAnalysisResult] = useState(false);
+  
+  // Pre-recording dialog state
+  const [showPreRecordingDialog, setShowPreRecordingDialog] = useState(false);
+  
+  // Camera setup dialog state
+  const [showCameraSetupDialog, setShowCameraSetupDialog] = useState(false);
+  
+  // Captions and transcription state
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcriptionText, setTranscriptionText] = useState<string | null>(null);
+  
+  // Recording preview
+  const [lastRecordingBlob, setLastRecordingBlob] = useState<Blob | null>(null);
+  const [lastRecordingSavedCaptions, setLastRecordingSavedCaptions] = useState<{ hasCaptions?: boolean; captionsText?: string } | undefined>(undefined);
+  const [showRecordingPreview, setShowRecordingPreview] = useState(false);
+  
+  // Trim state
+  const [trimSeconds, setTrimSeconds] = useState(5);
+  const [canUndoTrim, setCanUndoTrim] = useState(false);
+  const trimHistoryRef = useRef<Blob[]>([]);
+  
+  // Audio sync for word highlighting
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  
+  // Sidebar collapsed state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  
+  // Focus mode - auto-collapse panels during recording
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [headerMinimized, setHeaderMinimized] = useState(false);
+  const [controlsCollapsed, setControlsCollapsed] = useState(false);
+  
+  // Floating panels
+  const [showAudioMixer, setShowAudioMixer] = useState(false);
+  
+  // Asset breakdown panel
+  const [showAssetBreakdown, setShowAssetBreakdown] = useState(false);
+  
+  // Logo position persistence (saved per session)
+  const [savedLogoPosition, setSavedLogoPosition] = useState<{ x: number; y: number } | null>(null);
+  
+  // PIP mode for screen+camera
+  const [pipEnabled, setPipEnabled] = useState(true);
+  
+  // Video editor integration
+  const [showVideoEditor, setShowVideoEditor] = useState(false);
+  const [editingBlob, setEditingBlob] = useState<Blob | null>(null);
+  
+  // Content Analyzer (Vibe → Mind → Vibe flow)
+  const [showContentAnalyzer, setShowContentAnalyzer] = useState(false);
+  const [contentToAnalyze, setContentToAnalyze] = useState<{
+    type: 'recording' | 'ppt' | 'pdf' | 'url' | 'image';
+    name: string;
+    source?: string;
+  } | undefined>(undefined);
+  
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const audioPlaybackTimeoutRef = useRef<number | null>(null);
+  
+  // Ref to store proceedWithRecording for use in callbacks defined before it
+  const proceedWithRecordingRef = useRef<((mode: RecordingMode) => Promise<void>) | null>(null);
+  
+  // Script draft storage hook
+  const scriptDraft = useScriptDraftStorage({ 
+    scriptId: selectedScriptId,
+    autoSaveInterval: 30000 
+  });
+
+  // Update scripts when props change
+  useEffect(() => {
+    setScripts(initialScripts);
+  }, [initialScripts]);
+
+  // Note: Draft sync effects moved after currentScript declaration
+
+  // Hooks
+  const camera = useCamera({ autoStart: isOpen });
+  const screenShare = useScreenShare();
+  const library = useRecordingLibrary();
+  const audioPlayback = useAudioPlayback();
+  
+  // Media project tracking for cost management - linked to production when available
+  const mediaProject = useMediaProject({ productionContext });
+  
+  // Studio sound processing for podcast-quality audio
+  const studioSound = useStudioSound();
+  
+  // TTS generation with real API integration
+  const ttsGeneration = useTTSGeneration();
+  
+  // ML-based background blur with person segmentation
+  const mlBlur = useMLBackgroundBlur({ blurAmount: 15, enabled: isBlurEnabled });
+  
+  // FFmpeg for precise video trimming
+  const ffmpegTrim = useFFmpegTrim();
+  
+  // Get current data early for keyboard shortcuts
+  const currentScript = scripts.find(s => s.id === selectedScriptId);
+  const currentVoiceover = voiceovers.find(v => v.id === selectedVoiceoverId);
+  const currentMusic = music.find(m => m.id === selectedMusicId);
+  const currentTTSFile = voiceovers.find(v => v.id === selectedTTSFileId);
+  
+  // Analyze scripts for TTS/Voiceover status
+  // Returns detailed info about each script's audio availability
+  const scriptAudioStatus = scripts.map(script => {
+    const scriptTitle = (script.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // Find matching TTS files (metadataType = 'tts') - must have valid URL
+    const matchingTTS = voiceovers.filter(v => {
+      if (v.metadataType !== 'tts') return false;
+      // Skip files without valid URL
+      if (!v.url || v.url.startsWith('blob:') || v.url.startsWith('data:')) return false;
+      
+      // Priority 1: Match by scriptText content (most reliable)
+      if (v.scriptText && script.content) {
+        const scriptContent = script.enhancedContent || script.content;
+        if (v.scriptText.substring(0, 100) === scriptContent.substring(0, 100)) {
+          return true;
+        }
+      }
+      
+      // Priority 2: Strict name matching - require significant overlap
+      const voName = (v.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      // Only match if the TTS name contains most of the script title (>80% of title)
+      const titleWords = scriptTitle.split(/(?=[A-Z])|_|-/).filter(w => w.length > 2);
+      const matchedWords = titleWords.filter(word => voName.includes(word));
+      if (titleWords.length > 0 && matchedWords.length >= Math.ceil(titleWords.length * 0.6)) {
+        return true;
+      }
+      
+      // Fallback: exact prefix match (first 15 chars)
+      if (scriptTitle.length >= 10 && voName.includes(scriptTitle.substring(0, 15))) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    // Find matching Voiceover files (metadataType = 'voiceover') - must have valid URL
+    const matchingVoiceover = voiceovers.filter(v => {
+      if (v.metadataType !== 'voiceover') return false;
+      // Skip files without valid URL
+      if (!v.url || v.url.startsWith('blob:') || v.url.startsWith('data:')) return false;
+      
+      // Priority 1: Match by scriptText content (most reliable)
+      if (v.scriptText && script.content) {
+        const scriptContent = script.enhancedContent || script.content;
+        if (v.scriptText.substring(0, 100) === scriptContent.substring(0, 100)) {
+          return true;
+        }
+      }
+      
+      // Priority 2: Name matching similar to TTS
+      const voName = (v.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const titleWords = scriptTitle.split(/(?=[A-Z])|_|-/).filter(w => w.length > 2);
+      const matchedWords = titleWords.filter(word => voName.includes(word));
+      if (titleWords.length > 0 && matchedWords.length >= Math.ceil(titleWords.length * 0.6)) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    // Determine if TTS is for enhanced or original version
+    const hasTTSForEnhanced = matchingTTS.some(t => 
+      (t.name || '').toLowerCase().includes('enhanced') || 
+      (t.scriptText && script.enhancedContent && t.scriptText.substring(0, 50) === script.enhancedContent.substring(0, 50))
+    );
+    const hasTTSForOriginal = matchingTTS.some(t => 
+      !(t.name || '').toLowerCase().includes('enhanced') &&
+      (t.scriptText && script.content && t.scriptText.substring(0, 50) === script.content.substring(0, 50))
+    );
+    
+    return {
+      script,
+      hasTTS: matchingTTS.length > 0,
+      hasVoiceover: matchingVoiceover.length > 0,
+      hasEnhanced: !!script.enhancedContent,
+      hasTTSForEnhanced,
+      hasTTSForOriginal: hasTTSForOriginal || (matchingTTS.length > 0 && !hasTTSForEnhanced),
+      ttsFiles: matchingTTS,
+      voiceoverFiles: matchingVoiceover,
+      // Best audio file to use (prefer TTS, then voiceover)
+      bestAudioFile: matchingTTS[0] || matchingVoiceover[0] || null
+    };
+  });
+  
+  // Group scripts by status
+  const scriptsWithTTS = scriptAudioStatus.filter(s => s.hasTTS);
+  const scriptsWithVoiceoverOnly = scriptAudioStatus.filter(s => !s.hasTTS && s.hasVoiceover);
+  const scriptsNeedingAudio = scriptAudioStatus.filter(s => !s.hasTTS && !s.hasVoiceover);
+  
+  // Count actual voiceover files (with valid URL and metadataType='voiceover')
+  const actualVoiceoverCount = voiceovers.filter(v => {
+    if (!v.url || v.url.startsWith('blob:') || v.url.startsWith('data:')) return false;
+    if (v.metadataType === 'voiceover' || v.metadataType === 'narration') return true;
+    if (v.metadataType === 'tts' || v.metadataType === 'instrumental' || v.metadataType === 'music') return false;
+    // Default: if no metadataType, check name patterns
+    const lowerName = (v.name || '').toLowerCase();
+    if (lowerName.includes('voiceover') || lowerName.includes('narration')) return true;
+    if (lowerName.includes('tts') || lowerName.includes('instrumental') || lowerName.includes('music')) return false;
+    return false; // Only count files explicitly marked as voiceover
+  }).length;
+  
+  console.log('[RecordingStudio] Script audio status:', {
+    withTTS: scriptsWithTTS.length,
+    withVoiceoverOnly: scriptsWithVoiceoverOnly.length,
+    actualVoiceoverCount,
+    needingAudio: scriptsNeedingAudio.length,
+    total: scripts.length
+  });
+  
+  // Track script text from selected TTS/voiceover for teleprompter
+  const [audioLinkedScriptText, setAudioLinkedScriptText] = useState<string | null>(null);
+  
+  // Debug logging for audio selection state
+  useEffect(() => {
+    console.log('[RecordingStudio] Audio asset state:', {
+      voiceoversCount: voiceovers.length,
+      voiceovers: voiceovers.map(v => ({ 
+        id: v.id, 
+        name: v.name, 
+        metadataType: v.metadataType,
+        hasUrl: !!v.url,
+        urlType: v.url?.startsWith('blob:') ? 'blob' : v.url?.startsWith('http') ? 'http' : 'other'
+      })),
+      selectedVoiceoverId,
+      currentVoiceover: currentVoiceover ? { 
+        id: currentVoiceover.id, 
+        name: currentVoiceover.name, 
+        hasUrl: !!currentVoiceover.url,
+        urlPreview: currentVoiceover.url?.substring(0, 60)
+      } : 'None',
+      selectedTTSFileId,
+      currentTTSFile: currentTTSFile ? { 
+        id: currentTTSFile.id, 
+        name: currentTTSFile.name, 
+        hasUrl: !!currentTTSFile.url,
+        hasScriptText: !!currentTTSFile.scriptText 
+      } : 'None',
+      musicCount: music.length,
+      selectedMusicId,
+      currentMusic: currentMusic ? { id: currentMusic.id, name: currentMusic.name } : 'None'
+    });
+  }, [voiceovers, selectedVoiceoverId, currentVoiceover, selectedTTSFileId, currentTTSFile, music, selectedMusicId, currentMusic]);
+
+  // Auto-load script text from TTS/voiceover when selected (for teleprompter sync)
+  useEffect(() => {
+    if (currentTTSFile?.scriptText) {
+      console.log('[RecordingStudio] Loading script text from TTS file for teleprompter:', currentTTSFile.name);
+      setAudioLinkedScriptText(currentTTSFile.scriptText);
+    } else if (currentVoiceover?.scriptText) {
+      console.log('[RecordingStudio] Loading script text from voiceover for teleprompter:', currentVoiceover.name);
+      setAudioLinkedScriptText(currentVoiceover.scriptText);
+    } else {
+      setAudioLinkedScriptText(null);
+    }
+  }, [currentTTSFile, currentVoiceover]);
+
+  // Apply production context settings when opened from Production Hub
+  useEffect(() => {
+    if (productionContext) {
+      console.log('[RecordingStudio] Applying production context:', productionContext.showTitle);
+      
+      // Auto-select linked script if available
+      if (productionContext.linkedScriptId) {
+        const linkedScript = scripts.find(s => s.id === productionContext.linkedScriptId);
+        if (linkedScript) {
+          setSelectedScriptId(linkedScript.id);
+        }
+      }
+      
+      // Auto-select linked music if available  
+      if (productionContext.linkedMusicId) {
+        const linkedMusic = music.find(m => m.id === productionContext.linkedMusicId);
+        if (linkedMusic) {
+          setSelectedMusicId(linkedMusic.id);
+        }
+      }
+      
+      // Apply studio settings from production context
+      if (productionContext.studioSettings) {
+        const settings = productionContext.studioSettings;
+        
+        // Set teleprompter speed
+        setTeleprompter(prev => ({
+          ...prev,
+          scrollSpeed: settings.teleprompterSpeed,
+          enabled: settings.teleprompterEnabled,
+        }));
+        
+        // Set TTS provider and voice
+        setTTSProvider(settings.ttsProvider);
+        setSelectedVoice(settings.ttsVoiceId);
+        
+        // Apply studio sound preset based on production type
+        if (settings.studioSoundEnabled) {
+          studioSound.applyPreset('podcast');
+        }
+      }
+    }
+  }, [productionContext, scripts, music, studioSound]);
+  // Persist logo position when dragged
+  useEffect(() => {
+    if (logo.enabled && logo.src && savedLogoPosition) {
+      setLogo(prev => ({ ...prev, position: savedLogoPosition }));
+    }
+  }, [logo.enabled, logo.src, savedLogoPosition]);
+  
+  // Save logo position on change
+  const handleLogoPositionChange = useCallback((pos: { x: number; y: number }) => {
+    setSavedLogoPosition(pos);
+    setLogo(prev => ({ ...prev, position: pos }));
+  }, []);
+  
+  // Calculate current word index from audio time with improved sync algorithm
+  // Uses weighted timing based on word length and punctuation for better TTS alignment
+  // Works with BOTH legacy audioPlayback AND new preloadedAudio system
+  const calculateWordIndex = useCallback((currentTime: number, duration: number, scriptContent: string): number => {
+    if (!scriptContent || duration <= 0) return 0;
+    
+    const words = scriptContent.split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) return 0;
+    
+    // Calculate weighted durations for each word
+    // Longer words take more time, punctuation adds pauses
+    const wordWeights = words.map(word => {
+      let weight = word.length; // Base weight = character count
+      
+      // Add pause weight for punctuation - TTS pauses more at punctuation
+      if (word.match(/[.!?]$/)) weight += 8; // End of sentence pause (longer)
+      else if (word.match(/[,;:]$/)) weight += 4; // Comma pause
+      else if (word.match(/[-–—]$/)) weight += 2; // Dash pause
+      
+      // Minimum weight to prevent too-fast words
+      return Math.max(weight, 3);
+    });
+    
+    const totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
+    
+    // Find which word we should be at based on elapsed time proportion
+    // Subtract a small offset to keep cursor slightly behind (more natural reading)
+    const timeProgress = Math.max(0, (currentTime / duration) - 0.02); // 2% lag to stay in sync
+    
+    let accumulatedWeight = 0;
+    let targetIndex = 0;
+    
+    for (let i = 0; i < words.length; i++) {
+      const progress = accumulatedWeight / totalWeight;
+      
+      // Find the word where we've reached this time progress
+      if (progress >= timeProgress) {
+        targetIndex = Math.max(0, i - 1); // Go back one word to stay in sync
+        break;
+      }
+      
+      accumulatedWeight += wordWeights[i];
+      targetIndex = i;
+    }
+    
+    // Clamp to valid range
+    return Math.max(0, Math.min(targetIndex, words.length - 1));
+  }, []);
+
+  // Sync word index with LEGACY audioPlayback system
+  useEffect(() => {
+    if (audioPlayback.audioTimeInfo) {
+      setAudioCurrentTime(audioPlayback.audioTimeInfo.currentTime);
+      setAudioDuration(audioPlayback.audioTimeInfo.duration);
+      setIsAudioPlaying(audioPlayback.audioTimeInfo.isPlaying);
+      
+      // Get script content from either selected script OR audioLinkedScriptText
+      const currentScriptObj = scripts.find(s => s.id === selectedScriptId);
+      const scriptContent = currentScriptObj?.content || audioLinkedScriptText;
+      
+      if (scriptContent && audioPlayback.audioTimeInfo.duration > 0 && audioPlayback.audioTimeInfo.isPlaying) {
+        const newIndex = calculateWordIndex(
+          audioPlayback.audioTimeInfo.currentTime,
+          audioPlayback.audioTimeInfo.duration,
+          scriptContent
+        );
+        setCurrentWordIndex(newIndex);
+      }
+    }
+  }, [audioPlayback.audioTimeInfo, scripts, selectedScriptId, audioLinkedScriptText, calculateWordIndex]);
+
+  // NOTE: preloadedAudio word sync is defined after preloadedAudio hook below
+  // Use the new useRecordingStream hook for proper stream management
+  // Handles: blur integration, screen+camera PiP compositing, dynamic stream acquisition
+  const recordingStream = useRecordingStream({
+    mode: recordingMode,
+    cameraStream: camera.stream,
+    screenStream: screenShare.screenStream,
+    startScreenShare: screenShare.startScreenShare,
+    isScreenSharing: screenShare.isSharing,
+    // Note: blurredStream integration requires useMLBackgroundBlur to expose the stream
+    // For now, blur is applied at the camera level, not the recording stream level
+    blurredStream: null,
+    useBlur: false, // Blur handled by VideoPreview component
+    pipConfig: {
+      enabled: pipEnabled,
+      position: 'bottom-right',
+      size: 'medium',
+    },
+  });
+  
+  // Max recording duration (30 minutes default, 0 = unlimited)
+  const MAX_RECORDING_DURATION = 30 * 60; // 30 minutes in seconds
+  
+  // Ref to hold stopRecording to avoid circular dependency
+  const stopRecordingRef = useRef<(() => void) | null>(null);
+  
+  // === SIMPLIFIED AUDIO-FIRST APPROACH ===
+  // Pre-loaded audio recorder: prepares all audio BEFORE recording starts
+  // No more connectAudio, pendingAudioRef, or stale closures!
+  const preloadedAudio = usePreloadedAudioRecorder({
+    micStream: camera.stream,
+    videoStream: recordingStream.previewStream, // Use preview stream for video base
+    getVideoStream: recordingStream.getRecordingStream, // Dynamic getter for screen share, etc
+    enableDucking: true,
+    duckedVolume: 0.08,
+  });
+
+  // Get current script content for teleprompter (moved before recording for memoization)
+  const teleprompterScriptContent = React.useMemo(() => {
+    const currentScriptObj = scripts.find(s => s.id === selectedScriptId);
+    if (isUsingEnhancedScript && currentScriptObj?.enhancedContent) {
+      return currentScriptObj.enhancedContent;
+    }
+    return currentScriptObj?.content || audioLinkedScriptText || null;
+  }, [scripts, selectedScriptId, isUsingEnhancedScript, audioLinkedScriptText]);
+
+  // Create a combined stream getter that uses preloadedAudio when ready
+  // This ensures the recording stream includes both video AND mixed audio
+  const getCombinedRecordingStream = useCallback(async (): Promise<MediaStream | null> => {
+    // If preloadedAudio is ready, use its combined stream (video + audio)
+    if (preloadedAudio.state.isReady) {
+      const combined = await preloadedAudio.getRecordingStream();
+      if (combined) {
+        console.log('[RecordingStudio] Using preloadedAudio combined stream:', {
+          videoTracks: combined.getVideoTracks().length,
+          audioTracks: combined.getAudioTracks().length,
+        });
+        return combined;
+      }
+    }
+    
+    // Fall back to recordingStream (video only, with camera mic if available)
+    const baseStream = await recordingStream.getRecordingStream();
+    console.log('[RecordingStudio] Using recordingStream (no preloadedAudio):', {
+      videoTracks: baseStream?.getVideoTracks().length || 0,
+      audioTracks: baseStream?.getAudioTracks().length || 0,
+    });
+    return baseStream;
+  }, [preloadedAudio, recordingStream]);
+  
+  // Store pending audio config to be prepared when recording starts
+  const pendingAudioConfigRef = useRef<{
+    ttsUrl: string | null;
+    ttsName: string;
+    musicUrl: string | null;
+    musicName: string;
+  } | null>(null);
+  
+  const recording = useRecording(
+    // Use combined stream getter that includes preloaded audio
+    getCombinedRecordingStream,
+    {
+      onRecordingComplete: async (blob, duration) => {
+        console.log('[RecordingStudio] onRecordingComplete called - blob size:', blob.size, 'duration:', duration);
+        
+        // Clean up recording stream resources
+        recordingStream.cleanup();
+        
+        // Stop all audio playback (both preloaded and audioPlayback)
+        preloadedAudio.stopPlayback();
+        audioPlayback.stopAll();
+        
+        // Stop screen share if active
+        if (screenShare.isSharing) {
+          screenShare.stopScreenShare();
+        }
+        
+        // Check if blob is empty (no data captured)
+        if (blob.size === 0) {
+          console.error('[RecordingStudio] Recording completed but blob is empty!');
+          toast.error('Recording failed - no data captured. Please try again.');
+          return;
+        }
+        
+        // Show preview with the recording
+        console.log('[RecordingStudio] Setting lastRecordingBlob and showing preview');
+        setLastRecordingBlob(blob);
+        setShowRecordingPreview(true);
+        toast.success(`Recording complete! ${Math.floor(duration / 60)}m ${duration % 60}s captured.`);
+      },
+      // Recording quality
+      quality: recordingQuality,
+      // 5-second countdown (default in hook)
+      countdownSeconds: 5,
+      // Max duration limit (auto-stop)
+      maxDuration: MAX_RECORDING_DURATION,
+      onMaxDurationReached: () => {
+        // Use ref to avoid circular dependency
+        stopRecordingRef.current?.();
+      },
+      // SIMPLIFIED: Start pre-loaded audio playback when recording actually starts
+      onRecordingStarted: () => {
+        console.log('[RecordingStudio] ✅ onRecordingStarted callback - starting pre-loaded audio!');
+        
+        // Start the pre-loaded audio (it's already prepared and connected to mixer)
+        preloadedAudio.startPlayback();
+        
+        console.log('[RecordingStudio] ✅ Audio playback started via preloadedAudio');
+      },
+    }
+  );
+  
+  // Update ref after recording is created
+  useEffect(() => {
+    stopRecordingRef.current = recording.stopRecording;
+  }, [recording.stopRecording]);
+
+  // Sync preloaded audio time with teleprompter
+  useEffect(() => {
+    if (preloadedAudio.isPlaying) {
+      setAudioCurrentTime(preloadedAudio.currentTime);
+      setAudioDuration(preloadedAudio.duration);
+      setIsAudioPlaying(true);
+    } else if (!recording.isRecording) {
+      setIsAudioPlaying(false);
+    }
+  }, [preloadedAudio.isPlaying, preloadedAudio.currentTime, preloadedAudio.duration, recording.isRecording]);
+
+  // Use teleprompter sync hook (after recording is defined)
+  const teleprompterSyncState = useTeleprompterSync({
+    scriptContent: teleprompterScriptContent,
+    audioCurrentTime: preloadedAudio.currentTime,
+    audioDuration: preloadedAudio.duration,
+    isAudioPlaying: preloadedAudio.isPlaying,
+    isRecording: recording.isRecording,
+    isPaused: recording.isPaused,
+  });
+
+  // Sync currentWordIndex from teleprompterSyncState
+  useEffect(() => {
+    if (teleprompterSyncState.currentWordIndex !== currentWordIndex) {
+      setCurrentWordIndex(teleprompterSyncState.currentWordIndex);
+    }
+  }, [teleprompterSyncState.currentWordIndex, currentWordIndex]);
+
+  // Note: currentScript, currentVoiceover, currentMusic defined above after hooks
+
+  // Ref to track if we've already started audio for the current recording session
+  const audioStartedForSessionRef = useRef(false);
+  
+  // Track recording state for audio session management
+  useEffect(() => {
+    if (recording.isRecording && !recording.isPaused) {
+      if (!audioStartedForSessionRef.current) {
+        audioStartedForSessionRef.current = true;
+        console.log('[RecordingStudio] Recording active - audio is playing via preloadedAudio');
+      }
+    } else if (!recording.isRecording) {
+      // Reset the flag when recording stops
+      audioStartedForSessionRef.current = false;
+    }
+  }, [recording.isRecording, recording.isPaused]);
+
+  // Auto-focus mode: collapse panels when recording starts
+  // Also notify parent of recording state changes
+  useEffect(() => {
+    if (recording.isRecording && !recording.isPaused) {
+      // Enter focus mode
+      setIsFocusMode(true);
+      setIsSidebarCollapsed(true);
+      setHeaderMinimized(true);
+      // Notify parent that recording started
+      onRecordingStateChange?.(true);
+    } else if (!recording.isRecording) {
+      // Exit focus mode when recording stops
+      setIsFocusMode(false);
+      setHeaderMinimized(false);
+      // Don't auto-expand sidebar - let user control it
+      // Notify parent that recording stopped
+      onRecordingStateChange?.(false);
+    }
+  }, [recording.isRecording, recording.isPaused, onRecordingStateChange]);
+
+  // Sync enhanced script to draft storage when it changes
+  useEffect(() => {
+    if (enhancedScriptContent && currentScript && selectedScriptId) {
+      scriptDraft.updateDraft({
+        originalContent: currentScript.content,
+        enhancedContent: enhancedScriptContent,
+        changes: enhancementChangesData,
+        status: 'draft',
+      });
+    }
+  }, [enhancedScriptContent, currentScript, selectedScriptId, enhancementChangesData, scriptDraft]);
+
+  // Load draft on script change if exists
+  useEffect(() => {
+    if (scriptDraft.hasDraft && scriptDraft.draft?.enhancedContent && !enhancedScriptContent) {
+      setEnhancedScriptContent(scriptDraft.draft.enhancedContent);
+      setEnhancementChangesData(scriptDraft.draft.changes || []);
+      if (scriptDraft.isDraft) {
+        toast.info('Restored unsaved enhancement draft');
+      }
+    }
+  }, [scriptDraft.hasDraft, scriptDraft.draft, selectedScriptId, enhancedScriptContent]);
+
+  // Cleanup all audio when studio closes or unmounts
+  // Use ref to avoid dependency loop with audioPlayback
+  const audioPlaybackRef = useRef(audioPlayback);
+  audioPlaybackRef.current = audioPlayback;
+  
+  useEffect(() => {
+    // Only cleanup on close/unmount, not on every render
+    return () => {
+      audioPlaybackRef.current.stopAll();
+    };
+  }, []); // Empty deps - only runs on unmount
+
+  // Handlers
+  const handleClose = useCallback(() => {
+    camera.stopCamera();
+    screenShare.stopScreenShare();
+    audioPlayback.stopAll();
+    onClose();
+  }, [camera, screenShare, audioPlayback, onClose]);
+
+  const handleLogoUpload = useCallback(() => {
+    console.log('[Logo] Upload button clicked, triggering file input');
+    logoInputRef.current?.click();
+  }, []);
+
+  const handleLogoFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      console.log('[Logo] No file selected');
+      return;
+    }
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+    
+    console.log('[Logo] Processing file:', file.name, file.type, file.size);
+    
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const result = loadEvent.target?.result as string;
+      if (result) {
+        setLogo(prev => ({
+          ...prev,
+          enabled: true,
+          src: result,
+        }));
+        toast.success('Logo uploaded! Drag to reposition.');
+        console.log('[Logo] Logo loaded successfully');
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Failed to load image');
+      console.error('[Logo] FileReader error');
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  }, []);
+
+  // Script content update handler
+  const handleScriptContentUpdate = useCallback((id: string, newContent: string) => {
+    setScripts(prev => prev.map(s => 
+      s.id === id ? { ...s, content: newContent } : s
+    ));
+    toast.success('Script updated!');
+  }, []);
+
+  // Script analysis - uses AI
+  const handleAnalyzeScript = useCallback(async (): Promise<any> => {
+    if (!currentScript) return null;
+    setIsAnalyzing(true);
+    
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enhance-script`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            scriptContent: currentScript.content,
+            mode: 'analyze'
+          }),
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Analysis failed');
+      }
+      
+      const result = await response.json();
+      if (result.success && result.data) {
+        return result.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast.error(error instanceof Error ? error.message : 'Analysis failed');
+      return null;
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [currentScript]);
+
+  // Script enhancement - uses AI
+  const handleEnhanceScript = useCallback(async (): Promise<any> => {
+    if (!currentScript) return null;
+    setIsEnhancing(true);
+    
+    try {
+      toast.info('Enhancing script with AI...');
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enhance-script`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            scriptContent: currentScript.content,
+            mode: 'enhance'
+          }),
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Enhancement failed');
+      }
+      
+      const result = await response.json();
+      if (result.success && result.data) {
+        // Return the full enhancement data including changes
+        toast.success('Script enhanced! Review the changes below.');
+        return result.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Enhancement error:', error);
+      toast.error(error instanceof Error ? error.message : 'Enhancement failed');
+      return null;
+    } finally {
+      setIsEnhancing(false);
+    }
+  }, [currentScript]);
+
+  // TTS generation - uses real API integration with cost tracking
+  const handleGenerateTTS = useCallback(async () => {
+    const textToSpeak = ttsText || currentScript?.content;
+    
+    console.log('[RecordingStudio] handleGenerateTTS called:', {
+      ttsTextLength: ttsText?.length || 0,
+      currentScriptContent: currentScript?.content?.substring(0, 50) || 'None',
+      textToSpeakLength: textToSpeak?.length || 0,
+      provider: ttsProvider,
+      voice: selectedVoice
+    });
+    
+    if (!textToSpeak) {
+      toast.error('No text to generate TTS. Enter text or select a script first.');
+      return;
+    }
+    
+    setIsTTSGenerating(true);
+    
+    try {
+      console.log('[RecordingStudio] Calling ttsGeneration.generate...');
+      
+      const result = await ttsGeneration.generate({
+        text: textToSpeak,
+        voice: selectedVoice,
+        provider: ttsProvider,
+      });
+      
+      console.log('[RecordingStudio] TTS generation result:', {
+        success: !!result,
+        hasAudioUrl: !!result?.audioUrl,
+        audioUrlPreview: result?.audioUrl?.substring(0, 60) || 'None',
+        duration: result?.duration
+      });
+      
+      if (result && result.audioUrl) {
+        setHasTTSAudio(true);
+        setTTSAudioUrl(result.audioUrl);
+        
+        // Log cost to current project if selected
+        if (mediaProject.currentProject) {
+          await mediaProject.logCost({
+            operation_type: 'tts',
+            operation_name: `TTS: ${textToSpeak.substring(0, 50)}...`,
+            cost: result.estimatedCost || 0.01,
+            provider: ttsProvider,
+            characters_processed: textToSpeak.length,
+            metadata: { voice: selectedVoice }
+          });
+        }
+        
+        toast.success('TTS audio generated! Click Play to preview.');
+      } else {
+        console.error('[RecordingStudio] TTS generation returned no result or no audioUrl');
+        toast.error('TTS generation failed - no audio returned');
+      }
+    } catch (error) {
+      console.error('[RecordingStudio] TTS generation error:', error);
+      toast.error('TTS generation failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsTTSGenerating(false);
+    }
+  }, [ttsText, currentScript, ttsProvider, selectedVoice, ttsGeneration, mediaProject]);
+
+  // Start recording - show camera setup dialog first
+  const handleStartRecording = useCallback(async () => {
+    console.log('[RecordingStudio] handleStartRecording called - showing camera setup dialog');
+    // Always show camera setup dialog first to let user configure recording mode
+    setShowCameraSetupDialog(true);
+  }, []);
+
+  // Handle camera setup confirmation
+  const handleCameraSetupConfirm = useCallback(async (mode: RecordingMode, options: CameraSetupOptions) => {
+    console.log('[RecordingStudio] handleCameraSetupConfirm called with mode:', mode, 'options:', options);
+    
+    // Apply selected mode
+    setRecordingMode(mode);
+    
+    // Apply options
+    setPipEnabled(options.enablePIP);
+    setIsBlurEnabled(options.enableBackgroundBlur);
+    
+    // Apply studio sound settings
+    if (options.enableStudioSound) {
+      studioSound.applyPreset('podcast');
+    } else {
+      studioSound.applyPreset('off');
+    }
+    
+    // If we have an enhanced script, show the script selection dialog
+    if (cleanEnhancedScript && currentScript) {
+      console.log('[RecordingStudio] Has enhanced script - showing pre-recording dialog');
+      setShowPreRecordingDialog(true);
+      return;
+    }
+    
+    // No enhanced script - proceed directly
+    console.log('[RecordingStudio] No enhanced script - proceeding directly to recording');
+    // Use ref to get the latest version of proceedWithRecording
+    proceedWithRecordingRef.current?.(mode);
+  }, [cleanEnhancedScript, currentScript, studioSound]);
+
+  // Handle script selection from pre-recording dialog
+  const handlePreRecordingScriptSelect = useCallback(async (useEnhanced: boolean) => {
+    console.log('[RecordingStudio] handlePreRecordingScriptSelect called, useEnhanced:', useEnhanced);
+    setIsUsingEnhancedScript(useEnhanced);
+    // Use ref to avoid stale closure
+    proceedWithRecordingRef.current?.(recordingMode);
+  }, [recordingMode]);
+
+  // Flag to track if recording was cancelled during countdown
+  const recordingCancelledRef = useRef(false);
+  
+  // Actual recording start logic - with pre-connected audio (HYBRID FIX)
+  const proceedWithRecording = useCallback(async (mode: RecordingMode) => {
+    console.log('[RecordingStudio] proceedWithRecording called with mode:', mode);
+    console.log('[RecordingStudio] Current state:', {
+      cameraStream: !!camera.stream,
+      cameraStreamTracks: camera.stream?.getTracks().length,
+      isScreenSharing: screenShare.isSharing,
+      screenStream: !!screenShare.screenStream,
+      recordingStreamIsReady: recordingStream.isReady,
+    });
+    
+    // Reset cancellation flag
+    recordingCancelledRef.current = false;
+    
+    // === SIMPLIFIED AUDIO-FIRST APPROACH ===
+    // Prepare audio BEFORE starting recording (during countdown)
+    const ttsFileToPlay = voiceovers.find(v => v.id === selectedTTSFileId);
+    const voiceoverToPlay = voiceovers.find(v => v.id === selectedVoiceoverId);
+    const musicToPlay = music.find(m => m.id === selectedMusicId);
+    
+    const ttsUrl = ttsFileToPlay?.url || voiceoverToPlay?.url || ttsGeneration.lastResult?.audioUrl || ttsAudioUrl || null;
+    const musicUrl = musicToPlay?.url || null;
+    
+    console.log('[RecordingStudio] Preparing audio for recording:', {
+      hasTTS: !!ttsUrl,
+      hasMusic: !!musicUrl,
+    });
+    
+    // Prepare pre-loaded audio (loads files and sets up mixer)
+    if (ttsUrl || musicUrl) {
+      await preloadedAudio.prepare({
+        tts: ttsUrl ? { url: ttsUrl, name: ttsFileToPlay?.name || voiceoverToPlay?.name || 'TTS', volume: 1.0 } : null,
+        music: musicUrl ? { url: musicUrl, name: musicToPlay?.name || 'Music', volume: 0.3, loop: true } : null,
+      });
+      console.log('[RecordingStudio] ✅ Audio pre-loaded and ready');
+    }
+    
+    // Open teleprompter automatically when recording starts (if script available)
+    const teleprompterContent = currentScript?.content || audioLinkedScriptText;
+    if (currentScript || audioLinkedScriptText) {
+      console.log('[RecordingStudio] Opening teleprompter automatically');
+      setTeleprompterOpen(true);
+    }
+    
+    // Start teleprompter scrolling immediately
+    setTeleprompter(prev => ({ ...prev, isScrolling: true }));
+    setCurrentWordIndex(0);
+    
+    // Clear any existing timeout first
+    if (audioPlaybackTimeoutRef.current) {
+      clearTimeout(audioPlaybackTimeoutRef.current);
+      audioPlaybackTimeoutRef.current = null;
+    }
+    
+    // Start recording - audio will start via onRecordingStarted callback AFTER countdown
+    recording.startRecording();
+    
+  }, [recording, currentScript, audioLinkedScriptText, camera.stream, screenShare, recordingStream.isReady, 
+      voiceovers, music, selectedVoiceoverId, selectedTTSFileId, selectedMusicId, 
+      ttsGeneration.lastResult, ttsAudioUrl, preloadedAudio]);
+
+  // Update ref so callbacks defined before proceedWithRecording can access it
+  proceedWithRecordingRef.current = proceedWithRecording;
+
+  // Pause recording - also pause ALL audio including music (but keep position for resume)
+  const handlePauseRecording = useCallback(() => {
+    if (!recording.isPaused) {
+      // Pausing - pause ALL audio (keep position)
+      // Use preloadedAudio for new audio-first approach
+      preloadedAudio.pausePlayback();
+      // Also pause legacy audioPlayback just in case
+      audioPlayback.pauseVoiceover();
+      audioPlayback.pauseTTS();
+      audioPlayback.pauseMusic();
+      setTeleprompter(prev => ({ ...prev, isScrolling: false }));
+      console.log('[RecordingStudio] Pausing recording and all audio (preloadedAudio + legacy)');
+    } else {
+      // Resuming - resume ALL audio from where it was paused
+      // Use preloadedAudio for new audio-first approach
+      preloadedAudio.resumePlayback();
+      // Also resume legacy audioPlayback just in case
+      audioPlayback.resumeVoiceover();
+      audioPlayback.resumeTTS();
+      audioPlayback.resumeMusic();
+      setTeleprompter(prev => ({ ...prev, isScrolling: true }));
+      console.log('[RecordingStudio] Resuming recording and all audio (preloadedAudio + legacy)');
+    }
+    recording.pauseRecording();
+  }, [recording, audioPlayback, preloadedAudio]);
+
+  // Stop recording - stop all audio and cancel pending audio playback timeout
+  const handleStopRecording = useCallback(() => {
+    console.log('[RecordingStudio] handleStopRecording called');
+    
+    // CRITICAL: Set cancellation flag FIRST to prevent audio from playing
+    recordingCancelledRef.current = true;
+    
+    // Cancel any pending audio playback timeout (important if user stops during countdown)
+    if (audioPlaybackTimeoutRef.current) {
+      console.log('[RecordingStudio] Cancelling pending audio playback timeout');
+      clearTimeout(audioPlaybackTimeoutRef.current);
+      audioPlaybackTimeoutRef.current = null;
+    }
+    
+    recording.stopRecording();
+    audioPlayback.stopAll();
+    
+    // Stop teleprompter scrolling
+    setTeleprompter(prev => ({ ...prev, isScrolling: false }));
+    
+    if (screenShare.isSharing) {
+      screenShare.stopScreenShare();
+    }
+  }, [recording, audioPlayback, screenShare]);
+
+  // Rewind handler - trims the last N seconds during pause
+  const handleRewindSeconds = useCallback((seconds: number) => {
+    if (!recording.isPaused) {
+      toast.error('Pause recording to rewind');
+      return;
+    }
+    
+    if (recording.duration < seconds) {
+      toast.info(`Recording is only ${recording.duration}s long`);
+      return;
+    }
+    
+    // Use the hook's trim function to remove last N seconds
+    recording.trimLastSeconds?.(seconds);
+    toast.success(`Rewound ${seconds} seconds`);
+  }, [recording]);
+
+  // Restart recording - discard current and start fresh
+  const handleRestartRecording = useCallback(() => {
+    if (!recording.isRecording) return;
+    
+    const confirmed = window.confirm('Discard current recording and start over?');
+    if (!confirmed) return;
+    
+    // Stop current recording without saving
+    recording.stopRecording();
+    audioPlayback.stopAll();
+    
+    // Reset states
+    setTranscriptionText(null);
+    trimHistoryRef.current = [];
+    setCanUndoTrim(false);
+    
+    // Wait a bit then start new recording
+    setTimeout(() => {
+      handleStartRecording();
+    }, 500);
+    
+    toast.info('Starting fresh recording...');
+  }, [recording, audioPlayback, handleStartRecording]);
+
+  // Trim handler with undo support - now uses hook's trimLastSeconds
+  const handleTrimSeconds = useCallback((seconds: number) => {
+    if (!recording.recordedChunks || recording.recordedChunks.length === 0) {
+      toast.info('Nothing to trim');
+      return;
+    }
+    
+    // Store current blob for undo before trimming
+    const currentBlob = new Blob(recording.recordedChunks, { type: 'video/webm' });
+    trimHistoryRef.current.push(currentBlob);
+    
+    // Use the hook's trim function
+    recording.trimLastSeconds?.(seconds);
+    
+    toast.success(`Trimmed last ${seconds} seconds`);
+    setCanUndoTrim(true);
+  }, [recording]);
+
+  // Transcribe current recording (during pause)
+  const handleTranscribeRecording = useCallback(async () => {
+    if (!recording.isPaused) {
+      toast.error('Pause recording to transcribe');
+      return;
+    }
+
+    const blob = recording.getCurrentBlob?.();
+    if (!blob) {
+      toast.error('No recording to transcribe');
+      return;
+    }
+
+    setIsTranscribing(true);
+    try {
+      // Convert blob to base64
+      const arrayBuffer = await blob.arrayBuffer();
+      const base64Audio = btoa(
+        String.fromCharCode(...new Uint8Array(arrayBuffer))
+      );
+
+      const response = await fetch(
+        `https://ithspbabhmdntioslfqe.supabase.co/functions/v1/voice-to-text`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw`,
+          },
+          body: JSON.stringify({ audio: base64Audio }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Transcription failed');
+      }
+
+      const { text } = await response.json();
+      setTranscriptionText(text);
+      toast.success('Transcription complete!');
+    } catch (error) {
+      console.error('Transcription error:', error);
+      toast.error('Failed to transcribe recording');
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, [recording]);
+
+  const handleUndoTrim = useCallback(() => {
+    if (trimHistoryRef.current.length === 0) {
+      toast.info('Nothing to undo');
+      return;
+    }
+    
+    trimHistoryRef.current.pop();
+    setCanUndoTrim(trimHistoryRef.current.length > 0);
+    toast.success('Trim undone');
+  }, []);
+
+  // Save recording from preview with options and metadata
+  const handleSaveRecording = useCallback(async (options?: {
+    format: 'webm' | 'mp4';
+    includeAudio: boolean;
+    includeCaptions: boolean;
+    captionsText?: string;
+    metadata?: {
+      scriptTitle?: string;
+      scriptContent?: string;
+      audioAssets?: {
+        tts?: string;
+        voiceover?: string;
+        music?: string;
+      };
+      duration?: number;
+      createdAt?: string;
+    };
+  }) => {
+    if (!lastRecordingBlob) return;
+    
+    const script = scripts.find(s => s.id === selectedScriptId);
+    const format = options?.format || 'webm';
+    
+    // Convert to MP4 if requested
+    let blobToSave = lastRecordingBlob;
+    let downloadExtension = 'webm';
+    
+    if (format === 'mp4' && ffmpegTrim.isLoaded) {
+      try {
+        toast.info('Converting to MP4 for save...');
+        const mp4Blob = await ffmpegTrim.convertToMp4(lastRecordingBlob);
+        if (mp4Blob) {
+          blobToSave = mp4Blob;
+          downloadExtension = 'mp4';
+        }
+      } catch (err) {
+        console.error('MP4 conversion failed, saving as WebM:', err);
+      }
+    }
+    
+    // Prepare comprehensive metadata
+    const saveMetadata = {
+      name: `Recording ${new Date().toLocaleString()}`,
+      duration: options?.metadata?.duration || recording.duration,
+      scriptTitle: options?.metadata?.scriptTitle || script?.title,
+      scriptContent: options?.metadata?.scriptContent || script?.content,
+      hasVoiceover: !!selectedVoiceoverId,
+      hasMusic: !!selectedMusicId,
+      hasTTS: !!selectedTTSFileId,
+      hasCaptions: options?.includeCaptions || false,
+      captionsText: options?.captionsText,
+      format: downloadExtension,
+      audioAssets: options?.metadata?.audioAssets || {
+        tts: currentTTSFile?.name,
+        voiceover: currentVoiceover?.name,
+        music: currentMusic?.name,
+      },
+      createdAt: options?.metadata?.createdAt || new Date().toISOString(),
+    };
+    
+    await library.saveRecording(blobToSave, saveMetadata);
+    
+    // Download with metadata in filename
+    const safeName = (saveMetadata.scriptTitle || 'untitled').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30);
+    const url = URL.createObjectURL(blobToSave);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${safeName}-${Date.now()}.${downloadExtension}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast.success(`Recording saved as ${downloadExtension.toUpperCase()} with metadata!`);
+    setShowRecordingPreview(false);
+    setLastRecordingBlob(null);
+  }, [lastRecordingBlob, scripts, selectedScriptId, library, recording.duration, selectedVoiceoverId, selectedMusicId, selectedTTSFileId, currentTTSFile, currentVoiceover, currentMusic, ffmpegTrim]);
+
+  // Discard recording
+  const handleDiscardRecording = useCallback(() => {
+    setLastRecordingBlob(null);
+    setShowRecordingPreview(false);
+    toast.info('Recording discarded');
+  }, []);
+
+  // Preview recording from library (opens in RecordingPreview modal)
+  const handlePreviewLibraryRecording = useCallback(async (id: number) => {
+    try {
+      const recording = await library.getRecording(id);
+      if (recording?.blob) {
+        setLastRecordingBlob(recording.blob);
+        setLastRecordingSavedCaptions({
+          hasCaptions: recording.hasCaptions,
+          captionsText: recording.captionsText,
+        });
+        setShowRecordingPreview(true);
+        library.setIsOpen(false); // Close library panel to focus on preview
+      } else {
+        toast.error('Could not load recording for preview');
+      }
+    } catch (err) {
+      console.error('[RecordingStudio] Error previewing library recording:', err);
+      toast.error('Failed to load recording');
+    }
+  }, [library]);
+
+  // Open recording in video editor
+  const handleOpenInEditor = useCallback(() => {
+    if (lastRecordingBlob) {
+      setEditingBlob(lastRecordingBlob);
+      setShowRecordingPreview(false);
+      setShowVideoEditor(true);
+    }
+  }, [lastRecordingBlob]);
+
+  // Open pop-out window for screen recording scenarios
+  const handleOpenPopout = useCallback(async () => {
+    try {
+      // Get user session for backend saves
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      // Prepare media items for popout
+      const mediaItems: MediaItemForPopout[] = [
+        ...voiceovers.map(v => ({
+          id: v.id,
+          name: v.name,
+          url: v.url,
+          file_type: 'audio' as const,
+          metadata: {
+            scriptText: v.scriptText,
+            scriptType: v.scriptType,
+            type: v.metadataType,
+          }
+        })),
+        ...music.map(m => ({
+          id: m.id,
+          name: m.name,
+          url: m.url,
+          file_type: 'audio' as const,
+          metadata: { type: 'instrumental' }
+        }))
+      ];
+
+      // Prepare scripts for popout
+      const availableScripts: ScriptItemForPopout[] = scripts.map(s => ({
+        id: s.id,
+        title: s.title,
+        content: s.content,
+      }));
+
+      // Open the popout window with all context including recording mode
+      const popoutWindow = openPopoutRecordingStudio({
+        mediaItems,
+        availableScripts,
+        selectedScript: currentScript,
+        selectedAudioFile: currentVoiceover ? {
+          id: currentVoiceover.id,
+          name: currentVoiceover.name,
+          url: currentVoiceover.url,
+          file_type: 'audio',
+        } : null,
+        selectedBackgroundMusic: currentMusic ? {
+          id: currentMusic.id,
+          name: currentMusic.name,
+          url: currentMusic.url,
+          file_type: 'audio',
+        } : null,
+        userAccessToken: accessToken,
+        recordingMode: recordingMode, // Pass the current recording mode (camera, screen, screen+camera)
+        productionContext: productionContext ? {
+          showId: productionContext.showId,
+          showTitle: productionContext.showTitle,
+          showType: productionContext.showType,
+          scriptMode: productionContext.scriptMode,
+          currentStage: productionContext.currentStage,
+          participants: productionContext.participants.map(p => ({
+            id: p.id,
+            name: p.name,
+            role: p.role,
+          })),
+          studioSettings: productionContext.studioSettings ? {
+            teleprompterSpeed: productionContext.studioSettings.teleprompterSpeed,
+            ttsVoiceId: productionContext.studioSettings.ttsVoiceId,
+            ttsProvider: productionContext.studioSettings.ttsProvider,
+          } : undefined,
+        } : undefined,
+        onSuccess: () => {
+          toast.success('Pop-out window opened. Your recording session will be saved to the project.');
+        },
+        onError: (message) => {
+          toast.error(message);
+        },
+      });
+
+      if (popoutWindow) {
+        // Close the modal since we're now in popout mode
+        onClose();
+      }
+    } catch (err) {
+      console.error('Failed to open popout:', err);
+      toast.error('Failed to open pop-out window');
+    }
+  }, [voiceovers, music, scripts, currentScript, currentVoiceover, currentMusic, productionContext, onClose]);
+
+  // TTS download
+  const handleDownloadTTS = useCallback(() => {
+    if (ttsAudioUrl) {
+      const a = document.createElement('a');
+      a.href = ttsAudioUrl;
+      a.download = `tts-${ttsProvider}-${Date.now()}.mp3`;
+      a.click();
+    } else {
+      toast.info('No TTS audio to download');
+    }
+  }, [ttsAudioUrl, ttsProvider]);
+
+  // Play TTS - use URL directly (hook handles audio element creation with cleanup)
+  const handlePlayTTS = useCallback(() => {
+    const audioUrl = ttsAudioUrl || ttsGeneration.lastResult?.audioUrl;
+    console.log('[RecordingStudio] handlePlayTTS called, audioUrl:', audioUrl ? 'Available' : 'Missing');
+    
+    if (audioUrl) {
+      console.log('[RecordingStudio] Playing TTS audio');
+      audioPlayback.playTTS(audioUrl);
+    } else {
+      toast.info('No TTS audio available. Generate TTS first.');
+    }
+  }, [ttsAudioUrl, ttsGeneration.lastResult?.audioUrl, audioPlayback]);
+
+  // Prevent closing during recording - only allow explicit close button
+  // MUST be before any early returns to avoid hooks order issues
+  const handleDialogOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      // Cancel any pending audio playback timeout
+      if (audioPlaybackTimeoutRef.current) {
+        clearTimeout(audioPlaybackTimeoutRef.current);
+        audioPlaybackTimeoutRef.current = null;
+      }
+      
+      // If recording, warn user before closing
+      if (recording.isRecording) {
+        const confirmed = window.confirm('Recording in progress. Are you sure you want to close? Your recording will be lost.');
+        if (confirmed) {
+          recording.stopRecording();
+          audioPlayback.stopAll();
+          handleClose();
+        }
+        // Don't close if not confirmed
+        return;
+      }
+      
+      // Stop all audio on close
+      audioPlayback.stopAll();
+      handleClose();
+    }
+  }, [recording.isRecording, recording.stopRecording, audioPlayback, handleClose]);
+
+  // Don't use early return - let Dialog handle open/close state
+  // This ensures hooks are always called in the same order
+
+  return (
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={handleDialogOpenChange}
+      modal={true}
+    >
+      <DialogContent 
+        className="!max-w-[100vw] !w-screen !h-screen !rounded-none p-0 gap-0 overflow-hidden flex flex-col [&>button]:hidden"
+        onPointerDownOutside={(e) => {
+          // ALWAYS prevent closing when clicking outside during recording
+          if (recording.isRecording) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          // ALWAYS prevent escape key closing during recording
+          if (recording.isRecording) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onInteractOutside={(e) => {
+          // ALWAYS prevent any outside interaction from closing during recording
+          if (recording.isRecording) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onFocusOutside={(e) => {
+          // Prevent focus loss from closing during recording
+          if (recording.isRecording) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+      >
+        {/* Hidden file input */}
+        <input
+          ref={logoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleLogoFileChange}
+        />
+
+        {/* Header - Minimized in focus mode */}
+        <div className={`flex items-center justify-between px-4 border-b bg-background shrink-0 z-10 transition-all duration-300 ${
+          headerMinimized ? 'py-1 opacity-60 hover:opacity-100' : 'py-2'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {!headerMinimized && (
+                <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm overflow-hidden border border-border/30">
+                  <img src={genieVibeLogo} alt="Genie Vibe" className="h-8 w-8 object-contain" />
+                </div>
+              )}
+              <div>
+                <h2 className={`font-semibold flex items-center gap-2 ${headerMinimized ? 'text-sm' : 'text-base'}`}>
+                  {headerMinimized && '🎬'} {!headerMinimized && 'Genie Vibe'}
+                </h2>
+                {!headerMinimized && (
+                  <span className="text-xs text-purple-500">Script to Screen</span>
+                )}
+              </div>
+            </div>
+            
+            {/* Recording Mode Selector - Hidden in focus mode */}
+            {!headerMinimized && (
+              <div className="flex items-center border rounded-lg p-0.5 bg-muted/50">
+                <Button
+                  size="sm"
+                  variant={recordingMode === 'camera' ? 'default' : 'ghost'}
+                  onClick={() => setRecordingMode('camera')}
+                  className="h-7 px-2 gap-1 text-xs"
+                >
+                  <Camera className="w-3 h-3" />
+                  Camera
+                </Button>
+                <Button
+                  size="sm"
+                  variant={recordingMode === 'screen' ? 'default' : 'ghost'}
+                  onClick={() => setRecordingMode('screen')}
+                  className="h-7 px-2 gap-1 text-xs"
+                >
+                  <Monitor className="w-3 h-3" />
+                  Screen
+                </Button>
+                <Button
+                  size="sm"
+                  variant={recordingMode === 'screen+camera' ? 'default' : 'ghost'}
+                  onClick={() => setRecordingMode('screen+camera')}
+                  className="h-7 px-2 gap-1 text-xs"
+                >
+                  <MonitorPlay className="w-3 h-3" />
+                  Both
+                </Button>
+              </div>
+            )}
+            
+            {/* Screen sharing status */}
+            {screenShare.isSharing && (
+              <Badge variant="secondary" className="gap-1 text-xs">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Screen Sharing
+              </Badge>
+            )}
+            
+            {/* Recording indicator in header when minimized */}
+            {headerMinimized && recording.isRecording && (
+              <Badge variant="destructive" className="gap-1 text-xs animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-white" />
+                REC {recording.formattedDuration}
+              </Badge>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* Teleprompter Toggle Button - works with script OR audio-linked script text */}
+            {(currentScript || audioLinkedScriptText) && (
+              <Button
+                size="sm"
+                variant={teleprompterOpen ? 'default' : 'outline'}
+                onClick={() => setTeleprompterOpen(!teleprompterOpen)}
+                className="gap-1 h-8"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                {teleprompterOpen ? 'Hide' : 'Show'} Teleprompter
+              </Button>
+            )}
+            
+            {/* Hide controls in focus mode */}
+            {!headerMinimized && (
+              <>
+                <Separator orientation="vertical" className="h-6" />
+                
+                {/* Project Selector with breakdown */}
+                <div className="flex items-center gap-1">
+                  <ProjectSelector
+                    projects={mediaProject.projects}
+                    currentProject={mediaProject.currentProject}
+                    onSelectProject={mediaProject.selectProject}
+                    onCreateProject={mediaProject.createProject}
+                    totalSessionCost={mediaProject.totalSessionCost}
+                    isLoading={mediaProject.isLoading}
+                    isLinkedToProduction={mediaProject.isLinkedToProduction}
+                    productionContext={productionContext}
+                  />
+                  {mediaProject.currentProject && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => setShowAssetBreakdown(true)}
+                      title="View project assets"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                </div>
+                
+                <Separator orientation="vertical" className="h-6" />
+                
+                {/* Keyboard Shortcuts Help */}
+                <KeyboardShortcutsHelp isRecording={recording.isRecording} />
+                
+                {/* Recording Quality Settings */}
+                <RecordingQualitySettings
+                  quality={recordingQuality}
+                  onQualityChange={setRecordingQuality}
+                />
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => library.setIsOpen(true)}
+                  className="gap-1 h-8"
+                >
+                  <Library className="w-4 h-4" />
+                  Library ({library.recordings.length})
+                </Button>
+              </>
+            )}
+            
+            {/* Focus mode toggle */}
+            {headerMinimized && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setHeaderMinimized(false)}
+                className="h-7 text-xs"
+              >
+                Show Controls
+              </Button>
+            )}
+            
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClose}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          {/* Video Section */}
+          <div className="flex-1 flex flex-col p-4 gap-3 min-w-0 overflow-hidden">
+            <div className="flex-1 min-h-0 relative">
+              {/* Use PictureInPicture for screen+camera mode */}
+              {recordingMode === 'screen+camera' && pipEnabled ? (
+                <PictureInPicture
+                  mainStream={screenShare.screenStream}
+                  pipStream={camera.stream}
+                  isEnabled={pipEnabled}
+                  onToggle={() => setPipEnabled(!pipEnabled)}
+                  className="w-full h-full"
+                />
+              ) : (
+                <VideoPreview
+                  stream={recordingMode === 'camera' ? camera.stream : (screenShare.screenStream || camera.stream)}
+                  isLoading={camera.isLoading || screenShare.isLoading}
+                  error={camera.error || screenShare.error}
+                  isRecording={recording.isRecording}
+                  isPaused={recording.isPaused}
+                  countdown={recording.countdown}
+                  formattedDuration={recording.formattedDuration}
+                  teleprompter={{
+                    ...teleprompter,
+                    content: '', // Teleprompter is now in separate window
+                  }}
+                  logo={logo}
+                  onLogoPositionChange={handleLogoPositionChange}
+                  audioCurrentTime={audioCurrentTime}
+                  audioDuration={audioDuration}
+                  isAudioPlaying={isAudioPlaying}
+                  onRetryCamera={camera.retryCamera}
+                  isBlurEnabled={isBlurEnabled && recordingMode === 'camera'}
+                  blurAmount={15}
+                  isBlurLoading={mlBlur.isModelLoading}
+                />
+              )}
+            </div>
+
+            {/* Collapsible Recording Controls */}
+            <div className={cn(
+              "transition-all duration-300 overflow-hidden",
+              controlsCollapsed ? "h-10" : "h-auto"
+            )}>
+              {controlsCollapsed ? (
+                <div className="flex items-center justify-center gap-4 py-2 bg-muted/30 rounded-lg border">
+                  {/* Minimal controls when collapsed */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setControlsCollapsed(false)}
+                    className="h-7 text-xs gap-1"
+                  >
+                    <ChevronRight className="w-3 h-3 rotate-90" />
+                    Show Controls
+                  </Button>
+                  
+                  {/* Essential recording controls always visible */}
+                  {recording.isRecording && (
+                    <>
+                      <Badge variant="destructive" className="animate-pulse gap-1">
+                        <span className="w-2 h-2 rounded-full bg-white" />
+                        {recording.formattedDuration}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant={recording.isPaused ? 'default' : 'secondary'}
+                        onClick={handlePauseRecording}
+                        className="h-7"
+                      >
+                        {recording.isPaused ? <Play className="w-3 h-3 mr-1" /> : <Pause className="w-3 h-3 mr-1" />}
+                        {recording.isPaused ? 'Resume' : 'Pause'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleStopRecording}
+                        className="h-7"
+                      >
+                        <Square className="w-3 h-3 mr-1" />
+                        Stop
+                      </Button>
+                    </>
+                  )}
+                  
+                  {/* Audio mixer toggle */}
+                  <Button
+                    size="icon"
+                    variant={showAudioMixer ? 'default' : 'ghost'}
+                    className="h-7 w-7"
+                    onClick={() => setShowAudioMixer(!showAudioMixer)}
+                    title="Audio Mixer"
+                  >
+                    <AudioLines className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="relative">
+                  {/* Collapse button */}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute -top-1 right-0 h-6 w-6 z-10"
+                    onClick={() => setControlsCollapsed(true)}
+                    title="Collapse controls"
+                  >
+                    <ChevronRight className="w-3 h-3 -rotate-90" />
+                  </Button>
+                  
+                  <RecordingControls
+                    isCameraEnabled={camera.isEnabled}
+                    isMicEnabled={camera.isMicEnabled}
+                    onToggleCamera={camera.toggleCamera}
+                    onToggleMic={camera.toggleMic}
+                    isRecording={recording.isRecording}
+                    isPaused={recording.isPaused}
+                    canRecord={!!(camera.stream || screenShare.screenStream) && !camera.isLoading}
+                    onStartRecording={handleStartRecording}
+                    onPauseRecording={handlePauseRecording}
+                    onStopRecording={handleStopRecording}
+                    isTeleprompterEnabled={teleprompterOpen}
+                    onToggleTeleprompter={() => setTeleprompterOpen(!teleprompterOpen)}
+                    isBlurEnabled={isBlurEnabled}
+                    onToggleBlur={() => setIsBlurEnabled(!isBlurEnabled)}
+                    isLogoEnabled={logo.enabled}
+                    onToggleLogo={() => setLogo(prev => ({ ...prev, enabled: !prev.enabled }))}
+                    onUploadLogo={handleLogoUpload}
+                    captionsEnabled={captionsEnabled}
+                    onToggleCaptions={() => setCaptionsEnabled(!captionsEnabled)}
+                    onTrimSeconds={handleTrimSeconds}
+                    onUndoTrim={handleUndoTrim}
+                    canUndoTrim={canUndoTrim}
+                    trimSeconds={trimSeconds}
+                    onTrimSecondsChange={setTrimSeconds}
+                    onTranscribe={handleTranscribeRecording}
+                    isTranscribing={isTranscribing}
+                    transcriptionText={transcriptionText}
+                    onRewindSeconds={handleRewindSeconds}
+                    onRestartRecording={handleRestartRecording}
+                    currentDuration={recording.duration}
+                    audioCombination={{
+                      hasTTS: !!selectedTTSFileId && !!currentTTSFile,
+                      hasVoiceover: !!selectedVoiceoverId && !!currentVoiceover,
+                      hasMusic: !!selectedMusicId && !!currentMusic,
+                      ttsName: currentTTSFile?.name,
+                      voiceoverName: currentVoiceover?.name,
+                      musicName: currentMusic?.name,
+                    }}
+                    onToggleAudioMixer={() => setShowAudioMixer(!showAudioMixer)}
+                    showAudioMixer={showAudioMixer}
+                    onViewScripts={() => {
+                      // Expand sidebar to show scripts
+                      setIsSidebarCollapsed(false);
+                    }}
+                    onAddScript={() => {
+                      // Expand sidebar and toast to guide user
+                      setIsSidebarCollapsed(false);
+                      toast.info('Use the Script dropdown in the sidebar to select or create scripts');
+                    }}
+                    currentScriptTitle={currentScript?.title}
+                    onPreviewRecording={() => {
+                      // Create a preview from current chunks
+                      if (recording.recordedChunks.length > 0) {
+                        const previewBlob = new Blob(recording.recordedChunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(previewBlob);
+                        window.open(url, '_blank', 'width=800,height=600');
+                      } else {
+                        toast.info('No recording data to preview yet');
+                      }
+                    }}
+                    isStreamHealthy={recording.isStreamHealthy}
+                    sessionInfo={recording.sessionInfo}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar - Fixed width, properly contained */}
+          <aside 
+            className={`shrink-0 border-l bg-card flex flex-col transition-all duration-200 relative z-10 ${
+              isSidebarCollapsed ? 'w-14' : 'w-[340px]'
+            }`}
+            style={{ minWidth: isSidebarCollapsed ? '56px' : '340px' }}
+          >
+            {/* Header with toggle */}
+            <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30 shrink-0">
+              {!isSidebarCollapsed && (
+                <span className="text-sm font-semibold">Settings</span>
+              )}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 ml-auto shrink-0"
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              >
+                {isSidebarCollapsed ? (
+                  <ChevronLeft className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+            
+            {/* Content area - scrollable */}
+            {!isSidebarCollapsed && (
+              <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                {/* Production Info - Show when opened from Production Hub */}
+                {productionContext && (
+                  <ProductionInfo 
+                    productionContext={productionContext}
+                    projectStats={mediaProject.currentProject ? {
+                      totalRecordings: mediaProject.currentProject.total_recordings,
+                      totalTTS: mediaProject.currentProject.total_tts_generations,
+                      totalCost: mediaProject.currentProject.total_estimated_cost,
+                      sessionCost: mediaProject.totalSessionCost,
+                    } : undefined}
+                  />
+                )}
+
+                {/* Info Banner - Pre-production in Genie Studio */}
+                {!productionContext && (
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                    <p className="text-muted-foreground">
+                      <span className="font-medium text-primary">Tip:</span> Script enhancement, TTS, and music generation are done in Genie Mind & Spark. Select prepared assets here for recording.
+                    </p>
+                  </div>
+                )}
+
+                {/* Script Selection - Shows all scripts with status indicators */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="font-medium text-sm">Script</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                        {scriptsWithTTS.length} TTS
+                      </Badge>
+                      <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                        {actualVoiceoverCount} VO
+                      </Badge>
+                      <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
+                        {scriptsNeedingAudio.length} need audio
+                      </Badge>
+                    </div>
+                  </div>
+                  <select
+                    value={selectedScriptId}
+                    onChange={(e) => {
+                      const scriptId = e.target.value;
+                      setSelectedScriptId(scriptId);
+                      
+                      // Auto-select matching audio file when script is selected
+                      if (scriptId) {
+                        const scriptStatus = scriptAudioStatus.find(s => s.script.id === scriptId);
+                        if (scriptStatus?.bestAudioFile) {
+                          console.log('[RecordingStudio] Auto-selected audio for script:', scriptStatus.bestAudioFile.name);
+                          if (scriptStatus.hasTTS) {
+                            setSelectedTTSFileId(scriptStatus.bestAudioFile.id);
+                            setActiveAudioTab('tts');
+                          } else if (scriptStatus.hasVoiceover) {
+                            setSelectedVoiceoverId(scriptStatus.bestAudioFile.id);
+                            setActiveAudioTab('voiceover');
+                          }
+                        }
+                      }
+                    }}
+                    className="w-full p-2 rounded-md border bg-background text-sm"
+                  >
+                    <option value="">Select script for teleprompter...</option>
+                    
+                    {/* Scripts with TTS - Ready to record */}
+                    {scriptsWithTTS.length > 0 && (
+                      <optgroup label="✓ TTS Ready">
+                        {scriptsWithTTS.map((s) => (
+                          <option key={s.script.id} value={s.script.id}>
+                            {s.script.title} {s.hasEnhanced ? '(Enhanced)' : '(Original)'} {s.hasTTSForEnhanced ? '• Enhanced TTS' : s.hasTTSForOriginal ? '• Original TTS' : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {/* Scripts with Voiceover only */}
+                    {scriptsWithVoiceoverOnly.length > 0 && (
+                      <optgroup label="🎙 Voiceover Only">
+                        {scriptsWithVoiceoverOnly.map((s) => (
+                          <option key={s.script.id} value={s.script.id}>
+                            {s.script.title} {s.hasEnhanced ? '(Enhanced)' : '(Original)'}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    
+                    {/* Scripts needing audio */}
+                    {scriptsNeedingAudio.length > 0 && (
+                      <optgroup label="⚠ Needs Audio">
+                        {scriptsNeedingAudio.map((s) => (
+                          <option key={s.script.id} value={s.script.id} className="text-muted-foreground">
+                            {s.script.title} {s.hasEnhanced ? '(Enhanced available)' : '(Original only)'}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                  
+                  {/* Status message based on selected script */}
+                  {selectedScriptId && (() => {
+                    const status = scriptAudioStatus.find(s => s.script.id === selectedScriptId);
+                    if (!status) return null;
+                    
+                    if (status.hasTTS) {
+                      return (
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          ✓ TTS audio ready - will auto-play during recording
+                        </p>
+                      );
+                    } else if (status.hasVoiceover) {
+                      return (
+                        <p className="text-xs text-blue-600 flex items-center gap-1">
+                          🎙 Voiceover available - will auto-play during recording
+                        </p>
+                      );
+                    } else {
+                      return (
+                        <p className="text-xs text-amber-600 flex items-center gap-1">
+                          ⚠ No audio for this script - generate TTS in Genie Mind
+                        </p>
+                      );
+                    }
+                  })()}
+                  
+                  {currentScript && (
+                    <div className="p-2 rounded bg-muted/50 text-xs text-muted-foreground max-h-24 overflow-y-auto">
+                      {currentScript.content?.slice(0, 200)}...
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Scroll Speed:</span>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="3"
+                      step="0.1"
+                      value={teleprompter.scrollSpeed}
+                      onChange={(e) => setTeleprompter(prev => ({ ...prev, scrollSpeed: parseFloat(e.target.value) }))}
+                      className="flex-1 h-2"
+                    />
+                    <span className="text-xs font-medium">{teleprompter.scrollSpeed.toFixed(1)}x</span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Audio Asset Selector - Selection only, no generation */}
+                <AudioAssetSelector
+                  activeTab={activeAudioTab}
+                  onTabChange={setActiveAudioTab}
+                  
+                  // Voiceover - select and play existing files
+                  voiceovers={voiceovers}
+                  selectedVoiceoverId={selectedVoiceoverId}
+                  onVoiceoverChange={setSelectedVoiceoverId}
+                  onPlayVoiceover={() => {
+                    // Find voiceover fresh in callback to avoid stale closure
+                    const voiceoverToPlay = voiceovers.find(v => v.id === selectedVoiceoverId);
+                    console.log('[RecordingStudio] onPlayVoiceover:', { 
+                      selectedVoiceoverId, 
+                      found: !!voiceoverToPlay, 
+                      name: voiceoverToPlay?.name,
+                      url: voiceoverToPlay?.url?.substring(0, 80),
+                      allVoiceoverIds: voiceovers.map(v => v.id)
+                    });
+                    if (voiceoverToPlay?.url) {
+                      audioPlayback.playVoiceover(voiceoverToPlay.url);
+                    } else {
+                      toast.error('Select a voiceover file first');
+                    }
+                  }}
+                  onPauseVoiceover={audioPlayback.pauseVoiceover}
+                  onResumeVoiceover={audioPlayback.resumeVoiceover}
+                  onStopVoiceover={audioPlayback.stopVoiceover}
+                  isVoiceoverPlaying={audioPlayback.isPlaying.voiceover}
+                  isVoiceoverPaused={audioPlayback.isPaused.voiceover}
+                  voiceoverVolume={audioPlayback.voiceoverVolume}
+                  onVoiceoverVolumeChange={audioPlayback.setVoiceoverVolume}
+                  
+                  // Music - select and play existing files
+                  musicList={music}
+                  selectedMusicId={selectedMusicId}
+                  onMusicChange={setSelectedMusicId}
+                  onPlayMusic={() => {
+                    // Find music fresh in callback to avoid stale closure
+                    const musicToPlay = music.find(m => m.id === selectedMusicId);
+                    console.log('[RecordingStudio] onPlayMusic:', { 
+                      selectedMusicId, 
+                      found: !!musicToPlay, 
+                      name: musicToPlay?.name,
+                      url: musicToPlay?.url?.substring(0, 80)
+                    });
+                    if (musicToPlay?.url) {
+                      audioPlayback.playMusic(musicToPlay.url);
+                    } else {
+                      toast.error('Select a music file first');
+                    }
+                  }}
+                  onPauseMusic={audioPlayback.pauseMusic}
+                  onResumeMusic={audioPlayback.resumeMusic}
+                  onStopMusic={audioPlayback.stopMusic}
+                  isMusicPlaying={audioPlayback.isPlaying.music}
+                  isMusicPaused={audioPlayback.isPaused.music}
+                  musicVolume={audioPlayback.musicVolume}
+                  onMusicVolumeChange={audioPlayback.setMusicVolume}
+                  musicLoop={audioPlayback.musicLoop}
+                  onToggleMusicLoop={audioPlayback.toggleMusicLoop}
+                  
+                  // TTS - select and play existing TTS files from GenieStudio
+                  ttsFiles={voiceovers} // Pass all voiceovers, component will filter TTS files
+                  selectedTTSFileId={selectedTTSFileId}
+                  onTTSFileChange={setSelectedTTSFileId}
+                  onPlayTTS={() => {
+                    // Find TTS file from voiceovers - search by ID
+                    const ttsFile = voiceovers.find(v => v.id === selectedTTSFileId);
+                    console.log('[RecordingStudio] Playing TTS:', { 
+                      selectedTTSFileId, 
+                      ttsFile: ttsFile?.name, 
+                      url: ttsFile?.url?.substring(0, 80),
+                      urlType: typeof ttsFile?.url,
+                      voiceoverCount: voiceovers.length
+                    });
+                    
+                    if (ttsFile?.url) {
+                      // Validate URL is accessible (not a blob URL)
+                      const audioUrl = String(ttsFile.url);
+                      if (audioUrl.startsWith('blob:') || audioUrl.startsWith('data:')) {
+                        console.error('[RecordingStudio] TTS file has ephemeral URL:', audioUrl.substring(0, 50));
+                        toast.error('This TTS file needs to be regenerated - the audio file is no longer accessible');
+                        return;
+                      }
+                      console.log('[RecordingStudio] Calling playTTS with URL:', audioUrl.substring(0, 80));
+                      audioPlayback.playTTS(audioUrl);
+                    } else if (selectedTTSFileId && ttsFile) {
+                      console.error('[RecordingStudio] TTS file found but no URL:', ttsFile);
+                      toast.error('This TTS file needs to be regenerated - the audio file is no longer accessible');
+                    } else if (selectedTTSFileId) {
+                      toast.error('TTS file not found');
+                    } else {
+                      toast.error('Select a TTS file first');
+                    }
+                  }}
+                  onPauseTTS={audioPlayback.pauseTTS}
+                  onResumeTTS={audioPlayback.resumeTTS}
+                  onStopTTS={audioPlayback.stopTTS}
+                  isTTSPlaying={audioPlayback.isPlaying.tts}
+                  isTTSPaused={audioPlayback.isPaused.tts}
+                  ttsVolume={audioPlayback.ttsVolume}
+                  onTTSVolumeChange={audioPlayback.setTTSVolume}
+                  
+                  // Ducking control
+                  duckingEnabled={audioPlayback.duckingEnabled}
+                  onToggleDucking={audioPlayback.toggleDucking}
+                />
+
+                <Separator />
+                
+                {/* Studio Sound Panel for Podcast Audio Processing */}
+                <StudioSoundPanel
+                  settings={studioSound.settings}
+                  activePreset={studioSound.activePreset}
+                  onPresetChange={studioSound.applyPreset}
+                  onSettingsChange={studioSound.updateSettings}
+                />
+                
+                <Separator />
+                
+                {/* Vibe → Mind Bridge - for content without scripts */}
+                <VibeToMindBridge
+                  compact
+                  recentRecordings={library.recordings.slice(0, 3).map(r => ({
+                    id: String(r.id),
+                    type: 'recording' as const,
+                    name: r.name,
+                    hasScript: false
+                  }))}
+                  onAnalyzeContent={(content) => {
+                    setContentToAnalyze({
+                      type: content.type === 'recording' ? 'recording' : 'image',
+                      name: content.name,
+                      source: undefined
+                    });
+                    setShowContentAnalyzer(true);
+                  }}
+                  onImportForAnalysis={() => {
+                    // Open file picker for import
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.ppt,.pptx,.pdf,image/*';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        const fileType = file.name.toLowerCase();
+                        let type: 'ppt' | 'pdf' | 'image' = 'image';
+                        if (fileType.endsWith('.ppt') || fileType.endsWith('.pptx')) {
+                          type = 'ppt';
+                        } else if (fileType.endsWith('.pdf')) {
+                          type = 'pdf';
+                        }
+                        
+                        // Revoke previous Object URL if exists to prevent memory leak
+                        if (contentToAnalyze?.source?.startsWith('blob:')) {
+                          URL.revokeObjectURL(contentToAnalyze.source);
+                        }
+                        
+                        setContentToAnalyze({
+                          type,
+                          name: file.name,
+                          source: URL.createObjectURL(file)
+                        });
+                        setShowContentAnalyzer(true);
+                      }
+                    };
+                    input.click();
+                  }}
+                />
+              </div>
+            )}
+            
+            {/* Collapsed state - icons only */}
+            {isSidebarCollapsed && (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9"
+                  onClick={() => setIsSidebarCollapsed(false)}
+                  title="Script"
+                >
+                  <FileText className="w-5 h-5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9"
+                  onClick={() => setIsSidebarCollapsed(false)}
+                  title="Audio"
+                >
+                  <Mic className="w-5 h-5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9"
+                  onClick={() => setIsSidebarCollapsed(false)}
+                  title="Music"
+                >
+                  <Music className="w-5 h-5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9"
+                  onClick={() => setIsSidebarCollapsed(false)}
+                  title="Studio Sound"
+                >
+                  <Sliders className="w-5 h-5" />
+                </Button>
+              </div>
+            )}
+          </aside>
+        </div>
+
+        {/* Floating Audio Mixer Panel */}
+        <FloatingAudioMixer
+          isOpen={showAudioMixer}
+          onClose={() => setShowAudioMixer(false)}
+          defaultPosition={{ x: 20, y: 150 }}
+          tracks={[
+            ...(currentTTSFile ? [{
+              id: 'tts',
+              name: currentTTSFile.name,
+              type: 'tts' as const,
+              isPlaying: audioPlayback.isPlaying.tts,
+              isPaused: audioPlayback.isPaused.tts,
+              volume: audioPlayback.ttsVolume,
+              onPlay: () => {
+                if (currentTTSFile.url) {
+                  audioPlayback.playTTS(currentTTSFile.url);
+                }
+              },
+              onPause: audioPlayback.pauseTTS,
+              onResume: audioPlayback.resumeTTS,
+              onStop: audioPlayback.stopTTS,
+              onVolumeChange: audioPlayback.setTTSVolume,
+            }] : []),
+            ...(currentVoiceover ? [{
+              id: 'voiceover',
+              name: currentVoiceover.name,
+              type: 'voiceover' as const,
+              isPlaying: audioPlayback.isPlaying.voiceover,
+              isPaused: audioPlayback.isPaused.voiceover,
+              volume: audioPlayback.voiceoverVolume,
+              onPlay: () => {
+                if (currentVoiceover.url) {
+                  audioPlayback.playVoiceover(currentVoiceover.url);
+                }
+              },
+              onPause: audioPlayback.pauseVoiceover,
+              onResume: audioPlayback.resumeVoiceover,
+              onStop: audioPlayback.stopVoiceover,
+              onVolumeChange: audioPlayback.setVoiceoverVolume,
+            }] : []),
+            ...(currentMusic ? [{
+              id: 'music',
+              name: currentMusic.name,
+              type: 'music' as const,
+              isPlaying: audioPlayback.isPlaying.music,
+              isPaused: audioPlayback.isPaused.music,
+              volume: audioPlayback.musicVolume,
+              onPlay: () => {
+                if (currentMusic.url) {
+                  audioPlayback.playMusic(currentMusic.url);
+                }
+              },
+              onPause: audioPlayback.pauseMusic,
+              onResume: audioPlayback.resumeMusic,
+              onStop: audioPlayback.stopMusic,
+              onVolumeChange: audioPlayback.setMusicVolume,
+              loop: audioPlayback.musicLoop,
+              onToggleLoop: audioPlayback.toggleMusicLoop,
+            }] : []),
+          ]}
+          duckingEnabled={audioPlayback.duckingEnabled}
+          onToggleDucking={audioPlayback.toggleDucking}
+        />
+
+        {/* Library Panel */}
+        <RecordingLibraryPanel
+          recordings={library.recordings}
+          isOpen={library.isOpen}
+          onClose={() => library.setIsOpen(false)}
+          onPlay={handlePreviewLibraryRecording}
+          onDownload={library.downloadRecording}
+          onDelete={library.deleteRecording}
+          isLoading={library.isLoading}
+        />
+
+        {/* Recording Preview Modal */}
+        <RecordingPreview
+          blob={lastRecordingBlob}
+          isOpen={showRecordingPreview}
+          onClose={() => setShowRecordingPreview(false)}
+          onSave={handleSaveRecording}
+          onDiscard={handleDiscardRecording}
+          onEdit={handleOpenInEditor}
+          recordingName={`Recording-${currentScript?.title || 'Untitled'}-${Date.now()}`}
+          // Pass script content for comparison
+          scriptContent={currentScript?.enhancedContent || currentScript?.content}
+          scriptTitle={currentScript?.title}
+          onScriptUpdate={(newContent) => {
+            if (currentScript) {
+              handleScriptContentUpdate(currentScript.id, newContent);
+            }
+          }}
+          // Pass audio metadata for saving with the recording
+          audioMetadata={{
+            hasTTS: !!selectedTTSFileId && !!currentTTSFile,
+            hasVoiceover: !!selectedVoiceoverId && !!currentVoiceover,
+            hasMusic: !!selectedMusicId && !!currentMusic,
+            ttsName: currentTTSFile?.name,
+            voiceoverName: currentVoiceover?.name,
+            musicName: currentMusic?.name,
+            voiceoverUrl: currentVoiceover?.url,
+            ttsUrl: currentTTSFile?.url,
+            musicUrl: currentMusic?.url,
+          }}
+          // Saved captions from library recordings
+          savedCaptions={lastRecordingSavedCaptions}
+          // TTS generation for additional script text
+          onGenerateTTS={async (text: string) => {
+            try {
+              const result = await ttsGeneration.generate({
+                text,
+                voice: selectedVoice,
+                provider: ttsProvider,
+              });
+              
+              if (result && result.audioUrl && result.audioBlob) {
+                // Log cost if project tracking enabled
+                if (mediaProject.currentProject) {
+                  await mediaProject.logCost({
+                    operation_type: 'tts',
+                    operation_name: `Additional TTS: ${text.substring(0, 30)}...`,
+                    cost: result.estimatedCost || 0.01,
+                    provider: ttsProvider,
+                    characters_processed: text.length,
+                    metadata: { voice: selectedVoice, source: 'recording-preview' }
+                  });
+                }
+                return { audioUrl: result.audioUrl, audioBlob: result.audioBlob };
+              }
+              return null;
+            } catch (error) {
+              console.error('TTS generation for additional script failed:', error);
+              return null;
+            }
+          }}
+          // Video upload handler
+          onUploadVideo={async (file: File) => {
+            // Create blob from file and update lastRecordingBlob
+            const blob = new Blob([await file.arrayBuffer()], { type: file.type });
+            setLastRecordingBlob(blob);
+            toast.success('Video replaced with uploaded file');
+          }}
+          onTrim={async (startTime, endTime) => {
+            if (!lastRecordingBlob) return;
+            
+            try {
+              // Try FFmpeg for precise trimming
+              if (ffmpegTrim.isLoaded || !ffmpegTrim.isLoading) {
+                toast.info('Loading FFmpeg for precise trimming...');
+                const loaded = await ffmpegTrim.loadFFmpeg();
+                
+                if (loaded) {
+                  toast.info('Trimming with FFmpeg...');
+                  const trimmedBlob = await ffmpegTrim.trimVideo(
+                    lastRecordingBlob,
+                    startTime,
+                    endTime,
+                    { quality: 'high', outputFormat: 'webm' }
+                  );
+                  
+                  if (trimmedBlob) {
+                    setLastRecordingBlob(trimmedBlob);
+                    toast.success(`Trimmed to ${(endTime - startTime).toFixed(1)}s with FFmpeg`);
+                    return;
+                  }
+                }
+              }
+              
+              // Fallback to browser-based trimming
+              toast.info('Using browser-based trimming...');
+              
+              const video = document.createElement('video');
+              video.src = URL.createObjectURL(lastRecordingBlob);
+              await new Promise(resolve => { video.onloadedmetadata = resolve; });
+              
+              const canvas = document.createElement('canvas');
+              canvas.width = video.videoWidth || 1280;
+              canvas.height = video.videoHeight || 720;
+              const ctx = canvas.getContext('2d');
+              
+              const stream = canvas.captureStream(30);
+              const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+              const chunks: Blob[] = [];
+              
+              mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunks.push(e.data);
+              };
+              
+              await new Promise<void>((resolve) => {
+                mediaRecorder.onstop = () => resolve();
+                
+                video.currentTime = startTime;
+                video.play();
+                mediaRecorder.start();
+                
+                const drawFrame = () => {
+                  if (video.currentTime >= endTime) {
+                    video.pause();
+                    mediaRecorder.stop();
+                    return;
+                  }
+                  if (ctx) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  } else {
+                    console.warn('[RecordingStudio] Canvas context is null, skipping frame');
+                  }
+                  requestAnimationFrame(drawFrame);
+                };
+                drawFrame();
+              });
+              
+              const trimmedBlob = new Blob(chunks, { type: 'video/webm' });
+              setLastRecordingBlob(trimmedBlob);
+              toast.success(`Trimmed to ${(endTime - startTime).toFixed(1)}s`);
+            } catch (error) {
+              console.error('Trim error:', error);
+              toast.error('Trim failed');
+            }
+          }}
+        />
+        
+        {/* Video Editor Integration - for advanced post-processing */}
+        <VideoEditorIntegration
+          isOpen={showVideoEditor}
+          onClose={() => {
+            setShowVideoEditor(false);
+            setEditingBlob(null);
+          }}
+          recordingBlob={editingBlob}
+          recordingName={`Recording-${Date.now()}`}
+          voiceovers={voiceovers.map(v => ({ id: v.id, name: v.name, url: v.url }))}
+          music={music.map(m => ({ id: m.id, name: m.name, url: m.url }))}
+          onSaveEdited={(blob, transcript) => {
+            // Save to library
+            library.saveRecording(blob, {
+              name: `Edited Recording ${new Date().toLocaleString()}`,
+              duration: 0,
+              scriptTitle: currentScript?.title,
+            });
+            toast.success('Edited video saved to library!');
+          }}
+        />
+
+        {/* Pre-Recording Script Selection Dialog */}
+        <PreRecordingDialog
+          isOpen={showPreRecordingDialog}
+          onClose={() => setShowPreRecordingDialog(false)}
+          onSelectScript={handlePreRecordingScriptSelect}
+          hasEnhancedScript={!!cleanEnhancedScript}
+          originalScriptPreview={currentScript?.content || ''}
+          enhancedScriptPreview={cleanEnhancedScript || ''}
+          scriptTitle={currentScript?.title}
+        />
+
+        {/* Camera Setup Dialog - shown before recording */}
+        <CameraSetupDialog
+          isOpen={showCameraSetupDialog}
+          onClose={() => setShowCameraSetupDialog(false)}
+          onConfirm={handleCameraSetupConfirm}
+          currentMode={recordingMode}
+        />
+
+        {/* Project Asset Breakdown */}
+        <ProjectAssetBreakdown
+          isOpen={showAssetBreakdown}
+          onClose={() => setShowAssetBreakdown(false)}
+          projectName={mediaProject.currentProject?.name || 'Project'}
+          assets={mediaProject.assets}
+          totalCost={mediaProject.currentProject?.total_estimated_cost || 0}
+        />
+        
+        {/* Content Analyzer - Vibe → Mind → Vibe bidirectional flow */}
+        <ContentAnalyzer
+          isOpen={showContentAnalyzer}
+          onClose={() => {
+            // Cleanup Object URL to prevent memory leak
+            if (contentToAnalyze?.source?.startsWith('blob:')) {
+              URL.revokeObjectURL(contentToAnalyze.source);
+            }
+            setShowContentAnalyzer(false);
+            setContentToAnalyze(undefined);
+          }}
+          content={contentToAnalyze}
+          onScriptGenerated={(script) => {
+            // Add generated script to the scripts list
+            const newScript: ScriptData = {
+              id: `generated-${Date.now()}`,
+              title: script.title,
+              content: script.content,
+            };
+            setScripts(prev => [...prev, newScript]);
+            setSelectedScriptId(newScript.id);
+            toast.success('Script generated and added!');
+          }}
+          onRequestTTS={(scriptContent) => {
+            // Set TTS text for generation in parent context
+            setTTSText(scriptContent);
+            toast.info('TTS text set - generate in Genie Mind for best results');
+          }}
+        />
+
+        {/* Inline Teleprompter - Floating overlay inside the app */}
+        <InlineTeleprompter
+          content={
+            currentScript 
+              ? (isUsingEnhancedScript && cleanEnhancedScript ? cleanEnhancedScript : currentScript.content)
+              : audioLinkedScriptText || ''
+          }
+          title={
+            currentScript 
+              ? (currentScript.title + (isUsingEnhancedScript ? ' (Enhanced)' : ''))
+              : (currentTTSFile?.name || currentVoiceover?.name || 'Audio Script')
+          }
+          currentWordIndex={currentWordIndex}
+          totalWords={teleprompterSyncState.totalWords}
+          progress={teleprompterSyncState.progress}
+          isRecording={recording.isRecording}
+          isPaused={recording.isPaused}
+          isVisible={teleprompterOpen}
+          onClose={() => setTeleprompterOpen(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}

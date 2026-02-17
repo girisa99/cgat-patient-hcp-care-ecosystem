@@ -61,7 +61,7 @@ export const useSecurePatientData = () => {
         // Keep only profiles that include the patientCaregiver role
         const filtered = (data as any[]).filter((p) => {
           const roles = p.user_roles || [];
-          return roles.some((r: any) => r.role?.name === 'patientCaregiver');
+          return roles.some((r: any) => r.roles?.name === 'patientCaregiver');
         });
         setPatientData(filtered as PatientData[]);
       } catch (err) {

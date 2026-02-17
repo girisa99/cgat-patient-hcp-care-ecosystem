@@ -65,9 +65,10 @@ export const useDeveloperApplications = () => {
           status: 'pending'
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to submit application: no data returned'); }
       return data;
     },
     onSuccess: () => {

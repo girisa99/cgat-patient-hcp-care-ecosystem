@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield, RefreshCw, AlertCircle } from "lucide-react";
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import DashboardHeader from "@/components/layout/DashboardHeader";
+import AppLayout from '@/components/layout/AppLayout';
 import { getErrorMessage } from '@/utils/errorHandling';
 
 const Security = () => {
@@ -12,9 +12,8 @@ const Security = () => {
   const [error] = React.useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AppLayout title="Security Dashboard">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Security</h1>
           <p className="text-lg text-gray-600">Manage security settings and policies</p>
@@ -28,25 +27,45 @@ const Security = () => {
           </Card>
         )}
 
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Shield className="h-5 w-5" />
-              <span>Security Dashboard</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12">
-              <Shield className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="font-semibold mb-2">Security Center</h3>
-              <p className="text-sm text-gray-500">
-                Monitor and manage security policies
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="h-5 w-5" />
+                <span>Security Monitoring</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Shield className="h-8 w-8 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold mb-2">Real-time Protection</h3>
+                <p className="text-sm text-muted-foreground">
+                  XSS protection, input validation, and rate limiting active
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>Security Hardening</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <AlertCircle className="h-8 w-8 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold mb-2">Enhanced Protection</h3>
+                <p className="text-sm text-muted-foreground">
+                  Session management, API security, and automated response enabled
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

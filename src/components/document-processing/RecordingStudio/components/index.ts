@@ -1,0 +1,35 @@
+/**
+ * Recording Studio Components - Export all components
+ */
+
+export { VideoPreview } from './VideoPreview';
+export { InlineTeleprompter } from './InlineTeleprompter';
+export { RecordingControls } from './RecordingControls';
+export { AudioPanel } from './AudioPanel';
+export { AudioAssetSelector } from './AudioAssetSelector';
+export { ScriptPanel } from './ScriptPanel';
+export { RecordingLibraryPanel } from './RecordingLibraryPanel';
+export { RecordingPreview } from './RecordingPreview';
+export type { SaveOptions } from './RecordingPreview';
+export { AudioAnalyzer } from './AudioAnalyzer';
+// FloatingTeleprompter and DraggableTeleprompter removed - use InlineTeleprompter instead
+export { SidePanel, SectionIcons } from './SidePanel';
+export { PreRecordingDialog } from './PreRecordingDialog';
+export { CameraSetupDialog } from './CameraSetupDialog';
+export type { CameraSetupOptions } from './CameraSetupDialog';
+export { MusicGenerator } from './MusicGenerator';
+export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
+export { RecordingQualitySettings, QUALITY_SETTINGS } from './RecordingQualitySettings';
+export type { RecordingQuality } from './RecordingQualitySettings';
+export { ProjectSelector } from './ProjectSelector';
+export { StudioSoundPanel } from './StudioSoundPanel';
+export { ProjectAssetBreakdown } from './ProjectAssetBreakdown';
+export { AvatarCreator } from './AvatarCreator';
+export { PictureInPicture } from './PictureInPicture';
+export { VideoEditorIntegration } from './VideoEditorIntegration';
+export { ProductionInfo } from './ProductionInfo';
+export { DraggablePanel } from './DraggablePanel';
+export { FloatingAudioMixer } from './FloatingAudioMixer';
+export { ContentAnalyzer } from './ContentAnalyzer';
+export { VibeToMindBridge } from './VibeToMindBridge';
+export { MobileRecordingView } from './MobileRecordingView';

@@ -59,8 +59,8 @@ export interface ServiceProviderCapability {
 }
 
 export const SERVICE_TYPES = {
-  '3pl': '3PL Logistics',
-  'specialty_distribution': 'Specialty Distribution',
+  '3pl': '3PL',
+  'specialty_distribution': 'SD (Specialty Distribution)',
   'specialty_pharmacy': 'Specialty Pharmacy',
   'order_management': 'Order Management',
   'patient_hub_services': 'Patient Hub Services'

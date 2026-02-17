@@ -7,7 +7,8 @@
 
 import { RealDatabaseValidator, RealDatabaseValidationResult } from './RealDatabaseValidator';
 import { supabase } from '@/integrations/supabase/client';
-import type { Json } from '@/integrations/supabase/types';
+// Local Json type alias to avoid dependency on generated Supabase types
+type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
 export interface RealSystemHealthResult {
   overallHealthScore: number;

@@ -1,0 +1,1040 @@
+/**
+ * REAL-TIME DOCUMENT PROCESSING HOOK
+ * Handles document upload, processing, metadata extraction, and form mapping
+ * with real-time progress updates via Supabase Realtime
+ * 
+ * SINGLE SOURCE OF TRUTH: Uses documentTypes.ts config for all field definitions
+ */
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { getAllSessionStoragePrefixes, DOCUMENT_TYPE_FIELDS } from '@/config/documentTypes';
+export interface ModelRoutingInfo {
+  primaryModel: 'claude' | 'gemini' | 'openai';
+  modelUsed: 'claude' | 'gemini' | 'openai';
+  selectionReason: 'explicit_config' | 'category_default' | 'content_analysis' | 'fallback';
+  confidence: number;
+  pipelineType: 'single' | 'sequential-hybrid';
+  stage1Model?: 'claude' | 'gemini' | 'openai';
+  stage2Model?: 'claude' | 'gemini' | 'openai';
+  fallbacksAttempted?: ('claude' | 'gemini' | 'openai')[];
+  processingTimeMs?: number;
+}
+
+export interface DocumentJob {
+  id: string;
+  file_name: string;
+  file_path: string;
+  mime_type: string;
+  status: 'uploaded' | 'processing' | 'completed' | 'error' | 'needs_review';
+  progress: number;
+  current_stage: string;
+  stage_message?: string;
+  extracted_text?: string;
+  extracted_metadata?: ExtractedMetadata;
+  processing_config?: ProcessingConfig;
+  created_at: string;
+  completed_at?: string;
+  error_message?: string;
+  document_type?: DocumentType;
+  validation_status?: ValidationStatus;
+  batch_id?: string;
+  // Image storage for verification
+  image_url?: string;
+  image_base64?: string;
+  thumbnail_url?: string;
+  // Real-time extraction tracking
+  extraction_stages?: ExtractionStage[];
+  live_extractions?: LiveExtraction[];
+  // Model routing info
+  model_routing?: ModelRoutingInfo;
+}
+
+export type DocumentType = 
+  | 'invoice' 
+  | 'receipt' 
+  | 'form' 
+  | 'contract' 
+  | 'medical_record' 
+  | 'insurance_card'
+  | 'prescription'
+  | 'lab_result'
+  | 'identification'
+  | 'medical_imaging'
+  | 'xray'
+  | 'ct_scan'
+  | 'mri'
+  | 'ultrasound'
+  | 'ecg'
+  | 'unknown';
+
+export interface ValidationStatus {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+  requiresManualReview: boolean;
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
+export interface ValidationWarning {
+  field: string;
+  message: string;
+  suggestion?: string;
+}
+
+export interface ExtractedMetadata {
+  title?: string;
+  author?: string;
+  createdDate?: string;
+  modifiedDate?: string;
+  pageCount?: number;
+  wordCount?: number;
+  language?: string;
+  keywords?: string[];
+  entities?: EntityExtraction[];
+  formFields?: FormFieldExtraction[];
+  tables?: ExtractedTable[];
+  signatures?: SignatureDetection[];
+  documentClassification?: DocumentClassification;
+  handwrittenRegions?: HandwrittenRegion[];
+  extractionSummary?: ExtractionSummary;
+}
+
+export interface ExtractionSummary {
+  ocrFieldCount: number;
+  visionAiFieldCount: number;
+  totalFields: number;
+  ocrProvider: string;
+  visionAiProvider: string;
+}
+
+// Real-time extraction tracking interfaces
+export interface ExtractionStage {
+  name: string;
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  startedAt?: string;
+  completedAt?: string;
+  fieldsExtracted?: number;
+  message?: string;
+}
+
+export interface LiveExtraction {
+  id: string;
+  fieldName: string;
+  fieldValue: string;
+  confidence: number;
+  source: 'ocr' | 'vision_ai';
+  extractedAt: string;
+  boundingBox?: BoundingBox;
+}
+
+// Document type specific field configurations - NOW IMPORTED FROM documentTypes.ts
+// Re-export for backwards compatibility (already imported at top of file)
+// See: src/config/documentTypes.ts for the single source of truth
+export { DOCUMENT_TYPE_FIELDS };
+
+export interface EntityExtraction {
+  type: string;
+  value: string;
+  confidence: number;
+  boundingBox?: BoundingBox;
+  verified?: boolean;
+  source?: 'ocr' | 'vision_ai';
+}
+
+export interface FormFieldExtraction {
+  fieldName: string;
+  value: string;
+  confidence: number;
+  boundingBox?: BoundingBox;
+  fieldType?: 'text' | 'date' | 'number' | 'checkbox' | 'signature';
+  verified?: boolean;
+  originalValue?: string;
+  source?: string;  // Added: Track extraction source (e.g., 'gemini_vision_ai', 'ocr')
+}
+
+export interface ExtractedTable {
+  id: string;
+  rows: TableRow[];
+  headers?: string[];
+  confidence: number;
+  pageNumber?: number;
+}
+
+export interface TableRow {
+  cells: TableCell[];
+}
+
+export interface TableCell {
+  value: string;
+  confidence: number;
+  columnIndex: number;
+  rowIndex: number;
+}
+
+export interface SignatureDetection {
+  id: string;
+  detected: boolean;
+  boundingBox?: BoundingBox;
+  confidence: number;
+  signedBy?: string;
+  signedDate?: string;
+}
+
+export interface DocumentClassification {
+  type: DocumentType;
+  confidence: number;
+  alternativeTypes?: { type: DocumentType; confidence: number }[];
+}
+
+export interface HandwrittenRegion {
+  id: string;
+  text: string;
+  confidence: number;
+  boundingBox?: BoundingBox;
+}
+
+export interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  pageNumber?: number;
+}
+
+export interface ProcessingConfig {
+  enableOCR?: boolean;
+  enableHandwritingRecognition?: boolean;
+  enableTableExtraction?: boolean;
+  enableSignatureDetection?: boolean;
+  enableDocumentClassification?: boolean;
+  enableMetadataExtraction?: boolean;
+  targetFormId?: string;
+  extractionFields?: string[];
+  confidenceThreshold?: number;
+  validationRules?: ValidationRule[];
+  language?: string;
+  ocrProvider?: 'google' | 'azure' | 'aws';
+}
+
+export interface ValidationRule {
+  fieldName: string;
+  type: 'required' | 'format' | 'range' | 'custom';
+  pattern?: string;
+  min?: number;
+  max?: number;
+  message?: string;
+}
+
+export interface FormMapping {
+  [fieldName: string]: {
+    value: string;
+    confidence: number;
+    source: string;
+    verified?: boolean;
+    originalValue?: string;
+    fieldType?: string;
+  };
+}
+
+export interface BatchProcessingResult {
+  batchId: string;
+  totalDocuments: number;
+  processed: number;
+  failed: number;
+  jobs: DocumentJob[];
+}
+
+export interface ExportOptions {
+  format: 'json' | 'csv' | 'xlsx';
+  includeMetadata?: boolean;
+  includeRawText?: boolean;
+  fields?: string[];
+}
+
+export interface UseDocumentProcessingReturn {
+  // State
+  jobs: DocumentJob[];
+  activeJob: DocumentJob | null;
+  isUploading: boolean;
+  isProcessing: boolean;
+  uploadProgress: number;
+  formMapping: FormMapping | null;
+  batchProgress: { total: number; completed: number } | null;
+  
+  // Actions
+  uploadDocument: (file: File, config?: ProcessingConfig, options?: { autoDetect?: boolean; autoAnalyzeMedical?: boolean; isMedicalContext?: boolean }) => Promise<string | null>;
+  uploadBatch: (files: File[], config?: ProcessingConfig) => Promise<BatchProcessingResult | null>;
+  processDocument: (documentId: string) => Promise<boolean>;
+  extractMetadata: (documentId: string) => Promise<ExtractedMetadata | null>;
+  mapToForm: (documentId: string, targetFields: string[]) => Promise<FormMapping | null>;
+  cancelJob: (documentId: string) => Promise<void>;
+  clearJobs: () => void;
+  clearAllDocumentState: () => void;
+  
+  // Verification & Editing
+  updateFieldValue: (documentId: string, fieldName: string, newValue: string) => Promise<boolean>;
+  deleteField: (documentId: string, fieldName: string) => Promise<boolean>;
+  verifyField: (documentId: string, fieldName: string) => Promise<boolean>;
+  flagForReview: (documentId: string, reason: string) => Promise<boolean>;
+  
+  // Export
+  exportResults: (documentId: string, options: ExportOptions) => Promise<Blob | null>;
+  
+  // Real-time subscription
+  subscribeToJob: (documentId: string) => void;
+  unsubscribeFromJob: () => void;
+}
+
+export function useDocumentProcessing(): UseDocumentProcessingReturn {
+  const [jobs, setJobs] = useState<DocumentJob[]>([]);
+  const [activeJob, setActiveJob] = useState<DocumentJob | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [formMapping, setFormMapping] = useState<FormMapping | null>(null);
+  
+  const subscriptionRef = useRef<any>(null);
+  const activeJobIdRef = useRef<string | null>(null);
+
+  // Load existing jobs on mount
+  useEffect(() => {
+    loadJobs();
+    return () => {
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+      }
+    };
+  }, []);
+
+  const loadJobs = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('document_processing_jobs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Failed to load jobs:', error);
+        return;
+      }
+
+      // Extract model_routing from processing_config for each job
+      const jobsWithRouting = (data || []).map((job: any) => ({
+        ...job,
+        model_routing: job.processing_config?.modelRouting || null
+      }));
+
+      setJobs(jobsWithRouting);
+    } catch (e) {
+      console.error('Error loading jobs:', e);
+    }
+  };
+
+  const subscribeToJob = useCallback((documentId: string) => {
+    // Clean up existing subscription
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+    }
+
+    activeJobIdRef.current = documentId;
+    console.log(`Subscribing to document job: ${documentId}`);
+
+    const channel = supabase
+      .channel(`document-job-${documentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'document_processing_jobs',
+          filter: `id=eq.${documentId}`
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload.new);
+          const rawJob = payload.new as any;
+          
+          // Preserve image_base64 from current activeJob since it's not stored in DB
+          setActiveJob(prev => {
+            const updatedJob: DocumentJob = {
+              ...rawJob,
+              model_routing: rawJob.processing_config?.modelRouting || null,
+              // Preserve image_base64 from previous state since it's only stored locally
+              image_base64: rawJob.image_base64 || prev?.image_base64
+            };
+            
+            // Update jobs list as well
+            setJobs(jobs => jobs.map(j => j.id === updatedJob.id ? updatedJob : j));
+            
+            // Update processing state based on status
+            if (updatedJob.status === 'completed') {
+              setIsProcessing(false);
+              toast.success('Document processing completed!');
+            } else if (updatedJob.status === 'error') {
+              setIsProcessing(false);
+              toast.error(`Processing failed: ${updatedJob.error_message || 'Unknown error'}`);
+            }
+            
+            return updatedJob;
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log(`Subscription status: ${status}`);
+      });
+
+    subscriptionRef.current = channel;
+  }, []);
+
+  const unsubscribeFromJob = useCallback(() => {
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
+    activeJobIdRef.current = null;
+  }, []);
+
+  const uploadDocument = useCallback(async (
+    file: File, 
+    config?: ProcessingConfig,
+    options?: { autoDetect?: boolean; autoAnalyzeMedical?: boolean; isMedicalContext?: boolean }
+  ): Promise<string | null> => {
+    // Clear previous document state before uploading new document
+    setActiveJob(null);
+    setFormMapping(null);
+    setIsProcessing(false);
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const { autoDetect = true, autoAnalyzeMedical = true, isMedicalContext = false } = options || {};
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 50));
+          }
+        };
+      });
+      
+      reader.readAsDataURL(file);
+      const fileBase64 = await base64Promise;
+      setUploadProgress(60);
+
+      // Determine if this is a medical imaging file
+      const isDicom = file.type === 'application/dicom' || !!file.name.match(/\.(dcm|dicom)$/i);
+      const isImage = file.type.startsWith('image/');
+      const effectiveIsMedicalContext = isMedicalContext || isDicom;
+
+      // Use auto-detect action for intelligent processing
+      const action = autoDetect ? 'upload_with_auto_detect' : 'upload';
+
+      console.log(`[useDocumentProcessing] Uploading with action: ${action}, autoDetect: ${autoDetect}, autoAnalyzeMedical: ${autoAnalyzeMedical}, isMedicalContext: ${effectiveIsMedicalContext}`);
+
+      // Call edge function with auto-detection
+      const { data, error } = await supabase.functions.invoke('document-processor', {
+        body: {
+          action,
+          fileBase64,
+          fileName: file.name,
+          mimeType: file.type,
+          processingConfig: { 
+            ...config, 
+            isMedicalContext: effectiveIsMedicalContext 
+          },
+          autoDetect,
+          autoAnalyzeMedical
+        }
+      });
+
+      setUploadProgress(100);
+
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || 'Upload failed');
+      }
+
+      const documentId = data.documentId;
+      
+      // Store the image base64 in activeJob for verification display
+      // Create the full data URL from the uploaded file
+      const imageDataUrl = `data:${file.type};base64,${fileBase64}`;
+      
+      // Create initial job with image data for immediate preview
+      const initialJob: DocumentJob = {
+        id: documentId,
+        file_name: file.name,
+        file_path: '',
+        mime_type: file.type,
+        status: 'processing',
+        progress: 0,
+        current_stage: 'uploading',
+        created_at: new Date().toISOString(),
+        image_base64: imageDataUrl, // Store full data URL for display
+        document_type: data.detectedDocumentType || undefined,
+      };
+      
+      setActiveJob(initialJob);
+      
+      // Log auto-detection results
+      if (data.detectedDocumentType) {
+        console.log(`[useDocumentProcessing] Auto-detected type: ${data.detectedDocumentType}`);
+        if (data.autoDetectionResult) {
+          toast.success(`Document classified as: ${data.detectedDocumentType} (${Math.round((data.autoDetectionResult.confidence || 0) * 100)}% confidence)`);
+        }
+      }
+      
+      // Log medical analysis if performed
+      if (data.medicalAnalysisResult) {
+        console.log(`[useDocumentProcessing] Medical analysis completed:`, data.medicalAnalysisResult);
+        toast.info('Medical imaging analysis completed');
+      }
+      
+      // Refresh jobs and subscribe
+      await loadJobs();
+      subscribeToJob(documentId);
+      
+      toast.success('Document uploaded successfully');
+      return documentId;
+    } catch (e) {
+      console.error('Upload error:', e);
+      toast.error(`Upload failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      return null;
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  }, [subscribeToJob]);
+
+  const processDocument = useCallback(async (documentId: string): Promise<boolean> => {
+    setIsProcessing(true);
+    subscribeToJob(documentId);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('document-processor', {
+        body: {
+          action: 'process',
+          documentId
+        }
+      });
+
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || 'Processing failed');
+      }
+
+      // Update active job with result
+      if (data.metadata) {
+        setActiveJob(prev => prev ? { ...prev, extracted_metadata: data.metadata } : null);
+      }
+
+      await loadJobs();
+      return true;
+    } catch (e) {
+      console.error('Processing error:', e);
+      toast.error(`Processing failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      setIsProcessing(false);
+      return false;
+    }
+  }, [subscribeToJob]);
+
+  const extractMetadata = useCallback(async (documentId: string): Promise<ExtractedMetadata | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('document-processor', {
+        body: {
+          action: 'extract_metadata',
+          documentId
+        }
+      });
+
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || 'Metadata extraction failed');
+      }
+
+      return data.metadata;
+    } catch (e) {
+      console.error('Metadata extraction error:', e);
+      toast.error(`Metadata extraction failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      return null;
+    }
+  }, []);
+
+  const mapToForm = useCallback(async (
+    documentId: string, 
+    targetFields: string[]
+  ): Promise<FormMapping | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('document-processor', {
+        body: {
+          action: 'map_to_form',
+          documentId,
+          processingConfig: { extractionFields: targetFields }
+        }
+      });
+
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || 'Form mapping failed');
+      }
+
+      // Filter out internal metadata fields from display
+      // These include: fields starting with _, raw data fields, and system metadata
+      const EXCLUDED_FIELDS = [
+        'line_items', 'tables', 'raw_text', 
+        'detected_document_type', 'document_category',
+        '_pipeline_type', '_ocr_text_length', '_ocr_confidence'
+      ];
+      
+      const cleanedMapping: FormMapping = {};
+      const formFieldsForDb: FormFieldExtraction[] = [];
+      const sectionsData = data.formMapping?.['_sections'];
+      
+      if (data.formMapping) {
+        Object.entries(data.formMapping).forEach(([key, value]) => {
+          // Skip internal metadata fields that start with _ or are in exclusion list
+          if (!key.startsWith('_') && !EXCLUDED_FIELDS.includes(key)) {
+            const fieldValue = value as any;
+            cleanedMapping[key] = {
+              value: fieldValue.value ?? '',
+              confidence: fieldValue.confidence ?? 0,
+              source: fieldValue.source ?? 'unknown',
+              verified: fieldValue.verified,
+              originalValue: fieldValue.originalValue,
+              fieldType: fieldValue.fieldType
+            };
+            
+            // Also build formFields array for database storage
+            formFieldsForDb.push({
+              fieldName: key,
+              value: fieldValue.value ?? '',
+              confidence: fieldValue.confidence ?? 0,
+              source: fieldValue.source ?? 'unknown',
+              verified: fieldValue.verified ?? false,
+              originalValue: fieldValue.originalValue
+            });
+          }
+        });
+      }
+
+      // CRITICAL: Save extracted fields to database so they persist and are available in PatientInfoVerificationPanel
+      // This updates extracted_metadata with entities and formFields from the AI extraction
+      try {
+        const { data: existingDoc } = await (supabase as any)
+          .from('document_processing_jobs')
+          .select('extracted_metadata, processing_config')
+          .eq('id', documentId)
+          .single();
+        
+        const existingMetadata = existingDoc?.extracted_metadata || {};
+        const existingConfig = existingDoc?.processing_config || {};
+        
+        // Build entities array from extracted fields (for legacy compatibility)
+        const entities = formFieldsForDb.map(field => ({
+          type: field.fieldName,
+          value: field.value,
+          confidence: field.confidence,
+          source: field.source || 'vision_ai'
+        }));
+        
+        const updatedMetadata = {
+          ...existingMetadata,
+          entities,
+          formFields: formFieldsForDb,
+          sections: sectionsData || existingMetadata.sections,
+          extractionSummary: {
+            totalFields: formFieldsForDb.length,
+            ocrFieldCount: formFieldsForDb.filter(f => f.source?.includes('ocr')).length,
+            visionAiFieldCount: formFieldsForDb.filter(f => f.source?.includes('vision') || f.source?.includes('gemini')).length,
+            extractedAt: new Date().toISOString()
+          }
+        };
+        
+        // Also save to processing_config.extractedFields for the DocumentProcessing page to use
+        const updatedConfig = {
+          ...existingConfig,
+          extractedFields: cleanedMapping,
+          lineItems: data.line_items || existingConfig.lineItems || [],
+          tables: data.tables || existingConfig.tables || []
+        };
+        
+        await (supabase as any)
+          .from('document_processing_jobs')
+          .update({
+            extracted_metadata: updatedMetadata,
+            processing_config: updatedConfig
+          })
+          .eq('id', documentId);
+        
+        console.log(`[mapToForm] Saved ${formFieldsForDb.length} fields to database`);
+      } catch (saveError) {
+        console.error('[mapToForm] Failed to save extracted fields to database:', saveError);
+        // Continue anyway - fields are still available in memory
+      }
+
+      setFormMapping(cleanedMapping);
+      
+      // Reload jobs to get the updated data
+      await loadJobs();
+      
+      if (data.unmappedFields?.length > 0) {
+        toast.info(`${data.unmappedFields.length} fields could not be mapped automatically`);
+      }
+
+      return cleanedMapping;
+    } catch (e) {
+      console.error('Form mapping error:', e);
+      toast.error(`Form mapping failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      return null;
+    }
+  }, [loadJobs]);
+
+  const cancelJob = useCallback(async (documentId: string) => {
+    try {
+      await (supabase as any)
+        .from('document_processing_jobs')
+        .update({ status: 'cancelled' })
+        .eq('id', documentId);
+      
+      unsubscribeFromJob();
+      setIsProcessing(false);
+      await loadJobs();
+      toast.info('Job cancelled');
+    } catch (e) {
+      console.error('Cancel error:', e);
+    }
+  }, [unsubscribeFromJob]);
+
+  const clearJobs = useCallback(() => {
+    setJobs([]);
+    setActiveJob(null);
+    setFormMapping(null);
+  }, []);
+
+  // Clear all document processing state including sessionStorage
+  const clearAllDocumentState = useCallback(() => {
+    console.log('Document Processing - Clearing all document state');
+    
+    // Clear component state
+    setJobs([]);
+    setActiveJob(null);
+    setFormMapping(null);
+    setIsProcessing(false);
+    setIsUploading(false);
+    setUploadProgress(0);
+    
+    // Clear all document related sessionStorage keys using DYNAMIC prefixes from config
+    // This ensures new document types added to documentTypes.ts are automatically handled
+    const allPrefixes = getAllSessionStoragePrefixes();
+    const keysToRemove: string[] = [];
+    
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && allPrefixes.some(prefix => key.startsWith(prefix))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => {
+      console.log('Document Processing - Removing sessionStorage key:', key);
+      sessionStorage.removeItem(key);
+    });
+    
+    // Unsubscribe from any active job
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
+    activeJobIdRef.current = null;
+  }, []);
+
+  // Batch upload
+  const [batchProgress, setBatchProgress] = useState<{ total: number; completed: number } | null>(null);
+
+  const uploadBatch = useCallback(async (
+    files: File[], 
+    config?: ProcessingConfig
+  ): Promise<BatchProcessingResult | null> => {
+    const batchId = `batch_${Date.now()}`;
+    setBatchProgress({ total: files.length, completed: 0 });
+    
+    const results: DocumentJob[] = [];
+    let failed = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const documentId = await uploadDocument(file, { ...config });
+        if (documentId) {
+          const job = jobs.find(j => j.id === documentId);
+          if (job) results.push({ ...job, batch_id: batchId });
+        }
+      } catch (e) {
+        failed++;
+      }
+      setBatchProgress({ total: files.length, completed: i + 1 });
+    }
+
+    setBatchProgress(null);
+    await loadJobs();
+
+    return {
+      batchId,
+      totalDocuments: files.length,
+      processed: results.length,
+      failed,
+      jobs: results
+    };
+  }, [uploadDocument, jobs]);
+
+  // Update field value with verification
+  const updateFieldValue = useCallback(async (
+    documentId: string, 
+    fieldName: string, 
+    newValue: string
+  ): Promise<boolean> => {
+    try {
+      const { data: doc, error: fetchError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .select('extracted_metadata')
+        .eq('id', documentId)
+        .single();
+
+      if (fetchError || !doc) throw new Error('Document not found');
+
+      const metadata = doc.extracted_metadata || {};
+      const formFields = metadata.formFields || [];
+      const updatedFields = formFields.map((f: FormFieldExtraction) => 
+        f.fieldName === fieldName 
+          ? { ...f, value: newValue, verified: true, originalValue: f.originalValue || f.value }
+          : f
+      );
+
+      const { error: updateError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .update({ 
+          extracted_metadata: { ...metadata, formFields: updatedFields }
+        })
+        .eq('id', documentId);
+
+      if (updateError) throw updateError;
+
+      // Update form mapping
+      if (formMapping && formMapping[fieldName]) {
+        setFormMapping({
+          ...formMapping,
+          [fieldName]: { 
+            ...formMapping[fieldName], 
+            value: newValue, 
+            verified: true,
+            originalValue: formMapping[fieldName].originalValue || formMapping[fieldName].value
+          }
+        });
+      }
+
+      await loadJobs();
+      toast.success(`Field "${fieldName}" updated`);
+      return true;
+    } catch (e) {
+      console.error('Update field error:', e);
+      toast.error(`Failed to update field: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      return false;
+    }
+  }, [formMapping]);
+
+  // Verify field
+  const verifyField = useCallback(async (
+    documentId: string, 
+    fieldName: string
+  ): Promise<boolean> => {
+    try {
+      const { data: doc, error: fetchError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .select('extracted_metadata')
+        .eq('id', documentId)
+        .single();
+
+      if (fetchError || !doc) throw new Error('Document not found');
+
+      const metadata = doc.extracted_metadata || {};
+      const formFields = metadata.formFields || [];
+      const updatedFields = formFields.map((f: FormFieldExtraction) => 
+        f.fieldName === fieldName ? { ...f, verified: true } : f
+      );
+
+      await (supabase as any)
+        .from('document_processing_jobs')
+        .update({ 
+          extracted_metadata: { ...metadata, formFields: updatedFields }
+        })
+        .eq('id', documentId);
+
+      if (formMapping && formMapping[fieldName]) {
+        setFormMapping({
+          ...formMapping,
+          [fieldName]: { ...formMapping[fieldName], verified: true }
+        });
+      }
+
+      return true;
+    } catch (e) {
+      console.error('Verify field error:', e);
+      return false;
+    }
+  }, [formMapping]);
+
+  // Delete field - removes a field from formMapping and database
+  const deleteField = useCallback(async (
+    documentId: string, 
+    fieldName: string
+  ): Promise<boolean> => {
+    try {
+      const { data: doc, error: fetchError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .select('extracted_metadata')
+        .eq('id', documentId)
+        .single();
+
+      if (fetchError || !doc) throw new Error('Document not found');
+
+      const metadata = doc.extracted_metadata || {};
+      const formFields = metadata.formFields || [];
+      
+      // Remove the field from formFields array
+      const updatedFields = formFields.filter((f: FormFieldExtraction) => 
+        f.fieldName !== fieldName
+      );
+
+      const { error: updateError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .update({ 
+          extracted_metadata: { ...metadata, formFields: updatedFields }
+        })
+        .eq('id', documentId);
+
+      if (updateError) throw updateError;
+
+      // Update form mapping - remove the field
+      if (formMapping && formMapping[fieldName]) {
+        const newFormMapping = { ...formMapping };
+        delete newFormMapping[fieldName];
+        setFormMapping(newFormMapping);
+      }
+
+      await loadJobs();
+      toast.success(`Field "${fieldName}" deleted`);
+      return true;
+    } catch (e) {
+      console.error('Delete field error:', e);
+      toast.error(`Failed to delete field: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      return false;
+    }
+  }, [formMapping]);
+
+  // Flag for manual review
+  const flagForReview = useCallback(async (
+    documentId: string, 
+    reason: string
+  ): Promise<boolean> => {
+    try {
+      await (supabase as any)
+        .from('document_processing_jobs')
+        .update({ 
+          status: 'needs_review',
+          stage_message: reason
+        })
+        .eq('id', documentId);
+
+      await loadJobs();
+      toast.info('Document flagged for review');
+      return true;
+    } catch (e) {
+      console.error('Flag for review error:', e);
+      return false;
+    }
+  }, []);
+
+  // Export results
+  const exportResults = useCallback(async (
+    documentId: string, 
+    options: ExportOptions
+  ): Promise<Blob | null> => {
+    try {
+      const { data: doc, error } = await (supabase as any)
+        .from('document_processing_jobs')
+        .select('*')
+        .eq('id', documentId)
+        .single();
+
+      if (error || !doc) throw new Error('Document not found');
+
+      let exportData: any;
+      const metadata = doc.extracted_metadata || {};
+
+      if (options.format === 'json') {
+        exportData = {
+          documentId: doc.id,
+          fileName: doc.file_name,
+          status: doc.status,
+          processedAt: doc.completed_at,
+          fields: options.fields 
+            ? metadata.formFields?.filter((f: FormFieldExtraction) => options.fields?.includes(f.fieldName))
+            : metadata.formFields,
+          entities: metadata.entities,
+          ...(options.includeMetadata && { metadata }),
+          ...(options.includeRawText && { extractedText: doc.extracted_text })
+        };
+        return new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      } else if (options.format === 'csv') {
+        const fields = metadata.formFields || [];
+        const headers = ['Field Name', 'Value', 'Confidence', 'Verified'];
+        const rows = fields.map((f: FormFieldExtraction) => 
+          [f.fieldName, f.value, (f.confidence * 100).toFixed(1) + '%', f.verified ? 'Yes' : 'No']
+        );
+        const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+        return new Blob([csv], { type: 'text/csv' });
+      }
+
+      return null;
+    } catch (e) {
+      console.error('Export error:', e);
+      toast.error('Export failed');
+      return null;
+    }
+  }, []);
+
+  return {
+    jobs,
+    activeJob,
+    isUploading,
+    isProcessing,
+    uploadProgress,
+    formMapping,
+    batchProgress,
+    uploadDocument,
+    uploadBatch,
+    processDocument,
+    extractMetadata,
+    mapToForm,
+    cancelJob,
+    clearJobs,
+    clearAllDocumentState,
+    updateFieldValue,
+    deleteField,
+    verifyField,
+    flagForReview,
+    exportResults,
+    subscribeToJob,
+    unsubscribeFromJob
+  };
+}

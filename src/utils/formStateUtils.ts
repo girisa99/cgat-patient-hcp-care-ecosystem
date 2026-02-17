@@ -3,30 +3,33 @@
  * MASTER FORM STATE UTILITIES - CONSOLIDATED REAL DATA ONLY
  * Version: master-form-state-utils-v2.0.0 - Fixed interface consistency
  */
-import { MasterUserFormState } from '@/types/formState';
+import { MasterUserFormState } from '@/types/masterFormState';
 
 export const createMasterFormState = (initialData?: Partial<MasterUserFormState>): MasterUserFormState => {
   return {
-    firstName: initialData?.firstName || '',
-    lastName: initialData?.lastName || '',
+    firstName: initialData?.firstName || initialData?.first_name || '',
+    lastName: initialData?.lastName || initialData?.last_name || '',
+    first_name: initialData?.first_name || initialData?.firstName || '',
+    last_name: initialData?.last_name || initialData?.lastName || '',
     email: initialData?.email || '',
     phone: initialData?.phone || '',
-    role: initialData?.role || 'user',
-    facilityId: initialData?.facilityId || '',
-    isActive: initialData?.isActive ?? true,
-    // Remove termsAccepted as it's not part of MasterUserFormState interface
+    role: initialData?.role || '',
+    facility_id: initialData?.facility_id || '',
+    isActive: initialData?.isActive ?? initialData?.is_active ?? true,
+    is_active: initialData?.is_active ?? initialData?.isActive ?? true
   };
 };
 
-export const normalizeMasterFormState = (data: any): MasterUserFormState => {
+export const normalizeMasterFormState = (data: unknown): MasterUserFormState => {
+  const typedData = data as Record<string, unknown>;
   return createMasterFormState({
-    firstName: data?.firstName || data?.first_name || '',
-    lastName: data?.lastName || data?.last_name || '',
-    email: data?.email || '',
-    phone: data?.phone || '',
-    role: data?.role || 'user',
-    facilityId: data?.facilityId || data?.facility_id || '',
-    isActive: data?.isActive ?? data?.is_active ?? true,
+    firstName: (typedData?.firstName as string) || (typedData?.first_name as string) || '',
+    lastName: (typedData?.lastName as string) || (typedData?.last_name as string) || '',
+    email: (typedData?.email as string) || '',
+    phone: (typedData?.phone as string) || '',
+    role: (typedData?.role as string) || '',
+    facility_id: (typedData?.facility_id as string) || '',
+    isActive: (typedData?.isActive as boolean) ?? (typedData?.is_active as boolean) ?? true,
   });
 };
 

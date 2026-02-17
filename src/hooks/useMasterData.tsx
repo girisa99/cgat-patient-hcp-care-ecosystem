@@ -7,23 +7,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
 
-export interface MasterUser {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  created_at: string;
-  updated_at: string;
-  is_active?: boolean;
-  phone?: string;
-  user_roles: {
-    role: {
-      name: string;
-    };
-  }[];
-}
-
-interface User extends MasterUser {}
+// Import from single source of truth instead of duplicating
+import type { MasterUser } from '@/types/userManagement';
 
 interface ApiService {
   id: string;
@@ -57,46 +42,87 @@ interface Module {
   updated_at: string;
 }
 
-export const useMasterData = () => {
-  console.log('📊 Master Data Hook - Single source of truth for all data');
-  
+export const useMasterData = (isAuthenticated: boolean = false) => {
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
 
-  // Fetch users
+  // Fetch users - only when authenticated
   const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['master-users'],
-    queryFn: async (): Promise<User[]> => {
+    queryFn: async (): Promise<MasterUser[]> => {
       console.log('👥 Fetching users from profiles table');
       
-      const { data, error } = await supabase
+      // First, get profiles
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
           id,
           first_name,
           last_name,
           email,
+          is_email_verified,
           created_at,
-          updated_at,
-          user_roles(
-            role:roles(name)
-          )
+          updated_at
         `);
 
-      if (error) {
-        console.error('❌ Error fetching users:', error);
-        throw error;
+      if (profilesError) {
+        console.error('❌ Error fetching profiles:', profilesError);
+        throw profilesError;
       }
 
-      console.log('✅ Users loaded:', data?.length || 0);
-      return (data || []).map(user => ({
-        ...user,
-        is_active: true,
-        user_roles: Array.isArray(user.user_roles) ? user.user_roles : []
-      })) as User[];
+      console.log('✅ Profiles fetched:', profiles?.length || 0);
+
+      // Get roles for each user using existing get_user_roles function
+      const usersWithRoles = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          try {
+            const { data: roleNames, error: roleError } = await supabase
+              .rpc('get_user_roles', { check_user_id: profile.id });
+            
+            if (roleError) {
+              console.warn('❌ Error fetching roles for user:', profile.id, roleError);
+              return {
+                ...profile,
+                firstName: profile.first_name,
+                lastName: profile.last_name,
+                isActive: true,
+                is_active: true,
+                user_roles: []
+              };
+            }
+
+            return {
+              ...profile,
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              isActive: true,
+              is_active: true,
+              user_roles: Array.isArray(roleNames) 
+                ? roleNames.map((role: string | { role_name: string }) => ({
+                    role: { name: typeof role === 'string' ? role : role.role_name }
+                  }))
+                : []
+            };
+          } catch (err) {
+            console.warn('❌ Role fetch failed for user:', profile.id, err);
+            return {
+              ...profile,
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              isActive: true,
+              is_active: true,
+              user_roles: []
+            };
+          }
+        })
+      );
+
+      console.log('✅ Users with roles combined:', usersWithRoles.length);
+      return usersWithRoles as MasterUser[];
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
+    enabled: isAuthenticated, // Only run when authenticated
   });
 
   // Fetch API services from api_integration_registry
@@ -120,6 +146,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
+    enabled: isAuthenticated, // Only run when authenticated
   });
 
   // Fetch facilities
@@ -143,6 +170,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
+    enabled: isAuthenticated, // Only run when authenticated
   });
 
   // Fetch modules
@@ -166,6 +194,7 @@ export const useMasterData = () => {
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
+    enabled: isAuthenticated, // Only run when authenticated
   });
 
   // Create API service mutation
@@ -175,9 +204,9 @@ export const useMasterData = () => {
         .from('api_integration_registry')
         .insert(serviceData)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to create API service'));
       return data;
     },
     onSuccess: () => {
@@ -195,20 +224,20 @@ export const useMasterData = () => {
     totalApiServices: apiServices.length,
     activeApiServices: apiServices.filter(s => s.status === 'active'),
     patientUsers: users.filter(u => 
-      u.user_roles.some(ur => ur.role?.name === 'patientCaregiver')
+      u.user_roles?.some(ur => ur.role?.name === 'patientCaregiver')
     ).length,
     totalFacilities: facilities.length,
     activeFacilities: facilities.filter(f => f.is_active).length,
     totalModules: modules.length,
     activeModules: modules.filter(m => m.is_active).length,
     adminCount: users.filter(u => 
-      u.user_roles.some(ur => ur.role?.name === 'superAdmin')
+      u.user_roles?.some(ur => ur.role?.name === 'superAdmin')
     ).length,
     staffCount: users.filter(u => 
-      u.user_roles.some(ur => ['onboardingTeam', 'facilityAdmin'].includes(ur.role?.name || ''))
+      u.user_roles?.some(ur => ['onboardingTeam', 'facilityAdmin'].includes(ur.role?.name || ''))
     ).length,
     patientCount: users.filter(u => 
-      u.user_roles.some(ur => ur.role?.name === 'patientCaregiver')
+      u.user_roles?.some(ur => ur.role?.name === 'patientCaregiver')
     ).length,
   };
 
@@ -232,6 +261,15 @@ export const useMasterData = () => {
     facilities,
     modules,
     stats,
+    roles: [
+      { id: '1', name: 'superAdmin', description: 'Super Administrator' },
+      { id: '2', name: 'onboardingTeam', description: 'Onboarding Team' },
+      { id: '3', name: 'caseManager', description: 'Case Manager' },
+      { id: '4', name: 'nurse', description: 'Nurse' },
+      { id: '5', name: 'provider', description: 'Provider' },
+      { id: '6', name: 'patientCaregiver', description: 'Patient/Caregiver' },
+      { id: '7', name: 'facilityAdmin', description: 'Facility Administrator' }
+    ],
     
     // Loading states
     isLoading: usersLoading || apiServicesLoading || facilitiesLoading || modulesLoading,

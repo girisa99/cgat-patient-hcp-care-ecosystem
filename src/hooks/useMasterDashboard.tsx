@@ -31,7 +31,8 @@ export const useMasterDashboard = () => {
     activeModules: moduleStats.active,
     activeFacilities: facilities.filter(f => f.is_active).length,
     welcomeMessage: `Welcome back${profile?.first_name ? `, ${profile.first_name}` : ''}!`,
-    summary: `Managing ${userStats.totalUsers} users across ${facilities.length} facilities`
+    summary: `Managing ${userStats.totalUsers} users across ${facilities.length} facilities`,
+    hasPresentation: true
   };
 
   const recentActivity = [

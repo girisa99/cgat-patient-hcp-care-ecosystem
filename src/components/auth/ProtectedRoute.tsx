@@ -1,33 +1,136 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useTenantContext, useFacilityScope } from '@/contexts/TenantContext';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { normalizeRoles, normalizeRoleName } from '@/utils/roles';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  requiredRoles?: string[];
+  requiredPermissions?: string[];
+  
+  // MULTI-TENANT ENHANCEMENTS
+  facilityAccess?: 'read' | 'write' | 'admin';
+  requireFacilityContext?: boolean;
+  allowedFacilityTypes?: string[];
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isLoading, isAuthenticated, user } = useMasterAuth();
+const ProtectedRoute = ({ 
+  children, 
+  requiredRoles, 
+  requiredPermissions, 
+  facilityAccess,
+  requireFacilityContext,
+  allowedFacilityTypes
+}: ProtectedRouteProps) => {
+  const { isLoading, isAuthenticated, user, userRoles } = useMasterAuth();
+  const { currentFacility, isSuperAdmin, isLoadingFacilities } = useTenantContext();
+  const { canRead, canWrite, canAdmin } = useFacilityScope();
   const navigate = useNavigate();
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hadAuthenticatedRef = useRef<boolean>(false);
 
-  console.log('🛡️ ProtectedRoute check:', { isLoading, isAuthenticated, hasUser: !!user });
+  // CRITICAL: Use normalized roles to prevent role mismatch issues
+  const normalizedUserRoles = normalizeRoles(userRoles);
+  const normalizedRequiredRoles = requiredRoles?.map(normalizeRoleName);
+
+  // Defer role checks until roles are loaded to avoid false redirects
+  const rolesStillLoading = Boolean(
+    isAuthenticated &&
+    requiredRoles &&
+    requiredRoles.length > 0 &&
+    userRoles.length === 0
+  );
+
+  // ProtectedRoute check
+
+  // Check role-based access
+  const hasRequiredRole = !normalizedRequiredRoles || normalizedRequiredRoles.length === 0 || 
+    normalizedRequiredRoles.some(role => normalizedUserRoles.includes(role)) || isSuperAdmin;
+
+  // Check facility-based access
+  const hasFacilityAccess = () => {
+    if (isSuperAdmin) return true;
+    if (!requireFacilityContext) return true;
+    if (!currentFacility) return false;
+    
+    // Check facility type restrictions
+    if (allowedFacilityTypes && allowedFacilityTypes.length > 0) {
+      if (!allowedFacilityTypes.includes(currentFacility.facility_type)) {
+        return false;
+      }
+    }
+    
+    // Check facility permission level
+    if (facilityAccess) {
+      switch (facilityAccess) {
+        case 'read': return canRead();
+        case 'write': return canWrite();
+        case 'admin': return canAdmin();
+        default: return false;
+      }
+    }
+    
+    return true;
+  };
+
+  const hasValidFacilityAccess = hasFacilityAccess();
+
+  // Track if user was authenticated before (grace period on token refresh)
+  useEffect(() => {
+    if (isAuthenticated) {
+      hadAuthenticatedRef.current = true;
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    // Only redirect if not loading and not authenticated - redirect to login instead of index
-    if (!isLoading && !isAuthenticated) {
-      console.log('🔄 Redirecting to login for authentication...');
-      navigate('/login', { replace: true });
-    }
-  }, [isLoading, isAuthenticated, navigate]);
+    const clearTimer = () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
+      }
+    };
 
-  // Show loading spinner while checking auth
-  if (isLoading) {
+    // While loading anything, never redirect
+    if (isLoading || isLoadingFacilities || rolesStillLoading) {
+      clearTimer();
+    } else if (!isAuthenticated) {
+      // If user was previously authenticated, wait a bit for session refresh to avoid false redirects
+      const delay = hadAuthenticatedRef.current ? 2500 : 0;
+      clearTimer();
+      if (delay === 0) {
+        navigate('/login', { replace: true });
+      } else {
+        redirectTimeoutRef.current = setTimeout(() => {
+          if (!isAuthenticated) {
+            navigate('/login', { replace: true });
+          }
+        }, delay);
+      }
+    } else if (!hasRequiredRole || !hasValidFacilityAccess) {
+      // Debounce permission-based redirects to avoid brief role/facility flaps
+      clearTimer();
+      redirectTimeoutRef.current = setTimeout(() => {
+        if (!hasRequiredRole || !hasValidFacilityAccess) {
+          navigate('/', { replace: true });
+        }
+      }, 1500);
+    } else {
+      // All good, ensure no pending redirect remains
+      clearTimer();
+    }
+
+    return () => clearTimer();
+  }, [isLoading, isLoadingFacilities, rolesStillLoading, isAuthenticated, hasRequiredRole, hasValidFacilityAccess, navigate]);
+
+  // Show loading spinner while checking auth, roles, and facilities
+  if (isLoading || isLoadingFacilities || rolesStillLoading) {
     console.log('⏳ ProtectedRoute loading...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
-        <span className="ml-3 text-gray-600">Loading...</span>
+        <span className="ml-3 text-gray-600">{rolesStillLoading ? 'Loading permissions...' : 'Loading...'}</span>
       </div>
     );
   }
@@ -39,6 +142,18 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
         <span className="ml-3 text-gray-600">Redirecting to login...</span>
+      </div>
+    );
+  }
+
+  // If authenticated but lacks required roles or facility access
+  if (!hasRequiredRole || !hasValidFacilityAccess) {
+    const reason = !hasRequiredRole ? 'role permissions' : 'facility access';
+    console.log(`🚫 Insufficient ${reason}, redirecting...`);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+        <span className="ml-3 text-gray-600">Insufficient {reason}...</span>
       </div>
     );
   }

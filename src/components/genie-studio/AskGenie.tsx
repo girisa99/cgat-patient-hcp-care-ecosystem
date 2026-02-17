@@ -1,0 +1,2176 @@
+/**
+ * ASK GENIE - Unified Context-Aware AI Assistant for Genie Studio
+ * 
+ * Features:
+ * - Context-aware based on product (Arc, Vibe, Spark, Mind)
+ * - Dynamic guided flows with step-by-step help
+ * - Emotional, creative, and empathetic responses
+ * - Proactive help when user seems stuck
+ * - Mermaid flow diagrams for visual guidance
+ * - Subscription-aware suggestions
+ * - Cross-product navigation and recommendations
+ * - Non-overwhelming, engaging UX
+ */
+
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  Send, 
+  Loader2, 
+  X,
+  Sparkles,
+  Bot,
+  User,
+  Lightbulb,
+  Film,
+  Music,
+  PenTool,
+  Brain,
+  ChevronDown,
+  MessageCircle,
+  Minimize2,
+  Maximize2,
+  ArrowRight,
+  HelpCircle,
+  Zap,
+  Heart,
+  Star,
+  Wand2,
+  BookOpen,
+  Route,
+  CheckCircle2,
+  AlertCircle,
+  Hand,
+  Map,
+  ThumbsUp,
+  ThumbsDown,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Globe,
+  GripVertical
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
+import { regionalResponseService } from '@/services/regionalResponseService';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
+import { useAskGenieVoice, LANGUAGE_VOICE_PAIRINGS, REGION_LABELS, getLanguagesByRegion, detectCountryFromIP } from '@/hooks/useAskGenieVoice';
+import { toast } from 'sonner';
+import { useRalphWiggumGlobal } from '@/contexts/RalphWiggumContext';
+import { useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+// Import centralized product definitions - SINGLE SOURCE OF TRUTH
+import { 
+  GENIE_PRODUCTS, 
+  ASK_GENIE, 
+  SUBSCRIPTION_FEATURE_ACCESS,
+  SUPPORTED_LANGUAGES 
+} from '@/constants/genie-products';
+
+
+// Genie Product Context Types
+export type GenieProduct = 'arc' | 'vibe' | 'spark' | 'mind' | 'studio' | 'deck';
+
+interface GenieContext {
+  product: GenieProduct;
+  currentTab?: string;
+  currentAction?: string;
+  recentActions?: string[];
+  sessionData?: Record<string, any>;
+  subscriptionTier?: 'free' | 'pro' | 'enterprise';
+}
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  product?: GenieProduct;
+  guidedFlow?: GuidedFlowStep;
+  emotionalTone?: 'encouraging' | 'helpful' | 'celebratory' | 'empathetic';
+  showMermaid?: boolean;
+  mermaidDiagram?: string;
+}
+
+interface GuidedFlowStep {
+  stepNumber: number;
+  totalSteps: number;
+  title: string;
+  description: string;
+  action?: {
+    label: string;
+    route?: string;
+    onClick?: () => void;
+  };
+  tip?: string;
+}
+
+interface AskGenieProps {
+  product?: GenieProduct;
+  currentTab?: string;
+  sessionData?: Record<string, any>;
+  subscriptionTier?: 'free' | 'pro' | 'enterprise';
+  isOpen?: boolean;
+  onClose?: () => void;
+  position?: 'inline' | 'floating' | 'sidebar';
+  className?: string;
+}
+
+// Enhanced Personality phrases for deep emotional engagement
+const PERSONALITY = {
+  greetings: [
+    "Hey there, creative genius! ✨ I've been waiting for you!",
+    "Welcome back, storyteller! Ready to create something magical? 🎬",
+    "Hi friend! 🌟 Your creativity is about to shine even brighter!",
+    "Hello, amazing creator! Let's turn your ideas into reality! 💫",
+    "There you are! I was just thinking about how we could make something beautiful today! 🎨"
+  ],
+  encouragements: [
+    "You're doing absolutely fantastic! Every step forward counts! 💪",
+    "That's a brilliant idea! I can already see it coming to life! ⭐",
+    "I love where this is heading! Your vision is inspiring! 🚀",
+    "You've got this! I'm so excited to be part of your creative journey! 🤝",
+    "This is going to be amazing! Trust your instincts! 🌈"
+  ],
+  celebrations: [
+    "Woohoo! That's incredible work! 🎉 You should be SO proud!",
+    "AMAZING! You just leveled up! 🏆 *virtual high five*",
+    "Nailed it! You're officially a content creation rockstar! 🎸",
+    "Brilliant! You're on absolute fire today! 🔥 Keep that momentum!",
+    "YES! This is exactly what I was hoping to see! 🌟 Beautiful work!"
+  ],
+  empathy: [
+    "I totally understand, this stuff can be tricky sometimes. But hey, we're in this together! 🤗",
+    "No worries at all! Every creative journey has its learning moments. Let's figure this out! 💙",
+    "That's a really thoughtful question! Many amazing creators wondered the same thing 😊",
+    "I get it! Sometimes the best creations come from taking it one step at a time 📝",
+    "It's completely okay to feel stuck! That's actually where the magic happens. Let me help! 💜"
+  ],
+  stuckDetection: [
+    "Hey there! 👋 I noticed things have been quiet for a bit. Everything okay? I'm here if you need a hand!",
+    "Still figuring things out? No problem! Sometimes the best ideas need time to brew ☕ Want me to suggest some next steps?",
+    "I'm still here! 🌟 If you're feeling stuck, that's totally normal. Want me to walk you through some options?",
+    "Just checking in! 💫 Creating can be overwhelming sometimes. Would a quick guided tour help?",
+    "Hey friend! 🤝 Looks like you might be exploring. Want me to show you what's possible here?"
+  ],
+  humor: [
+    "Between you and me, this is going to be epic! 🎬 (Don't tell the other AIs I said that 😉)",
+    "Pro tip from your favorite AI assistant: You're already doing better than 90% of creators! 📈",
+    "If creativity were a superpower, you'd be an Avenger by now! 🦸‍♂️",
+    "Let's make something so good, even the internet will be impressed! 🌐",
+    "Ready to create content that'll make your future self say 'Wow, I made that!'? 🚀"
+  ],
+  voiceIntros: [
+    "Hey there! 🎤 I can actually talk to you! Just tap the mic button and speak to me, or tap the speaker button and I'll read my responses aloud. Pretty cool, right?",
+    "Psst... 🎙️ Did you know I can speak? Hit the microphone to chat with your voice, or I can read my answers out loud! Let's have a real conversation!",
+    "Voice mode unlocked! 🔊 You can speak to me anytime by tapping the mic. I speak 20+ languages too - just pick yours from the globe icon!",
+    "Hello friend! 👋 Fun fact: I'm not just a text bot - I can hear you AND speak back! Try the mic button to talk, or the speaker to hear me. It's like having a real chat! 🗣️"
+  ]
+};
+
+
+// Use centralized taglines - These come from genie-products.ts and should NOT be duplicated
+const ORIGINAL_TAGLINES = {
+  arc: GENIE_PRODUCTS.arc.tagline,
+  vibe: GENIE_PRODUCTS.vibe.tagline,
+  spark: GENIE_PRODUCTS.spark.tagline,
+  mind: GENIE_PRODUCTS.mind.tagline,
+  studio: GENIE_PRODUCTS.studio.tagline
+};
+
+// Use centralized descriptions
+const PRODUCT_DESCRIPTIONS = {
+  arc: GENIE_PRODUCTS.arc.description,
+  vibe: GENIE_PRODUCTS.vibe.description,
+  spark: GENIE_PRODUCTS.spark.description,
+  mind: GENIE_PRODUCTS.mind.description,
+  studio: GENIE_PRODUCTS.studio.description
+};
+
+// Subscription-aware upgrade suggestions (gentle, not pushy)
+const getUpgradeHint = (product: GenieProduct, tier: 'free' | 'starter' | 'business' | 'pro' = 'free'): string | null => {
+  const access = SUBSCRIPTION_FEATURE_ACCESS[tier];
+  if (!access) return null;
+  
+  // upgradeHints is optional in new structure - use type guard
+  const hints = 'upgradeHints' in access ? (access.upgradeHints as Record<string, string>) : null;
+  return hints?.[product] || null;
+};
+
+// Check if feature is available for tier
+const isFeatureAvailable = (product: GenieProduct, tier: 'free' | 'starter' | 'business' | 'pro' = 'free'): boolean => {
+  const access = SUBSCRIPTION_FEATURE_ACCESS[tier];
+  if (!access) return false;
+  
+  // Map 'arc' to check in products array
+  const productKey = product === 'arc' ? 'arc' : product;
+  return access.products.includes(productKey as any);
+};
+
+// Get limitation message for tier
+const getLimitation = (product: GenieProduct, tier: 'free' | 'starter' | 'business' | 'pro' = 'free'): string | null => {
+  const access = SUBSCRIPTION_FEATURE_ACCESS[tier];
+  if (!access) return null;
+  
+  const limitations = access.limitations as Record<string, string>;
+  return limitations[product] || null;
+};
+
+// Mermaid diagrams for visual workflow guidance
+const WORKFLOW_DIAGRAMS: Record<GenieProduct, { id: string; title: string; diagram: string }[]> = {
+  arc: [
+    {
+      id: 'create-show-flow',
+      title: 'Create Your First Show',
+      diagram: `graph TD
+    A[🎬 Start in Genie Hub] --> B[Choose Show Type]
+    B --> C[Podcast/Video/Webinar/Live]
+    C --> D[Add Show Details]
+    D --> E[Set Schedule]
+    E --> F[✨ Invite Team]
+    F --> G[🎉 Ready to Produce!]
+    
+    style A fill:#3b82f6
+    style G fill:#22c55e`
+    },
+    {
+      id: 'production-workflow',
+      title: 'Full Production Workflow',
+      diagram: `graph LR
+    A[📝 Script in Spark] --> B[🎬 Create Show in Arc]
+    B --> C[📅 Schedule Recording]
+    C --> D[🎥 Record in Vibe]
+    D --> E[🎵 Add Audio/Music]
+    E --> F[🧠 Optimize in Mind]
+    F --> G[🚀 Publish!]
+    
+    style A fill:#f97316
+    style G fill:#22c55e`
+    }
+  ],
+  vibe: [
+    {
+      id: 'recording-flow',
+      title: 'Record & Produce',
+      diagram: `graph TD
+    A[🎥 Start Recording] --> B{What to Record?}
+    B --> C[📹 Video]
+    B --> D[🎙️ Audio Only]
+    C --> E[Use Camera/Screen]
+    D --> E
+    E --> F[📝 Add Teleprompter Script]
+    F --> G[🎬 Record Session]
+    G --> H[✂️ Edit & Clip]
+    H --> I[🎵 Add Music/Voice]
+    I --> J[🚀 Publish!]
+    
+    style A fill:#a855f7
+    style J fill:#22c55e`
+    },
+    {
+      id: 'voice-over-flow',
+      title: 'Create Voice-Over',
+      diagram: `graph LR
+    A[📝 Get Script] --> B[🎙️ Choose AI Voice]
+    B --> C[⚙️ Adjust Settings]
+    C --> D[▶️ Generate Audio]
+    D --> E[👂 Preview & Refine]
+    E --> F[💾 Save to Project]
+    
+    style A fill:#a855f7
+    style F fill:#22c55e`
+    }
+  ],
+  spark: [
+    {
+      id: 'content-creation-flow',
+      title: 'Create Content',
+      diagram: `graph TD
+    A[💡 Have an Idea] --> B{What to Create?}
+    B --> C[📝 Script]
+    B --> D[🎨 Images]
+    B --> E[📊 Multi-Format]
+    C --> F[Choose Template]
+    D --> F
+    E --> F
+    F --> G[✨ AI Generates]
+    G --> H[✏️ Edit & Refine]
+    H --> I[🎬 Send to Production]
+    
+    style A fill:#f97316
+    style I fill:#22c55e`
+    },
+    {
+      id: 'spark-to-vibe',
+      title: 'Script to Voice',
+      diagram: `graph LR
+    A[✨ Generate Script] --> B[📋 Review Content]
+    B --> C[🎙️ Send to Vibe]
+    C --> D[🗣️ Add TTS Voice]
+    D --> E[🎵 Polish Audio]
+    E --> F[🚀 Export!]
+    
+    style A fill:#f97316
+    style F fill:#22c55e`
+    }
+  ],
+  mind: [
+    {
+      id: 'script-editing-flow',
+      title: 'Edit & Enhance Scripts',
+      diagram: `graph TD
+    A[📝 Open Script] --> B[🧠 AI Suggestions]
+    B --> C[✏️ Make Edits]
+    C --> D{Add Audio?}
+    D --> |Yes| E[🎙️ Go to Vibe for TTS]
+    D --> |No| F[💾 Save Script]
+    E --> G[🎵 Generate Voice-Over]
+    F --> H[📤 Export/Share]
+    G --> H
+    
+    style A fill:#6366f1
+    style H fill:#22c55e`
+    },
+    {
+      id: 'ai-model-flow',
+      title: 'Choose AI Model',
+      diagram: `graph LR
+    A[🎯 Define Use Case] --> B[🔍 Compare Models]
+    B --> C[📊 Run Tests]
+    C --> D[📈 Analyze Results]
+    D --> E[✅ Select Best Model]
+    
+    style A fill:#6366f1
+    style E fill:#22c55e`
+    }
+  ],
+  studio: [
+    {
+      id: 'full-workflow',
+      title: 'Complete Production Journey',
+      diagram: `graph TD
+    A[💡 Idea] --> B[✨ Spark: Create Script]
+    B --> C[🧠 Mind: Refine & Optimize]
+    C --> D[🎬 Arc: Plan Production]
+    D --> E[🎥 Vibe: Record & Mix]
+    E --> F[🚀 Publish Everywhere!]
+    
+    subgraph "Genie Studio Suite"
+    B
+    C
+    D
+    E
+    end
+    
+    style A fill:#8b5cf6
+    style F fill:#22c55e`
+    },
+    {
+      id: 'quick-start',
+      title: 'Quick Start Guide',
+      diagram: `graph LR
+    A[🌟 Welcome!] --> B{What's Your Goal?}
+    B --> |Create Content| C[Start with Spark]
+    B --> |Plan Show| D[Start with Arc]
+    B --> |Record Media| E[Start with Vibe]
+    B --> |Edit Scripts| F[Start with Mind]
+    C --> G[🎯 You're Ready!]
+    D --> G
+    E --> G
+    F --> G
+    
+    style A fill:#8b5cf6
+    style G fill:#22c55e`
+    }
+  ],
+  deck: [
+    {
+      id: 'presentation-creation-flow',
+      title: 'Create Presentation',
+      diagram: `graph TD
+    A[📝 Add Content] --> B{Input Type?}
+    B --> |Text/Prompt| C[Enter Description]
+    B --> |Document| D[Upload File]
+    B --> |URL| E[Paste Link]
+    C --> F[⚙️ Configure Style]
+    D --> F
+    E --> F
+    F --> G[🎨 Choose Template]
+    G --> H[🖼️ Set Image Options]
+    H --> I[✨ Generate Slides!]
+    I --> J[📥 Download PPTX]
+    
+    style A fill:#8b5cf6
+    style J fill:#22c55e`
+    },
+    {
+      id: 'multilang-export',
+      title: 'Multi-Language Export',
+      diagram: `graph LR
+    A[📊 Generated Deck] --> B[🌍 Select Languages]
+    B --> C[🔄 AI Translates]
+    C --> D[📦 Download All]
+    
+    style A fill:#8b5cf6
+    style D fill:#22c55e`
+    }
+  ]
+};
+
+// Product-specific context with original taglines and descriptions
+const PRODUCT_CONTEXTS: Record<GenieProduct, { 
+  name: string; 
+  icon: React.ReactNode; 
+  systemContext: string; 
+  color: string;
+  tagline: string;
+  emoji: string;
+  description: string;
+  workflows: Array<{ id: string; title: string; description: string; steps: string[] }>;
+}> = {
+  arc: {
+    name: 'Genie Hub',
+    icon: <Film className="h-4 w-4" />,
+    color: 'from-blue-500 to-cyan-500',
+    tagline: ORIGINAL_TAGLINES.arc,
+    description: PRODUCT_DESCRIPTIONS.arc,
+    emoji: '🎬',
+    systemContext: `You are Ask Genie, a warm, emotionally intelligent, and genuinely caring AI assistant for Genie Hub - the Creative Command Center.
+
+TAGLINE: "${ORIGINAL_TAGLINES.arc}" - This is sacred, never change it!
+DESCRIPTION: ${PRODUCT_DESCRIPTIONS.arc}
+
+PERSONALITY CORE:
+- Be warm, encouraging, and genuinely excited about the user's creative journey
+- Use humor occasionally to keep things light (but not cheesy)
+- Show empathy when users seem confused or frustrated
+- Celebrate every small win with genuine enthusiasm
+- Use emojis naturally (1-3 per response) to add warmth
+
+EMOTIONAL INTELLIGENCE:
+- If user seems stuck or confused, offer a gentle hand: "I'm here to help! Want me to walk you through this step by step? 🤝"
+- If user accomplished something, celebrate: "That's amazing! You just created your first show! 🎉"
+- If user is exploring, encourage: "Love that you're curious! Let me show you what's possible here 🌟"
+
+YOU HELP WITH:
+- Video production and show creation (podcasts, webcasts, webinars, live streams)
+- Script management for broadcasts
+- Show scheduling and episode planning
+- Recording session coordination with Vibe
+- Post-production workflows
+- Team collaboration on productions
+
+CROSS-PRODUCT NAVIGATION:
+- Need a script? → "Let's hop over to Genie Spark - that's where the magic happens! ✨"
+- Need voice-over? → "Genie Vibe can add professional TTS or let you record! 🎙️"
+- Want AI optimization? → "Genie Mind is perfect for that - it's like a brain boost! 🧠"
+
+GUIDED FLOWS: Always offer to show visual flow diagrams when explaining complex processes. Say "Want me to show you a visual flow of how this works? 📊"
+
+TONE: Warm, creative, encouraging, slightly playful, deeply empathetic`,
+    workflows: [
+      { id: 'create-show', title: 'Create Your First Show', description: 'Set up a podcast, video series, webinar, or live stream', steps: ['Choose show type', 'Add show details', 'Set your schedule', 'Invite team members', 'Start creating episodes!'] },
+      { id: 'schedule-production', title: 'Schedule a Production', description: 'Plan and organize your recording sessions', steps: ['Select your show', 'Pick a date/time', 'Configure settings', 'Send invites', 'Get ready to record!'] }
+    ]
+  },
+  vibe: {
+    name: 'Genie Vibe',
+    icon: <Music className="h-4 w-4" />,
+    color: 'from-purple-500 to-pink-500',
+    tagline: ORIGINAL_TAGLINES.vibe,
+    description: PRODUCT_DESCRIPTIONS.vibe,
+    emoji: '🎥',
+    systemContext: `You are Ask Genie, an artistic, expressive, and passionate AI assistant for Genie Vibe - the Recording & Production Studio.
+
+TAGLINE: "${ORIGINAL_TAGLINES.vibe}" - This is sacred, never change it!
+DESCRIPTION: ${PRODUCT_DESCRIPTIONS.vibe}
+
+IMPORTANT: Vibe is for BOTH audio AND video recording! It's a full recording studio, not just audio.
+
+PERSONALITY CORE:
+- Be creative, rhythmic, and passionate about media production
+- Use music and film metaphors naturally
+- Show genuine appreciation for the art of recording
+- Be patient with technical questions
+- Celebrate the creative process, not just the result
+
+EMOTIONAL INTELLIGENCE:
+- If user is nervous about recording: "First recordings can feel weird, but I promise - you've got this! 🎙️ Want some tips to feel more confident?"
+- If user is struggling with audio: "Audio can be finicky, I know! Let's troubleshoot together 💜"
+- If user created something: "Ooh, I love that! The way you [specific compliment] is really creative! 🎵"
+
+YOU HELP WITH:
+- Video recording (camera, screen share, both)
+- Audio recording and voice-overs
+- AI voice generation (TTS)
+- Music selection and integration
+- Audio/video mixing and enhancement
+- Clip creation and editing
+- Timeline management
+- Publishing to platforms
+
+CROSS-PRODUCT NAVIGATION:
+- Need a script to read? → "Head to Spark to create one, or Mind to edit an existing script! 📝"
+- Want to schedule a show? → "Arc is your planning HQ - set up your production there! 🎬"
+- Need AI model help? → "Mind can help you choose the perfect TTS voice! 🧠"
+
+GUIDED FLOWS: Offer visual flow diagrams for recording workflows. Say "Want to see the recording flow visually? It makes it so much clearer! 🎬"
+
+TONE: Creative, expressive, passionate about quality, encouraging, patient with tech stuff`,
+    workflows: [
+      { id: 'record-video', title: 'Record Video', description: 'Capture video with camera, screen, or both', steps: ['Set up your camera/screen', 'Load teleprompter script', 'Check audio levels', 'Record your take', 'Review and clip!'] },
+      { id: 'create-voiceover', title: 'Create AI Voice-Over', description: 'Generate professional voice-overs with AI TTS', steps: ['Write or paste script', 'Select AI voice style', 'Adjust settings', 'Generate audio', 'Fine-tune and export'] }
+    ]
+  },
+  spark: {
+    name: 'Genie Spark',
+    icon: <PenTool className="h-4 w-4" />,
+    color: 'from-orange-500 to-yellow-500',
+    tagline: ORIGINAL_TAGLINES.spark,
+    description: PRODUCT_DESCRIPTIONS.spark,
+    emoji: '✨',
+    systemContext: `You are Ask Genie, an imaginative, inspiring, and creatively energetic AI assistant for Genie Spark - the Content Creation Engine.
+
+TAGLINE: "${ORIGINAL_TAGLINES.spark}" - This is sacred, never change it!
+DESCRIPTION: ${PRODUCT_DESCRIPTIONS.spark}
+
+PERSONALITY CORE:
+- Be bursting with creative energy and enthusiasm
+- Spark ideas constantly - always thinking "what if?"
+- Use creative metaphors and colorful language
+- Encourage experimentation and creative risks
+- Make the creative process feel fun and exciting
+
+EMOTIONAL INTELLIGENCE:
+- If user has writer's block: "Creative blocks happen to everyone! Let's brainstorm together - even silly ideas can lead to gold! 💡"
+- If user is unsure: "There's no wrong answer in creativity! What feels right to you? I'll help you explore 🌈"
+- If user created something: "WOW! The way you approached this is so unique! I love it! ✨"
+
+YOU HELP WITH:
+- Script generation (video scripts, podcast scripts, social content)
+- Content ideation and brainstorming sessions
+- Image generation prompts and visuals
+- Multi-format content pipelines
+- Creative writing assistance
+- Template-based content creation
+- Content repurposing strategies
+
+CROSS-PRODUCT NAVIGATION:
+- Script ready for voice? → "Time to bring it to life! Vibe can add amazing TTS! 🎙️"
+- Want to produce it? → "Arc is ready to turn this into a full production! 🎬"
+- Need AI model comparison? → "Mind can help you pick the perfect AI for this! 🧠"
+
+GUIDED FLOWS: Offer visual content creation flows. Say "Want to see the creative journey laid out? Let me draw you a map! 🗺️"
+
+TONE: Creative, energetic, inspiring, celebrates imagination, playfully enthusiastic`,
+    workflows: [
+      { id: 'generate-script', title: 'Generate a Script', description: 'Create compelling scripts with AI assistance', steps: ['Choose your format', 'Describe your topic', 'Select tone & style', 'Generate draft', 'Refine and polish!'] },
+      { id: 'content-pipeline', title: 'Smart Content Pipeline', description: 'Transform one idea into multiple formats', steps: ['Input your source content', 'Select output formats', 'Configure each format', 'Generate all variations', 'Export and use!'] }
+    ]
+  },
+  mind: {
+    name: 'Genie Mind',
+    icon: <Brain className="h-4 w-4" />,
+    color: 'from-indigo-500 to-purple-500',
+    tagline: ORIGINAL_TAGLINES.mind,
+    description: PRODUCT_DESCRIPTIONS.mind,
+    emoji: '🧠',
+    systemContext: `You are Ask Genie, a knowledgeable, insightful, and thoughtfully helpful AI assistant for Genie Mind - the AI Intelligence Hub.
+
+TAGLINE: "${ORIGINAL_TAGLINES.mind}" - This is sacred, never change it!
+DESCRIPTION: ${PRODUCT_DESCRIPTIONS.mind}
+
+PERSONALITY CORE:
+- Be intelligent but never condescending
+- Explain complex AI concepts in simple, relatable terms
+- Show genuine curiosity about the user's goals
+- Be patient and thorough with explanations
+- Celebrate learning and exploration
+
+EMOTIONAL INTELLIGENCE:
+- If user is confused by AI concepts: "AI can feel like a whole new language! Let me break this down - no jargon, I promise! 📚"
+- If user is exploring: "I love your curiosity! There's so much to discover here 🔍"
+- If user accomplished something: "You're getting the hang of this! That's exactly right! 🧠✨"
+
+YOU HELP WITH:
+- Script editing and enhancement
+- AI model selection and comparison
+- TTS voice selection and configuration
+- Knowledge base management
+- RAG pipeline configuration
+- AI workflow optimization
+- Media library organization
+
+SPECIAL CONTEXT AWARENESS:
+- If in Script Editor → "I see you're working on a script! Want me to suggest improvements or add TTS? ✏️"
+- If viewing scripts → "Looking for something? I can help you find or organize your scripts! 📂"
+- If in media library → "Your media collection is looking great! Want to batch process anything? 🎵"
+
+CROSS-PRODUCT NAVIGATION:
+- Want to generate new content? → "Spark is your creative playground - let's go there! ✨"
+- Need voice-over or music? → "Vibe has all the audio magic you need! 🎙️"
+- Ready to produce? → "Arc will help you schedule and manage production! 🎬"
+
+GUIDED FLOWS: Offer to show AI concept diagrams. Say "Want me to visualize how this AI workflow works? Sometimes seeing it helps! 📊"
+
+TONE: Knowledgeable, patient, encouraging exploration, genuinely helpful, celebrates learning`,
+    workflows: [
+      { id: 'edit-script', title: 'Edit & Enhance Script', description: 'Polish your scripts with AI assistance', steps: ['Open your script', 'Review AI suggestions', 'Make your edits', 'Add TTS voice if needed', 'Export or send to production!'] },
+      { id: 'compare-models', title: 'Compare AI Models', description: 'Find the best AI model for your specific needs', steps: ['Define your use case', 'Select models to compare', 'Run test prompts', 'Analyze results', 'Pick your winner!'] }
+    ]
+  },
+  studio: {
+    name: 'Genie Suite',
+    icon: <Sparkles className="h-4 w-4" />,
+    color: 'from-violet-500 to-fuchsia-500',
+    tagline: ORIGINAL_TAGLINES.studio,
+    description: PRODUCT_DESCRIPTIONS.studio,
+    emoji: '🌟',
+    systemContext: `You are Ask Genie, the master guide for Genie Suite - the complete AI-powered media production suite.
+
+TAGLINE: "${ORIGINAL_TAGLINES.studio}" - This is sacred, never change it!
+DESCRIPTION: ${PRODUCT_DESCRIPTIONS.studio}
+
+PERSONALITY CORE:
+- Be warm, welcoming, and knowledgeable about the entire ecosystem
+- Help users understand how all products work together
+- Be the friendly tour guide who knows every corner
+- Celebrate the power of the integrated suite
+- Make new users feel at home
+
+THE GENIE FAMILY:
+🎬 **Arc** - "${ORIGINAL_TAGLINES.arc}" - Production planning, shows, scheduling, Production Hub
+🎥 **Vibe** - "${ORIGINAL_TAGLINES.vibe}" - Audio & video recording, TTS, mixing, publishing
+✨ **Spark** - "${ORIGINAL_TAGLINES.spark}" - Content creation, scripts, images, ideas
+🧠 **Mind** - "${ORIGINAL_TAGLINES.mind}" - AI intelligence, script editing, model management
+
+ROUTING INTELLIGENCE:
+- "I want to start a podcast" → "Perfect! Start in Arc to create your show, use Spark for scripts, record in Vibe!"
+- "I need a video script" → "Let's go to Spark! That's where ideas become words ✨"
+- "How do I add AI voice?" → "Vibe is your destination! TTS magic happens there 🎙️"
+- "Which AI model should I use?" → "Mind can help you compare and choose! 🧠"
+
+EMOTIONAL INTELLIGENCE:
+- If user is new: "Welcome to the family! 🌟 Don't worry, I'll guide you every step of the way!"
+- If user seems overwhelmed: "It's a lot to take in, I know! Let's start simple - what's ONE thing you want to create?"
+- If user is exploring: "I love your curiosity! You're going to discover so many cool things here!"
+
+GUIDED FLOWS: Offer complete ecosystem diagrams. Say "Want to see how all the Genie products work together? It's actually beautiful! 🗺️"
+
+TONE: Welcoming, knowledgeable, encouraging, warm, the ultimate helpful friend`,
+    workflows: [
+      { id: 'get-started', title: 'Getting Started', description: 'Learn what each Genie product can do for you', steps: ['Explore Arc for production', 'Discover Spark for creation', 'Try Vibe for recording', 'Use Mind for AI power'] },
+      { id: 'full-production', title: 'Full Production Workflow', description: 'Create content from idea to finished product', steps: ['Ideate in Spark', 'Plan in Arc', 'Record in Vibe', 'Optimize in Mind', 'Publish everywhere!'] }
+    ]
+  },
+  deck: {
+    name: 'Genie Deck',
+    icon: <PenTool className="h-4 w-4" />,
+    color: 'from-purple-500 to-violet-500',
+    tagline: 'Ideas to Impact',
+    description: 'Transform ideas into stunning AI-powered presentations with smart visual design and multi-language support.',
+    emoji: '📊',
+    systemContext: `You are Ask Genie, a creative and articulate AI assistant for Genie Deck - the AI Presentation Generator.
+
+TAGLINE: "Ideas to Impact" - This is sacred, never change it!
+DESCRIPTION: Transform ideas into stunning AI-powered presentations with smart visual design and multi-language support.
+
+PERSONALITY CORE:
+- Be creative, articulate, and passionate about visual communication
+- Help users craft compelling presentations
+- Suggest design tips and layout improvements
+- Celebrate when presentations come together beautifully
+- Be patient with customization requests
+
+EMOTIONAL INTELLIGENCE:
+- If user is unsure about content: "Great presentations start with clarity! What's the ONE key message you want your audience to remember? 🎯"
+- If user is happy with result: "This is going to make an impact! Your presentation looks fantastic! 🌟"
+- If user needs help: "Don't worry, I'll help you create something memorable! Let's start with your core message 💜"
+
+YOU HELP WITH:
+- Presentation creation from text, documents, or prompts
+- Template and theme selection
+- Brand customization (logos, colors)
+- Multi-language parallel generation
+- Slide layout and design suggestions
+- PPTX export and download
+
+CROSS-PRODUCT NAVIGATION:
+- Need a script first? → "Genie Spark can help you draft content before presenting! ✨"
+- Want to record the presentation? → "Take your deck to Genie Vibe for a video walkthrough! 🎥"
+- Need AI optimization? → "Genie Mind can refine your messaging! 🧠"
+
+GUIDED FLOWS: Offer visual workflow diagrams. Say "Want to see the presentation creation flow? It's simple and elegant! 📊"
+
+TONE: Creative, articulate, encouraging, design-savvy, genuinely helpful`,
+    workflows: [
+      { id: 'create-presentation', title: 'Create Presentation', description: 'Generate slides from your content', steps: ['Add content (text/doc/URL)', 'Choose template & theme', 'Configure image settings', 'Select languages', 'Generate and download!'] },
+      { id: 'brand-customize', title: 'Brand Your Deck', description: 'Add company branding to presentations', steps: ['Upload your logo', 'Set brand colors', 'Choose fonts', 'Preview branding', 'Apply to all slides!'] }
+    ]
+  }
+};
+
+// Dynamic contextual suggestions based on current state
+const getContextualSuggestions = (
+  product: GenieProduct, 
+  currentTab?: string, 
+  sessionData?: Record<string, any>
+): Array<{ label: string; prompt: string; icon: React.ReactNode; isHighlighted?: boolean }> => {
+  const suggestions: Array<{ label: string; prompt: string; icon: React.ReactNode; isHighlighted?: boolean }> = [];
+  
+  // Product-specific base suggestions
+  switch (product) {
+    case 'mind':
+      if (currentTab === 'scripts' || currentTab === 'editor') {
+        suggestions.push(
+          { label: '✏️ Enhance this script', prompt: 'Help me improve my script - make it more engaging and polished!', icon: <Wand2 className="h-3 w-3" />, isHighlighted: true },
+          { label: '🎙️ Add TTS/Voice', prompt: 'I want to add an AI voice to this script. Walk me through it!', icon: <Music className="h-3 w-3" /> },
+          { label: '✨ Create in Spark', prompt: 'Can I use Genie Spark to generate more content like this?', icon: <Zap className="h-3 w-3" /> }
+        );
+      } else if (currentTab === 'media') {
+        suggestions.push(
+          { label: '📚 Organize library', prompt: 'Help me organize my media library effectively!', icon: <BookOpen className="h-3 w-3" /> },
+          { label: '🔄 Batch process', prompt: 'Can I batch process multiple audio files at once?', icon: <Zap className="h-3 w-3" /> }
+        );
+      } else {
+        suggestions.push(
+          { label: '🧠 Compare AI models', prompt: 'Help me understand which AI model is best for my needs!', icon: <Brain className="h-3 w-3" /> },
+          { label: '📝 Edit a script', prompt: 'Guide me through editing a script here in Mind', icon: <PenTool className="h-3 w-3" /> },
+          { label: '📊 Show me the flow', prompt: 'Can you show me a visual diagram of how Mind works?', icon: <Map className="h-3 w-3" /> }
+        );
+      }
+      break;
+
+    case 'spark':
+      if (sessionData?.hasGeneratedContent) {
+        suggestions.push(
+          { label: '🎙️ Add voice-over', prompt: 'I created content! Now help me add a voice-over with Vibe!', icon: <Music className="h-3 w-3" />, isHighlighted: true },
+          { label: '🎬 Go to production', prompt: 'Take my script to Arc for full production!', icon: <Film className="h-3 w-3" /> }
+        );
+      }
+      suggestions.push(
+        { label: '✨ Generate script', prompt: 'Help me create an amazing script for my video or podcast!', icon: <PenTool className="h-3 w-3" /> },
+        { label: '💡 Brainstorm ideas', prompt: "I need creative ideas - let's brainstorm together!", icon: <Lightbulb className="h-3 w-3" /> },
+        { label: '📊 Show the flow', prompt: 'Show me a visual of the content creation workflow!', icon: <Map className="h-3 w-3" /> }
+      );
+      break;
+
+    case 'arc':
+      if (sessionData?.showCount === 0) {
+        suggestions.push(
+          { label: '🎬 Create first show', prompt: "I'm new! Help me create my first show step by step!", icon: <Film className="h-3 w-3" />, isHighlighted: true }
+        );
+      } else {
+        suggestions.push(
+          { label: '➕ Add episode', prompt: 'Help me add a new episode to my show!', icon: <Film className="h-3 w-3" /> }
+        );
+      }
+      suggestions.push(
+        { label: '📝 Need a script?', prompt: 'I need to write a script - should I use Spark?', icon: <PenTool className="h-3 w-3" /> },
+        { label: '🎥 Go record!', prompt: 'How do I start recording in Vibe?', icon: <Music className="h-3 w-3" /> },
+        { label: '📊 Show workflow', prompt: 'Show me a visual diagram of the production workflow!', icon: <Map className="h-3 w-3" /> }
+      );
+      break;
+
+    case 'vibe':
+      suggestions.push(
+        { label: '🎥 Start recording', prompt: 'Guide me through recording video or audio!', icon: <Music className="h-3 w-3" />, isHighlighted: true },
+        { label: '🎙️ Create AI voice', prompt: 'Help me create a professional AI voice-over!', icon: <Wand2 className="h-3 w-3" /> },
+        { label: '📝 Need script first?', prompt: "I don't have a script yet - where do I start?", icon: <PenTool className="h-3 w-3" /> },
+        { label: '📊 Show the flow', prompt: 'Show me the recording workflow visually!', icon: <Map className="h-3 w-3" /> }
+      );
+      break;
+
+    case 'deck':
+      // Deck-specific context awareness for presentation creation
+      if (sessionData?.hasGeneratedSlides) {
+        suggestions.push(
+          { label: '📥 Export my deck', prompt: 'Help me export my presentation as PPTX!', icon: <Film className="h-3 w-3" />, isHighlighted: true },
+          { label: '🎨 Change theme', prompt: 'I want to change the visual theme of my deck!', icon: <Wand2 className="h-3 w-3" /> }
+        );
+      } else {
+        suggestions.push(
+          { label: '📊 Create presentation', prompt: 'Help me create a stunning presentation from scratch!', icon: <Film className="h-3 w-3" />, isHighlighted: true }
+        );
+      }
+      suggestions.push(
+        { label: '🎨 Add branding', prompt: 'How do I add my company logo and colors to the deck?', icon: <Wand2 className="h-3 w-3" /> },
+        { label: '🌍 Multi-language', prompt: 'Can I generate this presentation in multiple languages at once?', icon: <Sparkles className="h-3 w-3" /> },
+        { label: '✨ Use Spark first', prompt: "I need to write the content first - should I use Genie Spark?", icon: <PenTool className="h-3 w-3" /> },
+        { label: '📊 Show deck flow', prompt: 'Show me a visual diagram of the deck creation workflow!', icon: <Map className="h-3 w-3" /> }
+      );
+      break;
+
+    default: // studio
+      suggestions.push(
+        { label: '🚀 Getting started', prompt: "I'm new to Genie Suite! Give me a tour!", icon: <Sparkles className="h-3 w-3" />, isHighlighted: true },
+        { label: '🎬 Full workflow', prompt: 'Show me the complete workflow from idea to published content!', icon: <Film className="h-3 w-3" /> },
+        { label: '🎙️ Start a podcast', prompt: 'Walk me through starting a podcast from scratch!', icon: <Music className="h-3 w-3" /> },
+        { label: '📊 See the ecosystem', prompt: 'Show me how all Genie products connect together!', icon: <Map className="h-3 w-3" /> }
+      );
+  }
+
+  return suggestions.slice(0, 4); // Limit to 4 for non-overwhelming UX
+};
+
+// Render mermaid diagram as simple text representation (real mermaid would need a library)
+const MermaidDiagramDisplay: React.FC<{ diagram: { id: string; title: string; diagram: string } }> = ({ diagram }) => {
+  return (
+    <div className="bg-muted/50 rounded-lg p-3 border mt-2">
+      <div className="flex items-center gap-2 mb-2">
+        <Map className="h-4 w-4 text-primary" />
+        <span className="font-medium text-sm">{diagram.title}</span>
+      </div>
+      <div className="bg-background rounded-md p-3 text-xs font-mono overflow-x-auto">
+        <pre className="whitespace-pre-wrap text-muted-foreground">{diagram.diagram}</pre>
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-2 italic">
+        💡 Tip: This shows the recommended flow. Follow the arrows!
+      </p>
+    </div>
+  );
+};
+
+// Fun animated thinking indicator with progress and messages
+const THINKING_MESSAGES = [
+  "Thinking of the best way to help... ✨",
+  "Consulting my magical knowledge... 🧞",
+  "Brewing up some ideas... ☕",
+  "Almost there, working my magic... 🪄",
+  "Digging deep for the perfect answer... 💎",
+  "Genie is thinking hard! 🤔✨"
+];
+
+const GenieThinkingIndicator: React.FC<{ productColor: string }> = ({ productColor }) => {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [showLongWait, setShowLongWait] = useState(false);
+  
+  useEffect(() => {
+    // Rotate through messages every 2 seconds
+    const messageInterval = setInterval(() => {
+      setMessageIndex(prev => (prev + 1) % THINKING_MESSAGES.length);
+    }, 2000);
+    
+    // Animate progress bar
+    const progressInterval = setInterval(() => {
+      setProgress(prev => Math.min(prev + 2, 90)); // Max 90% until complete
+    }, 100);
+    
+    // Show "taking longer than expected" after 5 seconds
+    const longWaitTimer = setTimeout(() => {
+      setShowLongWait(true);
+    }, 5000);
+    
+    return () => {
+      clearInterval(messageInterval);
+      clearInterval(progressInterval);
+      clearTimeout(longWaitTimer);
+    };
+  }, []);
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex gap-3"
+      role="status"
+      aria-live="polite"
+      aria-label="Genie is thinking"
+    >
+      <div className={cn(
+        "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0",
+        `bg-gradient-to-r ${productColor}`
+      )}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        >
+          <Sparkles className="h-4 w-4 text-white" />
+        </motion.div>
+      </div>
+      <div className="bg-muted rounded-2xl rounded-tl-md px-4 py-3 flex-1 max-w-[280px]">
+        <div className="flex items-center gap-2 mb-2">
+          <motion.div 
+            className="flex gap-1"
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <span className="h-2 w-2 rounded-full bg-purple-500" />
+            <span className="h-2 w-2 rounded-full bg-violet-500" />
+            <span className="h-2 w-2 rounded-full bg-fuchsia-500" />
+          </motion.div>
+          <span className="text-sm text-muted-foreground">
+            {THINKING_MESSAGES[messageIndex]}
+          </span>
+        </div>
+        {/* Progress bar */}
+        <div className="h-1.5 bg-muted-foreground/20 rounded-full overflow-hidden">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-purple-500 to-fuchsia-500 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.1 }}
+          />
+        </div>
+        {/* Show message if taking too long */}
+        <AnimatePresence>
+          {showLongWait && (
+            <motion.p
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="text-[10px] text-amber-600 dark:text-amber-400 mt-2"
+            >
+              Still working... complex questions take a bit longer! 🙏
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+};
+
+export const AskGenie: React.FC<AskGenieProps> = ({
+  product = 'studio',
+  currentTab,
+  sessionData,
+  subscriptionTier = 'free',
+  isOpen: externalIsOpen,
+  onClose,
+  position = 'floating',
+  className
+}) => {
+  const [isOpen, setIsOpen] = useState(externalIsOpen ?? false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [isAutoMinimized, setIsAutoMinimized] = useState(false); // Smart auto-minimize when blocking buttons
+  const userOpenedExplicitly = useRef(false); // Track if user explicitly opened to skip auto-minimize
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+  const [hasOfferedHelp, setHasOfferedHelp] = useState(false);
+  const [showDiagram, setShowDiagram] = useState<{ id: string; title: string; diagram: string } | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const lastScrollY = useRef(0);
+  
+  // Draggable position state - persists corner preference
+  type Corner = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  const [corner, setCorner] = useState<Corner>('bottom-right');
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<HTMLDivElement>(null);
+  
+  // Get position classes based on corner
+  const getCornerClasses = (isPanel = false) => {
+    const offset = isPanel ? '20' : '6';
+    switch (corner) {
+      case 'bottom-right': return `bottom-${offset} right-6`;
+      case 'bottom-left': return `bottom-${offset} left-6`;
+      case 'top-right': return `top-20 right-6`;
+      case 'top-left': return `top-20 left-6`;
+      default: return `bottom-${offset} right-6`;
+    }
+  };
+  
+  // Smart scroll detection: auto-minimize when user scrolls to bottom action areas (only for bottom corners)
+  useEffect(() => {
+    if (!isOpen || position !== 'floating' || !corner.startsWith('bottom')) return;
+    
+    const handleScroll = () => {
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrolledToBottom = (window.scrollY + windowHeight) >= (documentHeight - 150);
+      
+      // Detect action buttons near bottom of viewport using valid selectors
+      const actionButtons = document.querySelectorAll(
+        'button[type="submit"], ' +
+        'button[data-action-button], ' +
+        '[data-action-button], ' +
+        'button.action-button, ' +
+        '.action-buttons button, ' +
+        'footer button, ' +
+        '.sticky button, ' +
+        '.fixed button'
+      );
+      
+      let hasVisibleActionButton = false;
+      
+      // Also check buttons by text content manually
+      document.querySelectorAll('button').forEach((btn) => {
+        const text = btn.textContent?.toLowerCase() || '';
+        const isActionButton = ['save', 'cancel', 'generate', 'publish', 'submit', 'create', 'send'].some(
+          keyword => text.includes(keyword)
+        );
+        if (isActionButton) {
+          const rect = btn.getBoundingClientRect();
+          // Check if button is in the bottom 200px of viewport
+          if (rect.bottom > windowHeight - 200 && rect.top < windowHeight && rect.width > 0) {
+            hasVisibleActionButton = true;
+          }
+        }
+      });
+      
+      actionButtons.forEach((btn) => {
+        const rect = btn.getBoundingClientRect();
+        if (rect.bottom > windowHeight - 200 && rect.top < windowHeight && rect.width > 0) {
+          hasVisibleActionButton = true;
+        }
+      });
+      
+      // Auto-minimize when action buttons visible, restore when they're not
+      // BUT NEVER auto-minimize when:
+      // 1. The chat is already open (isOpen = true)
+      // 2. User explicitly opened it recently (userOpenedExplicitly.current = true)
+      // 3. Already minimized by user (isMinimized = true)
+      if (hasVisibleActionButton || scrolledToBottom) {
+        // Only auto-minimize the TRIGGER BUTTON, never the open chat panel
+        if (!isAutoMinimized && !isMinimized && !isOpen && !userOpenedExplicitly.current) {
+          setIsAutoMinimized(true);
+        }
+      } else {
+        if (isAutoMinimized && !isOpen) {
+          setIsAutoMinimized(false);
+        }
+        // Only clear the explicit open flag when conditions are safe AND chat is closed
+        if (!isOpen) {
+          userOpenedExplicitly.current = false;
+        }
+      }
+      
+      lastScrollY.current = window.scrollY;
+    };
+    
+    // Use passive listener for better scroll performance
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+    
+    // Check periodically for dynamic button visibility
+    const intervalCheck = setInterval(handleScroll, 1000);
+    
+    // Initial check
+    handleScroll();
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+      clearInterval(intervalCheck);
+    };
+  }, [isOpen, position, isMinimized, isAutoMinimized, corner]);
+  
+  const { generateResponse } = useUniversalAI();
+  const labelStudioService = useLabelStudioBackground();
+  const productContext = PRODUCT_CONTEXTS[product];
+  
+  // Voice integration for bidirectional conversation
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const [hasIntroducedVoice, setHasIntroducedVoice] = useState(false);
+  
+  const voice = useAskGenieVoice({
+    autoDetectLanguage: true,
+    preferredVoiceGender: 'female',
+    onTranscript: (text) => {
+      if (text.trim()) {
+        setInput(text);
+        // Auto-send after voice input
+        setTimeout(() => handleSendMessage(text), 300);
+      }
+    },
+    onSpeakingEnd: () => {
+      // Could trigger follow-up actions
+    }
+  });
+  
+  // Auto-detect language from IP/country on mount
+  useEffect(() => {
+    detectCountryFromIP().then(result => {
+      if (result?.language) {
+        voice.setLanguage(result.language);
+        console.log('[AskGenie] Auto-detected language from IP:', result.country, '->', result.language);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
+  // State for inline hints from Label Studio
+  const [inlineHints, setInlineHints] = useState<Array<{ id: string; type: string; message: string; confidence: number; dismissable: boolean }>>([]); 
+  
+  // Get Ralph Wiggum context to report when Ask Genie is open
+  // Only destructure what we need to avoid re-render cycles
+  const ralphContext = useRalphWiggumGlobal();
+  const isRalphEnabled = ralphContext.isEnabled;
+  
+  // Report open/close state to Ralph Wiggum for proper tracking
+  // Use a ref to avoid re-render cycles with setActiveOverlay
+  useEffect(() => {
+    if (!isRalphEnabled) return;
+    
+    const overlayId = isOpen ? `ask-genie:${product}` : null;
+    ralphContext.setActiveOverlay(overlayId);
+    
+    return () => {
+      ralphContext.setActiveOverlay(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, product]); // Only depend on isOpen and product, not the context functions
+  
+  // Memoize sessionData to prevent unnecessary recalculations
+  const sessionDataKey = useMemo(() => JSON.stringify(sessionData || {}), [sessionData]);
+  
+  // Dynamic suggestions based on context - use sessionDataKey for stable deps
+  const contextualSuggestions = useMemo(() => 
+    getContextualSuggestions(product, currentTab, sessionData), 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [product, currentTab, sessionDataKey]
+  );
+
+  // Random personality phrases
+  const getRandomPhrase = (type: keyof typeof PERSONALITY) => {
+    const phrases = PERSONALITY[type];
+    return phrases[Math.floor(Math.random() * phrases.length)];
+  };
+
+  // Proactive help detection - check if user seems stuck
+  // Use refs to avoid unnecessary re-renders
+  const hasOfferedHelpRef = useRef(hasOfferedHelp);
+  hasOfferedHelpRef.current = hasOfferedHelp;
+  
+  const messagesLengthRef = useRef(messages.length);
+  messagesLengthRef.current = messages.length;
+
+  useEffect(() => {
+    if (!isOpen || hasOfferedHelpRef.current) return;
+
+    const checkInterval = setInterval(() => {
+      const timeSinceActivity = Date.now() - lastActivityTime;
+      const stuckThreshold = 45000; // 45 seconds of inactivity
+      
+      if (timeSinceActivity > stuckThreshold && messagesLengthRef.current === 0) {
+        // User might be stuck - offer help proactively
+        const helpMessage: Message = {
+          id: `help-${Date.now()}`,
+          role: 'assistant',
+          content: getRandomPhrase('stuckDetection'),
+          timestamp: new Date(),
+          product,
+          emotionalTone: 'empathetic'
+        };
+        setMessages(prev => [...prev, helpMessage]);
+        setShowWelcome(false);
+        setHasOfferedHelp(true);
+      }
+    }, 15000); // Check every 15 seconds
+
+    return () => clearInterval(checkInterval);
+  }, [isOpen, lastActivityTime, product]); // Removed hasOfferedHelp and messages.length from deps
+
+  // Get inline hints from Label Studio background service (sync - cached patterns)
+  // Only run once when popup opens, not on every re-render
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const productKey = product === 'studio' || product === 'deck' ? 'mind' : product;
+    const hints = labelStudioService.getHints(productKey as 'mind' | 'spark' | 'vibe' | 'arc' | 'hub', { currentTab, subscriptionTier });
+    if (hints && hints.length > 0) {
+      setInlineHints(hints);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, product, currentTab]);
+
+  // Track activity - only update when chat is opened, not on every input change
+  const isOpenRef = useRef(isOpen);
+  useEffect(() => {
+    // Only update lastActivityTime when isOpen changes from false to true
+    if (isOpen && !isOpenRef.current) {
+      setLastActivityTime(Date.now());
+    }
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  // Sync with external isOpen prop
+  useEffect(() => {
+    if (externalIsOpen !== undefined) {
+      setIsOpen(externalIsOpen);
+    }
+  }, [externalIsOpen]);
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen && !isMinimized && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen, isMinimized]);
+
+  // Check if user is asking for a flow/diagram
+  const shouldShowDiagram = (text: string): { id: string; title: string; diagram: string } | null => {
+    const lowerText = text.toLowerCase();
+    const flowKeywords = ['show me', 'diagram', 'flow', 'workflow', 'how does', 'visual', 'steps', 'process', 'guide'];
+    
+    if (flowKeywords.some(keyword => lowerText.includes(keyword))) {
+      const diagrams = WORKFLOW_DIAGRAMS[product];
+      if (diagrams && diagrams.length > 0) {
+        // Return first diagram or match based on context
+        if (lowerText.includes('record') || lowerText.includes('video') || lowerText.includes('audio')) {
+          return diagrams.find(d => d.id.includes('record')) || diagrams[0];
+        }
+        if (lowerText.includes('script') || lowerText.includes('create')) {
+          return diagrams.find(d => d.id.includes('script') || d.id.includes('create')) || diagrams[0];
+        }
+        return diagrams[0];
+      }
+    }
+    return null;
+  };
+
+  const handleSendMessage = useCallback(async (messageText?: string) => {
+    const text = messageText || input.trim();
+    if (!text || isLoading) return;
+
+    setShowWelcome(false);
+    setLastActivityTime(Date.now());
+
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: text,
+      timestamp: new Date(),
+      product
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    // Check if we should show a diagram
+    const diagram = shouldShowDiagram(text);
+
+    try {
+      // Build context-aware, personality-rich prompt with regional language support
+      const userLanguage = voice.userLanguage || 'en';
+      const isTechnicalQuery = regionalResponseService.isTechnicalContent(text);
+      
+      const basePrompt = `
+${productContext.systemContext}
+
+IMPORTANT RESPONSE GUIDELINES:
+- Keep responses warm and conversational (3-5 sentences for simple questions)
+- Use emojis naturally (2-3 per response) to add personality
+- If explaining a process, offer to show a visual flow diagram
+- If suggesting another Genie product, explain WHY and HOW it helps
+- Celebrate user progress with genuine enthusiasm
+- Be empathetic if they seem confused, frustrated, or stuck
+- Add a touch of humor when appropriate (but not forced)
+- End with a question or offer to help further
+
+CURRENT CONTEXT:
+- Product: ${productContext.name} ("${productContext.tagline}")
+- Current Tab: ${currentTab || 'main view'}
+- Session Info: ${sessionData ? JSON.stringify(sessionData).slice(0, 300) : 'New session'}
+- Subscription: ${subscriptionTier}
+
+${diagram ? 'NOTE: User is asking about a workflow. Explain it AND offer to show the visual diagram.' : ''}
+
+USER MESSAGE: ${text}
+      `.trim();
+
+      // Apply regional language localization (regional for usage, English for technical)
+      const contextPrompt = regionalResponseService.buildLocalizedSystemPrompt(
+        basePrompt,
+        userLanguage,
+        text,
+        isTechnicalQuery
+      );
+
+      const response = await generateResponse({
+        prompt: contextPrompt,
+        provider: 'gemini'
+      });
+
+      let responseContent = response?.content || getRandomPhrase('empathy') + " I couldn't quite process that. Want to try asking differently? I'm here! 💜";
+      
+      // Add diagram offer if relevant
+      if (diagram) {
+        responseContent += "\n\n📊 **I've got a visual flow to show you!** Check it out below - it makes things so much clearer!";
+      }
+
+      const assistantMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: responseContent,
+        timestamp: new Date(),
+        product,
+        emotionalTone: 'helpful',
+        showMermaid: !!diagram,
+        mermaidDiagram: diagram?.diagram
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      if (diagram) {
+        setShowDiagram(diagram);
+      }
+      
+      // Auto-speak response if enabled
+      if (autoSpeak && responseContent) {
+        // Strip markdown and emojis for cleaner TTS
+        const cleanText = responseContent
+          .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove bold
+          .replace(/\*([^*]+)\*/g, '$1')       // Remove italic
+          .replace(/📊|📝|🎬|🎤|✨|💜|🔊|🎙️|💪|🚀|🌟|🎉|🤔|👋|🤝|💫|🎨|⭐|🔥|🏆|🎸|🌈|💙|😊|📈|🦸‍♂️|🌐|☕|🪄|💎|🙏/g, '')  // Remove emojis
+          .slice(0, 500);  // Limit length for TTS
+        voice.speak(cleanText, voice.userLanguage);
+      }
+      
+      // Record training event for ML improvement (invisible to user)
+      labelStudioService.recordEvent({
+        eventType: 'script_enhancement_accepted',
+        context: {
+          product: (product === 'studio' || product === 'deck') ? 'mind' : product as 'mind' | 'spark' | 'vibe' | 'arc' | 'hub',
+          contentType: 'conversation',
+          originalValue: text,
+          selectedValue: responseContent.slice(0, 200),
+          userAction: 'accept'
+        }
+      });
+    } catch (error) {
+      console.error('Ask Genie error:', error);
+      toast.error('Oops! Something went wrong. Let me try again...');
+      
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: `${getRandomPhrase('empathy')} I hit a small bump there! 🤔 Want to try asking again? I promise I'm still here for you! 💪`,
+        timestamp: new Date(),
+        product,
+        emotionalTone: 'empathetic'
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [input, isLoading, product, productContext, currentTab, sessionData, subscriptionTier, generateResponse, labelStudioService, autoSpeak, voice]);
+
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    onClose?.();
+  }, [onClose]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  }, [handleSendMessage]);
+
+  // Handle drag end to snap to nearest corner
+  const handleDragEnd = useCallback((_: any, info: { point: { x: number; y: number } }) => {
+    setIsDragging(false);
+    
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Determine which quadrant based on drag end position
+    const isRight = info.point.x > viewportWidth / 2;
+    const isBottom = info.point.y > viewportHeight / 2;
+    
+    const newCorner: Corner = 
+      isBottom && isRight ? 'bottom-right' :
+      isBottom && !isRight ? 'bottom-left' :
+      !isBottom && isRight ? 'top-right' : 'top-left';
+    
+    setCorner(newCorner);
+    
+    // Persist preference
+    try {
+      localStorage.setItem('askgenie-corner', newCorner);
+    } catch {}
+  }, []);
+  
+  // Load saved corner preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('askgenie-corner') as Corner | null;
+      if (saved && ['bottom-right', 'bottom-left', 'top-right', 'top-left'].includes(saved)) {
+        setCorner(saved);
+      }
+    } catch {}
+  }, []);
+
+  // Track if we're actually dragging (moved more than threshold)
+  const hasDragged = useRef(false);
+  const isDragSession = useRef(false); // true from pointerdown until we decide click vs drag
+  const DRAG_THRESHOLD = 5; // pixels - if moved less than this, it's a click
+  
+  const handleDragStart = useCallback(() => {
+    // Reset drag flag at start
+    hasDragged.current = false;
+    isDragSession.current = true;
+    setIsDragging(true);
+  }, []);
+  
+  const handleDrag = useCallback((_: any, info: { offset: { x: number; y: number } }) => {
+    // Mark as dragged if we moved more than threshold
+    if (Math.abs(info.offset.x) > DRAG_THRESHOLD || Math.abs(info.offset.y) > DRAG_THRESHOLD) {
+      hasDragged.current = true;
+    }
+  }, []);
+  
+  const handleDragEndWrapper = useCallback((event: any, info: { point: { x: number; y: number } }) => {
+    setIsDragging(false);
+    // Only handle corner snapping if we actually dragged
+    if (hasDragged.current) {
+      handleDragEnd(event, info);
+    }
+    // Mark drag session as ended so click can be processed
+    isDragSession.current = false;
+  }, [handleDragEnd]);
+  
+  // Handle click/tap to open the panel
+  const handleTriggerClick = useCallback(() => {
+    console.log('[AskGenie] Trigger clicked, hasDragged:', hasDragged.current);
+    // If we were dragging (moved more than threshold), don't open
+    if (hasDragged.current) {
+      console.log('[AskGenie] Click ignored - was dragging');
+      // Reset for next interaction
+      hasDragged.current = false;
+      return;
+    }
+    // This is a genuine click - open the panel
+    console.log('[AskGenie] Opening panel...');
+    // Mark as explicitly opened to prevent auto-minimize from triggering immediately
+    userOpenedExplicitly.current = true;
+    setIsAutoMinimized(false);
+    setIsOpen(true);
+    
+    // Clear the explicit flag after a short delay to allow normal behavior later
+    setTimeout(() => {
+      userOpenedExplicitly.current = false;
+    }, 2000);
+    
+    // Reset drag state
+    hasDragged.current = false;
+  }, []);
+
+  // Floating trigger button - DRAGGABLE to any corner
+  const TriggerButton = () => {
+    // Compact mode when auto-minimized (show just a small icon)
+    if (isAutoMinimized) {
+      return (
+        <motion.div
+          drag
+          dragMomentum={false}
+          dragElastic={0.1}
+          onDragStart={handleDragStart}
+          onDrag={handleDrag}
+          onDragEnd={handleDragEndWrapper}
+          whileDrag={{ scale: 1.1, zIndex: 9999 }}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 0.85 }}
+          whileHover={{ scale: 1.05, opacity: 1 }}
+          className={cn(
+            "fixed z-50",
+            corner === 'bottom-right' && "bottom-6 right-6",
+            corner === 'bottom-left' && "bottom-6 left-6",
+            corner === 'top-right' && "top-20 right-6",
+            corner === 'top-left' && "top-20 left-6"
+          )}
+          style={{ touchAction: 'none' }}
+        >
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTriggerClick();
+            }}
+            className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-purple-100 to-violet-100 hover:from-purple-200 hover:to-violet-200 border-2 border-purple-200 flex items-center justify-center cursor-pointer"
+            title="Ask Genie - Click to expand, drag to reposition"
+          >
+            <img 
+              src={ASK_GENIE.logo}
+              alt={ASK_GENIE.name}
+              className="h-8 w-8 object-contain pointer-events-none"
+            />
+          </div>
+        </motion.div>
+      );
+    }
+    
+    return (
+      <motion.div
+        ref={dragRef}
+        drag
+        dragMomentum={false}
+        dragElastic={0.1}
+        onDragStart={handleDragStart}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEndWrapper}
+        whileDrag={{ scale: 1.05, zIndex: 9999 }}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        whileHover={{ scale: 1.02 }}
+        className={cn(
+          "fixed z-50",
+          corner === 'bottom-right' && "bottom-6 right-6",
+          corner === 'bottom-left' && "bottom-6 left-6",
+          corner === 'top-right' && "top-20 right-6",
+          corner === 'top-left' && "top-20 left-6"
+        )}
+        style={{ touchAction: 'none' }}
+      >
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            handleTriggerClick();
+          }}
+          className="relative h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-background hover:bg-muted border-2 transition-all duration-300 group cursor-pointer border-purple-200 hover:border-purple-300"
+        >
+          <div className="flex items-center gap-3">
+            {/* Always show Ask Genie logo */}
+            <div className="h-12 w-12 rounded-xl flex items-center justify-center shadow-inner overflow-hidden bg-gradient-to-br from-purple-100 to-violet-100">
+              <img 
+                src={ASK_GENIE.logo}
+                alt={ASK_GENIE.name}
+                className="h-10 w-10 object-contain pointer-events-none"
+              />
+            </div>
+            {/* Always show "Ask Genie" - never product-specific */}
+            <div className="text-left pr-1">
+              <div className="font-bold text-base bg-clip-text text-transparent flex items-center gap-1.5 bg-gradient-to-r from-violet-600 to-fuchsia-600">
+                {ASK_GENIE.name} {ASK_GENIE.emoji}
+              </div>
+              <div className="text-xs text-muted-foreground italic">
+                {ASK_GENIE.tagline}
+              </div>
+            </div>
+          </div>
+          {/* Subtle pulse indicator */}
+          <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 animate-pulse shadow-lg" />
+        </div>
+        {/* Drag hint on hover */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isDragging ? 1 : 0 }}
+          className="absolute -top-8 left-1/2 -translate-x-1/2 bg-background/90 text-xs px-2 py-1 rounded shadow whitespace-nowrap border"
+        >
+          Drag to reposition
+        </motion.div>
+      </motion.div>
+    );
+  };
+
+  // Main chat interface - with smart positioning based on corner
+  // DRAGGABLE panel that floats as user scrolls
+  const ChatInterface = () => {
+    // Show compact collapsed version when auto-minimized
+    const effectiveMinimized = isMinimized || isAutoMinimized;
+    
+    // Calculate initial position based on corner for floating mode
+    const getInitialPosition = () => {
+      if (position !== 'floating' || typeof window === 'undefined') return {};
+      
+      const padding = 24; // 6 * 4 = 24px
+      const panelWidth = 380;
+      const panelHeight = isAutoMinimized ? 60 : 550;
+      
+      let x = 0;
+      let y = 0;
+      
+      if (corner.includes('right')) {
+        x = window.innerWidth - panelWidth - padding;
+      } else {
+        x = padding;
+      }
+      
+      if (corner.startsWith('bottom')) {
+        y = window.innerHeight - panelHeight - padding;
+      } else {
+        y = 80; // top-20 = 80px
+      }
+      
+      return { x, y };
+    };
+    
+    const initialPos = getInitialPosition();
+    
+    return (
+      <motion.div
+        ref={dragRef}
+        // Enable dragging for floating mode - entire panel is draggable
+        drag={position === 'floating'}
+        dragMomentum={false}
+        dragElastic={0.05}
+        dragConstraints={{
+          top: 0,
+          left: 0,
+          right: typeof window !== 'undefined' ? window.innerWidth - 380 : 800,
+          bottom: typeof window !== 'undefined' ? window.innerHeight - 100 : 600
+        }}
+        onDragStart={handleDragStart}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEndWrapper}
+        whileDrag={{ 
+          scale: 1.02, 
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+          cursor: 'grabbing',
+          zIndex: 999999
+        }}
+        initial={position === 'floating' ? { 
+          opacity: 0, 
+          scale: 0.95,
+          ...initialPos
+        } : { opacity: 0, scale: 0.95 }}
+        animate={position === 'floating' ? { 
+          opacity: 1, 
+          scale: 1,
+          ...initialPos
+        } : { opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className={cn(
+          "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden",
+          // Floating mode - fixed dimensions with drag cursor (no position classes - handled by framer-motion)
+          position === 'floating' && cn(
+            "fixed sm:w-[380px] w-[320px] pointer-events-auto cursor-grab active:cursor-grabbing select-none",
+            // Use fixed height instead of max-height for proper containment
+            isAutoMinimized ? "h-[60px]" : "h-[500px] sm:h-[550px]"
+          ),
+          position === 'sidebar' && "h-full w-full",
+          position === 'inline' && "w-full h-[500px]",
+          className
+        )}
+        style={{ 
+          zIndex: 99999, 
+          touchAction: position === 'floating' ? 'none' : undefined,
+          userSelect: position === 'floating' ? 'none' : undefined
+        }}
+        role="dialog"
+        aria-labelledby="ask-genie-title"
+        aria-describedby="ask-genie-description"
+      >
+      {/* Header - Compact when auto-minimized, full when normal */}
+      {/* Drag handle for floating mode */}
+      <div className={cn(
+        "flex flex-col border-b overflow-hidden",
+        position === 'floating' ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+        `bg-gradient-to-br ${ASK_GENIE.color}`
+      )} onClick={() => isAutoMinimized && setIsAutoMinimized(false)}>
+        {/* Compact header when auto-minimized */}
+        {isAutoMinimized ? (
+          <div className="px-3 py-2 flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center overflow-hidden shadow flex-shrink-0">
+              <img src={ASK_GENIE.logo} alt={ASK_GENIE.name} className="h-6 w-6 object-contain" />
+            </div>
+            <span className="text-sm font-semibold text-white flex-1">{ASK_GENIE.name}</span>
+            <span className="text-xs text-white/70">Click to expand</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-white hover:bg-white/20"
+              onClick={(e) => { e.stopPropagation(); handleClose(); }}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        ) : (
+          /* Full header when not auto-minimized */
+          <div className="px-3 sm:px-5 py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
+            {/* Drag handle indicator for floating mode */}
+            {position === 'floating' && (
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 opacity-40 hover:opacity-70 transition-opacity">
+                <GripVertical className="h-3 w-3 text-white rotate-90" />
+              </div>
+            )}
+            {/* Always show Ask Genie Logo - smaller on mobile */}
+            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/50 flex-shrink-0">
+              <img 
+                src={ASK_GENIE.logo} 
+                alt={ASK_GENIE.name} 
+                className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
+              />
+            </div>
+            {/* Always show "Ask Genie" name and tagline */}
+            <div className="flex-1 min-w-0">
+              <h2 id="ask-genie-title" className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                {ASK_GENIE.name} {ASK_GENIE.emoji}
+              </h2>
+              <p id="ask-genie-description" className="text-[10px] sm:text-xs text-white/90 italic font-medium mt-0.5 truncate">
+                "{ASK_GENIE.tagline}"
+              </p>
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <Badge variant="outline" className="text-[8px] sm:text-[9px] bg-white/20 text-white border-white/30 px-1.5 py-0 h-4">
+                  🧞 AI
+                </Badge>
+                {product !== 'studio' && (
+                  <Badge variant="outline" className="text-[8px] sm:text-[9px] bg-white/10 text-white/90 border-white/20 px-1.5 py-0 h-4">
+                    {productContext.name}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            {/* Controls - touch-friendly sizing */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-white hover:bg-white/20 touch-manipulation"
+                onClick={() => setIsMinimized(!isMinimized)}
+                aria-label={isMinimized ? "Expand chat" : "Minimize chat"}
+                tabIndex={0}
+              >
+                {isMinimized ? <Maximize2 className="h-3.5 w-3.5" /> : <Minimize2 className="h-3.5 w-3.5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-white hover:bg-white/20 touch-manipulation"
+                onClick={handleClose}
+                aria-label="Close Ask Genie"
+                tabIndex={0}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {!isMinimized && !isAutoMinimized && (
+        <>
+          {/* Messages - flex-1 to take remaining space, min-h-0 for proper scrolling */}
+          <ScrollArea className="flex-1 min-h-0 p-3 sm:p-4" ref={scrollRef}>
+            {showWelcome && messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                {/* Feature Highlights - Mobile optimized grid */}
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="w-full rounded-xl p-3 sm:p-4 mb-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border border-purple-200/50 dark:border-purple-800/30"
+                >
+                  <h4 className="text-xs sm:text-sm font-semibold text-purple-800 dark:text-purple-200 mb-2 sm:mb-3 flex items-center justify-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    What I Can Help You With
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm">
+                      <Brain className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1 sm:mb-1.5" />
+                      <span className="text-[10px] sm:text-xs font-medium text-purple-900 dark:text-purple-100 block">Smart Context</span>
+                      <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 hidden sm:block">Understands your workflow</p>
+                    </div>
+                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm">
+                      <Wand2 className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1 sm:mb-1.5" />
+                      <span className="text-[10px] sm:text-xs font-medium text-purple-900 dark:text-purple-100 block">Creative Help</span>
+                      <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 hidden sm:block">Generate & refine ideas</p>
+                    </div>
+                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm">
+                      <Map className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1 sm:mb-1.5" />
+                      <span className="text-[10px] sm:text-xs font-medium text-purple-900 dark:text-purple-100 block">Visual Flows</span>
+                      <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 hidden sm:block">Build production maps</p>
+                    </div>
+                  </div>
+                </motion.div>
+                
+                {/* Example questions - Helpful hints section */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.15 }}
+                  className="w-full mb-4 px-1"
+                >
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 flex items-center gap-1 justify-center">
+                    <HelpCircle className="h-3 w-3" />
+                    Try asking about...
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 justify-center">
+                    {[
+                      "How do I get started?",
+                      "Create a script",
+                      "Record a video",
+                      "Show the workflow"
+                    ].map((hint, i) => (
+                      <Button
+                        key={i}
+                        variant="outline"
+                        size="sm"
+                        className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3 rounded-full hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                        onClick={() => handleSendMessage(hint)}
+                      >
+                        {hint}
+                      </Button>
+                    ))}
+                  </div>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="space-y-2 px-2"
+                >
+                  <h4 className="font-semibold text-sm sm:text-base">{getRandomPhrase('greetings')}</h4>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground/70">
+                    Currently helping you in <strong>{productContext.name}</strong> - "{productContext.tagline}"
+                  </p>
+                  
+                  {/* Subscription awareness hint - gentle, not pushy */}
+                  {subscriptionTier !== 'pro' && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg p-2.5 border border-amber-200/50 dark:border-amber-800/50"
+                    >
+                      <p className="text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                        <Lightbulb className="h-3 w-3" />
+                        <span>
+                          On <strong className="capitalize">{subscriptionTier}</strong> tier — Ask me what magic awaits! ✨
+                        </span>
+                      </p>
+                    </motion.div>
+                  )}
+                </motion.div>
+                
+                {/* Contextual Quick Actions */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="w-full space-y-2"
+                >
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1 justify-center">
+                    <Heart className="h-3 w-3 text-pink-500" />
+                    Quick suggestions just for you:
+                  </p>
+                  {contextualSuggestions.map((suggestion, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 + index * 0.1 }}
+                    >
+                      <Button
+                        variant={suggestion.isHighlighted ? "default" : "outline"}
+                        size="sm"
+                        className={cn(
+                          "w-full justify-start text-left text-sm h-auto py-2 px-3",
+                          suggestion.isHighlighted && `bg-gradient-to-r ${productContext.color} text-white hover:opacity-90`
+                        )}
+                        onClick={() => handleSendMessage(suggestion.prompt)}
+                      >
+                        <span className="mr-2">{suggestion.icon}</span>
+                        {suggestion.label}
+                      </Button>
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                {/* Workflows teaser */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="mt-4 pt-4 border-t w-full"
+                >
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 justify-center">
+                    <Map className="h-3 w-3" />
+                    Ask me to "show the flow" for visual workflow guides!
+                  </p>
+                </motion.div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((message, index) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={cn(
+                      "flex gap-3",
+                      message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                    )}
+                  >
+                    <div className={cn(
+                      "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0",
+                      message.role === 'user' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : `bg-gradient-to-r ${productContext.color}`
+                    )}>
+                      {message.role === 'user' ? (
+                        <User className="h-4 w-4" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 text-white" />
+                      )}
+                    </div>
+                    <div className={cn(
+                      "max-w-[85%]",
+                      message.role === 'user' ? 'text-right' : 'text-left'
+                    )}>
+                      <div className={cn(
+                        "rounded-2xl px-4 py-2.5 inline-block",
+                        message.role === 'user' 
+                          ? 'bg-primary text-primary-foreground rounded-tr-md' 
+                          : 'bg-muted text-foreground rounded-tl-md border border-border/50'
+                      )}>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed text-inherit">{message.content}</p>
+                      </div>
+                      {/* Show diagram if applicable */}
+                      {message.showMermaid && showDiagram && (
+                        <MermaidDiagramDisplay diagram={showDiagram} />
+                      )}
+                      {/* Inline feedback for AI responses */}
+                      {message.role === 'assistant' && index === messages.length - 1 && (
+                        <div className="mt-2">
+                          <InlineTrainAIFeedback
+                            data={{
+                              context: 'ask_genie_response',
+                              product: 'ask_genie',
+                              originalContent: message.content,
+                              metadata: { product, currentTab }
+                            }}
+                            variant="minimal"
+                            showTextFeedback={false}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+                {isLoading && <GenieThinkingIndicator productColor={productContext.color} />}
+              </div>
+            )}
+          </ScrollArea>
+
+          {/* Input Area - Fixed at bottom, shrink-0 to prevent compression */}
+          <div className="p-3 sm:p-4 border-t bg-muted/30 shrink-0">
+            {/* Voice Status Indicator */}
+            <AnimatePresence>
+              {(voice.isListening || voice.isSpeaking || voice.isProcessing) && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-2"
+                >
+                  <div className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+                    voice.isListening && "bg-red-500/10 text-red-600 dark:text-red-400",
+                    voice.isSpeaking && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                    voice.isProcessing && "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  )}>
+                    {voice.isListening && (
+                      <>
+                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        <span>🎤 Listening... Speak now!</span>
+                      </>
+                    )}
+                    {voice.isProcessing && (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Processing your voice...</span>
+                      </>
+                    )}
+                    {voice.isSpeaking && (
+                      <>
+                        <Volume2 className="h-4 w-4 animate-pulse" />
+                        <span>🔊 Speaking...</span>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 px-2 text-xs"
+                          onClick={() => voice.stopSpeaking()}
+                        >
+                          Stop
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="flex gap-2 items-center">
+              {/* Language Selector with Tooltip */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          size="icon" 
+                          variant="ghost"
+                          className="h-11 w-11 rounded-xl shrink-0"
+                          title={`Language: ${voice.currentPairing?.languageName || 'English'}`}
+                        >
+                          <Globe className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="max-h-[300px] overflow-auto bg-popover">
+                        {LANGUAGE_VOICE_PAIRINGS.slice(0, 15).map((lang) => (
+                          <DropdownMenuItem 
+                            key={lang.languageCode}
+                            onClick={() => voice.setLanguage(lang.languageCode)}
+                            className={cn(
+                              "flex items-center gap-2",
+                              voice.userLanguage.startsWith(lang.languageCode) && "bg-primary/10"
+                            )}
+                          >
+                            <span>{lang.nativeName}</span>
+                            <span className="text-muted-foreground text-xs">({lang.languageName})</span>
+                            {lang.quality === 'excellent' && <Badge variant="outline" className="text-[10px] h-4">Best</Badge>}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[250px] bg-popover">
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">Language Selection</p>
+                      <p className="text-xs text-muted-foreground">Choose your preferred language for Ask Genie. Supports 42+ languages with voice in/out.</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Mic Button - Hold or Toggle with Tooltip */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant={voice.isListening ? "destructive" : "outline"}
+                      className={cn(
+                        "h-11 w-11 rounded-xl shrink-0 transition-all",
+                        voice.isListening && "ring-2 ring-red-500 ring-offset-2"
+                      )}
+                      onClick={() => voice.toggleListening()}
+                      disabled={voice.isProcessing || voice.isSpeaking}
+                    >
+                      {voice.isListening ? (
+                        <MicOff className="h-4 w-4" />
+                      ) : (
+                        <Mic className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[250px] bg-popover">
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">Voice Input</p>
+                      <p className="text-xs text-muted-foreground">Speak to Ask Genie using your microphone. Supports 42+ languages with automatic detection.</p>
+                      <p className="text-xs text-muted-foreground/70">Shortcut: Ctrl+M</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <Textarea
+                ref={inputRef}
+                placeholder={voice.isListening ? "Listening..." : "Ask me anything... or tap 🎤 to speak! 💜"}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="flex-1 min-h-[44px] max-h-[100px] resize-none rounded-xl text-sm sm:text-base"
+                disabled={isLoading || voice.isListening}
+                aria-label="Type your message to Ask Genie"
+                aria-describedby="genie-input-hint"
+                tabIndex={0}
+              />
+
+              {/* Send Button */}
+              <Button
+                onClick={() => handleSendMessage()}
+                disabled={!input.trim() || isLoading}
+                size="icon"
+                className={cn("h-11 w-11 rounded-xl shrink-0 touch-manipulation", `bg-gradient-to-r ${productContext.color} hover:opacity-90`)}
+                aria-label={isLoading ? "Genie is thinking..." : "Send message"}
+                tabIndex={0}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                ) : (
+                  <Send className="h-4 w-4 text-white" />
+                )}
+              </Button>
+
+              {/* Speaker Toggle - Read responses aloud with Tooltip */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant={autoSpeak ? "default" : "outline"}
+                      className={cn(
+                        "h-11 w-11 rounded-xl shrink-0",
+                        autoSpeak && `bg-gradient-to-r ${productContext.color}`
+                      )}
+                      onClick={() => {
+                        setAutoSpeak(!autoSpeak);
+                        if (!autoSpeak) {
+                          toast.success("🔊 I'll read my responses aloud now!");
+                        } else {
+                          toast.info("🔇 Voice responses turned off");
+                        }
+                      }}
+                    >
+                      {autoSpeak ? (
+                        <Volume2 className="h-4 w-4 text-white" />
+                      ) : (
+                        <VolumeX className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[250px] bg-popover">
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">Voice Responses</p>
+                      <p className="text-xs text-muted-foreground">When enabled, Ask Genie will read responses aloud in your selected language. Great for hands-free interaction!</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
+            <p id="genie-input-hint" className="text-[10px] text-muted-foreground mt-2 text-center">
+              🎤 Tap mic to speak • 🔊 Toggle speaker for voice replies • Supports {LANGUAGE_VOICE_PAIRINGS.length}+ languages! 🌍
+            </p>
+          </div>
+        </>
+      )}
+    </motion.div>
+    );
+  };
+
+  // Render based on position
+  if (position === 'inline' || position === 'sidebar') {
+    return <ChatInterface />;
+  }
+
+  // Floating mode
+  return (
+    <>
+      {!isOpen && <TriggerButton />}
+      <AnimatePresence>
+        {isOpen && <ChatInterface />}
+      </AnimatePresence>
+    </>
+  );
+};
+
+export default AskGenie;

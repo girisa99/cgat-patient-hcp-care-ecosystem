@@ -3,7 +3,7 @@
 // Updated to work with simplified RLS policies and comprehensive validation
 
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -121,7 +121,7 @@ export const checkUserRole = async (userId: string, roleName: UserRole): Promise
     const { data, error } = await supabase
       .from('user_roles')
       .select(`
-        roles!inner (
+        role:roles!inner (
           name
         )
       `)
@@ -132,7 +132,7 @@ export const checkUserRole = async (userId: string, roleName: UserRole): Promise
       return false;
     }
 
-    const hasRole = data?.some((ur: any) => ur.roles.name === roleName) || false;
+    const hasRole = data?.some((ur: any) => ur.role.name === roleName) || false;
     console.log(`✅ User ${userId} has role ${roleName}:`, hasRole);
     return hasRole;
   } catch (error) {
@@ -203,7 +203,7 @@ export const getUserRolesDirect = async (userId: string): Promise<UserRole[]> =>
     const { data, error } = await supabase
       .from('user_roles')
       .select(`
-        roles!inner (
+        role:roles!inner (
           name
         )
       `)
@@ -214,7 +214,7 @@ export const getUserRolesDirect = async (userId: string): Promise<UserRole[]> =>
       return [];
     }
 
-    const roles = data?.map((ur: any) => ur.roles.name as UserRole) || [];
+    const roles = data?.map((ur: any) => ur.role.name as UserRole) || [];
     console.log('✅ User roles fetched:', roles);
     return roles;
   } catch (error) {

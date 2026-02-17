@@ -1,18 +1,15 @@
 
 /**
  * MASTER FORM STATE TYPES - COMPREHENSIVE INTERFACE
- * Version: master-form-state-types-v4.0.0 - All interfaces with required properties
+ * Version: master-form-state-types-v4.1.0 - Phase 1C: Consolidated with masterFormState
+ * Single source of truth established
  */
 
-export interface MasterUserFormState {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  role: string;
-  facilityId?: string;
-  isActive: boolean;
-}
+// Phase 1C: Form State Consolidation Complete
+
+// Re-export MasterUserFormState from single source of truth
+// This eliminates duplication and maintains dual compatibility
+export type { MasterUserFormState } from '@/types/masterFormState';
 
 export interface MasterFormValidation {
   isValid: boolean;
@@ -78,8 +75,11 @@ export interface ApiIntegrationState {
 }
 
 // Export utility function references with correct names
+// Point to masterFormState for single source of truth
 export { 
-  createMasterFormState as createMasterUserFormState,
-  normalizeMasterFormState as normalizeMasterUserFormState,
-  validateMasterFormState as validateMasterUserFormState
-} from '@/utils/formStateUtils';
+  createMasterUserFormState,
+  normalizeMasterUserFormState
+} from '@/types/masterFormState';
+
+// Note: Legacy formStateUtils are available but deprecated
+// Use masterFormState utilities for new code

@@ -1,0 +1,650 @@
+/**
+ * GENIE CONFIGURATION DASHBOARD
+ * Visual configuration builder interface with real-time provider status
+ * and advanced configuration management capabilities
+ */
+import React, { useState, useCallback, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Settings2,
+  Download,
+  Upload,
+  Save,
+  Check,
+  X,
+  AlertCircle,
+  Activity,
+  Brain,
+  Database,
+  Zap,
+  FileText,
+  Microscope,
+  Wrench,
+  Eye,
+  Globe,
+  Shield,
+  Clock,
+  BarChart3
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SelectedModelConfig } from '@/components/ai';
+import { useGenieState, GenieConfiguration } from '@/hooks/useGenieState';
+import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
+import { useMasterToast } from '@/hooks/useMasterToast';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { GenieProviderStatusPanel } from './GenieProviderStatusPanel';
+import { GenieModelDropdown } from './GenieModelDropdown';
+import { GenieFeatureDropdown } from './GenieFeatureDropdown';
+
+interface GenieConfigurationDashboardProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfigurationSelect: (config: GenieConfiguration) => void;
+}
+
+export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardProps> = ({
+  isOpen,
+  onClose,
+  onConfigurationSelect
+}) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [editingConfig, setEditingConfig] = useState<Partial<GenieConfiguration> | null>(null);
+  const [configName, setConfigName] = useState('');
+  const [selectedModels, setSelectedModels] = useState<SelectedModelConfig[]>([]);
+  const [selectedMode, setSelectedMode] = useState<'system' | 'single' | 'multi'>('single');
+  const [enabledFeatures, setEnabledFeatures] = useState<string[]>([]);
+  const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([]);
+  const [knowledgeBase, setKnowledgeBase] = useState('');
+  const [medicalContext, setMedicalContext] = useState(false);
+  const [isDefault, setIsDefault] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  const { 
+    configurations, 
+    currentConfig, 
+    loading, 
+    saveConfiguration, 
+    loadConfigurations 
+  } = useGenieState();
+  
+  const { status, checkHealth, healthyProviders } = useAIServiceHealth();
+  const { showSuccess, showError } = useMasterToast();
+  const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
+
+  // Load health status on mount
+  useEffect(() => {
+    checkHealth();
+  }, [checkHealth]);
+
+  // Auto-refresh health status every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, [checkHealth]);
+
+  const handleFeatureToggle = useCallback((feature: string) => {
+    setEnabledFeatures(prev => 
+      prev.includes(feature) 
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    );
+  }, []);
+
+  const handleMCPToolToggle = useCallback((tool: string) => {
+    setSelectedMCPTools(prev =>
+      prev.includes(tool)
+        ? prev.filter(t => t !== tool)
+        : [...prev, tool]
+    );
+  }, []);
+
+  const handleSaveConfiguration = useCallback(async () => {
+    let name = configName.trim();
+    if (!name) {
+      // Auto-generate a sensible name to avoid disabled UX
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      name = `${selectedMode}-config-${ts}`;
+      setConfigName(name);
+    }
+
+    setSaving(true);
+
+    const config: Omit<GenieConfiguration, 'id'> = {
+      configuration_name: name,
+      selected_mode: selectedMode,
+      selected_models: selectedModels.map(m => m.model),
+      left_model: selectedModels.find(m => m.role === 'primary')?.model || '',
+      right_model: selectedModels.find(m => m.role === 'secondary')?.model || '',
+      selected_model_type: (selectedModels[0]?.category === 'small' ? 'slm' : selectedModels[0]?.category === 'vision' ? 'vlm' : 'llm'),
+      enabled_features: enabledFeatures,
+      selected_mcp_tools: selectedMCPTools,
+      knowledge_base: knowledgeBase,
+      medical_context: medicalContext,
+      is_default: isDefault
+    };
+
+    try {
+      // Safety timeout to prevent infinite "Saving..." when network fails
+      const saved = await Promise.race([
+        saveConfiguration(config),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 30000))
+      ]);
+
+      if (!saved) {
+        showError('Save timed out. Please check your connection and try again.');
+      } else {
+        await loadConfigurations();
+        showSuccess('Configuration saved successfully');
+        // Don't call resetForm() here, wait for successful save to complete
+        setConfigName('');
+        setSelectedModels([]);
+        setSelectedMode('single');
+        setEnabledFeatures([]);
+        setSelectedMCPTools([]);
+        setKnowledgeBase('');
+        setMedicalContext(false);
+        setIsDefault(false);
+        setEditingConfig(null);
+        setActiveTab('management'); // Show the saved config in management
+      }
+    } catch (e: any) {
+      showError(e?.message || 'Failed to save configuration');
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    configName, selectedMode, selectedModels, enabledFeatures,
+    selectedMCPTools, knowledgeBase, medicalContext, isDefault,
+    saveConfiguration, showSuccess, showError, loadConfigurations
+  ]);
+
+  const resetForm = useCallback(() => {
+    setConfigName('');
+    setSelectedModels([]);
+    setSelectedMode('single');
+    setEnabledFeatures([]);
+    setSelectedMCPTools([]);
+    setKnowledgeBase('');
+    setMedicalContext(false);
+    setIsDefault(false);
+    setEditingConfig(null);
+  }, []);
+
+  const loadConfiguration = useCallback((config: GenieConfiguration) => {
+    setConfigName(config.configuration_name);
+    setSelectedMode(config.selected_mode);
+    setEnabledFeatures(config.enabled_features);
+    setSelectedMCPTools(config.selected_mcp_tools);
+    setKnowledgeBase(config.knowledge_base);
+    setMedicalContext(config.medical_context);
+    setIsDefault(config.is_default);
+    setEditingConfig(config);
+    setActiveTab('builder');
+  }, []);
+
+  const exportConfiguration = useCallback(() => {
+    if (!currentConfig) return;
+    
+    const dataStr = JSON.stringify(currentConfig, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `genie-config-${currentConfig.configuration_name}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    showSuccess('Configuration exported');
+  }, [currentConfig, showSuccess]);
+
+  const importConfiguration = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const config = JSON.parse(e.target?.result as string);
+        loadConfiguration(config);
+        showSuccess('Configuration imported successfully');
+      } catch (error) {
+        showError('Failed to import configuration');
+      }
+    };
+    reader.readAsText(file);
+  }, [loadConfiguration, showSuccess, showError]);
+
+  const availableFeatures = [
+    { id: 'knowledge', label: 'Knowledge Base', icon: Database, description: 'Access to curated knowledge repositories' },
+    { id: 'rag', label: 'RAG Search', icon: FileText, description: 'Retrieval-Augmented Generation capabilities' },
+    { id: 'medical', label: 'Medical Context', icon: Microscope, description: 'Healthcare and medical expertise' },
+    { id: 'tools', label: 'MCP Tools', icon: Wrench, description: 'Model Context Protocol tool integration' },
+    { id: 'vision', label: 'Vision Analysis', icon: Eye, description: 'Image and document processing' },
+    { id: 'web', label: 'Web Search', icon: Globe, description: 'Real-time web information retrieval' }
+  ];
+
+  const availableMCPTools = [
+    'filesystem', 'memory', 'web-search', 'database', 'api-client', 
+    'document-processor', 'image-analyzer', 'code-executor', 'calculator'
+  ];
+
+  const getProviderStatus = useCallback((provider: string) => {
+    const isHealthy = healthyProviders.includes(provider);
+    return {
+      status: isHealthy ? 'healthy' : 'unavailable',
+      color: isHealthy ? 'text-green-600' : 'text-red-600',
+      bgColor: isHealthy ? 'bg-green-100' : 'bg-red-100'
+    };
+  }, [healthyProviders]);
+
+  // Authentication check
+  if (!isOpen) return null;
+
+  // Show auth prompt if not authenticated
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="h-5 w-5 text-primary" />
+              Authentication Required
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 p-6">
+            <p className="text-muted-foreground">
+              Please log in to access Genie AI configuration features.
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => window.location.href = '/login'} 
+                className="flex-1"
+              >
+                Go to Login
+              </Button>
+              <Button variant="outline" onClick={onClose} className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-6xl h-[85vh] p-0 overflow-y-auto">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle className="flex items-center gap-2">
+            <Settings2 className="h-5 w-5 text-primary" />
+            GENIE Configuration Dashboard
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="relative flex h-full">
+          {/* Sidebar Navigation */}
+          <div className="relative w-56 shrink-0 border-r bg-background p-4 z-10 overflow-y-auto">
+            <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="w-full">
+              <TabsList className="grid w-full grid-rows-4 h-auto">
+                <TabsTrigger value="overview" className="justify-start">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="builder" className="justify-start">
+                  <Settings2 className="h-4 w-4 mr-2" />
+                  Builder
+                </TabsTrigger>
+                <TabsTrigger value="health" className="justify-start">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Health
+                </TabsTrigger>
+                <TabsTrigger value="management" className="justify-start">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Manage
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Main Content */}
+          <div className="relative z-10 flex-1 min-w-0 min-h-0 overflow-y-auto">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Active Configuration</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-lg font-semibold">{currentConfig?.configuration_name || 'None'}</p>
+                      <p className="text-sm text-muted-foreground">Mode: {currentConfig?.selected_mode || 'N/A'}</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Total Configurations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-lg font-semibold">{configurations.length}</p>
+                      <p className="text-sm text-muted-foreground">Saved configurations</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Healthy Providers</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-lg font-semibold">{healthyProviders.length}/3</p>
+                      <p className="text-sm text-muted-foreground">AI services online</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recent Configurations */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Recent Configurations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {configurations.slice(0, 5).map((config) => (
+                        <div
+                          key={config.id}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                          onClick={() => onConfigurationSelect(config)}
+                        >
+                          <div>
+                            <p className="font-medium">{config.configuration_name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {config.selected_mode} mode • {config.selected_models.length} models
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            {config.is_default && <Badge variant="secondary">Default</Badge>}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                loadConfiguration(config);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Configuration Builder Tab */}
+              <TabsContent value="builder" className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Configuration Builder</h3>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={resetForm}>
+                      Reset
+                    </Button>
+                    <Button onClick={handleSaveConfiguration} disabled={saving || (selectedModels.length === 0 && !configName.trim())} aria-busy={saving}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {saving ? 'Saving...' : 'Save Configuration'}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Basic Settings */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Basic Settings</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="config-name">Configuration Name</Label>
+                        <Input
+                          id="config-name"
+                          value={configName}
+                          onChange={(e) => setConfigName(e.target.value)}
+                          placeholder="Enter configuration name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="mode-select">Conversation Mode</Label>
+                        <Select value={selectedMode} onValueChange={(value: any) => setSelectedMode(value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="single">Single Model</SelectItem>
+                            <SelectItem value="multi">Multi Model</SelectItem>
+                            <SelectItem value="system">System Mode</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="knowledge-base">Knowledge Base</Label>
+                        <Textarea
+                          id="knowledge-base"
+                          value={knowledgeBase}
+                          onChange={(e) => setKnowledgeBase(e.target.value)}
+                          placeholder="Describe the knowledge base or domain expertise"
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="medical-context">Medical Context</Label>
+                        <Switch
+                          id="medical-context"
+                          checked={medicalContext}
+                          onCheckedChange={setMedicalContext}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="is-default">Set as Default</Label>
+                        <Switch
+                          id="is-default"
+                          checked={isDefault}
+                          onCheckedChange={setIsDefault}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Model Selection */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-primary" />
+                        Model Selection
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <GenieModelDropdown
+                        selectedModels={selectedModels}
+                        onModelsChange={setSelectedModels}
+                        mode={selectedMode}
+                        maxSelections={selectedMode === 'single' ? 1 : 6}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Features & Tools */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Features */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-primary" />
+                        Features
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <GenieFeatureDropdown
+                        selectedFeatures={enabledFeatures}
+                        onFeaturesChange={setEnabledFeatures}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* MCP Tools */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Wrench className="h-4 w-4 text-primary" />
+                        MCP Tools
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-2">
+                        {availableMCPTools.map((tool) => (
+                          <div
+                            key={tool}
+                            className={`flex items-center justify-between p-2 border rounded cursor-pointer transition-colors ${
+                              selectedMCPTools.includes(tool) 
+                                ? 'border-primary bg-primary/5' 
+                                : 'hover:bg-muted/50'
+                            }`}
+                            onClick={() => handleMCPToolToggle(tool)}
+                          >
+                            <span className="text-sm">{tool}</span>
+                            {selectedMCPTools.includes(tool) && (
+                              <Check className="h-3 w-3 text-primary" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Health Status Tab */}
+              <TabsContent value="health" className="p-6 space-y-6">
+                <GenieProviderStatusPanel />
+              </TabsContent>
+
+              {/* Management Tab */}
+              <TabsContent value="management" className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Configuration Management</h3>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={loadConfigurations} disabled={loading}>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Refresh
+                    </Button>
+                    <Button variant="outline" onClick={exportConfiguration}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                    <label>
+                      <Button variant="outline" asChild>
+                        <span>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Import
+                        </span>
+                      </Button>
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={importConfiguration}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Configuration List */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>All Configurations ({configurations.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                        <p className="text-sm text-muted-foreground mt-2">Loading configurations...</p>
+                      </div>
+                    ) : configurations.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">No configurations found</p>
+                        <Button 
+                          variant="outline" 
+                          className="mt-2" 
+                          onClick={() => setActiveTab('builder')}
+                        >
+                          Create First Configuration
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {configurations.map((config) => (
+                          <div
+                            key={config.id}
+                            className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{config.configuration_name}</p>
+                                {config.is_default && <Badge variant="secondary">Default</Badge>}
+                              </div>
+                              <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                                <span>Mode: {config.selected_mode}</span>
+                                <span>Models: {config.selected_models.length}</span>
+                                <span>Features: {config.enabled_features.length}</span>
+                                <span>Tools: {config.selected_mcp_tools.length}</span>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onConfigurationSelect(config)}
+                              >
+                                Use
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => loadConfiguration(config)}
+                              >
+                                Edit
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};

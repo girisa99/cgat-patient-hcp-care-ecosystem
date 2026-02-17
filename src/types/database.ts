@@ -1,12 +1,14 @@
 
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
 // Extract proper types from the database schema
 export type Facility = Database['public']['Tables']['facilities']['Row'];
 export type Module = Database['public']['Tables']['modules']['Row'];
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
-// Extended types with proper structure that matches UserWithRoles from userManagement.ts
+// Phase 1C: Database Type Consistency Complete
+
+// Extended types with proper structure that matches MasterUser from userManagement.ts
 export interface ExtendedProfile {
   // Core Profile properties
   id: string;
@@ -18,10 +20,13 @@ export interface ExtendedProfile {
   updated_at?: string;
   facility_id?: string | null;
   
-  // Additional extended properties - match UserWithRoles structure
+  // Additional extended properties - align with MasterUser structure
+  firstName?: string; // Dual compatibility
+  lastName?: string;  // Dual compatibility
   is_active?: boolean;
+  isActive?: boolean; // Dual compatibility
   user_roles: Array<{
-    roles: {
+    role: {
       name: Database['public']['Enums']['user_role'];
       description: string | null;
     };

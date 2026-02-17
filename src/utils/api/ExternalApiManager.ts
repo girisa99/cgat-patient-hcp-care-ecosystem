@@ -160,9 +160,9 @@ class ExternalApiManagerClass {
             created_by: user.id
           })
           .select('id')
-          .single();
+          .maybeSingle();
 
-        if (createError) {
+        if (createError || !newApi?.id) {
           console.error('❌ Error creating internal API reference:', createError);
           throw createError;
         }
@@ -201,17 +201,17 @@ class ExternalApiManagerClass {
       .from('external_api_registry')
       .insert(externalApiData)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.error('❌ Error publishing external API:', error);
       console.error('❌ Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code
       });
-      throw error;
+      throw (error || new Error('Failed to publish external API'));
     }
 
     console.log('✅ Successfully published external API:', data);
@@ -313,11 +313,11 @@ class ExternalApiManagerClass {
         ...application
       })
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.error('Error submitting developer application:', error);
-      throw error;
+      throw (error || new Error('Failed to submit developer application'));
     }
 
     return data as DeveloperPortalApplication;
@@ -368,11 +368,11 @@ class ExternalApiManagerClass {
       .update(updateData)
       .eq('id', applicationId)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.error('Error reviewing developer application:', error);
-      throw error;
+      throw (error || new Error('Failed to review developer application'));
     }
 
     return data as DeveloperPortalApplication;
@@ -388,11 +388,11 @@ class ExternalApiManagerClass {
       .from('marketplace_listings')
       .insert(listing)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.error('Error creating marketplace listing:', error);
-      throw error;
+      throw (error || new Error('Failed to create marketplace listing'));
     }
 
     return data as MarketplaceListing;
@@ -437,11 +437,11 @@ class ExternalApiManagerClass {
       .update(updateData)
       .eq('id', externalApiId)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.error('Error updating external API status:', error);
-      throw error;
+      throw (error || new Error('Failed to update external API status'));
     }
 
     return data as ExternalApiRegistry;

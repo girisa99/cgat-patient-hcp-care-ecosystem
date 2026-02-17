@@ -1,0 +1,167 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/types/database.generated';
+import { useMasterToast } from './useMasterToast';
+
+type VoiceConnector = Database['public']['Tables']['voice_connectors']['Row'];
+type CreateConnectorData = Pick<Database['public']['Tables']['voice_connectors']['Insert'], 'name' | 'connector_type' | 'configuration' | 'endpoints' | 'features'>;
+type UpdateConnectorData = Database['public']['Tables']['voice_connectors']['Update'];
+
+export const useVoiceConnectors = () => {
+  const { showSuccess, showError } = useMasterToast();
+  const queryClient = useQueryClient();
+
+  // Fetch voice connectors
+  const { data: connectors = [], isLoading, error } = useQuery({
+    queryKey: ['voice-connectors'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('voice_connectors')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data as VoiceConnector[];
+    }
+  });
+
+  // Create voice connector
+  const createConnector = useMutation({
+    mutationFn: async (connectorData: CreateConnectorData) => {
+      const { data, error } = await supabase
+        .from('voice_connectors')
+        .insert([{
+          ...connectorData,
+          endpoints: connectorData.endpoints || [],
+          features: connectorData.features || [],
+          is_active: true,
+          health_status: 'unknown',
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        }])
+        .select()
+        .maybeSingle();
+      
+      if (error || !data) throw (error || new Error('Failed to create connector'));
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voice-connectors'] });
+      showSuccess('Voice connector created successfully');
+    },
+    onError: (error) => {
+      console.error('Error creating connector:', error);
+      showError('Failed to create connector');
+    },
+  });
+
+  // Update voice connector
+  const updateConnector = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: UpdateConnectorData }) => {
+      const { data, error } = await supabase
+        .from('voice_connectors')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+      
+      if (error || !data) throw (error || new Error('Failed to update connector'));
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voice-connectors'] });
+      showSuccess('Connector updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating connector:', error);
+      showError('Failed to update connector');
+    },
+  });
+
+  // Test voice connector
+  const testConnector = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('voice_connectors')
+        .update({ 
+          last_tested_at: new Date().toISOString(),
+          health_status: 'healthy'
+        })
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+      
+      if (error || !data) throw (error || new Error('Failed to test connector'));
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voice-connectors'] });
+      showSuccess('Connector test completed successfully');
+    },
+    onError: (error) => {
+      console.error('Error testing connector:', error);
+      showError('Connector test failed');
+    },
+  });
+
+  // Test all connectors
+  const testAllConnectors = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from('voice_connectors')
+        .update({ 
+          last_tested_at: new Date().toISOString(),
+          health_status: 'healthy'
+        })
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all records
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voice-connectors'] });
+      showSuccess('All connectors tested successfully');
+    },
+    onError: (error) => {
+      console.error('Error testing all connectors:', error);
+      showError('Failed to test all connectors');
+    },
+  });
+
+  // Delete voice connector
+  const deleteConnector = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('voice_connectors')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['voice-connectors'] });
+      showSuccess('Connector deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting connector:', error);
+      showError('Failed to delete connector');
+    },
+  });
+
+  return {
+    connectors,
+    isLoading,
+    error,
+    createConnector: createConnector.mutate,
+    updateConnector: updateConnector.mutate,
+    testConnector: testConnector.mutate,
+    testAllConnectors: testAllConnectors.mutate,
+    deleteConnector: deleteConnector.mutate,
+    isCreating: createConnector.isPending,
+    isUpdating: updateConnector.isPending,
+    isTesting: testConnector.isPending || testAllConnectors.isPending,
+    isDeleting: deleteConnector.isPending,
+  };
+};

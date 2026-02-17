@@ -12,6 +12,11 @@ export interface MasterUser {
   email: string;
   phone?: string;
   is_email_verified: boolean;
+  
+  // Enrollment fields
+  enrollment_type?: string;
+  enrollment_status?: string;
+  enrollment_progress?: number;
   facility_id?: string;
   is_active?: boolean;
   deactivated_at?: string;
@@ -90,6 +95,8 @@ export interface MasterApiService {
   status: string;
   type: string;
   description?: string;
+  category?: string;
+  direction?: string;
   created_at: string;
   updated_at?: string;
 }

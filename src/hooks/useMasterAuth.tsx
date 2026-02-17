@@ -7,6 +7,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { AuthStateManager } from '@/utils/auth/authStateManager';
 
 interface AuthContextType {
   user: User | null;
@@ -21,38 +22,64 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   refreshAuth: (userId?: string) => Promise<void>;
+  hasAnyRole: (roleNames: string[]) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
+  console.log('🔑 MasterAuthProvider rendering...');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  console.log('🔐 Master Auth Provider - Single source of truth for authentication');
+  // Master Auth Provider - Single source of truth for authentication
 
   const isAuthenticated = !!user && !!session;
 
+  // Retry mechanism for failed auth operations
+  const retryAuth = async () => {
+    if (retryCount < 3) {
+      setRetryCount(prev => prev + 1);
+      setError(null);
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to retry authentication');
+      }
+    }
+  };
+
   // Initialize auth state
   useEffect(() => {
+    let mounted = true;
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 Auth state changed:', event, session?.user?.email);
+        if (!mounted) return;
         
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer data fetching to prevent deadlocks
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-            fetchUserRoles(session.user.id);
-          }, 0);
+          // Fetch user data on any session event (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED)
+          if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            setTimeout(() => {
+              if (mounted) {
+                fetchUserProfile(session.user.id);
+                fetchUserRoles(session.user.id);
+              }
+            }, 100);
+          }
         } else {
           setProfile(null);
           setUserRoles([]);
@@ -62,21 +89,47 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check for existing session once
+    const checkSession = async () => {
+      if (!mounted) return;
       
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-        fetchUserRoles(session.user.id);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('❌ Session check failed:', error);
+          setIsLoading(false);
+          return;
+        }
+        
+        // The auth state change listener will handle the rest
+        if (!session) {
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('❌ Session check error:', err);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
-  }, []);
+    checkSession();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []); // No dependencies to prevent re-runs
+
+  // Force loading to complete after 10 seconds to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('🚨 Auth loading timeout - force completing...');
+        setIsLoading(false);
+      }
+    }, 10000);
+    
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
 
   const fetchUserProfile = async (userId: string) => {
     console.log('👤 Fetching user profile for:', userId);
@@ -85,7 +138,7 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
@@ -102,6 +155,7 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserRoles = async (userId: string) => {
     console.log('🏷️ Fetching user roles for:', userId);
     try {
+      // Use optimized RPC function with performance improvements
       const { data, error } = await supabase
         .rpc('get_user_roles', { check_user_id: userId });
 
@@ -112,9 +166,32 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
 
       const roles = data?.map((r: any) => r.role_name) || [];
       setUserRoles(roles);
-      console.log('✅ User roles loaded:', roles);
+      console.log('✅ User roles loaded (optimized):', roles);
     } catch (err) {
       console.error('❌ Roles fetch failed:', err);
+    }
+  };
+
+  // Optimized role checking function using new DB function
+  const hasAnyRole = async (roleNames: string[]) => {
+    if (!user?.id) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('user_has_any_role', { 
+          check_user_id: user.id, 
+          role_names: roleNames 
+        });
+
+      if (error) {
+        console.error('❌ Role check error:', error);
+        return false;
+      }
+
+      return data || false;
+    } catch (err) {
+      console.error('❌ Role check failed:', err);
+      return false;
     }
   };
 
@@ -182,18 +259,14 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    console.log('🔐 Signing out user');
+    console.log('🔐 Signing out user using AuthStateManager');
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('❌ Sign out error:', error);
-      } else {
-        console.log('✅ User signed out');
-      }
+      // Use AuthStateManager for secure sign out with proper cleanup
+      await AuthStateManager.secureSignOut();
+      console.log('✅ Secure sign out completed');
     } catch (err) {
       console.error('❌ Sign out failed:', err);
     } finally {
@@ -236,6 +309,7 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
     resetPassword,
     refreshAuth,
+    hasAnyRole,
   };
 
   return (

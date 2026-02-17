@@ -8,7 +8,12 @@ interface RoleBasedRouteProps {
   path: string;
   requiredPermissions?: string[];
   requiredRoles?: string[];
-  fallbackComponent?: React.ComponentType<any>;
+  fallbackComponent?: React.ComponentType<{
+    message?: string;
+    showReturnButton?: boolean;
+    requiredRole?: string;
+    requiredPermission?: string;
+  }>;
 }
 
 const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
@@ -52,7 +57,7 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     );
   }
 
-  // Check specific role requirements
+  // Check specific role requirements (optimized for performance)
   if (requiredRoles.length > 0) {
     const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
     if (!hasRequiredRole) {

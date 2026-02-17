@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -47,11 +47,39 @@ export class ApiAuthorizationMiddleware {
         return null;
       }
 
-      // Check required permission (simplified for this implementation)
-      const permissions = ['read', 'write', 'admin']; // Mock permissions
-
-      if (requiredPermission && !permissions.includes(requiredPermission)) {
-        console.log('🔒 API request blocked: Insufficient permissions');
+      // Resolve permissions via Supabase (no mock values)
+      let permissions: string[] = [];
+      try {
+        if (requiredPermission) {
+          const { data: hasPerm, error: permError } = await supabase.rpc('user_has_permission', {
+            check_user_id: session.user.id,
+            permission_name: requiredPermission,
+            facility_id: null
+          });
+          if (permError) {
+            console.warn('⚠️ Permission check RPC error:', permError);
+            return null;
+          }
+          if (!hasPerm) {
+            console.log('🔒 API request blocked: Insufficient permissions');
+            return null;
+          }
+          // Fetch effective permissions for context
+          const { data: effPerms } = await supabase.rpc('get_user_effective_permissions', {
+            check_user_id: session.user.id,
+            facility_id: null
+          });
+          permissions = Array.isArray(effPerms) ? effPerms.map((p: any) => p.permission_name) : [];
+        } else {
+          // If no specific permission required, still fetch effective permissions for downstream usage
+          const { data: effPerms } = await supabase.rpc('get_user_effective_permissions', {
+            check_user_id: session.user.id,
+            facility_id: null
+          });
+          permissions = Array.isArray(effPerms) ? effPerms.map((p: any) => p.permission_name) : [];
+        }
+      } catch (e) {
+        console.error('❌ Permission resolution error:', e);
         return null;
       }
 

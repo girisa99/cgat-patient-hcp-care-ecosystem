@@ -1,19 +1,18 @@
 /**
- * MASTER AUTHENTICATION FORM - SINGLE SOURCE OF TRUTH
- * Unified login/signup component following master consolidation principles
- * Version: master-auth-form-v1.0.0
+ * MASTER AUTHENTICATION FORM - REFACTORED FOR STABILITY
+ * Unified login/signup component following stability framework principles
+ * Version: master-auth-form-v2.0.0 (Phase 2 Refactoring)
  */
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Shield, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { AuthStateManager } from '@/utils/auth/authStateManager';
 import HealthcareAuthLayout from './HealthcareAuthLayout';
+import MasterAuthTabs from './MasterAuthTabs';
+import MasterAuthValidation from './MasterAuthValidation';
 import { useNavigate } from 'react-router-dom';
 
 interface MasterAuthFormProps {
@@ -21,24 +20,36 @@ interface MasterAuthFormProps {
   defaultTab?: 'login' | 'signup';
 }
 
+interface AuthFormData {
+  email: string;
+  password: string;
+  confirmPassword?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({ 
   onSuccess,
   defaultTab = 'login'
 }) => {
+  console.log('🔐 MasterAuthForm component rendering (v2.0.0)...');
   const { isLoading: authLoading, refreshAuth, isAuthenticated } = useMasterAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
+  
+  // Check if signup should be hidden based on domain
+  const hideSignupTab = window.location.hostname.includes('genieaiexpermentationhub.com');
+  
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(hideSignupTab ? 'login' : defaultTab);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Login form state
-  const [loginData, setLoginData] = useState({
+  // Form state management
+  const [loginData, setLoginData] = useState<AuthFormData>({
     email: '',
     password: ''
   });
 
-  // Signup form state
-  const [signupData, setSignupData] = useState({
+  const [signupData, setSignupData] = useState<AuthFormData>({
     email: '',
     password: '',
     confirmPassword: '',
@@ -46,7 +57,7 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
     lastName: ''
   });
 
-  // If already authenticated, redirect to dashboard
+  // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       navigate('/', { replace: true });
@@ -55,39 +66,49 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🎯 Login button clicked!', { email: loginData.email, password: loginData.password ? '[HIDDEN]' : 'EMPTY' });
     setIsLoading(true);
 
     try {
-      console.log('🔐 MASTER AUTH - Attempting login for:', loginData.email);
+      // Validate login data
+      console.log('🔍 Starting validation...');
+      const validation = MasterAuthValidation.validateLogin(loginData.email, loginData.password);
+      console.log('📋 Validation result:', validation);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password
-      });
-
-      if (error) {
-        console.error('❌ Login error:', error.message);
+      if (!validation.isValid) {
+        console.log('❌ Validation failed:', validation.message);
         toast({
-          title: "Login Failed",
-          description: error.message,
+          title: "Validation Error",
+          description: validation.message,
           variant: "destructive"
         });
         return;
       }
 
-      if (data.user) {
-        console.log('✅ Login successful:', data.user.email);
+      console.log('✅ Validation passed, attempting secure login for:', loginData.email);
+      
+      // Use AuthStateManager for secure sign-in with proper cleanup
+      const result = await AuthStateManager.secureSignIn(loginData.email, loginData.password);
+
+      if (!result.success) {
+        console.error('❌ Secure login failed:', result.error);
         toast({
-          title: "Login Successful",
-          description: "Redirecting to dashboard..."
+          title: "Login Failed",
+          description: result.error || "Invalid email or password",
+          variant: "destructive"
         });
-        
-        // Refresh auth state - ensure we pass the newly signed-in user id so
-        // roles, profile & facilities are fetched immediately before the
-        // auth listener fires (helps slow connections)
-        await refreshAuth(data.user.id);
-        navigate('/', { replace: true });
+        return;
       }
+
+      console.log('✅ Secure login successful - redirecting...');
+      toast({
+        title: "Login Successful",
+        description: "Redirecting to dashboard..."
+      });
+      
+      // AuthStateManager handles the redirect, so we don't need to do it here
+      onSuccess?.();
+      
     } catch (error) {
       console.error('💥 Login exception:', error);
       toast({
@@ -104,28 +125,25 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
     e.preventDefault();
     setIsLoading(true);
 
-    // Validation
-    if (signupData.password !== signupData.confirmPassword) {
-      toast({
-        title: "Validation Error",
-        description: "Passwords do not match",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    if (signupData.password.length < 6) {
-      toast({
-        title: "Validation Error",
-        description: "Password must be at least 6 characters",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      // Validate signup data
+      const validation = MasterAuthValidation.validateSignup({
+        email: signupData.email,
+        password: signupData.password,
+        confirmPassword: signupData.confirmPassword || '',
+        firstName: signupData.firstName || '',
+        lastName: signupData.lastName || ''
+      });
+
+      if (!validation.isValid) {
+        toast({
+          title: "Validation Error",
+          description: validation.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
       console.log('🔐 MASTER AUTH - Attempting signup for:', signupData.email);
       
       const { data, error } = await supabase.auth.signUp({
@@ -157,6 +175,7 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
             description: "Account created successfully! Redirecting..."
           });
           await refreshAuth(data.user.id);
+          onSuccess?.();
           navigate('/', { replace: true });
         } else {
           toast({
@@ -182,20 +201,23 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
     field: string,
     value: string
   ) => {
+    const sanitizedValue = MasterAuthValidation.sanitizeInput(value);
+    
     if (formType === 'login') {
-      setLoginData(prev => ({ ...prev, [field]: value }));
+      setLoginData(prev => ({ ...prev, [field]: sanitizedValue }));
     } else {
-      setSignupData(prev => ({ ...prev, [field]: value }));
+      setSignupData(prev => ({ ...prev, [field]: sanitizedValue }));
     }
   };
 
+  // Loading state
   if (authLoading) {
     return (
       <HealthcareAuthLayout>
         <div className="flex items-center justify-center p-8">
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Checking authentication...</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Checking authentication...</p>
           </div>
         </div>
       </HealthcareAuthLayout>
@@ -204,184 +226,40 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
 
   return (
     <HealthcareAuthLayout>
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to GENIE</CardTitle>
-          <CardDescription>
-            Secure access to healthcare management system
+      <Card className="w-full max-w-md mx-auto shadow-2xl border-0 bg-background/95 backdrop-blur-sm">
+        <CardHeader className="text-center pb-6">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Healthcare Platform
+          </CardTitle>
+          <CardDescription className="text-base text-muted-foreground">
+            Secure access to your healthcare management system
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'signup')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login" className="mt-6">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={loginData.email}
-                      onChange={(e) => handleInputChange('login', 'email', e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={loginData.password}
-                      onChange={(e) => handleInputChange('login', 'password', e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="mr-2 h-4 w-4" />
-                      Sign In
-                    </>
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup" className="mt-6">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-firstName">First Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        id="signup-firstName"
-                        type="text"
-                        placeholder="First name"
-                        value={signupData.firstName}
-                        onChange={(e) => handleInputChange('signup', 'firstName', e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-lastName">Last Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        id="signup-lastName"
-                        type="text"
-                        placeholder="Last name"
-                        value={signupData.lastName}
-                        onChange={(e) => handleInputChange('signup', 'lastName', e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={signupData.email}
-                      onChange={(e) => handleInputChange('signup', 'email', e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={signupData.password}
-                      onChange={(e) => handleInputChange('signup', 'password', e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirmPassword">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      id="signup-confirmPassword"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={signupData.confirmPassword}
-                      onChange={(e) => handleInputChange('signup', 'confirmPassword', e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    <>
-                      <User className="mr-2 h-4 w-4" />
-                      Create Account
-                    </>
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+        
+        <CardContent className="px-6 pb-6">
+          <MasterAuthTabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            loginData={loginData}
+            signupData={signupData}
+            isLoading={isLoading}
+            onLogin={handleLogin}
+            onSignup={handleSignup}
+            onInputChange={handleInputChange}
+            hideSignupTab={hideSignupTab}
+          />
           
-
-          
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>By signing in, you agree to our</p>
-            <p className="font-medium">Privacy Policy and Terms of Service</p>
+          <div className="mt-8 text-center space-y-3">
+            <div className="flex items-center justify-center space-x-2 text-xs text-muted-foreground">
+              <Shield className="w-4 h-4" />
+              <span>HIPAA Compliant • SOC 2 Certified</span>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <p>By accessing this system, you agree to our</p>
+              <p className="font-semibold text-primary hover:underline cursor-pointer">
+                Privacy Policy and Terms of Service
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

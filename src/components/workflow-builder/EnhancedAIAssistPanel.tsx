@@ -1,0 +1,1032 @@
+/**
+ * ENHANCED AI ASSIST PANEL
+ * Multi-tab AI assistant for workflow canvas with context preservation
+ * Supports: Architecture, Generate, Analyze, MCP Tools, KB/RAG, Performance
+ */
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { 
+  Sparkles, 
+  X, 
+  Send, 
+  Brain, 
+  Wrench, 
+  Database, 
+  BarChart3,
+  Lightbulb,
+  CheckCircle,
+  AlertTriangle,
+  Zap,
+  Link2,
+  Bot,
+  Users,
+  Network,
+  RefreshCw,
+  Share2,
+  Cpu,
+  MessageSquare,
+  Plug,
+  ChevronDown,
+  ChevronRight,
+  Info
+} from 'lucide-react';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { MULTI_AGENT_NODES, determineAgentArchitecture, getArchitectureInfo } from './MultiAgentNodeRegistry';
+import { 
+  agentArchitectureIntelligence, 
+  AgentArchitectureType,
+  ArchitectureRecommendation 
+} from '@/services/agentArchitectureIntelligence';
+
+interface AgentContext {
+  id?: string;
+  name: string;
+  description?: string;
+  useCaseId?: string;
+  useCase?: { name: string; description?: string };
+  brandName?: string;
+  channels?: string[];
+}
+
+interface WorkflowNode {
+  id: string;
+  type: string;
+  data: {
+    label: string;
+    type_key: string;
+    intent?: string;
+    configuration?: any;
+  };
+  position: { x: number; y: number };
+}
+
+interface EnhancedAIAssistPanelProps {
+  isOpen: boolean;
+  onClose: () => void;
+  agentContext: AgentContext;
+  workflowNodes: WorkflowNode[];
+  workflowEdges: any[];
+  onNodesGenerated: (nodes: WorkflowNode[]) => void;
+  onNodeUpdate?: (nodeId: string, updates: any) => void;
+}
+
+type AIProvider = 'openai' | 'claude' | 'gemini';
+
+interface Suggestion {
+  id: string;
+  type: 'improvement' | 'warning' | 'recommendation';
+  title: string;
+  description: string;
+  action?: () => void;
+}
+
+export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
+  isOpen,
+  onClose,
+  agentContext,
+  workflowNodes,
+  workflowEdges,
+  onNodesGenerated,
+  onNodeUpdate
+}) => {
+  const { generateResponse, isLoading, providers } = useUniversalAI();
+  
+  const [activeTab, setActiveTab] = useState('generate');
+  const [prompt, setPrompt] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState<AIProvider>('gemini');
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [mcpTools, setMcpTools] = useState<any[]>([]);
+  const [kbEntries, setKbEntries] = useState<any[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Load MCP tools on mount
+  useEffect(() => {
+    loadMCPTools();
+    loadKnowledgeBaseEntries();
+  }, []);
+
+  // Auto-analyze when workflow changes
+  useEffect(() => {
+    if (workflowNodes.length > 0 && activeTab === 'analyze') {
+      analyzeWorkflow();
+    }
+  }, [workflowNodes.length, activeTab]);
+
+  const loadMCPTools = async () => {
+    try {
+      // Load available MCP tools from database
+      const { data } = await supabase
+        .from('workflow_node_types')
+        .select('id, type_key, display_name, description, category:workflow_node_categories(name)')
+        .eq('is_active', true)
+        .or('type_key.ilike.%mcp%,type_key.ilike.%connector%,type_key.ilike.%integration%')
+        .limit(20);
+      
+      setMcpTools(data || []);
+    } catch (e) {
+      console.error('Failed to load MCP tools:', e);
+    }
+  };
+
+  const loadKnowledgeBaseEntries = async () => {
+    try {
+      const { data } = await (supabase as any)
+        .from('universal_knowledge_base')
+        .select('id, title, category, topics, source_type')
+        .eq('is_active', true)
+        .limit(20);
+      
+      setKbEntries(data || []);
+    } catch (e) {
+      console.error('Failed to load KB entries:', e);
+    }
+  };
+
+  const analyzeWorkflow = useCallback(async () => {
+    if (workflowNodes.length === 0) {
+      setSuggestions([]);
+      return;
+    }
+
+    setIsAnalyzing(true);
+    const newSuggestions: Suggestion[] = [];
+
+    // Check for missing connections
+    const nodesWithoutOutgoing = workflowNodes.filter(node => {
+      const hasOutgoing = workflowEdges.some(edge => edge.source === node.id);
+      return !hasOutgoing && node.data.type_key !== 'output' && node.data.type_key !== 'end';
+    });
+
+    if (nodesWithoutOutgoing.length > 0) {
+      newSuggestions.push({
+        id: 'missing-connections',
+        type: 'warning',
+        title: 'Disconnected Nodes',
+        description: `${nodesWithoutOutgoing.length} node(s) have no outgoing connections: ${nodesWithoutOutgoing.map(n => n.data.label).join(', ')}`,
+      });
+    }
+
+    // Check for KB/RAG integration
+    const hasKBNode = workflowNodes.some(n => 
+      n.data.type_key === 'knowledge_base' || n.data.type_key === 'rag_retrieval'
+    );
+
+    if (!hasKBNode && agentContext.useCase) {
+      newSuggestions.push({
+        id: 'add-kb',
+        type: 'recommendation',
+        title: 'Add Knowledge Base',
+        description: `Consider adding a Knowledge Base node for ${agentContext.useCase.name} context`,
+        action: () => addRecommendedNode('knowledge_base')
+      });
+    }
+
+    // Check for MCP integration
+    const hasMCPNode = workflowNodes.some(n => 
+      n.data.type_key?.includes('mcp') || n.data.type_key?.includes('connector')
+    );
+
+    if (!hasMCPNode) {
+      newSuggestions.push({
+        id: 'add-mcp',
+        type: 'recommendation',
+        title: 'Add MCP Integration',
+        description: 'MCP tools can enhance your agent with external data and actions',
+        action: () => setActiveTab('mcp')
+      });
+    }
+
+    // Check for error handling
+    const hasErrorHandler = workflowNodes.some(n => 
+      n.data.type_key === 'error_handler' || n.data.label?.toLowerCase().includes('error')
+    );
+
+    if (!hasErrorHandler && workflowNodes.length > 3) {
+      newSuggestions.push({
+        id: 'add-error-handling',
+        type: 'improvement',
+        title: 'Add Error Handling',
+        description: 'Add an error handler node for robust workflow execution',
+        action: () => addRecommendedNode('error_handler')
+      });
+    }
+
+    // Check for validation nodes
+    const hasValidation = workflowNodes.some(n => 
+      n.data.type_key === 'validation' || n.data.type_key === 'condition'
+    );
+
+    if (!hasValidation && workflowNodes.length > 2) {
+      newSuggestions.push({
+        id: 'add-validation',
+        type: 'improvement',
+        title: 'Add Input Validation',
+        description: 'Validate inputs before processing for better reliability',
+        action: () => addRecommendedNode('validation')
+      });
+    }
+
+    // Check for multi-agent capabilities
+    const hasMultiAgent = workflowNodes.some(n => 
+      ['a2a_agent', 'agent_team', 'swarm_decision', 'task_handoff'].includes(n.data.type_key)
+    );
+
+    if (!hasMultiAgent && workflowNodes.length >= 2) {
+      newSuggestions.push({
+        id: 'add-multi-agent',
+        type: 'recommendation',
+        title: 'Consider Multi-Agent Architecture',
+        description: 'Complex workflows benefit from specialized agent teams. Add A2A or Agent Team nodes.',
+        action: () => addRecommendedNode('agent_team')
+      });
+    }
+
+    // Check for agentic capabilities
+    const hasAgenticNodes = workflowNodes.some(n => 
+      ['react_loop', 'tool_chain', 'self_reflection', 'plan_execute', 'reasoning_chain'].includes(n.data.type_key)
+    );
+
+    if (!hasAgenticNodes && agentContext.useCase?.name?.toLowerCase().includes('autonom')) {
+      newSuggestions.push({
+        id: 'add-agentic',
+        type: 'recommendation',
+        title: 'Add Agentic AI Capabilities',
+        description: 'Enable autonomous reasoning with ReAct loops for goal-oriented behavior.',
+        action: () => addRecommendedNode('react_loop')
+      });
+    }
+
+    // Check for document processing capabilities
+    const hasDocProcessing = workflowNodes.some(n => 
+      ['ocr_document', 'doc_ai', 'metadata_extraction', 'form_recognition', 'data_extraction', 'google_vision_ocr', 'azure_form_recognizer', 'aws_textract', 'multi_provider_ocr', 'prescription_processor', 'insurance_processor', 'invoice_rcm_processor'].includes(n.data.type_key)
+    );
+
+    const useCaseLower = agentContext.useCase?.name?.toLowerCase() || '';
+    const descriptionLower = agentContext.description?.toLowerCase() || '';
+    const nameLower = agentContext.name?.toLowerCase() || '';
+    const contextLower = `${useCaseLower} ${descriptionLower} ${nameLower}`;
+
+    // PRESCRIPTION processing recommendations
+    const isPrescriptionUseCase = contextLower.includes('prescription') || contextLower.includes('rx') || contextLower.includes('medication') || contextLower.includes('pharmacy');
+    const hasPrescriptionNodes = workflowNodes.some(n => 
+      ['prescription_processor', 'ndc_matcher', 'medication_processor'].includes(n.data.type_key)
+    );
+
+    if (isPrescriptionUseCase && !hasPrescriptionNodes) {
+      newSuggestions.push({
+        id: 'add-prescription-processor',
+        type: 'recommendation',
+        title: 'Add Prescription Processor',
+        description: 'Process prescriptions with multi-medication extraction, NDC lookup, and clinical recommendations.',
+        action: () => addRecommendedNode('prescription_processor')
+      });
+    }
+
+    // INSURANCE processing recommendations
+    const isInsuranceUseCase = contextLower.includes('insurance') || contextLower.includes('eligibility') || contextLower.includes('coverage');
+    const hasInsuranceNodes = workflowNodes.some(n => 
+      ['insurance_processor', 'insurance_verification'].includes(n.data.type_key)
+    );
+
+    if (isInsuranceUseCase && !hasInsuranceNodes) {
+      newSuggestions.push({
+        id: 'add-insurance-processor',
+        type: 'recommendation',
+        title: 'Add Insurance Processor',
+        description: 'Process pharmacy, medical, and Medicaid insurance cards with auto-variant detection.',
+        action: () => addRecommendedNode('insurance_processor')
+      });
+    }
+
+    // INVOICE/RCM processing recommendations
+    const isInvoiceUseCase = contextLower.includes('invoice') || contextLower.includes('billing') || contextLower.includes('rcm') || contextLower.includes('revenue cycle') || contextLower.includes('claim');
+    const hasInvoiceNodes = workflowNodes.some(n => 
+      ['invoice_rcm_processor', 'invoice_parser', 'cpt_analyzer', 'aging_analyzer'].includes(n.data.type_key)
+    );
+
+    if (isInvoiceUseCase && !hasInvoiceNodes) {
+      newSuggestions.push({
+        id: 'add-invoice-processor',
+        type: 'recommendation',
+        title: 'Add Invoice/RCM Processor',
+        description: 'Process invoices with CPT/HCPCS analysis, AR aging, and ERP export to QuickBooks/SAP/D365.',
+        action: () => addRecommendedNode('invoice_rcm_processor')
+      });
+    }
+
+    // Add NLP extractor recommendation if OCR exists but no NLP
+    const hasOCR = workflowNodes.some(n => 
+      ['multi_provider_ocr', 'google_vision_ocr', 'azure_form_recognizer', 'aws_textract', 'ocr_document'].includes(n.data.type_key)
+    );
+    const hasNLPExtractor = workflowNodes.some(n => n.data.type_key === 'gemini_nlp_extractor');
+
+    if (hasOCR && !hasNLPExtractor) {
+      newSuggestions.push({
+        id: 'add-nlp-extractor',
+        type: 'improvement',
+        title: 'Add Gemini NLP Entity Extraction',
+        description: 'Use Gemini AI to extract structured entities from OCR text with intelligent field recognition.',
+        action: () => addRecommendedNode('gemini_nlp_extractor')
+      });
+    }
+
+    // Add MCP Export recommendation if doc processing exists but no export
+    const hasMCPExport = workflowNodes.some(n => 
+      ['mcp_export', 'erp_export', 'mcp_connector'].includes(n.data.type_key)
+    );
+
+    if (hasDocProcessing && !hasMCPExport) {
+      newSuggestions.push({
+        id: 'add-mcp-export',
+        type: 'recommendation',
+        title: 'Add MCP/CRM Export',
+        description: 'Export extracted data to Salesforce, HubSpot, Veeva, or ERP systems via MCP SDK.',
+        action: () => addRecommendedNode('mcp_export')
+      });
+    }
+
+    // General document processing recommendation
+    if (!hasDocProcessing && (contextLower.includes('document') || contextLower.includes('form') || contextLower.includes('ocr'))) {
+      newSuggestions.push({
+        id: 'add-doc-processing',
+        type: 'recommendation',
+        title: 'Add Multi-Provider OCR Hub',
+        description: 'Choose OCR provider: Google Vision, Azure Form Recognizer, or AWS Textract.',
+        action: () => addRecommendedNode('multi_provider_ocr')
+      });
+    }
+
+    // Check for specific OCR providers if document workflow
+    const hasMultiProviderOCR = workflowNodes.some(n => 
+      ['google_vision_ocr', 'azure_form_recognizer', 'aws_textract', 'multi_provider_ocr'].includes(n.data.type_key)
+    );
+
+    if (!hasMultiProviderOCR && hasDocProcessing && !hasOCR) {
+      newSuggestions.push({
+        id: 'add-multi-ocr',
+        type: 'improvement',
+        title: 'Add Multi-Provider OCR Selection',
+        description: 'Enable user selection of OCR provider (Google/Azure/AWS) for better flexibility.',
+        action: () => addRecommendedNode('multi_provider_ocr')
+      });
+    }
+
+    // Check for enhanced agentic capabilities
+    const hasEnhancedAgentic = workflowNodes.some(n => 
+      ['plan_execute', 'reasoning_chain', 'memory_context', 'adaptive_learning'].includes(n.data.type_key)
+    );
+
+    if (!hasEnhancedAgentic && workflowNodes.length >= 3) {
+      newSuggestions.push({
+        id: 'add-enhanced-agentic',
+        type: 'improvement',
+        title: 'Add Enhanced Reasoning',
+        description: 'Add planning, reasoning chains, or adaptive learning for smarter workflows.',
+        action: () => addRecommendedNode('plan_execute')
+      });
+    }
+
+    // Check for MEDICAL IMAGING capabilities
+    const hasMedicalImaging = workflowNodes.some(n => 
+      ['xray_analysis', 'ct_analysis', 'mri_analysis', 'ecg_analysis', 'ultrasound_analysis', 'mammogram_analysis', 'vision_ai_hub'].includes(n.data.type_key)
+    );
+
+    const isMedicalImagingUseCase = contextLower.includes('imaging') || contextLower.includes('radiology') || 
+      contextLower.includes('xray') || contextLower.includes('x-ray') || contextLower.includes('ct') || 
+      contextLower.includes('mri') || contextLower.includes('ecg') || contextLower.includes('ultrasound') ||
+      contextLower.includes('mammogram') || contextLower.includes('medical image') || contextLower.includes('dicom');
+
+    if (!hasMedicalImaging && isMedicalImagingUseCase) {
+      newSuggestions.push({
+        id: 'add-vision-ai-hub',
+        type: 'recommendation',
+        title: 'Add Multi-Provider Vision AI Hub',
+        description: 'Central hub for medical imaging with Gemini, AWS Rekognition, and Azure Health Insights.',
+        action: () => addRecommendedNode('vision_ai_hub')
+      });
+    }
+
+    // Modality-specific medical imaging recommendations
+    if (isMedicalImagingUseCase && !hasMedicalImaging) {
+      if (contextLower.includes('xray') || contextLower.includes('x-ray') || contextLower.includes('lung') || contextLower.includes('chest')) {
+        newSuggestions.push({
+          id: 'add-xray-analysis',
+          type: 'recommendation',
+          title: 'Add X-Ray Analysis Node',
+          description: 'CNN-based lung nodule detection, pneumonia, TB screening with qXR/RetinaNet models.',
+          action: () => addRecommendedNode('xray_analysis')
+        });
+      }
+      if (contextLower.includes('ct') || contextLower.includes('brain') || contextLower.includes('hemorrhage') || contextLower.includes('tumor')) {
+        newSuggestions.push({
+          id: 'add-ct-analysis',
+          type: 'recommendation',
+          title: 'Add CT Scan Analysis Node',
+          description: 'U-Net segmentation for brain hemorrhage, lung cancer, tumor analysis with qER/DeepMedic.',
+          action: () => addRecommendedNode('ct_analysis')
+        });
+      }
+      if (contextLower.includes('mri') || contextLower.includes('alzheimer') || contextLower.includes('brain tumor')) {
+        newSuggestions.push({
+          id: 'add-mri-analysis',
+          type: 'recommendation',
+          title: 'Add MRI Analysis Node',
+          description: 'U-Net brain tumor segmentation, Alzheimer detection with BraTS/nnU-Net models.',
+          action: () => addRecommendedNode('mri_analysis')
+        });
+      }
+      if (contextLower.includes('ecg') || contextLower.includes('cardiac') || contextLower.includes('heart') || contextLower.includes('arrhythmia')) {
+        newSuggestions.push({
+          id: 'add-ecg-analysis',
+          type: 'recommendation',
+          title: 'Add ECG Analysis Node',
+          description: 'RNN/LSTM arrhythmia detection, AFib, MI analysis with ResNet-ECG models.',
+          action: () => addRecommendedNode('ecg_analysis')
+        });
+      }
+      if (contextLower.includes('ultrasound') || contextLower.includes('fetal') || contextLower.includes('thyroid')) {
+        newSuggestions.push({
+          id: 'add-ultrasound-analysis',
+          type: 'recommendation',
+          title: 'Add Ultrasound Analysis Node',
+          description: 'U-Net fetal measurements, cardiac function, thyroid nodule detection.',
+          action: () => addRecommendedNode('ultrasound_analysis')
+        });
+      }
+      if (contextLower.includes('mammogram') || contextLower.includes('breast')) {
+        newSuggestions.push({
+          id: 'add-mammogram-analysis',
+          type: 'recommendation',
+          title: 'Add Mammogram Analysis Node',
+          description: 'Faster R-CNN mass detection, microcalcifications, BI-RADS scoring.',
+          action: () => addRecommendedNode('mammogram_analysis')
+        });
+      }
+    }
+
+    // Suggest multi-provider vision if only one provider is used
+    const hasMultiProviderVision = workflowNodes.some(n => n.data.type_key === 'vision_ai_hub');
+    if (hasMedicalImaging && !hasMultiProviderVision) {
+      newSuggestions.push({
+        id: 'add-multi-provider-vision',
+        type: 'improvement',
+        title: 'Add Multi-Provider Vision Hub',
+        description: 'Enable cross-provider analysis with Gemini, AWS Rekognition Medical, and Azure Health Insights for comprehensive results.',
+        action: () => addRecommendedNode('vision_ai_hub')
+      });
+    }
+
+    setSuggestions(newSuggestions);
+    setIsAnalyzing(false);
+  }, [workflowNodes, workflowEdges, agentContext]);
+
+  const addRecommendedNode = useCallback((type: string) => {
+    const nodeLabels: { [key: string]: string } = {
+      'knowledge_base': 'Knowledge Base',
+      'rag_retrieval': 'RAG Retrieval',
+      'error_handler': 'Error Handler',
+      'validation': 'Input Validation',
+      'mcp_connector': 'MCP Connector',
+      // Multi-agent nodes - all 10 types
+      'a2a_agent': 'A2A Agent',
+      'task_handoff': 'Task Handoff',
+      'communication_hub': 'Communication Hub',
+      'agent_team': 'Agent Team',
+      'swarm_decision': 'Swarm Decision',
+      'tool_sharing': 'Tool Sharing',
+      'react_loop': 'ReAct Loop',
+      'tool_chain': 'Tool Chain',
+      'self_reflection': 'Self Reflection',
+      'goal_decomposition': 'Goal Decomposition',
+      // Document Processing nodes - all types including Multi-Provider OCR
+      'ocr_document': 'OCR Document',
+      'doc_ai': 'Document AI',
+      'metadata_extraction': 'Metadata Extraction',
+      'form_recognition': 'Form Recognition',
+      'image_analysis': 'Image Analysis',
+      'document_validation': 'Document Validation',
+      'data_extraction': 'Data Extraction',
+      'document_comparison': 'Document Comparison',
+      'document_archive': 'Document Archive',
+      'document_to_database': 'Doc to Database',
+      // Multi-Provider OCR nodes
+      'multi_provider_ocr': 'Multi-Provider OCR Hub',
+      'google_vision_ocr': 'Google Vision OCR',
+      'azure_form_recognizer': 'Azure Form Recognizer',
+      'aws_textract': 'AWS Textract',
+      // Document Type Specific nodes
+      'prescription_processor': 'Prescription Processor',
+      'insurance_processor': 'Insurance Processor',
+      'invoice_rcm_processor': 'Invoice/RCM Processor',
+      'patient_form_processor': 'Patient Form Processor',
+      'lab_result_processor': 'Lab Results Processor',
+      'gemini_nlp_extractor': 'Gemini NLP Extractor',
+      'field_mapping': 'Field Mapping',
+      'validation_node': 'Validation & Verification',
+      'mcp_export': 'MCP/CRM Export',
+      // Invoice/RCM specific
+      'invoice_parser': 'Invoice Parser',
+      'cpt_analyzer': 'CPT/HCPCS Analyzer',
+      'aging_analyzer': 'AR Aging Analyzer',
+      'payment_tracker': 'Payment Status Tracker',
+      'erp_export': 'ERP Export',
+      // Enhanced Agentic AI nodes - all 10 types
+      'plan_execute': 'Plan & Execute',
+      'reasoning_chain': 'Reasoning Chain',
+      'memory_context': 'Memory & Context',
+      'critique_refinement': 'Critique & Refinement',
+      'multi_perspective': 'Multi-Perspective',
+      'knowledge_integration': 'Knowledge Integration',
+      'hypothesis_testing': 'Hypothesis Testing',
+      'skill_composition': 'Skill Composition',
+      'adaptive_learning': 'Adaptive Learning',
+      'workflow_orchestrator': 'Workflow Orchestrator',
+      // Medical Imaging Vision AI nodes
+      'xray_analysis': 'X-Ray Analysis',
+      'ct_analysis': 'CT Scan Analysis',
+      'mri_analysis': 'MRI Analysis',
+      'ecg_analysis': 'ECG Analysis',
+      'ultrasound_analysis': 'Ultrasound Analysis',
+      'mammogram_analysis': 'Mammogram Analysis',
+      'vision_ai_hub': 'Multi-Provider Vision AI Hub'
+    };
+
+    const nodeIntents: { [key: string]: string } = {
+      'knowledge_base': 'Query knowledge base for relevant context',
+      'rag_retrieval': 'Retrieve relevant documents using RAG',
+      'error_handler': 'Handle errors and exceptions gracefully',
+      'validation': 'Validate input data before processing',
+      'mcp_connector': 'Connect to external MCP tool',
+      // Multi-agent intents
+      'a2a_agent': 'A2A Protocol compliant agent with task lifecycle',
+      'task_handoff': 'Transfer task context between agents',
+      'communication_hub': 'Central message routing between agents',
+      'agent_team': 'Coordinated team of specialized agents',
+      'swarm_decision': 'Collective decision using swarm intelligence',
+      'tool_sharing': 'Share tools and capabilities between agents',
+      'react_loop': 'Reasoning and acting loop for autonomous goals',
+      'tool_chain': 'Sequential tool execution with output chaining',
+      'self_reflection': 'Agent self-evaluation and strategy adjustment',
+      'goal_decomposition': 'Break complex goals into achievable sub-tasks',
+      // Document Processing intents
+      'ocr_document': 'Extract text from images and scanned documents',
+      'doc_ai': 'Analyze documents with AI for entities and classification',
+      'metadata_extraction': 'Extract metadata from documents',
+      'form_recognition': 'Recognize and extract form field data',
+      'image_analysis': 'Analyze images for objects, text, and content',
+      'document_validation': 'Validate document authenticity',
+      'data_extraction': 'Extract structured data from documents',
+      'document_comparison': 'Compare documents for differences',
+      'document_archive': 'Archive documents with versioning',
+      'document_to_database': 'Parse and push document data to database',
+      // Document Type Specific intents
+      'prescription_processor': 'Process prescriptions with NDC lookup and multi-medication extraction',
+      'insurance_processor': 'Process pharmacy/medical/Medicaid insurance cards with variant detection',
+      'invoice_rcm_processor': 'Process invoices with CPT codes, line items, and RCM analysis',
+      'patient_form_processor': 'Process patient intake and onboarding forms',
+      'lab_result_processor': 'Process laboratory results with structured output',
+      'gemini_nlp_extractor': 'Extract entities from OCR text using Gemini AI',
+      'field_mapping': 'Map extracted fields to target schema',
+      'validation_node': 'Validate extracted data with confidence scoring',
+      'mcp_export': 'Export to CRM via MCP SDK (Salesforce, HubSpot, Veeva)',
+      // Invoice/RCM specific intents
+      'invoice_parser': 'Parse invoice line items and totals',
+      'cpt_analyzer': 'Analyze CPT/HCPCS codes with category and reimbursement',
+      'aging_analyzer': 'Analyze accounts receivable aging buckets',
+      'payment_tracker': 'Track payment status and collection metrics',
+      'erp_export': 'Export to ERP (QuickBooks, SAP, D365)',
+      // Enhanced Agentic AI intents
+      'plan_execute': 'Plan-execute-reflect cycle for complex tasks',
+      'reasoning_chain': 'Chain of thought reasoning with step-by-step logic',
+      'memory_context': 'Manage contextual memory across conversations',
+      'critique_refinement': 'Self-critique and iterative improvement',
+      'multi_perspective': 'Analyze from multiple viewpoints',
+      'knowledge_integration': 'Integrate knowledge from multiple sources',
+      'hypothesis_testing': 'Generate and test hypotheses systematically',
+      'skill_composition': 'Compose complex behaviors from simpler skills',
+      'adaptive_learning': 'Learn and adapt from execution feedback',
+      'workflow_orchestrator': 'Orchestrate complex multi-step workflows',
+      // Medical Imaging Vision AI intents
+      'xray_analysis': 'CNN lung nodule, pneumonia, TB, fracture detection (qXR, RetinaNet)',
+      'ct_analysis': 'U-Net brain hemorrhage, lung cancer, tumor segmentation (qER, DeepMedic)',
+      'mri_analysis': 'U-Net brain tumor segmentation, Alzheimer detection (BraTS, nnU-Net)',
+      'ecg_analysis': 'RNN/LSTM arrhythmia, AFib, MI detection (ResNet-ECG)',
+      'ultrasound_analysis': 'U-Net fetal measurements, cardiac, thyroid analysis (SonoNet)',
+      'mammogram_analysis': 'Faster R-CNN mass detection, microcalcifications, BI-RADS (YOLO)',
+      'vision_ai_hub': 'Multi-provider medical vision AI hub (Gemini, AWS, Azure)'
+    };
+
+    const newNode: WorkflowNode = {
+      id: `rec-${Date.now()}`,
+      type: 'enhanced',
+      position: { x: 500, y: 150 + workflowNodes.length * 80 },
+      data: {
+        label: nodeLabels[type] || type,
+        type_key: type,
+        intent: nodeIntents[type] || `Process ${type}`,
+        configuration: {}
+      }
+    };
+
+    onNodesGenerated([newNode]);
+    toast.success(`Added ${nodeLabels[type] || type} node`);
+  }, [workflowNodes.length, onNodesGenerated]);
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      toast.error('Please enter a prompt');
+      return;
+    }
+
+    try {
+      const contextPrompt = `
+Agent: ${agentContext.name}
+Description: ${agentContext.description || 'N/A'}
+Use Case: ${agentContext.useCase?.name || 'General'}
+Current Nodes: ${workflowNodes.map(n => n.data.label).join(', ') || 'None'}
+
+User Request: ${prompt}
+
+Generate workflow nodes as a JSON array. Each node should have:
+- label: display name
+- type: node type (action, condition, output, knowledge_base, rag_retrieval, api_call, mcp_connector)
+- intent: short description of purpose (REQUIRED)
+- description: detailed explanation
+
+Return ONLY the JSON array, no other text.`;
+
+      const response = await generateResponse({
+        provider: selectedProvider,
+        model: selectedProvider === 'gemini' ? 'gemini-2.0-flash' : undefined,
+        prompt: contextPrompt,
+      });
+
+      if (response?.content) {
+        const jsonMatch = response.content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsedNodes = JSON.parse(jsonMatch[0]);
+          const newNodes = parsedNodes.map((n: any, idx: number) => ({
+            id: `gen-${Date.now()}-${idx}`,
+            type: 'enhanced',
+            position: { x: 400 + (idx % 3) * 180, y: 100 + Math.floor(idx / 3) * 120 },
+            data: {
+              label: n.label || n.name || `Node ${idx + 1}`,
+              type_key: n.type || 'action',
+              intent: n.intent || n.description || 'Process data',
+              configuration: n.configuration || {}
+            }
+          }));
+          
+          onNodesGenerated(newNodes);
+          toast.success(`Generated ${newNodes.length} nodes`);
+          setPrompt('');
+        }
+      }
+    } catch (e: any) {
+      toast.error('Generation failed: ' + (e.message || 'Unknown error'));
+    }
+  };
+
+  const addMCPTool = (tool: any) => {
+    const newNode: WorkflowNode = {
+      id: `mcp-${Date.now()}`,
+      type: 'enhanced',
+      position: { x: 500, y: 150 + workflowNodes.length * 80 },
+      data: {
+        label: tool.display_name,
+        type_key: tool.type_key,
+        intent: tool.description || `Integrate with ${tool.display_name}`,
+        configuration: { toolId: tool.id }
+      }
+    };
+
+    onNodesGenerated([newNode]);
+    toast.success(`Added ${tool.display_name}`);
+  };
+
+  const linkKnowledgeBase = (entry: any) => {
+    const newNode: WorkflowNode = {
+      id: `kb-${Date.now()}`,
+      type: 'enhanced',
+      position: { x: 500, y: 150 + workflowNodes.length * 80 },
+      data: {
+        label: `KB: ${entry.title}`,
+        type_key: 'knowledge_base',
+        intent: `Query ${entry.title} knowledge`,
+        configuration: { 
+          knowledgeBaseId: entry.id,
+          category: entry.category,
+          topics: entry.topics
+        }
+      }
+    };
+
+    onNodesGenerated([newNode]);
+    toast.success(`Linked ${entry.title}`);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Card className="absolute top-4 right-4 w-[420px] z-50 shadow-xl border-primary/20 max-h-[calc(100vh-120px)] flex flex-col">
+      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          AI Assist
+          <Badge variant="secondary" className="text-xs ml-2">
+            {agentContext.name}
+          </Badge>
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          <Select value={selectedProvider} onValueChange={(v: AIProvider) => setSelectedProvider(v)}>
+            <SelectTrigger className="h-7 w-24 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gemini">Gemini</SelectItem>
+              <SelectItem value="openai">OpenAI</SelectItem>
+              <SelectItem value="claude">Claude</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        <TabsList className="grid grid-cols-5 mx-4 mt-2">
+          <TabsTrigger value="generate" className="text-xs px-2">
+            <Sparkles className="h-3 w-3 mr-1" />
+            Generate
+          </TabsTrigger>
+          <TabsTrigger value="analyze" className="text-xs px-2">
+            <Brain className="h-3 w-3 mr-1" />
+            Analyze
+          </TabsTrigger>
+          <TabsTrigger value="mcp" className="text-xs px-2">
+            <Wrench className="h-3 w-3 mr-1" />
+            MCP
+          </TabsTrigger>
+          <TabsTrigger value="kb" className="text-xs px-2">
+            <Database className="h-3 w-3 mr-1" />
+            KB
+          </TabsTrigger>
+          <TabsTrigger value="perf" className="text-xs px-2">
+            <BarChart3 className="h-3 w-3 mr-1" />
+            Perf
+          </TabsTrigger>
+        </TabsList>
+
+        <CardContent className="flex-1 overflow-hidden p-4">
+          {/* Generate Tab */}
+          <TabsContent value="generate" className="mt-0 space-y-3 h-full">
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+              <p className="font-medium mb-1">Context: {agentContext.useCase?.name || 'General Agent'}</p>
+              <p className="truncate">{agentContext.description || 'No description'}</p>
+            </div>
+            <Textarea 
+              placeholder="Describe nodes to add... e.g., 'Add validation node to check user input, then branch to success or error'"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="min-h-[100px] text-sm resize-none"
+            />
+            <Button 
+              onClick={handleGenerate}
+              disabled={isLoading || !prompt.trim()}
+              className="w-full"
+              size="sm"
+            >
+              {isLoading ? 'Generating...' : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Generate with {selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)}
+                </>
+              )}
+            </Button>
+          </TabsContent>
+
+          {/* Analyze Tab */}
+          <TabsContent value="analyze" className="mt-0 h-full">
+            <ScrollArea className="h-[280px]">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Workflow Analysis</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={analyzeWorkflow}
+                    disabled={isAnalyzing}
+                    className="h-7 text-xs"
+                  >
+                    {isAnalyzing ? 'Analyzing...' : 'Refresh'}
+                  </Button>
+                </div>
+                
+                <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+                  <p>Nodes: {workflowNodes.length} | Connections: {workflowEdges.length}</p>
+                </div>
+
+                {suggestions.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                    <p className="text-sm">Workflow looks good!</p>
+                    <p className="text-xs">No suggestions at this time</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {suggestions.map(suggestion => (
+                      <div 
+                        key={suggestion.id}
+                        className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-start gap-2">
+                          {suggestion.type === 'warning' && <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />}
+                          {suggestion.type === 'improvement' && <Lightbulb className="h-4 w-4 text-blue-500 mt-0.5" />}
+                          {suggestion.type === 'recommendation' && <Zap className="h-4 w-4 text-purple-500 mt-0.5" />}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">{suggestion.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{suggestion.description}</p>
+                            {suggestion.action && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="mt-2 h-6 text-xs"
+                                onClick={suggestion.action}
+                              >
+                                Apply
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* MCP Tools Tab */}
+          <TabsContent value="mcp" className="mt-0 h-full">
+            <ScrollArea className="h-[280px]">
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Add MCP SDK tools to connect external services and data
+                </p>
+                {mcpTools.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No MCP tools available
+                  </p>
+                ) : (
+                  mcpTools.map(tool => (
+                    <div 
+                      key={tool.id}
+                      className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => addMCPTool(tool)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Wrench className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">{tool.display_name}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {tool.category?.name || 'Tool'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {tool.description || 'MCP integration tool'}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* Knowledge Base Tab */}
+          <TabsContent value="kb" className="mt-0 h-full">
+            <ScrollArea className="h-[280px]">
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Link knowledge base entries to enhance agent context
+                </p>
+                {kbEntries.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No knowledge base entries available
+                  </p>
+                ) : (
+                  kbEntries.map(entry => (
+                    <div 
+                      key={entry.id}
+                      className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => linkKnowledgeBase(entry)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Database className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">{entry.title}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {entry.category || 'KB'}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {entry.topics?.slice(0, 3).map((topic: string, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {topic}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* Performance Tab */}
+          <TabsContent value="perf" className="mt-0 h-full">
+            <ScrollArea className="h-[280px]">
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Real-time performance metrics for {agentContext.name || 'this agent'}
+                </p>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg border bg-muted/30">
+                    <p className="text-xs text-muted-foreground">Total Nodes</p>
+                    <p className="text-xl font-bold">{workflowNodes.length}</p>
+                  </div>
+                  <div className="p-3 rounded-lg border bg-muted/30">
+                    <p className="text-xs text-muted-foreground">Connections</p>
+                    <p className="text-xl font-bold">{workflowEdges.length}</p>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg border">
+                  <p className="text-sm font-medium mb-2">Node Types</p>
+                  <div className="space-y-1">
+                    {Object.entries(
+                      workflowNodes.reduce((acc: Record<string, number>, node) => {
+                        const type = node.data.type_key || 'unknown';
+                        acc[type] = (acc[type] || 0) + 1;
+                        return acc;
+                      }, {})
+                    ).map(([type, count]) => (
+                      <div key={type} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{type}</span>
+                        <span className="font-medium">{count as number}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Use Case Context */}
+                {agentContext.useCase && (
+                  <div className="p-3 rounded-lg border bg-primary/5">
+                    <p className="text-sm font-medium mb-1">Use Case</p>
+                    <p className="text-xs text-muted-foreground">
+                      {agentContext.useCase.name}
+                    </p>
+                    {agentContext.useCase.description && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {agentContext.useCase.description}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    if (agentContext.id) {
+                      window.open(`/genie-analytics/${agentContext.id}`, '_blank');
+                    } else {
+                      window.open('/enterprise-analytics', '_blank');
+                    }
+                  }}
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Open Full Analytics Dashboard
+                </Button>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </CardContent>
+      </Tabs>
+    </Card>
+  );
+};

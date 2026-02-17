@@ -20,13 +20,13 @@ export const useSimpleRouting = ({ userRoles, isAuthenticated }: SimpleRoutingPr
     // If we have roles, use them for routing
     if (userRoles.length > 0) {
       if (userRoles.includes('superAdmin')) {
-        console.log('🗺️ Routing super admin to dashboard');
-        return '/dashboard';
+        console.log('🗺️ Routing super admin to agents');
+        return '/agents';
       }
       
       if (userRoles.includes('onboardingTeam')) {
-        console.log('🗺️ Routing onboarding team to onboarding');
-        return '/onboarding';
+        console.log('🗺️ Routing onboarding team to agents');
+        return '/agents';
       }
       
       if (userRoles.includes('healthcareProvider') || userRoles.includes('nurse')) {

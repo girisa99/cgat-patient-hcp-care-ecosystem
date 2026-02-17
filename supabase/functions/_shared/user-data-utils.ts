@@ -75,7 +75,7 @@ export async function fetchSupplementaryProfiles(supabase: any, userIds: string[
   console.log('✅ [USER-DATA-UTILS] Basic profiles fetched:', profiles?.length || 0);
   
   // Get facilities separately
-  const facilitiesPromises = (profiles || []).map(async (profile) => {
+  const facilitiesPromises = (profiles || []).map(async (profile: { facility_id?: string | null } & Record<string, any>) => {
     if (!profile.facility_id) return { ...profile, facilities: null };
     
     const { data: facility } = await supabase

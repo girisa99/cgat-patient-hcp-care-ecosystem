@@ -1,0 +1,55 @@
+/* Navigation Bar Custom Styles */
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Ensure navigation items don't shrink below readable size and prevent text overlap */
+.nav-item {
+  min-width: fit-content;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Prevent text wrapping and ensure stable layout */
+.text-stable {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive navigation adjustments */
+@media (max-width: 768px) {
+  .nav-text-responsive {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .nav-text-lg {
+    display: none;
+  }
+}
+
+@media (max-width: 1280px) {
+  .nav-text-xl {
+    display: none;
+  }
+}
+
+/* Animation for navigation hover effects */
+.nav-hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Ensure dropdowns don't get cut off */
+.dropdown-menu {
+  z-index: 9999;
+}

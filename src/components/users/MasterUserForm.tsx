@@ -6,14 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMasterFormStateManager } from '@/hooks/useMasterFormStateManager';
 import type { MasterUserFormState } from '@/types/masterFormState';
+import type { MasterUserFormProps } from '@/types/userComponentTypes';
 
-interface MasterUserFormProps {
-  onSubmit: (userData: MasterUserFormState) => void;
-  isSubmitting?: boolean;
-  onCancel: () => void;
-  initialData?: Partial<MasterUserFormState>;
-  title?: string;
-}
+// Phase 1D: Using consolidated props interface with ALL functionality preserved
 
 export const MasterUserForm: React.FC<MasterUserFormProps> = ({
   onSubmit,

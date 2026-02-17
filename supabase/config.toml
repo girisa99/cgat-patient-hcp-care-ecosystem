@@ -1,0 +1,426 @@
+project_id = "ithspbabhmdntioslfqe"
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["https://ithspbabhmdntioslfqe.supabase.co"]
+jwt_expiry = 3600
+
+[functions.ai-model-processor]
+verify_jwt = false
+
+[functions.agent-test-runner]
+verify_jwt = true
+
+[functions.comprehensive-therapy-data-generator]
+verify_jwt = false
+
+[functions.data-processor]
+verify_jwt = true
+
+[functions.generate-knowledge-content]
+verify_jwt = true
+
+[functions.crawl-relevant-content]
+verify_jwt = true
+
+[functions.generate-therapy-products]
+verify_jwt = true
+
+[functions.claude-ai-chat]
+verify_jwt = true
+
+[functions.healthcare-agentic-orchestrator]
+verify_jwt = true
+
+[functions.docusign-integration]
+
+[functions.patient-enrollment-pdf]
+
+[functions.fax-processing]
+verify_jwt = false
+
+[functions.onboarding-pdf-generator]
+verify_jwt = false
+
+[functions.perplexity-recommend]
+verify_jwt = true
+
+[functions.security-monitor]
+verify_jwt = true
+
+[functions.generate-agent-from-prompt]
+verify_jwt = true
+
+[functions.ai-universal-processor]
+verify_jwt = false
+
+[functions.check-ai-provider]
+verify_jwt = false
+
+[functions.arize-integration]
+verify_jwt = true
+
+[functions.langwatch-integration] 
+verify_jwt = true
+
+[functions.elevenlabs-voice]
+verify_jwt = false
+
+[functions.huggingface-speech]
+verify_jwt = false
+
+[functions.pdf-voice-processor]
+verify_jwt = false
+
+[functions.fax-voice-processor]
+verify_jwt = false
+
+[functions.rag-search]
+verify_jwt = false
+
+[functions.label-studio-search]
+verify_jwt = false
+
+[functions.rag-status]
+verify_jwt = false
+
+[functions.ai-image-generator]
+verify_jwt = false
+
+[functions.visual-content-search]
+verify_jwt = false
+
+[functions.health-check]
+verify_jwt = false
+
+[functions.mcp-database-server]
+verify_jwt = false
+
+[functions.mcp-api-server]
+verify_jwt = false
+
+[functions.mcp-memory-server]
+verify_jwt = false
+
+[functions.data-integration]
+verify_jwt = false
+
+[functions.document-processor]
+verify_jwt = false
+
+[functions.process-documents]
+verify_jwt = false
+
+[functions.drug-lookup]
+verify_jwt = false
+
+[functions.mcp-data-sync]
+verify_jwt = false
+
+[functions.medical-imaging-cnn]
+verify_jwt = false
+
+[functions.extract-enrollment-form]
+verify_jwt = false
+
+[functions.openai-tts]
+verify_jwt = false
+
+[functions.analyze-script]
+verify_jwt = false
+
+[functions.text-to-speech]
+verify_jwt = false
+
+[functions.enhance-script]
+verify_jwt = false
+
+[functions.send-show-invite]
+verify_jwt = false
+
+[functions.elevenlabs-music]
+verify_jwt = false
+
+[functions.amazon-polly]
+verify_jwt = false
+
+[functions.azure-tts]
+verify_jwt = false
+
+[functions.google-tts]
+verify_jwt = false
+
+[functions.execute-document-agent]
+verify_jwt = false
+
+[functions.agent-config-manager]
+verify_jwt = false
+
+[functions.og-metadata]
+verify_jwt = false
+
+[functions.share-presentation]
+verify_jwt = false
+
+[functions.voice-to-text]
+verify_jwt = false
+
+[functions.deepgram-stt]
+verify_jwt = false
+
+[functions.extract-video-audio]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.create-session]
+verify_jwt = false
+
+[functions.send-session-invites]
+verify_jwt = false
+
+[functions.session-reminders]
+verify_jwt = false
+
+[functions.session-update-notify]
+verify_jwt = false
+
+[functions.session-feedback]
+verify_jwt = false
+
+[functions.social-publish]
+verify_jwt = false
+
+[functions.voice-clone-processor]
+verify_jwt = false
+
+[functions.auto-thumbnail-generator]
+verify_jwt = false
+
+[functions.hipaa-redaction]
+verify_jwt = false
+
+[functions.recurring-scheduler]
+verify_jwt = false
+
+[functions.calendar-sync]
+verify_jwt = false
+
+[functions.audio-mixer]
+verify_jwt = false
+
+[functions.scene-analyzer]
+verify_jwt = false
+
+[functions.shorts-generator]
+verify_jwt = false
+
+[functions.viral-score-predictor]
+verify_jwt = false
+
+[functions.quiz-video-generator]
+verify_jwt = false
+
+[functions.microlearning-generator]
+verify_jwt = false
+
+[functions.chat-with-claude]
+verify_jwt = false
+
+[functions.legal-review-gate]
+verify_jwt = false
+
+[functions.bulk-operations]
+verify_jwt = false
+
+[functions.workspace-collaboration]
+verify_jwt = false
+
+[functions.analytics-dashboard]
+verify_jwt = false
+
+[functions.template-marketplace]
+verify_jwt = false
+
+[functions.send-meeting-minutes]
+verify_jwt = false
+
+[functions.notify-recording-consent]
+verify_jwt = false
+
+[functions.linkedin-oauth]
+verify_jwt = false
+
+[functions.youtube-oauth]
+verify_jwt = false
+
+[functions.ai-caption-generator]
+verify_jwt = false
+
+[functions.accessibility-checker]
+verify_jwt = false
+
+[functions.brand-guidelines-checker]
+verify_jwt = false
+
+[functions.translation-service]
+verify_jwt = false
+
+[functions.modelslab-media]
+verify_jwt = false
+
+[functions.ask-genie-voice]
+verify_jwt = false
+
+[functions.alibaba-tts]
+verify_jwt = false
+
+[functions.elevenlabs-sfx]
+verify_jwt = false
+
+[functions.azure-form-recognizer]
+verify_jwt = false
+
+[functions.alibaba-stt]
+verify_jwt = false
+
+[functions.deepseek-vision]
+verify_jwt = false
+
+[functions.multi-language-audio-orchestrator]
+verify_jwt = false
+
+[functions.music-composer-agent]
+verify_jwt = false
+
+[functions.ai-video-generator]
+verify_jwt = false
+
+[functions.gemini-generate-video]
+verify_jwt = false
+
+[functions.gemini-generate-image]
+verify_jwt = false
+
+[functions.google-slides-export]
+verify_jwt = false
+
+[functions.distribution-agent]
+verify_jwt = false
+
+[functions.ai-a2a-coordinator]
+verify_jwt = false
+
+[functions.geo-compliance-check]
+verify_jwt = false
+
+[functions.marketing-auto-scheduler]
+verify_jwt = true
+
+[functions.pipeline-editor-processor]
+verify_jwt = false
+
+[functions.multi-provider-sfx]
+verify_jwt = false
+
+[functions.multi-provider-music]
+verify_jwt = false
+
+[functions.dialect-tts-demo]
+verify_jwt = false
+
+[functions.alibaba-avatar-generator]
+verify_jwt = false
+
+[functions.alibaba-video-generator]
+verify_jwt = false
+
+[functions.alibaba-3d-generator]
+verify_jwt = false
+
+[functions.landing-video-generator]
+verify_jwt = false
+
+[functions.ask-genie-support]
+verify_jwt = false
+
+[functions.content-compliance-check]
+verify_jwt = false
+
+[functions.instagram-oauth]
+verify_jwt = false
+
+[functions.tiktok-oauth]
+verify_jwt = false
+
+[functions.geo-detect]
+verify_jwt = false
+
+[functions.purchase-credits]
+verify_jwt = false
+
+[functions.genie-cast-assembler]
+verify_jwt = false
+
+[functions.multi-provider-tts]
+verify_jwt = false
+
+[functions.magic-clips-generator]
+verify_jwt = false
+
+[functions.generate-brand-assets]
+verify_jwt = false
+
+[functions.upload-brand-logos]
+verify_jwt = false
+
+[functions.genie-cast-status]
+verify_jwt = false
+
+[functions.seed-blueprints-comprehensive]
+verify_jwt = false
+
+[functions.seed-provider-templates]
+verify_jwt = false
+
+[functions.process-thumbnail-queue]
+verify_jwt = false
+
+[functions.generate-template-ai]
+verify_jwt = false
+
+[functions.queue-missing-thumbnails]
+verify_jwt = false
+
+[functions.fix-broken-thumbnails]
+verify_jwt = false
+
+[functions.seed-regional-templates]
+verify_jwt = false
+
+[functions.seed-mobile-regional-templates]
+verify_jwt = false
+
+[functions.intent-analyzer]
+verify_jwt = false
+
+[functions.competitive-intelligence]
+verify_jwt = false

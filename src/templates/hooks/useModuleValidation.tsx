@@ -1,8 +1,8 @@
 
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 import { ModuleConfig } from '@/utils/moduleValidation';
 
-type DatabaseTables = keyof Database['public']['Tables'];
+type DatabaseTables = string;
 
 interface ValidationResult {
   isValid: boolean;

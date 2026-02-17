@@ -5,10 +5,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { moduleRegistry } from '../moduleRegistry';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
 // Align with framework TypeScript types
-type DatabaseTables = keyof Database['public']['Tables'];
+type DatabaseTables = string;
 type TableRow<T extends DatabaseTables> = Database['public']['Tables'][T]['Row'];
 
 export interface DatabaseTableAnalysis {
@@ -158,9 +158,14 @@ class DatabaseSchemaAnalyzerClass {
         return null;
       }
 
-      // Get row count
-      const { count } = await supabase
-        .from(tableName as any)
+      // Get row count with table validation
+      const validTables = ['facilities', 'modules', 'profiles', 'roles', 'user_roles'];
+      if (!validTables.includes(tableName)) {
+        throw new Error(`Invalid table name: ${tableName}`);
+      }
+      
+      const { count } = await (supabase as any)
+        .from(tableName)
         .select('*', { count: 'exact', head: true });
 
       // Analyze framework alignment

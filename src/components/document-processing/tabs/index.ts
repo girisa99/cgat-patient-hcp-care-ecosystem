@@ -1,0 +1,17 @@
+/**
+ * Document Processing Tab Components
+ * Central export point for all tab components
+ */
+
+export { default as UploadTab } from './UploadTab';
+export { default as HistoryTab } from './HistoryTab';
+export { default as MedicationTab } from './MedicationTab';
+export { default as InsuranceTab } from './InsuranceTab';
+export { default as PatientInfoTab } from './PatientInfoTab';
+export { default as FollowUpTab } from './FollowUpTab';
+
+// Layout components
+export { DocumentProcessingHeader } from './DocumentProcessingHeader';
+export { DocumentProcessingControlBar } from './DocumentProcessingControlBar';
+export { AgentWorkflowSelector } from './AgentWorkflowSelector';
+export { GenericDocumentTab } from './GenericDocumentTab';

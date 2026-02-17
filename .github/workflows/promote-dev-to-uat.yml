@@ -1,0 +1,56 @@
+name: Promote dev to UAT
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force update uat to match dev (dangerous). Leave false for fast-forward only."
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Promote dev -> uat (fast-forward by default)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin dev uat --prune
+
+          DEV_SHA="$(git rev-parse origin/dev)"
+          UAT_SHA="$(git rev-parse origin/uat)"
+          MB_SHA="$(git merge-base origin/uat origin/dev)"
+
+          echo "origin/dev: $DEV_SHA"
+          echo "origin/uat: $UAT_SHA"
+          echo "merge-base: $MB_SHA"
+
+          FORCE_INPUT="${{ inputs.force }}"
+          if [[ "$FORCE_INPUT" != "true" && "$FORCE_INPUT" != "false" ]]; then
+            echo "Invalid inputs.force value: $FORCE_INPUT (expected 'true' or 'false')"
+            exit 2
+          fi
+
+          if [[ "$FORCE_INPUT" != "true" ]]; then
+            if [[ "$MB_SHA" != "$UAT_SHA" ]]; then
+              echo "Refusing to promote: uat is not an ancestor of dev (not a fast-forward)."
+              echo "If you really intend to overwrite uat, re-run with inputs.force=true."
+              exit 1
+            fi
+            echo "Fast-forwarding uat to dev..."
+            git push origin "$DEV_SHA:refs/heads/uat"
+          else
+            echo "Force-updating uat to dev (with lease)..."
+            git push --force-with-lease origin "$DEV_SHA:refs/heads/uat"
+          fi

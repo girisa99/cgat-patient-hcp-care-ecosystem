@@ -17,6 +17,8 @@ export interface ApiService {
   base_url?: string;
   type: string;
   status: string;
+  category?: string;
+  direction?: string;
   created_at: string;
   updated_at: string;
 }
@@ -66,7 +68,7 @@ export const useMasterApiServices = () => {
     queryClient.invalidateQueries({ queryKey: MASTER_API_SERVICES_CACHE_KEY });
   };
 
-  // ====================== API SERVICE CREATION ======================
+  // ====================== API SERVICE MUTATIONS ======================
   const createApiServiceMutation = useMutation({
     mutationFn: async (serviceData: {
       name: string;
@@ -85,9 +87,10 @@ export const useMasterApiServices = () => {
           status: 'active'
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to create API service'));
+
       return data;
     },
     onSuccess: () => {
@@ -100,6 +103,34 @@ export const useMasterApiServices = () => {
     onError: (error: any) => {
       toast({
         title: "API Service Creation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteApiServiceMutation = useMutation({
+    mutationFn: async (serviceId: string) => {
+      console.log('🗑️ Deleting API service:', serviceId);
+      
+      const { error } = await supabase
+        .from('api_integration_registry')
+        .delete()
+        .eq('id', serviceId);
+
+      if (error) throw error;
+      return { success: true };
+    },
+    onSuccess: () => {
+      invalidateCache();
+      toast({
+        title: "API Service Deleted",
+        description: "API service has been deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "API Service Deletion Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -156,9 +187,10 @@ export const useMasterApiServices = () => {
     // API Service Management
     createApiService: createApiServiceMutation.mutate,
     isCreatingApiService: createApiServiceMutation.isPending,
+    deleteApiService: deleteApiServiceMutation.mutate,
+    isDeletingApiService: deleteApiServiceMutation.isPending,
     
     updateApiService: async () => ({ success: false }),
-    deleteApiService: async () => ({ success: false }),
     
     // Utilities
     searchApiServices,

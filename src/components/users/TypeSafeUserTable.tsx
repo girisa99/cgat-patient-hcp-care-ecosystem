@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Settings, RefreshCw } from 'lucide-react';
 import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
-import { MasterUser } from '@/hooks/useMasterData';
+import type { MasterUser } from '@/types/userManagement';
 
 export const TypeSafeUserTable: React.FC = () => {
   const { 
