@@ -1,0 +1,75 @@
+// Sprint Tracker — Day 1 Diagnosis Findings
+import type { TaskFindings } from './types';
+
+export const DAY1_FINDINGS: Record<string, TaskFindings> = {
+  'C-101': {
+    summary: 'GenieSpark: critical race conditions in save+navigate, missing error handling, broken route, inconsistent stats.',
+    totalIssues: 14, issuesBySeverity: { critical: 3, high: 3, medium: 5, low: 3 },
+    dayTwoImpact: 'Handlers fixed. Day 3 C-301 (SmartContentPipeline) and C-302 (SparkGuidedWizard) remain.',
+    findings: [
+      { id: 'S-001', severity: 'critical', file: 'src/pages/GenieSpark.tsx', line: 45, issue: 'Race condition: saveScript() not awaited before navigate()', rootCause: 'saveScript is async but called synchronously', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-002', severity: 'critical', file: 'src/pages/GenieSpark.tsx', line: 50, issue: 'handleSendToVibe: same race condition + missing stats', rootCause: 'Copy-paste error', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-003', severity: 'critical', file: 'src/pages/GenieSpark.tsx', line: 84, issue: 'Broken route: /genie-studio/productions does not exist', rootCause: 'Moved to /genie-admin?tab=library', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-004', severity: 'high', file: 'src/pages/GenieSpark.tsx', line: 28, issue: 'No error handling on any content handler', rootCause: 'Handlers lacked try/catch', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-005', severity: 'high', file: 'src/pages/GenieSpark.tsx', line: 88, issue: 'handleSaveToKnowledgeBase is a no-op stub', rootCause: 'Never completed', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-006', severity: 'high', file: 'src/components/genie-studio/SmartContentPipeline.tsx', issue: 'Uses simulated AI not real API', rootCause: '80KB component has placeholder generation', status: 'open' },
+      { id: 'S-007', severity: 'medium', file: 'src/constants/genie-products.ts', line: 109, issue: 'Tagline capitalization mismatch', rootCause: '"Ignite your Ideas" vs "Ignite Your Ideas"', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-008', severity: 'medium', file: 'src/components/genie-spark/SparkGuidedWizard.tsx', line: 130, issue: 'onGenerate uses simulated 2s delay', rootCause: 'Fake callback with setTimeout', status: 'open' },
+      { id: 'S-009', severity: 'medium', file: 'src/components/genie-spark/SparkGuidedWizard.tsx', line: 162, issue: 'Phase buttons lack ARIA roles', rootCause: 'Accessibility gap', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-010', severity: 'medium', file: 'src/pages/GenieSpark.tsx', line: 26, issue: 'savedScripts destructured but never used', rootCause: 'Dashboard moved to GenieMind', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'S-011', severity: 'medium', file: 'src/pages/GenieSpark.tsx', line: 179, issue: 'Image-to-Script saves but never navigates', rootCause: 'No UX to find result', status: 'open' },
+      { id: 'S-012', severity: 'low', file: 'src/pages/GenieSpark.tsx', line: 162, issue: 'QuickTemplateSelector no template pre-fill', rootCause: 'Tab switches but no data passed', status: 'open' },
+      { id: 'S-013', severity: 'low', file: 'src/components/genie-spark/SparkGuidedWizard.tsx', line: 97, issue: 'Refine/Export phases always incomplete', rootCause: 'No completion tracking', status: 'open' },
+      { id: 'S-014', severity: 'low', file: 'src/pages/GenieSpark.tsx', issue: 'Duplicate script creation logic', rootCause: 'No shared factory', status: 'fixed', fixedIn: 'abb79815' },
+    ],
+  },
+  'C-102': {
+    summary: 'GenieMind: wrong tagline, voiceover save stub, 127KB ScriptEditorTab needs deep dive.',
+    totalIssues: 13, issuesBySeverity: { critical: 2, high: 3, medium: 5, low: 3 },
+    dayTwoImpact: 'Mind scheduled for Day 4. Voiceover stub and ScriptEditorTab are critical.',
+    findings: [
+      { id: 'M-001', severity: 'critical', file: 'src/components/navigation/QuadrantProductHeader.tsx', line: 50, issue: 'Mind tagline "Think Beyond Limits" instead of "AI That Understands"', rootCause: 'Hardcoded separately from genie-products.ts', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'M-002', severity: 'critical', file: 'src/pages/GenieMind.tsx', line: 241, issue: 'Voiceover save is stub — no persist', rootCause: 'useGenieMediaLibrary has no saveVoiceover', status: 'open' },
+      { id: 'M-003', severity: 'high', file: 'src/components/genie-studio/ScriptEditorTab.tsx', issue: '127KB file needs deep investigation', rootCause: 'Massive single-file component', status: 'open' },
+      { id: 'M-004', severity: 'high', file: 'src/pages/GenieMind.tsx', line: 301, issue: 'Audio delete says "Delete via Genie Vibe"', rootCause: 'Cross-product delete not implemented', status: 'open' },
+      { id: 'M-005', severity: 'high', file: 'src/components/genie-studio/CrossFunctionalMusic.tsx', issue: 'Music generation API needs verification', rootCause: 'Scheduled for C-403', status: 'open' },
+      { id: 'M-006', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 2, issue: 'Doc comment tagline wrong', rootCause: 'Copy-paste of old tagline', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'M-007', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 57, issue: 'No loading indicator for media library', rootCause: 'mediaLoading not rendered', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'M-008', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 325, issue: 'Audio elements lack aria-label', rootCause: 'Accessibility gap', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'M-009', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 82, issue: 'Stats bar 5-col grid breaks on mobile', rootCause: 'No responsive breakpoint', status: 'open' },
+      { id: 'M-010', severity: 'medium', file: 'src/pages/GenieMind.tsx', line: 40, issue: 'Tab changes not reflected in URL', rootCause: 'useState captures initial value only', status: 'open' },
+      { id: 'M-011', severity: 'low', file: 'src/pages/GenieMind.tsx', line: 149, issue: 'Script card click opens tab not specific script', rootCause: 'No script ID passed', status: 'open' },
+      { id: 'M-012', severity: 'low', file: 'src/components/genie-studio/SavedAudioCard.tsx', issue: 'Possible stale audio URL handling', rootCause: 'Needs investigation', status: 'open' },
+      { id: 'M-013', severity: 'low', file: 'src/pages/GenieMind.tsx', line: 256, issue: 'BatchScriptGenerationWorkflow no callbacks', rootCause: 'Self-contained component', status: 'open' },
+    ],
+  },
+  'C-103': {
+    summary: 'GenieDeck most production-ready. Polish: fallback UI, image loading, error messages.',
+    totalIssues: 6, issuesBySeverity: { critical: 0, high: 0, medium: 3, low: 3 },
+    dayTwoImpact: 'Deck scheduled for Day 2. Focus on PresentationWizard flow.',
+    findings: [
+      { id: 'D-001', severity: 'medium', file: 'src/pages/GenieDeck.tsx', line: 158, issue: 'Support email hardcoded as support@example.com', rootCause: 'Placeholder', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'D-002', severity: 'medium', file: 'src/components/landing/demo-hub/DeckDemoCard.tsx', line: 545, issue: 'Returns null when industry data missing', rootCause: 'No fallback UI', status: 'open' },
+      { id: 'D-003', severity: 'medium', file: 'src/config/genieStudioNavItems.ts', line: 143, issue: 'Tier gating starter but no client-side check', rootCause: 'Route guard does auth not tier', status: 'open' },
+      { id: 'D-004', severity: 'low', file: 'src/components/landing/demo-hub/DeckDemoCard.tsx', line: 560, issue: 'Error messages generic', rootCause: 'Generic strings', status: 'open' },
+      { id: 'D-005', severity: 'low', file: 'src/components/landing/demo-hub/DeckDemoCard.tsx', line: 628, issue: 'AI image generation no loading skeleton', rootCause: 'No visual feedback', status: 'open' },
+      { id: 'D-006', severity: 'low', file: 'src/components/navigation/QuadrantProductHeader.tsx', line: 149, issue: 'Carousel buttons lack aria-pressed', rootCause: 'Accessibility gap', status: 'open' },
+    ],
+  },
+  'C-104': {
+    summary: '33 total issues across 3 products. 11 fixed Day 1. 22 remain for Days 2-4.',
+    totalIssues: 33, issuesBySeverity: { critical: 5, high: 6, medium: 13, low: 9 },
+    dayTwoImpact: 'Day 2 focus: GenieDeck PresentationWizard.',
+    findings: [
+      { id: 'X-001', severity: 'high', file: 'src/constants/genie-products.ts', issue: 'Tagline inconsistency between constants and header', rootCause: 'Two sources of truth', status: 'fixed', fixedIn: 'abb79815' },
+      { id: 'X-002', severity: 'medium', file: 'src/components/navigation/QuadrantProductHeader.tsx', issue: 'Hardcodes data instead of importing', rootCause: 'Built independently', status: 'open' },
+      { id: 'X-003', severity: 'medium', file: 'N/A', issue: 'No shared error boundary for product pages', rootCause: 'Each page handles errors independently', status: 'open' },
+    ],
+  },
+  'S-101': {
+    summary: 'Build passes. 7 files changed. Branch pushed.',
+    totalIssues: 0, issuesBySeverity: { critical: 0, high: 0, medium: 0, low: 0 },
+    dayTwoImpact: 'Branch clean. Ready for Day 2.',
+    findings: [],
+  },
+};
