@@ -81,7 +81,12 @@ export const REGION_HIERARCHY: RegionGroup[] = [
     ],
   },
   // 4. Turkey — 1 zone
-  { groupCode: 'TURKEY', groupName: 'Turkey (Türkçe)', groupFlag: '🇹🇷', children: [] },
+  {
+    groupCode: 'TURKEY', groupName: 'Turkey (Türkçe)', groupFlag: '🇹🇷',
+    children: [
+      { code: 'TURKEY', name: 'Turkey (Türkçe / Kurdî)', flag: '🇹🇷' },
+    ],
+  },
   // 5. MENA — 6 zones (includes Israel)
   {
     groupCode: 'MENA', groupName: 'Middle East & North Africa', groupFlag: '🇸🇦',
@@ -131,9 +136,19 @@ export const REGION_HIERARCHY: RegionGroup[] = [
     ],
   },
   // 8. Pakistan — 1 zone (standalone)
-  { groupCode: 'PAKISTAN', groupName: 'Pakistan (اردو)', groupFlag: '🇵🇰', children: [] },
+  {
+    groupCode: 'PAKISTAN', groupName: 'Pakistan (اردو)', groupFlag: '🇵🇰',
+    children: [
+      { code: 'PAKISTAN', name: 'Pakistan (اردو / پنجابی / سنڌي / پښتو)', flag: '🇵🇰' },
+    ],
+  },
   // 9. Bangladesh — 1 zone (standalone)
-  { groupCode: 'BANGLADESH', groupName: 'Bangladesh (বাংলা)', groupFlag: '🇧🇩', children: [] },
+  {
+    groupCode: 'BANGLADESH', groupName: 'Bangladesh (বাংলা)', groupFlag: '🇧🇩',
+    children: [
+      { code: 'BANGLADESH', name: 'Bangladesh (বাংলা)', flag: '🇧🇩' },
+    ],
+  },
   // 10. South Asia — 4 zones (Nepal, Sri Lanka, Bhutan, Maldives)
   {
     groupCode: 'SOUTH_ASIA', groupName: 'South Asia', groupFlag: '🌏',
