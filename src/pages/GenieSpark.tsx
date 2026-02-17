@@ -23,70 +23,118 @@ const GenieSpark: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('pipeline');
   const [hasGeneratedContent, setHasGeneratedContent] = useState(false);
-  const { scripts: savedScripts, saveScript } = useGenieScripts();
+  const { saveScript } = useGenieScripts();
 
-  const handleSendToScriptEditor = (content: GeneratedContent) => {
-    const newScript: GenieScript = {
-      id: `script-${Date.now()}`,
-      name: content.title || 'Generated Script',
-      content: content.script,
-      type: content.type === 'podcast_script' ? 'audio' : 'video',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      stats: {
-        wordCount: content.metadata?.wordCount || 0,
-        sentenceCount: 0,
-        characterCount: content.script.length,
-        estimatedReadingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
-        estimatedSpeakingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
-        readabilityScore: 'moderate' as const
+  // Helper to build script stats from generated content
+  const buildScriptStats = (content: GeneratedContent) => ({
+    wordCount: content.metadata?.wordCount || 0,
+    sentenceCount: 0,
+    characterCount: content.script?.length || 0,
+    estimatedReadingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+    estimatedSpeakingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
+    readabilityScore: 'moderate' as const
+  });
+
+  // Map content type to script type
+  const getScriptType = (type: string): 'audio' | 'video' => {
+    return type === 'podcast_script' ? 'audio' : 'video';
+  };
+
+  const handleSendToScriptEditor = async (content: GeneratedContent) => {
+    try {
+      const newScript: GenieScript = {
+        id: `script-${Date.now()}`,
+        name: content.title || 'Generated Script',
+        content: content.script,
+        type: getScriptType(content.type),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        stats: buildScriptStats(content)
+      };
+      const saved = await saveScript(newScript);
+      if (!saved) {
+        toast.error('Failed to save script. Please try again.');
+        return;
       }
-    };
-    saveScript(newScript);
-    navigate('/genie-mind?tab=script-editor');
-    toast.success(`Script sent to Script Editor for refinement!`);
+      navigate('/genie-mind?tab=script-editor');
+      toast.success('Script sent to Script Editor for refinement!');
+    } catch (err) {
+      console.error('Failed to send to Script Editor:', err);
+      toast.error('Something went wrong. Please try again.');
+    }
   };
 
-  const handleSendToVibe = (content: GeneratedContent) => {
-    const newScript: GenieScript = {
-      id: `script-${Date.now()}`,
-      name: content.title || 'Generated Script',
-      content: content.script,
-      type: content.type === 'podcast_script' ? 'audio' : 'video',
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    saveScript(newScript);
-    navigate('/genie-vibe');
-    toast.success(`Script ready for recording in Vibe!`);
-  };
-
-  const handleSendToProductionHub = (content: GeneratedContent) => {
-    const newScript: GenieScript = {
-      id: `script-${Date.now()}`,
-      name: content.title || 'Generated Script',
-      content: content.script,
-      type: content.type === 'podcast_script' ? 'audio' : 'video',
-      source: 'spark', // Mark source as Genie Spark
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      stats: {
-        wordCount: content.metadata?.wordCount || 0,
-        sentenceCount: 0,
-        characterCount: content.script.length,
-        estimatedReadingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
-        estimatedSpeakingMinutes: Math.ceil((content.metadata?.estimatedDuration || 0) / 60),
-        readabilityScore: 'moderate' as const
+  const handleSendToVibe = async (content: GeneratedContent) => {
+    try {
+      const newScript: GenieScript = {
+        id: `script-${Date.now()}`,
+        name: content.title || 'Generated Script',
+        content: content.script,
+        type: getScriptType(content.type),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        stats: buildScriptStats(content)
+      };
+      const saved = await saveScript(newScript);
+      if (!saved) {
+        toast.error('Failed to save script. Please try again.');
+        return;
       }
-    };
-    saveScript(newScript);
-    // Navigate to Production Hub with the script ID for linking
-    navigate(`/genie-studio/productions?linkScript=${newScript.id}`);
-    toast.success(`Script ready for Production Hub! Create a show to link it.`);
+      navigate('/genie-vibe');
+      toast.success('Script ready for recording in Vibe!');
+    } catch (err) {
+      console.error('Failed to send to Vibe:', err);
+      toast.error('Something went wrong. Please try again.');
+    }
   };
 
-  const handleSaveToKnowledgeBase = (content: GeneratedContent) => {
-    toast.success(`Script saved to Knowledge Base for future AI reference!`);
+  const handleSendToProductionHub = async (content: GeneratedContent) => {
+    try {
+      const newScript: GenieScript = {
+        id: `script-${Date.now()}`,
+        name: content.title || 'Generated Script',
+        content: content.script,
+        type: getScriptType(content.type),
+        source: 'spark',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        stats: buildScriptStats(content)
+      };
+      const saved = await saveScript(newScript);
+      if (!saved) {
+        toast.error('Failed to save script. Please try again.');
+        return;
+      }
+      navigate(`/genie-admin?tab=library&linkScript=${newScript.id}`);
+      toast.success('Script ready for Production Hub! Create a show to link it.');
+    } catch (err) {
+      console.error('Failed to send to Production Hub:', err);
+      toast.error('Something went wrong. Please try again.');
+    }
+  };
+
+  const handleSaveToKnowledgeBase = async (content: GeneratedContent) => {
+    try {
+      const newScript: GenieScript = {
+        id: `kb-${Date.now()}`,
+        name: content.title || 'Knowledge Base Entry',
+        content: content.script,
+        type: getScriptType(content.type),
+        source: 'spark',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        stats: buildScriptStats(content)
+      };
+      const saved = await saveScript(newScript);
+      if (!saved) {
+        toast.error('Failed to save to Knowledge Base.');
+        return;
+      }
+      toast.success('Script saved to Knowledge Base for future AI reference!');
+    } catch (err) {
+      console.error('Failed to save to Knowledge Base:', err);
+      toast.error('Something went wrong. Please try again.');
+    }
   };
 
   return (

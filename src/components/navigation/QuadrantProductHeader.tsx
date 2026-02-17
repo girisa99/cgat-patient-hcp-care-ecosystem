@@ -47,7 +47,7 @@ export const PRODUCT_BRANDING: Record<string, ProductBranding> = {
   mind: {
     id: 'mind',
     name: 'Genie Mind',
-    tagline: 'Think Beyond Limits',
+    tagline: 'AI That Understands',
     logo: genieMindLogo,
     gradientFrom: 'from-purple-500',
     gradientTo: 'to-pink-500',

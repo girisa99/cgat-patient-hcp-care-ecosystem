@@ -155,7 +155,7 @@ const ErrorDisplay = ({
         <Button 
           size="sm" 
           variant="ghost" 
-          onClick={() => window.location.href = 'mailto:support@example.com?subject=Genie Deck Issue'}
+          onClick={() => window.location.href = 'mailto:support@geniaisuite.com?subject=Genie Deck Issue'}
           className="text-amber-800 hover:text-amber-900 dark:text-amber-200 dark:hover:text-amber-100"
         >
           <Mail className="h-4 w-4 mr-1.5" />
