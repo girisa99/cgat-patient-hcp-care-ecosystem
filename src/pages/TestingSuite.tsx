@@ -2,14 +2,14 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
-import { useMasterTesting } from '@/hooks/useMasterTesting';
+import useMasterTesting from '@/hooks/useMasterTesting';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 const TestingSuite: React.FC = () => {
   console.log('🧪 Testing Suite page rendering');
   const { currentRole, hasAccess } = useRoleBasedNavigation();
-  const { testCases, testSuites, testingStats, isLoading, executeTests, isExecutingTests } = useMasterTesting();
+  const { testCases, testingStats, isLoading, executeTestSuite, isExecuting } = useMasterTesting();
   
   if (!hasAccess('/testing-suite')) {
     return (
@@ -31,26 +31,26 @@ const TestingSuite: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold">{testingStats.total}</div>
+              <div className="text-2xl font-bold">{testingStats.totalTests}</div>
               <div className="text-sm text-muted-foreground">Total Tests</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-600">{testingStats.passed}</div>
+              <div className="text-2xl font-bold text-emerald-600">{testingStats.passedTests}</div>
               <div className="text-sm text-muted-foreground">Passed</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-red-600">{testingStats.failed}</div>
+              <div className="text-2xl font-bold text-destructive">{testingStats.failedTests}</div>
               <div className="text-sm text-muted-foreground">Failed</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">{testingStats.passRate.toFixed(1)}%</div>
-              <div className="text-sm text-muted-foreground">Pass Rate</div>
+              <div className="text-2xl font-bold text-primary">{testingStats.testCoverage.toFixed(1)}%</div>
+              <div className="text-sm text-muted-foreground">Coverage</div>
             </CardContent>
           </Card>
         </div>
@@ -60,8 +60,8 @@ const TestingSuite: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Testing Suite Management
-              <Badge variant={isExecutingTests ? 'secondary' : 'outline'}>
-                {isExecutingTests ? 'Running...' : `${testCases.length} tests`}
+              <Badge variant={isExecuting ? 'secondary' : 'outline'}>
+                {isExecuting ? 'Running...' : `${testCases.length} tests`}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -70,27 +70,27 @@ const TestingSuite: React.FC = () => {
               <p>Loading test suites...</p>
             ) : (
               <div className="space-y-4">
-                <p>Managing {testCases.length} automated tests across {testSuites.length} test suites.</p>
+                <p>Managing {testCases.length} automated tests.</p>
                 
                 {/* Test Execution Controls */}
                 <div className="flex gap-2">
                   <Button 
-                    onClick={() => executeTests('all')}
-                    disabled={isExecutingTests}
+                    onClick={() => executeTestSuite('all')}
+                    disabled={isExecuting}
                   >
-                    {isExecutingTests ? 'Executing...' : 'Run All Tests'}
+                    {isExecuting ? 'Executing...' : 'Run All Tests'}
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => executeTests('unit')}
-                    disabled={isExecutingTests}
+                    onClick={() => executeTestSuite('unit')}
+                    disabled={isExecuting}
                   >
                     Run Unit Tests
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => executeTests('integration')}
-                    disabled={isExecutingTests}
+                    onClick={() => executeTestSuite('integration')}
+                    disabled={isExecuting}
                   >
                     Run Integration Tests
                   </Button>
