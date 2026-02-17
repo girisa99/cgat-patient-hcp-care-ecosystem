@@ -558,7 +558,9 @@ export const detectRegionFromTimezone = (): RegionSlug => {
     if (tz.includes('Asia/Dhaka')) return 'bangladesh';
     if (tz.includes('Asia/Kolkata') || tz.includes('Asia/Calcutta')) return 'india';
     if (tz.includes('Asia/Dubai') || tz.includes('Asia/Riyadh') || tz.includes('Asia/Kuwait')) return 'mena';
-    if (tz.includes('Asia/Tokyo') || tz.includes('Asia/Seoul') || tz.includes('Asia/Shanghai') || tz.includes('Asia/Singapore') || tz.includes('Asia/Jakarta') || tz.includes('Asia/Bangkok')) return 'apac';
+    if (tz.includes('Asia/Tokyo') || tz.includes('Asia/Seoul') || tz.includes('Asia/Shanghai') || tz.includes('Asia/Hong_Kong')) return 'cjk';
+    if (tz.includes('Asia/Singapore') || tz.includes('Asia/Jakarta') || tz.includes('Asia/Bangkok') || tz.includes('Asia/Manila') || tz.includes('Asia/Ho_Chi_Minh') || tz.includes('Asia/Kuala_Lumpur')) return 'sea';
+    if (tz.includes('Asia/Kathmandu') || tz.includes('Asia/Colombo') || tz.includes('Asia/Thimphu') || tz.includes('Indian/Maldives')) return 'south_asia';
     if (tz.includes('Asia/Almaty') || tz.includes('Asia/Tashkent') || tz.includes('Asia/Tbilisi') || tz.includes('Asia/Baku') || tz.includes('Asia/Yerevan')) return 'central_asia';
     if (tz.includes('Africa')) return 'africa';
     if (tz.includes('Australia') || tz.includes('Pacific')) return 'oceania';
