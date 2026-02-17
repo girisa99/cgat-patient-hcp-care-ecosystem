@@ -43,33 +43,39 @@ const CONTENT_KEYS: { key: string; englishSource: string }[] = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface LLMRoute {
-  provider: 'anthropic' | 'alibaba' | 'gemini' | 'openai';
+  provider: 'anthropic' | 'alibaba' | 'gemini' | 'openai' | 'deepseek';
   model: string;
-  fallbackProviders: ('anthropic' | 'alibaba' | 'gemini' | 'openai')[];
+  fallbackProviders: ('anthropic' | 'alibaba' | 'gemini' | 'openai' | 'deepseek')[];
 }
 
+// ── DIFFERENTIATED FALLBACK CHAINS ──
+// Each zone uses region-appropriate fallbacks, NOT generic OpenAI.
+// Gemini zones → Qwen (strong South/SE Asian langs) → Claude (quality) → DeepSeek (niche differentiator)
+// Alibaba zones → DeepSeek (strong CJK) → Claude → OpenAI
+// Claude zones → OpenAI (strong English/Romance) → Gemini → DeepSeek
+// OpenAI zones → Claude → DeepSeek → Gemini
+
 const REGION_LLM_ROUTING: Record<string, LLMRoute> = {
-  // Claude Zone (Western/EU)
-  nam:            { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
-  europe:         { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
-  latam:          { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
-  oceania:        { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
-  turkey:         { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
-  // Alibaba Zone (MENA/CJK)
-  mena:           { provider: 'alibaba', model: 'qwen-max', fallbackProviders: ['openai', 'anthropic'] },
-  cjk:            { provider: 'alibaba', model: 'qwen-max', fallbackProviders: ['openai', 'anthropic'] },
-  // Gemini Zone (India/SEA/Africa/Bangladesh/South Asia)
-  india:          { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['openai', 'anthropic'] },
-  sea:            { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['anthropic', 'openai'] },
-  africa:         { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['anthropic', 'openai'] },
-  bangladesh:     { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['openai', 'anthropic'] },
-  south_asia:     { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['openai', 'anthropic'] },
-  apac:           { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['openai', 'anthropic'] },
-  // GPT-4o Zone (Pakistan/Caribbean/Eastern Europe/Central Asia)
-  pakistan:        { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'gemini'] },
-  caribbean:      { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'gemini'] },
-  eastern_europe: { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'gemini'] },
-  central_asia:   { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'gemini'] },
+  // Claude Zone (Western/EU) — OpenAI strong for English/Spanish fallback
+  nam:            { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  europe:         { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  latam:          { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  oceania:        { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  turkey:         { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  // Alibaba Zone (MENA/CJK) — DeepSeek strong CJK, Claude for quality
+  mena:           { provider: 'alibaba', model: 'qwen-max', fallbackProviders: ['deepseek', 'anthropic', 'openai'] },
+  cjk:            { provider: 'alibaba', model: 'qwen-max', fallbackProviders: ['deepseek', 'anthropic', 'openai'] },
+  // Gemini Zone (India/SEA/Africa) — Qwen strong Hindi/Bengali/SEA, Claude for quality
+  india:          { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['alibaba', 'anthropic', 'deepseek'] },
+  sea:            { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['alibaba', 'anthropic', 'deepseek'] },
+  africa:         { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['anthropic', 'alibaba', 'deepseek'] },
+  bangladesh:     { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['alibaba', 'anthropic', 'deepseek'] },
+  south_asia:     { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['alibaba', 'anthropic', 'deepseek'] },
+  // GPT-4o Zone (Pakistan/Caribbean/EE/Central Asia) — Claude for quality, DeepSeek for niche
+  pakistan:        { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'deepseek', 'gemini'] },
+  caribbean:      { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'deepseek', 'gemini'] },
+  eastern_europe: { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'deepseek', 'gemini'] },
+  central_asia:   { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'deepseek', 'gemini'] },
 };
 
 // ── Region metadata ──
@@ -175,10 +181,7 @@ const REGION_META: RegionMeta[] = [
       { code: "CARIBBEAN_FR", language: "Haitian Creole", languageCode: "ht", dialectContext: "French Caribbean/Haitian Creole — resilient, community" },
     ],
   },
-  {
-    slug: "apac", language: "Japanese", languageCode: "ja-JP",
-    culturalContext: "Asia-Pacific region. Diverse, tech-forward, respect for innovation and quality.",
-  },
+  // APAC skipped — covered by India/SEA/CJK/Oceania parent regions
   {
     slug: "oceania", language: "Australian English", languageCode: "en-AU",
     culturalContext: "Oceania. Laid-back but professional. Respect for indigenous culture. Progressive.",
@@ -389,12 +392,42 @@ async function callAlibaba(prompt: string): Promise<string | null> {
   return data?.choices?.[0]?.message?.content || null;
 }
 
+// ── DeepSeek (V3) ──
+async function callDeepSeek(prompt: string): Promise<string | null> {
+  const apiKey = Deno.env.get("DEEPSEEK_API_KEY");
+  if (!apiKey) { console.error("[transcreation] DEEPSEEK_API_KEY not configured"); return null; }
+
+  const response = await fetch("https://api.deepseek.com/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "deepseek-chat",
+      temperature: 0.7,
+      max_tokens: 500,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error(`[transcreation] DeepSeek error ${response.status}:`, err.slice(0, 200));
+    return null;
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content || null;
+}
+
 // ── Unified caller with fallback chain ──
 const PROVIDER_CALLERS: Record<string, (prompt: string) => Promise<string | null>> = {
   anthropic: callAnthropic,
   openai: callOpenAI,
   gemini: callGemini,
   alibaba: callAlibaba,
+  deepseek: callDeepSeek,
 };
 
 async function generateTranscreation(
@@ -428,6 +461,7 @@ async function generateTranscreation(
         const model = provider === 'anthropic' ? 'claude-sonnet-4-20250514'
           : provider === 'openai' ? 'gpt-4o'
           : provider === 'gemini' ? 'gemini-2.5-pro'
+          : provider === 'deepseek' ? 'deepseek-v3'
           : 'qwen-max';
 
         console.log(`[transcreation] ✓ ${provider}/${model} succeeded for ${regionSlug}/${contentKey}`);
@@ -690,7 +724,7 @@ serve(async (req) => {
       mode,
       totalGenerated,
       totalSkipped,
-      routing: "4-zone (anthropic/alibaba/gemini/openai)",
+      routing: "5-provider differentiated (anthropic/alibaba/gemini/openai/deepseek)",
       details: results,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
