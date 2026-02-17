@@ -111,6 +111,29 @@
           if (splash) splash.classList.add('hidden');
         }, 500);
       });
+
+      // Unregister stale service workers on localhost to prevent cached content
+      // blocking HMR updates during development.
+      if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            registrations.forEach(function(reg) {
+              reg.unregister().then(function() {
+                console.log('[dev] Unregistered stale service worker:', reg.scope);
+              });
+            });
+          });
+          // Also clear all caches left behind by workbox
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              names.forEach(function(name) {
+                caches.delete(name);
+                console.log('[dev] Cleared cache:', name);
+              });
+            });
+          }
+        }
+      }
     </script>
   </body>
 </html>
