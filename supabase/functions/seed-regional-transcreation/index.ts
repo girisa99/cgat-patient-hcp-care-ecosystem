@@ -495,14 +495,29 @@ serve(async (req) => {
 
     // ── Status mode: show what's seeded vs missing ──
     if (mode === "status") {
-      const { data: rows } = await supabase
-        .from("regional_content_cache")
-        .select("region_slug, sub_region_code, content_key")
-        .eq("content_type", content_type);
+      // Paginate to avoid Supabase default 1000-row limit
+      const allRows: { region_slug: string; sub_region_code: string | null; content_key: string }[] = [];
+      const PAGE_SIZE = 1000;
+      let offset = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: page } = await supabase
+          .from("regional_content_cache")
+          .select("region_slug, sub_region_code, content_key")
+          .eq("content_type", content_type)
+          .range(offset, offset + PAGE_SIZE - 1);
+        if (page && page.length > 0) {
+          allRows.push(...page);
+          offset += page.length;
+          hasMore = page.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
 
       const parentCounts: Record<string, number> = {};
       const subRegionCounts: Record<string, number> = {};
-      for (const row of rows || []) {
+      for (const row of allRows) {
         if (row.sub_region_code) {
           subRegionCounts[row.sub_region_code] = (subRegionCounts[row.sub_region_code] || 0) + 1;
         } else {
