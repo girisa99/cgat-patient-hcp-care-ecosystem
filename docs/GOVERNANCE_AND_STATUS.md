@@ -3,7 +3,7 @@
 > **Single Source of Truth** — Covers implementation governance, feature coverage, database audit, architecture, ops runbook, and roadmap.
 > 
 > **Last Updated:** 2026-02-17  
-> **Overall Implementation:** ~67%
+> **Overall Implementation:** ~75%
 
 ---
 
@@ -16,21 +16,21 @@
 | ✅ Done | Public Genie (rate limiting, analytics) | COMPLETE | 100% | `genieAnalyticsService`, rate-limit middleware |
 | ✅ Done | Localization & Transcreation | COMPLETE | 100% | `regional_content_cache`, `seed-regional-transcreation`, `useRegionalTranscreation` |
 | ✅ Done | hreflang SEO (16 regions + x-default) | COMPLETE | 100% | `RegionalLandingPage.tsx` (lines 166-175) |
-| P1 | AI Routing Intelligence | MOSTLY DONE | **80%** | `intent-analyzer`, `ai-universal-processor`, `_shared/image-providers.ts`, `_shared/video-providers.ts` |
+| P1 | AI Routing Intelligence | MOSTLY DONE | **90%** | `intent-analyzer`, `ai-universal-processor`, `AIRoutingObservabilityDashboard` |
 | P2 | Multi-Model Comparison | PARTIAL | **40%** | `genie_configurations` (multi mode), `OCRVisionAIComparisonView` |
-| P3A | User-Scoped Deployments | MOSTLY DONE | **90%** | `genie_deployments`, `EnhancedDeploymentManager`, `DeploymentFlowManager`, `deploymentFeaturePersistence`, `useDeploymentHealth`, `DeploymentHealthDashboard` |
-| P3B | MCP & Label Studio | HALF DONE | **50%** | `mcp_servers` table, 14 LS components, `LSUniversalProvider`, `@modelcontextprotocol/sdk` |
+| P3A | User-Scoped Deployments | COMPLETE | **95%** | `genie_deployments`, `EnhancedDeploymentManager`, `DeploymentHealthDashboard`, `DeploymentAnalyticsHistory` |
+| P3B | MCP & Label Studio | MOSTLY DONE | **75%** | `mcp_servers` table, `MCPServerManagementUI`, 14 LS components, `label-studio-connector` edge fn |
 | P4 | Multi-Tenancy | NOT STARTED | **0%** | No `workspace_id` columns (by design) |
 
 ---
 
 ## 2. Gap Analysis — What's Missing per Feature
 
-### Phase 1: AI Routing Intelligence (80% → 100%)
+### Phase 1: AI Routing Intelligence (90%)
 
 | Missing Item | Description | Priority |
 |---|---|---|
-| Routing observability dashboard | Show which provider served each request, latency, costs | High |
+| ~~Routing observability dashboard~~ | ~~Show which provider served each request, latency, costs~~ | ✅ Done |
 | User preference override UI | Frontend for `user_ai_preferences` table (backend exists) | Medium |
 | Unified routing config panel | Currently hardcoded per edge function; needs central config | Low |
 
@@ -46,26 +46,26 @@
 
 **Built:** `genie_configurations` with `selected_mode: 'multi'`, `left_model`/`right_model` fields, OCR vs Vision AI comparison view.
 
-### Phase 3A: User-Scoped Deployments (90% — was 70%)
+### Phase 3A: User-Scoped Deployments (95%)
 
 | Missing Item | Description | Priority |
 |---|---|---|
 | ~~Deployment versioning/rollback~~ | ~~Version tracking, one-click rollback~~ | ✅ Done |
 | ~~Health monitoring~~ | ~~Health checks + status dashboard~~ | ✅ Done |
 | ~~Deployment analytics~~ | ~~Conversations, tokens, confidence display~~ | ✅ Done |
-| Deployment analytics history | Time-series charts for metrics over time | Low |
+| ~~Deployment analytics history~~ | ~~Time-series charts for metrics over time~~ | ✅ Done |
 | Realtime status sync | Live deployment status via Supabase realtime subscriptions | ✅ Already existed |
 
 **Built:** `genie_deployments` table, `EnhancedDeploymentManager` (multi-channel), `DeploymentFlowManager` (wizard), `deploymentFeaturePersistence` (CRUD + versioning + health + realtime), `useDeploymentHealth` hook (polling health + version management), `DeploymentHealthDashboard` (3-tab UI: health/analytics/versions), multi-environment (dev/test/uat/prod).
 
-### Phase 3B: MCP & Label Studio (50% → 100%)
+### Phase 3B: MCP & Label Studio (75%)
 
 | Missing Item | Description | Priority |
 |---|---|---|
-| MCP server CRUD management UI | Create/edit/delete MCP servers from frontend | High |
+| ~~MCP server CRUD management UI~~ | ~~Create/edit/delete MCP servers from frontend~~ | ✅ Done |
 | MCP tool execution engine | Invoke MCP tools from agent UI | High |
 | MCP connection testing | Health check / ping MCP servers | Medium |
-| Label Studio real API integration | Replace mock data with actual LS API calls | High |
+| ~~Label Studio real API integration~~ | ~~Already wired via `label-studio-connector` edge fn~~ | ✅ Done |
 | Training pipeline | Auto-export annotations → model fine-tuning | Medium |
 | MCP ↔ Agent action binding | Connect MCP tools to agent actions | Medium |
 
