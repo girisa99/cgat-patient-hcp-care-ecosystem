@@ -2,14 +2,13 @@
  * SEED REGIONAL TRANSCREATION
  * 
  * Batch-generates transcreated landing page content for all 16 regions + sub-regional zones.
- * Uses ai-universal-processor for LLM-powered cultural transcreation.
- * Stores results in regional_content_cache table.
+ * Routes to zone-correct LLM providers per regional-routing-registry:
+ *   - Claude (Anthropic): EU, NAM, LATAM, Oceania, Turkey
+ *   - Qwen Max (Alibaba): MENA, CJK
+ *   - Gemini (Google): India, SEA, Africa, Bangladesh, South Asia
+ *   - GPT-4o (OpenAI): Pakistan, Caribbean, Eastern Europe, Central Asia
  * 
- * Modes:
- *   - "seed_parents"  → Generate content for all 16 parent regions (no sub-region)
- *   - "seed_subregions" → Generate dialect variants for specified region's zones
- *   - "seed_single" → Generate for a single region + optional sub-region
- *   - "seed_all" → Full seed: parents + all sub-regions
+ * Stores results in regional_content_cache table.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -39,7 +38,41 @@ const CONTENT_KEYS: { key: string; englishSource: string }[] = [
   { key: "nativeSections.signInPrompt", englishSource: "Already have an account? Sign in" },
 ];
 
-// ── Region → language + cultural context mapping ──
+// ═══════════════════════════════════════════════════════════════════════════
+// LLM ROUTING — Mirrors regional-routing-registry.ts exactly
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface LLMRoute {
+  provider: 'anthropic' | 'alibaba' | 'gemini' | 'openai';
+  model: string;
+  fallbackProviders: ('anthropic' | 'alibaba' | 'gemini' | 'openai')[];
+}
+
+const REGION_LLM_ROUTING: Record<string, LLMRoute> = {
+  // Claude Zone (Western/EU)
+  nam:            { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
+  europe:         { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
+  latam:          { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
+  oceania:        { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
+  turkey:         { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini'] },
+  // Alibaba Zone (MENA/CJK)
+  mena:           { provider: 'alibaba', model: 'qwen-max', fallbackProviders: ['openai', 'anthropic'] },
+  cjk:            { provider: 'alibaba', model: 'qwen-max', fallbackProviders: ['openai', 'anthropic'] },
+  // Gemini Zone (India/SEA/Africa/Bangladesh/South Asia)
+  india:          { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['openai', 'anthropic'] },
+  sea:            { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['anthropic', 'openai'] },
+  africa:         { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['anthropic', 'openai'] },
+  bangladesh:     { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['openai', 'anthropic'] },
+  south_asia:     { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['openai', 'anthropic'] },
+  apac:           { provider: 'gemini', model: 'gemini-2.5-pro', fallbackProviders: ['openai', 'anthropic'] },
+  // GPT-4o Zone (Pakistan/Caribbean/Eastern Europe/Central Asia)
+  pakistan:        { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'gemini'] },
+  caribbean:      { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'gemini'] },
+  eastern_europe: { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'gemini'] },
+  central_asia:   { provider: 'openai', model: 'gpt-4o', fallbackProviders: ['anthropic', 'gemini'] },
+};
+
+// ── Region metadata ──
 interface RegionMeta {
   slug: string;
   language: string;
@@ -192,6 +225,227 @@ const REGION_META: RegionMeta[] = [
   },
 ];
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PROVIDER-SPECIFIC API CALLERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildTranscreationPrompt(englishSource: string, targetLanguage: string, culturalContext: string, contentKey: string): string {
+  return `You are a cultural transcreation expert. Transcreate (do NOT literally translate) the following English text into ${targetLanguage}.
+
+Cultural context: ${culturalContext}
+Content purpose: ${contentKey} (landing page element)
+
+English source: "${englishSource}"
+
+Requirements:
+1. TRANSCREATE, not translate — adapt the meaning, emotion, and cultural resonance
+2. Use natural, native-sounding ${targetLanguage} that a local would actually say
+3. Maintain the marketing intent but make it culturally authentic
+4. For short labels (1-3 words), keep them concise in the target language
+5. For headlines, make them emotionally compelling in the target culture
+
+Respond in this exact JSON format:
+{
+  "transcreated": "The transcreated text in ${targetLanguage}",
+  "cultural_tone": "Brief description of the cultural tone used (e.g., 'formal respectful', 'warm familial')",
+  "emotional_register": "The emotional register (e.g., 'aspirational', 'trustworthy', 'warm')"
+}`;
+}
+
+interface TranscreationResult {
+  content: string;
+  culturalTone: string;
+  emotionalRegister: string;
+}
+
+function parseTranscreationResponse(rawContent: string): TranscreationResult | null {
+  if (!rawContent) return null;
+  try {
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        content: parsed.transcreated || parsed.text || rawContent,
+        culturalTone: parsed.cultural_tone || "authentic",
+        emotionalRegister: parsed.emotional_register || "professional",
+      };
+    }
+  } catch { /* fall through */ }
+  return { content: rawContent.trim(), culturalTone: "authentic", emotionalRegister: "professional" };
+}
+
+// ── Anthropic (Claude) ──
+async function callAnthropic(prompt: string): Promise<string | null> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) { console.error("[transcreation] ANTHROPIC_API_KEY not configured"); return null; }
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 500,
+      temperature: 0.7,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error(`[transcreation] Anthropic error ${response.status}:`, err.slice(0, 200));
+    return null;
+  }
+
+  const data = await response.json();
+  return data?.content?.[0]?.text || null;
+}
+
+// ── OpenAI (GPT-4o) ──
+async function callOpenAI(prompt: string): Promise<string | null> {
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!apiKey) { console.error("[transcreation] OPENAI_API_KEY not configured"); return null; }
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      temperature: 0.7,
+      max_tokens: 500,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error(`[transcreation] OpenAI error ${response.status}:`, err.slice(0, 200));
+    return null;
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content || null;
+}
+
+// ── Google Gemini ──
+async function callGemini(prompt: string): Promise<string | null> {
+  const apiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!apiKey) { console.error("[transcreation] GEMINI_API_KEY not configured"); return null; }
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error(`[transcreation] Gemini error ${response.status}:`, err.slice(0, 200));
+    return null;
+  }
+
+  const data = await response.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+}
+
+// ── Alibaba (Qwen Max) via Singapore DashScope ──
+async function callAlibaba(prompt: string): Promise<string | null> {
+  const apiKey = Deno.env.get("ALIBABA_SINGAPORE_API_KEY") || Deno.env.get("ALIBABA_API_KEY");
+  if (!apiKey) { console.error("[transcreation] ALIBABA_API_KEY not configured"); return null; }
+
+  const response = await fetch("https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "qwen-max",
+      temperature: 0.7,
+      max_tokens: 500,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error(`[transcreation] Alibaba/Qwen error ${response.status}:`, err.slice(0, 200));
+    return null;
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content || null;
+}
+
+// ── Unified caller with fallback chain ──
+const PROVIDER_CALLERS: Record<string, (prompt: string) => Promise<string | null>> = {
+  anthropic: callAnthropic,
+  openai: callOpenAI,
+  gemini: callGemini,
+  alibaba: callAlibaba,
+};
+
+async function generateTranscreation(
+  regionSlug: string,
+  englishSource: string,
+  targetLanguage: string,
+  culturalContext: string,
+  contentKey: string,
+): Promise<{ result: TranscreationResult; provider: string; model: string } | null> {
+  const route = REGION_LLM_ROUTING[regionSlug];
+  if (!route) {
+    console.error(`[transcreation] No routing for region: ${regionSlug}`);
+    return null;
+  }
+
+  const prompt = buildTranscreationPrompt(englishSource, targetLanguage, culturalContext, contentKey);
+
+  // Try primary provider first, then fallbacks
+  const providersToTry = [route.provider, ...route.fallbackProviders];
+
+  for (const provider of providersToTry) {
+    const caller = PROVIDER_CALLERS[provider];
+    if (!caller) continue;
+
+    console.log(`[transcreation] Trying ${provider} for ${regionSlug}/${contentKey}`);
+    const rawContent = await caller(prompt);
+
+    if (rawContent) {
+      const result = parseTranscreationResponse(rawContent);
+      if (result && result.content) {
+        const model = provider === 'anthropic' ? 'claude-sonnet-4-20250514'
+          : provider === 'openai' ? 'gpt-4o'
+          : provider === 'gemini' ? 'gemini-2.5-pro'
+          : 'qwen-max';
+
+        console.log(`[transcreation] ✓ ${provider}/${model} succeeded for ${regionSlug}/${contentKey}`);
+        return { result, provider, model };
+      }
+    }
+
+    console.warn(`[transcreation] ${provider} failed for ${regionSlug}/${contentKey}, trying fallback...`);
+  }
+
+  console.error(`[transcreation] All providers failed for ${regionSlug}/${contentKey}`);
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN HANDLER
+// ═══════════════════════════════════════════════════════════════════════════
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -229,7 +483,6 @@ serve(async (req) => {
       // ── Parent region (no sub_region_code) ──
       if (mode === "seed_parents" || mode === "seed_all" || mode === "seed_single") {
         for (const contentItem of CONTENT_KEYS) {
-          // Check if already exists
           const { data: existing } = await supabase
             .from("regional_content_cache")
             .select("id")
@@ -245,17 +498,17 @@ serve(async (req) => {
           }
 
           if (dry_run) {
-            results.push({ region: region.slug, key: contentItem.key, action: "would_generate" });
+            const route = REGION_LLM_ROUTING[region.slug];
+            results.push({ region: region.slug, key: contentItem.key, action: "would_generate", provider: route?.provider });
             continue;
           }
 
-          // Generate via ai-universal-processor
-          const transcreated = await generateTranscreation(
-            supabaseUrl, supabaseKey, contentItem.englishSource,
+          const generated = await generateTranscreation(
+            region.slug, contentItem.englishSource,
             region.language, region.culturalContext, contentItem.key
           );
 
-          if (transcreated) {
+          if (generated) {
             const { error: insertError } = await supabase
               .from("regional_content_cache")
               .insert({
@@ -265,11 +518,11 @@ serve(async (req) => {
                 content_type: "landing_page",
                 content_key: contentItem.key,
                 english_source: contentItem.englishSource,
-                transcreated_content: transcreated.content,
-                cultural_tone: transcreated.culturalTone,
-                emotional_register: transcreated.emotionalRegister,
-                llm_provider: "gemini",
-                llm_model: "gemini-2.5-flash",
+                transcreated_content: generated.result.content,
+                cultural_tone: generated.result.culturalTone,
+                emotional_register: generated.result.emotionalRegister,
+                llm_provider: generated.provider,
+                llm_model: generated.model,
                 status: "approved",
                 version: 1,
                 refresh_cadence: "weekly",
@@ -281,12 +534,12 @@ serve(async (req) => {
               console.error(`[seed] Insert error for ${region.slug}/${contentItem.key}:`, insertError.message);
             } else {
               totalGenerated++;
-              results.push({ region: region.slug, key: contentItem.key, action: "generated" });
+              results.push({ region: region.slug, key: contentItem.key, action: "generated", provider: generated.provider });
             }
           }
 
-          // Rate limit protection: small delay between API calls
-          await new Promise(r => setTimeout(r, 300));
+          // Rate limit protection
+          await new Promise(r => setTimeout(r, 500));
         }
       }
 
@@ -298,7 +551,6 @@ serve(async (req) => {
 
         for (const subRegion of subRegionsToProcess) {
           for (const contentItem of CONTENT_KEYS) {
-            // Check if already exists
             const { data: existing } = await supabase
               .from("regional_content_cache")
               .select("id")
@@ -314,17 +566,18 @@ serve(async (req) => {
             }
 
             if (dry_run) {
-              results.push({ region: region.slug, subRegion: subRegion.code, key: contentItem.key, action: "would_generate" });
+              const route = REGION_LLM_ROUTING[region.slug];
+              results.push({ region: region.slug, subRegion: subRegion.code, key: contentItem.key, action: "would_generate", provider: route?.provider });
               continue;
             }
 
             const dialectContext = `${region.culturalContext} Sub-region: ${subRegion.dialectContext}`;
-            const transcreated = await generateTranscreation(
-              supabaseUrl, supabaseKey, contentItem.englishSource,
+            const generated = await generateTranscreation(
+              region.slug, contentItem.englishSource,
               subRegion.language, dialectContext, contentItem.key
             );
 
-            if (transcreated) {
+            if (generated) {
               const { error: insertError } = await supabase
                 .from("regional_content_cache")
                 .insert({
@@ -334,12 +587,12 @@ serve(async (req) => {
                   content_type: "landing_page",
                   content_key: contentItem.key,
                   english_source: contentItem.englishSource,
-                  transcreated_content: transcreated.content,
-                  cultural_tone: transcreated.culturalTone,
-                  emotional_register: transcreated.emotionalRegister,
+                  transcreated_content: generated.result.content,
+                  cultural_tone: generated.result.culturalTone,
+                  emotional_register: generated.result.emotionalRegister,
                   dialect_variant: subRegion.code,
-                  llm_provider: "gemini",
-                  llm_model: "gemini-2.5-flash",
+                  llm_provider: generated.provider,
+                  llm_model: generated.model,
                   status: "approved",
                   version: 1,
                   refresh_cadence: "weekly",
@@ -351,11 +604,11 @@ serve(async (req) => {
                 console.error(`[seed] Insert error for ${region.slug}/${subRegion.code}/${contentItem.key}:`, insertError.message);
               } else {
                 totalGenerated++;
-                results.push({ region: region.slug, subRegion: subRegion.code, key: contentItem.key, action: "generated" });
+                results.push({ region: region.slug, subRegion: subRegion.code, key: contentItem.key, action: "generated", provider: generated.provider });
               }
             }
 
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 500));
           }
         }
       }
@@ -366,6 +619,7 @@ serve(async (req) => {
       mode,
       totalGenerated,
       totalSkipped,
+      routing: "4-zone (anthropic/alibaba/gemini/openai)",
       details: results,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -378,96 +632,3 @@ serve(async (req) => {
     });
   }
 });
-
-// ── AI Transcreation Generator ──
-interface TranscreationResult {
-  content: string;
-  culturalTone: string;
-  emotionalRegister: string;
-}
-
-async function generateTranscreation(
-  supabaseUrl: string,
-  supabaseKey: string,
-  englishSource: string,
-  targetLanguage: string,
-  culturalContext: string,
-  contentKey: string,
-): Promise<TranscreationResult | null> {
-  try {
-    const prompt = `You are a cultural transcreation expert. Transcreate (do NOT literally translate) the following English text into ${targetLanguage}.
-
-Cultural context: ${culturalContext}
-Content purpose: ${contentKey} (landing page element)
-
-English source: "${englishSource}"
-
-Requirements:
-1. TRANSCREATE, not translate — adapt the meaning, emotion, and cultural resonance
-2. Use natural, native-sounding ${targetLanguage} that a local would actually say
-3. Maintain the marketing intent but make it culturally authentic
-4. For short labels (1-3 words), keep them concise in the target language
-5. For headlines, make them emotionally compelling in the target culture
-
-Respond in this exact JSON format:
-{
-  "transcreated": "The transcreated text in ${targetLanguage}",
-  "cultural_tone": "Brief description of the cultural tone used (e.g., 'formal respectful', 'warm familial')",
-  "emotional_register": "The emotional register (e.g., 'aspirational', 'trustworthy', 'warm')"
-}`;
-
-    const geminiKey = Deno.env.get("GEMINI_API_KEY");
-    if (!geminiKey) throw new Error("GEMINI_API_KEY not configured");
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error(`[transcreation] AI error ${response.status} for ${contentKey}:`, errText.slice(0, 200));
-      return null;
-    }
-
-    const data = await response.json();
-    console.log(`[transcreation] Gemini response keys for ${contentKey}:`, JSON.stringify(Object.keys(data)));
-    const rawContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    if (!rawContent) {
-      console.error(`[transcreation] Empty response for ${contentKey}. Full response:`, JSON.stringify(data).slice(0, 300));
-      return null;
-    }
-
-    // Parse JSON from AI response
-    try {
-      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return {
-          content: parsed.transcreated || parsed.text || rawContent,
-          culturalTone: parsed.cultural_tone || "authentic",
-          emotionalRegister: parsed.emotional_register || "professional",
-        };
-      }
-    } catch {
-      // If JSON parse fails, use raw content
-    }
-
-    return {
-      content: rawContent.trim(),
-      culturalTone: "authentic",
-      emotionalRegister: "professional",
-    };
-  } catch (error) {
-    console.error(`[transcreation] Error for ${contentKey}:`, error);
-    return null;
-  }
-}
