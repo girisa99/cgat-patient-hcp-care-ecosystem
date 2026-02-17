@@ -31,7 +31,7 @@ const GROUP_TO_SLUG: Record<string, RegionSlug | null> = {
   PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', SOUTH_ASIA: 'south_asia',
 };
 
-const getZoneCount = (g: RegionGroup): number => g.children.length || 1;
+const getZoneCount = (g: RegionGroup): number => Math.max(g.children.length, 1);
 const getLangCount = (g: RegionGroup): number => {
   if (g.children.length === 0) return 1;
   return g.children.reduce((sum, c) => sum + (c.children?.length || 1), 0);
