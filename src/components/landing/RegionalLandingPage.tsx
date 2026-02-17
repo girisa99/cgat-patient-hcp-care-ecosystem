@@ -999,10 +999,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
         </div>
       )}
 
-      {/* Provider ribbon — continuously scrolling */}
-      <div className="absolute bottom-28 left-0 right-0 z-20">
-        <ProviderRibbon />
-      </div>
+      {/* Provider ribbon moved outside banner — see below HeroCarousel */}
 
       {/* Navigation dots with labels */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-5 z-20">
@@ -1439,6 +1436,12 @@ export const RegionalLandingPage: React.FC = () => {
       <RegionalSEOHead config={mergedConfig} currentSlug={regionSlug} />
       <RegionalNavbar config={mergedConfig} />
       <HeroCarousel config={mergedConfig} productContext={productContext} regionSlug={regionSlug} />
+      
+      {/* AI Provider ribbon — between banner and region navigator */}
+      <div className="relative bg-background/80 backdrop-blur-sm border-y border-border/30 overflow-hidden">
+        <ProviderRibbon />
+      </div>
+      
       <RegionNavigator currentSlug={regionSlug} />
 
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
