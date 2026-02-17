@@ -115,7 +115,9 @@ export function useRegionalTranscreation(regionSlug: RegionSlug): UseRegionalTra
         setLastRefreshed(latestRefresh);
       }
     } catch (err) {
-      console.warn('[useRegionalTranscreation] Error:', err);
+      // Graceful fallback: on any fetch error, transcreatedStrings stays empty
+      // and mergedConfig below will use 100% static English config
+      console.warn('[useRegionalTranscreation] Fetch failed, falling back to English static config:', err);
     } finally {
       setIsLoading(false);
     }
