@@ -20,10 +20,12 @@ import {
   Info,
   Settings,
   Play,
-  Database
+  Database,
+  Heart,
 } from 'lucide-react';
 import { useAgentDeployments } from '@/hooks/useAgentDeployments';
 import { useObservabilityConfig } from '@/hooks/useObservabilityConfig';
+import { DeploymentHealthDashboard } from './DeploymentHealthDashboard';
 import { toast } from 'sonner';
 
 interface EnhancedDeploymentManagerProps {
@@ -94,7 +96,7 @@ export const EnhancedDeploymentManager: React.FC<EnhancedDeploymentManagerProps>
     }
   });
 
-  const [deploymentStep, setDeploymentStep] = useState<'config' | 'testing' | 'deploying' | 'complete'>('config');
+  const [deploymentStep, setDeploymentStep] = useState<'config' | 'testing' | 'deploying' | 'complete' | 'health'>('config');
   const [testResults, setTestResults] = useState<any>({});
   const [deploymentProgress, setDeploymentProgress] = useState(0);
 
@@ -263,6 +265,26 @@ export const EnhancedDeploymentManager: React.FC<EnhancedDeploymentManagerProps>
     setTestResults({});
   };
 
+  if (deploymentStep === 'health') {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Heart className="h-5 w-5" />
+            Deployment Health & Versions
+          </h2>
+          <Button variant="outline" size="sm" onClick={() => setDeploymentStep('config')}>
+            ← Back to Config
+          </Button>
+        </div>
+        <DeploymentHealthDashboard
+          deploymentId={deploymentConfig.agentIds[0]}
+          showAllDeployments
+        />
+      </div>
+    );
+  }
+
   if (deploymentStep === 'complete') {
     return (
       <Card className="w-full">
@@ -284,8 +306,9 @@ export const EnhancedDeploymentManager: React.FC<EnhancedDeploymentManagerProps>
             <Button onClick={resetDeployment} variant="outline">
               Deploy Another
             </Button>
-            <Button onClick={() => window.location.href = '/deployments'}>
-              View Deployments
+            <Button onClick={() => setDeploymentStep('health')}>
+              <Heart className="h-4 w-4 mr-2" />
+              View Health & Versions
             </Button>
           </div>
         </CardContent>
@@ -674,6 +697,10 @@ export const EnhancedDeploymentManager: React.FC<EnhancedDeploymentManagerProps>
               Deploy Now
             </Button>
           )}
+          <Button variant="outline" onClick={() => setDeploymentStep('health')}>
+            <Heart className="h-4 w-4 mr-2" />
+            Health & Versions
+          </Button>
         </div>
 
         {/* Information Alert */}
