@@ -22994,6 +22994,54 @@ export type Database = {
           },
         ]
       }
+      training_data_captures: {
+        Row: {
+          annotation_result: Json | null
+          created_at: string
+          data_url: string | null
+          error_message: string | null
+          id: string
+          label_studio_project_id: number | null
+          label_studio_task_id: number | null
+          metadata: Json | null
+          quality_score: number | null
+          sync_status: string
+          training_type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          annotation_result?: Json | null
+          created_at?: string
+          data_url?: string | null
+          error_message?: string | null
+          id?: string
+          label_studio_project_id?: number | null
+          label_studio_task_id?: number | null
+          metadata?: Json | null
+          quality_score?: number | null
+          sync_status?: string
+          training_type: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          annotation_result?: Json | null
+          created_at?: string
+          data_url?: string | null
+          error_message?: string | null
+          id?: string
+          label_studio_project_id?: number | null
+          label_studio_task_id?: number | null
+          metadata?: Json | null
+          quality_score?: number | null
+          sync_status?: string
+          training_type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       treatment_assessments: {
         Row: {
           absolute_contraindications: string | null

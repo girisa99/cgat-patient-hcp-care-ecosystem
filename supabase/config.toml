@@ -430,3 +430,6 @@ verify_jwt = false
 
 [functions.mcp-tool-executor]
 verify_jwt = false
+
+[functions.training-pipeline]
+verify_jwt = false
