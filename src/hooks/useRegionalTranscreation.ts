@@ -65,6 +65,22 @@ export function useRegionalTranscreation(regionSlug: RegionSlug): UseRegionalTra
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
 
   const fetchTranscreatedContent = useCallback(async () => {
+    // Check in-memory cache first (avoids redundant Supabase calls within session)
+    const cacheKey = `regional_transcreation_${regionSlug}_${subRegion || 'parent'}`;
+    const BROWSER_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes browser-side cache
+
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < BROWSER_CACHE_TTL_MS) {
+          setTranscreatedStrings(data);
+          setIsLoading(false);
+          return;
+        }
+      }
+    } catch { /* sessionStorage unavailable */ }
+
     try {
       setIsLoading(true);
 
@@ -113,6 +129,11 @@ export function useRegionalTranscreation(regionSlug: RegionSlug): UseRegionalTra
 
         setTranscreatedStrings(mapped);
         setLastRefreshed(latestRefresh);
+
+        // Cache in sessionStorage for 10min to avoid redundant Supabase calls
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ data: mapped, timestamp: Date.now() }));
+        } catch { /* sessionStorage full or unavailable */ }
       }
     } catch (err) {
       // Graceful fallback: on any fetch error, transcreatedStrings stays empty

@@ -440,7 +440,19 @@ serve(async (req) => {
       content_keys,          // optional custom keys: { key, englishSource }[]
       product_context,       // e.g. "Genie Cast video production platform"
       throttle_ms = 500,     // configurable throttle
+      // Refresh cadence: "weekly" | "monthly" | "quarterly" — defaults to monthly for cost control
+      refresh_cadence = "monthly",
+      // Force refresh even if within cadence window
+      force_refresh = false,
     } = body;
+
+    // Cadence window in milliseconds
+    const CADENCE_MS: Record<string, number> = {
+      weekly: 7 * 24 * 60 * 60 * 1000,
+      monthly: 30 * 24 * 60 * 60 * 1000,
+      quarterly: 90 * 24 * 60 * 60 * 1000,
+    };
+    const cadenceWindow = CADENCE_MS[refresh_cadence] || CADENCE_MS.monthly;
 
     const activeContentKeys = content_keys || DEFAULT_CONTENT_KEYS;
 
@@ -622,14 +634,27 @@ serve(async (req) => {
         for (const contentItem of activeContentKeys) {
           const { data: existing } = await supabase
             .from("regional_content_cache")
-            .select("id")
+            .select("id, last_refreshed_at")
             .eq("region_slug", region.slug)
             .eq("content_key", contentItem.key)
             .eq("content_type", content_type)
             .is("sub_region_code", null)
             .maybeSingle();
 
-          if (existing) { totalSkipped++; continue; }
+          // Skip if exists AND within refresh cadence window (unless force_refresh)
+          if (existing) {
+            if (!force_refresh && existing.last_refreshed_at) {
+              const lastRefresh = new Date(existing.last_refreshed_at).getTime();
+              if (Date.now() - lastRefresh < cadenceWindow) {
+                totalSkipped++;
+                continue;
+              }
+            } else if (!force_refresh) {
+              totalSkipped++;
+              continue;
+            }
+            // If force_refresh or outside cadence: fall through to regenerate (will upsert)
+          }
 
           if (dry_run) {
             results.push({ region: region.slug, key: contentItem.key, action: "would_generate", provider: REGION_LLM_ROUTING[region.slug]?.provider });
@@ -641,7 +666,7 @@ serve(async (req) => {
           );
 
           if (generated) {
-            const { error: insertError } = await supabase.from("regional_content_cache").insert({
+            const upsertData = {
               region_slug: region.slug,
               sub_region_code: null,
               language_code: region.languageCode,
@@ -654,14 +679,23 @@ serve(async (req) => {
               llm_provider: generated.provider,
               llm_model: generated.model,
               status: "approved",
-              version: 1,
-              refresh_cadence: "weekly",
+              version: existing ? 2 : 1,
+              refresh_cadence,
               last_refreshed_at: new Date().toISOString(),
-              next_refresh_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            });
+              next_refresh_at: new Date(Date.now() + cadenceWindow).toISOString(),
+            };
 
-            if (insertError) { console.error(`[seed] Insert error for ${region.slug}/${contentItem.key}:`, insertError.message); }
-            else { totalGenerated++; results.push({ region: region.slug, key: contentItem.key, action: "generated", provider: generated.provider }); }
+            let upsertError;
+            if (existing) {
+              const { error } = await supabase.from("regional_content_cache").update(upsertData).eq("id", existing.id);
+              upsertError = error;
+            } else {
+              const { error } = await supabase.from("regional_content_cache").insert(upsertData);
+              upsertError = error;
+            }
+
+            if (upsertError) { console.error(`[seed] Upsert error for ${region.slug}/${contentItem.key}:`, upsertError.message); }
+            else { totalGenerated++; results.push({ region: region.slug, key: contentItem.key, action: existing ? "refreshed" : "generated", provider: generated.provider }); }
           }
 
           await new Promise(r => setTimeout(r, throttle_ms));
@@ -678,14 +712,26 @@ serve(async (req) => {
           for (const contentItem of activeContentKeys) {
             const { data: existing } = await supabase
               .from("regional_content_cache")
-              .select("id")
+              .select("id, last_refreshed_at")
               .eq("region_slug", region.slug)
               .eq("content_key", contentItem.key)
               .eq("content_type", content_type)
               .eq("sub_region_code", subRegion.code)
               .maybeSingle();
 
-            if (existing) { totalSkipped++; continue; }
+            // Skip if within cadence window
+            if (existing) {
+              if (!force_refresh && existing.last_refreshed_at) {
+                const lastRefresh = new Date(existing.last_refreshed_at).getTime();
+                if (Date.now() - lastRefresh < cadenceWindow) {
+                  totalSkipped++;
+                  continue;
+                }
+              } else if (!force_refresh) {
+                totalSkipped++;
+                continue;
+              }
+            }
 
             if (dry_run) {
               results.push({ region: region.slug, subRegion: subRegion.code, key: contentItem.key, action: "would_generate", provider: REGION_LLM_ROUTING[region.slug]?.provider });
@@ -698,7 +744,7 @@ serve(async (req) => {
             );
 
             if (generated) {
-              const { error: insertError } = await supabase.from("regional_content_cache").insert({
+              const upsertData = {
                 region_slug: region.slug,
                 sub_region_code: subRegion.code,
                 language_code: subRegion.languageCode,
@@ -712,14 +758,23 @@ serve(async (req) => {
                 llm_provider: generated.provider,
                 llm_model: generated.model,
                 status: "approved",
-                version: 1,
-                refresh_cadence: "weekly",
+                version: existing ? 2 : 1,
+                refresh_cadence,
                 last_refreshed_at: new Date().toISOString(),
-                next_refresh_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-              });
+                next_refresh_at: new Date(Date.now() + cadenceWindow).toISOString(),
+              };
 
-              if (insertError) { console.error(`[seed] Insert error for ${region.slug}/${subRegion.code}/${contentItem.key}:`, insertError.message); }
-              else { totalGenerated++; results.push({ region: region.slug, subRegion: subRegion.code, key: contentItem.key, action: "generated", provider: generated.provider }); }
+              let upsertError;
+              if (existing) {
+                const { error } = await supabase.from("regional_content_cache").update(upsertData).eq("id", existing.id);
+                upsertError = error;
+              } else {
+                const { error } = await supabase.from("regional_content_cache").insert(upsertData);
+                upsertError = error;
+              }
+
+              if (upsertError) { console.error(`[seed] Upsert error for ${region.slug}/${subRegion.code}/${contentItem.key}:`, upsertError.message); }
+              else { totalGenerated++; results.push({ region: region.slug, subRegion: subRegion.code, key: contentItem.key, action: existing ? "refreshed" : "generated", provider: generated.provider }); }
             }
 
             await new Promise(r => setTimeout(r, throttle_ms));
