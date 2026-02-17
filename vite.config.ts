@@ -151,7 +151,7 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       devOptions: {
-        enabled: true
+        enabled: false
       }
     })
   ].filter(Boolean),
