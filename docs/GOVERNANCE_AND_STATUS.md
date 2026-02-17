@@ -3,7 +3,7 @@
 > **Single Source of Truth** — Covers implementation governance, feature coverage, database audit, architecture, ops runbook, and roadmap.
 > 
 > **Last Updated:** 2026-02-17  
-> **Overall Implementation:** ~62%
+> **Overall Implementation:** ~67%
 
 ---
 
@@ -18,7 +18,7 @@
 | ✅ Done | hreflang SEO (16 regions + x-default) | COMPLETE | 100% | `RegionalLandingPage.tsx` (lines 166-175) |
 | P1 | AI Routing Intelligence | MOSTLY DONE | **80%** | `intent-analyzer`, `ai-universal-processor`, `_shared/image-providers.ts`, `_shared/video-providers.ts` |
 | P2 | Multi-Model Comparison | PARTIAL | **40%** | `genie_configurations` (multi mode), `OCRVisionAIComparisonView` |
-| P3A | User-Scoped Deployments | MOSTLY DONE | **70%** | `genie_deployments`, `EnhancedDeploymentManager`, `DeploymentFlowManager`, `deploymentFeaturePersistence` |
+| P3A | User-Scoped Deployments | MOSTLY DONE | **90%** | `genie_deployments`, `EnhancedDeploymentManager`, `DeploymentFlowManager`, `deploymentFeaturePersistence`, `useDeploymentHealth`, `DeploymentHealthDashboard` |
 | P3B | MCP & Label Studio | HALF DONE | **50%** | `mcp_servers` table, 14 LS components, `LSUniversalProvider`, `@modelcontextprotocol/sdk` |
 | P4 | Multi-Tenancy | NOT STARTED | **0%** | No `workspace_id` columns (by design) |
 
@@ -46,16 +46,17 @@
 
 **Built:** `genie_configurations` with `selected_mode: 'multi'`, `left_model`/`right_model` fields, OCR vs Vision AI comparison view.
 
-### Phase 3A: User-Scoped Deployments (70% → 100%)
+### Phase 3A: User-Scoped Deployments (90% — was 70%)
 
 | Missing Item | Description | Priority |
 |---|---|---|
-| Deployment versioning/rollback | Version tracking, one-click rollback to previous config | High |
-| Health monitoring | Scheduled health checks for active deployments | Medium |
-| Deployment analytics | Usage metrics per deployment (conversations, errors, latency) | Medium |
-| Realtime status sync | Live deployment status via Supabase realtime subscriptions | Low |
+| ~~Deployment versioning/rollback~~ | ~~Version tracking, one-click rollback~~ | ✅ Done |
+| ~~Health monitoring~~ | ~~Health checks + status dashboard~~ | ✅ Done |
+| ~~Deployment analytics~~ | ~~Conversations, tokens, confidence display~~ | ✅ Done |
+| Deployment analytics history | Time-series charts for metrics over time | Low |
+| Realtime status sync | Live deployment status via Supabase realtime subscriptions | ✅ Already existed |
 
-**Built:** `genie_deployments` table, `EnhancedDeploymentManager` (690 lines, multi-channel), `DeploymentFlowManager` (wizard), `deploymentFeaturePersistence` (CRUD + realtime setup), multi-environment (dev/test/uat/prod).
+**Built:** `genie_deployments` table, `EnhancedDeploymentManager` (multi-channel), `DeploymentFlowManager` (wizard), `deploymentFeaturePersistence` (CRUD + versioning + health + realtime), `useDeploymentHealth` hook (polling health + version management), `DeploymentHealthDashboard` (3-tab UI: health/analytics/versions), multi-environment (dev/test/uat/prod).
 
 ### Phase 3B: MCP & Label Studio (50% → 100%)
 
