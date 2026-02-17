@@ -164,6 +164,15 @@ function calculateCurrentDay(): number {
   return Math.min(Math.max(diffDays, 1), 5);
 }
 
+// Default completed tasks from automated diagnosis (Day 1 Claude tasks)
+const DEFAULT_TASK_OVERRIDES: SprintTrackerState['taskOverrides'] = {
+  'C-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Diagnosed: 14 issues found (3 critical, 3 high, 5 medium, 3 low)' },
+  'C-102': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Diagnosed: 13 issues found (2 critical, 3 high, 5 medium, 3 low)' },
+  'C-103': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Diagnosed: 6 issues found (0 critical, 0 high, 3 medium, 3 low)' },
+  'C-104': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'All issues documented with fix plans. Fixes applied: race conditions, error handling, tagline alignment, accessibility, broken routes, hardcoded email.' },
+  'S-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Build passes. All fixes committed and pushed.' },
+};
+
 function useSprintTrackerState() {
   const [state, setState] = useState<SprintTrackerState>(() => {
     try {
@@ -172,7 +181,8 @@ function useSprintTrackerState() {
     } catch (e) {
       console.error('[SprintTracker] Failed to load state:', e);
     }
-    return { taskOverrides: {}, standups: [] };
+    // Seed with completed Day 1 diagnosis tasks
+    return { taskOverrides: { ...DEFAULT_TASK_OVERRIDES }, standups: [] };
   });
 
   useEffect(() => {

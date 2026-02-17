@@ -157,11 +157,15 @@ export const SparkGuidedWizard: React.FC<SparkGuidedWizardProps> = ({
         <Progress value={progress} className="h-2 mt-3" />
         
         {/* Phase Indicators */}
-        <div className="flex justify-between mt-4">
+        <div className="flex justify-between mt-4" role="tablist" aria-label="Wizard steps">
           {phases.map((phase, index) => (
             <button
               key={phase.id}
               onClick={() => setCurrentPhase(index)}
+              role="tab"
+              aria-selected={index === currentPhase}
+              aria-current={index === currentPhase ? 'step' : undefined}
+              aria-label={`${phase.title}: ${phase.description}${phase.isComplete ? ' (completed)' : ''}`}
               className={cn(
                 "flex flex-col items-center gap-1 transition-all",
                 index === currentPhase ? "opacity-100" : "opacity-50 hover:opacity-75"
@@ -169,10 +173,10 @@ export const SparkGuidedWizard: React.FC<SparkGuidedWizardProps> = ({
             >
               <div className={cn(
                 "h-8 w-8 rounded-full flex items-center justify-center transition-all",
-                phase.isComplete 
-                  ? "bg-green-500 text-white" 
-                  : index === currentPhase 
-                    ? "bg-orange-500 text-white" 
+                phase.isComplete
+                  ? "bg-green-500 text-white"
+                  : index === currentPhase
+                    ? "bg-orange-500 text-white"
                     : "bg-muted"
               )}>
                 {phase.isComplete ? <Check className="h-4 w-4" /> : phase.icon}
