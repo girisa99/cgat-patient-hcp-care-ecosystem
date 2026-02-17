@@ -411,6 +411,37 @@ const REGION_VOICES: Record<string, VoiceOption[]> = {
     { code: 'es-MX', label: 'Spanish', nativeLabel: 'Español', azureVoice: 'es-MX-DaliaNeural', flag: '🇲🇽' },
     { code: 'fr-FR', label: 'French', nativeLabel: 'Français', azureVoice: 'fr-FR-DeniseNeural', flag: '🇫🇷' },
   ],
+  oceania: [
+    { code: 'en-AU', label: 'Australian English', nativeLabel: 'English', azureVoice: 'en-AU-NatashaNeural', flag: '🇦🇺' },
+    { code: 'en-NZ', label: 'NZ English', nativeLabel: 'English', azureVoice: 'en-NZ-MollyNeural', flag: '🇳🇿' },
+  ],
+  turkey: [
+    { code: 'tr-TR', label: 'Turkish', nativeLabel: 'Türkçe', azureVoice: 'tr-TR-EmelNeural', flag: '🇹🇷' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
+  pakistan: [
+    { code: 'ur-PK', label: 'Urdu', nativeLabel: 'اردو', azureVoice: 'ur-PK-AsadNeural', flag: '🇵🇰' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
+  bangladesh: [
+    { code: 'bn-BD', label: 'Bengali', nativeLabel: 'বাংলা', azureVoice: 'bn-BD-NabanitaNeural', flag: '🇧🇩' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
+  eastern_europe: [
+    { code: 'uk-UA', label: 'Ukrainian', nativeLabel: 'Українська', azureVoice: 'uk-UA-PolinaNeural', flag: '🇺🇦' },
+    { code: 'sr-RS', label: 'Serbian', nativeLabel: 'Српски', azureVoice: 'sr-RS-SophieNeural', flag: '🇷🇸' },
+    { code: 'bg-BG', label: 'Bulgarian', nativeLabel: 'Български', azureVoice: 'bg-BG-KalinaNeural', flag: '🇧🇬' },
+  ],
+  central_asia: [
+    { code: 'kk-KZ', label: 'Kazakh', nativeLabel: 'Қазақ', azureVoice: 'kk-KZ-AigulNeural', flag: '🇰🇿' },
+    { code: 'uz-UZ', label: 'Uzbek', nativeLabel: 'Oʻzbek', azureVoice: 'uz-UZ-MadinaNeural', flag: '🇺🇿' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
+  south_asia: [
+    { code: 'ne-NP', label: 'Nepali', nativeLabel: 'नेपाली', azureVoice: 'ne-NP-SagarNeural', flag: '🇳🇵' },
+    { code: 'si-LK', label: 'Sinhala', nativeLabel: 'සිංහල', azureVoice: 'si-LK-ThiliniNeural', flag: '🇱🇰' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
 };
 
 const useHeroVoiceover = () => {

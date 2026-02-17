@@ -442,6 +442,245 @@ const southAsiaConfig: RegionalConfig = {
   ],
 };
 
+const oceaniaConfig: RegionalConfig = {
+  hero: {
+    flag: '🇦🇺',
+    regionName: 'Oceania',
+    theme: 'Pacific Excellence',
+    englishHeadline: 'AI Content Production Suite — Oceania',
+    englishSubheadline: 'Australia & New Zealand. Premium English AI.',
+    nativeHeadline: 'AI Content Production Suite',
+    nativeSubheadline: 'Premium AI content for ANZ markets',
+  },
+  stats: { languages: '5+', dialects: '3+', audienceReach: '30M+', industries: '50+', pipelines: '206' },
+  cta: { primary: 'Start Free', secondary: 'Watch Demo', badge: 'ANZ optimized' },
+  differentiators: {
+    heroBadge: 'Oceania\'s AI Content Suite',
+    firstToMarket: ['Australian English adaptation', 'Māori language support', 'Pacific Island coverage'],
+    capabilityDepth: ['ANZ accent voice synthesis', 'Regional compliance built-in', 'Time-zone aware scheduling'],
+    onlyHere: ['True ANZ transcreation', 'Pacific cultural intelligence'],
+  },
+  languageShowcase: {
+    languages: [
+      { code: 'en-AU', name: 'English (AU)', nativeName: 'English', flag: '🇦🇺' },
+      { code: 'en-NZ', name: 'English (NZ)', nativeName: 'English', flag: '🇳🇿' },
+      { code: 'mi-NZ', name: 'Māori', nativeName: 'Te Reo Māori', flag: '🇳🇿' },
+    ],
+    demoPhrase: 'Create stunning content in minutes',
+    demoTranslations: {},
+  },
+  seo: {
+    title: 'Genie Suite - AI Content Production | Oceania',
+    description: 'AI content production for Australia, New Zealand & Pacific Islands.',
+    keywords: ['Oceania AI', 'Australian content', 'ANZ production', 'Pacific AI'],
+    hreflang: 'en-AU',
+    ogLocale: 'en_AU',
+  },
+  welcomeScript: 'Welcome to Genie Suite for Oceania. Premium AI content for Australia, New Zealand and the Pacific.',
+  showcaseExamples: [
+    { title: 'Tourism Campaign', input: 'Destination brief', pipeline: 'Script > Voice > Video', output: 'ANZ tourism content', industry: 'Tourism' },
+  ],
+};
+
+const turkeyConfig: RegionalConfig = {
+  hero: {
+    flag: '🇹🇷',
+    regionName: 'Turkey',
+    theme: 'Türkiye AI',
+    englishHeadline: 'AI Content Production Suite — Turkey',
+    englishSubheadline: 'Türkçe-native. 85M audience.',
+    nativeHeadline: 'AI İçerik Üretim Platformu',
+    nativeSubheadline: 'Türkçe içerik üretimi',
+  },
+  stats: { languages: '3+', dialects: '5+', audienceReach: '85M+', industries: '50+', pipelines: '206' },
+  cta: { primary: 'Ücretsiz Başla', secondary: 'Demo İzle', badge: 'Türkçe-optimize' },
+  differentiators: {
+    heroBadge: 'Turkey\'s AI Content Suite',
+    firstToMarket: ['Turkish language AI mastery', 'Agglutinative language engine', 'Ottoman script support'],
+    capabilityDepth: ['Istanbul accent synthesis', 'Turkish cultural calendar', 'E-commerce content'],
+    onlyHere: ['True Turkish transcreation', 'Anatolian cultural depth'],
+  },
+  languageShowcase: {
+    languages: [
+      { code: 'tr-TR', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷' },
+      { code: 'ku-TR', name: 'Kurdish', nativeName: 'Kurdî', flag: '🇹🇷' },
+    ],
+    demoPhrase: 'Create stunning content in minutes',
+    demoTranslations: { 'tr-TR': 'Dakikalar içinde etkileyici içerik oluşturun' },
+  },
+  seo: {
+    title: 'Genie Suite - AI Content Production | Turkey',
+    description: 'AI content production for Turkey. Turkish-native, culturally authentic.',
+    keywords: ['Turkish AI', 'Türkçe content', 'Turkey production', 'Istanbul AI'],
+    hreflang: 'tr',
+    ogLocale: 'tr_TR',
+  },
+  welcomeScript: 'Genie Suite\'e hoş geldiniz. Türkçe içerik üretiminde yapay zeka ile fark yaratın.',
+  showcaseExamples: [
+    { title: 'E-Ticaret Kampanyası', input: 'Ürün kataloğu', pipeline: 'Script > Voice > Video', output: 'Turkish e-commerce content', industry: 'E-Commerce' },
+  ],
+};
+
+const pakistanConfig: RegionalConfig = {
+  hero: {
+    flag: '🇵🇰',
+    regionName: 'Pakistan',
+    theme: 'Urdu-First Intelligence',
+    englishHeadline: 'AI Content Production Suite — Pakistan',
+    englishSubheadline: 'Urdu-native. 230M audience. RTL-ready.',
+    nativeHeadline: 'AI مواد تیار کرنے کا پلیٹ فارم',
+    nativeSubheadline: 'اردو میں مواد — پاکستان کے لیے',
+    isRTL: true,
+  },
+  stats: { languages: '8+', dialects: '10+', audienceReach: '230M+', industries: '50+', pipelines: '206' },
+  cta: { primary: 'مفت شروع کریں', secondary: 'ڈیمو دیکھیں', badge: 'اردو آپٹمائزڈ' },
+  differentiators: {
+    heroBadge: 'Pakistan\'s AI Content Suite',
+    firstToMarket: ['Urdu language AI', 'Nastaliq script rendering', 'Pakistan regional dialects'],
+    capabilityDepth: ['Urdu, Punjabi, Sindhi, Pashto', 'RTL-native architecture', 'Pakistani cultural calendar'],
+    onlyHere: ['True Urdu transcreation', 'Pakistani cultural intelligence'],
+  },
+  languageShowcase: {
+    languages: [
+      { code: 'ur-PK', name: 'Urdu', nativeName: 'اردو', flag: '🇵🇰' },
+      { code: 'pa-PK', name: 'Punjabi', nativeName: 'پنجابی', flag: '🇵🇰' },
+      { code: 'sd-PK', name: 'Sindhi', nativeName: 'سنڌي', flag: '🇵🇰' },
+    ],
+    demoPhrase: 'Create stunning content in minutes',
+    demoTranslations: { 'ur-PK': 'منٹوں میں شاندار مواد بنائیں' },
+  },
+  seo: {
+    title: 'Genie Suite - AI Content Production | Pakistan',
+    description: 'AI content production for Pakistan. Urdu-native, Nastaliq rendering, regional dialects.',
+    keywords: ['Pakistan AI', 'Urdu content', 'Pakistani production', 'Nastaliq AI'],
+    hreflang: 'ur',
+    ogLocale: 'ur_PK',
+  },
+  welcomeScript: 'Genie Suite میں خوش آمدید۔ اردو، پنجابی، سندھی اور پشتو میں مواد بنائیں۔',
+  showcaseExamples: [
+    { title: 'EdTech Content', input: 'Curriculum brief', pipeline: 'Translate > Voice > Animate', output: 'Educational content in Urdu + regional', industry: 'Education' },
+  ],
+};
+
+const bangladeshConfig: RegionalConfig = {
+  hero: {
+    flag: '🇧🇩',
+    regionName: 'Bangladesh',
+    theme: 'Bengali Intelligence',
+    englishHeadline: 'AI Content Production Suite — Bangladesh',
+    englishSubheadline: 'Bengali-native. 170M audience.',
+    nativeHeadline: 'AI কন্টেন্ট প্রোডাকশন সুইট',
+    nativeSubheadline: 'বাংলায় কন্টেন্ট — বাংলাদেশের জন্য',
+  },
+  stats: { languages: '3+', dialects: '8+', audienceReach: '170M+', industries: '50+', pipelines: '206' },
+  cta: { primary: 'ফ্রি শুরু করুন', secondary: 'ডেমো দেখুন', badge: 'বাংলা অপটিমাইজড' },
+  differentiators: {
+    heroBadge: 'Bangladesh\'s AI Content Suite',
+    firstToMarket: ['Bengali language AI', 'Bangla script rendering', 'Bangladeshi dialects'],
+    capabilityDepth: ['Standard Bengali + Chittagongian', 'Bangla calligraphy AI', 'Garment industry content'],
+    onlyHere: ['True Bengali transcreation', 'Bangladeshi cultural depth'],
+  },
+  languageShowcase: {
+    languages: [
+      { code: 'bn-BD', name: 'Bengali', nativeName: 'বাংলা', flag: '🇧🇩' },
+      { code: 'en-BD', name: 'English', nativeName: 'English', flag: '🇧🇩' },
+    ],
+    demoPhrase: 'Create stunning content in minutes',
+    demoTranslations: { 'bn-BD': 'মিনিটের মধ্যে অসাধারণ কন্টেন্ট তৈরি করুন' },
+  },
+  seo: {
+    title: 'Genie Suite - AI Content Production | Bangladesh',
+    description: 'AI content production for Bangladesh. Bengali-native, culturally authentic.',
+    keywords: ['Bangladesh AI', 'Bengali content', 'Bangla production', 'Dhaka AI'],
+    hreflang: 'bn',
+    ogLocale: 'bn_BD',
+  },
+  welcomeScript: 'Genie Suite-এ স্বাগতম। বাংলায় কন্টেন্ট তৈরি করুন — বাংলাদেশের জন্য।',
+  showcaseExamples: [
+    { title: 'Garment Marketing', input: 'Product catalog', pipeline: 'Script > Voice > Video', output: 'Bengali marketing content', industry: 'Textiles' },
+  ],
+};
+
+const easternEuropeConfig: RegionalConfig = {
+  hero: {
+    flag: '🇺🇦',
+    regionName: 'Eastern Europe & Caucasus',
+    theme: 'Eurasian Bridge',
+    englishHeadline: 'AI Content Production Suite — Eastern Europe',
+    englishSubheadline: 'Ukraine, Balkans, Caucasus. 200M+ audience.',
+    nativeHeadline: 'AI Платформа Контенту',
+    nativeSubheadline: 'Контент для Східної Європи та Кавказу',
+  },
+  stats: { languages: '12+', dialects: '15+', audienceReach: '200M+', industries: '50+', pipelines: '206' },
+  cta: { primary: 'Start Free', secondary: 'Watch Demo', badge: 'Cyrillic + Latin' },
+  differentiators: {
+    heroBadge: 'Eastern Europe AI Suite',
+    firstToMarket: ['Ukrainian language AI', 'Cyrillic + Latin dual support', 'Balkan language coverage'],
+    capabilityDepth: ['Ukrainian, Serbian, Bulgarian, Croatian', 'Georgian, Armenian scripts', 'Multi-script rendering'],
+    onlyHere: ['True Slavic transcreation', 'Caucasus cultural intelligence'],
+  },
+  languageShowcase: {
+    languages: [
+      { code: 'uk-UA', name: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦' },
+      { code: 'sr-RS', name: 'Serbian', nativeName: 'Српски', flag: '🇷🇸' },
+      { code: 'ka-GE', name: 'Georgian', nativeName: 'ქართული', flag: '🇬🇪' },
+    ],
+    demoPhrase: 'Create stunning content in minutes',
+    demoTranslations: { 'uk-UA': 'Створюйте вражаючий контент за лічені хвилини' },
+  },
+  seo: {
+    title: 'Genie Suite - AI Content Production | Eastern Europe',
+    description: 'AI content production for Eastern Europe & Caucasus. Ukrainian, Balkan, Georgian support.',
+    keywords: ['Eastern Europe AI', 'Ukrainian content', 'Balkan AI', 'Caucasus production'],
+    hreflang: 'en',
+    ogLocale: 'en_US',
+  },
+  welcomeScript: 'Welcome to Genie Suite for Eastern Europe. Create content across Ukrainian, Serbian, Georgian and more.',
+  showcaseExamples: [
+    { title: 'Tech Startup Content', input: 'Product brief', pipeline: 'Script > Voice > Video', output: 'Content in 5 Eastern European languages', industry: 'Technology' },
+  ],
+};
+
+const centralAsiaConfig: RegionalConfig = {
+  hero: {
+    flag: '🇰🇿',
+    regionName: 'Central Asia',
+    theme: 'Silk Road Digital',
+    englishHeadline: 'AI Content Production Suite — Central Asia',
+    englishSubheadline: 'Kazakhstan, Uzbekistan, Azerbaijan.',
+    nativeHeadline: 'AI Контент Платформасы',
+    nativeSubheadline: 'Орталық Азияға арналған контент',
+  },
+  stats: { languages: '8+', dialects: '10+', audienceReach: '100M+', industries: '50+', pipelines: '206' },
+  cta: { primary: 'Start Free', secondary: 'Watch Demo', badge: 'Turkic + Cyrillic' },
+  differentiators: {
+    heroBadge: 'Central Asia AI Suite',
+    firstToMarket: ['Kazakh language AI', 'Turkic language family', 'Cyrillic-Latin dual script'],
+    capabilityDepth: ['Kazakh, Uzbek, Azerbaijani', 'Arabic, Cyrillic, Latin scripts', 'Regional cultural adaptation'],
+    onlyHere: ['True Central Asian transcreation', 'Silk Road cultural intelligence'],
+  },
+  languageShowcase: {
+    languages: [
+      { code: 'kk-KZ', name: 'Kazakh', nativeName: 'Қазақ', flag: '🇰🇿' },
+      { code: 'uz-UZ', name: 'Uzbek', nativeName: 'Oʻzbek', flag: '🇺🇿' },
+      { code: 'az-AZ', name: 'Azerbaijani', nativeName: 'Azərbaycan', flag: '🇦🇿' },
+    ],
+    demoPhrase: 'Create stunning content in minutes',
+    demoTranslations: { 'kk-KZ': 'Бірнеше минутта тамаша мазмұн жасаңыз' },
+  },
+  seo: {
+    title: 'Genie Suite - AI Content Production | Central Asia',
+    description: 'AI content production for Central Asia. Kazakh, Uzbek, Azerbaijani support.',
+    keywords: ['Central Asia AI', 'Kazakh content', 'Uzbek AI', 'Turkic production'],
+    hreflang: 'en',
+    ogLocale: 'en_US',
+  },
+  welcomeScript: 'Welcome to Genie Suite for Central Asia. Create content in Kazakh, Uzbek, Azerbaijani and more.',
+  showcaseExamples: [
+    { title: 'Energy Sector Content', input: 'Industry brief', pipeline: 'Script > Voice > Video', output: 'Content in Central Asian languages', industry: 'Energy' },
+  ],
+};
+
 const latamConfig: RegionalConfig = {
   hero: {
     flag: '🌎',
@@ -524,25 +763,25 @@ const caribbeanConfig: RegionalConfig = {
 // ── Exported Registry ──
 
 export const REGIONAL_CONFIGS: Record<RegionSlug, RegionalConfig> = {
-  // Primary regions
+  // Primary 8 regions
   nam: namConfig,
   europe: europeConfig,
   mena: menaConfig,
   india: indiaConfig,
   africa: africaConfig,
-  apac: apacConfig,
   sea: seaConfig,
   cjk: cjkConfig,
   latam: latamConfig,
+  // Legacy fallback (redirected in router)
+  apac: apacConfig,
+  // Dedicated 8 expansion regions
   caribbean: caribbeanConfig,
-  // P0 Regions
-  oceania: namConfig,
-  turkey: europeConfig,
-  // P1 Regions
-  pakistan: indiaConfig,
-  bangladesh: indiaConfig,
-  eastern_europe: europeConfig,
-  central_asia: namConfig,
+  oceania: oceaniaConfig,
+  turkey: turkeyConfig,
+  pakistan: pakistanConfig,
+  bangladesh: bangladeshConfig,
+  eastern_europe: easternEuropeConfig,
+  central_asia: centralAsiaConfig,
   south_asia: southAsiaConfig,
 };
 
