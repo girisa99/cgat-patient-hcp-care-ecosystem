@@ -460,6 +460,77 @@ serve(async (req) => {
 
     console.log(`[seed-regional-transcreation] Mode: ${mode}, Region: ${region_slug || "all"}, DryRun: ${dry_run}`);
 
+    // ── Cleanup mode: delete empty/broken rows ──
+    if (mode === "cleanup") {
+      const { data: emptyRows, error: fetchErr } = await supabase
+        .from("regional_content_cache")
+        .select("id")
+        .or("transcreated_content.is.null,transcreated_content.eq.");
+
+      if (fetchErr) {
+        return new Response(JSON.stringify({ error: fetchErr.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      let deleted = 0;
+      if (emptyRows && emptyRows.length > 0) {
+        const ids = emptyRows.map(r => r.id);
+        const { error: delErr } = await supabase
+          .from("regional_content_cache")
+          .delete()
+          .in("id", ids);
+
+        if (delErr) {
+          return new Response(JSON.stringify({ error: delErr.message }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        deleted = ids.length;
+      }
+
+      return new Response(JSON.stringify({ success: true, mode: "cleanup", deleted }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Dedup mode: remove duplicate rows keeping the first one ──
+    if (mode === "dedup") {
+      const { data: allRows, error: fetchErr } = await supabase
+        .from("regional_content_cache")
+        .select("id, region_slug, content_key, sub_region_code, created_at")
+        .order("created_at", { ascending: true });
+
+      if (fetchErr) {
+        return new Response(JSON.stringify({ error: fetchErr.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const seen = new Set<string>();
+      const dupeIds: string[] = [];
+      for (const row of allRows || []) {
+        const key = `${row.region_slug}|${row.content_key}|${row.sub_region_code || 'null'}`;
+        if (seen.has(key)) {
+          dupeIds.push(row.id);
+        } else {
+          seen.add(key);
+        }
+      }
+
+      if (dupeIds.length > 0) {
+        // Delete in batches of 50
+        for (let i = 0; i < dupeIds.length; i += 50) {
+          const batch = dupeIds.slice(i, i + 50);
+          await supabase.from("regional_content_cache").delete().in("id", batch);
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true, mode: "dedup", duplicatesRemoved: dupeIds.length }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const results: any[] = [];
     let totalGenerated = 0;
     let totalSkipped = 0;
@@ -467,7 +538,7 @@ serve(async (req) => {
     // Determine which regions to process
     let regionsToProcess: RegionMeta[] = [];
     
-    if (mode === "seed_single" && region_slug) {
+    if (region_slug) {
       const found = REGION_META.find(r => r.slug === region_slug);
       if (!found) {
         return new Response(JSON.stringify({ error: `Region ${region_slug} not found` }), {
