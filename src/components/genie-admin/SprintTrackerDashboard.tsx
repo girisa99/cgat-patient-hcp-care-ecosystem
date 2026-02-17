@@ -27,6 +27,7 @@ import {
   Target, CheckCircle2, Clock, XCircle, ChevronRight, ChevronDown,
   Users, Code2, FileCode, BarChart3, ListChecks, Shield, Layers,
   Zap, Brain, AlertTriangle, Lock, MessageSquare, Save,
+  ClipboardCheck, Eye, GitBranch, Bug, FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -748,10 +749,14 @@ export const SprintTrackerDashboard: React.FC = () => {
 
       {/* Main Tabs */}
       <Tabs defaultValue="tasks" className="space-y-4">
-        <TabsList className="grid grid-cols-4 w-full max-w-lg">
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
           <TabsTrigger value="tasks" className="gap-1 text-xs sm:text-sm">
             <ListChecks className="w-3.5 h-3.5" />
             Tasks
+          </TabsTrigger>
+          <TabsTrigger value="review" className="gap-1 text-xs sm:text-sm">
+            <ClipboardCheck className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Daily</span> Review
           </TabsTrigger>
           <TabsTrigger value="standups" className="gap-1 text-xs sm:text-sm">
             <MessageSquare className="w-3.5 h-3.5" />
@@ -787,6 +792,144 @@ export const SprintTrackerDashboard: React.FC = () => {
               onStatusChange={updateTaskStatus}
             />
           </div>
+        </TabsContent>
+
+        {/* ── Daily Review Tab ── */}
+        <TabsContent value="review" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Eye className="w-4 h-4 text-blue-600" />
+                Morning Review Checklist — Day {selectedDay}
+              </CardTitle>
+              <CardDescription className="text-xs">Do this at the start of every session</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                { step: 1, title: 'Read diagnosis findings', desc: 'Open GENIESUITE_DAY1_DIAGNOSIS.md and review all open issues', icon: <FileText className="w-3.5 h-3.5" /> },
+                { step: 2, title: 'Check CSV project plan', desc: 'Open GENIESUITE_PROJECT_PLAN.csv — check your task status and Claude\'s findings', icon: <ListChecks className="w-3.5 h-3.5" /> },
+                { step: 3, title: 'Review standup logs', desc: 'Go to Standups tab — read what the other developer did yesterday and any blockers', icon: <MessageSquare className="w-3.5 h-3.5" /> },
+                { step: 4, title: 'Check for branch conflicts', desc: 'Run: git fetch origin main && git log --oneline origin/main..HEAD', icon: <GitBranch className="w-3.5 h-3.5" /> },
+                { step: 5, title: 'Verify build passes', desc: 'Run: npm run build — if it fails, investigate before starting new work', icon: <Code2 className="w-3.5 h-3.5" /> },
+              ].map(item => (
+                <div key={item.step} className="flex items-start gap-3 py-2 border-b last:border-0">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700 shrink-0">
+                    {item.step}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      {item.icon}
+                      <p className="text-sm font-medium">{item.title}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Open Issues Summary */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Bug className="w-4 h-4 text-amber-600" />
+                Open Issues from Day 1 — Assigned to Days 2-4
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Group by target day */}
+                {[2, 3, 4, 5].map(targetDay => {
+                  const allFindings = Object.values(DAY1_FINDINGS).flatMap(tf => tf.findings);
+                  const openForDay = allFindings.filter(f => {
+                    if (f.status !== 'open') return false;
+                    // Map findings to target days based on ID prefix
+                    if (f.id.startsWith('D-')) return targetDay === 2;
+                    if (f.id.startsWith('X-') && f.id !== 'X-003') return targetDay === 2;
+                    if (f.id.startsWith('S-')) return targetDay === 3;
+                    if (f.id.startsWith('M-')) return targetDay === 4;
+                    if (f.id === 'X-003') return targetDay === 5;
+                    return false;
+                  });
+                  if (openForDay.length === 0) return null;
+                  return (
+                    <div key={targetDay}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="text-xs">Day {targetDay}</Badge>
+                        <span className="text-xs text-muted-foreground">{SPRINT_DAYS[targetDay - 1]?.theme}</span>
+                        <Badge className="text-[10px] bg-amber-100 text-amber-800">{openForDay.length} open</Badge>
+                      </div>
+                      <div className="grid gap-1.5">
+                        {openForDay.map(f => (
+                          <div key={f.id} className={cn("p-2 rounded border text-[11px]", findingSeverityColor[f.severity])}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold">{f.id}</span>
+                              <Badge className={cn("text-[9px] h-4 px-1", findingSeverityColor[f.severity])}>{f.severity}</Badge>
+                              <span className="flex-1 truncate">{f.issue}</span>
+                            </div>
+                            <p className="text-[10px] opacity-70 mt-0.5 font-mono">{f.file}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* End-of-Day Checklist */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                End-of-Day Checklist
+              </CardTitle>
+              <CardDescription className="text-xs">Before ending your session</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-xs">
+              {[
+                'All assigned tasks marked completed (or noted as in-progress with reason)',
+                'npm run build passes',
+                'CSV updated: status, actual effort, findings summary',
+                'Standup entry added for next morning',
+                'No locked files modified (git diff --name-only)',
+                'No files in the other developer\'s territory touched',
+                'Changes committed with descriptive message',
+                'Branch pushed to remote',
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-2 py-1">
+                  <div className="w-4 h-4 rounded border border-muted-foreground/30 shrink-0 mt-0.5" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Key Documents */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <FileText className="w-4 h-4 text-purple-600" />
+                Key Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {[
+                  { name: 'GENIESUITE_PROJECT_PLAN.csv', desc: 'Full sprint plan with status, findings, effort' },
+                  { name: 'GENIESUITE_DAY1_DIAGNOSIS.md', desc: 'Detailed diagnosis: 33 issues, file:line, root cause' },
+                  { name: 'LOVABLE_DEVELOPER_GUIDE.md', desc: 'Lovable daily ops: what to read, update, and never touch' },
+                  { name: 'GENIESUITE_DUAL_DEVELOPER_STRATEGY.md', desc: 'Merge order, file ownership, conflict prevention' },
+                ].map(doc => (
+                  <div key={doc.name} className="p-2 rounded border bg-muted/30">
+                    <p className="text-xs font-mono font-medium truncate">{doc.name}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{doc.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ── Standups Tab ── */}
