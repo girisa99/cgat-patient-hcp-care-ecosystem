@@ -121,6 +121,17 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
     </div>
   );
 
+  // Sprint tracker gets full-screen treatment — no padding wrapper, no scroll area nesting
+  if (activeTab === 'sprint-tracker') {
+    return (
+      <div className={cn("h-full min-h-screen w-full", className)}>
+        <Suspense fallback={<TabLoading />}>
+          <SprintTrackerDashboard />
+        </Suspense>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("h-full min-h-[calc(100vh-4rem)]", className)}>
       <ScrollArea className="h-full">
@@ -307,12 +318,6 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
             </Suspense>
           )}
 
-          {/* Sprint Tracker - Development Sprint Planning Dashboard */}
-          {activeTab === 'sprint-tracker' && (
-            <Suspense fallback={<TabLoading />}>
-              <SprintTrackerDashboard />
-            </Suspense>
-          )}
         </div>
       </ScrollArea>
     </div>
