@@ -576,7 +576,6 @@ export const SprintTrackerDashboard: React.FC = () => {
                 standups={state.standups}
               />
             )}
-            )}
 
           </div>
         </main>
