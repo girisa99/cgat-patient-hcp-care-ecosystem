@@ -505,6 +505,7 @@ export const SprintTrackerDashboard: React.FC = () => {
             {activeDayNum !== undefined && (
               <DayPageView
                 day={activeDayNum}
+                currentDay={currentDay}
                 theme={SPRINT_DAYS[activeDayNum - 1]?.theme ?? ''}
                 standups={state.standups}
                 onAddStandup={addStandup}
