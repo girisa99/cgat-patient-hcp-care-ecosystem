@@ -49,7 +49,8 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { EffortMetrics, TaskEffort, Discipline, Developer } from './types';
+import type { EffortMetrics, TaskEffort, Discipline } from './data-effort';
+import type { Developer } from './types';
 import { ALL_EFFORT, DISCIPLINE_META, computeEffortMetrics } from './data-effort';
 import { SPRINT_TASKS } from './data-tasks';
 

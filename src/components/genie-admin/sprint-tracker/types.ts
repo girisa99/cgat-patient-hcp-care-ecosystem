@@ -7,14 +7,11 @@ export type TaskPriority = 'critical' | 'high' | 'medium' | 'low';
 // ── Work category for velocity breakdown ──
 export type WorkCategory = 'frontend' | 'backend' | 'database' | 'testing' | 'ux' | 'docs' | 'devops';
 
-export interface TaskEffort {
-  /** Actual hours logged by developer (updated when task completes) */
+/** Compact inline effort stored directly on SprintTask (not the rich TaskEffort in data-effort.ts) */
+export interface SprintTaskEffort {
   actualHours?: number;
-  /** AI tokens consumed (approximate, set by Claude/Lovable) */
   tokensUsed?: number;
-  /** Token cost in USD cents */
   tokenCostCents?: number;
-  /** Which categories of work this task covers */
   workCategories: WorkCategory[];
 }
 
@@ -29,8 +26,7 @@ export interface SprintTask {
   acceptanceCriteria: string;
   estimatedHours: number;
   notes?: string;
-  // ── Effort tracking ──
-  effort?: TaskEffort;
+  effort?: SprintTaskEffort;
 }
 
 export interface StandupEntry {
@@ -231,7 +227,7 @@ export interface TaskEffort {
   /** Bugs/issues fixed as part of this task */
   issuesFixed?: string[];
   /** Files modified */
-  filesModified: string[];
+  filesModified?: string[];
   /** Number of lines changed (insertions + deletions) */
   linesChanged?: number;
   /** When the task was started */
