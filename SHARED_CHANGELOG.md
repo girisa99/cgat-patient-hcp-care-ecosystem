@@ -132,6 +132,18 @@ At session start:
   - Lovable: **MUST** check Handoffs tab before starting any task — some tasks need Claude's output first.
 - **Breaking Changes:** None — new tabs added to existing dashboard.
 
+### [11:00] HANDOFF — Sprint Tracker UI/UX assigned to Lovable
+- **File(s):** `src/components/genie-admin/sprint-tracker/` (all 12+ files)
+- **Changed By:** Claude (PO decision)
+- **What Changed:** Sprint Tracker UI/UX is now **Lovable's responsibility**. Claude built the full data layer, modular architecture (7 tabs), types, hooks, and dependency tracking. The visual polish, animations, mobile responsiveness, and look-and-feel need Lovable's design skills.
+- **Why:** PO decided Claude's strength is data/logic/architecture, not UI/UX polish. Lovable is the better fit for making it look great.
+- **How to Use:** Route: `/genie-admin?tab=sprint-tracker`. All tab views are in `src/components/genie-admin/sprint-tracker/`.
+- **Impact on Your Work:**
+  - Claude: **Do NOT** spend time on Sprint Tracker visuals. Focus on Deck/Spark/Mind creation flows.
+  - Lovable: **YOU OWN** Sprint Tracker UI/UX. Restyle all 7 tab views. Do NOT change data structures, types, or hook logic — only the JSX/styling in view components (BoardView, StandupsView, DependenciesView, FindingsView, MetricsView, StrategyView, POVerificationView, TaskCard).
+- **Breaking Changes:** None — ownership change only.
+- **Mermaid Note:** `SPRINT_PROCESS_FLOW.md` has 7 Mermaid diagrams that render on GitHub but NOT in the app. Lovable can optionally replace them with React-based visualizations in the Strategy tab.
+
 ### [10:30] NEW — Stage Gate Protocol (Claude as Team Lead)
 - **File(s):** `CLAUDE.md`, `.lovable/instructions.md`, `SHARED_CHANGELOG.md`
 - **Changed By:** Claude
@@ -177,6 +189,7 @@ Claude (Team Lead) produces → Lovable consumes:
 | H-101 | 1 | Route fix: `/genie-admin?tab=library` | Ready |
 | H-102 | 1 | Mind tagline: "AI That Understands" | Ready |
 | H-103 | 1 | Support email: `support@geniaisuite.com` | Ready |
+| **H-110** | **2** | **Sprint Tracker UI/UX → Lovable owns all visuals** | **Ready** |
 | H-201 | 2 | Deck creation flow live at `/genie-deck` | Pending (after C-203) |
 | H-301 | 3 | Spark flow live at `/genie-spark` | Pending (after C-304) |
 | H-401 | 4 | Mind flow live at `/genie-mind` | Pending (after C-404) |
