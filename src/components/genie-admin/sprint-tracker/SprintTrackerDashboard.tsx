@@ -6,12 +6,14 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import {
   Target, LayoutGrid, Bug, MessageSquare, BarChart3, Shield, Link2, ClipboardCheck,
-  AlertTriangle, CheckCircle2, Clock, TrendingUp,
+  AlertTriangle, CheckCircle2, Clock, TrendingUp, ArrowLeft, Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +40,9 @@ const TABS = [
 ] as const;
 
 export const SprintTrackerDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
+
   const {
     state, currentDay, metrics, boardColumns,
     updateTaskStatus, addStandup, getTaskStatus,
@@ -62,8 +67,19 @@ export const SprintTrackerDashboard: React.FC = () => {
         {/* ─── STICKY TOP BAR ─── */}
         <div className="sticky top-0 z-20 bg-background border-b shadow-sm">
 
-          {/* Row 1: Title + stat chips */}
-          <div className="flex items-center gap-4 px-4 sm:px-6 pt-3 pb-2 flex-wrap">
+          {/* Row 1: Back button + Title + stat chips + Genie Cast shortcut */}
+          <div className="flex items-center gap-3 px-4 sm:px-6 pt-3 pb-2 flex-wrap">
+            {/* Back button — restores sidebar nav */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/genie-admin?tab=genie-cast')}
+              className="gap-1.5 shrink-0 h-8 px-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-xs font-medium hidden sm:inline">Back</span>
+            </Button>
+
             <div className="flex items-center gap-2 shrink-0">
               <Target className="w-5 h-5 text-primary" />
               <span className="font-bold text-base">Sprint Tracker</span>
@@ -128,6 +144,17 @@ export const SprintTrackerDashboard: React.FC = () => {
                   <AlertTriangle className="w-3 h-3" />{metrics.backlogCount} backlog
                 </Badge>
               )}
+
+              {/* Genie Cast shortcut */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/genie-admin?tab=genie-cast')}
+                className="gap-1.5 h-7 px-2.5 text-xs shrink-0 border-primary/30 text-primary hover:bg-primary/10"
+              >
+                <Video className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Genie Cast</span>
+              </Button>
             </div>
           </div>
 
