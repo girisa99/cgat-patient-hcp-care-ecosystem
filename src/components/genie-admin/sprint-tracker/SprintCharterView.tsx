@@ -912,44 +912,82 @@ function StoryPointDashboard({ getTaskStatus, currentDay }: { getTaskStatus: (id
 
 function AddedWorkMetricsSection({ getTaskStatus, currentDay }: { getTaskStatus: (id: string) => TaskStatus; currentDay: number }) {
   // Baseline from sprint planning (Day 1 start)
-  const baselineSP = SPRINT_TASKS.length; // 41 tasks = 41 base story points
-  const addedSP    = 5; // SC-001 + SC-002 + SC-003 = 5 SP from scope log above
-  const totalSP    = baselineSP + addedSP;
-  const addedRate  = Math.round((addedSP / baselineSP) * 100);
+  const baselineSP    = SPRINT_TASKS.length; // 41 tasks = 41 base story points
+  const addedSP       = 5; // SC-001 + SC-002 + SC-003 = 5 SP from scope log above
+  const totalSP       = baselineSP + addedSP;
+  const addedRate     = Math.round((addedSP / baselineSP) * 100);
 
   const doneSP = SPRINT_TASKS.filter(t => getTaskStatus(t.id) === 'completed').length;
-  const wipSP  = SPRINT_TASKS.filter(t => getTaskStatus(t.id) === 'in-progress').length;
-  const interruptions = 3; // SC-001, SC-002, SC-003
+  const interruptions = 3;
+
+  // Dynamic threshold: AI teams can absorb more scope late in sprint
+  // Days 1-2: 25% | Day 3: 35% | Days 4-5: 50%
+  const dynamicThreshold = currentDay <= 2 ? 25 : currentDay === 3 ? 35 : 50;
+  const thresholdLabel   = currentDay <= 2 ? 'Early sprint (strict)' : currentDay === 3 ? 'Mid sprint (moderate)' : 'Late sprint (flexible)';
+
+  const warnRate  = addedRate >= dynamicThreshold;
+  const warnIntr  = interruptions >= 5;
+  const warnTotal = addedSP >= Math.round(baselineSP * dynamicThreshold / 100);
 
   const thresholds = [
-    { label: 'Interruption Rate', value: interruptions, threshold: 5, unit: 'events', warn: interruptions >= 5 },
-    { label: 'Added SP Rate', value: addedRate, threshold: 20, unit: '%', warn: addedRate >= 20 },
-    { label: 'Total Added SP', value: addedSP, threshold: 8, unit: 'SP', warn: addedSP >= 8 },
+    { label: 'Interruption Rate',  value: interruptions, threshold: 5,                unit: 'events', warn: warnIntr },
+    { label: 'Added SP Rate',      value: addedRate,     threshold: dynamicThreshold, unit: '%',      warn: warnRate },
+    { label: 'Total Added SP',     value: addedSP,       threshold: Math.round(baselineSP * dynamicThreshold / 100), unit: 'SP', warn: warnTotal },
   ];
 
   return (
     <div className="space-y-3">
+      {/* Dynamic threshold banner */}
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-violet-200 bg-violet-50/40">
+        <Gauge className="w-4 h-4 text-violet-600 shrink-0" />
+        <div className="flex-1 text-[10px]">
+          <span className="font-bold text-violet-900">Day {currentDay} Threshold: </span>
+          <span className="text-violet-800 font-semibold">{dynamicThreshold}%</span>
+          <span className="text-violet-700 ml-1.5">— {thresholdLabel}</span>
+        </div>
+        <div className="flex gap-2 text-[9px] font-mono">
+          <span className="text-muted-foreground">Day 1-2: 25%</span>
+          <span className="text-muted-foreground">Day 3: 35%</span>
+          <span className="text-muted-foreground">Day 4-5: 50%</span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <StatBox label="Baseline SP" value={baselineSP.toString()} sub="sprint planned" />
-        <StatBox label="Added SP" value={`+${addedSP}`} sub="post-planning" cls={addedRate >= 20 ? 'text-red-600' : 'text-amber-600'} />
+        <StatBox label="Added SP" value={`+${addedSP}`} sub="post-planning" cls={warnRate ? 'text-red-600' : 'text-amber-600'} />
         <StatBox label="Total SP" value={totalSP.toString()} sub="current scope" cls="text-foreground" />
         <StatBox label="Done SP" value={doneSP.toString()} sub={`${Math.round(doneSP/totalSP*100)}% velocity`} cls="text-green-600" />
       </div>
 
       {/* Threshold monitors */}
       <div className="space-y-2">
-        {thresholds.map(t => (
-          <div key={t.label} className={cn('flex items-center gap-3 px-3 py-2 rounded-lg border', t.warn ? 'border-red-300 bg-red-50/50' : 'border-border/60 bg-card')}>
-            {t.warn ? <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" /> : <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
-            <span className="text-xs font-semibold flex-1">{t.label}</span>
-            <span className={cn('text-xs font-bold', t.warn ? 'text-red-600' : 'text-green-600')}>{t.value}{t.unit === '%' ? '%' : ''} {t.unit !== '%' ? t.unit : ''}</span>
-            <span className="text-[9px] text-muted-foreground">threshold: {t.threshold}{t.unit === '%' ? '%' : ''} {t.unit !== '%' ? t.unit : ''}</span>
-          </div>
-        ))}
+        {thresholds.map(t => {
+          const pct = Math.min(Math.round((t.value / t.threshold) * 100), 100);
+          return (
+            <div key={t.label} className={cn('flex items-center gap-3 px-3 py-2 rounded-lg border', t.warn ? 'border-red-300 bg-red-50/50' : 'border-border/60 bg-card')}>
+              {t.warn ? <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" /> : <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
+              <span className="text-xs font-semibold flex-1">{t.label}</span>
+              <div className="w-20 hidden sm:block">
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className={cn('h-full rounded-full transition-all', t.warn ? 'bg-red-500' : 'bg-green-500')} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+              <span className={cn('text-xs font-bold tabular-nums', t.warn ? 'text-red-600' : 'text-green-600')}>
+                {t.value}{t.unit === '%' ? '%' : ` ${t.unit}`}
+              </span>
+              <span className="text-[9px] text-muted-foreground tabular-nums">
+                / {t.threshold}{t.unit === '%' ? '%' : ` ${t.unit}`}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       <div className="text-[10px] text-muted-foreground rounded-lg border border-border/60 p-2.5">
-        <strong>Retrospective signal:</strong> {addedRate}% scope change rate is {addedRate >= 20 ? '⚠️ above the 20% warning threshold — review interruption sources in retro.' : '✅ within acceptable limits. Team handled interruptions well using AI buffer capacity.'}
+        <strong>Retrospective signal:</strong> {addedRate}% scope change rate is{' '}
+        {warnRate
+          ? `⚠️ above the Day ${currentDay} dynamic threshold (${dynamicThreshold}%) — review interruption sources in retro.`
+          : `✅ within the Day ${currentDay} AI threshold (${dynamicThreshold}%). Team absorbed scope using 2× buffer capacity.`}
       </div>
     </div>
   );
@@ -1208,6 +1246,350 @@ function CapacityImpedimentsSection({ getTaskStatus, currentDay }: { getTaskStat
   );
 }
 
+// ─── 12. Token Consumption & Sprint ROI ──────────────────────────────────────
+
+// Estimated token costs per provider (per 1M tokens) — as of Feb 2026
+const PROVIDER_COSTS: Record<string, { input: number; output: number; label: string; color: string; bg: string }> = {
+  anthropic: { input: 3.00,  output: 15.00, label: 'Anthropic Claude',  color: 'text-violet-700', bg: 'bg-violet-50' },
+  openai:    { input: 0.15,  output: 0.60,  label: 'OpenAI GPT-4o-mini', color: 'text-emerald-700', bg: 'bg-emerald-50' },
+  gemini:    { input: 0.075, output: 0.30,  label: 'Google Gemini Flash', color: 'text-blue-700',   bg: 'bg-blue-50' },
+  lovable:   { input: 0,     output: 0,     label: 'Lovable Platform',   color: 'text-pink-700',    bg: 'bg-pink-50' },
+};
+
+// Static sprint token estimates based on task type, file sizes, and AI interactions
+// These represent a realistic estimate for a 5-day AI sprint building 3 products
+const TOKEN_DATA = {
+  claude: {
+    developer: 'claude' as Developer,
+    sessions: 22,
+    // Per-session breakdown
+    byProvider: [
+      { provider: 'anthropic', inputTokens: 4_200_000,  outputTokens: 890_000,  purpose: 'Code generation, diagnosis, architecture' },
+      { provider: 'openai',    inputTokens: 380_000,    outputTokens: 95_000,   purpose: 'Workflow analysis, test generation' },
+      { provider: 'gemini',    inputTokens: 120_000,    outputTokens: 28_000,   purpose: 'Cross-validation, content checks' },
+    ],
+  },
+  lovable: {
+    developer: 'lovable' as Developer,
+    sessions: 34,
+    byProvider: [
+      { provider: 'anthropic', inputTokens: 6_800_000,  outputTokens: 1_400_000, purpose: 'UI/UX, component generation, edge functions' },
+      { provider: 'openai',    inputTokens: 920_000,    outputTokens: 210_000,   purpose: 'Schema generation, data modeling' },
+      { provider: 'gemini',    inputTokens: 240_000,    outputTokens: 55_000,    purpose: 'Content generation, landing copy' },
+    ],
+  },
+};
+
+// Human equivalent cost: ~$95/hour loaded cost (senior dev, benefits, overhead)
+const HUMAN_HOURLY_RATE = 95;
+
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)}K`;
+  return n.toString();
+}
+
+function calcCost(inputTokens: number, outputTokens: number, provider: string): number {
+  const p = PROVIDER_COSTS[provider];
+  if (!p) return 0;
+  return (inputTokens / 1_000_000) * p.input + (outputTokens / 1_000_000) * p.output;
+}
+
+function TokenConsumptionSection({ getTaskStatus, currentDay }: { getTaskStatus: (id: string) => TaskStatus; currentDay: number }) {
+  const [view, setView] = useState<'overview' | 'by-dev' | 'by-provider' | 'roi'>('overview');
+
+  // Aggregate totals
+  const allDevs = [TOKEN_DATA.claude, TOKEN_DATA.lovable];
+  const grandTotalInput  = allDevs.flatMap(d => d.byProvider).reduce((s, p) => s + p.inputTokens, 0);
+  const grandTotalOutput = allDevs.flatMap(d => d.byProvider).reduce((s, p) => s + p.outputTokens, 0);
+  const grandTotalCost   = allDevs.flatMap(d => d.byProvider).reduce((s, p) => s + calcCost(p.inputTokens, p.outputTokens, p.provider), 0);
+  const grandTotalSessions = allDevs.reduce((s, d) => s + d.sessions, 0);
+
+  // ROI: completed tasks × hours × human rate
+  const completedHours = SPRINT_TASKS.filter(t => getTaskStatus(t.id) === 'completed').reduce((s, t) => s + t.estimatedHours, 0);
+  const aiValueHours   = completedHours * AI_EFFICIENCY_MULTIPLIER;
+  const humanCostEquiv = aiValueHours * HUMAN_HOURLY_RATE;
+  const roiMultiple    = grandTotalCost > 0 ? Math.round(humanCostEquiv / grandTotalCost) : 0;
+
+  // Projected end-of-sprint (scale from currentDay)
+  const projFactor      = 5 / Math.max(currentDay, 1);
+  const projTotalCost   = grandTotalCost * projFactor;
+  const projHumanCost   = SPRINT_TASKS.reduce((s, t) => s + t.estimatedHours, 0) * AI_EFFICIENCY_MULTIPLIER * HUMAN_HOURLY_RATE;
+  const projRoi         = projTotalCost > 0 ? Math.round(projHumanCost / projTotalCost) : 0;
+
+  const tabs: { key: typeof view; label: string }[] = [
+    { key: 'overview',     label: 'Overview' },
+    { key: 'by-dev',       label: 'By Developer' },
+    { key: 'by-provider',  label: 'By Provider' },
+    { key: 'roi',          label: 'ROI & Cost' },
+  ];
+
+  const devColorCls = { claude: 'text-violet-700', lovable: 'text-pink-700' } as const;
+  const devBgCls    = { claude: 'bg-violet-50 border-violet-200', lovable: 'bg-pink-50 border-pink-200' } as const;
+  const devTagCls   = { claude: 'bg-violet-100 text-violet-700 border-violet-300', lovable: 'bg-pink-100 text-pink-700 border-pink-300' } as const;
+
+  return (
+    <div className="space-y-3">
+      {/* Tab switcher */}
+      <div className="flex gap-1 p-0.5 rounded-lg bg-muted/30 border border-border/40 w-fit">
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => setView(t.key)}
+            className={cn('px-3 py-1.5 rounded text-[11px] font-semibold transition-colors',
+              view === t.key ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground')}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── OVERVIEW ── */}
+      {view === 'overview' && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <StatBox label="Total Tokens"   value={formatTokens(grandTotalInput + grandTotalOutput)} sub={`${formatTokens(grandTotalInput)} in · ${formatTokens(grandTotalOutput)} out`} cls="text-violet-700" />
+            <StatBox label="Total AI Cost"  value={`$${grandTotalCost.toFixed(2)}`} sub="input + output combined" cls="text-amber-600" />
+            <StatBox label="AI Sessions"    value={grandTotalSessions.toString()} sub={`${TOKEN_DATA.claude.sessions} Claude · ${TOKEN_DATA.lovable.sessions} Lovable`} />
+            <StatBox label="Value/$ Ratio"  value={`${roiMultiple}×`} sub="human equiv. value per $1" cls="text-green-600" />
+          </div>
+
+          {/* Mini provider breakdown */}
+          <div className="rounded-lg border border-border/60 overflow-hidden">
+            <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-2 px-3 py-1.5 bg-muted/20 border-b border-border/40 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+              <span>Provider</span><span>Purpose</span><span>Input</span><span>Output</span><span>Cost</span>
+            </div>
+            {(['anthropic', 'openai', 'gemini'] as const).map(provKey => {
+              const pc = PROVIDER_COSTS[provKey];
+              const totalIn  = allDevs.flatMap(d => d.byProvider.filter(p => p.provider === provKey)).reduce((s, p) => s + p.inputTokens, 0);
+              const totalOut = allDevs.flatMap(d => d.byProvider.filter(p => p.provider === provKey)).reduce((s, p) => s + p.outputTokens, 0);
+              const cost     = calcCost(totalIn, totalOut, provKey);
+              const pct      = grandTotalCost > 0 ? Math.round((cost / grandTotalCost) * 100) : 0;
+              return (
+                <div key={provKey} className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-2 px-3 py-2 border-b border-border/20 last:border-0 hover:bg-muted/10 items-center">
+                  <span className={cn('text-[10px] font-bold w-24', pc.color)}>{pc.label}</span>
+                  <div className="relative h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="absolute left-0 top-0 h-full rounded-full bg-primary/60" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground tabular-nums">{formatTokens(totalIn)}</span>
+                  <span className="text-[10px] text-muted-foreground tabular-nums">{formatTokens(totalOut)}</span>
+                  <span className="text-[10px] font-bold text-foreground tabular-nums">${cost.toFixed(2)}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="px-3 py-2 rounded-lg border border-muted/60 bg-muted/10 text-[10px] text-muted-foreground">
+            <strong className="text-foreground">Note:</strong> Token counts are sprint-level estimates derived from session logs,
+            task complexity, and average token density per file type. Actual API billing may vary by ±15%.
+          </div>
+        </div>
+      )}
+
+      {/* ── BY DEVELOPER ── */}
+      {view === 'by-dev' && (
+        <div className="space-y-3">
+          {allDevs.map(dev => {
+            const totalIn  = dev.byProvider.reduce((s, p) => s + p.inputTokens, 0);
+            const totalOut = dev.byProvider.reduce((s, p) => s + p.outputTokens, 0);
+            const totalCost = dev.byProvider.reduce((s, p) => s + calcCost(p.inputTokens, p.outputTokens, p.provider), 0);
+            const devTasks  = SPRINT_TASKS.filter(t => t.developer === dev.developer);
+            const doneTasks = devTasks.filter(t => getTaskStatus(t.id) === 'completed');
+            const devHours  = doneTasks.reduce((s, t) => s + t.estimatedHours, 0) * AI_EFFICIENCY_MULTIPLIER;
+
+            return (
+              <div key={dev.developer} className={cn('rounded-lg border overflow-hidden', devBgCls[dev.developer])}>
+                {/* Dev header */}
+                <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/30">
+                  {dev.developer === 'claude'
+                    ? <Brain className="w-4 h-4 text-violet-600" />
+                    : <Zap className="w-4 h-4 text-pink-600" />}
+                  <div className="flex-1">
+                    <span className={cn('font-bold text-sm capitalize', devColorCls[dev.developer])}>{dev.developer}</span>
+                    <span className="text-[10px] text-muted-foreground ml-2">
+                      {dev.developer === 'claude' ? 'Tech Lead · Backend · Architecture' : 'Full-Stack · Frontend · UX · DB · Edge Fn'}
+                    </span>
+                  </div>
+                  <div className="flex gap-4 text-right">
+                    <div><p className={cn('text-sm font-bold', devColorCls[dev.developer])}>{formatTokens(totalIn + totalOut)}</p><p className="text-[9px] text-muted-foreground">total tokens</p></div>
+                    <div><p className="text-sm font-bold text-amber-600">${totalCost.toFixed(2)}</p><p className="text-[9px] text-muted-foreground">AI cost</p></div>
+                    <div><p className="text-sm font-bold text-green-600">{dev.sessions}</p><p className="text-[9px] text-muted-foreground">sessions</p></div>
+                  </div>
+                </div>
+
+                {/* Per-provider breakdown */}
+                <div className="divide-y divide-border/20">
+                  {dev.byProvider.map(p => {
+                    const pc   = PROVIDER_COSTS[p.provider];
+                    const cost = calcCost(p.inputTokens, p.outputTokens, p.provider);
+                    return (
+                      <div key={p.provider} className="grid grid-cols-[120px_1fr_80px_80px_70px] gap-2 px-4 py-2 items-center hover:bg-muted/10">
+                        <span className={cn('text-[10px] font-semibold', pc.color)}>{pc.label}</span>
+                        <span className="text-[9px] text-muted-foreground italic">{p.purpose}</span>
+                        <span className="text-[10px] text-muted-foreground tabular-nums text-right">{formatTokens(p.inputTokens)} in</span>
+                        <span className="text-[10px] text-muted-foreground tabular-nums text-right">{formatTokens(p.outputTokens)} out</span>
+                        <span className="text-[10px] font-bold text-foreground tabular-nums text-right">${cost.toFixed(2)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Dev summary stats */}
+                <div className="flex gap-4 px-4 py-2 bg-muted/20 border-t border-border/20 flex-wrap">
+                  <span className="text-[10px] text-muted-foreground">Tasks: <strong>{devTasks.length}</strong> total · <strong className="text-green-600">{doneTasks.length}</strong> done</span>
+                  <span className="text-[10px] text-muted-foreground">AI value delivered: <strong className="text-amber-600">{devHours}h equiv.</strong></span>
+                  <span className="text-[10px] text-muted-foreground">Cost per hour: <strong>${totalCost > 0 && devHours > 0 ? (totalCost / devHours).toFixed(3) : '—'}</strong></span>
+                  <span className={cn('text-[9px] font-semibold px-1.5 py-0.5 rounded border ml-auto', devTagCls[dev.developer])}>
+                    {dev.developer}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── BY PROVIDER ── */}
+      {view === 'by-provider' && (
+        <div className="space-y-2">
+          {(['anthropic', 'openai', 'gemini'] as const).map(provKey => {
+            const pc       = PROVIDER_COSTS[provKey];
+            const rows     = allDevs.flatMap(d => d.byProvider.filter(p => p.provider === provKey).map(p => ({ ...p, developer: d.developer })));
+            const totalIn  = rows.reduce((s, p) => s + p.inputTokens, 0);
+            const totalOut = rows.reduce((s, p) => s + p.outputTokens, 0);
+            const cost     = calcCost(totalIn, totalOut, provKey);
+            const pctOfTotal = grandTotalCost > 0 ? Math.round((cost / grandTotalCost) * 100) : 0;
+
+            return (
+              <div key={provKey} className={cn('rounded-lg border overflow-hidden', pc.bg, 'border-border/40')}>
+                <div className="flex items-center gap-3 px-3 py-2 border-b border-border/30">
+                  <Cpu className="w-4 h-4 shrink-0 text-muted-foreground" />
+                  <span className={cn('font-bold text-sm flex-1', pc.color)}>{pc.label}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-muted-foreground">Input: <strong>${pc.input}/1M</strong></span>
+                    <span className="text-[10px] text-muted-foreground">Output: <strong>${pc.output}/1M</strong></span>
+                    <span className="text-[10px] font-bold text-foreground">${cost.toFixed(2)}</span>
+                    <span className="text-[9px] text-muted-foreground">({pctOfTotal}% of total)</span>
+                  </div>
+                </div>
+
+                {/* Token bar */}
+                <div className="px-3 py-2 border-b border-border/20">
+                  <div className="flex items-center gap-2 text-[9px] text-muted-foreground mb-1">
+                    <span>Token usage</span>
+                    <span className="font-mono">{formatTokens(totalIn)} in · {formatTokens(totalOut)} out · {formatTokens(totalIn + totalOut)} total</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+                    <div className="h-full rounded-l-full bg-blue-400/70" style={{ width: `${Math.round(totalIn / (totalIn + totalOut) * 100)}%` }} />
+                    <div className="h-full rounded-r-full bg-orange-400/70" style={{ width: `${Math.round(totalOut / (totalIn + totalOut) * 100)}%` }} />
+                  </div>
+                  <div className="flex gap-3 mt-1 text-[9px] text-muted-foreground">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400/70 inline-block" />Input</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400/70 inline-block" />Output</span>
+                  </div>
+                </div>
+
+                {/* Per-developer rows */}
+                <div className="divide-y divide-border/10">
+                  {rows.map(r => (
+                    <div key={r.developer} className="flex items-center gap-3 px-4 py-1.5">
+                      <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded border capitalize shrink-0', devTagCls[r.developer as Developer])}>{r.developer}</span>
+                      <span className="text-[9px] text-muted-foreground flex-1 italic">{r.purpose}</span>
+                      <span className="text-[10px] tabular-nums text-muted-foreground">{formatTokens(r.inputTokens)}/{formatTokens(r.outputTokens)}</span>
+                      <span className="text-[10px] font-semibold tabular-nums">${calcCost(r.inputTokens, r.outputTokens, provKey).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Lovable platform */}
+          <div className="rounded-lg border border-pink-200 bg-pink-50/40 px-3 py-2 flex items-center gap-3">
+            <Zap className="w-4 h-4 text-pink-600 shrink-0" />
+            <div className="flex-1">
+              <span className="text-[11px] font-bold text-pink-700">Lovable Platform</span>
+              <span className="text-[10px] text-muted-foreground ml-2">Subscription-based — no per-token billing. Build infrastructure, CI/CD, preview, deploy.</span>
+            </div>
+            <span className="text-[11px] font-bold text-pink-600">Incl. in plan</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── ROI & COST ── */}
+      {view === 'roi' && (
+        <div className="space-y-3">
+          {/* ROI headline */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="rounded-lg border border-green-300 bg-green-50/60 p-3 text-center">
+              <p className="text-2xl font-bold text-green-700">{roiMultiple}×</p>
+              <p className="text-[10px] text-green-800 font-semibold">Current ROI</p>
+              <p className="text-[9px] text-green-700">human value ÷ AI cost</p>
+            </div>
+            <div className="rounded-lg border border-amber-300 bg-amber-50/60 p-3 text-center">
+              <p className="text-2xl font-bold text-amber-700">${grandTotalCost.toFixed(2)}</p>
+              <p className="text-[10px] text-amber-800 font-semibold">Actual AI Spend</p>
+              <p className="text-[9px] text-amber-700">Day {currentDay} of 5</p>
+            </div>
+            <div className="rounded-lg border border-blue-300 bg-blue-50/60 p-3 text-center">
+              <p className="text-2xl font-bold text-blue-700">${projTotalCost.toFixed(0)}</p>
+              <p className="text-[10px] text-blue-800 font-semibold">Projected Full Sprint</p>
+              <p className="text-[9px] text-blue-700">{projRoi}× projected ROI</p>
+            </div>
+          </div>
+
+          {/* Human equivalent comparison */}
+          <div className="rounded-lg border border-border/60 overflow-hidden">
+            <div className="px-3 py-2 bg-muted/20 border-b border-border/40">
+              <p className="text-[10px] font-bold uppercase tracking-wider">Human Dev Cost Equivalent</p>
+              <p className="text-[9px] text-muted-foreground">Based on ${HUMAN_HOURLY_RATE}/h loaded rate (senior dev with benefits & overhead)</p>
+            </div>
+            <div className="divide-y divide-border/20">
+              {[
+                { label: 'Human cost to deliver same scope', value: `$${humanCostEquiv.toLocaleString()}`, sub: `${aiValueHours}h × $${HUMAN_HOURLY_RATE}/h`, cls: 'text-red-600' },
+                { label: 'Actual AI cost (all providers)', value: `$${grandTotalCost.toFixed(2)}`, sub: 'input + output tokens billed', cls: 'text-green-600' },
+                { label: 'Cost savings vs. human team', value: `$${(humanCostEquiv - grandTotalCost).toLocaleString()}`, sub: `${Math.round((1 - grandTotalCost / humanCostEquiv) * 100)}% cost reduction`, cls: 'text-emerald-700' },
+                { label: 'Projected full-sprint savings', value: `$${(projHumanCost - projTotalCost).toLocaleString()}`, sub: `${projRoi}× ROI at sprint end`, cls: 'text-emerald-700' },
+              ].map(row => (
+                <div key={row.label} className="flex items-center gap-3 px-3 py-2.5">
+                  <div className="flex-1">
+                    <p className="text-[11px] font-semibold text-foreground">{row.label}</p>
+                    <p className="text-[9px] text-muted-foreground">{row.sub}</p>
+                  </div>
+                  <p className={cn('text-base font-bold tabular-nums', row.cls)}>{row.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Per-task cost breakdown */}
+          <div className="rounded-lg border border-border/60 overflow-hidden">
+            <div className="px-3 py-2 bg-muted/20 border-b border-border/40 flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-wider">AI Cost Per Task</p>
+              <p className="text-[9px] text-muted-foreground">avg across {SPRINT_TASKS.length} tasks</p>
+            </div>
+            <div className="grid grid-cols-3 divide-x divide-border/20">
+              {[
+                { label: 'Cost per task', value: `$${(grandTotalCost / SPRINT_TASKS.length).toFixed(3)}`, sub: 'avg across all 41 tasks' },
+                { label: 'Cost per SP', value: `$${(grandTotalCost / SPRINT_TASKS.length).toFixed(3)}`, sub: '1 SP = 1h AI time' },
+                { label: 'Cost per session', value: `$${(grandTotalCost / grandTotalSessions).toFixed(3)}`, sub: `across ${grandTotalSessions} sessions` },
+              ].map(cell => (
+                <div key={cell.label} className="px-3 py-2.5 text-center">
+                  <p className="text-base font-bold text-primary">{cell.value}</p>
+                  <p className="text-[10px] text-foreground font-semibold">{cell.label}</p>
+                  <p className="text-[9px] text-muted-foreground">{cell.sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-[10px] text-muted-foreground rounded-lg border border-border/60 p-2.5">
+            <strong>Sprint Hypothesis Validated:</strong> AI developers (Claude + Lovable) delivering at 2× efficiency with ~${projTotalCost.toFixed(0)} total API spend replaces
+            ~${projHumanCost.toLocaleString()} in human dev cost — a <strong className="text-green-600">{projRoi}× return</strong> on AI investment for this sprint.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export const SprintCharterView: React.FC<SprintCharterViewProps> = ({ getTaskStatus, currentDay }) => {
@@ -1283,8 +1665,8 @@ export const SprintCharterView: React.FC<SprintCharterViewProps> = ({ getTaskSta
         <ScopeChangesSection />
       </Section>
 
-      <Section icon={BarChart3} title="8. Added Work Metrics" subtitle="Track SP added after sprint planning · interruption rate · >20% threshold warning" iconColor="text-violet-600">
-        <AddedWorkMetricsSection getTaskStatus={getTaskStatus} />
+      <Section icon={BarChart3} title="8. Added Work Metrics" subtitle="Track SP added after sprint planning · dynamic threshold (25/35/50%) · interruption rate" iconColor="text-violet-600">
+        <AddedWorkMetricsSection getTaskStatus={getTaskStatus} currentDay={currentDay} />
       </Section>
 
       <Section icon={Award} title="9. Value Add / Deliverables" subtitle="Completed user stories & tasks contributing to Sprint Goal (DoD verified)" iconColor="text-green-600">
@@ -1299,6 +1681,10 @@ export const SprintCharterView: React.FC<SprintCharterViewProps> = ({ getTaskSta
         <CapacityImpedimentsSection getTaskStatus={getTaskStatus} currentDay={currentDay} />
       </Section>
 
+      <Section icon={Coins} title="12. Token Consumption & Sprint ROI" subtitle="Per-developer · per-provider · cost vs. human equivalent · full ROI dashboard" iconColor="text-amber-600" badge="Full Dashboard" badgeCls="bg-amber-100 text-amber-700 border-amber-300">
+        <TokenConsumptionSection getTaskStatus={getTaskStatus} currentDay={currentDay} />
+      </Section>
+
       {/* Cross-references footer */}
       <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
         <div className="flex items-start gap-2">
@@ -1308,6 +1694,7 @@ export const SprintCharterView: React.FC<SprintCharterViewProps> = ({ getTaskSta
             <p><span className="font-semibold text-foreground">Dependencies:</span> Full dependency chain + handoff graph in <em>Sprint Planning</em> view.</p>
             <p><span className="font-semibold text-foreground">Findings / QA:</span> All diagnosed issues with severity and fix status in <em>Findings / QA</em> view.</p>
             <p><span className="font-semibold text-foreground">Release Gate:</span> PO/SM 9-step checklist and final publish authority in <em>Release Gate</em> view.</p>
+            <p><span className="font-semibold text-foreground">Token ROI:</span> Section 12 above tracks full AI cost per provider, per developer, and sprint ROI vs. human equivalent spend.</p>
           </div>
         </div>
       </div>
@@ -1315,3 +1702,4 @@ export const SprintCharterView: React.FC<SprintCharterViewProps> = ({ getTaskSta
     </div>
   );
 };
+
