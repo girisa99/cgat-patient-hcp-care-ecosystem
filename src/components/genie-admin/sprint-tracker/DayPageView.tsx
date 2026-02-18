@@ -1003,17 +1003,39 @@ function StandupCard({
   );
 }
 
+// ─── Handoff Acknowledge Storage ─────────────────────────────────────────────
+
+const HANDOFF_ACK_KEY = 'genie_sprint_handoff_acks_v1';
+
+function getHandoffAcks(): Record<string, { ackedAt: string; ackedBy: string }> {
+  try { const s = localStorage.getItem(HANDOFF_ACK_KEY); return s ? JSON.parse(s) : {}; } catch { return {}; }
+}
+function setHandoffAck(hid: string, ackedBy: string) {
+  const acks = getHandoffAcks();
+  acks[hid] = { ackedAt: new Date().toISOString(), ackedBy };
+  localStorage.setItem(HANDOFF_ACK_KEY, JSON.stringify(acks));
+}
+
 // ─── Handoff row ──────────────────────────────────────────────────────────────
 
 function HandoffRow({ h, getTaskStatus }: { h: typeof HANDOFFS[0]; getTaskStatus: (id: string) => TaskStatus }) {
-  const [open, setOpen] = useState(false);
-  const ready = isHandoffReady(h.id, getTaskStatus);
-  const live: HandoffStatus = ready
-    ? (h.status === 'acknowledged' ? 'acknowledged' : 'ready')
-    : h.status === 'blocked' ? 'blocked' : 'pending';
-  const sc = HANDOFF_CFG[live];
-  const from = DEV[h.from];
-  const to   = DEV[h.to];
+  const [open, setOpen]     = useState(false);
+  const [acks, setAcks]     = useState<Record<string, { ackedAt: string; ackedBy: string }>>(getHandoffAcks);
+
+  const ready   = isHandoffReady(h.id, getTaskStatus);
+  const acked   = !!acks[h.id];
+  const live: HandoffStatus = acked ? 'acknowledged' : ready ? 'ready' : h.status === 'blocked' ? 'blocked' : 'pending';
+  const sc      = HANDOFF_CFG[live];
+  const from    = DEV[h.from];
+  const to      = DEV[h.to];
+  const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const acknowledge = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const ackedBy = h.to === 'lovable' ? 'Lovable' : 'Claude';
+    setHandoffAck(h.id, ackedBy);
+    setAcks(getHandoffAcks());
+  };
 
   return (
     <div className="border-b border-border/30 last:border-0">
@@ -1024,21 +1046,51 @@ function HandoffRow({ h, getTaskStatus }: { h: typeof HANDOFFS[0]; getTaskStatus
         <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
         <span className={cn('text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0', to.tagCls)}>{to.label}</span>
         <span className="flex-1 min-w-0 truncate text-foreground ml-1">{h.title}</span>
+
+        {/* Acknowledge button — visible when ready and not yet acked */}
+        {ready && !acked && (
+          <button
+            onClick={acknowledge}
+            className="text-[9px] font-bold px-2 py-0.5 rounded border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 shrink-0 transition-colors"
+          >
+            ✓ Acknowledge
+          </button>
+        )}
+        {acked && (
+          <span className="text-[9px] text-green-700 font-semibold shrink-0">
+            Ack'd {fmtTime(acks[h.id].ackedAt)}
+          </span>
+        )}
+
         <span className={cn('text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0', sc.cls)}>{sc.label}</span>
         <span className="text-[9px] text-muted-foreground capitalize shrink-0 hidden sm:block">{h.priority}</span>
         {open ? <ChevronDown className="w-3 h-3 shrink-0 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 shrink-0 text-muted-foreground" />}
       </button>
       {open && (
-        <div className="px-4 pb-3 text-[10px] space-y-1 text-muted-foreground border-t border-border/20 pt-2 bg-muted/5">
+        <div className="px-4 pb-3 text-[10px] space-y-1.5 text-muted-foreground border-t border-border/20 pt-2 bg-muted/5">
           <p><span className="font-semibold text-foreground">Artifact:</span> {h.artifact}</p>
           <p><span className="font-semibold text-foreground">Notes for {to.label}:</span> {h.consumerNotes}</p>
-          <p><span className="font-semibold text-foreground">Producer task:</span> <span className="font-mono">{h.producerTaskId}</span></p>
-          <p><span className="font-semibold text-foreground">Consumer task:</span> <span className="font-mono">{h.consumerTaskId}</span></p>
+          <div className="flex gap-3 text-[9px]">
+            <span><span className="font-semibold text-foreground">Producer:</span> <span className="font-mono">{h.producerTaskId}</span> ({getTaskStatus(h.producerTaskId)})</span>
+            <span><span className="font-semibold text-foreground">Consumer:</span> <span className="font-mono">{h.consumerTaskId}</span></span>
+          </div>
+          {acked && (
+            <p className="text-green-700 font-semibold">✓ Acknowledged by {acks[h.id].ackedBy} at {fmtTime(acks[h.id].ackedAt)}</p>
+          )}
+          {!acked && ready && (
+            <button
+              onClick={acknowledge}
+              className="mt-1 text-[10px] font-bold px-3 py-1.5 rounded border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+            >
+              ✓ {to.label} Acknowledges Receipt of {h.id}
+            </button>
+          )}
         </div>
       )}
     </div>
   );
 }
+
 
 // ─── Day Start / Sign-off Workflow Banner ────────────────────────────────────
 
@@ -1054,12 +1106,13 @@ type DayWorkflowState = {
 };
 
 function DayWorkflowBanner({
-  day, claudeSD, lovableSD, getTaskStatus,
+  day, claudeSD, lovableSD, getTaskStatus, onAutoStart,
 }: {
   day: number;
   claudeSD: StandupEntry | undefined;
   lovableSD: StandupEntry | undefined;
   getTaskStatus: (id: string) => TaskStatus;
+  onAutoStart: (taskIds: string[]) => void;
 }) {
   const storageKey = `${DAY_START_KEY}_day${day}`;
   const signoffKey = `${DAY_SIGNOFF_KEY}_day${day}`;
@@ -1070,6 +1123,8 @@ function DayWorkflowBanner({
       return s ? JSON.parse(s) : { startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null };
     } catch { return { startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null }; }
   });
+  const [copied, setCopied]   = React.useState(false);
+  const [showBrief, setShowBrief] = React.useState(false);
 
   // Auto-detect standup status from actual saved entries
   const claudeUp    = !!claudeSD;
@@ -1089,9 +1144,62 @@ function DayWorkflowBanner({
     localStorage.setItem(storageKey, JSON.stringify(next));
   };
 
-  const startDay = () => persist({ ...wf, startedAt: new Date().toISOString(), startedBy: 'PO/SM' });
+  // Build the kickstart brief Claude reads at session start
+  const buildKickstartBrief = (startedAt: string): string => {
+    const dayHandoffs = HANDOFFS.filter(h => h.day === day);
+    const readyHOs = dayHandoffs.filter(h => isHandoffReady(h.id, getTaskStatus));
+    const pendingHOs = dayHandoffs.filter(h => !isHandoffReady(h.id, getTaskStatus));
+    const claudeTasks = dayTasks.filter(t => t.developer === 'claude');
+    const lovableTasks = dayTasks.filter(t => t.developer === 'lovable');
+    const claudeSP = claudeTasks.reduce((s, t) => s + t.estimatedHours, 0);
+    const lovableSP = lovableTasks.reduce((s, t) => s + t.estimatedHours, 0);
+    const time = new Date(startedAt).toLocaleString();
+
+    return [
+      `### [${time}] PO KICKSTART — Day ${day} Started`,
+      `- **Changed By:** PO/SM`,
+      `- **What Changed:** Day ${day} officially started. All Day ${day} tasks auto-moved to in-progress.`,
+      ``,
+      `**Claude (Tech Lead) — ${claudeTasks.length} tasks · ${claudeSP} SP:**`,
+      claudeTasks.map(t => `  - ${t.id}: ${t.title} [${t.priority}]`).join('\n'),
+      ``,
+      `**Lovable (Full-Stack Dev) — ${lovableTasks.length} tasks · ${lovableSP} SP:**`,
+      lovableTasks.map(t => `  - ${t.id}: ${t.title} [${t.priority}]`).join('\n'),
+      ``,
+      `**Handoffs Day ${day}:**`,
+      readyHOs.length > 0 ? readyHOs.map(h => `  - ✅ ${h.id} READY: ${h.title} (${h.from} → ${h.to})`).join('\n') : `  - No handoffs ready yet`,
+      pendingHOs.length > 0 ? pendingHOs.map(h => `  - ⏳ ${h.id} PENDING: ${h.title} (needs ${h.producerTaskId})`).join('\n') : ``,
+      ``,
+      `**Impact on Claude:** Start ${claudeTasks.map(t => t.id).join(', ')}. Top priority: ${dayHandoffs.find(h => h.from === 'claude' && h.priority === 'critical')?.id ?? 'none'} (${dayHandoffs.find(h => h.from === 'claude' && h.priority === 'critical')?.title ?? 'see handoffs'}).`,
+      `**Impact on Lovable:** Start ${lovableTasks.map(t => t.id).join(', ')}. Gate check: ${pendingHOs.filter(h => h.to === 'lovable').map(h => h.id).join(', ') || 'none gated'}.`,
+      `- **Breaking Changes:** None`,
+    ].join('\n');
+  };
+
+  const startDay = () => {
+    const startedAt = new Date().toISOString();
+    persist({ ...wf, startedAt, startedBy: 'PO/SM' });
+
+    // Auto-assign ALL Day N tasks to in-progress (unless already completed/rejected)
+    const toStart = dayTasks
+      .filter(t => getTaskStatus(t.id) === 'pending')
+      .map(t => t.id);
+    if (toStart.length > 0) onAutoStart(toStart);
+
+    // Show brief immediately after start
+    setShowBrief(true);
+  };
+
   const signOff  = () => persist({ ...wf, signedOffAt: new Date().toISOString() });
   const reset    = () => { persist({ startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null }); localStorage.removeItem(signoffKey); };
+
+  const copyBrief = () => {
+    if (!wf.startedAt) return;
+    navigator.clipboard.writeText(buildKickstartBrief(wf.startedAt)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   // Steps: 1=PO Start Day  2=Standups  3=Tasks done  4=Sign-off
   const step1 = isStarted;
@@ -1216,6 +1324,46 @@ function DayWorkflowBanner({
           {!step3 && !step4 && <p className="text-[8px] text-muted-foreground italic">Available after all tasks done</p>}
         </div>
       </div>
+
+      {/* Kickstart Brief — shown after Day is Started */}
+      {isStarted && (
+        <div className="border-t border-border/40">
+          <button
+            onClick={() => setShowBrief(b => !b)}
+            className="w-full flex items-center gap-2 px-4 py-2 bg-muted/10 hover:bg-muted/20 transition-colors text-left"
+          >
+            <GitBranch className="w-3 h-3 text-violet-600 shrink-0" />
+            <span className="text-[10px] font-bold text-violet-700 uppercase tracking-wide">
+              Kickstart Brief — Claude reads this at session start
+            </span>
+            <span className="text-[9px] text-muted-foreground ml-1">
+              (paste into SHARED_CHANGELOG.md or Claude's session)
+            </span>
+            <span className="ml-auto text-[9px] font-semibold text-violet-600">
+              {showBrief ? '▲ Hide' : '▼ Show'}
+            </span>
+          </button>
+
+          {showBrief && wf.startedAt && (
+            <div className="px-4 pb-3 pt-2 bg-violet-50/30">
+              <pre className="text-[9px] font-mono text-muted-foreground bg-background border border-border/60 rounded p-3 overflow-auto whitespace-pre-wrap leading-relaxed max-h-48">
+                {buildKickstartBrief(wf.startedAt)}
+              </pre>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={copyBrief}
+                  className="text-[10px] font-bold px-3 py-1.5 rounded bg-violet-600 text-white hover:bg-violet-700 transition-colors"
+                >
+                  {copied ? '✓ Copied!' : '📋 Copy to Clipboard'}
+                </button>
+                <span className="text-[9px] text-muted-foreground self-center">
+                  Paste this at the top of SHARED_CHANGELOG.md or into Claude's new session prompt
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1251,7 +1399,13 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
     <div className="space-y-5">
 
       {/* ── Day Workflow Banner ───────────────────────────────────────────── */}
-      <DayWorkflowBanner day={day} claudeSD={claudeSD} lovableSD={lovableSD} getTaskStatus={getTaskStatus} />
+      <DayWorkflowBanner
+        day={day}
+        claudeSD={claudeSD}
+        lovableSD={lovableSD}
+        getTaskStatus={getTaskStatus}
+        onAutoStart={(ids) => ids.forEach(id => onStatusChange(id, 'in-progress'))}
+      />
 
       {/* ── Epic header ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
