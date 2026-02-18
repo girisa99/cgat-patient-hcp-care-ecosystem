@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -128,6 +129,7 @@ export function ComplianceChecker({
       onComplianceResult?.(checkResult);
     } catch (error) {
       console.error('Compliance check failed:', error);
+      toast.error('Compliance check failed. Please try again.');
     } finally {
       setIsChecking(false);
     }

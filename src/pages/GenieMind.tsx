@@ -1,7 +1,7 @@
 /**
  * Genie Mind - AI Dashboard & Script Management
- * "Think Beyond Limits" - AI-powered script editing and management
- * 
+ * "AI That Understands" - AI-powered script editing and management
+ *
  * CONSOLIDATED: Uses QuadrantLayout + QuadrantProductHeader
  * AskGenie is now centralized in QuadrantLayout (removed from here)
  */
@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
+import {
   PenTool,
   Mic,
   Library,
@@ -23,7 +23,8 @@ import {
   Film,
   Zap,
   Files,
-  Layers
+  Layers,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -267,6 +268,13 @@ const GenieMind: React.FC = () => {
                 }}
               />
 
+              {mediaLoading && (
+                <div className="flex items-center justify-center py-8 gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Loading media library...</span>
+                </div>
+              )}
+
               <Tabs defaultValue="voiceovers">
                 <TabsList>
                   <TabsTrigger value="voiceovers">
@@ -322,7 +330,7 @@ const GenieMind: React.FC = () => {
                               <Music className="h-8 w-8 text-muted-foreground" />
                               <div className="flex-1">
                                 <p className="font-medium truncate">{track.name}</p>
-                                {track.url && <audio src={track.url} controls className="w-full mt-2" />}
+                                {track.url && <audio src={track.url} controls className="w-full mt-2" aria-label={`Play ${track.name}`} />}
                               </div>
                             </div>
                           </CardContent>

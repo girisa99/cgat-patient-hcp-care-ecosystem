@@ -10,7 +10,7 @@
  * - GenieAISuite.com = Domain
  * - Genie Suite = Umbrella brand ("Mind to Media")
  * - 7 Products under Genie Suite:
- *   - Genie Spark: "Ignite your Ideas" - Script generation from any input
+ *   - Genie Spark: "Ignite Your Ideas" - Script generation from any input
  *   - Genie Mind: "AI That Understands" - Script editing, TTS, voice, music
  *   - Genie Vibe: "Script to Screen" - Audio/Video production, podcast, trim, stitch
  *   - Genie Deck: "Ideas to Impact" - AI presentation/slide generation
@@ -106,7 +106,7 @@ export const GENIE_PRODUCTS: Record<GenieProduct, GenieProductInfo> = {
   spark: {
     id: 'spark',
     name: 'Genie Spark',
-    tagline: 'Ignite your Ideas',
+    tagline: 'Ignite Your Ideas',
     description: 'Generate scripts from any input - Documents, PPT, Video, Audio, URL, Image. If no image exists, AI generates one. Transform raw ideas into structured scripts.',
     emoji: '✨',
     color: 'from-amber-500 to-orange-500',

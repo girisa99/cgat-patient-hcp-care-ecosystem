@@ -195,6 +195,8 @@ const AppContent = () => {
               
               {/* Auto-redirect bare /genie-landing to default regional page */}
               <Route path="/genie-landing" element={<Navigate to="/genie-landing/nam" replace />} />
+              {/* Legacy APAC redirect — SEA and CJK are now separate */}
+              <Route path="/genie-landing/apac" element={<Navigate to="/genie-landing/sea" replace />} />
               <Route path="/genie-landing/:region" element={
                 <Suspense fallback={<PageLoading message="Loading..." />}>
                   <RegionalLandingPage />

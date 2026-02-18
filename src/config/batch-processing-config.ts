@@ -154,9 +154,22 @@ export const PROVIDER_RATE_LIMITS = {
     concurrentRequests: 5,
   },
   gemini: {
-    requestsPerMinute: 1000,
-    tokensPerMinute: 1000000,
-    concurrentRequests: 20,
+    // Paid Tier 3: Unlimited RPM/TPM (Generative Language API)
+    requestsPerMinute: Infinity,
+    tokensPerMinute: Infinity,
+    concurrentRequests: 50,
+    // Throttle still useful to avoid burst spikes on edge function side
+    throttle: { enabled: true, delayMs: 200, maxQueueSize: 500 },
+  },
+  deepseek: {
+    requestsPerMinute: 120,
+    tokensPerMinute: 200000,
+    concurrentRequests: 8,
+  },
+  alibaba: {
+    requestsPerMinute: 100,
+    tokensPerMinute: 150000,
+    concurrentRequests: 5,
   },
   elevenlabs: {
     requestsPerMinute: 100,
@@ -171,9 +184,44 @@ export const PROVIDER_RATE_LIMITS = {
     requestsPerMinute: 200,
     concurrentRequests: 10,
   },
-  alibaba: {
-    requestsPerMinute: 100,
-    concurrentRequests: 5,
+  // Google Cloud Speech-to-Text API v2 Quotas (updated 2026-02-18)
+  // Source: Google Cloud Console quota page
+  googleStt: {
+    // Audio throughput
+    audioSecondsPerDay: 1_728_000,         // 1,728,000 audio seconds/day (~480 hrs)
+    
+    // Recognize (sync) per endpoint
+    recognizeRequestsPerMinute: 300,        // Global & US endpoints
+    recognizeRequestsPerMinuteEu: 300,      // EU endpoint (europe-west4)
+    recognizeCustomModelsPerMinuteEu: 1_000,
+    
+    // StreamingRecognize (realtime)
+    concurrentStreamingSessions: 300,       // Global, US, and EU endpoints each
+    streamingRequestsPerMinute: 1_000_000,  // Global endpoint
+    streamingRequestsPerMinuteEu: 500_000,  // EU endpoint (europe-west4)
+    streamingCustomModelsPerMinuteEu: 500_000,
+    
+    // BatchRecognize (async)
+    batchRequestsPerMinutePerRegion: 50,    // europe-west4 regional limit
+    batchRequestsPerMinuteEu: 150,          // EU endpoint
+    batchRequestsPerMinuteGlobal: 300,      // Global endpoint
+    batchCustomModelsPerMinuteEu: 300,
+    
+    // Resource / operation quotas
+    operationRequestsPerMinuteEu: 150,
+    resourceRequestsPerMinuteEu: 100,
+    resourceCreateEndpointPerMinuteEu: 2,
+    resourceCreateModelPerMinuteEu: 2,
+    
+    // Object count limits (per endpoint)
+    maxRecognizers: 5_000,                  // US & EU (global = unlimited)
+    maxCustomClasses: 5_000,
+    maxPhraseSets: 5_000,
+    maxEndpoints: 5_000,
+    maxModels: 5_000,
+    
+    // Concurrency cap used by our batch-seeding logic
+    concurrentRequests: 10,
   },
   deepl: {
     requestsPerMinute: 30,

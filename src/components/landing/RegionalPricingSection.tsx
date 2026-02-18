@@ -28,6 +28,8 @@ const REGIONAL_PRICING: Record<RegionSlug, {
   india: { currency: 'INR', symbol: '₹', multiplier: 83, paymentMethods: ['UPI', 'Visa', 'Mastercard', 'Paytm', 'PhonePe'], savingsLabel: '₹10,000/माह बचाएं — 7 अलग टूल्स की तुलना में' },
   africa: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard', 'M-Pesa', 'Flutterwave'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
   apac: { currency: 'JPY', symbol: '¥', multiplier: 150, paymentMethods: ['Visa', 'Mastercard', 'JCB', 'Alipay', 'WeChat Pay'], savingsLabel: '月額¥18,000節約 — 7つのツール比較' },
+  sea: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard', 'GrabPay', 'GCash'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
+  cjk: { currency: 'JPY', symbol: '¥', multiplier: 150, paymentMethods: ['Visa', 'Mastercard', 'JCB', 'Alipay', 'WeChat Pay'], savingsLabel: '月額¥18,000節約 — 7つのツール比較' },
   latam: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard', 'Pix', 'Mercado Pago'], savingsLabel: 'Ahorra $121/mes vs 7 herramientas separadas' },
    caribbean: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
    oceania: { currency: 'AUD', symbol: '$', multiplier: 1.5, paymentMethods: ['Visa', 'Mastercard', 'PayPal'], savingsLabel: 'Save $180/mo vs 7 separate tools' },
@@ -36,6 +38,7 @@ const REGIONAL_PRICING: Record<RegionSlug, {
    bangladesh: { currency: 'BDT', symbol: '৳', multiplier: 104, paymentMethods: ['Visa', 'Mastercard', 'bKash', 'Nagad'], savingsLabel: '৳12,584/মাস বাঁচান' },
    eastern_europe: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard', 'Wise', 'Local'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
    central_asia: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard', 'Wise'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
+   south_asia: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
 };
 
 const BASE_TIERS = [

@@ -419,8 +419,17 @@ verify_jwt = false
 [functions.seed-mobile-regional-templates]
 verify_jwt = false
 
+[functions.seed-regional-transcreation]
+verify_jwt = false
+
 [functions.intent-analyzer]
 verify_jwt = false
 
 [functions.competitive-intelligence]
+verify_jwt = false
+
+[functions.mcp-tool-executor]
+verify_jwt = false
+
+[functions.training-pipeline]
 verify_jwt = false

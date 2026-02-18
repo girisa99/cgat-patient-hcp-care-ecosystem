@@ -34,6 +34,8 @@ import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcas
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
+import { SubRegionDialectPicker } from '@/components/landing/SubRegionDialectPicker';
+import { useRegionalTranscreation } from '@/hooks/useRegionalTranscreation';
 import genieSuiteLogo from '@/assets/logos/genie-studio-suite-logo.png';
 // Region-specific hero backgrounds — all 4 slides per region
 import heroRegionNam from '@/assets/hero-region-nam.jpg';
@@ -76,6 +78,52 @@ import heroCaribbeanPipeline from '@/assets/hero-caribbean-pipeline.jpg';
 import heroCaribbeanLanguages from '@/assets/hero-caribbean-languages.jpg';
 import heroCaribbeanTranscreation from '@/assets/hero-caribbean-transcreation.jpg';
 
+// Unique region-specific hero images for all 9 remaining regions
+import heroRegionSea from '@/assets/hero-region-sea.jpg';
+import heroSeaPipeline from '@/assets/hero-sea-pipeline.jpg';
+import heroSeaLanguages from '@/assets/hero-sea-languages.jpg';
+import heroSeaTranscreation from '@/assets/hero-sea-transcreation.jpg';
+
+import heroRegionCjk from '@/assets/hero-region-cjk.jpg';
+import heroCjkPipeline from '@/assets/hero-cjk-pipeline.jpg';
+import heroCjkLanguages from '@/assets/hero-cjk-languages.jpg';
+import heroCjkTranscreation from '@/assets/hero-cjk-transcreation.jpg';
+
+import heroRegionOceania from '@/assets/hero-region-oceania.jpg';
+import heroOceaniaPipeline from '@/assets/hero-oceania-pipeline.jpg';
+import heroOceaniaLanguages from '@/assets/hero-oceania-languages.jpg';
+import heroOceaniaTranscreation from '@/assets/hero-oceania-transcreation.jpg';
+
+import heroRegionTurkey from '@/assets/hero-region-turkey.jpg';
+import heroTurkeyPipeline from '@/assets/hero-turkey-pipeline.jpg';
+import heroTurkeyLanguages from '@/assets/hero-turkey-languages.jpg';
+import heroTurkeyTranscreation from '@/assets/hero-turkey-transcreation.jpg';
+
+import heroRegionPakistan from '@/assets/hero-region-pakistan.jpg';
+import heroPakistanPipeline from '@/assets/hero-pakistan-pipeline.jpg';
+import heroPakistanLanguages from '@/assets/hero-pakistan-languages.jpg';
+import heroPakistanTranscreation from '@/assets/hero-pakistan-transcreation.jpg';
+
+import heroRegionBangladesh from '@/assets/hero-region-bangladesh.jpg';
+import heroBangladeshPipeline from '@/assets/hero-bangladesh-pipeline.jpg';
+import heroBangladeshLanguages from '@/assets/hero-bangladesh-languages.jpg';
+import heroBangladeshTranscreation from '@/assets/hero-bangladesh-transcreation.jpg';
+
+import heroRegionEasternEurope from '@/assets/hero-region-eastern-europe.jpg';
+import heroEasternEuropePipeline from '@/assets/hero-eastern-europe-pipeline.jpg';
+import heroEasternEuropeLanguages from '@/assets/hero-eastern-europe-languages.jpg';
+import heroEasternEuropeTranscreation from '@/assets/hero-eastern-europe-transcreation.jpg';
+
+import heroRegionCentralAsia from '@/assets/hero-region-central-asia.jpg';
+import heroCentralAsiaPipeline from '@/assets/hero-central-asia-pipeline.jpg';
+import heroCentralAsiaLanguages from '@/assets/hero-central-asia-languages.jpg';
+import heroCentralAsiaTranscreation from '@/assets/hero-central-asia-transcreation.jpg';
+
+import heroRegionSouthAsia from '@/assets/hero-region-south-asia.jpg';
+import heroSouthAsiaPipeline from '@/assets/hero-south-asia-pipeline.jpg';
+import heroSouthAsiaLanguages from '@/assets/hero-south-asia-languages.jpg';
+import heroSouthAsiaTranscreation from '@/assets/hero-south-asia-transcreation.jpg';
+
 const REGION_HERO_IMAGES: Record<RegionSlug, string[]> = {
   nam: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
   europe: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
@@ -83,16 +131,17 @@ const REGION_HERO_IMAGES: Record<RegionSlug, string[]> = {
   india: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
   africa: [heroRegionAfrica, heroAfricaPipeline, heroAfricaLanguages, heroAfricaTranscreation],
   apac: [heroRegionApac, heroApacPipeline, heroApacLanguages, heroApacTranscreation],
+  sea: [heroRegionSea, heroSeaPipeline, heroSeaLanguages, heroSeaTranscreation],
+  cjk: [heroRegionCjk, heroCjkPipeline, heroCjkLanguages, heroCjkTranscreation],
   latam: [heroRegionLatam, heroLatamPipeline, heroLatamLanguages, heroLatamTranscreation],
   caribbean: [heroRegionCaribbean, heroCaribbeanPipeline, heroCaribbeanLanguages, heroCaribbeanTranscreation],
-  // P0 regions — alias to closest primary
-  oceania: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
-  turkey: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
-  // P1 regions — alias to closest primary
-  pakistan: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
-  bangladesh: [heroRegionIndia, heroIndiaPipeline, heroIndiaLanguages, heroIndiaTranscreation],
-  eastern_europe: [heroRegionEurope, heroEuropePipeline, heroEuropeLanguages, heroEuropeTranscreation],
-  central_asia: [heroRegionNam, heroNamPipeline, heroNamLanguages, heroNamTranscreation],
+  oceania: [heroRegionOceania, heroOceaniaPipeline, heroOceaniaLanguages, heroOceaniaTranscreation],
+  turkey: [heroRegionTurkey, heroTurkeyPipeline, heroTurkeyLanguages, heroTurkeyTranscreation],
+  pakistan: [heroRegionPakistan, heroPakistanPipeline, heroPakistanLanguages, heroPakistanTranscreation],
+  bangladesh: [heroRegionBangladesh, heroBangladeshPipeline, heroBangladeshLanguages, heroBangladeshTranscreation],
+  eastern_europe: [heroRegionEasternEurope, heroEasternEuropePipeline, heroEasternEuropeLanguages, heroEasternEuropeTranscreation],
+  central_asia: [heroRegionCentralAsia, heroCentralAsiaPipeline, heroCentralAsiaLanguages, heroCentralAsiaTranscreation],
+  south_asia: [heroRegionSouthAsia, heroSouthAsiaPipeline, heroSouthAsiaLanguages, heroSouthAsiaTranscreation],
 };
 
 // ============================================
@@ -378,6 +427,19 @@ const REGION_VOICES: Record<string, VoiceOption[]> = {
     { code: 'fr-FR', label: 'French', nativeLabel: 'Français', azureVoice: 'fr-FR-DeniseNeural', flag: '🇫🇷' },
     { code: 'am-ET', label: 'Amharic', nativeLabel: 'አማርኛ', azureVoice: 'am-ET-MekdesNeural', flag: '🇪🇹' },
   ],
+  sea: [
+    { code: 'ms-MY', label: 'Malay', nativeLabel: 'Melayu', azureVoice: 'ms-MY-YasminNeural', flag: '🇲🇾' },
+    { code: 'id-ID', label: 'Indonesian', nativeLabel: 'Bahasa', azureVoice: 'id-ID-GadisNeural', flag: '🇮🇩' },
+    { code: 'th-TH', label: 'Thai', nativeLabel: 'ไทย', azureVoice: 'th-TH-PremwadeeNeural', flag: '🇹🇭' },
+    { code: 'vi-VN', label: 'Vietnamese', nativeLabel: 'Tiếng Việt', azureVoice: 'vi-VN-HoaiMyNeural', flag: '🇻🇳' },
+    { code: 'tl-PH', label: 'Filipino', nativeLabel: 'Filipino', azureVoice: 'fil-PH-BlessicaNeural', flag: '🇵🇭' },
+  ],
+  cjk: [
+    { code: 'zh-CN', label: 'Chinese', nativeLabel: '中文', azureVoice: 'zh-CN-XiaoxiaoNeural', flag: '🇨🇳' },
+    { code: 'ja-JP', label: 'Japanese', nativeLabel: '日本語', azureVoice: 'ja-JP-NanamiNeural', flag: '🇯🇵' },
+    { code: 'ko-KR', label: 'Korean', nativeLabel: '한국어', azureVoice: 'ko-KR-SunHiNeural', flag: '🇰🇷' },
+    { code: 'zh-TW', label: 'Traditional Chinese', nativeLabel: '繁體中文', azureVoice: 'zh-TW-HsiaoChenNeural', flag: '🇹🇼' },
+  ],
   apac: [
     { code: 'ja-JP', label: 'Japanese', nativeLabel: '日本語', azureVoice: 'ja-JP-NanamiNeural', flag: '🇯🇵' },
     { code: 'zh-CN', label: 'Chinese', nativeLabel: '中文', azureVoice: 'zh-CN-XiaoxiaoNeural', flag: '🇨🇳' },
@@ -394,6 +456,37 @@ const REGION_VOICES: Record<string, VoiceOption[]> = {
     { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
     { code: 'es-MX', label: 'Spanish', nativeLabel: 'Español', azureVoice: 'es-MX-DaliaNeural', flag: '🇲🇽' },
     { code: 'fr-FR', label: 'French', nativeLabel: 'Français', azureVoice: 'fr-FR-DeniseNeural', flag: '🇫🇷' },
+  ],
+  oceania: [
+    { code: 'en-AU', label: 'Australian English', nativeLabel: 'English', azureVoice: 'en-AU-NatashaNeural', flag: '🇦🇺' },
+    { code: 'en-NZ', label: 'NZ English', nativeLabel: 'English', azureVoice: 'en-NZ-MollyNeural', flag: '🇳🇿' },
+  ],
+  turkey: [
+    { code: 'tr-TR', label: 'Turkish', nativeLabel: 'Türkçe', azureVoice: 'tr-TR-EmelNeural', flag: '🇹🇷' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
+  pakistan: [
+    { code: 'ur-PK', label: 'Urdu', nativeLabel: 'اردو', azureVoice: 'ur-PK-AsadNeural', flag: '🇵🇰' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
+  bangladesh: [
+    { code: 'bn-BD', label: 'Bengali', nativeLabel: 'বাংলা', azureVoice: 'bn-BD-NabanitaNeural', flag: '🇧🇩' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
+  eastern_europe: [
+    { code: 'uk-UA', label: 'Ukrainian', nativeLabel: 'Українська', azureVoice: 'uk-UA-PolinaNeural', flag: '🇺🇦' },
+    { code: 'sr-RS', label: 'Serbian', nativeLabel: 'Српски', azureVoice: 'sr-RS-SophieNeural', flag: '🇷🇸' },
+    { code: 'bg-BG', label: 'Bulgarian', nativeLabel: 'Български', azureVoice: 'bg-BG-KalinaNeural', flag: '🇧🇬' },
+  ],
+  central_asia: [
+    { code: 'kk-KZ', label: 'Kazakh', nativeLabel: 'Қазақ', azureVoice: 'kk-KZ-AigulNeural', flag: '🇰🇿' },
+    { code: 'uz-UZ', label: 'Uzbek', nativeLabel: 'Oʻzbek', azureVoice: 'uz-UZ-MadinaNeural', flag: '🇺🇿' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
+  ],
+  south_asia: [
+    { code: 'ne-NP', label: 'Nepali', nativeLabel: 'नेपाली', azureVoice: 'ne-NP-SagarNeural', flag: '🇳🇵' },
+    { code: 'si-LK', label: 'Sinhala', nativeLabel: 'සිංහල', azureVoice: 'si-LK-ThiliniNeural', flag: '🇱🇰' },
+    { code: 'en-US', label: 'English', nativeLabel: 'English', azureVoice: 'en-US-JennyNeural', flag: '🇺🇸' },
   ],
 };
 
@@ -952,10 +1045,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
         </div>
       )}
 
-      {/* Provider ribbon — continuously scrolling */}
-      <div className="absolute bottom-28 left-0 right-0 z-20">
-        <ProviderRibbon />
-      </div>
+      {/* Provider ribbon moved outside banner — see below HeroCarousel */}
 
       {/* Navigation dots with labels */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-5 z-20">
@@ -997,8 +1087,8 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 // CONSISTENT METRICS — Single source of truth
 // ============================================
 const LANDING_METRICS = {
-  regions: 15,
-  subRegions: 60,
+  regions: 16,
+  subRegions: 56,
   languages: '140+',
   dialects: '50+',
   aiProviders: 19,
@@ -1009,184 +1099,194 @@ const LANDING_METRICS = {
 } as const;
 
 // ============================================
-// REGION NAVIGATOR — Auto-scrolling marquee with parent/child hierarchy
+// REGION NAVIGATOR — Interactive 15-region grid with expandable zones
 // ============================================
 
-import { REGION_HIERARCHY } from '@/config/regionHierarchy';
+import { REGION_HIERARCHY, type RegionGroup } from '@/config/regionHierarchy';
 
-// Primary 8 region slugs only (no expansion aliases that duplicate content)
-const PRIMARY_REGION_SLUGS: RegionSlug[] = ['nam', 'europe', 'mena', 'india', 'africa', 'apac', 'latam', 'caribbean'];
-
-// Build parent region items from REGION_HIERARCHY
-interface ParentMarqueeItem {
-  flag: string;
-  name: string;
-  childCount: number;
-  langHint?: string;
-  slug?: RegionSlug;
-}
-
-interface SubRegionMarqueeItem {
-  flag: string;
-  name: string;
-  subCount: number;
-}
-
-const SLUG_BY_GROUP: Record<string, RegionSlug | undefined> = {
-  NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena',
-  AFRICA: 'africa', INDIA: 'india', SEA: 'apac', CJK: 'apac',
-  OCEANIA: 'oceania', TURKEY: 'turkey', CARIBBEAN: 'caribbean',
-  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', EURASIA: 'eastern_europe',
-  CENTRAL_ASIA: 'central_asia', SOUTH_ASIA: undefined,
+// Language hints for zones/leaves
+const ZONE_LANG_MAP: Record<string, string> = {
+  'NAM_US': 'EN-US', 'NAM_CA': 'EN/FR',
+  'EU_WEST': 'EN', 'EU_DACH': 'DE', 'EU_FRANCE': 'FR', 'EU_BENELUX': 'NL', 'EU_IBERIA': 'ES/PT', 'EU_ITALY': 'IT', 'EU_NORDIC': 'SV/NO/DA/FI', 'EU_EAST': 'PL/CZ/RO/HU/EL',
+  'LATAM_BRAZIL': 'PT-BR', 'LATAM_MEXICO': 'ES-MX', 'LATAM_ANDEAN': 'ES', 'LATAM_CONESUR': 'ES', 'LATAM_CARIB': 'ES',
+  'MENA_GULF': 'AR-Gulf', 'MENA_EGYPT': 'AR-EG', 'MENA_LEVANT': 'AR-Levant', 'MENA_MAGHREB': 'AR-Maghreb', 'MENA_MSA': 'MSA', 'MENA_ISRAEL': 'HE',
+  'AFRICA_WEST': 'EN/YO', 'AFRICA_EAST': 'SW/EN', 'AFRICA_SOUTH': 'EN/ZU/AF', 'AFRICA_FRANCO': 'FR',
+  'INDIA_NORTH': 'HI/UR/PA', 'INDIA_SOUTH': 'TA/TE/KN/ML', 'INDIA_WEST': 'MR/GU', 'INDIA_EAST': 'BN/OR', 'INDIA_PAN': 'EN-IN',
+  'SEA_MALAY': 'MS/ID', 'SEA_THAI': 'TH', 'SEA_VIET': 'VI', 'SEA_PHIL': 'TL', 'SEA_PAN': 'EN-SG',
+  'CJK_CN': 'ZH-CN', 'CJK_TW': 'ZH-TW', 'CJK_JP': 'JA', 'CJK_KR': 'KO',
+  'OCEANIA_AU': 'EN-AU', 'OCEANIA_NZ': 'EN-NZ',
+  'CARIBBEAN_EN': 'EN-CB', 'CARIBBEAN_FR': 'FR-CB',
+  'EU_UKRAINE': 'UK', 'EU_BALKANS': 'SR/BG/HR', 'EU_CAUCASUS': 'KA/HY',
+  'ASIA_CENTRAL_KZ': 'KK', 'ASIA_CENTRAL_UZ': 'UZ', 'ASIA_CENTRAL_AZ': 'AZ',
+  'SA_NEPAL': 'NE', 'SA_SRILANKA': 'SI/TA', 'SA_BHUTAN': 'DZ', 'SA_MALDIVES': 'DV',
+  'PAKISTAN': 'UR', 'BANGLADESH': 'BN', 'TURKEY': 'TR',
 };
 
-// Row 1: Parent regions — deduplicated by slug so groups sharing a landing page
-// (e.g., SEA + CJK → apac) appear only once. Groups with no slug are skipped.
-const PARENT_MARQUEE: ParentMarqueeItem[] = (() => {
-  const seen = new Set<string>();
-  const items: ParentMarqueeItem[] = [];
-  for (const g of REGION_HIERARCHY) {
-    const slug = SLUG_BY_GROUP[g.groupCode];
-    if (!slug) continue; // skip groups with no landing page
-    if (seen.has(slug)) continue; // skip duplicate slugs (e.g., CJK after SEA both → apac)
-    seen.add(slug);
-    const cfg = REGIONAL_CONFIGS[slug];
-    items.push({
-      flag: cfg?.hero.flag ?? g.groupFlag,
-      name: cfg?.hero.regionName ?? g.groupName,
-      childCount: g.children.length,
-      langHint: cfg?.stats.languages,
-      slug,
-    });
-  }
-  return items;
-})();
+const getZoneCount = (g: RegionGroup): number => {
+  if (g.children.length === 0) return 1;
+  return g.children.length;
+};
 
-// Row 2: Leaf-only sub-regions (no parent+child duplication)
-// If a zone has grandchildren, show ONLY the grandchildren (leaf countries).
-// If a zone has no children, show the zone itself.
-// Deduplicate by name to avoid cross-group overlaps (e.g., Georgia in both EURASIA & CENTRAL_ASIA).
-const SUB_REGION_MARQUEE: SubRegionMarqueeItem[] = (() => {
-  const seen = new Set<string>();
-  const items: SubRegionMarqueeItem[] = [];
-  for (const g of REGION_HIERARCHY) {
-    for (const child of g.children) {
-      if (child.children && child.children.length > 0) {
-        // Has grandchildren → show only leaf countries
-        for (const gc of child.children) {
-          if (!seen.has(gc.name)) {
-            seen.add(gc.name);
-            items.push({ flag: gc.flag, name: gc.name, subCount: 0 });
-          }
-        }
-      } else {
-        // Leaf zone → show the zone itself
-        if (!seen.has(child.name)) {
-          seen.add(child.name);
-          items.push({ flag: child.flag, name: child.name, subCount: 0 });
-        }
-      }
-    }
-  }
-  return items;
-})();
+const getLanguageCount = (g: RegionGroup): number => {
+  if (g.children.length === 0) return 1;
+  return g.children.reduce((sum, c) => sum + (c.children?.length || 1), 0);
+};
+
+// Map group codes to landing page slugs (where available)
+const GROUP_TO_SLUG: Record<string, RegionSlug | null> = {
+  NAM: 'nam', EU: 'europe', LATAM: 'latam', MENA: 'mena', AFRICA: 'africa',
+  INDIA: 'india', SEA: 'sea', CJK: 'cjk', OCEANIA: 'oceania', TURKEY: 'turkey',
+  CARIBBEAN: 'caribbean', EURASIA: 'eastern_europe', CENTRAL_ASIA: 'central_asia',
+  PAKISTAN: 'pakistan', BANGLADESH: 'bangladesh', SOUTH_ASIA: 'south_asia',
+};
 
 const RegionNavigator: React.FC<{ currentSlug: RegionSlug }> = ({ currentSlug }) => {
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+
+  // Compute totals for title
+  const totalZones = REGION_HIERARCHY.reduce((sum, g) => sum + getZoneCount(g), 0);
+  const totalLangs = REGION_HIERARCHY.reduce((sum, g) => sum + getLanguageCount(g), 0);
+
   return (
-    <section className="py-8 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" />
+    <section className="py-10 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-primary/5" />
       <div className="relative">
-        {/* Header */}
-        <div className="flex items-center justify-center gap-3 mb-5 px-4">
-          <Globe className="w-5 h-5 text-primary" />
-          <span className="text-sm font-bold uppercase tracking-widest text-foreground">
-            {LANDING_METRICS.regions} Global Regions · {LANDING_METRICS.subRegions}+ Sub-Regions · {LANDING_METRICS.languages} Languages
-          </span>
-          <Globe className="w-5 h-5 text-primary" />
+        {/* Title with all stats */}
+        <div className="text-center mb-6 px-4">
+          <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
+            <Globe className="w-5 h-5 text-primary" />
+            <span className="text-sm font-bold uppercase tracking-widest text-foreground">
+              {REGION_HIERARCHY.length} Regions · {totalZones} Zones · {totalLangs}+ Languages · {LANDING_METRICS.dialects} Dialects
+            </span>
+            <Globe className="w-5 h-5 text-primary" />
+          </div>
+          <p className="text-muted-foreground text-sm">Click any region to explore its zones, sub-regions & languages</p>
         </div>
 
-        {/* Row 1: Parent regions — scrolls left to right, pauses on hover */}
-        <div className="marquee-container relative overflow-hidden mb-3">
+        {/* Rolling marquee — all 16 regions */}
+        <div className="marquee-container relative overflow-hidden mb-4">
           <div className="absolute left-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
           <div className="marquee-track-left flex gap-3 py-2" style={{ width: 'max-content' }}>
-            {[...PARENT_MARQUEE, ...PARENT_MARQUEE, ...PARENT_MARQUEE].map((item, i) => {
-              const isActive = item.slug === currentSlug;
+            {[...REGION_HIERARCHY, ...REGION_HIERARCHY, ...REGION_HIERARCHY].map((group, i) => {
+              const slug = GROUP_TO_SLUG[group.groupCode];
+              const isActive = slug === currentSlug;
+              const isExpanded = expandedGroup === group.groupCode;
+              const zoneCount = getZoneCount(group);
+              const langCount = getLanguageCount(group);
+
               return (
-                <Link
-                  key={`p-${i}`}
-                  to={item.slug ? `/genie-landing/${item.slug}` : '#'}
-                  className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold shrink-0 transition-colors ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30'
-                      : 'bg-card border-2 border-primary/20 text-foreground hover:border-primary/50 hover:shadow-md'
+                <button
+                  key={`r-${i}`}
+                  onClick={() => setExpandedGroup(isExpanded ? null : group.groupCode)}
+                  className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-bold shrink-0 transition-all duration-200 border-2 ${
+                    isExpanded
+                      ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/10'
+                      : isActive
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                        : 'bg-card border-border/60 hover:border-primary/40 hover:shadow-md text-foreground'
                   }`}
                 >
-                  <span className="text-xl leading-none">{item.flag}</span>
-                  <span className="whitespace-nowrap">{item.name}</span>
-                  {item.childCount > 0 && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
-                    }`}>
-                      {item.childCount} zones
-                    </span>
-                  )}
-                  {item.langHint && (
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
-                      isActive ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-accent/10 text-accent-foreground/70'
-                    }`}>
-                      {item.langHint} langs
-                    </span>
-                  )}
-                </Link>
+                  <span className="text-xl leading-none">{group.groupFlag}</span>
+                  <span className="whitespace-nowrap">{group.groupName}</span>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
+                    isActive && !isExpanded ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-primary/10 text-primary'
+                  }`}>
+                    {zoneCount}z · {langCount}L
+                  </span>
+                </button>
               );
             })}
           </div>
         </div>
 
-        {/* Row 2: Sub-regions + countries — scrolls right to left, pauses on hover */}
-        <div className="marquee-container relative overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-          <div className="marquee-track-right flex gap-2.5 py-2" style={{ width: 'max-content' }}>
-            {[...SUB_REGION_MARQUEE, ...SUB_REGION_MARQUEE, ...SUB_REGION_MARQUEE].map((item, i) => (
-              <span
-                key={`s-${i}`}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-muted/60 border border-border/40 text-muted-foreground shrink-0 hover:bg-muted hover:text-foreground transition-colors whitespace-nowrap"
-              >
-                <span className="text-sm leading-none">{item.flag}</span>
-                <span>{item.name}</span>
-                {item.subCount > 0 && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/8 text-primary font-bold">
-                    {item.subCount}
-                  </span>
-                )}
-              </span>
-            ))}
-          </div>
-        </div>
+        {/* Expanded zone detail panel */}
+        <AnimatePresence>
+          {expandedGroup && (() => {
+            const group = REGION_HIERARCHY.find(g => g.groupCode === expandedGroup);
+            if (!group) return null;
+            const slug = GROUP_TO_SLUG[group.groupCode];
 
-        {/* Quick-jump: only primary 8 regions (no duplicates) */}
-        <div className="flex flex-wrap justify-center gap-2 mt-6 px-4">
-          {PRIMARY_REGION_SLUGS.map((slug) => {
-            const r = REGIONAL_CONFIGS[slug];
-            const isActive = slug === currentSlug;
             return (
-              <Link
-                key={slug}
-                to={`/genie-landing/${slug}`}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-card/80 border border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40'
-                }`}
+              <motion.div
+                key={expandedGroup}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden max-w-6xl mx-auto px-4"
               >
-                <span className="leading-none">{r.hero.flag}</span>
-                <span>{r.hero.regionName}</span>
-              </Link>
+                <div className="bg-card/80 backdrop-blur-md border-2 border-primary/20 rounded-2xl p-5 mt-2 mb-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{group.groupFlag}</span>
+                      <div>
+                        <h3 className="text-base font-bold text-foreground">{group.groupName}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {getZoneCount(group)} zone{getZoneCount(group) > 1 ? 's' : ''} · {getLanguageCount(group)} language{getLanguageCount(group) > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {slug && (
+                        <Link to={`/genie-landing/${slug}`}>
+                          <Button size="sm" variant="outline" className="text-xs border-primary/40 text-primary hover:bg-primary/10">
+                            View Landing Page <ArrowRight className="ml-1 w-3 h-3" />
+                          </Button>
+                        </Link>
+                      )}
+                      <button onClick={() => setExpandedGroup(null)} className="text-muted-foreground hover:text-foreground p-1">
+                        <ChevronDown className="w-4 h-4 rotate-180" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Zones & languages */}
+                  {group.children.length === 0 ? (
+                    <div className="flex items-center gap-2 p-3 bg-muted/40 rounded-lg">
+                      <span className="text-lg">{group.groupFlag}</span>
+                      <span className="text-sm font-medium text-foreground">{group.groupName}</span>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {ZONE_LANG_MAP[group.groupCode] || '1 lang'}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {group.children.map((zone) => (
+                        <div key={zone.code} className="p-3 bg-muted/30 rounded-lg border border-border/40 hover:border-primary/30 transition-colors">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-base">{zone.flag}</span>
+                            <span className="text-xs font-bold text-foreground flex-1">{zone.name}</span>
+                            {ZONE_LANG_MAP[zone.code] && (
+                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0.5">
+                                {ZONE_LANG_MAP[zone.code]}
+                              </Badge>
+                            )}
+                          </div>
+                          {zone.children && zone.children.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5 pl-6">
+                              {zone.children.map((leaf) => (
+                                <span
+                                  key={leaf.code}
+                                  className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/8 text-muted-foreground border border-border/30 font-medium"
+                                >
+                                  <span className="text-xs">{leaf.flag}</span>
+                                  {leaf.name}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             );
-          })}
-        </div>
+          })()}
+        </AnimatePresence>
+
+        {/* Quick-jump pills removed — marquee above already provides region navigation */}
       </div>
     </section>
   );
@@ -1201,18 +1301,27 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
     <div className="relative max-w-4xl mx-auto px-4 text-center">
       <Badge variant="outline" className="mb-6 border-primary/40 text-primary">
         <Globe className="h-3 w-3 mr-1" />
-        Ready for {config.hero.regionName}
+        {config.nativeSections.readyForRegion}
       </Badge>
-      <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-        Your Audience Deserves Content
-        <br />
+      <p className="text-sm text-muted-foreground mb-2">Ready for {config.hero.regionName}</p>
+
+      {/* Native headline */}
+      <h2 className="text-4xl md:text-5xl font-bold mb-2 text-foreground">
         <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          That Feels Like Home.
+          {config.nativeSections.ctaFooterHeadline}
         </span>
       </h2>
+      {/* English subtitle */}
+      <p className="text-lg text-muted-foreground/70 italic mb-4">
+        Your Audience Deserves Content That Feels Like Home.
+      </p>
       
-      <p className="text-xl text-muted-foreground mb-2 max-w-2xl mx-auto">
-        {LANDING_METRICS.languages} languages across {LANDING_METRICS.dialects} dialects. {LANDING_METRICS.industries} industries. {LANDING_METRICS.regions} regions. From idea to global distribution.
+      {/* Native subheadline */}
+      <p className="text-xl text-foreground/80 mb-1 max-w-2xl mx-auto font-medium">
+        {config.nativeSections.ctaFooterSubheadline}
+      </p>
+      <p className="text-sm text-muted-foreground mb-2 max-w-2xl mx-auto">
+        From idea to global distribution — every format, every market, every language.
       </p>
       <p className="text-lg text-primary font-semibold mb-8">
         💰 {config.comparisonSavings}
@@ -1227,15 +1336,18 @@ const RegionalCTAFooter: React.FC<{ config: RegionalConfig }> = ({ config }) => 
         </Link>
         <Link to="/support">
           <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-6">
-            Schedule a Guided Demo
+            {config.nativeSections.scheduleDemoLabel}
           </Button>
         </Link>
       </div>
 
       <p className="text-muted-foreground text-sm mb-2">
         <Link to="/genie-studio-auth" className="text-primary hover:underline font-medium">
-          {config.cta.signIn}
+          {config.nativeSections.signInPrompt}
         </Link>
+      </p>
+      <p className="text-xs text-muted-foreground/60">
+        {config.cta.signIn}
       </p>
       <p className="text-muted-foreground text-sm">{config.cta.freeCredits}</p>
 
@@ -1324,9 +1436,11 @@ const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => {
 // Slug → DB region code mapping
 const SLUG_TO_REGION_CODE: Record<string, string> = {
   nam: 'NAM', europe: 'WESTERN', mena: 'MENA', india: 'IND',
-  africa: 'AFR', apac: 'APAC', latam: 'LATAM', caribbean: 'CARIB',
+  africa: 'AFR', apac: 'APAC', sea: 'SEA', cjk: 'CJK',
+  latam: 'LATAM', caribbean: 'CARIB',
   oceania: 'WESTERN', turkey: 'TURKEY', pakistan: 'IND',
   bangladesh: 'IND', eastern_europe: 'EUR_EASTERN', central_asia: 'MENA',
+  south_asia: 'IND',
 };
 
 export const RegionalLandingPage: React.FC = () => {
@@ -1342,6 +1456,14 @@ export const RegionalLandingPage: React.FC = () => {
   // Phase A3: DB-driven content with fallback to constants
   const dbRegionCode = SLUG_TO_REGION_CODE[regionSlug] || 'WESTERN';
   const { content: dbContent, variants: dbVariants, fallbackTier, deviceType, isRTL: dbIsRTL } = useRegionalLandingContent(dbRegionCode);
+
+  // Phase A4: Dynamic transcreation with sub-region dialect support
+  const { 
+    config: transcreatedConfig, 
+    subRegion: selectedDialect, 
+    setSubRegion: setSelectedDialect,
+    hasDynamicContent: hasTranscreation,
+  } = useRegionalTranscreation(regionSlug);
 
   if (!config) {
     // Auto-detect and redirect
@@ -1366,6 +1488,14 @@ export const RegionalLandingPage: React.FC = () => {
     welcomeScript: dbContent.welcome_script || config.welcomeScript,
   } : config;
 
+  // Layer transcreated nativeSections on top (transcreation cache wins over static)
+  if (hasTranscreation) {
+    mergedConfig.nativeSections = {
+      ...mergedConfig.nativeSections,
+      ...transcreatedConfig.nativeSections,
+    };
+  }
+
   // Use device-aware variants for mobile headlines when DB content exists
   const heroHeadline = deviceType === 'mobile' && dbVariants
     ? dbVariants.headlineMobile
@@ -1380,7 +1510,22 @@ export const RegionalLandingPage: React.FC = () => {
       <RegionalSEOHead config={mergedConfig} currentSlug={regionSlug} />
       <RegionalNavbar config={mergedConfig} />
       <HeroCarousel config={mergedConfig} productContext={productContext} regionSlug={regionSlug} />
+      
+      {/* AI Provider ribbon — between banner and region navigator */}
+      <div className="relative bg-background/80 backdrop-blur-sm border-y border-border/30 overflow-hidden">
+        <ProviderRibbon />
+      </div>
+      
       <RegionNavigator currentSlug={regionSlug} />
+
+      {/* Sub-region Dialect Picker — shows available dialects for this region */}
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <SubRegionDialectPicker
+          regionSlug={regionSlug}
+          selectedSubRegion={selectedDialect}
+          onSubRegionChange={setSelectedDialect}
+        />
+      </div>
 
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
       <section id="products" className="py-24 relative">
@@ -1388,12 +1533,21 @@ export const RegionalLandingPage: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4 text-sm px-4 py-1">
-              7 Products · {LANDING_METRICS.pipelines} Pipelines · {LANDING_METRICS.aiProviders} AI Providers · {LANDING_METRICS.languages} Languages
+              7 Products · {LANDING_METRICS.pipelines} Pipelines · {LANDING_METRICS.aiProviders} AI Providers
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-              The Genie Suite — Mind to Media
+            {/* Native headline */}
+            <h2 className="text-4xl md:text-5xl font-bold mb-2 text-foreground">
+              {mergedConfig.nativeSections.demoHubHeadline}
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            {/* English subtitle */}
+            <p className="text-sm text-muted-foreground/60 italic mb-3">
+              The Genie Suite — Mind to Media
+            </p>
+            {/* Native subheadline */}
+            <p className="text-xl text-foreground/80 max-w-2xl mx-auto font-medium mb-1">
+              {mergedConfig.nativeSections.demoHubSubheadline}
+            </p>
+            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
               One platform. Every format. Every language. Every market.
             </p>
           </div>

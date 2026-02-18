@@ -1177,10 +1177,13 @@ export function PresentationWizard({
       });
 
       toast.success(`Generated ${editableSlides.length} slides!`);
+
+      // Notify parent that generation completed successfully
+      onComplete?.({ slides: editableSlides, title: result.metadata.title, metadata: result.metadata });
     } else {
       setGenerationPhase('analyzing');
       setSlideStatuses([]);
-      onError?.('Generation did not complete successfully. Please try again with different content or settings.');
+      onError?.('Genie Deck: Generation did not complete successfully. Please try again with different content or settings.');
     }
   };
 
@@ -2272,10 +2275,24 @@ export function PresentationWizard({
                       <Loader2 className="h-5 w-5 animate-spin text-primary" />
                       <div>
                         <p className="text-sm font-medium">Generating presentation...</p>
-                        <p className="text-xs text-muted-foreground">This may take a few moments</p>
+                        <p className="text-xs text-muted-foreground">
+                          {generationPhase === 'analyzing' ? 'Analyzing your content...' :
+                           generationPhase === 'structuring' ? 'Structuring slides...' :
+                           generationPhase === 'generating' ? 'Generating slide content...' :
+                           generationPhase === 'images' ? 'Creating images...' :
+                           generationPhase === 'finalizing' ? 'Finalizing...' :
+                           'Processing...'}
+                        </p>
                       </div>
                     </div>
-                    <Progress value={50} className="mt-3" />
+                    <Progress value={
+                      generationPhase === 'analyzing' ? 15 :
+                      generationPhase === 'structuring' ? 35 :
+                      generationPhase === 'generating' ? 60 :
+                      generationPhase === 'images' ? 85 :
+                      generationPhase === 'finalizing' ? 95 :
+                      generationPhase === 'complete' ? 100 : 50
+                    } className="mt-3" />
                   </div>
                 )}
 
