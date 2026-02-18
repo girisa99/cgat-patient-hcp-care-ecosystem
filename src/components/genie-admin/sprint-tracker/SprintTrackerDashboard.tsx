@@ -27,7 +27,7 @@ import { HANDOFFS } from './data-dependencies';
 import { SPRINT_TASKS } from './data-tasks';
 import { DayPageView } from './DayPageView';
 import { MetricsView } from './MetricsView';
-import { StrategyView } from './StrategyView';
+
 import { POVerificationView } from './POVerificationView';
 import { POMissionControl } from './POMissionControl';
 import { FindingsView } from './FindingsView';
@@ -38,7 +38,7 @@ import { QASignOffView } from './QASignOffView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewId = 'po-mission' | 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff';
+type ViewId = 'po-mission' | 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -236,7 +236,7 @@ export const SprintTrackerDashboard: React.FC = () => {
     activeDayNum !== undefined   ? `Day ${activeDayNum} · ${DAY_THEMES[activeDayNum - 1]}` :
     activeView === 'backlog'     ? 'Backlog' :
     activeView === 'metrics'     ? '📊 Velocity / Metrics' :
-    activeView === 'strategy'    ? 'Strategy' :
+    
     activeView === 'findings'    ? '🔎 Findings / QA' :
     activeView === 'governance'  ? '⚙️ Governance & Release Flow' :
     activeView === 'planning'    ? '📋 Project Plan — All 41 Tasks' :
@@ -311,8 +311,9 @@ export const SprintTrackerDashboard: React.FC = () => {
             ) : (
               /* ── DEV VIEW ── */
               <>
+                {/* Sprint Epics — one per day, standup + board + handoffs all inside */}
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
-                  Sprint Epics (Days)
+                  Sprint Days
                 </p>
                 {[1, 2, 3, 4, 5].map(d => (
                   <NavBtn key={d}
@@ -328,27 +329,27 @@ export const SprintTrackerDashboard: React.FC = () => {
                 ))}
 
                 <Separator className="my-2" />
+                {/* Board — backlog + velocity */}
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
                   Board
                 </p>
                 <NavBtn active={activeView === 'backlog'} badge={backlogCount} label="Backlog"
                   icon={Archive} onClick={() => setActiveView('backlog')} />
-                <NavBtn active={activeView === 'metrics'} label="Velocity / Metrics"
+                <NavBtn active={activeView === 'metrics'} label="Velocity"
                   icon={BarChart3} onClick={() => setActiveView('metrics')} />
+                <NavBtn active={activeView === 'planning'} label="Project Plan (41 tasks)"
+                  icon={Target} onClick={() => setActiveView('planning')} />
 
                 <Separator className="my-2" />
+                {/* Reference — read-only docs */}
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
-                  Reports
+                  Reference
                 </p>
-                <NavBtn active={activeView === 'planning'}   label="Project Plan (CSV)"  icon={Target}
-                  onClick={() => setActiveView('planning')} />
-                <NavBtn active={activeView === 'findings'}   label="Findings / QA"       icon={ClipboardCheck}
+                <NavBtn active={activeView === 'findings'}   label="Findings & QA"    icon={ClipboardCheck}
                   onClick={() => setActiveView('findings')} />
-                <NavBtn active={activeView === 'strategy'}   label="Strategy"            icon={TrendingUp}
-                  onClick={() => setActiveView('strategy')} />
-                <NavBtn active={activeView === 'charter'}    label="Sprint Charter"      icon={BookOpen}
+                <NavBtn active={activeView === 'charter'}    label="Sprint Charter"   icon={BookOpen}
                   onClick={() => setActiveView('charter')} />
-                <NavBtn active={activeView === 'governance'} label="Governance Flow"     icon={Shield}
+                <NavBtn active={activeView === 'governance'} label="Governance Guide" icon={Shield}
                   onClick={() => setActiveView('governance')} />
               </>
             )}
@@ -495,10 +496,6 @@ export const SprintTrackerDashboard: React.FC = () => {
             {/* Findings */}
             {activeView === 'findings' && <FindingsView />}
 
-            {/* Strategy */}
-            {activeView === 'strategy' && (
-              <StrategyView activityLog={state.activityLog} />
-            )}
 
             {/* PO Gate */}
             {activeView === 'po-gate' && (
