@@ -104,11 +104,27 @@ export const POVerificationView: React.FC<POVerificationViewProps> = ({ currentD
 
   return (
     <div className="space-y-5">
+      {/* ── Page header ── */}
+      <div className="flex items-start gap-3 pb-2">
+        <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
+          <ClipboardCheck className="w-5 h-5 text-emerald-700" />
+        </div>
+        <div>
+          <h2 className="text-base font-bold flex items-center gap-2">
+            📋 PO Actions & Notes
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Your single source of truth — Verify · Approve · Decide · Unblock · Notes per day.
+            <span className="ml-1 inline-flex items-center gap-1 text-green-600 font-medium">
+              <Save className="w-3 h-3" /> Auto-saved to browser.
+            </span>
+          </p>
+        </div>
+      </div>
+
       {/* ── Day selector ── */}
       <div className="flex gap-2 flex-wrap items-center">
-        <ClipboardCheck className="w-5 h-5 text-primary shrink-0" />
-        <span className="text-sm font-semibold mr-1">PO Daily Checklist</span>
-        <span className="text-muted-foreground text-sm mr-2">—</span>
+        <span className="text-sm font-semibold mr-1">Sprint Day:</span>
         {SPRINT_DAYS.map(d => {
           const items = PO_CHECKLISTS.filter(i => i.day === d.day);
           const done = items.filter(i => checked[i.id]).length;
