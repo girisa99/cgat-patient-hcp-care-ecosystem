@@ -206,6 +206,7 @@ export const SprintTrackerDashboard: React.FC = () => {
   const {
     state, currentDay, metrics, effortMetrics, updateTaskStatus, addStandup, getTaskStatus, resetToDefaults,
     isOnline, isSyncing, lastSyncAt, syncError, forceRefresh,
+    poNotes, poChecklist, syncPONotes, syncPOChecklist,
   } = useSprintTracker();
 
   // PO Mission Control is the default — the single-screen summary
@@ -540,7 +541,14 @@ export const SprintTrackerDashboard: React.FC = () => {
 
             {/* PO Gate */}
             {activeView === 'po-gate' && (
-              <POVerificationView currentDay={currentDay} getTaskStatus={getTaskStatus} />
+              <POVerificationView
+                currentDay={currentDay}
+                getTaskStatus={getTaskStatus}
+                poNotes={poNotes}
+                poChecklist={poChecklist}
+                onUpdateNote={syncPONotes}
+                onUpdateChecklist={syncPOChecklist}
+              />
             )}
 
             {/* Governance Flow */}
