@@ -463,6 +463,301 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
   );
 }
 
+// ── Onsite vs Offshore Cost Breakdown ───────────────────────────────────────
+//
+// Resource rate assumptions (US market, fully loaded with benefits & overhead):
+//   Frontend:  Onsite $80/hr  | Offshore $25/hr @ 70% productivity = $35.71 effective
+//   Backend:   Onsite $90/hr  | Offshore $28/hr @ 70% productivity = $40.00 effective
+//   Database:  Onsite $85/hr  | Offshore $30/hr @ 75% productivity = $40.00 effective
+//   Testing:   Onsite $65/hr  | Offshore $18/hr @ 75% productivity = $24.00 effective
+//   UX/Design: Onsite $95/hr  | Offshore $22/hr @ 65% productivity = $33.85 effective
+//   Docs:      Onsite $55/hr  | Offshore $15/hr @ 80% productivity = $18.75 effective
+//   DevOps:    Onsite $100/hr | Offshore $32/hr @ 70% productivity = $45.71 effective
+//   SM/PM:     Onsite $85/hr  | Offshore $30/hr @ 70% productivity = $42.86 effective
+//             (Offshore SM/PM typically onsite-adjacent due to coordination overhead)
+//
+// "Effective offshore rate" = raw_rate / productivity_factor
+// This reflects that lower productivity means more hours needed for same output.
+//
+// Backend vs Database distinction:
+//   Backend  = Edge functions, API routes, business logic, auth flows, server-side processing
+//   Database = Schema design, migrations, RLS policies, SQL queries, indexes, relationships
+//   They differ in skill profile & offshore availability — DB work is often more offshored
+//   safely than backend API logic which requires deep business domain knowledge.
+
+interface ResourceRate {
+  label: string;
+  category: WorkCategory | 'smpm';
+  Icon: React.ElementType;
+  cls: string;
+  bg: string;
+  onsiteRate: number;       // USD/hr
+  offshoreRawRate: number;  // USD/hr raw
+  offshoreProductivity: number; // 0–1 factor (e.g. 0.70 = 70%)
+  sprintHours?: number;     // override: fixed hours (SM/PM)
+}
+
+const RESOURCE_RATES: ResourceRate[] = [
+  { label: 'Frontend',  category: 'frontend',  Icon: Code2,        cls: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200',    onsiteRate: 80,  offshoreRawRate: 25, offshoreProductivity: 0.70 },
+  { label: 'Backend',   category: 'backend',   Icon: Server,       cls: 'text-violet-700', bg: 'bg-violet-50 border-violet-200', onsiteRate: 90,  offshoreRawRate: 28, offshoreProductivity: 0.70 },
+  { label: 'Database',  category: 'database',  Icon: Database,     cls: 'text-emerald-700',bg: 'bg-emerald-50 border-emerald-200', onsiteRate: 85, offshoreRawRate: 30, offshoreProductivity: 0.75 },
+  { label: 'Testing',   category: 'testing',   Icon: FlaskConical, cls: 'text-amber-700',  bg: 'bg-amber-50 border-amber-200',   onsiteRate: 65,  offshoreRawRate: 18, offshoreProductivity: 0.75 },
+  { label: 'UX / Design', category: 'ux',      Icon: Paintbrush,   cls: 'text-pink-700',   bg: 'bg-pink-50 border-pink-200',     onsiteRate: 95,  offshoreRawRate: 22, offshoreProductivity: 0.65 },
+  { label: 'Docs',      category: 'docs',      Icon: FileText,     cls: 'text-orange-700', bg: 'bg-orange-50 border-orange-200', onsiteRate: 55,  offshoreRawRate: 15, offshoreProductivity: 0.80 },
+  { label: 'DevOps',    category: 'devops',    Icon: Cpu,          cls: 'text-slate-700',  bg: 'bg-slate-50 border-slate-200',   onsiteRate: 100, offshoreRawRate: 32, offshoreProductivity: 0.70 },
+  { label: 'SM / PM',   category: 'smpm',      Icon: Users,        cls: 'text-orange-800', bg: 'bg-orange-50 border-orange-200', onsiteRate: 85,  offshoreRawRate: 30, offshoreProductivity: 0.70, sprintHours: SM_PM_SPRINT_HOURS },
+];
+
+function OnsiteVsOffshorePanel({ metrics }: { metrics: SprintMetrics }) {
+  const [view, setView] = useState<'table' | 'cards'>('table');
+  const totalActualHours = metrics.totalActualHours;
+
+  // Effective offshore rate accounts for productivity loss
+  // effective_rate = raw_rate / productivity  →  more hours needed per unit of output
+  const effectiveOffshore = (r: ResourceRate) => r.offshoreRawRate / r.offshoreProductivity;
+
+  const rows = RESOURCE_RATES.map(r => {
+    const hours = r.sprintHours != null
+      ? r.sprintHours
+      : (r.category !== 'smpm' ? (metrics.byCategory[r.category as WorkCategory]?.actualHours ?? 0) : 0);
+
+    const onsiteCost = hours * r.onsiteRate;
+    const offshoreCost = hours * effectiveOffshore(r);
+    const saving = onsiteCost - offshoreCost;
+    const savingPct = onsiteCost > 0 ? Math.round((saving / onsiteCost) * 100) : 0;
+    return { ...r, hours, onsiteCost, offshoreCost, saving, savingPct };
+  });
+
+  const totalOnsite = rows.reduce((s, r) => s + r.onsiteCost, 0);
+  const totalOffshore = rows.reduce((s, r) => s + r.offshoreCost, 0);
+  const totalSaving = totalOnsite - totalOffshore;
+  const totalSavingPct = totalOnsite > 0 ? Math.round((totalSaving / totalOnsite) * 100) : 0;
+
+  // AI total cost for comparison
+  const claudeAI = metrics.byDeveloper.claude.tokenCostCents / 100;
+  const lovableAI = (metrics.byDeveloper.lovable.tokenCostCents / 100) + LOVABLE_SPRINT_SUBSCRIPTION_USD;
+  const totalAI = claudeAI + lovableAI;
+
+  return (
+    <Card className="border-2 border-blue-200">
+      <CardHeader className="pb-3 bg-blue-50/60 border-b border-blue-100">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-sm flex items-center gap-2 text-blue-800">
+              <Users className="w-4 h-4 text-blue-600" />
+              Resource Cost Breakdown — Onsite vs Offshore vs AI
+            </CardTitle>
+            <p className="text-[11px] text-blue-700/70 mt-1">
+              Effective offshore rate = raw rate ÷ productivity factor (lower productivity = more hours = higher real cost).
+              Backend &amp; UX carry higher offshore risk due to domain knowledge &amp; communication overhead.
+            </p>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <button onClick={() => setView('table')}
+              className={cn('px-2 py-1 text-[10px] rounded font-semibold transition-colors',
+                view === 'table' ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>
+              Table
+            </button>
+            <button onClick={() => setView('cards')}
+              className={cn('px-2 py-1 text-[10px] rounded font-semibold transition-colors',
+                view === 'cards' ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>
+              Cards
+            </button>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-4 space-y-4">
+
+        {/* ── Headline totals ─────────────────────────────────── */}
+        <div className="grid grid-cols-4 gap-3 text-center">
+          <div className="p-3 rounded-xl bg-blue-100 border border-blue-200">
+            <Users className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+            <p className="text-xl font-black text-blue-700">{fmtUSD(totalOnsite)}</p>
+            <p className="text-[10px] text-blue-600 font-semibold">Onsite Total</p>
+            <p className="text-[9px] text-muted-foreground">All resources</p>
+          </div>
+          <div className="p-3 rounded-xl bg-teal-50 border border-teal-200">
+            <TrendingDown className="w-4 h-4 text-teal-600 mx-auto mb-1" />
+            <p className="text-xl font-black text-teal-700">{fmtUSD(totalOffshore)}</p>
+            <p className="text-[10px] text-teal-600 font-semibold">Offshore Effective</p>
+            <p className="text-[9px] text-muted-foreground">Incl. productivity loss</p>
+          </div>
+          <div className="p-3 rounded-xl bg-green-100 border border-green-200">
+            <Sparkles className="w-4 h-4 text-green-600 mx-auto mb-1" />
+            <p className="text-xl font-black text-green-700">{fmtUSD(totalAI)}</p>
+            <p className="text-[10px] text-green-600 font-semibold">AI (This Sprint)</p>
+            <p className="text-[9px] text-muted-foreground">Claude + Lovable</p>
+          </div>
+          <div className="p-3 rounded-xl bg-emerald-100 border border-emerald-200">
+            <TrendingDown className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
+            <p className="text-xl font-black text-emerald-700">{totalSavingPct}%</p>
+            <p className="text-[10px] text-emerald-600 font-semibold">Offshore vs Onsite</p>
+            <p className="text-[9px] text-muted-foreground">{fmtUSD(totalSaving)} saved</p>
+          </div>
+        </div>
+
+        {/* ── Table view ──────────────────────────────────────── */}
+        {view === 'table' && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b text-muted-foreground text-[10px]">
+                  <th className="text-left py-2 pr-3 font-semibold">Resource</th>
+                  <th className="text-right py-2 px-2 font-semibold">Hours</th>
+                  <th className="text-right py-2 px-2 font-semibold text-blue-700">Onsite $/hr</th>
+                  <th className="text-right py-2 px-2 font-semibold text-blue-800">Onsite Cost</th>
+                  <th className="text-right py-2 px-2 font-semibold text-teal-700">Shore $/hr</th>
+                  <th className="text-right py-2 px-2 font-semibold text-teal-600">Prod.</th>
+                  <th className="text-right py-2 px-2 font-semibold text-teal-800">Eff. $/hr</th>
+                  <th className="text-right py-2 px-2 font-semibold text-teal-800">Off. Cost</th>
+                  <th className="text-right py-2 px-2 font-semibold text-green-700">AI Cost</th>
+                  <th className="text-right py-2 pl-2 font-semibold text-emerald-700">Saving</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {rows.map(r => {
+                  const Icon = r.Icon;
+                  const effRate = effectiveOffshore(r);
+                  // AI cost proportional to hours this category uses
+                  const catAIcost = totalActualHours > 0 && r.category !== 'smpm'
+                    ? totalAI * (r.hours / Math.max(totalActualHours, 0.01))
+                    : r.category === 'smpm' ? 0 : 0;
+                  return (
+                    <tr key={r.label} className={cn('hover:bg-muted/20', r.hours === 0 && 'opacity-40')}>
+                      <td className="py-2 pr-3">
+                        <div className="flex items-center gap-1.5">
+                          <Icon className={cn('w-3 h-3 shrink-0', r.cls)} />
+                          <span className={cn('font-semibold', r.cls)}>{r.label}</span>
+                          {r.category === 'smpm' && (
+                            <span className="text-[9px] text-muted-foreground ml-1">fixed</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">
+                        {r.hours > 0 ? fmt(r.hours) : '—'}
+                      </td>
+                      {/* Onsite */}
+                      <td className="py-2 px-2 text-right tabular-nums text-blue-700">${r.onsiteRate}</td>
+                      <td className="py-2 px-2 text-right tabular-nums font-semibold text-blue-800">
+                        {r.hours > 0 ? fmtUSD(r.onsiteCost) : '—'}
+                      </td>
+                      {/* Offshore */}
+                      <td className="py-2 px-2 text-right tabular-nums text-teal-700">${r.offshoreRawRate}</td>
+                      <td className="py-2 px-2 text-right tabular-nums text-teal-600 font-semibold">
+                        {Math.round(r.offshoreProductivity * 100)}%
+                      </td>
+                      <td className="py-2 px-2 text-right tabular-nums text-teal-700 font-semibold">
+                        ${effRate.toFixed(0)}
+                      </td>
+                      <td className="py-2 px-2 text-right tabular-nums font-semibold text-teal-800">
+                        {r.hours > 0 ? fmtUSD(r.offshoreCost) : '—'}
+                      </td>
+                      {/* AI */}
+                      <td className="py-2 px-2 text-right tabular-nums text-green-700 font-semibold">
+                        {r.category === 'smpm' ? <span className="text-muted-foreground italic text-[9px]">AI handles</span> : fmtUSD(catAIcost)}
+                      </td>
+                      {/* Saving (onsite - offshore) */}
+                      <td className="py-2 pl-2 text-right tabular-nums font-bold text-emerald-700">
+                        {r.hours > 0 ? (
+                          <span>{fmtUSD(r.saving)} <span className="text-[9px] opacity-70">({r.savingPct}%)</span></span>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {/* Totals */}
+                <tr className="bg-muted/30 font-bold border-t-2 text-[11px]">
+                  <td className="py-2 pr-3">Sprint Total</td>
+                  <td className="py-2 px-2 text-right tabular-nums">{fmt(totalActualHours + SM_PM_SPRINT_HOURS)}</td>
+                  <td className="py-2 px-2" colSpan={2} />
+                  <td className="py-2 px-2 text-right font-black text-blue-800" colSpan={1}>{fmtUSD(totalOnsite)}</td>
+                  <td className="py-2 px-2" colSpan={3} />
+                  <td className="py-2 px-2 text-right font-black text-teal-800">{fmtUSD(totalOffshore)}</td>
+                  <td className="py-2 px-2 text-right font-black text-green-700">{fmtUSD(totalAI)}</td>
+                  <td className="py-2 pl-2 text-right font-black text-emerald-700">{fmtUSD(totalSaving)} ({totalSavingPct}%)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ── Cards view ──────────────────────────────────────── */}
+        {view === 'cards' && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {rows.map(r => {
+              const Icon = r.Icon;
+              const effRate = effectiveOffshore(r);
+              const catAICost = totalActualHours > 0 && r.category !== 'smpm'
+                ? totalAI * (r.hours / Math.max(totalActualHours, 0.01))
+                : 0;
+              return (
+                <div key={r.label} className={cn('p-3 rounded-lg border', r.bg, r.hours === 0 && 'opacity-40')}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Icon className={cn('w-3.5 h-3.5 shrink-0', r.cls)} />
+                    <span className={cn('text-[11px] font-bold', r.cls)}>{r.label}</span>
+                  </div>
+                  {r.hours > 0 ? (
+                    <div className="space-y-1 text-[10px]">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Hours</span>
+                        <span className="font-semibold">{fmt(r.hours)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-blue-700">Onsite</span>
+                        <span className="font-bold text-blue-800">{fmtUSD(r.onsiteCost)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-teal-700">Offshore eff.</span>
+                        <span className="font-bold text-teal-800">{fmtUSD(r.offshoreCost)}</span>
+                      </div>
+                      <div className="flex justify-between text-[9px]">
+                        <span className="text-muted-foreground">Prod. factor</span>
+                        <span className="text-amber-700 font-semibold">{Math.round(r.offshoreProductivity * 100)}%</span>
+                      </div>
+                      {r.category !== 'smpm' && (
+                        <div className="flex justify-between">
+                          <span className="text-green-700">AI cost</span>
+                          <span className="font-bold text-green-700">{fmtUSD(catAICost)}</span>
+                        </div>
+                      )}
+                      <div className="pt-1 border-t flex justify-between">
+                        <span className="text-emerald-700 font-semibold">Saving</span>
+                        <span className="font-black text-emerald-700">{fmtUSD(r.saving)} ({r.savingPct}%)</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground italic">No hours logged</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Rate assumptions legend ──────────────────────────── */}
+        <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-3 space-y-1.5">
+          <p className="text-[10px] font-bold text-blue-800">Rate Assumptions & Offshore Productivity Notes</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0.5">
+            {RESOURCE_RATES.map(r => (
+              <div key={r.label} className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+                <r.Icon className={cn('w-2.5 h-2.5 shrink-0', r.cls)} />
+                <span className="font-semibold text-foreground/70">{r.label}:</span>
+                <span>Onsite ${r.onsiteRate}/hr · Offshore ${r.offshoreRawRate}/hr @ {Math.round(r.offshoreProductivity*100)}% → eff. ${effectiveOffshore(r).toFixed(0)}/hr</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[9px] text-muted-foreground mt-1 leading-relaxed">
+            <span className="font-semibold text-amber-700">⚠ Offshore productivity:</span> UX/Design (65%) and Backend (70%) carry the highest risk due to design system familiarity and business domain knowledge. 
+            Database &amp; Testing are more safely offshored (75–80%). SM/PM is treated as onsite-adjacent due to real-time coordination requirements.
+          </p>
+        </div>
+
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 
 export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay }) => {
@@ -531,6 +826,9 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
 
       {/* ── ROI / COST COMPARISON ─────────────────────────────────────────── */}
       <ROISummaryPanel metrics={metrics} />
+
+      {/* ── ONSITE vs OFFSHORE vs AI COST BREAKDOWN ──────────────────────── */}
+      <OnsiteVsOffshorePanel metrics={metrics} />
 
       {/* ── WORK CATEGORY BREAKDOWN ───────────────────────────────────────── */}
       <Card>
