@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CheckCircle2, Clock, XCircle, FileCode, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, FileCode, AlertTriangle, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SprintTask, TaskStatus, TaskFindings } from './types';
 
@@ -37,22 +37,26 @@ interface TaskCardProps {
   taskNotes?: string[];
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   compact?: boolean;
+  /** List of unmet dependency IDs that gate this task (H-xxx or task IDs) */
+  blockedBy?: string[];
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
-  task, status, findings, overrideNote, taskNotes, onStatusChange, compact,
+  task, status, findings, overrideNote, taskNotes, onStatusChange, compact, blockedBy,
 }) => {
   const priority = PRIORITY_STYLES[task.priority];
   const statusStyle = STATUS_STYLES[status];
   const isDone = status === 'completed';
   const hasFindings = findings && findings.findings.length > 0;
+  const isGateBlocked = (blockedBy?.length ?? 0) > 0 && !isDone;
 
   return (
     <Card className={cn(
       'border-l-4 transition-all',
-      status === 'completed' && 'border-l-green-500 bg-green-50/30',
-      status === 'in-progress' && 'border-l-blue-500 bg-blue-50/30',
-      status === 'pending' && 'border-l-gray-300',
+      isGateBlocked && 'border-l-amber-500 bg-amber-50/30 opacity-80',
+      !isGateBlocked && status === 'completed' && 'border-l-green-500 bg-green-50/30',
+      !isGateBlocked && status === 'in-progress' && 'border-l-blue-500 bg-blue-50/30',
+      !isGateBlocked && status === 'pending' && 'border-l-gray-300',
       status === 'rejected' && 'border-l-red-400 opacity-60',
     )}>
       <CardContent className="p-4 space-y-3">
@@ -82,18 +86,30 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <p className="text-sm text-muted-foreground italic">{findings.summary}</p>
         )}
 
+        {/* Gate-blocked banner */}
+        {isGateBlocked && (
+          <div className="flex items-start gap-2 p-2 rounded bg-amber-100 border border-amber-300 text-xs text-amber-900">
+            <Ban className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-700" />
+            <span>
+              <span className="font-semibold">WAIT — gate pending:</span>{' '}
+              {blockedBy!.join(', ')} must be Ready before starting this task.
+            </span>
+          </div>
+        )}
+
         {/* Override note */}
         {overrideNote && (
           <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">{overrideNote}</p>
         )}
 
-        {/* Status buttons */}
+        {/* Status buttons — disabled when gate-blocked (except Done to allow override) */}
         <div className="flex gap-1.5">
           <Button size="sm" variant={isDone ? 'default' : 'outline'} className="h-8 px-3 text-xs gap-1.5"
             onClick={() => onStatusChange(task.id, isDone ? 'pending' : 'completed')}>
             <CheckCircle2 className="w-4 h-4 text-green-600" /> Done
           </Button>
           <Button size="sm" variant={status === 'in-progress' ? 'default' : 'outline'} className="h-8 px-3 text-xs gap-1.5"
+            disabled={isGateBlocked}
             onClick={() => onStatusChange(task.id, status === 'in-progress' ? 'pending' : 'in-progress')}>
             <Clock className="w-4 h-4 text-blue-600" /> WIP
           </Button>
