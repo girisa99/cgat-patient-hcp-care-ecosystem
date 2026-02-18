@@ -30,10 +30,11 @@ import { StrategyView } from './StrategyView';
 import { POVerificationView } from './POVerificationView';
 import { FindingsView } from './FindingsView';
 import { SprintPlanningView } from './SprintPlanningView';
+import { GovernanceFlowView } from './GovernanceFlowView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewId = 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning';
+type ViewId = 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -225,12 +226,14 @@ export const SprintTrackerDashboard: React.FC = () => {
 
   // ── view title ────────────────────────────────────────────────────────────
   const viewTitle =
-    activeDayNum !== undefined ? `Day ${activeDayNum} · ${DAY_THEMES[activeDayNum - 1]}` :
-    activeView === 'backlog'   ? 'Backlog' :
+    activeDayNum !== undefined  ? `Day ${activeDayNum} · ${DAY_THEMES[activeDayNum - 1]}` :
+    activeView === 'backlog'    ? 'Backlog' :
     activeView === 'metrics'   ? 'Metrics' :
     activeView === 'strategy'  ? 'Strategy' :
-    activeView === 'findings'  ? 'Findings' :
-    'PO Gate';
+    activeView === 'findings'  ? 'Findings / QA' :
+    activeView === 'governance' ? 'Governance & Release Flow' :
+    activeView === 'planning'   ? 'Sprint Planning' :
+    'Release Gate';
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -301,10 +304,11 @@ export const SprintTrackerDashboard: React.FC = () => {
                 Reports
               </p>
               <div className="space-y-0.5">
-                <NavBtn active={activeView === 'planning'}  label="Sprint Planning ▸" icon={Target}         onClick={() => setActiveView('planning')}  />
-                <NavBtn active={activeView === 'findings'}  label="Findings / QA"     icon={ClipboardCheck} onClick={() => setActiveView('findings')} />
-                <NavBtn active={activeView === 'strategy'}  label="Strategy"           icon={Shield}         onClick={() => setActiveView('strategy')} />
-                <NavBtn active={activeView === 'po-gate'}   label="Release Gate ▸"    icon={Flag}           onClick={() => setActiveView('po-gate')}  />
+                <NavBtn active={activeView === 'planning'}   label="Sprint Planning ▸"       icon={Target}          onClick={() => setActiveView('planning')}  />
+                <NavBtn active={activeView === 'findings'}   label="Findings / QA"            icon={ClipboardCheck}  onClick={() => setActiveView('findings')} />
+                <NavBtn active={activeView === 'governance'} label="Governance Flow ▸"        icon={Shield}          onClick={() => setActiveView('governance')} />
+                <NavBtn active={activeView === 'strategy'}   label="Strategy"                 icon={TrendingUp}      onClick={() => setActiveView('strategy')} />
+                <NavBtn active={activeView === 'po-gate'}    label="Release Gate ▸"           icon={Flag}            onClick={() => setActiveView('po-gate')}  />
               </div>
             </div>
 
@@ -439,6 +443,11 @@ export const SprintTrackerDashboard: React.FC = () => {
             {/* PO Gate */}
             {activeView === 'po-gate' && (
               <POVerificationView currentDay={currentDay} getTaskStatus={getTaskStatus} />
+            )}
+
+            {/* Governance Flow */}
+            {activeView === 'governance' && (
+              <GovernanceFlowView getTaskStatus={getTaskStatus} />
             )}
 
             {/* Sprint Planning */}
