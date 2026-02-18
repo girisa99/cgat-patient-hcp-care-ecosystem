@@ -17,7 +17,7 @@ import {
   LayoutGrid, BarChart3, Shield, ClipboardCheck,
   CheckCircle2, TrendingUp, ArrowLeft, Video,
   Archive, Target, Calendar, Flag, Brain, Zap, ChevronRight, BookOpen, FlaskConical,
-  Rocket,
+  Rocket, RotateCcw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -202,7 +202,7 @@ function BacklogView({ getTaskStatus, onStatusChange, taskOverrides, currentDay 
 export const SprintTrackerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const {
-    state, currentDay, metrics, updateTaskStatus, addStandup, getTaskStatus,
+    state, currentDay, metrics, updateTaskStatus, addStandup, getTaskStatus, resetToDefaults,
   } = useSprintTracker();
 
   // PO Mission Control is the default — the single-screen summary
@@ -391,6 +391,18 @@ export const SprintTrackerDashboard: React.FC = () => {
             onClick={() => navigate('/genie-admin')}>
             <ArrowLeft className="w-3.5 h-3.5" />Exit Sprint View
           </Button>
+          <Separator className="my-1" />
+          <Button
+            variant="ghost" size="sm"
+            className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => {
+              if (confirm('Reset all sprint tracker state? This clears stale cached data and restores only confirmed completed tasks (Days 1–2).')) {
+                resetToDefaults();
+              }
+            }}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />Reset Cache
+          </Button>
         </div>
       </aside>
 
@@ -530,7 +542,7 @@ export const SprintTrackerDashboard: React.FC = () => {
 
             {/* QA Sign-off — non-blocking, manual PO/SO verification */}
             {activeView === 'qa-signoff' && (
-              <QASignOffView getTaskStatus={getTaskStatus} />
+              <QASignOffView getTaskStatus={getTaskStatus} currentDay={currentDay} />
             )}
 
           </div>
