@@ -1,9 +1,12 @@
 /**
  * Genie Spark - Content Creation Suite
  * "Ignite Your Ideas" - AI-powered content generation engine
- * 
+ *
  * CONSOLIDATED: Uses QuadrantLayout + QuadrantProductHeader
  * AskGenie is now centralized in QuadrantLayout (removed from here)
+ *
+ * Day 3 (C-304): Fixed wizard onGenerate integration, removed temp IDs,
+ * connected save flow to use returned DB ids
  */
 
 import React, { useState } from 'react';
@@ -37,21 +40,29 @@ const GenieSpark: React.FC = () => {
 
   // Map content type to script type
   const getScriptType = (type: string): 'audio' | 'video' => {
-    return type === 'podcast_script' ? 'audio' : 'video';
+    if (type === 'podcast_script') return 'audio';
+    return 'video';
+  };
+
+  /** Save content to DB and return the real script (with DB-generated ID) */
+  const saveGeneratedContent = async (
+    content: GeneratedContent,
+    source: 'spark' | 'mind' = 'spark'
+  ): Promise<GenieScript | null> => {
+    const scriptInput = {
+      name: content.title || 'Generated Script',
+      content: content.script,
+      type: getScriptType(content.type),
+      source,
+      stats: buildScriptStats(content),
+    } as Omit<GenieScript, 'id' | 'createdAt' | 'updatedAt'>;
+
+    return saveScript(scriptInput);
   };
 
   const handleSendToScriptEditor = async (content: GeneratedContent) => {
     try {
-      const newScript: GenieScript = {
-        id: `script-${Date.now()}`,
-        name: content.title || 'Generated Script',
-        content: content.script,
-        type: getScriptType(content.type),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        stats: buildScriptStats(content)
-      };
-      const saved = await saveScript(newScript);
+      const saved = await saveGeneratedContent(content);
       if (!saved) {
         toast.error('Failed to save script. Please try again.');
         return;
@@ -66,16 +77,7 @@ const GenieSpark: React.FC = () => {
 
   const handleSendToVibe = async (content: GeneratedContent) => {
     try {
-      const newScript: GenieScript = {
-        id: `script-${Date.now()}`,
-        name: content.title || 'Generated Script',
-        content: content.script,
-        type: getScriptType(content.type),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        stats: buildScriptStats(content)
-      };
-      const saved = await saveScript(newScript);
+      const saved = await saveGeneratedContent(content);
       if (!saved) {
         toast.error('Failed to save script. Please try again.');
         return;
@@ -90,22 +92,13 @@ const GenieSpark: React.FC = () => {
 
   const handleSendToProductionHub = async (content: GeneratedContent) => {
     try {
-      const newScript: GenieScript = {
-        id: `script-${Date.now()}`,
-        name: content.title || 'Generated Script',
-        content: content.script,
-        type: getScriptType(content.type),
-        source: 'spark',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        stats: buildScriptStats(content)
-      };
-      const saved = await saveScript(newScript);
+      const saved = await saveGeneratedContent(content);
       if (!saved) {
         toast.error('Failed to save script. Please try again.');
         return;
       }
-      navigate(`/genie-admin?tab=library&linkScript=${newScript.id}`);
+      // Use the real DB id for deep-linking
+      navigate(`/genie-admin?tab=library&linkScript=${saved.id}`);
       toast.success('Script ready for Production Hub! Create a show to link it.');
     } catch (err) {
       console.error('Failed to send to Production Hub:', err);
@@ -115,17 +108,7 @@ const GenieSpark: React.FC = () => {
 
   const handleSaveToKnowledgeBase = async (content: GeneratedContent) => {
     try {
-      const newScript: GenieScript = {
-        id: `kb-${Date.now()}`,
-        name: content.title || 'Knowledge Base Entry',
-        content: content.script,
-        type: getScriptType(content.type),
-        source: 'spark',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        stats: buildScriptStats(content)
-      };
-      const saved = await saveScript(newScript);
+      const saved = await saveGeneratedContent(content);
       if (!saved) {
         toast.error('Failed to save to Knowledge Base.');
         return;
@@ -175,10 +158,19 @@ const GenieSpark: React.FC = () => {
                 }}
                 onGenerate={async (prompt) => {
                   toast.info('Generating content...');
-                  // Simulate generation delay
-                  await new Promise(r => setTimeout(r, 2000));
-                  setHasGeneratedContent(true);
-                  toast.success('Content generated!');
+                  // Save the prompt as a draft script in the DB
+                  const saved = await saveScript({
+                    name: `Spark Draft — ${prompt.slice(0, 40)}...`,
+                    content: prompt,
+                    type: 'video',
+                    source: 'spark',
+                  });
+                  if (saved) {
+                    setHasGeneratedContent(true);
+                    toast.success('Content generated and saved!');
+                  } else {
+                    throw new Error('Save failed');
+                  }
                 }}
                 onSendToEditor={() => {
                   navigate('/genie-mind?tab=script-editor');
@@ -206,7 +198,7 @@ const GenieSpark: React.FC = () => {
 
             {/* Quick Templates Tab */}
             <TabsContent value="templates" className="mt-0">
-              <QuickTemplateSelector 
+              <QuickTemplateSelector
                 onSelect={(template) => {
                   toast.success(`Template "${template.name}" selected!`);
                   // Navigate to pipeline with template pre-loaded
@@ -217,23 +209,20 @@ const GenieSpark: React.FC = () => {
 
             {/* Image to Script Tab */}
             <TabsContent value="images" className="mt-0">
-              <ImageScriptAssembler 
+              <ImageScriptAssembler
                 onAssemblyComplete={(slides) => {
                   toast.success(`Assembly complete with ${slides.length} slides!`);
                 }}
                 onGenerateVideo={(slides) => {
                   toast.success(`Generating video from ${slides.length} slides!`);
-                  // Create script from slides
+                  // Create script from slides — no temp ID
                   const scriptContent = slides.map(s => s.scriptText).join('\n\n');
-                  const newScript: GenieScript = {
-                    id: `script-${Date.now()}`,
+                  saveScript({
                     name: 'Image-Based Script',
                     content: scriptContent,
                     type: 'video',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                  };
-                  saveScript(newScript);
+                    source: 'spark',
+                  });
                 }}
               />
           </TabsContent>
