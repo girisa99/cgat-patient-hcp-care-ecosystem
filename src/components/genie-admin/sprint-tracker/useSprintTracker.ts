@@ -4,7 +4,7 @@ import type { TaskStatus, Developer, SprintTrackerState, SprintMetrics, Activity
 import { SPRINT_TASKS } from './data-tasks';
 import { DEFAULT_TASK_OVERRIDES, DEFAULT_STANDUPS, calculateCurrentDay } from './data-config';
 
-const STORAGE_KEY = 'genie_sprint_tracker_state_v2'; // bumped to v2 to flush stale Day 1 cache
+const STORAGE_KEY = 'genie_sprint_tracker_state_v3'; // v3: flush stale Days 3-5 sign-offs
 
 export function useSprintTracker() {
   const [state, setState] = useState<SprintTrackerState>(() => {
@@ -158,6 +158,32 @@ export function useSprintTracker() {
     return { backlog, todo, inProgress, done };
   }, [state.taskOverrides, currentDay]);
 
+  const resetToDefaults = () => {
+    // Clear all sprint-tracker localStorage keys so stale data doesn't bleed in
+    const keysToRemove = [
+      'genie_sprint_tracker_state_v2',
+      'genie_sprint_tracker_state_v3',
+      'genie_qa_signoff_v2',
+      'genie_qa_signoff_v3',
+      'genie_qa_signoff_notes_v2',
+      'genie_qa_signoff_notes_v3',
+      'genie_qa_carryover_v2',
+      'genie_qa_carryover_v3',
+      'genie_qa_sprint_signoff_v2',
+      'genie_qa_sprint_signoff_v3',
+      'genie_sprint_po_checklist',
+      'genie_sprint_po_checklist_notes',
+      'genie_sprint_po_notes',
+    ];
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    setState({
+      taskOverrides: { ...DEFAULT_TASK_OVERRIDES },
+      standups: [...DEFAULT_STANDUPS],
+      activityLog: [],
+      taskNotes: {},
+    });
+  };
+
   return {
     state,
     currentDay,
@@ -167,5 +193,6 @@ export function useSprintTracker() {
     addStandup,
     addTaskNote,
     getTaskStatus,
+    resetToDefaults,
   };
 }
