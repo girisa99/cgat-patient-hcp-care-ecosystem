@@ -10,7 +10,16 @@ export function useSprintTracker() {
   const [state, setState] = useState<SprintTrackerState>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Ensure all required fields exist (guards against stale cached state)
+        return {
+          taskOverrides: parsed.taskOverrides ?? { ...DEFAULT_TASK_OVERRIDES },
+          standups: parsed.standups ?? [...DEFAULT_STANDUPS],
+          activityLog: parsed.activityLog ?? [],
+          taskNotes: parsed.taskNotes ?? {},
+        };
+      }
     } catch (e) {
       console.error('[SprintTracker] Failed to load state:', e);
     }
