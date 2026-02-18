@@ -107,7 +107,7 @@ export const GenieStudioOverallArchitectureDiagram: React.FC = () => {
           <Layers className="h-8 w-8 text-violet-500" />
           Genie Suite - Complete Architecture
         </h2>
-        <p className="text-muted-foreground mt-2">Mind to Media • 206 Pipelines • 15 Core Providers • 7-Zone Routing • 7 Products (incl. Genie Cast)</p>
+        <p className="text-muted-foreground mt-2">Mind to Media • 206 Pipelines • 19 Core Providers • 7-Zone Routing • 7 Products (incl. Genie Cast)</p>
       </div>
 
       {/* Implementation Summary */}
