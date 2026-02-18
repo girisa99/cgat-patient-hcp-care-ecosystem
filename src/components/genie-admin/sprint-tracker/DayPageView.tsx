@@ -1040,6 +1040,186 @@ function HandoffRow({ h, getTaskStatus }: { h: typeof HANDOFFS[0]; getTaskStatus
   );
 }
 
+// ─── Day Start / Sign-off Workflow Banner ────────────────────────────────────
+
+const DAY_START_KEY = 'genie_sprint_day_start_v1';
+const DAY_SIGNOFF_KEY = 'genie_sprint_day_signoff_v1';
+
+type DayWorkflowState = {
+  startedAt: string | null;
+  startedBy: string;
+  standupClaudeDone: boolean;
+  standupLovableDone: boolean;
+  signedOffAt: string | null;
+};
+
+function DayWorkflowBanner({
+  day, claudeSD, lovableSD, getTaskStatus,
+}: {
+  day: number;
+  claudeSD: StandupEntry | undefined;
+  lovableSD: StandupEntry | undefined;
+  getTaskStatus: (id: string) => TaskStatus;
+}) {
+  const storageKey = `${DAY_START_KEY}_day${day}`;
+  const signoffKey = `${DAY_SIGNOFF_KEY}_day${day}`;
+
+  const [wf, setWf] = React.useState<DayWorkflowState>(() => {
+    try {
+      const s = localStorage.getItem(storageKey);
+      return s ? JSON.parse(s) : { startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null };
+    } catch { return { startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null }; }
+  });
+
+  // Auto-detect standup status from actual saved entries
+  const claudeUp    = !!claudeSD;
+  const lovableUp   = !!lovableSD;
+  const bothUp      = claudeUp && lovableUp;
+  const dayTasks    = SPRINT_TASKS.filter(t => t.day === day);
+  const doneTasks   = dayTasks.filter(t => getTaskStatus(t.id) === 'completed').length;
+  const allDone     = doneTasks === dayTasks.length;
+  const isStarted   = !!wf.startedAt;
+  const isSignedOff = !!wf.signedOffAt;
+
+  // Dynamic change-rate threshold: tighter early (Days 1-2), looser late (Days 4-5)
+  const dayThreshold = day <= 2 ? 25 : day === 3 ? 35 : 50;
+
+  const persist = (next: DayWorkflowState) => {
+    setWf(next);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+  };
+
+  const startDay = () => persist({ ...wf, startedAt: new Date().toISOString(), startedBy: 'PO/SM' });
+  const signOff  = () => persist({ ...wf, signedOffAt: new Date().toISOString() });
+  const reset    = () => { persist({ startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null }); localStorage.removeItem(signoffKey); };
+
+  // Steps: 1=PO Start Day  2=Standups  3=Tasks done  4=Sign-off
+  const step1 = isStarted;
+  const step2 = bothUp;
+  const step3 = allDone;
+  const step4 = isSignedOff;
+
+  const fmtTime = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+  if (isSignedOff) {
+    return (
+      <div className="rounded-lg border border-green-300 bg-green-50/50 px-4 py-3 flex items-center gap-3">
+        <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-bold text-green-800">Day {day} Complete — Signed Off ✓</p>
+          <p className="text-[10px] text-green-700">Started: {fmtTime(wf.startedAt)} · Signed off: {fmtTime(wf.signedOffAt)} · {doneTasks}/{dayTasks.length} tasks done</p>
+        </div>
+        <button onClick={reset} className="text-[9px] text-green-700 hover:underline shrink-0">Reset</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-primary/30 bg-card overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 border-b border-primary/20">
+        <Rocket className="w-3.5 h-3.5 text-primary shrink-0" />
+        <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Day {day} Workflow · Start → Standups → Work → Sign-off</span>
+        <span className="ml-auto text-[9px] text-muted-foreground">Change-rate threshold: <strong>{dayThreshold}%</strong> (Day {day} dynamic)</span>
+      </div>
+
+      {/* 4-step checklist */}
+      <div className="grid grid-cols-4 divide-x divide-border/40">
+        {/* Step 1 — PO Starts Day */}
+        <div className={cn('p-3 space-y-2', step1 ? 'bg-green-50/30' : 'bg-amber-50/30')}>
+          <div className="flex items-center gap-1.5">
+            <span className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0', step1 ? 'bg-green-500 text-white' : 'bg-amber-400 text-white')}>
+              {step1 ? '✓' : '1'}
+            </span>
+            <span className="text-[10px] font-bold">PO/SM Starts Day</span>
+          </div>
+          <p className="text-[9px] text-muted-foreground">PO clicks Start Day to open the sprint board. Tasks unlock for both developers.</p>
+          {step1 ? (
+            <p className="text-[9px] text-green-700 font-semibold">✓ Started at {fmtTime(wf.startedAt)}</p>
+          ) : (
+            <button
+              onClick={startDay}
+              className="w-full text-[10px] font-bold px-2 py-1.5 rounded bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              ▶ Start Day {day}
+            </button>
+          )}
+        </div>
+
+        {/* Step 2 — Standups */}
+        <div className={cn('p-3 space-y-2', step2 ? 'bg-green-50/30' : step1 ? 'bg-blue-50/30' : 'bg-muted/20 opacity-60')}>
+          <div className="flex items-center gap-1.5">
+            <span className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0', step2 ? 'bg-green-500 text-white' : step1 ? 'bg-blue-500 text-white' : 'bg-muted-foreground/30 text-muted-foreground')}>
+              {step2 ? '✓' : '2'}
+            </span>
+            <span className="text-[10px] font-bold">Standups Filed</span>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-[9px]">
+              <Brain className={cn('w-3 h-3 shrink-0', claudeUp ? 'text-green-600' : 'text-muted-foreground')} />
+              <span className={claudeUp ? 'text-green-700 font-semibold' : 'text-muted-foreground'}>Claude {claudeUp ? '✓' : '⏳ pending'}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px]">
+              <Zap className={cn('w-3 h-3 shrink-0', lovableUp ? 'text-green-600' : 'text-muted-foreground')} />
+              <span className={lovableUp ? 'text-green-700 font-semibold' : 'text-muted-foreground'}>Lovable {lovableUp ? '✓' : '⏳ pending'}</span>
+            </div>
+          </div>
+          {step2 && <p className="text-[9px] text-green-700 font-semibold">✓ Both standups saved</p>}
+        </div>
+
+        {/* Step 3 — Work */}
+        <div className={cn('p-3 space-y-2', step3 ? 'bg-green-50/30' : step2 ? 'bg-violet-50/20' : 'bg-muted/20 opacity-60')}>
+          <div className="flex items-center gap-1.5">
+            <span className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0', step3 ? 'bg-green-500 text-white' : step2 ? 'bg-violet-500 text-white' : 'bg-muted-foreground/30 text-muted-foreground')}>
+              {step3 ? '✓' : '3'}
+            </span>
+            <span className="text-[10px] font-bold">Tasks Complete</span>
+          </div>
+          <div className="space-y-1">
+            {(['claude', 'lovable'] as Developer[]).map(dev => {
+              const devTasks  = dayTasks.filter(t => t.developer === dev);
+              const devDone   = devTasks.filter(t => getTaskStatus(t.id) === 'completed').length;
+              const devSP     = devTasks.reduce((s, t) => s + t.estimatedHours, 0);
+              const cfg       = DEV[dev];
+              const DevIcon   = cfg.Icon;
+              return (
+                <div key={dev} className="flex items-center gap-1 text-[9px]">
+                  <DevIcon className={cn('w-3 h-3', cfg.iconCls)} />
+                  <span className={cn('font-mono', cfg.iconCls)}>{dev === 'claude' ? 'C' : 'L'}</span>
+                  <span className="text-muted-foreground">{devDone}/{devTasks.length}</span>
+                  <span className="text-muted-foreground text-[8px]">· {devSP}SP</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className={cn('text-[9px] font-semibold', step3 ? 'text-green-700' : 'text-muted-foreground')}>{doneTasks}/{dayTasks.length} tasks done</p>
+        </div>
+
+        {/* Step 4 — PO Sign-off */}
+        <div className={cn('p-3 space-y-2', step4 ? 'bg-green-50/30' : step3 ? 'bg-emerald-50/30' : 'bg-muted/20 opacity-60')}>
+          <div className="flex items-center gap-1.5">
+            <span className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0', step4 ? 'bg-green-500 text-white' : step3 ? 'bg-emerald-500 text-white' : 'bg-muted-foreground/30 text-muted-foreground')}>
+              {step4 ? '✓' : '4'}
+            </span>
+            <span className="text-[10px] font-bold">PO Sign-off</span>
+          </div>
+          <p className="text-[9px] text-muted-foreground">PO verifies AC on all tasks. Day is closed. Claude merges first on Day 5.</p>
+          {step3 && !step4 && (
+            <button
+              onClick={signOff}
+              className="w-full text-[10px] font-bold px-2 py-1.5 rounded bg-emerald-600 text-white hover:opacity-90 transition-opacity"
+            >
+              ✓ Sign Off Day {day}
+            </button>
+          )}
+          {step4 && <p className="text-[9px] text-green-700 font-semibold">✓ Signed off at {fmtTime(wf.signedOffAt)}</p>}
+          {!step3 && !step4 && <p className="text-[8px] text-muted-foreground italic">Available after all tasks done</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 interface DayPageViewProps {
@@ -1069,6 +1249,9 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
 
   return (
     <div className="space-y-5">
+
+      {/* ── Day Workflow Banner ───────────────────────────────────────────── */}
+      <DayWorkflowBanner day={day} claudeSD={claudeSD} lovableSD={lovableSD} getTaskStatus={getTaskStatus} />
 
       {/* ── Epic header ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
