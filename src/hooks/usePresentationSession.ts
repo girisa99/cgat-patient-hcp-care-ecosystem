@@ -115,6 +115,12 @@ export function usePresentationSession(sessionId?: string) {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id;
 
+      if (!userId) {
+        toast.error('Please sign in to create a presentation');
+        setIsLoading(false);
+        return null;
+      }
+
       const slug = `${name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
       const { data, error } = await supabase
@@ -171,7 +177,7 @@ export function usePresentationSession(sessionId?: string) {
     try {
       const configToSave = {
         ...session.configuration,
-        ...updates.configuration,
+        ...(updates.configuration || {}),
         inputContent: updates.inputContent ?? session.inputContent,
         currentStep: updates.currentStep ?? session.currentStep,
       };

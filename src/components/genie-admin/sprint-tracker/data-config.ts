@@ -72,9 +72,16 @@ export const DEFAULT_STANDUPS: StandupEntry[] = [
   {
     day: 2, developer: 'claude' as Developer,
     yesterday: 'Day 1: Diagnosed all 3 CREATE products. Found 33 issues. Fixed 11. Build passes.',
-    today: 'Day 2: C-201 Fix PresentationWizard (4h). C-202 Fix sub-components (3h). C-203 E2E verify (1h).',
-    blockers: 'None — Deck is cleanest product.',
-    createdAt: '2026-02-17T17:00:00Z',
+    today: 'Completed C-201, C-202, C-203, S-201. Fixed PresentationWizard: auth validation, progress bar, onComplete callback, Deck-specific errors, ARIA. ComplianceChecker error handling. Deck E2E verified. H-201 set to ready.',
+    blockers: 'None. Deck complete. D-002/D-003/D-005 are in Lovable territory (DeckDemoCard/route guard).',
+    createdAt: '2026-02-18T15:00:00Z',
+  },
+  {
+    day: 2, developer: 'claude' as Developer,
+    yesterday: 'Day 2: Deck creation flow complete. H-201 ready. SIC-104/SIC-105 acknowledged.',
+    today: 'Next session: Day 3 — C-301 SmartContentPipeline AI generation, C-302 SparkGuidedWizard, C-303 useGenieScripts, C-304 Spark E2E.',
+    blockers: 'SmartContentPipeline (80KB) uses simulated AI — will need real edge function calls.',
+    createdAt: '2026-02-18T17:00:00Z',
   },
 ];
 

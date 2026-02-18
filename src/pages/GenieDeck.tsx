@@ -172,8 +172,8 @@ const GenieDeck = () => {
 
   const handleError = useCallback((errorMessage: string) => {
     setError(errorMessage);
-    toast.error('Generation encountered an issue', {
-      description: 'Please check the error message and try again.'
+    toast.error('Genie Deck: Generation encountered an issue', {
+      description: 'Please check the error details and try again.'
     });
   }, []);
 
