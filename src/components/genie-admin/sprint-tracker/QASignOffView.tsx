@@ -24,10 +24,10 @@ import { cn } from '@/lib/utils';
 import { SPRINT_TASKS } from './data-tasks';
 import type { TaskStatus } from './types';
 
-const STORAGE_KEY   = 'genie_qa_signoff_v2';
-const NOTES_KEY     = 'genie_qa_signoff_notes_v2';
-const CARRYOVER_KEY = 'genie_qa_carryover_v2';
-const SIGNOFF_KEY   = 'genie_qa_sprint_signoff_v2';
+const STORAGE_KEY   = 'genie_qa_signoff_v3';
+const NOTES_KEY     = 'genie_qa_signoff_notes_v3';
+const CARRYOVER_KEY = 'genie_qa_carryover_v3';
+const SIGNOFF_KEY   = 'genie_qa_sprint_signoff_v3';
 
 // ─── QA test cases ────────────────────────────────────────────────────────────
 
@@ -123,12 +123,13 @@ function SeverityBadge({ s }: { s: 'critical' | 'high' | 'medium' }) {
 }
 
 function DayPillBar({
-  selectedDay, setSelectedDay, checked, signedDays,
+  selectedDay, setSelectedDay, checked, signedDays, currentDay,
 }: {
   selectedDay: number;
   setSelectedDay: (d: number) => void;
   checked: Record<string, boolean>;
   signedDays: Record<number, boolean>;
+  currentDay: number;
 }) {
   return (
     <div className="flex gap-1.5 flex-wrap items-center">
@@ -136,24 +137,25 @@ function DayPillBar({
         const tests  = QA_TESTS.filter(t => t.day === d);
         const done   = tests.filter(t => checked[t.id]).length;
         const signed = signedDays[d];
-        const future = d > 3; // 4-5 shown but greyed until day arrives
+        const future = d > currentDay; // grey out days not yet started
         return (
           <button
             key={d}
-            onClick={() => setSelectedDay(d)}
+            onClick={() => !future && setSelectedDay(d)}
+            disabled={future}
             className={cn(
               'px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1.5',
               selectedDay === d
                 ? 'bg-primary text-primary-foreground border-primary'
                 : future
-                  ? 'bg-muted/40 text-muted-foreground/50 border-transparent cursor-default'
+                  ? 'bg-muted/40 text-muted-foreground/50 border-transparent cursor-not-allowed opacity-50'
                   : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80',
             )}
           >
             {signed && <CheckCircle2 className="w-3 h-3" />}
             Day {d}
             {!future && <span className="opacity-70">({done}/{tests.length})</span>}
-            {future && <span className="opacity-40">(upcoming)</span>}
+            {future && <span className="opacity-40">(not started)</span>}
           </button>
         );
       })}
@@ -438,9 +440,10 @@ function SprintSignOffPanel({
 
 interface QASignOffViewProps {
   getTaskStatus: (id: string) => TaskStatus;
+  currentDay: number;
 }
 
-export const QASignOffView: React.FC<QASignOffViewProps> = ({ getTaskStatus }) => {
+export const QASignOffView: React.FC<QASignOffViewProps> = ({ getTaskStatus, currentDay }) => {
   const [checked, setChecked] = useState<Record<string, boolean>>(() => {
     try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : {}; } catch { return {}; }
   });
@@ -623,6 +626,7 @@ export const QASignOffView: React.FC<QASignOffViewProps> = ({ getTaskStatus }) =
             setSelectedDay={setSelectedDay}
             checked={checked}
             signedDays={signedDays}
+            currentDay={currentDay}
           />
 
           {/* Day progress */}
