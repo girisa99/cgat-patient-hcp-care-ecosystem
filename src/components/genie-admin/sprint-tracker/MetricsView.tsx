@@ -992,10 +992,11 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
                     t: fmtUSD((metrics.totalTokenCostCents / 100) + LOVABLE_SPRINT_SUBSCRIPTION_USD),
                   },
                   {
-                    label: 'Human equiv. cost ($75/hr)',
+                    label: `Human equiv. cost ($${HUMAN_HOURLY_RATE_USD}/hr devs + SM/PM)`,
                     c: fmtUSD(metrics.byDeveloper.claude.actualHours * HUMAN_HOURLY_RATE_USD),
                     l: fmtUSD(metrics.byDeveloper.lovable.actualHours * HUMAN_HOURLY_RATE_USD),
-                    t: fmtUSD(metrics.totalActualHours * HUMAN_HOURLY_RATE_USD),
+                    // Total = both devs + SM/PM overhead (consistent with ROI panel)
+                    t: fmtUSD(metrics.totalActualHours * HUMAN_HOURLY_RATE_USD + SM_PM_SPRINT_COST_USD),
                   },
                 ].map(row => (
                   <tr key={row.label} className="hover:bg-muted/20">
