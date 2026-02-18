@@ -46,10 +46,12 @@ export const DEFAULT_TASK_OVERRIDES: Record<string, TaskOverride> = {
   'C-104': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '33 total issues across 3 products. 11 fixed Day 1, 22 open.' },
   'S-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Build passes (58s). 7 files changed. Branch pushed.' },
   // ── Day 2: Lovable (active — green light from Claude 2026-02-18) ──
-  'L-201': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Product catalog + "Try It" CTAs. Soft gate only — Deck CTA renders, verify link once H-201 ready.' },
+  'L-201': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Product catalog + "Try It" CTAs. H-201 acknowledged — Deck CTA can link to /genie-deck. D-002 (fallback UI) + D-005 (image skeleton) implemented in DeckDemoCard.' },
   'L-202': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Tier names aligned with genieStudioNavItems.ts (free/starter/creator/pro/business/enterprise). H-203 resolved.' },
   'L-203': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Verifying GenieExploreDemoPage flows.' },
   'L-204': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Adding missing landing sections.' },
+  // D-003: Tier gating route guard — LOCKED FILE. Needs PO decision before implementation.
+  // Locked: src/config/genieStudioNavItems.ts — PO must decide: (A) soft-gate via landing CTA only, or (B) hard redirect guard on /genie-deck. See PO-204.
 };
 
 export const DEFAULT_STANDUPS: StandupEntry[] = [
