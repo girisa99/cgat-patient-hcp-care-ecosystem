@@ -4,6 +4,20 @@ export type Developer = 'lovable' | 'claude';
 export type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'rejected';
 export type TaskPriority = 'critical' | 'high' | 'medium' | 'low';
 
+// ── Work category for velocity breakdown ──
+export type WorkCategory = 'frontend' | 'backend' | 'database' | 'testing' | 'ux' | 'docs' | 'devops';
+
+export interface TaskEffort {
+  /** Actual hours logged by developer (updated when task completes) */
+  actualHours?: number;
+  /** AI tokens consumed (approximate, set by Claude/Lovable) */
+  tokensUsed?: number;
+  /** Token cost in USD cents */
+  tokenCostCents?: number;
+  /** Which categories of work this task covers */
+  workCategories: WorkCategory[];
+}
+
 export interface SprintTask {
   id: string;
   title: string;
@@ -15,6 +29,8 @@ export interface SprintTask {
   acceptanceCriteria: string;
   estimatedHours: number;
   notes?: string;
+  // ── Effort tracking ──
+  effort?: TaskEffort;
 }
 
 export interface StandupEntry {
@@ -72,11 +88,32 @@ export interface SprintDay {
 }
 
 export interface SprintMetrics {
-  byDeveloper: Record<Developer, { total: number; completed: number; inProgress: number; blocked: number }>;
-  byDay: Record<number, { total: number; completed: number }>;
+  byDeveloper: Record<Developer, {
+    total: number;
+    completed: number;
+    inProgress: number;
+    blocked: number;
+    estimatedHours: number;
+    actualHours: number;
+    tokensUsed: number;
+    tokenCostCents: number;
+    byCategory: Partial<Record<WorkCategory, number>>;
+  }>;
+  byDay: Record<number, {
+    total: number;
+    completed: number;
+    estimatedHours: number;
+    actualHours: number;
+  }>;
   total: number;
   completed: number;
   backlogCount: number;
+  totalEstimatedHours: number;
+  totalActualHours: number;
+  totalTokensUsed: number;
+  totalTokenCostCents: number;
+  velocityRatio: number; // actualHours / estimatedHours
+  byCategory: Partial<Record<WorkCategory, { tasks: number; estimatedHours: number; actualHours: number }>>;
 }
 
 // ── Cross-Functional Dependency Tracking ──
