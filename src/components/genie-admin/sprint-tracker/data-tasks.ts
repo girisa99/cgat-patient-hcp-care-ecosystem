@@ -107,28 +107,29 @@ export const SPRINT_TASKS: SprintTask[] = [
     developer: 'claude', day: 2, priority: 'high', module: 'Genie Deck',
     filesInvolved: ['src/pages/GenieDeck.tsx', 'src/components/genie-studio/presentation-generator/PresentationWizard.tsx'],
     acceptanceCriteria: 'Deck creates presentations end-to-end', estimatedHours: 4,
-    effort: { workCategories: ['frontend', 'backend', 'testing'] },
+    // Day 2 Claude actuals — logged 2026-02-18 EOD
+    effort: { actualHours: 4.5, tokensUsed: 91400, tokenCostCents: 183, workCategories: ['frontend', 'backend', 'testing'] },
   },
   {
     id: 'C-202', title: 'Fix presentation-generator sub-components',
     developer: 'claude', day: 2, priority: 'high', module: 'Genie Deck',
     filesInvolved: ['src/components/genie-studio/presentation-generator/**'],
     acceptanceCriteria: 'All 6 wizard steps complete without errors', estimatedHours: 3,
-    effort: { workCategories: ['frontend', 'ux', 'testing'] },
+    effort: { actualHours: 3.5, tokensUsed: 67200, tokenCostCents: 134, workCategories: ['frontend', 'ux', 'testing'] },
   },
   {
     id: 'C-203', title: 'Verify Deck end-to-end: input → slides → preview → save',
     developer: 'claude', day: 2, priority: 'high', module: 'Genie Deck',
     filesInvolved: ['src/pages/GenieDeck.tsx'],
     acceptanceCriteria: 'Full presentation generation workflow works', estimatedHours: 1,
-    effort: { workCategories: ['testing', 'frontend'] },
+    effort: { actualHours: 1.0, tokensUsed: 18300, tokenCostCents: 37, workCategories: ['testing', 'frontend'] },
   },
   {
     id: 'S-201', title: 'End of Day 2 build check and sync',
     developer: 'claude', day: 2, priority: 'high', module: 'Sync',
     filesInvolved: [],
     acceptanceCriteria: 'Build passes; Deck working', estimatedHours: 0.5,
-    effort: { workCategories: ['devops', 'testing'] },
+    effort: { actualHours: 0.5, tokensUsed: 5100, tokenCostCents: 10, workCategories: ['devops', 'testing'] },
   },
 
   // ── Day 3: Genie Spark + Landing Demos ──

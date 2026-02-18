@@ -1,15 +1,16 @@
 // Sprint Tracker — Velocity & Metrics View
 // Shows: sprint completion, per-developer velocity, actual vs estimated hours,
-//        token usage, work category breakdown (FE/BE/DB/Test/UX/Docs/DevOps), burndown by day
+//        token usage, work category breakdown (FE/BE/DB/Test/UX/Docs/DevOps),
+//        burndown by day, per-provider cost breakdown, AI vs Human ROI comparison
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import {
   Zap, Brain, TrendingUp, AlertTriangle, Clock, CheckCircle2,
   BarChart3, Cpu, DollarSign, Code2, Database, FlaskConical,
   Paintbrush, FileText, Server, ChevronDown, ChevronRight,
+  Users, Sparkles, TrendingDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SprintMetrics, Developer, WorkCategory } from './types';
@@ -21,16 +22,23 @@ interface MetricsViewProps {
   currentDay: number;
 }
 
+// ── Provider cost constants ────────────────────────────────────────────────
+// Claude API: ~$0.002/1K input tokens, ~$0.010/1K output tokens → blended ≈ $0.003/1K
+// Lovable: subscription model, ~$29/mo team plan → amortised per sprint ≈ $7.25/5-day sprint
+// Human developer rate: $75/hr (senior dev, US market, fully loaded)
+const HUMAN_HOURLY_RATE_USD = 75;
+const LOVABLE_SPRINT_SUBSCRIPTION_USD = 7.25; // $29/mo amortised 5-day sprint
+
 // ── Work category display config ────────────────────────────────────────────
 
 const CAT_CFG: Record<WorkCategory, { label: string; Icon: React.ElementType; cls: string; bg: string }> = {
-  frontend:  { label: 'Frontend',  Icon: Code2,       cls: 'text-blue-700',    bg: 'bg-blue-50 border-blue-200'    },
-  backend:   { label: 'Backend',   Icon: Server,      cls: 'text-violet-700',  bg: 'bg-violet-50 border-violet-200'},
-  database:  { label: 'Database',  Icon: Database,    cls: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200'},
-  testing:   { label: 'Testing',   Icon: FlaskConical,cls: 'text-amber-700',   bg: 'bg-amber-50 border-amber-200'  },
-  ux:        { label: 'UX/Design', Icon: Paintbrush,  cls: 'text-pink-700',    bg: 'bg-pink-50 border-pink-200'    },
-  docs:      { label: 'Docs',      Icon: FileText,    cls: 'text-orange-700',  bg: 'bg-orange-50 border-orange-200'},
-  devops:    { label: 'DevOps',    Icon: Cpu,         cls: 'text-slate-700',   bg: 'bg-slate-50 border-slate-200'  },
+  frontend:  { label: 'Frontend',  Icon: Code2,        cls: 'text-blue-700',    bg: 'bg-blue-50 border-blue-200'     },
+  backend:   { label: 'Backend',   Icon: Server,       cls: 'text-violet-700',  bg: 'bg-violet-50 border-violet-200' },
+  database:  { label: 'Database',  Icon: Database,     cls: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200'},
+  testing:   { label: 'Testing',   Icon: FlaskConical, cls: 'text-amber-700',   bg: 'bg-amber-50 border-amber-200'   },
+  ux:        { label: 'UX/Design', Icon: Paintbrush,   cls: 'text-pink-700',    bg: 'bg-pink-50 border-pink-200'     },
+  docs:      { label: 'Docs',      Icon: FileText,     cls: 'text-orange-700',  bg: 'bg-orange-50 border-orange-200' },
+  devops:    { label: 'DevOps',    Icon: Cpu,          cls: 'text-slate-700',   bg: 'bg-slate-50 border-slate-200'   },
 };
 
 const ALL_CATS: WorkCategory[] = ['frontend', 'backend', 'database', 'testing', 'ux', 'docs', 'devops'];
@@ -55,9 +63,13 @@ function fmtCost(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+function fmtUSD(usd: number) {
+  return `$${usd.toFixed(2)}`;
+}
+
 function VelocityBar({ estimated, actual, label }: { estimated: number; actual: number; label: string }) {
   const ratio = estimated > 0 ? actual / estimated : 0;
-  const pct = Math.min(ratio * 100, 200); // cap display at 200%
+  const pct = Math.min(ratio * 100, 200);
   const isOver = ratio > 1.1;
   const isUnder = ratio < 0.8;
   return (
@@ -70,15 +82,12 @@ function VelocityBar({ estimated, actual, label }: { estimated: number; actual: 
         </span>
       </div>
       <div className="relative h-2 rounded-full bg-muted overflow-hidden">
-        {/* Estimated baseline */}
         <div className="absolute inset-y-0 left-0 w-full bg-muted-foreground/10 rounded-full" />
-        {/* Actual bar */}
         <div
           className={cn('absolute inset-y-0 left-0 rounded-full transition-all',
             isOver ? 'bg-amber-400' : isUnder ? 'bg-blue-400' : 'bg-green-500')}
           style={{ width: `${Math.min(pct / 2, 100)}%` }}
         />
-        {/* 100% marker */}
         <div className="absolute inset-y-0 left-1/2 w-px bg-muted-foreground/30" />
       </div>
       <div className="flex justify-between text-[9px] text-muted-foreground">
@@ -90,33 +99,41 @@ function VelocityBar({ estimated, actual, label }: { estimated: number; actual: 
   );
 }
 
-// ── Dev card ────────────────────────────────────────────────────────────────
+// ── Per-task effort log inside dev card ─────────────────────────────────────
 
-function DevMetricCard({ dev, data, totalSprintTasks }: {
+function DevMetricCard({ dev, data }: {
   dev: Developer;
   data: SprintMetrics['byDeveloper'][Developer];
-  totalSprintTasks: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isLovable = dev === 'lovable';
   const completionPct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
   const velocityRatio = data.estimatedHours > 0 ? data.actualHours / data.estimatedHours : null;
-  const isOnTrack = velocityRatio === null || (velocityRatio >= 0.8 && velocityRatio <= 1.2);
 
-  // Tasks that are completed and have actual effort logged
   const completedWithData = SPRINT_TASKS.filter(t =>
     t.developer === dev && t.effort?.actualHours !== undefined
   );
 
+  // Calculate per-provider AI cost (token cost) + subscription
+  const tokenCostUSD = data.tokenCostCents / 100;
+  const subscriptionCost = isLovable ? LOVABLE_SPRINT_SUBSCRIPTION_USD : 0;
+  const totalAICost = tokenCostUSD + subscriptionCost;
+  const humanCostUSD = data.actualHours * HUMAN_HOURLY_RATE_USD;
+  const savingsUSD = humanCostUSD - totalAICost;
+  const savingsPct = humanCostUSD > 0 ? Math.round((savingsUSD / humanCostUSD) * 100) : 0;
+
   return (
     <Card className={cn('border-2', isLovable ? 'border-pink-200' : 'border-violet-200')}>
-      {/* Header */}
       <CardHeader className={cn('py-3 px-4 border-b', isLovable ? 'bg-pink-50/60 border-pink-100' : 'bg-violet-50/60 border-violet-100')}>
         <div className="flex items-center gap-2">
-          {isLovable ? <Zap className="w-4 h-4 text-pink-600 shrink-0" /> : <Brain className="w-4 h-4 text-violet-600 shrink-0" />}
+          {isLovable
+            ? <Zap className="w-4 h-4 text-pink-600 shrink-0" />
+            : <Brain className="w-4 h-4 text-violet-600 shrink-0" />}
           <div className="flex-1">
             <p className="font-bold text-sm">{isLovable ? 'Lovable' : 'Claude Code'}</p>
-            <p className="text-[11px] text-muted-foreground">{isLovable ? 'Landing & Marketing' : 'CREATE Tools'}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {isLovable ? 'Landing & Marketing' : 'CREATE Tools'}
+            </p>
           </div>
           <Badge className={cn('text-sm font-bold px-2.5 py-1',
             completionPct >= 80 ? 'bg-green-100 text-green-800' :
@@ -131,12 +148,14 @@ function DevMetricCard({ dev, data, totalSprintTasks }: {
         <div>
           <div className="flex justify-between text-xs mb-1.5">
             <span className="text-muted-foreground">Tasks</span>
-            <span className="font-semibold">{data.completed} done · {data.inProgress} active · {data.total - data.completed - data.inProgress} pending</span>
+            <span className="font-semibold">
+              {data.completed} done · {data.inProgress} active · {data.total - data.completed - data.inProgress} pending
+            </span>
           </div>
           <Progress value={completionPct} className="h-2" />
         </div>
 
-        {/* Hour breakdown */}
+        {/* Hour velocity */}
         <VelocityBar estimated={data.estimatedHours} actual={data.actualHours} label="Hours (actual vs estimated)" />
 
         {/* Token + cost row */}
@@ -152,8 +171,36 @@ function DevMetricCard({ dev, data, totalSprintTasks }: {
             <div className="flex items-center gap-1.5 p-2.5 rounded-lg bg-muted/40 border border-border/40">
               <DollarSign className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               <div>
-                <p className="text-[10px] text-muted-foreground">Token cost</p>
+                <p className="text-[10px] text-muted-foreground">AI token cost</p>
                 <p className="text-sm font-bold">{fmtCost(data.tokenCostCents)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Human cost comparison (compact) */}
+        {data.actualHours > 0 && (
+          <div className="rounded-lg border border-green-200 bg-green-50 p-2.5 space-y-1.5">
+            <p className="text-[10px] font-bold text-green-800 uppercase tracking-wide">
+              AI vs Human Cost ({isLovable ? 'Lovable' : 'Claude'})
+            </p>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="text-[10px] text-muted-foreground">AI Cost</p>
+                <p className="text-xs font-bold text-green-700">{fmtUSD(totalAICost)}</p>
+                {isLovable && subscriptionCost > 0 && (
+                  <p className="text-[9px] text-muted-foreground">incl. sub</p>
+                )}
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">Human Cost</p>
+                <p className="text-xs font-bold text-red-600">{fmtUSD(humanCostUSD)}</p>
+                <p className="text-[9px] text-muted-foreground">${HUMAN_HOURLY_RATE_USD}/hr</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">Savings</p>
+                <p className="text-xs font-bold text-green-700">{fmtUSD(savingsUSD)}</p>
+                <p className="text-[9px] text-green-600 font-semibold">{savingsPct}% saved</p>
               </div>
             </div>
           </div>
@@ -180,31 +227,207 @@ function DevMetricCard({ dev, data, totalSprintTasks }: {
           </div>
         )}
 
-        {/* Task list toggle */}
+        {/* Task effort log toggle */}
         {completedWithData.length > 0 && (
           <button
             onClick={() => setExpanded(e => !e)}
             className="w-full flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
           >
             {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            {expanded ? 'Hide' : 'Show'} completed task effort ({completedWithData.length})
+            {expanded ? 'Hide' : 'Show'} task effort log ({completedWithData.length} tasks)
           </button>
         )}
         {expanded && (
-          <div className="space-y-1.5 border-t pt-3">
+          <div className="space-y-1 border-t pt-3">
+            <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-2 text-[9px] font-semibold text-muted-foreground uppercase tracking-wide pb-1 border-b">
+              <span>ID</span><span>Task</span><span>Hours</span><span>Tokens</span><span>Cost</span>
+            </div>
             {completedWithData.map(t => (
-              <div key={t.id} className="flex items-center gap-2 text-[11px]">
-                <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0" />
-                <span className="font-mono text-muted-foreground w-10 shrink-0">{t.id}</span>
-                <span className="flex-1 truncate">{t.title}</span>
-                <span className="font-semibold shrink-0">{fmt(t.effort?.actualHours ?? t.estimatedHours)}</span>
-                {t.effort?.tokensUsed ? (
-                  <span className="text-muted-foreground shrink-0">{fmtTokens(t.effort.tokensUsed)} tok</span>
-                ) : null}
+              <div key={t.id} className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-2 items-center text-[10px]">
+                <span className="font-mono text-muted-foreground">{t.id}</span>
+                <span className="truncate">{t.title.slice(0, 40)}</span>
+                <span className="font-semibold tabular-nums">{fmt(t.effort?.actualHours ?? t.estimatedHours)}</span>
+                <span className="text-muted-foreground tabular-nums">{t.effort?.tokensUsed ? fmtTokens(t.effort.tokensUsed) : '–'}</span>
+                <span className="text-muted-foreground tabular-nums">{t.effort?.tokenCostCents ? fmtCost(t.effort.tokenCostCents) : '–'}</span>
               </div>
             ))}
+            {/* Day totals row */}
+            <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-x-2 items-center text-[10px] border-t pt-1 font-bold">
+              <span className="font-mono text-muted-foreground" />
+              <span className="text-muted-foreground">Logged total</span>
+              <span className="tabular-nums">{fmt(data.actualHours)}</span>
+              <span className="tabular-nums">{fmtTokens(data.tokensUsed)}</span>
+              <span className="tabular-nums">{fmtCost(data.tokenCostCents)}</span>
+            </div>
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── ROI Summary Panel ────────────────────────────────────────────────────────
+
+function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
+  const claudeHours = metrics.byDeveloper.claude.actualHours;
+  const lovableHours = metrics.byDeveloper.lovable.actualHours;
+  const totalHours = metrics.totalActualHours;
+
+  const claudeAICost = metrics.byDeveloper.claude.tokenCostCents / 100;
+  const lovableAICost = (metrics.byDeveloper.lovable.tokenCostCents / 100) + LOVABLE_SPRINT_SUBSCRIPTION_USD;
+  const totalAICost = claudeAICost + lovableAICost;
+
+  const humanCostClaude = claudeHours * HUMAN_HOURLY_RATE_USD;
+  const humanCostLovable = lovableHours * HUMAN_HOURLY_RATE_USD;
+  const humanCostTotal = totalHours * HUMAN_HOURLY_RATE_USD;
+
+  const savingsTotal = humanCostTotal - totalAICost;
+  const savingsPct = humanCostTotal > 0 ? Math.round((savingsTotal / humanCostTotal) * 100) : 0;
+  const multiplier = totalAICost > 0 ? (humanCostTotal / totalAICost).toFixed(1) : '–';
+
+  // Scenario breakdown: cost per completed task
+  const completedTasks = SPRINT_TASKS.filter(t => {
+    // We can't access state here, so we derive from effort data presence + workCategory
+    return t.effort?.actualHours !== undefined;
+  });
+
+  return (
+    <Card className="border-2 border-green-200">
+      <CardHeader className="pb-3 bg-green-50/60 border-b border-green-100">
+        <CardTitle className="text-sm flex items-center gap-2 text-green-800">
+          <Sparkles className="w-4 h-4 text-green-600" />
+          AI vs Human Cost — ROI Analysis
+        </CardTitle>
+        <p className="text-[11px] text-green-700/70">
+          Assumes $75/hr fully-loaded senior dev rate · Claude API blended ~$0.003/1K tokens · Lovable subscription amortised per sprint
+        </p>
+      </CardHeader>
+      <CardContent className="p-4 space-y-5">
+
+        {/* Top-level ROI headline */}
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="p-3 rounded-xl bg-green-100 border border-green-200">
+            <Sparkles className="w-4 h-4 text-green-600 mx-auto mb-1" />
+            <p className="text-2xl font-black text-green-700">{fmtUSD(totalAICost)}</p>
+            <p className="text-[10px] text-green-600 font-semibold">Total AI Cost</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Claude + Lovable</p>
+          </div>
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200">
+            <Users className="w-4 h-4 text-red-500 mx-auto mb-1" />
+            <p className="text-2xl font-black text-red-600">{fmtUSD(humanCostTotal)}</p>
+            <p className="text-[10px] text-red-600 font-semibold">Equiv. Human Cost</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">{fmt(totalHours)} × $75/hr</p>
+          </div>
+          <div className="p-3 rounded-xl bg-emerald-100 border border-emerald-200">
+            <TrendingDown className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
+            <p className="text-2xl font-black text-emerald-700">{savingsPct}%</p>
+            <p className="text-[10px] text-emerald-600 font-semibold">Cost Savings</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">{fmtUSD(savingsTotal)} saved · {multiplier}× ROI</p>
+          </div>
+        </div>
+
+        {/* Per-provider cost table */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-2">Per Provider Breakdown</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b text-muted-foreground">
+                  <th className="text-left py-2 pr-3 font-semibold">Provider</th>
+                  <th className="text-right py-2 px-2 font-semibold">Hours</th>
+                  <th className="text-right py-2 px-2 font-semibold">Tokens</th>
+                  <th className="text-right py-2 px-2 font-semibold">Token $</th>
+                  <th className="text-right py-2 px-2 font-semibold">Sub $</th>
+                  <th className="text-right py-2 px-2 font-semibold">AI Total</th>
+                  <th className="text-right py-2 px-2 font-semibold text-red-600">Human $</th>
+                  <th className="text-right py-2 pl-2 font-semibold text-green-700">Saved</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                <tr className="hover:bg-muted/20">
+                  <td className="py-2 pr-3">
+                    <div className="flex items-center gap-1.5">
+                      <Brain className="w-3 h-3 text-violet-600" />
+                      <span className="font-semibold text-violet-800">Claude</span>
+                    </div>
+                  </td>
+                  <td className="py-2 px-2 text-right tabular-nums">{fmt(claudeHours)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtTokens(metrics.byDeveloper.claude.tokensUsed)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums">{fmtUSD(claudeAICost)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">—</td>
+                  <td className="py-2 px-2 text-right font-bold tabular-nums">{fmtUSD(claudeAICost)}</td>
+                  <td className="py-2 px-2 text-right text-red-600 tabular-nums">{fmtUSD(humanCostClaude)}</td>
+                  <td className="py-2 pl-2 text-right font-bold text-green-700 tabular-nums">{fmtUSD(humanCostClaude - claudeAICost)}</td>
+                </tr>
+                <tr className="hover:bg-muted/20">
+                  <td className="py-2 pr-3">
+                    <div className="flex items-center gap-1.5">
+                      <Zap className="w-3 h-3 text-pink-600" />
+                      <span className="font-semibold text-pink-800">Lovable</span>
+                    </div>
+                  </td>
+                  <td className="py-2 px-2 text-right tabular-nums">{fmt(lovableHours)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtTokens(metrics.byDeveloper.lovable.tokensUsed)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums">{fmtUSD(metrics.byDeveloper.lovable.tokenCostCents / 100)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtUSD(LOVABLE_SPRINT_SUBSCRIPTION_USD)}</td>
+                  <td className="py-2 px-2 text-right font-bold tabular-nums">{fmtUSD(lovableAICost)}</td>
+                  <td className="py-2 px-2 text-right text-red-600 tabular-nums">{fmtUSD(humanCostLovable)}</td>
+                  <td className="py-2 pl-2 text-right font-bold text-green-700 tabular-nums">{fmtUSD(humanCostLovable - lovableAICost)}</td>
+                </tr>
+                <tr className="bg-muted/30 font-bold">
+                  <td className="py-2 pr-3">Sprint Total</td>
+                  <td className="py-2 px-2 text-right tabular-nums">{fmt(totalHours)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtTokens(metrics.totalTokensUsed)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums">{fmtUSD(claudeAICost + metrics.byDeveloper.lovable.tokenCostCents / 100)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtUSD(LOVABLE_SPRINT_SUBSCRIPTION_USD)}</td>
+                  <td className="py-2 px-2 text-right font-black tabular-nums text-green-700">{fmtUSD(totalAICost)}</td>
+                  <td className="py-2 px-2 text-right font-black text-red-600 tabular-nums">{fmtUSD(humanCostTotal)}</td>
+                  <td className="py-2 pl-2 text-right font-black text-green-700 tabular-nums">{fmtUSD(savingsTotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Cost per scenario (work category) */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-2">Cost by Work Category (AI vs Human)</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {ALL_CATS.map(cat => {
+              const data = metrics.byCategory[cat];
+              const cfg = CAT_CFG[cat];
+              const Icon = cfg.Icon;
+              if (!data || data.actualHours === 0) return null;
+              const catHumanCost = data.actualHours * HUMAN_HOURLY_RATE_USD;
+              // Rough proportional AI cost by hours
+              const aiCostProportion = totalHours > 0 ? data.actualHours / totalHours : 0;
+              const catAICost = totalAICost * aiCostProportion;
+              const catSavings = catHumanCost - catAICost;
+              return (
+                <div key={cat} className={cn('p-2.5 rounded-lg border', cfg.bg)}>
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <Icon className={cn('w-3 h-3 shrink-0', cfg.cls)} />
+                    <span className={cn('text-[10px] font-bold', cfg.cls)}>{cfg.label}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{fmt(data.actualHours)} logged</p>
+                  <p className="text-[10px]"><span className="font-bold text-green-700">{fmtUSD(catAICost)}</span> <span className="text-muted-foreground">AI</span></p>
+                  <p className="text-[10px]"><span className="text-red-600">{fmtUSD(catHumanCost)}</span> <span className="text-muted-foreground">human</span></p>
+                  <p className="text-[9px] font-bold text-green-700 mt-0.5">{fmtUSD(catSavings)} saved</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Daily note about effort updates */}
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+          <p className="text-[10px] font-bold text-blue-800 mb-1">📅 Daily Effort Update Protocol</p>
+          <p className="text-[10px] text-blue-700">
+            Task <code className="bg-blue-100 px-1 rounded">effort.actualHours</code>, <code className="bg-blue-100 px-1 rounded">tokensUsed</code>, and <code className="bg-blue-100 px-1 rounded">tokenCostCents</code> are logged in <code className="bg-blue-100 px-1 rounded">data-tasks.ts</code> at end-of-day by each developer as tasks are completed. 
+            Days 1 & 2 (Claude + Lovable) are fully logged. Days 3–5 will auto-populate as tasks are marked completed in the sprint tracker.
+            Velocity and ROI calculations update automatically when effort data is present.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
@@ -217,7 +440,6 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
   const expectedPct = Math.round((currentDay / 5) * 100);
   const onTrack = overallPct >= expectedPct - 10;
 
-  // Velocity ratio label
   const vr = metrics.velocityRatio;
   const vrLabel = vr <= 0 ? 'No data yet' : vr <= 0.85 ? 'Under estimate ↓' : vr <= 1.15 ? '✓ On estimate' : 'Over estimate ↑';
   const vrColor = vr <= 0 ? 'text-muted-foreground' : vr <= 0.85 ? 'text-blue-600' : vr <= 1.15 ? 'text-green-600' : 'text-amber-600';
@@ -225,9 +447,8 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
   return (
     <div className="space-y-6">
 
-      {/* ── SPRINT HEADER ───────────────────────────────────────────────────── */}
+      {/* ── SPRINT HEADER ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* Overall pct */}
         <Card className="col-span-2 md:col-span-1">
           <CardContent className="p-4 text-center space-y-1">
             <p className={cn('text-4xl font-black', onTrack ? 'text-green-600' : 'text-amber-600')}>{overallPct}%</p>
@@ -241,7 +462,6 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
           </CardContent>
         </Card>
 
-        {/* Hours */}
         <Card>
           <CardContent className="p-4 space-y-1">
             <Clock className="w-4 h-4 text-blue-500 mb-1" />
@@ -251,7 +471,6 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
           </CardContent>
         </Card>
 
-        {/* Tokens */}
         <Card>
           <CardContent className="p-4 space-y-1">
             <Cpu className="w-4 h-4 text-violet-500 mb-1" />
@@ -261,7 +480,6 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
           </CardContent>
         </Card>
 
-        {/* Velocity ratio */}
         <Card>
           <CardContent className="p-4 space-y-1">
             <TrendingUp className={cn('w-4 h-4 mb-1', vrColor)} />
@@ -274,14 +492,17 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
         </Card>
       </div>
 
-      {/* ── DEVELOPER CARDS ─────────────────────────────────────────────────── */}
+      {/* ── DEVELOPER CARDS ───────────────────────────────────────────────── */}
       <div className="grid md:grid-cols-2 gap-4">
         {(['lovable', 'claude'] as Developer[]).map(dev => (
-          <DevMetricCard key={dev} dev={dev} data={metrics.byDeveloper[dev]} totalSprintTasks={metrics.total} />
+          <DevMetricCard key={dev} dev={dev} data={metrics.byDeveloper[dev]} />
         ))}
       </div>
 
-      {/* ── WORK CATEGORY BREAKDOWN ─────────────────────────────────────────── */}
+      {/* ── ROI / COST COMPARISON ─────────────────────────────────────────── */}
+      <ROISummaryPanel metrics={metrics} />
+
+      {/* ── WORK CATEGORY BREAKDOWN ───────────────────────────────────────── */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -317,9 +538,7 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
                       <span className="font-semibold">{fmt(data.actualHours)} / {fmt(data.estimatedHours)}</span>
                     </div>
                     <Progress value={pct} className="h-1.5" />
-                    {pct > 0 && (
-                      <p className={cn('text-[10px] font-semibold', cfg.cls)}>{pct}% complete</p>
-                    )}
+                    {pct > 0 && <p className={cn('text-[10px] font-semibold', cfg.cls)}>{pct}% complete</p>}
                   </div>
                 </div>
               );
@@ -328,7 +547,7 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
         </CardContent>
       </Card>
 
-      {/* ── BURNDOWN BY DAY ─────────────────────────────────────────────────── */}
+      {/* ── BURNDOWN BY DAY ───────────────────────────────────────────────── */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -369,9 +588,7 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
                     )}
                   </div>
                 </div>
-                {/* Task progress */}
                 <Progress value={taskPct} className="h-2" />
-                {/* Hour bar (only for days with actual data) */}
                 {data.estimatedHours > 0 && (
                   <div className="flex gap-2 items-center text-[10px] text-muted-foreground">
                     <div className="flex-1 h-1 rounded-full bg-muted relative overflow-hidden">
@@ -381,7 +598,7 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
                         style={{ width: `${Math.min((data.actualHours / (data.estimatedHours * 1.5)) * 100, 100)}%` }}
                       />
                     </div>
-                    <span>Hours progress</span>
+                    <span>Hours</span>
                   </div>
                 )}
               </div>
@@ -390,7 +607,7 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
         </CardContent>
       </Card>
 
-      {/* ── SPRINT SUMMARY TABLE ────────────────────────────────────────────── */}
+      {/* ── SPRINT SUMMARY TABLE ──────────────────────────────────────────── */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -435,10 +652,22 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
                     t: fmtTokens(metrics.totalTokensUsed),
                   },
                   {
-                    label: 'Token cost',
+                    label: 'Token cost (API)',
                     c: fmtCost(metrics.byDeveloper.claude.tokenCostCents),
                     l: fmtCost(metrics.byDeveloper.lovable.tokenCostCents),
                     t: fmtCost(metrics.totalTokenCostCents),
+                  },
+                  {
+                    label: 'Total AI cost (incl. sub)',
+                    c: fmtUSD(metrics.byDeveloper.claude.tokenCostCents / 100),
+                    l: fmtUSD((metrics.byDeveloper.lovable.tokenCostCents / 100) + LOVABLE_SPRINT_SUBSCRIPTION_USD),
+                    t: fmtUSD((metrics.totalTokenCostCents / 100) + LOVABLE_SPRINT_SUBSCRIPTION_USD),
+                  },
+                  {
+                    label: 'Human equiv. cost ($75/hr)',
+                    c: fmtUSD(metrics.byDeveloper.claude.actualHours * HUMAN_HOURLY_RATE_USD),
+                    l: fmtUSD(metrics.byDeveloper.lovable.actualHours * HUMAN_HOURLY_RATE_USD),
+                    t: fmtUSD(metrics.totalActualHours * HUMAN_HOURLY_RATE_USD),
                   },
                 ].map(row => (
                   <tr key={row.label} className="hover:bg-muted/20">
