@@ -457,8 +457,10 @@ export const SprintPlanningView: React.FC<SprintPlanningViewProps> = ({
               Sprint Plan · Feb 17–21, 2026
             </span>
           </div>
-          <h2 className="text-base font-bold">GenieSuite 5-Day Sprint</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Full planning view — all days, all roles, all dependencies</p>
+          <h2 className="text-base font-bold">GenieSuite 5-Day Sprint — Project Plan</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            📋 This is the live version of <span className="font-mono font-semibold">GENIESUITE_PROJECT_PLAN.csv</span> — all 41 tasks, all days, all assignees, all dependencies
+          </p>
         </div>
         <div className="flex items-center gap-3 text-xs flex-wrap">
           {/* Sprint health pills */}
