@@ -1,17 +1,25 @@
-// Sprint Tracker — DayPageView
-// One scrollable page per sprint day:
-//   [1] Day standup  — Claude | Lovable side-by-side, compact read-only + add button
-//   [2] Tasks        — Claude col | Lovable col, tasks grouped by status (inline, no card-in-card)
-//   [3] Handoffs     — compact inline rows for this day only
+/**
+ * DayPageView — Jira-style Sprint Board for one day
+ *
+ * Jira mapping:
+ *   Day         = Epic / Sprint
+ *   Task (L/C)  = Story / Issue
+ *   Swimlane    = Assignee (Claude | Lovable)
+ *   Columns     = Backlog | To Do | In Progress | Done
+ *   Handoffs    = Issue Links (blocks / is blocked by)
+ *   Standup     = Sprint Ceremony / Activity feed
+ *   PO Gate     = Release gate / acceptance criteria
+ */
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import {
-  Brain, Zap, CheckCircle2, Clock, AlertTriangle, ArrowRight,
-  ArrowLeftRight, Ban, Save, Plus, ChevronDown, ChevronRight,
-  FileCode, XCircle,
+  Brain, Zap, CheckCircle2, Clock, AlertTriangle,
+  ArrowRight, Ban, Save, Plus, ChevronDown, ChevronRight,
+  FileCode, Link2, MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SPRINT_TASKS } from './data-tasks';
@@ -25,42 +33,41 @@ const DEV = {
   claude: {
     label: 'Claude', role: 'Tech Lead',
     Icon: Brain,
-    accent: 'border-violet-400',
     headerBg: 'bg-violet-50 dark:bg-violet-950/30',
     iconCls: 'text-violet-600',
-    badgeCls: 'bg-violet-100 text-violet-700 border-violet-300',
-    colBg: 'bg-violet-50/30',
-    colBorder: 'border-violet-200',
-    taskBorder: 'border-l-violet-400',
+    rowAccent: 'border-l-violet-500',
+    swimBg: 'bg-violet-50/20 dark:bg-violet-950/10',
+    swimBorder: 'border-violet-200 dark:border-violet-800',
+    tagCls: 'bg-violet-100 text-violet-800 border-violet-300',
   },
   lovable: {
     label: 'Lovable', role: 'Dev / UI',
     Icon: Zap,
-    accent: 'border-pink-400',
     headerBg: 'bg-pink-50 dark:bg-pink-950/30',
     iconCls: 'text-pink-600',
-    badgeCls: 'bg-pink-100 text-pink-700 border-pink-300',
-    colBg: 'bg-pink-50/30',
-    colBorder: 'border-pink-200',
-    taskBorder: 'border-l-pink-400',
+    rowAccent: 'border-l-pink-500',
+    swimBg: 'bg-pink-50/20 dark:bg-pink-950/10',
+    swimBorder: 'border-pink-200 dark:border-pink-800',
+    tagCls: 'bg-pink-100 text-pink-800 border-pink-300',
   },
 } as const;
 
-const STATUS_CFG: Record<TaskStatus, { label: string; dot: string; textCls: string }> = {
-  pending:      { label: 'Todo',        dot: 'bg-muted-foreground/30', textCls: 'text-muted-foreground' },
-  'in-progress':{ label: 'In Progress', dot: 'bg-blue-500',            textCls: 'text-blue-700' },
-  completed:    { label: 'Done',        dot: 'bg-green-500',           textCls: 'text-green-700' },
-  rejected:     { label: 'Skipped',     dot: 'bg-red-400',             textCls: 'text-red-600' },
+// Jira-style column definitions
+const COLUMNS: { status: TaskStatus; label: string; dotCls: string; headerCls: string }[] = [
+  { status: 'pending',     label: 'To Do',       dotCls: 'bg-muted-foreground/30', headerCls: 'text-muted-foreground' },
+  { status: 'in-progress', label: 'In Progress',  dotCls: 'bg-blue-500',            headerCls: 'text-blue-700' },
+  { status: 'completed',   label: 'Done',         dotCls: 'bg-green-500',           headerCls: 'text-green-700' },
+  { status: 'rejected',    label: 'Won\'t Do',    dotCls: 'bg-red-400',             headerCls: 'text-red-600' },
+];
+
+const PRIORITY_DOT: Record<string, string> = {
+  critical: 'bg-red-500',
+  high:     'bg-orange-400',
+  medium:   'bg-yellow-400',
+  low:      'bg-muted-foreground/30',
 };
 
-const PRIORITY_BORDER: Record<string, string> = {
-  critical: 'border-l-red-500',
-  high:     'border-l-orange-400',
-  medium:   'border-l-yellow-400',
-  low:      'border-l-border',
-};
-
-const HANDOFF_STATUS: Record<HandoffStatus, { label: string; cls: string; dot: string }> = {
+const HANDOFF_STATUS_CFG: Record<HandoffStatus, { label: string; cls: string; dot: string }> = {
   pending:      { label: 'Waiting', cls: 'text-amber-700 bg-amber-50 border-amber-200', dot: 'bg-amber-400' },
   ready:        { label: 'Ready',   cls: 'text-blue-700 bg-blue-50 border-blue-200',   dot: 'bg-blue-400'  },
   acknowledged: { label: 'Done',    cls: 'text-green-700 bg-green-50 border-green-200', dot: 'bg-green-400' },
@@ -85,19 +92,9 @@ function getUnmetDeps(taskId: string, getTaskStatus: (id: string) => TaskStatus)
   });
 }
 
-// ─── Section heading ──────────────────────────────────────────────────────────
+// ─── Jira Issue Card (flat row, no nesting) ───────────────────────────────────
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
-      {children}
-    </p>
-  );
-}
-
-// ─── Inline task row (flat, no card-in-card) ─────────────────────────────────
-
-function TaskRow({
+function IssueRow({
   taskId, getTaskStatus, onStatusChange, taskOverrides,
 }: {
   taskId: string;
@@ -107,139 +104,168 @@ function TaskRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const task = SPRINT_TASKS.find(t => t.id === taskId);
-
   if (!task) return null;
 
-  const status = getTaskStatus(taskId);
-  const sc = STATUS_CFG[status];
-  const isDone = status === 'completed';
-  const isWIP = status === 'in-progress';
-  const unmet = getUnmetDeps(taskId, getTaskStatus);
-  const isGated = unmet.length > 0 && !isDone;
-  const note = taskOverrides[taskId]?.note;
-  const findings = DAY1_FINDINGS[taskId];
+  const status    = getTaskStatus(taskId);
+  const isDone    = status === 'completed';
+  const isWIP     = status === 'in-progress';
+  const unmet     = getUnmetDeps(taskId, getTaskStatus);
+  const isGated   = unmet.length > 0 && !isDone;
+  const note      = taskOverrides[taskId]?.note;
+  const findings  = DAY1_FINDINGS[taskId];
+  const dev       = DEV[task.developer];
 
   return (
     <div className={cn(
-      'border-l-4 rounded-r-lg bg-card transition-all',
-      isGated ? 'border-l-amber-400 opacity-80' : PRIORITY_BORDER[task.priority],
-      isDone && 'opacity-60',
+      'border-l-[3px] bg-card rounded-r border border-l-0 border-border transition-all',
+      isGated ? 'border-l-amber-400 opacity-85' : dev.rowAccent,
+      isDone && 'opacity-55',
     )}>
-      {/* Main row */}
-      <div className="flex items-center gap-2.5 px-3 py-2.5">
-        {/* Status dot */}
-        <span className={cn('w-2 h-2 rounded-full shrink-0', sc.dot)} />
+      {/* Issue row */}
+      <div className="flex items-center gap-2 px-3 py-2">
+        {/* Priority dot (Jira-style) */}
+        <span
+          title={`Priority: ${task.priority}`}
+          className={cn('w-2 h-2 rounded-sm shrink-0', PRIORITY_DOT[task.priority])}
+        />
 
-        {/* ID */}
-        <span className="text-[10px] font-mono text-muted-foreground w-11 shrink-0">{task.id}</span>
+        {/* Issue key (e.g. C-201) */}
+        <span className="text-[10px] font-mono text-muted-foreground w-12 shrink-0 select-all">
+          {task.id}
+        </span>
 
-        {/* Title */}
+        {/* Summary / Title */}
         <span className={cn(
-          'flex-1 text-sm font-medium min-w-0 truncate',
-          isDone && 'line-through text-muted-foreground',
+          'flex-1 text-sm min-w-0 truncate',
+          isDone ? 'line-through text-muted-foreground' : 'text-foreground',
         )}>
           {task.title}
         </span>
 
-        {/* Module badge */}
-        <Badge variant="outline" className="text-[9px] px-1.5 py-0 hidden sm:flex shrink-0">
+        {/* Epic label (module) */}
+        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border hidden md:inline shrink-0">
           {task.module}
-        </Badge>
+        </span>
 
-        {/* Hours */}
-        <span className="text-[10px] text-muted-foreground shrink-0 hidden md:inline">
+        {/* Story points */}
+        <span className="text-[10px] text-muted-foreground w-6 text-right shrink-0 hidden sm:inline" title="Estimated hours">
           {task.estimatedHours}h
         </span>
 
         {/* Status actions */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0 ml-1">
           <button
             onClick={() => onStatusChange(task.id, isDone ? 'pending' : 'completed')}
+            title="Mark Done"
             className={cn(
-              'w-6 h-6 rounded flex items-center justify-center transition-colors border',
+              'w-6 h-6 rounded flex items-center justify-center border transition-colors',
               isDone
                 ? 'bg-green-500 border-green-600 text-white'
-                : 'border-border hover:bg-green-50 hover:border-green-300 text-muted-foreground hover:text-green-600',
+                : 'border-border hover:bg-green-50 hover:border-green-400 text-muted-foreground',
             )}
-            title="Mark done"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => onStatusChange(task.id, isWIP ? 'pending' : 'in-progress')}
-            disabled={isGated}
+            disabled={isGated && !isWIP}
+            title={isGated ? `Blocked by: ${unmet.join(', ')}` : 'Set In Progress'}
             className={cn(
-              'w-6 h-6 rounded flex items-center justify-center transition-colors border',
+              'w-6 h-6 rounded flex items-center justify-center border transition-colors',
               isWIP
                 ? 'bg-blue-500 border-blue-600 text-white'
-                : 'border-border hover:bg-blue-50 hover:border-blue-300 text-muted-foreground hover:text-blue-600',
-              isGated && 'opacity-40 cursor-not-allowed',
+                : 'border-border hover:bg-blue-50 hover:border-blue-400 text-muted-foreground',
+              isGated && !isWIP && 'opacity-35 cursor-not-allowed',
             )}
-            title="Mark in progress"
           >
             <Clock className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setExpanded(e => !e)}
-            className="w-6 h-6 rounded flex items-center justify-center border border-border hover:bg-muted transition-colors text-muted-foreground"
             title="Details"
+            className="w-6 h-6 rounded flex items-center justify-center border border-border hover:bg-muted transition-colors text-muted-foreground"
           >
             {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
 
-      {/* Gate warning inline */}
+      {/* Blocker pill — inline like Jira */}
       {isGated && (
-        <div className="flex items-center gap-1.5 px-3 pb-2 text-[10px] text-amber-800">
-          <Ban className="w-3 h-3 text-amber-600 shrink-0" />
-          Gated by: {unmet.join(', ')}
+        <div className="flex items-center gap-1 px-3 pb-1.5 text-[10px] text-amber-800">
+          <Ban className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+          <span>Blocked by: </span>
+          {unmet.map(dep => (
+            <span key={dep} className="font-mono bg-amber-100 border border-amber-300 px-1 rounded">{dep}</span>
+          ))}
         </div>
       )}
 
-      {/* Override note */}
+      {/* Inline note (collapsed) */}
       {note && !expanded && (
-        <p className="px-3 pb-2 text-[10px] text-muted-foreground italic line-clamp-1">{note}</p>
+        <p className="px-3 pb-1.5 text-[10px] text-muted-foreground italic truncate">{note}</p>
       )}
 
-      {/* Expanded details */}
+      {/* Expanded — Jira issue detail panel */}
       {expanded && (
-        <div className="px-3 pb-3 pt-1 space-y-2 border-t border-border/30 bg-muted/10 text-xs">
-          {note && (
-            <p className="italic text-muted-foreground">{note}</p>
-          )}
-          <p><span className="font-semibold">Acceptance: </span>{task.acceptanceCriteria}</p>
+        <div className="border-t border-border/40 bg-muted/5 px-3 py-2.5 space-y-2 text-xs">
+          {note && <p className="italic text-muted-foreground">{note}</p>}
+
+          <div>
+            <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+              Acceptance Criteria
+            </span>
+            <p className="mt-0.5 text-foreground">{task.acceptanceCriteria}</p>
+          </div>
+
           {task.notes && (
-            <p className="text-amber-700"><span className="font-semibold">Note: </span>{task.notes}</p>
-          )}
-          {task.filesInvolved.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {task.filesInvolved.map(f => (
-                <span key={f} className="inline-flex items-center gap-0.5 bg-muted px-1.5 py-0.5 rounded font-mono text-[9px] border border-border/50">
-                  <FileCode className="w-2.5 h-2.5" />{f.split('/').pop()}
-                </span>
-              ))}
+            <div className="flex items-start gap-1.5 px-2 py-1.5 bg-amber-50 border border-amber-200 rounded text-amber-800">
+              <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
+              <p>{task.notes}</p>
             </div>
           )}
-          {findings && (
-            <div className="space-y-1 pt-1">
-              <p className="font-semibold text-muted-foreground uppercase tracking-wide text-[9px]">
-                Findings ({findings.findings.length})
-              </p>
-              {findings.findings.slice(0, 3).map(f => (
-                <div key={f.id} className="flex items-start gap-2">
-                  <span className={cn(
-                    'text-[9px] font-bold uppercase px-1 py-0.5 rounded shrink-0',
-                    f.status === 'fixed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700',
-                  )}>
-                    {f.status === 'fixed' ? '✓' : '●'}
+
+          {task.filesInvolved.length > 0 && (
+            <div>
+              <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                Files
+              </span>
+              <div className="flex flex-wrap gap-1 mt-0.5">
+                {task.filesInvolved.map(f => (
+                  <span key={f} className="inline-flex items-center gap-0.5 bg-muted border border-border/50 px-1.5 py-0.5 rounded font-mono text-[9px]">
+                    <FileCode className="w-2.5 h-2.5" />
+                    {f.split('/').pop()}
                   </span>
-                  <span className="text-muted-foreground">{f.issue}</span>
-                </div>
-              ))}
-              {findings.findings.length > 3 && (
-                <p className="text-muted-foreground">+{findings.findings.length - 3} more…</p>
-              )}
+                ))}
+              </div>
+            </div>
+          )}
+
+          {findings && findings.findings.length > 0 && (
+            <div>
+              <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                Findings ({findings.findings.length})
+              </span>
+              <div className="mt-0.5 space-y-0.5">
+                {findings.findings.slice(0, 4).map(f => (
+                  <div key={f.id} className="flex items-center gap-2">
+                    <span className={cn(
+                      'w-1.5 h-1.5 rounded-full shrink-0',
+                      f.status === 'fixed' ? 'bg-green-500' : 'bg-amber-500',
+                    )} />
+                    <span className="text-muted-foreground truncate">{f.issue}</span>
+                    <span className={cn(
+                      'text-[9px] shrink-0 ml-auto',
+                      f.status === 'fixed' ? 'text-green-600' : 'text-amber-600',
+                    )}>
+                      {f.status}
+                    </span>
+                  </div>
+                ))}
+                {findings.findings.length > 4 && (
+                  <p className="text-muted-foreground text-[10px]">+{findings.findings.length - 4} more</p>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -248,142 +274,149 @@ function TaskRow({
   );
 }
 
-// ─── Developer column (tasks grouped by status) ───────────────────────────────
+// ─── Jira Swimlane row (one per developer) ────────────────────────────────────
 
-function DevColumn({
-  dev, dayTasks, getTaskStatus, onStatusChange, taskOverrides,
+function SwimlaneRow({
+  dev, dayTaskIds, getTaskStatus, onStatusChange, taskOverrides,
 }: {
   dev: Developer;
-  dayTasks: string[];  // task IDs for this dev on this day
+  dayTaskIds: string[];
   getTaskStatus: (id: string) => TaskStatus;
   onStatusChange: (id: string, status: TaskStatus) => void;
   taskOverrides: Record<string, { status: TaskStatus; note?: string }>;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
   const cfg = DEV[dev];
   const Icon = cfg.Icon;
 
-  const statusOrder: TaskStatus[] = ['in-progress', 'pending', 'completed', 'rejected'];
-  const grouped = statusOrder.map(s => ({
-    status: s,
-    ids: dayTasks.filter(id => getTaskStatus(id) === s),
-  })).filter(g => g.ids.length > 0);
+  const done  = dayTaskIds.filter(id => getTaskStatus(id) === 'completed').length;
+  const total = dayTaskIds.length;
 
-  const total = dayTasks.length;
-  const done  = dayTasks.filter(id => getTaskStatus(id) === 'completed').length;
-  const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+  // Group by status for each column
+  const byStatus = (s: TaskStatus) => dayTaskIds.filter(id => getTaskStatus(id) === s);
 
   return (
-    <div className={cn('rounded-xl border-2 overflow-hidden flex flex-col', cfg.accent)}>
-      {/* Column header */}
-      <div className={cn('flex items-center gap-2.5 px-4 py-3', cfg.headerBg)}>
-        <Icon className={cn('w-4 h-4 shrink-0', cfg.iconCls)} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold leading-none">{cfg.label}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{cfg.role}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className={cn(
-            'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
-            pct === 100 ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground',
-          )}>
-            {done}/{total}
-          </span>
-          {pct === 100 && <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
-        </div>
-      </div>
-
-      {/* Tasks */}
-      <div className="flex-1 p-3 space-y-3 bg-card">
-        {dayTasks.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-6">No tasks this day</p>
+    <div className={cn('rounded-lg border', cfg.swimBorder)}>
+      {/* Swimlane header — assignee row like Jira */}
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className={cn(
+          'w-full flex items-center gap-2.5 px-3 py-2 rounded-t-lg text-left transition-colors hover:bg-muted/30',
+          cfg.headerBg,
         )}
-        {grouped.map(({ status, ids }) => (
-          <div key={status}>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span className={cn('w-1.5 h-1.5 rounded-full', STATUS_CFG[status].dot)} />
-              <span className={cn('text-[10px] font-semibold uppercase tracking-wide', STATUS_CFG[status].textCls)}>
-                {STATUS_CFG[status].label}
-              </span>
-              <span className="text-[10px] text-muted-foreground">({ids.length})</span>
-            </div>
-            <div className="space-y-1.5 pl-1">
-              {ids.map(id => (
-                <TaskRow
-                  key={id}
-                  taskId={id}
-                  getTaskStatus={getTaskStatus}
-                  onStatusChange={onStatusChange}
-                  taskOverrides={taskOverrides}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Compact standup card ─────────────────────────────────────────────────────
-
-function StandupCard({ dev, entry }: { dev: Developer; entry?: StandupEntry }) {
-  const cfg = DEV[dev];
-  const Icon = cfg.Icon;
-
-  if (!entry) {
-    return (
-      <div className={cn(
-        'rounded-lg border-2 border-dashed px-4 py-4 flex items-center gap-2 text-xs text-muted-foreground',
-        dev === 'claude' ? 'border-violet-200' : 'border-pink-200',
-      )}>
-        <Icon className={cn('w-4 h-4 opacity-30', cfg.iconCls)} />
-        No standup logged yet
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn('rounded-lg border-2 overflow-hidden', cfg.accent)}>
-      <div className={cn('flex items-center gap-2 px-3 py-2', cfg.headerBg)}>
-        <Icon className={cn('w-3.5 h-3.5', cfg.iconCls)} />
-        <span className="text-xs font-bold">{cfg.label}</span>
-        <span className="text-[10px] text-muted-foreground ml-auto">
-          {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      >
+        {collapsed
+          ? <ChevronRight className={cn('w-3.5 h-3.5 shrink-0', cfg.iconCls)} />
+          : <ChevronDown  className={cn('w-3.5 h-3.5 shrink-0', cfg.iconCls)} />
+        }
+        <Icon className={cn('w-3.5 h-3.5 shrink-0', cfg.iconCls)} />
+        <span className="text-sm font-semibold">{cfg.label}</span>
+        <span className="text-xs text-muted-foreground">({cfg.role})</span>
+        <span className={cn(
+          'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full border',
+          cfg.tagCls,
+        )}>
+          {done}/{total}
         </span>
+      </button>
+
+      {!collapsed && (
+        <div className={cn('rounded-b-lg', cfg.swimBg)}>
+          {/* Column headers */}
+          <div className="grid grid-cols-4 border-b border-border/40">
+            {COLUMNS.map(col => {
+              const count = byStatus(col.status).length;
+              return (
+                <div key={col.status} className="px-3 py-1.5 flex items-center gap-1.5">
+                  <span className={cn('w-2 h-2 rounded-full shrink-0', col.dotCls)} />
+                  <span className={cn('text-[10px] font-semibold uppercase tracking-wide', col.headerCls)}>
+                    {col.label}
+                  </span>
+                  {count > 0 && (
+                    <span className="text-[9px] text-muted-foreground ml-auto">({count})</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Issues in columns */}
+          <div className="grid grid-cols-4 divide-x divide-border/40 min-h-[48px]">
+            {COLUMNS.map(col => {
+              const ids = byStatus(col.status);
+              return (
+                <div key={col.status} className="p-2 space-y-1.5">
+                  {ids.length === 0 ? (
+                    <div className="h-8 flex items-center justify-center">
+                      <span className="text-[10px] text-muted-foreground/40">—</span>
+                    </div>
+                  ) : (
+                    ids.map(id => (
+                      <IssueRow
+                        key={id}
+                        taskId={id}
+                        getTaskStatus={getTaskStatus}
+                        onStatusChange={onStatusChange}
+                        taskOverrides={taskOverrides}
+                      />
+                    ))
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Standup entry (activity-feed style, like Jira comments) ─────────────────
+
+function StandupEntry({ entry, dev }: { entry: StandupEntry; dev: Developer }) {
+  const cfg = DEV[dev];
+  const Icon = cfg.Icon;
+  return (
+    <div className="flex gap-2.5">
+      {/* Avatar */}
+      <div className={cn('w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 border', cfg.tagCls)}>
+        <Icon className="w-3 h-3" />
       </div>
-      <div className="px-3 py-2.5 space-y-1.5 bg-card text-xs">
-        {entry.yesterday && (
-          <div className="flex gap-1.5">
-            <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 shrink-0" />
-            <span className="text-foreground leading-snug">{entry.yesterday}</span>
-          </div>
-        )}
-        {entry.today && (
-          <div className="flex gap-1.5">
-            <Clock className="w-3 h-3 text-blue-500 mt-0.5 shrink-0" />
-            <span className="text-foreground leading-snug">{entry.today}</span>
-          </div>
-        )}
-        {entry.blockers && entry.blockers !== 'None' && (
-          <div className="flex gap-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mt-1">
-            <AlertTriangle className="w-3 h-3 text-amber-600 mt-0.5 shrink-0" />
-            <span className="text-amber-900 leading-snug">{entry.blockers}</span>
-          </div>
-        )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs font-semibold">{cfg.label}</span>
+          <span className="text-[10px] text-muted-foreground">
+            {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+        <div className="space-y-1 text-xs">
+          {entry.yesterday && (
+            <p><span className="text-muted-foreground">✓ Done:</span> {entry.yesterday}</p>
+          )}
+          {entry.today && (
+            <p><span className="text-muted-foreground">→ Now:</span> {entry.today}</p>
+          )}
+          {entry.blockers && entry.blockers !== 'None' && (
+            <p className="text-amber-700 flex gap-1 items-start">
+              <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
+              {entry.blockers}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Mini add-standup form ────────────────────────────────────────────────────
+// ─── Add standup inline form ──────────────────────────────────────────────────
 
-function AddStandupInline({ day, dev, onSave }: {
+function AddStandupForm({ day, dev, onSave }: {
   day: number; dev: Developer; onSave: (e: Omit<StandupEntry, 'createdAt'>) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [completed, setCompleted] = useState('');
-  const [working, setWorking] = useState('');
-  const [blockers, setBlockers] = useState('');
+  const [working,   setWorking]   = useState('');
+  const [blockers,  setBlockers]  = useState('');
   const cfg = DEV[dev];
   const Icon = cfg.Icon;
 
@@ -399,88 +432,80 @@ function AddStandupInline({ day, dev, onSave }: {
       <button
         onClick={() => setOpen(true)}
         className={cn(
-          'w-full flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed text-[11px] font-medium transition-all',
+          'flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded border border-dashed transition-colors',
           dev === 'claude'
             ? 'border-violet-300 text-violet-600 hover:bg-violet-50'
             : 'border-pink-300 text-pink-600 hover:bg-pink-50',
         )}
       >
-        <Plus className="w-3 h-3" />
-        <Icon className="w-3 h-3" />
-        Update {cfg.label} standup
+        <Plus className="w-3 h-3" /><Icon className="w-3 h-3" />Add {cfg.label} update
       </button>
     );
   }
 
   return (
-    <div className={cn('rounded-lg border-2 overflow-hidden', cfg.accent)}>
-      <div className={cn('flex items-center gap-2 px-3 py-1.5', cfg.headerBg)}>
-        <Icon className={cn('w-3.5 h-3.5', cfg.iconCls)} />
-        <span className="text-xs font-bold">{cfg.label} — Day {day}</span>
+    <div className="border border-border rounded-lg p-2.5 bg-card space-y-1.5">
+      <div className="flex items-center gap-1.5 mb-1">
+        <Icon className={cn('w-3 h-3', cfg.iconCls)} />
+        <span className="text-[11px] font-semibold">{cfg.label} standup</span>
       </div>
-      <div className="px-3 py-2.5 space-y-2 bg-card">
-        <Textarea value={completed} onChange={e => setCompleted(e.target.value)} rows={1} className="text-xs" placeholder="Completed…" />
-        <Textarea value={working}   onChange={e => setWorking(e.target.value)}   rows={1} className="text-xs" placeholder="Working on…" />
-        <Textarea value={blockers}  onChange={e => setBlockers(e.target.value)}  rows={1} className="text-xs" placeholder="Blockers (blank = none)" />
-        <div className="flex gap-1.5">
-          <Button size="sm" onClick={save} className="h-7 text-xs gap-1"><Save className="w-3 h-3" />Save</Button>
-          <Button size="sm" variant="ghost" onClick={() => setOpen(false)} className="h-7 text-xs">Cancel</Button>
-        </div>
+      <Textarea value={completed} onChange={e => setCompleted(e.target.value)} rows={1} className="text-xs resize-none" placeholder="Completed…" />
+      <Textarea value={working}   onChange={e => setWorking(e.target.value)}   rows={1} className="text-xs resize-none" placeholder="Working on…" />
+      <Textarea value={blockers}  onChange={e => setBlockers(e.target.value)}  rows={1} className="text-xs resize-none" placeholder="Blockers (blank = none)" />
+      <div className="flex gap-1.5">
+        <Button size="sm" onClick={save} className="h-7 text-xs gap-1"><Save className="w-3 h-3" />Save</Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)} className="h-7 text-xs">Cancel</Button>
       </div>
     </div>
   );
 }
 
-// ─── Day handoff row ──────────────────────────────────────────────────────────
+// ─── Handoff link row (Jira-style Issue Link) ─────────────────────────────────
 
-function HandoffRow({ h, getTaskStatus }: {
+function HandoffLink({ h, getTaskStatus }: {
   h: typeof HANDOFFS[0];
   getTaskStatus: (id: string) => TaskStatus;
 }) {
   const producerDone = getTaskStatus(h.producerTaskId) === 'completed';
   const liveStatus: HandoffStatus = producerDone
     ? (h.status === 'acknowledged' ? 'acknowledged' : 'ready')
-    : 'pending';
-  const sc = HANDOFF_STATUS[liveStatus];
-  const [expanded, setExpanded] = useState(false);
+    : h.status === 'blocked' ? 'blocked' : 'pending';
+  const sc = HANDOFF_STATUS_CFG[liveStatus];
+
+  const fromDev = DEV[h.from];
+  const toDev   = DEV[h.to];
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
-      <button
-        onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-muted/20 transition-colors"
-      >
-        <span className={cn('w-2 h-2 rounded-full shrink-0', sc.dot)} />
-        <span className="text-[10px] font-mono text-muted-foreground shrink-0 w-10">{h.id}</span>
-        {/* Direction */}
-        <span className="text-[10px] text-muted-foreground shrink-0">
-          {h.direction === 'bidirectional' ? '⟷' : '→'}
+    <div className="flex items-center gap-2 py-1.5 px-2 border-b border-border/30 last:border-0 text-xs">
+      {/* Status dot */}
+      <span className={cn('w-2 h-2 rounded-full shrink-0', sc.dot)} />
+
+      {/* Link key */}
+      <span className="text-[10px] font-mono text-muted-foreground shrink-0 w-10">{h.id}</span>
+
+      {/* From → To assignees */}
+      <div className="flex items-center gap-1 shrink-0">
+        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded border', fromDev.tagCls)}>
+          {fromDev.label}
         </span>
-        <span className="flex-1 text-xs font-medium truncate min-w-0">{h.title}</span>
-        <Badge variant="outline" className={cn('text-[9px] px-1.5 py-0 border shrink-0', sc.cls)}>
-          {sc.label}
-        </Badge>
-        <Badge variant="outline" className="text-[9px] px-1.5 py-0 capitalize shrink-0">{h.priority}</Badge>
-        {expanded ? <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" /> : <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />}
-      </button>
-      {expanded && (
-        <div className="px-3 pb-3 pt-2 border-t border-border/40 space-y-2 text-xs bg-muted/5">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Artifact</p>
-            <p className="font-mono bg-muted px-2 py-1 rounded text-[10px]">{h.artifact}</p>
-          </div>
-          <div className={cn('px-2.5 py-2 rounded border', h.to === 'lovable' ? 'bg-pink-50 border-pink-200' : 'bg-violet-50 border-violet-200')}>
-            <p className={cn('text-[9px] font-bold uppercase tracking-wide mb-0.5', h.to === 'lovable' ? 'text-pink-700' : 'text-violet-700')}>
-              {h.to === 'lovable' ? '⚡ Lovable action' : '🧠 Claude action'}
-            </p>
-            <p className="leading-relaxed">{h.consumerNotes}</p>
-          </div>
-          <p className="text-muted-foreground text-[10px]">
-            Producer: <code className="bg-muted px-1 rounded">{h.producerTaskId}</code>
-            {' · '}Consumer: <code className="bg-muted px-1 rounded">{h.consumerTaskId}</code>
-          </p>
-        </div>
-      )}
+        <ArrowRight className="w-3 h-3 text-muted-foreground" />
+        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded border', toDev.tagCls)}>
+          {toDev.label}
+        </span>
+      </div>
+
+      {/* Title */}
+      <span className="flex-1 min-w-0 truncate text-foreground">{h.title}</span>
+
+      {/* Status badge */}
+      <span className={cn('text-[9px] font-semibold px-1.5 py-0.5 rounded border shrink-0', sc.cls)}>
+        {sc.label}
+      </span>
+
+      {/* Priority */}
+      <span className="text-[9px] text-muted-foreground capitalize shrink-0 hidden sm:inline">
+        {h.priority}
+      </span>
     </div>
   );
 }
@@ -500,95 +525,140 @@ interface DayPageViewProps {
 export const DayPageView: React.FC<DayPageViewProps> = ({
   day, theme, standups, onAddStandup, getTaskStatus, onStatusChange, taskOverrides,
 }) => {
-  const dayTasks = SPRINT_TASKS.filter(t => t.day === day);
-  const claudeTasks = dayTasks.filter(t => t.developer === 'claude').map(t => t.id);
-  const lovableTasks = dayTasks.filter(t => t.developer === 'lovable').map(t => t.id);
-  const dayHandoffs = HANDOFFS.filter(h => h.day === day);
+  const dayTasks     = SPRINT_TASKS.filter(t => t.day === day);
+  const claudeIds    = dayTasks.filter(t => t.developer === 'claude').map(t => t.id);
+  const lovableIds   = dayTasks.filter(t => t.developer === 'lovable').map(t => t.id);
+  const dayHandoffs  = HANDOFFS.filter(h => h.day === day);
+  const dayStandups  = standups.filter(s => s.day === day);
 
-  const getLastStandup = (dev: Developer): StandupEntry | undefined => {
-    const all = standups.filter(s => s.day === day && s.developer === dev);
-    return all[all.length - 1];
-  };
+  const doneTasks    = dayTasks.filter(t => getTaskStatus(t.id) === 'completed').length;
+  const readyHoffs   = dayHandoffs.filter(h => getTaskStatus(h.producerTaskId) === 'completed').length;
 
-  const doneTasks   = dayTasks.filter(t => getTaskStatus(t.id) === 'completed').length;
-  const totalTasks  = dayTasks.length;
-  const readyHoffs  = dayHandoffs.filter(h => getTaskStatus(h.producerTaskId) === 'completed').length;
-  const pendingHoffs= dayHandoffs.length - readyHoffs;
+  // Latest standup per dev
+  const claudeSD  = [...dayStandups].filter(s => s.developer === 'claude').pop();
+  const lovableSD = [...dayStandups].filter(s => s.developer === 'lovable').pop();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
-      {/* ── Day header ── */}
-      <div className="flex items-center gap-3 flex-wrap">
+      {/* ── Epic header ────────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-lg font-bold leading-none">Day {day}</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">{theme}</p>
+          {/* Jira Epic label */}
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/30 bg-primary/5 px-2 py-0.5 rounded">
+              Epic · Day {day}
+            </span>
+            <span className="text-[10px] text-muted-foreground">Feb {16 + day}, 2026</span>
+          </div>
+          <h2 className="text-base font-bold leading-none">{theme}</h2>
         </div>
-        <div className="flex items-center gap-2 ml-auto flex-wrap">
+        <div className="flex items-center gap-2 text-xs">
           <span className={cn(
-            'text-xs font-semibold px-2.5 py-1 rounded-full border',
-            doneTasks === totalTasks
+            'px-2 py-1 rounded-full border font-semibold',
+            doneTasks === dayTasks.length
               ? 'bg-green-50 text-green-700 border-green-200'
               : 'bg-muted text-muted-foreground border-border',
           )}>
-            {doneTasks}/{totalTasks} tasks
+            {doneTasks}/{dayTasks.length} done
           </span>
           {dayHandoffs.length > 0 && (
             <span className={cn(
-              'text-xs font-semibold px-2.5 py-1 rounded-full border',
-              pendingHoffs > 0
-                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                : 'bg-green-50 text-green-700 border-green-200',
+              'px-2 py-1 rounded-full border font-semibold',
+              readyHoffs === dayHandoffs.length
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-amber-50 text-amber-700 border-amber-200',
             )}>
-              {readyHoffs}/{dayHandoffs.length} handoffs ready
+              {readyHoffs}/{dayHandoffs.length} handoffs
             </span>
           )}
         </div>
       </div>
 
-      {/* ═══ 1. STANDUPS ═══════════════════════════════════════════════════ */}
+      {/* ═══ 1. SPRINT BOARD — Swimlanes ════════════════════════════════════ */}
       <section>
-        <SectionLabel>Standups</SectionLabel>
-        <div className="grid md:grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <StandupCard dev="claude" entry={getLastStandup('claude')} />
-            <AddStandupInline day={day} dev="claude" onSave={onAddStandup} />
-          </div>
-          <div className="space-y-2">
-            <StandupCard dev="lovable" entry={getLastStandup('lovable')} />
-            <AddStandupInline day={day} dev="lovable" onSave={onAddStandup} />
-          </div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Sprint Board
+          </span>
+          <Separator className="flex-1" />
+          <span className="text-[10px] text-muted-foreground">Assignee swimlanes · 4 columns</span>
+        </div>
+
+        <div className="space-y-3">
+          {claudeIds.length > 0 && (
+            <SwimlaneRow
+              dev="claude"
+              dayTaskIds={claudeIds}
+              getTaskStatus={getTaskStatus}
+              onStatusChange={onStatusChange}
+              taskOverrides={taskOverrides}
+            />
+          )}
+          {lovableIds.length > 0 && (
+            <SwimlaneRow
+              dev="lovable"
+              dayTaskIds={lovableIds}
+              getTaskStatus={getTaskStatus}
+              onStatusChange={onStatusChange}
+              taskOverrides={taskOverrides}
+            />
+          )}
         </div>
       </section>
 
-      {/* ═══ 2. TASKS ══════════════════════════════════════════════════════ */}
+      {/* ═══ 2. STANDUP — Sprint Ceremony / Activity ═════════════════════════ */}
       <section>
-        <SectionLabel>Tasks — Claude | Lovable</SectionLabel>
-        <div className="grid md:grid-cols-2 gap-4">
-          <DevColumn
-            dev="claude"
-            dayTasks={claudeTasks}
-            getTaskStatus={getTaskStatus}
-            onStatusChange={onStatusChange}
-            taskOverrides={taskOverrides}
-          />
-          <DevColumn
-            dev="lovable"
-            dayTasks={lovableTasks}
-            getTaskStatus={getTaskStatus}
-            onStatusChange={onStatusChange}
-            taskOverrides={taskOverrides}
-          />
+        <div className="flex items-center gap-2 mb-3">
+          <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Daily Standup
+          </span>
+          <Separator className="flex-1" />
+          <div className="flex gap-2">
+            <AddStandupForm day={day} dev="claude"  onSave={onAddStandup} />
+            <AddStandupForm day={day} dev="lovable" onSave={onAddStandup} />
+          </div>
         </div>
+
+        {claudeSD || lovableSD ? (
+          <div className="space-y-3 pl-1">
+            {claudeSD  && <StandupEntry entry={claudeSD}  dev="claude" />}
+            {lovableSD && <StandupEntry entry={lovableSD} dev="lovable" />}
+            {/* Historic standups (collapsed count) */}
+            {dayStandups.length > 2 && (
+              <p className="text-[10px] text-muted-foreground pl-8">
+                +{dayStandups.length - 2} earlier updates
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground pl-1 italic">No standups logged yet for Day {day}</p>
+        )}
       </section>
 
-      {/* ═══ 3. HANDOFFS ═══════════════════════════════════════════════════ */}
+      {/* ═══ 3. ISSUE LINKS — Handoffs ═══════════════════════════════════════ */}
       {dayHandoffs.length > 0 && (
         <section>
-          <SectionLabel>Handoffs this day ({dayHandoffs.length})</SectionLabel>
-          <div className="space-y-1.5">
+          <div className="flex items-center gap-2 mb-2">
+            <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Issue Links · Handoffs
+            </span>
+            <Separator className="flex-1" />
+            <span className="text-[10px] text-muted-foreground">{dayHandoffs.length} link{dayHandoffs.length > 1 ? 's' : ''}</span>
+          </div>
+          <div className="border border-border rounded-lg overflow-hidden bg-card">
+            {/* Column header */}
+            <div className="grid grid-cols-[16px_40px_1fr_auto_auto] gap-2 px-2 py-1.5 bg-muted/40 border-b border-border text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+              <span />
+              <span>ID</span>
+              <span>Title</span>
+              <span>Status</span>
+              <span className="hidden sm:block">Priority</span>
+            </div>
             {dayHandoffs.map(h => (
-              <HandoffRow key={h.id} h={h} getTaskStatus={getTaskStatus} />
+              <HandoffLink key={h.id} h={h} getTaskStatus={getTaskStatus} />
             ))}
           </div>
         </section>
