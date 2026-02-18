@@ -102,24 +102,67 @@ export function useSprintTracker() {
   };
 
   const metrics: SprintMetrics = useMemo(() => {
+    const emptyDev = () => ({
+      total: 0, completed: 0, inProgress: 0, blocked: 0,
+      estimatedHours: 0, actualHours: 0,
+      tokensUsed: 0, tokenCostCents: 0,
+      byCategory: {} as Partial<Record<import('./types').WorkCategory, number>>,
+    });
     const byDeveloper: SprintMetrics['byDeveloper'] = {
-      lovable: { total: 0, completed: 0, inProgress: 0, blocked: 0 },
-      claude: { total: 0, completed: 0, inProgress: 0, blocked: 0 },
+      lovable: emptyDev(),
+      claude:  emptyDev(),
     };
-    const byDay: Record<number, { total: number; completed: number }> = {};
+    const byDay: SprintMetrics['byDay'] = {};
     let backlogCount = 0;
+    let totalEstimatedHours = 0;
+    let totalActualHours = 0;
+    let totalTokensUsed = 0;
+    let totalTokenCostCents = 0;
+    const byCategory: SprintMetrics['byCategory'] = {};
 
     SPRINT_TASKS.forEach(task => {
       const status = state.taskOverrides[task.id]?.status ?? 'pending';
-      byDeveloper[task.developer].total++;
-      if (status === 'completed') byDeveloper[task.developer].completed++;
-      if (status === 'in-progress') byDeveloper[task.developer].inProgress++;
+      const dev = byDeveloper[task.developer];
+      const effort = task.effort;
+      const isCompleted = status === 'completed';
+      const isWIP = status === 'in-progress';
 
-      if (!byDay[task.day]) byDay[task.day] = { total: 0, completed: 0 };
+      dev.total++;
+      dev.estimatedHours += task.estimatedHours;
+      if (isCompleted) {
+        dev.completed++;
+        dev.actualHours += effort?.actualHours ?? task.estimatedHours;
+        dev.tokensUsed += effort?.tokensUsed ?? 0;
+        dev.tokenCostCents += effort?.tokenCostCents ?? 0;
+      }
+      if (isWIP) dev.inProgress++;
+
+      // Category breakdown
+      for (const cat of (effort?.workCategories ?? [])) {
+        dev.byCategory[cat] = (dev.byCategory[cat] ?? 0) + 1;
+        if (!byCategory[cat]) byCategory[cat] = { tasks: 0, estimatedHours: 0, actualHours: 0 };
+        byCategory[cat]!.tasks++;
+        byCategory[cat]!.estimatedHours += task.estimatedHours;
+        if (isCompleted) byCategory[cat]!.actualHours += effort?.actualHours ?? task.estimatedHours;
+      }
+
+      // Day aggregates
+      if (!byDay[task.day]) byDay[task.day] = { total: 0, completed: 0, estimatedHours: 0, actualHours: 0 };
       byDay[task.day].total++;
-      if (status === 'completed') byDay[task.day].completed++;
+      byDay[task.day].estimatedHours += task.estimatedHours;
+      if (isCompleted) {
+        byDay[task.day].completed++;
+        byDay[task.day].actualHours += effort?.actualHours ?? task.estimatedHours;
+      }
 
-      // Backlog: tasks from previous days that aren't completed
+      // Sprint totals
+      totalEstimatedHours += task.estimatedHours;
+      if (isCompleted) {
+        totalActualHours += effort?.actualHours ?? task.estimatedHours;
+        totalTokensUsed += effort?.tokensUsed ?? 0;
+        totalTokenCostCents += effort?.tokenCostCents ?? 0;
+      }
+
       if (task.day < currentDay && status !== 'completed' && status !== 'rejected') {
         backlogCount++;
       }
@@ -130,7 +173,15 @@ export function useSprintTracker() {
       (state.taskOverrides[t.id]?.status ?? 'pending') === 'completed'
     ).length;
 
-    return { byDeveloper, byDay, total, completed, backlogCount };
+    const velocityRatio = totalEstimatedHours > 0
+      ? Math.round((totalActualHours / totalEstimatedHours) * 100) / 100
+      : 1;
+
+    return {
+      byDeveloper, byDay, total, completed, backlogCount,
+      totalEstimatedHours, totalActualHours, totalTokensUsed, totalTokenCostCents,
+      velocityRatio, byCategory,
+    };
   }, [state.taskOverrides, currentDay]);
 
   // Group tasks by status for Kanban board
