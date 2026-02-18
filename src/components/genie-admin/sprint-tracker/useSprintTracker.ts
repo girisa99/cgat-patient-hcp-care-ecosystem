@@ -4,13 +4,22 @@ import type { TaskStatus, Developer, SprintTrackerState, SprintMetrics, Activity
 import { SPRINT_TASKS } from './data-tasks';
 import { DEFAULT_TASK_OVERRIDES, DEFAULT_STANDUPS, calculateCurrentDay } from './data-config';
 
-const STORAGE_KEY = 'genie_sprint_tracker_state';
+const STORAGE_KEY = 'genie_sprint_tracker_state_v2'; // bumped to v2 to flush stale Day 1 cache
 
 export function useSprintTracker() {
   const [state, setState] = useState<SprintTrackerState>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Ensure all required fields exist (guards against stale cached state)
+        return {
+          taskOverrides: parsed.taskOverrides ?? { ...DEFAULT_TASK_OVERRIDES },
+          standups: parsed.standups ?? [...DEFAULT_STANDUPS],
+          activityLog: parsed.activityLog ?? [],
+          taskNotes: parsed.taskNotes ?? {},
+        };
+      }
     } catch (e) {
       console.error('[SprintTracker] Failed to load state:', e);
     }

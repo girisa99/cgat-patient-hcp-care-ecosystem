@@ -8,7 +8,27 @@ import { cn } from '@/lib/utils';
 import { TaskCard } from './TaskCard';
 import { SPRINT_TASKS } from './data-tasks';
 import { DAY1_FINDINGS } from './data-findings';
+import { HANDOFFS, DEPENDENCY_CHAINS } from './data-dependencies';
 import type { TaskStatus, Developer } from './types';
+
+// Resolve live handoff status from task-completion state
+function isHandoffReady(handoffId: string, getTaskStatus: (id: string) => TaskStatus): boolean {
+  const h = HANDOFFS.find(x => x.id === handoffId);
+  if (!h) return false;
+  // Hard-coded ready handoffs (Claude confirmed) OR producer task completed
+  if (h.status === 'ready') return true;
+  return getTaskStatus(h.producerTaskId) === 'completed';
+}
+
+// Returns list of unmet dependency IDs for a task
+function getUnmetDeps(taskId: string, getTaskStatus: (id: string) => TaskStatus): string[] {
+  const chain = DEPENDENCY_CHAINS.find(c => c.taskId === taskId);
+  if (!chain) return [];
+  return chain.blockedBy.filter(depId => {
+    if (depId.startsWith('H-')) return !isHandoffReady(depId, getTaskStatus);
+    return getTaskStatus(depId) !== 'completed';
+  });
+}
 
 interface BoardViewProps {
   boardColumns: { backlog: string[]; todo: string[]; inProgress: string[]; done: string[] };
@@ -84,6 +104,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                     {ids.map(id => {
                       const task = taskMap[id];
                       if (!task) return null;
+                      const unmetDeps = getUnmetDeps(id, getTaskStatus);
                       return (
                         <TaskCard
                           key={id}
@@ -94,6 +115,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                           taskNotes={taskNotes[id]}
                           onStatusChange={onStatusChange}
                           compact={col.key === 'done'}
+                          blockedBy={unmetDeps.length > 0 ? unmetDeps : undefined}
                         />
                       );
                     })}

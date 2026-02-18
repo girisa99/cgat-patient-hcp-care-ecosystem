@@ -34,14 +34,32 @@ export const FILE_OWNERSHIP = [
 ];
 
 export const DEFAULT_TASK_OVERRIDES: Record<string, TaskOverride> = {
+  // ── Day 1: Lovable ──
+  'L-101': { status: 'completed', updatedAt: '2026-02-18T12:00:00Z', note: 'Audited RegionalLandingPage.tsx. Fixed broken regional content, routes updated to /genie-admin?tab=library. H-101 consumed.' },
+  'L-102': { status: 'completed', updatedAt: '2026-02-18T12:00:00Z', note: 'Audited GenieExplorePage. Explore journey verified across all steps without errors.' },
+  'L-103': { status: 'completed', updatedAt: '2026-02-18T12:00:00Z', note: 'Fixed hero sections and demos. HeroLandingVideo and HeroInteractiveVideo verified.' },
+  'L-104': { status: 'completed', updatedAt: '2026-02-18T12:00:00Z', note: 'Verified all 6 legal pages. Support email updated to support@geniaisuite.com. H-103 consumed.' },
+  // ── Day 1: Claude ──
   'C-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '14 issues found. Fixed: race conditions, error handling, broken routes, stubs, taglines, ARIA, duplicate code.' },
   'C-102': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '13 issues found. Fixed: tagline, loading spinner, audio aria-labels.' },
   'C-103': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '6 issues found. Fixed: support email. Deck is most production-ready.' },
   'C-104': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '33 total issues across 3 products. 11 fixed Day 1, 22 open.' },
   'S-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Build passes (58s). 7 files changed. Branch pushed.' },
+  // ── Day 2: Lovable (gated) ──
+  'L-201': { status: 'in-progress', updatedAt: '2026-02-18T12:00:00Z', note: 'GATED: Waiting on H-201 (Deck flow live at /genie-deck) from Claude.' },
+  'L-202': { status: 'in-progress', updatedAt: '2026-02-18T12:00:00Z', note: 'GATED: Waiting on H-203 (pricing tier name alignment) from Claude.' },
+  'L-203': { status: 'pending', updatedAt: '2026-02-18T12:00:00Z', note: 'No hard gate — can start when L-201 is unblocked.' },
+  'L-204': { status: 'pending', updatedAt: '2026-02-18T12:00:00Z', note: 'No hard gate — can start anytime.' },
 };
 
 export const DEFAULT_STANDUPS: StandupEntry[] = [
+  {
+    day: 1, developer: 'lovable' as Developer,
+    yesterday: 'N/A — Sprint Day 1 start',
+    today: 'Completed L-101 to L-104: Audited RegionalLandingPage, GenieExplorePage, hero sections, and all legal pages. Support email fixed. Routes corrected to /genie-admin?tab=library.',
+    blockers: 'H-201 (Deck flow) and H-203 (pricing tiers) pending from Claude — L-201 and L-202 gated.',
+    createdAt: '2026-02-18T17:00:00Z',
+  },
   {
     day: 1, developer: 'claude' as Developer,
     yesterday: 'N/A — Sprint Day 1 start',
