@@ -27,10 +27,15 @@ You (Lovable) own: Landing pages, product catalog, explore, pricing, demos, lega
 
 | Your Task | Needs Handoff | What You're Waiting For | Gate |
 |-----------|--------------|------------------------|------|
-| L-101 (landing audit) | H-101, H-102, H-103 | Route fix, taglines, email | All Ready — proceed |
-| L-201 (product catalog) | H-201 | Deck creation flow live | Ready after Claude completes C-203 |
-| L-202 (pricing) | H-203 | Pricing tier names match | Bidirectional — must align with Claude |
-| L-301 (demos) | H-301 | Spark creation flow live | Ready after Claude completes C-304 |
+| L-101 (landing audit) | H-101, H-102, H-103 | Route fix, taglines, email | **DONE** -- All Ready, completed Day 1 |
+| L-201 (product catalog) | H-201 | Deck creation flow live | **DONE** -- H-201 Ready, L-201 completed Day 2 |
+| L-202 (pricing) | H-203 | Pricing tier names match | **DONE** -- Bidirectional resolved, completed Day 2 |
+| L-203 (explore demos) | None | -- | **DONE** -- Completed Day 2, D-005 fixed |
+| L-204 (landing sections) | None | -- | **DONE** -- Completed Day 2 |
+| L-301 (interactive demos) | H-301 | Spark creation flow live | **Soft gate** -- Build demo UI first, verify Spark link at EOD when Claude finishes C-304 |
+| L-302 (DeepL demo) | L-301 | L-301 must complete first | **Unblocked** after L-301 |
+| L-303 (video showcases) | None | -- | **Unblocked** -- Start immediately |
+| L-304 (region switching) | L-101 | -- | **Unblocked** -- L-101 already completed |
 | L-401 (mobile) | H-401 | Mind editing flow live | Ready after Claude completes C-404 |
 | L-504 (merge) | H-501 | Claude merges to main first | MUST wait — never merge before Claude |
 
@@ -97,9 +102,17 @@ Cross-reference with Stage Gate table above — only start unblocked tasks.
 |-----|-------|-------|-------------|
 | Day 1 (Mon) | Foundation audit | L-101 to L-104 | H-101,102,103 Ready |
 | Day 2 (Tue) | Products + pricing | L-201 to L-204 | H-201 (after Deck), H-203 (bidirectional) |
-| Day 3 (Wed) | Interactive demos | L-301 to L-304 | H-301 (after Spark) |
+| Day 3 (Wed) | Interactive demos | L-301 to L-304 | H-301 soft gate — see note below |
 | Day 4 (Thu) | Mobile + polish | L-401 to L-404 | H-401 (after Mind) |
 | Day 5 (Fri) | Final verify + merge | L-501 to L-504 | H-501 (Claude merges FIRST) |
+
+**Day 3 Parallel Work Note:**
+Claude is working on Spark (C-301 to C-304) in parallel with your Day 3 tasks.
+- **L-303 (video showcases)** and **L-304 (region switching)** have ZERO dependencies — start these first
+- **L-301 (interactive demos)** has a *soft gate* on H-301 (Spark flow): Build the demo UI/fix rendering first. The Spark "Try it live" link can be verified at EOD after Claude finishes C-304
+- **L-302 (DeepL demo)** depends on L-301 — work on it after L-301 rendering is done
+- Claude will mark H-301 as `ready` in `data-dependencies.ts` when Spark E2E is verified
+- **Recommended order:** L-303 → L-304 → L-301 (UI first) → L-302 → verify Spark links
 
 ### Step 4: Build Check — "Is the codebase healthy?" (1 min)
 ```bash

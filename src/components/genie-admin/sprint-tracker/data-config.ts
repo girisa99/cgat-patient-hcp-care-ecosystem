@@ -83,6 +83,21 @@ export const DEFAULT_STANDUPS: StandupEntry[] = [
     blockers: 'SmartContentPipeline (80KB) uses simulated AI — will need real edge function calls.',
     createdAt: '2026-02-18T17:00:00Z',
   },
+  // ── Lovable Day 2 ──
+  {
+    day: 2, developer: 'lovable' as Developer,
+    yesterday: 'Day 1: Audited landing (L-101 to L-104). Fixed routes, verified legal pages.',
+    today: 'Completed L-201 to L-204. Fixed D-002 (DeckDemoCard fallback), D-005 (image skeleton). Product catalog + pricing + explore demos + landing sections all done. Acknowledged H-201, SIC-104, SIC-105.',
+    blockers: 'None. All Day 2 tasks complete. H-301 (Spark flow) pending for Day 3 demo linking.',
+    createdAt: '2026-02-18T17:30:00Z',
+  },
+  {
+    day: 2, developer: 'lovable' as Developer,
+    yesterday: 'Day 2: Product catalog, pricing, explore demos, landing sections — all done. D-002/D-005 fixed.',
+    today: 'Next session: Day 3 — L-301 Interactive demos (STT + TryGenie), L-302 DeepL demo, L-303 Video showcases, L-304 Region switching.',
+    blockers: 'H-301 (Spark flow) still pending — will build demo UI first, verify Spark link at EOD.',
+    createdAt: '2026-02-18T18:00:00Z',
+  },
 ];
 
 export function calculateCurrentDay(): number {
