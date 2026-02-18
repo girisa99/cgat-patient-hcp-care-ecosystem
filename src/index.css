@@ -5,6 +5,16 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+/* Non-Latin script font stacks — loaded on-demand via font-display: swap */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -52,10 +62,10 @@
   100% { transform: translateX(0); }
 }
 .marquee-track-left {
-  animation: marquee-scroll-left 40s linear infinite;
+  animation: marquee-scroll-left 90s linear infinite;
 }
 .marquee-track-right {
-  animation: marquee-scroll-right 50s linear infinite;
+  animation: marquee-scroll-right 120s linear infinite;
 }
 .marquee-container:hover .marquee-track-left,
 .marquee-container:hover .marquee-track-right {
@@ -588,4 +598,80 @@
 .compact-node {
   font-size: 10px;
   padding: 4px 8px;
+}
+
+/* ═══════════════════════════════════════════════
+   RTL (Right-to-Left) Foundation — Arabic, Hebrew, Urdu
+   Applied when html[dir="rtl"] is set by useRegionalDetection
+   ═══════════════════════════════════════════════ */
+
+/* Base text alignment flip */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* Flex direction flip for RTL layouts */
+[dir="rtl"] .flex-row,
+[dir="rtl"] .flex {
+  /* Only flip horizontal flex containers */
+}
+
+/* RTL-aware spacing: swap margin/padding left↔right */
+[dir="rtl"] .ml-auto { margin-left: unset; margin-right: auto; }
+[dir="rtl"] .mr-auto { margin-right: unset; margin-left: auto; }
+
+/* RTL-aware icon positioning */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Landing page hero: flip text alignment */
+[dir="rtl"] .hero-headline,
+[dir="rtl"] .hero-subheadline {
+  text-align: right;
+  direction: rtl;
+}
+
+/* CTA buttons: maintain center alignment in RTL */
+[dir="rtl"] .cta-group {
+  flex-direction: row-reverse;
+}
+
+/* Stats section: flip grid direction */
+[dir="rtl"] .stats-grid {
+  direction: rtl;
+}
+
+/* Comparison section: swap translation vs transcreation columns */
+[dir="rtl"] .comparison-columns {
+  flex-direction: row-reverse;
+}
+
+/* Native font families for non-Latin scripts */
+.font-arabic {
+  font-family: 'Noto Sans Arabic', 'Segoe UI', 'Tahoma', sans-serif;
+}
+
+.font-hebrew {
+  font-family: 'Noto Sans Hebrew', 'Segoe UI', 'Arial', sans-serif;
+}
+
+.font-devanagari {
+  font-family: 'Noto Sans Devanagari', 'Mangal', sans-serif;
+}
+
+.font-cjk {
+  font-family: 'Noto Sans CJK', 'Hiragino Sans', 'Microsoft YaHei', sans-serif;
+}
+
+.font-bengali {
+  font-family: 'Noto Sans Bengali', 'Vrinda', sans-serif;
+}
+
+.font-tamil {
+  font-family: 'Noto Sans Tamil', 'Latha', sans-serif;
+}
+
+.font-thai {
+  font-family: 'Noto Sans Thai', 'Tahoma', sans-serif;
 }

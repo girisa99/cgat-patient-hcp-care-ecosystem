@@ -56,6 +56,7 @@ export const REGION_LLM_ROUTING: Record<string, LLMRoute> = {
    'caribbean': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
    'eastern_europe': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → deepseek → gemini' },
    'central_asia': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
+   'south_asia': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -88,6 +89,7 @@ const ZONE_PRIMARY_MAP: Record<string, string> = {
    caribbean: 'openai',
    eastern_europe: 'openai',
    central_asia: 'openai',
+   south_asia: 'gemini',
 };
 
 /**
@@ -112,9 +114,13 @@ const SUB_REGION_OVERRIDES: Record<string, string> = {
    'OCEANIA_AU': 'claude',
    'OCEANIA_NZ': 'claude',
    // P1: Extended regions
-   'CARIBBEAN_EN': 'openai',
-   'CARIBBEAN_FR': 'openai',
-   'EU_UKRAINE': 'openai',
+    'CARIBBEAN_EN': 'openai',
+    'CARIBBEAN_FR': 'openai',
+    'SA_NEPAL': 'openai',
+    'SA_SRILANKA': 'gemini',
+    'SA_BHUTAN': 'openai',
+    'SA_MALDIVES': 'openai',
+    'EU_UKRAINE': 'openai',
    'EU_BALKANS': 'openai',
    'EU_CAUCASUS': 'openai',
    'ASIA_CENTRAL': 'openai',
@@ -169,8 +175,13 @@ const SUB_REGION_FALLBACK_ORDER: Record<string, string[]> = {
    'AFRICA_SOUTH': ['gemini', 'claude', 'openai', 'alibaba', 'deepseek'],
    'AFRICA_FRANCO': ['gemini', 'alibaba', 'openai', 'claude', 'deepseek'],
    // Pakistan & Bangladesh
-   'PAKISTAN': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
-   'BANGLADESH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'PAKISTAN': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
+    'BANGLADESH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    // South Asia
+    'SA_NEPAL': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
+    'SA_SRILANKA': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
+    'SA_BHUTAN': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
+    'SA_MALDIVES': ['openai', 'gemini', 'claude', 'alibaba', 'deepseek'],
    // India
    'INDIA_NORTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
    'INDIA_SOUTH': ['gemini', 'openai', 'claude', 'alibaba', 'deepseek'],
@@ -241,8 +252,9 @@ export function getZoneAIProviders(regionCode: string): AIProviderOption[] {
     if (r === 'TURKEY') return 'turkey';
     if (r?.startsWith('CARIBBEAN')) return 'caribbean';
     if (r?.startsWith('EURASIA') || r === 'EU_UKRAINE' || r === 'EU_BALKANS' || r === 'EU_CAUCASUS') return 'eastern_europe';
-    if (r?.startsWith('ASIA_CENTRAL') || r?.startsWith('CENTRAL_ASIA')) return 'central_asia';
-    return 'western';
+     if (r?.startsWith('ASIA_CENTRAL') || r?.startsWith('CENTRAL_ASIA')) return 'central_asia';
+     if (r?.startsWith('SA_') || r === 'SOUTH_ASIA') return 'south_asia';
+     return 'western';
   })();
 
   const providers: AIProviderOption[] = [
@@ -398,9 +410,24 @@ export const REGION_VOICE_OPTIONS: Record<string, VoiceOption[]> = {
   ],
   'BANGLADESH': [
     { provider: 'azure', locale: 'bn-BD', label: 'Azure Neural', voiceId: 'bn-BD-NabanitaNeural', voiceName: 'Nabanita (Bengali)', gender: 'female', isDefault: true },
-    { provider: 'azure', locale: 'bn-BD', label: 'Azure Neural', voiceId: 'bn-BD-PradeepNeural', voiceName: 'Pradeep (Bengali)', gender: 'male' },
-  ],
-  // India
+     { provider: 'azure', locale: 'bn-BD', label: 'Azure Neural', voiceId: 'bn-BD-PradeepNeural', voiceName: 'Pradeep (Bengali)', gender: 'male' },
+   ],
+   // South Asia
+   'SA_NEPAL': [
+     { provider: 'azure', locale: 'ne-NP', label: 'Azure Neural', voiceId: 'ne-NP-HemkalaNeural', voiceName: 'Hemkala (Nepali)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'ne-NP', label: 'Azure Neural', voiceId: 'ne-NP-SagarNeural', voiceName: 'Sagar (Nepali)', gender: 'male' },
+   ],
+   'SA_SRILANKA': [
+     { provider: 'azure', locale: 'si-LK', label: 'Azure Neural', voiceId: 'si-LK-ThiliniNeural', voiceName: 'Thilini (Sinhala)', gender: 'female', isDefault: true },
+     { provider: 'azure', locale: 'ta-LK', label: 'Azure Neural', voiceId: 'ta-LK-SaranyaNeural', voiceName: 'Saranya (Sri Lankan Tamil)', gender: 'female' },
+   ],
+   'SA_BHUTAN': [
+     { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)', gender: 'female', isDefault: true },
+   ],
+   'SA_MALDIVES': [
+     { provider: 'azure', locale: 'en-IN', label: 'Azure Neural', voiceId: 'en-IN-NeerjaNeural', voiceName: 'Neerja (Indian English)', gender: 'female', isDefault: true },
+   ],
+   // India
   'INDIA_NORTH': [
     { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-SwaraNeural', voiceName: 'Swara (Hindi)', gender: 'female', isDefault: true },
     { provider: 'azure', locale: 'hi-IN', label: 'Azure Neural', voiceId: 'hi-IN-MadhurNeural', voiceName: 'Madhur (Hindi)', gender: 'male' },
@@ -603,7 +630,7 @@ export function normalizeTTSProvider(displayProvider: string): string {
 export type RegionalZone = 
   | 'western' | 'cjk' | 'mena' | 'india' | 'africa'
   | 'oceania' | 'turkey' | 'caribbean' | 'eastern_europe' | 'central_asia'
-  | 'pakistan' | 'bangladesh' | 'sea' | 'fallback';
+  | 'pakistan' | 'bangladesh' | 'sea' | 'south_asia' | 'fallback';
 
 /** Language → Zone mapping (most precise detection method) */
 const LANGUAGE_ZONE_MAP: Record<string, RegionalZone> = {
@@ -612,8 +639,9 @@ const LANGUAGE_ZONE_MAP: Record<string, RegionalZone> = {
   // MENA / RTL
   ar: 'mena', he: 'mena', fa: 'mena',
   // India / South Asia
-  hi: 'india', ta: 'india', te: 'india', bn: 'india', mr: 'india',
-  gu: 'india', kn: 'india', ml: 'india', pa: 'india', or: 'india',
+   hi: 'india', ta: 'india', te: 'india', bn: 'india', mr: 'india',
+   gu: 'india', kn: 'india', ml: 'india', pa: 'india', or: 'india',
+   ne: 'south_asia', si: 'south_asia', dz: 'south_asia', dv: 'south_asia',
   // Pakistan & Bangladesh (separate zones)
   ur: 'pakistan',
   // SEA
@@ -695,7 +723,7 @@ export function getZoneFromRegion(region: string): RegionalZone {
   if (r.startsWith('latam') || r.includes('latin')) return 'western';
   if (r.startsWith('cjk') || r.includes('china') || r.includes('japan') || r.includes('korea')) return 'cjk';
   if (r.startsWith('mena') || r.includes('arab') || r.includes('middle')) return 'mena';
-  if (r.startsWith('india') || r.includes('south_asia')) return 'india';
+  if (r.startsWith('india') || r.includes('south_asia') || r.startsWith('sa_')) return r.includes('south_asia') || r.startsWith('sa_') ? 'south_asia' : 'india';
   if (r === 'pakistan') return 'pakistan';
   if (r === 'bangladesh') return 'bangladesh';
   if (r.startsWith('sea') || r.includes('southeast')) return 'sea';
@@ -883,9 +911,17 @@ export const ZONE_PROVIDER_DISPLAY: Record<string, ZoneProviderDisplay> = {
     videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
     translationProvider: 'google_translate',
     displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
-    displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
-  },
-  fallback: {
+     displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+   },
+   south_asia: {
+     zone: 'south_asia', llmProvider: 'gemini', llmModel: 'gemini-3-pro',
+     ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
+     videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',
+     translationProvider: 'google_translate',
+     displayProviders: ['Gemini 3 Pro', 'Azure Neural', 'Vertex Veo 3', 'Google Translate'],
+     displayColors: ['from-blue-500/80 to-blue-600/80', 'from-sky-500/80 to-sky-600/80', 'from-blue-500/80 to-blue-600/80', 'from-green-500/80 to-green-600/80'],
+   },
+   fallback: {
     zone: 'fallback', llmProvider: 'openai', llmModel: 'gpt-4o',
     ttsProvider: 'azure', imageProvider: 'gemini_3_pro',
     videoProvider: 'vertex_veo3', avatarProvider: 'alibaba_wan22',

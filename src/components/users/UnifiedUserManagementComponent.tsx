@@ -55,7 +55,7 @@ const UnifiedUserManagementComponent = () => {
             </CardHeader>
             <CardContent>
               <p className="text-red-700">
-                Failed to load user data: {error}
+                Failed to load user data: {error instanceof Error ? error.message : String(error)}
               </p>
             </CardContent>
           </Card>

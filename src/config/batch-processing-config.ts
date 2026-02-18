@@ -154,9 +154,22 @@ export const PROVIDER_RATE_LIMITS = {
     concurrentRequests: 5,
   },
   gemini: {
-    requestsPerMinute: 1000,
-    tokensPerMinute: 1000000,
-    concurrentRequests: 20,
+    // Paid Tier 3: Unlimited RPM/TPM (Generative Language API)
+    requestsPerMinute: Infinity,
+    tokensPerMinute: Infinity,
+    concurrentRequests: 50,
+    // Throttle still useful to avoid burst spikes on edge function side
+    throttle: { enabled: true, delayMs: 200, maxQueueSize: 500 },
+  },
+  deepseek: {
+    requestsPerMinute: 120,
+    tokensPerMinute: 200000,
+    concurrentRequests: 8,
+  },
+  alibaba: {
+    requestsPerMinute: 100,
+    tokensPerMinute: 150000,
+    concurrentRequests: 5,
   },
   elevenlabs: {
     requestsPerMinute: 100,
@@ -170,10 +183,6 @@ export const PROVIDER_RATE_LIMITS = {
   azure: {
     requestsPerMinute: 200,
     concurrentRequests: 10,
-  },
-  alibaba: {
-    requestsPerMinute: 100,
-    concurrentRequests: 5,
   },
   deepl: {
     requestsPerMinute: 30,

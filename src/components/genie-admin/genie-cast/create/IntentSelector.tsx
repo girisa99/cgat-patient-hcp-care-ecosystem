@@ -202,7 +202,7 @@ export const IntentSelector: React.FC<IntentSelectorProps> = ({
               <SelectTrigger className="h-12 text-base bg-background">
                 <SelectValue placeholder="Choose content type..." />
               </SelectTrigger>
-              <SelectContent className="z-[100000] bg-popover">
+              <SelectContent className="z-[100000] bg-popover max-h-[300px] overflow-y-auto" position="popper" sideOffset={4} side="bottom">
                 {CATEGORY_ORDER.map((category) => {
                   const categoryIntents = getByCategory(category);
                   if (categoryIntents.length === 0) return null;

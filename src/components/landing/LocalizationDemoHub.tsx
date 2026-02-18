@@ -42,11 +42,19 @@ const REGION_TAB_DEFAULTS: Record<string, string> = {
 interface LocalizationDemoHubProps {
   region?: string;
   className?: string;
+  nativeSections?: {
+    demoHubHeadline?: string;
+    demoHubSubheadline?: string;
+    statsLanguagesLabel?: string;
+    statsDialectsLabel?: string;
+    statsRegionsLabel?: string;
+  };
 }
 
 export const LocalizationDemoHub: React.FC<LocalizationDemoHubProps> = ({
   region,
   className = '',
+  nativeSections,
 }) => {
   const defaultTab = region ? (REGION_TAB_DEFAULTS[region] || 'tts') : 'tts';
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -103,10 +111,18 @@ export const LocalizationDemoHub: React.FC<LocalizationDemoHubProps> = ({
               {region ? `Try It Live — ${getRegionDisplayName(region)}` : 'Try It Live'}
             </span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            True Localization. Not Translation.
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
+            {nativeSections?.demoHubHeadline || 'True Localization. Not Translation.'}
           </h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+          {nativeSections?.demoHubHeadline && (
+            <p className="text-sm text-muted-foreground/60 italic mb-3">
+              True Localization. Not Translation.
+            </p>
+          )}
+          <p className="text-lg text-foreground/80 max-w-3xl mx-auto font-medium mb-1">
+            {nativeSections?.demoHubSubheadline || ''}
+          </p>
+          <p className="text-base text-muted-foreground max-w-3xl mx-auto">
             We adapt meaning, culture, and context — this is{' '}
             <span className="text-primary font-bold">transcreation</span>. 
             Try all our AI capabilities below.
