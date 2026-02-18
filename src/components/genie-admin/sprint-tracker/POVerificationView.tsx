@@ -35,18 +35,49 @@ const STORAGE_KEY = 'genie_sprint_po_checklist';
 interface POVerificationViewProps {
   currentDay: number;
   getTaskStatus: (id: string) => TaskStatus;
+  /** PO notes per day — from Supabase (live state) */
+  poNotes?: Record<number, string>;
+  /** PO checklist state — from Supabase (live state) */
+  poChecklist?: Record<string, boolean>;
+  /** Sync PO note for a day to Supabase */
+  onUpdateNote?: (day: number, note: string) => void;
+  /** Sync full PO checklist to Supabase */
+  onUpdateChecklist?: (checklist: Record<string, boolean>) => void;
 }
 
-export const POVerificationView: React.FC<POVerificationViewProps> = ({ currentDay, getTaskStatus }) => {
+export const POVerificationView: React.FC<POVerificationViewProps> = ({
+  currentDay,
+  getTaskStatus,
+  poNotes: externalNotes,
+  poChecklist: externalChecklist,
+  onUpdateNote,
+  onUpdateChecklist,
+}) => {
+  // Local state — seeded from Supabase, falls back to localStorage
   const [checked, setChecked] = useState<Record<string, boolean>>(() => {
+    if (externalChecklist && Object.keys(externalChecklist).length > 0) return externalChecklist;
     try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : {}; }
     catch { return {}; }
   });
 
   const [notes, setNotes] = useState<Record<number, string>>(() => {
+    if (externalNotes && Object.keys(externalNotes).length > 0) return externalNotes;
     try { const s = localStorage.getItem(STORAGE_KEY + '_notes'); return s ? JSON.parse(s) : {}; }
     catch { return {}; }
   });
+
+  // Sync external (Supabase) values into local state when they arrive
+  React.useEffect(() => {
+    if (externalChecklist && Object.keys(externalChecklist).length > 0) {
+      setChecked(prev => ({ ...prev, ...externalChecklist }));
+    }
+  }, [externalChecklist]);
+
+  React.useEffect(() => {
+    if (externalNotes && Object.keys(externalNotes).length > 0) {
+      setNotes(prev => ({ ...prev, ...externalNotes }));
+    }
+  }, [externalNotes]);
 
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     verify: true, approve: true, decide: true, unblock: true,
@@ -58,6 +89,8 @@ export const POVerificationView: React.FC<POVerificationViewProps> = ({ currentD
     setChecked(prev => {
       const next = { ...prev, [id]: !prev[id] };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      // Sync to Supabase
+      onUpdateChecklist?.(next);
       return next;
     });
   };
@@ -68,6 +101,8 @@ export const POVerificationView: React.FC<POVerificationViewProps> = ({ currentD
       const next = { ...prev };
       items.forEach(i => { next[i.id] = !allDone; });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      // Sync to Supabase
+      onUpdateChecklist?.(next);
       return next;
     });
   };
@@ -76,6 +111,8 @@ export const POVerificationView: React.FC<POVerificationViewProps> = ({ currentD
     setNotes(prev => {
       const next = { ...prev, [day]: value };
       localStorage.setItem(STORAGE_KEY + '_notes', JSON.stringify(next));
+      // Sync to Supabase (debounce by letting the caller handle it)
+      onUpdateNote?.(day, value);
       return next;
     });
   };
@@ -297,17 +334,27 @@ export const POVerificationView: React.FC<POVerificationViewProps> = ({ currentD
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <Save className="w-4 h-4" /> PO Notes — Day {selectedDay}
+            {onUpdateNote && (
+              <span className="ml-auto text-[10px] font-normal text-emerald-600 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                Synced to Supabase (visible to Claude)
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Textarea
             value={notes[selectedDay] || ''}
             onChange={e => updateNote(selectedDay, e.target.value)}
-            placeholder={`Decisions made, feedback given, follow-ups for Day ${selectedDay}...`}
-            rows={3}
+            placeholder={`Decisions made, feedback for devs, blockers, PO decisions for Day ${selectedDay}... (synced to Supabase — Claude reads this)`}
+            rows={4}
             className="text-sm"
           />
-          <p className="text-xs text-muted-foreground mt-1.5">Auto-saved to browser.</p>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {onUpdateNote
+              ? '✅ Auto-saved to browser + Supabase. Claude ingests this at session start.'
+              : 'Auto-saved to browser.'}
+          </p>
         </CardContent>
       </Card>
 
