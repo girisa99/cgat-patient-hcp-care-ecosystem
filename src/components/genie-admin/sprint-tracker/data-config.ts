@@ -45,11 +45,11 @@ export const DEFAULT_TASK_OVERRIDES: Record<string, TaskOverride> = {
   'C-103': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '6 issues found. Fixed: support email. Deck is most production-ready.' },
   'C-104': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '33 total issues across 3 products. 11 fixed Day 1, 22 open.' },
   'S-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Build passes (58s). 7 files changed. Branch pushed.' },
-  // ── Day 2: Lovable (gated) ──
-  'L-201': { status: 'completed', updatedAt: '2026-02-18T16:00:00Z', note: 'D-002 fixed. Product catalog live. H-201 consumed — Try Deck CTA works.' },
-  'L-202': { status: 'completed', updatedAt: '2026-02-18T16:00:00Z', note: 'Pricing tiers fixed. 3 tiers per region with currency localization.' },
-  'L-203': { status: 'completed', updatedAt: '2026-02-18T16:00:00Z', note: 'D-005 fixed. Explore demos verified. SIC-104/SIC-105 acknowledged.' },
-  'L-204': { status: 'completed', updatedAt: '2026-02-18T16:00:00Z', note: 'All planned landing sections present and rendering.' },
+  // ── Day 2: Lovable (active — green light from Claude 2026-02-18) ──
+  'L-201': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Product catalog + "Try It" CTAs. Soft gate only — Deck CTA renders, verify link once H-201 ready.' },
+  'L-202': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Tier names aligned with genieStudioNavItems.ts (free/starter/creator/pro/business/enterprise). H-203 resolved.' },
+  'L-203': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Verifying GenieExploreDemoPage flows.' },
+  'L-204': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Adding missing landing sections.' },
 };
 
 export const DEFAULT_STANDUPS: StandupEntry[] = [
@@ -70,31 +70,9 @@ export const DEFAULT_STANDUPS: StandupEntry[] = [
   {
     day: 2, developer: 'claude' as Developer,
     yesterday: 'Day 1: Diagnosed all 3 CREATE products. Found 33 issues. Fixed 11. Build passes.',
-    today: 'Completed C-201, C-202, C-203, S-201. Fixed PresentationWizard: auth validation, progress bar, onComplete callback, Deck-specific errors, ARIA. ComplianceChecker error handling. Deck E2E verified. H-201 set to ready.',
-    blockers: 'None. Deck complete. D-002/D-003/D-005 are in Lovable territory (DeckDemoCard/route guard).',
-    createdAt: '2026-02-18T15:00:00Z',
-  },
-  {
-    day: 2, developer: 'claude' as Developer,
-    yesterday: 'Day 2: Deck creation flow complete. H-201 ready. SIC-104/SIC-105 acknowledged.',
-    today: 'Next session: Day 3 — C-301 SmartContentPipeline AI generation, C-302 SparkGuidedWizard, C-303 useGenieScripts, C-304 Spark E2E.',
-    blockers: 'SmartContentPipeline (80KB) uses simulated AI — will need real edge function calls.',
-    createdAt: '2026-02-18T17:00:00Z',
-  },
-  // ── Lovable Day 2 ──
-  {
-    day: 2, developer: 'lovable' as Developer,
-    yesterday: 'Day 1: Audited landing (L-101 to L-104). Fixed routes, verified legal pages.',
-    today: 'Completed L-201 to L-204. Fixed D-002 (DeckDemoCard fallback), D-005 (image skeleton). Product catalog + pricing + explore demos + landing sections all done. Acknowledged H-201, SIC-104, SIC-105.',
-    blockers: 'None. All Day 2 tasks complete. H-301 (Spark flow) pending for Day 3 demo linking.',
-    createdAt: '2026-02-18T17:30:00Z',
-  },
-  {
-    day: 2, developer: 'lovable' as Developer,
-    yesterday: 'Day 2: Product catalog, pricing, explore demos, landing sections — all done. D-002/D-005 fixed.',
-    today: 'Next session: Day 3 — L-301 Interactive demos (STT + TryGenie), L-302 DeepL demo, L-303 Video showcases, L-304 Region switching.',
-    blockers: 'H-301 (Spark flow) still pending — will build demo UI first, verify Spark link at EOD.',
-    createdAt: '2026-02-18T18:00:00Z',
+    today: 'Day 2: C-201 Fix PresentationWizard (4h). C-202 Fix sub-components (3h). C-203 E2E verify (1h).',
+    blockers: 'None — Deck is cleanest product.',
+    createdAt: '2026-02-17T17:00:00Z',
   },
 ];
 
