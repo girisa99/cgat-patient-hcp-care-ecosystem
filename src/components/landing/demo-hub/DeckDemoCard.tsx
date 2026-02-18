@@ -8,7 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Presentation, Loader2, Sparkles, Globe, Lock, ChevronRight, 
-  BarChart3, Users, Box, Footprints, User, Mic, Play, Volume2
+  BarChart3, Users, Box, Footprints, User, Mic, Play, Volume2,
+  ImageOff, RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -157,6 +158,48 @@ const ProviderRibbon: React.FC<{ layout: SlideLayout }> = ({ layout }) => {
     </motion.div>
   );
 };
+
+// ── D-005: Image Loading Skeleton ──
+const ImageSkeleton: React.FC<{ className?: string }> = ({ className }) => (
+  <motion.div
+    animate={{ opacity: [0.4, 0.8, 0.4] }}
+    transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+    className={`absolute inset-0 z-[1] bg-gradient-to-br from-white/5 via-white/10 to-white/5 backdrop-blur-sm flex flex-col items-center justify-center gap-2 ${className}`}
+  >
+    <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+      <Loader2 className="h-4 w-4 text-white/40 animate-spin" />
+    </div>
+    <span className="text-[9px] text-white/30 font-medium uppercase tracking-widest">Generating image…</span>
+    <div className="flex gap-1">
+      {[0, 1, 2].map(i => (
+        <motion.div
+          key={i}
+          animate={{ scaleY: [0.4, 1, 0.4] }}
+          transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.2 }}
+          className="w-1 h-3 rounded-full bg-white/20"
+        />
+      ))}
+    </div>
+  </motion.div>
+);
+
+// ── D-002: Image Fallback UI ──
+const ImageFallback: React.FC<{ palette: IndustryPalette; onRetry?: () => void }> = ({ palette, onRetry }) => (
+  <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-2 bg-black/20">
+    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+      <ImageOff className="h-5 w-5 text-white/20" />
+    </div>
+    <span className="text-[9px] text-white/25 font-medium">Visual unavailable</span>
+    {onRetry && (
+      <button
+        onClick={onRetry}
+        className="text-[8px] text-white/30 hover:text-white/50 flex items-center gap-1 transition-colors"
+      >
+        <RefreshCw className="h-2.5 w-2.5" /> Retry
+      </button>
+    )}
+  </div>
+);
 
 // ── Audio Waveform Animation ──
 const AudioWaveform: React.FC<{ active?: boolean }> = ({ active = true }) => (
@@ -530,6 +573,8 @@ export const DeckDemoCard: React.FC<DeckDemoCardProps> = ({ industryId, region }
   const templates = getDemoTemplates(industryId, 'deck');
 
   const [selectedLang, setSelectedLang] = useState('en');
+  const [slideImagesLoading, setSlideImagesLoading] = useState<Record<number, boolean>>({});
+  const [slideImagesFailed, setSlideImagesFailed] = useState<Record<number, boolean>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [slides, setSlides] = useState<GeneratedSlide[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -653,6 +698,9 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
 
   // ── AI Image Generation for slides ──
   const generateSlideImage = async (slideIdx: number, imagePrompt: string) => {
+    // D-005: Set loading skeleton before request
+    setSlideImagesLoading(prev => ({ ...prev, [slideIdx]: true }));
+    setSlideImagesFailed(prev => ({ ...prev, [slideIdx]: false }));
     try {
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
@@ -665,9 +713,15 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
       });
       if (!error && data?.imageUrl) {
         setSlideImages(prev => ({ ...prev, [slideIdx]: data.imageUrl }));
+      } else {
+        // D-002: Mark as failed so fallback UI shows
+        setSlideImagesFailed(prev => ({ ...prev, [slideIdx]: true }));
       }
     } catch {
-      // Image generation is optional — gracefully degrade
+      // D-002: Graceful degradation — show fallback UI
+      setSlideImagesFailed(prev => ({ ...prev, [slideIdx]: true }));
+    } finally {
+      setSlideImagesLoading(prev => ({ ...prev, [slideIdx]: false }));
     }
   };
 
@@ -715,14 +769,33 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
 
   const renderSlideContent = (slide: GeneratedSlide, slideIdx: number) => {
     const imgUrl = slideImages[slideIdx];
-    switch (slide.layoutType) {
-      case 'title': return <TitleSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
-      case 'avatar': return <AvatarSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
-      case 'chart': return <ChartSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
-      case 'timeline': return <TimelineSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
-      case '3d': return <ThreeDSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
-      default: return <BulletsSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
-    }
+    const isImgLoading = slideImagesLoading[slideIdx] || false;
+    const isImgFailed = slideImagesFailed[slideIdx] || false;
+    const retryImage = slide.imagePrompt
+      ? () => generateSlideImage(slideIdx, slide.imagePrompt!)
+      : undefined;
+    return (
+      <div className="relative h-full">
+        {/* D-005: Image loading skeleton overlay */}
+        {isImgLoading && !imgUrl && ['title', '3d', 'avatar'].includes(slide.layoutType) && (
+          <ImageSkeleton />
+        )}
+        {/* D-002: Image failed fallback overlay */}
+        {isImgFailed && !imgUrl && ['title', '3d'].includes(slide.layoutType) && (
+          <ImageFallback palette={palette} onRetry={retryImage} />
+        )}
+        {(() => {
+          switch (slide.layoutType) {
+            case 'title': return <TitleSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
+            case 'avatar': return <AvatarSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
+            case 'chart': return <ChartSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
+            case 'timeline': return <TimelineSlideLayout slide={slide} lang={selectedLang} palette={palette} />;
+            case '3d': return <ThreeDSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
+            default: return <BulletsSlideLayout slide={slide} lang={selectedLang} palette={palette} imageUrl={imgUrl} />;
+          }
+        })()}
+      </div>
+    );
   };
 
   return (
@@ -963,7 +1036,7 @@ Respond ONLY in valid JSON (no markdown): { "slides": [{ "slideNumber": 1, "layo
                     </div>
                   </div>
 
-                  {/* Slide content — layout-specific */}
+                  {/* Slide content — layout-specific (D-002/D-005 skeleton+fallback handled inside) */}
                   <div className="relative z-[5] h-full pt-10">
                     {renderSlideContent(slides[activeSlide], activeSlide)}
                   </div>

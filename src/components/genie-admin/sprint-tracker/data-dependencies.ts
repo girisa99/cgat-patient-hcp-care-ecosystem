@@ -48,33 +48,6 @@ export const HANDOFFS: Handoff[] = [
     priority: 'medium',
   },
 
-  // ── Day 2 — Sprint Tracker UI/UX Handoff ──
-  {
-    id: 'H-110',
-    title: 'Sprint Tracker UI/UX → Lovable owns visual polish',
-    from: 'claude', to: 'lovable', direction: 'claude-to-lovable',
-    day: 2,
-    producerTaskId: 'C-104',
-    consumerTaskId: 'L-110',
-    artifact: 'Sprint Tracker modular components at src/components/genie-admin/sprint-tracker/ (12 files). Data layer, types, hooks, and tab structure are complete. Lovable owns all visual/UI/UX improvements.',
-    consumerNotes: `Sprint Tracker UI/UX is now Lovable's responsibility. Claude built:
-- 7 tab views (Board, Standups, Dependencies, Findings, Metrics, Strategy, PO Gate)
-- Data files (data-tasks.ts, data-dependencies.ts, data-findings.ts, data-config.ts)
-- Hook (useSprintTracker.ts) and types (types.ts)
-- Route: /genie-admin?tab=sprint-tracker
-
-Lovable should:
-1. Restyle all tab views with proper Shadcn/Tailwind polish
-2. Make the Kanban board drag-and-drop friendly
-3. Add animations, transitions, and mobile responsiveness
-4. Improve card layouts, color coding, and visual hierarchy
-5. Optionally render Mermaid diagrams inline (or replace with React-based visualizations)
-
-Do NOT change: data structures, types, hook logic, or data-dependencies.ts handoff/chain data.`,
-    status: 'ready',
-    priority: 'high',
-  },
-
   // ── Day 2 ──
   {
     id: 'H-201',
@@ -84,9 +57,8 @@ Do NOT change: data structures, types, hook logic, or data-dependencies.ts hando
     producerTaskId: 'C-203',
     consumerTaskId: 'L-201',
     artifact: 'Route `/genie-deck` now has working creation flow',
-    consumerNotes: 'Product catalog can show "Try Deck" CTA linking to `/genie-deck`. Verify it loads.',
+    consumerNotes: 'Product catalog can show "Try Deck" CTA linking to `/genie-deck`. Verify it loads. PO confirmed acknowledged 2026-02-18.',
     status: 'acknowledged',
-    acknowledgedAt: '2026-02-18T16:00:00Z',
     priority: 'high',
   },
   {
@@ -244,6 +216,8 @@ export const PO_CHECKLISTS: POChecklistItem[] = [
   { id: 'PO-203', day: 2, category: 'approve', title: 'Pricing tiers match between landing and studio', description: 'Compare pricing on /products page with tier gating in genieStudioNavItems.ts', developer: 'both', relatedTasks: ['L-202', 'H-203'], completed: false },
   { id: 'PO-204', day: 2, category: 'decide', title: 'Landing CTA → Deck link approved', description: 'Lovable\'s product page links to /genie-deck. Verify Claude\'s Deck is ready.', developer: 'both', relatedTasks: ['H-201'], completed: false },
   { id: 'PO-205', day: 2, category: 'unblock', title: 'Handoff H-201 acknowledged', description: 'Confirm Lovable has acknowledged the Deck route is live and working.', developer: 'lovable', relatedTasks: ['H-201'], completed: false },
+  // D-003: Tier gating route guard
+  { id: 'PO-206', day: 2, category: 'decide', title: 'D-003: Tier gating approach for /genie-deck', description: 'genieStudioNavItems.ts is locked. PO must decide: (A) soft-gate via landing CTA only (no code change needed), or (B) hard redirect guard requiring Claude to implement. Lovable cannot touch locked file.', developer: 'both', relatedTasks: ['L-201', 'L-202'], completed: false },
 
   // ── Day 3 ──
   { id: 'PO-301', day: 3, category: 'verify', title: 'Spark creation flow works end-to-end', description: 'Visit /genie-spark, enter a prompt, generate content, save script.', route: '/genie-spark', developer: 'claude', relatedTasks: ['C-301', 'C-302', 'C-303', 'C-304'], completed: false },
