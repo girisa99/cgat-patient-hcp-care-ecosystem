@@ -446,6 +446,7 @@ export const SprintTrackerDashboard: React.FC = () => {
                 getTaskStatus={getTaskStatus}
                 onStatusChange={updateTaskStatus}
                 taskOverrides={state.taskOverrides}
+                onNavigateToPOGate={() => setActiveView('po-gate')}
               />
             )}
 
