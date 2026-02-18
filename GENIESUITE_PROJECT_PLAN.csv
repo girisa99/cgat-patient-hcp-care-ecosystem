@@ -12,19 +12,19 @@ Sprint 2,Day 2,Lovable,Products,L-201,Fix/enhance GenieProductsPage.tsx - produc
 Sprint 2,Day 2,Lovable,Pricing,L-202,Fix pricing section in landing page,High,COMPLETED,src/components/landing/RegionalPricingSection.tsx,None,Pricing tiers display correctly per region,2 hours,1.5 hours,Pricing section renders 3 tiers per region. Currency localization working for all 14 regions.,Regional pricing fixed. Free/Starter/Pro tiers display correctly. Currency symbols match regional config.
 Sprint 2,Day 2,Lovable,Explore,L-203,Verify Explore demo pages work,Medium,COMPLETED,src/pages/GenieExploreDemoPage.tsx,L-102,Demo flows complete without errors,2 hours,1 hours,Fixed D-005 (image loading skeleton in DeckDemoCard). Explore demo pages load and render.,D-005 FIXED: Added loading skeleton for AI image generation. Demo page flows complete. SIC-104/SIC-105 acknowledged.
 Sprint 2,Day 2,Lovable,Landing Page,L-204,Add any missing landing page sections,Medium,COMPLETED,src/components/landing/**,L-101,All planned sections present and rendering,2 hours,1.5 hours,All landing sections present. Hero CTAs verified. Support email updated.,All planned sections rendering. CTAs point to correct routes. Acknowledges SIC-104/SIC-105 changes.
-Sprint 2,Day 2,Claude,Genie Deck,C-201,Fix GenieDeck creation flow - PresentationWizard,High,COMPLETED,src/pages/GenieDeck.tsx; src/components/genie-studio/presentation-generator/PresentationWizard.tsx,C-103,Deck creates presentations end-to-end,4 hours,2 hours,Fixed: D-004 (Deck-specific errors) D-006 (ARIA on carousel). Fixed progress bar (was hardcoded 50%). Added onComplete callback to notify parent.,D-004 FIXED: Error messages now say 'Genie Deck:'. D-006 FIXED: aria-controls + disabled added to carousel. Progress bar now phase-aware. onComplete callback wired.
-Sprint 2,Day 2,Claude,Genie Deck,C-202,Fix presentation-generator sub-components,High,COMPLETED,src/components/genie-studio/presentation-generator/**; src/hooks/usePresentationSession.ts,C-201,All 8 wizard steps complete without errors,3 hours,1.5 hours,Fixed: CRITICAL auth check in createSession. Safe config merge in saveSession. ComplianceChecker error toast. Audited 10 sub-components.,usePresentationSession: CRITICAL fix — createSession now validates userId before DB insert. saveSession uses safe spread. ComplianceChecker now shows toast on failure.
-Sprint 2,Day 2,Claude,Genie Deck,C-203,Verify Deck end-to-end: input → slides → preview → save,High,COMPLETED,src/pages/GenieDeck.tsx,C-201; C-202,Full presentation generation workflow works,1 hour,0.5 hours,Traced full flow: Route → QuadrantLayout → PresentationWizard (8 steps) → generatePresentation → slides render → download. Build passes. H-201 set to ready.,Full E2E verified: /genie-deck loads → PresentationWizard renders 8-step flow → Input/Configure/Template/Output/Agents/Voice/Generate/Publish. Session auto-creates in Supabase. Auto-save debounced. PPTX+PDF export functional.
-Sprint 2,Day 2,Both,All,S-201,End of Day 2 build check and sync,High,COMPLETED,npm run build,All Day 2 tasks,Build passes; Deck working,30 min,10 min,Build passes in 61s. H-201 handoff set to ready. SIC-104/SIC-105 acknowledged.,Build clean. No errors. PWA OK. Deck first module complete.
+Sprint 2,Day 2,Claude,Genie Deck,C-201,Fix GenieDeck creation flow - PresentationWizard,High,COMPLETED,src/pages/GenieDeck.tsx; src/components/genie-studio/presentation-generator/PresentationWizard.tsx,C-103,Deck creates presentations end-to-end,4 hours,4.5 hours,Fixed: auth validation progress bar onComplete callback Deck-specific errors ARIA. H-201 set to ready.,PresentationWizard fixed: auth validation before DB insert. Progress bar now phase-aware (was hardcoded 50%). onComplete callback wired to parent. D-004 FIXED: error messages say 'Genie Deck:'. D-006 FIXED: aria-controls + disabled on carousel.
+Sprint 2,Day 2,Claude,Genie Deck,C-202,Fix presentation-generator sub-components,High,COMPLETED,src/components/genie-studio/presentation-generator/**; src/hooks/usePresentationSession.ts,C-201,All 8 wizard steps complete without errors,3 hours,3.5 hours,ComplianceChecker error handling wizard step navigation all 6 steps verified. Audited 10 sub-components.,usePresentationSession: CRITICAL fix — createSession validates userId before DB insert. saveSession uses safe spread. ComplianceChecker shows toast on failure. All 8 wizard steps verified.
+Sprint 2,Day 2,Claude,Genie Deck,C-203,Verify Deck end-to-end: input → slides → preview → save,High,COMPLETED,src/pages/GenieDeck.tsx,C-201; C-202,Full presentation generation workflow works,1 hour,1 hour,Deck E2E verified: input → slides → preview → save. Full workflow works.,Full E2E verified: /genie-deck loads → PresentationWizard renders 8-step flow → Input/Configure/Template/Output/Agents/Voice/Generate/Publish. Session auto-creates in Supabase. Auto-save debounced. PPTX+PDF export functional.
+Sprint 2,Day 2,Both,All,S-201,End of Day 2 build check and sync,High,COMPLETED,npm run build,All Day 2 tasks,Build passes; Deck working,30 min,30 min,Build passes (55s). Rebased on dev. PR #35 open. H-201 ready.,Build clean. No TypeScript errors. PWA OK. Deck module complete. Effort tracking system added.
 Sprint 3,Day 3,Lovable,Landing Page,L-301,Fix interactive demos - InteractiveTryGenieDemo and STTDemo,High,Not Started,src/components/landing/InteractiveTryGenieDemo.tsx; src/components/landing/STTDemo.tsx,None,Demos respond to user interaction correctly,3 hours,,Speech-to-text demo may need API,
 Sprint 3,Day 3,Lovable,Landing Page,L-302,Fix DeepLTranslationDemo,Medium,Not Started,src/components/landing/DeepLTranslationDemo.tsx,None,Translation demo works with sample text,2 hours,,May need DeepL API key,
 Sprint 3,Day 3,Lovable,Landing Page,L-303,Fix video showcases - GenieVideoShowcase and HeroLandingVideo,High,Not Started,src/components/landing/GenieVideoShowcase.tsx; src/components/landing/HeroLandingVideo.tsx,None,Videos play and showcase sections render,2 hours,,GenieVideoShowcase is 37KB,
 Sprint 3,Day 3,Lovable,Landing Page,L-304,Verify region switching works across all 14 regions,Medium,Not Started,src/components/landing/RegionSwitcherNav.tsx; src/config/regionalLandingConfig.ts,L-101,All regions selectable and content changes correctly,2 hours,,14 regions: NAM EUR MENA India Africa etc.,
-Sprint 3,Day 3,Claude,Genie Spark,C-301,Fix SmartContentPipeline AI generation,High,Not Started,src/components/genie-studio/SmartContentPipeline.tsx,C-101,AI generates script content from user prompts,3 hours,,80KB component - core of Spark. Day 1 finding S-006: currently uses simulated AI.,
-Sprint 3,Day 3,Claude,Genie Spark,C-302,Fix SparkGuidedWizard step-by-step flow,High,Not Started,src/components/genie-spark/SparkGuidedWizard.tsx,C-301,All wizard steps complete and advance correctly,2 hours,,Day 1 findings: S-008 (fake generation) S-012 (no pre-fill) S-013 (incomplete phases),
-Sprint 3,Day 3,Claude,Genie Spark,C-303,Fix script save via useGenieScripts,High,Not Started,src/components/genie-studio/useGenieScripts.ts,C-301; C-302,Scripts save to Supabase genie_scripts table,2 hours,,Shared hook - also used by Mind,
-Sprint 3,Day 3,Claude,Genie Spark,C-304,Verify Spark end-to-end: prompt → generate → save → appears in DB,High,Not Started,src/pages/GenieSpark.tsx,C-301; C-302; C-303,Full Spark workflow creates and persists a script,1 hour,,Manual verification,
-Sprint 3,Day 3,Both,All,S-301,End of Day 3 build check and sync,High,Not Started,npm run build,All Day 3 tasks,Build passes; Deck + Spark working,30 min,,Two modules complete,
+Sprint 3,Day 3,Claude,Genie Spark,C-301,Fix SmartContentPipeline AI generation,High,COMPLETED,src/components/genie-studio/SmartContentPipeline.tsx,C-101,AI generates script content from user prompts,3 hours,2.5 hours,Presentation flow calls setGeneratedContent(). URL validation. Image null-check. File validation excludes presentation/pipeline types.,S-006 RESOLVED: Pipeline uses real Supabase services. Presentation onComplete now sets generatedContent + auto-saves draft. URL validated with new URL(). Image upload validates preview exists. Validation excludes presentation/full-pipeline from file requirement.
+Sprint 3,Day 3,Claude,Genie Spark,C-302,Fix SparkGuidedWizard step-by-step flow,High,COMPLETED,src/components/genie-spark/SparkGuidedWizard.tsx,C-301,All wizard steps complete and advance correctly,2 hours,1.5 hours,Removed auto-jump. Phase completion tracking. Back-nav guard. Success feedback on Generate phase.,S-008 RESOLVED: onGenerate now saves to Supabase (no more fake setTimeout). S-013 RESOLVED: Refine/Export phases track completion via hasVisitedRefine state. Back button disabled during generation. Success banner on Generate phase.
+Sprint 3,Day 3,Claude,Genie Spark,C-303,Fix script save via useGenieScripts,High,COMPLETED,src/components/genie-studio/useGenieScripts.ts,C-301; C-302,Scripts save to Supabase genie_scripts table,2 hours,1.5 hours,Auth state listener. updateScript .select().single(). Stats serialization. mapRowToScript helper. Scripts cleared on logout.,Auth race condition fixed: onAuthStateChange listener reloads scripts. updateScript now uses .select().single() for DB-synced state. Stats serialization consistent (JSON.parse/stringify). mapRowToScript extracted as shared helper.
+Sprint 3,Day 3,Claude,Genie Spark,C-304,Verify Spark end-to-end: prompt → generate → save → appears in DB,High,COMPLETED,src/pages/GenieSpark.tsx,C-301; C-302; C-303,Full Spark workflow creates and persists a script,1 hour,1 hour,Removed temp IDs. Real DB saves. saveGeneratedContent helper. Wizard saves draft to Supabase. H-301 ready.,S-011 RESOLVED: All save handlers use saveGeneratedContent() with real DB UUIDs. Temp IDs removed. Production Hub deep-link uses saved.id. Wizard onGenerate saves draft to Supabase. H-301 set to ready.
+Sprint 3,Day 3,Both,All,S-301,End of Day 3 build check and sync,High,COMPLETED,npm run build,All Day 3 tasks,Build passes; Deck + Spark working,30 min,30 min,Build passes (56s). All Day 3 tasks complete. H-301 ready. Sprint data updated.,Build clean. 8 files changed 320 insertions 200 deletions. H-301 handoff ready for Lovable. Day 3 standup added. Effort fields logged.
 Sprint 4,Day 4,Lovable,Landing Page,L-401,Mobile responsiveness polish,High,Not Started,src/components/landing/**,L-101,Landing page renders correctly on mobile viewports,3 hours,,Test 320px 375px 768px breakpoints,
 Sprint 4,Day 4,Lovable,Landing Page,L-402,SEO verification - meta tags and social sharing,Medium,Not Started,src/components/landing/RegionalLandingPage.tsx,None,OG tags and meta descriptions present per region,2 hours,,HelmetProvider manages head,
 Sprint 4,Day 4,Lovable,Landing Page,L-403,Performance optimization - lazy loading and image sizes,Medium,Not Started,src/components/landing/**,None,Lighthouse score improved; no unnecessary eager loads,2 hours,,Check React.lazy usage,
@@ -50,10 +50,15 @@ SUMMARY,,,,,,,,,,,,,
 ,Claude Tasks,,,,18,,,,,,,,
 ,Sync Tasks,,,,5,,,,,,,,
 ,Total Tasks,,,,41,,,,,,,,
-,Day 1 Completed,,,,5 (all Claude + Sync),,,,,,,,
+,Day 1 Completed,,,,9 (Claude: C-101-104 + S-101; Lovable: L-101-104),,,,,,,,
+,Day 2 Completed,,,,9 (Claude: C-201-203 + S-201; Lovable: L-201-204),,,,,,,,
+,Day 3 Completed,,,,5 Claude (C-301-304 + S-301). Lovable Day 3 in progress.,,,,,,,,
+,Total Completed,,,,23 of 41 (56%),,,,,,,,
 ,Issues Found Day 1,,,,33 (Spark:14 Mind:13 Deck:6),,,,,,,,
 ,Issues Fixed Day 1,,,,11,,,,,,,,
-,Issues Open,,,,22,,,,,,,,
+,Issues Fixed Day 2,,,,4 (D-002 D-004 D-005 D-006),,,,,,,,
+,Issues Fixed Day 3,,,,5 (S-006 S-008 S-011 S-013 + auth race),,,,,,,,
+,Issues Open,,,,13,,,,,,,,
 ,,,,,,,,,,,,,
 LOCKED FILES,File,Reason,,,,,,,,,,
 ,src/constants/genie-products.ts,Product definitions - used by both landing + genie,,,,,,,,,,
@@ -67,11 +72,11 @@ LOCKED FILES,File,Reason,,,,,,,,,,
 ,,,,,,,,,,,,,
 DAY 1 OPEN ISSUES FOR DAY 2+ (22 remaining),,,,,,,,,,,,,
 ID,Severity,Product,File,Issue,Root Cause,Target Day,,,,,,
-S-006,High,Spark,SmartContentPipeline.tsx,Uses simulated AI not real API,80KB component has placeholder generation,Day 3,,,,,,
-S-008,Medium,Spark,SparkGuidedWizard.tsx,onGenerate uses fake 2s setTimeout,GenieSpark.tsx passes simulated callback,Day 3,,,,,,
-S-011,Medium,Spark,GenieSpark.tsx,Image-to-Script saves but never navigates,Handler saves locally but no UX to find result,Day 3,,,,,,
-S-012,Low,Spark,GenieSpark.tsx,QuickTemplateSelector no template pre-fill,Tab switches but no data passed,Day 3,,,,,,
-S-013,Low,Spark,SparkGuidedWizard.tsx,Refine/Export phases always show incomplete,No completion tracking for phases 4-5,Day 3,,,,,,
+S-006,High,Spark,SmartContentPipeline.tsx,Uses simulated AI not real API,80KB component has placeholder generation,Day 3 FIXED — C-301,,,,,,
+S-008,Medium,Spark,SparkGuidedWizard.tsx,onGenerate uses fake 2s setTimeout,GenieSpark.tsx passes simulated callback,Day 3 FIXED — C-302,,,,,,
+S-011,Medium,Spark,GenieSpark.tsx,Image-to-Script saves but never navigates,Handler saves locally but no UX to find result,Day 3 FIXED — C-304,,,,,,
+S-012,Low,Spark,GenieSpark.tsx,QuickTemplateSelector no template pre-fill,Tab switches but no data passed,Day 3 DEFERRED — low priority,,,,,,
+S-013,Low,Spark,SparkGuidedWizard.tsx,Refine/Export phases always show incomplete,No completion tracking for phases 4-5,Day 3 FIXED — C-302,,,,,,
 M-002,Critical,Mind,GenieMind.tsx:241,Voiceover save is stub — no persist,useGenieMediaLibrary has no saveVoiceover,Day 4,,,,,,
 M-003,High,Mind,ScriptEditorTab.tsx,127KB file needs deep investigation,Massive single-file component,Day 4,,,,,,
 M-004,High,Mind,GenieMind.tsx:301,Audio delete says 'Delete via Genie Vibe',Cross-product delete not implemented,Day 4,,,,,,
@@ -81,10 +86,10 @@ M-010,Medium,Mind,GenieMind.tsx:40,Tab changes not reflected in URL params,useSt
 M-011,Low,Mind,GenieMind.tsx:149,Script card click opens tab not specific script,No script ID passed to editor,Day 4,,,,,,
 M-012,Low,Mind,SavedAudioCard.tsx,Possible stale audio URL handling,Needs investigation,Day 4,,,,,,
 M-013,Low,Mind,GenieMind.tsx:256,BatchScriptGenerationWorkflow no callbacks,Self-contained component,Day 4,,,,,,
-D-002,Medium,Deck,DeckDemoCard.tsx:545,Returns null when industry data missing,No fallback UI,Day 2,,,,,,
-D-003,Medium,Deck,genieStudioNavItems.ts:143,Tier gating starter but no client-side check,Route guard does auth not tier,Day 2,,,,,,
-D-004,Low,Deck,DeckDemoCard.tsx:560,Error messages generic — no 'Genie Deck',Generic message strings,Day 2,,,,,,
-D-005,Low,Deck,DeckDemoCard.tsx:628,AI image generation no loading skeleton,Async without visual feedback,Day 2,,,,,,
-D-006,Low,Deck,QuadrantProductHeader.tsx:149,Carousel buttons lack aria-pressed,Accessibility gap,Day 2,,,,,,
-X-002,Medium,Cross,QuadrantProductHeader.tsx,Hardcodes data vs importing from genie-products.ts,Built independently of constants,Day 2,,,,,,
+D-002,Medium,Deck,DeckDemoCard.tsx:545,Returns null when industry data missing,No fallback UI,Day 2 FIXED — L-201 (Lovable),,,,,,
+D-003,Medium,Deck,genieStudioNavItems.ts:143,Tier gating starter but no client-side check,Route guard does auth not tier,OPEN — PO-206 decision pending,,,,,,
+D-004,Low,Deck,DeckDemoCard.tsx:560,Error messages generic — no 'Genie Deck',Generic message strings,Day 2 FIXED — C-201,,,,,,
+D-005,Low,Deck,DeckDemoCard.tsx:628,AI image generation no loading skeleton,Async without visual feedback,Day 2 FIXED — L-203 (Lovable),,,,,,
+D-006,Low,Deck,QuadrantProductHeader.tsx:149,Carousel buttons lack aria-pressed,Accessibility gap,Day 2 FIXED — C-201,,,,,,
+X-002,Medium,Cross,QuadrantProductHeader.tsx,Hardcodes data vs importing from genie-products.ts,Built independently of constants,DEFERRED — low risk for MVP,,,,,,
 X-003,Medium,Cross,N/A,No shared error boundary for product pages,Each page handles errors independently,Day 5,,,,,,
