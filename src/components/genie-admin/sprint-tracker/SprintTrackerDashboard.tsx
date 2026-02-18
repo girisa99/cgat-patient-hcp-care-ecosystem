@@ -29,10 +29,11 @@ import { MetricsView } from './MetricsView';
 import { StrategyView } from './StrategyView';
 import { POVerificationView } from './POVerificationView';
 import { FindingsView } from './FindingsView';
+import { SprintPlanningView } from './SprintPlanningView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewId = 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings';
+type ViewId = 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -300,9 +301,10 @@ export const SprintTrackerDashboard: React.FC = () => {
                 Reports
               </p>
               <div className="space-y-0.5">
-                <NavBtn active={activeView === 'findings'} label="Findings / QA"  icon={ClipboardCheck} onClick={() => setActiveView('findings')} />
-                <NavBtn active={activeView === 'strategy'} label="Strategy"        icon={Shield}         onClick={() => setActiveView('strategy')} />
-                <NavBtn active={activeView === 'po-gate'}  label="Release Gate ▸"  icon={Flag}           onClick={() => setActiveView('po-gate')}  />
+                <NavBtn active={activeView === 'planning'}  label="Sprint Planning ▸" icon={Target}         onClick={() => setActiveView('planning')}  />
+                <NavBtn active={activeView === 'findings'}  label="Findings / QA"     icon={ClipboardCheck} onClick={() => setActiveView('findings')} />
+                <NavBtn active={activeView === 'strategy'}  label="Strategy"           icon={Shield}         onClick={() => setActiveView('strategy')} />
+                <NavBtn active={activeView === 'po-gate'}   label="Release Gate ▸"    icon={Flag}           onClick={() => setActiveView('po-gate')}  />
               </div>
             </div>
 
@@ -437,6 +439,15 @@ export const SprintTrackerDashboard: React.FC = () => {
             {/* PO Gate */}
             {activeView === 'po-gate' && (
               <POVerificationView currentDay={currentDay} getTaskStatus={getTaskStatus} />
+            )}
+
+            {/* Sprint Planning */}
+            {activeView === 'planning' && (
+              <SprintPlanningView
+                getTaskStatus={getTaskStatus}
+                currentDay={currentDay}
+                onNavigateToDay={(d) => setActiveView(`day-${d}` as ViewId)}
+              />
             )}
 
           </div>

@@ -2,7 +2,8 @@
  * DayPageView — Day-centric sprint board (Jira-mappable)
  *
  * Sections per day:
- *   1. KICKSTART — who depends on what today, who is waiting, who is unblocked
+ *   0. PO/SM GATE — what the PO must do today (approve / verify / decide / unblock)
+ *   1. KICKSTART — who depends on what, who is waiting, who is unblocked
  *   2. SPRINT BOARD — 4 columns (To Do | In Progress | Done | Won't Do)
  *      - empty columns collapse to a thin strip; active columns expand
  *      - swimlanes: Claude (violet) | Lovable (pink)
@@ -16,22 +17,25 @@
  *   Swimlane= Assignee
  *   Handoff = Issue Link (blocks / is blocked by)
  *   Standup = Sprint Ceremony
+ *   PO Gate = Release Gate
  */
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import {
   Brain, Zap, CheckCircle2, Clock, AlertTriangle,
-  ArrowRight, Ban, Save, Plus, ChevronDown, ChevronRight,
+  ArrowRight, Ban, Save, ChevronDown, ChevronRight,
   FileCode, Link2, MessageSquare, Rocket, Users,
-  ArrowDown, Hourglass, PlayCircle,
+  ArrowDown, Hourglass, PlayCircle, Flag, Eye,
+  ThumbsUp, HelpCircle, KeyRound, ShieldCheck, GitBranch,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SPRINT_TASKS } from './data-tasks';
-import { HANDOFFS, DEPENDENCY_CHAINS } from './data-dependencies';
+import { HANDOFFS, DEPENDENCY_CHAINS, PO_CHECKLISTS } from './data-dependencies';
 import { DAY1_FINDINGS } from './data-findings';
 import type { Developer, TaskStatus, StandupEntry, HandoffStatus } from './types';
 
@@ -58,6 +62,13 @@ const DEV = {
     tagCls: 'bg-pink-100 text-pink-800 border-pink-300',
     dot: 'bg-pink-500',
   },
+} as const;
+
+const PO_CFG = {
+  verify:  { label: 'Verify',  Icon: Eye,        cls: 'text-blue-700 bg-blue-50 border-blue-200',   badge: 'bg-blue-100 text-blue-700',   dot: 'bg-blue-500' },
+  approve: { label: 'Approve', Icon: ThumbsUp,    cls: 'text-green-700 bg-green-50 border-green-200', badge: 'bg-green-100 text-green-700', dot: 'bg-green-500' },
+  decide:  { label: 'Decide',  Icon: HelpCircle,  cls: 'text-amber-700 bg-amber-50 border-amber-200', badge: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' },
+  unblock: { label: 'Unblock', Icon: KeyRound,    cls: 'text-red-700 bg-red-50 border-red-200',      badge: 'bg-red-100 text-red-700',     dot: 'bg-red-500' },
 } as const;
 
 // Column definitions — controls order and appearance
@@ -93,6 +104,223 @@ function getUnmetDeps(taskId: string, getStatus: (id: string) => TaskStatus): st
   if (!chain) return [];
   return chain.blockedBy.filter(dep =>
     dep.startsWith('H-') ? !isHandoffReady(dep, getStatus) : getStatus(dep) !== 'completed',
+  );
+}
+
+// ─── PO/SM Gate Section ───────────────────────────────────────────────────────
+
+const PO_STORAGE_KEY = 'genie_sprint_po_checklist';
+
+function POGateSection({
+  day, getTaskStatus,
+}: {
+  day: number;
+  getTaskStatus: (id: string) => TaskStatus;
+}) {
+  const [open, setOpen] = useState(true);
+  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
+    try { const s = localStorage.getItem(PO_STORAGE_KEY); return s ? JSON.parse(s) : {}; }
+    catch { return {}; }
+  });
+
+  const dayItems = PO_CHECKLISTS.filter(i => i.day === day);
+  if (dayItems.length === 0) return null;
+
+  const done = dayItems.filter(i => checked[i.id]).length;
+  const pct = Math.round((done / dayItems.length) * 100);
+  const allDone = done === dayItems.length;
+
+  const toggleCheck = (id: string) => {
+    setChecked(prev => {
+      const next = { ...prev, [id]: !prev[id] };
+      localStorage.setItem(PO_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // Group by category for display
+  const byCategory = (['verify', 'approve', 'decide', 'unblock'] as const).map(cat => ({
+    cat,
+    items: dayItems.filter(i => i.category === cat),
+  })).filter(g => g.items.length > 0);
+
+  // What MUST be done for day to start (unblock items)
+  const unblockItems = dayItems.filter(i => i.category === 'unblock');
+  const criticalApprove = dayItems.filter(i => i.category === 'approve');
+
+  return (
+    <section className="rounded-lg border border-emerald-200 bg-emerald-50/30 overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-emerald-200 hover:bg-emerald-100/50 transition-colors text-left"
+      >
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+        <Flag className="w-3 h-3 text-emerald-600 shrink-0" />
+        <span className="text-xs font-bold uppercase tracking-widest text-emerald-800">PO / SM Gate — Day {day}</span>
+        <span className="text-[10px] text-emerald-600 ml-1">What the Product Owner must do today</span>
+        <div className="ml-auto flex items-center gap-2">
+          {allDone ? (
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300 flex items-center gap-1">
+              <CheckCircle2 className="w-2.5 h-2.5" /> Gate Cleared
+            </span>
+          ) : (
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300">
+              {done}/{dayItems.length} · {pct}%
+            </span>
+          )}
+          {open ? <ChevronDown className="w-3.5 h-3.5 text-emerald-600" /> : <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />}
+        </div>
+      </button>
+
+      {open && (
+        <div className="p-3 space-y-3">
+
+          {/* Progress bar */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-bold text-emerald-700 shrink-0">{pct}% cleared</span>
+          </div>
+
+          {/* Critical: What PO must unblock TODAY for day to proceed */}
+          {(unblockItems.length > 0 || criticalApprove.length > 0) && (
+            <div className="rounded border border-amber-200 bg-amber-50/70 p-2.5 space-y-1.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800">Must Do First — Day {day} Cannot Start Without These</span>
+              </div>
+              {[...unblockItems, ...criticalApprove].map(item => {
+                const cfg = PO_CFG[item.category as keyof typeof PO_CFG];
+                const Icon = cfg.Icon;
+                return (
+                  <div key={item.id} className="flex items-start gap-2 text-[10px]">
+                    <Checkbox
+                      checked={checked[item.id] || false}
+                      onCheckedChange={() => toggleCheck(item.id)}
+                      className="mt-0.5 h-3 w-3"
+                    />
+                    <Icon className={cn('w-3 h-3 shrink-0 mt-0.5', cfg.cls.includes('blue') ? 'text-blue-600' : cfg.cls.includes('green') ? 'text-green-600' : cfg.cls.includes('amber') ? 'text-amber-600' : 'text-red-600')} />
+                    <div className="flex-1 min-w-0">
+                      <span className={cn('font-semibold', checked[item.id] && 'line-through text-muted-foreground')}>{item.title}</span>
+                      <p className="text-muted-foreground mt-0.5">{item.description}</p>
+                      {item.relatedTasks.length > 0 && (
+                        <div className="flex gap-1 mt-0.5 flex-wrap">
+                          {item.relatedTasks.map(t => {
+                            const st = getTaskStatus(t);
+                            return (
+                              <span key={t} className={cn('font-mono text-[8px] px-1 py-0.5 rounded border',
+                                st === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                st === 'in-progress' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-muted text-muted-foreground border-border'
+                              )}>{t}</span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    {checked[item.id] && <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Process flow: who is waiting for PO action */}
+          <div className="rounded border border-emerald-200 bg-white/50 overflow-hidden">
+            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-emerald-100">
+              {byCategory.map(({ cat, items }) => {
+                const cfg = PO_CFG[cat];
+                const Icon = cfg.Icon;
+                const catDone = items.filter(i => checked[i.id]).length;
+                return (
+                  <div key={cat} className="p-2.5 space-y-1.5">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', cfg.dot)} />
+                      <Icon className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{cfg.label}</span>
+                      <span className="ml-auto text-[9px] font-semibold text-muted-foreground">{catDone}/{items.length}</span>
+                    </div>
+                    {items.map(item => (
+                      <div key={item.id} className="flex items-start gap-1.5">
+                        <Checkbox
+                          checked={checked[item.id] || false}
+                          onCheckedChange={() => toggleCheck(item.id)}
+                          className="mt-0.5 h-3 w-3 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className={cn('text-[10px] leading-snug', checked[item.id] ? 'line-through text-muted-foreground' : 'text-foreground')}>
+                            {item.title}
+                          </p>
+                          {/* Who is affected */}
+                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                            {item.developer === 'both' ? (
+                              <>
+                                <span className="text-[8px] font-mono bg-violet-50 border border-violet-200 text-violet-700 px-1 rounded">Claude</span>
+                                <span className="text-[8px] font-mono bg-pink-50 border border-pink-200 text-pink-700 px-1 rounded">Lovable</span>
+                              </>
+                            ) : item.developer === 'claude' ? (
+                              <span className="text-[8px] font-mono bg-violet-50 border border-violet-200 text-violet-700 px-1 rounded">→ Claude</span>
+                            ) : (
+                              <span className="text-[8px] font-mono bg-pink-50 border border-pink-200 text-pink-700 px-1 rounded">→ Lovable</span>
+                            )}
+                            {item.route && (
+                              <span className="text-[8px] font-mono text-muted-foreground">{item.route}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Who is waiting for PO today */}
+          {(() => {
+            const waitingDevs: { dev: Developer; items: typeof dayItems }[] = [];
+            const claudeItems = dayItems.filter(i => i.developer === 'claude' && !checked[i.id]);
+            const lovableItems = dayItems.filter(i => i.developer === 'lovable' && !checked[i.id]);
+            const bothItems = dayItems.filter(i => i.developer === 'both' && !checked[i.id]);
+            if (claudeItems.length > 0 || bothItems.length > 0)
+              waitingDevs.push({ dev: 'claude', items: [...claudeItems, ...bothItems] });
+            if (lovableItems.length > 0 || bothItems.length > 0)
+              waitingDevs.push({ dev: 'lovable', items: [...lovableItems, ...bothItems] });
+
+            if (waitingDevs.length === 0) return (
+              <div className="flex items-center gap-1.5 text-[10px] text-green-700 px-1">
+                <CheckCircle2 className="w-3 h-3" /> All PO actions complete — both devs unblocked ✓
+              </div>
+            );
+
+            return (
+              <div className="flex items-center gap-2 flex-wrap text-[10px]">
+                <Users className="w-3 h-3 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground font-medium">Waiting on PO:</span>
+                {waitingDevs.map(({ dev }, i) => {
+                  const cfg = DEV[dev];
+                  const Icon = cfg.Icon;
+                  return (
+                    <React.Fragment key={dev}>
+                      {i > 0 && <span className="text-muted-foreground">&amp;</span>}
+                      <span className={cn('flex items-center gap-1 font-semibold', cfg.iconCls)}>
+                        <Icon className="w-3 h-3" /> {cfg.label}
+                      </span>
+                    </React.Fragment>
+                  );
+                })}
+                <span className="text-muted-foreground">— complete PO actions above to unblock</span>
+              </div>
+            );
+          })()}
+
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -311,10 +539,7 @@ function Swimlane({
   const wip   = ids.filter(id => getTaskStatus(id) === 'in-progress').length;
   const total = ids.length;
 
-  // Group IDs per column status
   const byStatus = (s: TaskStatus) => ids.filter(id => getTaskStatus(id) === s);
-
-  // Determine how many cols have content (for adaptive flex)
   const activeCols = COLS.filter(c => byStatus(c.status).length > 0).length;
 
   return (
@@ -344,7 +569,6 @@ function Swimlane({
       {!collapsed && (
         <div className={cn(
           'flex gap-2 p-2',
-          // When ≥3 cols have content, allow horizontal scroll on small screens
           activeCols >= 3 ? 'overflow-x-auto' : '',
         )}>
           {COLS.map(col => {
@@ -354,7 +578,6 @@ function Swimlane({
                 key={col.status}
                 className={cn(
                   'flex flex-col min-w-0',
-                  // Active cols get more space; empty cols collapse to thin strip
                   colIds.length > 0 ? 'flex-1 min-w-[180px]' : 'w-[80px] shrink-0',
                 )}
               >
@@ -385,15 +608,12 @@ function KickstartSection({
   const dayHandoffs = HANDOFFS.filter(h => h.day === day);
   if (dayHandoffs.length === 0 && day === 1) return null;
 
-  // Classify handoffs
   const ready    = dayHandoffs.filter(h => isHandoffReady(h.id, getTaskStatus));
   const waiting  = dayHandoffs.filter(h => !isHandoffReady(h.id, getTaskStatus));
 
-  // What does each dev need TODAY to get started
   const claudeNeeds  = dayHandoffs.filter(h => h.to === 'claude'  && !isHandoffReady(h.id, getTaskStatus));
   const lovableNeeds = dayHandoffs.filter(h => h.to === 'lovable' && !isHandoffReady(h.id, getTaskStatus));
 
-  // Tasks that can start today (no unmet deps)
   const dayTasks = SPRINT_TASKS.filter(t => t.day === day);
   const unblocked = dayTasks.filter(t => getUnmetDeps(t.id, getTaskStatus).length === 0 && getTaskStatus(t.id) === 'pending');
   const blocked   = dayTasks.filter(t => getUnmetDeps(t.id, getTaskStatus).length > 0  && getTaskStatus(t.id) !== 'completed');
@@ -547,10 +767,6 @@ function KickstartSection({
 
 // ─── Auto-fill helpers ────────────────────────────────────────────────────────
 
-/**
- * Build a smart auto-fill for the standup "Completed" field:
- * lists every task for this dev+day that is already completed.
- */
 function buildYesterdayFill(day: number, dev: Developer, getTaskStatus: (id: string) => TaskStatus): string {
   const prevDay = day - 1;
   if (prevDay < 1) return 'N/A — Sprint Day 1 start';
@@ -561,10 +777,6 @@ function buildYesterdayFill(day: number, dev: Developer, getTaskStatus: (id: str
   return `Completed ${prevDone.join(', ')} on Day ${prevDay}.`;
 }
 
-/**
- * Build a smart auto-fill for "Working On" field:
- * lists today's pending/in-progress tasks for this dev.
- */
 function buildTodayFill(day: number, dev: Developer, getTaskStatus: (id: string) => TaskStatus): string {
   const todayTasks = SPRINT_TASKS
     .filter(t => t.developer === dev && t.day === day)
@@ -580,10 +792,6 @@ function buildTodayFill(day: number, dev: Developer, getTaskStatus: (id: string)
   return labels.join('\n');
 }
 
-/**
- * Build auto-fill for "Blockers" field:
- * checks handoffs that this dev is waiting on today.
- */
 function buildBlockersFill(day: number, dev: Developer, getTaskStatus: (id: string) => TaskStatus): string {
   const waiting = HANDOFFS.filter(
     h => h.day === day && h.to === dev && !isHandoffReady(h.id, getTaskStatus),
@@ -608,13 +816,11 @@ function StandupCard({
   const cfg = DEV[dev];
   const Icon = cfg.Icon;
 
-  // Inline edit state (shown when no entry yet OR user clicks edit)
   const [editing, setEditing] = useState(!entry);
   const [done,  setDone]  = useState(() => entry?.yesterday ?? buildYesterdayFill(day, dev, getTaskStatus));
   const [now,   setNow]   = useState(() => entry?.today     ?? buildTodayFill(day, dev, getTaskStatus));
   const [block, setBlock] = useState(() => entry?.blockers  ?? buildBlockersFill(day, dev, getTaskStatus));
 
-  // When an entry appears from props (saved externally), sync local state
   React.useEffect(() => {
     if (entry && !editing) {
       setDone(entry.yesterday);
@@ -623,7 +829,6 @@ function StandupCard({
     }
   }, [entry]);
 
-  // Re-fill smart defaults whenever editing opens with no prior entry
   const openEdit = () => {
     if (!entry) {
       setDone(buildYesterdayFill(day, dev, getTaskStatus));
@@ -643,6 +848,12 @@ function StandupCard({
     setEditing(false);
   };
 
+  // What is this dev waiting on TODAY from PO or the other dev?
+  const dayHandoffsNeeded = HANDOFFS.filter(h => h.day === day && h.to === dev && !isHandoffReady(h.id, getTaskStatus));
+  const dayTasksForDev = SPRINT_TASKS.filter(t => t.developer === dev && t.day === day);
+  const blockedCount = dayTasksForDev.filter(t => getUnmetDeps(t.id, getTaskStatus).length > 0 && getTaskStatus(t.id) !== 'completed').length;
+  const canStartCount = dayTasksForDev.filter(t => getUnmetDeps(t.id, getTaskStatus).length === 0 && getTaskStatus(t.id) === 'pending').length;
+
   return (
     <div className={cn('rounded-lg border flex-1 min-w-0', cfg.swimBorder)}>
       {/* Card header */}
@@ -650,25 +861,58 @@ function StandupCard({
         <Icon className={cn('w-3.5 h-3.5 shrink-0', cfg.iconCls)} />
         <span className="text-xs font-semibold">{cfg.label}</span>
         <span className="text-[10px] text-muted-foreground">{cfg.role}</span>
-        {entry && !editing && (
-          <span className="ml-auto text-[9px] text-muted-foreground">
-            {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        )}
-        {entry && !editing && (
-          <button
-            onClick={openEdit}
-            className={cn(
-              'ml-1 text-[9px] flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-dashed transition-colors',
-              dev === 'claude'
-                ? 'border-violet-300 text-violet-600 hover:bg-violet-100'
-                : 'border-pink-300 text-pink-600 hover:bg-pink-100',
-            )}
-          >
-            <MessageSquare className="w-2.5 h-2.5" /> Edit
-          </button>
-        )}
+
+        {/* Status pills */}
+        <div className="ml-auto flex items-center gap-1.5">
+          {canStartCount > 0 && (
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+              {canStartCount} ready
+            </span>
+          )}
+          {blockedCount > 0 && (
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+              {blockedCount} gated
+            </span>
+          )}
+          {entry && !editing && (
+            <>
+              <span className="text-[9px] text-muted-foreground">
+                {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+              <button
+                onClick={openEdit}
+                className={cn(
+                  'text-[9px] flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-dashed transition-colors',
+                  dev === 'claude'
+                    ? 'border-violet-300 text-violet-600 hover:bg-violet-100'
+                    : 'border-pink-300 text-pink-600 hover:bg-pink-100',
+                )}
+              >
+                <MessageSquare className="w-2.5 h-2.5" /> Edit
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* What this dev is waiting on today — always visible */}
+      {dayHandoffsNeeded.length > 0 && (
+        <div className="px-3 pt-2 pb-0">
+          <div className="flex items-start gap-1.5 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 text-[9px] text-amber-800">
+            <Hourglass className="w-3 h-3 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold">Waiting on: </span>
+              {dayHandoffsNeeded.map((h, i) => (
+                <React.Fragment key={h.id}>
+                  {i > 0 && ', '}
+                  <span className="font-mono">{h.id}</span>
+                  <span className="text-amber-700"> from {DEV[h.from].label}</span>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── View mode ─────────────────────── */}
       {entry && !editing && (
@@ -704,7 +948,6 @@ function StandupCard({
             </p>
           )}
 
-          {/* Completed */}
           <div>
             <label className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground block mb-0.5">
               ✓ Completed (yesterday / prior)
@@ -718,7 +961,6 @@ function StandupCard({
             />
           </div>
 
-          {/* Working On */}
           <div>
             <label className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground block mb-0.5">
               → Working On today
@@ -732,7 +974,6 @@ function StandupCard({
             />
           </div>
 
-          {/* Blockers */}
           <div>
             <label className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground block mb-0.5">
               ⚠ Blockers / Waiting for
@@ -792,6 +1033,7 @@ function HandoffRow({ h, getTaskStatus }: { h: typeof HANDOFFS[0]; getTaskStatus
           <p><span className="font-semibold text-foreground">Artifact:</span> {h.artifact}</p>
           <p><span className="font-semibold text-foreground">Notes for {to.label}:</span> {h.consumerNotes}</p>
           <p><span className="font-semibold text-foreground">Producer task:</span> <span className="font-mono">{h.producerTaskId}</span></p>
+          <p><span className="font-semibold text-foreground">Consumer task:</span> <span className="font-mono">{h.consumerTaskId}</span></p>
         </div>
       )}
     </div>
@@ -853,12 +1095,16 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
         </div>
       </div>
 
+      {/* ── 0. PO / SM GATE ──────────────────────────────────────────────── */}
+      <POGateSection day={day} getTaskStatus={getTaskStatus} />
+
       {/* ── 1. KICKSTART ─────────────────────────────────────────────────── */}
       <KickstartSection day={day} getTaskStatus={getTaskStatus} />
 
       {/* ── 2. SPRINT BOARD ──────────────────────────────────────────────── */}
       <section>
         <div className="flex items-center gap-2 mb-2.5">
+          <GitBranch className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sprint Board</span>
           <Separator className="flex-1" />
           <span className="text-[9px] text-muted-foreground">Swimlanes · adaptive columns</span>
@@ -879,8 +1125,36 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
           <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Daily Standup</span>
           <Separator className="flex-1" />
-          <span className="text-[9px] text-muted-foreground italic">Click a card to update · auto-filled from task progress</span>
+          <span className="text-[9px] text-muted-foreground italic">Auto-filled from task progress · click Edit to update</span>
         </div>
+
+        {/* Process flow header: who waits on whom */}
+        {dayHandoffs.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 mb-2.5 rounded-lg bg-muted/30 border border-border/40 flex-wrap text-[10px]">
+            <Users className="w-3 h-3 text-muted-foreground shrink-0" />
+            <span className="font-semibold text-muted-foreground">Day {day} Process Flow:</span>
+            {dayHandoffs.map((h, i) => {
+              const fromCfg = DEV[h.from];
+              const toCfg = DEV[h.to];
+              const rdy = isHandoffReady(h.id, getTaskStatus);
+              return (
+                <React.Fragment key={h.id}>
+                  {i > 0 && <span className="text-muted-foreground/40">·</span>}
+                  <span className="flex items-center gap-1">
+                    <span className={cn('font-semibold', fromCfg.iconCls)}>{fromCfg.label}</span>
+                    <ArrowRight className="w-2.5 h-2.5 text-muted-foreground" />
+                    <span className={cn('font-semibold', toCfg.iconCls)}>{toCfg.label}</span>
+                    <span className="font-mono text-muted-foreground text-[8px]">({h.id})</span>
+                    <span className={cn('text-[8px] px-1 rounded border font-semibold',
+                      rdy ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                    )}>{rdy ? '✓ ready' : '⏳ pending'}</span>
+                  </span>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        )}
+
         <div className="flex gap-3 flex-col sm:flex-row">
           <StandupCard
             entry={claudeSD}
