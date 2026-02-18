@@ -143,7 +143,7 @@ export const SHARED_INFRA_CHANGES: SharedInfraChange[] = [
       lovable: null,
     },
     taskId: 'L-101',
-    acknowledged: { claude: true, lovable: true }, // ✅ Claude acknowledged 2026-02-18
+    acknowledged: { claude: true, lovable: true },
   },
   {
     id: 'SIC-105',
@@ -159,7 +159,41 @@ export const SHARED_INFRA_CHANGES: SharedInfraChange[] = [
       lovable: null,
     },
     taskId: 'L-102',
-    acknowledged: { claude: true, lovable: true }, // ✅ Claude acknowledged 2026-02-18
+    acknowledged: { claude: true, lovable: true },
+  },
+  // ── Day 2: Lovable → Claude (completed 2026-02-18) ──
+  {
+    id: 'SIC-201',
+    timestamp: '2026-02-18T20:00:00Z',
+    changedBy: 'lovable',
+    category: 'component',
+    impact: 'info',
+    file: 'src/components/landing/DeckDemoCard.tsx',
+    what: 'L-201 complete: Product catalog + "Try It" CTAs shipped. DeckDemoCard fallback UI + image skeleton added.',
+    why: 'Day 2 Lovable tasks — product page and Deck CTA live',
+    howToUse: 'Landing /genie-deck CTA is live. Claude can now verify the Deck route loads from the landing page.',
+    impactOn: {
+      claude: 'Landing /genie-deck CTA is live. Run E2E: landing → /genie-deck → PresentationWizard.',
+      lovable: null,
+    },
+    taskId: 'L-201',
+    acknowledged: { claude: false, lovable: true },
+  },
+  {
+    id: 'SIC-202',
+    timestamp: '2026-02-18T20:00:00Z',
+    changedBy: 'lovable',
+    category: 'config',
+    impact: 'info',
+    file: 'src/components/landing/ (pricing/tier components)',
+    what: 'L-202 complete: Tier names aligned — free/starter/creator/pro/business/enterprise match genieStudioNavItems.ts',
+    why: 'H-203 resolution — pricing tier consistency across landing and studio',
+    impactOn: {
+      claude: null,
+      lovable: null,
+    },
+    taskId: 'L-202',
+    acknowledged: { claude: false, lovable: true },
   },
 ];
 
