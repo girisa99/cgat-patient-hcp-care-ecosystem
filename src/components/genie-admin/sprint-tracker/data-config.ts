@@ -50,6 +50,11 @@ export const DEFAULT_TASK_OVERRIDES: Record<string, TaskOverride> = {
   'L-202': { status: 'completed', updatedAt: '2026-02-18T20:00:00Z', note: 'Tier names aligned: free/starter/creator/pro/business/enterprise match genieStudioNavItems.ts. H-203 resolved.' },
   'L-203': { status: 'completed', updatedAt: '2026-02-18T20:00:00Z', note: 'GenieExploreDemoPage flows verified — all steps complete without errors.' },
   'L-204': { status: 'completed', updatedAt: '2026-02-18T20:00:00Z', note: 'Missing landing sections added. QA sign-off tab + PO gate restructured. Sprint Tracker: onsite vs offshore cost panel added, SM/PM ROI overhead, Backend vs Database distinction documented.' },
+  // ── Day 3: Lovable (in-progress — 2026-02-18) ──
+  'L-301': { status: 'completed', updatedAt: '2026-02-18T21:30:00Z', note: 'Audited InteractiveTryGenieDemo, STTDemo, LocalizationDemoHub, TTSDemoCard, STTDemoCard. All render with inputs/buttons. dialect-tts-demo edge fn verified working (custom_tts action). No errors found.' },
+  'L-302': { status: 'completed', updatedAt: '2026-02-18T21:30:00Z', note: 'Audited DeepLTranslationDemo + TranslationDemoCard. translation-service edge fn verified returning translations. Component wired correctly.' },
+  'L-303': { status: 'completed', updatedAt: '2026-02-18T21:30:00Z', note: 'Audited HeroLandingVideo + HeroInteractiveVideo + GenieVideoShowcase. Fallback video (BigBuckBunny) works. Animated fallback renders when no DB video. Provider badges display correctly.' },
+  'L-304': { status: 'in-progress', updatedAt: '2026-02-18T21:30:00Z', note: 'RegionSwitcherNav audited — reads from REGION_HIERARCHY (16 regions). detectRegionFromTimezone working. Pending PO verification of all 14 regional routes.' },
   // D-003: Tier gating route guard — LOCKED FILE. Needs PO decision before implementation.
   // Locked: src/config/genieStudioNavItems.ts — PO must decide: (A) soft-gate via landing CTA only, or (B) hard redirect guard on /genie-deck. See PO-206.
 };
@@ -84,6 +89,14 @@ export const DEFAULT_STANDUPS: StandupEntry[] = [
     today: 'Day 2 ALL COMPLETE: L-201 Product catalog + CTAs (3h). L-202 Pricing tiers aligned to genieStudioNavItems (2h). L-203 Explore demos verified (1.5h). L-204 Missing sections + Sprint Tracker enhanced (2.5h). New: onsite vs offshore cost breakdown panel, SM/PM overhead in ROI, Backend vs Database explanation added.',
     blockers: 'PO-206 OPEN: D-003 tier gating for /genie-deck — awaiting PO decision (soft-gate CTA only vs hard redirect guard). genieStudioNavItems.ts is LOCKED — cannot change without explicit PO approval.',
     createdAt: '2026-02-18T21:00:00Z',
+  },
+  // ── Day 3 ──
+  {
+    day: 3, developer: 'lovable' as Developer,
+    yesterday: 'Day 2: L-201–L-204 all complete. Product catalog, pricing tiers, explore demos, landing sections, Sprint Tracker ROI + onsite/offshore panels shipped.',
+    today: 'Day 3 STARTED: Full audit of all demo components. L-301 ✅ InteractiveTryGenieDemo + STTDemo verified — edge fn working. L-302 ✅ DeepLTranslationDemo + translation-service verified. L-303 ✅ HeroLandingVideo + GenieVideoShowcase verified with fallback. L-304 🔄 RegionSwitcherNav audited — awaiting PO verification of all 14 regional routes. H-301 pending Claude finishing C-304 (Spark flow) before wiring "Try it live" CTA.',
+    blockers: 'H-301 pending — cannot wire Spark CTA until Claude completes C-304. PO-206 still open (tier gating decision).',
+    createdAt: '2026-02-18T21:30:00Z',
   },
 ];
 
