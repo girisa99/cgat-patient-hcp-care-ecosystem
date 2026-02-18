@@ -293,7 +293,39 @@ function POGateSection({
             </div>
           </div>
 
-          {/* Who is waiting for PO today */}
+      {/* Individual PO items with IDs */}
+          <div className="space-y-1.5 border-t border-emerald-100 pt-2 mt-1">
+            {dayItems.map(item => {
+              const cfg = PO_CFG[item.category as keyof typeof PO_CFG];
+              const Icon = cfg.Icon;
+              return (
+                <div key={item.id} className="flex items-start gap-2 text-[9px]">
+                  <Checkbox
+                    checked={checked[item.id] || false}
+                    onCheckedChange={() => toggleCheck(item.id)}
+                    className="mt-0.5 h-3 w-3 shrink-0"
+                  />
+                  <span className={cn('font-mono font-bold shrink-0 px-1 py-0.5 rounded border text-[8px]', cfg.badge)}>
+                    {item.id}
+                  </span>
+                  <Icon className={cn('w-3 h-3 shrink-0 mt-0.5',
+                    cfg.cls.includes('blue') ? 'text-blue-600' : cfg.cls.includes('green') ? 'text-green-600' : cfg.cls.includes('amber') ? 'text-amber-600' : 'text-red-600'
+                  )} />
+                  <div className="flex-1 min-w-0">
+                    <span className={cn('font-semibold leading-snug', checked[item.id] && 'line-through text-muted-foreground')}>
+                      {item.title}
+                    </span>
+                    {item.route && (
+                      <span className="ml-1.5 font-mono text-[8px] text-muted-foreground">→ {item.route}</span>
+                    )}
+                  </div>
+                  {checked[item.id] && <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />}
+                </div>
+              );
+            })}
+          </div>
+
+      {/* Who is waiting for PO today */}
           {(() => {
             const waitingDevs: { dev: Developer; items: typeof dayItems }[] = [];
             const claudeItems = dayItems.filter(i => i.developer === 'claude' && !checked[i.id]);
@@ -1268,6 +1300,155 @@ type DayWorkflowState = {
   signedOffAt: string | null;
 };
 
+// ─── Open Items for Lovable (day-specific tracked issues) ─────────────────────
+
+type OpenItemSeverity = 'critical' | 'high' | 'medium' | 'low';
+interface OpenItem {
+  id: string;
+  title: string;
+  description: string;
+  severity: OpenItemSeverity;
+  area: string;
+  poItemId?: string; // related PO checklist item
+  status: 'open' | 'in-progress' | 'resolved';
+}
+
+// Day-keyed open items for Lovable's territory
+const OPEN_ITEMS_BY_DAY: Record<number, OpenItem[]> = {
+  2: [
+    {
+      id: 'D-002', title: 'DeckDemoCard fallback UI',
+      description: 'When DeckDemoCard has no image data, show a styled fallback instead of blank/broken layout.',
+      severity: 'high', area: 'src/components/landing/demo-hub/DeckDemoCard.tsx',
+      poItemId: 'PO-202', status: 'in-progress',
+    },
+    {
+      id: 'D-003', title: 'Tier gating route guard for /genie-deck',
+      description: 'Locked file: genieStudioNavItems.ts. PO must decide: (A) soft-gate via landing CTA only, or (B) hard redirect guard requiring Claude. Lovable cannot touch the locked file.',
+      severity: 'critical', area: 'LOCKED: src/config/genieStudioNavItems.ts',
+      poItemId: 'PO-206', status: 'open',
+    },
+    {
+      id: 'D-004', title: 'SIC-104 / SIC-105 acknowledged',
+      description: 'Claude confirmed H-201 ready. Lovable can link landing CTAs to /genie-deck. Both SIC alerts acknowledged.',
+      severity: 'low', area: 'Shared Infrastructure Feed',
+      status: 'resolved',
+    },
+    {
+      id: 'D-005', title: 'Image loading skeleton for DeckDemoCard',
+      description: 'While slide images are generating, show an animated shimmer/skeleton placeholder.',
+      severity: 'medium', area: 'src/components/landing/demo-hub/DeckDemoCard.tsx',
+      poItemId: 'PO-202', status: 'in-progress',
+    },
+  ],
+  3: [],
+  4: [],
+  5: [],
+};
+
+const SEVERITY_CFG: Record<OpenItemSeverity, { cls: string; label: string; dot: string }> = {
+  critical: { cls: 'bg-red-50 border-red-300 text-red-800',    label: 'Critical', dot: 'bg-red-500'    },
+  high:     { cls: 'bg-orange-50 border-orange-300 text-orange-800', label: 'High', dot: 'bg-orange-400' },
+  medium:   { cls: 'bg-yellow-50 border-yellow-300 text-yellow-800', label: 'Medium', dot: 'bg-yellow-400' },
+  low:      { cls: 'bg-muted border-border text-muted-foreground', label: 'Low', dot: 'bg-muted-foreground/40' },
+};
+
+const ITEM_STATUS_CFG = {
+  open:        { cls: 'bg-red-100 text-red-700 border-red-200',     label: '● Open'       },
+  'in-progress': { cls: 'bg-blue-100 text-blue-700 border-blue-200', label: '◑ In Progress' },
+  resolved:    { cls: 'bg-green-100 text-green-700 border-green-200', label: '✓ Resolved'  },
+};
+
+function OpenItemsForLovable({
+  day, onOpenPOGate,
+}: {
+  day: number;
+  onOpenPOGate?: () => void;
+}) {
+  const items = OPEN_ITEMS_BY_DAY[day] ?? [];
+  const [open, setOpen] = useState(true);
+  const openCount     = items.filter(i => i.status === 'open').length;
+  const inProgCount   = items.filter(i => i.status === 'in-progress').length;
+  const resolvedCount = items.filter(i => i.status === 'resolved').length;
+
+  if (items.length === 0) return null;
+
+  return (
+    <section className="rounded-lg border border-pink-200 bg-pink-50/20 overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-4 py-2.5 bg-pink-50 border-b border-pink-200 hover:opacity-90 transition-opacity text-left"
+      >
+        <Zap className="w-3.5 h-3.5 text-pink-600 shrink-0" />
+        <span className="text-[10px] font-bold uppercase tracking-widest text-pink-800">
+          Open Items for Lovable — Day {day}
+        </span>
+        <div className="ml-2 flex items-center gap-1.5">
+          {openCount > 0 && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+              {openCount} open
+            </span>
+          )}
+          {inProgCount > 0 && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+              {inProgCount} in progress
+            </span>
+          )}
+          {resolvedCount > 0 && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+              {resolvedCount} resolved
+            </span>
+          )}
+        </div>
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          {onOpenPOGate && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenPOGate(); }}
+              className="text-[9px] font-bold px-2 py-0.5 rounded border border-pink-400 bg-pink-100 text-pink-800 hover:bg-pink-200 transition-colors flex items-center gap-1"
+            >
+              Sign off in PO Gate <ChevronRight className="w-2.5 h-2.5" />
+            </button>
+          )}
+          {open ? <ChevronDown className="w-3.5 h-3.5 text-pink-600" /> : <ChevronRight className="w-3.5 h-3.5 text-pink-600" />}
+        </div>
+      </button>
+
+      {open && (
+        <div className="p-3 space-y-2">
+          {items.map(item => {
+            const sev  = SEVERITY_CFG[item.severity];
+            const stat = ITEM_STATUS_CFG[item.status];
+            return (
+              <div key={item.id} className={`rounded border p-2.5 space-y-1 ${item.status === 'resolved' ? 'opacity-60' : ''}`}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={cn('w-2 h-2 rounded-full shrink-0', sev.dot)} />
+                  <span className="font-mono text-[10px] font-bold text-foreground">{item.id}</span>
+                  <span className={cn('text-[8px] font-bold px-1.5 py-0.5 rounded border', sev.cls)}>{sev.label}</span>
+                  <span className={cn('text-[8px] font-semibold px-1.5 py-0.5 rounded border', stat.cls)}>{stat.label}</span>
+                  {item.poItemId && (
+                    <span className="text-[8px] font-mono px-1.5 py-0.5 rounded border bg-emerald-50 border-emerald-200 text-emerald-700">
+                      PO gate: {item.poItemId}
+                    </span>
+                  )}
+                  <span className={cn('text-[10px] font-semibold flex-1 min-w-0', item.status === 'resolved' && 'line-through text-muted-foreground')}>
+                    {item.title}
+                  </span>
+                </div>
+                <p className="text-[9px] text-muted-foreground pl-4">{item.description}</p>
+                <p className="text-[8px] font-mono text-muted-foreground/60 pl-4 truncate">{item.area}</p>
+              </div>
+            );
+          })}
+          <p className="text-[9px] text-muted-foreground pl-1">
+            ⚡ These are Lovable's territory items. Sign off D-003 in the PO Gate before implementing.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function DayWorkflowBanner({
   day, claudeSD, lovableSD, getTaskStatus, onAutoStart,
 }: {
@@ -1672,7 +1853,8 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
       {/* ── 5. SHARED INFRA CHANGE FEED ──────────────────────────────────── */}
       <InfraFeedSection day={day} />
 
-
+      {/* ── 6. OPEN ITEMS FOR LOVABLE (day-specific) ─────────────────────── */}
+      <OpenItemsForLovable day={day} onOpenPOGate={onNavigateToPOGate} />
 
     </div>
   );

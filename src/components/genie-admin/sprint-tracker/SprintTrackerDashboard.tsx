@@ -310,12 +310,13 @@ export const SprintTrackerDashboard: React.FC = () => {
                 Reports
               </p>
               <div className="space-y-0.5">
-                <NavBtn active={activeView === 'charter'}    label="Sprint Charter ▸"         icon={BookOpen}        onClick={() => setActiveView('charter')}  />
-                <NavBtn active={activeView === 'planning'}   label="Sprint Planning ▸"       icon={Target}          onClick={() => setActiveView('planning')}  />
-                <NavBtn active={activeView === 'findings'}   label="Findings / QA"            icon={ClipboardCheck}  onClick={() => setActiveView('findings')} />
-                <NavBtn active={activeView === 'governance'} label="Governance Flow ▸"        icon={Shield}          onClick={() => setActiveView('governance')} />
-                <NavBtn active={activeView === 'strategy'}   label="Strategy"                 icon={TrendingUp}      onClick={() => setActiveView('strategy')} />
-                <NavBtn active={activeView === 'po-gate'}    label="Release Gate ▸"           icon={Flag}            onClick={() => setActiveView('po-gate')}  />
+                {/* Prominent CSV plan entry */}
+                <NavBtn active={activeView === 'planning'}   label="📋 Project Plan (CSV)"      icon={Target}          onClick={() => setActiveView('planning')}  />
+                <NavBtn active={activeView === 'charter'}    label="Sprint Charter ▸"            icon={BookOpen}        onClick={() => setActiveView('charter')}  />
+                <NavBtn active={activeView === 'findings'}   label="Findings / QA"               icon={ClipboardCheck}  onClick={() => setActiveView('findings')} />
+                <NavBtn active={activeView === 'governance'} label="Governance Flow ▸"           icon={Shield}          onClick={() => setActiveView('governance')} />
+                <NavBtn active={activeView === 'strategy'}   label="Strategy"                    icon={TrendingUp}      onClick={() => setActiveView('strategy')} />
+                <NavBtn active={activeView === 'po-gate'}    label="✅ PO Sign-off Gate ▸"        icon={Flag}            onClick={() => setActiveView('po-gate')}  />
               </div>
             </div>
 
