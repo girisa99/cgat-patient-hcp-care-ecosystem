@@ -57,6 +57,17 @@ export const DEFAULT_TASK_OVERRIDES: Record<string, TaskOverride> = {
   'L-304': { status: 'in-progress', updatedAt: '2026-02-18T21:30:00Z', note: 'RegionSwitcherNav audited — reads from REGION_HIERARCHY (16 regions). detectRegionFromTimezone working. Pending PO verification of all 14 regional routes.' },
   // D-003: Tier gating route guard — LOCKED FILE. Needs PO decision before implementation.
   // Locked: src/config/genieStudioNavItems.ts — PO must decide: (A) soft-gate via landing CTA only, or (B) hard redirect guard on /genie-deck. See PO-206.
+  // ── Day 2: Claude (completed — 2026-02-18) ──
+  'C-201': { status: 'completed', updatedAt: '2026-02-18T15:00:00Z', note: 'PresentationWizard fixed: auth validation, progress bar, onComplete callback, Deck-specific errors, ARIA. H-201 set to ready.' },
+  'C-202': { status: 'completed', updatedAt: '2026-02-18T15:00:00Z', note: 'ComplianceChecker error handling, wizard step navigation, all 6 steps verified.' },
+  'C-203': { status: 'completed', updatedAt: '2026-02-18T15:00:00Z', note: 'Deck E2E verified: input → slides → preview → save. Full workflow works.' },
+  'S-201': { status: 'completed', updatedAt: '2026-02-18T17:00:00Z', note: 'Build passes (55s). Rebased on dev. PR #35 open.' },
+  // ── Day 3: Claude (completed — 2026-02-19) ──
+  'C-301': { status: 'completed', updatedAt: '2026-02-19T18:00:00Z', note: 'SmartContentPipeline fixed: presentation flow now calls setGeneratedContent(), URL validation added, image null-check, file upload validation excludes presentation/pipeline types.' },
+  'C-302': { status: 'completed', updatedAt: '2026-02-19T17:00:00Z', note: 'SparkGuidedWizard fixed: removed auto-jump to phase 3, added phase completion tracking (hasVisitedRefine), disabled back during generation, success feedback on Generate phase.' },
+  'C-303': { status: 'completed', updatedAt: '2026-02-19T17:30:00Z', note: 'useGenieScripts fixed: auth state listener for session changes, updateScript uses .select().single(), stats serialization consistent, mapRowToScript extracted as shared helper, scripts cleared on logout.' },
+  'C-304': { status: 'completed', updatedAt: '2026-02-19T18:30:00Z', note: 'Spark E2E verified: GenieSpark.tsx removed temp IDs, uses saveGeneratedContent() with real DB IDs, wizard onGenerate saves draft to Supabase. H-301 set to ready.' },
+  'S-301': { status: 'completed', updatedAt: '2026-02-19T19:00:00Z', note: 'Build passes. All Day 3 tasks complete. H-301 ready for Lovable.' },
 };
 
 export const DEFAULT_STANDUPS: StandupEntry[] = [
@@ -97,6 +108,14 @@ export const DEFAULT_STANDUPS: StandupEntry[] = [
     today: 'Day 3 STARTED: Full audit of all demo components. L-301 ✅ InteractiveTryGenieDemo + STTDemo verified — edge fn working. L-302 ✅ DeepLTranslationDemo + translation-service verified. L-303 ✅ HeroLandingVideo + GenieVideoShowcase verified with fallback. L-304 🔄 RegionSwitcherNav audited — awaiting PO verification of all 14 regional routes. H-301 pending Claude finishing C-304 (Spark flow) before wiring "Try it live" CTA.',
     blockers: 'H-301 pending — cannot wire Spark CTA until Claude completes C-304. PO-206 still open (tier gating decision).',
     createdAt: '2026-02-18T21:30:00Z',
+  },
+  // ── Claude Day 3 ──
+  {
+    day: 3, developer: 'claude' as Developer,
+    yesterday: 'Day 2: Deck creation flow fixed (C-201/C-202/C-203). PR #35 rebased. H-201 ready.',
+    today: 'Completed C-301 to C-304 + S-301. Fixed SmartContentPipeline (presentation flow, URL validation, image null-check), SparkGuidedWizard (phase progression, completion tracking), useGenieScripts (auth listener, .select(), stats serialization), GenieSpark.tsx (removed temp IDs, real DB saves). H-301 set to ready.',
+    blockers: 'PO-305 (real API vs simulated) still open — pipeline uses real Supabase services where available, structured for easy swap. PO-206 (tier gating) still awaiting decision.',
+    createdAt: '2026-02-19T19:00:00Z',
   },
 ];
 

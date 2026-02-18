@@ -244,6 +244,75 @@ At session start:
 
 > Both developers working in parallel. Claude on Spark (C-301-304), Lovable on demos (L-301-304).
 
+### [17:00] Fix — SmartContentPipeline Presentation & Validation (C-301)
+- **File(s):** `src/components/genie-studio/SmartContentPipeline.tsx`
+- **Changed By:** Claude
+- **What Changed:** 3 critical fixes:
+  1. PresentationWizard `onComplete` now calls `setGeneratedContent()` — previously UI got stuck on wizard after generation
+  2. File upload validation now excludes `presentation` and `full-pipeline` content types (they don't need uploads)
+  3. Image generation path now validates preview exists before calling service
+  4. URL input validates format with `new URL()` before calling service
+- **Why:** Presentation flow was broken — generated content never displayed. Users got "Please upload a file" error when selecting Presentation type.
+- **Impact on Your Work:**
+  - Claude: PostGenerationActions now renders after presentation generation
+  - Lovable: No impact — file is in Claude's territory
+- **Breaking Changes:** None
+
+### [17:00] Fix — SparkGuidedWizard Phase Progression (C-302)
+- **File(s):** `src/components/genie-spark/SparkGuidedWizard.tsx`
+- **Changed By:** Claude
+- **What Changed:**
+  1. Removed auto-jump to phase 3 after generation — user stays on Generate phase, sees success message, clicks Next
+  2. Refine phase now tracks completion via `hasVisitedRefine` state (was hardcoded `false`)
+  3. Back button disabled during async generation (prevents zombie operations)
+  4. Phase indicators disabled during generation (prevents navigation during async)
+  5. Generate phase shows success banner with CheckCircle2 icon when content is ready
+- **Why:** Wizard was broken — users got trapped on Refine/Export phases (isComplete always false), and generation jumped past the confirmation step.
+- **Impact on Your Work:**
+  - Claude: Wizard now flows Idea → Template → Generate (success) → Next → Refine → Export
+  - Lovable: No impact — file is in Claude's territory
+- **Breaking Changes:** `onGenerate` prop type changed from `(prompt: string) => void` to `(prompt: string) => Promise<void>` — already compatible since parent awaited it
+
+### [17:30] Fix — useGenieScripts Auth & Data Integrity (C-303)
+- **File(s):** `src/components/genie-studio/useGenieScripts.ts`
+- **Changed By:** Claude
+- **What Changed:**
+  1. Added `supabase.auth.onAuthStateChange()` listener — scripts reload on login/logout (prevents stale data across sessions)
+  2. `updateScript()` now uses `.select().single()` — local state synced with actual DB values
+  3. Stats serialization consistent: all paths use `JSON.parse(JSON.stringify(stats))`
+  4. Extracted `mapRowToScript()` helper — single source of truth for DB→TS mapping
+  5. Scripts cleared on logout (`setScripts([])`)
+  6. `source` field now included in update payloads
+- **Why:** Auth race condition could leak scripts across user sessions. updateScript diverged local state from DB.
+- **How to Use:** Same API — `useGenieScripts()` returns `{ scripts, saveScript, updateScript, deleteScript, refresh }`
+- **Impact on Your Work:**
+  - Claude: All hooks using useGenieScripts benefit from these fixes
+  - Lovable: No impact — file is in Claude's territory
+- **Breaking Changes:** None
+
+### [18:30] Fix — GenieSpark.tsx Integration & E2E (C-304)
+- **File(s):** `src/pages/GenieSpark.tsx`
+- **Changed By:** Claude
+- **What Changed:**
+  1. Removed client-side temp IDs (`script-${Date.now()}`) — scripts now use DB-generated UUIDs
+  2. Added `saveGeneratedContent()` helper — DRY for all 4 save handlers
+  3. Wizard `onGenerate` now saves draft to Supabase (was simulated 2s delay)
+  4. Production Hub deep-link uses `saved.id` (real UUID) instead of temp ID
+  5. Image-to-Script tab also removes temp IDs
+- **Why:** Temp IDs caused save-as-insert every time. Production Hub link was broken (referenced nonexistent temp ID).
+- **Impact on Your Work:**
+  - Claude: Spark → Mind → Deck pipeline now uses real UUIDs
+  - Lovable: No impact — file is in Claude's territory
+- **Breaking Changes:** None
+
+### [19:00] Handoff — H-301 Set to Ready
+- **File(s):** `src/components/genie-admin/sprint-tracker/data-dependencies.ts`
+- **Changed By:** Claude
+- **What Changed:** H-301 status changed from `'pending'` to `'ready'`
+- **Why:** Spark E2E flow (C-301→C-304) is complete. `/genie-spark` has working prompt→generate→save flow.
+- **Impact on Your Work:**
+  - Lovable: **You can now link interactive demos to `/genie-spark`** — the route works end-to-end
+
 ---
 
 ## Day 4 — Thursday, Feb 20, 2026
@@ -271,7 +340,7 @@ Claude (Team Lead) produces → Lovable consumes:
 | H-103 | 1 | Support email: `support@geniaisuite.com` | Ready |
 | **H-110** | **2** | **Sprint Tracker UI/UX → Lovable owns all visuals** | **Ready** |
 | H-201 | 2 | Deck creation flow live at `/genie-deck` | **Consumed** -- Lovable verified Day 2 |
-| H-301 | 3 | Spark flow live at `/genie-spark` | **Pending** -- Claude working Day 3 |
+| H-301 | 3 | Spark flow live at `/genie-spark` | **Ready** -- C-301-304 complete, Lovable can link demos |
 | H-401 | 4 | Mind flow live at `/genie-mind` | Pending (after C-404) |
 | H-501 | 5 | Claude merges to main FIRST | Pending (Day 5) |
 
