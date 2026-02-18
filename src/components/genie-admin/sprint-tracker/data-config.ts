@@ -45,11 +45,11 @@ export const DEFAULT_TASK_OVERRIDES: Record<string, TaskOverride> = {
   'C-103': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '6 issues found. Fixed: support email. Deck is most production-ready.' },
   'C-104': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '33 total issues across 3 products. 11 fixed Day 1, 22 open.' },
   'S-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Build passes (58s). 7 files changed. Branch pushed.' },
-  // ── Day 2: Lovable (gated) ──
-  'L-201': { status: 'in-progress', updatedAt: '2026-02-18T12:00:00Z', note: 'GATED: Waiting on H-201 (Deck flow live at /genie-deck) from Claude.' },
-  'L-202': { status: 'in-progress', updatedAt: '2026-02-18T12:00:00Z', note: 'GATED: Waiting on H-203 (pricing tier name alignment) from Claude.' },
-  'L-203': { status: 'pending', updatedAt: '2026-02-18T12:00:00Z', note: 'No hard gate — can start when L-201 is unblocked.' },
-  'L-204': { status: 'pending', updatedAt: '2026-02-18T12:00:00Z', note: 'No hard gate — can start anytime.' },
+  // ── Day 2: Lovable (active — green light from Claude 2026-02-18) ──
+  'L-201': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Product catalog + "Try It" CTAs. Soft gate only — Deck CTA renders, verify link once H-201 ready.' },
+  'L-202': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Tier names aligned with genieStudioNavItems.ts (free/starter/creator/pro/business/enterprise). H-203 resolved.' },
+  'L-203': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Verifying GenieExploreDemoPage flows.' },
+  'L-204': { status: 'in-progress', updatedAt: '2026-02-18T14:00:00Z', note: 'ACTIVE: Adding missing landing sections.' },
 };
 
 export const DEFAULT_STANDUPS: StandupEntry[] = [

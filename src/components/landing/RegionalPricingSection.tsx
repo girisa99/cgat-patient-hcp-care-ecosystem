@@ -41,12 +41,15 @@ const REGIONAL_PRICING: Record<RegionSlug, {
    south_asia: { currency: 'USD', symbol: '$', multiplier: 1, paymentMethods: ['Visa', 'Mastercard'], savingsLabel: 'Save $121/mo vs 7 separate tools' },
 };
 
+// H-203 ALIGNED: Tier names match genieStudioNavItems.ts SubscriptionTier
+// Source of truth: 'free' | 'starter' | 'creator' | 'pro' | 'business' | 'enterprise'
 const BASE_TIERS = [
-  { name: 'Free', basePrice: 0, pipelines: 41, languages: 10, credits: 50, features: ['720p', '5 exports/mo', 'Watermark'] },
-  { name: 'Creator', basePrice: 29, pipelines: 120, languages: 20, credits: 500, features: ['1080p', '30 exports/mo', 'Basic avatar'] },
-  { name: 'Professional', basePrice: 59, pipelines: 165, languages: 40, credits: 1200, features: ['4K', '100 exports/mo', 'Voice cloning', 'API'], popular: true },
-  { name: 'Studio', basePrice: 99, pipelines: 194, languages: '70+', credits: 2500, features: ['4K', 'Unlimited', '7 Arabic dialects', '22 Indian langs'] },
-  { name: 'Enterprise', basePrice: 299, pipelines: 206, languages: '140+', credits: '10K+', features: ['8K', 'White-label', 'SSO/SAML', 'VR/AR Labs'] },
+  { name: 'Free',       tierKey: 'free',       basePrice: 0,   pipelines: 41,  languages: 10,    credits: 50,      features: ['720p', '5 exports/mo', 'Watermark'] },
+  { name: 'Starter',    tierKey: 'starter',    basePrice: 19,  pipelines: 80,  languages: 15,    credits: 250,     features: ['1080p', '15 exports/mo', 'No watermark'] },
+  { name: 'Creator',    tierKey: 'creator',    basePrice: 39,  pipelines: 120, languages: 20,    credits: 500,     features: ['1080p', '30 exports/mo', 'Basic avatar'] },
+  { name: 'Pro',        tierKey: 'pro',        basePrice: 79,  pipelines: 165, languages: 40,    credits: 1200,    features: ['4K', '100 exports/mo', 'Voice cloning', 'API'], popular: true },
+  { name: 'Business',   tierKey: 'business',   basePrice: 149, pipelines: 194, languages: '70+', credits: 2500,    features: ['4K', 'Unlimited', '7 Arabic dialects', '22 Indian langs'] },
+  { name: 'Enterprise', tierKey: 'enterprise', basePrice: 399, pipelines: 206, languages: '140+', credits: '10K+', features: ['8K', 'White-label', 'SSO/SAML', 'VR/AR Labs'] },
 ];
 
 interface RegionalPricingSectionProps {
@@ -99,12 +102,12 @@ export const RegionalPricingSection: React.FC<RegionalPricingSectionProps> = ({ 
                 transition={{ delay: i * 0.1 }}
                 className={`rounded-2xl p-6 ${
                   tier.popular
-                    ? 'bg-gradient-to-b from-primary to-accent text-white scale-105 shadow-xl relative'
+                    ? 'bg-gradient-to-b from-primary to-accent text-primary-foreground scale-105 shadow-xl relative'
                     : 'bg-card border border-border text-foreground shadow-md'
                 }`}
               >
                 {tier.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-yellow-500 text-black text-xs font-bold rounded-full">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-accent text-accent-foreground text-xs font-bold rounded-full">
                     Most Popular
                   </span>
                 )}
@@ -114,26 +117,29 @@ export const RegionalPricingSection: React.FC<RegionalPricingSectionProps> = ({ 
                   <span className="text-3xl font-bold">
                     {formatPrice(localPrice, regional.symbol, regional.currency)}
                   </span>
-                  <span className={tier.popular ? 'text-white/80' : 'text-muted-foreground'}>/mo</span>
+                  <span className={tier.popular ? 'text-primary-foreground/80' : 'text-muted-foreground'}>/mo</span>
                 </div>
                 
                 <div className="space-y-1 text-sm mb-4">
-                  <p><span className={tier.popular ? 'text-white font-bold' : 'text-primary font-bold'}>{tier.credits}</span> credits</p>
-                  <p><span className={tier.popular ? 'text-white font-bold' : 'text-primary font-bold'}>{tier.pipelines}</span> pipelines</p>
-                  <p><span className={tier.popular ? 'text-white font-bold' : 'text-primary font-bold'}>{tier.languages}</span> languages</p>
+                  <p><span className={tier.popular ? 'text-primary-foreground font-bold' : 'text-primary font-bold'}>{tier.credits}</span> credits</p>
+                  <p><span className={tier.popular ? 'text-primary-foreground font-bold' : 'text-primary font-bold'}>{tier.pipelines}</span> pipelines</p>
+                  <p><span className={tier.popular ? 'text-primary-foreground font-bold' : 'text-primary font-bold'}>{tier.languages}</span> languages</p>
                 </div>
 
                 <ul className="space-y-1 mb-4">
                   {tier.features.map((f) => (
-                    <li key={f} className={`text-xs flex items-center gap-1 ${tier.popular ? 'text-white/90' : 'text-muted-foreground'}`}>
-                      <Check className="h-3 w-3 text-green-400 shrink-0" /> {f}
+                    <li key={f} className={`text-xs flex items-center gap-1 ${tier.popular ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
+                      <Check className="h-3 w-3 text-primary shrink-0" /> {f}
                     </li>
                   ))}
                 </ul>
 
-                <Link to={`/genie-studio-auth?tier=${tier.name.toLowerCase()}`}>
+                {/* tierKey matches SubscriptionTier in genieStudioNavItems.ts (H-203) */}
+                <Link to={`/genie-studio-auth?tier=${tier.tierKey}`}>
                   <Button className={`w-full ${
-                    tier.popular ? 'bg-white text-primary hover:bg-gray-100' : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    tier.popular
+                      ? 'bg-background text-primary hover:bg-muted'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90'
                   }`}>
                     {tier.basePrice === 0 ? 'Start Free' : 'Get Started'}
                   </Button>
@@ -144,8 +150,8 @@ export const RegionalPricingSection: React.FC<RegionalPricingSectionProps> = ({ 
         </div>
 
         {/* Regional savings callout */}
-        <div className="mt-12 p-6 bg-green-500/10 rounded-2xl border border-green-500/30 text-center">
-          <p className="text-green-600 dark:text-green-400 text-lg font-semibold">
+        <div className="mt-12 p-6 bg-primary/10 rounded-2xl border border-primary/30 text-center">
+          <p className="text-primary text-lg font-semibold">
             💰 {regional.savingsLabel}
           </p>
         </div>
