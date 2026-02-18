@@ -26,8 +26,14 @@ interface MetricsViewProps {
 // Claude API: ~$0.002/1K input tokens, ~$0.010/1K output tokens → blended ≈ $0.003/1K
 // Lovable: subscription model, ~$29/mo team plan → amortised per sprint ≈ $7.25/5-day sprint
 // Human developer rate: $75/hr (senior dev, US market, fully loaded)
+// Scrum Master / PM: $85/hr · 20% of sprint hours = overhead allocation for ceremonies,
+//   standups, planning, retrospectives, backlog grooming, stakeholder comms, risk mgmt.
+//   Typically SM/PM burns 2–3h/day regardless of team size → 5-day sprint ≈ 12.5h at $85/hr = $1,062.50
 const HUMAN_HOURLY_RATE_USD = 75;
 const LOVABLE_SPRINT_SUBSCRIPTION_USD = 7.25; // $29/mo amortised 5-day sprint
+const SM_PM_HOURLY_RATE_USD = 85;             // SM/PM blended rate (US market, fully loaded)
+const SM_PM_SPRINT_HOURS = 12.5;             // 2.5h/day × 5 days: standups, planning, retros, comms
+const SM_PM_SPRINT_COST_USD = SM_PM_HOURLY_RATE_USD * SM_PM_SPRINT_HOURS; // $1,062.50
 
 // ── Work category display config ────────────────────────────────────────────
 
@@ -277,19 +283,17 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
   const lovableAICost = (metrics.byDeveloper.lovable.tokenCostCents / 100) + LOVABLE_SPRINT_SUBSCRIPTION_USD;
   const totalAICost = claudeAICost + lovableAICost;
 
+  // ── Human equivalent cost (2 devs + SM/PM overhead) ──────────────────────
+  // Without AI: you'd need 2 senior devs AND a dedicated SM/PM to manage the sprint.
+  // SM/PM cost is fixed per sprint regardless of team output (ceremonies always happen).
   const humanCostClaude = claudeHours * HUMAN_HOURLY_RATE_USD;
   const humanCostLovable = lovableHours * HUMAN_HOURLY_RATE_USD;
-  const humanCostTotal = totalHours * HUMAN_HOURLY_RATE_USD;
+  const humanCostDevTotal = totalHours * HUMAN_HOURLY_RATE_USD;
+  const humanCostTotal = humanCostDevTotal + SM_PM_SPRINT_COST_USD; // devs + SM/PM
 
   const savingsTotal = humanCostTotal - totalAICost;
   const savingsPct = humanCostTotal > 0 ? Math.round((savingsTotal / humanCostTotal) * 100) : 0;
   const multiplier = totalAICost > 0 ? (humanCostTotal / totalAICost).toFixed(1) : '–';
-
-  // Scenario breakdown: cost per completed task
-  const completedTasks = SPRINT_TASKS.filter(t => {
-    // We can't access state here, so we derive from effort data presence + workCategory
-    return t.effort?.actualHours !== undefined;
-  });
 
   return (
     <Card className="border-2 border-green-200">
@@ -299,7 +303,7 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
           AI vs Human Cost — ROI Analysis
         </CardTitle>
         <p className="text-[11px] text-green-700/70">
-          Assumes $75/hr fully-loaded senior dev rate · Claude API blended ~$0.003/1K tokens · Lovable subscription amortised per sprint
+          Assumes $75/hr senior dev · $85/hr SM/PM (2.5h/day × 5 days) · Claude API ~$0.003/1K tokens · Lovable subscription amortised per sprint
         </p>
       </CardHeader>
       <CardContent className="p-4 space-y-5">
@@ -316,7 +320,7 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
             <Users className="w-4 h-4 text-red-500 mx-auto mb-1" />
             <p className="text-2xl font-black text-red-600">{fmtUSD(humanCostTotal)}</p>
             <p className="text-[10px] text-red-600 font-semibold">Equiv. Human Cost</p>
-            <p className="text-[9px] text-muted-foreground mt-0.5">{fmt(totalHours)} × $75/hr</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Devs + SM/PM overhead</p>
           </div>
           <div className="p-3 rounded-xl bg-emerald-100 border border-emerald-200">
             <TrendingDown className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
@@ -326,24 +330,25 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
           </div>
         </div>
 
-        {/* Per-provider cost table */}
+        {/* Per-provider cost table (now includes SM/PM row) */}
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-2">Per Provider Breakdown</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-2">Per Provider / Role Breakdown</p>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="text-left py-2 pr-3 font-semibold">Provider</th>
+                  <th className="text-left py-2 pr-3 font-semibold">Provider / Role</th>
                   <th className="text-right py-2 px-2 font-semibold">Hours</th>
                   <th className="text-right py-2 px-2 font-semibold">Tokens</th>
                   <th className="text-right py-2 px-2 font-semibold">Token $</th>
-                  <th className="text-right py-2 px-2 font-semibold">Sub $</th>
-                  <th className="text-right py-2 px-2 font-semibold">AI Total</th>
+                  <th className="text-right py-2 px-2 font-semibold">Sub / Rate</th>
+                  <th className="text-right py-2 px-2 font-semibold">AI Cost</th>
                   <th className="text-right py-2 px-2 font-semibold text-red-600">Human $</th>
                   <th className="text-right py-2 pl-2 font-semibold text-green-700">Saved</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
+                {/* Claude row */}
                 <tr className="hover:bg-muted/20">
                   <td className="py-2 pr-3">
                     <div className="flex items-center gap-1.5">
@@ -354,11 +359,12 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
                   <td className="py-2 px-2 text-right tabular-nums">{fmt(claudeHours)}</td>
                   <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtTokens(metrics.byDeveloper.claude.tokensUsed)}</td>
                   <td className="py-2 px-2 text-right tabular-nums">{fmtUSD(claudeAICost)}</td>
-                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">—</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">API</td>
                   <td className="py-2 px-2 text-right font-bold tabular-nums">{fmtUSD(claudeAICost)}</td>
                   <td className="py-2 px-2 text-right text-red-600 tabular-nums">{fmtUSD(humanCostClaude)}</td>
                   <td className="py-2 pl-2 text-right font-bold text-green-700 tabular-nums">{fmtUSD(humanCostClaude - claudeAICost)}</td>
                 </tr>
+                {/* Lovable row */}
                 <tr className="hover:bg-muted/20">
                   <td className="py-2 pr-3">
                     <div className="flex items-center gap-1.5">
@@ -369,12 +375,32 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
                   <td className="py-2 px-2 text-right tabular-nums">{fmt(lovableHours)}</td>
                   <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtTokens(metrics.byDeveloper.lovable.tokensUsed)}</td>
                   <td className="py-2 px-2 text-right tabular-nums">{fmtUSD(metrics.byDeveloper.lovable.tokenCostCents / 100)}</td>
-                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtUSD(LOVABLE_SPRINT_SUBSCRIPTION_USD)}</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtUSD(LOVABLE_SPRINT_SUBSCRIPTION_USD)} sub</td>
                   <td className="py-2 px-2 text-right font-bold tabular-nums">{fmtUSD(lovableAICost)}</td>
                   <td className="py-2 px-2 text-right text-red-600 tabular-nums">{fmtUSD(humanCostLovable)}</td>
                   <td className="py-2 pl-2 text-right font-bold text-green-700 tabular-nums">{fmtUSD(humanCostLovable - lovableAICost)}</td>
                 </tr>
-                <tr className="bg-muted/30 font-bold">
+                {/* SM/PM overhead row — human-only cost, no AI equivalent */}
+                <tr className="hover:bg-muted/20 bg-orange-50/40">
+                  <td className="py-2 pr-3">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3 h-3 text-orange-600" />
+                      <div>
+                        <span className="font-semibold text-orange-800">SM / PM</span>
+                        <span className="ml-1 text-[9px] text-muted-foreground">(overhead)</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{SM_PM_SPRINT_HOURS}h</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">—</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">—</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">${SM_PM_HOURLY_RATE_USD}/hr</td>
+                  <td className="py-2 px-2 text-right tabular-nums text-muted-foreground italic text-[10px]">AI handles</td>
+                  <td className="py-2 px-2 text-right text-red-600 tabular-nums font-semibold">{fmtUSD(SM_PM_SPRINT_COST_USD)}</td>
+                  <td className="py-2 pl-2 text-right font-bold text-green-700 tabular-nums">{fmtUSD(SM_PM_SPRINT_COST_USD)}</td>
+                </tr>
+                {/* Sprint total (devs + SM/PM) */}
+                <tr className="bg-muted/30 font-bold border-t-2">
                   <td className="py-2 pr-3">Sprint Total</td>
                   <td className="py-2 px-2 text-right tabular-nums">{fmt(totalHours)}</td>
                   <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">{fmtTokens(metrics.totalTokensUsed)}</td>
@@ -387,6 +413,11 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
               </tbody>
             </table>
           </div>
+          {/* SM/PM scope note */}
+          <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
+            <span className="font-semibold text-orange-700">SM/PM overhead</span>: standups (0.5h/day), sprint planning (2h), backlog grooming (1h), retrospective (1h), stakeholder comms (0.5h/day) = <span className="font-semibold">{SM_PM_SPRINT_HOURS}h × ${SM_PM_HOURLY_RATE_USD}/hr</span>.
+            With AI tooling, these ceremonies are partially automated — sprint tracker replaces manual status tracking, reducing SM/PM burn to ~30% of traditional overhead.
+          </p>
         </div>
 
         {/* Cost per scenario (work category) */}
@@ -399,7 +430,6 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
               const Icon = cfg.Icon;
               if (!data || data.actualHours === 0) return null;
               const catHumanCost = data.actualHours * HUMAN_HOURLY_RATE_USD;
-              // Rough proportional AI cost by hours
               const aiCostProportion = totalHours > 0 ? data.actualHours / totalHours : 0;
               const catAICost = totalAICost * aiCostProportion;
               const catSavings = catHumanCost - catAICost;
@@ -424,8 +454,8 @@ function ROISummaryPanel({ metrics }: { metrics: SprintMetrics }) {
           <p className="text-[10px] font-bold text-blue-800 mb-1">📅 Daily Effort Update Protocol</p>
           <p className="text-[10px] text-blue-700">
             Task <code className="bg-blue-100 px-1 rounded">effort.actualHours</code>, <code className="bg-blue-100 px-1 rounded">tokensUsed</code>, and <code className="bg-blue-100 px-1 rounded">tokenCostCents</code> are logged in <code className="bg-blue-100 px-1 rounded">data-tasks.ts</code> at end-of-day by each developer as tasks are completed. 
-            Days 1 & 2 (Claude + Lovable) are fully logged. Days 3–5 will auto-populate as tasks are marked completed in the sprint tracker.
-            Velocity and ROI calculations update automatically when effort data is present.
+            Days 1 & 2 (Claude + Lovable) are fully logged. Days 3–5 will auto-populate as tasks are marked completed.
+            SM/PM overhead is fixed per sprint at {SM_PM_SPRINT_HOURS}h × ${SM_PM_HOURLY_RATE_USD}/hr = {fmtUSD(SM_PM_SPRINT_COST_USD)}.
           </p>
         </div>
       </CardContent>
