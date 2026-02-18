@@ -236,7 +236,7 @@ export const SprintTrackerDashboard: React.FC = () => {
     activeView === 'governance'  ? '⚙️ Governance & Release Flow  [auto-updates]' :
     activeView === 'planning'    ? '📋 Project Plan — All 41 Tasks  [auto-updates]' :
     activeView === 'charter'     ? 'Sprint Charter, Roles & Glossary' :
-    activeView === 'qa-signoff'  ? '🧪 Testing & QA Sign-off  [manual]' :
+    activeView === 'qa-signoff'  ? '🧪 QA Testing Sign-off  [end-of-sprint · conditional sign-off supported]' :
     '✅ PO Sign-off Gate  [manual + auto-updates]';
 
   return (
@@ -326,8 +326,8 @@ export const SprintTrackerDashboard: React.FC = () => {
                 Gates
               </p>
               <div className="space-y-0.5">
-                <NavBtn active={activeView === 'qa-signoff'} label="🧪 Testing Sign-off"         icon={FlaskConical}    onClick={() => setActiveView('qa-signoff')} />
-                <NavBtn active={activeView === 'po-gate'}    label="✅ PO Sign-off Gate ▸"        icon={Flag}            onClick={() => setActiveView('po-gate')}  />
+                <NavBtn active={activeView === 'qa-signoff'} label="🧪 QA Testing Sign-off"       icon={FlaskConical}    onClick={() => setActiveView('qa-signoff')} />
+                <NavBtn active={activeView === 'po-gate'}    label="✅ PO Daily Checklist"         icon={Flag}            onClick={() => setActiveView('po-gate')}  />
               </div>
             </div>
 
