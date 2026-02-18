@@ -24,20 +24,18 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { SharedInfraFeed } from './SharedInfraFeed';
 import {
   Brain, Zap, CheckCircle2, Clock, AlertTriangle,
   ArrowRight, Ban, Save, ChevronDown, ChevronRight,
   FileCode, Link2, MessageSquare, Rocket, Users,
-  ArrowDown, Hourglass, PlayCircle, Flag, Eye,
-  ThumbsUp, HelpCircle, KeyRound, ShieldCheck, GitBranch,
+  ArrowDown, Hourglass, PlayCircle, ShieldCheck, GitBranch,
   Lock, ShieldAlert, FolderX,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SPRINT_TASKS } from './data-tasks';
-import { HANDOFFS, DEPENDENCY_CHAINS, PO_CHECKLISTS } from './data-dependencies';
+import { HANDOFFS, DEPENDENCY_CHAINS } from './data-dependencies';
 import { DAY1_FINDINGS } from './data-findings';
 import type { Developer, TaskStatus, StandupEntry, HandoffStatus } from './types';
 
@@ -66,12 +64,6 @@ const DEV = {
   },
 } as const;
 
-const PO_CFG = {
-  verify:  { label: 'Verify',  Icon: Eye,        cls: 'text-blue-700 bg-blue-50 border-blue-200',   badge: 'bg-blue-100 text-blue-700',   dot: 'bg-blue-500' },
-  approve: { label: 'Approve', Icon: ThumbsUp,    cls: 'text-green-700 bg-green-50 border-green-200', badge: 'bg-green-100 text-green-700', dot: 'bg-green-500' },
-  decide:  { label: 'Decide',  Icon: HelpCircle,  cls: 'text-amber-700 bg-amber-50 border-amber-200', badge: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' },
-  unblock: { label: 'Unblock', Icon: KeyRound,    cls: 'text-red-700 bg-red-50 border-red-200',      badge: 'bg-red-100 text-red-700',     dot: 'bg-red-500' },
-} as const;
 
 // Column definitions — controls order and appearance
 const COLS: { status: TaskStatus; label: string; dotCls: string; hdrCls: string; emptyLabel: string }[] = [
@@ -106,266 +98,6 @@ function getUnmetDeps(taskId: string, getStatus: (id: string) => TaskStatus): st
   if (!chain) return [];
   return chain.blockedBy.filter(dep =>
     dep.startsWith('H-') ? !isHandoffReady(dep, getStatus) : getStatus(dep) !== 'completed',
-  );
-}
-
-// ─── PO/SM Gate Section ───────────────────────────────────────────────────────
-
-const PO_STORAGE_KEY = 'genie_sprint_po_checklist';
-
-function POGateSection({
-  day, getTaskStatus, onOpenFullGate,
-}: {
-  day: number;
-  getTaskStatus: (id: string) => TaskStatus;
-  onOpenFullGate?: () => void;
-}) {
-  const [open, setOpen] = useState(true);
-  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
-    try { const s = localStorage.getItem(PO_STORAGE_KEY); return s ? JSON.parse(s) : {}; }
-    catch { return {}; }
-  });
-
-  const dayItems = PO_CHECKLISTS.filter(i => i.day === day);
-  if (dayItems.length === 0) return null;
-
-  const done = dayItems.filter(i => checked[i.id]).length;
-  const pct = Math.round((done / dayItems.length) * 100);
-  const allDone = done === dayItems.length;
-
-  const toggleCheck = (id: string) => {
-    setChecked(prev => {
-      const next = { ...prev, [id]: !prev[id] };
-      localStorage.setItem(PO_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
-
-  // Group by category for display
-  const byCategory = (['verify', 'approve', 'decide', 'unblock'] as const).map(cat => ({
-    cat,
-    items: dayItems.filter(i => i.category === cat),
-  })).filter(g => g.items.length > 0);
-
-  // What MUST be done for day to start (unblock items)
-  const unblockItems = dayItems.filter(i => i.category === 'unblock');
-  const criticalApprove = dayItems.filter(i => i.category === 'approve');
-
-  return (
-    <section className="rounded-lg border border-emerald-200 bg-emerald-50/30 overflow-hidden">
-      {/* Header */}
-      <div className="w-full flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-emerald-200">
-        <button
-          onClick={() => setOpen(o => !o)}
-          className="flex items-center gap-2 flex-1 text-left hover:opacity-80 transition-opacity"
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-          <Flag className="w-3 h-3 text-emerald-600 shrink-0" />
-          <span className="text-xs font-bold uppercase tracking-widest text-emerald-800">PO / SM Gate — Day {day}</span>
-          <span className="text-[10px] text-emerald-600 ml-1 hidden sm:inline">What the Product Owner must do today</span>
-          <div className="ml-2 flex items-center gap-2">
-            {allDone ? (
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300 flex items-center gap-1">
-                <CheckCircle2 className="w-2.5 h-2.5" /> Gate Cleared
-              </span>
-            ) : (
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300">
-                {done}/{dayItems.length} · {pct}%
-              </span>
-            )}
-            {open ? <ChevronDown className="w-3.5 h-3.5 text-emerald-600" /> : <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />}
-          </div>
-        </button>
-        {onOpenFullGate && (
-          <button
-            onClick={onOpenFullGate}
-            className="ml-auto shrink-0 text-[10px] font-bold px-2.5 py-1 rounded border border-emerald-400 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors flex items-center gap-1"
-          >
-            Open Full PO Gate <ChevronRight className="w-3 h-3" />
-          </button>
-        )}
-      </div>
-
-      {open && (
-        <div className="p-3 space-y-3">
-
-          {/* Progress bar */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-1.5 bg-emerald-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <span className="text-[10px] font-bold text-emerald-700 shrink-0">{pct}% cleared</span>
-          </div>
-
-          {/* Critical: What PO must unblock TODAY for day to proceed */}
-          {(unblockItems.length > 0 || criticalApprove.length > 0) && (
-            <div className="rounded border border-amber-200 bg-amber-50/70 p-2.5 space-y-1.5">
-              <div className="flex items-center gap-1.5 mb-1">
-                <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
-                <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800">Must Do First — Day {day} Cannot Start Without These</span>
-              </div>
-              {[...unblockItems, ...criticalApprove].map(item => {
-                const cfg = PO_CFG[item.category as keyof typeof PO_CFG];
-                const Icon = cfg.Icon;
-                return (
-                  <div key={item.id} className="flex items-start gap-2 text-[10px]">
-                    <Checkbox
-                      checked={checked[item.id] || false}
-                      onCheckedChange={() => toggleCheck(item.id)}
-                      className="mt-0.5 h-3 w-3"
-                    />
-                    <Icon className={cn('w-3 h-3 shrink-0 mt-0.5', cfg.cls.includes('blue') ? 'text-blue-600' : cfg.cls.includes('green') ? 'text-green-600' : cfg.cls.includes('amber') ? 'text-amber-600' : 'text-red-600')} />
-                    <div className="flex-1 min-w-0">
-                      <span className={cn('font-semibold', checked[item.id] && 'line-through text-muted-foreground')}>{item.title}</span>
-                      <p className="text-muted-foreground mt-0.5">{item.description}</p>
-                      {item.relatedTasks.length > 0 && (
-                        <div className="flex gap-1 mt-0.5 flex-wrap">
-                          {item.relatedTasks.map(t => {
-                            const st = getTaskStatus(t);
-                            return (
-                              <span key={t} className={cn('font-mono text-[8px] px-1 py-0.5 rounded border',
-                                st === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
-                                st === 'in-progress' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-muted text-muted-foreground border-border'
-                              )}>{t}</span>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                    {checked[item.id] && <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Process flow: who is waiting for PO action */}
-          <div className="rounded border border-emerald-200 bg-white/50 overflow-hidden">
-            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-emerald-100">
-              {byCategory.map(({ cat, items }) => {
-                const cfg = PO_CFG[cat];
-                const Icon = cfg.Icon;
-                const catDone = items.filter(i => checked[i.id]).length;
-                return (
-                  <div key={cat} className="p-2.5 space-y-1.5">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', cfg.dot)} />
-                      <Icon className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{cfg.label}</span>
-                      <span className="ml-auto text-[9px] font-semibold text-muted-foreground">{catDone}/{items.length}</span>
-                    </div>
-                    {items.map(item => (
-                      <div key={item.id} className="flex items-start gap-1.5">
-                        <Checkbox
-                          checked={checked[item.id] || false}
-                          onCheckedChange={() => toggleCheck(item.id)}
-                          className="mt-0.5 h-3 w-3 shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className={cn('text-[10px] leading-snug', checked[item.id] ? 'line-through text-muted-foreground' : 'text-foreground')}>
-                            {item.title}
-                          </p>
-                          {/* Who is affected */}
-                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                            {item.developer === 'both' ? (
-                              <>
-                                <span className="text-[8px] font-mono bg-violet-50 border border-violet-200 text-violet-700 px-1 rounded">Claude</span>
-                                <span className="text-[8px] font-mono bg-pink-50 border border-pink-200 text-pink-700 px-1 rounded">Lovable</span>
-                              </>
-                            ) : item.developer === 'claude' ? (
-                              <span className="text-[8px] font-mono bg-violet-50 border border-violet-200 text-violet-700 px-1 rounded">→ Claude</span>
-                            ) : (
-                              <span className="text-[8px] font-mono bg-pink-50 border border-pink-200 text-pink-700 px-1 rounded">→ Lovable</span>
-                            )}
-                            {item.route && (
-                              <span className="text-[8px] font-mono text-muted-foreground">{item.route}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-      {/* Individual PO items with IDs */}
-          <div className="space-y-1.5 border-t border-emerald-100 pt-2 mt-1">
-            {dayItems.map(item => {
-              const cfg = PO_CFG[item.category as keyof typeof PO_CFG];
-              const Icon = cfg.Icon;
-              return (
-                <div key={item.id} className="flex items-start gap-2 text-[9px]">
-                  <Checkbox
-                    checked={checked[item.id] || false}
-                    onCheckedChange={() => toggleCheck(item.id)}
-                    className="mt-0.5 h-3 w-3 shrink-0"
-                  />
-                  <span className={cn('font-mono font-bold shrink-0 px-1 py-0.5 rounded border text-[8px]', cfg.badge)}>
-                    {item.id}
-                  </span>
-                  <Icon className={cn('w-3 h-3 shrink-0 mt-0.5',
-                    cfg.cls.includes('blue') ? 'text-blue-600' : cfg.cls.includes('green') ? 'text-green-600' : cfg.cls.includes('amber') ? 'text-amber-600' : 'text-red-600'
-                  )} />
-                  <div className="flex-1 min-w-0">
-                    <span className={cn('font-semibold leading-snug', checked[item.id] && 'line-through text-muted-foreground')}>
-                      {item.title}
-                    </span>
-                    {item.route && (
-                      <span className="ml-1.5 font-mono text-[8px] text-muted-foreground">→ {item.route}</span>
-                    )}
-                  </div>
-                  {checked[item.id] && <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />}
-                </div>
-              );
-            })}
-          </div>
-
-      {/* Who is waiting for PO today */}
-          {(() => {
-            const waitingDevs: { dev: Developer; items: typeof dayItems }[] = [];
-            const claudeItems = dayItems.filter(i => i.developer === 'claude' && !checked[i.id]);
-            const lovableItems = dayItems.filter(i => i.developer === 'lovable' && !checked[i.id]);
-            const bothItems = dayItems.filter(i => i.developer === 'both' && !checked[i.id]);
-            if (claudeItems.length > 0 || bothItems.length > 0)
-              waitingDevs.push({ dev: 'claude', items: [...claudeItems, ...bothItems] });
-            if (lovableItems.length > 0 || bothItems.length > 0)
-              waitingDevs.push({ dev: 'lovable', items: [...lovableItems, ...bothItems] });
-
-            if (waitingDevs.length === 0) return (
-              <div className="flex items-center gap-1.5 text-[10px] text-green-700 px-1">
-                <CheckCircle2 className="w-3 h-3" /> All PO actions complete — both devs unblocked ✓
-              </div>
-            );
-
-            return (
-              <div className="flex items-center gap-2 flex-wrap text-[10px]">
-                <Users className="w-3 h-3 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground font-medium">Waiting on PO:</span>
-                {waitingDevs.map(({ dev }, i) => {
-                  const cfg = DEV[dev];
-                  const Icon = cfg.Icon;
-                  return (
-                    <React.Fragment key={dev}>
-                      {i > 0 && <span className="text-muted-foreground">&amp;</span>}
-                      <span className={cn('flex items-center gap-1 font-semibold', cfg.iconCls)}>
-                        <Icon className="w-3 h-3" /> {cfg.label}
-                      </span>
-                    </React.Fragment>
-                  );
-                })}
-                <span className="text-muted-foreground">— complete PO actions above to unblock</span>
-              </div>
-            );
-          })()}
-
-        </div>
-      )}
-    </section>
   );
 }
 
@@ -1749,8 +1481,22 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
         </div>
       </div>
 
-      {/* ── 0. PO / SM GATE ──────────────────────────────────────────────── */}
-      <POGateSection day={day} getTaskStatus={getTaskStatus} onOpenFullGate={onNavigateToPOGate} />
+      {/* ── 0. PO / SM GATE — link out to single source of truth ────────── */}
+      {onNavigateToPOGate && (
+        <div className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/40">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+            <span className="text-xs font-semibold text-emerald-800">PO / SM Gate — Day {day}</span>
+            <span className="text-[10px] text-emerald-600">Manage all PO actions, approvals &amp; notes in one place</span>
+          </div>
+          <button
+            onClick={onNavigateToPOGate}
+            className="text-[10px] font-bold px-3 py-1.5 rounded border border-emerald-400 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors flex items-center gap-1 shrink-0"
+          >
+            Open PO Actions &amp; Notes <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+      )}
 
       {/* ── 1. KICKSTART ─────────────────────────────────────────────────── */}
       <KickstartSection day={day} getTaskStatus={getTaskStatus} />
