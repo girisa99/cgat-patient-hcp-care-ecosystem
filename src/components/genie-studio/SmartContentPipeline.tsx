@@ -423,15 +423,23 @@ export function SmartContentPipeline({
 
   const handleGenerate = async () => {
     // Validate input based on content type
-    if (contentType === 'url' && !urlInput.trim()) {
-      toast.error('Please enter a URL');
-      return;
+    if (contentType === 'url') {
+      if (!urlInput.trim()) {
+        toast.error('Please enter a URL');
+        return;
+      }
+      try {
+        new URL(urlInput);
+      } catch {
+        toast.error('Please enter a valid URL (e.g., https://example.com)');
+        return;
+      }
     }
     if (contentType === 'image' && generateImage && !imagePrompt.trim()) {
       toast.error('Please enter an image prompt');
       return;
     }
-    if (contentType !== 'url' && !generateImage && uploadedFiles.length === 0) {
+    if (contentType !== 'url' && contentType !== 'presentation' && contentType !== 'full-pipeline' && !generateImage && uploadedFiles.length === 0) {
       toast.error('Please upload a file');
       return;
     }
@@ -570,6 +578,9 @@ export function SmartContentPipeline({
       // Use real service for IMAGE content type
       else if (contentType === 'image') {
         const imageUrl = uploadedFiles[0]?.preview;
+        if (!generateImage && !imageUrl) {
+          throw new Error('Please upload a valid image file');
+        }
         const prompt = generateImage ? imagePrompt : 'Analyze this image';
         
         // Map script style from output format
@@ -1694,14 +1705,28 @@ export function SmartContentPipeline({
               className="h-[calc(100vh-200px)] min-h-[600px]"
               onComplete={(presentation) => {
                 toast.success(`Presentation "${presentation?.metadata?.title || 'Untitled'}" generated!`);
+                // Format slides as readable script text (not JSON)
+                const scriptText = presentation?.slides
+                  ?.map((s: any, i: number) => `## Slide ${i + 1}: ${s.title || ''}\n\n${s.narration || s.content || ''}`)
+                  .join('\n\n---\n\n') || '';
+
+                const content: GeneratedContent = {
+                  title: presentation?.metadata?.title || 'Presentation',
+                  script: scriptText,
+                  type: 'presentation_script',
+                  sourceType: 'presentation',
+                  metadata: {
+                    wordCount: scriptText.split(/\s+/).length,
+                    estimatedDuration: presentation?.metadata?.duration || 0,
+                    provider: selectedProvider,
+                    timestamp: Date.now(),
+                  },
+                };
+                setGeneratedContent(content);
+                saveDraft(content);
+
                 if (onSaveToKnowledgeBase && presentation) {
-                  const generatedContent: GeneratedContent = {
-                    title: presentation.metadata?.title || 'Presentation',
-                    script: JSON.stringify(presentation.slides || []),
-                    type: 'presentation_script',
-                    sourceType: 'document',
-                  };
-                  onSaveToKnowledgeBase(generatedContent);
+                  onSaveToKnowledgeBase(content);
                 }
               }}
               onError={(error) => {

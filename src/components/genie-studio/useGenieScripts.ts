@@ -1,6 +1,8 @@
 /**
  * Hook for managing scripts in the database for GenieStudio
  * Replaces localStorage-based script storage with Supabase
+ *
+ * Day 3 (C-303): Fixed auth race condition, updateScript .select(), stats serialization
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -45,12 +47,35 @@ interface UseGenieScriptsReturn {
   audioScripts: GenieScript[];
   isLoading: boolean;
   error: string | null;
-  
+
   // CRUD operations
   saveScript: (script: Omit<GenieScript, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => Promise<GenieScript | null>;
   updateScript: (id: string, updates: Partial<GenieScript>) => Promise<boolean>;
   deleteScript: (id: string) => Promise<boolean>;
   refresh: () => Promise<void>;
+}
+
+/** Map a Supabase row to the local GenieScript shape */
+function mapRowToScript(row: any): GenieScript {
+  return {
+    id: row.id,
+    name: row.name,
+    content: row.content,
+    type: row.type as 'video' | 'audio',
+    purpose: row.purpose as ScriptPurpose | undefined,
+    source: (row.source as ScriptSource) || 'manual',
+    showId: row.show_id,
+    enhancedContent: row.enhanced_content,
+    cleanContent: row.clean_content,
+    draftContent: row.draft_content,
+    draftStatus: row.draft_status,
+    draftChanges: row.draft_changes,
+    stats: row.stats as ScriptStats | null,
+    hasVoiceover: row.has_voiceover || false,
+    voiceoverId: row.voiceover_id,
+    createdAt: new Date(row.created_at).getTime(),
+    updatedAt: new Date(row.updated_at).getTime(),
+  };
 }
 
 export function useGenieScripts(): UseGenieScriptsReturn {
@@ -62,11 +87,12 @@ export function useGenieScripts(): UseGenieScriptsReturn {
   const loadScripts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log('No user logged in, skipping scripts load');
+        setScripts([]);
         setIsLoading(false);
         return;
       }
@@ -81,29 +107,11 @@ export function useGenieScripts(): UseGenieScriptsReturn {
         throw fetchError;
       }
 
-      const loadedScripts: GenieScript[] = (data || []).map((row: any) => ({
-        id: row.id,
-        name: row.name,
-        content: row.content,
-        type: row.type as 'video' | 'audio',
-        purpose: row.purpose as ScriptPurpose | undefined,
-        source: (row.source as ScriptSource) || 'manual',
-        showId: row.show_id,
-        enhancedContent: row.enhanced_content,
-        cleanContent: row.clean_content,
-        draftContent: row.draft_content,
-        draftStatus: row.draft_status,
-        draftChanges: row.draft_changes,
-        stats: row.stats as ScriptStats | null,
-        hasVoiceover: row.has_voiceover || false,
-        voiceoverId: row.voiceover_id,
-        createdAt: new Date(row.created_at).getTime(),
-        updatedAt: new Date(row.updated_at).getTime(),
-      }));
+      const loadedScripts: GenieScript[] = (data || []).map(mapRowToScript);
 
       console.log(`📝 GenieStudio: Loaded ${loadedScripts.length} scripts from database`);
       setScripts(loadedScripts);
-      
+
     } catch (err) {
       console.error('Failed to load scripts from database:', err);
       setError(err instanceof Error ? err.message : 'Failed to load scripts');
@@ -118,6 +126,14 @@ export function useGenieScripts(): UseGenieScriptsReturn {
     loadScripts();
   }, [loadScripts]);
 
+  // Re-load scripts on auth state change (login/logout)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event) => {
+      loadScripts();
+    });
+    return () => subscription.unsubscribe();
+  }, [loadScripts]);
+
   // Save or create script
   const saveScript = useCallback(async (
     script: Omit<GenieScript, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }
@@ -130,7 +146,7 @@ export function useGenieScripts(): UseGenieScriptsReturn {
       }
 
       const isUpdate = script.id && scripts.some(s => s.id === script.id);
-      
+
       if (isUpdate) {
         // Update existing
         const { data, error: updateError } = await supabase
@@ -140,6 +156,7 @@ export function useGenieScripts(): UseGenieScriptsReturn {
             content: script.content,
             type: script.type,
             purpose: (script as any).purpose ?? null,
+            source: script.source ?? 'manual',
             show_id: (script as any).showId ?? null,
             enhanced_content: script.enhancedContent ?? null,
             clean_content: script.cleanContent ?? null,
@@ -156,33 +173,14 @@ export function useGenieScripts(): UseGenieScriptsReturn {
           .single();
 
         if (updateError) throw updateError;
-        
-        const updated: GenieScript = {
-          id: data.id,
-          name: data.name,
-          content: data.content,
-          type: data.type as 'video' | 'audio',
-          purpose: data.purpose as ScriptPurpose | undefined,
-          source: (data.source as ScriptSource) || 'manual',
-          showId: data.show_id,
-          enhancedContent: data.enhanced_content,
-          cleanContent: data.clean_content,
-          draftContent: data.draft_content,
-          draftStatus: data.draft_status as 'in_progress' | 'completed' | null,
-          draftChanges: data.draft_changes as any[] | null,
-          stats: data.stats as unknown as ScriptStats | null,
-          hasVoiceover: data.has_voiceover,
-          voiceoverId: data.voiceover_id,
-          createdAt: new Date(data.created_at).getTime(),
-          updatedAt: new Date(data.updated_at).getTime(),
-        };
-        
+
+        const updated = mapRowToScript(data);
         setScripts(prev => prev.map(s => s.id === updated.id ? updated : s));
         toast.success('Script updated');
         return updated;
-        
+
       } else {
-        // Create new
+        // Create new — don't pass client-side temp id
         const { data, error: insertError } = await supabase
           .from('genie_scripts')
           .insert([{
@@ -190,7 +188,7 @@ export function useGenieScripts(): UseGenieScriptsReturn {
             name: script.name,
             content: script.content,
             type: script.type,
-            source: script.source ?? 'manual',
+            source: script.source ?? 'spark',
             purpose: (script as any).purpose ?? null,
             show_id: (script as any).showId ?? null,
             enhanced_content: script.enhancedContent ?? null,
@@ -206,27 +204,8 @@ export function useGenieScripts(): UseGenieScriptsReturn {
           .single();
 
         if (insertError) throw insertError;
-        
-        const newScript: GenieScript = {
-          id: data.id,
-          name: data.name,
-          content: data.content,
-          type: data.type as 'video' | 'audio',
-          purpose: data.purpose as ScriptPurpose | undefined,
-          source: (data.source as ScriptSource) || 'manual',
-          showId: data.show_id,
-          enhancedContent: data.enhanced_content,
-          cleanContent: data.clean_content,
-          draftContent: data.draft_content,
-          draftStatus: data.draft_status as 'in_progress' | 'completed' | null,
-          draftChanges: data.draft_changes as any[] | null,
-          stats: data.stats as unknown as ScriptStats | null,
-          hasVoiceover: data.has_voiceover,
-          voiceoverId: data.voiceover_id,
-          createdAt: new Date(data.created_at).getTime(),
-          updatedAt: new Date(data.updated_at).getTime(),
-        };
-        
+
+        const newScript = mapRowToScript(data);
         setScripts(prev => [newScript, ...prev]);
         toast.success('Script saved');
         return newScript;
@@ -238,11 +217,14 @@ export function useGenieScripts(): UseGenieScriptsReturn {
     }
   }, [scripts]);
 
-  // Update script
+  // Update script (partial fields)
   const updateScript = useCallback(async (id: string, updates: Partial<GenieScript>): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+      if (!user) {
+        toast.error('Please sign in to update scripts');
+        return false;
+      }
 
       const dbUpdates: Record<string, any> = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
@@ -255,22 +237,23 @@ export function useGenieScripts(): UseGenieScriptsReturn {
       if (updates.draftContent !== undefined) dbUpdates.draft_content = updates.draftContent;
       if (updates.draftStatus !== undefined) dbUpdates.draft_status = updates.draftStatus;
       if (updates.draftChanges !== undefined) dbUpdates.draft_changes = updates.draftChanges;
-      if (updates.stats !== undefined) dbUpdates.stats = updates.stats;
+      if (updates.stats !== undefined) dbUpdates.stats = updates.stats ? JSON.parse(JSON.stringify(updates.stats)) : null;
       if (updates.hasVoiceover !== undefined) dbUpdates.has_voiceover = updates.hasVoiceover;
       if (updates.voiceoverId !== undefined) dbUpdates.voiceover_id = updates.voiceoverId;
 
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('genie_scripts')
         .update(dbUpdates)
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
       if (updateError) throw updateError;
-      
-      setScripts(prev => prev.map(s => 
-        s.id === id ? { ...s, ...updates, updatedAt: Date.now() } : s
-      ));
-      
+
+      const updated = mapRowToScript(data);
+      setScripts(prev => prev.map(s => s.id === id ? updated : s));
+
       return true;
     } catch (err) {
       console.error('Failed to update script:', err);
@@ -292,7 +275,7 @@ export function useGenieScripts(): UseGenieScriptsReturn {
         .eq('user_id', user.id);
 
       if (deleteError) throw deleteError;
-      
+
       setScripts(prev => prev.filter(s => s.id !== id));
       toast.success('Script deleted');
       return true;
