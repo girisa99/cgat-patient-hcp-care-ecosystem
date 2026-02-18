@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
-  LayoutGrid, BarChart3, Shield, ClipboardCheck,
+  LayoutGrid, BarChart3, Shield, ClipboardCheck, Clock,
   CheckCircle2, TrendingUp, ArrowLeft, Video,
   Archive, Target, Calendar, Flag, Brain, Zap, ChevronRight, BookOpen, FlaskConical,
   Rocket, RotateCcw,
@@ -35,10 +35,11 @@ import { SprintPlanningView } from './SprintPlanningView';
 import { GovernanceFlowView } from './GovernanceFlowView';
 import { SprintCharterView } from './SprintCharterView';
 import { QASignOffView } from './QASignOffView';
+import { EffortTrackingView } from './EffortTrackingView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewId = 'po-mission' | 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff';
+type ViewId = 'po-mission' | 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'effort' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -202,7 +203,7 @@ function BacklogView({ getTaskStatus, onStatusChange, taskOverrides, currentDay 
 export const SprintTrackerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const {
-    state, currentDay, metrics, updateTaskStatus, addStandup, getTaskStatus, resetToDefaults,
+    state, currentDay, metrics, effortMetrics, updateTaskStatus, addStandup, getTaskStatus, resetToDefaults,
   } = useSprintTracker();
 
   // PO Mission Control is the default — the single-screen summary
@@ -236,7 +237,8 @@ export const SprintTrackerDashboard: React.FC = () => {
     activeDayNum !== undefined   ? `Day ${activeDayNum} · ${DAY_THEMES[activeDayNum - 1]}` :
     activeView === 'backlog'     ? 'Backlog' :
     activeView === 'metrics'     ? '📊 Velocity / Metrics' :
-    
+    activeView === 'effort'      ? 'Effort Tracking' :
+    activeView === 'strategy'    ? 'Strategy' :
     activeView === 'findings'    ? '🔎 Findings / QA' :
     activeView === 'governance'  ? '⚙️ Governance & Release Flow' :
     activeView === 'planning'    ? '📋 Project Plan — All 41 Tasks' :
@@ -337,6 +339,8 @@ export const SprintTrackerDashboard: React.FC = () => {
                   icon={Archive} onClick={() => setActiveView('backlog')} />
                 <NavBtn active={activeView === 'metrics'} label="Velocity"
                   icon={BarChart3} onClick={() => setActiveView('metrics')} />
+                <NavBtn active={activeView === 'effort'} label="Effort Tracking"
+                  icon={Clock} onClick={() => setActiveView('effort')} />
                 <NavBtn active={activeView === 'planning'} label="Project Plan (41 tasks)"
                   icon={Target} onClick={() => setActiveView('planning')} />
 
@@ -491,6 +495,11 @@ export const SprintTrackerDashboard: React.FC = () => {
             {/* Metrics */}
             {activeView === 'metrics' && (
               <MetricsView metrics={metrics} currentDay={currentDay} />
+            )}
+
+            {/* Effort Tracking */}
+            {activeView === 'effort' && (
+              <EffortTrackingView effortMetrics={effortMetrics} currentDay={currentDay} />
             )}
 
             {/* Findings */}
