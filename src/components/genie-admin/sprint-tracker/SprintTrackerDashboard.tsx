@@ -251,9 +251,11 @@ export const SprintTrackerDashboard: React.FC = () => {
         <ScrollArea className="flex-1">
           <div className="px-2 py-3 space-y-4">
 
-            {/* Sprint Days */}
+            {/* Epics = Days */}
             <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">Sprint Days</p>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
+                Epics · Sprint Days
+              </p>
               <div className="space-y-0.5">
                 {[1, 2, 3, 4, 5].map(d => (
                   <NavBtn
@@ -268,6 +270,17 @@ export const SprintTrackerDashboard: React.FC = () => {
                     onClick={() => setActiveView(`day-${d}` as ViewId)}
                   />
                 ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Backlog */}
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
+                Board
+              </p>
+              <div className="space-y-0.5">
                 <NavBtn
                   active={activeView === 'backlog'}
                   badge={backlogCount}
@@ -275,29 +288,33 @@ export const SprintTrackerDashboard: React.FC = () => {
                   icon={Archive}
                   onClick={() => setActiveView('backlog')}
                 />
+                <NavBtn active={activeView === 'metrics'}  label="Velocity / Metrics" icon={BarChart3}     onClick={() => setActiveView('metrics')}  />
               </div>
             </div>
 
             <Separator />
 
-            {/* Management */}
+            {/* Reports & Gates */}
             <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">Management</p>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
+                Reports
+              </p>
               <div className="space-y-0.5">
-                <NavBtn active={activeView === 'metrics'}  label="Metrics"   icon={BarChart3}     onClick={() => setActiveView('metrics')}  />
-                <NavBtn active={activeView === 'findings'} label="Findings"  icon={ClipboardCheck} onClick={() => setActiveView('findings')} />
-                <NavBtn active={activeView === 'strategy'} label="Strategy"  icon={Shield}         onClick={() => setActiveView('strategy')} />
-                <NavBtn active={activeView === 'po-gate'}  label="PO Gate"   icon={Flag}           onClick={() => setActiveView('po-gate')}  />
+                <NavBtn active={activeView === 'findings'} label="Findings / QA"  icon={ClipboardCheck} onClick={() => setActiveView('findings')} />
+                <NavBtn active={activeView === 'strategy'} label="Strategy"        icon={Shield}         onClick={() => setActiveView('strategy')} />
+                <NavBtn active={activeView === 'po-gate'}  label="Release Gate ▸"  icon={Flag}           onClick={() => setActiveView('po-gate')}  />
               </div>
             </div>
 
             <Separator />
 
-            {/* Team legend */}
+            {/* Assignees legend */}
             <div className="px-2 space-y-1.5">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Team</p>
-              <div className="flex items-center gap-2"><RoleChip role="po" /><span className="text-[10px] text-muted-foreground">Gate keeper</span></div>
-              <div className="flex items-center gap-2"><RoleChip role="claude" /><span className="text-[10px] text-muted-foreground">Tech lead</span></div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                Assignees
+              </p>
+              <div className="flex items-center gap-2"><RoleChip role="po" /><span className="text-[10px] text-muted-foreground">PO / Gate</span></div>
+              <div className="flex items-center gap-2"><RoleChip role="claude" /><span className="text-[10px] text-muted-foreground">Tech Lead</span></div>
               <div className="flex items-center gap-2"><RoleChip role="lovable" /><span className="text-[10px] text-muted-foreground">Dev / UI</span></div>
             </div>
 
