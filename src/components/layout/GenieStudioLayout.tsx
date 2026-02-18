@@ -145,11 +145,13 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     );
   }
 
-  // STAGE 1: Hide sidebar on /genie-cast for immersive full-width experience
+  // Full-width routes: Genie Cast page OR sprint-tracker tab — no sidebar
   const isGenieCastRoute = location.pathname === '/genie-cast';
-  
-  if (isGenieCastRoute) {
-    // Full-width immersive layout for Genie Cast
+  const isSprintTrackerTab = location.pathname === '/genie-admin' && 
+    new URLSearchParams(location.search).get('tab') === 'sprint-tracker';
+  const isFullWidthRoute = isGenieCastRoute || isSprintTrackerTab;
+
+  if (isFullWidthRoute) {
     return (
       <div className="min-h-screen bg-background w-full">
         <main className="h-full w-full">
@@ -162,7 +164,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
     );
   }
 
-  // Sidebar variant - for non-Genie-Cast routes
+  // Sidebar variant - for all other routes
   return (
     <div className="min-h-screen bg-background flex w-full">
       <GenieStudioNavigation 
