@@ -71,7 +71,7 @@ export const EnhancedPricingSection = () => {
           </h2>
           
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Start with a free trial, then scale as you grow. All plans include core Genie Studio features.
+            Start with a free trial, then scale as you grow. All plans include core Genie Suite features.
           </p>
         </div>
 
@@ -372,7 +372,7 @@ const FAQ = () => {
       faqs: [
         {
           q: "What's included in the free trial?",
-          a: "14-day trial with Genie Studio Basic and Genie Spark (5 prototypes). Build 1 agent, 100 API calls, explore all features. Exports have watermarks during trial."
+          a: "14-day trial with Genie Suite Basic and Genie Spark (5 prototypes). Build 1 agent, 100 API calls, explore all features. Exports have watermarks during trial."
         },
         {
           q: "Do I need a credit card for the free trial?",
@@ -389,7 +389,7 @@ const FAQ = () => {
       faqs: [
         {
           q: "What's the difference between Genie products?",
-          a: "Genie Mind = AI knowledge & document processing. Genie Spark = rapid script generation. Genie Vibe = recording studio with AI voices. Genie Studio = unified workflow. Production Hub = team collaboration."
+          a: "Genie Mind = AI knowledge & document processing. Genie Spark = rapid script generation. Genie Vibe = recording studio with AI voices. Genie Studio = the production workspace within Genie Suite. Production Hub = team collaboration."
         },
         {
           q: "Which plan includes Genie Vibe recording?",
