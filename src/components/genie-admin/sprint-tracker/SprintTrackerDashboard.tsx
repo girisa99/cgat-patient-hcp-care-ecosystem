@@ -1,9 +1,9 @@
 /**
- * SPRINT TRACKER — Day-Centric Layout
+ * SPRINT TRACKER — PO-First Layout
  *
- * Sidebar: Day 1–5 (with %) | Backlog | — | Metrics | Strategy | PO Gate
- * Main: DayPageView = standup + tasks(Claude|Lovable) + handoffs — all per day
- * Secondary views: Backlog list, Metrics, Strategy, PO Gate
+ * Sidebar (PO View): Mission Control | Daily Checklist | QA Gate
+ * Sidebar (Dev View): Day 1–5 | Backlog | Metrics | Reports
+ * Default landing: PO Mission Control (single-screen health summary)
  */
 
 import React, { useState } from 'react';
@@ -17,6 +17,7 @@ import {
   LayoutGrid, BarChart3, Shield, ClipboardCheck,
   CheckCircle2, TrendingUp, ArrowLeft, Video,
   Archive, Target, Calendar, Flag, Brain, Zap, ChevronRight, BookOpen, FlaskConical,
+  Rocket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,7 @@ import { DayPageView } from './DayPageView';
 import { MetricsView } from './MetricsView';
 import { StrategyView } from './StrategyView';
 import { POVerificationView } from './POVerificationView';
+import { POMissionControl } from './POMissionControl';
 import { FindingsView } from './FindingsView';
 import { SprintPlanningView } from './SprintPlanningView';
 import { GovernanceFlowView } from './GovernanceFlowView';
@@ -36,7 +38,7 @@ import { QASignOffView } from './QASignOffView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewId = 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff';
+type ViewId = 'po-mission' | 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -203,8 +205,10 @@ export const SprintTrackerDashboard: React.FC = () => {
     state, currentDay, metrics, updateTaskStatus, addStandup, getTaskStatus,
   } = useSprintTracker();
 
-  const [activeView, setActiveView] = useState<ViewId>(`day-${currentDay}` as ViewId);
+  // PO Mission Control is the default — the single-screen summary
+  const [activeView, setActiveView] = useState<ViewId>('po-mission');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarMode, setSidebarMode] = useState<'po' | 'dev'>('po');
 
   // ── computed ──────────────────────────────────────────────────────────────
   const overallPct = metrics.total > 0 ? Math.round((metrics.completed / metrics.total) * 100) : 0;
@@ -228,16 +232,17 @@ export const SprintTrackerDashboard: React.FC = () => {
 
   // ── view title ────────────────────────────────────────────────────────────
   const viewTitle =
+    activeView === 'po-mission'  ? '🎯 PO Mission Control' :
     activeDayNum !== undefined   ? `Day ${activeDayNum} · ${DAY_THEMES[activeDayNum - 1]}` :
     activeView === 'backlog'     ? 'Backlog' :
-    activeView === 'metrics'     ? '📊 Velocity / Metrics  [auto-updates]' :
+    activeView === 'metrics'     ? '📊 Velocity / Metrics' :
     activeView === 'strategy'    ? 'Strategy' :
-    activeView === 'findings'    ? '🔎 Findings / QA  [auto-updates]' :
-    activeView === 'governance'  ? '⚙️ Governance & Release Flow  [auto-updates]' :
-    activeView === 'planning'    ? '📋 Project Plan — All 41 Tasks  [auto-updates]' :
+    activeView === 'findings'    ? '🔎 Findings / QA' :
+    activeView === 'governance'  ? '⚙️ Governance & Release Flow' :
+    activeView === 'planning'    ? '📋 Project Plan — All 41 Tasks' :
     activeView === 'charter'     ? 'Sprint Charter, Roles & Glossary' :
-    activeView === 'qa-signoff'  ? '🧪 QA Testing Sign-off  [end-of-sprint · conditional sign-off supported]' :
-    '✅ PO Sign-off Gate  [manual + auto-updates]';
+    activeView === 'qa-signoff'  ? '🧪 QA Testing Sign-off' :
+    '✅ PO Daily Checklist';
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -245,7 +250,7 @@ export const SprintTrackerDashboard: React.FC = () => {
       {/* ═══ SIDEBAR ═════════════════════════════════════════════════════════ */}
       <aside className={cn(
         'flex flex-col border-r bg-card transition-all duration-200 shrink-0',
-        sidebarOpen ? 'w-52' : 'w-0 overflow-hidden border-r-0',
+        sidebarOpen ? 'w-56' : 'w-0 overflow-hidden border-r-0',
       )}>
         {/* Header */}
         <div className="flex items-center gap-2 px-4 py-3 border-b shrink-0">
@@ -256,18 +261,50 @@ export const SprintTrackerDashboard: React.FC = () => {
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="px-2 py-3 space-y-4">
+        {/* PO / Dev mode toggle */}
+        <div className="px-2 py-2 border-b shrink-0">
+          <div className="flex rounded-lg border overflow-hidden text-xs font-semibold">
+            <button
+              onClick={() => setSidebarMode('po')}
+              className={cn('flex-1 py-1.5 flex items-center justify-center gap-1 transition-colors',
+                sidebarMode === 'po' ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-muted',
+              )}
+            >
+              <Flag className="w-3 h-3" /> PO View
+            </button>
+            <button
+              onClick={() => setSidebarMode('dev')}
+              className={cn('flex-1 py-1.5 flex items-center justify-center gap-1 transition-colors',
+                sidebarMode === 'dev' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
+              )}
+            >
+              <Brain className="w-3 h-3" /> Dev View
+            </button>
+          </div>
+        </div>
 
-            {/* Epics = Days */}
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
-                Epics · Sprint Days
-              </p>
-              <div className="space-y-0.5">
+        <ScrollArea className="flex-1">
+          <div className="px-2 py-3 space-y-1">
+
+            {sidebarMode === 'po' ? (
+              /* ── PO VIEW ── */
+              <>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                  PO / SM Views
+                </p>
+                <NavBtn active={activeView === 'po-mission'} label="🎯 Mission Control" icon={Rocket}
+                  onClick={() => setActiveView('po-mission')} />
+                <NavBtn active={activeView === 'po-gate'}    label="✅ Daily Checklist"  icon={Flag}
+                  onClick={() => setActiveView('po-gate')}  />
+                <NavBtn active={activeView === 'qa-signoff'} label="🧪 QA Sign-off"      icon={FlaskConical}
+                  onClick={() => setActiveView('qa-signoff')} />
+
+                <Separator className="my-2" />
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                  Sprint Days
+                </p>
                 {[1, 2, 3, 4, 5].map(d => (
-                  <NavBtn
-                    key={d}
+                  <NavBtn key={d}
                     active={activeView === `day-${d}`}
                     dayNum={d}
                     isPast={d < currentDay}
@@ -278,73 +315,71 @@ export const SprintTrackerDashboard: React.FC = () => {
                     onClick={() => setActiveView(`day-${d}` as ViewId)}
                   />
                 ))}
-              </div>
-            </div>
 
-            <Separator />
+                <Separator className="my-2" />
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                  Reference
+                </p>
+                <NavBtn active={activeView === 'charter'}    label="Sprint Charter"  icon={BookOpen}
+                  onClick={() => setActiveView('charter')} />
+                <NavBtn active={activeView === 'governance'} label="Governance Flow" icon={Shield}
+                  onClick={() => setActiveView('governance')} />
+              </>
+            ) : (
+              /* ── DEV VIEW ── */
+              <>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                  Sprint Epics (Days)
+                </p>
+                {[1, 2, 3, 4, 5].map(d => (
+                  <NavBtn key={d}
+                    active={activeView === `day-${d}`}
+                    dayNum={d}
+                    isPast={d < currentDay}
+                    isToday={d === currentDay}
+                    pct={dayCompletion(d)}
+                    label={`Day ${d} · ${DAY_THEMES[d - 1]}`}
+                    icon={Calendar}
+                    onClick={() => setActiveView(`day-${d}` as ViewId)}
+                  />
+                ))}
 
-            {/* Backlog */}
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
-                Board
-              </p>
-              <div className="space-y-0.5">
-                <NavBtn
-                  active={activeView === 'backlog'}
-                  badge={backlogCount}
-                  label="Backlog"
-                  icon={Archive}
-                  onClick={() => setActiveView('backlog')}
-                />
-                <NavBtn active={activeView === 'metrics'}  label="Velocity / Metrics" icon={BarChart3}     onClick={() => setActiveView('metrics')}  />
-              </div>
-            </div>
+                <Separator className="my-2" />
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                  Board
+                </p>
+                <NavBtn active={activeView === 'backlog'} badge={backlogCount} label="Backlog"
+                  icon={Archive} onClick={() => setActiveView('backlog')} />
+                <NavBtn active={activeView === 'metrics'} label="Velocity / Metrics"
+                  icon={BarChart3} onClick={() => setActiveView('metrics')} />
 
-            <Separator />
-
-            {/* Reports & Gates */}
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
-                Reports
-              </p>
-              <div className="space-y-0.5">
-                {/* Project Plan — most prominent, always live from data-tasks */}
-                <NavBtn active={activeView === 'planning'}   label="📋 Project Plan (CSV)"      icon={Target}          onClick={() => setActiveView('planning')}  />
-                <NavBtn active={activeView === 'charter'}    label="Sprint Charter ▸"            icon={BookOpen}        onClick={() => setActiveView('charter')}  />
-                <NavBtn active={activeView === 'findings'}   label="Findings / QA ↺"             icon={ClipboardCheck}  onClick={() => setActiveView('findings')} />
-                <NavBtn active={activeView === 'governance'} label="Governance Flow ↺"           icon={Shield}          onClick={() => setActiveView('governance')} />
-                <NavBtn active={activeView === 'metrics'}    label="Velocity / Metrics ↺"        icon={BarChart3}       onClick={() => setActiveView('metrics')}  />
-                <NavBtn active={activeView === 'strategy'}   label="Strategy"                    icon={TrendingUp}      onClick={() => setActiveView('strategy')} />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Gates — manual sign-off area */}
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
-                Gates
-              </p>
-              <div className="space-y-0.5">
-                <NavBtn active={activeView === 'qa-signoff'} label="🧪 QA Testing Sign-off"       icon={FlaskConical}    onClick={() => setActiveView('qa-signoff')} />
-                <NavBtn active={activeView === 'po-gate'}    label="✅ PO Daily Checklist"         icon={Flag}            onClick={() => setActiveView('po-gate')}  />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Assignees legend */}
-            <div className="px-2 space-y-1.5">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                Assignees
-              </p>
-              <div className="flex items-center gap-2"><RoleChip role="po" /><span className="text-[10px] text-muted-foreground">PO / Gate</span></div>
-              <div className="flex items-center gap-2"><RoleChip role="claude" /><span className="text-[10px] text-muted-foreground">Tech Lead</span></div>
-              <div className="flex items-center gap-2"><RoleChip role="lovable" /><span className="text-[10px] text-muted-foreground">Dev / UI</span></div>
-            </div>
+                <Separator className="my-2" />
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                  Reports
+                </p>
+                <NavBtn active={activeView === 'planning'}   label="Project Plan (CSV)"  icon={Target}
+                  onClick={() => setActiveView('planning')} />
+                <NavBtn active={activeView === 'findings'}   label="Findings / QA"       icon={ClipboardCheck}
+                  onClick={() => setActiveView('findings')} />
+                <NavBtn active={activeView === 'strategy'}   label="Strategy"            icon={TrendingUp}
+                  onClick={() => setActiveView('strategy')} />
+                <NavBtn active={activeView === 'charter'}    label="Sprint Charter"      icon={BookOpen}
+                  onClick={() => setActiveView('charter')} />
+                <NavBtn active={activeView === 'governance'} label="Governance Flow"     icon={Shield}
+                  onClick={() => setActiveView('governance')} />
+              </>
+            )}
 
           </div>
         </ScrollArea>
+
+        {/* Assignees legend */}
+        <div className="border-t px-3 py-2.5 shrink-0 space-y-1.5">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Assignees</p>
+          <div className="flex items-center gap-2"><RoleChip role="po" /><span className="text-[10px] text-muted-foreground">PO / Gate</span></div>
+          <div className="flex items-center gap-2"><RoleChip role="claude" /><span className="text-[10px] text-muted-foreground">Tech Lead</span></div>
+          <div className="flex items-center gap-2"><RoleChip role="lovable" /><span className="text-[10px] text-muted-foreground">Dev / UI</span></div>
+        </div>
 
         {/* Footer */}
         <div className="border-t px-2 py-2 shrink-0 space-y-0.5">
@@ -417,39 +452,20 @@ export const SprintTrackerDashboard: React.FC = () => {
 
           {/* Progress bar */}
           <Progress value={overallPct} className="h-0.5 rounded-none" />
-
-          {/* Auto-update legend strip — shows on non-day views */}
-          {activeDayNum === undefined && (
-            <div className="flex items-center gap-4 px-4 py-1.5 bg-muted/30 border-t text-[10px] text-muted-foreground flex-wrap">
-              <span className="font-semibold text-foreground">Tab update mode:</span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
-                <span className="font-medium text-foreground">↺ Auto-updates</span> — reflects live task status from board
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
-                <span className="font-medium text-foreground">Manual</span> — PO/SO must tick checkboxes
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="inline-block w-2 h-2 rounded-full bg-blue-400" />
-                <span className="font-medium text-foreground">Mixed</span> — task status auto-feeds in, sign-off is manual
-              </span>
-              <span className="ml-auto">
-                {activeView === 'metrics' || activeView === 'planning' || activeView === 'findings' || activeView === 'governance'
-                  ? '✅ This tab is fully auto-updated'
-                  : activeView === 'qa-signoff'
-                    ? '🧪 Task status auto-feeds in — tick boxes manually'
-                    : activeView === 'po-gate'
-                      ? '🔵 Task status auto-feeds in — PO ticks manually'
-                      : ''}
-              </span>
-            </div>
-          )}
         </header>
 
         {/* Content */}
         <main className="flex-1 overflow-auto">
           <div className="p-5 max-w-6xl">
+
+            {/* PO Mission Control — default landing view */}
+            {activeView === 'po-mission' && (
+              <POMissionControl
+                currentDay={currentDay}
+                getTaskStatus={getTaskStatus}
+                onNavigateToDay={(d) => setActiveView(`day-${d}` as ViewId)}
+              />
+            )}
 
             {/* Day pages */}
             {activeDayNum !== undefined && (
