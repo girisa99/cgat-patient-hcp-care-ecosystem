@@ -33,6 +33,7 @@ import {
   FileCode, Link2, MessageSquare, Rocket, Users,
   ArrowDown, Hourglass, PlayCircle, Flag, Eye,
   ThumbsUp, HelpCircle, KeyRound, ShieldCheck, GitBranch,
+  Lock, ShieldAlert, FolderX,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SPRINT_TASKS } from './data-tasks';
@@ -325,7 +326,157 @@ function POGateSection({
   );
 }
 
+// ─── Infra Feed Section (with viewAs toggle) ──────────────────────────────────
+
+function InfraFeedSection({ day }: { day: number }) {
+  const [infraViewAs, setInfraViewAs] = useState<Developer>('lovable');
+  return (
+    <section>
+      <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Shared Infrastructure</span>
+        <Separator className="flex-1" />
+        <span className="text-[9px] text-muted-foreground">View alerts as:</span>
+        {(['claude', 'lovable'] as Developer[]).map(dev => (
+          <button
+            key={dev}
+            onClick={() => setInfraViewAs(dev)}
+            className={cn(
+              'text-[9px] font-bold px-2 py-0.5 rounded border transition-colors',
+              infraViewAs === dev
+                ? dev === 'claude'
+                  ? 'bg-violet-100 border-violet-300 text-violet-700'
+                  : 'bg-pink-100 border-pink-300 text-pink-700'
+                : 'text-muted-foreground border-transparent hover:border-border',
+            )}
+          >
+            {dev === 'claude' ? '🧠 Claude' : '⚡ Lovable'}
+          </button>
+        ))}
+      </div>
+      <SharedInfraFeed day={day} viewAs={infraViewAs} />
+    </section>
+  );
+}
+
+// ─── Territory Guardrails Panel ───────────────────────────────────────────────
+// Shown at the top of every day view — prevents either dev from touching
+// the other's files or locked shared infra. Auto-shows what Claude changed.
+
+const LOCKED_FILES_LIST = [
+  { file: 'src/constants/genie-products.ts',               reason: 'Product definitions — read-only import' },
+  { file: 'src/hooks/useMasterAuth.tsx',                    reason: 'Auth state — single source of truth' },
+  { file: 'src/config/genieStudioNavItems.ts',              reason: 'Nav + tier gating — locked' },
+  { file: 'src/components/auth/ProtectedRoute.tsx',         reason: 'Route access control' },
+  { file: 'src/components/auth/GenieStudioProtectedRoute.tsx', reason: 'Genie auth guard' },
+  { file: 'src/components/layout/AppLayout.tsx',            reason: 'Main layout' },
+  { file: 'src/components/layout/GenieStudioLayout.tsx',    reason: 'Genie layout' },
+  { file: 'src/integrations/supabase/**',                   reason: 'Database layer — never touch' },
+];
+
+const LOVABLE_OFF_LIMITS = [
+  { area: 'Claude territory',     files: 'src/pages/GenieSpark.tsx, GenieMind.tsx, GenieDeck.tsx' },
+  { area: 'Genie Studio',         files: 'src/components/genie-studio/**' },
+  { area: 'Genie Spark',          files: 'src/components/genie-spark/**' },
+  { area: 'Admin',                files: 'src/components/genie-admin/**' },
+  { area: 'Navigation (Claude)',   files: 'src/components/navigation/Quadrant*' },
+];
+
+const CLAUDE_OFF_LIMITS = [
+  { area: 'Lovable territory',    files: 'src/components/landing/**' },
+  { area: 'Landing hooks',        files: 'src/hooks/landing/**' },
+  { area: 'Landing pages',        files: 'src/pages/GenieExplore*.tsx, GenieProducts*.tsx, GenieSupport*.tsx' },
+];
+
+function TerritoryGuardrailsPanel() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section className="rounded-lg border border-border bg-card overflow-hidden text-xs">
+      {/* Header — always visible */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-muted/30 transition-colors text-left"
+      >
+        <ShieldAlert className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+        <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">Territory Rules — What NOT to Touch</span>
+        <span className="text-[10px] text-muted-foreground ml-1 hidden sm:block">Locked files · Lovable off-limits · Claude off-limits</span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-semibold flex items-center gap-1">
+            <Lock className="w-2.5 h-2.5" /> {LOCKED_FILES_LIST.length} locked files
+          </span>
+          {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+        </div>
+      </button>
+
+      {open && (
+        <div className="border-t border-border/50 grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border/50">
+
+          {/* Column 1: Locked shared files (neither dev) */}
+          <div className="p-3 space-y-1.5">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Lock className="w-3 h-3 text-red-600 shrink-0" />
+              <span className="text-[9px] font-bold uppercase tracking-wide text-red-700">Locked — Nobody Touches</span>
+            </div>
+            {LOCKED_FILES_LIST.map(({ file, reason }) => (
+              <div key={file} className="flex items-start gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0 mt-1" />
+                <div className="min-w-0">
+                  <p className="font-mono text-[9px] text-foreground truncate">{file}</p>
+                  <p className="text-[9px] text-muted-foreground">{reason}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Column 2: Lovable must NOT touch Claude's files */}
+          <div className="p-3 space-y-1.5">
+            <div className="flex items-center gap-1.5 mb-2">
+              <FolderX className="w-3 h-3 text-violet-600 shrink-0" />
+              <span className="text-[9px] font-bold uppercase tracking-wide text-violet-700">Lovable — Do NOT Touch (Claude's)</span>
+            </div>
+            {LOVABLE_OFF_LIMITS.map(({ area, files }) => (
+              <div key={area} className="flex items-start gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0 mt-1" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-[9px] text-violet-800">{area}</p>
+                  <p className="font-mono text-[9px] text-muted-foreground break-all">{files}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Column 3: Claude must NOT touch Lovable's files */}
+          <div className="p-3 space-y-1.5">
+            <div className="flex items-center gap-1.5 mb-2">
+              <FolderX className="w-3 h-3 text-pink-600 shrink-0" />
+              <span className="text-[9px] font-bold uppercase tracking-wide text-pink-700">Claude — Do NOT Touch (Lovable's)</span>
+            </div>
+            {CLAUDE_OFF_LIMITS.map(({ area, files }) => (
+              <div key={area} className="flex items-start gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-pink-400 shrink-0 mt-1" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-[9px] text-pink-800">{area}</p>
+                  <p className="font-mono text-[9px] text-muted-foreground break-all">{files}</p>
+                </div>
+              </div>
+            ))}
+            {/* Rule: if touching a shared file, log a SIC entry FIRST */}
+            <div className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5">
+              <p className="text-[9px] font-bold text-amber-800 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 shrink-0" />
+                If you must touch a shared file → log a SIC entry in data-shared-infra.ts FIRST
+              </p>
+            </div>
+          </div>
+
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── Issue Row (flat, Jira-style) ─────────────────────────────────────────────
+
 
 function IssueRow({
   taskId, getTaskStatus, onStatusChange, taskOverrides,
@@ -1408,6 +1559,9 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
         onAutoStart={(ids) => ids.forEach(id => onStatusChange(id, 'in-progress'))}
       />
 
+      {/* ── Territory Guardrails — who owns what, what NOT to touch ──────── */}
+      <TerritoryGuardrailsPanel />
+
       {/* ── Epic header ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -1535,15 +1689,9 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
       )}
 
       {/* ── 5. SHARED INFRA CHANGE FEED ──────────────────────────────────── */}
-      {/* Auto-populated — no manual input. Shows cross-dev alerts both ways. */}
-      <section>
-        <div className="flex items-center gap-2 mb-2.5">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Shared Infrastructure</span>
-          <Separator className="flex-1" />
-          <span className="text-[9px] text-muted-foreground italic">Auto-populated · no manual entry needed</span>
-        </div>
-        <SharedInfraFeed day={day} viewAs="claude" />
-      </section>
+      <InfraFeedSection day={day} />
+
+
 
     </div>
   );
