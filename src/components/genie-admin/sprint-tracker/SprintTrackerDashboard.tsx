@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   LayoutGrid, BarChart3, Shield, ClipboardCheck,
   CheckCircle2, TrendingUp, ArrowLeft, Video,
-  Archive, Target, Calendar, Flag, Brain, Zap, ChevronRight, BookOpen,
+  Archive, Target, Calendar, Flag, Brain, Zap, ChevronRight, BookOpen, FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,10 +32,11 @@ import { FindingsView } from './FindingsView';
 import { SprintPlanningView } from './SprintPlanningView';
 import { GovernanceFlowView } from './GovernanceFlowView';
 import { SprintCharterView } from './SprintCharterView';
+import { QASignOffView } from './QASignOffView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewId = 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter';
+type ViewId = 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -229,13 +230,14 @@ export const SprintTrackerDashboard: React.FC = () => {
   const viewTitle =
     activeDayNum !== undefined   ? `Day ${activeDayNum} · ${DAY_THEMES[activeDayNum - 1]}` :
     activeView === 'backlog'     ? 'Backlog' :
-    activeView === 'metrics'     ? 'Metrics' :
+    activeView === 'metrics'     ? '📊 Velocity / Metrics  [auto-updates]' :
     activeView === 'strategy'    ? 'Strategy' :
-    activeView === 'findings'    ? 'Findings / QA' :
-    activeView === 'governance'  ? 'Governance & Release Flow' :
-    activeView === 'planning'    ? 'Sprint Planning' :
+    activeView === 'findings'    ? '🔎 Findings / QA  [auto-updates]' :
+    activeView === 'governance'  ? '⚙️ Governance & Release Flow  [auto-updates]' :
+    activeView === 'planning'    ? '📋 Project Plan — All 41 Tasks  [auto-updates]' :
     activeView === 'charter'     ? 'Sprint Charter, Roles & Glossary' :
-    'Release Gate';
+    activeView === 'qa-signoff'  ? '🧪 Testing & QA Sign-off  [manual]' :
+    '✅ PO Sign-off Gate  [manual + auto-updates]';
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -306,12 +308,25 @@ export const SprintTrackerDashboard: React.FC = () => {
                 Reports
               </p>
               <div className="space-y-0.5">
-                {/* Prominent CSV plan entry */}
+                {/* Project Plan — most prominent, always live from data-tasks */}
                 <NavBtn active={activeView === 'planning'}   label="📋 Project Plan (CSV)"      icon={Target}          onClick={() => setActiveView('planning')}  />
                 <NavBtn active={activeView === 'charter'}    label="Sprint Charter ▸"            icon={BookOpen}        onClick={() => setActiveView('charter')}  />
-                <NavBtn active={activeView === 'findings'}   label="Findings / QA"               icon={ClipboardCheck}  onClick={() => setActiveView('findings')} />
-                <NavBtn active={activeView === 'governance'} label="Governance Flow ▸"           icon={Shield}          onClick={() => setActiveView('governance')} />
+                <NavBtn active={activeView === 'findings'}   label="Findings / QA ↺"             icon={ClipboardCheck}  onClick={() => setActiveView('findings')} />
+                <NavBtn active={activeView === 'governance'} label="Governance Flow ↺"           icon={Shield}          onClick={() => setActiveView('governance')} />
+                <NavBtn active={activeView === 'metrics'}    label="Velocity / Metrics ↺"        icon={BarChart3}       onClick={() => setActiveView('metrics')}  />
                 <NavBtn active={activeView === 'strategy'}   label="Strategy"                    icon={TrendingUp}      onClick={() => setActiveView('strategy')} />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Gates — manual sign-off area */}
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
+                Gates
+              </p>
+              <div className="space-y-0.5">
+                <NavBtn active={activeView === 'qa-signoff'} label="🧪 Testing Sign-off"         icon={FlaskConical}    onClick={() => setActiveView('qa-signoff')} />
                 <NavBtn active={activeView === 'po-gate'}    label="✅ PO Sign-off Gate ▸"        icon={Flag}            onClick={() => setActiveView('po-gate')}  />
               </div>
             </div>
@@ -402,6 +417,34 @@ export const SprintTrackerDashboard: React.FC = () => {
 
           {/* Progress bar */}
           <Progress value={overallPct} className="h-0.5 rounded-none" />
+
+          {/* Auto-update legend strip — shows on non-day views */}
+          {activeDayNum === undefined && (
+            <div className="flex items-center gap-4 px-4 py-1.5 bg-muted/30 border-t text-[10px] text-muted-foreground flex-wrap">
+              <span className="font-semibold text-foreground">Tab update mode:</span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                <span className="font-medium text-foreground">↺ Auto-updates</span> — reflects live task status from board
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
+                <span className="font-medium text-foreground">Manual</span> — PO/SO must tick checkboxes
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-blue-400" />
+                <span className="font-medium text-foreground">Mixed</span> — task status auto-feeds in, sign-off is manual
+              </span>
+              <span className="ml-auto">
+                {activeView === 'metrics' || activeView === 'planning' || activeView === 'findings' || activeView === 'governance'
+                  ? '✅ This tab is fully auto-updated'
+                  : activeView === 'qa-signoff'
+                    ? '🧪 Task status auto-feeds in — tick boxes manually'
+                    : activeView === 'po-gate'
+                      ? '🔵 Task status auto-feeds in — PO ticks manually'
+                      : ''}
+              </span>
+            </div>
+          )}
         </header>
 
         {/* Content */}
@@ -467,6 +510,11 @@ export const SprintTrackerDashboard: React.FC = () => {
             {/* Sprint Charter, Roles & Glossary */}
             {activeView === 'charter' && (
               <SprintCharterView getTaskStatus={getTaskStatus} currentDay={currentDay} />
+            )}
+
+            {/* QA Sign-off — non-blocking, manual PO/SO verification */}
+            {activeView === 'qa-signoff' && (
+              <QASignOffView getTaskStatus={getTaskStatus} />
             )}
 
           </div>
