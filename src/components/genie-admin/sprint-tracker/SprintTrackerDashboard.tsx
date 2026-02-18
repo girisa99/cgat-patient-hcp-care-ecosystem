@@ -204,6 +204,7 @@ export const SprintTrackerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const {
     state, currentDay, metrics, effortMetrics, updateTaskStatus, addStandup, getTaskStatus, resetToDefaults,
+    isOnline, isSyncing, lastSyncAt, syncError, forceRefresh,
   } = useSprintTracker();
 
   // PO Mission Control is the default — the single-screen summary
@@ -418,6 +419,31 @@ export const SprintTrackerDashboard: React.FC = () => {
 
             {/* Health pills */}
             <div className="flex items-center gap-2 shrink-0">
+              {/* Live sync indicator */}
+              <button
+                onClick={() => forceRefresh()}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium transition-colors",
+                  isOnline
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                    : syncError
+                      ? "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                      : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
+                )}
+                title={isOnline
+                  ? `Live sync active${lastSyncAt ? ` — last: ${lastSyncAt.toLocaleTimeString()}` : ''}`
+                  : syncError
+                    ? `Sync error: ${syncError}. Click to retry.`
+                    : 'Connecting to Supabase...'}
+              >
+                <div className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  isOnline ? "bg-emerald-500" : syncError ? "bg-red-500" : "bg-gray-400",
+                  isSyncing && "animate-pulse"
+                )} />
+                {isOnline ? 'Live' : syncError ? 'Offline' : '...'}
+              </button>
+
               <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 border border-green-200">
                 <CheckCircle2 className="w-3 h-3 text-green-600" />
                 <span className="text-xs font-bold text-green-700">{metrics.completed}/{metrics.total}</span>
