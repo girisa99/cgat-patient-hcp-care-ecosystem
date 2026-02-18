@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -17,7 +17,13 @@ const TermsOfServicePage: React.FC = () => {
   const version = '2.0';
 
   return (
-    <GenieStudioLayout variant="topbar">
+    <div className="min-h-screen bg-background">
+      <nav className="border-b border-border bg-background/95 backdrop-blur-xl">
+        <div className="container max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+          <Link to="/genie-landing" className="text-lg font-bold text-primary">Genie Suite</Link>
+          <Link to="/genie-landing" className="text-sm text-muted-foreground hover:text-foreground">← Back to Home</Link>
+        </div>
+      </nav>
       <div className="container mx-auto py-8 px-4 max-w-4xl">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -410,7 +416,7 @@ const TermsOfServicePage: React.FC = () => {
       </div>
       
       <GlobalComplianceFooter variant="minimal" />
-    </GenieStudioLayout>
+    </div>
   );
 };
 
