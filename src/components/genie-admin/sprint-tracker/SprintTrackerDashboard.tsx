@@ -535,7 +535,7 @@ export const SprintTrackerDashboard: React.FC = () => {
 
           {/* Standups */}
           {activeView === 'standups' && (
-            <div className="p-4 sm:p-6">
+            <div className="p-4 sm:p-6 max-w-5xl">
               <StandupsView
                 standups={state.standups}
                 selectedDay={currentDay}

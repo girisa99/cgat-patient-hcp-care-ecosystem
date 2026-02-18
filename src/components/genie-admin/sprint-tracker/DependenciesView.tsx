@@ -1,21 +1,15 @@
-// Sprint Tracker — Dependencies & Handoffs View — UX Polished
-// - Large colored status badges (prominent at a glance)
-// - Direction arrows (Claude → Lovable, Lovable → Claude)
-// - "My handoffs" filter + All/Pending/Ready
-// - Consumer notes prominently displayed
+// Sprint Tracker — Handoffs View (compact, scannable)
+// Layout: Summary bar + day filter tabs + compact row list (no accordion)
+// Each row: status pill | ID | from→to | title | priority | artifact (truncated)
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
   ArrowRight, ArrowLeftRight, AlertTriangle, CheckCircle2,
-  Clock, Zap, Brain, Link2, GitBranch, Filter,
+  Clock, Zap, Brain, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { HANDOFFS, DEPENDENCY_CHAINS } from './data-dependencies';
-import { SPRINT_TASKS } from './data-tasks';
+import { HANDOFFS } from './data-dependencies';
 import { SPRINT_DAYS } from './data-config';
 import type { TaskStatus, HandoffStatus, Developer } from './types';
 
@@ -24,300 +18,225 @@ interface DependenciesViewProps {
   getTaskStatus: (id: string) => TaskStatus;
 }
 
-// Large status badge configs
-const HANDOFF_STATUS: Record<HandoffStatus, { label: string; cls: string; iconCls: string; icon: React.ElementType }> = {
-  pending:      { label: 'Waiting',      cls: 'bg-amber-100 text-amber-800 border border-amber-300', iconCls: 'text-amber-600', icon: Clock },
-  ready:        { label: 'Ready ✓',      cls: 'bg-blue-100 text-blue-800 border border-blue-300',   iconCls: 'text-blue-600',   icon: ArrowRight },
-  acknowledged: { label: 'Acknowledged', cls: 'bg-green-100 text-green-800 border border-green-300', iconCls: 'text-green-600', icon: CheckCircle2 },
-  blocked:      { label: 'BLOCKED',      cls: 'bg-red-100 text-red-800 border border-red-300',       iconCls: 'text-red-600',    icon: AlertTriangle },
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const STATUS_CFG: Record<HandoffStatus, { label: string; cls: string; dot: string }> = {
+  pending:      { label: 'Waiting',  cls: 'bg-amber-100 text-amber-800 border-amber-300',  dot: 'bg-amber-500'  },
+  ready:        { label: 'Ready',    cls: 'bg-blue-100 text-blue-800 border-blue-300',     dot: 'bg-blue-500'   },
+  acknowledged: { label: 'Done',     cls: 'bg-green-100 text-green-800 border-green-300',  dot: 'bg-green-500'  },
+  blocked:      { label: 'Blocked',  cls: 'bg-red-100 text-red-800 border-red-300',        dot: 'bg-red-500'    },
 };
 
-const PRIORITY_CLS: Record<string, string> = {
-  critical: 'bg-red-500 text-white',
-  high:     'bg-orange-500 text-white',
-  medium:   'bg-blue-100 text-blue-800',
+const PRIORITY_DOT: Record<string, string> = {
+  critical: 'bg-red-500',
+  high:     'bg-orange-400',
+  medium:   'bg-blue-400',
 };
 
-function DevChip({ dev }: { dev: Developer }) {
-  const isLovable = dev === 'lovable';
+function DevBadge({ dev }: { dev: Developer }) {
+  const isL = dev === 'lovable';
   return (
-    <Badge className={cn(
-      'text-xs gap-1 px-2 py-0.5',
-      isLovable ? 'bg-pink-100 text-pink-700 border border-pink-300' : 'bg-purple-100 text-purple-700 border border-purple-300',
+    <span className={cn(
+      'inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded border',
+      isL ? 'bg-pink-50 text-pink-700 border-pink-200' : 'bg-violet-50 text-violet-700 border-violet-200',
     )}>
-      {isLovable ? <><Zap className="w-3 h-3" />Lovable</> : <><Brain className="w-3 h-3" />Claude</>}
-    </Badge>
+      {isL ? <Zap className="w-2.5 h-2.5" /> : <Brain className="w-2.5 h-2.5" />}
+      {isL ? 'Lovable' : 'Claude'}
+    </span>
   );
 }
 
-type StatusFilter = 'all' | 'pending' | 'ready' | 'mine';
+// ─── Single handoff row ───────────────────────────────────────────────────────
+
+function HandoffRow({ h, liveStatus, expanded, onToggle }: {
+  h: typeof HANDOFFS[0];
+  liveStatus: HandoffStatus;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const sc = STATUS_CFG[liveStatus];
+  const isPending = liveStatus === 'pending';
+
+  return (
+    <div className={cn(
+      'rounded-lg border transition-all',
+      isPending ? 'border-amber-200 bg-amber-50/30' : 'border-border bg-card',
+    )}>
+      {/* Main row */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/20 transition-colors rounded-lg"
+      >
+        {/* Status dot */}
+        <span className={cn('w-2 h-2 rounded-full shrink-0', sc.dot)} />
+
+        {/* ID */}
+        <span className="text-[11px] font-mono text-muted-foreground w-11 shrink-0">{h.id}</span>
+
+        {/* Priority dot */}
+        <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', PRIORITY_DOT[h.priority])} title={h.priority} />
+
+        {/* From → To */}
+        <div className="flex items-center gap-1 shrink-0">
+          <DevBadge dev={h.from} />
+          {h.direction === 'bidirectional'
+            ? <ArrowLeftRight className="w-3 h-3 text-muted-foreground" />
+            : <ArrowRight className="w-3 h-3 text-muted-foreground" />}
+          <DevBadge dev={h.to} />
+        </div>
+
+        {/* Title */}
+        <span className="flex-1 text-sm font-medium truncate min-w-0">{h.title}</span>
+
+        {/* Status badge */}
+        <Badge className={cn('text-[10px] px-2 py-0.5 border font-semibold shrink-0', sc.cls)}>
+          {sc.label}
+        </Badge>
+
+        {/* Expand chevron */}
+        {expanded
+          ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+      </button>
+
+      {/* Expanded detail */}
+      {expanded && (
+        <div className="px-4 pb-3 space-y-2 border-t border-border/40 pt-3">
+          {/* Artifact */}
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Artifact</p>
+            <p className="text-sm bg-muted/40 rounded px-2.5 py-1.5 font-mono text-xs">{h.artifact}</p>
+          </div>
+
+          {/* Action note */}
+          <div className={cn(
+            'rounded px-3 py-2',
+            h.to === 'lovable' ? 'bg-pink-50 border border-pink-200' : 'bg-violet-50 border border-violet-200',
+          )}>
+            <p className={cn(
+              'text-[10px] font-semibold uppercase tracking-wide mb-0.5',
+              h.to === 'lovable' ? 'text-pink-700' : 'text-violet-700',
+            )}>
+              {h.to === 'lovable' ? '⚡ Lovable action' : '🧠 Claude action'}
+            </p>
+            <p className="text-xs leading-relaxed">{h.consumerNotes}</p>
+          </div>
+
+          {/* Task links */}
+          <div className="flex gap-4 text-[10px] text-muted-foreground">
+            <span>Producer: <code className="bg-muted px-1 rounded">{h.producerTaskId}</code></span>
+            <span>Consumer: <code className="bg-muted px-1 rounded">{h.consumerTaskId}</code></span>
+            <span className="capitalize">Day {h.day} · {h.priority} priority</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export const DependenciesView: React.FC<DependenciesViewProps> = ({ currentDay, getTaskStatus }) => {
-  const [dayFilter, setDayFilter] = useState<number | 'all'>(currentDay);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const taskMap = Object.fromEntries(SPRINT_TASKS.map(t => [t.id, t]));
+  const [dayFilter, setDayFilter] = useState<number | 'all'>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const getHandoffLiveStatus = (h: typeof HANDOFFS[0]): HandoffStatus => {
-    const producerStatus = getTaskStatus(h.producerTaskId);
-    if (producerStatus === 'completed') return h.status === 'acknowledged' ? 'acknowledged' : 'ready';
+  const getLiveStatus = (h: typeof HANDOFFS[0]): HandoffStatus => {
+    const producerDone = getTaskStatus(h.producerTaskId) === 'completed';
+    if (producerDone) return h.status === 'acknowledged' ? 'acknowledged' : 'ready';
     return 'pending';
   };
 
-  // Blocked tasks
-  const blockedTasks = DEPENDENCY_CHAINS.filter(chain => {
-    const task = taskMap[chain.taskId];
-    if (!task) return false;
-    if (getTaskStatus(chain.taskId) === 'completed') return false;
-    return chain.blockedBy.some(depId => {
-      if (depId.startsWith('H-')) {
-        const handoff = HANDOFFS.find(h => h.id === depId);
-        if (!handoff) return false;
-        const ls = getHandoffLiveStatus(handoff);
-        return ls !== 'acknowledged' && ls !== 'ready';
-      }
-      return getTaskStatus(depId) !== 'completed';
-    });
-  });
+  const filtered = dayFilter === 'all' ? HANDOFFS : HANDOFFS.filter(h => h.day === dayFilter);
 
-  // Filtering
-  let filteredHandoffs = dayFilter === 'all'
-    ? HANDOFFS
-    : HANDOFFS.filter(h => h.day === dayFilter);
-
-  if (statusFilter === 'pending') {
-    filteredHandoffs = filteredHandoffs.filter(h => getHandoffLiveStatus(h) === 'pending');
-  } else if (statusFilter === 'ready') {
-    filteredHandoffs = filteredHandoffs.filter(h => ['ready', 'acknowledged'].includes(getHandoffLiveStatus(h)));
-  } else if (statusFilter === 'mine') {
-    filteredHandoffs = filteredHandoffs.filter(h => h.to === 'lovable');
-  }
-
-  const readyCount = HANDOFFS.filter(h => getHandoffLiveStatus(h) === 'ready').length;
-  const pendingCount = HANDOFFS.filter(h => getHandoffLiveStatus(h) === 'pending').length;
-  const ackedCount = HANDOFFS.filter(h => getHandoffLiveStatus(h) === 'acknowledged').length;
-
-  const STATUS_FILTER_OPTS: { key: StatusFilter; label: string }[] = [
-    { key: 'all',     label: 'All' },
-    { key: 'mine',    label: '⚡ My Handoffs (→ Lovable)' },
-    { key: 'pending', label: '⏳ Waiting' },
-    { key: 'ready',   label: '✓ Ready' },
-  ];
+  const counts = {
+    total:   HANDOFFS.length,
+    ready:   HANDOFFS.filter(h => getLiveStatus(h) === 'ready').length,
+    pending: HANDOFFS.filter(h => getLiveStatus(h) === 'pending').length,
+    done:    HANDOFFS.filter(h => getLiveStatus(h) === 'acknowledged').length,
+  };
 
   return (
-    <div className="space-y-5">
-      {/* ── Active blocker alert ── */}
-      {blockedTasks.length > 0 && (
-        <Card className="border-red-300 bg-red-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
-              <span className="font-semibold text-red-800">
-                {blockedTasks.length} task{blockedTasks.length > 1 ? 's' : ''} currently blocked
-              </span>
-            </div>
-            <div className="space-y-2">
-              {blockedTasks.map(chain => {
-                const task = taskMap[chain.taskId];
-                if (!task) return null;
-                const unmetDeps = chain.blockedBy.filter(depId =>
-                  depId.startsWith('H-') ? true : getTaskStatus(depId) !== 'completed'
-                );
-                return (
-                  <div key={chain.taskId} className="flex items-start gap-2 text-sm flex-wrap">
-                    <Badge variant="outline" className="font-mono text-xs shrink-0">{chain.taskId}</Badge>
-                    <DevChip dev={task.developer} />
-                    <span className="flex-1 min-w-0">{task.title}</span>
-                    <div className="flex items-center gap-1 flex-wrap shrink-0">
-                      <span className="text-red-600 text-xs font-medium">blocked by:</span>
-                      {unmetDeps.map(dep => (
-                        <Badge key={dep} variant="outline" className="font-mono text-xs text-red-600 border-red-300">{dep}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+    <div className="space-y-4">
 
-      {/* ── Summary stat cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold">{HANDOFFS.length}</p>
-            <p className="text-xs text-muted-foreground">Total Handoffs</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-blue-700">{readyCount}</p>
-            <p className="text-xs text-blue-600 font-medium">Ready / Acknowledged</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-amber-50 border-amber-200">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-amber-700">{pendingCount}</p>
-            <p className="text-xs text-amber-600 font-medium">Waiting on Claude</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-green-700">{ackedCount}</p>
-            <p className="text-xs text-green-600 font-medium">Acknowledged</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ── Filters row ── */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Status filter */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
-          {STATUS_FILTER_OPTS.map(opt => (
-            <button
-              key={opt.key}
-              onClick={() => setStatusFilter(opt.key)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium transition-all border',
-                statusFilter === opt.key
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80',
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
+      {/* ── Summary bar ── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5 text-sm">
+          <span className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+          <span className="text-muted-foreground">{counts.total} total</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm">
+          <span className="w-2 h-2 rounded-full bg-blue-500" />
+          <span className="text-blue-700 font-medium">{counts.ready} ready</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm">
+          <span className="w-2 h-2 rounded-full bg-amber-500" />
+          <span className="text-amber-700 font-medium">{counts.pending} waiting</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-sm">
+          <span className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="text-green-700 font-medium">{counts.done} done</span>
         </div>
 
-        {/* Day filter */}
-        <div className="flex gap-2 flex-wrap ml-auto">
-          <button
-            onClick={() => setDayFilter('all')}
-            className={cn('px-3 py-1.5 rounded-full text-xs font-medium transition-all border',
-              dayFilter === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80')}
-          >
-            All Days
-          </button>
-          {SPRINT_DAYS.map(d => (
-            <button key={d.day} onClick={() => setDayFilter(d.day)}
-              className={cn('px-3 py-1.5 rounded-full text-xs font-medium transition-all border',
-                dayFilter === d.day ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80',
-                d.day === currentDay && dayFilter !== d.day && 'ring-2 ring-primary/30')}
+        {/* Blocker callout */}
+        {counts.pending > 0 && (
+          <div className="ml-auto flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+            <AlertTriangle className="w-3 h-3" />
+            {counts.pending} handoff{counts.pending > 1 ? 's' : ''} blocking progress
+          </div>
+        )}
+      </div>
+
+      {/* ── Day filter tabs ── */}
+      <div className="flex items-center gap-0 border-b overflow-x-auto">
+        <button
+          onClick={() => setDayFilter('all')}
+          className={cn(
+            'px-4 py-2 border-b-2 text-xs font-medium transition-all whitespace-nowrap',
+            dayFilter === 'all' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
+          )}
+        >
+          All Days
+        </button>
+        {SPRINT_DAYS.map(d => {
+          const dayHandoffs = HANDOFFS.filter(h => h.day === d.day);
+          const dayPending = dayHandoffs.filter(h => getLiveStatus(h) === 'pending').length;
+          return (
+            <button
+              key={d.day}
+              onClick={() => setDayFilter(d.day)}
+              className={cn(
+                'flex items-center gap-1.5 px-4 py-2 border-b-2 text-xs font-medium transition-all whitespace-nowrap',
+                dayFilter === d.day ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
+                d.day === currentDay && dayFilter !== d.day && 'text-foreground',
+              )}
             >
               Day {d.day}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Handoff cards ── */}
-      {filteredHandoffs.length === 0 && (
-        <p className="text-center text-muted-foreground py-10">No handoffs match this filter.</p>
-      )}
-
-      <Accordion
-        type="multiple"
-        defaultValue={filteredHandoffs.filter(h => h.priority === 'critical').map(h => h.id)}
-        className="space-y-2"
-      >
-        {filteredHandoffs.map(h => {
-          const liveStatus = getHandoffLiveStatus(h);
-          const statusCfg = HANDOFF_STATUS[liveStatus];
-          const StatusIcon = statusCfg.icon;
-          const isForLovable = h.to === 'lovable';
-
-          return (
-            <AccordionItem
-              key={h.id}
-              value={h.id}
-              className={cn(
-                'border rounded-xl mb-2 overflow-hidden',
-                liveStatus === 'pending' && isForLovable && 'border-amber-300',
-                liveStatus === 'ready' && 'border-blue-300',
-                liveStatus === 'acknowledged' && 'border-green-300',
-                liveStatus === 'blocked' && 'border-red-300',
+              {dayPending > 0 && (
+                <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center">{dayPending}</span>
               )}
-            >
-              <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/30">
-                <div className="flex items-center gap-3 flex-1 flex-wrap min-w-0">
-                  {/* Handoff ID */}
-                  <span className="text-[11px] font-mono font-bold text-muted-foreground shrink-0">{h.id}</span>
-
-                  {/* Direction: FROM → TO */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <DevChip dev={h.from} />
-                    {h.direction === 'bidirectional'
-                      ? <ArrowLeftRight className="w-4 h-4 text-muted-foreground" />
-                      : <ArrowRight className="w-4 h-4 text-muted-foreground" />}
-                    <DevChip dev={h.to} />
-                  </div>
-
-                  {/* Title */}
-                  <span className="text-sm font-medium flex-1 text-left min-w-0 truncate">{h.title}</span>
-
-                  {/* Priority + large status badge */}
-                  <div className="flex gap-2 shrink-0 items-center">
-                    <Badge className={cn('text-xs', PRIORITY_CLS[h.priority])}>{h.priority}</Badge>
-                    {/* Large status badge */}
-                    <Badge className={cn('text-xs gap-1.5 px-2.5 py-1 font-semibold', statusCfg.cls)}>
-                      <StatusIcon className={cn('w-3.5 h-3.5', statusCfg.iconCls)} />
-                      {statusCfg.label}
-                    </Badge>
-                  </div>
-                </div>
-              </AccordionTrigger>
-
-              <AccordionContent className="px-4 pb-4 space-y-3">
-                {/* Artifact + Consumer Notes (prominent) */}
-                <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Artifact</p>
-                    <p className="bg-muted/50 p-2.5 rounded-lg border border-border/40">{h.artifact}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                      {isForLovable ? '⚡ What Lovable needs to do' : '🧠 What Claude needs to do'}
-                    </p>
-                    <p className={cn(
-                      'p-2.5 rounded-lg border font-medium',
-                      isForLovable
-                        ? 'bg-pink-50 border-pink-200 text-pink-900'
-                        : 'bg-purple-50 border-purple-200 text-purple-900',
-                    )}>
-                      {h.consumerNotes}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Producer / Consumer task links */}
-                <div className="flex items-center gap-4 text-xs flex-wrap">
-                  <div className="flex items-center gap-1.5">
-                    <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Producer:</span>
-                    <Badge variant="outline" className="font-mono text-[10px]">{h.producerTaskId}</Badge>
-                    <span className={cn('font-semibold',
-                      getTaskStatus(h.producerTaskId) === 'completed' ? 'text-green-600' : 'text-amber-600',
-                    )}>
-                      ({getTaskStatus(h.producerTaskId)})
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <GitBranch className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Consumer:</span>
-                    <Badge variant="outline" className="font-mono text-[10px]">{h.consumerTaskId}</Badge>
-                    <span className={cn('font-semibold',
-                      getTaskStatus(h.consumerTaskId) === 'completed' ? 'text-green-600' : 'text-amber-600',
-                    )}>
-                      ({getTaskStatus(h.consumerTaskId)})
-                    </span>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+            </button>
           );
         })}
-      </Accordion>
+      </div>
+
+      {/* ── Handoff rows ── */}
+      <div className="space-y-1.5">
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center py-12 gap-2 text-muted-foreground">
+            <CheckCircle2 className="w-8 h-8 text-green-500" />
+            <p className="text-sm">No handoffs for this day.</p>
+          </div>
+        )}
+        {filtered.map(h => (
+          <HandoffRow
+            key={h.id}
+            h={h}
+            liveStatus={getLiveStatus(h)}
+            expanded={expandedId === h.id}
+            onToggle={() => setExpandedId(prev => prev === h.id ? null : h.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };
