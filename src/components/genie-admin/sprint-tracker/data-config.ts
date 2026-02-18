@@ -46,10 +46,10 @@ export const DEFAULT_TASK_OVERRIDES: Record<string, TaskOverride> = {
   'C-104': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: '33 total issues across 3 products. 11 fixed Day 1, 22 open.' },
   'S-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Build passes (58s). 7 files changed. Branch pushed.' },
   // ── Day 2: Lovable (gated) ──
-  'L-201': { status: 'in-progress', updatedAt: '2026-02-18T12:00:00Z', note: 'GATED: Waiting on H-201 (Deck flow live at /genie-deck) from Claude.' },
-  'L-202': { status: 'in-progress', updatedAt: '2026-02-18T12:00:00Z', note: 'GATED: Waiting on H-203 (pricing tier name alignment) from Claude.' },
-  'L-203': { status: 'pending', updatedAt: '2026-02-18T12:00:00Z', note: 'No hard gate — can start when L-201 is unblocked.' },
-  'L-204': { status: 'pending', updatedAt: '2026-02-18T12:00:00Z', note: 'No hard gate — can start anytime.' },
+  'L-201': { status: 'completed', updatedAt: '2026-02-18T16:00:00Z', note: 'D-002 fixed. Product catalog live. H-201 consumed — Try Deck CTA works.' },
+  'L-202': { status: 'completed', updatedAt: '2026-02-18T16:00:00Z', note: 'Pricing tiers fixed. 3 tiers per region with currency localization.' },
+  'L-203': { status: 'completed', updatedAt: '2026-02-18T16:00:00Z', note: 'D-005 fixed. Explore demos verified. SIC-104/SIC-105 acknowledged.' },
+  'L-204': { status: 'completed', updatedAt: '2026-02-18T16:00:00Z', note: 'All planned landing sections present and rendering.' },
 };
 
 export const DEFAULT_STANDUPS: StandupEntry[] = [
@@ -80,6 +80,21 @@ export const DEFAULT_STANDUPS: StandupEntry[] = [
     today: 'Next session: Day 3 — C-301 SmartContentPipeline AI generation, C-302 SparkGuidedWizard, C-303 useGenieScripts, C-304 Spark E2E.',
     blockers: 'SmartContentPipeline (80KB) uses simulated AI — will need real edge function calls.',
     createdAt: '2026-02-18T17:00:00Z',
+  },
+  // ── Lovable Day 2 ──
+  {
+    day: 2, developer: 'lovable' as Developer,
+    yesterday: 'Day 1: Audited landing (L-101 to L-104). Fixed routes, verified legal pages.',
+    today: 'Completed L-201 to L-204. Fixed D-002 (DeckDemoCard fallback), D-005 (image skeleton). Product catalog + pricing + explore demos + landing sections all done. Acknowledged H-201, SIC-104, SIC-105.',
+    blockers: 'None. All Day 2 tasks complete. H-301 (Spark flow) pending for Day 3 demo linking.',
+    createdAt: '2026-02-18T17:30:00Z',
+  },
+  {
+    day: 2, developer: 'lovable' as Developer,
+    yesterday: 'Day 2: Product catalog, pricing, explore demos, landing sections — all done. D-002/D-005 fixed.',
+    today: 'Next session: Day 3 — L-301 Interactive demos (STT + TryGenie), L-302 DeepL demo, L-303 Video showcases, L-304 Region switching.',
+    blockers: 'H-301 (Spark flow) still pending — will build demo UI first, verify Spark link at EOD.',
+    createdAt: '2026-02-18T18:00:00Z',
   },
 ];
 
