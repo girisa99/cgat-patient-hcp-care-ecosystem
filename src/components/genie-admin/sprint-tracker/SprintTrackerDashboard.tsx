@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 
 import { useSprintTracker } from './useSprintTracker';
 import { SPRINT_DAYS } from './data-config';
-import { HANDOFFS } from './data-dependencies';
+import { HANDOFFS, PO_CHECKLISTS } from './data-dependencies';
 import { SPRINT_TASKS } from './data-tasks';
 import { DayPageView } from './DayPageView';
 import { MetricsView } from './MetricsView';
@@ -37,10 +37,11 @@ import { SprintCharterView } from './SprintCharterView';
 import { QASignOffView } from './QASignOffView';
 import { EffortTrackingView } from './EffortTrackingView';
 import { EODHandoffView } from './EODHandoffView';
+import { POActionsView } from './POActionsView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewId = 'po-mission' | 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'effort' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff' | 'eod-handoff';
+type ViewId = 'po-mission' | 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'effort' | 'strategy' | 'po-gate' | 'po-actions' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff' | 'eod-handoff';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -248,6 +249,7 @@ export const SprintTrackerDashboard: React.FC = () => {
     activeView === 'charter'     ? 'Sprint Charter, Roles & Glossary' :
     activeView === 'qa-signoff'  ? '🧪 QA Testing Sign-off' :
     activeView === 'eod-handoff' ? '🚀 EOD Auto-Handoff' :
+    activeView === 'po-actions'  ? '🚦 PO Actions Required' :
     '✅ PO Daily Checklist';
 
   return (
@@ -300,6 +302,13 @@ export const SprintTrackerDashboard: React.FC = () => {
                 </p>
                 <NavBtn active={activeView === 'po-mission'} label="🎯 Mission Control" icon={Rocket}
                   onClick={() => setActiveView('po-mission')} />
+                <NavBtn
+                  active={activeView === 'po-actions'}
+                  label="🚦 PO Actions"
+                  icon={ClipboardCheck}
+                  badge={PO_CHECKLISTS.filter(i => !poChecklist[i.id] && i.day <= currentDay).length}
+                  onClick={() => setActiveView('po-actions')}
+                />
                 <NavBtn active={activeView === 'po-gate'} label="📋 Actions & Notes" icon={Flag}
                   onClick={() => setActiveView('po-gate')} />
                 <NavBtn active={activeView === 'qa-signoff'} label="🧪 QA Sign-off" icon={FlaskConical}
@@ -539,6 +548,16 @@ export const SprintTrackerDashboard: React.FC = () => {
             {/* Findings */}
             {activeView === 'findings' && <FindingsView />}
 
+
+            {/* PO Actions Required — Day 1-5 audit */}
+            {activeView === 'po-actions' && (
+              <POActionsView
+                currentDay={currentDay}
+                poChecklist={poChecklist}
+                onUpdateChecklist={syncPOChecklist}
+                getTaskStatus={getTaskStatus}
+              />
+            )}
 
             {/* PO Gate */}
             {activeView === 'po-gate' && (
