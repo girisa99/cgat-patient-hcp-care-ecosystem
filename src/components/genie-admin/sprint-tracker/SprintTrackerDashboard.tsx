@@ -556,6 +556,7 @@ export const SprintTrackerDashboard: React.FC = () => {
                 poChecklist={poChecklist}
                 onUpdateChecklist={syncPOChecklist}
                 getTaskStatus={getTaskStatus}
+                onUpdateTaskStatus={updateTaskStatus}
               />
             )}
 
