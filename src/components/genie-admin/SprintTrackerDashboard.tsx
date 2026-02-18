@@ -164,6 +164,30 @@ function calculateCurrentDay(): number {
   return Math.min(Math.max(diffDays, 1), 5);
 }
 
+// ─── Stage Gate Protocol ────────────────────────────────────────────────────
+// Cross-functional handoffs from Claude (Team Lead). Update status when Claude confirms.
+
+export type GateStatus = 'ready' | 'pending' | 'blocked';
+
+interface HandoffGate {
+  id: string;
+  blocksTask: string;
+  description: string;
+  status: GateStatus;
+  readyAt?: string;
+}
+
+export const HANDOFF_GATES: HandoffGate[] = [
+  { id: 'H-101', blocksTask: 'L-101', description: 'Route fix: use /genie-admin?tab=library not /genie-studio/productions', status: 'ready', readyAt: '2026-02-18T00:00:00Z' },
+  { id: 'H-102', blocksTask: 'L-101', description: 'Mind tagline: "AI That Understands" (not "Think Beyond Limits")', status: 'ready', readyAt: '2026-02-18T00:00:00Z' },
+  { id: 'H-103', blocksTask: 'L-104', description: 'Support email: support@geniaisuite.com (not example.com)', status: 'ready', readyAt: '2026-02-18T00:00:00Z' },
+  { id: 'H-201', blocksTask: 'L-201', description: 'Deck creation flow live at /genie-deck — do NOT add Deck CTAs until Ready', status: 'pending' },
+  { id: 'H-203', blocksTask: 'L-202', description: 'Pricing tier names must match genieStudioNavItems.ts', status: 'pending' },
+  { id: 'H-301', blocksTask: 'L-301', description: 'Spark creation flow live at /genie-spark — do NOT link demos to Spark until Ready', status: 'pending' },
+  { id: 'H-401', blocksTask: 'L-401', description: 'Mind editing flow live at /genie-mind', status: 'pending' },
+  { id: 'H-501', blocksTask: 'L-504', description: 'Claude merges to main FIRST — never merge before Claude', status: 'pending' },
+];
+
 // Default completed tasks from automated diagnosis (Day 1 Claude tasks)
 const DEFAULT_TASK_OVERRIDES: SprintTrackerState['taskOverrides'] = {
   // ── Lovable Day 1 Tasks ──
@@ -539,6 +563,10 @@ export const SprintTrackerDashboard: React.FC = () => {
             <MessageSquare className="w-3.5 h-3.5" />
             Standups
           </TabsTrigger>
+          <TabsTrigger value="gates" className="gap-1 text-xs sm:text-sm">
+            <Lock className="w-3.5 h-3.5" />
+            Gates
+          </TabsTrigger>
           <TabsTrigger value="strategy" className="gap-1 text-xs sm:text-sm">
             <Shield className="w-3.5 h-3.5" />
             Strategy
@@ -607,6 +635,61 @@ export const SprintTrackerDashboard: React.FC = () => {
               </div>
             </>
           )}
+        </TabsContent>
+
+        {/* ── Gates Tab ── */}
+        <TabsContent value="gates" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Lock className="w-4 h-4 text-orange-500" />
+                Stage Gate Protocol — Cross-Functional Handoffs
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Claude (Team Lead) controls these gates. Do NOT start a gated task until its gate is READY.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {HANDOFF_GATES.map((gate) => (
+                <div key={gate.id} className={cn(
+                  "flex items-start gap-3 p-3 rounded-lg border text-sm",
+                  gate.status === 'ready' && "border-green-200 bg-green-50/40",
+                  gate.status === 'pending' && "border-orange-200 bg-orange-50/30",
+                  gate.status === 'blocked' && "border-red-200 bg-red-50/30",
+                )}>
+                  <div className="flex flex-col items-center gap-1 shrink-0">
+                    <span className="font-mono text-xs font-bold text-muted-foreground">{gate.id}</span>
+                    {gate.status === 'ready' ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    ) : gate.status === 'blocked' ? (
+                      <XCircle className="w-4 h-4 text-red-500" />
+                    ) : (
+                      <Clock className="w-4 h-4 text-orange-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-0.5">
+                      Blocks: <span className="font-mono font-medium text-foreground">{gate.blocksTask}</span>
+                    </p>
+                    <p className="text-sm">{gate.description}</p>
+                    {gate.readyAt && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Ready since: {new Date(gate.readyAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  <Badge className={cn(
+                    "shrink-0 text-xs",
+                    gate.status === 'ready' && "bg-green-100 text-green-700",
+                    gate.status === 'pending' && "bg-orange-100 text-orange-700",
+                    gate.status === 'blocked' && "bg-red-100 text-red-700",
+                  )}>
+                    {gate.status === 'ready' ? '✅ READY' : gate.status === 'blocked' ? '🚫 BLOCKED' : '⏳ PENDING'}
+                  </Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ── Strategy Tab ── */}
