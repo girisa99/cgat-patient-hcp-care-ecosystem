@@ -21,7 +21,59 @@
  *   debugging    — Bug investigation, root cause analysis
  */
 
-import { TaskEffort, EffortMetrics, Discipline, Developer } from './types';
+import { Developer } from './types';
+
+// ── Extended effort types used only in this file (Claude's detailed breakdown) ──
+export type Discipline =
+  | 'frontend' | 'backend' | 'ux' | 'ui' | 'database' | 'devops'
+  | 'architecture' | 'testing' | 'documentation' | 'code-review'
+  | 'integration' | 'debugging';
+
+export interface EffortBreakdown {
+  discipline: Discipline;
+  hours: number;
+  description: string;
+  files?: string[];
+}
+
+export interface TaskEffort {
+  taskId: string;
+  developer: Developer;
+  day: number;
+  estimatedHours: number;
+  actualHours: number;
+  variance: number;
+  breakdown: EffortBreakdown[];
+  issuesFixed?: string[];
+  filesModified?: string[];
+  linesChanged?: number;
+  startedAt?: string;
+  completedAt?: string;
+  accomplishment: string;
+  workCategories?: string[]; // optional bridge to SprintTask effort categories
+}
+
+export interface EffortMetrics {
+  totalEstimated: number;
+  totalActual: number;
+  totalVariance: number;
+  estimateAccuracy: number;
+  byDiscipline: Record<Discipline, { hours: number; percentage: number; taskCount: number }>;
+  byDeveloper: Record<Developer, {
+    estimatedHours: number;
+    actualHours: number;
+    variance: number;
+    completedTasks: number;
+    topDisciplines: { discipline: Discipline; hours: number }[];
+  }>;
+  byDay: Record<number, {
+    estimatedHours: number;
+    actualHours: number;
+    tasksCompleted: number;
+    disciplines: Record<Discipline, number>;
+  }>;
+  velocityByDay: Record<number, number>;
+}
 
 // ══════════════════════════════════════════════════════════════
 // DAY 1 — Foundation & Assessment (Feb 17, 2026)
