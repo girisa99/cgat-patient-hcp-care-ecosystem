@@ -5,22 +5,18 @@
  * Layout:
  *   Row 1: Sprint health banner (day, %, velocity, risk)
  *   Row 2: Today at a glance (Claude tasks | Lovable tasks | Blockers | Handoffs)
- *   Row 3: Daily PO actions (what YOU need to do TODAY)
+ *   Row 3: PO Actions shortcut → links to Daily Checklist (single source of truth)
  *   Row 4: Sprint timeline (all 5 days, completion per day)
  */
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import {
   CheckCircle2, AlertTriangle, Clock, ArrowRight, Flag,
-  Zap, Brain, Link2, Eye, ThumbsUp, HelpCircle, KeyRound,
-  TrendingUp, Calendar, Save, ChevronRight, XCircle, Circle,
+  Zap, Brain, Link2, TrendingUp, Calendar, ChevronRight, XCircle, Circle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SPRINT_TASKS } from './data-tasks';
@@ -29,15 +25,8 @@ import { SPRINT_DAYS } from './data-config';
 import type { TaskStatus } from './types';
 
 const STORAGE_KEY = 'genie_sprint_po_checklist';
-const NOTES_KEY   = 'genie_sprint_po_notes';
 
-// ─── Category config ─────────────────────────────────────────────────────────
-const CAT_CFG = {
-  verify:  { icon: Eye,        label: 'Verify',  color: 'text-blue-600',  bg: 'bg-blue-50',  border: 'border-blue-200',  badge: 'bg-blue-100 text-blue-700' },
-  approve: { icon: ThumbsUp,   label: 'Approve', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', badge: 'bg-green-100 text-green-700' },
-  decide:  { icon: HelpCircle, label: 'Decide',  color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700' },
-  unblock: { icon: KeyRound,   label: 'Unblock', color: 'text-red-600',   bg: 'bg-red-50',   border: 'border-red-200',   badge: 'bg-red-100 text-red-700' },
-};
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -137,18 +126,15 @@ interface POMissionControlProps {
   currentDay: number;
   getTaskStatus: (id: string) => TaskStatus;
   onNavigateToDay: (day: number) => void;
+  onNavigateToChecklist?: () => void;
 }
 
 export const POMissionControl: React.FC<POMissionControlProps> = ({
-  currentDay, getTaskStatus, onNavigateToDay,
+  currentDay, getTaskStatus, onNavigateToDay, onNavigateToChecklist,
 }) => {
   const [checked, setChecked] = useState<Record<string, boolean>>(() => {
     try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : {}; }
     catch { return {}; }
-  });
-  const [notes, setNotes] = useState<string>(() => {
-    try { const s = localStorage.getItem(NOTES_KEY + currentDay); return s || ''; }
-    catch { return ''; }
   });
 
   const toggleCheck = (id: string) => {
@@ -157,11 +143,6 @@ export const POMissionControl: React.FC<POMissionControlProps> = ({
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     });
-  };
-
-  const saveNote = (val: string) => {
-    setNotes(val);
-    localStorage.setItem(NOTES_KEY + currentDay, val);
   };
 
   // ── Sprint health metrics ─────────────────────────────────────────────────
@@ -369,106 +350,29 @@ export const POMissionControl: React.FC<POMissionControlProps> = ({
         </div>
       </div>
 
-      <Separator />
-
-      {/* ── ROW 3: YOUR ACTIONS TODAY ─────────────────────────────────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <div>
-            <h3 className="text-sm font-bold flex items-center gap-2">
-              <Flag className="w-4 h-4 text-emerald-600" />
-              Your Actions Today — Day {currentDay}
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {todayDone} of {todayChecklist.length} completed · {todayPct}% done
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Progress value={todayPct} className="w-24 h-2" />
-            <Badge className={cn(
-              'text-xs',
-              todayPct === 100 ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground',
-            )}>
-              {todayPct === 100 ? '✓ All done!' : `${todayPct}%`}
-            </Badge>
-          </div>
+      {/* ── PO ACTIONS SHORTCUT ───────────────────────────────────────────── */}
+      <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/60 flex items-start gap-3">
+        <Flag className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-emerald-800">PO Actions for Day {currentDay}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {todayDone} of {todayChecklist.length} completed ({todayPct}%) — Verify · Approve · Decide · Unblock
+          </p>
+          <Progress value={todayPct} className="h-1.5 mt-2" />
         </div>
-
-        {todayChecklist.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No PO actions defined for today yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {sortedChecklist.map(item => {
-              const cfg = CAT_CFG[item.category];
-              const Icon = cfg.icon;
-              const isDone = checked[item.id];
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => toggleCheck(item.id)}
-                  className={cn(
-                    'flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none',
-                    isDone
-                      ? 'bg-green-50/60 border-green-200 opacity-70'
-                      : cn(cfg.bg, cfg.border, 'hover:opacity-80'),
-                  )}
-                >
-                  <Checkbox
-                    checked={isDone || false}
-                    onCheckedChange={() => toggleCheck(item.id)}
-                    className="mt-0.5 shrink-0"
-                    onClick={e => e.stopPropagation()}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <Badge className={cn('text-[10px] px-1.5 py-0 gap-1 flex items-center', cfg.badge)}>
-                        <Icon className="w-2.5 h-2.5" />
-                        {cfg.label}
-                      </Badge>
-                      {item.developer !== 'both' && (
-                        <Badge className={cn('text-[10px] px-1.5 py-0',
-                          item.developer === 'lovable' ? 'bg-pink-100 text-pink-700' : 'bg-violet-100 text-violet-700',
-                        )}>
-                          {item.developer === 'lovable' ? '⚡ Lovable' : '🧠 Claude'}
-                        </Badge>
-                      )}
-                      {item.route && (
-                        <Badge variant="outline" className="text-[10px] font-mono">{item.route}</Badge>
-                      )}
-                    </div>
-                    <p className={cn('text-sm font-semibold mt-1', isDone && 'line-through text-muted-foreground')}>
-                      {item.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
-                  </div>
-                  {isDone && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />}
-                </div>
-              );
-            })}
-          </div>
+        {onNavigateToChecklist && (
+          <button
+            onClick={onNavigateToChecklist}
+            className="shrink-0 px-3 py-1.5 rounded-lg border border-emerald-300 bg-white text-xs font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors flex items-center gap-1.5"
+          >
+            Open Checklist <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         )}
       </div>
 
       <Separator />
 
-      {/* ── ROW 4: TODAY'S HANDOFF DETAILS ───────────────────────────────── */}
-      {todayHandoffs.length > 0 && (
-        <div>
-          <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-            <Link2 className="w-4 h-4 text-primary" />
-            Today's Handoffs — Day {currentDay}
-          </h3>
-          <div className="space-y-2">
-            {todayHandoffs.map(h => (
-              <HandoffRow key={h.id} h={h} statusLabel={handoffStatus(h, getTaskStatus)} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <Separator />
-
-      {/* ── ROW 5: SPRINT TIMELINE ────────────────────────────────────────── */}
+      {/* ── SPRINT TIMELINE ───────────────────────────────────────────────── */}
       <div>
         <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary" />
@@ -526,27 +430,6 @@ export const POMissionControl: React.FC<POMissionControlProps> = ({
           })}
         </div>
       </div>
-
-      <Separator />
-
-      {/* ── PO NOTES ─────────────────────────────────────────────────────── */}
-      <Card>
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Save className="w-4 h-4" /> PO Notes — Day {currentDay}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <Textarea
-            value={notes}
-            onChange={e => saveNote(e.target.value)}
-            placeholder={`Decisions made, feedback, blockers raised, follow-ups for Day ${currentDay}...`}
-            rows={3}
-            className="text-sm resize-none"
-          />
-          <p className="text-[11px] text-muted-foreground mt-1.5">Auto-saved to browser.</p>
-        </CardContent>
-      </Card>
 
     </div>
   );

@@ -634,6 +634,18 @@ interface GovernanceFlowViewProps {
 export const GovernanceFlowView: React.FC<GovernanceFlowViewProps> = ({ getTaskStatus }) => {
   return (
     <div className="space-y-5">
+      {/* Reference-only banner */}
+      <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-blue-200 bg-blue-50/70">
+        <BookOpen className="w-4 h-4 text-blue-600 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-blue-800">📖 Reference Guide — Read Only</p>
+          <p className="text-xs text-blue-700 mt-0.5">
+            This page explains <strong>how</strong> the sprint governance works. 
+            Your actual daily actions (Verify · Approve · Decide · Unblock) and PO Notes are in <strong>📋 Actions & Notes</strong>.
+          </p>
+        </div>
+      </div>
+
       {/* Page header */}
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
