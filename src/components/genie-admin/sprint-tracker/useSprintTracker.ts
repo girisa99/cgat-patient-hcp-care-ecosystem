@@ -1,8 +1,9 @@
 // Sprint Tracker — State Management Hook (localStorage persistence)
 import { useState, useEffect, useMemo } from 'react';
-import type { TaskStatus, Developer, SprintTrackerState, SprintMetrics, ActivityLogEntry, StandupEntry } from './types';
+import type { TaskStatus, Developer, SprintTrackerState, SprintMetrics, ActivityLogEntry, StandupEntry, EffortMetrics } from './types';
 import { SPRINT_TASKS } from './data-tasks';
 import { DEFAULT_TASK_OVERRIDES, DEFAULT_STANDUPS, calculateCurrentDay } from './data-config';
+import { ALL_EFFORT, computeEffortMetrics } from './data-effort';
 
 const STORAGE_KEY = 'genie_sprint_tracker_state_v2'; // bumped to v2 to flush stale Day 1 cache
 
@@ -158,10 +159,14 @@ export function useSprintTracker() {
     return { backlog, todo, inProgress, done };
   }, [state.taskOverrides, currentDay]);
 
+  // Effort metrics — auto-computed from data-effort.ts
+  const effortMetrics: EffortMetrics = useMemo(() => computeEffortMetrics(ALL_EFFORT), []);
+
   return {
     state,
     currentDay,
     metrics,
+    effortMetrics,
     boardColumns,
     updateTaskStatus,
     addStandup,
