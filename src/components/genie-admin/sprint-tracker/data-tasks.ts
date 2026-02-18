@@ -138,7 +138,7 @@ export const SPRINT_TASKS: SprintTask[] = [
     developer: 'lovable', day: 3, priority: 'high', module: 'Landing Page',
     filesInvolved: ['src/components/landing/InteractiveTryGenieDemo.tsx', 'src/components/landing/STTDemo.tsx'],
     acceptanceCriteria: 'Demos respond to user interaction correctly', estimatedHours: 3,
-    effort: { workCategories: ['frontend', 'ux', 'testing'] },
+    effort: { actualHours: 1.5, tokensUsed: 28400, tokenCostCents: 57, workCategories: ['frontend', 'ux', 'testing'] },
   },
   {
     id: 'L-302', title: 'Fix DeepLTranslationDemo',
