@@ -3,29 +3,33 @@
  *
  * Composes sub-components for a clean, readable UX:
  * - BoardView: Kanban board (Backlog | To Do | In Progress | Done)
+ * - DependenciesView: Cross-functional handoffs, dependency chains, blocker alerts
  * - FindingsView: Expandable diagnosis findings grouped by product
  * - StandupsView: Timeline of standups with forms
  * - MetricsView: Live progress, burndown, velocity
  * - StrategyView: File ownership, locked files, activity log
+ * - POVerificationView: PO/SM daily checklist — verify, approve, decide, unblock
  *
  * State persisted to localStorage via useSprintTracker hook.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Target, LayoutGrid, Bug, MessageSquare, BarChart3, Shield } from 'lucide-react';
+import { Target, LayoutGrid, Bug, MessageSquare, BarChart3, Shield, Link2, ClipboardCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { useSprintTracker } from './useSprintTracker';
 import { SPRINT_DAYS, SPRINT_START_DATE, SPRINT_END_DATE } from './data-config';
 import { BoardView } from './BoardView';
+import { DependenciesView } from './DependenciesView';
 import { FindingsView } from './FindingsView';
 import { StandupsView } from './StandupsView';
 import { MetricsView } from './MetricsView';
 import { StrategyView } from './StrategyView';
+import { POVerificationView } from './POVerificationView';
 
 export const SprintTrackerDashboard: React.FC = () => {
   const {
@@ -99,21 +103,27 @@ export const SprintTrackerDashboard: React.FC = () => {
 
       {/* ── Main Tabs ── */}
       <Tabs defaultValue="board" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
-          <TabsTrigger value="board" className="gap-1.5 text-sm">
+        <TabsList className="flex w-full max-w-3xl overflow-x-auto">
+          <TabsTrigger value="board" className="gap-1.5 text-sm flex-1">
             <LayoutGrid className="w-4 h-4" /> Board
           </TabsTrigger>
-          <TabsTrigger value="findings" className="gap-1.5 text-sm">
+          <TabsTrigger value="deps" className="gap-1.5 text-sm flex-1">
+            <Link2 className="w-4 h-4" /> Handoffs
+          </TabsTrigger>
+          <TabsTrigger value="findings" className="gap-1.5 text-sm flex-1">
             <Bug className="w-4 h-4" /> Findings
           </TabsTrigger>
-          <TabsTrigger value="standups" className="gap-1.5 text-sm">
+          <TabsTrigger value="standups" className="gap-1.5 text-sm flex-1">
             <MessageSquare className="w-4 h-4" /> Standups
           </TabsTrigger>
-          <TabsTrigger value="metrics" className="gap-1.5 text-sm">
+          <TabsTrigger value="metrics" className="gap-1.5 text-sm flex-1">
             <BarChart3 className="w-4 h-4" /> Metrics
           </TabsTrigger>
-          <TabsTrigger value="strategy" className="gap-1.5 text-sm">
+          <TabsTrigger value="strategy" className="gap-1.5 text-sm flex-1">
             <Shield className="w-4 h-4" /> Strategy
+          </TabsTrigger>
+          <TabsTrigger value="po" className="gap-1.5 text-sm flex-1">
+            <ClipboardCheck className="w-4 h-4" /> PO Gate
           </TabsTrigger>
         </TabsList>
 
@@ -125,6 +135,10 @@ export const SprintTrackerDashboard: React.FC = () => {
             taskOverrides={state.taskOverrides}
             taskNotes={state.taskNotes}
           />
+        </TabsContent>
+
+        <TabsContent value="deps">
+          <DependenciesView currentDay={currentDay} getTaskStatus={getTaskStatus} />
         </TabsContent>
 
         <TabsContent value="findings">
@@ -145,6 +159,10 @@ export const SprintTrackerDashboard: React.FC = () => {
 
         <TabsContent value="strategy">
           <StrategyView activityLog={state.activityLog} />
+        </TabsContent>
+
+        <TabsContent value="po">
+          <POVerificationView currentDay={currentDay} getTaskStatus={getTaskStatus} />
         </TabsContent>
       </Tabs>
     </div>

@@ -78,3 +78,60 @@ export interface SprintMetrics {
   completed: number;
   backlogCount: number;
 }
+
+// ── Cross-Functional Dependency Tracking ──
+
+export type HandoffDirection = 'claude-to-lovable' | 'lovable-to-claude' | 'bidirectional';
+export type HandoffStatus = 'pending' | 'ready' | 'acknowledged' | 'blocked';
+
+export interface Handoff {
+  id: string;
+  title: string;
+  from: Developer;
+  to: Developer;
+  direction: HandoffDirection;
+  day: number;
+  /** The task that produces the handoff */
+  producerTaskId: string;
+  /** The task that consumes the handoff */
+  consumerTaskId: string;
+  /** What exactly is being handed off */
+  artifact: string;
+  /** What the consumer needs to know */
+  consumerNotes: string;
+  /** Current status */
+  status: HandoffStatus;
+  /** Has the receiving dev acknowledged? */
+  acknowledgedAt?: string;
+  priority: 'critical' | 'high' | 'medium';
+}
+
+export interface DependencyChain {
+  /** Source task */
+  taskId: string;
+  /** Tasks that must complete before this one can start */
+  blockedBy: string[];
+  /** Tasks that this one unblocks when completed */
+  unblocks: string[];
+}
+
+export interface POChecklistItem {
+  id: string;
+  day: number;
+  category: 'verify' | 'approve' | 'decide' | 'unblock';
+  title: string;
+  description: string;
+  route?: string;
+  developer: Developer | 'both';
+  relatedTasks: string[];
+  completed: boolean;
+}
+
+export interface DailyPlanItem {
+  taskId: string;
+  developer: Developer;
+  canStart: boolean;
+  blockedBy: string[];
+  estimatedHours: number;
+  notes: string;
+}

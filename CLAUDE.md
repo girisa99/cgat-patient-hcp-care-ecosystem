@@ -4,6 +4,13 @@
 GenieSuite Ecosystem — Dual-developer sprint (Claude Code + Lovable)
 Sprint: Feb 17-21, 2026 | 5 days | 41 tasks | 3 products (Spark, Mind, Deck)
 
+**Role: Claude is TEAM LEAD** — responsible for:
+- Drafting the sprint plan and identifying all cross-functional dependencies
+- Flagging critical handoffs that Lovable needs before proceeding
+- Updating `data-dependencies.ts` with handoff status when tasks complete
+- Ensuring Lovable has what they need (routes, taglines, artifacts) BEFORE they need it
+- Raising blockers proactively — don't wait for Lovable to discover them
+
 ---
 
 ## SESSION START — Full Morning Routine (Auto-Triggered)
@@ -13,6 +20,7 @@ Every time this session starts, Claude MUST execute ALL steps IN ORDER before do
 ### Step 1: Read Shared Changelog — "What changed overnight?" (2 min)
 ```
 Read SHARED_CHANGELOG.md — find the latest day's entries.
+Read the "Cross-Functional Handoffs — Quick Reference" section.
 ```
 **Check for:**
 - Entries marked "Impact on Claude" — these affect your modules
@@ -20,8 +28,24 @@ Read SHARED_CHANGELOG.md — find the latest day's entries.
 - New shared hooks/services/utils you can leverage in today's work
 - Bug reports about your code from Lovable
 - Deprecation notices — resources being replaced
+- **Handoff status**: Did Lovable acknowledge any handoffs? Are any still pending?
 
 **Action:** Note any items that affect today's tasks.
+
+### Step 1b: Check Handoffs — "What does Lovable need from me today?" (2 min)
+```
+Read src/components/genie-admin/sprint-tracker/data-dependencies.ts
+Check HANDOFFS array for today's day number.
+```
+**As Team Lead, you MUST:**
+- Identify which handoffs Lovable needs TODAY
+- Prioritize producing those artifacts BEFORE starting your own isolated tasks
+- If a handoff requires a task you haven't completed, flag it as a BLOCKER for Lovable
+- Update handoff status to 'ready' when you complete the producer task
+
+**Output:**
+| Handoff | Lovable Needs | My Task | Status | Action |
+|---------|--------------|---------|--------|--------|
 
 ### Step 2: Read Partner's Standup — "Any blockers about my code?" (2 min)
 ```
@@ -33,17 +57,20 @@ Find the `standups` array → read Lovable's latest entry.
 - Completed tasks that unblock your work (e.g., landing CTAs now point to your routes)
 - Shared sync tasks (S-*) needing coordination
 - Questions or requests from Lovable about your components
+- **Did Lovable acknowledge handoffs?** If not, flag this to PO/SM.
 
 ### Step 3: Check Dependencies — "What's unblocked? What's still blocked?" (2 min)
 ```
 Read GENIESUITE_PROJECT_PLAN.csv
 Check the Dependencies column for today's tasks.
+Read src/components/genie-admin/sprint-tracker/data-dependencies.ts — DEPENDENCY_CHAINS array.
 ```
 **Verify:**
 - Are all dependency tasks marked COMPLETED? If not, that task is BLOCKED
 - Which tasks have no dependencies and can start immediately?
 - Are there tasks from previous days still in-progress that block today?
 - Cross-check: did Lovable complete any shared sync tasks (S-*) that unblock you?
+- **Check DEPENDENCY_CHAINS**: Are any of Lovable's tasks blocked by YOUR incomplete tasks?
 
 **Output a table:**
 | Task | Dependencies | Status | Can Start? |
@@ -109,6 +136,10 @@ Summarize in a structured message:
 📝 FROM LOVABLE:
 - <any relevant changes, blockers, or requests>
 
+🔗 HANDOFFS FOR LOVABLE TODAY:
+- H-NNN: <artifact> — status: ready ✓ | pending ⏳ | blocked ❌
+- H-NNN: <artifact> — status: ready ✓ | pending ⏳ | blocked ❌
+
 🔧 SHARED RESOURCES:
 - <new hooks/services available>
 
@@ -139,11 +170,20 @@ While working on tasks throughout the day:
 ### On Completing a Task:
 - Update CSV: mark COMPLETED, fill Actual Effort, fill Findings Summary
 - If the task produced shared resources, update SHARED_CHANGELOG
+- **TEAM LEAD DUTY:** Check if this task is a producer for any Handoff.
+  If yes, update the handoff status in `data-dependencies.ts` to 'ready'
+  and add a SHARED_CHANGELOG entry so Lovable knows immediately.
+
+### On Completing a Handoff Producer Task:
+- Update `data-dependencies.ts` — set handoff status to `'ready'`
+- Update SHARED_CHANGELOG with what Lovable can now use
+- Update the "Cross-Functional Handoffs" table in SHARED_CHANGELOG
 
 ### On Getting Blocked:
 - Document the blocker with specifics
 - Check if Lovable's work can help unblock
 - Consider re-prioritizing to work on unblocked tasks first
+- **If Lovable is blocked by YOUR work**, escalate priority of the blocking task
 
 ---
 
