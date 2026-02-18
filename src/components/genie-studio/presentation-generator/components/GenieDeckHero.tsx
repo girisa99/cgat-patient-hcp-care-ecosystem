@@ -257,6 +257,8 @@ export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
           onClick={goToPrev}
           className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20 transition-colors z-10"
           aria-label="Previous slide"
+          aria-controls="hero-slide-container"
+          disabled={HERO_SLIDES.length <= 1}
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -264,6 +266,8 @@ export function GenieDeckHero({ onGetStarted, className }: GenieDeckHeroProps) {
           onClick={goToNext}
           className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white hover:bg-white/20 transition-colors z-10"
           aria-label="Next slide"
+          aria-controls="hero-slide-container"
+          disabled={HERO_SLIDES.length <= 1}
         >
           <ChevronRight className="h-5 w-5" />
         </button>

@@ -85,7 +85,7 @@ Do NOT change: data structures, types, hook logic, or data-dependencies.ts hando
     consumerTaskId: 'L-201',
     artifact: 'Route `/genie-deck` now has working creation flow',
     consumerNotes: 'Product catalog can show "Try Deck" CTA linking to `/genie-deck`. Verify it loads.',
-    status: 'pending',
+    status: 'ready',
     priority: 'high',
   },
   {

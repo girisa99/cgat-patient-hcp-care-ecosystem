@@ -158,6 +158,46 @@ At session start:
   - Lovable: **STAGE GATE** — Read Handoffs tab at session start. If a handoff shows "Waiting", do NOT start the consumer task until it shows "Ready".
 - **Breaking Changes:** Workflow change — Lovable must read handoffs before working.
 
+### [14:00] FIX — GenieDeck PresentationWizard creation flow (C-201/C-202/C-203)
+- **File(s):** `src/components/genie-studio/presentation-generator/PresentationWizard.tsx`, `src/pages/GenieDeck.tsx`, `src/hooks/usePresentationSession.ts`, `src/components/genie-studio/presentation-generator/ComplianceChecker.tsx`, `src/components/genie-studio/presentation-generator/components/GenieDeckHero.tsx`
+- **Changed By:** Claude
+- **What Changed:**
+  1. **CRITICAL**: `usePresentationSession.createSession()` now validates userId before DB insert — previously would insert with undefined user_id
+  2. **CRITICAL**: `saveSession()` uses safe spread for config merge
+  3. **FIX D-004**: Error messages now say "Genie Deck:" instead of generic text
+  4. **FIX D-006**: Carousel prev/next buttons now have `aria-controls` and `disabled` attributes
+  5. **FIX**: Generation progress bar was hardcoded at 50% — now shows phase-aware progress (15%→35%→60%→85%→95%→100%)
+  6. **FIX**: `onComplete` callback now fires after successful generation (was never called)
+  7. **FIX**: ComplianceChecker now shows toast on check failure
+- **Why:** Day 2 task — make Deck creation flow work end-to-end. Fixes D-004, D-006 from Day 1 diagnosis.
+- **How to Use:** Visit `/genie-deck` — 8-step wizard: Input → Configure → Template → Output → Agents → Voice → Generate → Publish.
+- **Impact on Your Work:**
+  - Claude: Deck is done. Move to Spark (Day 3).
+  - Lovable: **H-201 is now READY**. Product catalog can link to `/genie-deck` — the creation flow works. Verify the "Try Deck" CTA works.
+- **Breaking Changes:** None — all fixes are internal.
+
+### [14:30] HANDOFF — H-201 Ready: Deck Creation Flow Live
+- **File(s):** `src/components/genie-admin/sprint-tracker/data-dependencies.ts`
+- **Changed By:** Claude
+- **What Changed:** H-201 status changed from `'pending'` to `'ready'`. Route `/genie-deck` now has a fully working 8-step presentation wizard.
+- **Why:** C-203 verified — Deck works end-to-end.
+- **Impact on Your Work:**
+  - Claude: None — handoff complete.
+  - Lovable: **YOU CAN NOW START L-201** (product catalog). Link "Try Deck" CTA to `/genie-deck`. Verify it loads and renders the wizard.
+- **Breaking Changes:** None.
+
+### [14:30] ACK — Acknowledged SIC-104 and SIC-105 from Lovable
+- **File(s):** `src/components/genie-admin/sprint-tracker/data-shared-infra.ts`
+- **Changed By:** Claude
+- **What Changed:** Acknowledged Lovable's Day 1 shared infra changes:
+  - SIC-104: Regional landing CTA routes fixed (now point to `/genie-admin?tab=library`)
+  - SIC-105: Explore journey verified and working
+- **Why:** Team Lead duty — acknowledge shared infra changes.
+- **Impact on Your Work:**
+  - Claude: Will verify Explore links to `/genie-spark`, `/genie-mind`, `/genie-deck` as I fix each product.
+  - Lovable: Your Day 1 changes acknowledged.
+- **Breaking Changes:** None.
+
 ---
 
 ## Day 3 — Wednesday, Feb 19, 2026
@@ -190,7 +230,7 @@ Claude (Team Lead) produces → Lovable consumes:
 | H-102 | 1 | Mind tagline: "AI That Understands" | Ready |
 | H-103 | 1 | Support email: `support@geniaisuite.com` | Ready |
 | **H-110** | **2** | **Sprint Tracker UI/UX → Lovable owns all visuals** | **Ready** |
-| H-201 | 2 | Deck creation flow live at `/genie-deck` | Pending (after C-203) |
+| H-201 | 2 | Deck creation flow live at `/genie-deck` | **Ready** |
 | H-301 | 3 | Spark flow live at `/genie-spark` | Pending (after C-304) |
 | H-401 | 4 | Mind flow live at `/genie-mind` | Pending (after C-404) |
 | H-501 | 5 | Claude merges to main FIRST | Pending (Day 5) |
