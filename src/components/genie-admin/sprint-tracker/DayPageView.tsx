@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { SharedInfraFeed } from './SharedInfraFeed';
 import {
   Brain, Zap, CheckCircle2, Clock, AlertTriangle,
   ArrowRight, Ban, Save, ChevronDown, ChevronRight,
@@ -1532,6 +1533,17 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
           </div>
         </section>
       )}
+
+      {/* ── 5. SHARED INFRA CHANGE FEED ──────────────────────────────────── */}
+      {/* Auto-populated — no manual input. Shows cross-dev alerts both ways. */}
+      <section>
+        <div className="flex items-center gap-2 mb-2.5">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Shared Infrastructure</span>
+          <Separator className="flex-1" />
+          <span className="text-[9px] text-muted-foreground italic">Auto-populated · no manual entry needed</span>
+        </div>
+        <SharedInfraFeed day={day} viewAs="claude" />
+      </section>
 
     </div>
   );
