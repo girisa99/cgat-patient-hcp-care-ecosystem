@@ -1,18 +1,47 @@
-// Sprint Tracker — State Management Hook (localStorage persistence)
-import { useState, useEffect, useMemo } from 'react';
-import type { TaskStatus, Developer, SprintTrackerState, SprintMetrics, ActivityLogEntry, StandupEntry } from './types';
+/**
+ * Sprint Tracker — Hybrid State Management Hook
+ *
+ * Architecture:
+ *   1. Hardcoded seed data (data-config.ts, data-effort.ts) — fallback + initial values
+ *   2. localStorage — fast local cache for offline resilience
+ *   3. Supabase real-time (useSprintSync) — live sync between Claude & Lovable
+ *
+ * Priority: Supabase > localStorage > seed data
+ * Both developers see the same data in real-time without needing git merge.
+ */
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import type {
+  TaskStatus, Developer, SprintTrackerState, SprintMetrics,
+  ActivityLogEntry, StandupEntry, EffortMetrics, TaskEffort,
+} from './types';
 import { SPRINT_TASKS } from './data-tasks';
 import { DEFAULT_TASK_OVERRIDES, DEFAULT_STANDUPS, calculateCurrentDay } from './data-config';
+import { ALL_EFFORT, computeEffortMetrics } from './data-effort';
+import { useSprintSync } from './useSprintSync';
 
-const STORAGE_KEY = 'genie_sprint_tracker_state_v3'; // v3: flush stale Days 3-5 sign-offs
+const STORAGE_KEY = 'genie_sprint_tracker_state_v3'; // v3: hybrid with Supabase sync
 
 export function useSprintTracker() {
-  const [state, setState] = useState<SprintTrackerState>(() => {
+  // ── Supabase real-time sync ─────────────────────────────────────
+  const {
+    liveState,
+    isOnline,
+    isSyncing,
+    lastSyncAt,
+    syncError,
+    syncTaskStatus,
+    syncEffort,
+    syncStandup,
+    forceRefresh,
+  } = useSprintSync();
+
+  // ── Local state (localStorage fallback) ─────────────────────────
+  const [localState, setLocalState] = useState<SprintTrackerState>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Ensure all required fields exist (guards against stale cached state)
         return {
           taskOverrides: parsed.taskOverrides ?? { ...DEFAULT_TASK_OVERRIDES },
           standups: parsed.standups ?? [...DEFAULT_STANDUPS],
@@ -21,7 +50,7 @@ export function useSprintTracker() {
         };
       }
     } catch (e) {
-      console.error('[SprintTracker] Failed to load state:', e);
+      console.error('[SprintTracker] Failed to load localStorage:', e);
     }
     return {
       taskOverrides: { ...DEFAULT_TASK_OVERRIDES },
@@ -31,19 +60,70 @@ export function useSprintTracker() {
     };
   });
 
+  // ── Effective state: merge Supabase live + local ────────────────
+  // Supabase data takes priority when online
+  const effectiveOverrides = useMemo(() => {
+    if (isOnline && liveState.taskOverrides) {
+      // Merge: start with local, overlay with live (live wins on conflict)
+      return { ...localState.taskOverrides, ...liveState.taskOverrides };
+    }
+    return localState.taskOverrides;
+  }, [isOnline, liveState.taskOverrides, localState.taskOverrides]);
+
+  const effectiveStandups = useMemo(() => {
+    if (isOnline && liveState.standups.length > 0) {
+      // Deduplicate by key
+      const key = (s: StandupEntry) => `${s.day}-${s.developer}-${s.createdAt}`;
+      const map = new Map<string, StandupEntry>();
+      for (const s of localState.standups) map.set(key(s), s);
+      for (const s of liveState.standups) map.set(key(s), s); // live wins
+      return Array.from(map.values()).sort((a, b) => a.day - b.day || a.createdAt.localeCompare(b.createdAt));
+    }
+    return localState.standups;
+  }, [isOnline, liveState.standups, localState.standups]);
+
+  const effectiveEfforts = useMemo(() => {
+    if (isOnline && liveState.efforts.length > 0) {
+      const map = new Map<string, TaskEffort>();
+      for (const e of ALL_EFFORT) map.set(e.taskId, e); // seed
+      for (const e of liveState.efforts) map.set(e.taskId, e); // live wins
+      return Array.from(map.values()).sort((a, b) => a.day - b.day || a.taskId.localeCompare(b.taskId));
+    }
+    return ALL_EFFORT;
+  }, [isOnline, liveState.efforts]);
+
+  // Build the effective combined state object
+  const state: SprintTrackerState = useMemo(() => ({
+    taskOverrides: effectiveOverrides,
+    standups: effectiveStandups,
+    activityLog: localState.activityLog,
+    taskNotes: localState.taskNotes,
+  }), [effectiveOverrides, effectiveStandups, localState.activityLog, localState.taskNotes]);
+
+  // ── Persist to localStorage as backup ───────────────────────────
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        taskOverrides: effectiveOverrides,
+        standups: effectiveStandups,
+        activityLog: localState.activityLog,
+        taskNotes: localState.taskNotes,
+      }));
     } catch (e) {
-      console.error('[SprintTracker] Failed to save state:', e);
+      console.error('[SprintTracker] Failed to save localStorage:', e);
     }
-  }, [state]);
+  }, [effectiveOverrides, effectiveStandups, localState.activityLog, localState.taskNotes]);
 
   const currentDay = useMemo(() => calculateCurrentDay(), []);
 
-  const updateTaskStatus = (taskId: string, status: TaskStatus, note?: string) => {
+  // ── Mutations: write to both local + Supabase ───────────────────
+
+  const updateTaskStatus = useCallback((taskId: string, status: TaskStatus, note?: string) => {
     const task = SPRINT_TASKS.find(t => t.id === taskId);
-    setState(prev => ({
+    const developer = task?.developer ?? 'claude';
+
+    // Local update (immediate)
+    setLocalState(prev => ({
       ...prev,
       taskOverrides: {
         ...prev.taskOverrides,
@@ -53,19 +133,25 @@ export function useSprintTracker() {
         ...prev.activityLog,
         {
           timestamp: new Date().toISOString(),
-          developer: task?.developer ?? 'claude',
+          developer,
           action: `Changed ${taskId} to ${status}`,
           taskId,
           details: note,
         },
       ],
     }));
-  };
 
-  const addStandup = (entry: Omit<StandupEntry, 'createdAt'>) => {
-    setState(prev => ({
+    // Supabase sync (async, non-blocking)
+    syncTaskStatus(taskId, status, developer, note);
+  }, [syncTaskStatus]);
+
+  const addStandup = useCallback((entry: Omit<StandupEntry, 'createdAt'>) => {
+    const fullEntry: StandupEntry = { ...entry, createdAt: new Date().toISOString() };
+
+    // Local
+    setLocalState(prev => ({
       ...prev,
-      standups: [...prev.standups, { ...entry, createdAt: new Date().toISOString() }],
+      standups: [...prev.standups, fullEntry],
       activityLog: [
         ...prev.activityLog,
         {
@@ -75,10 +161,13 @@ export function useSprintTracker() {
         },
       ],
     }));
-  };
 
-  const addTaskNote = (taskId: string, note: string, developer: Developer) => {
-    setState(prev => ({
+    // Supabase
+    syncStandup(fullEntry);
+  }, [syncStandup]);
+
+  const addTaskNote = useCallback((taskId: string, note: string, developer: Developer) => {
+    setLocalState(prev => ({
       ...prev,
       taskNotes: {
         ...prev.taskNotes,
@@ -95,11 +184,18 @@ export function useSprintTracker() {
         },
       ],
     }));
-  };
+  }, []);
 
-  const getTaskStatus = (taskId: string): TaskStatus => {
-    return state.taskOverrides[taskId]?.status ?? 'pending';
-  };
+  /** Add effort entry — syncs to Supabase immediately */
+  const addEffort = useCallback((effort: TaskEffort) => {
+    syncEffort(effort);
+  }, [syncEffort]);
+
+  const getTaskStatus = useCallback((taskId: string): TaskStatus => {
+    return effectiveOverrides[taskId]?.status ?? 'pending';
+  }, [effectiveOverrides]);
+
+  // ── Computed metrics ────────────────────────────────────────────
 
   const metrics: SprintMetrics = useMemo(() => {
     const emptyDev = () => ({
@@ -121,7 +217,7 @@ export function useSprintTracker() {
     const byCategory: SprintMetrics['byCategory'] = {};
 
     SPRINT_TASKS.forEach(task => {
-      const status = state.taskOverrides[task.id]?.status ?? 'pending';
+      const status = effectiveOverrides[task.id]?.status ?? 'pending';
       const dev = byDeveloper[task.developer];
       const effort = task.effort;
       const isCompleted = status === 'completed';
@@ -170,7 +266,7 @@ export function useSprintTracker() {
 
     const total = SPRINT_TASKS.length;
     const completed = SPRINT_TASKS.filter(t =>
-      (state.taskOverrides[t.id]?.status ?? 'pending') === 'completed'
+      (effectiveOverrides[t.id]?.status ?? 'pending') === 'completed'
     ).length;
 
     const velocityRatio = totalEstimatedHours > 0
@@ -182,9 +278,8 @@ export function useSprintTracker() {
       totalEstimatedHours, totalActualHours, totalTokensUsed, totalTokenCostCents,
       velocityRatio, byCategory,
     };
-  }, [state.taskOverrides, currentDay]);
+  }, [effectiveOverrides, currentDay]);
 
-  // Group tasks by status for Kanban board
   const boardColumns = useMemo(() => {
     const backlog: string[] = [];
     const todo: string[] = [];
@@ -192,7 +287,7 @@ export function useSprintTracker() {
     const done: string[] = [];
 
     SPRINT_TASKS.forEach(task => {
-      const status = state.taskOverrides[task.id]?.status ?? 'pending';
+      const status = effectiveOverrides[task.id]?.status ?? 'pending';
       if (status === 'completed') {
         done.push(task.id);
       } else if (status === 'in-progress') {
@@ -200,14 +295,14 @@ export function useSprintTracker() {
       } else if (status === 'rejected') {
         // skip
       } else if (task.day < currentDay) {
-        backlog.push(task.id); // overdue = backlog
+        backlog.push(task.id);
       } else {
         todo.push(task.id);
       }
     });
 
     return { backlog, todo, inProgress, done };
-  }, [state.taskOverrides, currentDay]);
+  }, [effectiveOverrides, currentDay]);
 
   const resetToDefaults = () => {
     // Clear all sprint-tracker localStorage keys so stale data doesn't bleed in
@@ -227,7 +322,7 @@ export function useSprintTracker() {
       'genie_sprint_po_notes',
     ];
     keysToRemove.forEach(k => localStorage.removeItem(k));
-    setState({
+    setLocalState({
       taskOverrides: { ...DEFAULT_TASK_OVERRIDES },
       standups: [...DEFAULT_STANDUPS],
       activityLog: [],
@@ -235,15 +330,29 @@ export function useSprintTracker() {
     });
   };
 
+  // Effort metrics — from live data (Supabase) or seed data (fallback)
+  const effortMetrics: EffortMetrics = useMemo(
+    () => computeEffortMetrics(effectiveEfforts),
+    [effectiveEfforts]
+  );
+
   return {
     state,
     currentDay,
     metrics,
+    effortMetrics,
     boardColumns,
     updateTaskStatus,
     addStandup,
     addTaskNote,
+    addEffort,
     getTaskStatus,
     resetToDefaults,
+    // Sync status — for UI indicators
+    isOnline,
+    isSyncing,
+    lastSyncAt,
+    syncError,
+    forceRefresh,
   };
 }

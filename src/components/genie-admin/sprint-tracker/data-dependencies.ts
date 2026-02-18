@@ -48,6 +48,33 @@ export const HANDOFFS: Handoff[] = [
     priority: 'medium',
   },
 
+  // ── Day 2 — Sprint Tracker UI/UX Handoff ──
+  {
+    id: 'H-110',
+    title: 'Sprint Tracker UI/UX → Lovable owns visual polish',
+    from: 'claude', to: 'lovable', direction: 'claude-to-lovable',
+    day: 2,
+    producerTaskId: 'C-104',
+    consumerTaskId: 'L-110',
+    artifact: 'Sprint Tracker modular components at src/components/genie-admin/sprint-tracker/ (12 files). Data layer, types, hooks, and tab structure are complete. Lovable owns all visual/UI/UX improvements.',
+    consumerNotes: `Sprint Tracker UI/UX is now Lovable's responsibility. Claude built:
+- 7 tab views (Board, Standups, Dependencies, Findings, Metrics, Strategy, PO Gate)
+- Data files (data-tasks.ts, data-dependencies.ts, data-findings.ts, data-config.ts)
+- Hook (useSprintTracker.ts) and types (types.ts)
+- Route: /genie-admin?tab=sprint-tracker
+
+Lovable should:
+1. Restyle all tab views with proper Shadcn/Tailwind polish
+2. Make the Kanban board drag-and-drop friendly
+3. Add animations, transitions, and mobile responsiveness
+4. Improve card layouts, color coding, and visual hierarchy
+5. Optionally render Mermaid diagrams inline (or replace with React-based visualizations)
+
+Do NOT change: data structures, types, hook logic, or data-dependencies.ts handoff/chain data.`,
+    status: 'ready',
+    priority: 'high',
+  },
+
   // ── Day 2 ──
   {
     id: 'H-201',
@@ -59,6 +86,7 @@ export const HANDOFFS: Handoff[] = [
     artifact: 'Route `/genie-deck` now has working creation flow',
     consumerNotes: 'Product catalog shows "Try Deck" CTA linking to /genie-deck. Shipped + verified 2026-02-18.',
     status: 'acknowledged',
+    acknowledgedAt: '2026-02-18T16:00:00Z',
     priority: 'high',
   },
   {

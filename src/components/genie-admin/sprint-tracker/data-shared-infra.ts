@@ -177,7 +177,7 @@ export const SHARED_INFRA_CHANGES: SharedInfraChange[] = [
       lovable: null,
     },
     taskId: 'L-201',
-    acknowledged: { claude: false, lovable: true },
+    acknowledged: { claude: true, lovable: true },
   },
   {
     id: 'SIC-202',
@@ -193,7 +193,7 @@ export const SHARED_INFRA_CHANGES: SharedInfraChange[] = [
       lovable: null,
     },
     taskId: 'L-202',
-    acknowledged: { claude: false, lovable: true },
+    acknowledged: { claude: true, lovable: true },
   },
 ];
 

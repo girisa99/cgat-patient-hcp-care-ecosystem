@@ -172,3 +172,103 @@ export interface DailyPlanItem {
   estimatedHours: number;
   notes: string;
 }
+
+// ── Effort Tracking — Automatic Time & Discipline Breakdown ──
+
+/** Engineering disciplines for effort categorization */
+export type Discipline =
+  | 'frontend'       // React components, JSX, CSS, Tailwind
+  | 'backend'        // Edge functions, API routes, server logic
+  | 'ux'             // User flows, interaction design, accessibility
+  | 'ui'             // Visual design, layout, styling, branding
+  | 'database'       // Supabase tables, RLS, migrations, queries
+  | 'devops'         // Build config, CI/CD, deployment, git
+  | 'architecture'   // System design, dependency mapping, planning
+  | 'testing'        // Manual testing, E2E verification, QA
+  | 'documentation'  // Changelogs, standups, CSV updates, CLAUDE.md
+  | 'code-review'    // Auditing, diagnosing, reading code
+  | 'integration'    // Cross-module wiring, handoffs, shared hooks
+  | 'debugging';     // Bug investigation, root cause analysis
+
+/** Single effort entry for a discipline within a task */
+export interface DisciplineEffort {
+  discipline: Discipline;
+  hours: number;
+  /** What was done in this discipline */
+  description: string;
+  /** Files touched for this discipline */
+  files?: string[];
+}
+
+/** Granular time entry with timestamps */
+export interface TimeEntry {
+  /** ISO timestamp when work started */
+  startedAt: string;
+  /** ISO timestamp when work ended */
+  endedAt: string;
+  /** Duration in hours (computed: endedAt - startedAt) */
+  hours: number;
+  developer: Developer;
+  discipline: Discipline;
+  description: string;
+}
+
+/** Complete effort record for a single task */
+export interface TaskEffort {
+  taskId: string;
+  developer: Developer;
+  day: number;
+  /** Estimated hours from sprint plan */
+  estimatedHours: number;
+  /** Actual total hours (sum of discipline breakdown) */
+  actualHours: number;
+  /** Variance: actual - estimated (negative = under budget) */
+  variance: number;
+  /** Breakdown by engineering discipline */
+  breakdown: DisciplineEffort[];
+  /** Granular time entries (optional, for detailed tracking) */
+  timeEntries?: TimeEntry[];
+  /** Bugs/issues fixed as part of this task */
+  issuesFixed?: string[];
+  /** Files modified */
+  filesModified: string[];
+  /** Number of lines changed (insertions + deletions) */
+  linesChanged?: number;
+  /** When the task was started */
+  startedAt?: string;
+  /** When the task was completed */
+  completedAt?: string;
+  /** Summary of what was accomplished */
+  accomplishment: string;
+}
+
+/** Aggregated effort metrics for reporting */
+export interface EffortMetrics {
+  /** Total estimated hours across all tasks */
+  totalEstimated: number;
+  /** Total actual hours across all completed tasks */
+  totalActual: number;
+  /** Overall variance (negative = under budget) */
+  totalVariance: number;
+  /** Accuracy ratio: actual / estimated */
+  estimateAccuracy: number;
+  /** Hours by discipline across all tasks */
+  byDiscipline: Record<Discipline, { hours: number; percentage: number; taskCount: number }>;
+  /** Hours by developer */
+  byDeveloper: Record<Developer, {
+    estimatedHours: number;
+    actualHours: number;
+    variance: number;
+    completedTasks: number;
+    topDisciplines: { discipline: Discipline; hours: number }[];
+  }>;
+  /** Hours by day */
+  byDay: Record<number, {
+    estimatedHours: number;
+    actualHours: number;
+    tasksCompleted: number;
+    disciplines: Record<Discipline, number>;
+  }>;
+  /** Velocity: tasks completed per day */
+  velocityByDay: Record<number, number>;
+}
