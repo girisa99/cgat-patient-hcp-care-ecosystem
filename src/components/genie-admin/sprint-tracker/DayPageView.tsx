@@ -545,11 +545,104 @@ function KickstartSection({
   );
 }
 
+// ─── Auto-fill helpers ────────────────────────────────────────────────────────
+
+/**
+ * Build a smart auto-fill for the standup "Completed" field:
+ * lists every task for this dev+day that is already completed.
+ */
+function buildYesterdayFill(day: number, dev: Developer, getTaskStatus: (id: string) => TaskStatus): string {
+  const prevDay = day - 1;
+  if (prevDay < 1) return 'N/A — Sprint Day 1 start';
+  const prevDone = SPRINT_TASKS
+    .filter(t => t.developer === dev && t.day === prevDay && getTaskStatus(t.id) === 'completed')
+    .map(t => t.id);
+  if (prevDone.length === 0) return 'No tasks completed on Day ' + prevDay;
+  return `Completed ${prevDone.join(', ')} on Day ${prevDay}.`;
+}
+
+/**
+ * Build a smart auto-fill for "Working On" field:
+ * lists today's pending/in-progress tasks for this dev.
+ */
+function buildTodayFill(day: number, dev: Developer, getTaskStatus: (id: string) => TaskStatus): string {
+  const todayTasks = SPRINT_TASKS
+    .filter(t => t.developer === dev && t.day === day)
+    .map(t => ({ ...t, status: getTaskStatus(t.id) }));
+  const wip    = todayTasks.filter(t => t.status === 'in-progress').map(t => t.id);
+  const todo   = todayTasks.filter(t => t.status === 'pending').map(t => t.id);
+  const active = [...wip, ...todo.slice(0, 3)];
+  if (active.length === 0) return 'All Day ' + day + ' tasks complete ✓';
+  const labels = active.map(id => {
+    const t = SPRINT_TASKS.find(x => x.id === id);
+    return t ? `${id} — ${t.title.slice(0, 40)}` : id;
+  });
+  return labels.join('\n');
+}
+
+/**
+ * Build auto-fill for "Blockers" field:
+ * checks handoffs that this dev is waiting on today.
+ */
+function buildBlockersFill(day: number, dev: Developer, getTaskStatus: (id: string) => TaskStatus): string {
+  const waiting = HANDOFFS.filter(
+    h => h.day === day && h.to === dev && !isHandoffReady(h.id, getTaskStatus),
+  );
+  if (waiting.length === 0) return 'None';
+  return waiting.map(h => `${h.id} (${h.artifact}) pending from ${DEV[h.from].label} — ${
+    SPRINT_TASKS.filter(t => h.consumerTaskId === t.id).map(t => t.id).join(', ') || 'see handoffs'
+  } gated.`).join('\n');
+}
+
 // ─── Standup section — side-by-side process-flow cards ───────────────────────
 
-function StandupCard({ entry, dev }: { entry: StandupEntry | undefined; dev: Developer }) {
+function StandupCard({
+  entry, dev, day, getTaskStatus, onSave,
+}: {
+  entry: StandupEntry | undefined;
+  dev: Developer;
+  day: number;
+  getTaskStatus: (id: string) => TaskStatus;
+  onSave: (e: Omit<StandupEntry, 'createdAt'>) => void;
+}) {
   const cfg = DEV[dev];
   const Icon = cfg.Icon;
+
+  // Inline edit state (shown when no entry yet OR user clicks edit)
+  const [editing, setEditing] = useState(!entry);
+  const [done,  setDone]  = useState(() => entry?.yesterday ?? buildYesterdayFill(day, dev, getTaskStatus));
+  const [now,   setNow]   = useState(() => entry?.today     ?? buildTodayFill(day, dev, getTaskStatus));
+  const [block, setBlock] = useState(() => entry?.blockers  ?? buildBlockersFill(day, dev, getTaskStatus));
+
+  // When an entry appears from props (saved externally), sync local state
+  React.useEffect(() => {
+    if (entry && !editing) {
+      setDone(entry.yesterday);
+      setNow(entry.today);
+      setBlock(entry.blockers ?? 'None');
+    }
+  }, [entry]);
+
+  // Re-fill smart defaults whenever editing opens with no prior entry
+  const openEdit = () => {
+    if (!entry) {
+      setDone(buildYesterdayFill(day, dev, getTaskStatus));
+      setNow(buildTodayFill(day, dev, getTaskStatus));
+      setBlock(buildBlockersFill(day, dev, getTaskStatus));
+    } else {
+      setDone(entry.yesterday);
+      setNow(entry.today);
+      setBlock(entry.blockers ?? 'None');
+    }
+    setEditing(true);
+  };
+
+  const save = () => {
+    if (!done.trim() && !now.trim()) return;
+    onSave({ day, developer: dev, yesterday: done, today: now, blockers: block || 'None' });
+    setEditing(false);
+  };
+
   return (
     <div className={cn('rounded-lg border flex-1 min-w-0', cfg.swimBorder)}>
       {/* Card header */}
@@ -557,87 +650,114 @@ function StandupCard({ entry, dev }: { entry: StandupEntry | undefined; dev: Dev
         <Icon className={cn('w-3.5 h-3.5 shrink-0', cfg.iconCls)} />
         <span className="text-xs font-semibold">{cfg.label}</span>
         <span className="text-[10px] text-muted-foreground">{cfg.role}</span>
-        {entry && (
+        {entry && !editing && (
           <span className="ml-auto text-[9px] text-muted-foreground">
             {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
+        {entry && !editing && (
+          <button
+            onClick={openEdit}
+            className={cn(
+              'ml-1 text-[9px] flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-dashed transition-colors',
+              dev === 'claude'
+                ? 'border-violet-300 text-violet-600 hover:bg-violet-100'
+                : 'border-pink-300 text-pink-600 hover:bg-pink-100',
+            )}
+          >
+            <MessageSquare className="w-2.5 h-2.5" /> Edit
+          </button>
+        )}
       </div>
 
-      {entry ? (
+      {/* ── View mode ─────────────────────── */}
+      {entry && !editing && (
         <div className="px-3 py-2.5 space-y-2 text-xs">
-          {/* Yesterday */}
           <div>
             <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">✓ Completed</p>
-            <p className="text-foreground leading-relaxed">{entry.yesterday}</p>
+            <p className="text-foreground leading-relaxed whitespace-pre-line">{entry.yesterday}</p>
           </div>
-          {/* Today */}
           <div>
             <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">→ Working On</p>
-            <p className="text-foreground leading-relaxed">{entry.today}</p>
+            <p className="text-foreground leading-relaxed whitespace-pre-line">{entry.today}</p>
           </div>
-          {/* Blockers */}
-          {entry.blockers && entry.blockers !== 'None' && (
+          {entry.blockers && entry.blockers !== 'None' ? (
             <div className="flex items-start gap-1.5 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 text-amber-800">
               <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
-              <p className="text-[10px]">{entry.blockers}</p>
+              <p className="text-[10px] whitespace-pre-line">{entry.blockers}</p>
             </div>
-          )}
-          {(!entry.blockers || entry.blockers === 'None') && (
+          ) : (
             <p className="text-[9px] text-green-600 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" /> No blockers
             </p>
           )}
         </div>
-      ) : (
-        <div className="px-3 py-4 text-center space-y-1">
-          <p className="text-[10px] text-muted-foreground italic">No standup logged yet</p>
+      )}
+
+      {/* ── Edit / Add mode (auto-filled) ─── */}
+      {(!entry || editing) && (
+        <div className="px-3 py-2.5 space-y-2">
+          {!entry && (
+            <p className="text-[9px] text-muted-foreground italic flex items-center gap-1">
+              <Rocket className="w-3 h-3 text-primary" />
+              Auto-filled from Day {day} task progress — edit &amp; save to lock in.
+            </p>
+          )}
+
+          {/* Completed */}
+          <div>
+            <label className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground block mb-0.5">
+              ✓ Completed (yesterday / prior)
+            </label>
+            <Textarea
+              value={done}
+              onChange={e => setDone(e.target.value)}
+              rows={2}
+              className="text-xs resize-none"
+              placeholder="What was completed…"
+            />
+          </div>
+
+          {/* Working On */}
+          <div>
+            <label className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground block mb-0.5">
+              → Working On today
+            </label>
+            <Textarea
+              value={now}
+              onChange={e => setNow(e.target.value)}
+              rows={3}
+              className="text-xs resize-none"
+              placeholder="Today's focus…"
+            />
+          </div>
+
+          {/* Blockers */}
+          <div>
+            <label className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground block mb-0.5">
+              ⚠ Blockers / Waiting for
+            </label>
+            <Textarea
+              value={block}
+              onChange={e => setBlock(e.target.value)}
+              rows={2}
+              className="text-xs resize-none"
+              placeholder="Blockers (leave blank if none)"
+            />
+          </div>
+
+          <div className="flex gap-1.5">
+            <Button size="sm" onClick={save} className="h-7 text-xs gap-1">
+              <Save className="w-3 h-3" /> Save &amp; Trigger Day {day} Flow
+            </Button>
+            {(entry || editing) && (
+              <Button size="sm" variant="ghost" onClick={() => setEditing(false)} className="h-7 text-xs">
+                Cancel
+              </Button>
+            )}
+          </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function AddStandupForm({
-  day, dev, onSave,
-}: {
-  day: number; dev: Developer; onSave: (e: Omit<StandupEntry, 'createdAt'>) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [done,  setDone]  = useState('');
-  const [now,   setNow]   = useState('');
-  const [block, setBlock] = useState('');
-  const cfg = DEV[dev];
-  const Icon = cfg.Icon;
-
-  const save = () => {
-    if (!done.trim() && !now.trim()) return;
-    onSave({ day, developer: dev, yesterday: done, today: now, blockers: block || 'None' });
-    setDone(''); setNow(''); setBlock(''); setOpen(false);
-  };
-
-  if (!open) return (
-    <button onClick={() => setOpen(true)}
-      className={cn(
-        'text-[10px] flex items-center gap-1 px-2 py-1 rounded border border-dashed transition-colors',
-        dev === 'claude' ? 'border-violet-300 text-violet-600 hover:bg-violet-50' : 'border-pink-300 text-pink-600 hover:bg-pink-50',
-      )}>
-      <Plus className="w-3 h-3" /><Icon className="w-3 h-3" />Update
-    </button>
-  );
-
-  return (
-    <div className="border border-border rounded-lg p-2.5 bg-card space-y-1.5 mt-2">
-      <p className="text-[10px] font-semibold flex items-center gap-1">
-        <Icon className={cn('w-3 h-3', cfg.iconCls)} />{cfg.label} standup
-      </p>
-      <Textarea value={done}  onChange={e => setDone(e.target.value)}  rows={1} className="text-xs resize-none" placeholder="Completed…" />
-      <Textarea value={now}   onChange={e => setNow(e.target.value)}   rows={1} className="text-xs resize-none" placeholder="Working on…" />
-      <Textarea value={block} onChange={e => setBlock(e.target.value)} rows={1} className="text-xs resize-none" placeholder="Blockers (leave blank if none)" />
-      <div className="flex gap-1.5">
-        <Button size="sm" onClick={save} className="h-7 text-xs gap-1"><Save className="w-3 h-3" />Save</Button>
-        <Button size="sm" variant="ghost" onClick={() => setOpen(false)} className="h-7 text-xs">Cancel</Button>
-      </div>
     </div>
   );
 }
@@ -759,14 +879,23 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
           <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Daily Standup</span>
           <Separator className="flex-1" />
-          <div className="flex gap-1.5">
-            <AddStandupForm day={day} dev="claude"  onSave={onAddStandup} />
-            <AddStandupForm day={day} dev="lovable" onSave={onAddStandup} />
-          </div>
+          <span className="text-[9px] text-muted-foreground italic">Click a card to update · auto-filled from task progress</span>
         </div>
         <div className="flex gap-3 flex-col sm:flex-row">
-          <StandupCard entry={claudeSD}  dev="claude" />
-          <StandupCard entry={lovableSD} dev="lovable" />
+          <StandupCard
+            entry={claudeSD}
+            dev="claude"
+            day={day}
+            getTaskStatus={getTaskStatus}
+            onSave={onAddStandup}
+          />
+          <StandupCard
+            entry={lovableSD}
+            dev="lovable"
+            day={day}
+            getTaskStatus={getTaskStatus}
+            onSave={onAddStandup}
+          />
         </div>
         {dayStandups.length > 2 && (
           <p className="text-[9px] text-muted-foreground mt-1.5 pl-1">
