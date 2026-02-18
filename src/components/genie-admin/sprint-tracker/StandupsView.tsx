@@ -1,11 +1,13 @@
-// Sprint Tracker — Standups View (timeline + form)
+// Sprint Tracker — Standups View
+// Layout: Day tabs (1-5) across top, Claude + Lovable cards side-by-side per day
+// Auto-filled: existing standup data populates automatically; add-form at bottom per day
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Zap, Brain, Save, MessageSquare } from 'lucide-react';
+import { Zap, Brain, Save, AlertTriangle, CheckCircle2, Clock, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Developer, StandupEntry } from './types';
 import { SPRINT_DAYS } from './data-config';
@@ -16,129 +18,257 @@ interface StandupsViewProps {
   onAddStandup: (entry: Omit<StandupEntry, 'createdAt'>) => void;
 }
 
-function StandupForm({ day, developer, onSave }: {
-  day: number; developer: Developer; onSave: (entry: Omit<StandupEntry, 'createdAt'>) => void;
-}) {
-  const [yesterday, setYesterday] = useState('');
-  const [today, setToday] = useState('');
-  const [blockers, setBlockers] = useState('');
-  const isLovable = developer === 'lovable';
+// ─── Role config ──────────────────────────────────────────────────────────────
 
-  const handleSave = () => {
-    if (!yesterday.trim() && !today.trim()) return;
-    onSave({ day, developer, yesterday, today, blockers });
-    setYesterday(''); setToday(''); setBlockers('');
-  };
+const DEV_CFG = {
+  claude: {
+    label: 'Claude',
+    role: 'Tech Lead',
+    icon: Brain,
+    border: 'border-violet-400',
+    headerBg: 'bg-violet-50',
+    iconCls: 'text-violet-600',
+    badgeCls: 'bg-violet-100 text-violet-700 border-violet-300',
+    dotCls: 'bg-violet-400',
+  },
+  lovable: {
+    label: 'Lovable',
+    role: 'Dev / UI',
+    icon: Zap,
+    border: 'border-pink-400',
+    headerBg: 'bg-pink-50',
+    iconCls: 'text-pink-600',
+    badgeCls: 'bg-pink-100 text-pink-700 border-pink-300',
+    dotCls: 'bg-pink-400',
+  },
+} as const;
+
+// ─── Single developer standup card ───────────────────────────────────────────
+
+function StandupCard({ entry, dev }: { entry?: StandupEntry; dev: Developer }) {
+  const cfg = DEV_CFG[dev];
+  const Icon = cfg.icon;
+
+  if (!entry) {
+    return (
+      <div className={cn(
+        'rounded-xl border-2 border-dashed p-5 flex flex-col items-center justify-center gap-2 min-h-[140px]',
+        dev === 'claude' ? 'border-violet-200' : 'border-pink-200',
+      )}>
+        <Icon className={cn('w-5 h-5 opacity-30', cfg.iconCls)} />
+        <p className="text-xs text-muted-foreground text-center">No standup logged yet</p>
+      </div>
+    );
+  }
 
   return (
-    <Card className={cn('border-t-2', isLovable ? 'border-t-pink-400' : 'border-t-purple-400')}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
-          {isLovable ? <Zap className="w-4 h-4 text-pink-600" /> : <Brain className="w-4 h-4 text-purple-600" />}
-          {isLovable ? 'Lovable' : 'Claude Code'} — Day {day} Standup
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <label className="text-sm font-medium text-muted-foreground">What did I complete?</label>
-          <Textarea value={yesterday} onChange={e => setYesterday(e.target.value)} rows={2} className="mt-1 text-sm" placeholder="List completed tasks..." />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-muted-foreground">What am I working on today?</label>
-          <Textarea value={today} onChange={e => setToday(e.target.value)} rows={2} className="mt-1 text-sm" placeholder="List today's focus..." />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-muted-foreground">Blockers or shared needs?</label>
-          <Textarea value={blockers} onChange={e => setBlockers(e.target.value)} rows={2} className="mt-1 text-sm" placeholder="Any blockers or coordination needs..." />
-        </div>
-        <Button size="sm" onClick={handleSave} className="gap-1.5">
-          <Save className="w-4 h-4" /> Log Standup
-        </Button>
-      </CardContent>
-    </Card>
+    <div className={cn('rounded-xl border-2 overflow-hidden', cfg.border)}>
+      {/* Card header */}
+      <div className={cn('flex items-center gap-2 px-4 py-2.5', cfg.headerBg)}>
+        <Icon className={cn('w-4 h-4 shrink-0', cfg.iconCls)} />
+        <span className="font-semibold text-sm">{cfg.label}</span>
+        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 border', cfg.badgeCls)}>
+          {cfg.role}
+        </Badge>
+        <span className="ml-auto text-[10px] text-muted-foreground">
+          {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </span>
+      </div>
+
+      {/* Card body */}
+      <div className="px-4 py-3 space-y-2.5 bg-card">
+        {entry.yesterday && (
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3 text-green-500" /> Completed
+            </p>
+            <p className="text-sm leading-relaxed">{entry.yesterday}</p>
+          </div>
+        )}
+        {entry.today && (
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5 flex items-center gap-1">
+              <Clock className="w-3 h-3 text-blue-500" /> Working on
+            </p>
+            <p className="text-sm leading-relaxed">{entry.today}</p>
+          </div>
+        )}
+        {entry.blockers && entry.blockers !== 'None' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 mb-0.5 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" /> Blockers
+            </p>
+            <p className="text-sm text-amber-900 leading-relaxed">{entry.blockers}</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
-export const StandupsView: React.FC<StandupsViewProps> = ({ standups, selectedDay, onAddStandup }) => {
-  const dayStandups = standups.filter(s => s.day === selectedDay);
-  const allByDay = [1, 2, 3, 4, 5].map(d => ({
-    day: d,
-    theme: SPRINT_DAYS[d - 1]?.theme ?? '',
-    entries: standups.filter(s => s.day === d),
-  })).filter(d => d.entries.length > 0 || d.day === selectedDay);
+// ─── Add standup form (collapsed by default) ──────────────────────────────────
+
+function AddStandupForm({ day, dev, onSave }: {
+  day: number; dev: Developer; onSave: (entry: Omit<StandupEntry, 'createdAt'>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [yesterday, setYesterday] = useState('');
+  const [today, setToday] = useState('');
+  const [blockers, setBlockers] = useState('');
+  const cfg = DEV_CFG[dev];
+  const Icon = cfg.icon;
+
+  const handleSave = () => {
+    if (!yesterday.trim() && !today.trim()) return;
+    onSave({ day, developer: dev, yesterday, today, blockers: blockers || 'None' });
+    setYesterday(''); setToday(''); setBlockers('');
+    setOpen(false);
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className={cn(
+          'w-full flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed text-xs font-medium transition-all',
+          dev === 'claude'
+            ? 'border-violet-300 text-violet-600 hover:bg-violet-50'
+            : 'border-pink-300 text-pink-600 hover:bg-pink-50',
+        )}
+      >
+        <Plus className="w-3.5 h-3.5" />
+        <Icon className="w-3.5 h-3.5" />
+        Add {cfg.label} standup
+      </button>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Standup forms */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        <StandupForm day={selectedDay} developer="lovable" onSave={onAddStandup} />
-        <StandupForm day={selectedDay} developer="claude" onSave={onAddStandup} />
+    <div className={cn('rounded-xl border-2 overflow-hidden', cfg.border)}>
+      <div className={cn('flex items-center gap-2 px-4 py-2', cfg.headerBg)}>
+        <Icon className={cn('w-4 h-4', cfg.iconCls)} />
+        <span className="text-sm font-semibold">{cfg.label} — Day {day} Standup</span>
       </div>
+      <div className="px-4 py-3 space-y-2.5 bg-card">
+        <div>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Completed</p>
+          <Textarea value={yesterday} onChange={e => setYesterday(e.target.value)} rows={2} className="text-sm" placeholder="What did I complete?" />
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Working on</p>
+          <Textarea value={today} onChange={e => setToday(e.target.value)} rows={2} className="text-sm" placeholder="What am I working on today?" />
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Blockers</p>
+          <Textarea value={blockers} onChange={e => setBlockers(e.target.value)} rows={1} className="text-sm" placeholder="Any blockers? (leave blank if none)" />
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={handleSave} className="gap-1.5 text-xs h-7">
+            <Save className="w-3.5 h-3.5" /> Log Standup
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setOpen(false)} className="text-xs h-7">Cancel</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-      <Separator />
+// ─── Main component ───────────────────────────────────────────────────────────
 
-      {/* Standup timeline */}
-      <h3 className="text-base font-semibold flex items-center gap-2">
-        <MessageSquare className="w-4 h-4" /> Standup Timeline
-      </h3>
+export const StandupsView: React.FC<StandupsViewProps> = ({ standups, selectedDay, onAddStandup }) => {
+  const [activeDay, setActiveDay] = useState(selectedDay);
 
-      <div className="space-y-6">
-        {allByDay.map(({ day, theme, entries }) => (
-          <div key={day}>
-            {/* Day header */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className={cn(
-                'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0',
-                day === selectedDay ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-              )}>
-                {day}
-              </div>
-              <div className="flex-1">
-                <span className={cn('text-sm font-medium', day === selectedDay && 'text-primary')}>Day {day}</span>
-                <span className="text-sm text-muted-foreground ml-2">{theme}</span>
-              </div>
-              <Badge variant="outline" className="text-xs">{entries.length} entries</Badge>
-            </div>
+  // Last standup per dev per day
+  const getEntry = (day: number, dev: Developer): StandupEntry | undefined => {
+    const all = standups.filter(s => s.day === day && s.developer === dev);
+    return all[all.length - 1]; // most recent
+  };
 
-            {/* Timeline entries with left connector */}
-            <div className="ml-4 border-l-2 border-muted pl-4 space-y-3">
-              {entries.length === 0 && (
-                <p className="text-sm text-muted-foreground py-2">No standups logged yet for this day.</p>
+  const hasAny = (day: number) => standups.some(s => s.day === day);
+
+  return (
+    <div className="space-y-4">
+
+      {/* ── Day tabs ── */}
+      <div className="flex items-center gap-0 border-b overflow-x-auto">
+        {SPRINT_DAYS.map(d => {
+          const filled = hasAny(d.day);
+          const isActive = activeDay === d.day;
+          const isToday = d.day === selectedDay;
+
+          return (
+            <button
+              key={d.day}
+              onClick={() => setActiveDay(d.day)}
+              className={cn(
+                'flex items-center gap-1.5 px-4 py-2.5 border-b-2 text-sm font-medium transition-all whitespace-nowrap shrink-0',
+                isActive
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30',
               )}
-
-              {entries.map((s, i) => {
-                const isLovable = s.developer === 'lovable';
-                return (
-                  <div key={i} className="relative">
-                    {/* Connector dot */}
-                    <div className={cn(
-                      'absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 bg-background',
-                      isLovable ? 'border-pink-400' : 'border-purple-400',
-                    )} />
-                    <Card className={cn('bg-muted/30 border-l-4',
-                      isLovable ? 'border-l-pink-400' : 'border-l-purple-400')}>
-                      <CardContent className="p-4 space-y-2">
-                        <div className="flex items-center gap-2">
-                          {isLovable ? <Zap className="w-4 h-4 text-pink-600" /> : <Brain className="w-4 h-4 text-purple-600" />}
-                          <span className="text-sm font-semibold">{isLovable ? 'Lovable' : 'Claude Code'}</span>
-                          <span className="text-xs text-muted-foreground">{new Date(s.createdAt).toLocaleString()}</span>
-                        </div>
-                        {s.yesterday && <div className="text-sm"><span className="font-medium">Completed:</span> {s.yesterday}</div>}
-                        {s.today && <div className="text-sm"><span className="font-medium">Working on:</span> {s.today}</div>}
-                        {s.blockers && s.blockers !== 'None' && (
-                          <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
-                            <span className="font-medium">Blockers:</span> {s.blockers}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+            >
+              <span className={cn(
+                'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold',
+                filled   ? 'bg-green-500 text-white' :
+                isToday  ? 'bg-primary text-primary-foreground' :
+                           'bg-muted text-muted-foreground',
+              )}>
+                {filled ? '✓' : d.day}
+              </span>
+              Day {d.day}
+              {isToday && !isActive && (
+                <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 rounded">TODAY</span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* ── Day header ── */}
+      <div className="flex items-center gap-2">
+        <span className="text-base font-semibold">Day {activeDay}</span>
+        <span className="text-sm text-muted-foreground">—</span>
+        <span className="text-sm text-muted-foreground">{SPRINT_DAYS[activeDay - 1]?.theme}</span>
+        {activeDay === selectedDay && (
+          <Badge className="text-[10px] px-2 py-0 bg-primary/10 text-primary border border-primary/20">Today</Badge>
+        )}
+      </div>
+
+      {/* ── Side-by-side cards ── */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <StandupCard entry={getEntry(activeDay, 'claude')} dev="claude" />
+          <AddStandupForm day={activeDay} dev="claude" onSave={onAddStandup} />
+        </div>
+        <div className="space-y-2">
+          <StandupCard entry={getEntry(activeDay, 'lovable')} dev="lovable" />
+          <AddStandupForm day={activeDay} dev="lovable" onSave={onAddStandup} />
+        </div>
+      </div>
+
+      {/* ── History: multiple entries in day ── */}
+      {(() => {
+        const dayEntries = standups.filter(s => s.day === activeDay);
+        if (dayEntries.length <= 2) return null;
+        return (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Earlier entries this day</p>
+            {dayEntries.slice(0, -2).map((entry, i) => {
+              const cfg = DEV_CFG[entry.developer];
+              return (
+                <div key={i} className={cn('border-l-4 pl-3 py-1', entry.developer === 'claude' ? 'border-violet-300' : 'border-pink-300')}>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className={cn('text-xs font-semibold', cfg.iconCls)}>{cfg.label}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date(entry.createdAt).toLocaleString()}</span>
+                  </div>
+                  {entry.yesterday && <p className="text-xs text-muted-foreground line-clamp-1">✓ {entry.yesterday}</p>}
+                  {entry.today && <p className="text-xs text-muted-foreground line-clamp-1">→ {entry.today}</p>}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 };
