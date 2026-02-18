@@ -17,7 +17,7 @@ import {
   LayoutGrid, BarChart3, Shield, ClipboardCheck, Clock,
   CheckCircle2, TrendingUp, ArrowLeft, Video,
   Archive, Target, Calendar, Flag, Brain, Zap, ChevronRight, BookOpen, FlaskConical,
-  Rocket, RotateCcw,
+  Rocket, RotateCcw, Handshake,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,10 +36,11 @@ import { GovernanceFlowView } from './GovernanceFlowView';
 import { SprintCharterView } from './SprintCharterView';
 import { QASignOffView } from './QASignOffView';
 import { EffortTrackingView } from './EffortTrackingView';
+import { EODHandoffView } from './EODHandoffView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewId = 'po-mission' | 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'effort' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff';
+type ViewId = 'po-mission' | 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'effort' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter' | 'qa-signoff' | 'eod-handoff';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -245,6 +246,7 @@ export const SprintTrackerDashboard: React.FC = () => {
     activeView === 'planning'    ? '📋 Project Plan — All 41 Tasks' :
     activeView === 'charter'     ? 'Sprint Charter, Roles & Glossary' :
     activeView === 'qa-signoff'  ? '🧪 QA Testing Sign-off' :
+    activeView === 'eod-handoff' ? '🚀 EOD Auto-Handoff' :
     '✅ PO Daily Checklist';
 
   return (
@@ -301,6 +303,8 @@ export const SprintTrackerDashboard: React.FC = () => {
                   onClick={() => setActiveView('po-gate')} />
                 <NavBtn active={activeView === 'qa-signoff'} label="🧪 QA Sign-off" icon={FlaskConical}
                   onClick={() => setActiveView('qa-signoff')} />
+                <NavBtn active={activeView === 'eod-handoff'} label="🚀 EOD Handoff" icon={Handshake}
+                  onClick={() => setActiveView('eod-handoff')} />
 
                 <Separator className="my-2" />
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
@@ -342,6 +346,8 @@ export const SprintTrackerDashboard: React.FC = () => {
                   icon={BarChart3} onClick={() => setActiveView('metrics')} />
                 <NavBtn active={activeView === 'effort'} label="Effort Tracking"
                   icon={Clock} onClick={() => setActiveView('effort')} />
+                <NavBtn active={activeView === 'eod-handoff'} label="🚀 EOD Handoff" icon={Handshake}
+                  onClick={() => setActiveView('eod-handoff')} />
                 <NavBtn active={activeView === 'planning'} label="Project Plan (41 tasks)"
                   icon={Target} onClick={() => setActiveView('planning')} />
 
@@ -559,6 +565,17 @@ export const SprintTrackerDashboard: React.FC = () => {
             {/* QA Sign-off — non-blocking, manual PO/SO verification */}
             {activeView === 'qa-signoff' && (
               <QASignOffView getTaskStatus={getTaskStatus} currentDay={currentDay} />
+            )}
+
+            {/* EOD Auto-Handoff — auto-generates brief + publishes to Supabase */}
+            {activeView === 'eod-handoff' && (
+              <EODHandoffView
+                currentDay={currentDay}
+                getTaskStatus={getTaskStatus}
+                metrics={metrics}
+                standups={state.standups}
+              />
+            )}
             )}
 
           </div>
