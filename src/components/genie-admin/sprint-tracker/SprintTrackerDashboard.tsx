@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   LayoutGrid, BarChart3, Shield, ClipboardCheck,
   CheckCircle2, TrendingUp, ArrowLeft, Video,
-  Archive, Target, Calendar, Flag, Brain, Zap, ChevronRight,
+  Archive, Target, Calendar, Flag, Brain, Zap, ChevronRight, BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,10 +31,11 @@ import { POVerificationView } from './POVerificationView';
 import { FindingsView } from './FindingsView';
 import { SprintPlanningView } from './SprintPlanningView';
 import { GovernanceFlowView } from './GovernanceFlowView';
+import { SprintCharterView } from './SprintCharterView';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ViewId = 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance';
+type ViewId = 'day-1' | 'day-2' | 'day-3' | 'day-4' | 'day-5' | 'backlog' | 'metrics' | 'strategy' | 'po-gate' | 'findings' | 'planning' | 'governance' | 'charter';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -226,13 +227,14 @@ export const SprintTrackerDashboard: React.FC = () => {
 
   // ── view title ────────────────────────────────────────────────────────────
   const viewTitle =
-    activeDayNum !== undefined  ? `Day ${activeDayNum} · ${DAY_THEMES[activeDayNum - 1]}` :
-    activeView === 'backlog'    ? 'Backlog' :
-    activeView === 'metrics'   ? 'Metrics' :
-    activeView === 'strategy'  ? 'Strategy' :
-    activeView === 'findings'  ? 'Findings / QA' :
-    activeView === 'governance' ? 'Governance & Release Flow' :
-    activeView === 'planning'   ? 'Sprint Planning' :
+    activeDayNum !== undefined   ? `Day ${activeDayNum} · ${DAY_THEMES[activeDayNum - 1]}` :
+    activeView === 'backlog'     ? 'Backlog' :
+    activeView === 'metrics'     ? 'Metrics' :
+    activeView === 'strategy'    ? 'Strategy' :
+    activeView === 'findings'    ? 'Findings / QA' :
+    activeView === 'governance'  ? 'Governance & Release Flow' :
+    activeView === 'planning'    ? 'Sprint Planning' :
+    activeView === 'charter'     ? 'Sprint Charter, Roles & Glossary' :
     'Release Gate';
 
   return (
@@ -304,6 +306,7 @@ export const SprintTrackerDashboard: React.FC = () => {
                 Reports
               </p>
               <div className="space-y-0.5">
+                <NavBtn active={activeView === 'charter'}    label="Sprint Charter ▸"         icon={BookOpen}        onClick={() => setActiveView('charter')}  />
                 <NavBtn active={activeView === 'planning'}   label="Sprint Planning ▸"       icon={Target}          onClick={() => setActiveView('planning')}  />
                 <NavBtn active={activeView === 'findings'}   label="Findings / QA"            icon={ClipboardCheck}  onClick={() => setActiveView('findings')} />
                 <NavBtn active={activeView === 'governance'} label="Governance Flow ▸"        icon={Shield}          onClick={() => setActiveView('governance')} />
@@ -457,6 +460,11 @@ export const SprintTrackerDashboard: React.FC = () => {
                 currentDay={currentDay}
                 onNavigateToDay={(d) => setActiveView(`day-${d}` as ViewId)}
               />
+            )}
+
+            {/* Sprint Charter, Roles & Glossary */}
+            {activeView === 'charter' && (
+              <SprintCharterView getTaskStatus={getTaskStatus} currentDay={currentDay} />
             )}
 
           </div>
