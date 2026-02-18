@@ -1,18 +1,13 @@
 /**
  * SprintCharterView — Sprint Charter, Roles & Responsibilities
  *
- * Covers all 7 standard Scrum elements + AI-specific extensions:
- * 1. Sprint Goal (SMART)
- * 2. Roles & Responsibilities (AI 2× efficiency model)
- * 3. Abbreviation Glossary
- * 4. Team Capacity & Velocity (AI-adjusted throughput)
- * 5. Definition of Done (DoD)
- * 6. Risks & Roadblocks
- * 7. Scope Additions & Changes Log
- * 8. Added Work Metrics
- * 9. Value Add / Deliverables
- * 10. Updated Estimates
- * 11. Capacity & Impediments
+ * Sections:
+ * 1. Sprint Goal (SMART)              7. Scope Additions & Changes Log
+ * 2. Roles & Responsibilities         8. Added Work Metrics (dynamic threshold)
+ * 3. Abbreviation Glossary            9. Value Add / Deliverables
+ * 4. AI-Adjusted Capacity & Velocity  10. Updated Estimates
+ * 5. Story Point Dashboard (new)      11. Capacity & Impediments
+ * 6. Definition of Done               12. Token Consumption & Sprint ROI (new)
  */
 
 import React, { useState } from 'react';
@@ -23,12 +18,14 @@ import {
   Shield, ShieldCheck, Calendar, FileText, Info, ChevronDown, ChevronRight,
   GitBranch, Star, Ban, Timer, Layers, Gauge,
   PlusCircle, BarChart3, Award, RefreshCw, Activity, Sparkles,
+  Cpu, DollarSign, Coins,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SPRINT_TASKS } from './data-tasks';
 import { HANDOFFS } from './data-dependencies';
 import { SPRINT_START_DATE } from './data-config';
 import type { Developer, TaskStatus } from './types';
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -784,9 +781,136 @@ function ScopeChangesSection() {
   );
 }
 
-// ─── 8. Added Work Metrics ────────────────────────────────────────────────────
+// ─── 5. Story Point Dashboard ────────────────────────────────────────────────
 
-function AddedWorkMetricsSection({ getTaskStatus }: { getTaskStatus: (id: string) => TaskStatus }) {
+function StoryPointDashboard({ getTaskStatus, currentDay }: { getTaskStatus: (id: string) => TaskStatus; currentDay: number }) {
+  const devCfg = {
+    claude:  { label: 'Claude (Tech Lead)',       tagCls: 'bg-violet-100 text-violet-800 border-violet-300', Icon: Brain, bar: 'bg-violet-400' },
+    lovable: { label: 'Lovable (Full-Stack Dev)', tagCls: 'bg-pink-100 text-pink-800 border-pink-300',       Icon: Zap,   bar: 'bg-pink-400'   },
+  } as const;
+  const devs: Developer[] = ['claude', 'lovable'];
+  const spForDev = (dev: Developer) => ({
+    total:  SPRINT_TASKS.filter(t => t.developer === dev).reduce((s, t) => s + t.estimatedHours, 0),
+    done:   SPRINT_TASKS.filter(t => t.developer === dev && getTaskStatus(t.id) === 'completed').reduce((s, t) => s + t.estimatedHours, 0),
+    tasks:  SPRINT_TASKS.filter(t => t.developer === dev).length,
+    byDay:  [1,2,3,4,5].map(d => ({
+      day: d,
+      sp:   SPRINT_TASKS.filter(t => t.developer === dev && t.day === d).reduce((s, t) => s + t.estimatedHours, 0),
+      done: SPRINT_TASKS.filter(t => t.developer === dev && t.day === d && getTaskStatus(t.id) === 'completed').reduce((s, t) => s + t.estimatedHours, 0),
+    })),
+  });
+  const teamTotal = SPRINT_TASKS.reduce((s, t) => s + t.estimatedHours, 0);
+  const teamDone  = SPRINT_TASKS.filter(t => getTaskStatus(t.id) === 'completed').reduce((s, t) => s + t.estimatedHours, 0);
+  const aiCapPerDev = 5 * AI_EFFECTIVE_HOURS_PER_DAY;
+  const teamCap   = aiCapPerDev * 2;
+  const bufferPct = Math.round(((teamCap - teamTotal) / teamCap) * 100);
+  const weeklyAISP= teamTotal * AI_EFFICIENCY_MULTIPLIER;
+  const byDay = [1,2,3,4,5].map(d => ({
+    day: d,
+    total:   SPRINT_TASKS.filter(t => t.day === d).reduce((s, t) => s + t.estimatedHours, 0),
+    done:    SPRINT_TASKS.filter(t => t.day === d && getTaskStatus(t.id) === 'completed').reduce((s, t) => s + t.estimatedHours, 0),
+    claude:  SPRINT_TASKS.filter(t => t.day === d && t.developer === 'claude').reduce((s, t) => s + t.estimatedHours, 0),
+    lovable: SPRINT_TASKS.filter(t => t.day === d && t.developer === 'lovable').reduce((s, t) => s + t.estimatedHours, 0),
+  }));
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-amber-300 bg-amber-50/60 p-3 space-y-1">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <p className="text-sm font-bold text-amber-900">Capacity Under-Committed vs AI Potential</p>
+        </div>
+        <p className="text-[11px] text-amber-800">
+          Team committed <strong>{teamTotal} SP</strong> of <strong>{teamCap} SP</strong> effective AI capacity (<strong>{bufferPct}% unused</strong>).
+          Claude spare: <strong>{aiCapPerDev - spForDev('claude').total}h</strong> · Lovable spare: <strong>{aiCapPerDev - spForDev('lovable').total}h</strong>.
+          Sprint 1 conservative. Recommended Sprint 2: <strong>+20–30 SP per developer.</strong>
+        </p>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <StatBox label="Sprint SP" value={teamTotal.toString()} sub={`of ${teamCap} cap`} />
+        <StatBox label="SP Burned" value={teamDone.toString()} sub={`${Math.round(teamDone/teamTotal*100)}%`} cls="text-green-600" />
+        <StatBox label="AI Equiv SP/wk" value={weeklyAISP.toString()} sub="2× multiplier" cls="text-amber-600" />
+        <StatBox label="Human Dev-Days" value={(weeklyAISP/8).toFixed(0)} sub="≡ team output" cls="text-primary" />
+        <StatBox label="Buffer" value={`${bufferPct}%`} sub={`${teamCap - teamTotal}h free`} cls={bufferPct > 40 ? 'text-green-600' : 'text-amber-600'} />
+      </div>
+      <div className="grid md:grid-cols-2 gap-3">
+        {devs.map(dev => {
+          const sp  = spForDev(dev); const cfg = devCfg[dev]; const Icon = cfg.Icon;
+          const pct = sp.total > 0 ? Math.round((sp.done / sp.total) * 100) : 0;
+          return (
+            <div key={dev} className="rounded-lg border p-3 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <Icon className="w-4 h-4 text-muted-foreground" />
+                <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full border', cfg.tagCls)}>{cfg.label}</span>
+                <span className="ml-auto text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">2× · {sp.tasks} tasks</span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                <StatBox label="Committed" value={sp.total.toString()} />
+                <StatBox label="Done SP" value={sp.done.toString()} cls="text-green-600" />
+                <StatBox label="AI Equiv" value={(sp.total*2).toString()} cls="text-amber-600" />
+                <StatBox label="Unused" value={`+${aiCapPerDev - sp.total}`} cls="text-blue-600" />
+              </div>
+              <div>
+                <div className="flex justify-between text-[9px] mb-1"><span className="text-muted-foreground">SP burn</span><span className="font-bold">{pct}%</span></div>
+                <Progress value={pct} className="h-1.5" />
+              </div>
+              <div className="space-y-1">
+                {sp.byDay.map(d => (
+                  <div key={d.day} className="flex items-center gap-2 text-[9px]">
+                    <span className="text-muted-foreground w-10 shrink-0">Day {d.day}</span>
+                    <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                      <div className={cn('h-full rounded-full', cfg.bar)} style={{ width: d.sp > 0 ? `${(d.done/d.sp)*100}%` : '0%' }} />
+                    </div>
+                    <span className="text-muted-foreground w-14 text-right">{d.done}/{d.sp} SP</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="rounded-lg border border-border/60 overflow-hidden">
+        <div className="px-3 py-2 bg-muted/20 border-b border-border/40"><span className="text-[10px] font-bold uppercase tracking-wider">SP by Day — Who Owns What</span></div>
+        <table className="w-full text-[10px]">
+          <thead><tr className="border-b border-border/30 bg-muted/10">
+            <th className="text-left px-3 py-1.5 font-semibold text-muted-foreground">Day</th>
+            <th className="text-center px-2 py-1.5 font-semibold text-violet-700">Claude</th>
+            <th className="text-center px-2 py-1.5 font-semibold text-pink-700">Lovable</th>
+            <th className="text-center px-2 py-1.5 font-semibold text-muted-foreground">Total</th>
+            <th className="text-center px-2 py-1.5 font-semibold text-green-700">Done</th>
+            <th className="text-left px-3 py-1.5 font-semibold text-muted-foreground">Burn</th>
+          </tr></thead>
+          <tbody>
+            {byDay.map(d => { const pct = d.total > 0 ? Math.round((d.done/d.total)*100) : 0; const isNow = d.day === currentDay; const isPast = d.day < currentDay; return (
+              <tr key={d.day} className={cn('border-b border-border/20 last:border-0', isNow && 'bg-primary/5')}>
+                <td className="px-3 py-2 font-semibold"><span className={isNow ? 'text-primary' : isPast ? 'text-green-700' : 'text-muted-foreground'}>Day {d.day}{isNow ? ' ◀' : ''}</span></td>
+                <td className="text-center px-2 py-2 text-violet-700 font-semibold">{d.claude}</td>
+                <td className="text-center px-2 py-2 text-pink-700 font-semibold">{d.lovable}</td>
+                <td className="text-center px-2 py-2 font-bold">{d.total}</td>
+                <td className="text-center px-2 py-2 text-green-700 font-semibold">{d.done}</td>
+                <td className="px-3 py-2"><div className="flex items-center gap-1.5">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden"><div className="h-full bg-green-500 rounded-full" style={{ width: `${pct}%` }} /></div>
+                  <span className={cn('text-[9px] font-bold w-7', isPast && pct < 100 ? 'text-amber-600' : 'text-muted-foreground')}>{pct}%</span>
+                </div></td>
+              </tr>);
+            })}
+            <tr className="bg-muted/30 border-t border-border font-bold">
+              <td className="px-3 py-2">TOTALS</td>
+              <td className="text-center px-2 py-2 text-violet-700">{spForDev('claude').total}</td>
+              <td className="text-center px-2 py-2 text-pink-700">{spForDev('lovable').total}</td>
+              <td className="text-center px-2 py-2">{teamTotal}</td>
+              <td className="text-center px-2 py-2 text-green-700">{teamDone}</td>
+              <td className="px-3 py-2 text-[9px] text-muted-foreground">{Math.round(teamDone/teamTotal*100)}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── 8. Added Work Metrics (dynamic threshold) ────────────────────────────────
+
+function AddedWorkMetricsSection({ getTaskStatus, currentDay }: { getTaskStatus: (id: string) => TaskStatus; currentDay: number }) {
   // Baseline from sprint planning (Day 1 start)
   const baselineSP = SPRINT_TASKS.length; // 41 tasks = 41 base story points
   const addedSP    = 5; // SC-001 + SC-002 + SC-003 = 5 SP from scope log above
