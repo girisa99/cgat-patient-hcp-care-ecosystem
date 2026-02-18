@@ -28,7 +28,7 @@ import type { EventCategory } from '@/types/shows';
 import { cn } from '@/lib/utils';
 import { UnifiedVideoGenerationPanel } from './UnifiedVideoGenerationPanel';
 
-// Lazy load heavy components
+// Lazy load heavy components — v2 (re-bundled 2026-02-18)
 const GenieCommandCenter = lazy(() => import('@/components/diagrams/genie-command-center/GenieCommandCenter'));
 const AIIntelligenceHub = lazy(() => import('@/components/ai/AIIntelligenceHub'));
 const VerticalKanban = lazy(() => import('@/components/production/VerticalKanban').then(m => ({ default: m.VerticalKanban })));
