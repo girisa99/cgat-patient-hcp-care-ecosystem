@@ -152,14 +152,18 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
   const isFullWidthRoute = isGenieCastRoute || isSprintTrackerTab;
 
   if (isFullWidthRoute) {
+    // Sprint tracker gets h-screen overflow-hidden for its own internal layout
+    const containerCls = isSprintTrackerTab
+      ? 'h-screen overflow-hidden bg-background w-full'
+      : 'min-h-screen bg-background w-full';
     return (
-      <div className="min-h-screen bg-background w-full">
+      <div className={containerCls}>
         <main className="h-full w-full">
           <Suspense fallback={<LoadingFallback />}>
             {mainContent}
           </Suspense>
         </main>
-        {showFAB && <AskGenie position="floating" />}
+        {showFAB && !isSprintTrackerTab && <AskGenie position="floating" />}
       </div>
     );
   }
