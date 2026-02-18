@@ -290,39 +290,22 @@ export const SprintTrackerDashboard: React.FC = () => {
               /* ── PO VIEW ── */
               <>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
-                  PO / SM Views
+                  PO / SM
                 </p>
                 <NavBtn active={activeView === 'po-mission'} label="🎯 Mission Control" icon={Rocket}
                   onClick={() => setActiveView('po-mission')} />
-                <NavBtn active={activeView === 'po-gate'}    label="✅ Daily Checklist"  icon={Flag}
-                  onClick={() => setActiveView('po-gate')}  />
-                <NavBtn active={activeView === 'qa-signoff'} label="🧪 QA Sign-off"      icon={FlaskConical}
+                <NavBtn active={activeView === 'po-gate'} label="📋 Actions & Notes" icon={Flag}
+                  onClick={() => setActiveView('po-gate')} />
+                <NavBtn active={activeView === 'qa-signoff'} label="🧪 QA Sign-off" icon={FlaskConical}
                   onClick={() => setActiveView('qa-signoff')} />
 
                 <Separator className="my-2" />
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
-                  Sprint Days
+                  Reference (Read-only)
                 </p>
-                {[1, 2, 3, 4, 5].map(d => (
-                  <NavBtn key={d}
-                    active={activeView === `day-${d}`}
-                    dayNum={d}
-                    isPast={d < currentDay}
-                    isToday={d === currentDay}
-                    pct={dayCompletion(d)}
-                    label={`Day ${d} · ${DAY_THEMES[d - 1]}`}
-                    icon={Calendar}
-                    onClick={() => setActiveView(`day-${d}` as ViewId)}
-                  />
-                ))}
-
-                <Separator className="my-2" />
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
-                  Reference
-                </p>
-                <NavBtn active={activeView === 'charter'}    label="Sprint Charter"  icon={BookOpen}
+                <NavBtn active={activeView === 'charter'} label="📖 Sprint Charter" icon={BookOpen}
                   onClick={() => setActiveView('charter')} />
-                <NavBtn active={activeView === 'governance'} label="Governance Flow" icon={Shield}
+                <NavBtn active={activeView === 'governance'} label="⚙️ Governance Guide" icon={Shield}
                   onClick={() => setActiveView('governance')} />
               </>
             ) : (
@@ -476,6 +459,7 @@ export const SprintTrackerDashboard: React.FC = () => {
                 currentDay={currentDay}
                 getTaskStatus={getTaskStatus}
                 onNavigateToDay={(d) => setActiveView(`day-${d}` as ViewId)}
+                onNavigateToChecklist={() => setActiveView('po-gate')}
               />
             )}
 
