@@ -166,6 +166,12 @@ function calculateCurrentDay(): number {
 
 // Default completed tasks from automated diagnosis (Day 1 Claude tasks)
 const DEFAULT_TASK_OVERRIDES: SprintTrackerState['taskOverrides'] = {
+  // ── Lovable Day 1 Tasks ──
+  'L-101': { status: 'completed', updatedAt: '2026-02-18T18:00:00Z', note: 'AUDIT COMPLETE: RegionalLandingPage.tsx renders correctly for NAM, MENA (RTL), all 17 region slugs mapped. SEO hreflang present for all regions. DB + transcreation content merge works. No runtime errors. ipapi.co CORS blocked in preview (non-critical — fallback timezone detection works).' },
+  'L-102': { status: 'completed', updatedAt: '2026-02-18T18:00:00Z', note: 'AUDIT COMPLETE: GenieExplorePage.tsx renders, use-case selection works. FINDING: Uses legacy "arc" product ID (should be "hub"). Uses hardcoded product logos instead of importing from GENIE_PRODUCTS. Will fix in L-204 (Day 2).' },
+  'L-103': { status: 'completed', updatedAt: '2026-02-18T18:00:00Z', note: 'FINDING: GenieProductsPage.tsx hardcodes all product data (names, taglines, descriptions, features, pipeline counts) instead of importing from src/constants/genie-products.ts. Will fix in L-201 (Day 2).' },
+  'L-104': { status: 'completed', updatedAt: '2026-02-18T18:00:00Z', note: 'FIX APPLIED: Legal pages (Terms, Privacy, Cookies) were behind auth — used GenieStudioLayout which requires login. Fixed to be publicly accessible with simple nav bar. AcceptableUse, ContentGuidelines, DMCA were already public.' },
+  // ── Claude Day 1 Tasks ──
   'C-101': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Diagnosed: 14 issues found (3 critical, 3 high, 5 medium, 3 low)' },
   'C-102': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Diagnosed: 13 issues found (2 critical, 3 high, 5 medium, 3 low)' },
   'C-103': { status: 'completed', updatedAt: '2026-02-17T12:00:00Z', note: 'Diagnosed: 6 issues found (0 critical, 0 high, 3 medium, 3 low)' },
