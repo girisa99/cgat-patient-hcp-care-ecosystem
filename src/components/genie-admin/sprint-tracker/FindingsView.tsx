@@ -30,22 +30,22 @@ export const FindingsView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold">{allFindings.length}</p>
-          <p className="text-sm text-muted-foreground">Total Issues</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Total Issues</p>
         </CardContent></Card>
         <Card className="bg-green-50"><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold text-green-700">{totalFixed}</p>
-          <p className="text-sm text-green-600">Fixed</p>
+          <p className="text-xs sm:text-sm text-green-600">Fixed</p>
         </CardContent></Card>
         <Card className="bg-amber-50"><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold text-amber-700">{totalOpen}</p>
-          <p className="text-sm text-amber-600">Open</p>
+          <p className="text-xs sm:text-sm text-amber-600">Open</p>
         </CardContent></Card>
         <Card className="bg-blue-50"><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold text-blue-700">{Math.round((totalFixed / Math.max(allFindings.length, 1)) * 100)}%</p>
-          <p className="text-sm text-blue-600">Resolution Rate</p>
+          <p className="text-xs sm:text-sm text-blue-600">Resolution Rate</p>
         </CardContent></Card>
       </div>
 

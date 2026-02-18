@@ -228,11 +228,16 @@ export const POVerificationView: React.FC<POVerificationViewProps> = ({ currentD
                   return getTaskStatus(d) !== 'completed';
                 }) ?? [];
                 return (
-                  <div key={task.id} className="flex items-center gap-2 text-sm pl-6">
-                    <Badge variant="outline" className="font-mono text-xs">{task.id}</Badge>
-                    <span className="truncate">{task.title}</span>
-                    <ArrowRight className="w-3 h-3 text-red-400 shrink-0" />
-                    <span className="text-red-600 shrink-0">needs: {unmet.join(', ')}</span>
+                  <div key={task.id} className="flex items-start gap-2 text-sm pl-6 flex-wrap">
+                    <Badge variant="outline" className="font-mono text-xs shrink-0">{task.id}</Badge>
+                    <span className="flex-1 min-w-0">{task.title}</span>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <ArrowRight className="w-3 h-3 text-red-400 shrink-0" />
+                      <span className="text-red-600 text-xs font-medium shrink-0">needs:</span>
+                      {unmet.map(dep => (
+                        <Badge key={dep} variant="outline" className="font-mono text-xs text-red-600 border-red-300">{dep}</Badge>
+                      ))}
+                    </div>
                   </div>
                 );
               })}

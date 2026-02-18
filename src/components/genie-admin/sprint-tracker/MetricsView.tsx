@@ -47,7 +47,7 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
       </Card>
 
       {/* By developer */}
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-4">
         {(['lovable', 'claude'] as Developer[]).map(dev => {
           const data = metrics.byDeveloper[dev];
           const pct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;

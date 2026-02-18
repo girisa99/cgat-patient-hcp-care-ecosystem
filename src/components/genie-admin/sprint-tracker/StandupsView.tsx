@@ -82,44 +82,63 @@ export const StandupsView: React.FC<StandupsViewProps> = ({ standups, selectedDa
         <MessageSquare className="w-4 h-4" /> Standup Timeline
       </h3>
 
-      {allByDay.map(({ day, theme, entries }) => (
-        <div key={day} className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Badge variant={day === selectedDay ? 'default' : 'outline'} className="text-xs">
-              Day {day}
-            </Badge>
-            <span className="text-sm text-muted-foreground">{theme}</span>
-            <Badge variant="outline" className="text-xs">{entries.length} entries</Badge>
-          </div>
+      <div className="space-y-6">
+        {allByDay.map(({ day, theme, entries }) => (
+          <div key={day}>
+            {/* Day header */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className={cn(
+                'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0',
+                day === selectedDay ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+              )}>
+                {day}
+              </div>
+              <div className="flex-1">
+                <span className={cn('text-sm font-medium', day === selectedDay && 'text-primary')}>Day {day}</span>
+                <span className="text-sm text-muted-foreground ml-2">{theme}</span>
+              </div>
+              <Badge variant="outline" className="text-xs">{entries.length} entries</Badge>
+            </div>
 
-          {entries.length === 0 && (
-            <p className="text-sm text-muted-foreground pl-4">No standups logged yet for this day.</p>
-          )}
+            {/* Timeline entries with left connector */}
+            <div className="ml-4 border-l-2 border-muted pl-4 space-y-3">
+              {entries.length === 0 && (
+                <p className="text-sm text-muted-foreground py-2">No standups logged yet for this day.</p>
+              )}
 
-          {entries.map((s, i) => {
-            const isLovable = s.developer === 'lovable';
-            return (
-              <Card key={i} className={cn('bg-muted/30 border-l-4',
-                isLovable ? 'border-l-pink-400' : 'border-l-purple-400')}>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center gap-2">
-                    {isLovable ? <Zap className="w-4 h-4 text-pink-600" /> : <Brain className="w-4 h-4 text-purple-600" />}
-                    <span className="text-sm font-semibold">{isLovable ? 'Lovable' : 'Claude Code'}</span>
-                    <span className="text-xs text-muted-foreground">{new Date(s.createdAt).toLocaleString()}</span>
+              {entries.map((s, i) => {
+                const isLovable = s.developer === 'lovable';
+                return (
+                  <div key={i} className="relative">
+                    {/* Connector dot */}
+                    <div className={cn(
+                      'absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 bg-background',
+                      isLovable ? 'border-pink-400' : 'border-purple-400',
+                    )} />
+                    <Card className={cn('bg-muted/30 border-l-4',
+                      isLovable ? 'border-l-pink-400' : 'border-l-purple-400')}>
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          {isLovable ? <Zap className="w-4 h-4 text-pink-600" /> : <Brain className="w-4 h-4 text-purple-600" />}
+                          <span className="text-sm font-semibold">{isLovable ? 'Lovable' : 'Claude Code'}</span>
+                          <span className="text-xs text-muted-foreground">{new Date(s.createdAt).toLocaleString()}</span>
+                        </div>
+                        {s.yesterday && <div className="text-sm"><span className="font-medium">Completed:</span> {s.yesterday}</div>}
+                        {s.today && <div className="text-sm"><span className="font-medium">Working on:</span> {s.today}</div>}
+                        {s.blockers && s.blockers !== 'None' && (
+                          <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
+                            <span className="font-medium">Blockers:</span> {s.blockers}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
-                  {s.yesterday && <div className="text-sm"><span className="font-medium">Completed:</span> {s.yesterday}</div>}
-                  {s.today && <div className="text-sm"><span className="font-medium">Working on:</span> {s.today}</div>}
-                  {s.blockers && s.blockers !== 'None' && (
-                    <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
-                      <span className="font-medium">Blockers:</span> {s.blockers}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      ))}
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

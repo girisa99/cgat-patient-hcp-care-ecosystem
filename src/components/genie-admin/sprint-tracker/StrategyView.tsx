@@ -24,7 +24,7 @@ export const StrategyView: React.FC<StrategyViewProps> = ({ activityLog }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">

@@ -90,11 +90,18 @@ export const DependenciesView: React.FC<DependenciesViewProps> = ({ currentDay, 
                   return getTaskStatus(depId) !== 'completed';
                 });
                 return (
-                  <div key={chain.taskId} className="flex items-center gap-2 text-sm">
-                    <Badge variant="outline" className="font-mono text-xs">{chain.taskId}</Badge>
-                    {DEV_BADGE(task.developer)}
-                    <span className="truncate">{task.title}</span>
-                    <span className="text-red-600 shrink-0">blocked by: {unmetDeps.join(', ')}</span>
+                  <div key={chain.taskId} className="flex items-start gap-2 text-sm flex-wrap">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="outline" className="font-mono text-xs">{chain.taskId}</Badge>
+                      {DEV_BADGE(task.developer)}
+                    </div>
+                    <span className="flex-1 min-w-0">{task.title}</span>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="text-red-600 text-xs font-medium shrink-0">blocked by:</span>
+                      {unmetDeps.map(dep => (
+                        <Badge key={dep} variant="outline" className="font-mono text-xs text-red-600 border-red-300">{dep}</Badge>
+                      ))}
+                    </div>
                   </div>
                 );
               })}
@@ -104,22 +111,22 @@ export const DependenciesView: React.FC<DependenciesViewProps> = ({ currentDay, 
       )}
 
       {/* ── Summary cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold">{HANDOFFS.length}</p>
-          <p className="text-sm text-muted-foreground">Total Handoffs</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Total Handoffs</p>
         </CardContent></Card>
         <Card className="bg-blue-50"><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold text-blue-700">{readyCount}</p>
-          <p className="text-sm text-blue-600">Ready for Pickup</p>
+          <p className="text-xs sm:text-sm text-blue-600">Ready</p>
         </CardContent></Card>
         <Card className="bg-amber-50"><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold text-amber-700">{pendingCount}</p>
-          <p className="text-sm text-amber-600">Waiting on Producer</p>
+          <p className="text-xs sm:text-sm text-amber-600">Waiting</p>
         </CardContent></Card>
         <Card className="bg-green-50"><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold text-green-700">{ackedCount}</p>
-          <p className="text-sm text-green-600">Acknowledged</p>
+          <p className="text-xs sm:text-sm text-green-600">Acknowledged</p>
         </CardContent></Card>
       </div>
 
@@ -141,7 +148,7 @@ export const DependenciesView: React.FC<DependenciesViewProps> = ({ currentDay, 
       </div>
 
       {/* ── Handoff cards ── */}
-      <Accordion type="multiple" defaultValue={filteredHandoffs.filter(h => h.priority === 'critical').map(h => h.id)}>
+      <Accordion type="multiple" defaultValue={filteredHandoffs.filter(h => h.priority === 'critical').map(h => h.id)} className="space-y-2">
         {filteredHandoffs.map(h => {
           const liveStatus = getHandoffLiveStatus(h);
           const statusStyle = HANDOFF_STATUS_STYLE[liveStatus];

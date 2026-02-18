@@ -37,39 +37,49 @@ export const BoardView: React.FC<BoardViewProps> = ({
   return (
     <div className="space-y-4">
       {/* Developer filter */}
-      <div className="flex gap-2">
-        {(['all', 'claude', 'lovable'] as const).map(f => (
-          <button key={f} onClick={() => setDevFilter(f)}
-            className={cn(
-              'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
-              devFilter === f ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80',
-            )}>
-            {f === 'all' ? 'All' : f === 'claude' ? 'Claude' : 'Lovable'}
-          </button>
-        ))}
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+        <div className="flex gap-2">
+          {(['all', 'claude', 'lovable'] as const).map(f => {
+            const activeClass = f === 'claude'
+              ? 'bg-purple-100 text-purple-700 border-purple-300 shadow-sm'
+              : f === 'lovable'
+              ? 'bg-pink-100 text-pink-700 border-pink-300 shadow-sm'
+              : 'bg-primary text-primary-foreground border-primary shadow-sm';
+            return (
+            <button key={f} onClick={() => setDevFilter(f)}
+              className={cn(
+                'px-4 py-1.5 rounded-full text-sm font-medium transition-all border',
+                devFilter === f ? activeClass : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80',
+              )}>
+              {f === 'all' ? 'All Tasks' : f === 'claude' ? 'Claude' : 'Lovable'}
+            </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Kanban columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {COLUMNS.map(col => {
           const ids = filterByDev(boardColumns[col.key]);
           const Icon = col.icon;
           return (
             <Card key={col.key} className={cn('border-t-4', col.borderColor)}>
-              <CardHeader className={cn('pb-2', col.bgColor)}>
+              <CardHeader className={cn('py-3 px-4', col.bgColor)}>
                 <CardTitle className="text-sm flex items-center justify-between">
                   <span className={cn('flex items-center gap-2', col.color)}>
                     <Icon className="w-4 h-4" />
                     {col.title}
                   </span>
-                  <Badge variant="outline" className="text-xs">{ids.length}</Badge>
+                  <Badge variant="outline" className="text-xs font-bold">{ids.length}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-2">
-                <ScrollArea className={ids.length > 3 ? 'h-[500px]' : ''}>
-                  <div className="space-y-2">
+                <ScrollArea className={ids.length > 3 ? 'h-[480px]' : ''}>
+                  <div className="space-y-2 p-1">
                     {ids.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-6">No tasks</p>
+                      <p className="text-sm text-muted-foreground text-center py-8">No tasks</p>
                     )}
                     {ids.map(id => {
                       const task = taskMap[id];
