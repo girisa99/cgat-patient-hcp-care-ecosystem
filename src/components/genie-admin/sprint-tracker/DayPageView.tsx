@@ -114,10 +114,11 @@ function getUnmetDeps(taskId: string, getStatus: (id: string) => TaskStatus): st
 const PO_STORAGE_KEY = 'genie_sprint_po_checklist';
 
 function POGateSection({
-  day, getTaskStatus,
+  day, getTaskStatus, onOpenFullGate,
 }: {
   day: number;
   getTaskStatus: (id: string) => TaskStatus;
+  onOpenFullGate?: () => void;
 }) {
   const [open, setOpen] = useState(true);
   const [checked, setChecked] = useState<Record<string, boolean>>(() => {
@@ -153,27 +154,37 @@ function POGateSection({
   return (
     <section className="rounded-lg border border-emerald-200 bg-emerald-50/30 overflow-hidden">
       {/* Header */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-emerald-200 hover:bg-emerald-100/50 transition-colors text-left"
-      >
-        <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-        <Flag className="w-3 h-3 text-emerald-600 shrink-0" />
-        <span className="text-xs font-bold uppercase tracking-widest text-emerald-800">PO / SM Gate — Day {day}</span>
-        <span className="text-[10px] text-emerald-600 ml-1">What the Product Owner must do today</span>
-        <div className="ml-auto flex items-center gap-2">
-          {allDone ? (
-            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300 flex items-center gap-1">
-              <CheckCircle2 className="w-2.5 h-2.5" /> Gate Cleared
-            </span>
-          ) : (
-            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300">
-              {done}/{dayItems.length} · {pct}%
-            </span>
-          )}
-          {open ? <ChevronDown className="w-3.5 h-3.5 text-emerald-600" /> : <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />}
-        </div>
-      </button>
+      <div className="w-full flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-emerald-200">
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="flex items-center gap-2 flex-1 text-left hover:opacity-80 transition-opacity"
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+          <Flag className="w-3 h-3 text-emerald-600 shrink-0" />
+          <span className="text-xs font-bold uppercase tracking-widest text-emerald-800">PO / SM Gate — Day {day}</span>
+          <span className="text-[10px] text-emerald-600 ml-1 hidden sm:inline">What the Product Owner must do today</span>
+          <div className="ml-2 flex items-center gap-2">
+            {allDone ? (
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300 flex items-center gap-1">
+                <CheckCircle2 className="w-2.5 h-2.5" /> Gate Cleared
+              </span>
+            ) : (
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300">
+                {done}/{dayItems.length} · {pct}%
+              </span>
+            )}
+            {open ? <ChevronDown className="w-3.5 h-3.5 text-emerald-600" /> : <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />}
+          </div>
+        </button>
+        {onOpenFullGate && (
+          <button
+            onClick={onOpenFullGate}
+            className="ml-auto shrink-0 text-[10px] font-bold px-2.5 py-1 rounded border border-emerald-400 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors flex items-center gap-1"
+          >
+            Open Full PO Gate <ChevronRight className="w-3 h-3" />
+          </button>
+        )}
+      </div>
 
       {open && (
         <div className="p-3 space-y-3">
@@ -1275,8 +1286,6 @@ function DayWorkflowBanner({
       return s ? JSON.parse(s) : { startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null };
     } catch { return { startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null }; }
   });
-  const [copied, setCopied]   = React.useState(false);
-  const [showBrief, setShowBrief] = React.useState(false);
 
   // Auto-detect standup status from actual saved entries
   const claudeUp    = !!claudeSD;
@@ -1336,22 +1345,10 @@ function DayWorkflowBanner({
     const toStart = dayTasks
       .filter(t => getTaskStatus(t.id) === 'pending')
       .map(t => t.id);
-    if (toStart.length > 0) onAutoStart(toStart);
-
-    // Show brief immediately after start
-    setShowBrief(true);
   };
 
   const signOff  = () => persist({ ...wf, signedOffAt: new Date().toISOString() });
   const reset    = () => { persist({ startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null }); localStorage.removeItem(signoffKey); };
-
-  const copyBrief = () => {
-    if (!wf.startedAt) return;
-    navigator.clipboard.writeText(buildKickstartBrief(wf.startedAt)).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
 
   // Steps: 1=PO Start Day  2=Standups  3=Tasks done  4=Sign-off
   const step1 = isStarted;
@@ -1477,43 +1474,26 @@ function DayWorkflowBanner({
         </div>
       </div>
 
-      {/* Kickstart Brief — shown after Day is Started */}
-      {isStarted && (
+      {/* Kickstart Brief — auto-shown after Day is Started */}
+      {isStarted && wf.startedAt && (
         <div className="border-t border-border/40">
-          <button
-            onClick={() => setShowBrief(b => !b)}
-            className="w-full flex items-center gap-2 px-4 py-2 bg-muted/10 hover:bg-muted/20 transition-colors text-left"
-          >
+          <div className="flex items-center gap-2 px-4 py-2 bg-violet-50/40 border-b border-violet-100/60">
             <GitBranch className="w-3 h-3 text-violet-600 shrink-0" />
             <span className="text-[10px] font-bold text-violet-700 uppercase tracking-wide">
-              Kickstart Brief — Claude reads this at session start
+              Kickstart Brief — Auto-shared with Claude at session start
             </span>
             <span className="text-[9px] text-muted-foreground ml-1">
-              (paste into SHARED_CHANGELOG.md or Claude's session)
+              (visible to both developers immediately)
             </span>
-            <span className="ml-auto text-[9px] font-semibold text-violet-600">
-              {showBrief ? '▲ Hide' : '▼ Show'}
-            </span>
-          </button>
-
-          {showBrief && wf.startedAt && (
-            <div className="px-4 pb-3 pt-2 bg-violet-50/30">
-              <pre className="text-[9px] font-mono text-muted-foreground bg-background border border-border/60 rounded p-3 overflow-auto whitespace-pre-wrap leading-relaxed max-h-48">
-                {buildKickstartBrief(wf.startedAt)}
-              </pre>
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={copyBrief}
-                  className="text-[10px] font-bold px-3 py-1.5 rounded bg-violet-600 text-white hover:bg-violet-700 transition-colors"
-                >
-                  {copied ? '✓ Copied!' : '📋 Copy to Clipboard'}
-                </button>
-                <span className="text-[9px] text-muted-foreground self-center">
-                  Paste this at the top of SHARED_CHANGELOG.md or into Claude's new session prompt
-                </span>
-              </div>
-            </div>
-          )}
+          </div>
+          <div className="px-4 pb-3 pt-2 bg-violet-50/30">
+            <pre className="text-[9px] font-mono text-muted-foreground bg-background border border-border/60 rounded p-3 overflow-auto whitespace-pre-wrap leading-relaxed max-h-48">
+              {buildKickstartBrief(wf.startedAt)}
+            </pre>
+            <p className="text-[9px] text-muted-foreground mt-1.5">
+              ✅ Brief is live — Claude reads this automatically at session start via SHARED_CHANGELOG.md
+            </p>
+          </div>
         </div>
       )}
     </div>
@@ -1530,10 +1510,11 @@ interface DayPageViewProps {
   getTaskStatus: (id: string) => TaskStatus;
   onStatusChange: (id: string, status: TaskStatus) => void;
   taskOverrides: Record<string, { status: TaskStatus; note?: string }>;
+  onNavigateToPOGate?: () => void;
 }
 
 export const DayPageView: React.FC<DayPageViewProps> = ({
-  day, theme, standups, onAddStandup, getTaskStatus, onStatusChange, taskOverrides,
+  day, theme, standups, onAddStandup, getTaskStatus, onStatusChange, taskOverrides, onNavigateToPOGate,
 }) => {
   const dayTasks     = SPRINT_TASKS.filter(t => t.day === day);
   const claudeIds    = dayTasks.filter(t => t.developer === 'claude').map(t => t.id);
@@ -1588,7 +1569,7 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
       </div>
 
       {/* ── 0. PO / SM GATE ──────────────────────────────────────────────── */}
-      <POGateSection day={day} getTaskStatus={getTaskStatus} />
+      <POGateSection day={day} getTaskStatus={getTaskStatus} onOpenFullGate={onNavigateToPOGate} />
 
       {/* ── 1. KICKSTART ─────────────────────────────────────────────────── */}
       <KickstartSection day={day} getTaskStatus={getTaskStatus} />
