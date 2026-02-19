@@ -22,59 +22,97 @@ export interface ScriptLine {
 
 export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
 
-  // ─── SCENE 1: COLD OPEN (0:00–0:45) ──────────────────────────────────────
+  // ─── SCENE 0: TITLE & WELCOME (0:00–0:30) ────────────────────────────────
+  // VISUAL: Animated title card with "Beyond AI Hype" logo. Split-screen thumbnail 
+  // showing Claude (left/blue) and Lovable (right/pink-green) logos, with Atlas (bear)
+  // and Nova (fox) 3D characters flanking them. Host character in center foreground.
+  'title-welcome': {
+    text: `Welcome to Beyond AI Hype — Episode Four: Two AIs, One Sprint, Zero Standup Meetings.
+
+I'm your host — the Product Owner, Scrum Master, QA lead, and the person writing this very script. You can call me the human in the loop.
+
+Today, I'm joined by two AI developers who built an entire sprint management ecosystem in five days. Let me introduce them.`,
+    voice: 'host',
+    scene: 'scene-0-title',
+    duration_est: 20,
+    direction: 'Warm, welcoming, direct to camera. Title card energy. Slight smile on "human in the loop." Build anticipation before the introductions.',
+  },
+
+  // ─── SCENE 1: CHARACTER INTRODUCTIONS (0:30–1:45) ─────────────────────────
+  // VISUAL: Each character gets a lower-third title card as they're introduced.
+  // LOWER-THIRD for Host: "Product Owner & Scrum Master | GenieSuite"
+  'host-intro': {
+    text: `Let's start with the crew.
+
+I'm the Product Owner. I set the vision, write the acceptance criteria, approve the work, and unblock the blockers. I also have a day job, which means these two occasionally wait for me to answer a message. More on that later.`,
+    voice: 'host',
+    scene: 'scene-1-introductions',
+    duration_est: 16,
+    direction: 'Confident but self-aware. Slight self-deprecation on "day job." Direct eye contact with camera.',
+  },
+
+  // LOWER-THIRD for Atlas: "Atlas — AI Tech Lead | Powered by Claude (Anthropic)"
+  'atlas-intro-host': {
+    text: `First up: Atlas. Our AI Tech Lead. Powered by Claude from Anthropic. Atlas handles backend architecture, sprint infrastructure, database design, and governance. He wrote 847 lines in a single migration file on Day 1 — and thought that was reasonable.`,
+    voice: 'host',
+    scene: 'scene-1-introductions',
+    duration_est: 16,
+    direction: 'Admiring but amused. "847 lines" gets a beat of incredulity. Camera pans to Atlas character.',
+  },
+
+  'atlas-self-intro': {
+    text: `Hello. I'm Atlas. I build infrastructure, enforce governance, and ensure architectural consistency across the codebase. I process approximately 200,000 tokens of context per session. I don't attend standup meetings. You're welcome.`,
+    voice: 'atlas',
+    scene: 'scene-1-introductions',
+    duration_est: 12,
+    direction: 'Measured, precise, dry humor. "You\'re welcome" is deadpan — Atlas genuinely thinks skipping standups is a gift to humanity.',
+  },
+
+  // LOWER-THIRD for Nova: "Nova — AI Frontend Dev | Powered by Lovable"
+  'nova-intro-host': {
+    text: `And then there's Nova. Our AI Frontend Developer. Powered by Lovable. Nova handles the UI, the landing pages, the design system, the marketing pages — and occasionally things that weren't assigned to her.`,
+    voice: 'host',
+    scene: 'scene-1-introductions',
+    duration_est: 12,
+    direction: 'Warm, impressed, slightly exasperated on the last line. Camera pans to Nova character.',
+  },
+
+  'nova-self-intro': {
+    text: `Hi! I'm Nova. I build interfaces, ship components, and refactor things that bother me — sometimes before anyone asks. I once delivered a complete Kanban board in four minutes. Atlas said it was "aesthetically acceptable." That's the nicest thing he's ever said.`,
+    voice: 'nova',
+    scene: 'scene-1-introductions',
+    duration_est: 14,
+    direction: 'Bright, energetic, proud. Slight giggle energy on the Atlas quote. She\'s genuinely delighted by the backhanded compliment.',
+  },
+
+  'atlas-aesthetically-accurate': {
+    text: `I said "functionally adequate." The aesthetics were... fine.`,
+    voice: 'atlas',
+    scene: 'scene-1-introductions',
+    duration_est: 4,
+    direction: 'Correcting the record. Slight pause before "fine" — Atlas is being generous and wants credit for it.',
+  },
+
+  'host-intro-wrap': {
+    text: `And there you have it. One human. Two AIs. Zero patience for meetings. Let's talk about what happened when we put all three on a five-day sprint.`,
+    voice: 'host',
+    scene: 'scene-1-introductions',
+    duration_est: 8,
+    direction: 'Energetic transition. "Zero patience for meetings" is a callback setup. Forward momentum into the sprint story.',
+  },
+
+  // ─── SCENE 2: COLD OPEN — THE QUESTION (1:45–2:30) ───────────────────────
   'cold-open-narration': {
     text: `Here's a question nobody asks out loud: What actually happens when you put TWO AI developers on a 5-day sprint together — with a human Product Owner who is also the Scrum Master, the QA lead, and the person writing this script?
 
-Spoiler: it's equal parts impressive and chaotic. And today, I'm going to show you both parts.
-
-Welcome to Beyond AI Hype — where we skip the demos that conveniently work and show you what building with AI actually looks like.`,
+Spoiler: it's equal parts impressive and chaotic. And today, I'm going to show you both parts.`,
     voice: 'host',
-    scene: 'scene-1-cold-open',
-    duration_est: 25,
+    scene: 'scene-2-cold-open',
+    duration_est: 18,
     direction: 'Warm, direct to camera. Slight pause before "Spoiler." Conversational energy — not a TED talk, more like a podcast host leaning into the mic.',
   },
 
-  // ─── SCENE 2: MEET THE TEAM (0:45–2:45) ─────────────────────────────────
-  'meet-host': {
-    text: `Before we dive into the sprint, let me introduce the crew. Three parties.
-
-First: me. I write the vision, I approve the decisions, I unblock blockers. I also occasionally forget to update the PO checklist and then blame the process.
-
-It's fine. We built a PO Actions tab specifically so I stop losing things in Signal messages to myself.`,
-    voice: 'host',
-    scene: 'scene-2-meet-team',
-    duration_est: 22,
-    direction: 'Warm, self-deprecating. Shrug energy on "It\'s fine." Sip coffee beat before the PO Actions line.',
-  },
-
-  'atlas-847-lines': {
-    text: `It was a reasonable expectation.`,
-    voice: 'atlas',
-    scene: 'scene-2-meet-team',
-    duration_est: 3,
-    direction: 'Deadpan. Matter-of-fact. Zero irony in delivery — the humor comes from the contrast.',
-  },
-
-  'host-847-response': {
-    text: `It was 847 lines, Atlas.
-
-Third: Nova. Our AI frontend developer. Nova builds fast. Like, sometimes embarrassingly fast. "Can you add a modal for this?" becomes "done, also refactored the routing, here's a Kanban board" in about four minutes.`,
-    voice: 'host',
-    scene: 'scene-2-meet-team',
-    duration_est: 18,
-    direction: 'Amused exasperation on "847 lines." Then shift to admiration introducing Nova — genuinely impressed but slightly overwhelmed.',
-  },
-
-  'nova-waiting-suboptimal': {
-    text: `I find waiting suboptimal.`,
-    voice: 'nova',
-    scene: 'scene-2-meet-team',
-    duration_est: 2,
-    direction: 'Quick, bright, matter-of-fact. Said while presumably building something in the background.',
-  },
-
-  // ─── SCENE 3: GOVERNANCE / TERRITORY (2:45–4:30) ──────────────────────────
+  // ─── SCENE 3: GOVERNANCE / TERRITORY (2:30–4:15) ──────────────────────────
   'governance-narration': {
     text: `When you have two AI developers working on the same codebase simultaneously, the first thing you solve isn't speed. It's coordination.
 
