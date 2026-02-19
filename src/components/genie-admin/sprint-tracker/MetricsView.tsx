@@ -3,6 +3,7 @@
 //        token usage, work category breakdown (FE/BE/DB/Test/UX/Docs/DevOps),
 //        burndown by day, per-provider cost breakdown, AI vs Human ROI comparison
 import React, { useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -20,6 +21,11 @@ import { SPRINT_TASKS } from './data-tasks';
 interface MetricsViewProps {
   metrics: SprintMetrics;
   currentDay: number;
+  /** Live sync props — from useSprintTracker */
+  isOnline?: boolean;
+  isSyncing?: boolean;
+  lastSyncAt?: Date | null;
+  onForceRefresh?: () => void;
 }
 
 // ── Provider cost constants ────────────────────────────────────────────────
@@ -760,7 +766,14 @@ function OnsiteVsOffshorePanel({ metrics }: { metrics: SprintMetrics }) {
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
-export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay }) => {
+export const MetricsView: React.FC<MetricsViewProps> = ({
+  metrics,
+  currentDay,
+  isOnline,
+  isSyncing,
+  lastSyncAt,
+  onForceRefresh,
+}) => {
   const overallPct = metrics.total > 0 ? Math.round((metrics.completed / metrics.total) * 100) : 0;
   const expectedPct = Math.round((currentDay / 5) * 100);
   const onTrack = overallPct >= expectedPct - 10;
@@ -772,7 +785,43 @@ export const MetricsView: React.FC<MetricsViewProps> = ({ metrics, currentDay })
   return (
     <div className="space-y-6">
 
-      {/* ── SPRINT HEADER ─────────────────────────────────────────────────── */}
+      {/* ── LIVE SYNC BANNER ──────────────────────────────────────────────── */}
+      <div className={cn(
+        'flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium',
+        isOnline
+          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          : isOnline === false
+            ? 'bg-amber-50 border-amber-200 text-amber-800'
+            : 'bg-muted border-border text-muted-foreground',
+      )}>
+        <div className="flex items-center gap-2">
+          <div className={cn(
+            'w-2 h-2 rounded-full shrink-0',
+            isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400',
+          )} />
+          <span>
+            {isOnline
+              ? `🟢 Velocity data is live — pulled from Supabase in real-time`
+              : `⚠ Offline — showing cached / seed data`}
+            {lastSyncAt && isOnline && (
+              <span className="ml-1 opacity-70">
+                · Last sync: {lastSyncAt.toLocaleTimeString()}
+              </span>
+            )}
+          </span>
+          {isSyncing && <span className="opacity-60 italic ml-1">syncing…</span>}
+        </div>
+        {onForceRefresh && (
+          <button
+            onClick={onForceRefresh}
+            className="flex items-center gap-1 px-2 py-0.5 rounded border border-current opacity-70 hover:opacity-100 transition-opacity text-[10px]"
+            title="Force refresh from Supabase"
+          >
+            <RefreshCw className={cn('w-3 h-3', isSyncing && 'animate-spin')} />
+            Refresh
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="col-span-2 md:col-span-1">
           <CardContent className="p-4 text-center space-y-1">

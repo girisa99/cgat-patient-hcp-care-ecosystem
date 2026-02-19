@@ -526,7 +526,14 @@ export const SprintTrackerDashboard: React.FC = () => {
 
             {/* Metrics */}
             {activeView === 'metrics' && (
-              <MetricsView metrics={metrics} currentDay={currentDay} />
+              <MetricsView
+                metrics={metrics}
+                currentDay={currentDay}
+                isOnline={isOnline}
+                isSyncing={isSyncing}
+                lastSyncAt={lastSyncAt}
+                onForceRefresh={forceRefresh}
+              />
             )}
 
             {/* Effort Tracking */}
