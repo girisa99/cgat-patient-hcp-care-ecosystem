@@ -423,7 +423,7 @@ export const EP04_PIPELINE_READINESS = [
   { pipeline: 'infographic-design',                   status: '✅ READY',     edgeFn: 'ai-image-generator',        notes: 'Comparison table, velocity prediction, timeline via Alibaba wanx' },
   // PHASE 3: Visuals — Screens
   { pipeline: 'screen-capture (19 screens)',          status: '✅ AUTO',      edgeFn: 'MultiScreenshotGallery',    notes: 'html2canvas on sprint-tracker tabs; upload to product-screenshots bucket' },
-  { pipeline: 'ai-screen-enhance (narration scenes)', status: '✅ READY',     edgeFn: 'Lovable AI Gateway',        notes: 'Gemini image editing on captured screens; highlight/stylize/redraw modes; scenes 3-7, 9' },
+  { pipeline: 'ai-screen-enhance (narration scenes)', status: '✅ READY',     edgeFn: 'ai-image-generator',        notes: 'Alibaba Wanx/Flux image editing via regional sub-region routing; highlight/stylize/redraw modes; scenes 3-7, 9' },
   // PHASE 4: Avatar Lip-Sync (Alibaba Wan2.2 Primary)
   { pipeline: 'avatar-lipsync atlas (bear)',          status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'Alibaba Wan2.2 phoneme-level lip-sync + Azure viseme data; all speaking scenes' },
   { pipeline: 'avatar-lipsync nova (fox)',            status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'Alibaba Wan2.2 lip-sync; Disney-style 2D character animation' },
