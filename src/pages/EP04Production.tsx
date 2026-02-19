@@ -54,7 +54,7 @@ const VOICE_COLORS: Record<string, string> = {
 };
 
 const VOICE_LABELS: Record<string, string> = {
-  host: '🎙️ Host (PO)',
+  host: '🐕 Host — The Human in the Loop',
   atlas: '🐻 Atlas (Claude)',
   nova: '🦊 Nova (Lovable)',
 };
