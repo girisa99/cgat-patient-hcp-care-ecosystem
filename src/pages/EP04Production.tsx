@@ -217,9 +217,9 @@ export default function EP04Production() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Beyond AI Hype — Episode 2 · TTS Production</h1>
+              <h1 className="text-xl font-bold">Beyond AI Hype — Episode 2</h1>
               <p className="text-sm text-muted-foreground">
-                {doneCount}/{scriptKeys.length} lines generated · ~{Math.round(totalDuration / 60)}min total
+                I Replaced My Entire Dev Team with Two AIs. Here's What Actually Happened. · {doneCount}/{scriptKeys.length} lines · ~{Math.round(totalDuration / 60)}min
               </p>
             </div>
           </div>
