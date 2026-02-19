@@ -219,7 +219,7 @@ export default function EP04Production() {
             <div>
               <h1 className="text-xl font-bold">Beyond AI Hype — Episode 2</h1>
               <p className="text-sm text-muted-foreground">
-                I Replaced My Entire Dev Team with Two AIs. Here's What Actually Happened. · {doneCount}/{scriptKeys.length} lines · ~{Math.round(totalDuration / 60)}min
+                Experimenting &amp; Learning with Two AIs — Building What Actually Works · {doneCount}/{scriptKeys.length} lines · ~{Math.round(totalDuration / 60)}min
               </p>
             </div>
           </div>
