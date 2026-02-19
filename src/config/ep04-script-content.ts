@@ -23,10 +23,11 @@
 
 export interface ScriptLine {
   text: string;
-  voice: 'host' | 'atlas' | 'nova';
+  voice: 'host' | 'atlas' | 'nova' | 'squirrel';
   scene: string;
   duration_est: number;
   direction: string;
+  isInterruption?: boolean;
 }
 
 export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
@@ -75,6 +76,25 @@ Wednesday. The Jira board looks like a Jackson Pollock painting. Cards everywher
     scene: 'scene-1-problem',
     duration_est: 55,
     direction: 'Relatable rant energy. Start conversational, build frustration. The fake standup dialogue should be slightly monotone — mimicking the bored developer voice. "Jackson Pollock" gets a beat. Each day should feel like the pain is escalating. This is the "I see you" moment for the audience.',
+  },
+
+  // 🐿️ SQUIRREL INTERRUPTION — After Scene 1 intro
+  'squirrel-interrupt-1': {
+    text: `Wait wait wait! Hold on! *clutches acorn* Did you say EIGHT people on a call? That's like... *counts on tiny paws* ...eight acorns! That's way too many acorns for one tree! Why don't they just... I dunno... send a bird?`,
+    voice: 'squirrel',
+    scene: 'scene-1-problem',
+    duration_est: 10,
+    direction: 'Chaotic, enthusiastic, genuinely confused. Squirrel pops in from the side, interrupting. High-pitched, fast-talking energy. The acorn metaphor makes perfect sense to the squirrel.',
+    isInterruption: true,
+  },
+
+  'host-squirrel-response-1': {
+    text: `...Who let the squirrel in? Security? Anyone? No? Okay. Moving on.`,
+    voice: 'host',
+    scene: 'scene-1-problem',
+    duration_est: 5,
+    direction: 'Exasperated but amused. Breaking the fourth wall. Quick recovery.',
+    isInterruption: true,
   },
 
   'problem-deeper': {
@@ -308,6 +328,34 @@ No camera. No "can everyone hear me?" No "you're on mute." No "let's take that o
     direction: 'Self-deprecating punchline. Tired, amused. Beat before "Pretty sure it was coffee."',
   },
 
+  // 🐿️ SQUIRREL INTERRUPTION — Between Scene 4 and 5
+  'squirrel-interrupt-2': {
+    text: `Oooh! Oooh! *drops acorn excitedly* So wait — if the AIs never forget anything, does that mean they remember where I buried my acorns last winter? Because I have QUESTIONS. Specifically about the oak tree near parking lot B.`,
+    voice: 'squirrel',
+    scene: 'scene-4-solution',
+    duration_est: 10,
+    direction: 'Genuinely hopeful. Squirrel sees an opportunity in 200K context windows. This is a real question for the squirrel.',
+    isInterruption: true,
+  },
+
+  'atlas-squirrel-response': {
+    text: `The 200,000 token context window is optimized for software engineering tasks. Acorn geolocation is... not a supported use case. Yet.`,
+    voice: 'atlas',
+    scene: 'scene-4-solution',
+    duration_est: 6,
+    direction: 'Deadpan. Atlas genuinely considered the technical feasibility before responding. The "Yet" implies he filed it as a feature request.',
+    isInterruption: true,
+  },
+
+  'squirrel-disappointed': {
+    text: `*sighs* Fine. But when you DO add acorn tracking, I want beta access. *scurries away with acorn*`,
+    voice: 'squirrel',
+    scene: 'scene-4-solution',
+    duration_est: 5,
+    direction: 'Disappointed but pragmatic. Already planning for the future. Exits with dignity.',
+    isInterruption: true,
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SCENE 5: GOVERNANCE — HOW TWO AIS SHARE A CODEBASE (8:00–9:30)
   // VISUAL: Split-screen file ownership matrix. Territory map animation.
@@ -468,6 +516,34 @@ And honestly? She usually did. But your burndown chart looks like it was drawn b
     direction: 'Passionate, then a self-aware meta moment. The logic correction is funny because it\'s so Nova.',
   },
 
+  // 🐿️ SQUIRREL INTERRUPTION — After velocity discussion
+  'squirrel-interrupt-3': {
+    text: `*slides in on a tiny skateboard* Okay I have a REAL question this time! If Nova is at 110% velocity... does that mean she's doing things from THE FUTURE? Because I need to know if acorn futures are up or down. This is important financial information.`,
+    voice: 'squirrel',
+    scene: 'scene-7-velocity',
+    duration_est: 10,
+    direction: 'Dramatic entrance. The squirrel has been listening carefully and has drawn completely wrong conclusions. Delivering with Wall Street broker energy.',
+    isInterruption: true,
+  },
+
+  'nova-squirrel-response': {
+    text: `Oh my gosh, the squirrel is back! I love the skateboard. Can I design you a tiny helmet? With a dark mode option?`,
+    voice: 'nova',
+    scene: 'scene-7-velocity',
+    duration_est: 5,
+    direction: 'Delighted. Nova is immediately distracted by the design opportunity. This is peak scope creep in action.',
+    isInterruption: true,
+  },
+
+  'host-squirrel-focus': {
+    text: `Nova, do NOT design a squirrel helmet. We are staying on track. Squirrel — out. Please.`,
+    voice: 'host',
+    scene: 'scene-7-velocity',
+    duration_est: 5,
+    direction: 'Trying to maintain control. The "please" is desperate. The PO is losing the standup to a rodent.',
+    isInterruption: true,
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SCENE 8: THE NUMBERS — 5X EFFICIENCY (11:30–12:30)
   // VISUAL: Animated infographic. ROI comparison. Cost analysis.
@@ -544,6 +620,34 @@ Day 3: I realized I was the weakest link. Not because I'm bad at my job. Because
     scene: 'scene-9-challenges',
     duration_est: 5,
     direction: 'Triumphant. "Vindication tastes like well-rendered CSS" is peak Nova energy.',
+  },
+
+  // 🐿️ SQUIRREL INTERRUPTION — After challenges (useful question)
+  'squirrel-interrupt-4': {
+    text: `*peeks out from behind Atlas's monitor* Okay but serious question — like actually serious this time. If you're the only human and both AIs are faster than you... who makes sure the AIs don't just... build the wrong thing really fast? Like, what if they're sprinting in the wrong direction? Who catches that?`,
+    voice: 'squirrel',
+    scene: 'scene-9-challenges',
+    duration_est: 12,
+    direction: 'Actually insightful. The squirrel asks the question the audience has been thinking. Delivered with genuine curiosity, less chaotic than usual.',
+    isInterruption: true,
+  },
+
+  'host-squirrel-good-question': {
+    text: `That... is actually a great question. Thank you, squirrel. That's literally why governance exists. The sprint tracker, the handoff protocol, the PO Actions queue — they're all guardrails to make sure speed doesn't outrun direction. The human in the loop isn't the fastest. But they're the one who decides where we're going.`,
+    voice: 'host',
+    scene: 'scene-9-challenges',
+    duration_est: 15,
+    direction: 'Genuinely surprised and impressed. This is a real teaching moment enabled by the squirrel. Deliver with warmth — the squirrel earned respect here.',
+    isInterruption: true,
+  },
+
+  'squirrel-vindicated': {
+    text: `*puffs up chest proudly* See? I contribute! I'm like... the QA squirrel. Testing your assumptions! *drops acorn* ...okay that one was an accident.`,
+    voice: 'squirrel',
+    scene: 'scene-9-challenges',
+    duration_est: 6,
+    direction: 'Triumphant then clumsy. Peak squirrel energy — the pride is immediately undercut by physical comedy.',
+    isInterruption: true,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -653,6 +757,16 @@ This is Beyond AI Hype — Episode 2. I'm your host. Atlas and Nova say goodbye 
     duration_est: 4,
     direction: 'Energetic, warm, on-brand. Dark mode is her final word. It always will be.',
   },
+
+  // 🐿️ SQUIRREL — Final appearance
+  'squirrel-finale': {
+    text: `*pops up one last time with a tiny subscribe button* Hey! Before you go — did you know that if you subscribe, a squirrel somewhere gets an acorn? That's not true. But subscribe anyway! Also — has anyone seen parking lot B? Asking for a friend. *waves tiny paw* Byeeee!`,
+    voice: 'squirrel',
+    scene: 'scene-11-close',
+    duration_est: 10,
+    direction: 'Perfect chaotic closer. Breaking the fourth wall completely. The subscribe CTA delivered by a squirrel is memorable. Exits waving. The parking lot B callback ties the whole arc together.',
+    isInterruption: true,
+  },
 };
 
 // ─── HELPER: Get all script lines for a scene ────────────────────────────────
@@ -666,7 +780,7 @@ export function getSceneDuration(sceneId: string): number {
 }
 
 // ─── HELPER: Get all script keys for a voice ─────────────────────────────────
-export function getVoiceScriptKeys(voice: 'host' | 'atlas' | 'nova'): string[] {
+export function getVoiceScriptKeys(voice: 'host' | 'atlas' | 'nova' | 'squirrel'): string[] {
   return Object.entries(EP04_SCRIPT_CONTENT)
     .filter(([_, line]) => line.voice === voice)
     .map(([key]) => key);
