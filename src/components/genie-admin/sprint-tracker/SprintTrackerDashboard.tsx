@@ -209,8 +209,8 @@ export const SprintTrackerDashboard: React.FC = () => {
     poChecklist, updatePoChecklist,
   } = useSprintTracker();
 
-  // PO Mission Control is the default — the single-screen summary
-  const [activeView, setActiveView] = useState<ViewId>('po-mission');
+  // PO Actions is the default — direct access to the checklist
+  const [activeView, setActiveView] = useState<ViewId>('po-gate');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarMode, setSidebarMode] = useState<'po' | 'dev'>('po');
 
@@ -488,8 +488,8 @@ export const SprintTrackerDashboard: React.FC = () => {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-5 max-w-6xl">
+        <main className="flex-1 overflow-auto w-full">
+          <div className="p-5 w-full max-w-6xl mx-auto">
 
             {/* PO Mission Control — default landing view */}
             {activeView === 'po-mission' && (
