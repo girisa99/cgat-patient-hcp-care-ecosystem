@@ -6,7 +6,7 @@
  * Default landing: PO Mission Control (single-screen health summary)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -212,7 +212,23 @@ export const SprintTrackerDashboard: React.FC = () => {
   // PO Actions is the default — direct access to the checklist
   const [activeView, setActiveView] = useState<ViewId>('po-gate');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarMode, setSidebarMode] = useState<'po' | 'dev'>('po');
+  // Persist sidebar mode — defaults to 'po' so PO always lands on Actions view
+  const [sidebarMode, setSidebarModeRaw] = useState<'po' | 'dev'>(() => {
+    try {
+      return (localStorage.getItem('genie_sprint_sidebar_mode') as 'po' | 'dev') || 'po';
+    } catch { return 'po'; }
+  });
+  const setSidebarMode = useCallback((mode: 'po' | 'dev') => {
+    setSidebarModeRaw(mode);
+    try { localStorage.setItem('genie_sprint_sidebar_mode', mode); } catch {}
+    // When switching to PO mode from a dev-only view, snap back to po-gate
+    if (mode === 'po') {
+      setActiveView(prev => {
+        const PO_VIEWS: ViewId[] = ['po-mission', 'po-gate', 'qa-signoff', 'eod-handoff', 'charter', 'governance'];
+        return PO_VIEWS.includes(prev) ? prev : 'po-gate';
+      });
+    }
+  }, []);
 
   // ── computed ──────────────────────────────────────────────────────────────
   const overallPct = metrics.total > 0 ? Math.round((metrics.completed / metrics.total) * 100) : 0;
