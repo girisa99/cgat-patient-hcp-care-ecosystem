@@ -94,6 +94,8 @@ import { SmartSchedulerPanel } from './SmartSchedulerPanel';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ContentRepurposingPanel } from './ContentRepurposingPanel';
 import { DistributionPanel } from './DistributionPanel';
+import { EP04PublishHub } from './EP04PublishHub';
+import { SceneCharacterVisualizer } from './SceneCharacterVisualizer';
 import { SEOOptimizerPanel } from './SEOOptimizerPanel';
 import { ABTestingPanel } from './ABTestingPanel';
 
@@ -1634,7 +1636,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
               >
-                <DistributionPanel />
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  {/* Left: Scene character visualizer */}
+                  <div>
+                    <SceneCharacterVisualizer autoPlay={false} />
+                  </div>
+                  {/* Right: EP04 full publish hub */}
+                  <div>
+                    <EP04PublishHub />
+                  </div>
+                </div>
               </motion.div>
             )}
             
