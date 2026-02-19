@@ -1714,7 +1714,7 @@ export function SmartContentPipeline({
                   title: presentation?.metadata?.title || 'Presentation',
                   script: scriptText,
                   type: 'presentation_script',
-                  sourceType: 'presentation',
+                  sourceType: 'text',
                   metadata: {
                     wordCount: scriptText.split(/\s+/).length,
                     estimatedDuration: presentation?.metadata?.duration || 0,

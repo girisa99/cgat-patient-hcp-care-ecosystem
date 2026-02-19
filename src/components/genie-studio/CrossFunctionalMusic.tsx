@@ -136,10 +136,10 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
 
       // Persist to generated_media table
       await supabase.from('generated_media').insert({
-        id: trackId,
-        user_id: user.id,
         name: trackName,
         file_type: 'audio',
+        storage_bucket: 'generated_media',
+        storage_path: `audio/${trackId}`,
         file_url: data?.url || null,
         source: 'music-generation',
         metadata: {
@@ -174,10 +174,10 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
 
         if (user) {
           await supabase.from('generated_media').insert({
-            id: trackId,
-            user_id: user.id,
             name: trackName,
             file_type: 'audio',
+            storage_bucket: 'generated_media',
+            storage_path: `audio/${trackId}`,
             source: 'music-generation',
             metadata: { type: 'instrumental', genre, mood, prompt: prompt.trim(), duration: duration[0], product }
           });
