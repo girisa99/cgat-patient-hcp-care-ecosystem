@@ -29,6 +29,8 @@ export { SmartSchedulerPanel } from './SmartSchedulerPanel';
 export { AnalyticsDashboard } from './AnalyticsDashboard';
 export { ContentRepurposingPanel } from './ContentRepurposingPanel';
 export { DistributionPanel } from './DistributionPanel';
+export { EP04PublishHub } from './EP04PublishHub';
+export { SceneCharacterVisualizer } from './SceneCharacterVisualizer';
 export { SEOOptimizerPanel } from './SEOOptimizerPanel';
 export { ABTestingPanel } from './ABTestingPanel';
 export { PoweredByEndCard, type PoweredByData } from './PoweredByEndCard';
