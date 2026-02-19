@@ -29,6 +29,7 @@ import atlasAvatar from '@/assets/characters/atlas-bear.png';
 import novaAvatar from '@/assets/characters/nova-fox.png';
 import squirrelAvatar from '@/assets/characters/squirrel-distractor.png';
 import ep02Thumbnail from '@/assets/thumbnails/ep02-thumbnail.png';
+import allaudinAvatar from '@/assets/characters/allaudin-genie.png';
 
 // Scene background imports
 import scene0Bg from '@/assets/scenes/scene-0-title.png';
@@ -56,14 +57,14 @@ type LineStatus = 'idle' | 'generating' | 'done' | 'error';
 
 // ─── Voice config mapping ────────────────────────────────────────────────────
 
-function getVoiceConfig(voice: 'host' | 'atlas' | 'nova' | 'squirrel') {
-  // Squirrel uses Nova's voice config with higher pitch for now
-  const voiceKey = voice === 'squirrel' ? 'nova' : voice;
+function getVoiceConfig(voice: 'host' | 'atlas' | 'nova' | 'squirrel' | 'allaudin') {
+  // Squirrel uses Nova's voice config with higher pitch; Allaudin uses a deep ElevenLabs voice
+  const voiceKey = voice === 'squirrel' ? 'nova' : voice === 'allaudin' ? 'host' : voice;
   const v = EP04_VOICES[voiceKey];
   return {
     provider: v.provider as string,
-    voiceId: v.voiceId,
-    stability: 'stability' in v ? v.stability : undefined,
+    voiceId: voice === 'allaudin' ? 'onwK4e9ZLuTAKqWW03F9' : v.voiceId, // Daniel voice for Allaudin — deep, resonant
+    stability: 'stability' in v ? (voice === 'allaudin' ? 0.6 : v.stability) : undefined,
     similarityBoost: 'similarityBoost' in v ? v.similarityBoost : undefined,
     rate: 'rate' in v ? v.rate : undefined,
     pitch: 'pitch' in v ? v.pitch : undefined,
@@ -75,6 +76,7 @@ const VOICE_COLORS: Record<string, string> = {
   atlas: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
   nova: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
   squirrel: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
+  allaudin: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
 };
 
 const VOICE_LABELS: Record<string, string> = {
@@ -82,6 +84,7 @@ const VOICE_LABELS: Record<string, string> = {
   atlas: 'Atlas (Claude)',
   nova: 'Nova (Lovable)',
   squirrel: '🐿️ Squirrel — The Distractor',
+  allaudin: '🧞 Allaudin — The Genie',
 };
 
 const CHARACTER_AVATARS: Record<string, string> = {
@@ -89,6 +92,7 @@ const CHARACTER_AVATARS: Record<string, string> = {
   atlas: atlasAvatar,
   nova: novaAvatar,
   squirrel: squirrelAvatar,
+  allaudin: allaudinAvatar,
 };
 
 const SCENE_BACKGROUNDS: Record<string, string> = {

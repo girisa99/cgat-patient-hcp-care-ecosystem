@@ -23,7 +23,7 @@
 
 export interface ScriptLine {
   text: string;
-  voice: 'host' | 'atlas' | 'nova' | 'squirrel';
+  voice: 'host' | 'atlas' | 'nova' | 'squirrel' | 'allaudin';
   scene: string;
   duration_est: number;
   direction: string;
@@ -39,6 +39,15 @@ export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
   // Atlas (bear) and Nova (fox) 3D characters flanking. Host in center foreground.
   // LOWER-THIRD: "Beyond AI Hype — Episode 2"
   // ═══════════════════════════════════════════════════════════════════════════
+
+  // ── ALLAUDIN EMERGES — Lamp mist intro before host welcome
+  'allaudin-emerge': {
+    text: `*magical mist swirls from lamp* Ahhh... at last! I am Allaudin — the Genie of Genie AI. And YOU... have summoned something extraordinary. This is not your ordinary podcast. This is The Genie AI Podcast — where creativity meets code, where ideas become reality, and where AI goes beyond the hype. Your host, Sai Dasika, has a story to tell. And I? I'll be here — guiding, watching, and maybe... granting a wish or two along the way. *laughs* Let us begin!`,
+    voice: 'allaudin',
+    scene: 'scene-0-title',
+    duration_est: 25,
+    direction: 'Grand, theatrical, warm. Allaudin emerges from lamp as blue mist — mystical sound effects. Voice is deep, resonant, wise but playful. Each phrase builds anticipation. The laugh is genuine and magical. "Let us begin" is a dramatic cue for the host.',
+  },
 
   'title-welcome': {
     text: `Welcome to Beyond AI Hype — The Genie AI Podcast. I'm Sai Dasika, your host. And this — is where Allaudin, our Genie, meets the real world.
@@ -790,7 +799,7 @@ export function getSceneDuration(sceneId: string): number {
 }
 
 // ─── HELPER: Get all script keys for a voice ─────────────────────────────────
-export function getVoiceScriptKeys(voice: 'host' | 'atlas' | 'nova' | 'squirrel'): string[] {
+export function getVoiceScriptKeys(voice: 'host' | 'atlas' | 'nova' | 'squirrel' | 'allaudin'): string[] {
   return Object.entries(EP04_SCRIPT_CONTENT)
     .filter(([_, line]) => line.voice === voice)
     .map(([key]) => key);
