@@ -64,7 +64,7 @@ But before I introduce the team, let me tell you about the problem that started 
   'problem-intro': {
     text: `Raise your hand if this sounds familiar.
 
-Monday morning. Sprint planning. Eight people in a room — or worse, eight people on a Zoom call where three cameras are off and one person is definitely making breakfast.
+Monday morning. Sprint planning. Eight people in a room — or worse, eight people on a Google Meet, Teams, or Zoom call where three cameras are off and one person is definitely making breakfast.
 
 You spend forty-five minutes estimating story points. Half the team disagrees. Someone says "we should timebox this." You timebox it. The timebox expires. You're still estimating.
 
