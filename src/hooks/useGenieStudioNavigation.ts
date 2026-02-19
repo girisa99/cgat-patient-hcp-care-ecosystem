@@ -1,6 +1,6 @@
 /**
- * GENIE STUDIO NAVIGATION HOOK
- * Provides filtered navigation for Genie Studio users
+ * GENIE SUITE NAVIGATION HOOK
+ * Provides filtered navigation for Genie Suite users
  * Based on subscription tier and internal user status
  * 
  * CRITICAL: DEV_MODE_ALWAYS_SHOW_NAV ensures navigation never disappears
@@ -51,7 +51,7 @@ export interface UseGenieStudioNavigationReturn {
 const DEV_MODE_ALWAYS_SHOW_NAV = true;
 
 /**
- * Hook for Genie Studio-specific navigation
+ * Hook for Genie Suite-specific navigation
  * Filters nav items based on user subscription and internal status
  */
 export function useGenieStudioNavigation(): UseGenieStudioNavigationReturn {
@@ -69,7 +69,7 @@ export function useGenieStudioNavigation(): UseGenieStudioNavigationReturn {
     return (genieUser.current_subscription_tier as SubscriptionTier) || 'free';
   }, [genieUser]);
 
-  // Check if user is a Genie Studio user (has genie_studio_users record)
+  // Check if user is a Genie Suite user (has genie_studio_users record)
   const isGenieStudioUser = useMemo(() => {
     return isAuthenticated && !!genieUser;
   }, [isAuthenticated, genieUser]);

@@ -1,5 +1,5 @@
 /**
- * Ralph Wiggum - Automated AI Review System for Genie Studio
+ * Ralph Wiggum - Automated AI Review System for Genie Suite
  * DEV-ONLY: Reviews content quality across all modules
  * 
  * @description Exports the hook, panel, integration, and types for the Ralph Wiggum review system.

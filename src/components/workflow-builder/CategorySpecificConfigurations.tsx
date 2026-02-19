@@ -829,7 +829,7 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
                         <SelectItem value="claude-opus-4-0">Claude Opus 4.0</SelectItem>
                         <SelectItem value="claude-sonnet-4-0">Claude Sonnet 4.0</SelectItem>
                         <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                        <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                        <SelectItem value="gemini-2.5-pro">Gemini 1.5 Pro</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>

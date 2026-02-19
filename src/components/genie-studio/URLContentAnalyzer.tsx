@@ -249,7 +249,7 @@ export function URLContentAnalyzer({
       const { data, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           prompt: `Analyze this URL and determine what type of web content it is: ${url}
 
 Based on the URL structure and any available context, classify this page into ONE of these categories:

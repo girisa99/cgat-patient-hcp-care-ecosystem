@@ -1,5 +1,5 @@
 /**
- * Shared Genie Studio Components
+ * Shared Genie Suite Components
  * Barrel export for all shared components
  */
 

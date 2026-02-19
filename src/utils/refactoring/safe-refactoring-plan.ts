@@ -1,6 +1,6 @@
 /**
  * SAFE REFACTORING PLAN
- * Non-breaking improvements for GenieStudio and related components
+ * Non-breaking improvements for GenieSuite and related components
  * Updated: Phase 3 integration complete
  */
 

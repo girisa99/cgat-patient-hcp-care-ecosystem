@@ -1,7 +1,7 @@
 /**
  * Product Feature Teaser Component
  * 
- * Shows Genie Studio product features and capabilities as marketing teasers
+ * Shows Genie Suite product features and capabilities as marketing teasers
  * Educates users on cross-product workflows and drives feature discovery
  */
 
@@ -319,7 +319,7 @@ export const ProductDiscoveryPanel: React.FC<ProductDiscoveryPanelProps> = ({
       <div>
         <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
           <LayoutGrid className="h-4 w-4" />
-          Genie Studio Suite
+          Genie Suite
         </h4>
         <div className="grid grid-cols-2 gap-2">
           {products.map(product => (

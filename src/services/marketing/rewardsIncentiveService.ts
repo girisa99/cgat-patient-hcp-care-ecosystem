@@ -5,7 +5,7 @@
  * - Weekly leaderboards for top creators
  * - Monthly incentive programs
  * - Engagement tracking and rewards
- * - User-generated content showcase through Genie Studio social platform
+ * - User-generated content showcase through Genie Suite social platform
  */
 
 import { supabase } from '@/integrations/supabase/client';

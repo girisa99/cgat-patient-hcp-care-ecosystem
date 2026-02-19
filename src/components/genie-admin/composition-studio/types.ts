@@ -258,7 +258,7 @@ export const DEFAULT_CHAPTERS: Omit<CompositionChapter, 'id'>[] = [
     title: 'Opening',
     duration: 30,
     visual: { type: 'animation', prompt: 'Magical genie lamp emerging from smoke' },
-    voiceover: { type: 'tts', text: 'Welcome to Genie Studio...', language: 'en' },
+    voiceover: { type: 'tts', text: 'Welcome to Genie Suite...', language: 'en' },
     status: 'draft',
     previewUrls: {},
   },

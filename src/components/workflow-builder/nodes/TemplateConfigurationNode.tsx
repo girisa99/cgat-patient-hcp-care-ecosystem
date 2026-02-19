@@ -389,8 +389,8 @@ export const TemplateConfigurationNode: React.FC<{ id: string; data: any; select
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                        <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-                        <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
+                        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                        <SelectItem value="claude-opus-4-5">Claude Opus 4.5</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

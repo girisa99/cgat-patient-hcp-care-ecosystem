@@ -69,9 +69,9 @@ export const useModelRouting = (): UseModelRoutingReturn => {
         const defaultPrefs: UserModelPreferences = {
           userId: 'current-user',
       preferredModels: {
-        chat: 'gemini-1.5-flash',
+        chat: 'gemini-2.5-flash',
         code: 'phi-3-mini',
-        medical: 'gemini-1.5-flash',
+        medical: 'gemini-2.5-flash',
         embeddings: 'distilbert-base',
         classification: 'distilbert-base'
       },

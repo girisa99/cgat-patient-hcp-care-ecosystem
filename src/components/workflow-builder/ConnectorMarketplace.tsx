@@ -154,7 +154,7 @@ const SAMPLE_CONNECTORS: Connector[] = [
       inputs: ['api_key', 'prompt', 'model'],
       outputs: ['generated_text', 'usage_stats'],
       settings: {
-        model: 'gpt-4',
+        model: 'gpt-4o',
         max_tokens: 1000,
         temperature: 0.7
       }

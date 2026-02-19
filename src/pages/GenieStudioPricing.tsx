@@ -1,5 +1,5 @@
 /**
- * GENIE STUDIO PRICING PAGE
+ * GENIE SUITE PRICING PAGE
  * PUBLIC pricing page - matches landing page corporate styling
  * Shows all subscription options aligned with landing page tiers
  * UPDATED: Includes tier feature gating for Lipsync, Dubbing, Mix-and-Match

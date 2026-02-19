@@ -178,7 +178,7 @@ class ImageToScriptService {
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           prompt: `Analyze this image in detail for video script creation. Describe:
 1. Main subject and scene composition
 2. Colors, lighting, and mood
@@ -222,7 +222,7 @@ ${isBase64 ? 'The image is provided as base64 data.' : `Image URL: ${imageUrl}`}
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           prompt: `Create a ${style} video script based on this visual concept:
 
 ORIGINAL CONCEPT: ${originalPrompt}

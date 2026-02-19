@@ -29,7 +29,7 @@ export const SHOW_TYPE_TO_PRODUCTION_CAPABILITY: Partial<Record<ShowType, { prim
   webinar: { primary: 'ppt_slides', secondary: 'avatar_lipsync' },
   conference: { primary: 'ppt_slides', secondary: 'motion_graphics' },
   training_session: { primary: 'avatar_lipsync', secondary: 'ppt_slides' },
-  // Genie Studio Demos
+  // Genie Suite Demos
   genie_studio_full: { primary: 'motion_graphics', secondary: 'avatar_lipsync' },
   genie_spark_demo: { primary: 'motion_graphics', secondary: 'banner_static' },
   genie_arc_demo: { primary: 'motion_graphics' },
@@ -62,7 +62,7 @@ export const SHOW_TYPE_TO_SCRIPT_MODE: Record<ShowType, ScriptMode> = {
   webinar: 'webcast',
   conference: 'webcast',
   training_session: 'video',
-  // Genie Studio Demos - default to video style
+  // Genie Suite Demos - default to video style
   genie_studio_full: 'video',
   genie_spark_demo: 'video',
   genie_arc_demo: 'video',

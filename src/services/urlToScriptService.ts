@@ -172,7 +172,7 @@ class UrlToScriptService {
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: request.aiProvider || 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           prompt: `Analyze and extract content from this URL for video script creation: ${url}
 
 Extract:
@@ -227,7 +227,7 @@ Provide a comprehensive summary suitable for script writing.`,
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: request.aiProvider || 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           prompt: `Convert this web content into a COMPLETE, FULL-LENGTH ${request.outputFormat.replace('_', ' ')}:
 
 SOURCE URL: ${crawledContent.url}

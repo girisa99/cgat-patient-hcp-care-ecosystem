@@ -448,7 +448,7 @@ const BackendServicesArchitecture: React.FC = () => {
           ))}
         </div>
 
-        {/* Stats - Genie Studio Specific vs Total */}
+        {/* Stats - Genie Suite Specific vs Total */}
         <div className="grid grid-cols-4 md:grid-cols-8 gap-3 text-center">
           <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3 border-2 border-green-200 dark:border-green-800/40">
             <div className="text-lg font-bold text-green-600 dark:text-green-400">

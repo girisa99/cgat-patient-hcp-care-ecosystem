@@ -86,7 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Calculate when session becomes active (30 min before)
     const sessionActiveAt = new Date(scheduledAt.getTime() - 30 * 60 * 1000);
 
-    // Generate join URL based on session mode - uses Genie Studio meeting route
+    // Generate join URL based on session mode - uses Genie Suite meeting route
     // This will be the origin where the app is hosted
     const baseUrl = Deno.env.get('PUBLIC_SITE_URL') || 'https://genieaiexperimentationhub.tech';
     
@@ -385,7 +385,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           // Build email payload with host CC'd (not other participants for privacy)
           const emailPayload: any = {
-            from: `Genie Studio <${fromEmail}>`,
+            from: `Genie Suite <${fromEmail}>`,
             to: [participant.email],
             subject: `You're invited: ${body.title}`,
             html: `
@@ -493,7 +493,7 @@ const handler = async (req: Request): Promise<Response> => {
         try {
           console.log('[create-session] Sending host notification to:', body.host_email);
           await resend.emails.send({
-            from: `Genie Studio <${fromEmail}>`,
+            from: `Genie Suite <${fromEmail}>`,
             to: [body.host_email],
             subject: `Session Created: ${body.title}`,
             html: `
@@ -667,7 +667,7 @@ function generateCalendarLinks(session: any, body: CreateSessionRequest, joinUrl
   // iCal file content
   const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Genie Studio//Session//EN
+PRODID:-//Genie Suite//Session//EN
 BEGIN:VEVENT
 UID:${session.id}@genie-studio
 DTSTAMP:${formatDate(new Date())}

@@ -85,7 +85,7 @@ export const GenieStudioScriptGallery = () => {
           <div className="flex items-center gap-3">
             <Sparkles className="h-6 w-6 text-purple-400" />
             <div>
-              <CardTitle className="text-white text-xl">Genie Studio Documentation</CardTitle>
+              <CardTitle className="text-white text-xl">Genie Suite Documentation</CardTitle>
               <p className="text-slate-400 text-sm mt-1">Video Script & Architecture Assets</p>
             </div>
           </div>

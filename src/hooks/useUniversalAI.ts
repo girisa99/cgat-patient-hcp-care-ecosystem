@@ -38,7 +38,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     llm: {
       openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16'],
       claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022'],
-      gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-1.5-pro']
+      gemini: ['gemini-2.0-flash', 'gemini-2.5-pro', 'gemini-2.5-pro']
     },
     small: {
       openai: ['gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4o-mini'],
@@ -47,9 +47,9 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
       specialized: ['biomed-llama-7b', 'clinical-bert', 'pubmed-gpt', 'pharma-t5', 'biotech-mistral-7b']
     },
     vision: {
-      openai: ['gpt-4o', 'o4-mini-2025-04-16', 'gpt-4-vision-preview'],
+      openai: ['gpt-4o', 'o4-mini-2025-04-16'],
       claude: ['claude-3-5-sonnet-20241022'],
-      gemini: ['gemini-1.5-pro-latest', 'gemini-2.0-flash-exp'],
+      gemini: ['gemini-2.5-pro', 'gemini-2.0-flash'],
       healthcare: ['medical-imaging-vision', 'radiology-ai-vision', 'pathology-vision-pro']
     },
     image: {
@@ -122,7 +122,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     switch (provider) {
       case 'openai': return 'gpt-4o-mini';
       case 'claude': return 'claude-3-5-haiku-20241022';
-      case 'gemini': return 'gemini-2.0-flash-exp';
+      case 'gemini': return 'gemini-2.0-flash';
       case 'stability': return 'stable-diffusion-xl';
       case 'huggingface': return 'flux-schnell';
       default: return 'gpt-4o-mini';

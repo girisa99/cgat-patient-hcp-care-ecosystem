@@ -216,7 +216,7 @@ export class EnhancedAIService {
     const defaultModels = {
       'openai': 'gpt-4o-mini',
       'claude': 'claude-3-5-haiku-20241022',
-      'gemini': 'gemini-pro'
+      'gemini': 'gemini-2.5-pro'
     };
     return defaultModels[provider as keyof typeof defaultModels] || 'gpt-4o-mini';
   }
@@ -293,7 +293,7 @@ export class EnhancedAIService {
         priority: 3,
         available: this.providerHealth.get('gemini') || false,
         lastChecked: this.lastHealthCheck.toISOString(),
-        models: ['gemini-pro', 'gemini-pro-vision'],
+        models: ['gemini-2.5-pro', 'gemini-2.0-flash'],
         capabilities: ['text', 'vision', 'multimodal']
       }
     ];

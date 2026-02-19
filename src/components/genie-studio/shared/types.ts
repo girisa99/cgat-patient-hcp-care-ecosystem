@@ -1,5 +1,5 @@
 /**
- * Shared types for Genie Studio components
+ * Shared types for Genie Suite components
  * Centralized type definitions for consistency
  */
 

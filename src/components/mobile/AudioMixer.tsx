@@ -482,7 +482,7 @@ export const AudioMixer: React.FC<AudioMixerProps> = ({
 
               {recordings.length === 0 && voiceovers.length === 0 && music.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-4">
-                  No audio sources available. Record content or generate voiceovers in Genie Studio.
+                  No audio sources available. Record content or generate voiceovers in Genie Suite.
                 </p>
               )}
             </CardContent>

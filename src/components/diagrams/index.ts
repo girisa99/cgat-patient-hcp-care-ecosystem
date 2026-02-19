@@ -8,9 +8,9 @@ export { BeforeAfterArchitectureDiagram } from './BeforeAfterArchitectureDiagram
 export { ProductFeatureMatrix } from './ProductFeatureMatrix';
 
 // =============================================================================
-// GENIE STUDIO - CONSOLIDATED SINGLE SOURCE OF TRUTH
+// GENIE SUITE - CONSOLIDATED SINGLE SOURCE OF TRUTH
 // =============================================================================
-// The Unified Hub is the ONLY entry point for all Genie Studio content.
+// The Unified Hub is the ONLY entry point for all Genie Suite content.
 // It contains 11 tabs: Overview, Verification, Product Suite, Scenarios (177),
 // Architecture (7 diagrams), Technical, Functional, Market Analysis, 
 // Investor Dashboard, Assets & Studio, and Roadmap.
@@ -23,17 +23,17 @@ export { ProductFeatureMatrix } from './ProductFeatureMatrix';
 // =============================================================================
 export { GenieStudioUnifiedHub } from './GenieStudioUnifiedHub';
 
-// Genie Studio - Individual diagrams (accessible via Architecture tab in Unified Hub)
+// Genie Suite - Individual diagrams (accessible via Architecture tab in Unified Hub)
 export { GenieRecordingStudioArchitectureDiagram } from './GenieRecordingStudioArchitectureDiagram';
 export { MarketAnalysisDashboard } from './MarketAnalysisDashboard';
 
-// Genie Studio - Investor Dashboard (accessible via Investor Dashboard tab in Unified Hub)
+// Genie Suite - Investor Dashboard (accessible via Investor Dashboard tab in Unified Hub)
 export { GenieInvestorDashboard } from './GenieInvestorDashboard';
 
-// Genie Studio - Architecture Hub (consolidated architecture tab within Unified Hub)
+// Genie Suite - Architecture Hub (consolidated architecture tab within Unified Hub)
 export { GenieArchitectureHub } from './GenieArchitectureHub';
 
-// Genie Studio - Architecture Diagrams (individual with download/expand, used by Architecture Hub)
+// Genie Suite - Architecture Diagrams (individual with download/expand, used by Architecture Hub)
 export { 
   GenieMindArchitectureDiagram,
   GenieVibeArchitectureDiagram,

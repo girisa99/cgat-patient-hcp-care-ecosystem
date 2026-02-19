@@ -212,7 +212,7 @@ function RolesSection() {
         { area: 'Genie Spark', detail: 'src/components/genie-spark/**, src/pages/GenieSpark.tsx' },
         { area: 'Genie Mind', detail: 'src/pages/GenieMind.tsx, ScriptEditorTab, SavedAudioCard, CrossFunctionalMusic' },
         { area: 'Genie Deck', detail: 'src/pages/GenieDeck.tsx, presentation-generator/** (6 wizard steps)' },
-        { area: 'Genie Studio', detail: 'src/components/genie-studio/** (core engine, 150+ files)' },
+        { area: 'Genie Suite', detail: 'src/components/genie-studio/** (core engine, 150+ files)' },
         { area: 'Navigation', detail: 'src/components/navigation/Quadrant* (tab switching between modules)' },
         { area: 'AI Routing', detail: 'useUniversalAI, ai-universal-processor edge function, genieConversationService' },
         { area: 'Database Layer (read)', detail: 'Reads supabase tables; does NOT modify schema or RLS' },

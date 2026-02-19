@@ -10,13 +10,13 @@ import heroImage from '@/assets/genie-recording-architecture-hero.png';
 import beforeAfterImage from '@/assets/genie-before-after-comparison.png';
 import contextHandoffImage from '@/assets/genie-context-handoff.png';
 
-// Import Genie Studio logo (finalized banner)
+// Import Genie Suite logo (finalized banner)
 import studioBanner from '@/assets/logos/genie-studio-banner.png';
 
 // Import Genie Mind logo (finalized combined)
 import mindCombined from '@/assets/logos/genie-mind-combined.png';
 
-// Import Genie Arc logo (finalized combined)
+// Import Genie Hub logo (finalized combined)
 import arcCombined from '@/assets/logos/genie-arc-combined.png';
 
 // Import Genie Vibe logo (finalized combined)
@@ -66,10 +66,10 @@ const imageAssets: ImageAsset[] = [
 
 // Finalized logo assets - one combined version per brand (used for all purposes)
 const logoAssets: ImageAsset[] = [
-  // Genie Studio
+  // Genie Suite
   {
     id: 'studio-combined',
-    title: 'Genie Studio',
+    title: 'Genie Suite',
     description: 'Mind to Media — AI-Powered Production Suite (use for presentations, websites, products, icons)',
     src: studioBanner,
     category: 'logo',
@@ -84,7 +84,7 @@ const logoAssets: ImageAsset[] = [
     category: 'logo',
     brand: 'spark',
   },
-  // Genie Arc
+  // Genie Hub
   {
     id: 'arc-combined',
     title: 'Genie Hub',
@@ -176,7 +176,7 @@ export const GenieStudioVisualAssets = () => {
   return (
     <Card className="w-full bg-slate-900 border-slate-700">
       <div className="p-4 border-b border-slate-700">
-        <h3 className="text-lg font-semibold text-white">Genie Studio Visual Assets</h3>
+        <h3 className="text-lg font-semibold text-white">Genie Suite Visual Assets</h3>
         <p className="text-sm text-slate-400">Architecture diagrams and logo assets</p>
       </div>
       <CardContent className="p-4">

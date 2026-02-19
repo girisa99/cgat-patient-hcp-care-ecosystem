@@ -16,6 +16,7 @@
  * 7. ModelsLab (FLUX, AnimateDiff, 3D)
  * 8. Replicate (Open-source models, 3D)
  * 9. ElevenLabs (Premium TTS, Voice Clone, SFX)
+ * NOTE: Google Lyria 2 (lyria-002) music generation routes through 'gemini' provider via Vertex AI
  * 10. DeepL (European translation)
  * 11. Supabase (Auth, Database, Edge Functions)
  * 12. Stripe (Payments)
@@ -24,7 +25,7 @@
  * - stability → modelslab (SDXL, image gen)
  * - assemblyai → azure/openai (STT with Whisper)
  * - runway → modelslab/alibaba (video gen)
- * - suno/udio → elevenlabs (music/SFX)
+ * - music/SFX → elevenlabs (primary), alibaba (CJK)
  * - pika → modelslab/alibaba (video gen)
  * - cohere → openai/gemini (embeddings)
  * - huggingface → modelslab/replicate (open models)
@@ -60,8 +61,6 @@ export const DEPRECATED_TO_CORE_MAP: Record<string, { primary: ProviderId; fallb
   stability: { primary: 'modelslab', fallback: 'replicate', reason: 'ModelsLab provides SDXL/FLUX with lower cost' },
   assemblyai: { primary: 'azure', fallback: 'openai', reason: 'Azure STT + OpenAI Whisper as fallback' },
   runway: { primary: 'modelslab', fallback: 'alibaba', reason: 'ModelsLab AnimateDiff + Alibaba WAN 2.2' },
-  suno: { primary: 'elevenlabs', fallback: 'elevenlabs', reason: 'ElevenLabs Music/SFX generation' },
-  udio: { primary: 'elevenlabs', fallback: 'elevenlabs', reason: 'ElevenLabs Music/SFX generation' },
   pika: { primary: 'alibaba', fallback: 'modelslab', reason: 'Alibaba WAN 2.2 for fast video' },
   cohere: { primary: 'openai', fallback: 'gemini', reason: 'OpenAI/Gemini embeddings' },
   huggingface: { primary: 'modelslab', fallback: 'replicate', reason: 'ModelsLab/Replicate for open models' },

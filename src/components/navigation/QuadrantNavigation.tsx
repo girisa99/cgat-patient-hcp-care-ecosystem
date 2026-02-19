@@ -1,7 +1,7 @@
 /**
  * QuadrantNavigation - 4-Quadrant Unified Workflow Architecture
  * 
- * Simplifies Genie Studio UI/UX by consolidating 206 pipelines into 4 sequential task-based flows:
+ * Simplifies Genie Suite UI/UX by consolidating 206 pipelines into 4 sequential task-based flows:
  * 1. CREATE (Spark, Mind, Deck) - Script/slide generation
  * 2. PRODUCE (Vibe) - Audio/video production
  * 3. MANAGE (Arc, Hub) - Scheduling/assets

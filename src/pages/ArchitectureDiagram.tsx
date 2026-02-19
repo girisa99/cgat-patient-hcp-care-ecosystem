@@ -36,7 +36,7 @@ interface DiagramVersion {
 }
 
 // Define diagram categories for cleaner organization
-// CONSOLIDATED: Genie Studio now uses single Unified Hub as source of truth
+// CONSOLIDATED: Genie Suite now uses single Unified Hub as source of truth
 // (Script Gallery, Visual Assets, Recording Studio, Market Analysis are all tabs within Unified Hub)
 // NOTE: Command Center label is static here but actual metrics are dynamic within the component
 const diagramCategories = {

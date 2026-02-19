@@ -68,7 +68,7 @@ export const masterScenarioCounts = {
 // =============================================================================
 /**
  * Master Infrastructure Counts now include both platform totals and Genie-specific counts.
- * GENIE_COUNTS is the primary source for Genie Studio ecosystem metrics.
+ * GENIE_COUNTS is the primary source for Genie Suite ecosystem metrics.
  */
 export const masterInfrastructureCounts = {
   // Platform-wide totals (includes healthcare + shared infrastructure)
@@ -193,7 +193,7 @@ export const recentAuditLog: AuditEntry[] = [
     action: 'VERIFY',
     area: 'AI Phases Implementation',
     performedBy: 'Dev Team',
-    notes: 'Verified all AI phases complete: Phase 1 (AI Routing Intelligence) 100%, Phase 2 (Multi-Model Comparison) 100%, Phase 3B (MCP & Label Studio) 100% integrated. Phase 3A confirmed not required for Genie Studio.',
+    notes: 'Verified all AI phases complete: Phase 1 (AI Routing Intelligence) 100%, Phase 2 (Multi-Model Comparison) 100%, Phase 3B (MCP & Label Studio) 100% integrated. Phase 3A confirmed not required for Genie Suite.',
   },
   {
     timestamp: '2026-01-28T10:00:00Z',

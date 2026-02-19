@@ -1,7 +1,7 @@
 /**
  * Calendar Integration Buttons Component
  * Add to Calendar buttons for Google, Outlook, iCal
- * Genie Studio branded calendar invites with full meeting details
+ * Genie Suite branded calendar invites with full meeting details
  */
 
 import React from 'react';
@@ -46,9 +46,9 @@ export const SessionCalendarButtons: React.FC<SessionCalendarButtonsProps> = ({
 }) => {
   const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
 
-  // Build rich calendar event with all Genie Studio details
+  // Build rich calendar event with all Genie Suite details
   const calendarEvent: CalendarEvent = {
-    title: `🎬 ${title} - Genie Studio`,
+    title: `🎬 ${title} - Genie Suite`,
     description,
     location: joinUrl,
     startTime,
@@ -167,7 +167,7 @@ export const SessionCalendarButtons: React.FC<SessionCalendarButtonsProps> = ({
     );
   }
 
-  // Default variant - Genie Studio branded
+  // Default variant - Genie Suite branded
   return (
     <div className={`space-y-3 ${className}`}>
       <div className="flex items-center gap-2 text-sm font-medium">

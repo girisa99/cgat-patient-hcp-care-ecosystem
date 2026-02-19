@@ -97,9 +97,9 @@ export const AIModelConfigurationNode: React.FC<{ id: string; data: any; selecte
   };
 
   const modelOptions = {
-    openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307', 'claude-3-opus-20240229'],
-    google: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'],
+    openai: ['gpt-4o', 'gpt-4o-mini'],
+    anthropic: ['claude-3-5-sonnet-20241022', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-5-20250929'],
+    google: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'],
     meta: ['llama-3.1-405b', 'llama-3.1-70b', 'llama-3.1-8b'],
     microsoft: ['phi-3-mini', 'phi-3-medium', 'phi-3-large']
   };

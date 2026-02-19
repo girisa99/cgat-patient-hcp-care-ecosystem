@@ -2,7 +2,7 @@
  * Document Processing Module
  * 
  * Central export file for all Document Processing functionality.
- * Isolated from other products (Genie Studio, Healthcare) for clean separation.
+ * Isolated from other products (Genie Suite, Healthcare) for clean separation.
  */
 
 // ============================================================================

@@ -267,7 +267,7 @@ React.useEffect(() => {
               <div className="flex items-center gap-2 mt-1">
                 <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-black/10 dark:bg-white/10">
                   <div className="w-4 h-4 text-xs">✨</div>
-                  <span className="text-xs">{data.model || data.configuration?.model || 'gpt-4'}</span>
+                  <span className="text-xs">{data.model || data.configuration?.model || 'gpt-4o'}</span>
                 </div>
                 {data.provider && (
                   <div className="w-5 h-5 rounded bg-black/20 dark:bg-white/20 flex items-center justify-center">

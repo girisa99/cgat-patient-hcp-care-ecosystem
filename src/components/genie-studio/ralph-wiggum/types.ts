@@ -1,9 +1,9 @@
 /**
  * Ralph Wiggum - Automated AI Review System Types
- * DEV-ONLY: Reviews content quality across all Genie Studio modules
+ * DEV-ONLY: Reviews content quality across all Genie Suite modules
  */
 
-// Module identifiers for all Genie Studio areas
+// Module identifiers for all Genie Suite areas
 export type GenieModule = 
   | 'spark'           // Ideas/brainstorming
   | 'mind'            // Script editor, TTS, Voice
@@ -19,7 +19,7 @@ export type GenieModule =
   | 'templates'       // Script/content templates
   | 'library'         // Media library (audio, video, scripts)
   | 'native-features' // Mobile/native capabilities
-  | 'genie-page';     // Main GenieStudio page structure
+  | 'genie-page';     // Main Genie Suite page structure
 
 // Review severity levels
 export type ReviewSeverity = 'info' | 'suggestion' | 'warning' | 'critical';

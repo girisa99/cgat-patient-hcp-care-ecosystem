@@ -1,7 +1,7 @@
 /**
- * Genie Studio Unified Hub - SINGLE SOURCE OF TRUTH
- * 
- * This is the ONLY consolidated view for all Genie Studio content.
+ * Genie Suite Unified Hub - SINGLE SOURCE OF TRUTH
+ *
+ * This is the ONLY consolidated view for all Genie Suite content.
  * Contains 11 tabs: Overview, Verification, Product Suite, Scenarios (253 total, 21 categories A-U + 76 new),
  * Architecture (7 diagrams), Technical, Functional, Market Analysis, Investor Dashboard, 
  * Assets & Studio (with logo downloads), and Roadmap (P0-P5, 24 weeks).

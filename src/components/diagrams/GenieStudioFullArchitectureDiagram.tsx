@@ -466,7 +466,7 @@ export const GenieStudioFullArchitectureDiagram: React.FC = () => {
                     <thead>
                       <tr>
                         <th className="p-2 text-left border" style={{ borderColor: colors.border, backgroundColor: '#f8fafc' }}>Feature</th>
-                        <th className="p-2 text-center border" style={{ borderColor: colors.border, backgroundColor: colors.completed.light }}>Genie Studio</th>
+                        <th className="p-2 text-center border" style={{ borderColor: colors.border, backgroundColor: colors.completed.light }}>Genie Suite</th>
                         <th className="p-2 text-center border" style={{ borderColor: colors.border }}>CapCut</th>
                         <th className="p-2 text-center border" style={{ borderColor: colors.border }}>Synthesia</th>
                         <th className="p-2 text-center border" style={{ borderColor: colors.border }}>Loom</th>

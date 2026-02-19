@@ -106,7 +106,8 @@ export const AI_PROVIDERS: AIProvider[] = [
   { id: 'deepgram-nova-2', name: 'Deepgram Nova 2', shortName: 'Deepgram', category: 'voice', confidenceScore: 98, ranking: 1, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['real-time-stt', 'streaming', 'low-latency', 'accuracy'] },
   
   // Music Models (NEW)
-  { id: 'suno-v4', name: 'Suno V4', shortName: 'Suno', category: 'voice', confidenceScore: 94, ranking: 1, costTier: 'high', speedTier: 'slow', qualityTier: 'premium', bestFor: ['music-generation', 'vocals', 'full-songs'] },
+  { id: 'elevenlabs-music', name: 'ElevenLabs Music', shortName: 'ElevenLabs', category: 'voice', confidenceScore: 94, ranking: 1, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['music-generation', 'sfx', 'voice-clone'] },
+  { id: 'google-lyria-2', name: 'Google Lyria 2', shortName: 'Lyria', category: 'voice', confidenceScore: 92, ranking: 2, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['instrumental-music', 'soundscapes', 'scene-matching'] },
   
   // Translation Models
   { id: 'deepl', name: 'DeepL', shortName: 'DeepL', category: 'translation', confidenceScore: 95, ranking: 1, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['european-languages', 'nuanced', 'professional'] },

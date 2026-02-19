@@ -1,5 +1,5 @@
 /**
- * Genie Studio Constants - Central Export
+ * Genie Suite Constants - Central Export
  * 
  * Single source of truth for all product definitions, capabilities, and mappings.
  * 

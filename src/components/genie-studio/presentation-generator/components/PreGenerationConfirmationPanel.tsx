@@ -148,7 +148,7 @@ export const MODEL_TIERS: Record<string, ModelTierInfo> = {
   // Tier 2 - AI-powered
   'deepseek-vl': { tier: 2, tierName: 'Tier 2 - AI', description: 'Multilingual, complex layouts', costMultiplier: 0.5, qualityScore: 90, speedScore: 85 },
   'gemini-vision': { tier: 2, tierName: 'Tier 2 - AI', description: 'General OCR, handwriting', costMultiplier: 0.8, qualityScore: 88, speedScore: 88 },
-  'gpt-4-vision': { tier: 2, tierName: 'Tier 2 - AI', description: 'Complex layouts, reasoning', costMultiplier: 1.2, qualityScore: 92, speedScore: 80 },
+  'gpt-4o': { tier: 2, tierName: 'Tier 2 - AI', description: 'Complex layouts, reasoning', costMultiplier: 1.2, qualityScore: 92, speedScore: 80 },
 
   // ==================== TRANSLATION ====================
   // Tier 1 - Highest quality

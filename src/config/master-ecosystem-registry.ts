@@ -2,7 +2,7 @@
  * MASTER ECOSYSTEM REGISTRY
  * 
  * SINGLE SOURCE OF TRUTH for all AI providers, video styles, and pipelines
- * across Genie Studio ecosystem (Spark, Mind, Vibe, Arc, Deck, Cast, Hub, Ask Genie)
+ * across Genie Suite ecosystem (Spark, Mind, Vibe, Arc, Deck, Cast, Hub, Ask Genie)
  * 
  * Features:
  * - 17+ AI Providers with capability matrix
@@ -535,7 +535,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     qualityScore: 82,
     speedScore: 95,
     strengths: ['Ultra fast', 'Low cost', 'Good for classification', 'Quick tasks'],
-    models: ['claude-3-5-haiku', 'claude-3-haiku'],
+    models: ['claude-3-5-haiku', 'claude-haiku-4-5'],
     wiredToGenieCast: true,
   },
   {

@@ -1,5 +1,5 @@
 /**
- * Genie Studio Types - Barrel Export
+ * Genie Suite Types - Barrel Export
  */
 
 export * from './studio-types';

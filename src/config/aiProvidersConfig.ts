@@ -83,18 +83,14 @@ export const AI_PROVIDERS_REGISTRY: AIProviderEntry[] = [
   { value: 'tripo3d', label: 'Tripo3D AI', icon: '🔷', category: '3d', priority: 4, isDefault: false },
   { value: 'modelslab_3d', label: 'ModelsLab 3D', icon: '📦', category: '3d', priority: 5, isDefault: false },
 
-  // AVATAR - Wan 2.2 S2V → OmniAvatar → HeyGen
+  // AVATAR - Wan 2.2 S2V → OmniAvatar → Azure Visemes
   { value: 'alibaba_wan22', label: 'Alibaba Wan 2.2 S2V', icon: '👤', category: 'avatar', priority: 1, isDefault: true },
   { value: 'omni_avatar', label: 'OmniAvatar', icon: '🧑', category: 'avatar', priority: 2, isDefault: false },
   { value: 'tao_avatar', label: 'TaoAvatar', icon: '👥', category: 'avatar', priority: 3, isDefault: false, zones: ['cjk'] },
-  { value: 'heygen', label: 'HeyGen', icon: '🎭', category: 'avatar', priority: 4, isDefault: false },
-  { value: 'synthesia', label: 'Synthesia', icon: '📺', category: 'avatar', priority: 5, isDefault: false },
-  { value: 'd_id', label: 'D-ID', icon: '🖥️', category: 'avatar', priority: 6, isDefault: false },
 
   // AUDIO - Voice Cloning, Music, SFX
-  { value: 'suno_music', label: 'Suno AI Music', icon: '🎵', category: 'audio', priority: 1, isDefault: false },
-  { value: 'udio_music', label: 'Udio Music', icon: '🎶', category: 'audio', priority: 2, isDefault: false },
-  { value: 'elevenlabs_clone', label: 'ElevenLabs Voice Clone', icon: '🔊', category: 'audio', priority: 3, isDefault: false },
+  { value: 'elevenlabs_clone', label: 'ElevenLabs Voice Clone', icon: '🔊', category: 'audio', priority: 1, isDefault: false },
+  { value: 'google_lyria', label: 'Google Lyria', icon: '🎼', category: 'audio', priority: 2, isDefault: false },
 ];
 
 // ============================================

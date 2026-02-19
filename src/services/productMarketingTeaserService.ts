@@ -1,7 +1,7 @@
 /**
  * Product Marketing Teaser Service
  * 
- * PURPOSE: Showcase Genie Studio products and capabilities as teasers
+ * PURPOSE: Showcase Genie Suite products and capabilities as teasers
  * - Shows live demos of Spark, Mind, Vibe, Deck, Arc/Hub features
  * - Educates users on cross-product workflows
  * - Drives feature discovery and upgrades

@@ -45,7 +45,7 @@ const MCPTemplateConfigurator: React.FC = () => {
     enabledServers: ['database', 'memory', 'api'],
     conversationalAI: {
       enabled: true,
-      model: 'gpt-4',
+      model: 'gpt-4o',
       contextDepth: 'medium'
     },
     structuredAI: {

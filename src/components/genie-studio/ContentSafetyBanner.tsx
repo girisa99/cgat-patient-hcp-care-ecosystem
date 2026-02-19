@@ -1,7 +1,7 @@
 /**
  * Content Safety Banner Component
  * Displays AI-generated content disclaimers and privacy terms
- * Used across all Genie Studio components for safeguarding protection
+ * Used across all Genie Suite components for safeguarding protection
  */
 
 import React from 'react';
@@ -61,7 +61,7 @@ export function ContentSafetyBanner({
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <AlertTitle className="text-amber-800 dark:text-amber-200 text-sm">AI-Generated Content Disclaimer</AlertTitle>
           <AlertDescription className="text-amber-700 dark:text-amber-300 text-xs space-y-1">
-            <p>• All content generated through Genie Studio is <strong>purely AI-generated</strong></p>
+            <p>• All content generated through Genie Suite is <strong>purely AI-generated</strong></p>
             <p>• Please <strong>verify and review</strong> all generated content before publishing or using</p>
             <p>• We are <strong>not responsible</strong> for the accuracy, completeness, or appropriateness of AI-generated content</p>
             <p>• AI outputs may contain errors, biases, or inaccuracies - always fact-check important information</p>

@@ -166,7 +166,7 @@ function isProviderConfigured(provider: string): boolean {
 function getMusicProvider(tier: GlobalTier): string {
   switch (tier) {
     case 3: return 'elevenlabs';
-    case 2: return 'suno';
+    case 2: return 'elevenlabs';
     default: return 'basic';
   }
 }

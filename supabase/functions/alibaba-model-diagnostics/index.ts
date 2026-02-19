@@ -43,17 +43,17 @@ const MODELS_TO_TEST: ModelTest[] = [
     category: 'video',
   },
   {
-    name: 'Wan 2.1 Video (T2V Turbo)',
-    modelId: 'wan2.1-t2v-turbo',
+    name: 'Wan 2.6 Video (T2V Fast)',
+    modelId: 'wan2.6-t2v',
     endpoint: '/api/v1/services/aigc/video-generation/video-synthesis',
-    payload: { model: 'wan2.1-t2v-turbo', input: { prompt: 'A simple test' }, parameters: { size: '1280*720' } },
+    payload: { model: 'wan2.6-t2v', input: { prompt: 'A simple test' }, parameters: { size: '1280*720' } },
     category: 'video',
   },
   {
-    name: 'Wan 2.1 Video (T2V Plus)',
-    modelId: 'wan2.1-t2v-plus',
+    name: 'Wan 2.6 Video (T2V)',
+    modelId: 'wan2.6-t2v',
     endpoint: '/api/v1/services/aigc/video-generation/video-synthesis',
-    payload: { model: 'wan2.1-t2v-plus', input: { prompt: 'A simple test' }, parameters: { size: '1280*720' } },
+    payload: { model: 'wan2.6-t2v', input: { prompt: 'A simple test' }, parameters: { size: '1280*720' } },
     category: 'video',
   },
   // Wan 2.2 S2V - CORRECTED: needs image_url (audio-driven video from reference image)

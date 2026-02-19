@@ -37,10 +37,25 @@ import { BatchScriptGenerationWorkflow } from '@/components/genie-studio/batch/B
 
 const GenieMind: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'dashboard';
-  
+
   const [activeTab, setActiveTab] = useState(initialTab);
+  const scriptIdParam = searchParams.get('scriptId');
+  const [selectedScriptId, setSelectedScriptId] = useState<string | null>(scriptIdParam);
+
+  // C-404 FIX: Sync scriptId from URL when navigating from Spark
+  React.useEffect(() => {
+    if (scriptIdParam) {
+      setSelectedScriptId(scriptIdParam);
+    }
+  }, [scriptIdParam]);
+
+  // M-010 FIX: Sync tab changes to URL search params
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
 
   // Existing hooks - data flow unchanged
   const { 
@@ -80,7 +95,7 @@ const GenieMind: React.FC = () => {
       {/* Quick Stats Bar */}
       <div className="border-b bg-muted/30">
         <div className="max-w-7xl mx-auto px-6 py-3">
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {[
               { label: 'Video Scripts', value: String(videoScripts.length), icon: Video, color: 'text-destructive' },
               { label: 'Audio Scripts', value: String(audioScripts.length), icon: Headphones, color: 'text-primary' },
@@ -100,7 +115,7 @@ const GenieMind: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="bg-muted/50 border border-border/50 p-1">
             <TabsTrigger value="dashboard" className="gap-2">
               <Layers className="h-4 w-4" />
@@ -126,7 +141,7 @@ const GenieMind: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Recent Scripts</h3>
-                  <Button variant="ghost" size="sm" onClick={() => setActiveTab('script-editor')}>
+                  <Button variant="ghost" size="sm" onClick={() => handleTabChange('script-editor')}>
                     View All
                   </Button>
                 </div>
@@ -151,7 +166,10 @@ const GenieMind: React.FC = () => {
                       <Card 
                         key={script.id} 
                         className="hover:border-purple-500/30 transition-colors cursor-pointer"
-                        onClick={() => setActiveTab('script-editor')}
+                        onClick={() => {
+                          setSelectedScriptId(script.id);
+                          handleTabChange('script-editor');
+                        }}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-center gap-2 mb-2">
@@ -224,7 +242,7 @@ const GenieMind: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold">Manage Shows</h4>
-                      <p className="text-sm text-muted-foreground">Plan productions in Arc</p>
+                      <p className="text-sm text-muted-foreground">Plan productions in Hub</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -235,14 +253,40 @@ const GenieMind: React.FC = () => {
             <TabsContent value="script-editor" className="mt-0">
               <ScriptEditorTab
                 savedScripts={savedScripts}
+                initialScriptId={selectedScriptId}
                 onSaveScript={(script) => saveScript(script)}
                 onDeleteScript={deleteScript}
                 onUpdateScript={updateScript}
-                onSaveVoiceover={(url, name, scriptId, audioBlob, scriptMeta) => {
-                  // Note: The hook doesn't have saveVoiceover - just log for now
-                  toast.success(`Voiceover "${name}" saved!`);
-                  if (scriptId) {
-                    updateScript(scriptId, { hasVoiceover: true });
+                onSaveVoiceover={async (url, name, scriptId, audioBlob, scriptMeta) => {
+                  try {
+                    // Save voiceover metadata to generated_media table
+                    const { data: { user } } = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
+                    if (user) {
+                      const { error } = await (await import('@/integrations/supabase/client')).supabase
+                        .from('generated_media')
+                        .insert({
+                          user_id: user.id,
+                          name,
+                          file_type: 'audio',
+                          file_url: url,
+                          source: 'tts',
+                          metadata: {
+                            type: 'tts',
+                            scriptId,
+                            scriptText: scriptMeta?.scriptText,
+                            originalScript: scriptMeta?.originalScript,
+                            scriptType: scriptMeta?.scriptType
+                          }
+                        });
+                      if (error) throw error;
+                    }
+                    toast.success(`Voiceover "${name}" saved!`);
+                    if (scriptId) {
+                      updateScript(scriptId, { hasVoiceover: true });
+                    }
+                  } catch (err) {
+                    console.error('Failed to save voiceover:', err);
+                    toast.error('Failed to save voiceover');
                   }
                 }}
                 savedVoiceovers={allAudio.map(v => ({
@@ -306,7 +350,17 @@ const GenieMind: React.FC = () => {
                             url: audio.url || '',
                             timestamp: audio.timestamp
                           }}
-                          onDelete={() => toast.info('Delete via Genie Vibe')}
+                          onDelete={async () => {
+                            try {
+                              const { supabase: sb } = await import('@/integrations/supabase/client');
+                              const { error } = await sb.from('generated_media').delete().eq('id', audio.id);
+                              if (error) throw error;
+                              toast.success(`Deleted "${audio.name}"`);
+                            } catch (err) {
+                              console.error('Delete failed:', err);
+                              toast.error('Failed to delete audio');
+                            }
+                          }}
                         />
                       ))}
                     </div>

@@ -94,7 +94,7 @@ A unified gateway that decouples application logic from LLM providers:
 ## 📄 Document Processing Module
 
 ### Separate Enterprise-Grade System
-A dedicated AI pipeline distinct from Genie Studio, specialized for healthcare and enterprise document automation.
+A dedicated AI pipeline distinct from Genie Suite, specialized for healthcare and enterprise document automation.
 
 ### Supported Document Types
 | Type | Extraction Capabilities |

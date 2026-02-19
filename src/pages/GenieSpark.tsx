@@ -26,6 +26,7 @@ const GenieSpark: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('pipeline');
   const [hasGeneratedContent, setHasGeneratedContent] = useState(false);
+  const [lastSavedScriptId, setLastSavedScriptId] = useState<string | null>(null);
   const { saveScript } = useGenieScripts();
 
   // Helper to build script stats from generated content
@@ -67,7 +68,7 @@ const GenieSpark: React.FC = () => {
         toast.error('Failed to save script. Please try again.');
         return;
       }
-      navigate('/genie-mind?tab=script-editor');
+      navigate(`/genie-mind?tab=script-editor&scriptId=${saved.id}`);
       toast.success('Script sent to Script Editor for refinement!');
     } catch (err) {
       console.error('Failed to send to Script Editor:', err);
@@ -166,6 +167,7 @@ const GenieSpark: React.FC = () => {
                     source: 'spark',
                   });
                   if (saved) {
+                    setLastSavedScriptId(saved.id);
                     setHasGeneratedContent(true);
                     toast.success('Content generated and saved!');
                   } else {
@@ -173,7 +175,8 @@ const GenieSpark: React.FC = () => {
                   }
                 }}
                 onSendToEditor={() => {
-                  navigate('/genie-mind?tab=script-editor');
+                  const scriptParam = lastSavedScriptId ? `&scriptId=${lastSavedScriptId}` : '';
+                  navigate(`/genie-mind?tab=script-editor${scriptParam}`);
                 }}
                 onExport={(format) => {
                   if (format === 'vibe') {

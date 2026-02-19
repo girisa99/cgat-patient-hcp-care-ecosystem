@@ -161,6 +161,7 @@ export interface ShowInfo {
 
 interface ScriptEditorTabProps {
   savedScripts: SavedScript[];
+  initialScriptId?: string | null;
   onSaveScript: (script: SavedScript) => void;
   onDeleteScript: (id: string) => void;
   onUpdateScript: (id: string, updates: Partial<SavedScript>) => void;
@@ -197,6 +198,7 @@ function calculateStats(content: string): ScriptStats {
 
 export function ScriptEditorTab({
   savedScripts,
+  initialScriptId,
   onSaveScript,
   onDeleteScript,
   onUpdateScript,
@@ -355,7 +357,14 @@ export function ScriptEditorTab({
       toast.success(`Loaded "${script.name}"`);
     }
   }, [savedScripts]);
-  
+
+  // M-011 FIX: Auto-select script when initialScriptId changes (from dashboard card click)
+  useEffect(() => {
+    if (initialScriptId && savedScripts.length > 0 && initialScriptId !== selectedScriptId) {
+      handleSelectScript(initialScriptId);
+    }
+  }, [initialScriptId, savedScripts.length]);
+
   // Start new script
   const handleNewScript = () => {
     setSelectedScriptId(null);

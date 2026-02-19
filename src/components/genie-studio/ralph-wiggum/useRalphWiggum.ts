@@ -1,9 +1,9 @@
 /**
- * useRalphWiggum - Automated AI Review Hook for Genie Studio
+ * useRalphWiggum - Automated AI Review Hook for Genie Suite
  * DEV-ONLY: Provides automated content analysis and improvement suggestions
  * 
  * @description This hook integrates with the Universal AI system to provide
- * real-time content reviews across all Genie Studio modules.
+ * real-time content reviews across all Genie Suite modules.
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
@@ -36,7 +36,7 @@ const generateId = () => `ralph-${Date.now()}-${Math.random().toString(36).subst
 const buildReviewPrompt = (request: ReviewRequest): string => {
   const { moduleContent, includeJourneyAnalysis, compareWith } = request;
   
-  let prompt = `You are Ralph Wiggum, a helpful AI reviewer for the Genie Studio content creation platform.
+  let prompt = `You are Ralph Wiggum, a helpful AI reviewer for the Genie Suite content creation platform.
 Analyze the following ${moduleContent.module.toUpperCase()} module content and provide actionable feedback.
 
 Focus on:
@@ -134,7 +134,7 @@ Evaluate feature availability, permission handling, platform optimization, and o
       break;
       
     case 'genie-page':
-      prompt += `GENIE STUDIO PAGE:
+      prompt += `GENIE SUITE PAGE:
 ${JSON.stringify(moduleContent.content, null, 2)}
 
 Evaluate page structure, user flow coherence, component loading, navigation clarity, and overall UX.`;
@@ -360,7 +360,7 @@ export function useRalphWiggum(): UseRalphWiggumReturn {
         body: {
           provider: 'gemini',
           prompt,
-          systemPrompt: `You are Ralph Wiggum, an AI content reviewer for Genie Studio. 
+          systemPrompt: `You are Ralph Wiggum, an AI content reviewer for Genie Suite.
 You provide helpful, constructive feedback to improve content quality.
 Always respond with valid JSON. Be specific and actionable in your suggestions.`,
           model: 'gemini-2.0-flash',

@@ -1,6 +1,6 @@
 /**
- * GENIE STUDIO AUTH HOOK
- * Clean, separate authentication system for Genie Studio
+ * GENIE SUITE AUTH HOOK
+ * Clean, separate authentication system for Genie Suite
  * Uses Google OAuth as primary authentication method
  */
 
@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { User, Session } from '@supabase/supabase-js';
 
-// Genie Studio Role Types (matches database enum)
+// Genie Suite Role Types (matches database enum)
 export type GenieStudioRole = 
   | 'super_admin'
   | 'content_manager'
@@ -23,7 +23,7 @@ export type GenieStudioRole =
   | 'subscriber_enterprise'
   | 'freelancer';
 
-// Genie Studio User Profile
+// Genie Suite User Profile
 export interface GenieStudioUser {
   id: string;
   auth_user_id: string;
@@ -80,7 +80,7 @@ export function useGenieStudioAuth() {
     };
   });
 
-  // Fetch Genie Studio user profile
+  // Fetch Genie Suite user profile
   const fetchGenieUserProfile = useCallback(async (authUserId: string): Promise<GenieStudioUser | null> => {
     try {
       // Get user profile
@@ -91,7 +91,7 @@ export function useGenieStudioAuth() {
         .single();
 
       if (userError || !userProfile) {
-        console.log('🔍 No Genie Studio profile found, will create on first login');
+        console.log('🔍 No Genie Suite profile found, will create on first login');
         return null;
       }
 
@@ -114,12 +114,12 @@ export function useGenieStudioAuth() {
         marketing_access: marketingAccess || null,
       };
     } catch (error) {
-      console.error('❌ Error fetching Genie Studio profile:', error);
+      console.error('❌ Error fetching Genie Suite profile:', error);
       return null;
     }
   }, []);
 
-  // Create Genie Studio user profile (for new users) + sync to profiles table
+  // Create Genie Suite user profile (for new users) + sync to profiles table
   // Also checks for domain whitelist to auto-flag internal users
   const createGenieUserProfile = useCallback(async (
     authUser: User, 
@@ -208,7 +208,7 @@ export function useGenieStudioAuth() {
         console.log('✅ Synced user to profiles table');
       }
 
-      console.log('✅ Created new Genie Studio user:', newUser.email, 'with tier:', tier);
+      console.log('✅ Created new Genie Suite user:', newUser.email, 'with tier:', tier);
 
       return {
         ...newUser,
@@ -216,7 +216,7 @@ export function useGenieStudioAuth() {
         marketing_access: null,
       };
     } catch (error) {
-      console.error('❌ Error creating Genie Studio profile:', error);
+      console.error('❌ Error creating Genie Suite profile:', error);
       return null;
     }
   }, [fetchGenieUserProfile]);

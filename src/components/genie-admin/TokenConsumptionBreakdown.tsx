@@ -50,7 +50,7 @@ export const PROVIDER_COSTS = {
   // Avatar Providers (per segment)
   avatar: {
     'alibaba-wan22': { name: 'Alibaba Wan2.2', cost: 0.25, unit: 'segment', icon: '👤', model: 'S2V Lip-sync' },
-    'heygen': { name: 'HeyGen', cost: 0.45, unit: 'segment', icon: '🎭', model: 'Avatar API' },
+    'alibaba-omniavatar': { name: 'Alibaba OmniAvatar', cost: 0.25, unit: 'segment', icon: '🧑', model: 'OmniAvatar API' },
   },
   // 3D Providers (per asset)
   threeD: {

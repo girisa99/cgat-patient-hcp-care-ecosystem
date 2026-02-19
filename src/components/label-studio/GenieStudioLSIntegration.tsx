@@ -1,6 +1,6 @@
 /**
- * Genie Studio Label Studio Integration
- * Comprehensive integration across all Genie Studio workflows:
+ * Genie Suite Label Studio Integration
+ * Comprehensive integration across all Genie Suite workflows:
  * - Scripts: Quality, structure, tone annotation
  * - Video: Trimming, stitching, best moments, scene detection
  * - Audio: Voice quality, emotion, transcription accuracy
@@ -420,7 +420,7 @@ export function GenieStudioLSIntegration({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-primary" />
-          Genie Studio × Label Studio
+          Genie Suite × Label Studio
         </CardTitle>
         <CardDescription>
           Train AI to match your style across scripts, video, audio, and content

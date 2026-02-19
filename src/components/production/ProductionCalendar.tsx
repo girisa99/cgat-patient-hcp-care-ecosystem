@@ -84,7 +84,7 @@ const SHOW_TYPE_COLORS: Record<ShowType, { bg: string; text: string; border: str
   webinar: { bg: 'bg-sky-500/20', text: 'text-sky-400', border: 'border-sky-500', label: '🖥️ Webinar', category: 'event' },
   conference: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500', label: '🏛️ Conference', category: 'event' },
   training_session: { bg: 'bg-lime-500/20', text: 'text-lime-400', border: 'border-lime-500', label: '📖 Training', category: 'event' },
-  // Genie Studio Demos
+  // Genie Suite Demos
   genie_studio_full: { bg: 'bg-fuchsia-500/20', text: 'text-fuchsia-400', border: 'border-fuchsia-500', label: '✨ Full Studio', category: 'genie_demo' },
   genie_spark_demo: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500', label: '⚡ Spark Demo', category: 'genie_demo' },
   genie_arc_demo: { bg: 'bg-indigo-500/20', text: 'text-indigo-400', border: 'border-indigo-500', label: '🎬 Arc Demo', category: 'genie_demo' },
@@ -325,7 +325,7 @@ export function ProductionCalendar({
     // Branding
     lines.push('');
     lines.push('─────────────────────');
-    lines.push('📺 Powered by Genie Studio');
+    lines.push('📺 Powered by Genie Suite');
     lines.push('🌐 genieaiexperimentationhub.tech');
     
     return lines.join('\n');
@@ -416,10 +416,10 @@ export function ProductionCalendar({
     const lines = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Genie Studio//genieaiexperimentationhub.tech//EN',
+      'PRODID:-//Genie Suite//genieaiexperimentationhub.tech//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
-      'X-WR-CALNAME:Genie Studio',
+      'X-WR-CALNAME:Genie Suite',
       'BEGIN:VEVENT',
       `UID:${show.id}@genie-studio`,
       `DTSTAMP:${formatCalDate(new Date())}`,
@@ -448,12 +448,12 @@ export function ProductionCalendar({
     lines.push(
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
-      'DESCRIPTION:Genie Studio - Session in 30 minutes',
+      'DESCRIPTION:Genie Suite - Session in 30 minutes',
       'TRIGGER:-PT30M',
       'END:VALARM',
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
-      'DESCRIPTION:Genie Studio - Session in 15 minutes',
+      'DESCRIPTION:Genie Suite - Session in 15 minutes',
       'TRIGGER:-PT15M',
       'END:VALARM'
     );

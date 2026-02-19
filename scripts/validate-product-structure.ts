@@ -76,7 +76,7 @@ interface BannedTerm {
 const BANNED_TERMS: BannedTerm[] = [
   {
     pattern: /\bGenie\s+Arc\b/gi,
-    label: 'Genie Arc',
+    label: 'Genie Hub',
     replacement: 'Genie Hub',
     allowedContexts: [
       /BRANDING_GLOSSARY\.md/,         // The glossary itself documents old names

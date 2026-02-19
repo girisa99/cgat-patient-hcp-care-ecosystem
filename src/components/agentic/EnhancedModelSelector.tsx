@@ -156,12 +156,12 @@ const ENHANCED_AI_MODELS: AIModel[] = [
 
   // Vision Language Models
   {
-    id: 'gpt-4-vision',
-    name: 'GPT-4 Vision',
+    id: 'gpt-4o-vision',
+    name: 'GPT-4o (Vision)',
     provider: 'OpenAI',
     type: 'vision',
     capabilities: ['image_analysis', 'medical_imaging', 'document_ocr'],
-    description: 'Advanced vision model for medical image analysis and diagnostics',
+    description: 'Advanced multimodal model for medical image analysis and diagnostics',
     useCase: 'Radiology analysis, pathology review, medical document processing',
     performanceRating: 9.2,
     costEfficiency: 7.0,

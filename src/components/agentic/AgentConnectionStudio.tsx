@@ -91,8 +91,8 @@ const languageModels: LanguageModel[] = [
     description: 'Advanced multimodal model with vision capabilities'
   },
   {
-    id: 'claude-3-sonnet',
-    name: 'Claude 3 Sonnet',
+    id: 'claude-sonnet-4-5',
+    name: 'Claude Sonnet 4.5',
     provider: 'claude',
     type: 'llm',
     capabilities: ['text', 'reasoning', 'analysis', 'healthcare'],
@@ -153,14 +153,14 @@ const languageModels: LanguageModel[] = [
   },
   // VLMs
   {
-    id: 'gpt-4-vision',
-    name: 'GPT-4 Vision',
+    id: 'gpt-4o-vision',
+    name: 'GPT-4o (Vision)',
     provider: 'openai',
     type: 'vlm',
     capabilities: ['vision', 'medical-imaging', 'analysis'],
     tokenLimit: 128000,
     costPerToken: 0.04,
-    description: 'Advanced vision model for medical image analysis'
+    description: 'Advanced multimodal model for medical image analysis'
   },
   {
     id: 'claude-3-vision',

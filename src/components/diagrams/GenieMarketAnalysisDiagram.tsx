@@ -1,6 +1,6 @@
 /**
  * Genie Market & Competitive Analysis Diagram
- * Dedicated diagram for comprehensive market analysis within Genie Studio
+ * Dedicated diagram for comprehensive market analysis within Genie Suite
  */
 
 import React, { useState, useRef } from 'react';

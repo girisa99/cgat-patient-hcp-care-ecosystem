@@ -1,5 +1,5 @@
 /**
- * GENIE STUDIO LANDING PAGE
+ * GENIE SUITE LANDING PAGE
  * 
  * Main marketing landing page with:
  * - Professional AI Avatar video showcase (Veo, Alibaba WAN, ModelsLab)

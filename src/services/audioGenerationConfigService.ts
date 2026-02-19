@@ -133,10 +133,10 @@ const VOICE_PROVIDER_ROUTES: Record<RegionalZone, ProviderRoute> = {
 };
 
 const MUSIC_PROVIDER_ROUTES: Record<RegionalZone, ProviderRoute> = {
-  claude_zone: { primary: 'suno', fallback: 'elevenlabs', endpoint: 'multi-provider-music' },
+  claude_zone: { primary: 'elevenlabs', fallback: 'modelslab', endpoint: 'multi-provider-music' },
   alibaba_zone: { primary: 'alibaba', fallback: 'modelslab', endpoint: 'multi-provider-music' },
   arabic_zone: { primary: 'elevenlabs', fallback: 'modelslab', endpoint: 'multi-provider-music' },
-  gemini_zone: { primary: 'elevenlabs', fallback: 'modelslab', endpoint: 'multi-provider-music' },
+  gemini_zone: { primary: 'google-lyria', fallback: 'elevenlabs', endpoint: 'multi-provider-music' }, // Google's zone prefers Google Lyria 2
   africa_zone: { primary: 'elevenlabs', fallback: 'modelslab', endpoint: 'multi-provider-music' },
   fallback_zone: { primary: 'elevenlabs', fallback: 'modelslab', endpoint: 'multi-provider-music' },
 };

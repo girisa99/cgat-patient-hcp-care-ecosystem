@@ -106,8 +106,8 @@ export const ConnectorSwapManager: React.FC<ConnectorSwapManagerProps> = ({
         requirements: { api_key: true, rate_limits: '8K RPM' }
       },
       {
-        id: 'gemini-pro',
-        name: 'Gemini Pro',
+        id: 'gemini-2.5-pro',
+        name: 'Gemini 2.5 Pro',
         type: 'ai_model',
         provider: 'Google',
         capabilities: ['text', 'conversation', 'multimodal', 'vision'],

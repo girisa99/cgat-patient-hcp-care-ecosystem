@@ -49,7 +49,7 @@ export const GenAIConfig: React.FC<GenAIConfigProps> = ({
                   <SelectItem value="claude-3-5-haiku-20241022">🟣 Claude 3.5 Haiku (Fastest)</SelectItem>
                   <SelectItem value="claude-3-7-sonnet-20250219">🟣 Claude 3.7 Sonnet (Extended Thinking)</SelectItem>
                   <SelectItem value="claude-3-5-sonnet-20241022">🟣 Claude 3.5 Sonnet (Previous)</SelectItem>
-                  <SelectItem value="claude-3-opus-20240229">🟣 Claude 3 Opus (Legacy)</SelectItem>
+                  <SelectItem value="claude-sonnet-4-5-20250929">🟣 Claude Sonnet 4.5 (Latest)</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
@@ -197,10 +197,6 @@ export const GenAIConfig: React.FC<GenAIConfigProps> = ({
                 <SelectContent>
                   <SelectItem value="gpt-4o">🚀 GPT-4o (Multimodal)</SelectItem>
                   <SelectItem value="gpt-4o-mini">⚡ GPT-4o Mini (Fast & Efficient)</SelectItem>
-                  <SelectItem value="gpt-4-turbo">🧠 GPT-4 Turbo (Advanced)</SelectItem>
-                  <SelectItem value="gpt-4">🎯 GPT-4 (Standard)</SelectItem>
-                  <SelectItem value="gpt-3.5-turbo">💨 GPT-3.5 Turbo (Fast)</SelectItem>
-                  <SelectItem value="gpt-3.5-turbo-16k">📚 GPT-3.5 Turbo 16K (Long Context)</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>

@@ -1,7 +1,7 @@
 /**
- * Genie Studio Shared Context
- * 
- * PURPOSE: Provide shared state and P2 enhancements across all Genie Studio tools
+ * Genie Suite Shared Context
+ *
+ * PURPOSE: Provide shared state and P2 enhancements across all Genie Suite tools
  * - Spark, Mind, Vibe, Arc share content context
  * - Enables seamless content flow between tools
  * - Centralizes AI training feedback collection

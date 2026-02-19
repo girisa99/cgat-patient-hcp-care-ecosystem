@@ -35,7 +35,7 @@ export const GenieStudioOnePager: React.FC = () => {
         <div className="bg-slate-50 border-l-4 border-slate-900 p-4">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Executive Summary</h2>
           <p className="text-sm text-slate-700 leading-relaxed">
-            Genie Studio consolidates 5-6 disparate content tools into a unified AI-native platform, 
+            Genie Suite consolidates 5-6 disparate content tools into a unified AI-native platform, 
             delivering <span className="font-semibold">80% faster production times</span> and{' '}
             <span className="font-semibold">50-70% cost reduction</span>. The platform serves creators, 
             SMBs, and enterprises with 107+ AI pipelines, 70+ language dubbing, and HIPAA-ready compliance.
@@ -138,7 +138,7 @@ export const GenieStudioOnePager: React.FC = () => {
             <thead className="bg-slate-900 text-white">
               <tr>
                 <th className="text-left p-2 font-medium">Capability</th>
-                <th className="text-center p-2 font-bold bg-slate-800">Genie Studio</th>
+                <th className="text-center p-2 font-bold bg-slate-800">Genie Suite</th>
                 <th className="text-center p-2 font-medium">CapCut</th>
                 <th className="text-center p-2 font-medium">Descript</th>
                 <th className="text-center p-2 font-medium">Synthesia</th>
@@ -248,7 +248,7 @@ export const GenieStudioOnePager: React.FC = () => {
 
       {/* Footer */}
       <footer className="text-center text-[9px] text-slate-400 border-t border-slate-200 pt-2">
-        © 2026 Genie Studio Inc. | Confidential | Not for Distribution
+        © 2026 Genie Suite Inc. | Confidential | Not for Distribution
       </footer>
     </div>
   );

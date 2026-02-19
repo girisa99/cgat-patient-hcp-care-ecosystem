@@ -55,6 +55,7 @@ export function SavedAudioCard({
 }: SavedAudioCardProps) {
   const [showScriptDialog, setShowScriptDialog] = useState(false);
   const [viewVersion, setViewVersion] = useState<'original' | 'enhanced'>('enhanced');
+  const [audioError, setAudioError] = useState(false);
   
   const hasScript = !!(audio.scriptText || audio.originalScript);
   const hasOriginal = !!audio.originalScript;
@@ -133,8 +134,18 @@ export function SavedAudioCard({
           </p>
         </div>
         
-        {audio.url && (
-          <audio src={audio.url} controls className="h-8 w-40" />
+        {audio.url && !audioError && (
+          <audio
+            src={audio.url}
+            controls
+            className="h-8 w-40"
+            onError={() => setAudioError(true)}
+          />
+        )}
+        {audioError && (
+          <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
+            URL expired
+          </Badge>
         )}
         
         <DropdownMenu>
@@ -238,7 +249,8 @@ export function SavedAudioCard({
                 <Volume2 className="h-4 w-4 text-green-600" />
                 <span className="text-sm font-medium">Audio Preview</span>
               </div>
-              <audio src={audio.url} controls className="h-8" />
+              <audio src={audio.url} controls className="h-8" onError={() => setAudioError(true)} />
+              {audioError && <span className="text-xs text-amber-600 ml-2">URL may have expired</span>}
             </div>
           )}
         </DialogContent>

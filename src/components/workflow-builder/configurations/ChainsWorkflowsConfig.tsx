@@ -257,7 +257,7 @@ export const ChainsWorkflowsConfig: React.FC<ChainsWorkflowsConfigProps> = ({
                 }
                 onChange({ ...configuration, chainSteps: steps });
               }}
-              placeholder='{"prompt": "Your prompt here", "model": "gpt-4"}'
+              placeholder='{"prompt": "Your prompt here", "model": "gpt-4o"}'
               rows={3}
             />
           </div>

@@ -48,15 +48,15 @@ export const PROVIDER_COSTS = {
   llm: {
     // Tier 3 - Premium
     'claude-3-5-sonnet': { cost: 15, unit: '1M tokens', tier: 'premium' },
-    'claude-3-opus': { cost: 30, unit: '1M tokens', tier: 'premium' },
+    'claude-opus-4-5': { cost: 30, unit: '1M tokens', tier: 'premium' },
     'gpt-4o': { cost: 15, unit: '1M tokens', tier: 'premium' },
     'gpt-5': { cost: 25, unit: '1M tokens', tier: 'premium' },
     
     // Tier 2 - Advanced
     'qwen-max': { cost: 8, unit: '1M tokens', tier: 'advanced' },
     'qwen-plus': { cost: 5, unit: '1M tokens', tier: 'advanced' },
-    'gemini-pro': { cost: 7, unit: '1M tokens', tier: 'advanced' },
-    'gemini-1.5-pro': { cost: 7, unit: '1M tokens', tier: 'advanced' },
+    'gemini-2.5-pro': { cost: 7, unit: '1M tokens', tier: 'advanced' },
+    'gemini-2.5-pro': { cost: 7, unit: '1M tokens', tier: 'advanced' },
     'deepseek-v3': { cost: 2, unit: '1M tokens', tier: 'advanced' },
     'deepseek-r1': { cost: 3, unit: '1M tokens', tier: 'advanced' },
     
@@ -64,7 +64,7 @@ export const PROVIDER_COSTS = {
     'qwen-turbo': { cost: 2, unit: '1M tokens', tier: 'standard' },
     'gemini-flash': { cost: 3, unit: '1M tokens', tier: 'standard' },
     'gpt-4o-mini': { cost: 5, unit: '1M tokens', tier: 'standard' },
-    'claude-3-haiku': { cost: 3, unit: '1M tokens', tier: 'standard' },
+    'claude-haiku-4-5': { cost: 3, unit: '1M tokens', tier: 'standard' },
   },
   tts: {
     'elevenlabs': { cost: 0.30, unit: '1k chars', tier: 'premium' },
@@ -162,31 +162,31 @@ export const COMPLETE_ROUTING_TABLE: RegionRoute[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   
   // India/Pakistan/Bangladesh (⭐ = Regional specialist with MOAT)
-  { region: 'India', countryCode: 'IN', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: '⭐ 22 languages', reason: 'Google invested in 22 Indian langs' } },
-  { region: 'Pakistan', countryCode: 'PK', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: true, moat: 'Urdu + RTL', reason: 'Urdu support' } },
-  { region: 'Bangladesh', countryCode: 'BD', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Bengali', reason: 'Bengali support' } },
-  { region: 'Sri Lanka', countryCode: 'LK', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Sinhala/Tamil', reason: 'Sinhala/Tamil support' } },
-  { region: 'Nepal', countryCode: 'NP', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Nepali', reason: 'Nepali support' } },
+  { region: 'India', countryCode: 'IN', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: '⭐ 22 languages', reason: 'Google invested in 22 Indian langs' } },
+  { region: 'Pakistan', countryCode: 'PK', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: true, moat: 'Urdu + RTL', reason: 'Urdu support' } },
+  { region: 'Bangladesh', countryCode: 'BD', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Bengali', reason: 'Bengali support' } },
+  { region: 'Sri Lanka', countryCode: 'LK', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Sinhala/Tamil', reason: 'Sinhala/Tamil support' } },
+  { region: 'Nepal', countryCode: 'NP', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Nepali', reason: 'Nepali support' } },
   
   // Southeast Asia (⭐ = Regional specialist)
-  { region: 'Indonesia', countryCode: 'ID', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: '⭐ Bahasa Indo', reason: 'Strong Bahasa Indonesia' } },
-  { region: 'Vietnam', countryCode: 'VN', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Vietnamese', reason: 'Vietnamese tones' } },
-  { region: 'Thailand', countryCode: 'TH', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Thai', reason: 'Thai script' } },
-  { region: 'Philippines', countryCode: 'PH', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Filipino', reason: 'Filipino/Tagalog' } },
-  { region: 'Malaysia', countryCode: 'MY', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Malay', reason: 'Malay support' } },
-  { region: 'Singapore', countryCode: 'SG', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Multilingual', reason: 'English + Mandarin + Malay + Tamil' } },
-  { region: 'Myanmar', countryCode: 'MM', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Burmese', reason: 'Burmese support' } },
-  { region: 'Cambodia', countryCode: 'KH', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Khmer', reason: 'Khmer support' } },
+  { region: 'Indonesia', countryCode: 'ID', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: '⭐ Bahasa Indo', reason: 'Strong Bahasa Indonesia' } },
+  { region: 'Vietnam', countryCode: 'VN', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Vietnamese', reason: 'Vietnamese tones' } },
+  { region: 'Thailand', countryCode: 'TH', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Thai', reason: 'Thai script' } },
+  { region: 'Philippines', countryCode: 'PH', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Filipino', reason: 'Filipino/Tagalog' } },
+  { region: 'Malaysia', countryCode: 'MY', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Malay', reason: 'Malay support' } },
+  { region: 'Singapore', countryCode: 'SG', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Multilingual', reason: 'English + Mandarin + Malay + Tamil' } },
+  { region: 'Myanmar', countryCode: 'MM', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Burmese', reason: 'Burmese support' } },
+  { region: 'Cambodia', countryCode: 'KH', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Khmer', reason: 'Khmer support' } },
   
   // Africa (⭐ = FIRST MOVER - MOAT)
-  { region: 'Nigeria', countryCode: 'NG', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: '⭐ Yoruba/Hausa/Igbo', reason: 'Yoruba, Hausa, Igbo' } },
-  { region: 'Kenya', countryCode: 'KE', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: '⭐ Swahili', reason: 'Swahili' } },
-  { region: 'Tanzania', countryCode: 'TZ', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Swahili', reason: 'Swahili' } },
-  { region: 'Ethiopia', countryCode: 'ET', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Amharic', reason: 'Amharic' } },
-  { region: 'Ghana', countryCode: 'GH', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Akan/Twi', reason: 'Akan/Twi' } },
-  { region: 'Uganda', countryCode: 'UG', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Luganda/Swahili', reason: 'Luganda/Swahili' } },
-  { region: 'Rwanda', countryCode: 'RW', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Kinyarwanda', reason: 'Kinyarwanda' } },
-  { region: 'Senegal', countryCode: 'SN', zone: 'gemini', config: { llm: 'gemini-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Wolof/French', reason: 'Wolof/French' } },
+  { region: 'Nigeria', countryCode: 'NG', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: '⭐ Yoruba/Hausa/Igbo', reason: 'Yoruba, Hausa, Igbo' } },
+  { region: 'Kenya', countryCode: 'KE', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: '⭐ Swahili', reason: 'Swahili' } },
+  { region: 'Tanzania', countryCode: 'TZ', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Swahili', reason: 'Swahili' } },
+  { region: 'Ethiopia', countryCode: 'ET', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Amharic', reason: 'Amharic' } },
+  { region: 'Ghana', countryCode: 'GH', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Akan/Twi', reason: 'Akan/Twi' } },
+  { region: 'Uganda', countryCode: 'UG', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Luganda/Swahili', reason: 'Luganda/Swahili' } },
+  { region: 'Rwanda', countryCode: 'RW', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Kinyarwanda', reason: 'Kinyarwanda' } },
+  { region: 'Senegal', countryCode: 'SN', zone: 'gemini', config: { llm: 'gemini-2.5-pro', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Wolof/French', reason: 'Wolof/French' } },
 ];
 
 // ============================================================================
@@ -212,7 +212,7 @@ export const ZONE_SUMMARY = {
   },
   gemini: {
     name: 'Gemini Zone',
-    llm: 'gemini-pro',
+    llm: 'gemini-2.5-pro',
     regions: ['India', 'Pakistan', 'SEA', 'Africa'],
     providers: 'Gemini + Azure + Google Translate',
     color: 'bg-green-500',
@@ -330,7 +330,7 @@ export function selectLLM(region: string): { llm: string; fallback: string } {
     return { llm: 'qwen-max', fallback: 'gpt-4o' };
   }
   if (geminiZone.includes(region)) {
-    return { llm: 'gemini-pro', fallback: 'gpt-4o' };
+    return { llm: 'gemini-2.5-pro', fallback: 'gpt-4o' };
   }
   
   return { llm: 'gpt-4o', fallback: 'claude-3-5-sonnet' };

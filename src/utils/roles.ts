@@ -55,7 +55,7 @@ export const hasAnyRole = (userRoles: string[] = [], required: string[] = []): b
 // Role-based routing: 
 //   - Internal/Admin → Production Hub (/genie-admin)
 //   - Healthcare roles → Patient Dashboard (/patients)
-//   - Genie Studio subscribers → Studio (/genie-studio)
+//   - Genie Suite subscribers → Studio (/genie-studio)
 export const getDefaultRouteForRoles = (roles: string[] = [], isInternal?: boolean): string => {
   const r = normalizeRoles(roles);
 
@@ -67,7 +67,7 @@ export const getDefaultRouteForRoles = (roles: string[] = [], isInternal?: boole
   if (r.includes('admin')) return '/genie-cast';
   if (r.includes('onboardingTeam')) return '/genie-cast';
 
-  // Healthcare roles → Patient Management (NOT Genie Studio)
+  // Healthcare roles → Patient Management (NOT Genie Suite)
   if (r.includes('healthcareProvider')) return '/patients';
   if (r.includes('nurse')) return '/patients';
   if (r.includes('caseManager')) return '/patients';
@@ -76,6 +76,6 @@ export const getDefaultRouteForRoles = (roles: string[] = [], isInternal?: boole
   // Demo users
   if (r.includes('demoUser')) return '/demo-dashboard';
 
-  // Default for Genie Studio subscribers
+  // Default for Genie Suite subscribers
   return '/genie-studio';
 };

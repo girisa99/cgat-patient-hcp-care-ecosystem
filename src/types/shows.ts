@@ -14,7 +14,7 @@ export type ShowType =
   | 'discovery_call' | 'sales_meeting' | 'project_kickoff' | 'status_update' | 'consultation'
   // Events
   | 'workshop' | 'webinar' | 'conference' | 'training_session'
-  // Genie Studio Demos
+  // Genie Suite Demos
   | 'genie_studio_full' | 'genie_spark_demo' | 'genie_arc_demo' | 'genie_mind_demo' | 'genie_vibe_demo' | 'genie_suite_overview';
 
 // Stage types per category
@@ -127,7 +127,7 @@ export const EVENT_CATEGORIES: {
   { id: 'media_production', label: 'Media Production', description: 'Podcasts, webcasts, interviews', icon: 'Video' },
   { id: 'business_meeting', label: 'Business Meeting', description: 'Calls, meetings, consultations', icon: 'Users' },
   { id: 'event', label: 'Event', description: 'Workshops, webinars, conferences', icon: 'Calendar' },
-  { id: 'genie_demo', label: 'Genie Studio Demo', description: 'Product demos & walkthroughs', icon: 'Sparkles' },
+  { id: 'genie_demo', label: 'Genie Suite Demo', description: 'Product demos & walkthroughs', icon: 'Sparkles' },
 ];
 
 // Stage configuration for Media Productions
@@ -201,8 +201,8 @@ export const SHOW_TYPES: { id: ShowType; label: string; icon: string; category: 
   { id: 'webinar', label: 'Webinar', icon: 'Monitor', category: 'event' },
   { id: 'conference', label: 'Conference', icon: 'Building', category: 'event' },
   { id: 'training_session', label: 'Training Session', icon: 'BookOpen', category: 'event' },
-  // Genie Studio Demos
-  { id: 'genie_studio_full', label: 'Full Studio Demo', icon: 'Sparkles', category: 'genie_demo' },
+  // Genie Suite Demos
+  { id: 'genie_studio_full', label: 'Full Suite Demo', icon: 'Sparkles', category: 'genie_demo' },
   { id: 'genie_spark_demo', label: 'Genie Spark Demo', icon: 'Zap', category: 'genie_demo' },
   { id: 'genie_arc_demo', label: 'Genie Hub Demo', icon: 'Film', category: 'genie_demo' },
   { id: 'genie_mind_demo', label: 'Genie Mind Demo', icon: 'Brain', category: 'genie_demo' },

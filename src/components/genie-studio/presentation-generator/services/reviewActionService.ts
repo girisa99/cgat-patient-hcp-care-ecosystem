@@ -223,7 +223,7 @@ class ReviewActionService {
         success: true,
         updatedContent: data?.content,
         processingTimeMs: Date.now() - startTime,
-        modelUsed: data?.model || 'gemini-1.5-flash',
+        modelUsed: data?.model || 'gemini-2.5-flash',
       };
     } catch (error) {
       console.error('[ReviewAction] Enhance failed:', error);
@@ -270,7 +270,7 @@ class ReviewActionService {
           suggestions: data?.suggestions || suggestions,
         },
         processingTimeMs: Date.now() - startTime,
-        modelUsed: data?.model || 'gemini-1.5-flash',
+        modelUsed: data?.model || 'gemini-2.5-flash',
       };
     } catch (error) {
       // Return mock analysis for development
@@ -332,7 +332,7 @@ class ReviewActionService {
         success: true,
         updatedContent: data?.content,
         processingTimeMs: Date.now() - startTime,
-        modelUsed: data?.model || 'gemini-1.5-flash',
+        modelUsed: data?.model || 'gemini-2.5-flash',
       };
     } catch (error) {
       return {
@@ -370,7 +370,7 @@ class ReviewActionService {
         suggestions: data?.suggestions || [],
         updatedContent: data?.content,
         processingTimeMs: Date.now() - startTime,
-        modelUsed: data?.model || 'gemini-1.5-flash',
+        modelUsed: data?.model || 'gemini-2.5-flash',
       };
     } catch (error) {
       // Return mock suggestions
@@ -430,7 +430,7 @@ class ReviewActionService {
         success: true,
         updatedContent: data?.content,
         processingTimeMs: Date.now() - startTime,
-        modelUsed: data?.model || 'gemini-1.5-flash',
+        modelUsed: data?.model || 'gemini-2.5-flash',
       };
     } catch (error) {
       return {
