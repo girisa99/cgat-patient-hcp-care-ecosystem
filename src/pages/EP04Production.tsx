@@ -485,10 +485,25 @@ export default function EP04Production() {
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               {line.isInterruption && (
                                 <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-400 border-orange-500/30 animate-pulse">
                                   ⚡ Interruption
+                                </Badge>
+                              )}
+                              {line.lipsync && (
+                                <Badge variant="outline" className="text-xs bg-pink-500/10 text-pink-400 border-pink-500/30">
+                                  👄 Lip-Sync
+                                </Badge>
+                              )}
+                              {line.sfx && line.sfx.length > 0 && (
+                                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                                  🔊 SFX ×{line.sfx.length}
+                                </Badge>
+                              )}
+                              {line.motion && (
+                                <Badge variant="outline" className="text-xs bg-violet-500/10 text-violet-400 border-violet-500/30">
+                                  🎬 {line.motion.split('-').slice(0, 3).join(' ')}
                                 </Badge>
                               )}
                               <Badge variant="outline" className={cn('text-xs', VOICE_COLORS[line.voice])}>
