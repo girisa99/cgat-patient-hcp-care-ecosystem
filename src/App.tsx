@@ -245,6 +245,13 @@ const AppContent = () => {
               {/* PERMANENT FIX: Genie Cast is now a standalone page, not a tab */}
               <Route path="/genie-cast" element={<GenieCastPage />} />
               
+              {/* EP04 TTS Production */}
+              <Route path="/ep04-production" element={
+                <Suspense fallback={<PageLoading message="Loading EP04 Production..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/EP04Production')))}
+                </Suspense>
+              } />
+              
               {/* Root path - Dashboard redirect */}
               <Route path="/" element={
                 isAuthenticated ? (
