@@ -28,6 +28,20 @@ import hostAvatar from '@/assets/characters/host-dog.png';
 import atlasAvatar from '@/assets/characters/atlas-bear.png';
 import novaAvatar from '@/assets/characters/nova-fox.png';
 
+// Scene background imports
+import scene0Bg from '@/assets/scenes/scene-0-title.png';
+import scene1Bg from '@/assets/scenes/scene-1-problem.png';
+import scene2Bg from '@/assets/scenes/scene-2-introductions.png';
+import scene3Bg from '@/assets/scenes/scene-3-origin.png';
+import scene4Bg from '@/assets/scenes/scene-4-solution.png';
+import scene5Bg from '@/assets/scenes/scene-5-governance.png';
+import scene6Bg from '@/assets/scenes/scene-6-po-actions.png';
+import scene7Bg from '@/assets/scenes/scene-7-velocity.png';
+import scene8Bg from '@/assets/scenes/scene-8-numbers.png';
+import scene9Bg from '@/assets/scenes/scene-9-challenges.png';
+import scene10Bg from '@/assets/scenes/scene-10-vision.png';
+import scene11Bg from '@/assets/scenes/scene-11-close.png';
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface GeneratedAudio {
@@ -68,6 +82,51 @@ const CHARACTER_AVATARS: Record<string, string> = {
   host: hostAvatar,
   atlas: atlasAvatar,
   nova: novaAvatar,
+};
+
+const SCENE_BACKGROUNDS: Record<string, string> = {
+  'scene-0-title': scene0Bg,
+  'scene-1-problem': scene1Bg,
+  'scene-2-introductions': scene2Bg,
+  'scene-3-origin': scene3Bg,
+  'scene-4-solution': scene4Bg,
+  'scene-5-governance': scene5Bg,
+  'scene-6-po-actions': scene6Bg,
+  'scene-7-velocity': scene7Bg,
+  'scene-8-numbers': scene8Bg,
+  'scene-9-challenges': scene9Bg,
+  'scene-10-vision': scene10Bg,
+  'scene-11-close': scene11Bg,
+};
+
+const SCENE_TITLES: Record<string, string> = {
+  'scene-0-title': 'Scene 0 — Title & Welcome',
+  'scene-1-problem': 'Scene 1 — The Problem',
+  'scene-2-introductions': 'Scene 2 — Meet the Team',
+  'scene-3-origin': 'Scene 3 — The Origin Story',
+  'scene-4-solution': 'Scene 4 — The Solution',
+  'scene-5-governance': 'Scene 5 — Governance',
+  'scene-6-po-actions': 'Scene 6 — PO Actions',
+  'scene-7-velocity': 'Scene 7 — Velocity & Scope Creep',
+  'scene-8-numbers': 'Scene 8 — The Numbers',
+  'scene-9-challenges': 'Scene 9 — Honest Challenges',
+  'scene-10-vision': 'Scene 10 — What\'s Next',
+  'scene-11-close': 'Scene 11 — Close & CTA',
+};
+
+const SCENE_STYLES: Record<string, string> = {
+  'scene-0-title': 'Pixar 3D',
+  'scene-1-problem': 'Anime',
+  'scene-2-introductions': 'Watercolor',
+  'scene-3-origin': 'Flat Illustration',
+  'scene-4-solution': 'Pixar 3D',
+  'scene-5-governance': 'Anime',
+  'scene-6-po-actions': 'Watercolor',
+  'scene-7-velocity': 'Pixar 3D',
+  'scene-8-numbers': 'Flat Illustration',
+  'scene-9-challenges': 'Anime',
+  'scene-10-vision': 'Watercolor',
+  'scene-11-close': 'Pixar 3D',
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -280,9 +339,28 @@ export default function EP04Production() {
         <div className="max-w-5xl mx-auto p-6 space-y-8">
           {Array.from(scenes.entries()).map(([sceneId, { keys, lines }]) => (
             <div key={sceneId}>
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                {sceneId.replace(/-/g, ' ')}
-              </h2>
+              {/* Scene Background Header */}
+              <div className="relative rounded-xl overflow-hidden mb-4 h-40 group">
+                <img
+                  src={SCENE_BACKGROUNDS[sceneId]}
+                  alt={SCENE_TITLES[sceneId] || sceneId}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-foreground drop-shadow-lg">
+                      {SCENE_TITLES[sceneId] || sceneId.replace(/-/g, ' ')}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {keys.length} line{keys.length !== 1 ? 's' : ''} · Art Style: {SCENE_STYLES[sceneId] || 'Mixed'}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-xs bg-background/50 backdrop-blur-sm">
+                    {sceneId.split('-')[1]?.replace('scene', '') || ''}
+                  </Badge>
+                </div>
+              </div>
               <div className="space-y-2">
                 {keys.map((key, i) => {
                   const line = lines[i];
