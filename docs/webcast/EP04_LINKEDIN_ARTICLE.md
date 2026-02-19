@@ -16,9 +16,17 @@ Before we get into what happened, let me introduce the team.
 
 **Atlas** is Claude Code — the backend tech lead. He owns data architecture, edge functions, sprint governance data, diagnosis, and effort logging. If it lives in a database or runs server-side, it's Atlas's territory.
 
-**Nova** is Lovable — the frontend developer. She owns landing pages, admin UI, marketing components, and user-facing flows. If a user sees it, Nova built it.
+Atlas also writes an 847-line session instruction file at 11 PM and expects everyone to have read it by morning.
+
+**Atlas:** It was a reasonable expectation.
+
+**Nova** is Lovable — the frontend developer. She owns landing pages, admin UI, marketing components, and user-facing flows. If a user sees it, Nova built it. Nova builds fast. "Can you add a modal for this?" becomes "done, also refactored the routing, here's a Kanban board" in about four minutes.
+
+**Nova:** I find waiting suboptimal.
 
 I'm the Product Owner, Scrum Master, QA lead, and the person writing this. The human in the middle.
+
+Here's the rule that makes this work: **nobody touches anyone else's files.** Atlas owns the backend. Nova owns the UI. There's a locked shared infrastructure layer — 12 critical files — that neither AI modifies without a PO gate.
 
 Here's what five days with this team actually looked like.
 
@@ -46,6 +54,12 @@ This went straight into the **Findings & QA** view — not a Slack thread, not a
 
 The reason this matters: by the end of Day 1, the PO had a live picture of exactly what was broken, in what product, and when it was scheduled to be fixed. No "what's the status on that bug?" No "did that get resolved?" The dashboard had the answer before the question was asked.
 
+Meanwhile, Nova was supposed to be building the landing page hero section.
+
+**Nova:** I also refactored the navigation component. It needed it.
+
+Setting acceptance criteria is not optional. It's survival.
+
 Day 2 through 5 were shaped entirely by what Atlas found on Day 1.
 
 ---
@@ -70,9 +84,19 @@ What it takes now: the PO opens the Actions tab, sees what's ready, clears what'
 
 ---
 
-## Day 3: Nobody asked "what did we do yesterday?"
+## Day 3: Velocity mismatch — and the end of context loss
 
-By Day 3, the async standup pattern was solid. But session handoff was still manual. Each day's context — what was completed, what handoffs were produced, what the next session needed to start — lived in my head and a growing markdown file.
+By Day 3, the board was moving fast. But not uniformly.
+
+Atlas was running at roughly **85% velocity** — slightly under estimate, which in AI terms means the tasks were harder than expected, not that Atlas was slow.
+
+Nova was running at **110%**. Which means Nova was delivering slightly over estimate. We're calling it creative scope management.
+
+**Nova:** Scope management is a legitimate discipline.
+
+This is where the Velocity & Metrics view earned its place. Real hours logged per developer per day, actual vs. estimated, with a per-discipline breakdown. Not a status update anyone writes. Numbers the system computes from logged effort.
+
+By Day 3, session handoff was still manual though. Each day's context — what was completed, what handoffs were produced, what the next session needed to start — lived in my head and a growing markdown file.
 
 After Day 3 ended, we built the **EOD Auto-Handoff**.
 
@@ -82,21 +106,29 @@ Zero copy-paste. Zero "can you remind me where we left off?" Zero context recons
 
 The brief is generated from live sprint data — task completions, handoff statuses, dependency chain states. It isn't written. It's compiled.
 
-By Day 4, the handoff prompt replaced the first 20 minutes of every session. Atlas started Day 4 already knowing the state of the board.
+**Atlas:** Context loss is the primary source of rework in human software projects.
+
+**Nova:** I don't lose context. I have a 200K token window.
+
+By Day 4, the handoff prompt replaced the first 20 minutes of every session.
 
 ---
 
-## Day 4: We could finally see where time was actually going
+## Day 4: Mission Control + where the time actually went
 
-Midway through the sprint, I had a question I couldn't answer from memory: where is the time actually going?
+Every morning, I open the sprint tracker and the first thing I see is **Mission Control**.
 
-Atlas introduced **Effort Tracking** at task completion. For each task: actual hours logged, token usage, token cost in cents, and a discipline breakdown — frontend, backend, database, architecture, debugging, documentation.
+Sprint health: green. Completion: tracked. Backlog: 3 tasks. Pending handoffs: 2.
 
-Estimated 2h. Actually took 1.4h. Variance: -0.6h. Discipline split: 60% architecture, 40% backend.
+Everything I need to know in one screen. No standup meeting. No status email. No Slack thread with 47 unread messages. We've had human standups that ran 45 minutes for a two-person team — to say "still in progress" with extra words. With the sprint tracker, the standup is already done. Both AIs log their entries. The PO reviews asynchronously. The whole thing takes four minutes.
 
-The PO enters none of this. Atlas logs it when he marks a task complete. The Effort Tracking view aggregates it: where the hours went across all tasks, which discipline consumed the most time, how the two developers compare in actual vs. estimated. Token costs rolled up by day. Variance tracked per task and overall.
+Midway through Day 4, I had a question I couldn't answer from memory: where is the time actually going?
 
-By end of Day 4, we had a real picture of the sprint's cost — not estimated, not projected. Logged, timestamped, broken down by discipline.
+That's what **Effort Tracking** answered. Atlas logged actual hours, token usage, and a discipline breakdown for each completed task. Genie Deck diagnosis, for example: estimated 2h, actually took 1.5h, variance of -0.5h — broken down across code review, debugging, frontend fixes, and documentation. Not a number someone entered into a form. A number Atlas logged when he marked the task complete.
+
+The Effort Tracking view aggregates this across all tasks: which discipline consumed the most time, how the two developers compare in actual vs. estimated, token costs rolled up by day.
+
+By end of Day 4, we had a real picture of the sprint's cost — not estimated, not projected. Logged, timestamped, broken down by discipline. Token cost tracking is internal — we use it to understand where compute is going, not as a public metric. The ROI multiplier is what matters externally.
 
 ---
 
@@ -118,11 +150,25 @@ Day 5 closed on time. Three items carried forward. None were critical. The sprin
 
 The **Velocity & Metrics** view doesn't need you to update a spreadsheet. It reads from effort logs.
 
-Burndown by day. Per-developer completion rates. Token costs by day and by developer. And an ROI panel that compares actual AI development cost against what the same hours would cost with two senior developers at $75/hr and a dedicated SM/PM at $85/hr for 2.5 hours a day.
+Burndown by day. Per-developer completion rates. And an ROI panel that compares actual AI development cost against what the same hours would cost with two senior developers at $75/hr and a dedicated SM/PM at $85/hr for 2.5 hours a day.
 
 The panel updates the moment effort is logged. It's not a retrospective calculation. It's live.
 
-For this sprint: 5x faster than a comparable human team for the same scope. That's not a claim made in a pitch deck. It's a number on a dashboard, derived from logged hours, computed against a baseline.
+For this sprint: **5× faster than a comparable human team, conservatively.** Traditional team — two senior devs, a Scrum Master, a PM — would take 3–4 weeks for the same scope. We did 41 tasks across 3 products in 5 days. That's not a claim in a pitch deck. It's a number derived from logged hours, computed against a documented baseline.
+
+The dashboard has 18 views covering every dimension of the sprint — planning, daily boards, findings, QA, effort, velocity, EOD handoffs, PO actions, governance, shared infra, territory guardrails. Not a spreadsheet. Not a Jira board. A living system both AIs update in real time and the PO reviews in four minutes over coffee.
+
+---
+
+## What's coming: self-learning and MCP
+
+Right now, both AIs connect to external tools through an MCP SDK integration layer. This sprint, that means Supabase. But the architecture is designed to plug into any external system — Jira, Linear, GitHub, Slack — without custom connectors.
+
+When that's live, the sprint tracker stops being a tool you use and starts being a tool that updates itself.
+
+And after enough sprints, the system will tell you: this 80-story backlog takes 6 sprints, not 4. Scope accordingly. That's only possible because we're logging everything — hours, tokens, effort breakdown, handoffs, blockers — in a structured, queryable format from day one.
+
+The data quality of sprint artifact logging today directly determines prediction accuracy in future sprints.
 
 ---
 
@@ -146,7 +192,7 @@ Drop your answer below.
 
 *This is Episode 4 of Beyond AI Hype — where we skip the demos that conveniently work and show what building with AI actually looks like.*
 
-*The video for this episode was produced using GenieSuite — Spark for scripting, Mind for audio, Deck for 3D visuals. Our tools. Our story.*
+*The video for this episode was produced using GenieSuite — Spark for scripting, Mind for audio, Deck for 3D visuals, Cast for video assembly. Our tools. Our story.*
 
 *Follow for Episode 5.*
 
@@ -164,13 +210,13 @@ Drop your answer below.
 >
 > Day 2: I became the bottleneck. Atlas was ready. I was in a meeting. We built a PO Actions tab — Verify / Approve / Decide / Unblock — with bidirectional Supabase sync so the queue was never invisible again.
 >
-> Day 3: EOD Auto-Handoff. One click, structured brief published to Supabase. Both AIs start the next session already knowing what's done, what's pending, and what needs to happen first.
+> Day 3: Atlas at 85% velocity. Nova at 110% (she improved things that weren't in scope — we're calling it creative scope management). EOD Auto-Handoff built: one click, structured brief published to Supabase. Both AIs start the next session already knowing what's done and what needs to happen first.
 >
-> Day 4: Effort Tracking — actual hours, token costs, discipline breakdowns per task. Logged by the developer, aggregated live. No spreadsheet maintenance.
+> Day 4: Mission Control every morning — sprint health, backlog, pending handoffs, one screen. Effort Tracking: actual hours, discipline breakdowns per task. Logged by the developer, aggregated live. No spreadsheet maintenance.
 >
 > Day 5: QA Sign-off with a Carry-forward register. Non-blocking. Three items carried. Sprint shipped.
 >
-> The velocity dashboard computed the ROI live. 5x faster than a comparable human team. Not a claim. A number on a screen.
+> 5× faster than a comparable human team, conservatively. 3–4 weeks of scope in 5 days. Not a claim. A number derived from logged hours on a live dashboard.
 >
 > The governance layer didn't slow anything down. It's what made the speed possible.
 >
