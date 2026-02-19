@@ -56,7 +56,6 @@ export const PROVIDER_COSTS = {
     'qwen-max': { cost: 8, unit: '1M tokens', tier: 'advanced' },
     'qwen-plus': { cost: 5, unit: '1M tokens', tier: 'advanced' },
     'gemini-2.5-pro': { cost: 7, unit: '1M tokens', tier: 'advanced' },
-    'gemini-2.5-pro': { cost: 7, unit: '1M tokens', tier: 'advanced' },
     'deepseek-v3': { cost: 2, unit: '1M tokens', tier: 'advanced' },
     'deepseek-r1': { cost: 3, unit: '1M tokens', tier: 'advanced' },
     

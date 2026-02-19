@@ -265,10 +265,11 @@ const GenieMind: React.FC = () => {
                       const { error } = await (await import('@/integrations/supabase/client')).supabase
                         .from('generated_media')
                         .insert({
-                          user_id: user.id,
                           name,
                           file_type: 'audio',
                           file_url: url,
+                          storage_bucket: 'generated_media',
+                          storage_path: `tts/${Date.now()}`,
                           source: 'tts',
                           metadata: {
                             type: 'tts',

@@ -891,7 +891,6 @@ export class ContextualRecommendationService {
       'google-stt': 'Google STT',
       'azure-translator': 'Azure Translator',
       'modelslab': 'ModelsLab',
-      'alibaba-wan2': 'Alibaba Wan 2.2',
       'replicate': 'Replicate',
       'stability': 'Stability AI',
     };

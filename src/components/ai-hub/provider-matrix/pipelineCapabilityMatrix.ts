@@ -311,6 +311,7 @@ export const PROVIDER_VERTICAL_MATRIX: Record<ProviderId, {
   cohere: { name: 'Cohere → OpenAI/Gemini', verticals: { enterprise: 'full' }, pricingTier: 'pro', strengths: ['→ Use OpenAI/Gemini Embeddings'] },
   runway: { name: 'Runway → ModelsLab', verticals: { generative_video: 'full', ai_avatar: 'partial' }, pricingTier: 'pro', strengths: ['→ Use ModelsLab AnimateDiff'] },
   pika: { name: 'Pika → Alibaba', verticals: { generative_video: 'full', social_publishing: 'full' }, pricingTier: 'pro', strengths: ['→ Use Alibaba WAN 2.2'] },
+  'google-lyria': { name: 'Google Lyria 2', verticals: { generative_video: 'partial' }, pricingTier: 'pro', strengths: ['Instrumental music generation', 'Vertex AI integration'] },
 };
 
 // ============================================
