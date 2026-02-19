@@ -339,7 +339,7 @@ export default function EP04Production() {
                               )}
                             </div>
                             <p className="text-sm leading-relaxed whitespace-pre-line">
-                              {line.text.length > 200 ? line.text.slice(0, 200) + '...' : line.text}
+                              {line.text}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1 italic">
                               {line.direction}
