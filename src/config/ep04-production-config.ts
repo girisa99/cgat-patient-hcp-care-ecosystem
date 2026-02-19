@@ -165,7 +165,10 @@ export const EP04_AVATAR_CONFIG = {
 export type ScenePipelineStep =
   | { type: 'tts'; voice: EP04Voice; scriptKey: string }
   | { type: 'screen-capture'; screenIds: string[]; multiCapture: boolean }
-  | { type: 'avatar-3d'; character: keyof typeof EP04_AVATAR_CONFIG['characters'] }
+  | { type: 'avatar-3d'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; style?: 'pixar-3d' | 'disney-2d' | 'hybrid-2.5d' }
+  | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab' }
+  | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v'; prompt: string; referenceImage?: string }
+  | { type: 'alibaba-image'; model: 'flux-merged' | 'wanx-v2.1'; prompt: string }
   | { type: 'motion-graphics'; content: string }
   | { type: 'kinetic-text'; text: string };
 
@@ -177,31 +180,38 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'motion-graphics', content: 'sprint-dashboard-montage' },
   ],
   'scene-2-meet-team': [
-    { type: 'avatar-3d', character: 'host' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'tts', voice: 'host', scriptKey: 'meet-host' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
-    { type: 'avatar-3d', character: 'atlas' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-847-lines' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-847-response' },
-    { type: 'avatar-3d', character: 'nova' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-waiting-suboptimal' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'kinetic-text', text: 'NOBODY TOUCHES ANYONE ELSE\'S FILES.' },
   ],
   'scene-3-governance': [
     { type: 'tts', voice: 'host', scriptKey: 'governance-narration' },
     { type: 'screen-capture', screenIds: ['sprint-charter', 'governance-guide'], multiCapture: true },
-    { type: 'motion-graphics', content: 'territory-city-3d' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Cinematic aerial fly-through of a divided miniature city: blue crystal towers on left, green garden towers on right, golden bridge connecting them, Pixar-quality 3D, dramatic sunset lighting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-merge-conflict' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-governance-not-overkill' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-read-relevant-sections' },
-    { type: 'motion-graphics', content: 'sprint-overview-infographic' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
+    { type: 'alibaba-image', model: 'wanx-v2.1', prompt: 'Infographic showing sprint territory map with two color-coded zones (blue Atlas, green Nova), clear boundary lines, task distribution icons, clean professional design' },
   ],
   'scene-4-day1': [
     { type: 'tts', voice: 'host', scriptKey: 'day1-narration' },
     { type: 'screen-capture', screenIds: ['day-1-view'], multiCapture: false },
     { type: 'screen-capture', screenIds: ['findings-qa'], multiCapture: false },
-    { type: 'avatar-3d', character: 'atlas' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-refactored-nav' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-not-in-scope' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-works-better' },
     { type: 'kinetic-text', text: 'Setting acceptance criteria isn\'t optional. It\'s survival.' },
@@ -209,10 +219,12 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-5-day2': [
     { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
     { type: 'screen-capture', screenIds: ['day-2-view'], multiCapture: false },
-    { type: 'motion-graphics', content: 'frozen-blocked-task' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A frozen task card encased in ice slowly cracking and thawing as a small fox character taps it impatiently, Pixar-quality animation, dramatic lighting' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-blocked-six-hours' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-in-a-meeting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-human-meetings' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
     { type: 'tts', voice: 'host', scriptKey: 'host-po-actions-built' },
   ],
@@ -220,23 +232,29 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'day3-velocity-mismatch' },
     { type: 'screen-capture', screenIds: ['day-3-view', 'velocity-metrics'], multiCapture: true },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-scope-now' },
-    { type: 'avatar-3d', character: 'atlas' },
-    { type: 'avatar-3d', character: 'nova' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
+    { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Velocity chart bars growing dynamically with sparkle effects, camera slowly zooming out to reveal full sprint dashboard, smooth cinematic motion', referenceImage: 'velocity-metrics-screenshot' },
   ],
   'scene-7-mission-control': [
     { type: 'tts', voice: 'host', scriptKey: 'mission-control-narration' },
     { type: 'screen-capture', screenIds: ['po-mission-control'], multiCapture: false },
-    { type: 'motion-graphics', content: 'standup-comparison-split' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup with people talking over each other, RIGHT side shows calm AI-powered async standup with organized data flowing smoothly, cinematic quality' },
     { type: 'screen-capture', screenIds: ['standup-entries'], multiCapture: false },
     { type: 'screen-capture', screenIds: ['qa-signoff'], multiCapture: false },
     { type: 'screen-capture', screenIds: ['eod-handoff'], multiCapture: false },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-context-loss' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-window' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-forgot-breakfast' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
   ],
   'scene-8-dashboard-tour': [
     { type: 'tts', voice: 'host', scriptKey: 'tour-narration' },
-    // All 18 screens captured as rapid-cut montage (3-5s each)
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
     {
       type: 'screen-capture',
       screenIds: [
@@ -247,29 +265,37 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
       ],
       multiCapture: true,
     },
+    // Animate each screenshot with subtle pan/zoom via Alibaba i2v
+    { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Ken Burns style slow zoom and pan across a software dashboard screenshot, subtle particle effects, professional product demo feel', referenceImage: 'auto-captured-screenshots' },
   ],
   'scene-9-numbers': [
     { type: 'tts', voice: 'host', scriptKey: 'numbers-narration' },
-    { type: 'motion-graphics', content: 'comparison-table-3d' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
+    { type: 'alibaba-image', model: 'wanx-v2.1', prompt: '3D comparison infographic table: Traditional Sprint (left, red) vs AI Sprint (right, green), showing metrics — velocity 5x, blockers 0, async standups, clean modern design with depth and shadows' },
+    { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Animated infographic with numbers counting up dynamically, bars growing, green checkmarks appearing, professional motion graphics style', referenceImage: 'comparison-infographic' },
     { type: 'screen-capture', screenIds: ['velocity-metrics'], multiCapture: false },
-    { type: 'motion-graphics', content: 'timeline-comparison' },
   ],
   'scene-10-whats-next': [
     { type: 'tts', voice: 'host', scriptKey: 'whats-next-narration' },
-    { type: 'motion-graphics', content: 'world-map-language-zones' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Animated world map with language zones lighting up one by one — Arabic, Hindi, Mandarin, Spanish — each zone pulses with a unique color, camera slowly rotating around a 3D globe, cinematic sci-fi feel' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-language-foundational' },
-    { type: 'motion-graphics', content: 'mcp-network-diagram' },
-    { type: 'motion-graphics', content: 'velocity-prediction-trend' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'MCP network diagram coming alive: central hub pulsing with energy, connection lines extending to Jira, GitHub, Slack nodes, data packets flowing as glowing orbs, dark tech background with blue-violet nebula, 3D space visualization' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Velocity prediction chart animating forward in time, trend line curving upward with confidence intervals fading in, futuristic holographic display style' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-data-quality' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-atlas-said' },
   ],
   'scene-11-close': [
-    { type: 'avatar-3d', character: 'host' },
-    { type: 'avatar-3d', character: 'atlas' },
-    { type: 'avatar-3d', character: 'nova' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'close-takeaway' },
     { type: 'screen-capture', screenIds: ['day-5-view'], multiCapture: false },
-    { type: 'motion-graphics', content: 'end-card-cta' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'End card: three animated characters (bear, fox, human) standing together in a sunlit forest-tech hub, golden retriever at their feet, woodland creatures gathered around, text "Two AIs, One Sprint, Zero Standup Meetings" floating above in holographic letters, cinematic Pixar quality, warm golden hour lighting, 8K' },
   ],
 };
 
@@ -284,22 +310,31 @@ export const EP04_PIPELINE_READINESS = [
   { pipeline: 'tts-generation nova (ElevenLabs)',   status: '✅ READY',     edgeFn: 'elevenlabs-voice',          notes: 'ELEVENLABS_API_KEY present; voice: Domi' },
   { pipeline: 'music-generation (ElevenLabs)',      status: '✅ READY',     edgeFn: 'elevenlabs-music',          notes: 'Background bed + transition stings' },
   { pipeline: 'sfx-generation (ElevenLabs)',        status: '✅ READY',     edgeFn: 'elevenlabs-sfx',            notes: 'UI click sounds, dashboard transitions' },
-  // PHASE 3: Visuals — 3D
-  { pipeline: '3d-immersive atlas-character',       status: '✅ READY',     edgeFn: 'alibaba-3d-generator',      notes: 'MESHY_API_KEY present; deferred (60-90s/model)' },
-  { pipeline: '3d-immersive nova-character',        status: '✅ READY',     edgeFn: 'alibaba-3d-generator',      notes: 'MESHY_API_KEY present; deferred' },
-  { pipeline: '3d-immersive host-character',        status: '✅ READY',     edgeFn: 'alibaba-3d-generator',      notes: 'MESHY_API_KEY present; deferred' },
-  { pipeline: '3d-immersive environments',          status: '✅ READY',     edgeFn: 'alibaba-3d-generator',      notes: 'Sprint board room, territory city, MCP network' },
-  { pipeline: 'infographic-design',                 status: '✅ READY',     edgeFn: 'ai-image-generator',        notes: 'Comparison table, velocity prediction, timeline' },
+  // PHASE 3: Visuals — 3D Characters (Meshy AI via alibaba-3d-generator)
+  { pipeline: '3d-immersive atlas-character (bear)',  status: '✅ READY',     edgeFn: 'alibaba-3d-generator',      notes: 'MESHY_API_KEY present; Pixar bear with owl companion; deferred (60-90s/model)' },
+  { pipeline: '3d-immersive nova-character (fox)',    status: '✅ READY',     edgeFn: 'alibaba-3d-generator',      notes: 'MESHY_API_KEY present; Pixar/Disney fox with hummingbird; deferred' },
+  { pipeline: '3d-immersive host-character (human)',  status: '✅ READY',     edgeFn: 'alibaba-3d-generator',      notes: 'MESHY_API_KEY present; PO with golden retriever; deferred' },
+  { pipeline: '3d-immersive environments',            status: '✅ READY',     edgeFn: 'alibaba-3d-generator',      notes: 'Sprint board room, territory city, MCP network, standup circle' },
+  // PHASE 3: Visuals — Alibaba DashScope (Video + Image Generation)
+  { pipeline: 'alibaba-wan2.6-t2v (text-to-video)',  status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'ALIBABA_API_KEY present; Wan2.6 text-to-video for scene transitions, environment flyovers, motion graphics' },
+  { pipeline: 'alibaba-wan2.6-i2v (image-to-video)', status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'ALIBABA_API_KEY present; Animates screenshots with Ken Burns, chart animations, infographic motion' },
+  { pipeline: 'alibaba-wanx-v2.1 (image-gen)',       status: '✅ READY',     edgeFn: 'ai-image-generator',        notes: 'ALIBABA_API_KEY present; Infographics, comparison tables, territory maps' },
+  { pipeline: 'alibaba-flux-merged (image-gen)',      status: '✅ READY',     edgeFn: 'ai-image-generator',        notes: 'ALIBABA_API_KEY present; High-quality character stills, thumbnails' },
+  { pipeline: 'infographic-design',                   status: '✅ READY',     edgeFn: 'ai-image-generator',        notes: 'Comparison table, velocity prediction, timeline via Alibaba wanx' },
   // PHASE 3: Visuals — Screens
-  { pipeline: 'screen-capture (19 screens)',        status: '✅ AUTO',      edgeFn: 'MultiScreenshotGallery',    notes: 'html2canvas on sprint-tracker tabs; upload to product-screenshots bucket' },
+  { pipeline: 'screen-capture (19 screens)',          status: '✅ AUTO',      edgeFn: 'MultiScreenshotGallery',    notes: 'html2canvas on sprint-tracker tabs; upload to product-screenshots bucket' },
+  // PHASE 4: Avatar Lip-Sync (Alibaba Wan2.2 Primary)
+  { pipeline: 'avatar-lipsync atlas (bear)',          status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'Alibaba Wan2.2 phoneme-level lip-sync + Azure viseme data; all speaking scenes' },
+  { pipeline: 'avatar-lipsync nova (fox)',            status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'Alibaba Wan2.2 lip-sync; Disney-style 2D character animation' },
+  { pipeline: 'avatar-lipsync host (human)',          status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'Alibaba Wan2.2 lip-sync; Pixar-style human PO with expressions' },
+  { pipeline: 'alibaba-omniavatar (full-body)',       status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'ALIBABA_API_KEY present; Full body gestures for close-up character scenes' },
   // PHASE 4: Video Assembly
-  { pipeline: 'avatar-lipsync (Pixar chars)',       status: '⚠️ DEFERRED', edgeFn: 'ai-video-generator',        notes: 'Alibaba Wan2.2 → ModelsLab fallback; heavy asset, runs as background job' },
-  { pipeline: 'video-generation character scenes',  status: '✅ READY',     edgeFn: 'genie-cast-assembler',      notes: 'Drives avatar scenes via ai-video-generator' },
-  { pipeline: 'video-generation motion-graphics',   status: '✅ READY',     edgeFn: 'modelslab-media',           notes: 'AnimateDiff for transitions + motion graphics' },
-  { pipeline: 'video-editing final assembly',       status: '✅ READY',     edgeFn: 'genie-cast-assembler',      notes: 'JSON2Video stitch — JSON2VIDEO_API_KEY present' },
-  { pipeline: 'thumbnail-generation',               status: '✅ READY',     edgeFn: 'auto-thumbnail-generator',  notes: 'YouTube/LinkedIn thumbnails post-assembly' },
+  { pipeline: 'video-generation character scenes',    status: '✅ READY',     edgeFn: 'genie-cast-assembler',      notes: 'Drives avatar scenes via ai-video-generator + Alibaba pipelines' },
+  { pipeline: 'video-generation motion-graphics',     status: '✅ READY',     edgeFn: 'modelslab-media',           notes: 'AnimateDiff for transitions + motion graphics (fallback to Alibaba)' },
+  { pipeline: 'video-editing final assembly',         status: '✅ READY',     edgeFn: 'genie-cast-assembler',      notes: 'JSON2Video stitch — JSON2VIDEO_API_KEY present' },
+  { pipeline: 'thumbnail-generation',                 status: '✅ READY',     edgeFn: 'auto-thumbnail-generator',  notes: 'YouTube/LinkedIn thumbnails via Alibaba wanx + flux-merged' },
   // PUBLISH
-  { pipeline: 'social-publish youtube/linkedin',    status: '✅ SKELETON',  edgeFn: 'social-publish',            notes: 'Phase 3B per CAST_PIPELINE_USAGE_MAP.md' },
+  { pipeline: 'social-publish youtube/linkedin',      status: '✅ SKELETON',  edgeFn: 'social-publish',            notes: 'Phase 3B per CAST_PIPELINE_USAGE_MAP.md; OAuth connected' },
 ] as const;
 
 // ─── SOCIAL TEASER CLIPS CONFIG ───────────────────────────────────────────────
