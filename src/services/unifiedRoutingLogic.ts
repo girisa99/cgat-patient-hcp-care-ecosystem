@@ -145,7 +145,7 @@ export function selectLLM(region: string, taskType: TaskType = 'general'): LLMRo
   // GEMINI ZONE: India, SEA, Africa - Cost-effective, good local support
   if (GEMINI_REGIONS.includes(region)) {
     return {
-      primary: 'gemini-1.5-pro',
+      primary: 'gemini-2.5-pro',
       fallback: 'gpt-4o',
       cost: 0.00125,
       zone: 'gemini',
@@ -624,7 +624,7 @@ export function getAllZoneConfigurations() {
     geminiZone: {
       name: 'Gemini Zone',
       regions: GEMINI_REGIONS,
-      primaryLLM: 'gemini-1.5-pro',
+      primaryLLM: 'gemini-2.5-pro',
       cost: 0.00125,
       languages: ['HI', 'BN', 'TE', 'TA', 'ID', 'VI', 'TH', 'SW', 'HA']
     },

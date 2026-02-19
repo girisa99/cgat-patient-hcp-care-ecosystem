@@ -88,7 +88,7 @@ const FALLBACK_CHAINS: Record<string, ProviderFallback[]> = {
   
   // Avatar Generation
   avatar: [
-    { providerId: 'heygen', providerName: 'HeyGen', tier: 'premium', capabilities: ['lipsync', 'gestures', 'custom'], costMultiplier: 1.0, qualityScore: 95 },
+    { providerId: 'alibaba-wan22', providerName: 'Alibaba Wan 2.2', tier: 'premium', capabilities: ['lipsync', 'gestures', 'custom'], costMultiplier: 0.5, qualityScore: 92 },
     { providerId: 'modelslab-avatar', providerName: 'ModelsLab Avatar', tier: 'standard', capabilities: ['lipsync', 'preset'], costMultiplier: 0.5, qualityScore: 82 },
   ],
 };

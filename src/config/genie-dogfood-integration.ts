@@ -50,7 +50,7 @@ export const GENIE_CAST_PIPELINE_MAPPINGS: GenieCastPipelineMapping[] = [
   {
     feature: 'avatar_presenter',
     pipelines: ['text-to-avatar', 'script-to-avatar', 'voice-to-lipsync'],
-    providers: ['Alibaba OmniAvatar', 'HeyGen', 'Azure Visemes'],
+    providers: ['Alibaba OmniAvatar', 'Alibaba WAN 2.2', 'Azure Visemes'],
     refreshInterval: 168, // Weekly refresh
     regionalVariants: true,
     description: 'Regional AI avatar presenters for guided tours',

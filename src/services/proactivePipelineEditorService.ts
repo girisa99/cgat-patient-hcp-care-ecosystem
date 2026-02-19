@@ -5,7 +5,7 @@
  * - Analyzes content to suggest relevant editing pipelines
  * - Triggers appropriate editors (video, audio, image, document)
  * - Integrates with Ask Genie, Support, and Confidence Loop
- * - Works across all Genie Studio products (Spark, Mind, Vibe, Deck, Arc, Cast)
+ * - Works across all Genie Suite products (Spark, Mind, Vibe, Deck, Arc, Cast)
  * 
  * PRODUCT-AWARE FILTERING:
  * - Each pipeline is now mapped to its primary product owner

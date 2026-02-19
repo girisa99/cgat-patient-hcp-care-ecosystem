@@ -3,7 +3,7 @@
  * Enhanced app layout with global conversational AI available across all pages
  * Supports multi-user/multi-tenant conversations
  * 
- * NOTE: Genie popup is hidden on Genie Studio pages (uses Ask Genie instead)
+ * NOTE: Genie popup is hidden on Genie Suite pages (uses Ask Genie instead)
  * NOTE: Label Studio runs as background service (no popup widgets)
  */
 import React, { Suspense } from 'react';
@@ -55,7 +55,7 @@ export const AppLayoutWithEnrollment: React.FC<AppLayoutWithEnrollmentProps> = (
 }) => {
   const location = useLocation();
   
-  // Hide the floating Genie on Genie Studio pages (they use Ask Genie instead)
+  // Hide the floating Genie on Genie Suite pages (they use Ask Genie instead)
   const isGenieStudioPage = GENIE_STUDIO_ROUTES.some(route => 
     location.pathname.startsWith(route)
   );
@@ -73,7 +73,7 @@ export const AppLayoutWithEnrollment: React.FC<AppLayoutWithEnrollmentProps> = (
         <Suspense fallback={<div />}>
           <GlobalConversationalEnrollmentModalLazy />
 
-          {/* Universal Conversation Genie - Hidden on Genie Studio pages */}
+          {/* Universal Conversation Genie - Hidden on Genie Suite pages */}
           {shouldShowGenie && (
             <UniversalConversationGenieLazy 
               tenantId={tenantId}

@@ -150,7 +150,7 @@ const LOCKED_FILES_LIST = [
 
 const LOVABLE_OFF_LIMITS = [
   { area: 'Claude territory',     files: 'src/pages/GenieSpark.tsx, GenieMind.tsx, GenieDeck.tsx' },
-  { area: 'Genie Studio',         files: 'src/components/genie-studio/**' },
+  { area: 'Genie Suite',         files: 'src/components/genie-studio/**' },
   { area: 'Genie Spark',          files: 'src/components/genie-spark/**' },
   { area: 'Admin',                files: 'src/components/genie-admin/**' },
   { area: 'Navigation (Claude)',   files: 'src/components/navigation/Quadrant*' },
@@ -1182,36 +1182,23 @@ function OpenItemsForLovable({
 }
 
 function DayWorkflowBanner({
-  day, claudeSD, lovableSD, getTaskStatus, onAutoStart, currentDay,
+  day, claudeSD, lovableSD, getTaskStatus, onAutoStart,
 }: {
   day: number;
   claudeSD: StandupEntry | undefined;
   lovableSD: StandupEntry | undefined;
   getTaskStatus: (id: string) => TaskStatus;
   onAutoStart: (taskIds: string[]) => void;
-  currentDay: number;
 }) {
   const storageKey = `${DAY_START_KEY}_day${day}`;
   const signoffKey = `${DAY_SIGNOFF_KEY}_day${day}`;
 
-  // Future days are locked — ignore any stale localStorage
-  const isFutureDay = day > currentDay;
-
   const [wf, setWf] = React.useState<DayWorkflowState>(() => {
-    if (isFutureDay) return { startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null };
     try {
       const s = localStorage.getItem(storageKey);
       return s ? JSON.parse(s) : { startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null };
     } catch { return { startedAt: null, startedBy: '', standupClaudeDone: false, standupLovableDone: false, signedOffAt: null }; }
   });
-
-  // If this is a future day, clear any accidentally-set localStorage
-  React.useEffect(() => {
-    if (isFutureDay) {
-      localStorage.removeItem(storageKey);
-      localStorage.removeItem(signoffKey);
-    }
-  }, [isFutureDay, storageKey, signoffKey]);
 
   // Auto-detect standup status from actual saved entries
   const claudeUp    = !!claudeSD;
@@ -1220,8 +1207,8 @@ function DayWorkflowBanner({
   const dayTasks    = SPRINT_TASKS.filter(t => t.day === day);
   const doneTasks   = dayTasks.filter(t => getTaskStatus(t.id) === 'completed').length;
   const allDone     = doneTasks === dayTasks.length;
-  const isStarted   = !isFutureDay && !!wf.startedAt;
-  const isSignedOff = !isFutureDay && !!wf.signedOffAt;
+  const isStarted   = !!wf.startedAt;
+  const isSignedOff = !!wf.signedOffAt;
 
   // Dynamic change-rate threshold: tighter early (Days 1-2), looser late (Days 4-5)
   const dayThreshold = day <= 2 ? 25 : day === 3 ? 35 : 50;
@@ -1283,21 +1270,6 @@ function DayWorkflowBanner({
   const step4 = isSignedOff;
 
   const fmtTime = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-
-  // Future day — show locked state, don't render workflow
-  if (isFutureDay) {
-    const dateStr = `Feb ${16 + day}, 2026`;
-    return (
-      <div className="rounded-lg border border-border/40 bg-muted/10 px-4 py-3 flex items-center gap-3 opacity-70">
-        <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-muted-foreground">Day {day} — Not started yet</p>
-          <p className="text-[10px] text-muted-foreground">Scheduled for {dateStr}. PO will unlock this day when it begins.</p>
-        </div>
-        <span className="text-[9px] font-bold px-2 py-1 rounded border border-border/40 bg-muted text-muted-foreground">Future</span>
-      </div>
-    );
-  }
 
   if (isSignedOff) {
     return (
@@ -1445,7 +1417,6 @@ function DayWorkflowBanner({
 
 interface DayPageViewProps {
   day: number;
-  currentDay: number;
   theme: string;
   standups: StandupEntry[];
   onAddStandup: (entry: Omit<StandupEntry, 'createdAt'>) => void;
@@ -1456,7 +1427,7 @@ interface DayPageViewProps {
 }
 
 export const DayPageView: React.FC<DayPageViewProps> = ({
-  day, currentDay, theme, standups, onAddStandup, getTaskStatus, onStatusChange, taskOverrides, onNavigateToPOGate,
+  day, theme, standups, onAddStandup, getTaskStatus, onStatusChange, taskOverrides, onNavigateToPOGate,
 }) => {
   const dayTasks     = SPRINT_TASKS.filter(t => t.day === day);
   const claudeIds    = dayTasks.filter(t => t.developer === 'claude').map(t => t.id);
@@ -1476,7 +1447,6 @@ export const DayPageView: React.FC<DayPageViewProps> = ({
       {/* ── Day Workflow Banner ───────────────────────────────────────────── */}
       <DayWorkflowBanner
         day={day}
-        currentDay={currentDay}
         claudeSD={claudeSD}
         lovableSD={lovableSD}
         getTaskStatus={getTaskStatus}

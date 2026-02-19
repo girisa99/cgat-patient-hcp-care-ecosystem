@@ -165,9 +165,9 @@ const generateProviderMatrixContent = (): string => {
 
 ## NOT Configured
 
-- HeyGen (No API Key) → Use Alibaba WAN 2.2
-- Suno (No API Key) → Use ElevenLabs Music
-- RunPod (No Docker) → Use ModelsLab/Meshy
+- Avatars → Alibaba WAN 2.2 + Azure Visemes
+- Music → ElevenLabs + Alibaba FunAudio
+- GPU Tasks → ModelsLab/Meshy
 
 ---
 

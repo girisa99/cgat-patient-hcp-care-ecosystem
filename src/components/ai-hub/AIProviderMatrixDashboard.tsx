@@ -116,7 +116,7 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, Record<string, ProviderScore>> 
     gemini: { providerId: 'gemini', name: 'Gemini Veo', confidence: 90, quality: 88, speed: 65, cost: 'medium', status: 'configured', features: ['Long-form', 'Google ecosystem'] },
   },
   music_gen: {
-    // Core 12 Providers Only - suno/udio remapped to elevenlabs
+    // Core 12 Providers Only - ElevenLabs for Music/SFX
     elevenlabs: { providerId: 'elevenlabs', name: 'ElevenLabs Music', confidence: 95, quality: 92, speed: 80, cost: 'medium', status: 'configured', features: ['SFX', 'Music', 'Voice'] },
     replicate: { providerId: 'replicate', name: 'Replicate Audio', confidence: 80, quality: 78, speed: 75, cost: 'medium', status: 'configured', features: ['Various models', 'Open source'] },
     alibaba: { providerId: 'alibaba', name: 'Alibaba Audio', confidence: 78, quality: 75, speed: 85, cost: 'low', status: 'configured', features: ['CJK music', 'Fast'] },

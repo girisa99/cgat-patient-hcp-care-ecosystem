@@ -35,10 +35,6 @@ export interface LiveSprintState {
   standups: StandupEntry[];
   /** Effort entries from both developers */
   efforts: TaskEffort[];
-  /** PO notes per day — persisted to Supabase so Claude can read them */
-  poNotes: Record<number, string>;
-  /** PO checklist checked state — persisted to Supabase */
-  poChecklist: Record<string, boolean>;
   /** Last update metadata */
   lastUpdatedBy: Developer | 'system';
   lastUpdatedAt: string;
@@ -64,8 +60,6 @@ function mergeState(remote: Partial<LiveSprintState> | null): LiveSprintState {
       taskOverrides: seedOverrides,
       standups: seedStandups,
       efforts: seedEfforts,
-      poNotes: {},
-      poChecklist: {},
       lastUpdatedBy: 'system',
       lastUpdatedAt: new Date().toISOString(),
       version: 0,
@@ -109,8 +103,6 @@ function mergeState(remote: Partial<LiveSprintState> | null): LiveSprintState {
     taskOverrides: mergedOverrides,
     standups: mergedStandups,
     efforts: mergedEfforts,
-    poNotes: remote.poNotes || {},
-    poChecklist: remote.poChecklist || {},
     lastUpdatedBy: remote.lastUpdatedBy || 'system',
     lastUpdatedAt: remote.lastUpdatedAt || new Date().toISOString(),
     version: remote.version || 0,
@@ -353,36 +345,6 @@ export function useSprintSync() {
     await pushState(newState);
   }, [liveState, pushState]);
 
-  // ── Public mutation: Update PO notes ────────────────────────────
-  const syncPONotes = useCallback(async (day: number, note: string) => {
-    const newState: LiveSprintState = {
-      ...liveState,
-      poNotes: { ...liveState.poNotes, [day]: note },
-      lastUpdatedBy: 'system',
-      lastUpdatedAt: new Date().toISOString(),
-      version: versionRef.current + 1,
-    };
-
-    versionRef.current = newState.version;
-    setLiveState(newState);
-    await pushState(newState);
-  }, [liveState, pushState]);
-
-  // ── Public mutation: Update PO checklist ─────────────────────────
-  const syncPOChecklist = useCallback(async (checklist: Record<string, boolean>) => {
-    const newState: LiveSprintState = {
-      ...liveState,
-      poChecklist: checklist,
-      lastUpdatedBy: 'system',
-      lastUpdatedAt: new Date().toISOString(),
-      version: versionRef.current + 1,
-    };
-
-    versionRef.current = newState.version;
-    setLiveState(newState);
-    await pushState(newState);
-  }, [liveState, pushState]);
-
   // ── Public: Force refresh from Supabase ─────────────────────────
   const forceRefresh = useCallback(async () => {
     await loadRemoteState();
@@ -405,10 +367,6 @@ export function useSprintSync() {
     syncEffort,
     /** Add a standup entry — syncs to Supabase immediately */
     syncStandup,
-    /** Update PO notes for a day — syncs to Supabase immediately */
-    syncPONotes,
-    /** Update PO checklist — syncs to Supabase immediately */
-    syncPOChecklist,
     /** Force reload from Supabase */
     forceRefresh,
   };

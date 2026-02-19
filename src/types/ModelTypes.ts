@@ -452,10 +452,10 @@ export const LARGE_LANGUAGE_MODELS: ModelConfig[] = [
     tags: ['openai', 'fast', 'affordable', 'api']
   },
   {
-    id: 'claude-3-haiku',
-    name: 'Claude 3 Haiku',
+    id: 'claude-haiku-4-5',
+    name: 'Claude Haiku 4.5',
     provider: 'anthropic',
-    modelId: 'claude-3-haiku-20240307',
+    modelId: 'claude-haiku-4-5-20251001',
     size: 'medium',
     capabilities: ['text', 'chat', 'code'],
     maxTokens: 4096,
@@ -469,10 +469,10 @@ export const LARGE_LANGUAGE_MODELS: ModelConfig[] = [
     tags: ['anthropic', 'fast', 'efficient', 'api']
   },
   {
-    id: 'gemini-1.5-flash',
-    name: 'Gemini 1.5 Flash',
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
     provider: 'google',
-    modelId: 'gemini-1.5-flash',
+    modelId: 'gemini-2.5-flash',
     size: 'medium',
     capabilities: ['text', 'chat', 'code'],
     maxTokens: 16384,
@@ -481,14 +481,14 @@ export const LARGE_LANGUAGE_MODELS: ModelConfig[] = [
     requiresApiKey: true,
     latency: 'low',
     accuracy: 'high',
-    description: 'Google Gemini 1.5 Flash - Fast, versatile multimodal chat/code model',
+    description: 'Google Gemini 2.5 Flash - Fast, versatile multimodal chat/code model',
     tags: ['google', 'gemini', 'fast', 'api']
   },
   {
-    id: 'gemini-1.5-pro',
-    name: 'Gemini 1.5 Pro',
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
     provider: 'google',
-    modelId: 'gemini-1.5-pro',
+    modelId: 'gemini-2.5-pro',
     size: 'large',
     capabilities: ['text', 'chat', 'code'],
     maxTokens: 32768,

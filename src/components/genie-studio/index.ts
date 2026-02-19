@@ -1,6 +1,6 @@
 /**
- * Genie Studio Component Exports
- * Centralized barrel file for all Genie Studio components
+ * Genie Suite Component Exports
+ * Centralized barrel file for all Genie Suite components
  */
 
 // Core components

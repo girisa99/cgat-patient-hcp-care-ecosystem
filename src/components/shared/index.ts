@@ -1,6 +1,6 @@
  /**
   * Shared Components Index
-  * Cross-product reusable components for Genie Studio ecosystem
+  * Cross-product reusable components for Genie Suite ecosystem
   */
  
  // Regional & Localization

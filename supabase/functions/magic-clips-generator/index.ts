@@ -348,7 +348,7 @@ async function generatePlatformClip(
     // Add platform-specific branding
     (movieConfig.scenes[0].elements as any[]).push({
       type: 'text',
-      text: 'Genie Studio',
+      text: 'Genie Suite',
       font: 'Inter',
       size: 16,
       color: '#ffffff',

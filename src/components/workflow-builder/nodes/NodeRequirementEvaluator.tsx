@@ -260,7 +260,7 @@ export const NodeRequirementEvaluator = {
           field: 'model',
           label: 'Gemini Model',
           description: 'Choose the Gemini model version',
-          defaultValue: 'gemini-1.5-pro'
+          defaultValue: 'gemini-2.5-pro'
         },
         {
           id: 'temperature',

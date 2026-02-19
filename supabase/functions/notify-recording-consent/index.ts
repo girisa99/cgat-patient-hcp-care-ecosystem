@@ -233,7 +233,7 @@ const handler = async (req: Request): Promise<Response> => {
             Questions? Contact the host or visit our <a href="${publicSiteUrl}/privacy" style="color: #007bff;">Privacy Policy</a>
           </p>
           <p style="margin: 8px 0 0; color: #8B5CF6; font-size: 13px; font-weight: 600;">
-            ✨ Genie Studio
+            ✨ Genie Suite
           </p>
         </td>
       </tr>
@@ -249,7 +249,7 @@ const handler = async (req: Request): Promise<Response> => {
       const email = participant_emails[i];
       try {
         await resend.emails.send({
-          from: "Genie Studio <notifications@resend.dev>",
+          from: "Genie Suite <notifications@resend.dev>",
           to: [email],
           subject: `🎥 Recording Notice: ${session_title}`,
           html: emailHtml,

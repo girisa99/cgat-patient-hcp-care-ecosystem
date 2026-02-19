@@ -1,7 +1,7 @@
 /**
  * Content Moderation Service
  * Centralized service for content safety checks
- * Used across Genie Studio for text, images, and file uploads
+ * Used across Genie Suite for text, images, and file uploads
  */
 
 // Blocked words and patterns for adult/inappropriate content

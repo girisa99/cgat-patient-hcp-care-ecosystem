@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { GenieProduct } from '@/constants/genie-products';
 
 interface MusicTrack {
@@ -99,29 +100,96 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
     }
 
     setIsGenerating(true);
-    
+
     try {
-      // In production, this would call the ElevenLabs music API
-      // For now, simulate generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please log in to generate music');
+        return;
+      }
+
+      // Call the music generation edge function
+      const { data, error } = await supabase.functions.invoke('generate-music', {
+        body: {
+          prompt: prompt.trim(),
+          genre,
+          mood,
+          duration: duration[0],
+          product,
+        }
+      });
+
+      if (error) throw error;
+
+      const trackId = crypto.randomUUID();
+      const trackName = `${mood} ${genre} - ${prompt.slice(0, 30)}`;
+
       const newTrack: MusicTrack = {
-        id: `track-${Date.now()}`,
-        name: `${mood} ${genre} - ${prompt.slice(0, 30)}`,
+        id: trackId,
+        name: trackName,
+        url: data?.url || undefined,
         duration: duration[0],
         genre,
         mood,
         createdAt: new Date(),
-        // url would come from API response
       };
-      
+
+      // Persist to generated_media table
+      await supabase.from('generated_media').insert({
+        id: trackId,
+        user_id: user.id,
+        name: trackName,
+        file_type: 'audio',
+        file_url: data?.url || null,
+        source: 'music-generation',
+        metadata: {
+          type: 'instrumental',
+          genre,
+          mood,
+          prompt: prompt.trim(),
+          duration: duration[0],
+          product,
+        }
+      });
+
       setGeneratedTracks(prev => [newTrack, ...prev]);
       onTrackGenerated?.(newTrack);
-      toast.success('Music generated successfully!');
-      
-    } catch (error) {
-      toast.error('Failed to generate music');
-      console.error(error);
+      toast.success('Music generated and saved!');
+
+    } catch (error: any) {
+      // If edge function not deployed, generate placeholder and still save
+      if (error?.message?.includes('not found') || error?.status === 404) {
+        const { data: { user } } = await supabase.auth.getUser();
+        const trackId = crypto.randomUUID();
+        const trackName = `${mood} ${genre} - ${prompt.slice(0, 30)}`;
+
+        const newTrack: MusicTrack = {
+          id: trackId,
+          name: trackName,
+          duration: duration[0],
+          genre,
+          mood,
+          createdAt: new Date(),
+        };
+
+        if (user) {
+          await supabase.from('generated_media').insert({
+            id: trackId,
+            user_id: user.id,
+            name: trackName,
+            file_type: 'audio',
+            source: 'music-generation',
+            metadata: { type: 'instrumental', genre, mood, prompt: prompt.trim(), duration: duration[0], product }
+          });
+        }
+
+        setGeneratedTracks(prev => [newTrack, ...prev]);
+        onTrackGenerated?.(newTrack);
+        toast.success('Music request saved! Audio will be generated when the music API is deployed.');
+      } else {
+        toast.error('Failed to generate music');
+        console.error('Music generation error:', error);
+      }
     } finally {
       setIsGenerating(false);
     }

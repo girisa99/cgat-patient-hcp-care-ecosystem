@@ -1,5 +1,5 @@
 /**
- * Genie Studio Constants - Extracted from GenieStudio.tsx
+ * Genie Suite Constants - Extracted from GenieStudio.tsx
  * Static data for features, templates, and configuration
  */
 

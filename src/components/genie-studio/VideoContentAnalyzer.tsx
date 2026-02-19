@@ -218,7 +218,7 @@ export function VideoContentAnalyzer({
       const { data, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           prompt: `Analyze this video frame and determine what type of content this video contains.
 
 Based on visual cues, classify this video into ONE of these categories:

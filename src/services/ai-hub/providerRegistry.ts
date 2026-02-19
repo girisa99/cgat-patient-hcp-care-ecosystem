@@ -137,7 +137,7 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         notes: 'Sora for premium, falls back to ModelsLab AnimateDiff',
       },
       vision: {
-        models: ['gpt-4o', 'gpt-4-vision-preview'],
+        models: ['gpt-4o'],
         strengths: ['Excellent understanding', 'Multi-image', 'OCR capable'],
         weaknesses: ['Higher cost'],
         priority: 1,
@@ -222,7 +222,7 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         costPerUnit: 0.00001,
       },
       ocr: {
-        models: ['gemini-2.5-flash', 'gemini-1.5-pro'],
+        models: ['gemini-2.5-flash', 'gemini-2.5-pro'],
         strengths: ['Vision-native OCR', 'Understands context', 'Handles handwriting'],
         weaknesses: ['Not as structured as Form Recognizer'],
         priority: 2,
@@ -250,7 +250,7 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         costPerUnit: 0.002,
       },
       vision: {
-        models: ['gemini-2.5-flash', 'gemini-1.5-pro'],
+        models: ['gemini-2.5-flash', 'gemini-2.5-pro'],
         strengths: ['Native multimodal', 'Fast', 'Good understanding'],
         weaknesses: ['Occasional hallucinations on details'],
         priority: 1,

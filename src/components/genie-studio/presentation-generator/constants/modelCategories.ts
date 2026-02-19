@@ -955,11 +955,11 @@ export const TEXT_MODELS: ModelConfig[] = [
     speed: 5
   },
   {
-    id: 'gpt-4-turbo',
-    name: 'GPT-4 Turbo',
+    id: 'gpt-4o',
+    name: 'GPT-4o',
     provider: 'OpenAI',
     tier: 3,
-    description: 'Most capable GPT model',
+    description: 'Most capable GPT multimodal model',
     capabilities: ['128K context', 'Vision', 'Coding'],
     costMultiplier: 3.0,
     quality: 10,

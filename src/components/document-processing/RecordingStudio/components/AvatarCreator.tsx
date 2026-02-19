@@ -84,7 +84,7 @@ export function AvatarCreator({
         setGenerationProgress(prev => Math.min(prev + 10, 90));
       }, 1000);
 
-      // Call avatar generation API (placeholder - would integrate with D-ID, HeyGen, or similar)
+      // Call avatar generation API (Alibaba WAN 2.2 / OmniAvatar)
       const response = await supabase.functions.invoke('ai-avatar-generator', {
         body: {
           script: scriptText,
@@ -119,7 +119,7 @@ export function AvatarCreator({
       console.error('Avatar generation error:', error);
       
       // For demo purposes, show placeholder success
-      toast.info('Avatar generation requires API integration (D-ID, HeyGen, or similar)');
+      toast.info('Avatar generation requires Alibaba WAN 2.2 / OmniAvatar API integration');
       
       // Demo callback with placeholder
       if (onAvatarGenerated) {
@@ -315,7 +315,7 @@ export function AvatarCreator({
 
         {/* Info */}
         <p className="text-[10px] text-muted-foreground text-center">
-          Requires D-ID, HeyGen, or similar API integration for video generation
+          Requires Alibaba WAN 2.2 / OmniAvatar API integration for video generation
         </p>
       </CollapsibleContent>
     </Collapsible>

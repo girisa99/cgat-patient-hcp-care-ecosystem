@@ -142,7 +142,7 @@ Generate a workflow for: "${prompt}"`;
             'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({
-            model: 'claude-3-sonnet-20240229',
+            model: 'claude-sonnet-4-5-20250929',
             max_tokens: 3000,
             messages: [
               { role: 'user', content: systemPrompt + '\n\n' + prompt }

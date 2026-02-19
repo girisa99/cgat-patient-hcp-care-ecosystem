@@ -1,5 +1,5 @@
 /**
- * RalphWiggumPanel - Automated AI Review Panel for Genie Studio
+ * RalphWiggumPanel - Automated AI Review Panel for Genie Suite
  * DEV-ONLY: Displays review insights, findings, and journey analysis
  */
 
@@ -94,7 +94,7 @@ const moduleNames: Record<GenieModule, string> = {
   templates: 'Templates',
   library: 'Library',
   'native-features': 'Native Features',
-  'genie-page': 'Genie Studio Page'
+  'genie-page': 'Genie Suite Page'
 };
 
 /**

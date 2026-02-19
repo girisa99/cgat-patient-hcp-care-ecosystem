@@ -73,7 +73,7 @@ const IntegrationsSettingsPage: React.FC = () => {
 
   const externalAPIs = [
     { id: 'elevenlabs', name: 'ElevenLabs', category: 'Voice Cloning', status: 'configured' },
-    { id: 'synthesia', name: 'Synthesia', category: 'Avatar Video', status: 'pending' },
+    { id: 'alibaba-avatar', name: 'Alibaba Avatar', category: 'Avatar Video', status: 'configured' },
     { id: 'broll', name: 'Pexels/Unsplash', category: 'B-Roll Library', status: 'configured' },
     { id: 'music', name: 'Epidemic Sound', category: 'Music Library', status: 'pending' }
   ];

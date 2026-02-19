@@ -328,7 +328,7 @@ export interface SocialPreview {
 
 class UniversalPresentationService {
   private readonly AI_PROVIDER = 'gemini';
-  private readonly AI_MODEL = 'gemini-2.0-flash-exp';
+  private readonly AI_MODEL = 'gemini-2.0-flash';
   private readonly IMAGE_MODEL = 'google/gemini-2.5-flash-image-preview';
   
   // Model recommendations based on collateral type
@@ -1042,7 +1042,7 @@ Output as JSON with title, topics, sections, and any extracted data.`;
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: this.AI_PROVIDER,
-          model: 'gemini-1.5-pro-latest', // Vision model
+          model: 'gemini-2.5-pro', // Vision model
           systemPrompt,
           prompt: `Analyze this image for a ${request.length} presentation. Extract all relevant content.`,
           imageUrl: imageData.startsWith('data:') ? imageData : `data:image/png;base64,${imageData}`,

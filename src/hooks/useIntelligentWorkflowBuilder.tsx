@@ -275,16 +275,16 @@ export const useIntelligentWorkflowBuilder = () => {
     // Analyze node type and suggest better connectors
     if (node.type?.includes('agent')) {
       // For AI agents, suggest vision models if handling images
-      if (capabilities.includes('vision') && !currentConnectors.includes('gpt-4-vision')) {
+      if (capabilities.includes('vision') && !currentConnectors.includes('gpt-4o')) {
         suggestions.push({
           id: `connector-swap-${Date.now()}`,
           type: 'configuration',
           title: 'Upgrade to Vision-Capable Model',
-          description: 'Switch to GPT-4 Vision for enhanced image processing',
+          description: 'Switch to GPT-4o for enhanced multimodal image processing',
           confidence: 0.85,
           configKey: 'model',
-          configValue: 'gpt-4-vision',
-          reasoning: 'Vision capabilities require specialized models'
+          configValue: 'gpt-4o',
+          reasoning: 'Vision capabilities require multimodal models like GPT-4o'
         });
       }
 

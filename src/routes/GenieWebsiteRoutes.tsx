@@ -1,6 +1,6 @@
 /**
  * GENIE WEBSITE ROUTES
- * Central routing configuration for the Genie Studio public website
+ * Central routing configuration for the Genie Suite public website
  * Separate from internal app routes for clarity
  */
 import React, { Suspense } from 'react';

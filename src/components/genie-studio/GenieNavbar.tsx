@@ -1,6 +1,6 @@
 /**
  * GENIE NAVBAR - Shared navigation component
- * Used across all Genie Studio public pages for consistent navigation
+ * Used across all Genie Suite public pages for consistent navigation
  */
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';

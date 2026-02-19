@@ -53,8 +53,8 @@ const defaultNodes: NodeItem[] = [
     lastUpdated: '2024-11-24'
   },
   {
-    id: 'claude-3-haiku',
-    name: 'Claude 3 Haiku',
+    id: 'claude-haiku-4-5',
+    name: 'Claude Haiku 4.5',
     description: 'Anthropic\'s fast and efficient model for quick responses',
     category: 'Language Models',
     subcategory: 'Small Language Models',
@@ -69,9 +69,9 @@ const defaultNodes: NodeItem[] = [
   },
   // Vision Language Models
   {
-    id: 'gpt-4-vision',
-    name: 'GPT-4 Vision',
-    description: 'Advanced vision-language model for image analysis and description',
+    id: 'gpt-4o',
+    name: 'GPT-4o',
+    description: 'Advanced multimodal model for image analysis, text, and more',
     category: 'Language Models',
     subcategory: 'Vision Language Models',
     type: 'vlm',

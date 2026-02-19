@@ -1,6 +1,6 @@
 /**
  * Label Studio Universal Provider
- * Provides LS context and training capabilities across the entire Genie Studio ecosystem
+ * Provides LS context and training capabilities across the entire Genie Suite ecosystem
  * Works seamlessly on both desktop and mobile
  */
 

@@ -496,7 +496,7 @@ function selectModel(provider: string, requestedModel: string): string {
     'modelslab': 'animatediff',
     'alibaba': 'wan-2.2-animate',
     'replicate': 'minimax/video-01',
-    'gemini': 'veo-001',
+    'gemini': 'veo-002',
   };
   
   return defaultModels[provider] || 'auto';
@@ -734,7 +734,7 @@ async function generateWithGemini(prompt: string, duration: number, aspectRatio:
   console.log('🎥 Generating video with Gemini Veo');
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/veo-001:generateVideo?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/veo-002:generateVideo?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -762,7 +762,7 @@ async function generateWithGemini(prompt: string, duration: number, aspectRatio:
   return {
     videoUrl: data.video?.uri || data.generatedVideos?.[0]?.uri,
     provider: 'gemini',
-    model: 'veo-001',
+    model: 'veo-002',
   };
 }
 
@@ -788,7 +788,7 @@ async function pollGeminiOperation(operationName: string, apiKey: string): Promi
       return {
         videoUrl: data.response?.generatedVideos?.[0]?.uri,
         provider: 'gemini',
-        model: 'veo-001',
+        model: 'veo-002',
       };
     }
   }

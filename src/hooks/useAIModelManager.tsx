@@ -115,11 +115,11 @@ export const useAIModelManager = () => {
   // Get recommended models for specific use cases
   const getRecommendedModels = (useCase: 'chat' | 'completion' | 'embedding' | 'vision' | 'code') => {
     const recommendations = {
-      chat: ['gpt-4o-mini', 'gpt-4o', 'claude-3-haiku', 'claude-3-sonnet'],
-      completion: ['gpt-4o-mini', 'claude-3-haiku', 'gemini-pro'],
+      chat: ['gpt-4o-mini', 'gpt-4o', 'claude-haiku-4-5', 'claude-sonnet-4-5'],
+      completion: ['gpt-4o-mini', 'claude-haiku-4-5', 'gemini-2.5-pro'],
       embedding: ['text-embedding-3-small', 'text-embedding-ada-002'],
-      vision: ['gpt-4o', 'claude-3-sonnet', 'gemini-1.5-pro-latest'],
-      code: ['gpt-4o', 'claude-3-sonnet', 'codellama']
+      vision: ['gpt-4o', 'claude-sonnet-4-5', 'gemini-2.5-pro'],
+      code: ['gpt-4o', 'claude-sonnet-4-5', 'codellama']
     };
 
     return aiModels?.filter(model => 

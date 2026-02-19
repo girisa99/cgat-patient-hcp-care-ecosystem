@@ -1,6 +1,6 @@
 /**
  * Label Studio Integration Hooks
- * Specialized hooks for each Genie Studio feature area
+ * Specialized hooks for each Genie Suite feature area
  * Use these in your components to capture training data
  */
 

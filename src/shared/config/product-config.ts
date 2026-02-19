@@ -3,7 +3,7 @@
  * Defines product boundaries, routes, and feature flags
  * 
  * This config ensures:
- * 1. Clear separation between Genie Studio and Healthcare products
+ * 1. Clear separation between Genie Suite and Healthcare products
  * 2. Feature flags for enabling/disabling products
  * 3. Route protection and access control
  * 4. Edge function ownership mapping
@@ -24,11 +24,11 @@ export interface ProductConfig {
 }
 
 // =============================================================================
-// GENIE STUDIO - Commercial Launch Product
+// GENIE SUITE - Commercial Launch Product
 // =============================================================================
 export const GENIE_STUDIO_CONFIG: ProductConfig = {
   id: 'genie-studio',
-  name: 'Genie Studio',
+  name: 'Genie Suite',
   description: 'AI-Powered Media Production Suite - Mind to Media',
   enabled: true,
   commercialLaunch: true,
@@ -324,7 +324,7 @@ export const PRODUCT_REGISTRY = {
  * Get product for a given route
  */
 export function getProductForRoute(route: string): ProductId | null {
-  // Check Genie Studio routes first (commercial launch priority)
+  // Check Genie Suite routes first (commercial launch priority)
   if (GENIE_STUDIO_CONFIG.routes.some(r => route.startsWith(r))) {
     return 'genie-studio';
   }

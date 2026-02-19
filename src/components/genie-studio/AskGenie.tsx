@@ -1,5 +1,5 @@
 /**
- * ASK GENIE - Unified Context-Aware AI Assistant for Genie Studio
+ * ASK GENIE - Unified Context-Aware AI Assistant for Genie Suite
  * 
  * Features:
  * - Context-aware based on product (Arc, Vibe, Spark, Mind)
@@ -368,7 +368,7 @@ const WORKFLOW_DIAGRAMS: Record<GenieProduct, { id: string; title: string; diagr
     D --> E[🎥 Vibe: Record & Mix]
     E --> F[🚀 Publish Everywhere!]
     
-    subgraph "Genie Studio Suite"
+    subgraph "Genie Suite"
     B
     C
     D

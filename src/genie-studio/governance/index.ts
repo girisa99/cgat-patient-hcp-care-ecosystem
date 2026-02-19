@@ -1,9 +1,9 @@
 /**
- * Genie Studio Governance - Index
- * 
- * Central governance module for tracking all Genie Studio assets.
+ * Genie Suite Governance - Index
+ *
+ * Central governance module for tracking all Genie Suite assets.
  * This provides a SINGLE SOURCE OF TRUTH for:
- * - What belongs to Genie Studio
+ * - What belongs to Genie Suite
  * - Current counts and metrics
  * - Phase progress (P0-P5)
  * - Validation utilities

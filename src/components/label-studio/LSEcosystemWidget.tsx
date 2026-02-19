@@ -1,6 +1,6 @@
 /**
  * Label Studio Ecosystem Widget
- * Floating widget for quick LS actions across all Genie Studio features
+ * Floating widget for quick LS actions across all Genie Suite features
  * Responsive design for desktop, tablet, and mobile
  */
 

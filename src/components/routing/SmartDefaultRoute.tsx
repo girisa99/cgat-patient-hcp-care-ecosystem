@@ -3,8 +3,8 @@
  * Checks for last visited route before redirecting to role-based default
  * Prevents losing state on refresh within app sections
  * 
- * IMPORTANT: This component checks BOTH healthcare roles AND Genie Studio user status
- * to properly route internal Genie Studio users to /genie-admin
+ * IMPORTANT: This component checks BOTH healthcare roles AND Genie Suite user status
+ * to properly route internal Genie Suite users to /genie-admin
  */
 
 import React, { useEffect, useState } from 'react';
@@ -57,7 +57,7 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles,
     if (targetRoute && !isCheckingGenieUser) return;
 
     const determineRoute = async () => {
-      // First, check if this user is a Genie Studio internal user
+      // First, check if this user is a Genie Suite internal user
       // This takes priority over healthcare roles
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -69,25 +69,25 @@ export const SmartDefaultRoute: React.FC<SmartDefaultRouteProps> = ({ userRoles,
             .eq('auth_user_id', user.id)
             .maybeSingle();
 
-          // If user is Genie Studio internal user, route to /genie-cast
+          // If user is Genie Suite internal user, route to /genie-cast
           if (genieUser?.is_internal) {
-            console.log('🎯 SmartDefaultRoute: Genie Studio internal user detected, routing to /genie-cast');
+            console.log('🎯 SmartDefaultRoute: Genie Suite internal user detected, routing to /genie-cast');
             localStorage.setItem('genie_studio_is_internal', 'true');
             setTargetRoute('/genie-cast');
             setIsCheckingGenieUser(false);
             return;
           }
 
-          // If user has Genie Studio account (not internal), route to /genie-studio
+          // If user has Genie Suite account (not internal), route to /genie-studio
           if (genieUser && !genieUser.is_internal) {
-            console.log('🎯 SmartDefaultRoute: Genie Studio subscriber detected, routing to /genie-studio');
+            console.log('🎯 SmartDefaultRoute: Genie Suite subscriber detected, routing to /genie-studio');
             setTargetRoute('/genie-studio');
             setIsCheckingGenieUser(false);
             return;
           }
         }
       } catch (error) {
-        console.warn('⚠️ SmartDefaultRoute: Could not check Genie Studio status:', error);
+        console.warn('⚠️ SmartDefaultRoute: Could not check Genie Suite status:', error);
       }
 
       setIsCheckingGenieUser(false);

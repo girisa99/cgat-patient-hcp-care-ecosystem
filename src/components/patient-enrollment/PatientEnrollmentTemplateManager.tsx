@@ -77,7 +77,7 @@ const SAMPLE_TEMPLATES: EnrollmentTemplate[] = [
     audit_enabled: true,
     llm_config: {
       provider: 'openai',
-      model: 'gpt-4',
+      model: 'gpt-4o',
       conversation_style: 'empathetic'
     },
     label_studio_enabled: true,

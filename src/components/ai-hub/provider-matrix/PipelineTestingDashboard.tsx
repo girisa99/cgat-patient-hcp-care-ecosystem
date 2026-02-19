@@ -169,7 +169,7 @@ const PROVIDER_AVAILABILITY: Partial<Record<ProviderId, { configured: boolean; h
   // ═══════════════════════════════════════════════════════════════
   // Image: stability → modelslab (hosts FLUX, SDXL, ControlNet)
   // Video: runway/pika → modelslab (AnimateDiff) + alibaba (WAN 2.2)
-  // Audio: suno/udio → elevenlabs (SFX + Music)
+  // Audio: elevenlabs (SFX + Music), alibaba (CJK Music)
   // STT: assemblyai → azure (Speech) + openai (Whisper)
   // NLP: cohere → openai (Embeddings) + gemini (Fast)
   // 3D: huggingface → modelslab (3D Mesh) + replicate

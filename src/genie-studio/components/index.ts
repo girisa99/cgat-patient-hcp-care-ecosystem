@@ -1,9 +1,9 @@
 /**
- * Genie Studio Components - Barrel Export
- * Re-exports all Genie Studio components from their original locations
+ * Genie Suite Components - Barrel Export
+ * Re-exports all Genie Suite components from their original locations
  */
 
-// Core Genie Studio components
+// Core Genie Suite components
 export * from '@/components/genie-studio/types';
 export * from '@/components/genie-studio/constants';
 export * from '@/components/genie-studio/hooks';

@@ -122,8 +122,8 @@ export const AgentStatusDashboard: React.FC = () => {
           averageResponseTime: 850
         },
         {
-          id: 'claude-3-sonnet',
-          name: 'Claude 3 Sonnet',
+          id: 'claude-sonnet-4-5',
+          name: 'Claude Sonnet 4.5',
           provider: 'Anthropic',
           status: 'active',
           tokensUsed: 89000,
@@ -134,8 +134,8 @@ export const AgentStatusDashboard: React.FC = () => {
           averageResponseTime: 1200
         },
         {
-          id: 'gpt-3.5-turbo',
-          name: 'GPT-3.5 Turbo',
+          id: 'gpt-4o-mini',
+          name: 'GPT-4o Mini',
           provider: 'OpenAI',
           status: 'rate_limited',
           tokensUsed: 980000,

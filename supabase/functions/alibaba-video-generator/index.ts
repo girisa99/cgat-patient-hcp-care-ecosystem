@@ -3,12 +3,12 @@
  * 
  * Supports ALL Alibaba video generation models:
  * - Wan 2.6 (International - Latest T2V/I2V/FLF2V)
- * - Wan 2.1 (China - Stable T2V/I2V)
+ * - Wan 2.6 (Upgraded from 2.1 - Latest T2V/I2V)
  * - Wan 2.0 (China - Legacy)
  * 
  * Regional Routing:
  * - Wan 2.6: dashscope-intl.aliyuncs.com (International)
- * - Wan 2.1/2.0: dashscope.aliyuncs.com (China Beijing)
+ * - Wan 2.6/2.0: dashscope-intl.aliyuncs.com (International) / dashscope.aliyuncs.com (China Beijing)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -53,29 +53,29 @@ const VIDEO_MODELS = {
     resolutions: ['720p', '1080p'],
   },
   
-  // Wan 2.1 Series - STABLE (China endpoint)
-  'wan2.1-t2v': { 
-    id: 'wanx2.1-v1-text-to-video', 
-    region: 'china', 
+  // Wan 2.6 Series - STABLE (International endpoint, upgraded from 2.1)
+  'wan2.6-t2v-legacy': {
+    id: 'wan2.6-t2v',
+    region: 'intl',
     type: 't2v',
-    description: 'Wan 2.1 Text-to-Video (stable)',
-    maxDuration: 8,
-    resolutions: ['720p', '1080p', '4k'],
+    description: 'Wan 2.6 Text-to-Video (upgraded from 2.1)',
+    maxDuration: 10,
+    resolutions: ['720p', '1080p'],
   },
-  'wan2.1-i2v': { 
-    id: 'wanx2.1-v1-image-to-video', 
-    region: 'china', 
+  'wan2.6-i2v-legacy': {
+    id: 'wan2.6-i2v',
+    region: 'intl',
     type: 'i2v',
-    description: 'Wan 2.1 Image-to-Video',
-    maxDuration: 8,
-    resolutions: ['720p', '1080p', '4k'],
+    description: 'Wan 2.6 Image-to-Video (upgraded from 2.1)',
+    maxDuration: 10,
+    resolutions: ['720p', '1080p'],
   },
-  'wan2.1-turbo': { 
-    id: 'wanx2.1-turbo-v1', 
-    region: 'china', 
+  'wan2.6-turbo': {
+    id: 'wan2.6-t2v',
+    region: 'intl',
     type: 't2v',
-    description: 'Wan 2.1 Turbo - Fast generation',
-    maxDuration: 6,
+    description: 'Wan 2.6 T2V (upgraded from 2.1 Turbo)',
+    maxDuration: 10,
     resolutions: ['720p', '1080p'],
   },
   

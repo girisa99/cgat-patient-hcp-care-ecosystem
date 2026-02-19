@@ -1,11 +1,11 @@
 /**
- * GENIE STUDIO AUTH LAYOUT
- * Dedicated authentication layout for Genie Studio with proper branding
+ * GENIE SUITE AUTH LAYOUT
+ * Dedicated authentication layout for Genie Suite with proper branding
  */
 import React from 'react';
 import { Sparkles, Zap, Wand2, Layers } from 'lucide-react';
 
-// Import Genie Studio combined logo
+// Import Genie Suite combined logo
 import genieStudioCombinedLogo from '@/assets/logos/genie-studio-combined.png';
 
 interface GenieStudioAuthLayoutProps {
@@ -15,7 +15,7 @@ interface GenieStudioAuthLayoutProps {
 const GenieStudioAuthLayout: React.FC<GenieStudioAuthLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex">
-      {/* Left side - Genie Studio Branding with Clean White/Light Background */}
+      {/* Left side - Genie Suite Branding with Clean White/Light Background */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-white via-purple-50 to-violet-100 p-12 flex-col justify-center items-center relative overflow-hidden">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 opacity-30">
@@ -29,7 +29,7 @@ const GenieStudioAuthLayout: React.FC<GenieStudioAuthLayoutProps> = ({ children 
           <div className="mb-8">
             <img 
               src={genieStudioCombinedLogo} 
-              alt="Genie Studio - Mind to Media" 
+              alt="Genie Suite - Mind to Media" 
               className="w-full max-w-md h-auto object-contain"
             />
           </div>

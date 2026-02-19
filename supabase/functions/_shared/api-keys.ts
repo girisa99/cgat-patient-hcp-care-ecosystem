@@ -122,7 +122,7 @@ export const GEMINI_MODELS = {
   IMAGEN_3: 'imagen-3.0-generate-001',
   // Video
   VEO_2: 'veo-002',
-  VEO_1: 'veo-001',
+  VEO_1: 'veo-002',
 } as const;
 
 /**

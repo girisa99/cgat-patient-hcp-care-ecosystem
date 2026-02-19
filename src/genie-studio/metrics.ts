@@ -1,5 +1,5 @@
 /**
- * Genie Studio Metrics - Re-exports from Unified Metrics
+ * Genie Suite Metrics - Re-exports from Unified Metrics
  * 
  * This file now re-exports from the SINGLE SOURCE OF TRUTH:
  * src/genie-studio/governance/UnifiedMetrics.ts

@@ -101,7 +101,7 @@ const UNIVERSAL_AI_REGISTRY = {
     stability: ['stable-diffusion-xl', 'stable-diffusion-3']
   },
   video: {
-    alibaba: ['wan2.6-t2v', 'wan2.1-t2v-plus'],
+    alibaba: ['wan2.6-t2v', 'wan2.6-t2v'],
   },
   tts: {
     alibaba: ['qwen3-tts-flash', 'qwen3-tts-instruct-flash-realtime', 'qwen3-tts-flash-realtime'],

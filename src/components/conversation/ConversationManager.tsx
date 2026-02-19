@@ -260,7 +260,7 @@ Let's begin with your basic information. Could you please provide your full name
     else if (id.includes('gemini')) provider = 'gemini';
 
     const selected = llmProviders.find(p => p.id === selectedLLM);
-    const model = selected?.model || (provider === 'openai' ? 'gpt-4.1-2025-04-14' : provider === 'claude' ? 'claude-sonnet-4-20250514' : 'gemini-1.5-pro');
+    const model = selected?.model || (provider === 'openai' ? 'gpt-4.1-2025-04-14' : provider === 'claude' ? 'claude-sonnet-4-20250514' : 'gemini-2.5-pro');
 
     const response = await generateResponse({
       prompt: userInput,

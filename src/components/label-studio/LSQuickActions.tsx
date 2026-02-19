@@ -1,6 +1,6 @@
 /**
  * Quick Label Studio Actions Widget
- * Embeddable widget for Recording Studio and other Genie Studio components
+ * Embeddable widget for Recording Studio and other Genie Suite components
  * Provides one-click training data capture during workflows
  */
 

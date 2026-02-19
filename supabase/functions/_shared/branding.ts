@@ -55,7 +55,7 @@ export const GENIE_BRANDING = {
    * - Genie Mind: "AI that understands"
    * - Genie Vibe: "Script to Screen"
    * - Genie Spark: "Ignite your Ideas"
-   * - Genie Studio: "Mind to Media"
+   * - Genie Suite: "Mind to Media"
    * - Genie Hub: "Your Creative Command Center"
    */
   products: {
@@ -96,7 +96,7 @@ export const GENIE_BRANDING = {
       features: ['Audio recording & editing', 'Video capture', 'Real-time effects']
     },
     studio: {
-      name: 'Genie Studio',
+      name: 'Genie Suite',
       tagline: 'Mind to Media', // EXACT from central repository
       emoji: '🎨',
       color: '#8B5CF6',

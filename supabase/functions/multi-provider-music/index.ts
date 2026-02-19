@@ -35,7 +35,7 @@ const GEMINI_REGIONS = [
   'NG', 'KE', 'GH', 'ET', 'TZ', 'UG', 'ZW', 'ZM', 'RW', 'SN', 'CI'
 ];
 
-type MusicProvider = 'elevenlabs' | 'suno' | 'alibaba' | 'modelslab';
+type MusicProvider = 'elevenlabs' | 'alibaba' | 'modelslab' | 'google-lyria';
 
 interface MusicRequest {
   prompt: string;
@@ -62,7 +62,7 @@ interface MusicRouting {
 function getAvailableMusicProviders(): { id: MusicProvider; available: boolean; priority: number }[] {
   return [
     { id: 'modelslab', available: !!Deno.env.get('MODELSLAB_API_KEY'), priority: 1 },
-    { id: 'suno', available: !!Deno.env.get('SUNO_API_KEY'), priority: 2 },
+    { id: 'google-lyria', available: !!Deno.env.get('GOOGLE_VERTEX_API_KEY') || !!Deno.env.get('GEMINI_API_KEY'), priority: 2 },
     { id: 'alibaba', available: !!Deno.env.get('ALIBABA_API_KEY'), priority: 3 },
     { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 4 }, // Deprioritized due to permission issues
   ];
@@ -72,17 +72,17 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
   const providers = getAvailableMusicProviders().filter(p => p.available);
   
   if (providers.length === 0) {
-    throw new Error('No music generation API keys configured. Please add MODELSLAB_API_KEY, SUNO_API_KEY, ALIBABA_API_KEY, or ELEVENLABS_API_KEY.');
+    throw new Error('No music generation API keys configured. Please add MODELSLAB_API_KEY, ALIBABA_API_KEY, or ELEVENLABS_API_KEY.');
   }
   
   // Helper to check if provider is available
   const hasProvider = (id: MusicProvider) => providers.some(p => p.id === id);
   
-  // Premium tier: Suno for highest quality full songs (if available)
-  if (tier === 'premium' && hasProvider('suno')) {
-    console.log('🎵 Premium tier: Routing to Suno');
+  // Premium tier: ElevenLabs for highest quality
+  if (tier === 'premium' && hasProvider('elevenlabs')) {
+    console.log('🎵 Premium tier: Routing to ElevenLabs');
     return {
-      provider: 'suno',
+      provider: 'elevenlabs',
       cost: 0.10,
       zone: 'premium',
       quality: 'premium',
@@ -102,6 +102,18 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
     };
   }
 
+  // Gemini Zone: Prefer Google Lyria for Indian/SEA/African music
+  if (GEMINI_REGIONS.includes(region) && hasProvider('google-lyria')) {
+    console.log('🎵 Gemini Zone: Routing to Google Lyria');
+    return {
+      provider: 'google-lyria',
+      cost: 0.05,
+      zone: 'gemini',
+      quality: 'premium',
+      maxDuration: 30
+    };
+  }
+
   // Default: Use ModelsLab as most reliable option
   if (hasProvider('modelslab')) {
     console.log('🎯 Default routing: ModelsLab (most reliable)');
@@ -111,17 +123,6 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
       zone: 'modelslab',
       quality: 'standard',
       maxDuration: 60
-    };
-  }
-  
-  // Fallback to Suno if available
-  if (hasProvider('suno')) {
-    return {
-      provider: 'suno',
-      cost: 0.08,
-      zone: 'suno-fallback',
-      quality: 'premium',
-      maxDuration: 120
     };
   }
   
@@ -336,69 +337,6 @@ function generateSilentAudioPlaceholder(duration: number): ArrayBuffer {
   return fullAudio.buffer;
 }
 
-async function generateSunoMusic(prompt: string, duration: number, style?: string, instrumental?: boolean): Promise<ArrayBuffer> {
-  const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
-  
-  if (!SUNO_API_KEY) {
-    console.warn('Suno not configured, falling back to ElevenLabs');
-    return generateElevenLabsMusic(prompt, duration);
-  }
-
-  // Suno API for full song generation
-  const response = await fetch('https://api.suno.ai/v1/generate', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${SUNO_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      prompt,
-      duration: duration,
-      style: style || 'auto',
-      instrumental: instrumental ?? true,
-      make_instrumental: instrumental ?? true,
-    }),
-  });
-
-  if (!response.ok) {
-    console.warn('Suno generation failed, falling back to ElevenLabs');
-    return generateElevenLabsMusic(prompt, Math.min(duration, 60));
-  }
-
-  const result = await response.json();
-  
-  // Poll for completion if async
-  if (result.status === 'processing' && result.id) {
-    let attempts = 0;
-    while (attempts < 60) { // Max 5 minutes wait
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      
-      const statusResponse = await fetch(`https://api.suno.ai/v1/status/${result.id}`, {
-        headers: { 'Authorization': `Bearer ${SUNO_API_KEY}` }
-      });
-      
-      const status = await statusResponse.json();
-      if (status.status === 'completed' && status.audio_url) {
-        const audioResponse = await fetch(status.audio_url);
-        return audioResponse.arrayBuffer();
-      }
-      
-      if (status.status === 'failed') {
-        throw new Error('Suno generation failed');
-      }
-      
-      attempts++;
-    }
-  }
-
-  if (result.audio_url) {
-    const audioResponse = await fetch(result.audio_url);
-    return audioResponse.arrayBuffer();
-  }
-
-  return generateElevenLabsMusic(prompt, Math.min(duration, 60));
-}
-
 async function generateAlibabaMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
   // Try both API keys - China (Beijing) preferred for audio models, International (Virginia) as fallback
   const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
@@ -450,6 +388,59 @@ async function generateAlibabaMusic(prompt: string, duration: number): Promise<A
   }
 
   return generateElevenLabsMusic(prompt, duration);
+}
+
+async function generateGoogleLyriaMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
+  const API_KEY = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_VERTEX_API_KEY');
+  if (!API_KEY) {
+    console.warn('Google Lyria not configured, falling back to ElevenLabs');
+    return generateElevenLabsMusic(prompt, duration);
+  }
+
+  const PROJECT_ID = Deno.env.get('GOOGLE_CLOUD_PROJECT') || 'geniesuite';
+  const LOCATION = Deno.env.get('GOOGLE_CLOUD_LOCATION') || 'us-central1';
+
+  try {
+    const response = await fetch(
+      `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/lyria-002:predict`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          instances: [{
+            prompt: `${prompt}. Duration: approximately ${duration} seconds.`,
+            negative_prompt: 'low quality, distorted, noise, static',
+          }],
+          parameters: { sample_count: 1 },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.warn(`Google Lyria generation failed (${response.status}), falling back to ElevenLabs`);
+      return generateElevenLabsMusic(prompt, Math.min(duration, 60));
+    }
+
+    const result = await response.json();
+
+    if (result.predictions?.[0]?.audioContent) {
+      // Decode base64 WAV response
+      const binaryStr = atob(result.predictions[0].audioContent);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    throw new Error('Google Lyria returned no audio content');
+  } catch (error) {
+    console.warn('Google Lyria Music failed, falling back to ElevenLabs:', error);
+    return generateElevenLabsMusic(prompt, Math.min(duration, 60));
+  }
 }
 
 async function generateModelsLabMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
@@ -535,14 +526,14 @@ serve(async (req) => {
       case 'elevenlabs':
         audioBuffer = await generateElevenLabsMusic(request.prompt, duration);
         break;
-      case 'suno':
-        audioBuffer = await generateSunoMusic(request.prompt, duration, request.style, request.instrumental);
-        break;
       case 'alibaba':
         audioBuffer = await generateAlibabaMusic(request.prompt, duration);
         break;
       case 'modelslab':
         audioBuffer = await generateModelsLabMusic(request.prompt, duration);
+        break;
+      case 'google-lyria':
+        audioBuffer = await generateGoogleLyriaMusic(request.prompt, duration);
         break;
       default:
         audioBuffer = await generateElevenLabsMusic(request.prompt, duration);

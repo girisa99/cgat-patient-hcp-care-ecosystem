@@ -1,5 +1,5 @@
 /**
- * GENIE STUDIO AUTH PAGE
+ * GENIE SUITE AUTH PAGE
  * Clean, modern authentication page matching corporate design
  * Google OAuth as PRIMARY method with email fallback
  */

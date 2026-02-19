@@ -1,5 +1,5 @@
 /**
- * GENIE STUDIO VIDEO SCRIPT - LANDING PAGE PRODUCTION
+ * GENIE SUITE VIDEO SCRIPT - LANDING PAGE PRODUCTION
  * 
  * A comprehensive, narrative-driven script featuring:
  * - Genie Lamp & Character introduction
@@ -366,7 +366,7 @@ And here's the magic for creators on the go: MOBILE-FIRST editing. Even OFFLINE.
     '74 Vibe-specific pipelines (largest product)',
     'AI Teleprompter with pace adaptation',
     '3D Avatar generation (Meshy AI, Alibaba WAN 2.2)',
-    'Lip-sync (Azure Visemes, HeyGen-style)',
+    'Lip-sync (Azure Visemes, Alibaba WAN 2.2)',
     'Multi-track audio: Voice, Music, SFX',
     'Music generation: ElevenLabs Music',
     'SFX generation: ElevenLabs SFX',

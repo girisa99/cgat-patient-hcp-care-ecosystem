@@ -24,7 +24,7 @@ export interface AvatarProfile {
   style: 'professional' | 'casual' | 'creative';
   voiceProvider: 'elevenlabs' | 'azure' | 'alibaba';
   voiceId: string;
-  avatarProvider: 'alibaba' | 'heygen' | 'meshy';
+  avatarProvider: 'alibaba' | 'modelslab' | 'meshy';
   transitionToGenie: boolean;
 }
 

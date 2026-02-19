@@ -1,6 +1,6 @@
 /**
- * Genie Studio Types - Extracted from GenieStudio.tsx
- * These types support the main studio functionality
+ * Genie Suite Types - Extracted from GenieStudio.tsx
+ * These types support the main suite functionality
  */
 
 // Types for media items

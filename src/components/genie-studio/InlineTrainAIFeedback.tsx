@@ -1,7 +1,7 @@
 /**
  * Inline Train AI Feedback Component
  * 
- * PURPOSE: Capture user feedback at key interaction points across all Genie Studio tools
+ * PURPOSE: Capture user feedback at key interaction points across all Genie Suite tools
  * - Thumbs up/down for quick feedback
  * - Optional text feedback for detailed improvement
  * - Stores to RAG (knowledge_base_contributions) for AI learning

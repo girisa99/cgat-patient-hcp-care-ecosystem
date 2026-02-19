@@ -311,8 +311,6 @@ export const PROVIDER_VERTICAL_MATRIX: Record<ProviderId, {
   cohere: { name: 'Cohere → OpenAI/Gemini', verticals: { enterprise: 'full' }, pricingTier: 'pro', strengths: ['→ Use OpenAI/Gemini Embeddings'] },
   runway: { name: 'Runway → ModelsLab', verticals: { generative_video: 'full', ai_avatar: 'partial' }, pricingTier: 'pro', strengths: ['→ Use ModelsLab AnimateDiff'] },
   pika: { name: 'Pika → Alibaba', verticals: { generative_video: 'full', social_publishing: 'full' }, pricingTier: 'pro', strengths: ['→ Use Alibaba WAN 2.2'] },
-  suno: { name: 'Suno → ElevenLabs', verticals: { presentations: 'partial', generative_video: 'partial' }, pricingTier: 'pro', strengths: ['→ Use ElevenLabs Music'] },
-  udio: { name: 'Udio → ElevenLabs', verticals: { presentations: 'partial', generative_video: 'partial' }, pricingTier: 'pro', strengths: ['→ Use ElevenLabs Music'] },
 };
 
 // ============================================
@@ -2531,7 +2529,7 @@ export const PIPELINE_CAPABILITY_MATRIX: PipelineCapabilityEntry[] = [
       sales_enablement: 'partial',
       live_realtime: 'none',
     },
-    primaryProviders: ['elevenlabs', 'alibaba', 'replicate'], // suno/udio → elevenlabs
+    primaryProviders: ['elevenlabs', 'alibaba', 'replicate'],
     fallbackProviders: ['gemini'],
     minimumTier: 'pro',
     recommendedTier: 'pro',

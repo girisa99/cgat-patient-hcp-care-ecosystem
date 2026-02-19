@@ -772,7 +772,7 @@ export const AgentFlowsConfig: React.FC<AgentFlowsConfigProps> = ({
                 <SelectContent>
                   <SelectItem value="gpt-4o">🤖 GPT-4o</SelectItem>
                   <SelectItem value="claude-4-opus">🟣 Claude 4 Opus</SelectItem>
-                  <SelectItem value="gemini-pro">💎 Gemini Pro</SelectItem>
+                  <SelectItem value="gemini-2.5-pro">💎 Gemini 2.5 Pro</SelectItem>
                   <SelectItem value="custom">🛠️ Custom Model</SelectItem>
                 </SelectContent>
               </Select>

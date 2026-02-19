@@ -1,5 +1,5 @@
 /**
- * Genie Studio Services Barrel Export
+ * Genie Suite Services Barrel Export
  * 
  * Central export for all Genie ecosystem services.
  */

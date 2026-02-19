@@ -501,11 +501,11 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
     const legacyTemplates: Record<string, Partial<CompositionChapter>[]> = {
       hero: [
         { title: 'Opening Hook', duration: 15, visual: { type: 'animation' }, voiceover: { type: 'tts', text: 'Discover the future of content creation...', language: 'en' } },
-        { title: 'Product Reveal', duration: 30, visual: { type: '3d' }, voiceover: { type: 'tts', text: 'Introducing Genie Studio...', language: 'en' } },
+        { title: 'Product Reveal', duration: 30, visual: { type: '3d' }, voiceover: { type: 'tts', text: 'Introducing Genie Suite...', language: 'en' } },
         { title: 'Call to Action', duration: 15, visual: { type: 'video' }, voiceover: { type: 'tts', text: 'Start your free trial today.', language: 'en' } },
       ],
       product: [
-        { title: 'Introduction', duration: 20, visual: { type: 'avatar', avatarStyle: 'professional_western', enableLipSync: true }, voiceover: { type: 'lipsync', text: 'Welcome to Genie Studio...', language: 'en' } },
+        { title: 'Introduction', duration: 20, visual: { type: 'avatar', avatarStyle: 'professional_western', enableLipSync: true }, voiceover: { type: 'lipsync', text: 'Welcome to Genie Suite...', language: 'en' } },
         { title: 'Feature 1', duration: 45, visual: { type: 'video' }, voiceover: { type: 'tts', text: 'First, lets look at...', language: 'en' } },
         { title: 'Feature 2', duration: 45, visual: { type: '3d' }, voiceover: { type: 'tts', text: 'Next, discover...', language: 'en' } },
         { title: 'Closing', duration: 20, visual: { type: 'avatar', enableLipSync: true }, voiceover: { type: 'lipsync', text: 'Thank you for watching.', language: 'en' } },
@@ -517,7 +517,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
         { title: 'Summary', duration: 30, visual: { type: 'avatar' }, voiceover: { type: 'lipsync', text: 'Now you know how to...', language: 'en' } },
       ],
       testimonial: [
-        { title: 'Testimonial 1', duration: 45, visual: { type: 'avatar', avatarStyle: 'professional_western' }, voiceover: { type: 'lipsync', text: 'Genie Studio transformed our workflow...', language: 'en' } },
+        { title: 'Testimonial 1', duration: 45, visual: { type: 'avatar', avatarStyle: 'professional_western' }, voiceover: { type: 'lipsync', text: 'Genie Suite transformed our workflow...', language: 'en' } },
         { title: 'Testimonial 2', duration: 45, visual: { type: 'avatar', avatarStyle: 'professional_cjk' }, voiceover: { type: 'lipsync', text: 'We saved 70% on production costs...', language: 'en' } },
         { title: 'Results', duration: 30, visual: { type: 'animation' }, voiceover: { type: 'tts', text: 'Join thousands of happy customers.', language: 'en' } },
       ],

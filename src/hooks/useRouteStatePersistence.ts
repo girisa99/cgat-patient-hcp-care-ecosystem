@@ -1,7 +1,7 @@
 /**
  * Route State Persistence Hook
  * Saves and restores the last visited route for specific sections
- * Prevents losing state on refresh within Genie Studio pages
+ * Prevents losing state on refresh within Genie Suite pages
  */
 
 import { useEffect, useCallback } from 'react';
@@ -10,7 +10,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const ROUTE_STORAGE_KEY = 'lovable_last_route';
 const GENIE_ROUTES_KEY = 'lovable_genie_last_route';
 
-// Routes that should be persisted (Genie Studio section)
+// Routes that should be persisted (Genie Suite section)
 const GENIE_ROUTE_PREFIXES = [
   '/genie-studio',
   '/genie-vibe',
@@ -21,7 +21,7 @@ const GENIE_ROUTE_PREFIXES = [
   '/genie-cast'
 ];
 
-// Check if route is a Genie Studio route
+// Check if route is a Genie Suite route
 const isGenieRoute = (path: string): boolean => {
   return GENIE_ROUTE_PREFIXES.some(prefix => path.startsWith(prefix));
 };

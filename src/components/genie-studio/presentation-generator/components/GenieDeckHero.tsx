@@ -1,6 +1,6 @@
 /**
  * Genie Deck Hero Section
- * Premium hero with Genie Studio-style deep gradients and glassmorphism
+ * Premium hero with Genie Suite-style deep gradients and glassmorphism
  * Features: Industry challenges, User requests, AI models, Publishing, Stats
  */
 

@@ -308,7 +308,7 @@ export function getConfiguredFallbackChain(capability: AICapability): AIProvider
     // 3D: Meshy → ModelsLab → Replicate (TripoSR) → Alibaba
     '3d_gen': ['meshy', 'modelslab', 'replicate', 'alibaba'],
     
-    // Avatar/Lip-Sync: Alibaba WAN 2.2 → Azure Visemes → ModelsLab (HeyGen NOT configured)
+    // Avatar/Lip-Sync: Alibaba WAN 2.2 → Azure Visemes → ModelsLab
     avatar: ['alibaba', 'azure', 'modelslab'],
   };
 

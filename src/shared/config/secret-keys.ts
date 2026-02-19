@@ -2,7 +2,7 @@
  * UNIFIED SECRET KEY CONFIGURATION
  * 
  * Single source of truth for all API keys and secrets used across
- * Genie Studio, Healthcare, and shared infrastructure.
+ * Genie Suite, Healthcare, and shared infrastructure.
  * 
  * IMPORTANT: All edge functions should use this pattern to retrieve secrets
  * instead of duplicating the logic.
