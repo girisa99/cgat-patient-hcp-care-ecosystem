@@ -28,7 +28,7 @@ import { SPRINT_TASKS } from './data-tasks';
 import { DayPageView } from './DayPageView';
 import { MetricsView } from './MetricsView';
 
-import { POVerificationView } from './POVerificationView';
+import { POActionsView } from './POActionsView';
 import { POMissionControl } from './POMissionControl';
 import { FindingsView } from './FindingsView';
 import { SprintPlanningView } from './SprintPlanningView';
@@ -206,6 +206,7 @@ export const SprintTrackerDashboard: React.FC = () => {
   const {
     state, currentDay, metrics, effortMetrics, updateTaskStatus, addStandup, getTaskStatus, resetToDefaults,
     isOnline, isSyncing, lastSyncAt, syncError, forceRefresh,
+    poChecklist, updatePoChecklist,
   } = useSprintTracker();
 
   // PO Mission Control is the default — the single-screen summary
@@ -545,9 +546,15 @@ export const SprintTrackerDashboard: React.FC = () => {
             {activeView === 'findings' && <FindingsView />}
 
 
-            {/* PO Gate */}
+            {/* PO Actions — Verify / Approve / Decide / Unblock */}
             {activeView === 'po-gate' && (
-              <POVerificationView currentDay={currentDay} getTaskStatus={getTaskStatus} />
+              <POActionsView
+                currentDay={currentDay}
+                poChecklist={poChecklist}
+                onUpdateChecklist={updatePoChecklist}
+                getTaskStatus={getTaskStatus}
+                onUpdateTaskStatus={updateTaskStatus}
+              />
             )}
 
             {/* Governance Flow */}

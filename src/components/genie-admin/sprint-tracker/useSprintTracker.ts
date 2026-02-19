@@ -336,6 +336,20 @@ export function useSprintTracker() {
     [effectiveEfforts]
   );
 
+  // ── PO Checklist state (persisted to localStorage) ──────────────
+  const PO_CHECKLIST_KEY = 'genie_sprint_po_checklist_v4';
+  const [poChecklist, setPoChecklist] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem(PO_CHECKLIST_KEY);
+      return stored ? JSON.parse(stored) : {};
+    } catch { return {}; }
+  });
+
+  const updatePoChecklist = useCallback((checklist: Record<string, boolean>) => {
+    setPoChecklist(checklist);
+    try { localStorage.setItem(PO_CHECKLIST_KEY, JSON.stringify(checklist)); } catch {}
+  }, []);
+
   return {
     state,
     currentDay,
@@ -348,6 +362,9 @@ export function useSprintTracker() {
     addEffort,
     getTaskStatus,
     resetToDefaults,
+    // PO Actions
+    poChecklist,
+    updatePoChecklist,
     // Sync status — for UI indicators
     isOnline,
     isSyncing,
