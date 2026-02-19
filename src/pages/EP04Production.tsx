@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import hostAvatar from '@/assets/characters/host-dog.png';
 import atlasAvatar from '@/assets/characters/atlas-bear.png';
 import novaAvatar from '@/assets/characters/nova-fox.png';
+import squirrelAvatar from '@/assets/characters/squirrel-distractor.png';
 
 // Scene background imports
 import scene0Bg from '@/assets/scenes/scene-0-title.png';
@@ -54,8 +55,10 @@ type LineStatus = 'idle' | 'generating' | 'done' | 'error';
 
 // ─── Voice config mapping ────────────────────────────────────────────────────
 
-function getVoiceConfig(voice: 'host' | 'atlas' | 'nova') {
-  const v = EP04_VOICES[voice];
+function getVoiceConfig(voice: 'host' | 'atlas' | 'nova' | 'squirrel') {
+  // Squirrel uses Nova's voice config with higher pitch for now
+  const voiceKey = voice === 'squirrel' ? 'nova' : voice;
+  const v = EP04_VOICES[voiceKey];
   return {
     provider: v.provider as string,
     voiceId: v.voiceId,
@@ -70,18 +73,21 @@ const VOICE_COLORS: Record<string, string> = {
   host: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
   atlas: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
   nova: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+  squirrel: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
 };
 
 const VOICE_LABELS: Record<string, string> = {
   host: 'Host — The Human in the Loop',
   atlas: 'Atlas (Claude)',
   nova: 'Nova (Lovable)',
+  squirrel: '🐿️ Squirrel — The Distractor',
 };
 
 const CHARACTER_AVATARS: Record<string, string> = {
   host: hostAvatar,
   atlas: atlasAvatar,
   nova: novaAvatar,
+  squirrel: squirrelAvatar,
 };
 
 const SCENE_BACKGROUNDS: Record<string, string> = {
@@ -373,7 +379,8 @@ export default function EP04Production() {
                       className={cn(
                         'transition-all',
                         isPlaying && 'ring-2 ring-primary',
-                        status === 'error' && 'border-destructive/50'
+                        status === 'error' && 'border-destructive/50',
+                        line.isInterruption && 'border-orange-500/40 bg-orange-500/5 ml-4'
                       )}
                     >
                       <CardContent className="p-4">
@@ -416,18 +423,41 @@ export default function EP04Production() {
                             )}
                           </div>
 
-                          {/* Character Avatar */}
-                          <div className="flex-shrink-0 pt-0.5">
+                          {/* Character Avatar with talking animation */}
+                          <div className="flex-shrink-0 pt-0.5 relative">
                             <img
                               src={CHARACTER_AVATARS[line.voice]}
                               alt={VOICE_LABELS[line.voice]}
-                              className="w-12 h-12 rounded-full object-cover ring-2 ring-border shadow-md"
+                              className={cn(
+                                'w-12 h-12 rounded-full object-cover ring-2 shadow-md transition-all duration-300',
+                                isPlaying 
+                                  ? 'ring-primary animate-pulse scale-110 shadow-primary/30 shadow-lg' 
+                                  : 'ring-border',
+                                line.voice === 'squirrel' && 'ring-orange-500/50',
+                                line.isInterruption && !isPlaying && 'animate-bounce'
+                              )}
+                              style={isPlaying ? {
+                                animation: 'pulse 1s ease-in-out infinite, wiggle 0.3s ease-in-out infinite',
+                              } : undefined}
                             />
+                            {/* Speaking indicator */}
+                            {isPlaying && (
+                              <div className="absolute -bottom-1 -right-1 flex gap-0.5">
+                                <span className="w-1 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <span className="w-1 h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <span className="w-1 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                              </div>
+                            )}
                           </div>
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
+                              {line.isInterruption && (
+                                <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-400 border-orange-500/30 animate-pulse">
+                                  ⚡ Interruption
+                                </Badge>
+                              )}
                               <Badge variant="outline" className={cn('text-xs', VOICE_COLORS[line.voice])}>
                                 {VOICE_LABELS[line.voice]}
                               </Badge>
@@ -436,7 +466,10 @@ export default function EP04Production() {
                                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                               )}
                             </div>
-                            <p className="text-sm leading-relaxed whitespace-pre-line">
+                            <p className={cn(
+                              'text-sm leading-relaxed whitespace-pre-line',
+                              line.isInterruption && 'italic'
+                            )}>
                               {line.text}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1 italic">
