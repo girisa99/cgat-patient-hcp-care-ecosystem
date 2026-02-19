@@ -41,19 +41,19 @@ export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
   // ═══════════════════════════════════════════════════════════════════════════
 
   'title-welcome': {
-    text: `Welcome to Beyond AI Hype — the show where we stop talking about what AI could do, and start showing what it actually does.
+    text: `Welcome to Beyond AI Hype — The Genie AI Podcast. I'm Sai Dasika, your host. And this — is where Allaudin, our Genie, meets the real world.
 
-I'm your host. Product Owner, Scrum Master, QA lead, and — apparently — the person writing this script too. You can call me the human in the loop. Or the bottleneck. Depends on the day.
+A podcast doesn't need to be traditional. That's exactly what Genie AI does differently. I don't just build — I show what I build, and what I learned in the process. AI beyond the hype. Real creativity. Real experimentation. Real results.
 
-This is Episode 2. And today — I want to tell you a story. A real story. About how I've been working with two AI developers for three months now, building a product called Genie AI Hub. And somewhere along the way, I realized something that changed how I think about software development entirely.
+This is Episode 2 — with Allaudin guiding us through the story. And today, I want to tell you a real story. About how I've been working with two AI developers for three months now, building a product called Genie AI Hub. And somewhere along the way, I realized something that changed how I think about software development entirely.
 
 One developer — one human — managing two AIs — is doing the work of five. Not in theory. Not in a pitch deck. In production. In real code. With real governance. And I have the receipts.
 
 But before I introduce the team, let me tell you about the problem that started all of this.`,
     voice: 'host',
     scene: 'scene-0-title',
-    duration_est: 55,
-    direction: 'Warm, welcoming, direct to camera. Title card energy. "Bottleneck" gets a slight smile. Build genuine curiosity — this is a founder telling a real story, not pitching. "Receipts" lands with weight. End with forward lean into the problem.',
+    duration_est: 60,
+    direction: 'Warm, welcoming, direct to camera. Title card with Lovable + Claude logos. "Sai Dasika" is confident — owning the stage. "Allaudin" introduction feels magical. "I don\'t just build — I show" is the thesis statement. Build genuine curiosity. "Receipts" lands with weight.',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -728,18 +728,28 @@ The sprint tracker wasn't planned. It was born from pain. From realizing that AI
     direction: 'Deadpan. Perfect timing. The comedy is in the inevitability.',
   },
 
-  'close-cta': {
-    text: `If you're watching this and thinking "I want to try this" — do it. Don't wait for the perfect setup. Don't wait for someone to write the playbook. Start experimenting. Start building.
+  'close-rationale': {
+    text: `Now — before I go, let me tell you why this podcast looks the way it does.
 
-Because that's what "Beyond AI Hype" actually means. It doesn't mean AI is overhyped. It doesn't mean AI is magic. It means: stop reading about it. Stop debating about it. Start building with it. And see what happens.
+I didn't hire a video team. I didn't use a traditional podcast format. I used the very tools I'm building — Genie AI — to create this episode. The characters? AI-generated. The animations? Built in the sprint. The voices? Multi-provider TTS routed through our own edge functions. The sprint tracker you saw? That's a real product. You can try it. It's linked below.
 
-I've been building with two AI developers for three months. And I can tell you — what happens is pretty incredible.
-
-This is Beyond AI Hype — Episode 2. I'm your host. Atlas and Nova say goodbye — in their own way.`,
+This is what I mean when I say: I don't build — I show what I build. The podcast IS the product demo. The creativity IS the proof. And if you check our sprint tracker, you'll see this episode listed as a task — completed by Atlas and Nova, reviewed by me. That's the workflow. That's the process. That's what Genie AI actually does.`,
     voice: 'host',
     scene: 'scene-11-close',
     duration_est: 35,
-    direction: 'This is the CTA — the most important 35 seconds. Start with permission energy — "do it." Build through the "beyond AI hype" thesis. Triple repetition of "stop/start" creates rhythm. End warm, personal, inviting. This should make people want to subscribe AND try building with AI themselves.',
+    direction: 'Meta-moment — breaking the fourth wall with purpose. This is the "how we made this" reveal. Each sentence builds the case. "The podcast IS the product demo" is the money line. Link to sprint tracker makes it tangible.',
+  },
+
+  'close-cta': {
+    text: `So if you're watching this and thinking "I want to try this" — do it. Don't wait for the perfect setup. Don't wait for someone to write the playbook. Start experimenting. Start building.
+
+Because that's what "Beyond AI Hype" actually means. Stop reading about it. Stop debating about it. Start building with it. And see what happens.
+
+I'm Sai Dasika. This has been The Genie AI Podcast — Episode 2, with Allaudin. Atlas and Nova say goodbye — in their own way.`,
+    voice: 'host',
+    scene: 'scene-11-close',
+    duration_est: 30,
+    direction: 'Final CTA — permission energy. "Sai Dasika" sign-off is confident. "With Allaudin" ties back to the intro. Warm, personal, inviting.',
   },
 
   'close-atlas-goodbye': {

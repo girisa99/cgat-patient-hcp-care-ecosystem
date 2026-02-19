@@ -28,6 +28,7 @@ import hostAvatar from '@/assets/characters/host-dog.png';
 import atlasAvatar from '@/assets/characters/atlas-bear.png';
 import novaAvatar from '@/assets/characters/nova-fox.png';
 import squirrelAvatar from '@/assets/characters/squirrel-distractor.png';
+import ep02Thumbnail from '@/assets/thumbnails/ep02-thumbnail.png';
 
 // Scene background imports
 import scene0Bg from '@/assets/scenes/scene-0-title.png';
@@ -77,7 +78,7 @@ const VOICE_COLORS: Record<string, string> = {
 };
 
 const VOICE_LABELS: Record<string, string> = {
-  host: 'Host — The Human in the Loop',
+  host: 'Sai Dasika — Host & Product Owner',
   atlas: 'Atlas (Claude)',
   nova: 'Nova (Lovable)',
   squirrel: '🐿️ Squirrel — The Distractor',
@@ -293,9 +294,9 @@ export default function EP04Production() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Beyond AI Hype — Episode 2</h1>
+              <h1 className="text-xl font-bold">The Genie AI Podcast — Episode 2</h1>
               <p className="text-sm text-muted-foreground">
-                Experimenting &amp; Learning with Two AIs — Building What Actually Works · {doneCount}/{scriptKeys.length} lines · ~{Math.round(totalDuration / 60)}min
+                Beyond AI Hype · Host: Sai Dasika · with Allaudin · {doneCount}/{scriptKeys.length} lines · ~{Math.round(totalDuration / 60)}min
               </p>
             </div>
           </div>
@@ -343,6 +344,34 @@ export default function EP04Production() {
       {/* Script Lines */}
       <ScrollArea className="h-[calc(100vh-80px)]">
         <div className="max-w-5xl mx-auto p-6 space-y-8">
+          {/* Episode Thumbnail Banner */}
+          <div className="relative rounded-2xl overflow-hidden mb-6">
+            <img
+              src={ep02Thumbnail}
+              alt="The Genie AI Podcast — Beyond AI Hype — Episode 2"
+              className="w-full h-auto object-cover rounded-2xl"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/80 to-transparent p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <img src="/logos/anthropic.svg" alt="Claude / Anthropic" className="h-8 w-8 rounded-full border border-border bg-background/50 p-1" />
+                  <span className="text-xs text-muted-foreground font-medium">Claude</span>
+                </div>
+                <span className="text-muted-foreground">×</span>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full border border-border bg-background/50 flex items-center justify-center">
+                    <span className="text-sm font-bold text-pink-400">♥</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">Lovable</span>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold mt-2">The Genie AI Podcast — Episode 2</h2>
+              <p className="text-sm text-muted-foreground">
+                Host: Sai Dasika · with Allaudin · AI • Experimentation • Real-World Impact
+              </p>
+            </div>
+          </div>
+
           {Array.from(scenes.entries()).map(([sceneId, { keys, lines }]) => (
             <div key={sceneId}>
               {/* Scene Background Header */}
