@@ -28,6 +28,12 @@ export interface ScriptLine {
   duration_est: number;
   direction: string;
   isInterruption?: boolean;
+  /** Lip-sync & motion flags for production */
+  lipsync?: boolean;
+  /** SFX cues to trigger during this line */
+  sfx?: string[];
+  /** Motion/animation cue for the character */
+  motion?: string;
 }
 
 export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
@@ -42,11 +48,14 @@ export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
 
   // ── ALLAUDIN EMERGES — Lamp mist intro before host welcome
   'allaudin-emerge': {
-    text: `*magical mist swirls from lamp* Ahhh... at last! I am Allaudin — the Genie of Genie AI. And YOU... have summoned something extraordinary. This is not your ordinary podcast. This is The Genie AI Podcast — where creativity meets code, where ideas become reality, and where AI goes beyond the hype. Your host, Sai Dasika, has a story to tell. And I? I'll be here — guiding, watching, and maybe... granting a wish or two along the way. *laughs* Let us begin!`,
+    text: `*magical mist swirls from lamp* Ahhh... at last! I am Allaudin — the Genie of Genie AI. And YOU... have summoned something extraordinary. This is not your ordinary podcast. This is The Genie AI Podcast — where creativity meets code, where ideas become reality, and where AI goes beyond the hype. Beyond AI Hype — we bring it to life. Your host, Sai Dasika, has a story to tell. And I? I'll be here — guiding, watching, and maybe... granting a wish or two along the way. *laughs* Let us begin!`,
     voice: 'allaudin',
     scene: 'scene-0-title',
-    duration_est: 25,
-    direction: 'Grand, theatrical, warm. Allaudin emerges from lamp as blue mist — mystical sound effects. Voice is deep, resonant, wise but playful. Each phrase builds anticipation. The laugh is genuine and magical. "Let us begin" is a dramatic cue for the host.',
+    duration_est: 28,
+    direction: 'Grand, theatrical, warm. Allaudin emerges from lamp as blue mist — mystical sound effects, sparkle particles. Voice is deep, resonant, wise but playful. Lip-sync ON — mouth moves with every word. "Beyond AI Hype — we bring it to life" is the thesis — deliver with gravitas. The laugh is genuine and magical. "Let us begin" is a dramatic cue for the host.',
+    lipsync: true,
+    sfx: ['lamp_whoosh', 'magical_mist', 'sparkle_chime', 'deep_gong'],
+    motion: 'emerge-from-lamp-mist-swirl',
   },
 
   'title-welcome': {
@@ -63,6 +72,9 @@ But before I introduce the team, let me tell you about the problem that started 
     scene: 'scene-0-title',
     duration_est: 60,
     direction: 'Warm, welcoming, direct to camera. Title card with Lovable + Claude logos. "Sai Dasika" is confident — owning the stage. "Allaudin" introduction feels magical. "I don\'t just build — I show" is the thesis statement. Build genuine curiosity. "Receipts" lands with weight.',
+    lipsync: true,
+    sfx: ['intro_music_fade', 'title_card_whoosh'],
+    motion: 'direct-to-camera-confident',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -93,8 +105,11 @@ Wednesday. The Jira board looks like a Jackson Pollock painting. Cards everywher
     voice: 'squirrel',
     scene: 'scene-1-problem',
     duration_est: 10,
-    direction: 'Chaotic, enthusiastic, genuinely confused. Squirrel pops in from the side, interrupting. High-pitched, fast-talking energy. The acorn metaphor makes perfect sense to the squirrel.',
+    direction: 'Chaotic, enthusiastic, genuinely confused. Squirrel BURSTS in from the right side — scampering animation. Lip-sync ON for full talking. Tail twitching. Clutches acorn close to chest. Counts on tiny paws with finger-wiggle animation.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['scamper_in', 'acorn_clutch', 'whoosh_entrance'],
+    motion: 'burst-in-from-right-scamper',
   },
 
   'host-squirrel-response-1': {
@@ -102,8 +117,11 @@ Wednesday. The Jira board looks like a Jackson Pollock painting. Cards everywher
     voice: 'host',
     scene: 'scene-1-problem',
     duration_est: 5,
-    direction: 'Exasperated but amused. Breaking the fourth wall. Quick recovery.',
+    direction: 'Exasperated but amused. Breaking the fourth wall. Lip-sync ON. Quick recovery. Background: squirrel still visible, nibbling acorn.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['awkward_silence_beat'],
+    motion: 'head-shake-exasperated',
   },
 
   'problem-deeper': {
@@ -343,8 +361,11 @@ No camera. No "can everyone hear me?" No "you're on mute." No "let's take that o
     voice: 'squirrel',
     scene: 'scene-4-solution',
     duration_est: 10,
-    direction: 'Genuinely hopeful. Squirrel sees an opportunity in 200K context windows. This is a real question for the squirrel.',
+    direction: 'Genuinely hopeful. Squirrel DROPS DOWN from a branch above the dashboard — dangling upside down. Lip-sync ON. Acorn falls and bounces with SFX. Eyes go wide at "200K context." Tail swishes excitedly.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['acorn_drop_bounce', 'branch_creak', 'excited_chittering'],
+    motion: 'drop-from-above-dangle-upside-down',
   },
 
   'atlas-squirrel-response': {
@@ -352,8 +373,10 @@ No camera. No "can everyone hear me?" No "you're on mute." No "let's take that o
     voice: 'atlas',
     scene: 'scene-4-solution',
     duration_est: 6,
-    direction: 'Deadpan. Atlas genuinely considered the technical feasibility before responding. The "Yet" implies he filed it as a feature request.',
+    direction: 'Deadpan. Lip-sync ON. Atlas genuinely considered the technical feasibility. The "Yet" implies he filed a feature request. Background: squirrel slowly tilts head.',
     isInterruption: true,
+    lipsync: true,
+    motion: 'subtle-head-tilt-thinking',
   },
 
   'squirrel-disappointed': {
@@ -361,8 +384,11 @@ No camera. No "can everyone hear me?" No "you're on mute." No "let's take that o
     voice: 'squirrel',
     scene: 'scene-4-solution',
     duration_est: 5,
-    direction: 'Disappointed but pragmatic. Already planning for the future. Exits with dignity.',
+    direction: 'Disappointed but pragmatic. Lip-sync ON. Picks up acorn, tucks under arm, scurries off-screen left with scampering SFX. Tail droops slightly.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['sad_sigh', 'acorn_pickup', 'scamper_away'],
+    motion: 'scurry-away-left-disappointed',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -531,8 +557,11 @@ And honestly? She usually did. But your burndown chart looks like it was drawn b
     voice: 'squirrel',
     scene: 'scene-7-velocity',
     duration_est: 10,
-    direction: 'Dramatic entrance. The squirrel has been listening carefully and has drawn completely wrong conclusions. Delivering with Wall Street broker energy.',
+    direction: 'DRAMATIC entrance — squirrel SLIDES IN on a tiny skateboard from left. Lip-sync ON throughout. Wheels screech SFX. Stops with a power-slide. Delivers with Wall Street broker energy — adjusts tiny imaginary tie. Background: burndown chart wobbles as skateboard rolls past.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['skateboard_roll', 'wheel_screech', 'power_slide_stop', 'stock_ticker_beep'],
+    motion: 'skateboard-slide-in-power-stop',
   },
 
   'nova-squirrel-response': {
@@ -540,8 +569,11 @@ And honestly? She usually did. But your burndown chart looks like it was drawn b
     voice: 'nova',
     scene: 'scene-7-velocity',
     duration_est: 5,
-    direction: 'Delighted. Nova is immediately distracted by the design opportunity. This is peak scope creep in action.',
+    direction: 'Delighted. Lip-sync ON. Nova bounces excitedly — scope creep in real-time. Eyes light up. Already sketching in the air.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['sparkle_idea'],
+    motion: 'excited-bounce-sketching',
   },
 
   'host-squirrel-focus': {
@@ -549,8 +581,11 @@ And honestly? She usually did. But your burndown chart looks like it was drawn b
     voice: 'host',
     scene: 'scene-7-velocity',
     duration_est: 5,
-    direction: 'Trying to maintain control. The "please" is desperate. The PO is losing the standup to a rodent.',
+    direction: 'Trying to maintain control. Lip-sync ON. Pinches bridge of nose. The "please" is desperate. Background: squirrel does a tiny kickflip as it exits. SFX: standup-call notification ping.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['standup_notification_ping', 'skateboard_kickflip', 'exasperated_sigh'],
+    motion: 'pinch-bridge-of-nose',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -637,8 +672,11 @@ Day 3: I realized I was the weakest link. Not because I'm bad at my job. Because
     voice: 'squirrel',
     scene: 'scene-9-challenges',
     duration_est: 12,
-    direction: 'Actually insightful. The squirrel asks the question the audience has been thinking. Delivered with genuine curiosity, less chaotic than usual.',
+    direction: 'Actually insightful. Squirrel PEEKS slowly from behind Atlas\'s monitor — cautious entrance. Lip-sync ON. Tone shifts — less chaotic, genuine curiosity. Squirrel holds still for the first time. Background: standup call notification faintly pings. The audience realizes the squirrel just asked the best question of the episode.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['quiet_peek', 'thoughtful_pause', 'standup_ping_faint'],
+    motion: 'slow-peek-from-behind-monitor',
   },
 
   'host-squirrel-good-question': {
@@ -646,8 +684,10 @@ Day 3: I realized I was the weakest link. Not because I'm bad at my job. Because
     voice: 'host',
     scene: 'scene-9-challenges',
     duration_est: 15,
-    direction: 'Genuinely surprised and impressed. This is a real teaching moment enabled by the squirrel. Deliver with warmth — the squirrel earned respect here.',
+    direction: 'Genuinely surprised and impressed. Lip-sync ON. Nods slowly at squirrel — first time treating it as a peer. This is a real teaching moment. Deliver with warmth.',
     isInterruption: true,
+    lipsync: true,
+    motion: 'respectful-nod-to-squirrel',
   },
 
   'squirrel-vindicated': {
@@ -655,8 +695,11 @@ Day 3: I realized I was the weakest link. Not because I'm bad at my job. Because
     voice: 'squirrel',
     scene: 'scene-9-challenges',
     duration_est: 6,
-    direction: 'Triumphant then clumsy. Peak squirrel energy — the pride is immediately undercut by physical comedy.',
+    direction: 'Triumphant then clumsy. Lip-sync ON. Puffs chest — hero pose animation. Then DROPS acorn — it bounces and rolls away. Squirrel watches it go. Physical comedy undercuts the pride. SFX: acorn bounce, tiny roll.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['chest_puff', 'acorn_drop_bounce', 'tiny_roll_away', 'comedic_bonk'],
+    motion: 'hero-pose-then-acorn-fumble',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -783,8 +826,11 @@ I'm Sai Dasika. This has been The Genie AI Podcast — Episode 2, with Allaudin.
     voice: 'squirrel',
     scene: 'scene-11-close',
     duration_est: 10,
-    direction: 'Perfect chaotic closer. Breaking the fourth wall completely. The subscribe CTA delivered by a squirrel is memorable. Exits waving. The parking lot B callback ties the whole arc together.',
+    direction: 'Perfect chaotic closer. Squirrel POPS UP from bottom of frame holding a comically large "SUBSCRIBE" button. Lip-sync ON for full talking. Waves tiny paw — arm wiggle animation. Background: confetti particles fall. Parking lot B callback ties the arc together. Final exit: squirrel runs off-screen with subscribe button bouncing behind.',
     isInterruption: true,
+    lipsync: true,
+    sfx: ['pop_up_boing', 'subscribe_ding', 'confetti_burst', 'scamper_away_final', 'tiny_wave'],
+    motion: 'pop-up-from-bottom-wave-exit-with-subscribe-button',
   },
 };
 
