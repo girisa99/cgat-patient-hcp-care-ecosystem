@@ -143,7 +143,7 @@ const STT_PROVIDERS = [
 // TEMPLATE GENERATION PROMPT - Supports all 206 pipelines
 // =============================================================================
 
-const TEMPLATE_GENERATION_PROMPT = `You are an AI video template generator for Genie Studio, supporting 206+ pipelines and 43+ video styles.
+const TEMPLATE_GENERATION_PROMPT = `You are an AI video template generator for Genie Suite, supporting 206+ pipelines and 43+ video styles.
 
 Given a user's description, generate a comprehensive video template configuration.
 

@@ -61,20 +61,20 @@ const [docStoreSelection, setDocStoreSelection] = useState<{ table?: string; col
       models: [
         'claude-opus-4-0', 'claude-4.1-opus', 'claude-sonnet-4-0', 'claude-4-sonnet',
         'claude-3-7-sonnet-latest', 'claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest',
-        'claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'
+        'claude-opus-4-5', 'claude-sonnet-4-5', 'claude-haiku-4-5'
       ]
     },
     { 
       value: 'AWS ChatBedrock', 
       label: 'AWS ChatBedrock', 
       icon: Database,
-      models: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku', 'titan-text-express']
+      models: ['claude-opus-4-5', 'claude-sonnet-4-5', 'claude-haiku-4-5', 'titan-text-express']
     },
     { 
       value: 'Azure ChatOpenAI', 
       label: 'Azure ChatOpenAI', 
       icon: Globe,
-      models: ['gpt-4', 'gpt-4-turbo', 'gpt-35-turbo']
+      models: ['gpt-4o', 'gpt-4o-mini']
     },
     { 
       value: 'ChatAlibabaTongyi', 
@@ -110,13 +110,13 @@ const [docStoreSelection, setDocStoreSelection] = useState<{ table?: string; col
       value: 'ChatGoogleGenerativeAI', 
       label: 'ChatGoogleGenerativeAI', 
       icon: Search,
-      models: ['gemini-1.5-pro', 'gemini-1.5-flash']
+      models: ['gemini-2.5-pro', 'gemini-2.5-flash']
     },
     { 
       value: 'ChatGoogleVertexAI', 
       label: 'ChatGoogleVertexAI', 
       icon: Search,
-      models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'text-bison']
+      models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'text-bison']
     },
     { 
       value: 'ChatHuggingFace', 

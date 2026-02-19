@@ -6,7 +6,7 @@
  * - Execute scheduled posts at optimal times
  * - Track engagement and update leaderboards
  * 
- * INTERNAL USE ONLY - Genie Studio Team
+ * INTERNAL USE ONLY - Genie Suite Team
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';

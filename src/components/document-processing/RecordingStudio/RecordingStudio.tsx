@@ -1,6 +1,6 @@
 /**
  * Genie Vibe - Script to Screen Media Production Studio
- * Part of Genie Studio
+ * Part of Genie Suite
  *
  * Features:
  * - Screen sharing with 5-second countdown
@@ -1952,7 +1952,7 @@ export function RecordingStudio({
                   />
                 )}
 
-                {/* Info Banner - Pre-production in Genie Studio */}
+                {/* Info Banner - Pre-production in Genie Suite */}
                 {!productionContext && (
                   <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
                     <p className="text-muted-foreground">

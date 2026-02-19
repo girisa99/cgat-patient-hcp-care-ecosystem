@@ -1,7 +1,7 @@
 /**
  * Genie Spark - Smart Content Pipeline
  * "Ignite Your Ideas" - AI-powered content generation engine
- * Part of Genie Studio
+ * Part of Genie Suite
  * 
  * Features session persistence, drafts management, and enhanced save/download
  */
@@ -1714,7 +1714,7 @@ export function SmartContentPipeline({
                   title: presentation?.metadata?.title || 'Presentation',
                   script: scriptText,
                   type: 'presentation_script',
-                  sourceType: 'document',
+                  sourceType: 'presentation',
                   metadata: {
                     wordCount: scriptText.split(/\s+/).length,
                     estimatedDuration: presentation?.metadata?.duration || 0,

@@ -1,6 +1,6 @@
 /**
  * Auto-Publish Scheduling Component
- * Lives in Genie Arc (Production Hub) - handles scheduled publishing across platforms
+ * Lives in Genie Hub (Production Hub) - handles scheduled publishing across platforms
  * Integrates with n8n for external platform publishing automation
  */
 

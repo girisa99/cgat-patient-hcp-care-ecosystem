@@ -139,7 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
           console.log('[send-session-invites] CC list (host only):', ccList);
           
           const emailPayload: any = {
-            from: `Genie Studio <${fromEmail}>`,
+            from: `Genie Suite <${fromEmail}>`,
             to: [participant.email],
             subject: `You're invited: ${session.title}`,
             html: `

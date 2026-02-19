@@ -60,6 +60,8 @@ export type ProviderId =
   | 'replicate'   // Open-source models, TripoSR (Image-to-3D)
   // Voice/Audio
   | 'elevenlabs'  // Premium TTS, Voice Cloning, SFX
+  // Music (Google Vertex AI)
+  | 'google-lyria' // Google Lyria 2 - Instrumental music generation via Vertex AI
   // Translation
   | 'deepl'       // European languages, Context-aware
   // Infrastructure
@@ -72,8 +74,6 @@ export type ProviderId =
   | 'runway'      // → ModelsLab (AnimateDiff) / Alibaba (WAN 2.2)
   | 'pika'        // → Alibaba (WAN 2.2)
   | 'assemblyai'  // → Azure STT / OpenAI Whisper
-  | 'suno'        // → ElevenLabs Music/SFX
-  | 'udio'        // → ElevenLabs Music/SFX
   | 'microsoft'   // → Azure
   | 'google'      // → Gemini
   | 'huggingface' // → Replicate

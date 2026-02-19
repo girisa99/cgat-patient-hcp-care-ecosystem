@@ -155,7 +155,7 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: numbe
   // ═══════════════════════════════════════════════════════════════════════════
   'claude-3-5-sonnet': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
   'claude-3.5-sonnet': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
-  'claude-3-opus': { quality: 99, speed: 70, cost: 40, tier: 'premium' },
+  'claude-opus-4-5': { quality: 99, speed: 70, cost: 40, tier: 'premium' },
   'gpt-4o': { quality: 96, speed: 88, cost: 55, tier: 'premium' },
   'gpt-5': { quality: 99, speed: 80, cost: 45, tier: 'premium' },
   
@@ -165,7 +165,7 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: numbe
   'qwen-max': { quality: 94, speed: 90, cost: 85, tier: 'advanced' },
   'qwen-plus': { quality: 90, speed: 92, cost: 88, tier: 'advanced' },
   'gemini-pro': { quality: 92, speed: 90, cost: 75, tier: 'advanced' },
-  'gemini-1.5-pro': { quality: 94, speed: 88, cost: 70, tier: 'advanced' },
+  'gemini-2.5-pro': { quality: 94, speed: 88, cost: 70, tier: 'advanced' },
   'deepseek-v3': { quality: 88, speed: 92, cost: 95, tier: 'advanced' },
   'deepseek-r1': { quality: 92, speed: 75, cost: 90, tier: 'advanced' },
   
@@ -176,7 +176,7 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: numbe
   'gemini-flash': { quality: 86, speed: 96, cost: 92, tier: 'standard' },
   'gemini-2.0-flash': { quality: 86, speed: 96, cost: 92, tier: 'standard' },
   'gpt-4o-mini': { quality: 88, speed: 94, cost: 90, tier: 'standard' },
-  'claude-3-haiku': { quality: 85, speed: 95, cost: 92, tier: 'standard' },
+  'claude-haiku-4-5': { quality: 85, speed: 95, cost: 92, tier: 'standard' },
   
   // ═══════════════════════════════════════════════════════════════════════════
   // TTS
@@ -214,10 +214,10 @@ const INDUSTRY_PROVIDER_SCORES: Record<string, { llm: string; confidence: number
   legal: { llm: 'claude-3.5-sonnet', confidence: 93, reasoning: 'Legal terminology with jurisdiction awareness', considerations: ['Legal precision', 'Jurisdiction terms', 'Formal register'] },
   finance: { llm: 'gpt-4o', confidence: 92, reasoning: 'Financial modeling with regulatory compliance', considerations: ['SOX compliance', 'Financial accuracy', 'Audit trails'] },
   technology: { llm: 'deepseek-v3', confidence: 90, reasoning: 'Technical documentation with code understanding', considerations: ['Technical accuracy', 'Code samples', 'API documentation'] },
-  education: { llm: 'gemini-1.5-pro', confidence: 88, reasoning: 'Long-context for educational content', considerations: ['Curriculum alignment', 'Age-appropriate', 'Pedagogical'] },
+  education: { llm: 'gemini-2.5-pro', confidence: 88, reasoning: 'Long-context for educational content', considerations: ['Curriculum alignment', 'Age-appropriate', 'Pedagogical'] },
   consulting: { llm: 'claude-3.5-sonnet', confidence: 91, reasoning: 'Strategic frameworks and executive communication', considerations: ['Framework accuracy', 'Executive tone', 'Data visualization'] },
   manufacturing: { llm: 'gpt-4o', confidence: 87, reasoning: 'Technical specifications and process documentation', considerations: ['ISO standards', 'Technical specs', 'Safety protocols'] },
-  retail: { llm: 'gemini-1.5-pro', confidence: 86, reasoning: 'Consumer insights and marketing optimization', considerations: ['Consumer language', 'Brand voice', 'Conversion focus'] },
+  retail: { llm: 'gemini-2.5-pro', confidence: 86, reasoning: 'Consumer insights and marketing optimization', considerations: ['Consumer language', 'Brand voice', 'Conversion focus'] },
   media: { llm: 'claude-3.5-sonnet', confidence: 89, reasoning: 'Creative content with brand consistency', considerations: ['Creative quality', 'Brand alignment', 'Engagement'] },
 };
 
@@ -269,7 +269,7 @@ const OUTPUT_FORMAT_REQUIREMENTS: Record<string, { requiredCapabilities: string[
   
   // Video
   'mp4-standard': { requiredCapabilities: ['llm', 'tts', 'video_gen'], recommendedProviders: ['elevenlabs', 'modelslab'], confidence: 88, reasoning: 'Standard video pipeline' },
-  'mp4-avatar': { requiredCapabilities: ['llm', 'tts', 'avatar'], recommendedProviders: ['alibaba-wan2', 'heygen'], confidence: 85, reasoning: 'Avatar video with lip-sync' },
+  'mp4-avatar': { requiredCapabilities: ['llm', 'tts', 'avatar'], recommendedProviders: ['alibaba-wan2', 'alibaba-omniavatar'], confidence: 85, reasoning: 'Avatar video with lip-sync' },
   'mp4-fullbody': { requiredCapabilities: ['llm', 'tts', 'fullbody_avatar'], recommendedProviders: ['alibaba-omniavatar'], confidence: 82, reasoning: 'Full-body avatar generation' },
   
   // 3D/Immersive
@@ -463,19 +463,19 @@ export class ContextualRecommendationService {
     
     switch (zone) {
       case 'claude':
-        if (!primary.includes('gemini')) alternatives.push({ id: 'gemini-1.5-pro', confidence: 75, reasoning: 'Long context alternative' });
+        if (!primary.includes('gemini')) alternatives.push({ id: 'gemini-2.5-pro', confidence: 75, reasoning: 'Long context alternative' });
         if (!primary.includes('deepseek')) alternatives.push({ id: 'deepseek-v3', confidence: 70, reasoning: 'Cost-efficient alternative' });
         break;
       case 'alibaba':
         if (!primary.includes('deepseek')) alternatives.push({ id: 'deepseek-v3', confidence: 82, reasoning: 'Strong CJK alternative' });
-        if (!primary.includes('gemini')) alternatives.push({ id: 'gemini-1.5-pro', confidence: 68, reasoning: 'Multimodal fallback' });
+        if (!primary.includes('gemini')) alternatives.push({ id: 'gemini-2.5-pro', confidence: 68, reasoning: 'Multimodal fallback' });
         break;
       case 'gemini':
         if (!primary.includes('claude')) alternatives.push({ id: 'claude-3.5-sonnet', confidence: 72, reasoning: 'Premium quality fallback' });
         if (!primary.includes('deepseek')) alternatives.push({ id: 'deepseek-v3', confidence: 70, reasoning: 'Cost-efficient alternative' });
         break;
       case 'fallback':
-        alternatives.push({ id: 'gemini-1.5-pro', confidence: 82, reasoning: 'Long context capability' });
+        alternatives.push({ id: 'gemini-2.5-pro', confidence: 82, reasoning: 'Long context capability' });
         alternatives.push({ id: 'claude-3.5-sonnet', confidence: 78, reasoning: 'Premium reasoning' });
         break;
     }
@@ -855,7 +855,7 @@ export class ContextualRecommendationService {
 
   private getProviderTier(providerId: string): GlobalTier {
     const premiumProviders = ['elevenlabs', 'claude-3.5-sonnet', 'gpt-4o', 'alibaba-omniavatar'];
-    const advancedProviders = ['qwen-max', 'gemini-1.5-pro', 'deepseek-v3', 'modelslab', 'heygen'];
+    const advancedProviders = ['qwen-max', 'gemini-2.5-pro', 'deepseek-v3', 'modelslab', 'alibaba-wan2'];
     
     if (premiumProviders.some(p => providerId.includes(p))) return 'premium';
     if (advancedProviders.some(p => providerId.includes(p))) return 'advanced';
@@ -871,7 +871,7 @@ export class ContextualRecommendationService {
     const names: Record<string, string> = {
       'claude-3.5-sonnet': 'Claude 3.5 Sonnet',
       'gpt-4o': 'GPT-4o',
-      'gemini-1.5-pro': 'Gemini 1.5 Pro',
+      'gemini-2.5-pro': 'Gemini 1.5 Pro',
       'gemini-pro': 'Gemini Pro',
       'gemini-flash': 'Gemini Flash',
       'qwen-max': 'Qwen Max',
@@ -891,7 +891,7 @@ export class ContextualRecommendationService {
       'google-stt': 'Google STT',
       'azure-translator': 'Azure Translator',
       'modelslab': 'ModelsLab',
-      'heygen': 'HeyGen',
+      'alibaba-wan2': 'Alibaba Wan 2.2',
       'replicate': 'Replicate',
       'stability': 'Stability AI',
     };
@@ -1102,8 +1102,8 @@ export class ContextualRecommendationService {
       });
 
       recommendations.push({
-        id: 'heygen',
-        name: 'HeyGen',
+        id: 'alibaba-wan2',
+        name: 'Alibaba Wan 2.2',
         category: 'avatar',
         confidence: 88,
         qualityScore: 92,

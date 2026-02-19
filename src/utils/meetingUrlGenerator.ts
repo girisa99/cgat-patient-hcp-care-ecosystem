@@ -160,7 +160,7 @@ export function generateMeetingUrl(
 }
 
 /**
- * Platform display info - Genie Studio branded
+ * Platform display info - Genie Suite branded
  */
 export const MEETING_PLATFORMS = [
   { 

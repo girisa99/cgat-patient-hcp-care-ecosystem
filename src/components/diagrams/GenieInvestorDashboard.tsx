@@ -355,7 +355,7 @@ export const GenieInvestorDashboard: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <BarChart3 className="h-6 w-6 text-primary" />
-            Genie Studio — Investor Dashboard
+            Genie Suite — Investor Dashboard
           </h1>
           <p className="text-muted-foreground">Market Analysis • Why Genie • SWOT • Projections</p>
         </div>

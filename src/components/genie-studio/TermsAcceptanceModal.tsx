@@ -1,6 +1,6 @@
 /**
  * Terms and Privacy Acceptance Modal
- * Shows on first use of Genie Studio content generation
+ * Shows on first use of Genie Suite content generation
  * Covers AI-generated content disclaimers and monitoring notice
  */
 

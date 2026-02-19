@@ -108,9 +108,9 @@ export interface AnalyzeSceneOptions {
 
 // Vision-capable models by provider
 const VISION_MODELS: Record<string, string[]> = {
-  openai: ['gpt-4o', 'o4-mini-2025-04-16', 'gpt-4-vision-preview'],
+  openai: ['gpt-4o', 'o4-mini-2025-04-16'],
   claude: ['claude-3-5-sonnet-20241022', 'claude-sonnet-4-20250514'],
-  gemini: ['gemini-1.5-pro-latest', 'gemini-2.0-flash-exp'],
+  gemini: ['gemini-2.5-pro', 'gemini-2.0-flash'],
   lovable: ['google/gemini-2.5-pro', 'google/gemini-2.5-flash']
 };
 

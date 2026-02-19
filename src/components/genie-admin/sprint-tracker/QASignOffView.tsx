@@ -82,7 +82,7 @@ const QA_TESTS: QATestItem[] = [
   // ── Day 5 ──
   { id: 'QA-501', day: 5, taskId: 'S-501', title: 'Merge: Lovable rebases onto Claude cleanly', steps: 'Check CI/CD for merge conflicts and build result after merge', expectedResult: 'Zero merge conflicts, build passes post-merge', module: 'CI/CD', developer: 'claude', severity: 'critical' },
   { id: 'QA-502', day: 5, taskId: 'S-501', title: 'All 3 products functional on merged branch', steps: 'Test /genie-spark, /genie-mind, /genie-deck on the merged branch', expectedResult: 'Each product core flow works end-to-end', module: 'All Products', developer: 'claude', severity: 'critical' },
-  { id: 'QA-503', day: 5, taskId: 'S-501', title: 'Landing + Studio nav links all correct', steps: 'Click every nav link on landing + inside Genie Studio', expectedResult: 'No 404s, no broken routes', module: 'Navigation', developer: 'lovable', severity: 'high' },
+  { id: 'QA-503', day: 5, taskId: 'S-501', title: 'Landing + Studio nav links all correct', steps: 'Click every nav link on landing + inside Genie Suite', expectedResult: 'No 404s, no broken routes', module: 'Navigation', developer: 'lovable', severity: 'high' },
 ];
 
 // ─── Carry-forward item ───────────────────────────────────────────────────────

@@ -4,7 +4,7 @@
  * Provides consistent branding within each quadrant while preserving
  * individual product identity (logo, tagline, colors).
  * 
- * Includes back navigation to the main Genie Studio dashboard.
+ * Includes back navigation to the main Genie Suite dashboard.
  */
 
 import React from 'react';

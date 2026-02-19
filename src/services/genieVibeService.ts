@@ -327,7 +327,7 @@ class GenieVibeService {
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           prompt: `Translate the following ${request.contentType} content from ${request.sourceLanguage} to these languages: ${request.targetLanguages.join(', ')}.
 
 Source content:
@@ -457,7 +457,7 @@ Important:
         const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
             provider: 'gemini',
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-2.0-flash',
             prompt: `Analyze this image and generate presentation slide content.
             
 Image URL: ${request.imageUrls[i]}

@@ -1,6 +1,6 @@
 /**
- * Genie Studio Pages - Barrel Export
- * Re-exports all Genie Studio page components
+ * Genie Suite Pages - Barrel Export
+ * Re-exports all Genie Suite page components
  * Note: GenieArc removed - merged into Production Hub (/genie-admin)
  */
 

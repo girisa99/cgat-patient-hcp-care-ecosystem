@@ -33,12 +33,12 @@ export const PROCESSING_STAGE_LABELS: Record<string, string> = {
 // ============================================================================
 
 export const AI_MODELS = {
-  GEMINI_PRO_VISION: 'gemini-pro-vision',
-  GEMINI_1_5_PRO: 'gemini-1.5-pro',
-  GPT_4_VISION: 'gpt-4-vision-preview',
-  GPT_4_TURBO: 'gpt-4-turbo',
-  CLAUDE_3_OPUS: 'claude-3-opus',
-  CLAUDE_3_SONNET: 'claude-3-sonnet',
+  GEMINI_PRO_VISION: 'gemini-2.0-flash',
+  GEMINI_1_5_PRO: 'gemini-2.5-pro',
+  GPT_4O_VISION: 'gpt-4o',
+  GPT_4O: 'gpt-4o',
+  CLAUDE_OPUS_4_5: 'claude-opus-4-5',
+  CLAUDE_SONNET_4_5: 'claude-sonnet-4-5',
 } as const;
 
 export const OCR_ENGINES = {

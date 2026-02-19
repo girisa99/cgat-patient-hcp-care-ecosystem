@@ -32,21 +32,21 @@ export const DOCUMENT_PROCESSING_EDGE_FUNCTIONS = [
     purpose: 'Core multi-model OCR/Extraction',
     phase: 'P0',
     status: 'production',
-    aiModels: ['gemini-pro-vision', 'gpt-4-vision'],
+    aiModels: ['gemini-2.0-flash', 'gpt-4o'],
   },
   {
     name: 'process-documents',
     purpose: 'Legacy document extraction',
     phase: 'P0',
     status: 'production',
-    aiModels: ['gemini-pro'],
+    aiModels: ['gemini-2.5-pro'],
   },
   {
     name: 'execute-document-agent',
     purpose: 'Workflow integration',
     phase: 'P1',
     status: 'production',
-    aiModels: ['gemini-pro'],
+    aiModels: ['gemini-2.5-pro'],
   },
   {
     name: 'pdf-voice-processor',
@@ -67,7 +67,7 @@ export const DOCUMENT_PROCESSING_EDGE_FUNCTIONS = [
     purpose: 'Enrollment form extraction',
     phase: 'P1',
     status: 'production',
-    aiModels: ['gemini-pro-vision'],
+    aiModels: ['gemini-2.0-flash'],
   },
   {
     name: 'medical-imaging-cnn',

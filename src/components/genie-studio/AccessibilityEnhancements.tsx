@@ -1,5 +1,5 @@
 /**
- * Accessibility Enhancements for Genie Studio
+ * Accessibility Enhancements for Genie Suite
  * Addresses Ralph Wiggum findings: Color Contrast, Content Readability
  * 
  * Provides:

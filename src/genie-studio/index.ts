@@ -1,7 +1,7 @@
 /**
- * GENIE STUDIO - Product Root Index
- * 
- * This is the main entry point for Genie Studio product.
+ * GENIE SUITE - Product Root Index
+ *
+ * This is the main entry point for Genie Suite product.
  * All Genie-specific components, hooks, services, and types should be
  * exported from here or their respective sub-indexes.
  * 
@@ -70,16 +70,16 @@ export { GENIE_STUDIO_METRICS, PLATFORM_TOTALS, getGenieStudioPercentage, GENIE_
 // MODULE EXPORTS (Phase 2 - Organized by domain)
 // =============================================================================
 
-// Pages - All Genie Studio pages
+// Pages - All Genie Suite pages
 export * from './pages';
 
-// Components - All Genie Studio components
+// Components - All Genie Suite components
 export * from './components';
 
-// Hooks - All Genie Studio hooks
+// Hooks - All Genie Suite hooks
 export * from './hooks';
 
-// Services - All Genie Studio services
+// Services - All Genie Suite services
 export * from './services';
 
 // Diagrams - Architecture and documentation
@@ -88,7 +88,7 @@ export * from './diagrams';
 // =============================================================================
 // ADDITIONAL RE-EXPORTS (Legacy compatibility)
 
-// Key Genie Studio Components (individual exports - no index.ts yet)
+// Key Genie Suite Components (individual exports - no index.ts yet)
 export { AskGenie } from '@/components/genie-studio/AskGenie';
 export { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 export { FullPipelineWorkflow } from '@/components/genie-studio/FullPipelineWorkflow';

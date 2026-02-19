@@ -170,7 +170,7 @@ export const VideoGenerationStudio: React.FC = () => {
       const videoUrl = `https://storage.supabase.co/genie-videos/${selectedLanguage}-${Date.now()}.mp4`;
 
       const { error } = await supabase.from('landing_page_videos').insert([{
-        title: `Genie Studio Demo - ${language?.name || selectedLanguage}`,
+        title: `Genie Suite Demo - ${language?.name || selectedLanguage}`,
         description: 'AI-generated product showcase with 9 chapters',
         video_url: videoUrl,
         language_code: selectedLanguage,

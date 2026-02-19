@@ -389,7 +389,7 @@ const FAQ = () => {
       faqs: [
         {
           q: "What's the difference between Genie products?",
-          a: "Genie Mind = AI knowledge & document processing. Genie Spark = rapid script generation. Genie Vibe = recording studio with AI voices. Genie Studio = the production workspace within Genie Suite. Production Hub = team collaboration."
+          a: "Genie Mind = AI knowledge & document processing. Genie Spark = rapid script generation. Genie Vibe = recording studio with AI voices. Genie Suite = unified workflow. Production Hub = team collaboration."
         },
         {
           q: "Which plan includes Genie Vibe recording?",

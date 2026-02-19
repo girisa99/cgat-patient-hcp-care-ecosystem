@@ -1,5 +1,5 @@
 /**
- * Genie Studio Hooks - Barrel Export
+ * Genie Suite Hooks - Barrel Export
  */
 
 export { useMediaLibrary } from './useMediaLibrary';

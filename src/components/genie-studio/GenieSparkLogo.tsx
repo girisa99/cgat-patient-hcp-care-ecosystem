@@ -1,7 +1,7 @@
 /**
  * Genie Spark Logo Component
  * "Ignite Your Ideas" - AI-powered content generation engine
- * Part of Genie Studio
+ * Part of Genie Suite
  */
 
 import React from 'react';

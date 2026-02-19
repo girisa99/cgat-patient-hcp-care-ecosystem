@@ -106,7 +106,7 @@ const AppContent = () => {
   const { isAuthenticated, isLoading, userRoles } = useMasterAuth();
   const location = window.location.pathname;
   
-  // Check if this is a Genie Studio route or public landing route
+  // Check if this is a Genie Suite route or public landing route
   // These routes bypass the healthcare role-loading gate
   const isGenieStudioRoute = location.startsWith('/genie-studio') || 
     location.startsWith('/genie-spark') || 
@@ -123,7 +123,7 @@ const AppContent = () => {
     location.startsWith('/support') ||
     location.startsWith('/pricing');
 
-  // Also check if user is on root route - SmartDefaultRoute will handle Genie Studio detection
+  // Also check if user is on root route - SmartDefaultRoute will handle Genie Suite detection
   const isRootRoute = location === '/' || location === '';
 
   console.log('🎯 Auth state:', { isAuthenticated, isLoading, userRoles, isGenieStudioRoute, isRootRoute });
@@ -134,9 +134,9 @@ const AppContent = () => {
     return <PageLoading message="Initializing application..." />;
   }
 
-  // For Genie Studio routes OR root route, don't wait for legacy roles
-  // Genie Studio routes use GenieStudioProtectedRoute
-  // Root route uses SmartDefaultRoute which checks Genie Studio user status
+  // For Genie Suite routes OR root route, don't wait for legacy roles
+  // Genie Suite routes use GenieStudioProtectedRoute
+  // Root route uses SmartDefaultRoute which checks Genie Suite user status
   if (isAuthenticated && userRoles.length === 0 && !isGenieStudioRoute && !isRootRoute) {
     console.log('⏳ Waiting for roles to load (healthcare route)...');
     return <PageLoading message="Loading your dashboard..." />;
@@ -367,10 +367,10 @@ const AppContent = () => {
                       <DocumentProcessing />
                     </ProtectedRoute>
                   } />
-                  {/* Genie Studio routes - use GenieStudioProtectedRoute with Genie-specific auth */}
+                  {/* Genie Suite routes - use GenieStudioProtectedRoute with Genie-specific auth */}
                   <Route path="/genie-studio" element={
                     <GenieStudioProtectedRoute>
-                      <Suspense fallback={<PageLoading message="Loading Genie Studio..." />}>
+                      <Suspense fallback={<PageLoading message="Loading Genie Suite..." />}>
                         <LazyPages.GenieStudio />
                       </Suspense>
                     </GenieStudioProtectedRoute>
@@ -382,7 +382,7 @@ const AppContent = () => {
                       </Suspense>
                     </GenieStudioProtectedRoute>
                   } />
-                  {/* Genie Arc - Redirect to Production Hub with calendar tab (schedule flow merged) */}
+                  {/* Genie Hub - Redirect to Production Hub with calendar tab (schedule flow merged) */}
                   <Route path="/genie-arc" element={
                     <Navigate to="/genie-admin?tab=calendar" replace />
                   } />

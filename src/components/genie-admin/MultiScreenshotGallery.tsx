@@ -59,7 +59,7 @@ export const GENIE_PRODUCTS = [
   { id: 'vibe', name: 'Genie Vibe', route: '/genie-vibe', color: '#22C55E', description: 'Voice & audio' },
   { id: 'deck', name: 'Genie Deck', route: '/genie-deck', color: '#EAB308', description: 'Presentations' },
   { id: 'arc', name: 'Genie Hub', route: '/genie-arc', color: '#EC4899', description: 'Scheduling' },
-  { id: 'studio', name: 'Genie Studio', route: '/genie-studio', color: '#9333EA', description: 'Full dashboard' },
+  { id: 'studio', name: 'Genie Suite', route: '/genie-studio', color: '#9333EA', description: 'Full dashboard' },
   { id: 'ask-genie', name: 'Ask Genie', route: '/genie-support', color: '#06B6D4', description: 'AI assistant' },
   { id: 'cast', name: 'Genie Cast', route: '/genie-admin?tab=landing-videos', color: '#EF4444', description: 'Video studio' },
 ];
@@ -106,7 +106,7 @@ export const PRODUCT_SCREENS: Record<string, ProductScreen[]> = {
     { id: 'deck-preview', name: 'Presentation Preview', description: 'Full preview mode' },
     { id: 'deck-export', name: 'Export Options', description: 'PPT/PDF export' },
   ],
-  // Genie Arc - Production Hub
+  // Genie Hub - Production Hub
   'arc': [
     { id: 'arc-kanban', name: 'Kanban Board', description: 'Project workflow' },
     { id: 'arc-calendar', name: 'Calendar View', description: 'Scheduling calendar' },
@@ -114,7 +114,7 @@ export const PRODUCT_SCREENS: Record<string, ProductScreen[]> = {
     { id: 'arc-scheduler', name: 'Scheduler', description: 'Publication scheduler' },
     { id: 'arc-analytics', name: 'Analytics', description: 'Performance metrics' },
   ],
-  // Genie Studio - Full Dashboard
+  // Genie Suite - Full Dashboard
   'studio': [
     { id: 'studio-dashboard', name: 'Dashboard', description: 'Main overview' },
     { id: 'studio-products', name: 'Product Suite', description: 'All 7 products' },

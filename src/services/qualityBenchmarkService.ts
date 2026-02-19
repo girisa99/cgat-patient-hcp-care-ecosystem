@@ -95,11 +95,11 @@ export const LLM_QUALITY_BENCHMARKS: LLMQualityBenchmark[] = [
   { language: 'Arabic', languageCode: 'ar', bestProvider: 'gpt-4o', secondBest: 'claude-3.5-sonnet', avoid: ['qwen'], benchmarkSource: 'ArabicNLU, AraBench', qualityScore: 88, notes: '⚠️ Qwen struggles with Arabic - use GPT-4o instead' },
   
   // Gemini Zone Languages
-  { language: 'Hindi', languageCode: 'hi', bestProvider: 'gemini-1.5-pro', secondBest: 'gpt-4o', avoid: ['claude'], benchmarkSource: 'IndicNLU', qualityScore: 86 },
-  { language: 'Indonesian', languageCode: 'id', bestProvider: 'gemini-1.5-pro', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'IndoNLU', qualityScore: 85 },
-  { language: 'Vietnamese', languageCode: 'vi', bestProvider: 'gemini-1.5-pro', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'ViNLU', qualityScore: 84 },
-  { language: 'Thai', languageCode: 'th', bestProvider: 'gemini-1.5-pro', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'ThaiNLU', qualityScore: 83 },
-  { language: 'Swahili', languageCode: 'sw', bestProvider: 'gemini-1.5-pro', secondBest: 'gpt-4o', avoid: ['all limited'], benchmarkSource: 'AfricanNLP', qualityScore: 72, notes: 'Limited support across all providers' }
+  { language: 'Hindi', languageCode: 'hi', bestProvider: 'gemini-2.5-pro', secondBest: 'gpt-4o', avoid: ['claude'], benchmarkSource: 'IndicNLU', qualityScore: 86 },
+  { language: 'Indonesian', languageCode: 'id', bestProvider: 'gemini-2.5-pro', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'IndoNLU', qualityScore: 85 },
+  { language: 'Vietnamese', languageCode: 'vi', bestProvider: 'gemini-2.5-pro', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'ViNLU', qualityScore: 84 },
+  { language: 'Thai', languageCode: 'th', bestProvider: 'gemini-2.5-pro', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'ThaiNLU', qualityScore: 83 },
+  { language: 'Swahili', languageCode: 'sw', bestProvider: 'gemini-2.5-pro', secondBest: 'gpt-4o', avoid: ['all limited'], benchmarkSource: 'AfricanNLP', qualityScore: 72, notes: 'Limited support across all providers' }
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -162,7 +162,7 @@ export const TESTING_MATRIX: TestCriteria[] = [
 
 export const AB_TEST_CONFIGS: ABTestConfig[] = [
   { testName: 'GPT-4 vs Qwen for Arabic', hypothesis: 'GPT-4 quality > Qwen for Arabic business content', sampleSize: 100, duration: '2 weeks', providerA: 'gpt-4o', providerB: 'qwen-max', targetLanguage: 'ar', status: 'planned' },
-  { testName: 'Gemini vs Claude for Hindi', hypothesis: 'Gemini better for Hindi formal content', sampleSize: 100, duration: '2 weeks', providerA: 'gemini-1.5-pro', providerB: 'claude-3.5-sonnet', targetLanguage: 'hi', status: 'planned' },
+  { testName: 'Gemini vs Claude for Hindi', hypothesis: 'Gemini better for Hindi formal content', sampleSize: 100, duration: '2 weeks', providerA: 'gemini-2.5-pro', providerB: 'claude-3.5-sonnet', targetLanguage: 'hi', status: 'planned' },
   { testName: 'ElevenLabs vs Azure for Spanish', hypothesis: 'ElevenLabs premium justified for Spanish', sampleSize: 50, duration: '1 week', providerA: 'elevenlabs', providerB: 'azure-neural', targetLanguage: 'es', status: 'planned' },
   { testName: 'Qwen3-TTS vs Azure for Japanese', hypothesis: 'Qwen3-TTS native prosody preferred', sampleSize: 50, duration: '1 week', providerA: 'alibaba-qwen3-tts', providerB: 'azure-neural', targetLanguage: 'ja', status: 'planned' }
 ];
@@ -330,7 +330,7 @@ export function getProviderRecommendation(
   // Cost scoring (simplified)
   const costMap: Record<string, number> = {
     'deepseek': 95,
-    'gemini-1.5-pro': 90,
+    'gemini-2.5-pro': 90,
     'qwen-max': 85,
     'azure-neural': 80,
     'gpt-4o': 60,

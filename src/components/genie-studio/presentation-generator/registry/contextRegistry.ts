@@ -582,11 +582,11 @@ export const VISUAL_FEATURES: VisualFeatureItem[] = [
   // ==========================================
   // NEW: AVATAR & CHARACTER ELEMENTS
   // ==========================================
-  { id: 'ai-avatar', name: 'AI Avatar', category: 'media', providers: ['heygen', 'alibaba-wan', 'synthesia'], tier: 'enterprise', compatibleOutputs: ['video-mp4', 'interactive-web'] },
-  { id: 'talking-head', name: 'Talking Head', category: 'media', providers: ['heygen', 'd-id', 'alibaba-wan'], tier: 'enterprise', compatibleOutputs: ['video-mp4', 'interactive-web'] },
+  { id: 'ai-avatar', name: 'AI Avatar', category: 'media', providers: ['alibaba-wan', 'alibaba-omniavatar', 'modelslab'], tier: 'enterprise', compatibleOutputs: ['video-mp4', 'interactive-web'] },
+  { id: 'talking-head', name: 'Talking Head', category: 'media', providers: ['alibaba-wan', 'azure-visemes', 'modelslab'], tier: 'enterprise', compatibleOutputs: ['video-mp4', 'interactive-web'] },
   { id: 'character-illustration', name: 'Character Illustration', category: 'media', providers: ['modelslab', 'dalle', 'midjourney'], tier: 'pro', compatibleOutputs: ['presentation', 'pdf', 'video', 'infographic'] },
   { id: 'mascot', name: 'Brand Mascot', category: 'media', providers: ['modelslab', 'dalle'], tier: 'pro', compatibleOutputs: ['presentation', 'pdf', 'video', 'infographic'] },
-  { id: 'animated-character', name: 'Animated Character', category: 'animation', providers: ['heygen', 'modelslab'], tier: 'enterprise', compatibleOutputs: ['video-mp4', '3d-presentation'] },
+  { id: 'animated-character', name: 'Animated Character', category: 'animation', providers: ['alibaba-wan', 'modelslab'], tier: 'enterprise', compatibleOutputs: ['video-mp4', '3d-presentation'] },
   
   // ==========================================
   // NEW: VIDEO STYLE PRESETS (From Genie Cast)

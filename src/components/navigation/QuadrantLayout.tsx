@@ -22,7 +22,7 @@ import { DebugModeToggle, DebugPanel } from '@/components/resilience/DebugModeTo
 import { UserErrorReporting } from '@/components/resilience/UserErrorReporting';
 import { cn } from '@/lib/utils';
 
-// Import Genie Studio logo
+// Import Genie Suite logo
 import genieStudioLogo from '@/assets/logos/genie-studio-banner.png';
 
 interface QuadrantLayoutProps {

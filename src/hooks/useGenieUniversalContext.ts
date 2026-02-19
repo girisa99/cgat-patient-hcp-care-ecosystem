@@ -2,7 +2,7 @@
  * USE GENIE UNIVERSAL CONTEXT
  * 
  * React hook for cross-product context-aware guidance system.
- * Works across ALL Genie Studio products with consistent behavior.
+ * Works across ALL Genie Suite products with consistent behavior.
  * 
  * Features:
  * - Product-specific flows and knowledge

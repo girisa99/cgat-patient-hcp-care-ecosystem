@@ -374,14 +374,14 @@ export const GenieStudioPitchDeck: React.FC = () => {
 
     // Slide 6: Competitive Landscape
     <Slide key="competition">
-      <SlideHeader title="Competitive Landscape" subtitle="Genie Studio vs. point solutions" />
+      <SlideHeader title="Competitive Landscape" subtitle="Genie Suite vs. point solutions" />
       <div className="flex-1 px-10 pb-8 overflow-hidden">
         <div className="h-full flex flex-col">
           <table className="w-full text-xs flex-1">
             <thead>
               <tr className="bg-slate-900 text-white">
                 <th className="text-left p-3 font-medium">Capability</th>
-                <th className="text-center p-3 font-bold bg-slate-800">Genie Studio</th>
+                <th className="text-center p-3 font-bold bg-slate-800">Genie Suite</th>
                 <th className="text-center p-3 font-medium">CapCut</th>
                 <th className="text-center p-3 font-medium">Descript</th>
                 <th className="text-center p-3 font-medium">Synthesia</th>

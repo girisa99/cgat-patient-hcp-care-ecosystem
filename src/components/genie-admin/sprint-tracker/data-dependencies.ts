@@ -124,8 +124,8 @@ Do NOT change: data structures, types, hook logic, or data-dependencies.ts hando
     consumerTaskId: 'L-301',
     artifact: 'Route `/genie-spark` has working prompt→generate→save flow',
     consumerNotes: 'Interactive demos (STT, translation) can link to Spark as "Try it live".',
-    status: 'acknowledged',
-    acknowledgedAt: '2026-02-19T22:00:00Z',
+    status: 'ready',
+    acknowledgedAt: undefined,
     priority: 'high',
   },
   {

@@ -1,7 +1,7 @@
 /**
  * UNIFIED METRICS - SINGLE SOURCE OF TRUTH
  * 
- * This file consolidates ALL metrics for Genie Studio Command Center.
+ * This file consolidates ALL metrics for Genie Suite Command Center.
  * Every tab, component, and display MUST derive values from here.
  * 
  * DO NOT create hardcoded metrics elsewhere!

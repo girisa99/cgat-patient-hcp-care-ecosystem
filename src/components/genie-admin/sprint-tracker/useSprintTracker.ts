@@ -33,8 +33,6 @@ export function useSprintTracker() {
     syncTaskStatus,
     syncEffort,
     syncStandup,
-    syncPONotes,
-    syncPOChecklist,
     forceRefresh,
   } = useSprintSync();
 
@@ -350,11 +348,6 @@ export function useSprintTracker() {
     addEffort,
     getTaskStatus,
     resetToDefaults,
-    // PO data — Supabase-persisted
-    poNotes: liveState.poNotes,
-    poChecklist: liveState.poChecklist,
-    syncPONotes,
-    syncPOChecklist,
     // Sync status — for UI indicators
     isOnline,
     isSyncing,

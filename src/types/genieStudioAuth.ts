@@ -1,6 +1,6 @@
 /**
- * GENIE STUDIO AUTH TYPES
- * Type definitions for the clean Genie Studio auth system
+ * GENIE SUITE AUTH TYPES
+ * Type definitions for the clean Genie Suite auth system
  */
 
 // Database enum types

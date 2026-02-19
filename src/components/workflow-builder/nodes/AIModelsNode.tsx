@@ -32,11 +32,10 @@ export const AIModelsNode: React.FC<{ id: string; data: any; selected: boolean }
 
   const models = [
     { value: 'gpt-4o', label: 'GPT-4o' },
-    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-    { value: 'claude-3-opus', label: 'Claude 3 Opus' },
-    { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' },
-    { value: 'gemini-pro', label: 'Gemini Pro' },
+    { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+    { value: 'claude-opus-4-5', label: 'Claude Opus 4.5' },
+    { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
     { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' }
   ];
 

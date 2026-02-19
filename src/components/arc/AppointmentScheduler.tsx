@@ -1,6 +1,6 @@
 /**
  * APPOINTMENT SCHEDULER
- * Merged from Genie Arc into Production Hub
+ * Merged from Genie Hub into Production Hub
  * Uses UnifiedScheduleShowDialog for comprehensive scheduling
  */
 

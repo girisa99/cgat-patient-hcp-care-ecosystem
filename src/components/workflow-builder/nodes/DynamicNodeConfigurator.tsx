@@ -81,7 +81,7 @@ const NODE_SCHEMAS: Record<string, NodeSchema> = {
           { value: 'gpt-4o', label: 'GPT-4 Omni' },
           { value: 'gpt-4o-mini', label: 'GPT-4 Omni Mini' },
           { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet' },
-          { value: 'gemini-pro', label: 'Gemini Pro' }
+          { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' }
         ]
       },
       {

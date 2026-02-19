@@ -70,9 +70,8 @@ export const InlineNodeConfig: React.FC<InlineNodeConfigProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-              <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-              <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
-              <SelectItem value="claude-3-sonnet">Claude 3 Sonnet</SelectItem>
+              <SelectItem value="claude-opus-4-5">Claude Opus 4.5</SelectItem>
+              <SelectItem value="claude-sonnet-4-5">Claude Sonnet 4.5</SelectItem>
               <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
             </SelectContent>
           </Select>

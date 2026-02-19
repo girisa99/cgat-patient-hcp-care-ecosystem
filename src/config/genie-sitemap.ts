@@ -1,5 +1,5 @@
 /**
- * GENIE STUDIO SITEMAP CONFIGURATION
+ * GENIE SUITE SITEMAP CONFIGURATION
  * Journey-Centric Architecture with Regional Support
  * 
  * Visual Style: AI Avatar Presenters + 3D Immersive + Interactive Demos + Video-First

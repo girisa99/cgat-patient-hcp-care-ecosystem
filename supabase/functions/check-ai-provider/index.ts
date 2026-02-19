@@ -56,8 +56,8 @@ const PROVIDER_SECRETS: Record<string, string[]> = {
   // ═══════════════════════════════════════════════════════════════
   // NOT CONFIGURED (Excluded from routing)
   // ═══════════════════════════════════════════════════════════════
-  // HeyGen: No HEYGEN_API_KEY → Use Alibaba WAN 2.2 for avatars
-  // Suno: No SUNO_API_KEY → Use ElevenLabs for music
+  // Avatars: Use Alibaba WAN 2.2 + Azure Visemes
+  // Music: Use ElevenLabs + Alibaba FunAudio
   // RunPod: No RUNPOD_API_KEY → Use ModelsLab/Meshy for GPU tasks
   // AWS: Not required → Use Azure
   // Stability: Not required → Use ModelsLab (same models, lower cost)

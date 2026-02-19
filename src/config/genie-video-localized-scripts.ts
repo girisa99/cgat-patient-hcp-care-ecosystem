@@ -1,5 +1,5 @@
 /**
- * GENIE STUDIO LOCALIZED VIDEO SCRIPTS
+ * GENIE SUITE LOCALIZED VIDEO SCRIPTS
  * 
  * Actual transcreated (not translated) voiceovers for all supported languages
  * Each script maintains cultural nuances and local expressions

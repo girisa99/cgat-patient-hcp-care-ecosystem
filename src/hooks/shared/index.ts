@@ -1,5 +1,5 @@
 /**
- * Shared Hooks Index - Consolidated utilities for reuse across Genie Studio
+ * Shared Hooks Index - Consolidated utilities for reuse across Genie Suite
  * 
  * These hooks provide consistent patterns for:
  * - Audio element management with proper cleanup

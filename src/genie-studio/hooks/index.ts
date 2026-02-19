@@ -1,12 +1,12 @@
 /**
- * Genie Studio Hooks - Barrel Export
- * Re-exports all Genie Studio-specific hooks
+ * Genie Suite Hooks - Barrel Export
+ * Re-exports all Genie Suite-specific hooks
  * 
  * For AI capabilities, use useUniversalAIHub which is the single source of truth
  * and includes contextual provider selection via useContextualAIProviders.
  */
 
-// Core Genie Studio hooks from components folder
+// Core Genie Suite hooks from components folder
 export { useMediaLibrary } from '@/components/genie-studio/hooks/useMediaLibrary';
 export { useShowEvents } from '@/components/genie-studio/hooks/useShowEvents';
 

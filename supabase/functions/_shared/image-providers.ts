@@ -282,7 +282,7 @@ async function generateWithOpenAI(prompt: string, options: ImageGenOptions): Pro
 async function generateWithAlibaba(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.alibabaSG() || keys.alibabaVA();
   if (!apiKey) throw new Error('Alibaba key missing');
-  const model = options.model || 'wan2.1-t2i-turbo';
+  const model = options.model || 'wan2.6-t2i-turbo';
   const endpoint = 'https://dashscope-intl.aliyuncs.com';
 
   const sizeMap: Record<string, string> = {

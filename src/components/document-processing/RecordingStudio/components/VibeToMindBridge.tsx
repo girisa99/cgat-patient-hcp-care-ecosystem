@@ -1,7 +1,7 @@
 /**
  * Vibe to Mind Bridge Component
  * Quick action panel to send content from Vibe to Mind/Spark for AI processing
- * Part of Genie Studio
+ * Part of Genie Suite
  */
 
 import React from 'react';

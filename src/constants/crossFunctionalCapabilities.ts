@@ -54,7 +54,7 @@ export const CROSS_FUNCTIONAL_CAPABILITIES: CrossFunctionalCapability[] = [
     tier: 'pro',
     compatibleProducts: ['vibe', 'deck', 'cast'],
     primaryProviders: ['Alibaba Wan2.2'],
-    fallbackProviders: ['Replicate', 'HeyGen'],
+    fallbackProviders: ['Replicate', 'ModelsLab'],
     pipelineIds: ['text-to-avatar', 'script-to-avatar', 'image-to-avatar'],
     editorType: 'timeline',
     wizardSteps: [5, 6, 7],

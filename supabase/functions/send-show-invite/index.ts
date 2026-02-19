@@ -346,7 +346,7 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
         
         <div style="display: grid; gap: 16px;">
-          <!-- Genie Arc -->
+          <!-- Genie Hub -->
           <a href="${products.arc.url}" style="text-decoration: none; display: block; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s;">
             <div style="display: flex; align-items: center; gap: 16px;">
               <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${products.arc.color}, #6366f1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">

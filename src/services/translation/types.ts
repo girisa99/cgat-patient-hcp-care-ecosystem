@@ -1,6 +1,6 @@
 /**
  * Translation Service Types
- * Extracted for cross-ecosystem reusability in Genie Studio (Hub/Arc, Mind, Spark, Vibe)
+ * Extracted for cross-ecosystem reusability in Genie Suite (Hub, Mind, Spark, Vibe)
  */
 
 // ============================================

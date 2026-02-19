@@ -143,7 +143,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   'webinar': Monitor,
   'conference': Building,
   'training_session': BookOpen,
-  // Genie Studio Demos
+  // Genie Suite Demos
   'genie_studio_full': Sparkles,
   'genie_spark_demo': Zap,
   'genie_arc_demo': Film,

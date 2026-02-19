@@ -1,5 +1,5 @@
 /**
- * Shared constants for Genie Studio
+ * Shared constants for Genie Suite
  * Centralized configuration for UI options
  */
 

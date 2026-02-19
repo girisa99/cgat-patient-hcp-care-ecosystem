@@ -207,13 +207,13 @@ export const AgentCanvas = () => {
 
     // AI Model suggestions
     if (useCase.includes('advanced') || useCase.includes('complex')) {
-      suggestedModels.push('gpt-4o', 'claude-3-opus');
+      suggestedModels.push('gpt-4o', 'claude-opus-4-5');
     } else if (useCase.includes('chat') || useCase.includes('conversation')) {
-      suggestedModels.push('gpt-4-turbo', 'claude-3-sonnet');
+      suggestedModels.push('gpt-4o', 'claude-sonnet-4-5');
     } else if (useCase.includes('search') || useCase.includes('research')) {
       suggestedModels.push('perplexity-online', 'gemini-pro');
     } else {
-      suggestedModels.push('gpt-4-turbo');
+      suggestedModels.push('gpt-4o');
     }
 
     // System suggestions based on use case

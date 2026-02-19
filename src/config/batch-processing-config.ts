@@ -2,7 +2,7 @@
  * BATCH PROCESSING & CONCURRENCY CONFIGURATION
  * 
  * Configures concurrency limits, queue modes, and batch processing settings
- * for the Genie Studio ecosystem.
+ * for the Genie Suite ecosystem.
  * 
  * Last Updated: 2026-01-28
  */
@@ -250,7 +250,7 @@ export const N8N_CONFIG = {
     'notification-flows', // Slack, Discord
   ],
   
-  // Impact on Genie Studio
+  // Impact on Genie Suite
   impact: {
     coreOperations: 'NO IMPACT - Edge Functions handle all AI',
     automationTasks: 'Queue-based, async processing',

@@ -133,7 +133,7 @@ export const OUTPUT_FORMAT_CONFIGS: OutputFormatConfig[] = [
     providers: {
       visual: ['Alibaba Wan2.2', 'Meshy AI', 'ModelsLab'],
       voice: ['ElevenLabs', 'Qwen3-TTS', 'Azure Neural'],
-      music: ['ElevenLabs Music', 'Suno'],
+      music: ['ElevenLabs Music', 'Alibaba FunAudio'],
     },
   },
   {

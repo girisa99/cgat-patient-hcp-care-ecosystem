@@ -17,7 +17,7 @@ const corsHeaders = {
 
 // Map product IDs to actual logo file names (8 unique logos)
 const LOGO_MAPPING: Record<string, { fileName: string; displayName: string }> = {
-  'studio': { fileName: 'genie-studio-logo.png', displayName: 'Genie Studio' },
+  'studio': { fileName: 'genie-studio-logo.png', displayName: 'Genie Suite' },
   'spark': { fileName: 'genie-spark-logo.png', displayName: 'Genie Spark' },
   'mind': { fileName: 'genie-mind-logo.png', displayName: 'Genie Mind' },
   'vibe': { fileName: 'genie-vibe-logo.png', displayName: 'Genie Vibe' },

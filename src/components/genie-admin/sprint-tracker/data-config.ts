@@ -28,7 +28,7 @@ export const FILE_OWNERSHIP = [
   { area: 'Landing hooks', files: 'src/hooks/landing/**', count: 2, owner: 'lovable' as Developer },
   { area: 'Landing pages', files: 'GenieExplore/Products/SupportPage.tsx', count: 12, owner: 'lovable' as Developer },
   { area: 'Genie Spark', files: 'src/components/genie-spark/**', count: 1, owner: 'claude' as Developer },
-  { area: 'Genie Suite (Studio Workspace)', files: 'src/components/genie-studio/**', count: 150, owner: 'claude' as Developer },
+  { area: 'Genie Suite', files: 'src/components/genie-studio/**', count: 150, owner: 'claude' as Developer },
   { area: 'Genie pages', files: 'GenieSpark/Mind/Deck.tsx', count: 3, owner: 'claude' as Developer },
   { area: 'Navigation', files: 'src/components/navigation/Quadrant*', count: 3, owner: 'claude' as Developer },
 ];
@@ -54,7 +54,7 @@ export const DEFAULT_TASK_OVERRIDES: Record<string, TaskOverride> = {
   'L-301': { status: 'completed', updatedAt: '2026-02-18T21:30:00Z', note: 'Audited InteractiveTryGenieDemo, STTDemo, LocalizationDemoHub, TTSDemoCard, STTDemoCard. All render with inputs/buttons. dialect-tts-demo edge fn verified working (custom_tts action). No errors found.' },
   'L-302': { status: 'completed', updatedAt: '2026-02-18T21:30:00Z', note: 'Audited DeepLTranslationDemo + TranslationDemoCard. translation-service edge fn verified returning translations. Component wired correctly.' },
   'L-303': { status: 'completed', updatedAt: '2026-02-18T21:30:00Z', note: 'Audited HeroLandingVideo + HeroInteractiveVideo + GenieVideoShowcase. Fallback video (BigBuckBunny) works. Animated fallback renders when no DB video. Provider badges display correctly.' },
-  'L-304': { status: 'completed', updatedAt: '2026-02-19T22:00:00Z', note: 'RegionSwitcherNav audited — reads from REGION_HIERARCHY (16 regions). detectRegionFromTimezone working. Code verified correct. PO confirmed all 14 regional routes switch correctly. Day 3 COMPLETE.' },
+  'L-304': { status: 'in-progress', updatedAt: '2026-02-18T21:30:00Z', note: 'RegionSwitcherNav audited — reads from REGION_HIERARCHY (16 regions). detectRegionFromTimezone working. Pending PO verification of all 14 regional routes.' },
   // D-003: Tier gating route guard — LOCKED FILE. Needs PO decision before implementation.
   // Locked: src/config/genieStudioNavItems.ts — PO must decide: (A) soft-gate via landing CTA only, or (B) hard redirect guard on /genie-deck. See PO-206.
   // ── Day 2: Claude (completed — 2026-02-18) ──
@@ -108,14 +108,6 @@ export const DEFAULT_STANDUPS: StandupEntry[] = [
     today: 'Day 3 STARTED: Full audit of all demo components. L-301 ✅ InteractiveTryGenieDemo + STTDemo verified — edge fn working. L-302 ✅ DeepLTranslationDemo + translation-service verified. L-303 ✅ HeroLandingVideo + GenieVideoShowcase verified with fallback. L-304 🔄 RegionSwitcherNav audited — awaiting PO verification of all 14 regional routes. H-301 pending Claude finishing C-304 (Spark flow) before wiring "Try it live" CTA.',
     blockers: 'H-301 pending — cannot wire Spark CTA until Claude completes C-304. PO-206 still open (tier gating decision).',
     createdAt: '2026-02-18T21:30:00Z',
-  },
-  // ── Day 4: Lovable kickoff ──
-  {
-    day: 4, developer: 'lovable' as Developer,
-    yesterday: 'Day 3 ALL COMPLETE: L-301–L-304 done. Interactive demos (STT, translation, video), region switching verified across all 14 routes. Branding updated: Genie Studio → Genie Suite in pricing + architecture diagram (19 core providers). H-301 acknowledged.',
-    today: 'Day 4 STARTING: L-401 Mobile responsiveness polish across all landing components at 375px, 768px, 1024px viewports. Then L-402 SEO meta tags, L-403 performance/lazy loading, L-404 cross-browser testing.',
-    blockers: 'PO-206 still open (tier gating decision for /genie-deck). Waiting on H-401 (Claude finishes C-404 Mind flow) to wire Mind showcase on landing.',
-    createdAt: '2026-02-19T22:30:00Z',
   },
   // ── Claude Day 3 ──
   {

@@ -1,7 +1,7 @@
 /**
  * Calendar Integration Utilities
  * Generate calendar links and .ics files for sessions
- * Genie Studio branded meeting invites
+ * Genie Suite branded meeting invites
  */
 
 export interface CalendarEvent {

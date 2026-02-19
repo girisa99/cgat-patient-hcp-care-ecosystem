@@ -317,7 +317,52 @@ At session start:
 
 ## Day 4 — Thursday, Feb 20, 2026
 
-> Entries will be added as work progresses.
+### [08:00] BREAKING — Global Brand Rename: "Genie Studio" → "Genie Suite" + "Arc" → "Hub"
+- **File(s):** 100+ files across entire codebase (both Claude and Lovable territories)
+- **Changed By:** Claude (Team Lead)
+- **What Changed:**
+  - All user-visible text "Genie Studio" renamed to "Genie Suite" across the entire codebase
+  - All user-visible text "Genie Arc" renamed to "Genie Hub" across the entire codebase
+  - Comments and console.log messages updated for consistency
+  - Email sender names in Supabase functions updated ("Genie Suite <...>")
+  - Calendar event titles, watermarks, AI prompts all updated
+- **Why:** Brand consolidation. "Genie Studio" was the old name for the umbrella product, now officially "Genie Suite". "Arc" was the old name for the production hub, now "Genie Hub".
+- **What was NOT changed (Phase 2+ post-sprint):**
+  - Code identifiers (variable names, function names, component names) — still say `GenieStudio*`, `genieStudio*`
+  - File/directory names — still `src/components/genie-studio/`, `src/genie-studio/`
+  - Route paths — still `/genie-studio`, `/genie-studio-auth`
+  - Database table names — still `genie_studio_users`, `genie_studio_teams`, etc.
+  - Import paths — still reference `@/components/genie-studio/`
+  - Asset filenames — still `genie-studio-banner.png`, `genie-arc-combined.png`
+  - Locked files as defined in CLAUDE.md (except locked files already had correct branding)
+- **How to Use:** No action needed — all UI text automatically shows "Genie Suite" and "Genie Hub" now
+- **Impact on Your Work:**
+  - Claude: When writing NEW code, use "Genie Suite" in all user-visible strings. Code identifiers stay as `GenieStudio*` until Phase 2.
+  - Lovable: Your landing pages, product catalogs, and demo components have been updated. Verify the text looks correct. If you create new UI text, use "Genie Suite" (not "Genie Studio") and "Genie Hub" (not "Genie Arc").
+- **Breaking Changes:** None functionally. Only text/label changes. All routes, imports, and code identifiers unchanged.
+
+### BRANDING GLOSSARY — Official Name Mapping
+
+| Old Name | New Name | Context | Status |
+|----------|----------|---------|--------|
+| **Genie Studio** | **Genie Suite** | Umbrella brand for the entire platform | **ACTIVE — Use "Genie Suite" everywhere** |
+| **Genie Arc** | **Genie Hub** | Production command center (scheduling, kanban, assets) | **ACTIVE — Use "Genie Hub" everywhere** |
+| `GenieStudio*` (code) | `GenieSuite*` (code) | Component/variable names | Phase 2 (post-sprint) |
+| `/genie-studio` (route) | `/genie-suite` (route) | URL paths | Phase 3 (post-sprint, with redirects) |
+| `genie_studio_*` (DB) | `genie_suite_*` (DB) | Database tables/columns | Phase 4 (post-sprint, with migration) |
+| `genie-studio-*.png` | `genie-suite-*.png` | Asset filenames | Phase 2 (post-sprint) |
+
+**Official Brand Hierarchy (from `src/constants/genie-products.ts`):**
+- **GenieAISuite.com** = Domain
+- **Genie Suite** = Umbrella brand ("Mind to Media")
+- 7 Products:
+  - **Genie Spark**: "Ignite Your Ideas" — Script generation
+  - **Genie Mind**: "AI That Understands" — Script editing, TTS, voice, music
+  - **Genie Vibe**: "Script to Screen" — Audio/Video production
+  - **Genie Deck**: "Ideas to Impact" — AI presentations
+  - **Genie Hub**: "Your Creative Command Center" — Scheduling, Kanban, Assets
+  - **Genie Cast**: "Make It. Show It. Scale It." — Global distribution
+  - **Ask Genie**: "Your wish is my command" — Universal AI assistant
 
 ---
 

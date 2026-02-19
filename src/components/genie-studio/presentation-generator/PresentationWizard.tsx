@@ -547,7 +547,7 @@ export function PresentationWizard({
     // Tier 2 - AI-powered
     { id: 'deepseek-vl', name: 'DeepSeek VL', types: ['documents', 'multilingual', 'complex'], tier: 2 },
     { id: 'gemini-vision', name: 'Gemini Vision OCR', types: ['general', 'handwriting', 'diagrams'], tier: 2 },
-    { id: 'gpt-4-vision', name: 'GPT-4 Vision', types: ['general', 'complex-layouts'], tier: 2 },
+    { id: 'gpt-4o', name: 'GPT-4o', types: ['general', 'complex-layouts'], tier: 2 },
     // Tier 3 - Budget
     { id: 'tesseract', name: 'Tesseract OCR', types: ['basic', 'print'], tier: 3 },
   ];

@@ -199,7 +199,7 @@ async function generateFrameworkThumbnail(apiKey: string, request: ThumbnailRequ
   };
 
   const audience = request.audienceSegment || 'solo_creators';
-  const product = request.productName || request.productId || 'Genie Studio';
+  const product = request.productName || request.productId || 'Genie Suite';
   const framework = request.frameworkType || 'aida';
   const hook = request.hook || request.title || product;
   const cta = request.cta || 'Start Free';

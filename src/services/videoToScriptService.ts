@@ -193,7 +193,7 @@ class VideoToScriptService {
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           prompt: `Convert this video transcript into a ${request.outputFormat.replace('_', ' ')}:
 
 TRANSCRIPT:
@@ -290,7 +290,7 @@ Return ONLY valid JSON in this format:
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.0-flash',
           prompt: `Analyze this ${documentType.toUpperCase()} content and extract individual slides with voiceover scripts:
 
 CONTENT:

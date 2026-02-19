@@ -1,6 +1,6 @@
 /**
- * Genie Studio Diagrams - Barrel Export
- * Re-exports all Genie Studio architecture and documentation diagrams
+ * Genie Suite Diagrams - Barrel Export
+ * Re-exports all Genie Suite architecture and documentation diagrams
  */
 
 // Genie Command Center

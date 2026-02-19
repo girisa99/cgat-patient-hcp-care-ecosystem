@@ -404,7 +404,7 @@ export function createDefaultWizardMetadata(): WizardMetadata {
       isRTL: false,
       isMoatLanguage: false,
       providers: {
-        llm: { primary: 'gpt-4o-mini', primaryModel: 'gpt-4o-mini', fallback: 'gemini-flash', fallbackModel: 'gemini-1.5-flash', zone: 'fallback', reason: 'Default' },
+        llm: { primary: 'gpt-4o-mini', primaryModel: 'gpt-4o-mini', fallback: 'gemini-flash', fallbackModel: 'gemini-2.5-flash', zone: 'fallback', reason: 'Default' },
         translation: { primary: 'google-translate', fallback: 'azure-translator', reason: 'Default', supportedPairs: ['en-*'] },
         tts: { primary: 'azure-neural', fallback: 'google-tts', reason: 'Default' },
         stt: { primary: 'whisper', fallback: 'azure-stt', reason: 'Default' },
