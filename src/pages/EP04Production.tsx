@@ -23,6 +23,11 @@ import { EP04_VOICES } from '@/config/ep04-production-config';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
+// Character avatar imports
+import hostAvatar from '@/assets/characters/host-dog.png';
+import atlasAvatar from '@/assets/characters/atlas-bear.png';
+import novaAvatar from '@/assets/characters/nova-fox.png';
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface GeneratedAudio {
@@ -54,9 +59,15 @@ const VOICE_COLORS: Record<string, string> = {
 };
 
 const VOICE_LABELS: Record<string, string> = {
-  host: '🐕 Host — The Human in the Loop',
-  atlas: '🐻 Atlas (Claude)',
-  nova: '🦊 Nova (Lovable)',
+  host: 'Host — The Human in the Loop',
+  atlas: 'Atlas (Claude)',
+  nova: 'Nova (Lovable)',
+};
+
+const CHARACTER_AVATARS: Record<string, string> = {
+  host: hostAvatar,
+  atlas: atlasAvatar,
+  nova: novaAvatar,
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -327,6 +338,15 @@ export default function EP04Production() {
                             )}
                           </div>
 
+                          {/* Character Avatar */}
+                          <div className="flex-shrink-0 pt-0.5">
+                            <img
+                              src={CHARACTER_AVATARS[line.voice]}
+                              alt={VOICE_LABELS[line.voice]}
+                              className="w-12 h-12 rounded-full object-cover ring-2 ring-border shadow-md"
+                            />
+                          </div>
+
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
@@ -335,7 +355,7 @@ export default function EP04Production() {
                               </Badge>
                               <span className="text-xs text-muted-foreground">~{line.duration_est}s</span>
                               {status === 'done' && (
-                                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                               )}
                             </div>
                             <p className="text-sm leading-relaxed whitespace-pre-line">
