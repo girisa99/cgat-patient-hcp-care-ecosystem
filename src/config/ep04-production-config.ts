@@ -169,8 +169,96 @@ export type ScenePipelineStep =
   | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab' }
   | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v'; prompt: string; referenceImage?: string }
   | { type: 'alibaba-image'; model: 'flux-merged' | 'wanx-v2.1'; prompt: string }
+  | { type: 'music'; prompt: string; duration: number; style?: string }
+  | { type: 'sfx'; prompt: string; duration?: number }
   | { type: 'motion-graphics'; content: string }
   | { type: 'kinetic-text'; text: string };
+
+// ─── EP04 MUSIC & SFX SCORE ──────────────────────────────────────────────────
+// Background music beds and sound effects per scene. Generated via ElevenLabs.
+export const EP04_MUSIC_SCORE: Record<string, { music: ScenePipelineStep & { type: 'music' }; sfx?: (ScenePipelineStep & { type: 'sfx' })[] }> = {
+  'scene-1-cold-open': {
+    music: { type: 'music', prompt: 'Tense cinematic build-up, deep bass pulse, electronic glitch accents, countdown timer energy, dark tech atmosphere, building to reveal, 100 BPM', duration: 25, style: 'dramatic' },
+    sfx: [
+      { type: 'sfx', prompt: 'Digital countdown beeps, futuristic interface activation', duration: 3 },
+      { type: 'sfx', prompt: 'Whoosh transition with bass drop reveal', duration: 2 },
+    ],
+  },
+  'scene-2-meet-team': {
+    music: { type: 'music', prompt: 'Playful Pixar-style orchestral with pizzicato strings, whimsical woodwinds, warm and character-introducing, light mischief undertones, 110 BPM', duration: 60, style: 'cinematic' },
+    sfx: [
+      { type: 'sfx', prompt: 'Magical character appearance sparkle chime', duration: 2 },
+      { type: 'sfx', prompt: 'Comic book style dramatic text slam impact', duration: 1 },
+      { type: 'sfx', prompt: 'Typing keyboard rapid code writing sounds', duration: 5 },
+    ],
+  },
+  'scene-3-governance': {
+    music: { type: 'music', prompt: 'Strategic planning orchestral, blueprint unfolding feel, measured strings with subtle electronic pulse, architectural and precise, 95 BPM', duration: 45, style: 'corporate' },
+    sfx: [
+      { type: 'sfx', prompt: 'Paper unrolling and blueprint spreading out on table', duration: 3 },
+      { type: 'sfx', prompt: 'Territory boundary laser line drawing sound', duration: 2 },
+    ],
+  },
+  'scene-4-day1': {
+    music: { type: 'music', prompt: 'Morning energy indie electronic, fresh start vibes, clean guitar arpeggios with light synth, optimistic momentum building, 115 BPM', duration: 50, style: 'upbeat' },
+    sfx: [
+      { type: 'sfx', prompt: 'Task card clicking into done column satisfying snap', duration: 1 },
+      { type: 'sfx', prompt: 'Alert notification ping — scope creep warning', duration: 2 },
+    ],
+  },
+  'scene-5-day2': {
+    music: { type: 'music', prompt: 'Tension building electronic, frozen/stuck feeling with ice crystal textures, clock ticking undertone, frustration building to resolution, 90 BPM', duration: 55, style: 'dramatic' },
+    sfx: [
+      { type: 'sfx', prompt: 'Ice cracking and thawing frozen task card', duration: 3 },
+      { type: 'sfx', prompt: 'Meeting room door closing — human unavailable', duration: 2 },
+      { type: 'sfx', prompt: 'Problem solving lightbulb moment chime', duration: 1 },
+    ],
+  },
+  'scene-6-day3': {
+    music: { type: 'music', prompt: 'Velocity acceleration electronic, racing momentum, ascending scale patterns, competitive energy turning collaborative, turbo boost feel, 125 BPM', duration: 40, style: 'electronic' },
+    sfx: [
+      { type: 'sfx', prompt: 'Velocity meter racing upward with whoosh', duration: 3 },
+      { type: 'sfx', prompt: 'Chart bars growing dynamically with positive chime', duration: 2 },
+    ],
+  },
+  'scene-7-mission-control': {
+    music: { type: 'music', prompt: 'NASA mission control orchestral, calm authority, deep bass with precise high-frequency data bleeps, split screen comparison energy, 100 BPM', duration: 60, style: 'cinematic' },
+    sfx: [
+      { type: 'sfx', prompt: 'Mission control radio chatter beep acknowledgment', duration: 2 },
+      { type: 'sfx', prompt: 'Data stream flowing through pipes visualization sound', duration: 4 },
+      { type: 'sfx', prompt: 'Coffee mug being set down with a tired thud', duration: 1 },
+    ],
+  },
+  'scene-8-dashboard-tour': {
+    music: { type: 'music', prompt: 'Fast-paced montage electronic, rapid cut energy, clean tech beats with dashboard scan feeling, screen transition whooshes baked in, 130 BPM', duration: 50, style: 'electronic' },
+    sfx: [
+      { type: 'sfx', prompt: 'Rapid screen swipe transition whoosh — 18 times', duration: 2 },
+      { type: 'sfx', prompt: 'Camera shutter click for screenshot capture', duration: 1 },
+    ],
+  },
+  'scene-9-numbers': {
+    music: { type: 'music', prompt: 'Grand reveal orchestral, numbers counting up energy, brass fanfare with modern electronic, impressive achievement unlocked feeling, 105 BPM', duration: 40, style: 'epic' },
+    sfx: [
+      { type: 'sfx', prompt: 'Counter rapidly counting up with slot machine energy', duration: 4 },
+      { type: 'sfx', prompt: 'Achievement unlocked triumphant chime with sparkle', duration: 2 },
+    ],
+  },
+  'scene-10-whats-next': {
+    music: { type: 'music', prompt: 'Visionary ambient orchestral, world expanding feeling, global scale with local warmth, hopeful future technology, rising strings with electronic shimmer, 90 BPM', duration: 55, style: 'inspirational' },
+    sfx: [
+      { type: 'sfx', prompt: 'World map locations pinging one by one', duration: 5 },
+      { type: 'sfx', prompt: 'Network connection establishing with digital handshake', duration: 3 },
+    ],
+  },
+  'scene-11-close': {
+    music: { type: 'music', prompt: 'Warm Pixar ending orchestral, heartfelt resolution, all themes combining into one harmonious finale, character leitmotifs weaving together, hopeful and satisfying, 95 BPM', duration: 35, style: 'cinematic' },
+    sfx: [
+      { type: 'sfx', prompt: 'Group of woodland creatures applauding and cheering softly', duration: 3 },
+      { type: 'sfx', prompt: 'Golden retriever happy bark of approval', duration: 1 },
+      { type: 'sfx', prompt: 'End card logo whoosh with magical sparkle settle', duration: 2 },
+    ],
+  },
+};
 
 export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-1-cold-open': [
