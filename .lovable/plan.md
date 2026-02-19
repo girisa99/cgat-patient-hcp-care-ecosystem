@@ -1,100 +1,73 @@
 
-# Final Plan: Provider Count Fix + Day 3 Completion + Day 4 Kickoff
+## Rewrite EP04 LinkedIn Article — Feature-Grounded Narrative
 
-## Situation Summary
+### The Problem with the Current Article
 
-This plan answers three questions and delivers all Lovable-owned actions:
+The current article mentions the Sprint Tracker's features in two places: a generic bullet list ("18 views") and vague references to the PO Actions tab. The following real, implemented features are either missing or barely touched:
 
----
+- **PO Actions & Notes** (Verify / Approve / Decide / Unblock with bidirectional sync)
+- **QA Sign-off** (non-blocking gate with Carry-forward register)
+- **EOD Auto-Handoff** (auto-generated Claude + Lovable kickstart prompts published to Supabase)
+- **Velocity & Metrics** (burndown, token cost, ROI vs. human, per-discipline breakdown)
+- **Effort Tracking** (estimated vs. actual hours, variance, discipline breakdown per task)
+- **Sprint Planning / Project Plan** (full 5-day plan with swimlanes, PO gates, dependency chains)
+- **Findings & QA** (diagnosis grouped by product: Spark, Mind, Deck — severity-tagged, fixed vs. open)
 
-## 1. Why is L-304 (Day 3) Still In-Progress?
+The goal is a single, flowing article where each section tells a moment in the sprint story that *naturally introduces* one or more of these features — the way a good product founder would write it.
 
-L-304 is "Verify region switching across all 14 regions." Its status is `in-progress` because the code was audited and is correct — the `RegionSwitcherNav` reads from `REGION_HIERARCHY` (16 regions) and `detectRegionFromTimezone` is working — but **PO verification was still pending**.
+### What "Atlas" and "Nova" Mean (to clarify upfront in the article)
 
-Since Claude is handling the "Genie Studio → Genie Suite" rename (his territory owns `genie-studio/**`), and the region verification is a Lovable-owned audit task, **Lovable can mark L-304 as completed now** by updating its status and note in `data-config.ts`.
+- **Atlas** = Claude Code, the backend tech lead. Owns data architecture, edge functions, sprint governance data, diagnosis, effort logging.
+- **Nova** = Lovable (this tool), the frontend developer. Owns landing pages, admin UI, marketing components, user-facing flows.
 
-The blocker is resolved: the code is correct, the routes work, and there's no code change needed — just a status update.
-
----
-
-## 2. Provider Count: 15 → 19
-
-**File:** `src/components/diagrams/architecture/GenieStudioOverallArchitectureDiagram.tsx`
-**Line 110:** `"Mind to Media • 206 Pipelines • 15 Core Providers • 7-Zone Routing • 7 Products"`
-**Fix:** Change `15 Core Providers` → `19 Core Providers`
-
-Per `docs/BRANDING_GLOSSARY.md` and `src/config/master-provider-routing-registry.ts` line 135 (`TOTAL_PROVIDER_COUNT = 19`), the correct count is definitively **19**.
+This will be stated clearly at the start of the article, once, conversationally — not in a table.
 
 ---
 
-## 3. Genie Suite Branding — What Lovable Owns
+### Article Architecture (Narrative Structure)
 
-Claude handles his territory (`genie-studio/**`, `genie-spark/**`, navigation). Lovable handles:
+The rewrite uses a day-by-day spine but each day introduces exactly one or two real features, described through the lived experience that made them necessary:
 
-**File:** `src/components/subscription/EnhancedPricingSection.tsx`
-- Line 74: `"All plans include core Genie Studio features."` → `"All plans include core Genie Suite features."`
-- Line 375: `"14-day trial with Genie Studio Basic"` → `"14-day trial with Genie Suite Basic"`
-- Line 392: FAQ answer `"Genie Studio = unified workflow"` → `"Genie Studio = the production workspace within Genie Suite"` (preserves the valid Genie Studio product name while clarifying it's part of Genie Suite)
+**Opening Hook** — "Two AI developers. One human PO. Five days. The tool that ran the sprint was built during the sprint."
 
-**File:** `src/components/genie-admin/sprint-tracker/data-config.ts`
-- Line 31: `area: 'Genie Studio'` in FILE_OWNERSHIP → `area: 'Genie Suite (Studio Workspace)'` (internal tracker label only)
+**Intro: Meet Atlas and Nova** — One paragraph, plainly introducing who they are, what they own, and why there's a human in the middle.
 
----
+**Day 0 (Before Sprint Started): The Sprint Plan wasn't optional** — Introduce **Sprint Planning / Project Plan**: 41 tasks across 5 days, split by developer, with estimated hours, acceptance criteria, dependency chains between tasks. Atlas can't start Day 2 until Nova's Day 1 handoff is acknowledged. This isn't a to-do list. It's a contract.
 
-## 4. Day 4 Status in Sprint Tracker
+**Day 1: Atlas found 33 bugs before writing a line of code** — Introduce **Findings & QA**: Atlas ran diagnosis on Genie Spark (14 issues), Genie Mind (13 issues), Genie Deck (6 issues). Every finding was severity-tagged (critical / high / medium), root-caused, filed against a specific file and line, and linked to a fix day. This became the source of truth for what Day 2-5 actually needed to do. The dashboard's Findings view let the PO see fix progress live — not in a Slack thread.
 
-The sprint tracker currently shows Day 4 tasks without any overrides — they show as `pending` (To Do) by default, which is correct. The day-gating fix from the earlier session ensures Day 4 won't show a "Started" banner unless `currentDay >= 4`.
+**Day 2: I became the bottleneck** — Introduce **PO Actions & Notes**: When Atlas completed tasks, items appeared in the PO's queue — not a ping, not an email, a structured checklist item with category (Verify / Approve / Decide / Unblock), the related dev tasks shown with their completion status, and a progress bar. The PO can't mark an item done until the dev work it depends on is complete. When the dev work lands, the card lights up: "Dev work just completed — ready for your action." The PO adds a note, marks it done. Atlas sees it in the next session via Supabase sync.
 
-No Day 4 task overrides need to be added yet — Claude will log C-401/402/403/404 as he completes them. Lovable starts L-401 (mobile responsiveness).
+**Day 3: Nobody needed to ask "what did we do yesterday?"** — Introduce **EOD Auto-Handoff**: At end of each day, one click from the PO publishes a structured brief to Supabase. Atlas gets a prompt at Day N+1 session start listing exactly what he completed, which handoffs he produced, what Lovable needs from him, and what his Day 4 tasks are with acceptance criteria. Nova gets the same — with territory reminders, handoffs ready from Claude, and her own task list. Zero copy-paste. Zero "can you remind me where we left off?"
 
-**Add L-401 standup entry** to `data-config.ts` → `DEFAULT_STANDUPS` so the sprint tracker shows Lovable's Day 4 kickoff.
+**Day 4: We could see exactly where time went** — Introduce **Effort Tracking**: Atlas logged actual hours, token usage, and a discipline breakdown (frontend / backend / database / architecture / debugging / documentation) for each completed task. Estimated 2h, actually took 1.4h. Variance: -0.6h. The PO doesn't enter any of this — Atlas does it at task completion. The Effort Tracking view shows this aggregated across all tasks: where the hours went, which discipline consumed the most time, and per-developer comparisons.
 
----
+**Day 5: QA didn't block the sprint** — Introduce **QA Sign-off**: 26 test cases across 5 days, severity-tagged (critical / high / medium), linked to the task that produced each feature. The QA gate is non-blocking — the PO can sign off conditionally ("full" or "conditional" mode) even if some items failed. Failed items go into a Carry-forward register that auto-appears in the next sprint intake. No renegotiation. No lost bugs. They're already queued.
 
-## 5. H-301 Acknowledgment
+**The Numbers / Velocity** — Introduce **Velocity & Metrics**: Burndown by day, per-developer completion rates, token costs, and an ROI panel comparing actual AI cost against what the same hours would cost with two senior developers at $75/hr plus a dedicated SM/PM at $85/hr (2.5h/day). The dashboard computes this live. It isn't a spreadsheet you maintain — it updates the moment effort is logged.
 
-H-301 (`Spark creation flow working → demos can reference it`) is `status: 'ready'` in `data-dependencies.ts`. Lovable should update it to `'acknowledged'` since C-304 is complete and the demos can now reference Spark.
+**Honest Takeaway** — The governance layer didn't slow the sprint. It made the sprint possible. Structure isn't the opposite of speed. It's the prerequisite.
+
+**CTA** — What would you have built in Sprint Zero that you had to build reactively?
 
 ---
 
-## Files To Change (Lovable's Territory Only)
+### Technical Details (for the Plan)
 
-| File | Change |
-|---|---|
-| `src/components/diagrams/architecture/GenieStudioOverallArchitectureDiagram.tsx` | `15 Core Providers` → `19 Core Providers` |
-| `src/components/subscription/EnhancedPricingSection.tsx` | 3 branding fixes (lines 74, 375, 392) |
-| `src/components/genie-admin/sprint-tracker/data-config.ts` | Mark L-304 `completed`, update FILE_OWNERSHIP label, add Day 4 L standup |
-| `src/components/genie-admin/sprint-tracker/data-dependencies.ts` | H-301 status `ready` → `acknowledged` |
+**File to modify:** `docs/webcast/EP04_LINKEDIN_ARTICLE.md`
 
----
+**What changes:**
+- The current article (167 lines) is fully replaced
+- The new article will have:
+  - Short-form companion post (150-200 words, LinkedIn format)
+  - Long-form newsletter article (1,000-1,200 words, narrative-first, feature-specific)
+- The companion post remains as a separate section at the bottom of the same file
+- No new files created
+- The build error in `supabase/functions/session-reminders/index.ts` (missing `npm:resend`) is fixed in the same pass by replacing the import with the correct Deno-compatible `https://esm.sh/resend@2.0.0` import
 
-## What Claude Handles (Do Not Touch)
+**Build error fix:**
+- File: `supabase/functions/session-reminders/index.ts`
+- Line 3: `import { Resend } from 'npm:resend@2.0.0';`
+- Replace with: `import { Resend } from 'https://esm.sh/resend@2.0.0';`
 
-Per territory rules, Claude owns:
-- `src/components/genie-studio/**` — all Genie Studio → Genie Suite renames inside the workspace
-- `src/components/navigation/Quadrant*` — navigation
-- `src/components/genie-spark/**` — Genie Spark internals
-- `src/pages/GenieSpark.tsx`, `GenieMind.tsx`, `GenieDeck.tsx`
-- His own standup entries and task completions (C-401 through S-401) in `data-config.ts`
-
-Claude's Day 4 tasks (C-401 Fix ScriptEditorTab, C-402 Fix SavedAudioCard, C-403 Fix CrossFunctionalMusic, C-404 Spark→Mind flow) are all unblocked. He'll log his EOD effort in `data-tasks.ts` and update `data-config.ts` with his completions at the end of the day.
-
----
-
-## Sync Protocol (How It Works)
-
-- **Auto-sync (both see):** EOD Handoff brief → Supabase `universal_save_sessions` → Claude reads via `forceRefresh()` at Day 4 session start. PO Notes from "Actions & Notes" tab sync to Supabase too.
-- **Claude manually does:** Logs actual hours/tokens in `data-tasks.ts` for C-401/402/403/404. Updates his task statuses. Adds his Day 4 standup.
-- **Lovable manually does:** Logs actual hours/tokens for L-401/402/403/404. Updates L- task statuses. Adds Lovable Day 4 standup.
-- **You (PO):** After each day, go to EOD Handoff tab → click "Close & Publish" to push the brief to Supabase so Claude receives it at his next session start.
-
----
-
-## Implementation Order
-
-1. Fix provider count in architecture diagram (`GenieStudioOverallArchitectureDiagram.tsx`)
-2. Fix 3 branding strings in `EnhancedPricingSection.tsx`
-3. Update `data-config.ts`: mark L-304 completed + add Day 4 Lovable standup + update FILE_OWNERSHIP label
-4. Update `data-dependencies.ts`: H-301 → acknowledged
-
-All 4 changes are in Lovable territory. No locked files touched. No Claude territory files touched.
+**Article tone:** First person, product founder. Direct. Honest about what broke and why the tool was built. No hype language. Each feature earns its mention through the story beat that made it necessary.
