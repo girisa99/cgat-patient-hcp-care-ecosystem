@@ -62,6 +62,8 @@ export const GENIE_PRODUCTS = [
   { id: 'studio', name: 'Genie Suite', route: '/genie-studio', color: '#9333EA', description: 'Full dashboard' },
   { id: 'ask-genie', name: 'Ask Genie', route: '/genie-support', color: '#06B6D4', description: 'AI assistant' },
   { id: 'cast', name: 'Genie Cast', route: '/genie-admin?tab=landing-videos', color: '#EF4444', description: 'Video studio' },
+  // EP04 Sprint Tracker — 19 screens mapped to production plan scene list
+  { id: 'sprint-tracker', name: 'Sprint Tracker (EP04)', route: '/genie-admin?tab=sprint-tracker', color: '#7C3AED', description: 'EP04 video screenshots' },
 ];
 
 // Screen sections for each product - what to capture for video generation
@@ -136,10 +138,168 @@ export const PRODUCT_SCREENS: Record<string, ProductScreen[]> = {
     { id: 'library-tab', name: 'Video Library', tabValue: 'library', description: 'Generated videos list' },
     { id: 'analytics-tab', name: 'Analytics', tabValue: 'analytics', description: 'Performance metrics' },
   ],
+
+  // ─── EP04 SPRINT TRACKER — 19 screens per production plan scene checklist ────
+  // Each screen maps to a specific scene + timestamp in the video script.
+  // scene: which script scene uses this capture  |  sceneTimestamp: mm:ss in video
+  // multiCapture: screens that appear together (shown side-by-side or cut-to in script)
+  'sprint-tracker': [
+    // SCENE 7 + SCENE 8 — PO Mission Control (5s Scene 7, 3s Scene 8)
+    { id: 'po-mission-control', name: 'PO Mission Control', description: 'Full dashboard — sprint health, backlog, today at a glance', selector: '[data-tab="mission-control"]', tabValue: 'mission-control' },
+    // SCENE 5 + SCENE 8 — PO Actions (5s Scene 5, 3s Scene 8)
+    { id: 'po-actions', name: 'PO Actions & Notes', description: 'Verify / Approve / Decide / Unblock checklist with progress bars', selector: '[data-tab="po-gate"]', tabValue: 'po-gate' },
+    // SCENE 7 + SCENE 8 — QA Sign-off (3s Scene 7, 3s Scene 8)
+    { id: 'qa-signoff', name: 'QA Sign-off', description: 'Non-blocking QA workflow — severity badges + carry-forward register', selector: '[data-tab="qa-signoff"]', tabValue: 'qa-signoff' },
+    // SCENE 7 + SCENE 8 — EOD Auto-Handoff (4s Scene 7, 3s Scene 8)
+    { id: 'eod-handoff', name: 'EOD Auto-Handoff', description: 'Generated brief — completed tasks, pending work, Day N+1 kickstart', selector: '[data-tab="eod-handoff"]', tabValue: 'eod-handoff' },
+    // SCENE 3 + SCENE 8 — Sprint Charter (3s Scene 3, 3s Scene 8)
+    { id: 'sprint-charter', name: 'Sprint Charter', description: 'SMART goals, roles & responsibilities, expanded goals section', selector: '[data-tab="charter"]', tabValue: 'charter' },
+    // SCENE 8 — Governance Guide
+    { id: 'governance-guide', name: 'Governance Guide', description: 'Lifecycle flow diagram — how decisions get made', selector: '[data-tab="governance"]', tabValue: 'governance' },
+    // SCENE 4 + SCENE 8 — Day 1 (4s Scene 4, 3s Scene 8)
+    { id: 'day-1-view', name: 'Day 1 — Foundation', description: 'Sprint board + PO/SM Gate + Kickstart prompt (Day 1 state)', selector: '[data-tab="day-1"]', tabValue: 'day-1' },
+    // SCENE 5 + SCENE 8 — Day 2 (4s Scene 5, 3s Scene 8)
+    { id: 'day-2-view', name: 'Day 2 — Velocity', description: 'Sprint board with Claude (violet) + Lovable (pink) swimlanes', selector: '[data-tab="day-2"]', tabValue: 'day-2' },
+    // SCENE 6 + SCENE 8 — Day 3 (3s Scene 6, 3s Scene 8)
+    { id: 'day-3-view', name: 'Day 3 — Velocity Mismatch', description: 'Board with effort data — Atlas 85% vs Nova 110%', selector: '[data-tab="day-3"]', tabValue: 'day-3' },
+    // SCENE 8 — Day 4
+    { id: 'day-4-view', name: 'Day 4 — Mission Control', description: 'Board with handoffs and effort tracking visible', selector: '[data-tab="day-4"]', tabValue: 'day-4' },
+    // SCENE 8 — Day 5
+    { id: 'day-5-view', name: 'Day 5 — QA & Ship', description: 'Board with completion — mostly green', selector: '[data-tab="day-5"]', tabValue: 'day-5' },
+    // SCENE 8 — Backlog
+    { id: 'backlog-view', name: 'Backlog', description: 'Overdue tasks grouped by day — nothing falls through', selector: '[data-tab="backlog"]', tabValue: 'backlog' },
+    // SCENE 6 + SCENE 8 + SCENE 9 — Velocity/Metrics (4s + 3s + 3s)
+    { id: 'velocity-metrics', name: 'Velocity & Metrics', description: 'Burndown chart + per-developer completion cards', selector: '[data-tab="metrics"]', tabValue: 'metrics' },
+    // SCENE 8 — Effort Tracking
+    { id: 'effort-tracking', name: 'Effort Tracking', description: 'Estimated vs actual hours — discipline breakdown per task', selector: '[data-tab="effort"]', tabValue: 'effort' },
+    // SCENE 8 — Project Plan (41 tasks)
+    { id: 'project-plan', name: 'Project Plan (41 tasks)', description: 'Full 5-day plan in one view — all tasks, dependencies', selector: '[data-tab="planning"]', tabValue: 'planning' },
+    // SCENE 4 + SCENE 8 — Findings & QA (4s + 3s)
+    { id: 'findings-qa', name: 'Findings & QA', description: 'Product-grouped issues (Spark 14, Mind 13, Deck 6) — severity tagged', selector: '[data-tab="findings"]', tabValue: 'findings' },
+    // SCENE 7 — Standup entries (both developers side-by-side)
+    { id: 'standup-entries', name: 'Standup Entries', description: 'Claude card + Lovable card side by side — yesterday/today/blockers', selector: '[data-standup]', tabValue: 'day-3' },
+    // SCENE 8 — Shared Infra Feed
+    { id: 'shared-infra-feed', name: 'Shared Infra Feed', description: 'Change alerts — both AIs see every infra change', selector: '[data-tab="shared-infra"]', tabValue: 'shared-infra' },
+    // SCENE 8 — Territory Guardrails
+    { id: 'territory-guardrails', name: 'Territory Guardrails', description: 'Locked files list — the 12 files nobody touches without PO gate', selector: '[data-tab="territory"]', tabValue: 'territory' },
+  ],
 };
 
 // Legacy alias for Cast screens (backward compatibility)
 export const GENIE_CAST_SCREENS = PRODUCT_SCREENS['cast'];
+
+// EP04-specific: ordered scene→screenshot mapping for video assembly sequence
+// Matches production plan SCENE-BY-SCENE order + timestamps
+export const EP04_SCENE_SCREENSHOT_MAP: Array<{
+  sceneId: string;
+  sceneLabel: string;
+  timestamp: string;    // mm:ss start
+  endTimestamp: string; // mm:ss end
+  screenIds: string[];  // Which sprint-tracker screens to use (in sequence)
+  voice: 'host' | 'atlas' | 'nova' | 'host-vo'; // Who speaks in this scene
+  visualStyle: 'screen-capture' | '3d-avatar' | 'motion-graphics' | 'mixed';
+  multiCapture?: boolean; // true = show multiple screens cut together
+}> = [
+  {
+    sceneId: 'scene-1-cold-open',
+    sceneLabel: 'Cold Open — The Question',
+    timestamp: '0:00', endTimestamp: '0:45',
+    screenIds: ['po-mission-control'],
+    voice: 'host-vo',
+    visualStyle: 'motion-graphics',
+  },
+  {
+    sceneId: 'scene-2-meet-team',
+    sceneLabel: 'Meet the Team — Three Parties',
+    timestamp: '0:45', endTimestamp: '2:45',
+    screenIds: ['po-actions'],
+    voice: 'host',
+    visualStyle: '3d-avatar',
+  },
+  {
+    sceneId: 'scene-3-governance',
+    sceneLabel: 'Governance — Territory',
+    timestamp: '2:45', endTimestamp: '4:30',
+    screenIds: ['sprint-charter', 'governance-guide'],
+    voice: 'host',
+    visualStyle: 'mixed',
+    multiCapture: true,
+  },
+  {
+    sceneId: 'scene-4-day1',
+    sceneLabel: 'Day 1 — Foundation',
+    timestamp: '4:30', endTimestamp: '5:30',
+    screenIds: ['day-1-view', 'findings-qa'],
+    voice: 'host',
+    visualStyle: 'mixed',
+    multiCapture: true,
+  },
+  {
+    sceneId: 'scene-5-day2',
+    sceneLabel: 'Day 2 — Velocity & PO Bottleneck',
+    timestamp: '5:30', endTimestamp: '7:00',
+    screenIds: ['day-2-view', 'po-actions'],
+    voice: 'host',
+    visualStyle: 'mixed',
+    multiCapture: true,
+  },
+  {
+    sceneId: 'scene-6-day3',
+    sceneLabel: 'Day 3 — Velocity Mismatch',
+    timestamp: '7:00', endTimestamp: '7:30',
+    screenIds: ['day-3-view', 'velocity-metrics'],
+    voice: 'host',
+    visualStyle: 'mixed',
+    multiCapture: true,
+  },
+  {
+    sceneId: 'scene-7-mission-control',
+    sceneLabel: 'Mission Control — Death of Standup',
+    timestamp: '7:30', endTimestamp: '9:00',
+    screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'],
+    voice: 'host',
+    visualStyle: 'screen-capture',
+    multiCapture: true,
+  },
+  {
+    sceneId: 'scene-8-dashboard-tour',
+    sceneLabel: 'Full Dashboard Tour — Every Tab',
+    timestamp: '9:00', endTimestamp: '10:00',
+    screenIds: [
+      'po-mission-control', 'po-actions', 'day-1-view', 'day-2-view', 'day-3-view',
+      'day-4-view', 'day-5-view', 'backlog-view', 'velocity-metrics', 'effort-tracking',
+      'project-plan', 'findings-qa', 'qa-signoff', 'eod-handoff', 'sprint-charter',
+      'governance-guide', 'shared-infra-feed', 'territory-guardrails',
+    ],
+    voice: 'host',
+    visualStyle: 'screen-capture',
+    multiCapture: true,
+  },
+  {
+    sceneId: 'scene-9-numbers',
+    sceneLabel: 'The Numbers — 5x Faster',
+    timestamp: '10:00', endTimestamp: '10:45',
+    screenIds: ['velocity-metrics'],
+    voice: 'host',
+    visualStyle: 'motion-graphics',
+  },
+  {
+    sceneId: 'scene-10-whats-next',
+    sceneLabel: "What's Next — MCP & Self-Learning",
+    timestamp: '10:45', endTimestamp: '11:30',
+    screenIds: [],
+    voice: 'host',
+    visualStyle: '3d-avatar',
+  },
+  {
+    sceneId: 'scene-11-close',
+    sceneLabel: 'Close — Honest Takeaway',
+    timestamp: '11:30', endTimestamp: '12:00',
+    screenIds: ['day-5-view'],
+    voice: 'host',
+    visualStyle: '3d-avatar',
+  },
+];
 
 export interface ProductScreenshot {
   id: string;
