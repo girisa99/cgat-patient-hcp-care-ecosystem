@@ -165,6 +165,7 @@ export const EP04_AVATAR_CONFIG = {
 export type ScenePipelineStep =
   | { type: 'tts'; voice: EP04Voice; scriptKey: string }
   | { type: 'screen-capture'; screenIds: string[]; multiCapture: boolean }
+  | { type: 'ai-screen-enhance'; screenIds: string[]; scriptContext: string; enhanceMode: 'highlight' | 'stylize' | 'redraw'; focusAreas?: string[] }
   | { type: 'avatar-3d'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; style?: 'pixar-3d' | 'disney-2d' | 'hybrid-2.5d' }
   | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab' }
   | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v'; prompt: string; referenceImage?: string }
@@ -284,6 +285,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-3-governance': [
     { type: 'tts', voice: 'host', scriptKey: 'governance-narration' },
     { type: 'screen-capture', screenIds: ['sprint-charter', 'governance-guide'], multiCapture: true },
+    { type: 'ai-screen-enhance', screenIds: ['sprint-charter', 'governance-guide'], scriptContext: 'Sprint charter defining territory rules — Claude owns backend, Lovable owns frontend. Governance guide with file ownership boundaries.', enhanceMode: 'highlight', focusAreas: ['territory-map', 'file-ownership-rules', 'merge-conflict-policy'] },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Cinematic aerial fly-through of a divided miniature city: blue crystal towers on left, green garden towers on right, golden bridge connecting them, Pixar-quality 3D, dramatic sunset lighting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-merge-conflict' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
@@ -295,7 +297,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-4-day1': [
     { type: 'tts', voice: 'host', scriptKey: 'day1-narration' },
     { type: 'screen-capture', screenIds: ['day-1-view'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['day-1-view'], scriptContext: 'Day 1 sprint view — 12 tasks started, Atlas diagnoses 847-line session instructions, Nova refactors navigation. Focus on task cards and status columns.', enhanceMode: 'stylize', focusAreas: ['task-cards', 'status-columns', 'developer-assignments'] },
     { type: 'screen-capture', screenIds: ['findings-qa'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['findings-qa'], scriptContext: 'QA findings from Day 1 — scope creep detected, acceptance criteria discussion. Highlight the finding severity and action items.', enhanceMode: 'highlight', focusAreas: ['finding-severity', 'action-items', 'scope-flags'] },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-refactored-nav' },
@@ -307,6 +311,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-5-day2': [
     { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
     { type: 'screen-capture', screenIds: ['day-2-view'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['day-2-view'], scriptContext: 'Day 2 — Nova blocked for 6 hours waiting on PO approval. Velocity dip visible. The frozen task and blocker status are the key story points.', enhanceMode: 'highlight', focusAreas: ['blocked-tasks', 'velocity-dip', 'blocker-status-red'] },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A frozen task card encased in ice slowly cracking and thawing as a small fox character taps it impatiently, Pixar-quality animation, dramatic lighting' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-blocked-six-hours' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
@@ -314,11 +319,13 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-human-meetings' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions dashboard built to prevent future blockers — async approval queue, priority flags, response time tracking.', enhanceMode: 'stylize', focusAreas: ['approval-queue', 'priority-flags', 'response-times'] },
     { type: 'tts', voice: 'host', scriptKey: 'host-po-actions-built' },
   ],
   'scene-6-day3': [
     { type: 'tts', voice: 'host', scriptKey: 'day3-velocity-mismatch' },
     { type: 'screen-capture', screenIds: ['day-3-view', 'velocity-metrics'], multiCapture: true },
+    { type: 'ai-screen-enhance', screenIds: ['day-3-view', 'velocity-metrics'], scriptContext: 'Day 3 velocity mismatch — Claude completing 8 tasks/day vs Lovable at 3. Velocity chart shows diverging lines. The gap is the story.', enhanceMode: 'highlight', focusAreas: ['velocity-comparison-chart', 'task-completion-rates', 'developer-velocity-gap'] },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-scope-now' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
@@ -329,10 +336,14 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-7-mission-control': [
     { type: 'tts', voice: 'host', scriptKey: 'mission-control-narration' },
     { type: 'screen-capture', screenIds: ['po-mission-control'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['po-mission-control'], scriptContext: 'PO Mission Control — the async standup replacement. Shows real-time status of both AI developers without meetings. Key: no context-switching cost.', enhanceMode: 'stylize', focusAreas: ['developer-status-cards', 'async-standup-feed', 'blocker-alerts'] },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup with people talking over each other, RIGHT side shows calm AI-powered async standup with organized data flowing smoothly, cinematic quality' },
     { type: 'screen-capture', screenIds: ['standup-entries'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['standup-entries'], scriptContext: 'Async standup entries — structured yesterday/today/blockers format from both AIs. Clean, no meeting needed. Highlight the structured format.', enhanceMode: 'highlight', focusAreas: ['standup-structure', 'blocker-flags', 'handoff-notes'] },
     { type: 'screen-capture', screenIds: ['qa-signoff'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['qa-signoff'], scriptContext: 'QA sign-off dashboard — automated quality gates, test results, approval status per task.', enhanceMode: 'highlight', focusAreas: ['quality-gates', 'approval-badges', 'test-results'] },
     { type: 'screen-capture', screenIds: ['eod-handoff'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['eod-handoff'], scriptContext: 'End-of-day handoff — context transfer between developers for next session continuity.', enhanceMode: 'highlight', focusAreas: ['handoff-summary', 'next-session-priorities', 'dependency-flags'] },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-context-loss' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-window' },
@@ -362,6 +373,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'alibaba-image', model: 'wanx-v2.1', prompt: '3D comparison infographic table: Traditional Sprint (left, red) vs AI Sprint (right, green), showing metrics — velocity 5x, blockers 0, async standups, clean modern design with depth and shadows' },
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Animated infographic with numbers counting up dynamically, bars growing, green checkmarks appearing, professional motion graphics style', referenceImage: 'comparison-infographic' },
     { type: 'screen-capture', screenIds: ['velocity-metrics'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['velocity-metrics'], scriptContext: 'Final velocity metrics — 41 tasks completed, 5x traditional speed, zero blockers at sprint end. The big number reveal moment.', enhanceMode: 'redraw', focusAreas: ['total-velocity-number', 'completion-percentage', 'zero-blockers-badge'] },
   ],
   'scene-10-whats-next': [
     { type: 'tts', voice: 'host', scriptKey: 'whats-next-narration' },
@@ -411,6 +423,7 @@ export const EP04_PIPELINE_READINESS = [
   { pipeline: 'infographic-design',                   status: '✅ READY',     edgeFn: 'ai-image-generator',        notes: 'Comparison table, velocity prediction, timeline via Alibaba wanx' },
   // PHASE 3: Visuals — Screens
   { pipeline: 'screen-capture (19 screens)',          status: '✅ AUTO',      edgeFn: 'MultiScreenshotGallery',    notes: 'html2canvas on sprint-tracker tabs; upload to product-screenshots bucket' },
+  { pipeline: 'ai-screen-enhance (narration scenes)', status: '✅ READY',     edgeFn: 'Lovable AI Gateway',        notes: 'Gemini image editing on captured screens; highlight/stylize/redraw modes; scenes 3-7, 9' },
   // PHASE 4: Avatar Lip-Sync (Alibaba Wan2.2 Primary)
   { pipeline: 'avatar-lipsync atlas (bear)',          status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'Alibaba Wan2.2 phoneme-level lip-sync + Azure viseme data; all speaking scenes' },
   { pipeline: 'avatar-lipsync nova (fox)',            status: '✅ READY',     edgeFn: 'ai-video-generator',        notes: 'Alibaba Wan2.2 lip-sync; Disney-style 2D character animation' },
