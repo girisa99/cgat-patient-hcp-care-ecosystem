@@ -1,0 +1,1 @@
+DELETE FROM cast_projects WHERE id = '7fa2e62a-cbf6-474b-83c9-78ebcc06e756';
