@@ -55,6 +55,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import {
   Select,
@@ -171,7 +172,7 @@ import {
 // STAGE 1: 3-Tab Consolidated Structure (CREATE, PRODUCE, PUBLISH)
 // MANAGE and LANDING have been consolidated into PRODUCE and CREATE respectively
 export type ConsolidatedTab = 'create' | 'produce' | 'publish';
-export type CreateSubTab = 'intent' | 'templates' | 'assets';
+export type CreateSubTab = 'intent' | 'configure' | 'templates' | 'assets';
 export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review' | 'library' | 'analytics' | 'flow';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
 
@@ -208,6 +209,7 @@ const TAB_DEFINITIONS = {
     inactiveColor: 'border-orange-300 text-orange-700 hover:bg-orange-50',
     subTabs: [
       { id: 'intent', label: 'Intent', icon: Sparkles, description: 'What are you creating?' },
+      { id: 'configure', label: 'Style & Enrichment', icon: Palette, description: 'Visual style, enrichment & resolution' },
       { id: 'templates', label: 'Templates', icon: LayoutTemplate, description: 'Select a blueprint' },
       { id: 'assets', label: 'Assets', icon: Image, description: 'Hero Banners, Assets Lab, Brand Assets' },
     ],
@@ -265,8 +267,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
       const stored = localStorage.getItem('genie-cast-session');
       if (stored) {
         const parsed = JSON.parse(stored);
-        // If intent selected, go to templates; otherwise start at intent
-        const createSub = (parsed.selectedIntent || parsed.selectedTemplate || parsed.approvedMessaging) ? 'templates' : 'intent';
+        // If template already selected, go to templates; if intent set, go to configure; otherwise start at intent
+        const createSub = (parsed.selectedTemplate || parsed.approvedMessaging) ? 'templates' : parsed.selectedIntent ? 'configure' : 'intent';
         return { create: createSub, produce: 'generate', publish: 'scheduler' };
       }
     } catch {}
@@ -299,6 +301,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
   const [selectedSubFormatId, setSelectedSubFormatId] = useState<string | null>(null);
+  // Enrichment prompt for AI context injection
+  const [enrichmentPrompt, setEnrichmentPrompt] = useState<string>('');
+  // Resolution / aspect ratio selection
+  const [selectedResolution, setSelectedResolution] = useState<string>('1920x1080');
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('16:9');
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
 
@@ -711,7 +718,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   if (subs.length === 0) {
                     const needsMessaging = contentRegistry.requiresMessaging(fmt.id, selectedCategoryId || undefined);
                     castSession.selectIntent(fmt.name as any);
-                    setSubTab('create', 'templates');
+                    setSubTab('create', 'configure');
                   }
                   // If sub-formats exist, stay on step — user picks sub-format next
                 }}
@@ -724,7 +731,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   // After sub-format selection, advance to templates
                   const needsMessaging = contentRegistry.requiresMessaging(selectedFormatId || '', selectedCategoryId || undefined);
                   castSession.selectIntent((sf.name || selectedFormatId) as any);
-                  setSubTab('create', 'templates');
+                  setSubTab('create', 'configure');
                 }}
                 onAddCategory={contentRegistry.addCategory}
                 onAddFormat={contentRegistry.addFormat}
@@ -773,6 +780,173 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           )}
 
           <AnimatePresence mode="wait">
+            {/* ── STEP 2: CONFIGURE — Visual Styles, Enrichment Prompt, Resolution ── */}
+            {currentSubTab === 'configure' && (castSession.session.selectedIntent || castSession.session.selectedTemplate) && (
+              <motion.div
+                key="configure"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-5"
+              >
+                {/* Back to Content Selection */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 mb-1 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    castSession.selectIntent(null as any);
+                    setSubTab('create', 'intent');
+                  }}
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to Content Selection
+                </Button>
+
+                {/* ── VISUAL STYLES ── (Pixar, 3D, Cartoon, etc.) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-primary" />
+                      Visual Style
+                      {selectedVideoStyles.length > 0 && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5">{selectedVideoStyles.length} selected</Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Choose visual styles — Pixar, 3D, Cartoon, Anime, Avatar, etc. Templates will be filtered by your selection.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <VideoStyleCards
+                      selectedStyles={selectedVideoStyles}
+                      onSelectStyle={(style) => {
+                        if (selectedVideoStyles.includes(style)) {
+                          onStylesChange(selectedVideoStyles.filter(s => s !== style));
+                        } else {
+                          onStylesChange([...selectedVideoStyles, style]);
+                        }
+                      }}
+                      onSelectStyles={onStylesChange}
+                      allowMultiple={true}
+                      compact={true}
+                      industryFilter={contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* ── UNIVERSAL ENRICHMENT PROMPT ── */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Wand2 className="w-4 h-4 text-primary" />
+                      Universal Enrichment Prompt
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Describe your vision, brand context, or specific instructions. This context enriches every scene in the blueprint.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <textarea
+                      className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+                      placeholder="e.g. Create a cinematic product demo for our AI platform. Focus on enterprise decision-makers. Tone: professional yet innovative. Highlight ROI metrics and competitive advantages..."
+                      value={enrichmentPrompt}
+                      onChange={(e) => setEnrichmentPrompt(e.target.value)}
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      {['Patient Services', 'ROI Focus', 'Brand Story', 'Product Demo', 'Competitive Edge', 'Thought Leadership'].map(tag => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="text-[10px] cursor-pointer hover:bg-primary/10 transition-colors"
+                          onClick={() => setEnrichmentPrompt(prev => prev ? `${prev}. ${tag}` : tag)}
+                        >
+                          <Sparkles className="w-2.5 h-2.5 mr-1" />
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ── RESOLUTION & PLATFORM ── */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Settings2 className="w-4 h-4 text-primary" />
+                      Resolution & Platform
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Aspect Ratio</Label>
+                        <Select value={selectedAspectRatio} onValueChange={setSelectedAspectRatio}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="16:9">16:9 (Landscape)</SelectItem>
+                            <SelectItem value="9:16">9:16 (Portrait / Reels)</SelectItem>
+                            <SelectItem value="1:1">1:1 (Square)</SelectItem>
+                            <SelectItem value="4:3">4:3 (Standard)</SelectItem>
+                            <SelectItem value="21:9">21:9 (Cinematic)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Resolution</Label>
+                        <Select value={selectedResolution} onValueChange={setSelectedResolution}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="3840x2160">4K (3840×2160)</SelectItem>
+                            <SelectItem value="1920x1080">Full HD (1920×1080)</SelectItem>
+                            <SelectItem value="1280x720">HD (1280×720)</SelectItem>
+                            <SelectItem value="1080x1920">Full HD Portrait (1080×1920)</SelectItem>
+                            <SelectItem value="1080x1080">Square HD (1080×1080)</SelectItem>
+                            <SelectItem value="720x1280">HD Portrait (720×1280)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Quality preset */}
+                    <div className="mt-3 space-y-1.5">
+                      <Label className="text-xs">Quality Preset</Label>
+                      <div className="flex gap-2">
+                        {(['preview', 'production', 'cinematic'] as const).map(q => (
+                          <Button
+                            key={q}
+                            variant={productionQuality === q ? 'default' : 'outline'}
+                            size="sm"
+                            className="text-xs capitalize flex-1"
+                            onClick={() => setProductionQuality(q)}
+                          >
+                            {q}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Continue to Templates */}
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setSubTab('create', 'templates')}
+                  >
+                    Continue to Templates
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
             {/* ── STEP 3: TEMPLATES ── Visible after messaging approved OR if template already exists */}
             {currentSubTab === 'templates' && (castSession.session.selectedIntent || castSession.session.selectedTemplate || castSession.session.approvedMessaging || castSession.session.projectId) && (
               <motion.div
@@ -783,19 +957,17 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                {/* Back to Intent */}
+                {/* Back to Configure */}
                 <Button
                   variant="ghost"
                   size="sm"
                   className="gap-1.5 mb-3 text-muted-foreground hover:text-foreground"
                   onClick={() => {
-                    // Clear intent so DynamicContentSelector re-appears
-                    castSession.selectIntent(null as any);
-                    setSubTab('create', 'intent');
+                    setSubTab('create', 'configure');
                   }}
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  Back
+                  Back to Style & Enrichment
                 </Button>
                 {/* Selected Template Confirmation Card */}
                 {castSession.session.selectedTemplate && (

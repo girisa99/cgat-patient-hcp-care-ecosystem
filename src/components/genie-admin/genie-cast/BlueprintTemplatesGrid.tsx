@@ -84,17 +84,21 @@ export function BlueprintTemplatesGrid({
 
   // Filter by category first, then apply intent scoring
   const recommendedTemplates = useMemo(() => {
+    // Browse All shows ALL blueprints (ignores category filter)
+    if (showBrowseAll) return blueprints;
+
     // Apply category filter if provided
     const categoryFiltered = categoryFilter
       ? blueprints.filter(bp => bp.category.toLowerCase() === categoryFilter.toLowerCase())
       : blueprints;
 
-    const source = showBrowseAll ? categoryFiltered : (
-      intentFilter ? getIntentRecommendations(categoryFiltered, intentFilter, 8) : categoryFiltered.slice(0, 12)
-    );
+    const source = intentFilter 
+      ? getIntentRecommendations(categoryFiltered, intentFilter, 8) 
+      : categoryFiltered.slice(0, 12);
+    
     // If category filter yielded no results, fall back to all blueprints
     if (source.length === 0 && categoryFilter) {
-      return showBrowseAll ? blueprints : blueprints.slice(0, 12);
+      return blueprints.slice(0, 12);
     }
     return source;
   }, [blueprints, intentFilter, categoryFilter, showBrowseAll]);
