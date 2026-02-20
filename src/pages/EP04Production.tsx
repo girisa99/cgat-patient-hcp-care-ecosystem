@@ -32,6 +32,8 @@ import atlasAvatar from '@/assets/characters/atlas-avatar-3d.png';
 import novaAvatar from '@/assets/characters/nova-avatar-3d.png';
 import squirrelAvatar from '@/assets/characters/squirrel-avatar-3d.png';
 import ep02Thumbnail from '@/assets/thumbnails/ep02-thumbnail.png';
+import claudeLogo from '@/assets/ep04-claude-avatar.png';
+import lovableLogo from '@/assets/ep04-lovable-avatar.png';
 import allaudinAvatar from '@/assets/characters/allaudin-avatar-3d.png';
 
 // Scene background imports
@@ -620,29 +622,47 @@ export default function EP04Production() {
       {/* Script Lines */}
       <ScrollArea className="h-[calc(100vh-80px)]">
         <div className="max-w-5xl mx-auto p-6 space-y-8">
-          {/* Episode Thumbnail Banner */}
-          <div className="relative rounded-2xl overflow-hidden mb-6">
+          {/* Episode Thumbnail Banner — Collage with Two AI Developers */}
+          <div className="relative rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-[hsl(220,60%,10%)] via-background to-[hsl(330,40%,12%)]">
+            {/* Background thumbnail image */}
             <img
               src={ep02Thumbnail}
               alt="The Genie AI Podcast — Beyond AI Hype — Episode 2"
-              className="w-full h-auto object-cover rounded-2xl"
+              className="w-full h-auto object-cover rounded-2xl opacity-30"
             />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/80 to-transparent p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <img src="/logos/anthropic.svg" alt="Claude / Anthropic" className="h-8 w-8 rounded-full border border-border bg-background/50 p-1" />
-                  <span className="text-xs text-muted-foreground font-medium">Claude</span>
+            {/* Collage overlay with two AI developer logos */}
+            <div className="absolute inset-0 flex items-center justify-center gap-8 sm:gap-12 p-6">
+              {/* Claude (Atlas) */}
+              <div className="flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                <div className="relative group">
+                  <div className="absolute -inset-2 bg-primary/20 rounded-2xl blur-xl group-hover:bg-primary/40 transition-all duration-500 animate-pulse" />
+                  <img src={claudeLogo} alt="Claude / Anthropic" className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl border-2 border-primary/40 shadow-2xl hover:scale-110 transition-transform duration-300" />
                 </div>
-                <span className="text-muted-foreground">×</span>
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full border border-border bg-background/50 flex items-center justify-center">
-                    <span className="text-sm font-bold text-pink-400">♥</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground font-medium">Lovable</span>
-                </div>
+                <span className="text-sm font-bold text-primary drop-shadow-lg">Atlas · Claude</span>
+                <span className="text-[10px] text-muted-foreground italic max-w-[140px] text-center">"Let me stop talking and write the code now."</span>
               </div>
-              <h2 className="text-2xl font-bold mt-2">The Genie AI Podcast — Episode 2</h2>
-              <p className="text-sm text-muted-foreground">
+
+              {/* × divider */}
+              <div className="flex flex-col items-center">
+                <span className="text-3xl font-bold text-muted-foreground/50">×</span>
+              </div>
+
+              {/* Lovable (Nova) */}
+              <div className="flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+                <div className="relative group">
+                  <div className="absolute -inset-2 bg-accent/20 rounded-2xl blur-xl group-hover:bg-accent/40 transition-all duration-500 animate-pulse" />
+                  <img src={lovableLogo} alt="Lovable" className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-2xl border-2 border-accent/40 shadow-2xl object-contain bg-card p-2 hover:scale-110 transition-transform duration-300" />
+                </div>
+                <span className="text-sm font-bold text-accent drop-shadow-lg">Nova · Lovable</span>
+                <span className="text-[10px] text-muted-foreground italic max-w-[140px] text-center">"I don't sit idle. I build."</span>
+              </div>
+            </div>
+
+            {/* Bottom gradient with corrected title */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/90 to-transparent p-6">
+              <p className="text-xs text-primary/70 font-semibold uppercase tracking-widest mb-1">Beyond AI Hype — Episode 2</p>
+              <h2 className="text-2xl font-bold text-foreground">Two AI Developers. One Human PO. Real Sprint.</h2>
+              <p className="text-sm text-muted-foreground mt-1">
                 Host: Sai Dasika · with Allaudin · AI • Experimentation • Real-World Impact
               </p>
             </div>
