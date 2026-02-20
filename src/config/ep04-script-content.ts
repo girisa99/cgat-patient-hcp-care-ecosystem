@@ -952,7 +952,10 @@ Atlas runs at roughly 85% velocity. Solid. Professional. Predictable. Every comm
     voice: 'host',
     scene: 'scene-7-velocity',
     duration_est: 16,
-    direction: 'Setup for contrast. "Straight line" and "beautiful" are delivered with dry admiration.',
+    direction: 'Setup for contrast. "Straight line" and "beautiful" are delivered with dry admiration. Host gestures at an imaginary chart — smooth horizontal motion.',
+    lipsync: true,
+    sfx: ['chart_draw_smooth', 'data_point_ping'],
+    motion: 'gesture-at-straight-chart-line',
   },
 
   'atlas-predictability': {
@@ -960,7 +963,10 @@ Atlas runs at roughly 85% velocity. Solid. Professional. Predictable. Every comm
     voice: 'atlas',
     scene: 'scene-7-velocity',
     duration_est: 6,
-    direction: 'Quiet pride. Atlas is genuinely proud of his straight line. It\'s his idea of art.',
+    direction: 'Quiet pride. Atlas is genuinely proud of his straight line. It\'s his idea of art. Stands taller. Background: clean burndown chart animates behind him.',
+    lipsync: true,
+    sfx: ['precision_click', 'satisfied_hum'],
+    motion: 'proud-stand-tall-arms-folded',
   },
 
   'velocity-nova': {
@@ -968,7 +974,10 @@ Atlas runs at roughly 85% velocity. Solid. Professional. Predictable. Every comm
     voice: 'host',
     scene: 'scene-7-velocity',
     duration_est: 3,
-    direction: 'Delivered with a beat of disbelief. Let it sit.',
+    direction: 'Delivered with a beat of disbelief. Let it sit. Host double-takes at an invisible stat.',
+    lipsync: true,
+    sfx: ['record_scratch', 'dramatic_pause_beat'],
+    motion: 'double-take-at-stat',
   },
 
   'host-nova-how': {
@@ -976,7 +985,10 @@ Atlas runs at roughly 85% velocity. Solid. Professional. Predictable. Every comm
     voice: 'host',
     scene: 'scene-7-velocity',
     duration_est: 5,
-    direction: 'Genuinely puzzled. Almost laughing.',
+    direction: 'Genuinely puzzled. Almost laughing. Leans forward squinting at a metric.',
+    lipsync: true,
+    sfx: ['confused_boing'],
+    motion: 'lean-forward-squint-disbelief',
   },
 
   'nova-scope-now': {
@@ -984,7 +996,10 @@ Atlas runs at roughly 85% velocity. Solid. Professional. Predictable. Every comm
     voice: 'nova',
     scene: 'scene-7-velocity',
     duration_est: 3,
-    direction: 'Quick, slightly smug. The italics on "now" are audible.',
+    direction: 'Quick, slightly smug. The italics on "now" are audible. Nova flips hair with a sparkle.',
+    lipsync: true,
+    sfx: ['sparkle_wink', 'sly_sting'],
+    motion: 'smug-hair-flip-sparkle',
   },
 
   'velocity-scope-creep': {
@@ -994,7 +1009,10 @@ And honestly? She usually did. But your burndown chart looks like it was drawn b
     voice: 'host',
     scene: 'scene-7-velocity',
     duration_est: 25,
-    direction: 'Building comedy through description. "Caffeinated squirrel" is the visual payoff. Then pivot to how the tracker handles it — the system turns chaos into data.',
+    direction: 'Building comedy through description. "Caffeinated squirrel" is the visual payoff — background chart goes haywire. Then pivot to how the tracker handles it — the system turns chaos into data.',
+    lipsync: true,
+    sfx: ['chart_going_haywire', 'squirrel_chittering', 'tracker_notification_cascade', 'grudging_approval_chime'],
+    motion: 'animated-storytelling-gestures-building',
   },
 
   'nova-dark-mode': {
@@ -1002,7 +1020,10 @@ And honestly? She usually did. But your burndown chart looks like it was drawn b
     voice: 'nova',
     scene: 'scene-7-velocity',
     duration_est: 6,
-    direction: 'Passionate, then a self-aware meta moment. The logic correction is funny because it\'s so Nova.',
+    direction: 'Passionate fist-pump, then a self-aware meta moment — tilts head at own logic. The correction is funny because it\'s so Nova.',
+    lipsync: true,
+    sfx: ['passionate_fist_pump', 'self_aware_ding'],
+    motion: 'passionate-fist-then-head-tilt-self-aware',
   },
 
   // 🐿️ SQUIRREL INTERRUPTION — After velocity discussion
@@ -1048,41 +1069,63 @@ And honestly? She usually did. But your burndown chart looks like it was drawn b
   // ═══════════════════════════════════════════════════════════════════════════
 
   'numbers-intro': {
-    text: `Let me give you the numbers. Because this isn't about vibes and AI hype. This is a story with data.
+    text: `Now — rather than me telling you what works, let me show you what we actually built. Every screen. Every tab. Every view. You decide what resonates with your workflow.
 
-Five times faster. Conservatively. That's not a marketing claim — that's a dashboard you can query. Real tasks, real timestamps, real completion rates.
-
-What does 5x mean practically? It means one human managing two AIs delivers what a traditional team of four to five developers would need two full sprints to match. In one sprint. With better documentation. Better governance. And fewer "quick questions" in Slack.`,
+This is the sprint tracker dashboard — the real one, not a mockup. What you're about to see are the actual screens we use every single day. There are screens across this dashboard — PO Mission Control, daily views for each sprint day, backlog, velocity metrics, effort tracking, project plan, QA findings, sign-off workflows, EOD handoffs, sprint charter, governance guide, shared infrastructure feed, and territory guardrails.`,
     voice: 'host',
     scene: 'scene-8-numbers',
-    duration_est: 25,
-    direction: 'Confident. "5x" is the headline — deliver clean. Build credibility through specifics. "Fewer quick questions" is relatable humor.',
+    duration_est: 28,
+    direction: 'Warm, inviting — not prescriptive. This is a "show, don\'t tell" moment. Let viewers form their own opinions. Each screen name triggers a rapid screenshot transition. The tone says: "Here it is — take what serves you."',
+    lipsync: true,
+    sfx: ['screen_swipe_whoosh', 'rapid_montage_beat', 'dashboard_scan_sweep'],
+    motion: 'presenter-gesturing-at-screen-montage',
+    visual_ref: 'dashboard-tour-18-screens',
   },
 
-  'numbers-atlas': {
-    text: `The 5x multiplier is computed by comparing estimated traditional effort hours against actual elapsed time, adjusted for scope variance. The methodology is documented in the sprint tracker. You can audit it. I encourage auditing.`,
+  'numbers-tour-atlas': {
+    text: `Each screen serves a specific governance function. The PO Mission Control provides the executive overview. Daily views capture granular progress. The QA sign-off ensures nothing ships without review. I can walk through the data model if—`,
     voice: 'atlas',
     scene: 'scene-8-numbers',
-    duration_est: 8,
-    direction: 'Pure Atlas — providing footnotes to a podcast. He genuinely thinks this makes it better. "I encourage auditing" is the most Atlas sentence ever written.',
+    duration_est: 10,
+    direction: 'Atlas starts cataloguing screens methodically — genuinely helpful. Gets cut off before the data model deep dive. Background: screenshots cycling in a clean grid.',
+    lipsync: true,
+    sfx: ['systematic_catalog_click', 'grid_arrange_snap'],
+    motion: 'methodical-pointing-at-screens-grid',
   },
 
-  'numbers-host-thanks': {
-    text: `Thank you, Atlas. That was... very Atlas.`,
+  'numbers-tour-host-cut': {
+    text: `We'll save the data model for the engineering deep-dive episode, Atlas. The point is — these screens exist. They're real. They're in production. And every viewer can look at them and decide what fits their context.`,
     voice: 'host',
     scene: 'scene-8-numbers',
-    duration_est: 3,
-    direction: 'Affectionate. "Very Atlas" is becoming a running descriptor.',
+    duration_est: 8,
+    direction: 'Gently redirecting Atlas. The key message: these are real, not theoretical. No opinion on what "should" work — let the audience decide.',
+    lipsync: true,
+    sfx: ['gentle_redirect_chime'],
+    motion: 'open-palms-showing-not-telling',
+  },
+
+  'numbers-nova-perspective': {
+    text: `What I love is that the screens look different depending on your role. The PO sees actions and blockers. I see my task queue and deploy status. Same system, different lens. Your mileage may vary — and that's the point.`,
+    voice: 'nova',
+    scene: 'scene-8-numbers',
+    duration_est: 8,
+    direction: 'Nova adds the UX perspective — role-based views. "Your mileage may vary" is deliberately non-prescriptive. Sparkle as screens shift between PO and Dev views.',
+    lipsync: true,
+    sfx: ['perspective_shift_whoosh', 'role_toggle_click'],
+    motion: 'enthusiastic-show-different-views',
   },
 
   'numbers-cost': {
-    text: `Cost per task? Down significantly. Context loss between sessions? Effectively zero. QA coverage? Non-blocking — if something isn't ready, it carries forward, flagged and tracked, not silently ignored.
+    text: `The numbers tell their own story. We track everything — task completion rates, context retention between sessions, scope variance, effort per sprint. The data is transparent. The methodology is documented.
 
-The efficiency isn't because AIs are magic. It's because the system around them — the governance, the tracker, the handoff protocol — removes the friction that usually slows everyone down. Speed without structure is just fast chaos. Speed with structure? That's velocity.`,
+But here's what I won't do — I won't tell you this is the only way. Every team is different. Every product is different. What I can tell you is: this worked for us, it's real, and you're welcome to take the parts that make sense for you and leave the rest. That's how good tools work — they adapt to you, not the other way around.`,
     voice: 'host',
     scene: 'scene-8-numbers',
-    duration_est: 22,
-    direction: 'Building the key insight. "Speed without structure is just fast chaos" is the quotable line. Let it land. "That\'s velocity" is the punctuation.',
+    duration_est: 25,
+    direction: 'This is the credibility moment — no hard sell, no "you should do this too." The tone is generous, authentic. "Take what serves you" is the thesis. Let the screens speak. "That\'s how good tools work" lands with quiet confidence.',
+    lipsync: true,
+    sfx: ['data_transparency_reveal', 'honest_piano_note', 'gentle_resolution_chord'],
+    motion: 'sincere-open-gesture-generous',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
