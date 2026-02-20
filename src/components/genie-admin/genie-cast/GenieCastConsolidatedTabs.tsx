@@ -580,7 +580,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => window.location.href = '/genie-admin?tab=product-setup'}
+          onClick={() => window.location.href = '/genie-admin?tab=subscriber-admin'}
           className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           <Settings2 className="w-4 h-4" />

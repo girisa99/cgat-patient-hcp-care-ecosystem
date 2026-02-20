@@ -28,7 +28,7 @@ import type { EventCategory } from '@/types/shows';
 import { cn } from '@/lib/utils';
 import { UnifiedVideoGenerationPanel } from './UnifiedVideoGenerationPanel';
 import { SubscriberProductSetup } from './SubscriberProductSetup';
-
+import { SubscriberAdminDashboard } from './SubscriberAdminDashboard';
 // Lazy load heavy components — v2 (re-bundled 2026-02-18)
 const GenieCommandCenter = lazy(() => import('@/components/diagrams/genie-command-center/GenieCommandCenter'));
 const AIIntelligenceHub = lazy(() => import('@/components/ai/AIIntelligenceHub'));
@@ -43,7 +43,7 @@ interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'landing-videos' | 'genie-cast-mockup' | 'genie-cast' | 'sprint-tracker' | 'product-setup';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'landing-videos' | 'genie-cast-mockup' | 'genie-cast' | 'sprint-tracker' | 'product-setup' | 'subscriber-admin';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -322,6 +322,11 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           {/* Product Setup - Subscriber Onboarding */}
           {activeTab === 'product-setup' && (
             <SubscriberProductSetup userTier="professional" />
+          )}
+
+          {/* Subscriber Admin - Full Admin Hub from Cast */}
+          {activeTab === 'subscriber-admin' && (
+            <SubscriberAdminDashboard userTier="professional" />
           )}
 
         </div>
