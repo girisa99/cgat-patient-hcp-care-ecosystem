@@ -31,6 +31,10 @@ import type {
 } from '@/config/universal-script-schema';
 import {
   PRODUCT_CONSTRAINTS,
+  DEFAULT_FALLBACK_VOICE,
+  DEFAULT_ELEVENLABS_VOICE_ID,
+  DEFAULT_AVATAR_STYLE,
+  DEFAULT_STORAGE_PATHS,
   getProductConstraints,
   validateManifest,
 } from '@/config/universal-script-schema';
@@ -115,7 +119,7 @@ function resolveCharacters(
       name: role.name,
       role: role.role,
       voice: voiceRouting[role.key] || getFallbackVoice(role.gender),
-      avatarStyle: 'pixar-3d' as const,
+      avatarStyle: DEFAULT_AVATAR_STYLE,
       motionStyle: role.motionStyle,
     }));
   }
@@ -131,13 +135,13 @@ function resolveCharacters(
       voice: {
         provider: preset.provider as VoiceConfig['provider'],
         voiceId: preset.voiceId,
-        fallbackProvider: 'alibaba' as const,
-        fallbackVoice: 'longxiaochun',
+        fallbackProvider: DEFAULT_FALLBACK_VOICE.provider,
+        fallbackVoice: DEFAULT_FALLBACK_VOICE.voiceId,
         stability: preset.stability,
         similarityBoost: preset.similarityBoost,
         speed: preset.speed,
       },
-      avatarStyle: 'pixar-3d' as const,
+      avatarStyle: DEFAULT_AVATAR_STYLE,
       motionStyle: role.motionStyle,
     };
   });
@@ -149,9 +153,9 @@ function getFallbackVoice(gender: 'male' | 'female'): VoiceConfig {
   const preset = modeVoices[0];
   return {
     provider: (preset?.provider || 'elevenlabs') as VoiceConfig['provider'],
-    voiceId: preset?.voiceId || 'onwK4e9ZLuTAKqWW03F9',
-    fallbackProvider: 'alibaba',
-    fallbackVoice: 'longxiaochun',
+    voiceId: preset?.voiceId || DEFAULT_ELEVENLABS_VOICE_ID,
+    fallbackProvider: DEFAULT_FALLBACK_VOICE.provider,
+    fallbackVoice: DEFAULT_FALLBACK_VOICE.voiceId,
     stability: preset?.stability ?? 0.5,
     similarityBoost: preset?.similarityBoost ?? 0.75,
     speed: preset?.speed ?? 1.0,
@@ -384,12 +388,10 @@ function assembleManifest(
     : undefined;
 
   const storagePaths = req.storagePaths || {
-    bucket: 'genie-media',
-    ttsPrefix: `${req.product}-generated-tts`,
-    musicPrefix: `${req.product}-generated-music`,
-    sfxPrefix: `${req.product}-generated-sfx`,
-    screenshotBucket: 'product-screenshots',
-    screenshotPattern: 'screenshots/{id}.png',
+    ...DEFAULT_STORAGE_PATHS,
+    ttsPrefix: `${req.product}-${DEFAULT_STORAGE_PATHS.ttsPrefix}`,
+    musicPrefix: `${req.product}-${DEFAULT_STORAGE_PATHS.musicPrefix}`,
+    sfxPrefix: `${req.product}-${DEFAULT_STORAGE_PATHS.sfxPrefix}`,
   };
 
   return {

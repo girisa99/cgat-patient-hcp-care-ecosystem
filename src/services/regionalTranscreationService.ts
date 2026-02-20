@@ -48,6 +48,7 @@ import type {
   UniversalScriptLine,
   UniversalCharacter,
 } from '@/config/universal-script-schema';
+import { DEFAULT_FALLBACK_VOICE } from '@/config/universal-script-schema';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -211,8 +212,8 @@ export function getRegionalVoiceRouting(
       routing[char.key] = {
         provider: voice.provider as VoiceConfig['provider'],
         voiceId: voice.voiceId,
-        fallbackProvider: 'alibaba',
-        fallbackVoice: 'longxiaochun',
+        fallbackProvider: DEFAULT_FALLBACK_VOICE.provider,
+        fallbackVoice: DEFAULT_FALLBACK_VOICE.voiceId,
         locale: voice.locale,
       };
     }
