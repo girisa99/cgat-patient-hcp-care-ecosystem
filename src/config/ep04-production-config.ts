@@ -11,38 +11,63 @@
  * All keys align with EP04_SCENE_SCREENSHOT_MAP in MultiScreenshotGallery.tsx.
  */
 
-// ─── THREE-VOICE TTS CONFIGURATION ───────────────────────────────────────────
+// ─── FIVE-VOICE TTS CONFIGURATION ────────────────────────────────────────────
 // Each character uses a distinct provider + voice to be distinguishable on audio.
+// ElevenLabs voice IDs from: https://elevenlabs.io/voice-library
 export const EP04_VOICES = {
-  /** Host = warm, podcast-style. ElevenLabs Rachel — conversational, direct. */
+  /** Host (Sai Dasika) = warm, podcast-style. ElevenLabs Brian — conversational, direct. */
   host: {
     provider: 'elevenlabs',
-    voiceId: 'rachel',          // ElevenLabs voice ID: "Rachel"
+    voiceId: 'nPczCjzI2devNBz1zQrb',  // Brian — warm male, podcast host style
     style: 'conversational',
     stability: 0.5,
     similarityBoost: 0.75,
+    speed: 1.0,
     eqProfile: 'warm',          // Applied in post: slight low-mid warmth
     description: 'Host narration — warm, self-deprecating, direct to camera',
   },
-  /** Atlas = measured, slight reverb. Azure Neural "en-US-GuyNeural" */
+  /** Atlas (Claude) = measured, slight reverb. Azure Neural "en-US-GuyNeural" */
   atlas: {
     provider: 'azure',
-    voiceId: 'en-US-GuyNeural',
+    voiceId: 'en-US-GuyNeural', // Azure Neural — already correct format
     style: 'professional',
     rate: '-5%',                // Slightly slower — measured, precise
     pitch: '-2%',               // Slightly lower — authoritative
     eqProfile: 'reverb',        // Subtle server-room reverb
     description: 'Atlas (Claude) — backend tech lead, measured, calm engineer',
   },
-  /** Nova = bright, energetic. ElevenLabs Domi — fast delivery, compressed. */
+  /** Nova (Lovable) = bright, energetic. ElevenLabs Lily — fast delivery, expressive. */
   nova: {
     provider: 'elevenlabs',
-    voiceId: 'domi',            // ElevenLabs voice ID: "Domi"
+    voiceId: 'pFZP5JQG7iQjIQuC4Bku',  // Lily — bright female, energetic
     style: 'energetic',
     stability: 0.35,            // Less stable = more expressive variation
     similarityBoost: 0.65,
+    speed: 1.1,                 // Slightly faster — energetic delivery
     eqProfile: 'bright',        // Brighter EQ, compressed
     description: 'Nova (Lovable) — frontend dev, fast delivery, energetic',
+  },
+  /** Allaudin (Genie) = deep, theatrical, magical. ElevenLabs George — rich baritone. */
+  allaudin: {
+    provider: 'elevenlabs',
+    voiceId: 'JBFqnCBsd6RMkjVDRZzb',  // George — deep, rich, theatrical
+    style: 'theatrical',
+    stability: 0.6,             // More stable for gravitas
+    similarityBoost: 0.8,
+    speed: 0.9,                 // Slightly slower — mystical delivery
+    eqProfile: 'deep-reverb',   // Deep reverb for magical presence
+    description: 'Allaudin (Genie) — deep, wise, theatrical narrator with mystical warmth',
+  },
+  /** Squirrel = high-pitched, chaotic, comedic. ElevenLabs Chris — light, fast. */
+  squirrel: {
+    provider: 'elevenlabs',
+    voiceId: 'iP95p4xoKVk53GoZ742B',  // Chris — light male, can be pitched up
+    style: 'chaotic',
+    stability: 0.2,             // Very unstable = chaotic energy
+    similarityBoost: 0.5,
+    speed: 1.3,                 // Fast delivery — hyperactive squirrel
+    eqProfile: 'high-pitch',    // Post-process: pitch shift +4 semitones
+    description: 'Squirrel — chaotic comic relief, hyperactive, interrupts scenes',
   },
 } as const;
 
