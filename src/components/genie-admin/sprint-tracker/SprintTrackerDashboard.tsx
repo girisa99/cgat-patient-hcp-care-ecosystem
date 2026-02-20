@@ -29,6 +29,7 @@ import { DayPageView } from './DayPageView';
 import { MetricsView } from './MetricsView';
 
 import { POActionsView } from './POActionsView';
+import { POVerificationView } from './POVerificationView';
 import { POMissionControl } from './POMissionControl';
 import { FindingsView } from './FindingsView';
 import { SprintPlanningView } from './SprintPlanningView';
@@ -517,6 +518,16 @@ export const SprintTrackerDashboard: React.FC = () => {
               />
             )}
 
+            {/* PO Mission Control — default landing view */}
+            {activeView === 'po-mission' && (
+              <POMissionControl
+                currentDay={currentDay}
+                getTaskStatus={getTaskStatus}
+                onNavigateToDay={(d) => setActiveView(`day-${d}` as ViewId)}
+                onNavigateToChecklist={() => setActiveView('po-gate')}
+              />
+            )}
+
             {/* Day pages */}
             {activeDayNum !== undefined && (
               <DayPageView
@@ -551,6 +562,11 @@ export const SprintTrackerDashboard: React.FC = () => {
                 lastSyncAt={lastSyncAt}
                 onForceRefresh={forceRefresh}
               />
+            )}
+
+            {/* Effort Tracking */}
+            {activeView === 'effort' && (
+              <EffortTrackingView effortMetrics={effortMetrics} currentDay={currentDay} />
             )}
 
             {/* Effort Tracking */}

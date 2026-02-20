@@ -822,6 +822,8 @@ export const MetricsView: React.FC<MetricsViewProps> = ({
           </button>
         )}
       </div>
+
+      {/* ── SPRINT HEADER ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="col-span-2 md:col-span-1">
           <CardContent className="p-4 text-center space-y-1">

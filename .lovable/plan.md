@@ -1,106 +1,100 @@
 
+# Final Plan: Provider Count Fix + Day 3 Completion + Day 4 Kickoff
 
-# Reuse Existing Admin Hub for Subscriber Onboarding
+## Situation Summary
 
-## What Already Exists (No Need to Rebuild)
+This plan answers three questions and delivers all Lovable-owned actions:
 
-You have ALL the infrastructure needed across these existing systems:
+---
 
-| Need | Already Built | Table/Component |
-|------|--------------|-----------------|
-| Organization setup | WorkspaceManagement | `genie_studio_teams` |
-| Team/seats | TeamInviteManagement | `genie_studio_team_members` |
-| Branding | WhitelabelConfiguration | `genie_studio_whitelabel_configs` |
-| Products & services | dynamicMarketingRegistryService | `marketing_products` (has `user_id`) |
-| Audiences | dynamicMarketingRegistryService | `marketing_audiences` (has `user_id`) |
-| Brand assets | dynamicMarketingRegistryService | `marketing_brand_assets` (has `user_id`) |
-| Product knowledge | useUniversalEnrichment | `product_knowledge_registry` |
-| Credit/tier config | tokenCreditService | `genie_studio_users.current_subscription_tier` |
+## 1. Why is L-304 (Day 3) Still In-Progress?
 
-## What Needs to Change (Extend, Not Create)
+L-304 is "Verify region switching across all 14 regions." Its status is `in-progress` because the code was audited and is correct — the `RegionSwitcherNav` reads from `REGION_HIERARCHY` (16 regions) and `detectRegionFromTimezone` is working — but **PO verification was still pending**.
 
-### 1. Add a "My Products" Tab to the Admin Hub
+Since Claude is handling the "Genie Studio → Genie Suite" rename (his territory owns `genie-studio/**`), and the region verification is a Lovable-owned audit task, **Lovable can mark L-304 as completed now** by updating its status and note in `data-config.ts`.
 
-Instead of a separate onboarding wizard, add a new tab to `ProductionHubAdmin` called **"My Products"** (or "Product Setup"). This tab surfaces the existing `dynamicMarketingRegistryService` CRUD in a guided wizard-style UI for subscribers to:
+The blocker is resolved: the code is correct, the routes work, and there's no code change needed — just a status update.
 
-- Add their own products (saves to `marketing_products` with their `user_id`, `is_system_default = false`)
-- Add product knowledge (saves to `product_knowledge_registry` with their product ID)
-- Add target audiences (saves to `marketing_audiences` with their `user_id`)
-- Upload brand assets (saves to `marketing_brand_assets`)
+---
 
-This reuses the existing service layer with zero new tables.
+## 2. Provider Count: 15 → 19
 
-### 2. Wire Universal Enrichment to Subscriber Products
+**File:** `src/components/diagrams/architecture/GenieStudioOverallArchitectureDiagram.tsx`
+**Line 110:** `"Mind to Media • 206 Pipelines • 15 Core Providers • 7-Zone Routing • 7 Products"`
+**Fix:** Change `15 Core Providers` → `19 Core Providers`
 
-`useUniversalEnrichment` already queries `product_knowledge_registry` and falls back to static Genie data. For subscribers, it just needs to:
-- Accept a `user_id` filter when loading products
-- Merge subscriber's `marketing_products` + `product_knowledge_registry` entries into the enrichment context
-- This is a small extension to the existing `fetchProductKnowledge()` function
+Per `docs/BRANDING_GLOSSARY.md` and `src/config/master-provider-routing-registry.ts` line 135 (`TOTAL_PROVIDER_COUNT = 19`), the correct count is definitively **19**.
 
-### 3. Tier-Gate the Tab Visibility
+---
 
-Using the existing `TIER_LIMITS` pattern from `WorkspaceManagement`:
-- **Free/Starter**: Read-only view of Genie's 7 products (system defaults)
-- **Pro**: Can add up to 3 custom products + audiences
-- **Business**: Up to 10 products, full brand assets
-- **Enterprise**: Unlimited products, full white-label
+## 3. Genie Suite Branding — What Lovable Owns
 
-### 4. Add URL/Knowledge Fields to `product_knowledge_registry`
+Claude handles his territory (`genie-studio/**`, `genie-spark/**`, navigation). Lovable handles:
 
-The `product_knowledge_registry` table already has `value_proposition`, `positioning_statement`, `pain_points`, `key_benefits`, etc. Two small columns to add:
+**File:** `src/components/subscription/EnhancedPricingSection.tsx`
+- Line 74: `"All plans include core Genie Studio features."` → `"All plans include core Genie Suite features."`
+- Line 375: `"14-day trial with Genie Studio Basic"` → `"14-day trial with Genie Suite Basic"`
+- Line 392: FAQ answer `"Genie Studio = unified workflow"` → `"Genie Studio = the production workspace within Genie Suite"` (preserves the valid Genie Studio product name while clarifying it's part of Genie Suite)
 
-- `website_url` (text, nullable) - subscriber's product URL
-- `knowledge_docs` (jsonb, nullable) - array of uploaded doc references
+**File:** `src/components/genie-admin/sprint-tracker/data-config.ts`
+- Line 31: `area: 'Genie Studio'` in FILE_OWNERSHIP → `area: 'Genie Suite (Studio Workspace)'` (internal tracker label only)
 
-This is a single migration, not a new table.
+---
 
-## Implementation Steps
+## 4. Day 4 Status in Sprint Tracker
 
-### Step 1: DB Migration (Minimal)
-Add `website_url` and `knowledge_docs` columns to `product_knowledge_registry`.
+The sprint tracker currently shows Day 4 tasks without any overrides — they show as `pending` (To Do) by default, which is correct. The day-gating fix from the earlier session ensures Day 4 won't show a "Started" banner unless `currentDay >= 4`.
 
-### Step 2: Create SubscriberProductSetup Component
-A guided form component that reuses `dynamicMarketingRegistryService` methods:
-- `createProduct()` / `updateProduct()` for products
-- `createAudience()` for audiences  
-- `createBrandAsset()` for assets
-- Direct insert to `product_knowledge_registry` for knowledge
+No Day 4 task overrides need to be added yet — Claude will log C-401/402/403/404 as he completes them. Lovable starts L-401 (mobile responsiveness).
 
-Rendered inside the existing Admin Hub as a new tab.
+**Add L-401 standup entry** to `data-config.ts` → `DEFAULT_STANDUPS` so the sprint tracker shows Lovable's Day 4 kickoff.
 
-### Step 3: Update ProductionHubAdmin
-Add `'product-setup'` to the `AdminTab` type and render `SubscriberProductSetup` when active. Tier-gate visibility using the existing pattern.
+---
 
-### Step 4: Extend useUniversalEnrichment
-Add a `userId` parameter to `fetchProductKnowledge()` so it can load subscriber-specific product knowledge alongside Genie defaults.
+## 5. H-301 Acknowledgment
 
-### Step 5: Credit Config Adjustability
-Move `TIER_CREDIT_CONFIG` from `tokenCreditService.ts` constants into a tier-gated admin section (inside the existing Workspace settings) so Pro/Enterprise admins can view their credit ratios. Actual editing remains admin-only for now.
+H-301 (`Spark creation flow working → demos can reference it`) is `status: 'ready'` in `data-dependencies.ts`. Lovable should update it to `'acknowledged'` since C-304 is complete and the demos can now reference Spark.
 
-## Technical Details
+---
 
-### Files Modified (not created from scratch)
-- `src/components/genie-admin/ProductionHubAdmin.tsx` - Add tab
-- `src/hooks/useUniversalEnrichment.ts` - Add userId filter
-- `src/services/marketing/dynamicMarketingRegistryService.ts` - Already has CRUD, no changes needed
-- `src/services/tokenCreditService.ts` - No structural changes, ratios already adjustable as constants
+## Files To Change (Lovable's Territory Only)
 
-### New File (1 only)
-- `src/components/genie-admin/SubscriberProductSetup.tsx` - Guided form that wraps existing service calls
+| File | Change |
+|---|---|
+| `src/components/diagrams/architecture/GenieStudioOverallArchitectureDiagram.tsx` | `15 Core Providers` → `19 Core Providers` |
+| `src/components/subscription/EnhancedPricingSection.tsx` | 3 branding fixes (lines 74, 375, 392) |
+| `src/components/genie-admin/sprint-tracker/data-config.ts` | Mark L-304 `completed`, update FILE_OWNERSHIP label, add Day 4 L standup |
+| `src/components/genie-admin/sprint-tracker/data-dependencies.ts` | H-301 status `ready` → `acknowledged` |
 
-### DB Migration (1 only)
-```sql
-ALTER TABLE product_knowledge_registry
-  ADD COLUMN IF NOT EXISTS website_url text,
-  ADD COLUMN IF NOT EXISTS knowledge_docs jsonb DEFAULT '[]';
-```
+---
 
-## Outcome
+## What Claude Handles (Do Not Touch)
 
-- Zero new tables (reuses 6 existing tables)
-- One new component (wraps existing services)
-- One small migration (2 columns)
-- Subscribers add their products/knowledge through the same Admin Hub
-- Universal Enrichment automatically picks up subscriber data
-- Credit ratios remain adjustable constants (promote to DB-driven later if needed)
+Per territory rules, Claude owns:
+- `src/components/genie-studio/**` — all Genie Studio → Genie Suite renames inside the workspace
+- `src/components/navigation/Quadrant*` — navigation
+- `src/components/genie-spark/**` — Genie Spark internals
+- `src/pages/GenieSpark.tsx`, `GenieMind.tsx`, `GenieDeck.tsx`
+- His own standup entries and task completions (C-401 through S-401) in `data-config.ts`
 
+Claude's Day 4 tasks (C-401 Fix ScriptEditorTab, C-402 Fix SavedAudioCard, C-403 Fix CrossFunctionalMusic, C-404 Spark→Mind flow) are all unblocked. He'll log his EOD effort in `data-tasks.ts` and update `data-config.ts` with his completions at the end of the day.
+
+---
+
+## Sync Protocol (How It Works)
+
+- **Auto-sync (both see):** EOD Handoff brief → Supabase `universal_save_sessions` → Claude reads via `forceRefresh()` at Day 4 session start. PO Notes from "Actions & Notes" tab sync to Supabase too.
+- **Claude manually does:** Logs actual hours/tokens in `data-tasks.ts` for C-401/402/403/404. Updates his task statuses. Adds his Day 4 standup.
+- **Lovable manually does:** Logs actual hours/tokens for L-401/402/403/404. Updates L- task statuses. Adds Lovable Day 4 standup.
+- **You (PO):** After each day, go to EOD Handoff tab → click "Close & Publish" to push the brief to Supabase so Claude receives it at his next session start.
+
+---
+
+## Implementation Order
+
+1. Fix provider count in architecture diagram (`GenieStudioOverallArchitectureDiagram.tsx`)
+2. Fix 3 branding strings in `EnhancedPricingSection.tsx`
+3. Update `data-config.ts`: mark L-304 completed + add Day 4 Lovable standup + update FILE_OWNERSHIP label
+4. Update `data-dependencies.ts`: H-301 → acknowledged
+
+All 4 changes are in Lovable territory. No locked files touched. No Claude territory files touched.

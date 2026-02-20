@@ -136,6 +136,8 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
 
       // Persist to generated_media table
       await supabase.from('generated_media').insert({
+        id: trackId,
+        user_id: user.id,
         name: trackName,
         file_type: 'audio',
         storage_bucket: 'generated_media',
@@ -174,6 +176,8 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
 
         if (user) {
           await supabase.from('generated_media').insert({
+            id: trackId,
+            user_id: user.id,
             name: trackName,
             file_type: 'audio',
             storage_bucket: 'generated_media',
