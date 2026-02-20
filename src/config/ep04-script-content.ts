@@ -1211,9 +1211,9 @@ This is what I mean when I say: I don't build — I show what I build. The podca
   },
 
   'close-cta': {
-    text: `I believe messaging, marketing, and production shouldn't be that hard in this age of AI. We have all the tools at our disposal — we just need to know where and how to use them, and experiment.
+    text: `I believe messaging, marketing, and production shouldn't be that hard in this age of AI. I have all the tools at my disposal — I just need to know where and how to use them, and experiment.
 
-Head to genieaiexperimentationhub.tech to see how we experiment. Subscribe to the Genie AI Podcast wherever you listen. Follow us on LinkedIn and YouTube for the latest updates and newsletters.
+Head to genieaiexperimentationhub.tech to see how I experiment. Subscribe to the Genie AI Podcast wherever you listen. Follow me on LinkedIn and YouTube for the latest updates and newsletters.
 
 Because that's what "Beyond AI Hype" actually means. Stop reading about it. Stop debating about it. Start building with it. And see what happens.
 
