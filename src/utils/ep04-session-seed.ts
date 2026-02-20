@@ -125,30 +125,37 @@ function buildEP04Messaging(): MessagingContent {
 
 // ─── BUILD TEMPLATE MAPPING (SCENE SCRIPTS) ─────────────────────────────────────
 
+/** Resolve voice config for a character, handling aliases */
+function resolveVoiceConfig(voice: string) {
+  const voiceKey = voice === 'squirrel' ? 'squirrel' : voice === 'allaudin' ? 'allaudin' : voice;
+  const config = EP04_VOICES[voiceKey as keyof typeof EP04_VOICES];
+  if (!config) return EP04_VOICES.host; // safe fallback
+  return config;
+}
+
 function buildEP04TemplateMapping(): TemplateMapping {
-  const scenes: SceneScript[] = SCENE_IDS.map((sceneId, index) => {
-    const sceneLines = getScriptLinesForScene(sceneId);
-    const combinedText = sceneLines.map(({ line }) => `[${line.voice.toUpperCase()}] ${line.text}`).join('\n\n');
-    const duration = getSceneDuration(sceneId);
-    
-    // Determine primary TTS provider from first speaking line
-    const firstVoice = sceneLines[0]?.line.voice || 'host';
-    const voiceConfig = EP04_VOICES[firstVoice === 'squirrel' ? 'nova' : firstVoice === 'allaudin' ? 'host' : firstVoice];
+  // Create one SceneScript PER script line so each voice gets its own ttsConfig.
+  // This lets multi-provider-tts route Host→ElevenLabs, Atlas→Azure, Nova→ElevenLabs correctly.
+  const allEntries = Object.entries(EP04_SCRIPT_CONTENT);
+  const scenes: SceneScript[] = allEntries.map(([key, line], index) => {
+    const voiceConfig = resolveVoiceConfig(line.voice);
+    const sceneLabel = SCENE_LABELS[line.scene] || line.scene;
+    const characterLabel = line.voice.charAt(0).toUpperCase() + line.voice.slice(1);
 
     return {
-      sceneId,
-      sceneKey: sceneId,
-      title: SCENE_LABELS[sceneId] || sceneId,
+      sceneId: key, // unique per line (e.g. 'title-welcome', 'atlas-intro-1')
+      sceneKey: line.scene, // groups lines by parent scene
+      title: `${sceneLabel} — ${characterLabel}`,
       orderIndex: index,
-      scriptText: combinedText,
+      scriptText: line.text,
       sourceType: 'custom' as const,
-      durationSeconds: duration,
-      minDuration: Math.max(10, duration - 15),
-      maxDuration: duration + 30,
+      durationSeconds: line.duration_est,
+      minDuration: Math.max(3, line.duration_est - 5),
+      maxDuration: line.duration_est + 10,
       ttsConfig: {
-        provider: voiceConfig?.provider || 'elevenlabs',
+        provider: voiceConfig.provider,
         voiceId: 'voiceId' in voiceConfig ? voiceConfig.voiceId : undefined,
-        speed: 1.0,
+        speed: 'speed' in voiceConfig ? (voiceConfig.speed as number) : 1.0,
         pitch: 0,
       },
       approvalStatus: 'approved' as const,
