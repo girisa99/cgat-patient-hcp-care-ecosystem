@@ -4585,6 +4585,199 @@ export type Database = {
         }
         Relationships: []
       }
+      cast_project_characters: {
+        Row: {
+          avatar_url: string | null
+          character_key: string
+          color_class: string | null
+          created_at: string
+          display_name: string
+          id: string
+          project_id: string
+          role_description: string | null
+          voice_config: Json | null
+          voice_id: string | null
+          voice_provider: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          character_key: string
+          color_class?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          project_id: string
+          role_description?: string | null
+          voice_config?: Json | null
+          voice_id?: string | null
+          voice_provider?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          character_key?: string
+          color_class?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          project_id?: string
+          role_description?: string | null
+          voice_config?: Json | null
+          voice_id?: string | null
+          voice_provider?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_project_characters_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cast_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cast_project_scenes: {
+        Row: {
+          art_style: string | null
+          background_url: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          is_optional: boolean | null
+          project_id: string
+          scene_config: Json
+          scene_index: number
+          scene_key: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          visual_style: string | null
+        }
+        Insert: {
+          art_style?: string | null
+          background_url?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          is_optional?: boolean | null
+          project_id: string
+          scene_config?: Json
+          scene_index?: number
+          scene_key: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          visual_style?: string | null
+        }
+        Update: {
+          art_style?: string | null
+          background_url?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          is_optional?: boolean | null
+          project_id?: string
+          scene_config?: Json
+          scene_index?: number
+          scene_key?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          visual_style?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_project_scenes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cast_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cast_project_script_lines: {
+        Row: {
+          character_id: string
+          created_at: string
+          dialogue: string
+          direction: string | null
+          duration_hint: string | null
+          id: string
+          line_config: Json
+          line_index: number
+          line_key: string
+          motion: string | null
+          project_id: string
+          scene_id: string
+          sfx_tags: string[] | null
+          tts_audio_url: string | null
+          tts_generated_at: string | null
+          tts_provider: string | null
+          tts_status: string | null
+          tts_voice_id: string | null
+          updated_at: string
+          visual_tags: string[] | null
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          dialogue: string
+          direction?: string | null
+          duration_hint?: string | null
+          id?: string
+          line_config?: Json
+          line_index?: number
+          line_key: string
+          motion?: string | null
+          project_id: string
+          scene_id: string
+          sfx_tags?: string[] | null
+          tts_audio_url?: string | null
+          tts_generated_at?: string | null
+          tts_provider?: string | null
+          tts_status?: string | null
+          tts_voice_id?: string | null
+          updated_at?: string
+          visual_tags?: string[] | null
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          dialogue?: string
+          direction?: string | null
+          duration_hint?: string | null
+          id?: string
+          line_config?: Json
+          line_index?: number
+          line_key?: string
+          motion?: string | null
+          project_id?: string
+          scene_id?: string
+          sfx_tags?: string[] | null
+          tts_audio_url?: string | null
+          tts_generated_at?: string | null
+          tts_provider?: string | null
+          tts_status?: string | null
+          tts_voice_id?: string | null
+          updated_at?: string
+          visual_tags?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_project_script_lines_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cast_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cast_project_script_lines_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "cast_project_scenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cast_project_variants: {
         Row: {
           audience_override: string | null
