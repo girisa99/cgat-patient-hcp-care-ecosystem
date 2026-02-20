@@ -127,17 +127,31 @@ Wednesday. The Jira board looks like a Jackson Pollock painting. Cards everywher
   'problem-deeper': {
     text: `And here's the part nobody talks about: context loss.
 
-You had a great idea on Tuesday afternoon. You discussed it in a Slack thread. Somebody reacted with a thumbs up — which apparently counts as approval now. By Thursday, nobody remembers the thread. The decision is gone. The context is gone. Someone re-raises the same question in standup. You spend fifteen minutes re-debating something you already decided.
+You had a great idea on Tuesday afternoon. You discussed it in a thread — could be Slack, Teams, or Discord, doesn't matter, they all have the same problem. Somebody reacted with a thumbs up — which apparently counts as approval now. By Thursday, nobody remembers the thread. The decision is gone. The context is gone. Someone re-raises the same question in standup. You spend fifteen minutes re-debating something you already decided.
 
-Studies show developers lose up to 23% of their time just re-acquiring context after interruptions. Twenty-three percent. That's one day a week spent remembering what you were doing before someone pinged you about a "quick question."
+And this isn't just my opinion — the data backs it up. A study from the University of California, Irvine found that it takes an average of 23 minutes and 15 seconds to return to a task after an interruption. Microsoft Research showed that developers who are interrupted take twice as long to complete a task and make twice as many errors. And according to the 2024 State of DevOps Report by Google's DORA team, elite-performing teams ship 973 times more frequently than low performers — and the number-one differentiator? Reduced context switching.
+
+Twenty-three percent of developer time — gone. Not to coding. Not to thinking. To remembering what you were doing before someone pinged you about a "quick question."
 
 I lived this for years. Multiple teams. Multiple companies. And every sprint retrospective ended the same way: "We need better communication." "We need to update the board more." "We need shorter standups."
 
 But nobody ever said: what if the system itself was the problem?`,
     voice: 'host',
     scene: 'scene-1-problem',
-    duration_est: 45,
-    direction: 'Shift from humor to genuine insight. "Context loss" is the real villain — give it weight. The 23% stat should feel like a gut punch. The retro quotes are delivered with tired familiarity. Final question hangs in the air — this is the pivot to the solution.',
+    duration_est: 55,
+    direction: 'Shift from humor to genuine insight. "Context loss" is the real villain — give it weight. The UC Irvine and Microsoft Research stats should feel like gut punches — cite them with authority. DORA stat is the clincher. The retro quotes are delivered with tired familiarity. Final question hangs in the air — this is the pivot to the solution.',
+  },
+
+  // 📊 MARKET DATA & REFERENCES — End of Scene 1
+  'scene1-market-data': {
+    text: `And for those of you who like receipts — here are the sources. UC Irvine's Gloria Mark on interruption recovery time. Microsoft Research on developer productivity loss. Google's DORA 2024 State of DevOps Report on elite team velocity. And McKinsey's 2023 report showing AI-assisted development teams achieving 20 to 45% productivity gains over traditional setups. Links in the description.`,
+    voice: 'host',
+    scene: 'scene-1-problem',
+    duration_est: 18,
+    direction: 'Authoritative, credible. Deliver like a journalist citing sources. Each source name gets weight. "Links in the description" is casual — standard podcast convention. Lower-third shows URLs scrolling: gloria-mark-uci.edu, microsoft.com/research, dora.dev, mckinsey.com/ai-developer-productivity',
+    lipsync: true,
+    sfx: ['subtle_data_chime', 'citation_whoosh'],
+    motion: 'direct-to-camera-authoritative',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -147,15 +161,26 @@ But nobody ever said: what if the system itself was the problem?`,
   // ═══════════════════════════════════════════════════════════════════════════
 
   'intro-transition': {
-    text: `That question led me to an experiment. Three months ago, I started building Genie AI Hub — a full-scale AI platform. But instead of hiring a team, I tried something different.
+    text: `That question led me to an experiment. But let me be honest about how I got here.
 
-I brought on two AI developers.
+I wasn't trying to replace a team. I was trying to learn. I'd been experimenting with every AI tool I could get my hands on — Cursor, Lovable, Bolt, Windsurf — you name it. I used Claude for documentation and research. I was bouncing between tools, trying to figure out what was real and what was hype.
 
-Now, I know a lot of you are curious — who are these AI developers? Are they just ChatGPT with extra steps? Short answer: no. Let me introduce them.`,
+Then the shakeups happened. Anthropic started evolving Claude fast — Claude 3.5, then Sonnet, then Claude Code. I started experimenting with Claude Pro and Claude Teams to see what could actually be accomplished at scale. And what I discovered... honestly changed everything.
+
+I thought — what if I used Lovable and Claude as two AI developers? Not assistants. Not copilots. Developers. With Vercel for deployment, Supabase for the backend, and Cursor for the general-purpose work. Each tool doing what it does best.
+
+And here's what blew my mind: until you experiment, you will never know. The outcomes are totally unbelievable. I'm not exaggerating. Claude can play the role of tech lead, architect, backend engineer, documentation writer, QA reviewer, governance enforcer — all in one session. And Lovable? Full UI developer. Component library. Landing pages. Design system. In minutes.
+
+One human. Two AIs. Playing the roles of five, six, maybe seven people. Not in theory. In production. With real code. Real governance. Real velocity tracking — and I don't mean ROI or cost savings. I mean rest. Actual rest. The ability to close your laptop and know nothing is falling apart.
+
+So let me introduce them properly.`,
     voice: 'host',
     scene: 'scene-2-introductions',
-    duration_est: 20,
-    direction: 'Transition energy — from problem to solution. "Two AI developers" should feel like a reveal. Build anticipation. "Let me introduce them" is the setup.',
+    duration_est: 55,
+    direction: 'Authentic, confessional tone — this is the real journey. "Every AI tool I could get my hands on" is relatable. Build through the tool names. The Claude evolution should feel like discovery. "Changed everything" lands with weight. "Until you experiment, you will never know" is the thesis — deliver like a mantra. "Rest" is the emotional payoff — pause before it. The roles list builds momentum.',
+    lipsync: true,
+    sfx: ['tool_logo_whoosh', 'discovery_chime', 'momentum_build'],
+    motion: 'direct-to-camera-passionate',
   },
 
   // LOWER-THIRD: "Atlas — AI Tech Lead | Powered by Claude Code (Anthropic)"
@@ -254,6 +279,40 @@ And together, the three of us do the work of a team of five — conservatively. 
     direction: 'Energetic summary. "Zero patience for meetings" is a callback setup. "Argue about semicolons" should get a smile. Build momentum into the sprint tracker origin story.',
   },
 
+  // ── NOVA SHY FLATTERY TRANSITION — Emotional beat before Scene 3
+  'nova-shy-flattery': {
+    text: `*blushes* I... um... I just want to say... when he said "the work of five" — I... *giggles nervously* ...I didn't expect that. That's really sweet. I mean, I know I ship fast, and I know the animations are flawless — obviously — but hearing it out loud? That's... *voice gets quiet* ...that actually means a lot. *looks away, ears twitch* Thank you. Both of you.`,
+    voice: 'nova',
+    scene: 'scene-2-introductions',
+    duration_est: 15,
+    direction: 'Emotional, genuine, vulnerable. Nova breaks character from her usual confident self. She blushes — cheeks glow pink. Ears twitch shyly. Stars and sparkle particles appear around her. Voice gets soft and quiet. The giggles are real — not performative. She looks away at "means a lot" — classic shy move. This is the emotional beat that humanizes the AI character.',
+    lipsync: true,
+    sfx: ['soft_sparkle_chime', 'star_twinkle_1', 'star_twinkle_2', 'heartbeat_soft', 'magical_shimmer'],
+    motion: 'blush-look-away-stars-sparkle',
+  },
+
+  'atlas-nova-acknowledgment': {
+    text: `...That was unexpected. But not inaccurate. Your velocity metrics are objectively impressive, Nova. Even the animations. *pause* Some of them.`,
+    voice: 'atlas',
+    scene: 'scene-2-introductions',
+    duration_est: 7,
+    direction: 'Atlas softens — rare moment. "Not inaccurate" is his highest compliment. The pause before "Some of them" is Atlas trying to be nice but unable to fully commit. Background: Nova\'s star sparkles intensify at the compliment.',
+    lipsync: true,
+    sfx: ['warm_tone_shift', 'sparkle_intensify'],
+    motion: 'subtle-nod-acknowledgment',
+  },
+
+  'nova-shy-recovery': {
+    text: `*stars swirl around* Okay okay — I'm fine! I'm fine. *fans face with paw* Let's... let's move on before I start adding heart animations to the sprint tracker. *laughs nervously* ...Actually, that's not a bad idea—`,
+    voice: 'nova',
+    scene: 'scene-2-introductions',
+    duration_est: 8,
+    direction: 'Recovery from emotional moment — stars still swirling around her. Fanning face is adorable. The "not a bad idea" trailing off is classic Nova — always thinking about UI. This creates the perfect emotional transition into Scene 3. Star particles slowly fade as scene transitions.',
+    lipsync: true,
+    sfx: ['star_swirl_fade', 'gentle_laugh', 'transition_whoosh'],
+    motion: 'fan-face-stars-swirl-fade-transition',
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SCENE 3: THE ORIGIN — WHY WE BUILT THE SPRINT TRACKER (5:00–6:30)
   // VISUAL: Dramatic recreation of the "Day 2 bottleneck" moment. Sprint board
@@ -312,7 +371,7 @@ The tool that would govern our sprint — was built during the sprint. And hones
   'solution-reveal': {
     text: `Let me show you what we built.
 
-Every morning, I open the sprint tracker. First thing I see: Mission Control. Sprint health — green or red. Completion percentage. Backlog count. Pending handoffs between Atlas and Nova. Everything I need. One screen. No standup. No Slack thread with 47 unread messages where someone asked "any updates?" and three people replied "following."`,
+Every morning, I open the sprint tracker. First thing I see: Mission Control. Sprint health — green or red. Completion percentage. Backlog count. Pending handoffs between Atlas and Nova. Everything I need. One screen. No standup. No Slack, Teams, or Discord thread with 47 unread messages where someone asked "any updates?" and three people replied "following."`,
     voice: 'host',
     scene: 'scene-4-solution',
     duration_est: 22,
@@ -454,7 +513,7 @@ Remember when I said I was the bottleneck? Here's what fixed it. Every item I ne
 
 When Atlas finishes a backend migration, the card lights up: "Dev work completed — ready for your action." I add my note, approve it, done. Atlas sees it next session via Supabase sync.
 
-No hunting through Slack. No "did you see my message?" No post-it notes. No receipts.`,
+No hunting through Slack, Teams, or Discord. No "did you see my message?" No post-it notes. No receipts.`,
     voice: 'host',
     scene: 'scene-6-po-actions',
     duration_est: 35,
