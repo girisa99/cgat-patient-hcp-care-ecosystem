@@ -98,6 +98,128 @@ const CHARACTER_AVATARS: Record<string, string> = {
   allaudin: allaudinAvatar,
 };
 
+// ─── Context-Aware Animation Engine ─────────────────────────────────────────
+// Parses direction + motion fields to determine mood, energy, and animation style
+
+interface AnimationContext {
+  mood: 'proud' | 'dramatic' | 'warm' | 'urgent' | 'playful' | 'serious' | 'mystical' | 'confident' | 'reflective' | 'energetic';
+  energy: 'low' | 'medium' | 'high';
+  emoji: string;
+  label: string;
+  avatarAnimation: string;
+  cardGlow: string;
+  stripGradient: string;
+  motionLabel: string;
+}
+
+const MOOD_KEYWORDS: Record<string, { mood: AnimationContext['mood']; emoji: string }> = {
+  'proud': { mood: 'proud', emoji: '🏆' },
+  'reveal': { mood: 'proud', emoji: '✨' },
+  'confident': { mood: 'confident', emoji: '💪' },
+  'direct': { mood: 'confident', emoji: '🎯' },
+  'owning': { mood: 'confident', emoji: '👑' },
+  'theatrical': { mood: 'dramatic', emoji: '🎭' },
+  'dramatic': { mood: 'dramatic', emoji: '🎬' },
+  'grand': { mood: 'dramatic', emoji: '🌟' },
+  'gravitas': { mood: 'dramatic', emoji: '⚡' },
+  'warm': { mood: 'warm', emoji: '☀️' },
+  'welcoming': { mood: 'warm', emoji: '🤝' },
+  'genuine': { mood: 'warm', emoji: '💛' },
+  'gentle': { mood: 'warm', emoji: '🕊️' },
+  'urgent': { mood: 'urgent', emoji: '🚨' },
+  'frustrat': { mood: 'urgent', emoji: '😤' },
+  'pain': { mood: 'urgent', emoji: '💢' },
+  'chaos': { mood: 'urgent', emoji: '🌪️' },
+  'crisis': { mood: 'urgent', emoji: '⚠️' },
+  'playful': { mood: 'playful', emoji: '🎪' },
+  'laugh': { mood: 'playful', emoji: '😄' },
+  'mischief': { mood: 'playful', emoji: '😏' },
+  'fun': { mood: 'playful', emoji: '🎉' },
+  'wink': { mood: 'playful', emoji: '😉' },
+  'serious': { mood: 'serious', emoji: '🔒' },
+  'weight': { mood: 'serious', emoji: '⚖️' },
+  'sobering': { mood: 'serious', emoji: '🪨' },
+  'real': { mood: 'serious', emoji: '📋' },
+  'honest': { mood: 'serious', emoji: '🔍' },
+  'mystical': { mood: 'mystical', emoji: '🔮' },
+  'magical': { mood: 'mystical', emoji: '✨' },
+  'mist': { mood: 'mystical', emoji: '🌫️' },
+  'genie': { mood: 'mystical', emoji: '🧞' },
+  'lamp': { mood: 'mystical', emoji: '🪔' },
+  'reflect': { mood: 'reflective', emoji: '🪞' },
+  'pause': { mood: 'reflective', emoji: '⏸️' },
+  'quiet': { mood: 'reflective', emoji: '🤔' },
+  'contemplat': { mood: 'reflective', emoji: '💭' },
+  'energetic': { mood: 'energetic', emoji: '⚡' },
+  'burst': { mood: 'energetic', emoji: '💥' },
+  'rapid': { mood: 'energetic', emoji: '🏃' },
+  'fast': { mood: 'energetic', emoji: '💨' },
+  'excit': { mood: 'energetic', emoji: '🎆' },
+};
+
+const MOOD_STYLES: Record<AnimationContext['mood'], Omit<AnimationContext, 'mood' | 'emoji' | 'label' | 'motionLabel'>> = {
+  proud:      { energy: 'high',   avatarAnimation: 'proudPulse 1.2s ease-in-out infinite',    cardGlow: 'ring-amber-400/40 shadow-amber-500/20',     stripGradient: 'from-amber-500/15 via-yellow-500/10 to-orange-500/15' },
+  dramatic:   { energy: 'high',   avatarAnimation: 'dramaticScale 1.5s ease-in-out infinite',  cardGlow: 'ring-violet-400/40 shadow-violet-500/20',    stripGradient: 'from-violet-500/15 via-purple-500/10 to-fuchsia-500/15' },
+  warm:       { energy: 'low',    avatarAnimation: 'warmGlow 2s ease-in-out infinite',         cardGlow: 'ring-orange-300/30 shadow-orange-400/15',    stripGradient: 'from-orange-500/10 via-amber-500/10 to-yellow-500/10' },
+  urgent:     { energy: 'high',   avatarAnimation: 'urgentShake 0.4s ease-in-out infinite',    cardGlow: 'ring-red-400/40 shadow-red-500/20',          stripGradient: 'from-red-500/15 via-orange-500/10 to-amber-500/15' },
+  playful:    { energy: 'medium', avatarAnimation: 'playfulBounce 0.8s ease-in-out infinite',  cardGlow: 'ring-emerald-400/30 shadow-emerald-500/15',  stripGradient: 'from-emerald-500/10 via-teal-500/10 to-cyan-500/10' },
+  serious:    { energy: 'low',    avatarAnimation: 'seriousSteady 2.5s ease-in-out infinite',  cardGlow: 'ring-slate-400/30 shadow-slate-500/15',      stripGradient: 'from-slate-500/10 via-zinc-500/10 to-gray-500/10' },
+  mystical:   { energy: 'medium', avatarAnimation: 'mysticalFloat 2s ease-in-out infinite',    cardGlow: 'ring-indigo-400/40 shadow-indigo-500/25',    stripGradient: 'from-indigo-500/15 via-blue-500/10 to-purple-500/15' },
+  confident:  { energy: 'medium', avatarAnimation: 'confidentPulse 1.8s ease-in-out infinite', cardGlow: 'ring-sky-400/30 shadow-sky-500/15',          stripGradient: 'from-sky-500/10 via-blue-500/10 to-indigo-500/10' },
+  reflective: { energy: 'low',    avatarAnimation: 'reflectiveFade 3s ease-in-out infinite',   cardGlow: 'ring-zinc-400/20 shadow-zinc-500/10',        stripGradient: 'from-zinc-500/10 via-slate-500/5 to-gray-500/10' },
+  energetic:  { energy: 'high',   avatarAnimation: 'energeticPop 0.6s ease-in-out infinite',   cardGlow: 'ring-lime-400/40 shadow-lime-500/20',        stripGradient: 'from-lime-500/15 via-green-500/10 to-emerald-500/15' },
+};
+
+function getAnimationContext(line: ScriptLine): AnimationContext {
+  const directionLower = (line.direction || '').toLowerCase();
+  const motionLower = (line.motion || '').toLowerCase();
+  const combined = `${directionLower} ${motionLower}`;
+
+  // Score each mood by keyword hits
+  let bestMood: AnimationContext['mood'] = 'warm';
+  let bestScore = 0;
+  let bestEmoji = '🎙️';
+
+  const moodScores: Partial<Record<AnimationContext['mood'], { score: number; emoji: string }>> = {};
+
+  for (const [keyword, { mood, emoji }] of Object.entries(MOOD_KEYWORDS)) {
+    if (combined.includes(keyword)) {
+      if (!moodScores[mood]) moodScores[mood] = { score: 0, emoji };
+      moodScores[mood]!.score++;
+    }
+  }
+
+  for (const [mood, data] of Object.entries(moodScores)) {
+    if (data.score > bestScore) {
+      bestScore = data.score;
+      bestMood = mood as AnimationContext['mood'];
+      bestEmoji = data.emoji;
+    }
+  }
+
+  // Build human-readable motion label from the motion field
+  const motionLabel = line.motion
+    ? line.motion.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : 'Speaking';
+
+  // Build context label from direction (first ~6 words of notable direction)
+  const directionWords = (line.direction || '').split(/[.!,—]/).filter(Boolean);
+  const label = directionWords[0]?.trim().split(' ').slice(0, 5).join(' ') || bestMood;
+
+  const styles = MOOD_STYLES[bestMood];
+
+  return {
+    mood: bestMood,
+    energy: styles.energy,
+    emoji: bestEmoji,
+    label,
+    avatarAnimation: styles.avatarAnimation,
+    cardGlow: styles.cardGlow,
+    stripGradient: styles.stripGradient,
+    motionLabel,
+  };
+}
+
 const SCENE_BACKGROUNDS: Record<string, string> = {
   'scene-0-title': scene0Bg,
   'scene-1-problem': scene1Bg,
@@ -395,18 +517,49 @@ export default function EP04Production() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Custom animation keyframes for character motion during playback */}
       <style>{`
-        @keyframes talkBounce {
-          0% { transform: scale(1.1) translateY(0); }
-          100% { transform: scale(1.1) translateY(-2px); }
+        @keyframes proudPulse {
+          0%, 100% { transform: scale(1.1); filter: brightness(1.1); }
+          50% { transform: scale(1.15); filter: brightness(1.25); }
         }
-        @keyframes soundBar {
-          0% { height: 4px; }
-          100% { height: 16px; }
+        @keyframes dramaticScale {
+          0%, 100% { transform: scale(1.08) rotate(-1deg); }
+          50% { transform: scale(1.18) rotate(1deg); }
         }
-        @keyframes motionSlide {
-          0% { transform: translateX(-3px) rotate(-2deg); }
-          50% { transform: translateX(3px) rotate(2deg); }
-          100% { transform: translateX(-3px) rotate(-2deg); }
+        @keyframes warmGlow {
+          0%, 100% { transform: scale(1.08); filter: saturate(1.2); }
+          50% { transform: scale(1.12); filter: saturate(1.5) brightness(1.1); }
+        }
+        @keyframes urgentShake {
+          0%, 100% { transform: scale(1.1) translateX(0); }
+          25% { transform: scale(1.1) translateX(-2px); }
+          75% { transform: scale(1.1) translateX(2px); }
+        }
+        @keyframes playfulBounce {
+          0%, 100% { transform: scale(1.1) translateY(0) rotate(0); }
+          30% { transform: scale(1.15) translateY(-4px) rotate(-3deg); }
+          60% { transform: scale(1.08) translateY(-1px) rotate(2deg); }
+        }
+        @keyframes seriousSteady {
+          0%, 100% { transform: scale(1.08); opacity: 0.95; }
+          50% { transform: scale(1.1); opacity: 1; }
+        }
+        @keyframes mysticalFloat {
+          0%, 100% { transform: scale(1.1) translateY(0); filter: hue-rotate(0deg); }
+          50% { transform: scale(1.14) translateY(-5px); filter: hue-rotate(15deg); }
+        }
+        @keyframes confidentPulse {
+          0%, 100% { transform: scale(1.1); }
+          50% { transform: scale(1.13); }
+        }
+        @keyframes reflectiveFade {
+          0%, 100% { transform: scale(1.08); opacity: 0.85; }
+          50% { transform: scale(1.1); opacity: 1; }
+        }
+        @keyframes energeticPop {
+          0%, 100% { transform: scale(1.1) rotate(0); }
+          25% { transform: scale(1.2) rotate(-2deg); }
+          50% { transform: scale(1.05) rotate(1deg); }
+          75% { transform: scale(1.18) rotate(-1deg); }
         }
       `}</style>
       {/* Header */}
@@ -621,9 +774,12 @@ export default function EP04Production() {
                     <Card
                       key={key}
                       className={cn(
-                        'transition-all',
-                        isPlaying && 'ring-2 ring-primary',
-                        status === 'error' && 'border-destructive/50',
+                        'transition-all duration-300',
+                        isPlaying && (() => {
+                          const ctx = getAnimationContext(line);
+                          return `ring-2 ${ctx.cardGlow} shadow-lg`;
+                        })(),
+                        !isPlaying && status === 'error' && 'border-destructive/50',
                         line.isInterruption && 'border-orange-500/40 bg-orange-500/5 ml-4'
                       )}
                     >
@@ -667,88 +823,105 @@ export default function EP04Production() {
                             )}
                           </div>
 
-                          {/* Character Avatar with talking animation */}
-                          <div className={cn(
-                            "flex-shrink-0 pt-0.5 relative",
-                            isPlaying && "z-10"
-                          )}>
-                            {/* Motion ring effect — active during playback with motion cue */}
-                            {isPlaying && line.motion && (
-                              <div className="absolute -inset-2 rounded-full border-2 border-violet-400/40 animate-ping" />
-                            )}
-                            {/* Lip-sync glow ring — active during playback with lipsync */}
-                            {isPlaying && line.lipsync && (
-                              <div 
-                                className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-pink-500/30 via-primary/20 to-pink-500/30"
-                                style={{ animation: 'pulse 0.6s ease-in-out infinite alternate' }}
-                              />
-                            )}
-                            <img
-                              src={CHARACTER_AVATARS[line.voice]}
-                              alt={VOICE_LABELS[line.voice]}
-                              className={cn(
-                                'w-12 h-12 rounded-full object-cover ring-2 shadow-md transition-all duration-300 relative',
-                                isPlaying 
-                                  ? 'ring-primary scale-110 shadow-primary/30 shadow-lg' 
-                                  : 'ring-border',
-                                line.voice === 'squirrel' && 'ring-orange-500/50',
-                                line.isInterruption && !isPlaying && 'animate-bounce'
-                              )}
-                              style={isPlaying ? {
-                                animation: line.lipsync 
-                                  ? 'pulse 0.8s ease-in-out infinite, talkBounce 0.3s ease-in-out infinite alternate'
-                                  : 'pulse 1.5s ease-in-out infinite',
-                              } : undefined}
-                            />
-                            {/* Speaking / lip-sync indicator */}
-                            {isPlaying && line.lipsync && (
-                              <div className="absolute -bottom-1 -right-1 flex gap-0.5 items-end">
-                                <span className="w-1 h-3 bg-pink-400 rounded-full" style={{ animation: 'soundBar 0.4s ease-in-out infinite alternate' }} />
-                                <span className="w-1 h-4 bg-pink-400 rounded-full" style={{ animation: 'soundBar 0.4s ease-in-out infinite alternate', animationDelay: '0.1s' }} />
-                                <span className="w-1 h-2 bg-pink-400 rounded-full" style={{ animation: 'soundBar 0.4s ease-in-out infinite alternate', animationDelay: '0.2s' }} />
-                                <span className="w-1 h-3 bg-pink-400 rounded-full" style={{ animation: 'soundBar 0.4s ease-in-out infinite alternate', animationDelay: '0.3s' }} />
+                          {/* Character Avatar with context-aware animation */}
+                          {(() => {
+                            const animCtx = isPlaying ? getAnimationContext(line) : null;
+                            return (
+                              <div className={cn(
+                                "flex-shrink-0 pt-0.5 relative",
+                                isPlaying && "z-10"
+                              )}>
+                                {/* Mood-specific aura ring */}
+                                {isPlaying && animCtx && animCtx.energy === 'high' && (
+                                  <div className={cn(
+                                    "absolute -inset-2.5 rounded-full border-2 opacity-60",
+                                    animCtx.mood === 'urgent' && 'border-red-400/50',
+                                    animCtx.mood === 'dramatic' && 'border-violet-400/50',
+                                    animCtx.mood === 'proud' && 'border-amber-400/50',
+                                    animCtx.mood === 'energetic' && 'border-lime-400/50',
+                                  )} style={{ animation: 'ping 1s cubic-bezier(0,0,0.2,1) infinite' }} />
+                                )}
+                                {/* Lip-sync glow — contextual color */}
+                                {isPlaying && line.lipsync && animCtx && (
+                                  <div className={cn(
+                                    "absolute -inset-1.5 rounded-full",
+                                    animCtx.mood === 'mystical' && 'bg-gradient-to-r from-indigo-500/30 via-purple-500/20 to-blue-500/30',
+                                    animCtx.mood === 'warm' && 'bg-gradient-to-r from-amber-500/25 via-orange-500/20 to-yellow-500/25',
+                                    animCtx.mood === 'urgent' && 'bg-gradient-to-r from-red-500/30 via-orange-500/20 to-red-500/30',
+                                    animCtx.mood === 'playful' && 'bg-gradient-to-r from-emerald-500/25 via-teal-500/20 to-cyan-500/25',
+                                    !['mystical', 'warm', 'urgent', 'playful'].includes(animCtx.mood) && 'bg-gradient-to-r from-pink-500/30 via-primary/20 to-pink-500/30',
+                                  )} style={{ animation: 'pulse 0.6s ease-in-out infinite alternate' }} />
+                                )}
+                                <img
+                                  src={CHARACTER_AVATARS[line.voice]}
+                                  alt={VOICE_LABELS[line.voice]}
+                                  className={cn(
+                                    'w-12 h-12 rounded-full object-cover ring-2 shadow-md transition-all duration-300 relative',
+                                    isPlaying
+                                      ? 'ring-primary scale-110 shadow-lg'
+                                      : 'ring-border',
+                                    line.voice === 'squirrel' && 'ring-orange-500/50',
+                                    line.isInterruption && !isPlaying && 'animate-bounce'
+                                  )}
+                                  style={isPlaying && animCtx ? {
+                                    animation: animCtx.avatarAnimation,
+                                  } : undefined}
+                                />
+                                {/* Mood indicator badge */}
+                                {isPlaying && animCtx && (
+                                  <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center text-xs shadow-md"
+                                    style={{ animation: animCtx.energy === 'high' ? 'bounce 0.6s ease-in-out infinite' : 'pulse 2s ease-in-out infinite' }}
+                                  >
+                                    {animCtx.emoji}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                            {/* Motion action indicator */}
-                            {isPlaying && line.motion && !line.lipsync && (
-                              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center text-[8px] animate-bounce">
-                                🎬
-                              </div>
-                            )}
-                          </div>
+                            );
+                          })()}
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
-                            {/* Active animation strip — shows during playback */}
-                            {isPlaying && (line.motion || line.sfx?.length || line.lipsync) && (
-                              <div className="flex items-center gap-1.5 mb-2 py-1.5 px-2 rounded-md bg-gradient-to-r from-violet-500/10 via-pink-500/10 to-cyan-500/10 border border-primary/20">
-                                {line.lipsync && (
-                                  <span className="flex items-center gap-1 text-[10px] font-medium text-pink-400">
-                                    <span style={{ animation: 'talkBounce 0.3s ease-in-out infinite alternate' }}>👄</span> 
-                                    TALKING
+                            {/* Context-aware animation strip — shows during playback */}
+                            {isPlaying && (() => {
+                              const ctx = getAnimationContext(line);
+                              return (
+                                <div className={cn(
+                                  "flex items-center gap-2 mb-2 py-1.5 px-3 rounded-lg border border-primary/15",
+                                  `bg-gradient-to-r ${ctx.stripGradient}`
+                                )}>
+                                  {/* Mood indicator */}
+                                  <span className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground/80">
+                                    <span style={{ animation: ctx.energy === 'high' ? 'bounce 0.5s ease-in-out infinite' : 'pulse 2s ease-in-out infinite' }}>
+                                      {ctx.emoji}
+                                    </span>
+                                    {ctx.mood.toUpperCase()}
                                   </span>
-                                )}
-                                {line.motion && (
-                                  <span className="flex items-center gap-1 text-[10px] font-medium text-violet-400">
-                                    <span style={{ animation: 'pulse 0.8s ease-in-out infinite' }}>🏃</span>
-                                    {line.motion.split('-').slice(0, 2).join(' ').toUpperCase()}
+                                  <span className="w-px h-3 bg-border" />
+                                  {/* Motion cue from script */}
+                                  <span className="text-[10px] font-medium text-muted-foreground">
+                                    🎬 {ctx.motionLabel}
                                   </span>
-                                )}
-                                {line.sfx && line.sfx.length > 0 && (
-                                  <span className="flex items-center gap-1 text-[10px] font-medium text-cyan-400 ml-auto">
-                                    {line.sfx.map((sfx, si) => (
-                                      <span 
-                                        key={sfx} 
-                                        className="px-1 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20"
-                                        style={{ animation: `pulse 1s ease-in-out infinite`, animationDelay: `${si * 0.3}s` }}
-                                      >
-                                        🔊 {sfx.replace(/_/g, ' ')}
-                                      </span>
-                                    ))}
+                                  {/* Direction context — first phrase */}
+                                  <span className="text-[10px] italic text-muted-foreground/70 truncate ml-auto max-w-[200px]">
+                                    "{ctx.label}"
                                   </span>
-                                )}
-                              </div>
-                            )}
+                                  {/* SFX indicators */}
+                                  {line.sfx && line.sfx.length > 0 && (
+                                    <span className="flex items-center gap-1 ml-1">
+                                      {line.sfx.slice(0, 3).map((sfx, si) => (
+                                        <span
+                                          key={sfx}
+                                          className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-cyan-500/10 border border-cyan-500/20 text-cyan-400"
+                                          style={{ animation: `pulse 1.2s ease-in-out infinite`, animationDelay: `${si * 0.2}s` }}
+                                        >
+                                          🔊 {sfx.replace(/_/g, ' ')}
+                                        </span>
+                                      ))}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                               {line.isInterruption && (
@@ -759,17 +932,17 @@ export default function EP04Production() {
                                   ⚡ Interruption
                                 </Badge>
                               )}
-                              {line.lipsync && !isPlaying && (
+                              {!isPlaying && line.lipsync && (
                                 <Badge variant="outline" className="text-xs bg-pink-500/10 text-pink-400 border-pink-500/30">
                                   👄 Lip-Sync
                                 </Badge>
                               )}
-                              {line.sfx && line.sfx.length > 0 && !isPlaying && (
+                              {!isPlaying && line.sfx && line.sfx.length > 0 && (
                                 <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
                                   🔊 SFX ×{line.sfx.length}
                                 </Badge>
                               )}
-                              {line.motion && !isPlaying && (
+                              {!isPlaying && line.motion && (
                                 <Badge variant="outline" className="text-xs bg-violet-500/10 text-violet-400 border-violet-500/30">
                                   🎬 {line.motion.split('-').slice(0, 3).join(' ')}
                                 </Badge>
@@ -791,7 +964,7 @@ export default function EP04Production() {
                             </p>
                             <p className={cn(
                               "text-xs text-muted-foreground mt-1 italic",
-                              isPlaying && "text-violet-300/80"
+                              isPlaying && "text-primary/70"
                             )}>
                               {line.direction}
                             </p>
