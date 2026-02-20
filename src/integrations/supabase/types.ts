@@ -4088,6 +4088,7 @@ export type Database = {
           actual_tokens_used: number
           blueprint_id: string | null
           completed_stages: string[]
+          content_type: string
           created_at: string
           current_stage: string
           description: string | null
@@ -4118,6 +4119,7 @@ export type Database = {
           actual_tokens_used?: number
           blueprint_id?: string | null
           completed_stages?: string[]
+          content_type?: string
           created_at?: string
           current_stage?: string
           description?: string | null
@@ -4148,6 +4150,7 @@ export type Database = {
           actual_tokens_used?: number
           blueprint_id?: string | null
           completed_stages?: string[]
+          content_type?: string
           created_at?: string
           current_stage?: string
           description?: string | null

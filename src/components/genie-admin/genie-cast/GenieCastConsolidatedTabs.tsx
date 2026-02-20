@@ -71,6 +71,8 @@ import { useUnifiedAuthoring, type AuthoringStage, type TemplateMapping, type Sc
 import { useBlueprintDraft } from '@/hooks/useBlueprintDraft';
 import { styleIntentResolver } from '@/services/styleIntentResolver';
 import { useGenieCastSession } from '@/hooks/useGenieCastSession';
+import { useCastProjects } from '@/hooks/useCastProjects';
+import { CastProjectDropdown } from './CastProjectDropdown';
 import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
 import { RegionalDialectSelector } from '@/components/shared/RegionalDialectSelector';
 import { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
@@ -287,6 +289,10 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // Initialize session state for CREATE → PRODUCE data handoff
   const castSession = useGenieCastSession();
+
+  // Cast projects for dropdown
+  const castProjects = useCastProjects();
+  const [activeContentType, setActiveContentType] = useState<string>('video');
 
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
@@ -506,6 +512,29 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         <Separator orientation="vertical" className="h-5" />
         <GlobalRegionSelector regions={genieCastRegions} />
         <Separator orientation="vertical" className="h-5" />
+        <CastProjectDropdown
+          projects={castProjects.projects}
+          isLoading={castProjects.isLoading}
+          selectedProjectId={castSession.session.projectId}
+          onProjectSelect={async (project) => {
+            const restored = await castProjects.restoreToSession(project.id);
+            if (restored) {
+              castSession.updateSession({ ...restored, projectId: project.id });
+              setActiveContentType((project as any).content_type || 'video');
+              toast.success(`Loaded: ${project.title}`);
+            }
+          }}
+          onNewProject={async (title, contentType) => {
+            try {
+              const project = await castProjects.createProject({ title, content_type: contentType });
+              if (project) {
+                castSession.updateSession({ projectId: project.id });
+                setActiveContentType(contentType);
+              }
+            } catch {}
+          }}
+          onContentTypeChange={setActiveContentType}
+        />
         <Button
           variant="outline"
           size="sm"
