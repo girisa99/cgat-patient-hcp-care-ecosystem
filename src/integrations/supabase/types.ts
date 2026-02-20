@@ -4073,6 +4073,65 @@ export type Database = {
         }
         Relationships: []
       }
+      cast_content_sub_formats: {
+        Row: {
+          blueprint_template_id: string | null
+          color: string
+          compatible_platforms: string[]
+          created_at: string
+          description: string | null
+          enrichment_preset: Json
+          format_id: string
+          icon: string
+          id: string
+          is_active: boolean
+          label: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          blueprint_template_id?: string | null
+          color?: string
+          compatible_platforms?: string[]
+          created_at?: string
+          description?: string | null
+          enrichment_preset?: Json
+          format_id: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          blueprint_template_id?: string | null
+          color?: string
+          compatible_platforms?: string[]
+          created_at?: string
+          description?: string | null
+          enrichment_preset?: Json
+          format_id?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_content_sub_formats_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "cast_content_formats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cast_generation_jobs: {
         Row: {
           actual_tokens_used: number
@@ -4224,6 +4283,7 @@ export type Database = {
       cast_projects: {
         Row: {
           actual_tokens_used: number
+          ai_scope_tags: string[]
           blueprint_id: string | null
           category_id: string | null
           completed_stages: string[]
@@ -4237,17 +4297,22 @@ export type Database = {
           format_id: string | null
           full_production_mode: boolean
           id: string
+          input_language: string
           intent_value: string | null
           metadata: Json
+          output_languages: string[]
+          primary_platform: string | null
           product_context: string | null
           production_config: Json
           quality: string
+          secondary_platforms: string[]
           selected_capabilities: string[]
           selected_dialects: string[]
           selected_styles: string[]
           slug: string | null
           status: string
           style_intent: string
+          sub_format_id: string | null
           target_regions: string[]
           team_id: string | null
           thumbnail_url: string | null
@@ -4258,6 +4323,7 @@ export type Database = {
         }
         Insert: {
           actual_tokens_used?: number
+          ai_scope_tags?: string[]
           blueprint_id?: string | null
           category_id?: string | null
           completed_stages?: string[]
@@ -4271,17 +4337,22 @@ export type Database = {
           format_id?: string | null
           full_production_mode?: boolean
           id?: string
+          input_language?: string
           intent_value?: string | null
           metadata?: Json
+          output_languages?: string[]
+          primary_platform?: string | null
           product_context?: string | null
           production_config?: Json
           quality?: string
+          secondary_platforms?: string[]
           selected_capabilities?: string[]
           selected_dialects?: string[]
           selected_styles?: string[]
           slug?: string | null
           status?: string
           style_intent?: string
+          sub_format_id?: string | null
           target_regions?: string[]
           team_id?: string | null
           thumbnail_url?: string | null
@@ -4292,6 +4363,7 @@ export type Database = {
         }
         Update: {
           actual_tokens_used?: number
+          ai_scope_tags?: string[]
           blueprint_id?: string | null
           category_id?: string | null
           completed_stages?: string[]
@@ -4305,17 +4377,22 @@ export type Database = {
           format_id?: string | null
           full_production_mode?: boolean
           id?: string
+          input_language?: string
           intent_value?: string | null
           metadata?: Json
+          output_languages?: string[]
+          primary_platform?: string | null
           product_context?: string | null
           production_config?: Json
           quality?: string
+          secondary_platforms?: string[]
           selected_capabilities?: string[]
           selected_dialects?: string[]
           selected_styles?: string[]
           slug?: string | null
           status?: string
           style_intent?: string
+          sub_format_id?: string | null
           target_regions?: string[]
           team_id?: string | null
           thumbnail_url?: string | null
@@ -4337,6 +4414,13 @@ export type Database = {
             columns: ["format_id"]
             isOneToOne: false
             referencedRelation: "cast_content_formats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cast_projects_sub_format_id_fkey"
+            columns: ["sub_format_id"]
+            isOneToOne: false
+            referencedRelation: "cast_content_sub_formats"
             referencedColumns: ["id"]
           },
         ]
