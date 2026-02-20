@@ -1306,7 +1306,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     const EP04_BLUEPRINT_ID = 'cafcd78a-7957-4021-ba8f-c20daba331b2';
                     if (blueprint.id === EP04_BLUEPRINT_ID) {
                       console.log('[GenieCast] EP04 detected — navigating to original production page');
-                      window.location.href = '/ep04-production';
+                      // Pass projectId if available so EP04 page can save/load from DB
+                      const pid = castSession.session.projectId || '';
+                      window.location.href = pid ? `/ep04-production?projectId=${pid}` : '/ep04-production';
                       return;
                     }
 

@@ -24,7 +24,9 @@ import { EP04_SCRIPT_CONTENT, type ScriptLine } from '@/config/ep04-script-conte
 import { EP04_VOICES } from '@/config/ep04-production-config';
 import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-admin/MultiScreenshotGallery';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
+import { Save, FolderOpen } from 'lucide-react';
 
 // Character avatar imports — upgraded to Pixar 3D portraits for visual consistency with scene backgrounds
 import hostAvatar from '@/assets/characters/host-avatar-3d.png';
@@ -325,7 +327,10 @@ const VISUAL_STYLE_CONFIG: Record<string, { label: string; icon: string; color: 
 
 export default function EP04Production() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get('projectId');
   const scriptKeys = Object.keys(EP04_SCRIPT_CONTENT);
+  const { saveProjectContent, loadProjectContent, updateLineTTS, isSaving, isLoading: isLoadingContent } = useCastProjectPersistence();
 
   // State
   const [audioMap, setAudioMap] = useState<Record<string, GeneratedAudio>>({});
@@ -334,8 +339,41 @@ export default function EP04Production() {
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
   const [screenshotUrls, setScreenshotUrls] = useState<Record<string, string>>({});
   const [screenshotsLoading, setScreenshotsLoading] = useState(true);
+  const [contentLoaded, setContentLoaded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const abortRef = useRef(false);
+
+  // ─── Load persisted content on mount (if projectId present) ────────────
+
+  useEffect(() => {
+    if (!projectId || contentLoaded) return;
+    (async () => {
+      const content = await loadProjectContent(projectId);
+      if (!content || content.scriptLines.length === 0) {
+        setContentLoaded(true);
+        return;
+      }
+      // Restore TTS audio from persisted lines
+      const restoredAudio: Record<string, GeneratedAudio> = {};
+      const restoredStatus: Record<string, LineStatus> = {};
+      for (const line of content.scriptLines) {
+        if (line.tts_audio_url && line.tts_status === 'generated') {
+          restoredAudio[line.line_key] = {
+            audioUrl: line.tts_audio_url,
+            provider: line.tts_provider || 'unknown',
+            voice: line.tts_voice_id || 'unknown',
+          };
+          restoredStatus[line.line_key] = 'done';
+        }
+      }
+      if (Object.keys(restoredAudio).length > 0) {
+        setAudioMap(restoredAudio);
+        setStatusMap(restoredStatus);
+        toast.success(`Restored ${Object.keys(restoredAudio).length} saved voiceovers`);
+      }
+      setContentLoaded(true);
+    })();
+  }, [projectId, contentLoaded, loadProjectContent]);
 
   // ─── Load screenshots from Supabase storage (auto-captured by MultiScreenshotGallery) ──
 
@@ -413,11 +451,24 @@ export default function EP04Production() {
 
       const audioUrl = data.audioUrl || `data:audio/mpeg;base64,${data.audioContent}`;
 
+      const resolvedProvider = data.provider || voiceConfig.provider;
+      const resolvedVoice = data.voice || voiceConfig.voiceId;
+
       setAudioMap(prev => ({
         ...prev,
-        [key]: { audioUrl, provider: data.provider || voiceConfig.provider, voice: data.voice || voiceConfig.voiceId },
+        [key]: { audioUrl, provider: resolvedProvider, voice: resolvedVoice },
       }));
       setStatusMap(prev => ({ ...prev, [key]: 'done' }));
+
+      // Auto-persist TTS result to DB
+      if (projectId) {
+        updateLineTTS(projectId, key, {
+          tts_audio_url: audioUrl,
+          tts_provider: resolvedProvider,
+          tts_voice_id: resolvedVoice,
+          tts_status: 'generated',
+        });
+      }
       return true;
     } catch (err: any) {
       console.error(`[EP04 TTS] Failed: ${key}`, err);
@@ -496,6 +547,74 @@ export default function EP04Production() {
     }
     setPlayingKey(null);
   }, [scriptKeys, audioMap]);
+
+  // ─── Save full project to DB ──────────────────────────────────────────────
+
+  const saveFullProject = useCallback(async () => {
+    if (!projectId) {
+      toast.error('No project linked — open from Genie Cast to save');
+      return;
+    }
+
+    // Build scenes
+    const sceneEntries = Array.from(new Set(scriptKeys.map(k => EP04_SCRIPT_CONTENT[k].scene)));
+    const scenesPayload = sceneEntries.map((sceneKey, idx) => ({
+      project_id: projectId,
+      scene_key: sceneKey,
+      title: SCENE_TITLES[sceneKey] || sceneKey,
+      scene_index: idx,
+      art_style: SCENE_STYLES[sceneKey] || null,
+      visual_style: SCENE_STYLES[sceneKey] || null,
+      background_url: null, // Asset imports can't be persisted as URLs
+      scene_config: {} as Record<string, unknown>,
+    }));
+
+    // Build characters
+    const charKeys = new Set(scriptKeys.map(k => EP04_SCRIPT_CONTENT[k].voice));
+    const charsPayload = Array.from(charKeys).map(ck => ({
+      project_id: projectId,
+      character_key: ck,
+      display_name: VOICE_LABELS[ck] || ck,
+      color_class: VOICE_COLORS[ck] || null,
+      voice_provider: getVoiceConfig(ck as any).provider,
+      voice_id: getVoiceConfig(ck as any).voiceId,
+      voice_config: {} as Record<string, unknown>,
+    }));
+
+    // Build script lines (scene_id will be resolved by the hook using scene_key)
+    const linesPayload = scriptKeys.map((key, idx) => {
+      const line = EP04_SCRIPT_CONTENT[key];
+      const audio = audioMap[key];
+      return {
+        project_id: projectId,
+        scene_id: line.scene, // scene_key — hook resolves to UUID
+        line_key: key,
+        line_index: idx,
+        character_id: line.voice,
+        dialogue: line.text,
+        direction: line.direction || null,
+        motion: line.motion || null,
+        duration_hint: `${line.duration_est}s`,
+        sfx_tags: line.sfx || null,
+        visual_tags: line.visual_ref ? [line.visual_ref] : null,
+        tts_audio_url: audio?.audioUrl || null,
+        tts_status: audio ? 'generated' : null,
+        tts_provider: audio?.provider || null,
+        tts_voice_id: audio?.voice || null,
+        line_config: {
+          lipsync: line.lipsync,
+          isInterruption: line.isInterruption,
+          links: line.links,
+        } as Record<string, unknown>,
+      };
+    });
+
+    await saveProjectContent(projectId, {
+      scenes: scenesPayload,
+      scriptLines: linesPayload,
+      characters: charsPayload,
+    });
+  }, [projectId, scriptKeys, audioMap, saveProjectContent]);
 
   // ─── Stats ───────────────────────────────────────────────────────────────
 
@@ -611,6 +730,12 @@ export default function EP04Production() {
                 {playingKey && (
                   <Button variant="ghost" size="sm" onClick={stopPlayback}>
                     <Square className="h-3 w-3 mr-1" /> Stop
+                  </Button>
+                )}
+                {projectId && (
+                  <Button variant="outline" size="sm" onClick={saveFullProject} disabled={isSaving}>
+                    <Save className="h-3 w-3 mr-1" />
+                    {isSaving ? 'Saving...' : 'Save Project'}
                   </Button>
                 )}
               </>
