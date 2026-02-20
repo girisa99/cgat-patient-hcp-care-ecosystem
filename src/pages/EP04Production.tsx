@@ -213,14 +213,15 @@ export default function EP04Production() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const abortRef = useRef(false);
 
-  // ─── Load screenshots from Supabase storage ──────────────────────────────
+  // ─── Load screenshots from Supabase storage (auto-captured by MultiScreenshotGallery) ──
 
   useEffect(() => {
     async function loadScreenshots() {
       try {
+        // Auto-capture saves to: product-screenshots/screenshots/{productId}-{screenId}.png
         const { data: files, error } = await supabase.storage
           .from('product-screenshots')
-          .list('sprint-tracker', { limit: 100 });
+          .list('screenshots', { limit: 100 });
 
         if (error || !files?.length) {
           setScreenshotsLoading(false);
@@ -229,17 +230,24 @@ export default function EP04Production() {
 
         const urls: Record<string, string> = {};
         for (const file of files) {
+          // Only load sprint-tracker captures (format: "sprint-tracker-{screenId}.png")
+          if (!file.name.startsWith('sprint-tracker-')) continue;
+
           const { data: urlData } = supabase.storage
             .from('product-screenshots')
-            .getPublicUrl(`sprint-tracker/${file.name}`);
+            .getPublicUrl(`screenshots/${file.name}`);
           
-          // Match file name to screen ID (e.g., "po-mission-control.png" → "po-mission-control")
-          const screenId = file.name.replace(/\.(png|jpg|jpeg|webp)$/i, '');
+          // Extract screen ID: "sprint-tracker-po-mission-control.png" → "po-mission-control"
+          const screenId = file.name
+            .replace(/^sprint-tracker-/, '')
+            .replace(/\.(png|jpg|jpeg|webp)$/i, '');
+          
           if (urlData?.publicUrl) {
             urls[screenId] = urlData.publicUrl;
           }
         }
         setScreenshotUrls(urls);
+        console.log(`📸 [EP04] Loaded ${Object.keys(urls).length} sprint-tracker screenshots`);
       } catch (err) {
         console.error('[EP04] Failed to load screenshots:', err);
       } finally {
