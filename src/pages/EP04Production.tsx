@@ -783,42 +783,42 @@ export default function EP04Production() {
                         line.isInterruption && 'border-orange-500/40 bg-orange-500/5 ml-4'
                       )}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
+                      <CardContent className="p-5">
+                        <div className="flex items-start gap-4">
                           {/* Play / Status Button */}
-                          <div className="pt-1 flex-shrink-0">
+                          <div className="pt-2 flex-shrink-0">
                             {status === 'generating' ? (
-                              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                             ) : status === 'done' ? (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-10 w-10"
                                 onClick={() => isPlaying ? stopPlayback() : playLine(key)}
                               >
                                 {isPlaying ? (
-                                  <Pause className="h-4 w-4 text-primary" />
+                                  <Pause className="h-5 w-5 text-primary" />
                                 ) : (
-                                  <Play className="h-4 w-4 text-primary" />
+                                  <Play className="h-5 w-5 text-primary" />
                                 )}
                               </Button>
                             ) : status === 'error' ? (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-10 w-10"
                                 onClick={() => generateLine(key)}
                               >
-                                <AlertCircle className="h-4 w-4 text-destructive" />
+                                <AlertCircle className="h-5 w-5 text-destructive" />
                               </Button>
                             ) : (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-10 w-10"
                                 onClick={() => generateLine(key)}
                               >
-                                <Mic className="h-4 w-4 text-muted-foreground" />
+                                <Mic className="h-5 w-5 text-muted-foreground" />
                               </Button>
                             )}
                           </div>
@@ -834,7 +834,7 @@ export default function EP04Production() {
                                 {/* Mood-specific aura ring */}
                                 {isPlaying && animCtx && animCtx.energy === 'high' && (
                                   <div className={cn(
-                                    "absolute -inset-2.5 rounded-full border-2 opacity-60",
+                                    "absolute -inset-4 rounded-full border-[3px] opacity-60",
                                     animCtx.mood === 'urgent' && 'border-red-400/50',
                                     animCtx.mood === 'dramatic' && 'border-violet-400/50',
                                     animCtx.mood === 'proud' && 'border-amber-400/50',
@@ -844,7 +844,7 @@ export default function EP04Production() {
                                 {/* Lip-sync glow — contextual color */}
                                 {isPlaying && line.lipsync && animCtx && (
                                   <div className={cn(
-                                    "absolute -inset-1.5 rounded-full",
+                                    "absolute -inset-2.5 rounded-full",
                                     animCtx.mood === 'mystical' && 'bg-gradient-to-r from-indigo-500/30 via-purple-500/20 to-blue-500/30',
                                     animCtx.mood === 'warm' && 'bg-gradient-to-r from-amber-500/25 via-orange-500/20 to-yellow-500/25',
                                     animCtx.mood === 'urgent' && 'bg-gradient-to-r from-red-500/30 via-orange-500/20 to-red-500/30',
@@ -856,7 +856,7 @@ export default function EP04Production() {
                                   src={CHARACTER_AVATARS[line.voice]}
                                   alt={VOICE_LABELS[line.voice]}
                                   className={cn(
-                                    'w-12 h-12 rounded-full object-cover ring-2 shadow-md transition-all duration-300 relative',
+                                    'w-20 h-20 rounded-full object-cover ring-[3px] shadow-lg transition-all duration-300 relative',
                                     isPlaying
                                       ? 'ring-primary scale-110 shadow-lg'
                                       : 'ring-border',
@@ -869,7 +869,7 @@ export default function EP04Production() {
                                 />
                                 {/* Mood indicator badge */}
                                 {isPlaying && animCtx && (
-                                  <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center text-xs shadow-md"
+                                  <div className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-background border-2 border-border flex items-center justify-center text-base shadow-lg"
                                     style={{ animation: animCtx.energy === 'high' ? 'bounce 0.6s ease-in-out infinite' : 'pulse 2s ease-in-out infinite' }}
                                   >
                                     {animCtx.emoji}
@@ -886,23 +886,23 @@ export default function EP04Production() {
                               const ctx = getAnimationContext(line);
                               return (
                                 <div className={cn(
-                                  "flex items-center gap-2 mb-2 py-1.5 px-3 rounded-lg border border-primary/15",
+                                  "flex items-center gap-3 mb-3 py-2 px-4 rounded-lg border border-primary/15",
                                   `bg-gradient-to-r ${ctx.stripGradient}`
                                 )}>
                                   {/* Mood indicator */}
-                                  <span className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground/80">
-                                    <span style={{ animation: ctx.energy === 'high' ? 'bounce 0.5s ease-in-out infinite' : 'pulse 2s ease-in-out infinite' }}>
+                                  <span className="flex items-center gap-1.5 text-xs font-bold text-foreground/90">
+                                    <span className="text-lg" style={{ animation: ctx.energy === 'high' ? 'bounce 0.5s ease-in-out infinite' : 'pulse 2s ease-in-out infinite' }}>
                                       {ctx.emoji}
                                     </span>
                                     {ctx.mood.toUpperCase()}
                                   </span>
-                                  <span className="w-px h-3 bg-border" />
+                                  <span className="w-px h-4 bg-border" />
                                   {/* Motion cue from script */}
-                                  <span className="text-[10px] font-medium text-muted-foreground">
+                                  <span className="text-xs font-medium text-muted-foreground">
                                     🎬 {ctx.motionLabel}
                                   </span>
                                   {/* Direction context — first phrase */}
-                                  <span className="text-[10px] italic text-muted-foreground/70 truncate ml-auto max-w-[200px]">
+                                  <span className="text-xs italic text-muted-foreground/70 truncate ml-auto max-w-[250px]">
                                     "{ctx.label}"
                                   </span>
                                   {/* SFX indicators */}
@@ -911,7 +911,7 @@ export default function EP04Production() {
                                       {line.sfx.slice(0, 3).map((sfx, si) => (
                                         <span
                                           key={sfx}
-                                          className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-cyan-500/10 border border-cyan-500/20 text-cyan-400"
+                                          className="px-2 py-1 rounded-md text-[11px] font-medium bg-cyan-500/10 border border-cyan-500/20 text-cyan-400"
                                           style={{ animation: `pulse 1.2s ease-in-out infinite`, animationDelay: `${si * 0.2}s` }}
                                         >
                                           🔊 {sfx.replace(/_/g, ' ')}
