@@ -457,14 +457,33 @@ export function validateManifest(manifest: UniversalEpisodeManifest): { valid: b
 
 /** Convert manifest to orchestrator payload format */
 export function manifestToOrchestratorPayload(manifest: UniversalEpisodeManifest) {
-  // Build scriptContent map (what orchestrator expects)
-  const scriptContent: Record<string, { text: string }> = {};
+  // Build scriptContent map — include ALL richness fields for orchestrator
+  const scriptContent: Record<string, {
+    text: string;
+    direction?: string;
+    lipsync?: boolean;
+    sfx?: string[];
+    motion?: string;
+    visualRef?: string;
+    emotionalTone?: string;
+    culturalTraits?: CulturalTraits;
+    regionCode?: string;
+  }> = {};
   for (const [key, line] of Object.entries(manifest.scriptLines)) {
-    scriptContent[key] = { text: line.text };
+    scriptContent[key] = {
+      text: line.text,
+      direction: line.direction,
+      lipsync: line.lipsync,
+      sfx: line.sfx,
+      motion: line.motion,
+      visualRef: line.visualRef,
+      emotionalTone: line.emotionalTone,
+      culturalTraits: line.culturalTraits,
+      regionCode: line.regionCode,
+    };
   }
 
   // Build scenePipelines from scene definitions + registry
-  // This will be enhanced when scene-type-registry.ts is integrated
   const scenePipelines: Record<string, Array<Record<string, unknown>>> = {};
   for (const scene of manifest.scenes) {
     const steps: Array<Record<string, unknown>> = [];
@@ -524,4 +543,22 @@ export function manifestToOrchestratorPayload(manifest: UniversalEpisodeManifest
     voiceRouting,
     storagePaths: manifest.storagePaths,
   };
+}
+
+// ─── TRANSCREATION TYPES ────────────────────────────────────────────────────
+
+/** Transcreated manifest — one source manifest → N regional versions */
+export interface TranscreatedManifest {
+  /** Source manifest (original language/region) */
+  sourceManifest: UniversalEpisodeManifest;
+  /** Transcreated versions keyed by region code */
+  regionalVersions: Record<string, UniversalEpisodeManifest>;
+  /** Transcreation audit log */
+  transcreationLog: Array<{
+    regionCode: string;
+    provider: string;
+    adaptationLevel: 'light' | 'moderate' | 'deep';
+    timestamp: string;
+    lineCount: number;
+  }>;
 }

@@ -23,6 +23,7 @@
  export type AuthoringStage = 
    | 'template_selection'
    | 'messaging_generation'
+   | 'transcreation'
    | 'script_composition'
    | 'template_mapping'
    | 'tts_generation'
@@ -123,29 +124,32 @@
  // ============================================
  
  const PRODUCT_STAGE_DEFAULTS: Record<string, AuthoringStage[]> = {
-   // Cast needs full pipeline
-   cast: ['template_selection', 'messaging_generation', 'script_composition', 'template_mapping', 'tts_generation', 'av_sync', 'approval', 'publishing'],
+   // Cast needs full pipeline with transcreation
+   cast: ['template_selection', 'messaging_generation', 'transcreation', 'script_composition', 'template_mapping', 'tts_generation', 'av_sync', 'approval', 'publishing'],
    
-   // Spark is about quick content - simplified pipeline
-   spark: ['messaging_generation', 'script_composition', 'tts_generation', 'approval'],
+   // Spark is about quick content - with transcreation for multi-region
+   spark: ['messaging_generation', 'transcreation', 'script_composition', 'tts_generation', 'approval'],
    
-   // Mind focuses on script/audio
-   mind: ['script_composition', 'tts_generation', 'approval'],
+   // Mind focuses on script/audio with transcreation
+   mind: ['messaging_generation', 'transcreation', 'script_composition', 'tts_generation', 'approval'],
    
-   // Deck focuses on visual template + script
-   deck: ['template_selection', 'script_composition', 'template_mapping', 'approval', 'publishing'],
+   // Deck focuses on visual template + script with transcreation
+   deck: ['template_selection', 'messaging_generation', 'transcreation', 'script_composition', 'template_mapping', 'approval', 'publishing'],
    
-   // Vibe is about video editing
-   vibe: ['template_mapping', 'av_sync', 'approval', 'publishing'],
+   // Vibe is about video editing with transcreation for regional versions
+   vibe: ['messaging_generation', 'transcreation', 'template_mapping', 'av_sync', 'approval', 'publishing'],
    
    // Arc is workflow automation
    arc: ['approval', 'publishing'],
+   
+   // Hub orchestrates — full pipeline
+   hub: ['template_selection', 'messaging_generation', 'transcreation', 'script_composition', 'template_mapping', 'tts_generation', 'av_sync', 'approval', 'publishing'],
    
    // Ask Genie is conversational
    ask_genie: ['messaging_generation', 'approval'],
    
    // Studio is the hub - all stages
-   studio: ['template_selection', 'messaging_generation', 'script_composition', 'template_mapping', 'tts_generation', 'av_sync', 'approval', 'publishing'],
+   studio: ['template_selection', 'messaging_generation', 'transcreation', 'script_composition', 'template_mapping', 'tts_generation', 'av_sync', 'approval', 'publishing'],
  };
  
  // ============================================
@@ -606,6 +610,30 @@
      getStyleLabel: styleIntentResolver.getLabel,
      availableStyleIntents: styleIntentResolver.getAvailable(),
      regionalConfig: REGIONAL_CONFIG,
+
+     // Transcreation (NEW — wired to Universal Script Schema)
+     transcreation: {
+       /** Get cultural traits for a region */
+       getTraits: (regionCode: string) => {
+         const { getTranscreationTraits } = require('@/services/regionalTranscreationService');
+         return getTranscreationTraits(regionCode);
+       },
+       /** Get full transcreation profile for a region */
+       getProfile: (regionCode: string) => {
+         const { getTranscreationProfile } = require('@/services/regionalTranscreationService');
+         return getTranscreationProfile(regionCode);
+       },
+       /** Get direction prompt enriched with cultural context */
+       getDirectionPrompt: (regionCode: string, tone: string) => {
+         const { getTranscreationDirectionPrompt } = require('@/services/regionalTranscreationService');
+         return getTranscreationDirectionPrompt(regionCode, tone as any, productContext as any);
+       },
+       /** Get all available regions for picker UI */
+       getAvailableRegions: () => {
+         const { getAllAvailableRegions } = require('@/services/regionalTranscreationService');
+         return getAllAvailableRegions();
+       },
+     },
    };
  }
  
