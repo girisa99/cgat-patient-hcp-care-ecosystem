@@ -3894,6 +3894,51 @@ export type Database = {
         }
         Relationships: []
       }
+      cast_asset_source_types: {
+        Row: {
+          allowed_mime_types: string[]
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          label: string
+          max_file_size_mb: number
+          name: string
+          requires_consent: boolean
+          requires_safety_scan: boolean
+          sort_order: number
+        }
+        Insert: {
+          allowed_mime_types?: string[]
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          max_file_size_mb?: number
+          name: string
+          requires_consent?: boolean
+          requires_safety_scan?: boolean
+          sort_order?: number
+        }
+        Update: {
+          allowed_mime_types?: string[]
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          max_file_size_mb?: number
+          name?: string
+          requires_consent?: boolean
+          requires_safety_scan?: boolean
+          sort_order?: number
+        }
+        Relationships: []
+      }
       cast_capability_provider_map: {
         Row: {
           capability_value: string
@@ -4132,6 +4177,54 @@ export type Database = {
           },
         ]
       }
+      cast_format_capabilities: {
+        Row: {
+          capability_id: string
+          config_overrides: Json
+          created_at: string
+          format_id: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          regional_overrides: Json
+        }
+        Insert: {
+          capability_id: string
+          config_overrides?: Json
+          created_at?: string
+          format_id: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          regional_overrides?: Json
+        }
+        Update: {
+          capability_id?: string
+          config_overrides?: Json
+          created_at?: string
+          format_id?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          regional_overrides?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_format_capabilities_capability_id_fkey"
+            columns: ["capability_id"]
+            isOneToOne: false
+            referencedRelation: "cast_production_capabilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cast_format_capabilities_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "cast_content_formats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cast_generation_jobs: {
         Row: {
           actual_tokens_used: number
@@ -4280,10 +4373,74 @@ export type Database = {
           },
         ]
       }
+      cast_production_capabilities: {
+        Row: {
+          category: string
+          color: string
+          created_at: string
+          default_provider: string | null
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          label: string
+          name: string
+          provider_routing: Json
+          requires_audio: boolean
+          requires_avatar: boolean
+          requires_consent: boolean
+          requires_visual: boolean
+          safety_level: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          color?: string
+          created_at?: string
+          default_provider?: string | null
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          name: string
+          provider_routing?: Json
+          requires_audio?: boolean
+          requires_avatar?: boolean
+          requires_consent?: boolean
+          requires_visual?: boolean
+          safety_level?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          color?: string
+          created_at?: string
+          default_provider?: string | null
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          name?: string
+          provider_routing?: Json
+          requires_audio?: boolean
+          requires_avatar?: boolean
+          requires_consent?: boolean
+          requires_visual?: boolean
+          safety_level?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cast_projects: {
         Row: {
           actual_tokens_used: number
           ai_scope_tags: string[]
+          asset_source_type: string | null
           blueprint_id: string | null
           category_id: string | null
           completed_stages: string[]
@@ -4305,6 +4462,7 @@ export type Database = {
           product_context: string | null
           production_config: Json
           quality: string
+          safety_flags: Json
           secondary_platforms: string[]
           selected_capabilities: string[]
           selected_dialects: string[]
@@ -4320,10 +4478,12 @@ export type Database = {
           total_duration_seconds: number | null
           updated_at: string
           user_id: string
+          visual_style_id: string | null
         }
         Insert: {
           actual_tokens_used?: number
           ai_scope_tags?: string[]
+          asset_source_type?: string | null
           blueprint_id?: string | null
           category_id?: string | null
           completed_stages?: string[]
@@ -4345,6 +4505,7 @@ export type Database = {
           product_context?: string | null
           production_config?: Json
           quality?: string
+          safety_flags?: Json
           secondary_platforms?: string[]
           selected_capabilities?: string[]
           selected_dialects?: string[]
@@ -4360,10 +4521,12 @@ export type Database = {
           total_duration_seconds?: number | null
           updated_at?: string
           user_id: string
+          visual_style_id?: string | null
         }
         Update: {
           actual_tokens_used?: number
           ai_scope_tags?: string[]
+          asset_source_type?: string | null
           blueprint_id?: string | null
           category_id?: string | null
           completed_stages?: string[]
@@ -4385,6 +4548,7 @@ export type Database = {
           product_context?: string | null
           production_config?: Json
           quality?: string
+          safety_flags?: Json
           secondary_platforms?: string[]
           selected_capabilities?: string[]
           selected_dialects?: string[]
@@ -4400,6 +4564,7 @@ export type Database = {
           total_duration_seconds?: number | null
           updated_at?: string
           user_id?: string
+          visual_style_id?: string | null
         }
         Relationships: [
           {
@@ -4421,6 +4586,13 @@ export type Database = {
             columns: ["sub_format_id"]
             isOneToOne: false
             referencedRelation: "cast_content_sub_formats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cast_projects_visual_style_id_fkey"
+            columns: ["visual_style_id"]
+            isOneToOne: false
+            referencedRelation: "cast_visual_styles"
             referencedColumns: ["id"]
           },
         ]
@@ -4547,6 +4719,66 @@ export type Database = {
           style_group?: string
           updated_at?: string
           value?: string
+        }
+        Relationships: []
+      }
+      cast_visual_styles: {
+        Row: {
+          allows_photorealistic: boolean
+          category: string
+          color: string
+          created_at: string
+          default_provider: string | null
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          label: string
+          name: string
+          provider_routing: Json
+          requires_face_consent: boolean
+          sample_prompt: string | null
+          sort_order: number
+          style_config: Json
+          updated_at: string
+        }
+        Insert: {
+          allows_photorealistic?: boolean
+          category?: string
+          color?: string
+          created_at?: string
+          default_provider?: string | null
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          name: string
+          provider_routing?: Json
+          requires_face_consent?: boolean
+          sample_prompt?: string | null
+          sort_order?: number
+          style_config?: Json
+          updated_at?: string
+        }
+        Update: {
+          allows_photorealistic?: boolean
+          category?: string
+          color?: string
+          created_at?: string
+          default_provider?: string | null
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          name?: string
+          provider_routing?: Json
+          requires_face_consent?: boolean
+          sample_prompt?: string | null
+          sort_order?: number
+          style_config?: Json
+          updated_at?: string
         }
         Relationships: []
       }
