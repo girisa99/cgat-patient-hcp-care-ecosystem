@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useUniversalEnrichment } from '@/services/enrichment';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -208,6 +209,9 @@ export function ScriptEditorTab({
   selectedShowId,
   onShowSelect
 }: ScriptEditorTabProps) {
+  // Universal enrichment — product knowledge, brand, audience, regional context for AI enhancement
+  const { additionalContext: enrichmentContext } = useUniversalEnrichment({});
+
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -668,11 +672,13 @@ export function ScriptEditorTab({
     const providerNames = { gemini: 'Gemini', openai: 'OpenAI', claude: 'Claude' };
     
     try {
-      // Build enhancement request with optional customization
+      // Build enhancement request with optional customization + enrichment context
       const enhancementBody: any = { 
         scriptContent, 
         mode: 'enhance', 
-        provider: aiProvider 
+        provider: aiProvider,
+        // Inject universal enrichment (product knowledge, brand, audience, regional context)
+        ...(enrichmentContext ? { enrichmentContext } : {}),
       };
       
       // Add customization if provided

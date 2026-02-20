@@ -62,6 +62,7 @@ import { recordViolation, isUserRestricted } from '@/services/contentViolationTr
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import { urlToScriptService, ScriptOutputFormat as UrlScriptFormat } from '@/services/urlToScriptService';
 import { documentToScriptService, OutputFormat as DocOutputFormat } from '@/services/documentToScriptService';
+import { useUniversalEnrichment } from '@/services/enrichment';
 import { imageToScriptService, ScriptStyle } from '@/services/imageToScriptService';
 import { audioToScriptService, ScriptOutputFormat as AudioScriptFormat } from '@/services/audioToScriptService';
 import { videoToScriptService, SlideVoiceover } from '@/services/videoToScriptService';
@@ -247,6 +248,9 @@ export function SmartContentPipeline({
   onSaveToKnowledgeBase,
   className,
 }: SmartContentPipelineProps) {
+  // Universal enrichment — product knowledge, brand, audience, regional context
+  const { additionalContext: enrichmentContext } = useUniversalEnrichment({});
+  
   // Session persistence hook
   const {
     sessionState,
@@ -482,7 +486,7 @@ export function SmartContentPipeline({
           outputFormat: outputFormat as UrlScriptFormat,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
-          targetAudience: targetAudience || undefined,
+          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
           aiProvider: aiProvider as 'openai' | 'claude' | 'gemini',
           enhanceWithAI: true,
           useKnowledgeBase: enableKnowledgeSearch,
@@ -537,7 +541,7 @@ export function SmartContentPipeline({
           outputFormat: docFormat,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic' | 'informative',
-          targetAudience: targetAudience || undefined,
+          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
           enhanceWithAI: true,
           useKnowledgeBase: enableKnowledgeSearch,
         });
@@ -592,7 +596,7 @@ export function SmartContentPipeline({
           scriptStyle: scriptStyle,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'dramatic' | 'informative' | 'educational' | 'inspirational',
-          targetAudience: targetAudience || undefined,
+          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
           imageProvider: 'gemini',
         });
 
@@ -645,7 +649,7 @@ export function SmartContentPipeline({
           outputFormat: audioFormat,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'educational' | 'documentary',
-          targetAudience: targetAudience || undefined,
+          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
           enhanceWithAI: true,
           removeFillerWords: true,
           structureContent: true,
@@ -698,7 +702,7 @@ export function SmartContentPipeline({
           enhanceWithAI: true,
           removeFillerWords: true,
           tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
-          targetAudience: targetAudience || undefined,
+          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
         });
 
         if (progressIntervalRef.current) {
@@ -1017,7 +1021,7 @@ export function SmartContentPipeline({
         enhanceWithAI: options.enhanceWithAI,
         removeFillerWords: options.removeFillerWords,
         tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
-        targetAudience: targetAudience || undefined,
+        targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
       });
 
       clearInterval(progressInterval);
@@ -1115,7 +1119,7 @@ export function SmartContentPipeline({
         outputFormat: selectedFormat as UrlScriptFormat,
         duration: duration,
         tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
-        targetAudience: targetAudience || undefined,
+        targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
         aiProvider: aiProvider as 'openai' | 'claude' | 'gemini',
         enhanceWithAI: options.enhanceWithAI,
         useKnowledgeBase: enableKnowledgeSearch,

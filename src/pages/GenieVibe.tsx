@@ -50,6 +50,7 @@ import type { GlobalTier } from '@/services/shared/globalTierService';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
+import { useUniversalEnrichment } from '@/services/enrichment';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useIsMobileOrTablet } from '@/hooks/use-mobile';
@@ -142,6 +143,9 @@ const GenieVibe: React.FC = () => {
   
   // Unified Regional + Tier routing - affects all AI processing (TTS, music, video generation)
   const { globalTier, setGlobalTier, tierConfig } = useRegionalLanguage({ defaultTier: 'advanced' });
+  
+  // Universal enrichment — product knowledge, brand, audience context for scripts & teleprompter
+  const { additionalContext: enrichmentContext } = useUniversalEnrichment({});
   
   // Get context from URL params (from MeetingRoom or ProductionHub)
   const showId = searchParams.get('showId');
