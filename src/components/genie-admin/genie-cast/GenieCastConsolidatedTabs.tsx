@@ -788,7 +788,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   variant="ghost"
                   size="sm"
                   className="gap-1.5 mb-3 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSubTab('create', 'intent')}
+                  onClick={() => {
+                    // Clear intent so DynamicContentSelector re-appears
+                    castSession.selectIntent(null as any);
+                    setSubTab('create', 'intent');
+                  }}
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   Back to Intent
