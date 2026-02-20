@@ -14,62 +14,96 @@
 // ─── FIVE-VOICE TTS CONFIGURATION ────────────────────────────────────────────
 // Each character uses a distinct provider + voice to be distinguishable on audio.
 // ElevenLabs voice IDs from: https://elevenlabs.io/voice-library
+// Alibaba CosyVoice fallbacks: https://www.alibabacloud.com/help/en/model-studio/cosyvoice-voice-list
+
+// Alibaba CosyVoice fallback voices (WebSocket API, cosyvoice-v3-flash model)
+export const ALIBABA_FALLBACK_VOICES = {
+  host:     { model: 'cosyvoice-v3-flash', voice: 'longanyang',     lang: 'en', description: 'Sunny young man — warm podcast host fallback' },
+  atlas:    { model: 'cosyvoice-v3-flash', voice: 'longcheng',      lang: 'en', description: 'Professional male — measured engineer fallback' },
+  nova:     { model: 'cosyvoice-v3-flash', voice: 'longhua',        lang: 'en', description: 'Bright female — energetic dev fallback' },
+  allaudin: { model: 'cosyvoice-v3-plus',  voice: 'longshu',        lang: 'en', description: 'Deep male — theatrical narrator fallback' },
+  squirrel: { model: 'cosyvoice-v3-flash', voice: 'longpaopao_v3',  lang: 'en', description: 'Bubble voice child — chaotic squirrel fallback' },
+} as const;
+
 export const EP04_VOICES = {
   /** Host (Sai Dasika) = warm, podcast-style. ElevenLabs Brian — conversational, direct. */
   host: {
-    provider: 'elevenlabs',
+    provider: 'elevenlabs' as const,
     voiceId: 'nPczCjzI2devNBz1zQrb',  // Brian — warm male, podcast host style
+    fallbackProvider: 'alibaba' as const,
+    fallbackVoice: ALIBABA_FALLBACK_VOICES.host,
     style: 'conversational',
     stability: 0.5,
     similarityBoost: 0.75,
     speed: 1.0,
-    eqProfile: 'warm',          // Applied in post: slight low-mid warmth
+    eqProfile: 'warm',
     description: 'Host narration — warm, self-deprecating, direct to camera',
   },
   /** Atlas (Claude) = measured, slight reverb. Azure Neural "en-US-GuyNeural" */
   atlas: {
-    provider: 'azure',
-    voiceId: 'en-US-GuyNeural', // Azure Neural — already correct format
+    provider: 'azure' as const,
+    voiceId: 'en-US-GuyNeural',
+    fallbackProvider: 'alibaba' as const,
+    fallbackVoice: ALIBABA_FALLBACK_VOICES.atlas,
     style: 'professional',
-    rate: '-5%',                // Slightly slower — measured, precise
-    pitch: '-2%',               // Slightly lower — authoritative
-    eqProfile: 'reverb',        // Subtle server-room reverb
+    rate: '-5%',
+    pitch: '-2%',
+    eqProfile: 'reverb',
     description: 'Atlas (Claude) — backend tech lead, measured, calm engineer',
   },
   /** Nova (Lovable) = bright, energetic. ElevenLabs Lily — fast delivery, expressive. */
   nova: {
-    provider: 'elevenlabs',
+    provider: 'elevenlabs' as const,
     voiceId: 'pFZP5JQG7iQjIQuC4Bku',  // Lily — bright female, energetic
+    fallbackProvider: 'alibaba' as const,
+    fallbackVoice: ALIBABA_FALLBACK_VOICES.nova,
     style: 'energetic',
-    stability: 0.35,            // Less stable = more expressive variation
+    stability: 0.35,
     similarityBoost: 0.65,
-    speed: 1.1,                 // Slightly faster — energetic delivery
-    eqProfile: 'bright',        // Brighter EQ, compressed
+    speed: 1.1,
+    eqProfile: 'bright',
     description: 'Nova (Lovable) — frontend dev, fast delivery, energetic',
   },
-  /** Allaudin (Genie) = deep, theatrical, magical. ElevenLabs George — rich baritone. */
+  /** Allaudin (Genie) = deep, theatrical, magical. ElevenLabs George OR Alibaba longshu. */
   allaudin: {
-    provider: 'elevenlabs',
+    provider: 'elevenlabs' as const,
     voiceId: 'JBFqnCBsd6RMkjVDRZzb',  // George — deep, rich, theatrical
+    fallbackProvider: 'alibaba' as const,
+    fallbackVoice: ALIBABA_FALLBACK_VOICES.allaudin,
     style: 'theatrical',
-    stability: 0.6,             // More stable for gravitas
+    stability: 0.6,
     similarityBoost: 0.8,
-    speed: 0.9,                 // Slightly slower — mystical delivery
-    eqProfile: 'deep-reverb',   // Deep reverb for magical presence
+    speed: 0.9,
+    eqProfile: 'deep-reverb',
     description: 'Allaudin (Genie) — deep, wise, theatrical narrator with mystical warmth',
   },
-  /** Squirrel = high-pitched, chaotic, comedic. ElevenLabs Chris — light, fast. */
+  /** Squirrel = high-pitched, chaotic, comedic. ElevenLabs Chris OR Alibaba longpaopao. */
   squirrel: {
-    provider: 'elevenlabs',
+    provider: 'elevenlabs' as const,
     voiceId: 'iP95p4xoKVk53GoZ742B',  // Chris — light male, can be pitched up
+    fallbackProvider: 'alibaba' as const,
+    fallbackVoice: ALIBABA_FALLBACK_VOICES.squirrel,
     style: 'chaotic',
-    stability: 0.2,             // Very unstable = chaotic energy
+    stability: 0.2,
     similarityBoost: 0.5,
-    speed: 1.3,                 // Fast delivery — hyperactive squirrel
-    eqProfile: 'high-pitch',    // Post-process: pitch shift +4 semitones
+    speed: 1.3,
+    eqProfile: 'high-pitch',
     description: 'Squirrel — chaotic comic relief, hyperactive, interrupts scenes',
   },
 } as const;
+
+/** Resolve voice config — returns Alibaba fallback if primary provider fails */
+export function resolveVoiceWithFallback(
+  character: keyof typeof EP04_VOICES,
+  useFallback = false,
+) {
+  const voice = EP04_VOICES[character];
+  if (!useFallback) {
+    return { provider: voice.provider, voiceId: voice.voiceId };
+  }
+  const fb = voice.fallbackVoice;
+  return { provider: 'alibaba' as const, voiceId: fb.voice, model: fb.model, lang: fb.lang };
+}
 
 export type EP04Voice = keyof typeof EP04_VOICES;
 
