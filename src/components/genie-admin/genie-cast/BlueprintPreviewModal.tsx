@@ -5,6 +5,8 @@
  */
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -67,6 +69,24 @@ export function BlueprintPreviewModal({
   const [expandedScene, setExpandedScene] = useState<string | null>(null);
   const [userPlatforms, setUserPlatforms] = useState<string[]>(blueprint?.target_platform || []);
 
+  // Auto-fetch scenes from DB when not passed inline
+  const shouldFetchScenes = scenes.length === 0 && !!blueprint?.id;
+  const { data: fetchedScenes } = useQuery({
+    queryKey: ['blueprint-scenes-preview', blueprint?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blueprint_scenes')
+        .select('*')
+        .eq('blueprint_id', blueprint!.id)
+        .order('order_index', { ascending: true });
+      if (error) throw error;
+      return (data || []) as BlueprintScene[];
+    },
+    enabled: shouldFetchScenes,
+    staleTime: 5 * 60 * 1000,
+  });
+  const resolvedScenes = scenes.length > 0 ? scenes : (fetchedScenes || []);
+
   // Product context for scene enrichment
   const { session } = useGenieCastSession();
   const productCtx = useProductContext(session.selectedProductId);
@@ -84,7 +104,7 @@ export function BlueprintPreviewModal({
     commitDraft,
     discardDraft,
     changeLog,
-  } = useBlueprintDraft(blueprint?.id ?? null, scenes);
+  } = useBlueprintDraft(blueprint?.id ?? null, resolvedScenes);
 
   const handleScenesModified = (updatedScenes: BlueprintScene[], description: string) => {
     updateScenes(updatedScenes, description);
