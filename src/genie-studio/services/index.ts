@@ -62,3 +62,15 @@ export type { ScriptGenerationRequest, ScriptGenerationResult } from '@/services
 // Framework-Aware Messaging Engine
 export { frameworkMessagingEngine, AUDIENCE_FRAMEWORK_MATRIX, PRODUCT_MESSAGING, PROVIDER_CHAR_LIMITS } from '@/services/marketing/frameworkMessagingEngine';
 export type { AudienceSegment, FrameworkConfig, AudienceMessaging, FrameworkScriptComposition } from '@/services/marketing/frameworkMessagingEngine';
+
+// Universal Enrichment (product-agnostic content richness for all 7 products)
+export {
+  useUniversalEnrichment,
+  buildEnrichmentContext,
+  formatEnrichmentForAI,
+} from '@/services/enrichment';
+export type {
+  UniversalEnrichmentOptions,
+  EnrichmentContext,
+  UniversalEnrichmentResult,
+} from '@/services/enrichment';
