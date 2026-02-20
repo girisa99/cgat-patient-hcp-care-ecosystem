@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { 
   Play, Pause, Square, Volume2, VolumeX, Loader2, 
   CheckCircle2, AlertCircle, Mic, SkipForward, ArrowLeft,
-  Camera, Monitor, Image as ImageIcon
+  Camera, Monitor, Image as ImageIcon, ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -962,6 +962,27 @@ export default function EP04Production() {
                             )}>
                               {line.text}
                             </p>
+                            {/* Clickable CTA Links */}
+                            {line.links && line.links.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                {line.links.map((link) => (
+                                  <a
+                                    key={link.url}
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={cn(
+                                      'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300',
+                                      'bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 hover:border-primary/50 hover:scale-105',
+                                      isPlaying && 'animate-pulse shadow-lg shadow-primary/20'
+                                    )}
+                                  >
+                                    {link.label}
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
                             <p className={cn(
                               "text-xs text-muted-foreground mt-1 italic",
                               isPlaying && "text-primary/70"
