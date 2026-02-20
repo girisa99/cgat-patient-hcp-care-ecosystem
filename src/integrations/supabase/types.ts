@@ -13119,7 +13119,15 @@ export type Database = {
           subscription_tier?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "genie_studio_teams_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       genie_studio_user_roles: {
         Row: {
