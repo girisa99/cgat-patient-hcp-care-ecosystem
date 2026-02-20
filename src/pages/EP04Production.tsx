@@ -636,7 +636,7 @@ export default function EP04Production() {
                 <p className="text-xs text-primary font-semibold uppercase tracking-[0.2em] mb-1 drop-shadow-lg">Beyond AI Hype — Episode 2</p>
                 <h2 className="text-xl sm:text-2xl font-bold text-foreground drop-shadow-lg">Two AI Developers. One Human PO. Real Sprint.</h2>
                 <p className="text-xs text-muted-foreground mt-1 drop-shadow-md">
-                  Host: Sai Dasika · with Allaudin · AI • Experimentation • Real-World Impact
+                  Host: Sai Dasika · AI • Experimentation • Real-World Impact
                 </p>
               </div>
             </div>
