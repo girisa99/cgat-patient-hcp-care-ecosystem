@@ -46,7 +46,7 @@ import { getVoicesForMode } from '@/config/scriptModePresets';
 // ─── INPUT TYPES ──────────────────────────────────────────────────────────────
 
 export interface ScriptGenerationRequest {
-  /** User prompt describing the content */
+  /** User prompt describing the content — can be in ANY language */
   prompt: string;
   /** Target product */
   product: GenieProduct;
@@ -54,7 +54,7 @@ export interface ScriptGenerationRequest {
   purpose: ScriptPurpose;
   /** Region code from regional registry (e.g., "INDIA_SOUTH_TA", "MENA_UAE") */
   regionCode?: string;
-  /** Target language (BCP47, default: "en") */
+  /** Target language (BCP47, default: "en") — output language for the script */
   language?: string;
   /** Characters to use (auto-generated if not provided) */
   characters?: UniversalCharacter[];
@@ -66,6 +66,12 @@ export interface ScriptGenerationRequest {
   storagePaths?: UniversalEpisodeManifest['storagePaths'];
   /** Additional context (brand info, audience data, etc.) */
   additionalContext?: string;
+  /**
+   * Translation provider preference for multilingual input handling.
+   * Default: auto-selects best provider based on detected language.
+   * DeepL for European, Alibaba for CJK, AI for others.
+   */
+  translationProvider?: 'deepl' | 'google' | 'alibaba' | 'ai' | 'auto';
 }
 
 export interface ScriptGenerationResult {
@@ -84,7 +90,6 @@ export interface ScriptGenerationResult {
 /** Character role definitions — voices resolved dynamically per region/product */
 const CHARACTER_ROLES: Array<{ key: string; name: string; role: string; gender: 'male' | 'female'; motionStyle: UniversalCharacter['motionStyle'] }> = [
   { key: 'host', name: 'Atlas', role: 'Primary host and narrator', gender: 'male', motionStyle: 'measured' },
-  { key: 'cohost', name: 'Nova', role: 'Co-host and challenger', gender: 'female', motionStyle: 'expressive' },
   { key: 'cohost', name: 'Nova', role: 'Co-host and challenger', gender: 'female', motionStyle: 'expressive' },
 ];
 
@@ -415,13 +420,148 @@ function assembleManifest(
   };
 }
 
+// ─── MULTILINGUAL INPUT PIPELINE ─────────────────────────────────────────────
+
+/** European language codes where DeepL excels */
+const DEEPL_LANGUAGES = new Set([
+  'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru', 'cs', 'da', 'el',
+  'et', 'fi', 'hu', 'id', 'lt', 'lv', 'nb', 'ro', 'sk', 'sl', 'sv', 'tr', 'uk',
+]);
+/** CJK + SEA language codes where Alibaba excels */
+const ALIBABA_LANGUAGES = new Set(['zh', 'ja', 'ko', 'th', 'vi', 'ms', 'id']);
+
+/**
+ * Auto-select the best translation provider based on detected input language.
+ * Uses existing provider strengths: DeepL → European, Alibaba → CJK/SEA, AI → all others.
+ */
+function selectTranslationProvider(detectedLang: string, preference?: string): string {
+  if (preference && preference !== 'auto') return preference;
+  const langBase = detectedLang.split('-')[0].toLowerCase();
+  if (langBase === 'en') return 'none'; // No translation needed
+  if (DEEPL_LANGUAGES.has(langBase)) return 'deepl';
+  if (ALIBABA_LANGUAGES.has(langBase)) return 'alibaba';
+  return 'ai'; // Gemini/GPT fallback for Arabic, Hindi, Urdu, Swahili, etc.
+}
+
+/**
+ * Detect input language, translate prompt to English for AI processing,
+ * and return metadata for downstream transcreation.
+ * Uses the existing translation-service edge function.
+ */
+async function processMultilingualInput(
+  prompt: string,
+  translationProvider?: string,
+): Promise<{
+  translatedPrompt: string;
+  detectedLanguage: string;
+  wasTranslated: boolean;
+  provider: string;
+}> {
+  // Step 1: Detect language via existing translation-service
+  try {
+    const { data: detectResult, error: detectError } = await supabase.functions.invoke('translation-service', {
+      body: { action: 'detect', provider: 'ai', text: prompt.substring(0, 500) },
+    });
+
+    if (detectError) throw detectError;
+
+    const detectedLang = detectResult?.detectedLanguage || 'en';
+    const langBase = detectedLang.split('-')[0].toLowerCase();
+
+    // If already English, skip translation
+    if (langBase === 'en') {
+      return { translatedPrompt: prompt, detectedLanguage: 'en', wasTranslated: false, provider: 'none' };
+    }
+
+    // Step 2: Select best provider and translate to English
+    const provider = selectTranslationProvider(detectedLang, translationProvider);
+
+    const { data: translateResult, error: translateError } = await supabase.functions.invoke('translation-service', {
+      body: {
+        action: 'translate',
+        provider,
+        text: prompt,
+        sourceLanguage: detectedLang,
+        targetLanguage: 'en',
+        context: 'video script generation prompt',
+      },
+    });
+
+    if (translateError) throw translateError;
+
+    const translatedText = translateResult?.translatedText || prompt;
+    console.log(`[ScriptGenerator] Multilingual: ${detectedLang} → en via ${provider}`);
+
+    return {
+      translatedPrompt: translatedText,
+      detectedLanguage: detectedLang,
+      wasTranslated: true,
+      provider,
+    };
+  } catch (err) {
+    console.warn('[ScriptGenerator] Translation failed, using original prompt:', err);
+    return { translatedPrompt: prompt, detectedLanguage: 'unknown', wasTranslated: false, provider: 'none' };
+  }
+}
+
+/**
+ * Transcreate generated script lines back to the target language.
+ * Uses the existing translation-service transcreation action.
+ */
+async function transcreateScriptLines(
+  manifest: UniversalEpisodeManifest,
+  targetLanguage: string,
+  regionCode: string,
+): Promise<UniversalEpisodeManifest> {
+  const langBase = targetLanguage.split('-')[0].toLowerCase();
+  if (langBase === 'en') return manifest; // Already in English
+
+  const provider = selectTranslationProvider(targetLanguage);
+  const updatedLines = { ...manifest.scriptLines };
+
+  // Transcreate each line (sequential to avoid rate limits on translation service)
+  for (const [key, line] of Object.entries(updatedLines)) {
+    try {
+      const { data, error } = await supabase.functions.invoke('translation-service', {
+        body: {
+          action: 'transcreate',
+          provider,
+          text: line.text,
+          sourceLanguage: 'en',
+          targetLanguage,
+          region: regionCode,
+          context: `Scene: ${line.scene}. Direction: ${line.direction}. Tone: ${line.emotionalTone}.`,
+        },
+      });
+
+      if (!error && data?.transcreatedText) {
+        updatedLines[key] = {
+          ...line,
+          text: data.transcreatedText,
+          direction: line.direction ? `[${targetLanguage.toUpperCase()}] ${line.direction}` : '',
+        };
+      }
+    } catch {
+      // Keep English text if transcreation fails for this line
+      console.warn(`[ScriptGenerator] Transcreation failed for ${key}, keeping English`);
+    }
+  }
+
+  return { ...manifest, scriptLines: updatedLines, language: targetLanguage };
+}
+
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
 
 /**
- * Generate a complete UniversalEpisodeManifest from a text prompt.
+ * Generate a complete UniversalEpisodeManifest from a text prompt in ANY language.
  * 
- * This is the B1 pipeline:
- *   prompt → AI → UniversalScriptLine[] → B2 enrichment → manifest → validate
+ * Full multilingual pipeline:
+ *   1. Detect input language (Thai, Arabic, Hindi, etc.)
+ *   2. Translate prompt → English (via DeepL/Alibaba/AI — auto-selected)
+ *   3. Generate script via AI in English
+ *   4. Enrich with B2 regional/cultural transcreation
+ *   5. Transcreate output back to target language (if non-English)
+ *   6. Validate manifest
  */
 export async function generateUniversalScript(
   request: ScriptGenerationRequest,
@@ -429,16 +569,29 @@ export async function generateUniversalScript(
   const startTime = Date.now();
 
   try {
-    // 1. Build system prompt
-    const systemPrompt = buildSystemPrompt(request);
+    // 1. Multilingual input: detect + translate prompt to English
+    const { translatedPrompt, detectedLanguage, wasTranslated, provider: translationProvider } =
+      await processMultilingualInput(request.prompt, request.translationProvider);
 
-    // 2. Call AI
-    const { data: aiOutput, provider } = await callAI(systemPrompt, request.prompt);
+    // Auto-set language from detection if not explicitly provided
+    const targetLanguage = request.language || (wasTranslated ? detectedLanguage : 'en');
 
-    // 3. Assemble manifest (includes B2 enrichment)
-    const manifest = assembleManifest(request, aiOutput);
+    // 2. Build system prompt (uses English prompt for AI)
+    const enrichedRequest = { ...request, prompt: translatedPrompt };
+    const systemPrompt = buildSystemPrompt(enrichedRequest);
 
-    // 4. Validate
+    // 3. Call AI with English prompt
+    const { data: aiOutput, provider: aiProvider } = await callAI(systemPrompt, translatedPrompt);
+
+    // 4. Assemble manifest with B2 cultural enrichment
+    const baseManifest = assembleManifest(enrichedRequest, aiOutput);
+
+    // 5. Transcreate output to target language if needed
+    const manifest = wasTranslated
+      ? await transcreateScriptLines(baseManifest, targetLanguage, request.regionCode || '')
+      : baseManifest;
+
+    // 6. Validate
     const validation = validateManifest(manifest);
 
     return {
@@ -446,7 +599,7 @@ export async function generateUniversalScript(
       manifest,
       validation,
       durationMs: Date.now() - startTime,
-      provider,
+      provider: aiProvider,
     };
   } catch (err) {
     console.error('[ScriptGenerator] Error:', err);
