@@ -63,6 +63,7 @@ export interface CastProject {
   team_id: string | null;
   title: string;
   description: string | null;
+  content_type: string;
   slug: string | null;
   blueprint_id: string | null;
   style_intent: string;
@@ -207,6 +208,7 @@ export interface CastProjectWithRelations extends CastProject {
 
 export interface CreateCastProjectInput {
   title: string;
+  content_type?: string;
   blueprint_id?: string;
   style_intent?: string;
   intent_value?: string;
