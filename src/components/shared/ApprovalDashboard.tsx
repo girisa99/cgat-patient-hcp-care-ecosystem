@@ -80,6 +80,14 @@ const STAGE_CONFIG: Record<AuthoringStage, {
     subTab: 'messaging',
     description: 'Generate and approve marketing copy',
   },
+  transcreation: {
+    label: 'Transcreation',
+    shortLabel: 'Transcreate',
+    icon: Sparkles,
+    tab: 'create',
+    subTab: 'transcreation',
+    description: 'Culturally adapt content for target regions',
+  },
   script_composition: {
     label: 'Script Composition',
     shortLabel: 'Script',

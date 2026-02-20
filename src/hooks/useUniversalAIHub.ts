@@ -454,6 +454,56 @@ export function useUniversalAIHub(options: UseUniversalAIHubOptions = {}) {
     zone: ecosystemRouting.zone,
     isRTL: ecosystemRouting.isRTL,
     regionalMoat: ecosystemRouting.moat,
+
+    // Scene Capabilities (NEW — wired to Universal Script Schema + Scene Registry)
+    sceneCapabilities: (() => {
+      try {
+        const { getProductConstraints } = require('@/config/universal-script-schema');
+        const { getSceneTypesForProduct } = require('@/config/scene-type-registry');
+        const constraints = getProductConstraints(product as any);
+        const sceneTypes = getSceneTypesForProduct(product as any);
+        return {
+          constraints,
+          sceneTypes,
+          sceneTypeIds: sceneTypes.map((s: any) => s.id),
+          maxDuration: constraints.maxDurationSeconds,
+          maxScenes: constraints.maxScenes,
+          supportsLipsync: constraints.lipsync,
+          supportsInteractive: constraints.interactive,
+          supportsMultiCharacter: constraints.multiCharacter,
+        };
+      } catch {
+        return null;
+      }
+    })(),
+
+    // Transcreation (NEW — wired to Regional Transcreation Service)
+    transcreation: {
+      getProfile: (regionCode: string) => {
+        const { getTranscreationProfile } = require('@/services/regionalTranscreationService');
+        return getTranscreationProfile(regionCode);
+      },
+      getTraits: (regionCode: string) => {
+        const { getTranscreationTraits } = require('@/services/regionalTranscreationService');
+        return getTranscreationTraits(regionCode);
+      },
+      getDirectionPrompt: (regionCode: string, tone: string) => {
+        const { getTranscreationDirectionPrompt } = require('@/services/regionalTranscreationService');
+        return getTranscreationDirectionPrompt(regionCode, tone, product);
+      },
+      getMultiRegionProfiles: (regionCodes: string[]) => {
+        const { getMultiRegionProfiles } = require('@/services/regionalTranscreationService');
+        return getMultiRegionProfiles(regionCodes);
+      },
+      getAllRegions: () => {
+        const { getAllAvailableRegions } = require('@/services/regionalTranscreationService');
+        return getAllAvailableRegions();
+      },
+      isValidRegion: (regionCode: string) => {
+        const { isValidTranscreationRegion } = require('@/services/regionalTranscreationService');
+        return isValidTranscreationRegion(regionCode);
+      },
+    },
   };
 }
 

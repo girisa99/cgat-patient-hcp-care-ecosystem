@@ -75,11 +75,24 @@ interface SceneResult {
   success: boolean;
 }
 
+interface ScriptEntry {
+  text: string;
+  // Transcreation richness fields (optional, backward compatible)
+  direction?: string;
+  lipsync?: boolean;
+  sfx?: string[];
+  motion?: string;
+  visualRef?: string;
+  emotionalTone?: string;
+  culturalTraits?: Record<string, string | boolean>;
+  regionCode?: string;
+}
+
 interface OrchestratorRequest {
   productId: string;
   episodeId?: string;
   scenes: string[] | 'all';
-  scriptContent: Record<string, { text: string }>;
+  scriptContent: Record<string, ScriptEntry>;
   scenePipelines: Record<string, Array<Record<string, any>>>;
   musicScore?: Record<string, { music?: Record<string, any>; sfx?: Array<Record<string, any>> }>;
   voiceRouting: Record<string, VoiceRoute>;
@@ -104,7 +117,7 @@ async function dispatchTTS(
   supabase: ReturnType<typeof createClient>,
   voice: string,
   scriptKey: string,
-  scriptContent: Record<string, { text: string }>,
+  scriptContent: Record<string, ScriptEntry>,
   voiceRouting: Record<string, VoiceRoute>,
   storagePaths: StoragePaths,
 ): Promise<SceneStepResult> {
@@ -136,6 +149,8 @@ async function dispatchTTS(
           stability: routing.stability ?? 0.5,
           similarityBoost: routing.similarityBoost ?? 0.75,
           speed: routing.speed ?? 1.0,
+          // Transcreation: inject emotional style if available
+          ...(script.emotionalTone ? { style: script.emotionalTone } : {}),
         };
       } else if (provider === 'azure') {
         edgeFn = 'azure-tts';
@@ -144,6 +159,8 @@ async function dispatchTTS(
           voice: voiceId,
           rate: routing.rate,
           pitch: routing.pitch,
+          // Transcreation: inject direction as SSML prosody hint
+          ...(script.direction ? { expressAs: script.emotionalTone || 'general' } : {}),
         };
       } else {
         edgeFn = 'alibaba-cosyvoice-tts';
@@ -151,10 +168,14 @@ async function dispatchTTS(
           text: script.text,
           voice: voiceId,
           model: 'cosyvoice-v3-flash',
+          // Transcreation: pass regional context
+          ...(script.regionCode ? { locale: script.regionCode } : {}),
         };
       }
 
-      console.log(`  🔊 TTS [${voice}] via ${provider} (${edgeFn}): "${script.text.substring(0, 60)}..."`);
+      // Log transcreation context if present
+      const culturalCtx = script.culturalTraits ? ` [${script.regionCode || 'global'}]` : '';
+      console.log(`  🔊 TTS [${voice}]${culturalCtx} via ${provider} (${edgeFn}): "${script.text.substring(0, 60)}..."`);
 
       const { data, error } = await supabase.functions.invoke(edgeFn, { body });
       if (error) throw new Error(`${edgeFn} error: ${error.message}`);
