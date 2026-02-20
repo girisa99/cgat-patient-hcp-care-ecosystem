@@ -12,6 +12,7 @@ import type { GenieCastSessionState, SelectedTemplate } from '@/hooks/useGenieCa
 import type { MessagingContent, TemplateMapping, SceneScript } from '@/hooks/useUnifiedAuthoring';
 import { EP04_SCRIPT_CONTENT, type ScriptLine } from '@/config/ep04-script-content';
 import { EP04_SCENE_PIPELINES, EP04_VOICES, EP04_AVATAR_CONFIG, EP04_MUSIC_SCORE } from '@/config/ep04-production-config';
+import { batchResolveScreenAssets, type ResolvedScreenAsset } from '@/services/screenAssetResolver';
 
 // ─── SCENE METADATA ────────────────────────────────────────────────────────────
 // Derive scene list from EP04_SCENE_PIPELINES keys (source of truth)
@@ -250,6 +251,63 @@ export function createEP04SessionSeed(): Partial<GenieCastSessionState> {
     // Stage tracking — CREATE complete, PRODUCE ready
     currentStage: 'tts_generation',
     completedStages: ['template_selection', 'messaging_generation', 'script_composition', 'template_mapping'],
+  };
+}
+
+// ─── SCREEN ASSET ENRICHMENT ─────────────────────────────────────────────────────
+
+/**
+ * Enriches a template mapping's scenes with resolved screen asset URLs.
+ * Call AFTER createEP04SessionSeed() to attach real storage URLs to visual pipeline steps.
+ *
+ * This is product-agnostic — pass any productId to resolve from that product's screenshots.
+ */
+export async function enrichWithScreenAssets(
+  templateMapping: TemplateMapping,
+  productId: string = 'sprint-tracker'
+): Promise<{ mapping: TemplateMapping; resolved: Map<string, ResolvedScreenAsset[]>; stats: { total: number; found: number; missing: string[] } }> {
+  // Collect scenes that have visualPipeline metadata
+  const scenesWithPipelines = templateMapping.scenes
+    .filter(s => s.visualPipeline && s.visualPipeline.length > 0)
+    .map(s => ({ sceneKey: s.sceneKey || s.sceneId, visualPipeline: s.visualPipeline! }));
+
+  const resolved = await batchResolveScreenAssets(productId, scenesWithPipelines);
+
+  // Attach resolved URLs back into visual pipeline steps
+  const enrichedScenes = templateMapping.scenes.map(scene => {
+    const sceneKey = scene.sceneKey || scene.sceneId;
+    const assets = resolved.get(sceneKey);
+    if (!assets || !scene.visualPipeline) return scene;
+
+    const assetMap = new Map(assets.map(a => [a.screenId, a]));
+
+    const enrichedPipeline = scene.visualPipeline.map(step => {
+      if ((step.type === 'screen-capture' || step.type === 'ai-screen-enhance') && Array.isArray(step.screenIds)) {
+        const resolvedUrls: Record<string, string> = {};
+        for (const sid of step.screenIds as string[]) {
+          const asset = assetMap.get(sid);
+          if (asset?.exists) resolvedUrls[sid] = asset.publicUrl;
+        }
+        return { ...step, resolvedUrls };
+      }
+      return step;
+    });
+
+    return { ...scene, visualPipeline: enrichedPipeline };
+  });
+
+  // Stats
+  const allAssets = [...resolved.values()].flat();
+  const missing = allAssets.filter(a => !a.exists).map(a => a.screenId);
+
+  return {
+    mapping: { ...templateMapping, scenes: enrichedScenes },
+    resolved,
+    stats: {
+      total: allAssets.length,
+      found: allAssets.filter(a => a.exists).length,
+      missing,
+    },
   };
 }
 

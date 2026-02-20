@@ -98,7 +98,7 @@ import { EP04PublishHub } from './EP04PublishHub';
 import { SceneCharacterVisualizer } from './SceneCharacterVisualizer';
 import { SEOOptimizerPanel } from './SEOOptimizerPanel';
 import { ABTestingPanel } from './ABTestingPanel';
-import { createEP04SessionSeed, getEP04Stats } from '@/utils/ep04-session-seed';
+import { createEP04SessionSeed, getEP04Stats, enrichWithScreenAssets } from '@/utils/ep04-session-seed';
 
 // Import Landing Page Scripts
 import { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
@@ -510,11 +510,24 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           variant="outline"
           size="sm"
           className="gap-1.5 text-xs font-medium border-primary/30 hover:bg-primary/10"
-          onClick={() => {
+          onClick={async () => {
             const seed = createEP04SessionSeed();
             castSession.updateSession(seed);
             const stats = getEP04Stats();
             toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
+
+            // Step D: Resolve screen capture assets from storage
+            if (seed.templateMapping) {
+              const { mapping, stats: screenStats } = await enrichWithScreenAssets(seed.templateMapping);
+              castSession.updateSession({ templateMapping: mapping });
+              if (screenStats.found > 0) {
+                toast.success(`📸 ${screenStats.found}/${screenStats.total} screenshots resolved`);
+              }
+              if (screenStats.missing.length > 0) {
+                toast.info(`⚠️ ${screenStats.missing.length} screenshots pending capture`, { description: screenStats.missing.slice(0, 3).join(', ') + (screenStats.missing.length > 3 ? '...' : '') });
+              }
+            }
+
             setActiveMainTab('produce');
             setSubTab('produce', 'generate');
           }}
