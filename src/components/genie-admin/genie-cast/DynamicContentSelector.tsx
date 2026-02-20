@@ -1,6 +1,6 @@
 /**
- * DynamicContentSelector — Two-step Category → Format selector
- * Fully DB-driven, supports adding new categories/formats on-the-fly.
+ * DynamicContentSelector — Three-step Category → Format → Sub-Format selector
+ * Fully DB-driven, supports adding new entries on-the-fly.
  * Connected to universal enrichment via format config.
  */
 import React, { useState, useMemo } from 'react';
@@ -19,18 +19,23 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import type { ContentCategory, ContentFormat } from '@/hooks/useCastContentRegistry';
+import type { ContentCategory, ContentFormat, ContentSubFormat } from '@/hooks/useCastContentRegistry';
 
 interface DynamicContentSelectorProps {
   categories: ContentCategory[];
   formats: ContentFormat[];
+  subFormats?: ContentSubFormat[];
   getFormatsForCategory: (categoryId: string) => ContentFormat[];
+  getSubFormatsForFormat?: (formatId: string) => ContentSubFormat[];
   selectedCategoryId: string | null;
   selectedFormatId: string | null;
+  selectedSubFormatId?: string | null;
   onCategorySelect: (category: ContentCategory) => void;
   onFormatSelect: (format: ContentFormat) => void;
+  onSubFormatSelect?: (subFormat: ContentSubFormat) => void;
   onAddCategory: (data: { name: string; label: string; description?: string }) => Promise<any>;
   onAddFormat: (data: { name: string; label: string; description?: string }) => Promise<any>;
+  onAddSubFormat?: (data: { format_id: string; name: string; label: string; description?: string }) => Promise<any>;
   isLoading?: boolean;
 }
 
@@ -43,17 +48,23 @@ const getIcon = (iconName: string) => {
 export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
   categories,
   formats,
+  subFormats = [],
   getFormatsForCategory,
+  getSubFormatsForFormat,
   selectedCategoryId,
   selectedFormatId,
+  selectedSubFormatId,
   onCategorySelect,
   onFormatSelect,
+  onSubFormatSelect,
   onAddCategory,
   onAddFormat,
+  onAddSubFormat,
   isLoading,
 }) => {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddFormat, setShowAddFormat] = useState(false);
+  const [showAddSubFormat, setShowAddSubFormat] = useState(false);
   const [newLabel, setNewLabel] = useState('');
   const [newDesc, setNewDesc] = useState('');
 
@@ -62,7 +73,13 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
     return getFormatsForCategory(selectedCategoryId);
   }, [selectedCategoryId, formats, getFormatsForCategory]);
 
+  const availableSubFormats = useMemo(() => {
+    if (!selectedFormatId || !getSubFormatsForFormat) return [];
+    return getSubFormatsForFormat(selectedFormatId);
+  }, [selectedFormatId, getSubFormatsForFormat]);
+
   const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+  const selectedFormat = availableFormats.find(f => f.id === selectedFormatId);
 
   const handleAddCategory = async () => {
     if (!newLabel.trim()) return;
@@ -80,6 +97,14 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
     setNewDesc('');
   };
 
+  const handleAddSubFormat = async () => {
+    if (!newLabel.trim() || !selectedFormatId || !onAddSubFormat) return;
+    await onAddSubFormat({ format_id: selectedFormatId, name: newLabel.trim(), label: newLabel.trim(), description: newDesc.trim() || undefined });
+    setShowAddSubFormat(false);
+    setNewLabel('');
+    setNewDesc('');
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
@@ -87,6 +112,11 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
       </div>
     );
   }
+
+  // Determine if sub-formats exist for the selected format
+  const hasSubFormats = availableSubFormats.length > 0;
+  // Show sub-format step only after format is selected AND sub-formats exist
+  const showSubFormatStep = selectedFormatId && hasSubFormats;
 
   return (
     <div className="space-y-6">
@@ -180,12 +210,6 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
                       {fmt.requires_video && <Badge variant="outline" className="text-[9px] px-1">Video</Badge>}
                       {fmt.requires_messaging && <Badge variant="outline" className="text-[9px] px-1">Messaging</Badge>}
                     </div>
-                    {isSelected && (
-                      <div className="flex items-center gap-1 text-[10px] text-primary mt-1">
-                        <Sparkles className="w-3 h-3" />
-                        Universal Enrichment will adapt
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               );
@@ -203,6 +227,67 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
         </div>
       )}
 
+      {/* STEP 3: Sub-Format Selection (shown after format, if sub-formats exist) */}
+      {showSubFormatStep && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+              {selectedSubFormatId ? '✓' : '3'}
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold">Refine your content type</h3>
+              <p className="text-xs text-muted-foreground">
+                {selectedCategory?.label} → {selectedFormat?.label} → Choose a specific type
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {availableSubFormats.map(sf => {
+              const IconComp = getIcon(sf.icon);
+              const isSelected = selectedSubFormatId === sf.id;
+              return (
+                <Card
+                  key={sf.id}
+                  className={cn(
+                    'cursor-pointer transition-all hover:shadow-md',
+                    isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/30' : 'hover:border-primary/40'
+                  )}
+                  onClick={() => onSubFormatSelect?.(sf)}
+                >
+                  <CardContent className="p-3 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <IconComp className={cn('w-4 h-4', !isSelected && (sf.color || 'text-muted-foreground'))} />
+                      <span className="text-xs font-medium">{sf.label}</span>
+                    </div>
+                    {sf.description && (
+                      <p className="text-[10px] text-muted-foreground line-clamp-2">{sf.description}</p>
+                    )}
+                    {isSelected && (
+                      <div className="flex items-center gap-1 text-[10px] text-primary mt-1">
+                        <Sparkles className="w-3 h-3" />
+                        Selected
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {onAddSubFormat && (
+              <Card
+                className="cursor-pointer border-dashed border-muted-foreground/30 hover:border-primary/40"
+                onClick={() => setShowAddSubFormat(true)}
+              >
+                <CardContent className="p-3 flex items-center gap-2 h-full">
+                  <Plus className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Add Sub-Format</span>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Summary */}
       {selectedCategoryId && selectedFormatId && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
@@ -210,8 +295,18 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
           <span className="text-xs">
             <strong>{selectedCategory?.label}</strong>
             <ChevronRight className="w-3 h-3 inline mx-1" />
-            <strong>{availableFormats.find(f => f.id === selectedFormatId)?.label}</strong>
-            {' — '}Universal Enrichment will determine messaging, positioning & blueprint requirements
+            <strong>{selectedFormat?.label}</strong>
+            {selectedSubFormatId && (
+              <>
+                <ChevronRight className="w-3 h-3 inline mx-1" />
+                <strong>{availableSubFormats.find(sf => sf.id === selectedSubFormatId)?.label}</strong>
+              </>
+            )}
+            {' — '}
+            {showSubFormatStep && !selectedSubFormatId 
+              ? 'Select a sub-format to continue'
+              : 'Universal Enrichment will determine messaging, positioning & blueprint requirements'
+            }
           </span>
         </div>
       )}
@@ -254,6 +349,27 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddFormat(false)}>Cancel</Button>
             <Button onClick={handleAddFormat} disabled={!newLabel.trim()}>Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Sub-Format Dialog */}
+      <Dialog open={showAddSubFormat} onOpenChange={setShowAddSubFormat}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Add Sub-Format</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Sub-Format Name</Label>
+              <Input value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="e.g. Expert Interview" className="mt-1" />
+            </div>
+            <div>
+              <Label>Description (optional)</Label>
+              <Input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="e.g. One-on-one expert discussion" className="mt-1" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddSubFormat(false)}>Cancel</Button>
+            <Button onClick={handleAddSubFormat} disabled={!newLabel.trim()}>Add</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
