@@ -48,12 +48,9 @@ const PLATFORM_STATS = [
   { value: '55+', label: 'Regions', icon: Globe },
 ];
 
-// ─── INDUSTRY VERTICALS ─────────────────────────────────────────────────
-const INDUSTRY_VERTICALS = [
-  'Healthcare', 'Finance', 'EdTech', 'Tourism', 'E-Commerce', 'Legal',
-  'Real Estate', 'Manufacturing', 'Logistics', 'Hospitality', 'Telecom',
-  'Government', 'Non-Profit', 'Media', 'Retail', 'Insurance',
-];
+// ─── INDUSTRY VERTICALS (shared constant) ───────────────────────────────
+import { getVerticalShortLabels } from '@/constants/industryVerticals';
+const INDUSTRY_VERTICALS = getVerticalShortLabels();
 
 // ─── 12 CREATIVE STYLES (full Asset Lab set) ────────────────────────────
 const CREATIVE_STYLES = [

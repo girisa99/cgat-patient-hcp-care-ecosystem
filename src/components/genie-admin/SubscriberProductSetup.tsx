@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import {
   Package, Users, Palette, Brain, Plus, Trash2, Edit2, Save, X, Loader2, Lock, Globe, ChevronRight
 } from 'lucide-react';
+import { INDUSTRY_VERTICALS } from '@/constants/industryVerticals';
 
 // ─── TIER LIMITS ────────────────────────────────────────────────────────────
 
@@ -438,20 +439,9 @@ export const SubscriberProductSetup: React.FC<SubscriberProductSetupProps> = ({
                         onChange={e => setProductForm(f => ({ ...f, content_vertical: e.target.value }))}
                       >
                         <option value="">Select industry...</option>
-                        <option value="finance">Finance & Banking</option>
-                        <option value="travel">Travel & Hospitality</option>
-                        <option value="food_beverage">Food & Beverages</option>
-                        <option value="healthcare">Healthcare & Wellness</option>
-                        <option value="technology">Technology & SaaS</option>
-                        <option value="education">Education & E-Learning</option>
-                        <option value="real_estate">Real Estate</option>
-                        <option value="retail">Retail & E-Commerce</option>
-                        <option value="automotive">Automotive</option>
-                        <option value="entertainment">Entertainment & Media</option>
-                        <option value="professional_services">Professional Services</option>
-                        <option value="manufacturing">Manufacturing</option>
-                        <option value="nonprofit">Nonprofit & NGO</option>
-                        <option value="other">Other</option>
+                        {INDUSTRY_VERTICALS.map(v => (
+                          <option key={v.value} value={v.value}>{v.label}</option>
+                        ))}
                       </select>
                     </div>
                     {/* Location */}
