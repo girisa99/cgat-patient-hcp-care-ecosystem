@@ -13071,10 +13071,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "genie_studio_team_members_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "genie_studio_team_members_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "genie_studio_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_studio_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "genie_studio_users"
             referencedColumns: ["id"]
           },
         ]
