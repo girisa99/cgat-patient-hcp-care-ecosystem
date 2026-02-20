@@ -317,6 +317,30 @@ export interface ProductConstraints {
   defaultTone: EmotionalTone;
 }
 
+// ─── SHARED DEFAULTS (single source of truth — no hardcoding in consumers) ───
+
+/** Default fallback voice when no regional voice is resolved */
+export const DEFAULT_FALLBACK_VOICE = {
+  provider: 'alibaba' as const,
+  voiceId: 'longxiaochun',
+} as const;
+
+/** Default ElevenLabs voice ID (Atlas/host) */
+export const DEFAULT_ELEVENLABS_VOICE_ID = 'onwK4e9ZLuTAKqWW03F9';
+
+/** Default avatar generation style */
+export const DEFAULT_AVATAR_STYLE: UniversalCharacter['avatarStyle'] = 'pixar-3d';
+
+/** Default storage paths for the orchestrator */
+export const DEFAULT_STORAGE_PATHS: UniversalEpisodeManifest['storagePaths'] = {
+  bucket: 'genie-media',
+  ttsPrefix: 'generated-tts',
+  musicPrefix: 'generated-music',
+  sfxPrefix: 'generated-sfx',
+  screenshotBucket: 'product-screenshots',
+  screenshotPattern: 'screenshots/{id}.png',
+};
+
 /** Default constraints per product */
 export const PRODUCT_CONSTRAINTS: Record<GenieProduct, ProductConstraints> = {
   spark: {
@@ -512,8 +536,8 @@ export function manifestToOrchestratorPayload(manifest: UniversalEpisodeManifest
     voiceRouting[char.key] = {
       provider: char.voice.provider,
       voiceId: char.voice.voiceId,
-      fallbackProvider: char.voice.fallbackProvider || 'alibaba',
-      fallbackVoice: char.voice.fallbackVoice || 'longxiaochun',
+      fallbackProvider: char.voice.fallbackProvider || DEFAULT_FALLBACK_VOICE.provider,
+      fallbackVoice: char.voice.fallbackVoice || DEFAULT_FALLBACK_VOICE.voiceId,
       stability: char.voice.stability,
       similarityBoost: char.voice.similarityBoost,
       speed: char.voice.speed,
