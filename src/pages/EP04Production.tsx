@@ -23,13 +23,13 @@ import { EP04_VOICES } from '@/config/ep04-production-config';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
-// Character avatar imports
-import hostAvatar from '@/assets/characters/host-dog.png';
-import atlasAvatar from '@/assets/characters/atlas-bear.png';
-import novaAvatar from '@/assets/characters/nova-fox.png';
-import squirrelAvatar from '@/assets/characters/squirrel-distractor.png';
+// Character avatar imports — upgraded to Pixar 3D portraits for visual consistency with scene backgrounds
+import hostAvatar from '@/assets/characters/host-avatar-3d.png';
+import atlasAvatar from '@/assets/characters/atlas-avatar-3d.png';
+import novaAvatar from '@/assets/characters/nova-avatar-3d.png';
+import squirrelAvatar from '@/assets/characters/squirrel-avatar-3d.png';
 import ep02Thumbnail from '@/assets/thumbnails/ep02-thumbnail.png';
-import allaudinAvatar from '@/assets/characters/allaudin-genie.png';
+import allaudinAvatar from '@/assets/characters/allaudin-avatar-3d.png';
 
 // Scene background imports
 import scene0Bg from '@/assets/scenes/scene-0-title.png';
