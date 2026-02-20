@@ -3935,6 +3935,144 @@ export type Database = {
           },
         ]
       }
+      cast_category_formats: {
+        Row: {
+          blueprint_template_id: string | null
+          category_id: string | null
+          created_at: string | null
+          enrichment_overrides: Json | null
+          format_id: string | null
+          id: string
+          is_active: boolean | null
+        }
+        Insert: {
+          blueprint_template_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          enrichment_overrides?: Json | null
+          format_id?: string | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Update: {
+          blueprint_template_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          enrichment_overrides?: Json | null
+          format_id?: string | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_category_formats_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "cast_content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cast_category_formats_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "cast_content_formats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cast_content_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          label: string
+          metadata: Json | null
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          label: string
+          metadata?: Json | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          metadata?: Json | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cast_content_formats: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          enrichment_config: Json | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          label: string
+          name: string
+          requires_messaging: boolean | null
+          requires_tts: boolean | null
+          requires_video: boolean | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          enrichment_config?: Json | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          label: string
+          name: string
+          requires_messaging?: boolean | null
+          requires_tts?: boolean | null
+          requires_video?: boolean | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          enrichment_config?: Json | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          name?: string
+          requires_messaging?: boolean | null
+          requires_tts?: boolean | null
+          requires_video?: boolean | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       cast_generation_jobs: {
         Row: {
           actual_tokens_used: number
@@ -4087,13 +4225,16 @@ export type Database = {
         Row: {
           actual_tokens_used: number
           blueprint_id: string | null
+          category_id: string | null
           completed_stages: string[]
           content_type: string
           created_at: string
           current_stage: string
           description: string | null
+          enrichment_snapshot: Json | null
           estimated_tokens: number
           final_video_url: string | null
+          format_id: string | null
           full_production_mode: boolean
           id: string
           intent_value: string | null
@@ -4118,13 +4259,16 @@ export type Database = {
         Insert: {
           actual_tokens_used?: number
           blueprint_id?: string | null
+          category_id?: string | null
           completed_stages?: string[]
           content_type?: string
           created_at?: string
           current_stage?: string
           description?: string | null
+          enrichment_snapshot?: Json | null
           estimated_tokens?: number
           final_video_url?: string | null
+          format_id?: string | null
           full_production_mode?: boolean
           id?: string
           intent_value?: string | null
@@ -4149,13 +4293,16 @@ export type Database = {
         Update: {
           actual_tokens_used?: number
           blueprint_id?: string | null
+          category_id?: string | null
           completed_stages?: string[]
           content_type?: string
           created_at?: string
           current_stage?: string
           description?: string | null
+          enrichment_snapshot?: Json | null
           estimated_tokens?: number
           final_video_url?: string | null
+          format_id?: string | null
           full_production_mode?: boolean
           id?: string
           intent_value?: string | null
@@ -4177,7 +4324,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cast_projects_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "cast_content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cast_projects_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "cast_content_formats"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cast_style_capability_map: {
         Row: {

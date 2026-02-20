@@ -73,6 +73,8 @@ import { styleIntentResolver } from '@/services/styleIntentResolver';
 import { useGenieCastSession } from '@/hooks/useGenieCastSession';
 import { useCastProjects } from '@/hooks/useCastProjects';
 import { CastProjectDropdown } from './CastProjectDropdown';
+import { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
+import { DynamicContentSelector } from './DynamicContentSelector';
 import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
 import { RegionalDialectSelector } from '@/components/shared/RegionalDialectSelector';
 import { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
@@ -294,6 +296,10 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const castProjects = useCastProjects();
   const [activeContentType, setActiveContentType] = useState<string>('video');
 
+  // Dynamic content registry (DB-driven categories + formats)
+  const contentRegistry = useCastContentRegistry();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
 
@@ -657,32 +663,52 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         <TabsContent value="create" className="mt-4 space-y-4">
           {/* GUIDED WIZARD: Show only the current step based on session state */}
 
-          {/* STEP 1: Intent (compact dropdown) — only show if no intent AND no template yet */}
+          {/* STEP 1: Dynamic Category + Format selector (DB-driven) */}
           {!castSession.session.selectedIntent && !castSession.session.selectedTemplate && (
             <motion.div
-              key="intent"
+              key="content-selector"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <IntentSelector
-                selectedIntent={castSession.session.selectedIntent}
-                onIntentSelect={(intent) => {
-                  castSession.selectIntent(intent);
-                  // Auto-advance to messaging when intent is selected
-                  setSubTab('create', 'messaging');
+              <DynamicContentSelector
+                categories={contentRegistry.categories}
+                formats={contentRegistry.formats}
+                getFormatsForCategory={contentRegistry.getFormatsForCategory}
+                selectedCategoryId={selectedCategoryId}
+                selectedFormatId={selectedFormatId}
+                onCategorySelect={(cat) => {
+                  setSelectedCategoryId(cat.id);
+                  setSelectedFormatId(null); // Reset format when category changes
                 }}
-                onIntentConfirmed={() => setSubTab('create', 'messaging')}
+                onFormatSelect={(fmt) => {
+                  setSelectedFormatId(fmt.id);
+                  setActiveContentType(fmt.name);
+                  // Auto-advance: if format doesn't require messaging, skip to templates
+                  const needsMessaging = contentRegistry.requiresMessaging(fmt.id, selectedCategoryId || undefined);
+                  castSession.selectIntent(fmt.name as any);
+                  setSubTab('create', needsMessaging ? 'messaging' : 'templates');
+                }}
+                onAddCategory={contentRegistry.addCategory}
+                onAddFormat={contentRegistry.addFormat}
+                isLoading={contentRegistry.isLoading}
               />
             </motion.div>
           )}
 
-          {/* STEP 1 DONE: Show intent as completed inline, allow change */}
+          {/* STEP 1 DONE: Show selection as completed inline, allow change */}
           {(castSession.session.selectedIntent || castSession.session.selectedTemplate) && (
-            <div className="flex items-center gap-3 text-sm px-1">
+            <div className="flex items-center gap-3 text-sm px-1 flex-wrap">
               <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0">✓</div>
-              <span className="text-muted-foreground">Intent:</span>
+              <span className="text-muted-foreground">Content:</span>
+              {selectedCategoryId && (
+                <Badge variant="secondary" className="text-xs">
+                  {contentRegistry.categories.find(c => c.id === selectedCategoryId)?.label || 'Category'}
+                </Badge>
+              )}
               <Badge variant="secondary" className="text-xs">
-                {castSession.session.selectedIntent || castSession.session.selectedTemplate?.styleIntent || castSession.session.selectedTemplate?.category || 'Select intent'}
+                {contentRegistry.formats.find(f => f.id === selectedFormatId)?.label || 
+                 castSession.session.selectedIntent || 
+                 castSession.session.selectedTemplate?.category || 'Format'}
               </Badge>
               <Button
                 variant="link"
@@ -691,6 +717,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 onClick={() => {
                   castSession.selectIntent(null as any);
                   castSession.resetSession();
+                  setSelectedCategoryId(null);
+                  setSelectedFormatId(null);
                   setSubTab('create', 'intent');
                 }}
               >
