@@ -43,11 +43,18 @@ class ModuleErrorBoundary extends Component<{ children: ReactNode }, { error: Er
   }
 }
 
-// Lazy load the heavy ProductionHubAdmin — no .catch() so real errors surface
-const ProductionHubAdmin = lazy(() => 
+// Lazy load with retry — handles transient network/module resolution failures
+const importWithRetry = (retries = 3, delay = 1000): Promise<{ default: React.ComponentType<any> }> =>
   import('@/components/genie-admin/ProductionHubAdmin')
     .then(m => ({ default: m.ProductionHubAdmin }))
-);
+    .catch((err) => {
+      if (retries <= 0) throw err;
+      return new Promise<{ default: React.ComponentType<any> }>((resolve) =>
+        setTimeout(() => resolve(importWithRetry(retries - 1, delay * 1.5)), delay)
+      );
+    });
+
+const ProductionHubAdmin = lazy(() => importWithRetry());
 
 const LoadingFallback = () => (
   <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
