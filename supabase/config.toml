@@ -442,3 +442,6 @@ verify_jwt = false
 
 [functions.local-business-enrichment]
 verify_jwt = false
+
+[functions.send-workspace-invite]
+verify_jwt = false
