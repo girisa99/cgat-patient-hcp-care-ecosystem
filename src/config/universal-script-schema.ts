@@ -523,7 +523,7 @@ export function manifestToOrchestratorPayload(manifest: UniversalEpisodeManifest
         steps.push({
           type: 'avatar-lipsync',
           character: line.voice,
-          provider: 'alibaba',
+          provider: DEFAULT_FALLBACK_VOICE.provider,
         });
       }
     }

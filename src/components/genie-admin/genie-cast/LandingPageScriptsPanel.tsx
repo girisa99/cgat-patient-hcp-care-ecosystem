@@ -45,6 +45,7 @@ import {
   REGION_LLM_ROUTING,
   getZoneAIProviders,
   getRegionVoiceOptions,
+  getZoneFromRegion,
   normalizeTTSProvider,
   type VoiceOption,
   type LLMRoute,
@@ -58,14 +59,15 @@ function getScriptText(script: { hook: string; problem_statement: string; soluti
 
 /** Estimate audio duration: ~13 chars/sec for CJK, ~15 chars/sec for others */
 function estimateAudioDuration(charCount: number, regionCode: string): number {
-  const isCJK = /^CJK|^cjk/i.test(regionCode || '');
-  const charsPerSec = isCJK ? 13 : 15;
+  const zone = getZoneFromRegion(regionCode);
+  const charsPerSec = zone === 'cjk' ? 13 : 15;
   return Math.round(charCount / charsPerSec);
 }
 
-/** Get TTS provider for a region */
+/** Get TTS provider for a region — delegates to regional-routing-registry */
 function getTTSProviderForRegion(regionCode: string): string {
-  return /^CJK_CN|^CJK_JP|^cjk_cn|^cjk_jp/i.test(regionCode || '') ? 'qwen3-tts-flash' : 'azure';
+  const zone = getZoneFromRegion(regionCode);
+  return zone === 'cjk' ? 'qwen3-tts-flash' : 'azure';
 }
 
 /** Render inline char count badge with duration estimate */
