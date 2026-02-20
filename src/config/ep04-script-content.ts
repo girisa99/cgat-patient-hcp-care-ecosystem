@@ -1200,6 +1200,8 @@ The sprint tracker wasn't planned. It was born from pain. From realizing that AI
 
 I didn't hire a video team. I didn't use a traditional podcast format. Because I believe it doesn't need to be traditional — it can be different. This podcast is my way of showing that. I used the very tools I'm building — Genie AI — to create this episode. The characters? AI-generated. The animations? Built in the sprint. The voices? Multi-provider TTS routed through my own edge functions. The sprint tracker you saw? That's a real product — and it will be launched soon.
 
+To produce this single episode, I used 19 AI providers — from ElevenLabs and Azure Neural TTS for voices, to OpenAI GPT-4o for script generation, Anthropic Claude for architecture, Google Vertex AI for visuals, Qwen3-TTS, Meshy AI for 3D, and more. The script alone consumed over 850,000 tokens across multiple iterations. That's the real cost of AI production — and it's a fraction of what a traditional production would cost.
+
 This is another way of innovating — experimenting with the same technology in different ways. That's what I believe in. I don't just build — I show what I build and what I learned in the process. The podcast IS the product demo. The creativity IS the proof. And if you check my sprint tracker, you'll see this episode listed as a task — completed by Atlas and Nova, reviewed by me. That's the workflow. That's the process. That's what Genie AI actually does.`,
     voice: 'host',
     scene: 'scene-11-close',
