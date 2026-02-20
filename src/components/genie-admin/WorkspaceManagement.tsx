@@ -217,6 +217,22 @@ export const WorkspaceManagement: React.FC = () => {
           .eq('id', activeWorkspaceId);
       }
 
+      // Send invite email via Resend edge function
+      const inviteWorkspace = workspaces?.find((w: Workspace) => w.id === activeWorkspaceId);
+      try {
+        await supabase.functions.invoke('send-workspace-invite', {
+          body: {
+            inviteeEmail: invitee.email,
+            inviteeName: invitee.display_name,
+            workspaceName: inviteWorkspace?.name || 'Workspace',
+            inviterName: currentUser.display_name || currentUser.email,
+            role,
+          },
+        });
+      } catch (emailErr) {
+        console.warn('Invite email failed (member still added):', emailErr);
+      }
+
       return invitee;
     },
     onSuccess: (invitee: any) => {
@@ -225,7 +241,7 @@ export const WorkspaceManagement: React.FC = () => {
       setIsInviteOpen(false);
       setInviteEmail('');
       setInviteRole('member');
-      toast({ title: `${invitee.display_name || invitee.email} added to workspace` });
+      toast({ title: `${invitee.display_name || invitee.email} added to workspace`, description: 'An invite email has been sent.' });
     },
     onError: (error: any) => {
       toast({ title: 'Failed to invite member', description: error.message, variant: 'destructive' });
