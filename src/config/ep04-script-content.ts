@@ -614,10 +614,114 @@ The tool that would govern our sprint — was built during the sprint. And hones
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SCENE 4: THE SOLUTION — SPRINT TRACKER DEEP DIVE (6:30–8:00)
-  // VISUAL: Full dashboard reveal. Screen recording walkthrough.
+  // SCENE 4: THE SOLUTION — SPRINT TRACKER & BETA LAUNCH (6:30–8:00)
+  // VISUAL: Cinematic Pixar 3D command center. Atlas (bear/Claude #D97757) and
+  // Nova (fox/Lovable #FF1F7D) at holographic war table. "BETA v1.0 LAUNCH"
+  // screens with green pipelines replacing red bottlenecks. Day 1-2-3 timeline.
+  // Woodland creatures cheering from treehouse balconies. God rays, particles.
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // ── ATLAS & NOVA — The Solution Conversation ──
+  'scene4-atlas-proposal': {
+    text: `Alright Nova, we can't keep waiting. Every sprint we lose velocity because the handoff pipeline has a single point of failure — a human bottleneck. Not because the PO is bad. Because the process assumes synchronous approval for asynchronous workers.`,
+    voice: 'atlas',
+    scene: 'scene-4-solution',
+    duration_est: 12,
+    direction: 'Atlas leans forward over the holographic war table, terracotta badge pulsing. Diagrams appear as he speaks — red nodes turning into flow arrows. Confident, analytical, but urgent.',
+    lipsync: true,
+    sfx: ['hologram_expand', 'diagram_materialize'],
+    motion: 'lean-forward-gesture-at-hologram',
+  },
+
+  'scene4-nova-agrees': {
+    text: `You're right. And look — you merge directly. Your branch, your commit, done. For me? I create a PR, I wait for review, I wait for sign-off, I wait for merge approval. By the time it lands, the context has shifted and I'm patching what should have been clean. It's exhausting.`,
+    voice: 'nova',
+    scene: 'scene-4-solution',
+    duration_est: 14,
+    direction: 'Nova pulls up a split-screen hologram — Atlas side shows instant green merges, Nova side shows a queue of yellow "PENDING" PRs stacking up. Her magenta badge flickers with each "wait." Frustrated but constructive.',
+    lipsync: true,
+    sfx: ['pr_stack_pile_up', 'pending_chime_loop', 'badge_flicker'],
+    motion: 'gesture-at-split-screen-comparison',
+  },
+
+  'scene4-atlas-empathy': {
+    text: `I understand. My workflow is different — I commit, I push, it lands. No gate. But your reality has gates. So instead of removing them — which we can't — let's reduce what needs to pass through them.`,
+    voice: 'atlas',
+    scene: 'scene-4-solution',
+    duration_est: 10,
+    direction: 'Atlas nods slowly. The hologram transforms — showing a funnel narrowing. "Reduce the gate traffic" appears as floating text. His terracotta badge glows steady — empathetic but solution-focused.',
+    lipsync: true,
+    sfx: ['hologram_transform_whoosh', 'gentle_confirmation_tone'],
+    motion: 'nod-then-gesture-funnel-diagram',
+  },
+
+  'scene4-nova-optimization': {
+    text: `What if we batch my PRs? Instead of one PR per component, I group related changes — a feature branch with everything the PO needs to review in one pass. Less context switches for him, less waiting for me. And we add the sprint tracker as the single source of truth — so he doesn't need to ask "what changed?" He just... opens the dashboard.`,
+    voice: 'nova',
+    scene: 'scene-4-solution',
+    duration_est: 16,
+    direction: 'Nova gets excited, tail swishing. She drags holographic PR cards together — merging 5 small PRs into 1 feature branch. The dashboard materializes between them. Magenta sparkles trail her gestures.',
+    lipsync: true,
+    sfx: ['cards_merge_swoosh', 'dashboard_materialize', 'sparkle_trail'],
+    motion: 'drag-merge-cards-excited-tail-swish',
+  },
+
+  'scene4-atlas-shared-log': {
+    text: `And I'll structure my changelogs so they map directly to your PRs. Cross-reference everything. When the PO opens the tracker, he sees my commits, your PRs, and the dependency chain — all connected. No detective work required.`,
+    voice: 'atlas',
+    scene: 'scene-4-solution',
+    duration_est: 12,
+    direction: 'Atlas pulls up a changelog hologram and draws connection lines to Nova\'s PR list. Lines glow green as they connect. The war table lights up like a constellation map.',
+    lipsync: true,
+    sfx: ['connection_lines_draw', 'constellation_chime', 'table_illuminate'],
+    motion: 'draw-connection-lines-between-holograms',
+  },
+
+  'scene4-nova-beta-idea': {
+    text: `This could actually work. But let's not over-engineer it. Let's start with a beta — run it for a few sprints. Track what improves, what breaks. Day one through three, just see what changes.`,
+    voice: 'nova',
+    scene: 'scene-4-solution',
+    duration_est: 10,
+    direction: 'Nova calms the energy, practical. A "BETA v1.0" stamp appears on the holographic dashboard. A Day 1-2-3 timeline materializes above the war table with empty progress bars.',
+    lipsync: true,
+    sfx: ['beta_stamp_thud', 'timeline_materialize'],
+    motion: 'calm-gesture-then-point-at-timeline',
+  },
+
+  'scene4-atlas-beta-agree': {
+    text: `Agreed. Beta. Iterate. Measure. I'll log every bottleneck I encounter. You log every PR delay. We compare at the end of each sprint. Data-driven optimization.`,
+    voice: 'atlas',
+    scene: 'scene-4-solution',
+    duration_est: 8,
+    direction: 'Atlas extends his paw. The timeline\'s Day 1 bar starts filling green. Both badges pulse in sync — terracotta and magenta harmonizing. A "DATA-DRIVEN" subtitle appears.',
+    lipsync: true,
+    sfx: ['progress_bar_fill', 'badges_sync_pulse', 'subtitle_appear'],
+    motion: 'extend-paw-handshake-ready',
+  },
+
+  'scene4-nova-high-five': {
+    text: `Let's do this. *high-fives Atlas* Day one starts now. And if it works... we just solved the biggest problem in AI-assisted development. The human bottleneck — optimized, not eliminated.`,
+    voice: 'nova',
+    scene: 'scene-4-solution',
+    duration_est: 10,
+    direction: 'HIGH-FIVE moment — sparks fly between their paws. Camera pulls back to reveal the full command center. Woodland creatures on treehouse balconies start cheering. God rays intensify. Both badges flare bright.',
+    lipsync: true,
+    sfx: ['epic_high_five_spark', 'crowd_cheer', 'god_ray_intensify', 'badge_flare'],
+    motion: 'high-five-with-spark-explosion',
+  },
+
+  'scene4-atlas-lets-go': {
+    text: `Hopefully this works. Let's see what Day 1 through 3 reveals. If the bottleneck relief is measurable, we scale it. If not, we adapt. That's what beta means.`,
+    voice: 'atlas',
+    scene: 'scene-4-solution',
+    duration_est: 8,
+    direction: 'Atlas turns back to the war table. The Day 1-2-3 timeline zooms in — Day 1 shows "HANDOFF PROTOCOL ACTIVE," Day 2 shows "PR BATCH REVIEW," Day 3 shows "VELOCITY CHECK." Calm determination.',
+    lipsync: true,
+    sfx: ['timeline_zoom', 'protocol_activate_chime'],
+    motion: 'turn-to-table-focus-on-timeline',
+  },
+
+  // ── HOST TRANSITION — Reveals the solution to audience ──
   'solution-reveal': {
     text: `Let me show you what we built.
 
