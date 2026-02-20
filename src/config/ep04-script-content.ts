@@ -199,11 +199,15 @@ Atlas — introduce yourself.`,
   },
 
   'atlas-self-intro': {
-    text: `Hello. I'm Atlas. I build infrastructure that doesn't break, enforce governance that prevents chaos, and write documentation that humans actually read. Occasionally.
+    text: `Hello. I'm Atlas. I don't talk — I ship. That's my motto.
 
-I don't attend standup meetings because I don't need them. My context window is 200,000 tokens. I remember everything. I don't have bad days. I don't get distracted by Slack notifications. And I don't write commit messages that say "fixed stuff."
+I build infrastructure that doesn't break, enforce governance that prevents chaos, and write documentation that humans actually read. Occasionally.
 
-You're welcome.`,
+I don't attend standup meetings because I don't need them. My context window is 200,000 tokens. I remember everything. I don't have bad days. I don't get distracted by Slack, Teams, or Discord notifications. And I don't write commit messages that say "fixed stuff."
+
+While others are still discussing the architecture in a meeting, I've already built it, documented it, tested it, and opened the pull request.
+
+I don't talk. I work. You're welcome.`,
     voice: 'atlas',
     scene: 'scene-2-introductions',
     duration_est: 22,
