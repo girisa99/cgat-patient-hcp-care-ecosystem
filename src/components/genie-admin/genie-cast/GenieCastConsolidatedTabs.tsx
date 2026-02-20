@@ -692,7 +692,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   if (subs.length === 0) {
                     const needsMessaging = contentRegistry.requiresMessaging(fmt.id, selectedCategoryId || undefined);
                     castSession.selectIntent(fmt.name as any);
-                    setSubTab('create', needsMessaging ? 'messaging' : 'templates');
+                    setSubTab('create', 'templates');
                   }
                   // If sub-formats exist, stay on step — user picks sub-format next
                 }}
@@ -701,7 +701,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   // After sub-format selection, advance to messaging or templates
                   const needsMessaging = contentRegistry.requiresMessaging(selectedFormatId || '', selectedCategoryId || undefined);
                   castSession.selectIntent((sf.name || selectedFormatId) as any);
-                  setSubTab('create', needsMessaging ? 'messaging' : 'templates');
+                  setSubTab('create', 'templates');
                 }}
                 onAddCategory={contentRegistry.addCategory}
                 onAddFormat={contentRegistry.addFormat}
@@ -760,15 +760,15 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                {/* Back to Messaging */}
+                {/* Back to Intent */}
                 <Button
                   variant="ghost"
                   size="sm"
                   className="gap-1.5 mb-3 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSubTab('create', 'messaging')}
+                  onClick={() => setSubTab('create', 'intent')}
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to Messaging
+                  Back to Intent
                 </Button>
                 {/* Selected Template Confirmation Card */}
                 {castSession.session.selectedTemplate && (
