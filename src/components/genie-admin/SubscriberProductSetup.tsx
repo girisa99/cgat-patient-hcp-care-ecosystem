@@ -105,10 +105,11 @@ export const SubscriberProductSetup: React.FC<SubscriberProductSetupProps> = ({
   const [productForm, setProductForm] = useState({
     name: '', tagline: '', description: '', category: '', features: '',
     primary_color: '#6366f1', secondary_color: '#8b5cf6',
+    content_vertical: '', business_city: '', business_state: '', business_zipcode: '', business_country: 'US',
   });
 
   const resetProductForm = () => {
-    setProductForm({ name: '', tagline: '', description: '', category: '', features: '', primary_color: '#6366f1', secondary_color: '#8b5cf6' });
+    setProductForm({ name: '', tagline: '', description: '', category: '', features: '', primary_color: '#6366f1', secondary_color: '#8b5cf6', content_vertical: '', business_city: '', business_state: '', business_zipcode: '', business_country: 'US' });
     setEditingProduct(null);
     setShowProductForm(false);
   };
@@ -129,7 +130,12 @@ export const SubscriberProductSetup: React.FC<SubscriberProductSetupProps> = ({
         is_system_default: false,
         is_active: true,
         sort_order: myProducts.length,
-      });
+        content_vertical: productForm.content_vertical || null,
+        business_city: productForm.business_city || null,
+        business_state: productForm.business_state || null,
+        business_zipcode: productForm.business_zipcode || null,
+        business_country: productForm.business_country || 'US',
+      } as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriber-products'] });
@@ -150,7 +156,12 @@ export const SubscriberProductSetup: React.FC<SubscriberProductSetupProps> = ({
         features: productForm.features.split(',').map(f => f.trim()).filter(Boolean),
         primary_color: productForm.primary_color,
         secondary_color: productForm.secondary_color,
-      });
+        content_vertical: productForm.content_vertical || null,
+        business_city: productForm.business_city || null,
+        business_state: productForm.business_state || null,
+        business_zipcode: productForm.business_zipcode || null,
+        business_country: productForm.business_country || 'US',
+      } as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriber-products'] });
@@ -178,6 +189,11 @@ export const SubscriberProductSetup: React.FC<SubscriberProductSetupProps> = ({
       features: product.features.join(', '),
       primary_color: product.primary_color ?? '#6366f1',
       secondary_color: product.secondary_color ?? '#8b5cf6',
+      content_vertical: (product as any).content_vertical ?? '',
+      business_city: (product as any).business_city ?? '',
+      business_state: (product as any).business_state ?? '',
+      business_zipcode: (product as any).business_zipcode ?? '',
+      business_country: (product as any).business_country ?? 'US',
     });
     setShowProductForm(true);
   };
@@ -413,6 +429,51 @@ export const SubscriberProductSetup: React.FC<SubscriberProductSetupProps> = ({
                         <Input value={productForm.features} onChange={e => setProductForm(f => ({ ...f, features: e.target.value }))} placeholder="Dashboard, API, Analytics" />
                       </div>
                     </div>
+                    {/* Industry Vertical */}
+                    <div>
+                      <Label>Industry / Content Vertical</Label>
+                      <select
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        value={productForm.content_vertical}
+                        onChange={e => setProductForm(f => ({ ...f, content_vertical: e.target.value }))}
+                      >
+                        <option value="">Select industry...</option>
+                        <option value="finance">Finance & Banking</option>
+                        <option value="travel">Travel & Hospitality</option>
+                        <option value="food_beverage">Food & Beverages</option>
+                        <option value="healthcare">Healthcare & Wellness</option>
+                        <option value="technology">Technology & SaaS</option>
+                        <option value="education">Education & E-Learning</option>
+                        <option value="real_estate">Real Estate</option>
+                        <option value="retail">Retail & E-Commerce</option>
+                        <option value="automotive">Automotive</option>
+                        <option value="entertainment">Entertainment & Media</option>
+                        <option value="professional_services">Professional Services</option>
+                        <option value="manufacturing">Manufacturing</option>
+                        <option value="nonprofit">Nonprofit & NGO</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    {/* Location */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <Label>City</Label>
+                        <Input value={productForm.business_city} onChange={e => setProductForm(f => ({ ...f, business_city: e.target.value }))} placeholder="San Francisco" />
+                      </div>
+                      <div>
+                        <Label>State / Province</Label>
+                        <Input value={productForm.business_state} onChange={e => setProductForm(f => ({ ...f, business_state: e.target.value }))} placeholder="CA" />
+                      </div>
+                      <div>
+                        <Label>Zipcode</Label>
+                        <Input value={productForm.business_zipcode} onChange={e => setProductForm(f => ({ ...f, business_zipcode: e.target.value }))} placeholder="94105" />
+                      </div>
+                      <div>
+                        <Label>Country</Label>
+                        <Input value={productForm.business_country} onChange={e => setProductForm(f => ({ ...f, business_country: e.target.value }))} placeholder="US" />
+                      </div>
+                    </div>
+                    {/* Colors */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Primary Color</Label>

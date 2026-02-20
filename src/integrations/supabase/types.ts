@@ -16278,7 +16278,12 @@ export type Database = {
       }
       marketing_products: {
         Row: {
+          business_city: string | null
+          business_country: string | null
+          business_state: string | null
+          business_zipcode: string | null
           category: string | null
+          content_vertical: string | null
           created_at: string | null
           description: string | null
           features: Json | null
@@ -16295,7 +16300,12 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          business_city?: string | null
+          business_country?: string | null
+          business_state?: string | null
+          business_zipcode?: string | null
           category?: string | null
+          content_vertical?: string | null
           created_at?: string | null
           description?: string | null
           features?: Json | null
@@ -16312,7 +16322,12 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          business_city?: string | null
+          business_country?: string | null
+          business_state?: string | null
+          business_zipcode?: string | null
           category?: string | null
+          content_vertical?: string | null
           created_at?: string | null
           description?: string | null
           features?: Json | null
