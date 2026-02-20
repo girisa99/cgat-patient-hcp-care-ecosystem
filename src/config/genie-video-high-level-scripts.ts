@@ -703,7 +703,8 @@ export function getFullLanguageCode(langCode: string): string {
 }
 
 /**
- * Get available languages for the showcase
+ * Showcase language picker — curated subset with UI fields (flag, zone).
+ * For the comprehensive language list, use ALL_AVAILABLE_LANGUAGES from regionLanguageBundles.ts.
  */
 export const AVAILABLE_LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸', zone: 'Claude Zone' },

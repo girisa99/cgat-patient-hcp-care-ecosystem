@@ -619,32 +619,33 @@ export const ARABIC_SCRIPTS: Record<string, string> = {
 // - GEMINI ZONE (India/Africa): Azure Neural PRIMARY → hi, sw, te, ta, bn
 // - German/Portuguese: Azure Neural (superior prosody)
 // ═══════════════════════════════════════════════════════════════════════════════
-export const TTS_PROVIDER_MAP: Record<string, { provider: 'elevenlabs' | 'azure' | 'alibaba'; displayName: string }> = {
-  // CLAUDE ZONE (Western) - ElevenLabs primary
+/**
+ * TTS_PROVIDER_MAP — thin wrapper re-exporting from unifiedProviderRoutingAdapter
+ * to maintain backward compatibility for consumers importing from this file.
+ * The CANONICAL source of truth is unifiedProviderRoutingAdapter.TTS_PROVIDER_MAP.
+ */
+export { unifiedProviderRouter } from '@/services/unifiedProviderRoutingAdapter';
+
+const SIMPLE_TTS_MAP: Record<string, { provider: 'elevenlabs' | 'azure' | 'alibaba'; displayName: string }> = {
   en: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
   es: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
   fr: { provider: 'elevenlabs', displayName: 'ElevenLabs' },
-  
-  // ALIBABA ZONE (CJK) - Alibaba Qwen3-TTS primary
   zh: { provider: 'alibaba', displayName: 'Alibaba Qwen3-TTS' },
   ja: { provider: 'alibaba', displayName: 'Alibaba Qwen3-TTS' },
-  
-  // MENA ZONE (Arabic) - Azure Neural primary (7 dialects)
   ar: { provider: 'azure', displayName: 'Azure Neural' },
-  
-  // GEMINI ZONE (India/SEA/Africa) - Azure Neural primary (Viseme support)
   hi: { provider: 'azure', displayName: 'Azure Neural' },
   te: { provider: 'azure', displayName: 'Azure Neural' },
   ta: { provider: 'azure', displayName: 'Azure Neural' },
   bn: { provider: 'azure', displayName: 'Azure Neural' },
   sw: { provider: 'azure', displayName: 'Azure Neural' },
-  
-  // Azure for superior prosody in these languages
   ko: { provider: 'azure', displayName: 'Azure Neural' },
   pt: { provider: 'azure', displayName: 'Azure Neural' },
   de: { provider: 'azure', displayName: 'Azure Neural' },
   tr: { provider: 'azure', displayName: 'Azure Neural' },
 };
+
+/** @deprecated Use unifiedProviderRouter.TTS_PROVIDER_MAP for comprehensive routing */
+export const TTS_PROVIDER_MAP = SIMPLE_TTS_MAP;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HELPER FUNCTION - Get localized script for a chapter and language
@@ -669,6 +670,7 @@ export function getLocalizedScript(chapterId: string, languageCode: string): str
   return null;
 }
 
+/** @deprecated Use unifiedProviderRouter.getUnifiedProviderRouting() for comprehensive routing */
 export function getTTSProviderForLanguage(languageCode: string): { provider: 'elevenlabs' | 'azure' | 'alibaba'; displayName: string } {
-  return TTS_PROVIDER_MAP[languageCode] || TTS_PROVIDER_MAP.en;
+  return SIMPLE_TTS_MAP[languageCode] || SIMPLE_TTS_MAP.en;
 }

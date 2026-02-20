@@ -167,9 +167,9 @@ export type RegionalZone =
   | 'fallback_zone'; // Global fallback
 
 export const ZONE_COUNTRIES: Record<RegionalZone, string[]> = {
-  claude_zone: ['US', 'UK', 'CA', 'AU', 'NZ', 'DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'PL', 'BR', 'IL', 'ZA', 'IE', 'BE', 'AT', 'CH'],
-  alibaba_zone: ['CN', 'HK', 'TW', 'JP', 'KR', 'SG', 'MO', 'SA', 'AE', 'EG', 'MA', 'JO', 'IQ', 'KW', 'QA', 'BH', 'OM', 'LB', 'SY'],
-  gemini_zone: ['IN', 'PK', 'BD', 'ID', 'VN', 'TH', 'PH', 'MY', 'NG', 'KE', 'GH', 'ET', 'TZ', 'UG', 'RW', 'MM', 'KH', 'LA', 'NP', 'LK'],
+  claude_zone: ['US', 'UK', 'CA', 'AU', 'NZ', 'DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'PL', 'BR', 'IL', 'ZA', 'IE', 'BE', 'AT', 'CH', 'SE', 'NO', 'DK', 'FI', 'CZ', 'RO', 'HU', 'GR', 'MX', 'AR', 'CL', 'CO', 'PE'],
+  alibaba_zone: ['CN', 'HK', 'TW', 'JP', 'KR', 'SG', 'MO', 'SA', 'AE', 'EG', 'MA', 'JO', 'IQ', 'KW', 'QA', 'BH', 'OM', 'LB', 'SY', 'TR', 'TN', 'DZ', 'LY', 'PS', 'YE'],
+  gemini_zone: ['IN', 'PK', 'BD', 'ID', 'VN', 'TH', 'PH', 'MY', 'NG', 'KE', 'GH', 'ET', 'TZ', 'UG', 'RW', 'MM', 'KH', 'LA', 'NP', 'LK', 'MV', 'BT', 'SN', 'CM', 'CI', 'MZ', 'ZM', 'ZW', 'JM', 'TT', 'BB', 'BZ'],
   fallback_zone: ['*'],
 };
 
