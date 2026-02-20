@@ -6,6 +6,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import { localSessionStorage } from '@/utils/localSessionStorage';
 
 export class AuthStateManager {
   private static instance: AuthStateManager;
@@ -23,9 +24,12 @@ export class AuthStateManager {
    */
   static async cleanupAuthState(): Promise<void> {
     console.log('🧹 Cleaning up authentication state...');
-    
+
     try {
-      // Clear all localStorage keys
+      // Clear all local session data (auth, genie, app state, recovery)
+      localSessionStorage.clearAll();
+
+      // Clear all Supabase localStorage keys
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -34,7 +38,7 @@ export class AuthStateManager {
         }
       }
       keysToRemove.forEach(key => localStorage.removeItem(key));
-      
+
       // Clear sessionStorage if it exists
       if (typeof sessionStorage !== 'undefined') {
         const sessionKeysToRemove = [];
@@ -46,8 +50,8 @@ export class AuthStateManager {
         }
         sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
       }
-      
-      console.log('✅ Authentication state cleaned');
+
+      console.log('✅ Authentication state cleaned (including local sessions)');
     } catch (error) {
       console.error('❌ Error cleaning auth state:', error);
     }
