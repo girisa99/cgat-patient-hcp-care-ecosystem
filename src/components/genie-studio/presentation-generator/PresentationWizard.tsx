@@ -352,7 +352,7 @@ export function PresentationWizard({
   className,
 }: PresentationWizardProps) {
   // Universal enrichment — product knowledge, brand, audience, regional context
-  const { additionalContext: enrichmentContext } = useUniversalEnrichment({});
+  const { additionalContext: enrichmentContext } = useUniversalEnrichment({ productName: 'Genie Deck' });
 
   const {
     session,

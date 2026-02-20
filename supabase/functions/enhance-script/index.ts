@@ -251,9 +251,9 @@ serve(async (req) => {
   }
 
   try {
-    const { scriptContent, mode, provider = "gemini", focus = "balanced", customInstructions } = await req.json();
+    const { scriptContent, mode, provider = "gemini", focus = "balanced", customInstructions, enrichmentContext } = await req.json();
     
-    console.log(`Enhancement request - mode: ${mode}, provider: ${provider}, focus: ${focus}, customInstructions: ${customInstructions ? 'provided' : 'none'}`);
+    console.log(`Enhancement request - mode: ${mode}, provider: ${provider}, focus: ${focus}, customInstructions: ${customInstructions ? 'provided' : 'none'}, enrichment: ${enrichmentContext ? 'provided' : 'none'}`);
     
     if (!scriptContent) {
       return new Response(
@@ -394,6 +394,11 @@ ${scriptContent.substring(0, 6000)}`;
         ? `\n\n🎯 USER'S CUSTOM INSTRUCTIONS (HIGH PRIORITY - FOLLOW THESE):\n${customInstructions}\n`
         : '';
       
+      // Add enrichment context (product knowledge, brand, audience) if provided
+      const enrichmentSection = enrichmentContext
+        ? `\n\n📦 PRODUCT & BRAND CONTEXT (use this to make the script on-brand and audience-aware):\n${enrichmentContext}\n`
+        : '';
+      
       systemPrompt = `You are an expert script editor and storytelling coach specializing in voiceover content for video and audio. You enhance scripts to be:
 - More ENGAGING and conversational (like talking to a friend)
 - Natural with proper pacing (pause markers: ..., section breaks: ---)
@@ -406,6 +411,7 @@ Return ONLY valid JSON, no markdown or code blocks.`;
 🎯 ENHANCEMENT FOCUS: ${focus.toUpperCase()}
 ${selectedFocus}
 ${customInstructionSection}
+${enrichmentSection}
 
 ENHANCEMENT REQUIREMENTS:
 

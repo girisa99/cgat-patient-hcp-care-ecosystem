@@ -145,7 +145,7 @@ const GenieVibe: React.FC = () => {
   const { globalTier, setGlobalTier, tierConfig } = useRegionalLanguage({ defaultTier: 'advanced' });
   
   // Universal enrichment — product knowledge, brand, audience context for scripts & teleprompter
-  const { additionalContext: enrichmentContext } = useUniversalEnrichment({});
+  const { additionalContext: enrichmentContext } = useUniversalEnrichment({ productName: 'Genie Vibe' });
   
   // Get context from URL params (from MeetingRoom or ProductionHub)
   const showId = searchParams.get('showId');

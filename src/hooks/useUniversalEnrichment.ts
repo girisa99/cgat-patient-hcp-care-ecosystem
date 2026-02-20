@@ -34,8 +34,10 @@ import { supabase } from '@/integrations/supabase/client';
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
 export interface UniversalEnrichmentOptions {
-  /** Product ID from the content pool */
+  /** Product ID (UUID) from the content pool */
   productId?: string;
+  /** Product name to resolve to productId (e.g. "Genie Spark"). Used when UUID is unknown. */
+  productName?: string;
   /** Region code (e.g. "MENA_UAE", "CJK_JP", "EU_FRANCE") */
   region?: string;
   /** BCP47 language code (default: "en") */
@@ -287,12 +289,23 @@ export function useUniversalEnrichment(
 ): UniversalEnrichmentResult {
   const { pool, isLoading: poolLoading } = useContentPool();
   const {
-    productId,
+    productId: explicitProductId,
+    productName,
     region = 'global',
     language = 'en',
     audienceFramework = 'StoryBrand',
     contentStyle,
   } = options;
+
+  // Resolve productName → productId if UUID not provided
+  const productId = useMemo(() => {
+    if (explicitProductId) return explicitProductId;
+    if (!productName || !pool) return undefined;
+    const match = pool.products.find(
+      p => p.name.toLowerCase() === productName.toLowerCase(),
+    );
+    return match?.id;
+  }, [explicitProductId, productName, pool]);
 
   // Fetch product knowledge (cached, deduplicated via react-query)
   const { data: knowledge, isLoading: knowledgeLoading } = useQuery({

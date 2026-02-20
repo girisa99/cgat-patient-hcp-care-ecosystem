@@ -474,3 +474,23 @@ This section is a living index of shared resources both developers can use. Upda
 | Component | Purpose | Added |
 |-----------|---------|-------|
 | `shadcn/ui` suite | 40+ base UI primitives | Pre-sprint |
+| `EnrichmentStatusBadge` | Enrichment status indicator for generation UIs | Day 5 |
+
+---
+
+### [Day 5 Final] Enrichment Backlog — All 6 Items Completed
+- **Changed By:** Lovable
+- **What Changed:** Completed all enrichment backlog items B-001 through B-006
+- **Details:**
+  1. ✅ **B-001** `enhance-script` edge function now accepts `enrichmentContext` param and injects it into AI prompts
+  2. ✅ **B-002** Verified: Vibe has no AI content generation — enrichment correctly unused (TTS is text→speech)
+  3. ✅ **B-003** AskGenie now skips enrichment injection for navigation/settings/UI queries via `isNavigationOrSettingsQuery()`
+  4. ✅ **B-004** `mergeAudienceWithEnrichment()` extracted to shared barrel `src/services/enrichment/index.ts`
+  5. ✅ **B-005** All `useUniversalEnrichment` calls now pass explicit `productName` (Spark, Mind, Vibe, Deck) with auto-resolve to DB UUID
+  6. ✅ **B-006** `EnrichmentStatusBadge` component created and wired into SmartContentPipeline + ScriptEditorTab
+- **New Shared Resources:**
+  - `mergeAudienceWithEnrichment()` — import from `@/services/enrichment`
+  - `EnrichmentStatusBadge` — import from `@/components/genie-studio/EnrichmentStatusBadge`
+  - `productName` option on `UniversalEnrichmentOptions` — resolves name to DB UUID automatically
+- **Impact on Your Work:**
+  - Claude: `enhance-script` now accepts optional `enrichmentContext` in request body. No breaking changes.

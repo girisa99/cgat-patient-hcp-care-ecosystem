@@ -230,6 +230,16 @@ const getLimitation = (product: GenieProduct, tier: 'free' | 'starter' | 'busine
   return limitations[product] || null;
 };
 
+/**
+ * B-003: Skip enrichment injection for navigation/settings/UI queries to save tokens.
+ * Content-creation queries (scripts, slides, videos) benefit from enrichment;
+ * "how do I change my password" does not.
+ */
+const NON_CONTENT_PATTERNS = /\b(settings|password|account|login|logout|sign.?out|sign.?in|navigate|where.?is|how.?to.?find|menu|tab|button|pricing|billing|plan|upgrade|subscription)\b/i;
+function isNavigationOrSettingsQuery(text: string): boolean {
+  return NON_CONTENT_PATTERNS.test(text);
+}
+
 // Mermaid diagrams for visual workflow guidance
 const WORKFLOW_DIAGRAMS: Record<GenieProduct, { id: string; title: string; diagram: string }[]> = {
   arc: [
@@ -1297,7 +1307,7 @@ CURRENT CONTEXT:
 - Session Info: ${sessionData ? JSON.stringify(sessionData).slice(0, 300) : 'New session'}
 - Subscription: ${subscriptionTier}
 
-${enrichmentContext ? `PRODUCT & BRAND KNOWLEDGE (use to give informed, contextual answers):\n${enrichmentContext}` : ''}
+${(enrichmentContext && !isNavigationOrSettingsQuery(text)) ? `PRODUCT & BRAND KNOWLEDGE (use to give informed, contextual answers):\n${enrichmentContext}` : ''}
 
 ${diagram ? 'NOTE: User is asking about a workflow. Explain it AND offer to show the visual diagram.' : ''}
 
