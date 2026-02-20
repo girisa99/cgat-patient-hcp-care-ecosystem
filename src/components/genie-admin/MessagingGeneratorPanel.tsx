@@ -232,32 +232,33 @@ export const MessagingGeneratorPanel: React.FC<MessagingGeneratorPanelProps> = (
       });
       const audienceList = targetAudiences.map((a: any) => `${a.id}: ${a.label}`).join(', ');
       
-      // Fetch product knowledge from database to enrich the AI prompt
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: productKnowledge } = await supabase
-        .from('product_knowledge_registry')
-        .select('value_proposition, pain_points, key_benefits, use_cases, positioning_statement, differentiators')
-        .eq('product_id', selectedProduct)
-        .eq('is_current', true)
-        .single();
-
-      // Build enriched context from product knowledge
+      // Use centralized enrichment pattern (product_knowledge_registry)
+      const { supabase: sb } = await import('@/integrations/supabase/client');
+      
       let enrichedContext = `Product: ${productName}\nCampaign Type: ${messagingType}\nCompetitors: ${competitorNames.length > 0 ? competitorNames.join(', ') : 'None'}\n`;
       
-      if (productKnowledge) {
+      // Fetch product knowledge via centralized query (same cache key as useUniversalEnrichment)
+      const { data: pkData } = await sb
+        .from('product_knowledge_registry')
+        .select('value_proposition, positioning_statement, pain_points, key_benefits, use_cases, differentiators')
+        .eq('product_id', selectedProduct)
+        .eq('is_current', true)
+        .maybeSingle();
+      
+      if (pkData) {
         enrichedContext += `\nProduct Strategy Context:\n`;
-        if (productKnowledge.value_proposition) enrichedContext += `- Value Proposition: ${productKnowledge.value_proposition}\n`;
-        if (productKnowledge.positioning_statement) enrichedContext += `- Positioning: ${productKnowledge.positioning_statement}\n`;
-        if (productKnowledge.pain_points && Array.isArray(productKnowledge.pain_points)) {
-          enrichedContext += `- Pain Points Solved: ${productKnowledge.pain_points.join(', ')}\n`;
+        if (pkData.value_proposition) enrichedContext += `- Value Proposition: ${pkData.value_proposition}\n`;
+        if (pkData.positioning_statement) enrichedContext += `- Positioning: ${pkData.positioning_statement}\n`;
+        if (pkData.pain_points && Array.isArray(pkData.pain_points)) {
+          enrichedContext += `- Pain Points Solved: ${(pkData.pain_points as string[]).join(', ')}\n`;
         }
-        if (productKnowledge.key_benefits && Array.isArray(productKnowledge.key_benefits)) {
-          enrichedContext += `- Key Benefits: ${productKnowledge.key_benefits.join(', ')}\n`;
+        if (pkData.key_benefits && Array.isArray(pkData.key_benefits)) {
+          enrichedContext += `- Key Benefits: ${(pkData.key_benefits as string[]).join(', ')}\n`;
         }
-        if (productKnowledge.use_cases && Array.isArray(productKnowledge.use_cases)) {
-          enrichedContext += `- Primary Use Cases: ${productKnowledge.use_cases.join(', ')}\n`;
+        if (pkData.use_cases && Array.isArray(pkData.use_cases)) {
+          enrichedContext += `- Primary Use Cases: ${(pkData.use_cases as string[]).join(', ')}\n`;
         }
-        if (productKnowledge.differentiators) enrichedContext += `- Differentiators: ${productKnowledge.differentiators}\n`;
+        if (pkData.differentiators) enrichedContext += `- Differentiators: ${pkData.differentiators}\n`;
       }
 
       // Inject learned relevance from feedback (Option C - learning loop)
@@ -278,7 +279,7 @@ For each suggestion, provide:
 
 Return ONLY valid JSON array like: [{"label":"Group Name","ids":["id1","id2"],"reason":"Why this group fits"}].`;
 
-      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+      const { data, error } = await sb.functions.invoke('ai-universal-processor', {
         body: { action: 'generate_marketing_messaging', provider: 'anthropic', prompt, systemPrompt: 'You are a marketing strategist. Return ONLY a valid JSON array, no markdown fences.' },
       });
       if (error) throw error;

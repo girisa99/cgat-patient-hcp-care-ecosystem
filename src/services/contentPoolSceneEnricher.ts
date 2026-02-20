@@ -1,18 +1,19 @@
 /**
  * Content Pool Scene Enricher (P5)
  * 
- * Injects product-specific context into blueprint scenes:
- * - Product metadata (name, tagline, features, category)
- * - Brand assets (logos per product)
- * - Audience personas (pain points, messaging angles)
- * - Approved regional scripts (if available)
+ * Injects product-specific context into blueprint scenes.
  * 
- * Aligned to actual DB schema for marketing_products, marketing_brand_assets,
- * marketing_audiences tables.
+ * DELEGATES to buildEnrichmentContext() from useUniversalEnrichment
+ * to avoid duplicating pool-traversal logic. This file adds the
+ * scene-level wrapping (EnrichedBlueprintScene) on top of the
+ * universal enrichment layer.
+ * 
+ * @see src/hooks/useUniversalEnrichment.ts — canonical enrichment logic
  */
 
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
-import type { ContentPoolContext, ContentPoolProduct, ContentPoolAudience } from '@/hooks/useContentPool';
+import type { ContentPoolContext } from '@/hooks/useContentPool';
+import { buildEnrichmentContext } from '@/hooks/useUniversalEnrichment';
 
 export interface EnrichedBlueprintScene extends BlueprintScene {
   productContext?: {
@@ -57,6 +58,10 @@ export interface EnrichedBlueprintScene extends BlueprintScene {
   };
 }
 
+/**
+ * Enrich a single scene using the universal enrichment layer.
+ * Delegates pool traversal to buildEnrichmentContext to avoid duplication.
+ */
 export function enrichSceneWithContext(
   scene: BlueprintScene,
   contentPool: ContentPoolContext,
@@ -65,59 +70,52 @@ export function enrichSceneWithContext(
   language?: string,
   audienceFramework?: string
 ): EnrichedBlueprintScene {
-  const product = productId ? contentPool.getProductById(productId) : null;
-  const brandAssets = productId ? contentPool.getBrandAssetsForProduct(productId) : [];
-  const primaryAsset = brandAssets.find(a => a.is_primary) || brandAssets[0];
-  const audiences = contentPool.audiences;
-  const selectedAudience = audienceFramework
-    ? contentPool.getAudienceByFramework(audienceFramework)[0]
-    : audiences[0];
-  const regionalScript = productId && region
-    ? contentPool.getScriptForRegion(productId, region)
-    : null;
+  // Delegate to universal enrichment (single source of truth)
+  const ctx = buildEnrichmentContext(contentPool, productId, region, language, audienceFramework);
+  const product = productId ? contentPool.getProductById(productId) : undefined;
 
   return {
     ...scene,
     
-    productContext: product ? {
+    productContext: ctx.product && product ? {
       productId: product.id,
-      productName: product.name,
-      tagline: product.tagline || '',
-      category: product.category || '',
-      features: product.features || [],
-      primaryColor: product.primary_color || '',
-      secondaryColor: product.secondary_color || '',
+      productName: ctx.product.name,
+      tagline: ctx.product.tagline,
+      category: ctx.product.category,
+      features: ctx.product.features,
+      primaryColor: ctx.product.primaryColor,
+      secondaryColor: ctx.product.secondaryColor,
       icon: product.icon || '',
     } : undefined,
     
-    brandContext: product ? {
-      logoUrl: primaryAsset?.asset_url,
-      primaryColor: product.primary_color || '',
-      secondaryColor: product.secondary_color || '',
+    brandContext: ctx.brand ? {
+      logoUrl: ctx.brand.logoUrl,
+      primaryColor: ctx.brand.primaryColor,
+      secondaryColor: ctx.brand.secondaryColor,
     } : undefined,
     
-    audienceContext: selectedAudience ? {
-      label: selectedAudience.label,
-      industry: selectedAudience.industry,
-      description: selectedAudience.description || '',
-      painPoints: selectedAudience.pain_points || [],
-      messagingAngles: selectedAudience.messaging_angles || [],
+    audienceContext: ctx.audience ? {
+      label: ctx.audience.label,
+      industry: ctx.audience.industry,
+      description: ctx.audience.description,
+      painPoints: ctx.audience.painPoints,
+      messagingAngles: ctx.audience.messagingAngles,
     } : undefined,
     
-    regionalContext: {
-      region: region || 'global',
-      language: language || 'en',
-      approvedScript: regionalScript?.content,
-      scriptStatus: (regionalScript?.status as 'approved' | 'draft' | 'pending') || 'pending',
-      ttsProviderRecommended: regionalScript?.llm_provider,
-    },
+    regionalContext: ctx.regional ? {
+      region: ctx.regional.region,
+      language: ctx.regional.language,
+      approvedScript: ctx.regional.approvedScript,
+      scriptStatus: ctx.regional.scriptStatus,
+      ttsProviderRecommended: ctx.regional.ttsProvider,
+    } : undefined,
     
     enrichedPromptContext: {
-      brand: product?.name || 'Genie',
-      audience: selectedAudience?.label || 'General Audience',
-      framework: selectedAudience?.messaging_angles?.[0] || 'StoryBrand',
-      region: region || 'global',
-      tone: product?.category || 'professional',
+      brand: ctx.product?.name || 'Genie',
+      audience: ctx.audience?.label || 'General Audience',
+      framework: ctx.audience?.messagingAngles?.[0] || 'StoryBrand',
+      region: ctx.regional?.region || 'global',
+      tone: ctx.product?.category || 'professional',
     },
   };
 }
