@@ -1301,64 +1301,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     console.log('[GenieCast] Template selected:', blueprint.name);
 
                     // ═══ EP04 SPECIAL HANDLING ═══
-                    // If EP04 is selected, trigger the full production seed instead of generic template selection
+                    // Navigate directly to the original EP04 production page — it already has
+                    // all scenes, characters, thumbnails, TTS, animations, and metadata.
                     const EP04_BLUEPRINT_ID = 'cafcd78a-7957-4021-ba8f-c20daba331b2';
                     if (blueprint.id === EP04_BLUEPRINT_ID) {
-                      console.log('[GenieCast] EP04 detected — running full production seed');
-                      const seed = createEP04SessionSeed();
-
-                      // Create a cast_project for token/cost tracking
-                      const { createCastProject } = await import('@/services/productionCostAccumulator');
-                      const projectId = await createCastProject({
-                        title: 'EP04 — Genie Reel Episode 2',
-                        description: 'AI-powered cinematic product demo',
-                        estimatedTokens: 850000,
-                        productContext: 'genie-reel-ep04',
-                        quality: 'cinematic',
-                        metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
-                      });
-
-                      castSession.updateSession({ ...seed, projectId });
-                      const stats = getEP04Stats();
-                      toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
-
-                      // Map EP04 to CREATE steps (local UI state)
-                      const techCategory = contentRegistry.categories.find(c => c.name === 'technology');
-                      if (techCategory) setSelectedCategoryId(techCategory.id);
-                      const videoFormat = contentRegistry.formats.find(f => f.name === 'video');
-                      if (videoFormat) {
-                        setSelectedFormatId(videoFormat.id);
-                        setActiveContentType(videoFormat.name);
-                      }
-                      setPrimaryPlatform('youtube');
-                      setOutputLanguages(['en']);
-                      setSelectedDialectCodes(['en-US']);
-                      const cinematicStyle = contentRegistry.visualStyles.find(s => s.name === 'cinematic');
-                      if (cinematicStyle) setSelectedVisualStyleId(cinematicStyle.id);
-                      const ep04Caps = ['avatar_talking_head', 'lip_sync', 'scene_voiceover', 'screen_recording', 'text_to_video'];
-                      const matchedCapIds = contentRegistry.productionCapabilities
-                        .filter(c => ep04Caps.includes(c.name))
-                        .map(c => c.id);
-                      if (matchedCapIds.length > 0) setSelectedCapabilityIds(matchedCapIds);
-                      setSelectedAssetSource('screen_capture');
-                      setLipSyncEnabled(true);
-                      setDubbingEnabled(false);
-                      setSelectedResolution('1920x1080');
-                      setSelectedAspectRatio('16:9');
-                      setProductionQuality('cinematic');
-
-                      // Resolve screen capture assets from storage
-                      if (seed.templateMapping) {
-                        const { mapping, stats: screenStats } = await enrichWithScreenAssets(seed.templateMapping);
-                        castSession.updateSession({ templateMapping: mapping });
-                        if (screenStats.found > 0) {
-                          toast.success(`📸 ${screenStats.found}/${screenStats.total} screenshots resolved`);
-                        }
-                      }
-
-                      // Navigate to CREATE → configure to show all pre-populated steps
-                      setActiveMainTab('create');
-                      setSubTab('create', 'configure');
+                      console.log('[GenieCast] EP04 detected — navigating to original production page');
+                      window.location.href = '/ep04-production';
                       return;
                     }
 

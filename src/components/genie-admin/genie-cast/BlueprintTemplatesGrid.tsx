@@ -34,6 +34,7 @@ import { CreateTemplateDialog } from './CreateTemplateDialog';
 import { TemplateComparisonView } from './TemplateComparisonView';
 import { getIntentRecommendations } from './intentScoringUtils';
 import { useToast } from '@/hooks/use-toast';
+import ep04Thumbnail from '@/assets/scenes/scene-0-title.png';
 
 interface BlueprintTemplatesGridProps {
   onSelectBlueprint?: (blueprint: VideoBlueprint) => void;
@@ -53,7 +54,10 @@ const CATEGORY_PLACEHOLDER_THUMBNAILS: Record<string, string> = {
   avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=640&h=360&fit=crop',
 };
 
+const EP04_BLUEPRINT_ID = 'cafcd78a-7957-4021-ba8f-c20daba331b2';
+
 const getEffectiveThumbnail = (blueprint: VideoBlueprint): string | null => {
+  if (blueprint.id === EP04_BLUEPRINT_ID) return ep04Thumbnail;
   if (blueprint.thumbnail_url) return blueprint.thumbnail_url;
   return CATEGORY_PLACEHOLDER_THUMBNAILS[blueprint.category] || CATEGORY_PLACEHOLDER_THUMBNAILS.marketing;
 };
