@@ -231,7 +231,7 @@ const SCENE_BACKGROUNDS: Record<string, string> = {
   'scene-7-velocity': scene7Bg,
   'scene-8-numbers': scene8Bg,
   'scene-9-challenges': scene9Bg,
-  'scene-10-vision': scene10Bg,
+  'scene-10-whats-next': scene10Bg,
   'scene-11-close': scene11Bg,
 };
 
@@ -246,7 +246,7 @@ const SCENE_TITLES: Record<string, string> = {
   'scene-7-velocity': 'Scene 7 — Velocity & Scope Creep',
   'scene-8-numbers': 'Scene 8 — The Numbers',
   'scene-9-challenges': 'Scene 9 — Honest Challenges',
-  'scene-10-vision': 'Scene 10 — What\'s Next',
+  'scene-10-whats-next': 'Scene 10 — What\'s Next',
   'scene-11-close': 'Scene 11 — Close & CTA',
 };
 
@@ -261,7 +261,7 @@ const SCENE_STYLES: Record<string, string> = {
   'scene-7-velocity': 'Pixar 3D',
   'scene-8-numbers': 'Flat Illustration',
   'scene-9-challenges': 'Anime',
-  'scene-10-vision': 'Watercolor',
+  'scene-10-whats-next': 'Watercolor',
   'scene-11-close': 'Pixar 3D',
 };
 
@@ -278,7 +278,7 @@ const SCENE_TO_SCREENSHOT_MAP: Record<string, string[]> = {
   'scene-7-velocity': ['scene-7-mission-control'], // screen-capture — ORIGINAL (mission control, standup, qa, eod)
   'scene-8-numbers': ['scene-8-dashboard-tour'], // screen-capture — ORIGINAL (18 screens!)
   'scene-9-challenges': ['scene-9-numbers'], // motion-graphics — AI regen
-  'scene-10-vision': ['scene-10-whats-next'], // 3d-avatar — pure AI
+  'scene-10-whats-next': ['scene-10-whats-next'], // 3d-avatar — pure AI
   'scene-11-close': ['scene-11-close'], // 3d-avatar — pure AI
 };
 

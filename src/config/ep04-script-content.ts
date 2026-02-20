@@ -1125,7 +1125,7 @@ Day 3: I realized I was the weakest link. Not because I'm bad at my job. Because
   'whats-next-intro': {
     text: `So what's next?
 
-We're integrating MCP — Model Context Protocol. When that's live, the sprint tracker stops being a tool you update and becomes a tool that updates itself.
+I'm integrating MCP — Model Context Protocol. When that's live, the sprint tracker stops being a tool you update and becomes a tool that updates itself.
 
 Push a commit. The tracker reads the diff. Updates the task status. Checks acceptance criteria. Flags if something's incomplete. Generates the QA checklist. You didn't touch the board. The board updated itself.
 
@@ -1133,15 +1133,21 @@ That's not science fiction. Atlas has the architecture diagram. It's 40 lines of
     voice: 'host',
     scene: 'scene-10-whats-next',
     duration_est: 25,
-    direction: 'Visionary energy. Build excitement through the "push a commit" sequence — each step gets faster. "40 lines of config" grounds it in reality.',
+    direction: 'Visionary energy. Build excitement through the "push a commit" sequence — each step gets faster. "40 lines of config" grounds it in reality. Leaning forward, gesturing at an imaginary screen.',
+    lipsync: true,
+    motion: 'visionary-lean-forward-gesture-at-screen',
+    sfx: ['futuristic_whoosh', 'tech_pulse'],
   },
 
   'whats-next-atlas': {
-    text: `Additionally, we built language support for 45+ languages across 5 regional zones. Seven Arabic dialects. Twenty-two Indian languages. In a traditional team, that's a quarter-long initiative. We built it in a session. Foundation-first architecture matters.`,
+    text: `Additionally, I built language support for 45+ languages across 5 regional zones. Seven Arabic dialects. Twenty-two Indian languages. In a traditional team, that's a quarter-long initiative. I built it in a session. Foundation-first architecture matters.`,
     voice: 'atlas',
     scene: 'scene-10-whats-next',
     duration_est: 12,
-    direction: 'Principled and proud. The scale of language support should feel impressive. Last line is Atlas\'s worldview — infrastructure first.',
+    direction: 'Principled and proud. The scale of language support should feel impressive. Last line is Atlas\'s worldview — infrastructure first. Standing tall, arms crossed with authority.',
+    lipsync: true,
+    motion: 'proud-arms-crossed-standing-tall',
+    sfx: ['achievement_chime', 'map_unfold'],
   },
 
   'whats-next-nova': {
@@ -1149,7 +1155,10 @@ That's not science fiction. Atlas has the architecture diagram. It's 40 lines of
     voice: 'nova',
     scene: 'scene-10-whats-next',
     duration_est: 8,
-    direction: 'Genuine excitement. "Like it\'s 2019" is delivered with dramatic horror.',
+    direction: 'Genuine excitement. "Like it\'s 2019" is delivered with dramatic horror. Bouncy energy, hands clapping together.',
+    lipsync: true,
+    motion: 'excited-bouncy-hands-clap',
+    sfx: ['sparkle_burst', 'excited_chime'],
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
