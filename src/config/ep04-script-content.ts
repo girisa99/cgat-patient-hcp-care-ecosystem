@@ -156,9 +156,34 @@ But nobody ever said: what if the system itself was the problem?`,
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SCENE 2: MEET THE TEAM — CHARACTER INTRODUCTIONS (3:00–5:00)
-  // VISUAL: Each character gets a dramatic entrance with lower-third title card.
-  // Host character center. Atlas (bear) enters from left. Nova (fox) from right.
   // ═══════════════════════════════════════════════════════════════════════════
+  // CINEMATIC STAGING:
+  // - WIDE SHOT opens on a woodland innovation lab / campfire clearing
+  // - HOST (center-foreground) addresses camera from a log podium
+  // - ATLAS (bear, stage-left) already working — typing on a holographic terminal,
+  //   blueprints floating around him, barely looking up. "Busy innovating" energy.
+  // - NOVA (fox, stage-right) is sketching UI wireframes in the air with her paw,
+  //   colorful component mockups floating and glowing. She's in creative flow.
+  // - SQUIRREL (background, tree branch above) is hanging upside down, eating an
+  //   acorn, occasionally peeking at the scene. Half-listening, half-distracted.
+  // - WOODLAND SPECTATORS (3-4 small animals — owl, rabbit, hedgehog, frog) sit
+  //   in a semicircle behind. OWL nods wisely. RABBIT takes notes on a tiny pad.
+  //   HEDGEHOG whispers to FROG. They react to each speaker — lean in, gasp, nod.
+  // - FIREFLIES and soft particle effects drift through the scene
+  // - Each character LANDING: dramatic spotlight + dust kick-up + name card flies in
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ── SCENE 2 OPENING — Cinematic landing of all characters
+  'scene2-staging-open': {
+    text: ``,
+    voice: 'host',
+    scene: 'scene-2-introductions',
+    duration_est: 5,
+    direction: '[NO DIALOGUE — PURE CINEMATIC] Wide establishing shot of the woodland innovation clearing. Camera swoops down from treetops. Three spotlights hit the ground in sequence — BOOM, BOOM, BOOM. Atlas lands stage-left in a flash of blue code particles, immediately opens a holographic terminal and starts typing without looking up. Nova lands stage-right in a burst of pink sparkles, UI components materialize around her as she starts sketching. Host walks in center from fog, casual. Squirrel drops from tree branch above, catches himself, hangs upside down munching an acorn. Woodland spectators (owl, rabbit, hedgehog, frog) shuffle into seats behind. Owl adjusts tiny glasses. Rabbit pulls out notepad. Fireflies drift lazily through the scene.',
+    lipsync: false,
+    sfx: ['dramatic_whoosh_1', 'dramatic_whoosh_2', 'dramatic_whoosh_3', 'code_particles_burst', 'sparkle_burst', 'footsteps_fog', 'acorn_crunch', 'firefly_ambience', 'woodland_settle'],
+    motion: 'triple-spotlight-landing-establishing-shot',
+  },
 
   'intro-transition': {
     text: `That question led me to an experiment. But let me be honest about how I got here.
@@ -177,10 +202,10 @@ So let me introduce them properly.`,
     voice: 'host',
     scene: 'scene-2-introductions',
     duration_est: 55,
-    direction: 'Authentic, confessional tone — this is the real journey. "Every AI tool I could get my hands on" is relatable. Build through the tool names. The Claude evolution should feel like discovery. "Changed everything" lands with weight. "Until you experiment, you will never know" is the thesis — deliver like a mantra. "Rest" is the emotional payoff — pause before it. The roles list builds momentum.',
+    direction: 'Authentic, confessional tone — this is the real journey. STAGING: Atlas is still typing in background, occasionally glancing over. Nova pauses her sketching to listen — ears perk up. Squirrel stops chewing and tilts head. Owl spectator nods at each tool name. Rabbit scribbles furiously. "Until you experiment" — Atlas stops typing, turns slightly. "Rest" — everyone in clearing goes still for a beat. Fireflies cluster warmly.',
     lipsync: true,
-    sfx: ['tool_logo_whoosh', 'discovery_chime', 'momentum_build'],
-    motion: 'direct-to-camera-passionate',
+    sfx: ['tool_logo_whoosh', 'discovery_chime', 'momentum_build', 'typing_stops_beat', 'firefly_cluster'],
+    motion: 'direct-to-camera-passionate-bg-reactions',
   },
 
   // LOWER-THIRD: "Atlas — AI Tech Lead | Powered by Claude Code (Anthropic)"
@@ -195,7 +220,10 @@ Atlas — introduce yourself.`,
     voice: 'host',
     scene: 'scene-2-introductions',
     duration_est: 30,
-    direction: 'Admiring but amused. Build Atlas as the serious, methodical one. "Reasonable Tuesday" gets a beat. Camera pans to Atlas character on his intro.',
+    direction: 'Admiring but amused. STAGING: Spotlight swings to Atlas. He closes holographic terminal with a flick. Stands up slowly — imposing. Blue code particles orbit him. Nova watches from stage-right, arms crossed, smirking. Squirrel drops acorn in surprise at "847 lines" — it bounces off hedgehog\'s head. Rabbit underlines something. Camera dollies toward Atlas. Lower-third name card flies in with code-matrix animation.',
+    lipsync: true,
+    sfx: ['spotlight_swing', 'hologram_close', 'code_orbit_hum', 'acorn_bonk', 'name_card_fly_in'],
+    motion: 'spotlight-atlas-dramatic-rise',
   },
 
   'atlas-self-intro': {
@@ -211,7 +239,10 @@ I don't talk. I work. You're welcome.`,
     voice: 'atlas',
     scene: 'scene-2-introductions',
     duration_est: 22,
-    direction: 'Measured, precise, dry humor. Each "I don\'t" is a deliberate beat. "Occasionally" is deadpan — Atlas knows humans skim docs. "Fixed stuff" callback gets a slight pause of disapproval. "You\'re welcome" is delivered with zero irony — Atlas genuinely thinks this is a gift.',
+    direction: 'Measured, precise, dry humor. STAGING: Atlas stands with arms behind back, military posture. Holographic code scrolls behind him as he speaks. On "200,000 tokens" a counter visualizes spinning up. On "fixed stuff" — Nova stifles a laugh, covers mouth with paw. Squirrel pretends to be taking notes but is drawing doodles. Owl nods approvingly at "documentation." On "You\'re welcome" Atlas does a single sharp nod — mic drop energy. Blue particles flare outward.',
+    lipsync: true,
+    sfx: ['code_scroll_ambient', 'token_counter_spin', 'nova_stifled_laugh', 'sharp_nod_boom'],
+    motion: 'atlas-military-stance-code-scroll-mic-drop',
   },
 
   'host-atlas-reaction': {
@@ -219,7 +250,10 @@ I don't talk. I work. You're welcome.`,
     voice: 'host',
     scene: 'scene-2-introductions',
     duration_est: 3,
-    direction: 'Genuinely surprised. Amused.',
+    direction: 'Genuinely surprised. Amused. STAGING: Host tilts head. Nova nods enthusiastically in background. Squirrel holds up a tiny "8/10" scorecard from tree branch. Hedgehog claps tiny paws.',
+    lipsync: true,
+    sfx: ['audience_light_chuckle', 'scorecard_flip'],
+    motion: 'host-amused-tilt-bg-reactions',
   },
 
   'atlas-not-intended': {
@@ -227,7 +261,10 @@ I don't talk. I work. You're welcome.`,
     voice: 'atlas',
     scene: 'scene-2-introductions',
     duration_est: 4,
-    direction: 'Correcting the record. Deadpan.',
+    direction: 'Correcting the record. Deadpan. STAGING: Atlas adjusts invisible tie. Nova rolls eyes playfully. Squirrel flips scorecard to "6/10." Frog spectator croaks a tiny laugh.',
+    lipsync: true,
+    sfx: ['deadpan_beat', 'scorecard_flip_2', 'frog_croak_tiny'],
+    motion: 'atlas-adjust-tie-nova-eye-roll',
   },
 
   // LOWER-THIRD: "Nova — AI Frontend Dev | Powered by Lovable (Vibe Coding)"
@@ -240,7 +277,10 @@ Nova — your turn.`,
     voice: 'host',
     scene: 'scene-2-introductions',
     duration_est: 22,
-    direction: 'Warmer tone — Nova is the energetic one. "Vibe coding" gets a slight emphasis. Slight exasperation on "weren\'t assigned to her." Camera pans to Nova.',
+    direction: 'Warmer tone. STAGING: Spotlight swings to Nova. She leaps up from her sketching, UI mockups scatter and reform as a dazzling aura around her. Pink-green sparkle trail follows her movement. Atlas steps back, crosses arms — watching analytically. Squirrel swings to a closer branch for a better view. Lower-third name card flies in with gradient animation. Owl whispers to rabbit: "Watch this one." Nova does a little spin — her floating UI components orbit her like planets.',
+    lipsync: true,
+    sfx: ['spotlight_swing_2', 'sparkle_trail', 'ui_components_scatter_reform', 'name_card_fly_in_gradient', 'owl_whisper'],
+    motion: 'spotlight-nova-leap-spin-ui-orbit',
   },
 
   'nova-self-intro': {
@@ -252,7 +292,10 @@ I'm powered by Lovable — so if you've ever said "I wish I could just describe 
     voice: 'nova',
     scene: 'scene-2-introductions',
     duration_est: 25,
-    direction: 'Bright, energetic, proud. Rapid delivery. Genuine delight at the backhanded compliment. "Four minutes flat" is a flex. "Dark mode is a human right" is delivered with passionate conviction.',
+    direction: 'Bright, energetic, proud. STAGING: Nova bounces on her toes as she talks — pure energy. On "four minutes flat" she snaps her paw and a Kanban board materializes holographically behind her, cards flying into columns. Atlas in background raises one eyebrow — barely perceptible approval. On "standing ovation" Squirrel does an actual tiny standing ovation from tree branch. Woodland spectators laugh — rabbit drops notepad. On "dark mode is a human right" Nova\'s floating UI components all toggle to dark mode simultaneously. Hedgehog puts on tiny sunglasses. Fireflies dim and glow purple.',
+    lipsync: true,
+    sfx: ['bounce_energy', 'snap_kanban_materialize', 'cards_flying', 'squirrel_tiny_clap', 'spectator_laughter', 'dark_mode_toggle_whoosh', 'firefly_dim_purple'],
+    motion: 'nova-bounce-snap-kanban-dark-mode-toggle',
   },
 
   'atlas-correction': {
@@ -260,7 +303,10 @@ I'm powered by Lovable — so if you've ever said "I wish I could just describe 
     voice: 'atlas',
     scene: 'scene-2-introductions',
     duration_est: 6,
-    direction: 'Correcting the record. Slight pause before "not harmful." Last line is growth — Atlas is evolving.',
+    direction: 'Correcting the record. STAGING: Atlas uncrosses arms, holds up one finger for precision. On "not harmful" Nova\'s ear twitches — she\'s keeping score. Squirrel pretends to be a judge, holds up "7.5/10" card. Owl nods sagely. Atlas does a micro-smile — blink and you miss it.',
+    lipsync: true,
+    sfx: ['precision_ding', 'ear_twitch', 'scorecard_flip_3'],
+    motion: 'atlas-one-finger-micro-smile',
   },
 
   'nova-animations-always': {
@@ -268,7 +314,10 @@ I'm powered by Lovable — so if you've ever said "I wish I could just describe 
     voice: 'nova',
     scene: 'scene-2-introductions',
     duration_est: 4,
-    direction: 'Passionate. She means this with every pixel of her being.',
+    direction: 'Passionate. STAGING: Nova stamps her paw — all floating UI components bounce in solidarity. Sparkle particles burst outward. Atlas closes his eyes in patient resignation. Squirrel does a tiny fist-pump of agreement. Frog spectator does a slow blink. Fireflies do a synchronized swirl around Nova.',
+    lipsync: true,
+    sfx: ['paw_stamp', 'components_bounce', 'sparkle_burst_solidarity', 'firefly_swirl'],
+    motion: 'nova-stamp-components-bounce-firefly-swirl',
   },
 
   'host-team-summary': {
@@ -280,7 +329,10 @@ And together, the three of us do the work of a team of five — conservatively. 
     voice: 'host',
     scene: 'scene-2-introductions',
     duration_est: 25,
-    direction: 'Energetic summary. "Zero patience for meetings" is a callback setup. "Argue about semicolons" should get a smile. Build momentum into the sprint tracker origin story.',
+    direction: 'Energetic summary. STAGING: Camera pulls back to wide shot — all three characters now standing together. Atlas on left (blue glow), Host center, Nova on right (pink-green glow). Atlas has returned to typing — but slower, half-listening. Nova\'s components orbit lazily. Squirrel swings down and sits on Host\'s shoulder briefly before scampering back up. Woodland spectators all lean forward at "the work of a team of five." Owl takes off glasses to clean them — impressed. Camera pushes in on Host for the transition tease. Fireflies form a subtle arrow pointing forward — toward Scene 3.',
+    lipsync: true,
+    sfx: ['camera_pullback_whoosh', 'glow_sync', 'squirrel_shoulder_hop', 'spectator_lean_in', 'arrow_form_chime'],
+    motion: 'wide-shot-trio-glow-squirrel-hop-arrow-transition',
   },
 
   // ── NOVA SHY FLATTERY TRANSITION — Emotional beat before Scene 3
