@@ -36,6 +36,8 @@ export interface ScriptLine {
   motion?: string;
   /** Clickable links for CTA scenes */
   links?: { label: string; url: string; type: string }[];
+  /** Visual reference tag for production (e.g., architecture diagram) */
+  visual_ref?: string;
 }
 
 export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
@@ -1125,37 +1127,39 @@ Day 3: I realized I was the weakest link. Not because I'm bad at my job. Because
   'whats-next-intro': {
     text: `So what's next?
 
-I'm integrating MCP — Model Context Protocol. When that's live, the sprint tracker stops being a tool you update and becomes a tool that updates itself.
+I'm working on integrating MCP — Model Context Protocol. The architecture is already mapped out — from GitHub commit hooks, to diff parsing, to automatic task status updates, acceptance criteria checks, and QA checklist generation. The full pipeline: push code to GitHub, MCP reads the diff, updates the sprint tracker, flags incomplete items, and generates the QA report. I don't touch the board. The board updates itself.
 
-Push a commit. The tracker reads the diff. Updates the task status. Checks acceptance criteria. Flags if something's incomplete. Generates the QA checklist. You didn't touch the board. The board updated itself.
+That frees me up to focus on what actually matters — the business logic, PO notes and actions, and QA validation. Not board maintenance.
 
-That's not science fiction. Atlas has the architecture diagram. It's 40 lines of config.`,
+I show what I build. That's not a tagline — it's how I work. I'm the best judge of my own problems because I encountered them, I know how to resolve them, and I build the tools to address them. That's the real dogfooding.`,
     voice: 'host',
     scene: 'scene-10-whats-next',
-    duration_est: 25,
-    direction: 'Visionary energy. Build excitement through the "push a commit" sequence — each step gets faster. "40 lines of config" grounds it in reality. Leaning forward, gesturing at an imaginary screen.',
+    duration_est: 30,
+    direction: 'Visionary but grounded. Walk through the architecture flow like you\'re drawing it on a whiteboard. The "I show what I build" line is personal and philosophical — slow down for it. Leaning forward, gesturing at the architecture diagram on screen.',
     lipsync: true,
     motion: 'visionary-lean-forward-gesture-at-screen',
     sfx: ['futuristic_whoosh', 'tech_pulse'],
+    visual_ref: 'architecture-diagram-sprint-tracker-github-mcp-pipeline',
   },
 
   'whats-next-atlas': {
-    text: `Additionally, I built language support for 45+ languages across 5 regional zones. Seven Arabic dialects. Twenty-two Indian languages. In a traditional team, that's a quarter-long initiative. I built it in a session. Foundation-first architecture matters.`,
+    text: `The architecture backs this up. I built language support for 45+ languages across 5 regional zones. Seven Arabic dialects. Twenty-two Indian languages. The sprint tracker itself pushes to GitHub with bidirectional sync — Lovable and Claude Code working in parallel, both feeding into the same tracker. Foundation-first architecture matters.`,
     voice: 'atlas',
     scene: 'scene-10-whats-next',
-    duration_est: 12,
-    direction: 'Principled and proud. The scale of language support should feel impressive. Last line is Atlas\'s worldview — infrastructure first. Standing tall, arms crossed with authority.',
+    duration_est: 14,
+    direction: 'Principled and proud. Reference the architecture diagram visible on screen. The GitHub integration detail grounds the vision in reality. Standing tall, arms crossed with authority.',
     lipsync: true,
     motion: 'proud-arms-crossed-standing-tall',
     sfx: ['achievement_chime', 'map_unfold'],
+    visual_ref: 'architecture-diagram-dual-developer-github-sync',
   },
 
   'whats-next-nova': {
-    text: `And I'm excited because MCP means the sprint tracker will automatically know when I've shipped a component. No more manual updates. No more updating a board like it's 2019. The future is self-documenting code and I am here for it.`,
+    text: `And with MCP, the sprint tracker will know when I've shipped a component — automatically. No more manual board updates. I focus on building, the tracker focuses on tracking. Business decisions, PO actions, QA — that's where human attention belongs. Not dragging cards around.`,
     voice: 'nova',
     scene: 'scene-10-whats-next',
-    duration_est: 8,
-    direction: 'Genuine excitement. "Like it\'s 2019" is delivered with dramatic horror. Bouncy energy, hands clapping together.',
+    duration_est: 10,
+    direction: 'Genuine excitement turning into conviction. The "dragging cards around" line is delivered with playful disdain. Bouncy energy, hands clapping together.',
     lipsync: true,
     motion: 'excited-bouncy-hands-clap',
     sfx: ['sparkle_burst', 'excited_chime'],
