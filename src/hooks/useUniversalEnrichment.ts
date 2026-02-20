@@ -2,28 +2,34 @@
  * useUniversalEnrichment — Product-agnostic content enrichment hook
  * 
  * Provides script richness (product context, brand, audience, regional scripts,
- * AI prompt context) to ANY Genie product. Each product passes its own session
- * context; the hook returns enrichment data + a ready-made `additionalContext`
- * string that plugs directly into `universalScriptGeneratorService`.
+ * product knowledge, AI prompt context) to ANY Genie product. Each product passes
+ * its own session context; the hook returns enrichment data + a ready-made
+ * `additionalContext` string that plugs directly into `universalScriptGeneratorService`.
+ * 
+ * Consolidates data from:
+ * - marketing_products (via useContentPool)
+ * - marketing_brand_assets (via useContentPool)
+ * - marketing_audiences (via useContentPool)
+ * - regional_narration_scripts (via useContentPool)
+ * - product_knowledge_registry (direct query, cached)
  * 
  * Supported products: Spark, Mind, Deck, Cast, Vibe, Arc, Hub
  * 
  * @example
- * // In Spark
  * const { enrichmentContext, additionalContext } = useUniversalEnrichment({
  *   productId: selectedProduct.id,
  *   region: 'INDIA_SOUTH_TA',
  *   language: 'ta',
  *   audienceFramework: 'StoryBrand',
  * });
- * 
- * // Feed into script generator
  * generateUniversalScript({ ...req, additionalContext });
  */
 
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useContentPool } from './useContentPool';
 import type { ContentPoolContext } from './useContentPool';
+import { supabase } from '@/integrations/supabase/client';
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
@@ -38,6 +44,21 @@ export interface UniversalEnrichmentOptions {
   audienceFramework?: string;
   /** Content style/tone override */
   contentStyle?: string;
+}
+
+export interface ProductKnowledgeContext {
+  valueProposition?: string;
+  positioningStatement?: string;
+  tagline?: string;
+  elevatorPitch?: string;
+  painPoints: string[];
+  keyBenefits: string[];
+  useCases: string[];
+  differentiators: string[];
+  competitiveEdge?: string;
+  regionalPositioning?: Record<string, unknown>;
+  regionalPainPoints?: Record<string, unknown>;
+  regionalBenefits?: Record<string, unknown>;
 }
 
 export interface EnrichmentContext {
@@ -68,6 +89,8 @@ export interface EnrichmentContext {
     scriptStatus: 'approved' | 'draft' | 'pending';
     ttsProvider?: string;
   };
+  /** Product knowledge from product_knowledge_registry */
+  knowledge?: ProductKnowledgeContext;
 }
 
 export interface UniversalEnrichmentResult {
@@ -81,6 +104,7 @@ export interface UniversalEnrichmentResult {
     hasBrandContext: boolean;
     hasAudienceContext: boolean;
     hasRegionalScript: boolean;
+    hasProductKnowledge: boolean;
     approvedScriptCount: number;
   };
   /** Content pool loading state */
@@ -91,6 +115,40 @@ export interface UniversalEnrichmentResult {
   productName?: string;
 }
 
+// ─── PRODUCT KNOWLEDGE QUERY (single source — replaces duplicate queries) ──
+
+async function fetchProductKnowledge(productId: string): Promise<ProductKnowledgeContext | null> {
+  try {
+    const { data, error } = await supabase
+      .from('product_knowledge_registry')
+      .select('value_proposition, positioning_statement, tagline, elevator_pitch, pain_points, key_benefits, use_cases, differentiators, competitive_edge, regional_positioning, regional_pain_points, regional_benefits')
+      .eq('product_id', productId)
+      .eq('is_current', true)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      valueProposition: data.value_proposition ?? undefined,
+      positioningStatement: data.positioning_statement ?? undefined,
+      tagline: data.tagline ?? undefined,
+      elevatorPitch: data.elevator_pitch ?? undefined,
+      painPoints: (data.pain_points as string[]) || [],
+      keyBenefits: (data.key_benefits as string[]) || [],
+      useCases: (data.use_cases as string[]) || [],
+      differentiators: (data.differentiators as string[]) || [],
+      competitiveEdge: data.competitive_edge ?? undefined,
+      regionalPositioning: (data.regional_positioning as Record<string, unknown>) || {},
+      regionalPainPoints: (data.regional_pain_points as Record<string, unknown>) || {},
+      regionalBenefits: (data.regional_benefits as Record<string, unknown>) || {},
+    };
+  } catch {
+    console.warn('[UniversalEnrichment] Failed to load product knowledge');
+    return null;
+  }
+}
+
 // ─── PURE FUNCTION: Build enrichment from pool ─────────────────────────────
 
 export function buildEnrichmentContext(
@@ -99,6 +157,7 @@ export function buildEnrichmentContext(
   region?: string,
   language?: string,
   audienceFramework?: string,
+  knowledge?: ProductKnowledgeContext | null,
 ): EnrichmentContext {
   const product = productId ? pool.getProductById(productId) : undefined;
   const brandAssets = productId ? pool.getBrandAssetsForProduct(productId) : [];
@@ -141,12 +200,17 @@ export function buildEnrichmentContext(
       scriptStatus: (regionalScript?.status as 'approved' | 'draft' | 'pending') || 'pending',
       ttsProvider: regionalScript?.llm_provider,
     },
+
+    knowledge: knowledge || undefined,
   };
 }
 
 /**
  * Format enrichment context into a string for AI script generation.
  * Plugs directly into `ScriptGenerationRequest.additionalContext`.
+ * 
+ * This is the SINGLE source of truth for AI prompt enrichment.
+ * Do NOT build inline enrichment strings elsewhere — import this instead.
  */
 export function formatEnrichmentForAI(
   ctx: EnrichmentContext,
@@ -154,6 +218,7 @@ export function formatEnrichmentForAI(
 ): string {
   const parts: string[] = [];
 
+  // Product basics
   if (ctx.product) {
     parts.push(`Product: ${ctx.product.name}`);
     if (ctx.product.tagline) parts.push(`Tagline: ${ctx.product.tagline}`);
@@ -163,16 +228,43 @@ export function formatEnrichmentForAI(
     }
   }
 
+  // Product knowledge (from product_knowledge_registry)
+  if (ctx.knowledge) {
+    if (ctx.knowledge.valueProposition) {
+      parts.push(`Value Proposition: ${ctx.knowledge.valueProposition}`);
+    }
+    if (ctx.knowledge.positioningStatement) {
+      parts.push(`Positioning: ${ctx.knowledge.positioningStatement}`);
+    }
+    if (ctx.knowledge.painPoints?.length) {
+      parts.push(`Pain Points Solved: ${ctx.knowledge.painPoints.join(', ')}`);
+    }
+    if (ctx.knowledge.keyBenefits?.length) {
+      parts.push(`Key Benefits: ${ctx.knowledge.keyBenefits.join(', ')}`);
+    }
+    if (ctx.knowledge.useCases?.length) {
+      parts.push(`Use Cases: ${ctx.knowledge.useCases.join(', ')}`);
+    }
+    if (ctx.knowledge.differentiators?.length) {
+      parts.push(`Differentiators: ${ctx.knowledge.differentiators.join(', ')}`);
+    }
+    if (ctx.knowledge.competitiveEdge) {
+      parts.push(`Competitive Edge: ${ctx.knowledge.competitiveEdge}`);
+    }
+  }
+
+  // Audience
   if (ctx.audience) {
     parts.push(`Target Audience: ${ctx.audience.label} (${ctx.audience.industry})`);
     if (ctx.audience.painPoints?.length) {
-      parts.push(`Pain Points: ${ctx.audience.painPoints.join(', ')}`);
+      parts.push(`Audience Pain Points: ${ctx.audience.painPoints.join(', ')}`);
     }
     if (ctx.audience.messagingAngles?.length) {
       parts.push(`Messaging Angles: ${ctx.audience.messagingAngles.join(', ')}`);
     }
   }
 
+  // Regional
   if (ctx.regional) {
     parts.push(`Region: ${ctx.regional.region}`);
     parts.push(`Language: ${ctx.regional.language}`);
@@ -193,7 +285,7 @@ export function formatEnrichmentForAI(
 export function useUniversalEnrichment(
   options: UniversalEnrichmentOptions,
 ): UniversalEnrichmentResult {
-  const { pool, isLoading } = useContentPool();
+  const { pool, isLoading: poolLoading } = useContentPool();
   const {
     productId,
     region = 'global',
@@ -202,10 +294,18 @@ export function useUniversalEnrichment(
     contentStyle,
   } = options;
 
+  // Fetch product knowledge (cached, deduplicated via react-query)
+  const { data: knowledge, isLoading: knowledgeLoading } = useQuery({
+    queryKey: ['product_knowledge', productId],
+    queryFn: () => fetchProductKnowledge(productId!),
+    enabled: !!productId,
+    staleTime: 10 * 60 * 1000,
+  });
+
   const enrichmentContext = useMemo<EnrichmentContext>(() => {
     if (!pool) return { regional: { region, language, scriptStatus: 'pending' } };
-    return buildEnrichmentContext(pool, productId, region, language, audienceFramework);
-  }, [pool, productId, region, language, audienceFramework]);
+    return buildEnrichmentContext(pool, productId, region, language, audienceFramework, knowledge);
+  }, [pool, productId, region, language, audienceFramework, knowledge]);
 
   const additionalContext = useMemo(
     () => formatEnrichmentForAI(enrichmentContext, contentStyle),
@@ -217,6 +317,7 @@ export function useUniversalEnrichment(
     hasBrandContext: !!enrichmentContext.brand,
     hasAudienceContext: !!enrichmentContext.audience,
     hasRegionalScript: !!enrichmentContext.regional?.approvedScript,
+    hasProductKnowledge: !!enrichmentContext.knowledge,
     approvedScriptCount: pool
       ? pool.regionalScripts.filter(s => s.status === 'approved').length
       : 0,
@@ -226,7 +327,7 @@ export function useUniversalEnrichment(
     enrichmentContext,
     additionalContext,
     status,
-    isLoading,
+    isLoading: poolLoading || knowledgeLoading,
     isAvailable: !!pool,
     productName: enrichmentContext.product?.name,
   };
