@@ -98,6 +98,7 @@ import { EP04PublishHub } from './EP04PublishHub';
 import { SceneCharacterVisualizer } from './SceneCharacterVisualizer';
 import { SEOOptimizerPanel } from './SEOOptimizerPanel';
 import { ABTestingPanel } from './ABTestingPanel';
+import { createEP04SessionSeed, getEP04Stats } from '@/utils/ep04-session-seed';
 
 // Import Landing Page Scripts
 import { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
@@ -504,6 +505,23 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         />
         <Separator orientation="vertical" className="h-5" />
         <GlobalRegionSelector regions={genieCastRegions} />
+        <Separator orientation="vertical" className="h-5" />
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs font-medium border-primary/30 hover:bg-primary/10"
+          onClick={() => {
+            const seed = createEP04SessionSeed();
+            castSession.updateSession(seed);
+            const stats = getEP04Stats();
+            toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
+            setActiveMainTab('produce');
+            setSubTab('produce', 'generate');
+          }}
+        >
+          <Film className="w-3.5 h-3.5" />
+          Load EP04
+        </Button>
       </div>
 
       {/* Main 3-Tab Navigation */}
