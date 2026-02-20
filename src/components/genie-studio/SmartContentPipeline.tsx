@@ -251,6 +251,12 @@ export function SmartContentPipeline({
   // Universal enrichment — product knowledge, brand, audience, regional context
   const { additionalContext: enrichmentContext } = useUniversalEnrichment({});
   
+  /** Merge user-provided targetAudience with enrichment context — single helper, no inline duplication */
+  const mergeAudienceWithEnrichment = (audience?: string): string | undefined => {
+    if (audience && enrichmentContext) return `${audience}\n\n--- Product & Brand Context ---\n${enrichmentContext}`;
+    return audience || enrichmentContext || undefined;
+  };
+  
   // Session persistence hook
   const {
     sessionState,
@@ -486,7 +492,7 @@ export function SmartContentPipeline({
           outputFormat: outputFormat as UrlScriptFormat,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
-          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
+          targetAudience: mergeAudienceWithEnrichment(targetAudience),
           aiProvider: aiProvider as 'openai' | 'claude' | 'gemini',
           enhanceWithAI: true,
           useKnowledgeBase: enableKnowledgeSearch,
@@ -541,7 +547,7 @@ export function SmartContentPipeline({
           outputFormat: docFormat,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic' | 'informative',
-          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
+           targetAudience: mergeAudienceWithEnrichment(targetAudience),
           enhanceWithAI: true,
           useKnowledgeBase: enableKnowledgeSearch,
         });
@@ -596,7 +602,7 @@ export function SmartContentPipeline({
           scriptStyle: scriptStyle,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'dramatic' | 'informative' | 'educational' | 'inspirational',
-          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
+          targetAudience: mergeAudienceWithEnrichment(targetAudience),
           imageProvider: 'gemini',
         });
 
@@ -649,7 +655,7 @@ export function SmartContentPipeline({
           outputFormat: audioFormat,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'educational' | 'documentary',
-          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
+          targetAudience: mergeAudienceWithEnrichment(targetAudience),
           enhanceWithAI: true,
           removeFillerWords: true,
           structureContent: true,
@@ -702,7 +708,7 @@ export function SmartContentPipeline({
           enhanceWithAI: true,
           removeFillerWords: true,
           tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
-          targetAudience: targetAudience ? `${targetAudience}${enrichmentContext ? `\n\n--- Product & Brand Context ---\n${enrichmentContext}` : ''}` : (enrichmentContext || undefined),
+          targetAudience: mergeAudienceWithEnrichment(targetAudience),
         });
 
         if (progressIntervalRef.current) {
