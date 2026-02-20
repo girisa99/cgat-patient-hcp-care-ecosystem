@@ -3849,6 +3849,68 @@ export type Database = {
           },
         ]
       }
+      cast_accessibility_config: {
+        Row: {
+          audio_description_voice: string | null
+          audio_descriptions: boolean
+          auto_alt_text: boolean
+          auto_captions: boolean
+          auto_transcript: boolean
+          caption_languages: string[]
+          caption_style: Json
+          created_at: string
+          high_contrast_mode: boolean
+          id: string
+          project_id: string
+          sign_language_overlay: boolean
+          sign_language_region: string | null
+          updated_at: string
+          wcag_level: string
+        }
+        Insert: {
+          audio_description_voice?: string | null
+          audio_descriptions?: boolean
+          auto_alt_text?: boolean
+          auto_captions?: boolean
+          auto_transcript?: boolean
+          caption_languages?: string[]
+          caption_style?: Json
+          created_at?: string
+          high_contrast_mode?: boolean
+          id?: string
+          project_id: string
+          sign_language_overlay?: boolean
+          sign_language_region?: string | null
+          updated_at?: string
+          wcag_level?: string
+        }
+        Update: {
+          audio_description_voice?: string | null
+          audio_descriptions?: boolean
+          auto_alt_text?: boolean
+          auto_captions?: boolean
+          auto_transcript?: boolean
+          caption_languages?: string[]
+          caption_style?: Json
+          created_at?: string
+          high_contrast_mode?: boolean
+          id?: string
+          project_id?: string
+          sign_language_overlay?: boolean
+          sign_language_region?: string | null
+          updated_at?: string
+          wcag_level?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_accessibility_config_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "cast_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cast_ai_capabilities: {
         Row: {
           base_token_cost: number | null
@@ -4373,6 +4435,93 @@ export type Database = {
           },
         ]
       }
+      cast_music_sfx_library: {
+        Row: {
+          attribution_required: boolean
+          attribution_text: string | null
+          audio_url: string | null
+          bpm: number | null
+          created_at: string
+          created_by: string | null
+          duration_seconds: number | null
+          generation_prompt: string | null
+          generation_provider: string | null
+          genre: string | null
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          key_signature: string | null
+          label: string
+          license_type: string
+          mood: string | null
+          name: string
+          preview_url: string | null
+          source: string
+          tags: string[]
+          tempo: string | null
+          type: string
+          updated_at: string
+          usage_count: number
+          waveform_data: Json | null
+        }
+        Insert: {
+          attribution_required?: boolean
+          attribution_text?: string | null
+          audio_url?: string | null
+          bpm?: number | null
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          generation_prompt?: string | null
+          generation_provider?: string | null
+          genre?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          key_signature?: string | null
+          label: string
+          license_type?: string
+          mood?: string | null
+          name: string
+          preview_url?: string | null
+          source?: string
+          tags?: string[]
+          tempo?: string | null
+          type?: string
+          updated_at?: string
+          usage_count?: number
+          waveform_data?: Json | null
+        }
+        Update: {
+          attribution_required?: boolean
+          attribution_text?: string | null
+          audio_url?: string | null
+          bpm?: number | null
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          generation_prompt?: string | null
+          generation_provider?: string | null
+          genre?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          key_signature?: string | null
+          label?: string
+          license_type?: string
+          mood?: string | null
+          name?: string
+          preview_url?: string | null
+          source?: string
+          tags?: string[]
+          tempo?: string | null
+          type?: string
+          updated_at?: string
+          usage_count?: number
+          waveform_data?: Json | null
+        }
+        Relationships: []
+      }
       cast_production_capabilities: {
         Row: {
           category: string
@@ -4435,6 +4584,71 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      cast_project_variants: {
+        Row: {
+          audience_override: string | null
+          created_at: string
+          cta_override: string | null
+          id: string
+          is_winner: boolean
+          output_url: string | null
+          performance_metrics: Json
+          project_id: string
+          sort_order: number
+          status: string
+          style_override: string | null
+          thumbnail_url: string | null
+          tone_override: string | null
+          updated_at: string
+          variant_config: Json
+          variant_label: string
+        }
+        Insert: {
+          audience_override?: string | null
+          created_at?: string
+          cta_override?: string | null
+          id?: string
+          is_winner?: boolean
+          output_url?: string | null
+          performance_metrics?: Json
+          project_id: string
+          sort_order?: number
+          status?: string
+          style_override?: string | null
+          thumbnail_url?: string | null
+          tone_override?: string | null
+          updated_at?: string
+          variant_config?: Json
+          variant_label?: string
+        }
+        Update: {
+          audience_override?: string | null
+          created_at?: string
+          cta_override?: string | null
+          id?: string
+          is_winner?: boolean
+          output_url?: string | null
+          performance_metrics?: Json
+          project_id?: string
+          sort_order?: number
+          status?: string
+          style_override?: string | null
+          thumbnail_url?: string | null
+          tone_override?: string | null
+          updated_at?: string
+          variant_config?: Json
+          variant_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_project_variants_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cast_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cast_projects: {
         Row: {
@@ -4674,6 +4888,99 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cast_video_styles"
             referencedColumns: ["value"]
+          },
+        ]
+      }
+      cast_template_gallery: {
+        Row: {
+          avg_rating: number | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          enrichment_preset: Json
+          estimated_duration_seconds: number | null
+          id: string
+          industry_tags: string[]
+          is_active: boolean
+          is_featured: boolean
+          is_premium: boolean
+          label: string
+          name: string
+          preview_url: string | null
+          scene_count: number
+          sort_order: number
+          sub_format_id: string | null
+          tags: string[]
+          template_config: Json
+          thumbnail_url: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          avg_rating?: number | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enrichment_preset?: Json
+          estimated_duration_seconds?: number | null
+          id?: string
+          industry_tags?: string[]
+          is_active?: boolean
+          is_featured?: boolean
+          is_premium?: boolean
+          label: string
+          name: string
+          preview_url?: string | null
+          scene_count?: number
+          sort_order?: number
+          sub_format_id?: string | null
+          tags?: string[]
+          template_config?: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          avg_rating?: number | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enrichment_preset?: Json
+          estimated_duration_seconds?: number | null
+          id?: string
+          industry_tags?: string[]
+          is_active?: boolean
+          is_featured?: boolean
+          is_premium?: boolean
+          label?: string
+          name?: string
+          preview_url?: string | null
+          scene_count?: number
+          sort_order?: number
+          sub_format_id?: string | null
+          tags?: string[]
+          template_config?: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_template_gallery_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "cast_content_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cast_template_gallery_sub_format_id_fkey"
+            columns: ["sub_format_id"]
+            isOneToOne: false
+            referencedRelation: "cast_content_sub_formats"
+            referencedColumns: ["id"]
           },
         ]
       }
