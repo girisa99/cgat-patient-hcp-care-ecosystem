@@ -117,7 +117,7 @@ import { CreateContextSelector } from './CreateContextSelector';
 import { AIProviderShowcase } from './AIProviderShowcase';
 import { MultiScreenshotGallery, type ProductGallery } from '../MultiScreenshotGallery';
 import { VideoGenerationMatrix } from '../VideoGenerationMatrix';
-import { MessagingGeneratorPanel } from '../MessagingGeneratorPanel';
+// MessagingGeneratorPanel removed — enrichment handles brand/product context
 import { ProductChangeAlertPanel } from '../ProductChangeAlertPanel';
 import { GenieCastFlowDiagram } from '../GenieCastFlowDiagram';
 import { GenieCastHubMockup } from './mockups';
@@ -171,7 +171,7 @@ import {
 // STAGE 1: 3-Tab Consolidated Structure (CREATE, PRODUCE, PUBLISH)
 // MANAGE and LANDING have been consolidated into PRODUCE and CREATE respectively
 export type ConsolidatedTab = 'create' | 'produce' | 'publish';
-export type CreateSubTab = 'intent' | 'messaging' | 'templates' | 'assets';
+export type CreateSubTab = 'intent' | 'templates' | 'assets';
 export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review' | 'library' | 'analytics' | 'flow';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
 
@@ -203,12 +203,11 @@ const TAB_DEFINITIONS = {
   create: {
     label: 'CREATE',
     icon: Sparkles,
-    description: 'Intent, Messaging, Templates & Assets',
+    description: 'Intent, Templates & Assets',
     activeColor: 'bg-orange-600 text-white border-orange-600',
     inactiveColor: 'border-orange-300 text-orange-700 hover:bg-orange-50',
     subTabs: [
       { id: 'intent', label: 'Intent', icon: Sparkles, description: 'What are you creating?' },
-      { id: 'messaging', label: 'Messaging', icon: MessageSquare, description: 'AI marketing copy & scripts' },
       { id: 'templates', label: 'Templates', icon: LayoutTemplate, description: 'Select a blueprint' },
       { id: 'assets', label: 'Assets', icon: Image, description: 'Hero Banners, Assets Lab, Brand Assets' },
     ],
@@ -266,9 +265,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
       const stored = localStorage.getItem('genie-cast-session');
       if (stored) {
         const parsed = JSON.parse(stored);
-        // If messaging approved, go to templates; if intent selected, go to messaging
-        const hasMessaging = parsed.approvedMessaging;
-        const createSub = hasMessaging ? 'templates' : (parsed.selectedIntent || parsed.selectedTemplate) ? 'messaging' : 'intent';
+        // If intent selected, go to templates; otherwise start at intent
+        const createSub = (parsed.selectedIntent || parsed.selectedTemplate || parsed.approvedMessaging) ? 'templates' : 'intent';
         return { create: createSub, produce: 'generate', publish: 'scheduler' };
       }
     } catch {}
@@ -853,68 +851,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
 
-            {/* ── MESSAGING ── Step 2: Generate marketing copy ONLY */}
-            {currentSubTab === 'messaging' && (
-              <motion.div
-                key="messaging"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-               >
-                {/* Back to Intent */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1.5 mb-3 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSubTab('create', 'intent')}
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to Intent
-                </Button>
-
-                {/* MessagingGeneratorPanel ONLY - no AuthoringStageIndicator or RegionalDialectSelector here */}
-                <MessagingGeneratorPanel 
-                  initialProductId={(() => {
-                    // Map database product name to GENIE_PRODUCTS key
-                    const selectedProd = pool?.products?.find(p => p.id === castSession.session.selectedProductId);
-                    if (!selectedProd) return undefined;
-                    const nameToKey: Record<string, string> = {
-                      'Genie Spark': 'spark', 'Genie Mind': 'mind', 'Genie Vibe': 'vibe',
-                      'Genie Deck': 'deck', 'Genie Hub': 'arc', 'Genie Cast': 'cast',
-                      'Ask Genie': 'ask_genie', 'Genie Suite': 'studio',
-                    };
-                    return nameToKey[selectedProd.name] || undefined;
-                  })()}
-                  initialProductionCapability={derivedProductionCapability}
-                  onMessagingApproved={(productId, messaging) => {
-                    console.log('[GenieCast] Messaging approved for', productId);
-                    if (messaging) {
-                      castSession.approveMessaging({
-                        id: `messaging-${productId}-${Date.now()}`,
-                        productId: productId || 'cast',
-                        hook: messaging.hook || '',
-                        valueProposition: messaging.valueProposition || '',
-                        painPoints: messaging.painPoints || [],
-                        benefits: messaging.benefits || [],
-                        differentiators: messaging.differentiators || [],
-                        cta: messaging.cta || '',
-                        shortScript: messaging.shortScript || '',
-                        mediumScript: messaging.mediumScript || '',
-                        longScript: messaging.longScript || '',
-                        approvalStatus: 'approved',
-                        language: 'en',
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                      });
-                    }
-                    // Navigate to Templates after messaging approval
-                    setSubTab('create', 'templates');
-                    toast.success('Messaging approved! Select a template next.');
-                  }}
-                />
-              </motion.div>
-            )}
+            {/* MESSAGING removed — enrichment handles all brand/product context */}
 
             {/* ── ASSETS ── Step 4: Hero Banners, Assets Lab, Brand Assets, Regional (consolidated from LANDING + PRODUCTION) */}
             {currentSubTab === 'assets' && (
@@ -1025,9 +962,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       selectedStyles={selectedVideoStyles}
                       onStylesChange={onStylesChange}
                       onNavigate={(tab) => {
-                        if (tab === 'messaging') {
-                          setSubTab('create', 'messaging');
-                        } else if (tab === 'generate') {
+                      if (tab === 'generate') {
                           setActiveMainTab('produce');
                           setSubTab('produce', 'generate');
                         } else if (tab === 'matrix') {
