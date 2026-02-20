@@ -39,7 +39,9 @@ import {
   enrichCharacterWithRegion,
   getTranscreationDirectionPrompt,
   getTranscreationTraits,
+  getRegionalVoiceRouting,
 } from '@/services/regionalTranscreationService';
+import { getVoicesForMode } from '@/config/scriptModePresets';
 
 // ─── INPUT TYPES ──────────────────────────────────────────────────────────────
 
@@ -77,50 +79,85 @@ export interface ScriptGenerationResult {
   provider?: string;
 }
 
-// ─── DEFAULT CHARACTERS ───────────────────────────────────────────────────────
+// ─── DYNAMIC CHARACTER RESOLUTION ─────────────────────────────────────────────
 
-const DEFAULT_CHARACTERS: Record<string, UniversalCharacter> = {
-  host: {
-    key: 'host',
-    name: 'Atlas',
-    role: 'Primary host and narrator',
-    voice: {
-      provider: 'elevenlabs',
-      voiceId: 'cgSgspJ2msm6clMCkdW9',
-      fallbackProvider: 'alibaba',
-      fallbackVoice: 'longxiaochun',
-      stability: 0.5,
-      similarityBoost: 0.75,
-      speed: 1.0,
-    },
-    avatarStyle: 'pixar-3d',
-    motionStyle: 'measured',
-    brandColor: '#6366f1',
-  },
-  cohost: {
-    key: 'cohost',
-    name: 'Nova',
-    role: 'Co-host and challenger',
-    voice: {
-      provider: 'elevenlabs',
-      voiceId: 'EXAVITQu4vr4xnSDxMaL',
-      fallbackProvider: 'alibaba',
-      fallbackVoice: 'longxiaochun',
-      stability: 0.5,
-      similarityBoost: 0.75,
-      speed: 1.05,
-    },
-    avatarStyle: 'pixar-3d',
-    motionStyle: 'expressive',
-    brandColor: '#f43f5e',
-  },
-};
+/** Character role definitions — voices resolved dynamically per region/product */
+const CHARACTER_ROLES: Array<{ key: string; name: string; role: string; gender: 'male' | 'female'; motionStyle: UniversalCharacter['motionStyle'] }> = [
+  { key: 'host', name: 'Atlas', role: 'Primary host and narrator', gender: 'male', motionStyle: 'measured' },
+  { key: 'cohost', name: 'Nova', role: 'Co-host and challenger', gender: 'female', motionStyle: 'expressive' },
+  { key: 'cohost', name: 'Nova', role: 'Co-host and challenger', gender: 'female', motionStyle: 'expressive' },
+];
+
+/**
+ * Resolve characters with voice configs from existing infrastructure.
+ * Uses getRegionalVoiceRouting for region-aware voice, falls back to scriptModePresets.
+ */
+function resolveCharacters(
+  product: GenieProduct,
+  regionCode?: string,
+  multiCharacter = false,
+): UniversalCharacter[] {
+  const roles = multiCharacter ? CHARACTER_ROLES : [CHARACTER_ROLES[0]];
+
+  // If region provided, use regional voice routing (parent→child inheritance built-in)
+  if (regionCode) {
+    const voiceRouting = getRegionalVoiceRouting(
+      regionCode,
+      roles.map(r => ({ key: r.key, gender: r.gender })),
+    );
+    return roles.map(role => ({
+      key: role.key,
+      name: role.name,
+      role: role.role,
+      voice: voiceRouting[role.key] || getFallbackVoice(role.gender),
+      avatarStyle: 'pixar-3d' as const,
+      motionStyle: role.motionStyle,
+    }));
+  }
+
+  // No region — use scriptModePresets voices
+  const modeVoices = getVoicesForMode('video');
+  return roles.map((role, i) => {
+    const preset = modeVoices[i] || modeVoices[0];
+    return {
+      key: role.key,
+      name: role.name,
+      role: role.role,
+      voice: {
+        provider: preset.provider as VoiceConfig['provider'],
+        voiceId: preset.voiceId,
+        fallbackProvider: 'alibaba' as const,
+        fallbackVoice: 'longxiaochun',
+        stability: preset.stability,
+        similarityBoost: preset.similarityBoost,
+        speed: preset.speed,
+      },
+      avatarStyle: 'pixar-3d' as const,
+      motionStyle: role.motionStyle,
+    };
+  });
+}
+
+/** Safe fallback voice when no regional voice found */
+function getFallbackVoice(gender: 'male' | 'female'): VoiceConfig {
+  const modeVoices = getVoicesForMode('video');
+  const preset = modeVoices[0];
+  return {
+    provider: (preset?.provider || 'elevenlabs') as VoiceConfig['provider'],
+    voiceId: preset?.voiceId || 'onwK4e9ZLuTAKqWW03F9',
+    fallbackProvider: 'alibaba',
+    fallbackVoice: 'longxiaochun',
+    stability: preset?.stability ?? 0.5,
+    similarityBoost: preset?.similarityBoost ?? 0.75,
+    speed: preset?.speed ?? 1.0,
+  };
+}
 
 // ─── SYSTEM PROMPT BUILDER ────────────────────────────────────────────────────
 
 function buildSystemPrompt(req: ScriptGenerationRequest): string {
   const constraints = getProductConstraints(req.product);
-  const chars = req.characters || [DEFAULT_CHARACTERS.host];
+  const chars = req.characters || resolveCharacters(req.product, req.regionCode, false);
   const charNames = chars.map(c => `${c.key} (${c.name} — ${c.role})`).join(', ');
   const maxScenes = req.sceneCount || Math.min(constraints.maxScenes, 8);
   const maxDuration = constraints.maxDurationSeconds;
@@ -263,9 +300,9 @@ function assembleManifest(
   aiOutput: AIScriptOutput,
 ): UniversalEpisodeManifest {
   const constraints = getProductConstraints(req.product);
-  const characters = req.characters || (constraints.multiCharacter
-    ? [DEFAULT_CHARACTERS.host, DEFAULT_CHARACTERS.cohost]
-    : [DEFAULT_CHARACTERS.host]);
+  const characters = req.characters || resolveCharacters(
+    req.product, req.regionCode, constraints.multiCharacter,
+  );
 
   // Enrich characters with regional traits
   const enrichedCharacters = req.regionCode
@@ -367,9 +404,11 @@ function assembleManifest(
     maxScenes: constraints.maxScenes,
     targetWPM: constraints.targetWPM,
     culturalTraits,
-    emotionalArc: sceneDefs.map((_, i) => {
-      const tones: EmotionalTone[] = ['inspiring', 'educational', 'dramatic', 'celebratory'];
-      return tones[i % tones.length];
+    emotionalArc: sceneDefs.map(scene => {
+      // Derive emotional tone from each scene's dominant line tone (not hardcoded)
+      const sceneLines = scene.scriptKeys.map(k => scriptLines[k]).filter(Boolean);
+      const dominantTone = sceneLines[0]?.emotionalTone || req.emotionalTone || constraints.defaultTone;
+      return dominantTone;
     }),
     createdAt: new Date().toISOString(),
     version: 1,
