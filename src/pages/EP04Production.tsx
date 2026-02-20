@@ -5,21 +5,24 @@
  * Uses multi-provider-tts edge function with ElevenLabs (Host/Nova) + Azure (Atlas).
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Play, Pause, Square, Volume2, VolumeX, Loader2, 
-  CheckCircle2, AlertCircle, Mic, SkipForward, ArrowLeft 
+  CheckCircle2, AlertCircle, Mic, SkipForward, ArrowLeft,
+  Camera, Monitor, Image as ImageIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EP04_SCRIPT_CONTENT, type ScriptLine } from '@/config/ep04-script-content';
 import { EP04_VOICES } from '@/config/ep04-production-config';
+import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-admin/MultiScreenshotGallery';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
@@ -140,6 +143,60 @@ const SCENE_STYLES: Record<string, string> = {
   'scene-11-close': 'Pixar 3D',
 };
 
+// ─── Bridge: EP04Production scene IDs → EP04_SCENE_SCREENSHOT_MAP scene IDs ──
+// Production scenes use "scene-N-name" while screenshot map uses different naming
+const SCENE_TO_SCREENSHOT_MAP: Record<string, string[]> = {
+  'scene-0-title': [], // Pure AI — title card
+  'scene-1-problem': ['scene-1-cold-open'], // motion-graphics — AI regen from original
+  'scene-2-introductions': ['scene-2-meet-team'], // 3d-avatar — character intro
+  'scene-3-origin': ['scene-3-governance'], // mixed — ORIGINAL screenshots (charter, governance)
+  'scene-4-solution': ['scene-4-day1'], // mixed — ORIGINAL (day-1, findings)
+  'scene-5-governance': ['scene-5-day2'], // mixed — ORIGINAL (day-2, po-actions)
+  'scene-6-po-actions': ['scene-6-day3'], // mixed — ORIGINAL (day-3, velocity)
+  'scene-7-velocity': ['scene-7-mission-control'], // screen-capture — ORIGINAL (mission control, standup, qa, eod)
+  'scene-8-numbers': ['scene-8-dashboard-tour'], // screen-capture — ORIGINAL (18 screens!)
+  'scene-9-challenges': ['scene-9-numbers'], // motion-graphics — AI regen
+  'scene-10-vision': ['scene-10-whats-next'], // 3d-avatar — pure AI
+  'scene-11-close': ['scene-11-close'], // 3d-avatar — pure AI
+};
+
+// Get screenshot details for a production scene
+function getSceneScreenshots(productionSceneId: string) {
+  const mappedIds = SCENE_TO_SCREENSHOT_MAP[productionSceneId] || [];
+  const results: Array<{
+    sceneLabel: string;
+    visualStyle: string;
+    screenIds: string[];
+    screens: Array<{ id: string; name: string; description: string }>;
+  }> = [];
+
+  for (const mappedId of mappedIds) {
+    const mapEntry = EP04_SCENE_SCREENSHOT_MAP.find(s => s.sceneId === mappedId);
+    if (!mapEntry) continue;
+
+    const sprintScreens = PRODUCT_SCREENS['sprint-tracker'] || [];
+    const screens = mapEntry.screenIds
+      .map(sid => sprintScreens.find(s => s.id === sid))
+      .filter(Boolean) as Array<{ id: string; name: string; description: string }>;
+
+    results.push({
+      sceneLabel: mapEntry.sceneLabel,
+      visualStyle: mapEntry.visualStyle,
+      screenIds: mapEntry.screenIds,
+      screens,
+    });
+  }
+
+  return results;
+}
+
+const VISUAL_STYLE_CONFIG: Record<string, { label: string; icon: string; color: string; showOriginal: boolean }> = {
+  'screen-capture': { label: 'Original Screenshots', icon: '📸', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30', showOriginal: true },
+  'mixed': { label: 'Original + AI Enhanced', icon: '🔀', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30', showOriginal: true },
+  'motion-graphics': { label: 'AI Regenerated', icon: '✨', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30', showOriginal: false },
+  '3d-avatar': { label: '3D Avatar Scene', icon: '🎭', color: 'text-violet-400 bg-violet-500/10 border-violet-500/30', showOriginal: false },
+};
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function EP04Production() {
@@ -151,8 +208,46 @@ export default function EP04Production() {
   const [statusMap, setStatusMap] = useState<Record<string, LineStatus>>({});
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const [screenshotUrls, setScreenshotUrls] = useState<Record<string, string>>({});
+  const [screenshotsLoading, setScreenshotsLoading] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const abortRef = useRef(false);
+
+  // ─── Load screenshots from Supabase storage ──────────────────────────────
+
+  useEffect(() => {
+    async function loadScreenshots() {
+      try {
+        const { data: files, error } = await supabase.storage
+          .from('product-screenshots')
+          .list('sprint-tracker', { limit: 100 });
+
+        if (error || !files?.length) {
+          setScreenshotsLoading(false);
+          return;
+        }
+
+        const urls: Record<string, string> = {};
+        for (const file of files) {
+          const { data: urlData } = supabase.storage
+            .from('product-screenshots')
+            .getPublicUrl(`sprint-tracker/${file.name}`);
+          
+          // Match file name to screen ID (e.g., "po-mission-control.png" → "po-mission-control")
+          const screenId = file.name.replace(/\.(png|jpg|jpeg|webp)$/i, '');
+          if (urlData?.publicUrl) {
+            urls[screenId] = urlData.publicUrl;
+          }
+        }
+        setScreenshotUrls(urls);
+      } catch (err) {
+        console.error('[EP04] Failed to load screenshots:', err);
+      } finally {
+        setScreenshotsLoading(false);
+      }
+    }
+    loadScreenshots();
+  }, []);
 
   // ─── Generate TTS for a single line ──────────────────────────────────────
 
@@ -379,27 +474,119 @@ export default function EP04Production() {
           {Array.from(scenes.entries()).map(([sceneId, { keys, lines }]) => (
             <div key={sceneId}>
               {/* Scene Background Header */}
-              <div className="relative rounded-xl overflow-hidden mb-4 h-40 group">
-                <img
-                  src={SCENE_BACKGROUNDS[sceneId]}
-                  alt={SCENE_TITLES[sceneId] || sceneId}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-foreground drop-shadow-lg">
-                      {SCENE_TITLES[sceneId] || sceneId.replace(/-/g, ' ')}
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      {keys.length} line{keys.length !== 1 ? 's' : ''} · Art Style: {SCENE_STYLES[sceneId] || 'Mixed'}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="text-xs bg-background/50 backdrop-blur-sm">
-                    {sceneId.split('-')[1]?.replace('scene', '') || ''}
-                  </Badge>
-                </div>
-              </div>
+              {(() => {
+                const sceneScreenshots = getSceneScreenshots(sceneId);
+                const hasScreenshots = sceneScreenshots.length > 0;
+                const primaryEntry = sceneScreenshots[0];
+                const styleConfig = primaryEntry ? VISUAL_STYLE_CONFIG[primaryEntry.visualStyle] : null;
+                const availableScreens = primaryEntry?.screenIds.filter(sid => screenshotUrls[sid]) || [];
+                const showOriginal = styleConfig?.showOriginal && availableScreens.length > 0;
+
+                return (
+                  <>
+                    <div className={cn(
+                      "relative rounded-xl overflow-hidden mb-4 group",
+                      showOriginal ? 'h-auto' : 'h-40'
+                    )}>
+                      {/* AI Background — always present */}
+                      <div className="relative h-40">
+                        <img
+                          src={SCENE_BACKGROUNDS[sceneId]}
+                          alt={SCENE_TITLES[sceneId] || sceneId}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
+                          <div>
+                            <h2 className="text-lg font-bold text-foreground drop-shadow-lg">
+                              {SCENE_TITLES[sceneId] || sceneId.replace(/-/g, ' ')}
+                            </h2>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-xs text-muted-foreground">
+                                {keys.length} line{keys.length !== 1 ? 's' : ''} · Art Style: {SCENE_STYLES[sceneId] || 'Mixed'}
+                              </p>
+                              {styleConfig && (
+                                <Badge variant="outline" className={cn('text-xs', styleConfig.color)}>
+                                  {styleConfig.icon} {styleConfig.label}
+                                </Badge>
+                              )}
+                              {hasScreenshots && primaryEntry && (
+                                <Badge variant="outline" className="text-xs bg-background/50 backdrop-blur-sm">
+                                  <Monitor className="w-3 h-3 mr-1" />
+                                  {primaryEntry.screenIds.length} screen{primaryEntry.screenIds.length !== 1 ? 's' : ''}
+                                  {availableScreens.length > 0 && (
+                                    <span className="ml-1 text-emerald-400">
+                                      · {availableScreens.length} captured
+                                    </span>
+                                  )}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-xs bg-background/50 backdrop-blur-sm">
+                            {sceneId.split('-')[1]?.replace('scene', '') || ''}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Screenshot overlay strip — only for screen-capture / mixed scenes with captured images */}
+                      {showOriginal && availableScreens.length > 0 && (
+                        <div className="bg-muted/50 border-t border-border p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Sprint Tracker Screenshots — {primaryEntry?.sceneLabel}
+                            </span>
+                          </div>
+                          <div className="flex gap-2 overflow-x-auto pb-1">
+                            {availableScreens.map(screenId => {
+                              const screen = primaryEntry?.screens.find(s => s.id === screenId);
+                              return (
+                                <TooltipProvider key={screenId}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="flex-shrink-0 w-40 h-24 rounded-lg overflow-hidden border-2 border-border hover:border-primary/50 transition-all cursor-pointer group/thumb">
+                                        <img
+                                          src={screenshotUrls[screenId]}
+                                          alt={screen?.name || screenId}
+                                          className="w-full h-full object-cover object-top transition-transform duration-300 group-hover/thumb:scale-105"
+                                        />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="max-w-xs">
+                                      <p className="font-medium text-sm">{screen?.name || screenId}</p>
+                                      <p className="text-xs text-muted-foreground">{screen?.description}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Missing screenshots indicator */}
+                      {hasScreenshots && styleConfig?.showOriginal && availableScreens.length === 0 && !screenshotsLoading && (
+                        <div className="bg-amber-500/5 border-t border-amber-500/20 p-3">
+                          <div className="flex items-center gap-2">
+                            <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                            <span className="text-xs text-amber-400">
+                              {primaryEntry?.screenIds.length} screenshot{primaryEntry?.screenIds.length !== 1 ? 's' : ''} needed — capture from Sprint Tracker
+                            </span>
+                          </div>
+                          <div className="flex gap-1 mt-1.5 flex-wrap">
+                            {primaryEntry?.screens.map(s => (
+                              <Badge key={s.id} variant="outline" className="text-xs border-amber-500/30 text-amber-400/80">
+                                {s.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
               <div className="space-y-2">
                 {keys.map((key, i) => {
                   const line = lines[i];
