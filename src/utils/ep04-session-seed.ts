@@ -142,6 +142,14 @@ function buildEP04TemplateMapping(): TemplateMapping {
     const sceneLabel = SCENE_LABELS[line.scene] || line.scene;
     const characterLabel = line.voice.charAt(0).toUpperCase() + line.voice.slice(1);
 
+    // Attach visual pipeline steps from the parent scene (only on first line of each scene)
+    const isFirstLineOfScene = !allEntries.slice(0, index).some(([, l]) => l.scene === line.scene);
+    const scenePipeline = EP04_SCENE_PIPELINES[line.scene];
+    // Filter out TTS steps (handled separately) — keep only visual/audio production steps
+    const visualSteps = scenePipeline
+      ? scenePipeline.filter(step => step.type !== 'tts').map(step => step as Record<string, unknown>)
+      : undefined;
+
     return {
       sceneId: key, // unique per line (e.g. 'title-welcome', 'atlas-intro-1')
       sceneKey: line.scene, // groups lines by parent scene
@@ -158,6 +166,9 @@ function buildEP04TemplateMapping(): TemplateMapping {
         speed: 'speed' in voiceConfig ? (voiceConfig.speed as number) : 1.0,
         pitch: 0,
       },
+      characterVoice: line.voice,
+      // Attach visual pipeline only on the first line of each scene to avoid duplication
+      ...(isFirstLineOfScene && visualSteps?.length ? { visualPipeline: visualSteps } : {}),
       approvalStatus: 'approved' as const,
     };
   });

@@ -97,9 +97,13 @@
      voiceId?: string;
      speed: number;
      pitch: number;
-   };
-   approvalStatus: ApprovalStatus;
- }
+    };
+    /** Optional visual pipeline metadata for production (avatar-3d, screen-capture, etc.) */
+    visualPipeline?: Record<string, unknown>[];
+    /** Character voice identifier for multi-voice scenes */
+    characterVoice?: string;
+    approvalStatus: ApprovalStatus;
+  }
  
  export interface TemplateMapping {
    templateId: string;
