@@ -622,25 +622,26 @@ export default function EP04Production() {
       {/* Script Lines */}
       <ScrollArea className="h-[calc(100vh-80px)]">
         <div className="max-w-5xl mx-auto p-6 space-y-8">
-          {/* Episode Thumbnail Banner — Thumbnail visible, then title, then collage */}
+          {/* Episode Thumbnail Banner — seamless: thumbnail with overlaid title → collage below */}
           <div className="rounded-2xl overflow-hidden mb-6 border border-border/30">
-            {/* Thumbnail image — shown fully, not obscured */}
-            <img
-              src={ep02Thumbnail}
-              alt="The Genie AI Podcast — Beyond AI Hype — Episode 2"
-              className="w-full h-auto object-cover"
-            />
-
-            {/* Title strip below the thumbnail */}
-            <div className="bg-gradient-to-r from-[hsl(220,60%,8%)] via-background to-[hsl(330,40%,10%)] px-6 py-4 text-center">
-              <p className="text-xs text-primary font-semibold uppercase tracking-[0.2em] mb-1">Beyond AI Hype — Episode 2</p>
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Two AI Developers. One Human PO. Real Sprint.</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Host: Sai Dasika · with Allaudin · AI • Experimentation • Real-World Impact
-              </p>
+            {/* Thumbnail with title overlaid at bottom */}
+            <div className="relative">
+              <img
+                src={ep02Thumbnail}
+                alt="The Genie AI Podcast — Beyond AI Hype — Episode 2"
+                className="w-full h-auto object-cover"
+              />
+              {/* Bottom gradient fading into the collage area */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/95 to-transparent pt-16 pb-5 px-6 text-center">
+                <p className="text-xs text-primary font-semibold uppercase tracking-[0.2em] mb-1 drop-shadow-lg">Beyond AI Hype — Episode 2</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground drop-shadow-lg">Two AI Developers. One Human PO. Real Sprint.</h2>
+                <p className="text-xs text-muted-foreground mt-1 drop-shadow-md">
+                  Host: Sai Dasika · with Allaudin · AI • Experimentation • Real-World Impact
+                </p>
+              </div>
             </div>
 
-            {/* AI Developer Collage */}
+            {/* AI Developer Collage — seamless continuation */}
             <div className="flex items-center justify-center gap-8 sm:gap-14 py-6 px-6 bg-background">
               {/* Claude (Atlas) */}
               <div className="flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -652,7 +653,6 @@ export default function EP04Production() {
                 <span className="text-[10px] text-muted-foreground italic max-w-[140px] text-center">"Let me stop talking and write the code now."</span>
               </div>
 
-              {/* × divider */}
               <span className="text-3xl font-bold text-muted-foreground/40">×</span>
 
               {/* Lovable (Nova) */}
