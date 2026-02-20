@@ -512,9 +512,24 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           className="gap-1.5 text-xs font-medium border-primary/30 hover:bg-primary/10"
           onClick={async () => {
             const seed = createEP04SessionSeed();
-            castSession.updateSession(seed);
+            
+            // Create a cast_project for token/cost tracking
+            const { createCastProject } = await import('@/services/productionCostAccumulator');
+            const projectId = await createCastProject({
+              title: 'EP04 — Genie Reel Episode 2',
+              description: 'AI-powered cinematic product demo',
+              estimatedTokens: 850000,
+              productContext: 'genie-reel-ep04',
+              quality: 'cinematic',
+              metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
+            });
+            
+            castSession.updateSession({ ...seed, projectId });
             const stats = getEP04Stats();
             toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
+            if (projectId) {
+              toast.success(`📊 Project created — token tracking active`);
+            }
 
             // Step D: Resolve screen capture assets from storage
             if (seed.templateMapping) {

@@ -60,6 +60,9 @@ export interface GenieCastSessionState {
   createdAt: Date;
   updatedAt: Date;
   
+  // Project linking (DB-backed tracking)
+  projectId: string | null; // cast_projects.id for token/cost tracking
+  
   // Product-first context (unified flow)
   selectedProductId: string | null;
   selectedIntent: string | null; // e.g., 'product-demo', 'hero-banner', 'educational'
@@ -91,6 +94,7 @@ export interface GenieCastSessionState {
 const STORAGE_KEY = 'genie-cast-session';
 
 const createDefaultSession = (): GenieCastSessionState => ({
+  projectId: null,
   sessionId: crypto.randomUUID(),
   createdAt: new Date(),
   updatedAt: new Date(),
