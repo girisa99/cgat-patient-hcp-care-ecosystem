@@ -306,6 +306,18 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   // Resolution / aspect ratio selection
   const [selectedResolution, setSelectedResolution] = useState<string>('1920x1080');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('16:9');
+  // Visual style from cast_visual_styles (DB-driven)
+  const [selectedVisualStyleId, setSelectedVisualStyleId] = useState<string | null>(null);
+  // Production capabilities selection
+  const [selectedCapabilityIds, setSelectedCapabilityIds] = useState<string[]>([]);
+  // Asset source type
+  const [selectedAssetSource, setSelectedAssetSource] = useState<string>('generate');
+  // Lip-sync and dubbing toggles
+  const [lipSyncEnabled, setLipSyncEnabled] = useState(true);
+  const [dubbingEnabled, setDubbingEnabled] = useState(true);
+  // Platform + Languages
+  const [primaryPlatform, setPrimaryPlatform] = useState<string>('youtube');
+  const [outputLanguages, setOutputLanguages] = useState<string[]>(['en']);
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
 
@@ -780,7 +792,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           )}
 
           <AnimatePresence mode="wait">
-            {/* ── STEP 2: CONFIGURE — Visual Styles, Enrichment Prompt, Resolution ── */}
+            {/* ── STEP 2: CONFIGURE — Full 7-step production flow ── */}
+            {/* Steps 4-6 of the 7-step flow: Platform+Languages → Visual & Asset Config → Enrichment */}
             {currentSubTab === 'configure' && (castSession.session.selectedIntent || castSession.session.selectedTemplate) && (
               <motion.div
                 key="configure"
@@ -804,78 +817,235 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   Back to Content Selection
                 </Button>
 
-                {/* ── VISUAL STYLES ── (Pixar, 3D, Cartoon, etc.) */}
+                {/* ════════════════════════════════════════════════════════ */}
+                {/* STEP 4: Platform + Languages                           */}
+                {/* ════════════════════════════════════════════════════════ */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Palette className="w-4 h-4 text-primary" />
-                      Visual Style
-                      {selectedVideoStyles.length > 0 && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5">{selectedVideoStyles.length} selected</Badge>
-                      )}
+                      <Globe className="w-4 h-4 text-primary" />
+                      <span className="flex items-center gap-1.5">
+                        <Badge variant="outline" className="text-[10px] px-1.5 font-mono">Step 4</Badge>
+                        Platform & Languages
+                      </span>
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      Choose visual styles — Pixar, 3D, Cartoon, Anime, Avatar, etc. Templates will be filtered by your selection.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <VideoStyleCards
-                      selectedStyles={selectedVideoStyles}
-                      onSelectStyle={(style) => {
-                        if (selectedVideoStyles.includes(style)) {
-                          onStylesChange(selectedVideoStyles.filter(s => s !== style));
-                        } else {
-                          onStylesChange([...selectedVideoStyles, style]);
-                        }
-                      }}
-                      onSelectStyles={onStylesChange}
-                      allowMultiple={true}
-                      compact={true}
-                      industryFilter={contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* ── UNIVERSAL ENRICHMENT PROMPT ── */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Wand2 className="w-4 h-4 text-primary" />
-                      Universal Enrichment Prompt
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Describe your vision, brand context, or specific instructions. This context enriches every scene in the blueprint.
+                      Select your primary platform and output languages for regional distribution.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <textarea
-                      className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
-                      placeholder="e.g. Create a cinematic product demo for our AI platform. Focus on enterprise decision-makers. Tone: professional yet innovative. Highlight ROI metrics and competitive advantages..."
-                      value={enrichmentPrompt}
-                      onChange={(e) => setEnrichmentPrompt(e.target.value)}
-                    />
-                    <div className="flex gap-2 flex-wrap">
-                      {['Patient Services', 'ROI Focus', 'Brand Story', 'Product Demo', 'Competitive Edge', 'Thought Leadership'].map(tag => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="text-[10px] cursor-pointer hover:bg-primary/10 transition-colors"
-                          onClick={() => setEnrichmentPrompt(prev => prev ? `${prev}. ${tag}` : tag)}
-                        >
-                          <Sparkles className="w-2.5 h-2.5 mr-1" />
-                          {tag}
-                        </Badge>
-                      ))}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Primary Platform</Label>
+                        <Select value={primaryPlatform} onValueChange={setPrimaryPlatform}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="youtube">YouTube</SelectItem>
+                            <SelectItem value="tiktok">TikTok</SelectItem>
+                            <SelectItem value="instagram_reels">Instagram Reels</SelectItem>
+                            <SelectItem value="linkedin">LinkedIn</SelectItem>
+                            <SelectItem value="facebook">Facebook</SelectItem>
+                            <SelectItem value="twitter">X (Twitter)</SelectItem>
+                            <SelectItem value="landing_page">Landing Page</SelectItem>
+                            <SelectItem value="product_page">Product Page</SelectItem>
+                            <SelectItem value="ott_ctv">OTT / CTV</SelectItem>
+                            <SelectItem value="webinar">Webinar</SelectItem>
+                            <SelectItem value="digital_signage">Digital Signage</SelectItem>
+                            <SelectItem value="presentation_slides">Presentation</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Input Language</Label>
+                        <Select value={selectedDialectCodes[0] || 'en-US'} onValueChange={(v) => handleDialectChange([v])}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="en-US">English (US)</SelectItem>
+                            <SelectItem value="en-GB">English (UK)</SelectItem>
+                            <SelectItem value="es-ES">Spanish</SelectItem>
+                            <SelectItem value="fr-FR">French</SelectItem>
+                            <SelectItem value="de-DE">German</SelectItem>
+                            <SelectItem value="pt-BR">Portuguese (BR)</SelectItem>
+                            <SelectItem value="hi-IN">Hindi</SelectItem>
+                            <SelectItem value="ar-SA">Arabic</SelectItem>
+                            <SelectItem value="zh-CN">Chinese (Mandarin)</SelectItem>
+                            <SelectItem value="ja-JP">Japanese</SelectItem>
+                            <SelectItem value="ko-KR">Korean</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Output Languages (for dubbing/subtitles)</Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['en', 'es', 'fr', 'de', 'pt', 'hi', 'ar', 'zh', 'ja', 'ko', 'sv', 'pl', 'it', 'nl'].map(lang => (
+                          <Badge
+                            key={lang}
+                            variant={outputLanguages.includes(lang) ? 'default' : 'outline'}
+                            className="text-[10px] cursor-pointer transition-colors"
+                            onClick={() => setOutputLanguages(prev =>
+                              prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]
+                            )}
+                          >
+                            {lang.toUpperCase()}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* ── RESOLUTION & PLATFORM ── */}
+                {/* ════════════════════════════════════════════════════════ */}
+                {/* STEP 5: Visual & Asset Configuration                   */}
+                {/* ════════════════════════════════════════════════════════ */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-primary" />
+                      <span className="flex items-center gap-1.5">
+                        <Badge variant="outline" className="text-[10px] px-1.5 font-mono">Step 5</Badge>
+                        Visual & Asset Configuration
+                      </span>
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Generation style, capabilities, asset source, lip-sync & dubbing settings.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* 5a: Generation Style (from cast_visual_styles DB) */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Generation Style</Label>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                        {contentRegistry.visualStyles.map(style => (
+                          <button
+                            key={style.id}
+                            onClick={() => setSelectedVisualStyleId(style.id === selectedVisualStyleId ? null : style.id)}
+                            className={cn(
+                              "flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all",
+                              selectedVisualStyleId === style.id
+                                ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                                : "border-border hover:border-primary/40 hover:bg-muted/50"
+                            )}
+                          >
+                            <span className="text-base">
+                              {style.icon === 'Box' ? '📦' : style.icon === 'Smile' ? '😊' : style.icon === 'Star' ? '⭐' : style.icon === 'Camera' ? '📷' : style.icon === 'Film' ? '🎬' : style.icon === 'Palette' ? '🎨' : style.icon === 'Droplets' ? '💧' : style.icon === 'Minus' ? '➖' : style.icon === 'BarChart3' ? '📊' : style.icon === 'PenTool' ? '✏️' : style.icon === 'BookOpen' ? '📚' : '🎭'}
+                            </span>
+                            <span className="font-medium text-center leading-tight">{style.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                      {selectedVisualStyleId && (
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          🛡️ IP-safe style — prevents photorealistic deepfakes
+                        </p>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* 5b: Production Capabilities (from cast_production_capabilities, filtered by format) */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Production Capabilities</Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {(selectedFormatId
+                          ? contentRegistry.getCapabilitiesForFormat(selectedFormatId)
+                          : contentRegistry.productionCapabilities
+                        ).map(cap => (
+                          <button
+                            key={cap.id}
+                            onClick={() => setSelectedCapabilityIds(prev =>
+                              prev.includes(cap.id) ? prev.filter(c => c !== cap.id) : [...prev, cap.id]
+                            )}
+                            className={cn(
+                              "flex items-center gap-2 p-2 rounded-lg border text-xs transition-all text-left",
+                              selectedCapabilityIds.includes(cap.id)
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border hover:border-primary/40 hover:bg-muted/50"
+                            )}
+                          >
+                            <span className="text-sm">
+                              {cap.name === 'lip_sync' ? '👄' : cap.name === 'dubbing' ? '🌍' : cap.name === 'avatar_talking_head' ? '🧑' : cap.name === 'avatar_full_body' ? '🕺' : cap.name === 'text_to_video' ? '🎬' : cap.name === 'text_to_image' ? '🖼️' : cap.name === 'image_to_image' ? '🔄' : cap.name === 'vr_ar_immersive' ? '🥽' : cap.name === 'pixar_3d' ? '📦' : cap.name === 'cartoon_animation' ? '🎨' : '⚡'}
+                            </span>
+                            <span className="font-medium">{cap.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* 5c: Asset Source */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Asset Source</Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                        {contentRegistry.assetSourceTypes.map(src => (
+                          <button
+                            key={src.id}
+                            onClick={() => setSelectedAssetSource(src.name)}
+                            className={cn(
+                              "flex flex-col items-center gap-1 p-2.5 rounded-lg border text-xs transition-all",
+                              selectedAssetSource === src.name
+                                ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                                : "border-border hover:border-primary/40 hover:bg-muted/50"
+                            )}
+                          >
+                            <span className="text-base">
+                              {src.name === 'generate' ? '✨' : src.name === 'pre_uploaded' ? '📁' : src.name === 'upload_new' ? '📤' : src.name === 'stock' ? '🏪' : src.name === 'screen_capture' ? '📸' : '📎'}
+                            </span>
+                            <span className="font-medium text-center">{src.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* 5d: Lip-sync & Dubbing */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center justify-between p-3 rounded-lg border">
+                        <div className="space-y-0.5">
+                          <Label className="text-xs font-medium">👄 Lip-sync</Label>
+                          <p className="text-[10px] text-muted-foreground">Auto-sync per scene</p>
+                        </div>
+                        <Button
+                          variant={lipSyncEnabled ? 'default' : 'outline'}
+                          size="sm"
+                          className="text-xs h-7"
+                          onClick={() => setLipSyncEnabled(!lipSyncEnabled)}
+                        >
+                          {lipSyncEnabled ? 'ON' : 'OFF'}
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between p-3 rounded-lg border">
+                        <div className="space-y-0.5">
+                          <Label className="text-xs font-medium">🌍 Dubbing</Label>
+                          <p className="text-[10px] text-muted-foreground">Auto for output languages</p>
+                        </div>
+                        <Button
+                          variant={dubbingEnabled ? 'default' : 'outline'}
+                          size="sm"
+                          className="text-xs h-7"
+                          onClick={() => setDubbingEnabled(!dubbingEnabled)}
+                        >
+                          {dubbingEnabled ? 'ON' : 'OFF'}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ════════════════════════════════════════════════════════ */}
+                {/* Resolution & Quality (extends Step 5)                  */}
+                {/* ════════════════════════════════════════════════════════ */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Settings2 className="w-4 h-4 text-primary" />
-                      Resolution & Platform
+                      Resolution & Quality
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -912,8 +1082,6 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         </Select>
                       </div>
                     </div>
-
-                    {/* Quality preset */}
                     <div className="mt-3 space-y-1.5">
                       <Label className="text-xs">Quality Preset</Label>
                       <div className="flex gap-2">
@@ -933,8 +1101,86 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   </CardContent>
                 </Card>
 
+                {/* ════════════════════════════════════════════════════════ */}
+                {/* STEP 6: Universal Enrichment Prompt                    */}
+                {/* ════════════════════════════════════════════════════════ */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Wand2 className="w-4 h-4 text-primary" />
+                      <span className="flex items-center gap-1.5">
+                        <Badge variant="outline" className="text-[10px] px-1.5 font-mono">Step 6</Badge>
+                        Universal Enrichment Prompt
+                      </span>
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Describe your vision in any language. AI generates scenes/templates scoped by ALL above selections.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <textarea
+                      className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+                      placeholder="e.g. Create a cinematic product demo for our AI platform. Focus on enterprise decision-makers. Tone: professional yet innovative. Highlight ROI metrics and competitive advantages..."
+                      value={enrichmentPrompt}
+                      onChange={(e) => setEnrichmentPrompt(e.target.value)}
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      {['Patient Services', 'ROI Focus', 'Brand Story', 'Product Demo', 'Competitive Edge', 'Thought Leadership'].map(tag => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="text-[10px] cursor-pointer hover:bg-primary/10 transition-colors"
+                          onClick={() => setEnrichmentPrompt(prev => prev ? `${prev}. ${tag}` : tag)}
+                        >
+                          <Sparkles className="w-2.5 h-2.5 mr-1" />
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ════════════════════════════════════════════════════════ */}
+                {/* STEP 7 Preview: Safety Pipeline (info only)            */}
+                {/* ════════════════════════════════════════════════════════ */}
+                <Card className="border-dashed">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      <span className="flex items-center gap-1.5">
+                        <Badge variant="outline" className="text-[10px] px-1.5 font-mono">Step 7</Badge>
+                        Production & Safety Pipeline
+                      </span>
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Automated safety checks run during production.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {[
+                        { icon: '🔍', label: 'Upload Scan', desc: 'Face & trademark detection' },
+                        { icon: '🎨', label: 'Style Enforcement', desc: 'No photorealistic deepfakes' },
+                        { icon: '💧', label: 'Watermark + C2PA', desc: 'Provenance metadata' },
+                        { icon: '📋', label: 'Legal Consent', desc: 'Face consent workflow' },
+                      ].map(item => (
+                        <div key={item.label} className="p-2 rounded-lg bg-muted/50 text-center space-y-1">
+                          <span className="text-lg">{item.icon}</span>
+                          <p className="text-[10px] font-medium">{item.label}</p>
+                          <p className="text-[9px] text-muted-foreground">{item.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Continue to Templates */}
-                <div className="flex justify-end">
+                <div className="flex justify-between items-center">
+                  <div className="text-xs text-muted-foreground">
+                    {selectedVisualStyleId && <span className="mr-2">✅ Style</span>}
+                    {selectedCapabilityIds.length > 0 && <span className="mr-2">✅ {selectedCapabilityIds.length} capabilities</span>}
+                    {enrichmentPrompt && <span>✅ Enrichment</span>}
+                  </div>
                   <Button
                     size="sm"
                     className="gap-1.5"

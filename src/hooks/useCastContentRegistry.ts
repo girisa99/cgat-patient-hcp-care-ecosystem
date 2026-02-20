@@ -60,21 +60,67 @@ export interface CategoryFormatLink {
   is_active: boolean;
 }
 
+export interface VisualStyle {
+  id: string;
+  name: string;
+  label: string;
+  icon: string;
+  description: string | null;
+  ip_safe: boolean;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface ProductionCapability {
+  id: string;
+  name: string;
+  label: string;
+  icon: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface AssetSourceType {
+  id: string;
+  name: string;
+  label: string;
+  icon: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface FormatCapabilityLink {
+  id: string;
+  format_id: string;
+  capability_id: string;
+  is_active: boolean;
+}
+
 export function useCastContentRegistry() {
   const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [formats, setFormats] = useState<ContentFormat[]>([]);
   const [subFormats, setSubFormats] = useState<ContentSubFormat[]>([]);
   const [categoryFormats, setCategoryFormats] = useState<CategoryFormatLink[]>([]);
+  const [visualStyles, setVisualStyles] = useState<VisualStyle[]>([]);
+  const [productionCapabilities, setProductionCapabilities] = useState<ProductionCapability[]>([]);
+  const [assetSourceTypes, setAssetSourceTypes] = useState<AssetSourceType[]>([]);
+  const [formatCapabilities, setFormatCapabilities] = useState<FormatCapabilityLink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [catRes, fmtRes, sfRes, cfRes] = await Promise.all([
+      const [catRes, fmtRes, sfRes, cfRes, vsRes, pcRes, asRes, fcRes] = await Promise.all([
         supabase.from('cast_content_categories').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_content_formats').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_content_sub_formats').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_category_formats').select('*').eq('is_active', true),
+        supabase.from('cast_visual_styles').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('cast_production_capabilities').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('cast_asset_source_types').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('cast_format_capabilities').select('*').eq('is_active', true),
       ]);
 
       if (catRes.error) throw catRes.error;
@@ -86,6 +132,10 @@ export function useCastContentRegistry() {
       setFormats((fmtRes.data || []) as unknown as ContentFormat[]);
       setSubFormats((sfRes.data || []) as unknown as ContentSubFormat[]);
       setCategoryFormats((cfRes.data || []) as unknown as CategoryFormatLink[]);
+      setVisualStyles((vsRes.data || []) as unknown as VisualStyle[]);
+      setProductionCapabilities((pcRes.data || []) as unknown as ProductionCapability[]);
+      setAssetSourceTypes((asRes.data || []) as unknown as AssetSourceType[]);
+      setFormatCapabilities((fcRes.data || []) as unknown as FormatCapabilityLink[]);
     } catch (err: any) {
       console.error('[useCastContentRegistry] Failed to fetch:', err);
     } finally {
@@ -222,15 +272,28 @@ export function useCastContentRegistry() {
     }
   }, [subFormats, fetchAll]);
 
+  /** Get capabilities available for a given format */
+  const getCapabilitiesForFormat = useCallback((formatId: string): ProductionCapability[] => {
+    const links = formatCapabilities.filter(fc => fc.format_id === formatId);
+    if (links.length === 0) return productionCapabilities; // All capabilities available
+    const linkedCapIds = new Set(links.map(l => l.capability_id));
+    return productionCapabilities.filter(pc => linkedCapIds.has(pc.id));
+  }, [productionCapabilities, formatCapabilities]);
+
   return {
     categories,
     formats,
     subFormats,
     categoryFormats,
+    visualStyles,
+    productionCapabilities,
+    assetSourceTypes,
+    formatCapabilities,
     isLoading,
     refresh: fetchAll,
     getFormatsForCategory,
     getSubFormatsForFormat,
+    getCapabilitiesForFormat,
     requiresMessaging,
     addCategory,
     addFormat,

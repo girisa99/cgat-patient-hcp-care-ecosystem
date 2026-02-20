@@ -210,15 +210,15 @@ export function BlueprintTemplatesGrid({
           Create Custom
         </Button>
 
-        {/* Browse All - When Intent Filtered & not already browsing */}
-        {intentFilter && !showBrowseAll && (
+        {/* Browse All - When filtered by intent or category & not already browsing */}
+        {(intentFilter || categoryFilter) && !showBrowseAll && (
           <Button
             onClick={() => setShowBrowseAll(true)}
             variant="secondary"
             size="sm"
             className="gap-2 shrink-0"
           >
-            Browse All
+            Browse All ({blueprints.length})
             <ArrowRight className="w-4 h-4" />
           </Button>
         )}
