@@ -1054,68 +1054,78 @@ The efficiency isn't because AIs are magic. It's because the system around them 
   // ═══════════════════════════════════════════════════════════════════════════
 
   'challenges-intro': {
-    text: `Now — I'd be lying if I said this was smooth from day one. It wasn't. Let me be honest about what broke.
+    text: `Now — I'd be lying if I said this was smooth from day one. It wasn't. Let me tell you what actually broke. Not the polished version. The real one.
 
-Day 1: Atlas generated a 2,400-line diagnosis document and a 847-line migration before I'd finished my coffee. I didn't know what half of it did. I approved it anyway. That was a mistake. Don't do that.
+Day 1: Atlas generated a 2,400-line diagnosis and an 847-line migration before I'd finished my coffee. I approved it without reading half of it. Mistake. Three hours later I'm debugging RLS policies I didn't write, on tables I didn't design, with error messages that assumed I understood the schema. I didn't. That's humbling when you're supposed to be the team lead.
 
-Day 2: Nova added three features nobody asked for. Beautiful features. Useful features. Features that made the sprint velocity chart look like it was drawn during an earthquake.
+Day 2: I'm context-switching between Lovable, Claude Code, the sprint tracker, Supabase, GitHub, and Slack — all at once. Not switching apps. Switching mental models. One minute I'm reviewing Nova's UI component, next I'm parsing Atlas's database migration, then I'm writing PO acceptance criteria, then I'm back to reviewing a PR. My brain felt like a browser with forty tabs open and every one of them is loading.
 
-Day 3: I realized I was the weakest link. Not because I'm bad at my job. Because the AIs don't take breaks, don't lose context, and don't spend twenty minutes looking for a document they saved somewhere. They exposed every inefficiency in my own workflow — and I had to level up to match them.`,
+Day 3: The emotional part. I realized I was the slowest member of my own team. The AIs don't get tired. They don't lose context. They don't spend twenty minutes looking for a file they saved somewhere yesterday. They exposed every inefficiency in my workflow — and instead of feeling empowered, I felt... inadequate. For about an hour. Then I got angry. Then I got productive.`,
     voice: 'host',
     scene: 'scene-9-challenges',
-    duration_est: 40,
-    direction: 'Raw honesty. This is the credibility section. "Don\'t do that" is direct to camera. Each day\'s challenge is real. The self-awareness in the last paragraph is the strongest moment — deliver with genuine reflection.',
+    duration_est: 55,
+    direction: 'Raw vulnerability. This is THE credibility moment of the entire episode. Day 1: self-deprecating, shaking head. Day 2: frantic energy — mime the context-switching, eyes darting between imaginary screens, hands juggling. Day 3: voice drops, genuine emotion. "Inadequate" lands heavy. Then the energy shifts — "got angry, got productive" builds back up. Anime-style split-screen of overwhelm.',
+    lipsync: true,
+    motion: 'overwhelmed-context-switching-juggle',
+    sfx: ['heartbeat_slow', 'tab_switching_rapid', 'emotional_piano_note'],
   },
 
   'challenges-atlas': {
-    text: `For the record, the 847-line migration included comprehensive row-level security policies, triggers, and indexes. It was thorough. Not excessive. Thorough.`,
+    text: `For the record, the 847-line migration included row-level security policies, triggers, indexes, and foreign key constraints across 14 tables. It was thorough. Not excessive. And yes — I generated it fast. But I also documented every decision. The problem wasn't the migration. The problem was the human didn't read the documentation I generated alongside it.`,
     voice: 'atlas',
     scene: 'scene-9-challenges',
-    duration_est: 6,
-    direction: 'Defensive but measured. Atlas wants the record straight. "Thorough, not excessive" is his hill.',
+    duration_est: 10,
+    direction: 'Defensive but fair. Atlas isn\'t wrong — he DID document it. Arms crossed, slight head tilt. "The problem was the human" is delivered matter-of-factly, not cruelly. He\'s stating architecture truth.',
+    lipsync: true,
+    motion: 'defensive-arms-crossed-head-tilt',
+    sfx: ['document_stamp', 'truth_bell'],
   },
 
   'challenges-nova': {
-    text: `And for the record, the dark mode toggle was the right call. Everyone uses it now. Vindication tastes like well-rendered CSS.`,
+    text: `And I'll own mine — I added a dark mode toggle, a notification system, and a keyboard shortcut panel on Day 2. Nobody asked for them. But here's the thing — everyone uses them now. Sometimes the best features are the ones nobody knew they needed. But yeah... timing could've been better.`,
     voice: 'nova',
     scene: 'scene-9-challenges',
-    duration_est: 5,
-    direction: 'Triumphant. "Vindication tastes like well-rendered CSS" is peak Nova energy.',
+    duration_est: 8,
+    direction: 'Starts triumphant, ends sheepish. "Everyone uses them now" is delivered with a proud grin. "Timing could\'ve been better" — looks away, small smile. Self-awareness is endearing. Bouncy energy settling into honesty.',
+    lipsync: true,
+    motion: 'proud-grin-then-sheepish-look-away',
+    sfx: ['sparkle_burst', 'gentle_admission_chime'],
   },
 
   // 🐿️ SQUIRREL INTERRUPTION — After challenges (useful question)
   'squirrel-interrupt-4': {
-    text: `*peeks out from behind Atlas's monitor* Okay but serious question — like actually serious this time. If you're the only human and both AIs are faster than you... who makes sure the AIs don't just... build the wrong thing really fast? Like, what if they're sprinting in the wrong direction? Who catches that?`,
+    text: `*peeks out from behind Atlas's monitor* Okay but serious question — like actually serious this time. If you're the only human and both AIs are faster than you... and you just said you felt inadequate... who makes sure the AIs don't just... build the wrong thing really fast? Like, what if they're sprinting in the wrong direction and you're too overwhelmed to notice?`,
     voice: 'squirrel',
     scene: 'scene-9-challenges',
-    duration_est: 12,
-    direction: 'Actually insightful. Squirrel PEEKS slowly from behind Atlas\'s monitor — cautious entrance. Lip-sync ON. Tone shifts — less chaotic, genuine curiosity. Squirrel holds still for the first time. Background: standup call notification faintly pings. The audience realizes the squirrel just asked the best question of the episode.',
+    duration_est: 14,
+    direction: 'The squirrel asks the question the audience is thinking. PEEKS slowly from behind Atlas\'s monitor — cautious entrance. Lip-sync ON. Tone shifts — less chaotic, genuine concern. References the host\'s vulnerability. The room goes still. This is the best question of the episode.',
     isInterruption: true,
     lipsync: true,
-    sfx: ['quiet_peek', 'thoughtful_pause', 'standup_ping_faint'],
+    sfx: ['quiet_peek', 'thoughtful_silence', 'heartbeat_single'],
     motion: 'slow-peek-from-behind-monitor',
   },
 
   'host-squirrel-good-question': {
-    text: `That... is actually a great question. Thank you, squirrel. That's literally why governance exists. The sprint tracker, the handoff protocol, the PO Actions queue — they're all guardrails to make sure speed doesn't outrun direction. The human in the loop isn't the fastest. But they're the one who decides where we're going.`,
+    text: `That... is actually the question. Thank you, squirrel. And here's my honest answer: that's exactly why I built the governance layer. The sprint tracker, the handoff protocol, the PO Actions queue — they're not project management theater. They're survival tools. Because the human in the loop isn't the fastest. But they're the one who decides where we're going. And when you're juggling this many contexts, you need a system that catches what your brain can't.`,
     voice: 'host',
     scene: 'scene-9-challenges',
-    duration_est: 15,
-    direction: 'Genuinely surprised and impressed. Lip-sync ON. Nods slowly at squirrel — first time treating it as a peer. This is a real teaching moment. Deliver with warmth.',
+    duration_est: 18,
+    direction: 'The emotional pivot of the episode. Genuinely grateful to the squirrel. Lip-sync ON. Nods slowly — first time treating the squirrel as a peer. "Survival tools" hits hard. The last line — "catches what your brain can\'t" — is delivered looking directly at camera. This is the thesis.',
     isInterruption: true,
     lipsync: true,
-    motion: 'respectful-nod-to-squirrel',
+    motion: 'grateful-nod-then-direct-to-camera',
+    sfx: ['emotional_resolve', 'gentle_piano_swell'],
   },
 
   'squirrel-vindicated': {
-    text: `*puffs up chest proudly* See? I contribute! I'm like... the QA squirrel. Testing your assumptions! *drops acorn* ...okay that one was an accident.`,
+    text: `*puffs up chest proudly* See? I contribute! I'm like... the QA squirrel. Testing your assumptions! Catching what your brain can't! *drops acorn* ...okay that one my brain also didn't catch.`,
     voice: 'squirrel',
     scene: 'scene-9-challenges',
-    duration_est: 6,
-    direction: 'Triumphant then clumsy. Lip-sync ON. Puffs chest — hero pose animation. Then DROPS acorn — it bounces and rolls away. Squirrel watches it go. Physical comedy undercuts the pride. SFX: acorn bounce, tiny roll.',
+    duration_est: 7,
+    direction: 'Triumphant then clumsy. Lip-sync ON. Puffs chest — hero pose. Callbacks the host\'s line perfectly. Then DROPS acorn — it bounces and rolls. Physical comedy breaks the emotional tension perfectly. The audience laughs and exhales.',
     isInterruption: true,
     lipsync: true,
-    sfx: ['chest_puff', 'acorn_drop_bounce', 'tiny_roll_away', 'comedic_bonk'],
+    sfx: ['chest_puff', 'acorn_drop_bounce', 'tiny_roll_away', 'audience_relief_laugh'],
     motion: 'hero-pose-then-acorn-fumble',
   },
 
