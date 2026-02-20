@@ -3935,6 +3935,119 @@ export type Database = {
           },
         ]
       }
+      cast_generation_jobs: {
+        Row: {
+          actual_tokens_used: number
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          estimated_cost_usd: number
+          estimated_tokens: number
+          fallback_provider: string | null
+          id: string
+          input_config: Json
+          job_type: string
+          language: string
+          line_key: string | null
+          max_retries: number
+          output_duration_seconds: number | null
+          output_file_size_bytes: number | null
+          output_metadata: Json
+          output_thumbnail_url: string | null
+          output_url: string | null
+          product_id: string | null
+          progress_percent: number
+          project_id: string
+          provider: string | null
+          provider_job_id: string | null
+          quality: string
+          queued_at: string
+          retry_count: number
+          scene_key: string | null
+          started_at: string | null
+          status: string
+          style_intent: string | null
+          tier: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_tokens_used?: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          estimated_cost_usd?: number
+          estimated_tokens?: number
+          fallback_provider?: string | null
+          id?: string
+          input_config?: Json
+          job_type?: string
+          language?: string
+          line_key?: string | null
+          max_retries?: number
+          output_duration_seconds?: number | null
+          output_file_size_bytes?: number | null
+          output_metadata?: Json
+          output_thumbnail_url?: string | null
+          output_url?: string | null
+          product_id?: string | null
+          progress_percent?: number
+          project_id: string
+          provider?: string | null
+          provider_job_id?: string | null
+          quality?: string
+          queued_at?: string
+          retry_count?: number
+          scene_key?: string | null
+          started_at?: string | null
+          status?: string
+          style_intent?: string | null
+          tier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_tokens_used?: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          estimated_cost_usd?: number
+          estimated_tokens?: number
+          fallback_provider?: string | null
+          id?: string
+          input_config?: Json
+          job_type?: string
+          language?: string
+          line_key?: string | null
+          max_retries?: number
+          output_duration_seconds?: number | null
+          output_file_size_bytes?: number | null
+          output_metadata?: Json
+          output_thumbnail_url?: string | null
+          output_url?: string | null
+          product_id?: string | null
+          progress_percent?: number
+          project_id?: string
+          provider?: string | null
+          provider_job_id?: string | null
+          quality?: string
+          queued_at?: string
+          retry_count?: number
+          scene_key?: string | null
+          started_at?: string | null
+          status?: string
+          style_intent?: string | null
+          tier?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_generation_jobs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cast_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cast_intent_style_map: {
         Row: {
           created_at: string
@@ -3969,6 +4082,99 @@ export type Database = {
             referencedColumns: ["value"]
           },
         ]
+      }
+      cast_projects: {
+        Row: {
+          actual_tokens_used: number
+          blueprint_id: string | null
+          completed_stages: string[]
+          created_at: string
+          current_stage: string
+          description: string | null
+          estimated_tokens: number
+          final_video_url: string | null
+          full_production_mode: boolean
+          id: string
+          intent_value: string | null
+          metadata: Json
+          product_context: string | null
+          production_config: Json
+          quality: string
+          selected_capabilities: string[]
+          selected_dialects: string[]
+          selected_styles: string[]
+          slug: string | null
+          status: string
+          style_intent: string
+          target_regions: string[]
+          team_id: string | null
+          thumbnail_url: string | null
+          title: string
+          total_duration_seconds: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_tokens_used?: number
+          blueprint_id?: string | null
+          completed_stages?: string[]
+          created_at?: string
+          current_stage?: string
+          description?: string | null
+          estimated_tokens?: number
+          final_video_url?: string | null
+          full_production_mode?: boolean
+          id?: string
+          intent_value?: string | null
+          metadata?: Json
+          product_context?: string | null
+          production_config?: Json
+          quality?: string
+          selected_capabilities?: string[]
+          selected_dialects?: string[]
+          selected_styles?: string[]
+          slug?: string | null
+          status?: string
+          style_intent?: string
+          target_regions?: string[]
+          team_id?: string | null
+          thumbnail_url?: string | null
+          title: string
+          total_duration_seconds?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_tokens_used?: number
+          blueprint_id?: string | null
+          completed_stages?: string[]
+          created_at?: string
+          current_stage?: string
+          description?: string | null
+          estimated_tokens?: number
+          final_video_url?: string | null
+          full_production_mode?: boolean
+          id?: string
+          intent_value?: string | null
+          metadata?: Json
+          product_context?: string | null
+          production_config?: Json
+          quality?: string
+          selected_capabilities?: string[]
+          selected_dialects?: string[]
+          selected_styles?: string[]
+          slug?: string | null
+          status?: string
+          style_intent?: string
+          target_regions?: string[]
+          team_id?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          total_duration_seconds?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       cast_style_capability_map: {
         Row: {
