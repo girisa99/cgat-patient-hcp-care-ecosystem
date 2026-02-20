@@ -387,15 +387,26 @@ And together, the three of us do the work of a team of five — conservatively. 
   // - WEATHER: The woodland scene has shifted to overcast — storm clouds rolling in slowly.
   // ═══════════════════════════════════════════════════════════════════════════
 
+  'scene3-squirrel-reintro': {
+    text: `*swings down from branch, acorn in paw* Oh no no no no NO! *looks at Host* Boss? BOSS! You okay? You've got that look. That "I-just-realized-I'm-the-problem" look. *turns to audience* I've seen this before. Last time he had this look, he reorganized his entire kitchen at 2 AM. *stage whisper* This time it's worse. He's about to reorganize an entire SPRINT.`,
+    voice: 'squirrel',
+    scene: 'scene-3-origin',
+    duration_est: 10,
+    direction: 'SQUIRREL RE-ENTRANCE — Big energy! Squirrel swings down from a branch on a vine like Tarzan, lands on the desk scattering sticky notes everywhere. Acorn nearly falls — catches it mid-air. Runs up to Host\'s face, waves tiny paw in front of his eyes. Turns to camera breaking the fourth wall. At "reorganized his kitchen" — a quick flash-cut shows Host surrounded by labeled kitchen containers at 2AM. At "reorganize an entire SPRINT" — Squirrel\'s eyes go WIDE, pupils dilate, grabs own tail nervously. Atlas glances over briefly — unimpressed. Nova giggles. Owl facepalms.',
+    lipsync: true,
+    sfx: ['vine_swing_tarzan', 'desk_sticky_note_scatter', 'acorn_catch_mid_air', 'paw_wave_whoosh', 'kitchen_flash_cut_ding', 'squirrel_eyes_wide_boing', 'nova_giggle', 'owl_facepalm_thud'],
+    motion: 'squirrel-vine-swing-land-desk-scatter-fourth-wall-break-eyes-wide',
+  },
+
   'scene3-staging-open': {
     text: '',
     voice: 'host',
     scene: 'scene-3-origin',
     duration_est: 6,
-    direction: 'PURE CINEMATIC — no dialogue. Camera descends from aerial view of chaotic desk. 37 browser tabs glow. Sticky notes flutter. Signal messages float as holographic bubbles that pop and scatter. Host sits center, head in hands, overwhelmed. Atlas stage-left with dim blue glow, arms folded, a single unread log floating beside him. Nova stage-right, frozen on a CTA button with giant red "BLOCKED" stamp — her pink glow flickers like broken neon. Components orbit her greyed out. Squirrel on branch above eating popcorn. Owl shakes head. Rabbit counting sticky notes. Hedgehog asleep on Jira tickets. Giant clock ticks in background. Storm clouds roll in. Each clock tick reverberates.',
+    direction: 'PURE CINEMATIC — no dialogue. Camera descends from aerial view of chaotic desk. 37 browser tabs glow. Sticky notes flutter. Signal messages float as holographic bubbles that pop and scatter. Host sits center, head in hands, overwhelmed — question marks float around his head, he looks LOST, confused, staring blankly. Atlas stage-left BUSY — typing furiously, code streams pouring out, totally productive and focused, blue glow strong. Nova stage-right BUSY — conjuring UI components rapidly, pink glow vibrant, she\'s in the zone. THE CONTRAST: Both AIs are crushing it while the PO is completely lost. Squirrel on branch above eating popcorn. Owl shakes head. Rabbit counting sticky notes. Hedgehog asleep on Jira tickets. Giant clock ticks in background. Storm clouds roll in.',
     lipsync: false,
-    sfx: ['aerial_descent_whoosh', 'clock_tick_reverb_loop', 'sticky_note_flutter', 'signal_bubble_pop', 'neon_flicker_buzz', 'storm_rumble_distant', 'popcorn_crunch'],
-    motion: 'aerial-pullback-chaos-desk-reveal-host-head-in-hands',
+    sfx: ['aerial_descent_whoosh', 'clock_tick_reverb_loop', 'sticky_note_flutter', 'signal_bubble_pop', 'keyboard_rapid_typing', 'ui_conjure_sparkle', 'storm_rumble_distant', 'popcorn_crunch'],
+    motion: 'aerial-pullback-contrast-busy-devs-lost-po',
   },
 
   'origin-story': {
