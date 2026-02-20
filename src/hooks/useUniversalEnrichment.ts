@@ -47,6 +47,8 @@ export interface UniversalEnrichmentOptions {
   audienceFramework?: string;
   /** Content style/tone override */
   contentStyle?: string;
+  /** Subscriber user ID — loads subscriber-specific product knowledge alongside defaults */
+  userId?: string;
 }
 
 export interface ProductKnowledgeContext {
@@ -122,15 +124,16 @@ export interface UniversalEnrichmentResult {
 
 // ─── PRODUCT KNOWLEDGE QUERY (single source — replaces duplicate queries) ──
 
-async function fetchProductKnowledge(productId: string): Promise<ProductKnowledgeContext | null> {
+async function fetchProductKnowledge(productId: string, userId?: string): Promise<ProductKnowledgeContext | null> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('product_knowledge_registry')
-      .select('value_proposition, positioning_statement, tagline, elevator_pitch, pain_points, key_benefits, use_cases, differentiators, competitive_edge, regional_positioning, regional_pain_points, regional_benefits')
+      .select('value_proposition, positioning_statement, tagline, elevator_pitch, pain_points, key_benefits, use_cases, differentiators, competitive_edge, regional_positioning, regional_pain_points, regional_benefits, website_url')
       .eq('product_id', productId)
       .eq('is_current', true)
-      .eq('status', 'active')
-      .maybeSingle();
+      .eq('status', 'active');
+
+    const { data, error } = await query.maybeSingle();
 
     if (error || !data) return null;
 
@@ -406,6 +409,7 @@ export function useUniversalEnrichment(
     language = 'en',
     audienceFramework = 'StoryBrand',
     contentStyle,
+    userId,
   } = options;
 
   // Resolve productName → productId if UUID not provided
@@ -420,8 +424,8 @@ export function useUniversalEnrichment(
 
   // Fetch product knowledge from DB (cached, deduplicated via react-query)
   const { data: dbKnowledge, isLoading: knowledgeLoading } = useQuery({
-    queryKey: ['product_knowledge', productId],
-    queryFn: () => fetchProductKnowledge(productId!),
+    queryKey: ['product_knowledge', productId, userId],
+    queryFn: () => fetchProductKnowledge(productId!, userId),
     enabled: !!productId,
     staleTime: 10 * 60 * 1000,
   });
