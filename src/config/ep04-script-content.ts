@@ -1198,13 +1198,13 @@ The sprint tracker wasn't planned. It was born from pain. From realizing that AI
   'close-rationale': {
     text: `Now — before I go, let me tell you why this podcast looks the way it does.
 
-I didn't hire a video team. I didn't use a traditional podcast format. I used the very tools I'm building — Genie AI — to create this episode. The characters? AI-generated. The animations? Built in the sprint. The voices? Multi-provider TTS routed through our own edge functions. The sprint tracker you saw? That's a real product — and it will be launched soon.
+I didn't hire a video team. I didn't use a traditional podcast format. Because I believe it doesn't need to be traditional — it can be different. This podcast is my way of showing that. I used the very tools I'm building — Genie AI — to create this episode. The characters? AI-generated. The animations? Built in the sprint. The voices? Multi-provider TTS routed through my own edge functions. The sprint tracker you saw? That's a real product — and it will be launched soon.
 
-This is what I mean when I say: I don't build — I show what I build. The podcast IS the product demo. The creativity IS the proof. And if you check our sprint tracker, you'll see this episode listed as a task — completed by Atlas and Nova, reviewed by me. That's the workflow. That's the process. That's what Genie AI actually does.`,
+This is another way of innovating — experimenting with the same technology in different ways. That's what I believe in. I don't just build — I show what I build and what I learned in the process. The podcast IS the product demo. The creativity IS the proof. And if you check my sprint tracker, you'll see this episode listed as a task — completed by Atlas and Nova, reviewed by me. That's the workflow. That's the process. That's what Genie AI actually does.`,
     voice: 'host',
     scene: 'scene-11-close',
-    duration_est: 35,
-    direction: 'Meta-moment — breaking the fourth wall with purpose. Proud gestures, hands open showing the product. "Will be launched soon" delivered with confident nod. "The podcast IS the product demo" is the money line — lean forward on it.',
+    duration_est: 40,
+    direction: 'Meta-moment — breaking the fourth wall with conviction. "It doesn\'t need to be traditional" delivered with a confident head shake. "Another way of innovating" — hands gesture outward. Proud, reflective. "The podcast IS the product demo" is the money line — lean forward.',
     lipsync: true,
     motion: 'proud-gestures-hands-open-lean-forward',
     sfx: ['gentle_reveal_chime', 'soft_orchestral_swell'],
@@ -1215,7 +1215,7 @@ This is what I mean when I say: I don't build — I show what I build. The podca
 
 Head to genieaiexperimentationhub.tech to see how I experiment. Subscribe to the Genie AI Podcast wherever you listen. Follow me on LinkedIn and YouTube for the latest updates and newsletters.
 
-Because that's what "Beyond AI Hype" actually means. Stop reading about it. Stop debating about it. Start building with it. And see what happens.
+Because going beyond AI hype means actually building. Not talking about it. Not debating it. Building with it. And seeing what happens.
 
 I'm Sai Dasika. This has been The Genie AI Podcast — Episode 2, with Allaudin. Atlas and Nova say goodbye — in their own way.`,
     voice: 'host',
