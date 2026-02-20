@@ -795,7 +795,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   }}
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to Intent
+                  Back
                 </Button>
                 {/* Selected Template Confirmation Card */}
                 {castSession.session.selectedTemplate && (
