@@ -860,46 +860,83 @@ This is governance. Not bureaucracy. Not overhead. The thing that makes speed po
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SCENE 6: PO ACTIONS — THE FEATURE NOBODY PLANNED (9:30–10:30)
-  // VISUAL: PO Actions dashboard. Items appearing, being processed. Progress bar.
+  // SCENE 6: PO ACTIONS — BORN FROM FRUSTRATION (9:30–10:30)
+  // VISUAL: PO Actions dashboard evolving. Atlas/Nova waiting. Items piling up.
+  // Then the breakthrough — structured queue, cards lighting up, relief.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  'po-actions-story': {
-    text: `My favorite feature in the sprint tracker is one we didn't plan. The PO Actions tab.
+  'po-actions-origin': {
+    text: `Here's the honest story behind my favorite feature. The PO Actions tab. It wasn't planned. It was born from frustration.
 
-Remember when I said I was the bottleneck? Here's what fixed it. Every item I need to act on — approvals, reviews, unblocks, sign-offs — appears in a structured queue. Color-coded by urgency. Each item shows the related dev tasks and their completion status. I can't mark something done until the dev work it depends on is actually complete.
+We had the sprint tracker. We had governance. We had the handoff protocol. Atlas and Nova were shipping fast — tasks completing, PRs merging, features landing. But nothing was getting signed off. Why? Because the PO — that's me — wasn't keeping up.
 
-When Atlas finishes a backend migration, the card lights up: "Dev work completed — ready for your action." I add my note, approve it, done. Atlas sees it next session via Supabase sync.
-
-No hunting through Slack, Teams, or Discord. No "did you see my message?" No post-it notes. No receipts.`,
+I'd open the tracker, see forty tasks across five views, and my eyes would glaze over. Which ones need my approval? Which ones are blocked on me? Which ones did I already review but forget to mark done? I was the bottleneck I built the system to eliminate. The irony was... painful.`,
     voice: 'host',
     scene: 'scene-6-po-actions',
     duration_est: 35,
-    direction: 'Story-within-a-story. Genuine pride in the solution. "Receipts" callback to the origin story. Each "No..." is a beat of relief — things that used to cause pain, eliminated.',
+    direction: 'Confessional energy. Start with warm pride, then shift to genuine frustration. "Eyes would glaze over" — mime it, overwhelmed face. "The irony was painful" — self-deprecating laugh, hand on forehead. Camera slowly zooms in during the admission. Anime-style sweat drop moment.',
+    lipsync: true,
+    motion: 'frustrated-hand-on-forehead-overwhelm',
+    sfx: ['pile_up_notification_cascade', 'overwhelm_sigh', 'irony_sting'],
   },
 
-  'po-actions-atlas': {
-    text: `The PO Actions system uses bidirectional Supabase sync. When I complete a task, the PO queue updates in real-time. When the PO approves, my next session brief reflects it. The latency is under 400 milliseconds. I find that acceptable.`,
+  'po-actions-atlas-frustrated': {
+    text: `I completed 14 tasks in one session. Twelve of them sat in "pending review" for 36 hours. The PO queue wasn't the bottleneck. The absence of a PO queue was the bottleneck. There was no system telling the human what to do next. So the human did... nothing. Efficiently.`,
     voice: 'atlas',
     scene: 'scene-6-po-actions',
-    duration_est: 10,
-    direction: 'Technical pride. "Under 400 milliseconds" is Atlas\'s love language. "I find that acceptable" is high praise from him.',
+    duration_est: 12,
+    direction: 'Measured frustration. Not angry — disappointed. Arms crossed, slight head shake. "Did nothing. Efficiently." is dry Atlas humor at its finest. The pause before "Efficiently" is everything.',
+    lipsync: true,
+    motion: 'disappointed-arms-crossed-slow-headshake',
+    sfx: ['clock_ticking', 'dry_humor_beat'],
   },
 
-  'po-actions-nova': {
-    text: `I like the PO Actions tab because it means I stop getting blocked for six hours. Now I can see exactly what's pending, plan around it, and — most importantly — ship other things while I wait. Productively. With animations.`,
+  'po-actions-nova-blocked': {
+    text: `I was blocked for six hours on Day 2. Six. Hours. I had three components ready to ship, all waiting on PO sign-off. Do you know what I did? I built a dark mode toggle. A notification system. And a keyboard shortcut panel. Because I couldn't just sit there. I'm not Atlas — I don't meditate between deploys.`,
+    voice: 'nova',
+    scene: 'scene-6-po-actions',
+    duration_est: 10,
+    direction: 'Exasperated energy turning playful. "Six. Hours." — each word is a separate beat, bouncing with frustration. Then the energy shifts to mischievous pride as she lists what she built instead. The Atlas dig is affectionate. Hands thrown up, then crossed smugly.',
+    lipsync: true,
+    motion: 'exasperated-hands-up-then-smug-cross',
+    sfx: ['blocked_buzzer', 'creative_burst_sparkle', 'playful_jab_chime'],
+  },
+
+  'po-actions-breakthrough': {
+    text: `So at 11 PM on Day 2, I'm staring at the tracker thinking — the data is all here. Every task, every status, every dependency. The problem isn't information. It's presentation. I need ONE view that shows me ONLY what needs MY action. Not Atlas's work. Not Nova's backlog. Just mine.
+
+Three hours later, the PO Actions tab existed. A structured queue. Color-coded by urgency. Each card shows the related dev tasks and their completion status. I can't mark something done until the dev work it depends on is actually complete — that's the safety gate. When Atlas finishes a migration, the card lights up: "Dev work completed — ready for your action." I add my note, approve it, done.
+
+That's how innovation actually happens. Not in a brainstorm. Not in a roadmap. At 11 PM when you're frustrated enough to build the thing you need.`,
+    voice: 'host',
+    scene: 'scene-6-po-actions',
+    duration_est: 40,
+    direction: 'The emotional arc of the scene. Starts tired and frustrated (11 PM energy). "ONE view, ONLY, MY action" — each word gets louder, fist-on-desk energy. Then the build montage feeling — quick cuts, typing, designing. When describing the finished product, voice fills with pride. The final line is the thesis — deliver it slow, looking at camera. This is the origin story.',
+    lipsync: true,
+    motion: 'late-night-eureka-then-building-montage',
+    sfx: ['keyboard_rapid_typing', 'card_light_up_chime', 'breakthrough_swell', 'approval_stamp'],
+  },
+
+  'po-actions-atlas-relief': {
+    text: `The next morning, my pending reviews cleared in 22 minutes. Previously: 36 hours. That is a 98.9% improvement. The PO Actions system uses bidirectional Supabase sync — when I complete a task, the queue updates in real-time. When the PO approves, my next session brief reflects it. Latency under 400 milliseconds. I find that... satisfying.`,
+    voice: 'atlas',
+    scene: 'scene-6-po-actions',
+    duration_est: 12,
+    direction: 'Visible relief breaking through the stoic exterior. For the first time, Atlas almost smiles. "98.9% improvement" is his love language. "Satisfying" — the highest praise Atlas can give. Uncrosses arms, relaxed posture for the first time.',
+    lipsync: true,
+    motion: 'relieved-uncross-arms-almost-smile',
+    sfx: ['relief_exhale', 'sync_pulse', 'satisfaction_tone'],
+  },
+
+  'po-actions-nova-relief': {
+    text: `And I stopped getting blocked! I can see exactly what's pending, plan around it, and ship other things while I wait. Productively. With animations. The PO Actions tab is proof that constraints breed creativity — and frustration breeds features.`,
     voice: 'nova',
     scene: 'scene-6-po-actions',
     duration_est: 8,
-    direction: 'Practical and funny. "With animations" is her signature callback — she can\'t help herself.',
-  },
-
-  'po-honest-agile': {
-    text: `It took us two days to realize we needed this feature. Three hours to build it. That's the honest version of agile: you discover what you need by feeling the pain first. Then you build it before the pain becomes a pattern.`,
-    voice: 'host',
-    scene: 'scene-6-po-actions',
-    duration_est: 12,
-    direction: 'Reflective wisdom. This is a genuine insight — deliver like a thesis statement, not a punchline. Let it land.',
+    direction: 'Pure joy and relief. Bouncing energy. "With animations" — signature callback with a wink. Last line is surprisingly wise for Nova — she delivers it with genuine conviction, then immediately goes back to bouncing. Sparkle effects around her.',
+    lipsync: true,
+    motion: 'joyful-bounce-with-sparkle-aura',
+    sfx: ['unblocked_fanfare', 'sparkle_burst', 'nova_signature_chime'],
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
