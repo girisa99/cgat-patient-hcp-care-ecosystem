@@ -622,16 +622,27 @@ export default function EP04Production() {
       {/* Script Lines */}
       <ScrollArea className="h-[calc(100vh-80px)]">
         <div className="max-w-5xl mx-auto p-6 space-y-8">
-          {/* Episode Thumbnail Banner — Collage with Two AI Developers */}
-          <div className="relative rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-[hsl(220,60%,10%)] via-background to-[hsl(330,40%,12%)]">
-            {/* Background thumbnail image */}
-            <img
-              src={ep02Thumbnail}
-              alt="The Genie AI Podcast — Beyond AI Hype — Episode 2"
-              className="w-full h-auto object-cover rounded-2xl opacity-30"
-            />
-            {/* Collage overlay with two AI developer logos */}
-            <div className="absolute inset-0 flex items-center justify-center gap-8 sm:gap-12 p-6">
+          {/* Episode Thumbnail Banner — Text on top, Collage below */}
+          <div className="rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-[hsl(220,60%,10%)] via-background to-[hsl(330,40%,12%)] border border-border/30">
+            {/* Top section: Thumbnail background with title text overlay */}
+            <div className="relative">
+              <img
+                src={ep02Thumbnail}
+                alt="The Genie AI Podcast — Beyond AI Hype — Episode 2"
+                className="w-full h-48 sm:h-56 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
+              <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-6">
+                <p className="text-xs text-primary font-semibold uppercase tracking-[0.2em] mb-2 drop-shadow-lg">Beyond AI Hype — Episode 2</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-xl">Two AI Developers. One Human PO. Real Sprint.</h2>
+                <p className="text-sm text-white/70 mt-2 drop-shadow-md">
+                  Host: Sai Dasika · with Allaudin · AI • Experimentation • Real-World Impact
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom section: AI Developer Collage */}
+            <div className="flex items-center justify-center gap-8 sm:gap-14 py-6 px-6">
               {/* Claude (Atlas) */}
               <div className="flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
                 <div className="relative group">
@@ -643,9 +654,7 @@ export default function EP04Production() {
               </div>
 
               {/* × divider */}
-              <div className="flex flex-col items-center">
-                <span className="text-3xl font-bold text-muted-foreground/50">×</span>
-              </div>
+              <span className="text-3xl font-bold text-muted-foreground/40">×</span>
 
               {/* Lovable (Nova) */}
               <div className="flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: '0.5s' }}>
@@ -656,15 +665,6 @@ export default function EP04Production() {
                 <span className="text-sm font-bold text-accent drop-shadow-lg">Nova · Lovable</span>
                 <span className="text-[10px] text-muted-foreground italic max-w-[140px] text-center">"I don't sit idle. I build."</span>
               </div>
-            </div>
-
-            {/* Bottom gradient with corrected title */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/90 to-transparent p-6">
-              <p className="text-xs text-primary/70 font-semibold uppercase tracking-widest mb-1">Beyond AI Hype — Episode 2</p>
-              <h2 className="text-2xl font-bold text-foreground">Two AI Developers. One Human PO. Real Sprint.</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Host: Sai Dasika · with Allaudin · AI • Experimentation • Real-World Impact
-              </p>
             </div>
           </div>
 
