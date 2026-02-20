@@ -68,9 +68,34 @@ export {
   useUniversalEnrichment,
   buildEnrichmentContext,
   formatEnrichmentForAI,
+  getAllGenieProductsKnowledge,
+  formatAllProductsForAI,
 } from '@/services/enrichment';
 export type {
   UniversalEnrichmentOptions,
   EnrichmentContext,
   UniversalEnrichmentResult,
 } from '@/services/enrichment';
+
+// Token ↔ Credit Conversion (dual display: internal tokens, external credits)
+export {
+  tokensToCredits,
+  creditsToTokens,
+  getRemainingCredits,
+  estimateStepCost,
+  buildProjectCostDisplay,
+  formatCredits,
+  formatTokens,
+  formatUsd,
+  TIER_CREDIT_CONFIG,
+  STEP_ESTIMATION_DEFAULTS,
+} from '@/services/tokenCreditService';
+export type {
+  SubscriptionTier,
+  UserContext,
+  CostStepType,
+  TierCreditConfig,
+  StepCostEstimate,
+  ProjectCostDisplay,
+  PreGenerationEstimate,
+} from '@/services/tokenCreditService';
