@@ -39,6 +39,7 @@ interface BlueprintTemplatesGridProps {
   onSelectBlueprint?: (blueprint: VideoBlueprint) => void;
   selectedBlueprintId?: string;
   intentFilter?: string | null;
+  categoryFilter?: string | null;
   simpleMode?: boolean;
   selectedVideoStyles?: any[];
 }
@@ -61,6 +62,7 @@ export function BlueprintTemplatesGrid({
   onSelectBlueprint,
   selectedBlueprintId,
   intentFilter,
+  categoryFilter,
   selectedVideoStyles,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
@@ -80,13 +82,22 @@ export function BlueprintTemplatesGrid({
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
 
-  // Get recommendations based on intent (or show all if browsing)
+  // Filter by category first, then apply intent scoring
   const recommendedTemplates = useMemo(() => {
-    const source = showBrowseAll ? blueprints : (
-      intentFilter ? getIntentRecommendations(blueprints, intentFilter, 8) : blueprints.slice(0, 12)
+    // Apply category filter if provided
+    const categoryFiltered = categoryFilter
+      ? blueprints.filter(bp => bp.category.toLowerCase() === categoryFilter.toLowerCase())
+      : blueprints;
+
+    const source = showBrowseAll ? categoryFiltered : (
+      intentFilter ? getIntentRecommendations(categoryFiltered, intentFilter, 8) : categoryFiltered.slice(0, 12)
     );
+    // If category filter yielded no results, fall back to all blueprints
+    if (source.length === 0 && categoryFilter) {
+      return showBrowseAll ? blueprints : blueprints.slice(0, 12);
+    }
     return source;
-  }, [blueprints, intentFilter, showBrowseAll]);
+  }, [blueprints, intentFilter, categoryFilter, showBrowseAll]);
 
   // Filter by search query
   const filteredTemplates = useMemo(() => {
