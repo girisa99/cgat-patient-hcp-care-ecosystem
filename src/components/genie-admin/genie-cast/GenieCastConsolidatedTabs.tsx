@@ -543,8 +543,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               }
             }
 
-            setActiveMainTab('produce');
-            setSubTab('produce', 'generate');
+            // Stay on CREATE tab to show loaded scenes/messaging
+            setActiveMainTab('create');
+            setSubTab('create', 'templates');
           }}
         >
           <Film className="w-3.5 h-3.5" />
