@@ -393,6 +393,22 @@ export default function EP04Production() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Custom animation keyframes for character motion during playback */}
+      <style>{`
+        @keyframes talkBounce {
+          0% { transform: scale(1.1) translateY(0); }
+          100% { transform: scale(1.1) translateY(-2px); }
+        }
+        @keyframes soundBar {
+          0% { height: 4px; }
+          100% { height: 16px; }
+        }
+        @keyframes motionSlide {
+          0% { transform: translateX(-3px) rotate(-2deg); }
+          50% { transform: translateX(3px) rotate(2deg); }
+          100% { transform: translateX(-3px) rotate(-2deg); }
+        }
+      `}</style>
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
@@ -652,51 +668,108 @@ export default function EP04Production() {
                           </div>
 
                           {/* Character Avatar with talking animation */}
-                          <div className="flex-shrink-0 pt-0.5 relative">
+                          <div className={cn(
+                            "flex-shrink-0 pt-0.5 relative",
+                            isPlaying && "z-10"
+                          )}>
+                            {/* Motion ring effect — active during playback with motion cue */}
+                            {isPlaying && line.motion && (
+                              <div className="absolute -inset-2 rounded-full border-2 border-violet-400/40 animate-ping" />
+                            )}
+                            {/* Lip-sync glow ring — active during playback with lipsync */}
+                            {isPlaying && line.lipsync && (
+                              <div 
+                                className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-pink-500/30 via-primary/20 to-pink-500/30"
+                                style={{ animation: 'pulse 0.6s ease-in-out infinite alternate' }}
+                              />
+                            )}
                             <img
                               src={CHARACTER_AVATARS[line.voice]}
                               alt={VOICE_LABELS[line.voice]}
                               className={cn(
-                                'w-12 h-12 rounded-full object-cover ring-2 shadow-md transition-all duration-300',
+                                'w-12 h-12 rounded-full object-cover ring-2 shadow-md transition-all duration-300 relative',
                                 isPlaying 
-                                  ? 'ring-primary animate-pulse scale-110 shadow-primary/30 shadow-lg' 
+                                  ? 'ring-primary scale-110 shadow-primary/30 shadow-lg' 
                                   : 'ring-border',
                                 line.voice === 'squirrel' && 'ring-orange-500/50',
                                 line.isInterruption && !isPlaying && 'animate-bounce'
                               )}
                               style={isPlaying ? {
-                                animation: 'pulse 1s ease-in-out infinite, wiggle 0.3s ease-in-out infinite',
+                                animation: line.lipsync 
+                                  ? 'pulse 0.8s ease-in-out infinite, talkBounce 0.3s ease-in-out infinite alternate'
+                                  : 'pulse 1.5s ease-in-out infinite',
                               } : undefined}
                             />
-                            {/* Speaking indicator */}
-                            {isPlaying && (
-                              <div className="absolute -bottom-1 -right-1 flex gap-0.5">
-                                <span className="w-1 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <span className="w-1 h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                <span className="w-1 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            {/* Speaking / lip-sync indicator */}
+                            {isPlaying && line.lipsync && (
+                              <div className="absolute -bottom-1 -right-1 flex gap-0.5 items-end">
+                                <span className="w-1 h-3 bg-pink-400 rounded-full" style={{ animation: 'soundBar 0.4s ease-in-out infinite alternate' }} />
+                                <span className="w-1 h-4 bg-pink-400 rounded-full" style={{ animation: 'soundBar 0.4s ease-in-out infinite alternate', animationDelay: '0.1s' }} />
+                                <span className="w-1 h-2 bg-pink-400 rounded-full" style={{ animation: 'soundBar 0.4s ease-in-out infinite alternate', animationDelay: '0.2s' }} />
+                                <span className="w-1 h-3 bg-pink-400 rounded-full" style={{ animation: 'soundBar 0.4s ease-in-out infinite alternate', animationDelay: '0.3s' }} />
+                              </div>
+                            )}
+                            {/* Motion action indicator */}
+                            {isPlaying && line.motion && !line.lipsync && (
+                              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center text-[8px] animate-bounce">
+                                🎬
                               </div>
                             )}
                           </div>
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
+                            {/* Active animation strip — shows during playback */}
+                            {isPlaying && (line.motion || line.sfx?.length || line.lipsync) && (
+                              <div className="flex items-center gap-1.5 mb-2 py-1.5 px-2 rounded-md bg-gradient-to-r from-violet-500/10 via-pink-500/10 to-cyan-500/10 border border-primary/20">
+                                {line.lipsync && (
+                                  <span className="flex items-center gap-1 text-[10px] font-medium text-pink-400">
+                                    <span style={{ animation: 'talkBounce 0.3s ease-in-out infinite alternate' }}>👄</span> 
+                                    TALKING
+                                  </span>
+                                )}
+                                {line.motion && (
+                                  <span className="flex items-center gap-1 text-[10px] font-medium text-violet-400">
+                                    <span style={{ animation: 'pulse 0.8s ease-in-out infinite' }}>🏃</span>
+                                    {line.motion.split('-').slice(0, 2).join(' ').toUpperCase()}
+                                  </span>
+                                )}
+                                {line.sfx && line.sfx.length > 0 && (
+                                  <span className="flex items-center gap-1 text-[10px] font-medium text-cyan-400 ml-auto">
+                                    {line.sfx.map((sfx, si) => (
+                                      <span 
+                                        key={sfx} 
+                                        className="px-1 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20"
+                                        style={{ animation: `pulse 1s ease-in-out infinite`, animationDelay: `${si * 0.3}s` }}
+                                      >
+                                        🔊 {sfx.replace(/_/g, ' ')}
+                                      </span>
+                                    ))}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                               {line.isInterruption && (
-                                <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-400 border-orange-500/30 animate-pulse">
+                                <Badge variant="outline" className={cn(
+                                  "text-xs bg-orange-500/10 text-orange-400 border-orange-500/30",
+                                  isPlaying && "animate-pulse"
+                                )}>
                                   ⚡ Interruption
                                 </Badge>
                               )}
-                              {line.lipsync && (
+                              {line.lipsync && !isPlaying && (
                                 <Badge variant="outline" className="text-xs bg-pink-500/10 text-pink-400 border-pink-500/30">
                                   👄 Lip-Sync
                                 </Badge>
                               )}
-                              {line.sfx && line.sfx.length > 0 && (
+                              {line.sfx && line.sfx.length > 0 && !isPlaying && (
                                 <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
                                   🔊 SFX ×{line.sfx.length}
                                 </Badge>
                               )}
-                              {line.motion && (
+                              {line.motion && !isPlaying && (
                                 <Badge variant="outline" className="text-xs bg-violet-500/10 text-violet-400 border-violet-500/30">
                                   🎬 {line.motion.split('-').slice(0, 3).join(' ')}
                                 </Badge>
@@ -711,11 +784,15 @@ export default function EP04Production() {
                             </div>
                             <p className={cn(
                               'text-sm leading-relaxed whitespace-pre-line',
-                              line.isInterruption && 'italic'
+                              line.isInterruption && 'italic',
+                              isPlaying && 'text-foreground font-medium'
                             )}>
                               {line.text}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1 italic">
+                            <p className={cn(
+                              "text-xs text-muted-foreground mt-1 italic",
+                              isPlaying && "text-violet-300/80"
+                            )}>
                               {line.direction}
                             </p>
                           </div>
