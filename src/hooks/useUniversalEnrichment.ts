@@ -30,6 +30,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useContentPool } from './useContentPool';
 import type { ContentPoolContext } from './useContentPool';
 import { supabase } from '@/integrations/supabase/client';
+import { GENIE_PRODUCTS, type GenieProduct } from '@/constants/genie-products';
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,8 @@ export interface ProductKnowledgeContext {
   regionalPositioning?: Record<string, unknown>;
   regionalPainPoints?: Record<string, unknown>;
   regionalBenefits?: Record<string, unknown>;
+  /** Source: 'db' from product_knowledge_registry, 'static' from GENIE_PRODUCTS, 'merged' from both */
+  source?: 'db' | 'static' | 'merged';
 }
 
 export interface EnrichmentContext {
@@ -144,11 +147,119 @@ async function fetchProductKnowledge(productId: string): Promise<ProductKnowledg
       regionalPositioning: (data.regional_positioning as Record<string, unknown>) || {},
       regionalPainPoints: (data.regional_pain_points as Record<string, unknown>) || {},
       regionalBenefits: (data.regional_benefits as Record<string, unknown>) || {},
+      source: 'db',
     };
   } catch {
     console.warn('[UniversalEnrichment] Failed to load product knowledge');
     return null;
   }
+}
+
+// ─── STATIC PRODUCT KNOWLEDGE (from GENIE_PRODUCTS constants) ──────────────
+
+/**
+ * Build ProductKnowledgeContext from the static GENIE_PRODUCTS registry.
+ * Works for all 7 products without requiring any DB entry.
+ * Used as fallback when no product_knowledge_registry row exists, and
+ * merged with DB data when both are available.
+ */
+function buildStaticProductKnowledge(productKey: string): ProductKnowledgeContext | null {
+  // Try exact match first, then fuzzy match on name
+  const entry = GENIE_PRODUCTS[productKey as GenieProduct];
+  if (!entry) {
+    // Try matching by name (e.g. "Genie Spark" → spark)
+    const match = Object.values(GENIE_PRODUCTS).find(
+      p => p.name.toLowerCase() === productKey.toLowerCase()
+        || p.id === productKey.toLowerCase(),
+    );
+    if (!match) return null;
+    return staticEntryToKnowledge(match);
+  }
+  return staticEntryToKnowledge(entry);
+}
+
+function staticEntryToKnowledge(entry: (typeof GENIE_PRODUCTS)[GenieProduct]): ProductKnowledgeContext {
+  return {
+    tagline: entry.tagline,
+    valueProposition: entry.description,
+    positioningStatement: `${entry.name}: ${entry.tagline} — ${entry.description}`,
+    elevatorPitch: `${entry.name} is the ${entry.tagline.toLowerCase()} solution. ${entry.description}`,
+    painPoints: [],
+    keyBenefits: entry.features.slice(0, 5),
+    useCases: entry.pipelineCategories,
+    differentiators: entry.capabilities,
+    competitiveEdge: `Part of the Genie Suite ecosystem with ${entry.capabilities.length} cross-functional capabilities`,
+    source: 'static',
+  };
+}
+
+/**
+ * Merge DB knowledge with static knowledge.
+ * DB values take priority; static fills gaps.
+ */
+function mergeKnowledge(
+  dbKnowledge: ProductKnowledgeContext | null,
+  staticKnowledge: ProductKnowledgeContext | null,
+): ProductKnowledgeContext | null {
+  if (!dbKnowledge && !staticKnowledge) return null;
+  if (!dbKnowledge) return staticKnowledge;
+  if (!staticKnowledge) return dbKnowledge;
+
+  return {
+    valueProposition: dbKnowledge.valueProposition || staticKnowledge.valueProposition,
+    positioningStatement: dbKnowledge.positioningStatement || staticKnowledge.positioningStatement,
+    tagline: dbKnowledge.tagline || staticKnowledge.tagline,
+    elevatorPitch: dbKnowledge.elevatorPitch || staticKnowledge.elevatorPitch,
+    painPoints: dbKnowledge.painPoints.length > 0 ? dbKnowledge.painPoints : staticKnowledge.painPoints,
+    keyBenefits: dbKnowledge.keyBenefits.length > 0 ? dbKnowledge.keyBenefits : staticKnowledge.keyBenefits,
+    useCases: dbKnowledge.useCases.length > 0 ? dbKnowledge.useCases : staticKnowledge.useCases,
+    differentiators: dbKnowledge.differentiators.length > 0 ? dbKnowledge.differentiators : staticKnowledge.differentiators,
+    competitiveEdge: dbKnowledge.competitiveEdge || staticKnowledge.competitiveEdge,
+    regionalPositioning: {
+      ...(staticKnowledge.regionalPositioning || {}),
+      ...(dbKnowledge.regionalPositioning || {}),
+    },
+    regionalPainPoints: {
+      ...(staticKnowledge.regionalPainPoints || {}),
+      ...(dbKnowledge.regionalPainPoints || {}),
+    },
+    regionalBenefits: {
+      ...(staticKnowledge.regionalBenefits || {}),
+      ...(dbKnowledge.regionalBenefits || {}),
+    },
+    source: 'merged',
+  };
+}
+
+/**
+ * Fetch ALL Genie Suite product knowledge as a single context block.
+ * Used when enrichment needs full ecosystem awareness (e.g. Ask Genie,
+ * cross-product recommendations, subscriber onboarding).
+ */
+export function getAllGenieProductsKnowledge(): Record<string, ProductKnowledgeContext> {
+  const result: Record<string, ProductKnowledgeContext> = {};
+  for (const key of ['spark', 'mind', 'vibe', 'deck', 'hub', 'cast'] as GenieProduct[]) {
+    const knowledge = buildStaticProductKnowledge(key);
+    if (knowledge) result[key] = knowledge;
+  }
+  return result;
+}
+
+/**
+ * Format ALL 7 products' knowledge into a single AI context string.
+ * Useful for Ask Genie to recommend the right product for a task.
+ */
+export function formatAllProductsForAI(): string {
+  const all = getAllGenieProductsKnowledge();
+  const lines: string[] = ['=== Genie Suite Products ==='];
+  for (const [key, k] of Object.entries(all)) {
+    const product = GENIE_PRODUCTS[key as GenieProduct];
+    lines.push(`\n[${product.name}] ${product.tagline}`);
+    lines.push(`  ${k.valueProposition}`);
+    if (k.keyBenefits.length) lines.push(`  Features: ${k.keyBenefits.join(', ')}`);
+    if (k.differentiators.length) lines.push(`  Capabilities: ${k.differentiators.join(', ')}`);
+  }
+  return lines.join('\n');
 }
 
 // ─── PURE FUNCTION: Build enrichment from pool ─────────────────────────────
@@ -307,18 +418,42 @@ export function useUniversalEnrichment(
     return match?.id;
   }, [explicitProductId, productName, pool]);
 
-  // Fetch product knowledge (cached, deduplicated via react-query)
-  const { data: knowledge, isLoading: knowledgeLoading } = useQuery({
+  // Fetch product knowledge from DB (cached, deduplicated via react-query)
+  const { data: dbKnowledge, isLoading: knowledgeLoading } = useQuery({
     queryKey: ['product_knowledge', productId],
     queryFn: () => fetchProductKnowledge(productId!),
     enabled: !!productId,
     staleTime: 10 * 60 * 1000,
   });
 
+  // Resolve static product key for GENIE_PRODUCTS fallback
+  const staticProductKey = useMemo(() => {
+    if (productName) {
+      // "Genie Spark" → "spark"
+      const lower = productName.toLowerCase().replace('genie ', '');
+      if (GENIE_PRODUCTS[lower as GenieProduct]) return lower;
+    }
+    // Try resolving from pool product name
+    if (productId && pool) {
+      const p = pool.getProductById(productId);
+      if (p?.name) {
+        const lower = p.name.toLowerCase().replace('genie ', '');
+        if (GENIE_PRODUCTS[lower as GenieProduct]) return lower;
+      }
+    }
+    return undefined;
+  }, [productId, productName, pool]);
+
+  // Merge DB knowledge with static knowledge (DB takes priority, static fills gaps)
+  const mergedKnowledge = useMemo(() => {
+    const staticK = staticProductKey ? buildStaticProductKnowledge(staticProductKey) : null;
+    return mergeKnowledge(dbKnowledge ?? null, staticK);
+  }, [dbKnowledge, staticProductKey]);
+
   const enrichmentContext = useMemo<EnrichmentContext>(() => {
     if (!pool) return { regional: { region, language, scriptStatus: 'pending' } };
-    return buildEnrichmentContext(pool, productId, region, language, audienceFramework, knowledge);
-  }, [pool, productId, region, language, audienceFramework, knowledge]);
+    return buildEnrichmentContext(pool, productId, region, language, audienceFramework, mergedKnowledge);
+  }, [pool, productId, region, language, audienceFramework, mergedKnowledge]);
 
   const additionalContext = useMemo(
     () => formatEnrichmentForAI(enrichmentContext, contentStyle),

@@ -21,6 +21,8 @@ export {
   useUniversalEnrichment,
   buildEnrichmentContext,
   formatEnrichmentForAI,
+  getAllGenieProductsKnowledge,
+  formatAllProductsForAI,
   type UniversalEnrichmentOptions,
   type EnrichmentContext,
   type UniversalEnrichmentResult,
