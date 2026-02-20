@@ -2,14 +2,15 @@
  * UNIVERSAL SCENE PIPELINE ORCHESTRATOR
  * 
  * Modular, product-agnostic orchestrator for ALL Genie Suite products.
- * Receives ALL configuration dynamically via request payload:
- *   - voiceRouting: character→provider map (no hardcoded voices)
- *   - storagePaths: bucket + prefix for TTS/music/SFX/screenshots
- *   - scenePipelines: scene→steps array
- *   - scriptContent: scriptKey→{text} map
- *   - musicScore: scene→music+sfx config
- *   - productId: spark|mind|deck|vibe|arc|hub|cast
- *   - episodeId: any string identifier
+ * 
+ * ACCEPTS TWO MODES:
+ * 
+ * MODE 1 (Legacy): Flat payload with individual fields
+ *   { productId, scenes, scriptContent, scenePipelines, musicScore, voiceRouting, storagePaths }
+ * 
+ * MODE 2 (B3 — Manifest): Full UniversalEpisodeManifest
+ *   { manifest: UniversalEpisodeManifest, dryRun?, maxExecutionMs? }
+ *   Auto-converts to Mode 1 internally.
  *
  * Dispatches each step to the correct existing edge function:
  *   TTS         → elevenlabs-voice / azure-tts / alibaba-cosyvoice-tts
@@ -48,12 +49,12 @@ interface VoiceRoute {
 }
 
 interface StoragePaths {
-  bucket: string;           // e.g. 'genie-media'
-  ttsPrefix: string;        // e.g. 'spark-ep01-tts' or 'cast-demo-tts'
+  bucket: string;
+  ttsPrefix: string;
   musicPrefix: string;
   sfxPrefix: string;
-  screenshotBucket: string; // e.g. 'product-screenshots'
-  screenshotPattern: string; // e.g. 'screenshots/{id}.png' — {id} is replaced
+  screenshotBucket: string;
+  screenshotPattern: string;
 }
 
 interface SceneStepResult {
@@ -77,7 +78,6 @@ interface SceneResult {
 
 interface ScriptEntry {
   text: string;
-  // Transcreation richness fields (optional, backward compatible)
   direction?: string;
   lipsync?: boolean;
   sfx?: string[];
@@ -89,16 +89,78 @@ interface ScriptEntry {
 }
 
 interface OrchestratorRequest {
-  productId: string;
+  // Mode 1: Flat payload
+  productId?: string;
   episodeId?: string;
-  scenes: string[] | 'all';
-  scriptContent: Record<string, ScriptEntry>;
-  scenePipelines: Record<string, Array<Record<string, any>>>;
+  scenes?: string[] | 'all';
+  scriptContent?: Record<string, ScriptEntry>;
+  scenePipelines?: Record<string, Array<Record<string, any>>>;
   musicScore?: Record<string, { music?: Record<string, any>; sfx?: Array<Record<string, any>> }>;
-  voiceRouting: Record<string, VoiceRoute>;
-  storagePaths: StoragePaths;
+  voiceRouting?: Record<string, VoiceRoute>;
+  storagePaths?: StoragePaths;
+  // Mode 2: Full manifest (B3)
+  manifest?: ManifestPayload;
+  // Shared options
   dryRun?: boolean;
   maxExecutionMs?: number;
+}
+
+/** Manifest shape matching UniversalEpisodeManifest from the client schema */
+interface ManifestPayload {
+  id: string;
+  title: string;
+  product: string;
+  purpose: string;
+  language: string;
+  regionCode?: string;
+  scenes: Array<{
+    id: string;
+    title: string;
+    sceneType: string;
+    scriptKeys: string[];
+    durationEst: number;
+    music?: { prompt?: string; trackUrl?: string; volume?: number; fadeIn?: number; fadeOut?: number; loop?: boolean };
+    sfx?: Array<{ prompt: string; timing: string; lineKey?: string; duration?: number }>;
+    transitionIn?: string;
+    transitionOut?: string;
+    layout?: string;
+    lowerThird?: string;
+    culturalTraits?: Record<string, unknown>;
+  }>;
+  scriptLines: Record<string, {
+    key: string;
+    text: string;
+    voice: string;
+    scene: string;
+    durationEst: number;
+    direction?: string;
+    lipsync?: boolean;
+    sfx?: string[];
+    motion?: string;
+    visualRef?: string;
+    emotionalTone?: string;
+    culturalTraits?: Record<string, unknown>;
+    regionCode?: string;
+  }>;
+  characters: Array<{
+    key: string;
+    name: string;
+    role: string;
+    voice: {
+      provider: string;
+      voiceId: string;
+      fallbackProvider?: string;
+      fallbackVoice?: string;
+      stability?: number;
+      similarityBoost?: number;
+      speed?: number;
+      rate?: string;
+      pitch?: string;
+    };
+  }>;
+  voiceRouting: Record<string, VoiceRoute>;
+  storagePaths: StoragePaths;
+  culturalTraits?: Record<string, unknown>;
 }
 
 interface OrchestratorResult {
@@ -109,6 +171,92 @@ interface OrchestratorResult {
   totalDuration: number;
   assetsGenerated: number;
   errors: string[];
+  /** Set to true when manifest mode was used */
+  manifestMode?: boolean;
+}
+
+// ─── MANIFEST → FLAT PAYLOAD CONVERTER (B3) ─────────────────────────────────
+
+function convertManifestToFlat(manifest: ManifestPayload): {
+  productId: string;
+  episodeId: string;
+  scenes: string[];
+  scriptContent: Record<string, ScriptEntry>;
+  scenePipelines: Record<string, Array<Record<string, any>>>;
+  musicScore: Record<string, { music?: Record<string, any>; sfx?: Array<Record<string, any>> }>;
+  voiceRouting: Record<string, VoiceRoute>;
+  storagePaths: StoragePaths;
+} {
+  // Build scriptContent
+  const scriptContent: Record<string, ScriptEntry> = {};
+  for (const [key, line] of Object.entries(manifest.scriptLines)) {
+    scriptContent[key] = {
+      text: line.text,
+      direction: line.direction,
+      lipsync: line.lipsync,
+      sfx: line.sfx,
+      motion: line.motion,
+      visualRef: line.visualRef,
+      emotionalTone: line.emotionalTone,
+      culturalTraits: line.culturalTraits as Record<string, string | boolean>,
+      regionCode: line.regionCode,
+    };
+  }
+
+  // Build scenePipelines
+  const scenePipelines: Record<string, Array<Record<string, any>>> = {};
+  for (const scene of manifest.scenes) {
+    const steps: Array<Record<string, any>> = [];
+    for (const lineKey of scene.scriptKeys) {
+      const line = manifest.scriptLines[lineKey];
+      if (!line) continue;
+      steps.push({ type: 'tts', voice: line.voice, scriptKey: lineKey });
+      if (line.lipsync !== false) {
+        steps.push({ type: 'avatar-lipsync', character: line.voice, provider: 'alibaba' });
+      }
+    }
+    scenePipelines[scene.id] = steps;
+  }
+
+  // Build voiceRouting from characters
+  const voiceRouting: Record<string, VoiceRoute> = {};
+  for (const char of manifest.characters) {
+    voiceRouting[char.key] = {
+      provider: char.voice.provider,
+      voiceId: char.voice.voiceId,
+      fallbackProvider: char.voice.fallbackProvider || 'alibaba',
+      fallbackVoice: char.voice.fallbackVoice || 'longxiaochun',
+      stability: char.voice.stability,
+      similarityBoost: char.voice.similarityBoost,
+      speed: char.voice.speed,
+      rate: char.voice.rate,
+      pitch: char.voice.pitch,
+    };
+  }
+  // Merge with any explicit voiceRouting from manifest
+  Object.assign(voiceRouting, manifest.voiceRouting || {});
+
+  // Build musicScore
+  const musicScore: Record<string, { music?: Record<string, any>; sfx?: Array<Record<string, any>> }> = {};
+  for (const scene of manifest.scenes) {
+    if (scene.music || scene.sfx?.length) {
+      musicScore[scene.id] = {
+        music: scene.music as Record<string, any>,
+        sfx: scene.sfx as Array<Record<string, any>>,
+      };
+    }
+  }
+
+  return {
+    productId: manifest.product,
+    episodeId: manifest.id,
+    scenes: manifest.scenes.map(s => s.id),
+    scriptContent,
+    scenePipelines,
+    musicScore,
+    voiceRouting,
+    storagePaths: manifest.storagePaths,
+  };
 }
 
 // ─── STEP DISPATCHERS (all receive config, nothing hardcoded) ───────────────
@@ -397,17 +545,45 @@ serve(async (req) => {
   try {
     const request: OrchestratorRequest = await req.json();
     const {
-      productId,
-      episodeId,
-      scenes,
-      scriptContent,
-      scenePipelines,
-      musicScore,
-      voiceRouting,
-      storagePaths,
       dryRun = false,
       maxExecutionMs = 55000,
     } = request;
+
+    // ── B3: Manifest Mode Detection ──
+    let productId: string;
+    let episodeId: string | undefined;
+    let scenes: string[] | 'all';
+    let scriptContent: Record<string, ScriptEntry>;
+    let scenePipelines: Record<string, Array<Record<string, any>>>;
+    let musicScore: Record<string, { music?: Record<string, any>; sfx?: Array<Record<string, any>> }> | undefined;
+    let voiceRouting: Record<string, VoiceRoute>;
+    let storagePaths: StoragePaths;
+    let manifestMode = false;
+
+    if (request.manifest) {
+      // MODE 2: Full manifest — auto-convert
+      console.log('📋 Manifest mode detected — auto-converting to flat payload');
+      const flat = convertManifestToFlat(request.manifest);
+      productId = flat.productId;
+      episodeId = flat.episodeId;
+      scenes = flat.scenes;
+      scriptContent = flat.scriptContent;
+      scenePipelines = flat.scenePipelines;
+      musicScore = flat.musicScore;
+      voiceRouting = flat.voiceRouting;
+      storagePaths = flat.storagePaths;
+      manifestMode = true;
+    } else {
+      // MODE 1: Flat payload (legacy)
+      productId = request.productId!;
+      episodeId = request.episodeId;
+      scenes = request.scenes!;
+      scriptContent = request.scriptContent!;
+      scenePipelines = request.scenePipelines!;
+      musicScore = request.musicScore;
+      voiceRouting = request.voiceRouting!;
+      storagePaths = request.storagePaths!;
+    }
 
     // Validate required fields
     if (!productId) throw new Error('productId is required (spark|mind|deck|vibe|arc|hub|cast)');
@@ -541,6 +717,7 @@ serve(async (req) => {
     const response: OrchestratorResult = {
       success: errors.length === 0, productId, episodeId,
       scenes: sceneResults, totalDuration, assetsGenerated: totalAssetsGenerated, errors,
+      manifestMode,
     };
 
     return new Response(JSON.stringify(response), {
