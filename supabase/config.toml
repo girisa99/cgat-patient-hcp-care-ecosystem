@@ -436,3 +436,6 @@ verify_jwt = false
 
 [functions.ep04-scene-orchestrator]
 verify_jwt = false
+
+[functions.universal-scene-orchestrator]
+verify_jwt = false
