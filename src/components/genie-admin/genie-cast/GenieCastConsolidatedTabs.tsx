@@ -577,6 +577,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           <span className="text-sm font-semibold">Genie Cast</span>
         </div>
         <Separator orientation="vertical" className="h-5" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => window.location.href = '/genie-admin?tab=product-setup'}
+          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <Settings2 className="w-4 h-4" />
+          Admin
+        </Button>
+        <Separator orientation="vertical" className="h-5" />
         <ProductSelector
           products={pool?.products || []}
           selectedProductId={castSession.session.selectedProductId}
