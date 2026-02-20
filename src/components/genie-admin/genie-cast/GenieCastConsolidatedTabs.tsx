@@ -524,8 +524,13 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           onProjectSelect={async (project) => {
             const restored = await castProjects.restoreToSession(project.id);
             if (restored) {
-              castSession.updateSession({ ...restored, projectId: project.id });
+              // Ensure intent is set so the templates tab guard passes
+              const intentValue = restored.selectedIntent || (project as any).content_type || 'video';
+              castSession.updateSession({ ...restored, projectId: project.id, selectedIntent: intentValue });
               setActiveContentType((project as any).content_type || 'video');
+              // Navigate to templates tab so user can see the project content
+              setActiveMainTab('create');
+              setSubTab('create', 'templates');
               toast.success(`Loaded: ${project.title}`);
             }
           }}
@@ -751,7 +756,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
           <AnimatePresence mode="wait">
             {/* ── STEP 3: TEMPLATES ── Visible after messaging approved OR if template already exists */}
-            {currentSubTab === 'templates' && (castSession.session.selectedIntent || castSession.session.selectedTemplate || castSession.session.approvedMessaging) && (
+            {currentSubTab === 'templates' && (castSession.session.selectedIntent || castSession.session.selectedTemplate || castSession.session.approvedMessaging || castSession.session.projectId) && (
               <motion.div
                 key="templates"
                 initial={{ opacity: 0, x: -20 }}

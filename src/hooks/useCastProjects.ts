@@ -297,7 +297,7 @@ export function useCastProjects() {
 
       return {
         selectedProductId: p.product_context ?? null,
-        selectedIntent: p.intent_value ?? null,
+        selectedIntent: p.intent_value || p.content_type || 'video',
         selectedStyles: p.selected_styles || [],
         selectedTemplate: p.blueprint_id
           ? {
