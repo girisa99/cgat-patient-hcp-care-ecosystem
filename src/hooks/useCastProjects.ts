@@ -47,10 +47,9 @@ export function useCastProjects() {
         .from('cast_projects')
         .select(`
           *,
-          cast_messaging_content (*),
-          cast_scene_scripts (*),
           cast_generation_jobs (*),
-          show_cast_links (*)
+          cast_project_variants (*),
+          cast_accessibility_config (*)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -59,12 +58,12 @@ export function useCastProjects() {
 
       const transformed: CastProjectWithRelations[] = (data || []).map((p: any) => ({
         ...p,
-        messaging: p.cast_messaging_content || [],
-        scene_scripts: (p.cast_scene_scripts || []).sort(
-          (a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0)
-        ),
+        messaging: [],
+        scene_scripts: [],
         generation_jobs: p.cast_generation_jobs || [],
-        show_links: p.show_cast_links || [],
+        variants: p.cast_project_variants || [],
+        accessibility: p.cast_accessibility_config || null,
+        show_links: [],
       }));
 
       setProjects(transformed);

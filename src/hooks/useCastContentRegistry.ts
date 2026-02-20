@@ -1,8 +1,8 @@
 /**
- * useCastContentRegistry — Dynamic, DB-driven content categories & formats
+ * useCastContentRegistry — Dynamic, DB-driven content categories, formats & sub-formats
  * 
- * Fetches categories and formats from cast_content_categories / cast_content_formats.
- * Supports adding new categories/formats on-the-fly (no code changes needed).
+ * Fetches categories, formats, and sub-formats from cast_content_* tables.
+ * Supports adding new entries on-the-fly (no code changes needed).
  * Connected to universal enrichment via enrichment_config on formats.
  */
 
@@ -37,6 +37,20 @@ export interface ContentFormat {
   is_active: boolean;
 }
 
+export interface ContentSubFormat {
+  id: string;
+  format_id: string;
+  name: string;
+  label: string;
+  icon: string;
+  color: string;
+  description: string | null;
+  blueprint_template_id: string | null;
+  enrichment_overrides: Record<string, unknown>;
+  sort_order: number;
+  is_active: boolean;
+}
+
 export interface CategoryFormatLink {
   id: string;
   category_id: string;
@@ -49,24 +63,28 @@ export interface CategoryFormatLink {
 export function useCastContentRegistry() {
   const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [formats, setFormats] = useState<ContentFormat[]>([]);
+  const [subFormats, setSubFormats] = useState<ContentSubFormat[]>([]);
   const [categoryFormats, setCategoryFormats] = useState<CategoryFormatLink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [catRes, fmtRes, cfRes] = await Promise.all([
+      const [catRes, fmtRes, sfRes, cfRes] = await Promise.all([
         supabase.from('cast_content_categories').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_content_formats').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('cast_content_sub_formats').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_category_formats').select('*').eq('is_active', true),
       ]);
 
       if (catRes.error) throw catRes.error;
       if (fmtRes.error) throw fmtRes.error;
+      if (sfRes.error) throw sfRes.error;
       if (cfRes.error) throw cfRes.error;
 
       setCategories((catRes.data || []) as unknown as ContentCategory[]);
       setFormats((fmtRes.data || []) as unknown as ContentFormat[]);
+      setSubFormats((sfRes.data || []) as unknown as ContentSubFormat[]);
       setCategoryFormats((cfRes.data || []) as unknown as CategoryFormatLink[]);
     } catch (err: any) {
       console.error('[useCastContentRegistry] Failed to fetch:', err);
@@ -85,16 +103,19 @@ export function useCastContentRegistry() {
     return formats.filter(f => linkedFormatIds.has(f.id));
   }, [formats, categoryFormats]);
 
+  /** Get sub-formats for a given format */
+  const getSubFormatsForFormat = useCallback((formatId: string): ContentSubFormat[] => {
+    return subFormats.filter(sf => sf.format_id === formatId);
+  }, [subFormats]);
+
   /** Check if a format requires a separate messaging/positioning step */
   const requiresMessaging = useCallback((formatId: string, categoryId?: string): boolean => {
-    // Check category-specific override first
     if (categoryId) {
       const link = categoryFormats.find(cf => cf.category_id === categoryId && cf.format_id === formatId);
       if (link?.enrichment_overrides && typeof (link.enrichment_overrides as any).requires_messaging === 'boolean') {
         return (link.enrichment_overrides as any).requires_messaging;
       }
     }
-    // Fall back to format default
     const format = formats.find(f => f.id === formatId);
     return format?.requires_messaging ?? false;
   }, [formats, categoryFormats]);
@@ -165,15 +186,54 @@ export function useCastContentRegistry() {
     }
   }, [formats.length, fetchAll]);
 
+  /** Add a new sub-format dynamically */
+  const addSubFormat = useCallback(async (data: {
+    format_id: string;
+    name: string;
+    label: string;
+    icon?: string;
+    color?: string;
+    description?: string;
+  }) => {
+    try {
+      const formatSubFormats = subFormats.filter(sf => sf.format_id === data.format_id);
+      const { data: newSf, error } = await supabase
+        .from('cast_content_sub_formats')
+        .insert({
+          format_id: data.format_id,
+          name: data.name.toLowerCase().replace(/\s+/g, '_'),
+          label: data.label,
+          icon: data.icon || 'FileText',
+          color: data.color || 'text-primary',
+          description: data.description || null,
+          sort_order: formatSubFormats.length + 1,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success(`Sub-format "${data.label}" added`);
+      await fetchAll();
+      return newSf;
+    } catch (err: any) {
+      console.error('[useCastContentRegistry] Failed to add sub-format:', err);
+      toast.error('Failed to add sub-format');
+      return null;
+    }
+  }, [subFormats, fetchAll]);
+
   return {
     categories,
     formats,
+    subFormats,
     categoryFormats,
     isLoading,
     refresh: fetchAll,
     getFormatsForCategory,
+    getSubFormatsForFormat,
     requiresMessaging,
     addCategory,
     addFormat,
+    addSubFormat,
   };
 }

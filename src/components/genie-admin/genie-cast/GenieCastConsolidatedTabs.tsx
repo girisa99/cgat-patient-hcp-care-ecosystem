@@ -300,6 +300,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const contentRegistry = useCastContentRegistry();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
+  const [selectedSubFormatId, setSelectedSubFormatId] = useState<string | null>(null);
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
 
@@ -673,23 +674,40 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               <DynamicContentSelector
                 categories={contentRegistry.categories}
                 formats={contentRegistry.formats}
+                subFormats={contentRegistry.subFormats}
                 getFormatsForCategory={contentRegistry.getFormatsForCategory}
+                getSubFormatsForFormat={contentRegistry.getSubFormatsForFormat}
                 selectedCategoryId={selectedCategoryId}
                 selectedFormatId={selectedFormatId}
+                selectedSubFormatId={selectedSubFormatId}
                 onCategorySelect={(cat) => {
                   setSelectedCategoryId(cat.id);
-                  setSelectedFormatId(null); // Reset format when category changes
+                  setSelectedFormatId(null);
+                  setSelectedSubFormatId(null);
                 }}
                 onFormatSelect={(fmt) => {
                   setSelectedFormatId(fmt.id);
+                  setSelectedSubFormatId(null);
                   setActiveContentType(fmt.name);
-                  // Auto-advance: if format doesn't require messaging, skip to templates
-                  const needsMessaging = contentRegistry.requiresMessaging(fmt.id, selectedCategoryId || undefined);
-                  castSession.selectIntent(fmt.name as any);
+                  // Check if sub-formats exist for this format — if not, advance
+                  const subs = contentRegistry.getSubFormatsForFormat(fmt.id);
+                  if (subs.length === 0) {
+                    const needsMessaging = contentRegistry.requiresMessaging(fmt.id, selectedCategoryId || undefined);
+                    castSession.selectIntent(fmt.name as any);
+                    setSubTab('create', needsMessaging ? 'messaging' : 'templates');
+                  }
+                  // If sub-formats exist, stay on step — user picks sub-format next
+                }}
+                onSubFormatSelect={(sf) => {
+                  setSelectedSubFormatId(sf.id);
+                  // After sub-format selection, advance to messaging or templates
+                  const needsMessaging = contentRegistry.requiresMessaging(selectedFormatId || '', selectedCategoryId || undefined);
+                  castSession.selectIntent((sf.name || selectedFormatId) as any);
                   setSubTab('create', needsMessaging ? 'messaging' : 'templates');
                 }}
                 onAddCategory={contentRegistry.addCategory}
                 onAddFormat={contentRegistry.addFormat}
+                onAddSubFormat={contentRegistry.addSubFormat}
                 isLoading={contentRegistry.isLoading}
               />
             </motion.div>
@@ -710,6 +728,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                  castSession.session.selectedIntent || 
                  castSession.session.selectedTemplate?.category || 'Format'}
               </Badge>
+              {selectedSubFormatId && (
+                <Badge variant="secondary" className="text-xs">
+                  {contentRegistry.subFormats.find(sf => sf.id === selectedSubFormatId)?.label || 'Sub-Format'}
+                </Badge>
+              )}
               <Button
                 variant="link"
                 size="sm"
@@ -719,6 +742,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   castSession.resetSession();
                   setSelectedCategoryId(null);
                   setSelectedFormatId(null);
+                  setSelectedSubFormatId(null);
                   setSubTab('create', 'intent');
                 }}
               >
