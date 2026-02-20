@@ -20350,6 +20350,7 @@ export type Database = {
           is_current: boolean
           is_system_default: boolean
           key_benefits: Json | null
+          knowledge_docs: Json | null
           pain_points: Json | null
           positioning_statement: string | null
           product_id: string
@@ -20362,6 +20363,7 @@ export type Database = {
           use_cases: Json | null
           value_proposition: string | null
           version: number
+          website_url: string | null
         }
         Insert: {
           competitive_category?: string | null
@@ -20374,6 +20376,7 @@ export type Database = {
           is_current?: boolean
           is_system_default?: boolean
           key_benefits?: Json | null
+          knowledge_docs?: Json | null
           pain_points?: Json | null
           positioning_statement?: string | null
           product_id: string
@@ -20386,6 +20389,7 @@ export type Database = {
           use_cases?: Json | null
           value_proposition?: string | null
           version?: number
+          website_url?: string | null
         }
         Update: {
           competitive_category?: string | null
@@ -20398,6 +20402,7 @@ export type Database = {
           is_current?: boolean
           is_system_default?: boolean
           key_benefits?: Json | null
+          knowledge_docs?: Json | null
           pain_points?: Json | null
           positioning_statement?: string | null
           product_id?: string
@@ -20410,6 +20415,7 @@ export type Database = {
           use_cases?: Json | null
           value_proposition?: string | null
           version?: number
+          website_url?: string | null
         }
         Relationships: [
           {

@@ -27,6 +27,7 @@ import { useShows } from '@/hooks/useShows';
 import type { EventCategory } from '@/types/shows';
 import { cn } from '@/lib/utils';
 import { UnifiedVideoGenerationPanel } from './UnifiedVideoGenerationPanel';
+import { SubscriberProductSetup } from './SubscriberProductSetup';
 
 // Lazy load heavy components — v2 (re-bundled 2026-02-18)
 const GenieCommandCenter = lazy(() => import('@/components/diagrams/genie-command-center/GenieCommandCenter'));
@@ -42,7 +43,7 @@ interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'landing-videos' | 'genie-cast-mockup' | 'genie-cast' | 'sprint-tracker';
+type AdminTab = 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'landing-videos' | 'genie-cast-mockup' | 'genie-cast' | 'sprint-tracker' | 'product-setup';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -316,6 +317,11 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
             <Suspense fallback={<TabLoading />}>
               <GenieCastHub />
             </Suspense>
+          )}
+
+          {/* Product Setup - Subscriber Onboarding */}
+          {activeTab === 'product-setup' && (
+            <SubscriberProductSetup userTier="professional" />
           )}
 
         </div>
