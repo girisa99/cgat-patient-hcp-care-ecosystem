@@ -38,10 +38,13 @@ const TIER_PRODUCT_LIMITS: Record<string, number> = {
 
 interface SubscriberProductSetupProps {
   userTier?: string;
+  /** When true, hides header and internal tabs (Products/Audiences only, no Knowledge/Brand) */
+  embedded?: boolean;
 }
 
 export const SubscriberProductSetup: React.FC<SubscriberProductSetupProps> = ({
   userTier = 'free',
+  embedded = false,
 }) => {
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<'products' | 'audiences' | 'knowledge' | 'brand'>('products');
@@ -251,18 +254,20 @@ export const SubscriberProductSetup: React.FC<SubscriberProductSetupProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">My Products & Services</h2>
-          <p className="text-muted-foreground">
-            Add your products so Genie AI can generate tailored content for your brand.
-          </p>
+      {/* Header - hidden in embedded mode */}
+      {!embedded && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">My Products & Services</h2>
+            <p className="text-muted-foreground">
+              Add your products so Genie AI can generate tailored content for your brand.
+            </p>
+          </div>
+          <Badge variant={canEdit ? 'default' : 'secondary'} className="text-xs">
+            {userTier.charAt(0).toUpperCase() + userTier.slice(1)} Plan
+          </Badge>
         </div>
-        <Badge variant={canEdit ? 'default' : 'secondary'} className="text-xs">
-          {userTier.charAt(0).toUpperCase() + userTier.slice(1)} Plan
-        </Badge>
-      </div>
+      )}
 
       {!canEdit && (
         <Card className="border-amber-500/30 bg-amber-500/5">
@@ -279,20 +284,32 @@ export const SubscriberProductSetup: React.FC<SubscriberProductSetupProps> = ({
       )}
 
       <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as any)}>
-        <TabsList className="grid grid-cols-4 w-full max-w-lg">
-          <TabsTrigger value="products" className="gap-1.5">
-            <Package className="w-4 h-4" /> Products
-          </TabsTrigger>
-          <TabsTrigger value="audiences" className="gap-1.5">
-            <Users className="w-4 h-4" /> Audiences
-          </TabsTrigger>
-          <TabsTrigger value="knowledge" className="gap-1.5">
-            <Brain className="w-4 h-4" /> Knowledge
-          </TabsTrigger>
-          <TabsTrigger value="brand" className="gap-1.5">
-            <Palette className="w-4 h-4" /> Brand
-          </TabsTrigger>
-        </TabsList>
+        {!embedded && (
+          <TabsList className="grid grid-cols-4 w-full max-w-lg">
+            <TabsTrigger value="products" className="gap-1.5">
+              <Package className="w-4 h-4" /> Products
+            </TabsTrigger>
+            <TabsTrigger value="audiences" className="gap-1.5">
+              <Users className="w-4 h-4" /> Audiences
+            </TabsTrigger>
+            <TabsTrigger value="knowledge" className="gap-1.5">
+              <Brain className="w-4 h-4" /> Knowledge
+            </TabsTrigger>
+            <TabsTrigger value="brand" className="gap-1.5">
+              <Palette className="w-4 h-4" /> Brand
+            </TabsTrigger>
+          </TabsList>
+        )}
+        {embedded && (
+          <TabsList className="grid grid-cols-2 w-full max-w-sm">
+            <TabsTrigger value="products" className="gap-1.5">
+              <Package className="w-4 h-4" /> Products
+            </TabsTrigger>
+            <TabsTrigger value="audiences" className="gap-1.5">
+              <Users className="w-4 h-4" /> Audiences
+            </TabsTrigger>
+          </TabsList>
+        )}
 
         {/* ── PRODUCTS TAB ─────────────────────────────────────────────────── */}
         <TabsContent value="products" className="space-y-4 mt-4">

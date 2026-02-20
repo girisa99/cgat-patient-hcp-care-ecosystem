@@ -561,7 +561,7 @@ export const SubscriberAdminDashboard: React.FC<SubscriberAdminDashboardProps> =
         </TabsList>
 
         <TabsContent value="products" className="mt-4">
-          <SubscriberProductSetup userTier={userTier} />
+          <SubscriberProductSetup userTier={userTier} embedded />
         </TabsContent>
 
         <TabsContent value="knowledge" className="mt-4">
