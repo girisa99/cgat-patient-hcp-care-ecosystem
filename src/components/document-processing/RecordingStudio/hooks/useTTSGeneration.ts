@@ -7,16 +7,18 @@ import { toast } from 'sonner';
 import { createManagedAudio, getAudioDuration as getAudioDurationFromUtil } from '@/hooks/shared/useAudioElement';
 
 export interface TTSOptions {
-  provider: 'openai' | 'elevenlabs' | 'google' | 'amazon' | 'azure';
+  provider: 'openai' | 'elevenlabs' | 'google' | 'amazon' | 'azure' | 'alibaba';
   voice: string;
   text: string;
   speed?: number;
   stability?: number;
   similarityBoost?: number;
   pitch?: number;
-  style?: string; // For Azure style support
-  engine?: string; // For Amazon Polly engine selection
+  style?: string;
+  engine?: string;
   scriptMode?: 'podcast' | 'webcast' | 'video' | 'audio';
+  /** Alibaba CosyVoice model override (default: cosyvoice-v3-flash) */
+  alibabaModel?: string;
   voiceSettings?: {
     stability: number;
     similarityBoost: number;
@@ -144,6 +146,16 @@ export const AZURE_VOICES = [
   // Australian English
   { value: 'en-AU-NatashaNeural', label: 'Natasha', description: 'Female, Australian' },
   { value: 'en-AU-WilliamNeural', label: 'William', description: 'Male, Australian' },
+];
+
+export const ALIBABA_COSYVOICE_VOICES = [
+  { value: 'longanyang', label: 'Long Anyang', description: 'Male, Sunny (CN+EN)' },
+  { value: 'longcheng', label: 'Long Cheng', description: 'Male, Professional (CN+EN)' },
+  { value: 'longhua', label: 'Long Hua', description: 'Female, Bright (CN+EN)' },
+  { value: 'longshu', label: 'Long Shu', description: 'Male, Deep (CN+EN)' },
+  { value: 'longpaopao_v3', label: 'Long Paopao', description: 'Child, Bubble (CN+EN)' },
+  { value: 'longxiaochun', label: 'Long Xiaochun', description: 'Female, Warm (CN)' },
+  { value: 'longxiaoxia', label: 'Long Xiaoxia', description: 'Female, Sweet (CN+EN)' },
 ];
 
 export function useTTSGeneration() {
@@ -423,6 +435,49 @@ export function useTTSGeneration() {
     };
   }, []);
 
+  // Generate TTS with Alibaba CosyVoice
+  const generateAlibaba = useCallback(async (options: TTSOptions): Promise<TTSResult> => {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/alibaba-cosyvoice-tts`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          text: options.text,
+          voice: options.voice,
+          model: options.alibabaModel || 'cosyvoice-v3-flash',
+          speed: options.speed || 1.0,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Alibaba CosyVoice TTS generation failed');
+    }
+
+    const data = await response.json();
+    
+    const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+    const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
+    const duration = await getAudioDuration(audioUrl);
+
+    return {
+      audioUrl,
+      audioBlob,
+      duration,
+      provider: 'alibaba',
+      voice: options.voice,
+      voiceName: data.voiceName,
+      charactersProcessed: options.text.length,
+      estimatedCost: (options.text.length / 10000) * 0.0029, // ~$0.29/10k chars
+    };
+  }, []);
+
   // Main generate function with fallback support
   const generate = useCallback(async (options: TTSOptions): Promise<TTSResult | null> => {
     if (!options.text?.trim()) {
@@ -439,14 +494,17 @@ export function useTTSGeneration() {
       google: 'Google Cloud',
       amazon: 'Amazon Polly',
       azure: 'Microsoft Azure',
+      alibaba: 'Alibaba CosyVoice',
     };
 
-    // Define fallback chain: if primary fails, try fallback
+    // Define fallback chain: primary → alibaba → elevenlabs
     const fallbackProvider: Record<string, TTSOptions['provider']> = {
-      google: 'elevenlabs',
-      amazon: 'elevenlabs',
-      azure: 'elevenlabs',
-      openai: 'elevenlabs',
+      google: 'alibaba',
+      amazon: 'alibaba',
+      azure: 'alibaba',
+      openai: 'alibaba',
+      elevenlabs: 'alibaba',
+      alibaba: 'elevenlabs', // alibaba falls back to elevenlabs and vice versa
     };
 
     const generateWithProvider = async (provider: TTSOptions['provider'], opts: TTSOptions): Promise<TTSResult> => {
@@ -459,6 +517,8 @@ export function useTTSGeneration() {
           return await generateAmazon(opts);
         case 'azure':
           return await generateAzure(opts);
+        case 'alibaba':
+          return await generateAlibaba(opts);
         case 'openai':
         default:
           return await generateOpenAI(opts);
@@ -473,20 +533,41 @@ export function useTTSGeneration() {
       try {
         result = await generateWithProvider(options.provider, options);
       } catch (primaryError) {
-        // If primary provider fails and there's a fallback, try fallback
+        // If primary provider fails, try fallback chain
         const fallback = fallbackProvider[options.provider];
-        if (fallback && options.provider !== 'elevenlabs') {
+        if (fallback) {
           console.warn(`[TTS] ${providerNames[options.provider]} failed, falling back to ${providerNames[fallback]}:`, primaryError);
           toast.warning(`${providerNames[options.provider]} failed, trying ${providerNames[fallback]}...`);
           
           // Get default voice for fallback provider
-          const fallbackVoice = fallback === 'elevenlabs' ? 'EXAVITQu4vr4xnSDxMaL' : options.voice; // Sarah voice as default
+          const fallbackVoiceMap: Record<string, string> = {
+            elevenlabs: 'EXAVITQu4vr4xnSDxMaL', // Sarah
+            alibaba: 'longanyang',                // Long Anyang (EN-capable)
+            openai: 'alloy',
+          };
+          const fallbackVoice = fallbackVoiceMap[fallback] || options.voice;
           
-          result = await generateWithProvider(fallback, {
-            ...options,
-            provider: fallback,
-            voice: fallbackVoice,
-          });
+          try {
+            result = await generateWithProvider(fallback, {
+              ...options,
+              provider: fallback,
+              voice: fallbackVoice,
+            });
+          } catch (fallbackError) {
+            // Try second fallback: alibaba↔elevenlabs
+            const secondFallback = fallbackProvider[fallback];
+            if (secondFallback && secondFallback !== options.provider) {
+              console.warn(`[TTS] ${providerNames[fallback]} also failed, trying ${providerNames[secondFallback]}:`, fallbackError);
+              toast.warning(`${providerNames[fallback]} also failed, trying ${providerNames[secondFallback]}...`);
+              result = await generateWithProvider(secondFallback, {
+                ...options,
+                provider: secondFallback,
+                voice: fallbackVoiceMap[secondFallback] || options.voice,
+              });
+            } else {
+              throw fallbackError;
+            }
+          }
         } else {
           throw primaryError;
         }
@@ -504,7 +585,7 @@ export function useTTSGeneration() {
     } finally {
       setIsGenerating(false);
     }
-  }, [generateOpenAI, generateElevenLabs, generateGoogle, generateAmazon, generateAzure]);
+  }, [generateOpenAI, generateElevenLabs, generateGoogle, generateAmazon, generateAzure, generateAlibaba]);
 
   // Track cleanup function for current audio
   const audioCleanupRef = useRef<(() => void) | null>(null);
@@ -587,6 +668,7 @@ export function useTTSGeneration() {
     googleVoices: GOOGLE_VOICES,
     amazonVoices: AMAZON_POLLY_VOICES,
     azureVoices: AZURE_VOICES,
+    alibabaVoices: ALIBABA_COSYVOICE_VOICES,
   };
 }
 

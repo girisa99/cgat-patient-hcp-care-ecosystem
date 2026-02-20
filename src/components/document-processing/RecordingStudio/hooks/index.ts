@@ -21,7 +21,7 @@ export { useMediaProject, COST_ESTIMATES } from './useMediaProject';
 export type { MediaProject, MediaProjectAsset, CostLog } from './useMediaProject';
 export { useStudioSound, STUDIO_PRESETS } from './useStudioSound';
 export type { StudioSoundSettings } from './useStudioSound';
-export { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES } from './useTTSGeneration';
+export { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES, ALIBABA_COSYVOICE_VOICES } from './useTTSGeneration';
 export type { TTSOptions, TTSResult } from './useTTSGeneration';
 export { useFFmpegTrim } from './useFFmpegTrim';
 export { useTeleprompterSync } from './useTeleprompterSync';
