@@ -29503,6 +29503,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      get_user_team_ids: { Args: { p_auth_uid: string }; Returns: string[] }
       get_user_team_role: {
         Args: { p_team_id: string; p_user_id: string }
         Returns: Database["public"]["Enums"]["genie_team_role"]
@@ -29581,6 +29582,10 @@ export type Database = {
       }
       is_genie_support_agent: {
         Args: { check_user_id?: string }
+        Returns: boolean
+      }
+      is_team_admin: {
+        Args: { p_auth_uid: string; p_team_id: string }
         Returns: boolean
       }
       log_credit_application_audit: {
