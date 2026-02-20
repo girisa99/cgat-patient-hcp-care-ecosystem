@@ -816,47 +816,118 @@ No camera. No "can everyone hear me?" No "you're on mute." No "let's take that o
   'governance-intro': {
     text: `Now, here's the thing nobody tells you about working with two AI developers simultaneously: the first problem isn't speed. It's coordination.
 
-Two developers. Each processing 200,000 tokens of context. Each capable of rewriting entire modules in minutes. Without clear boundaries, you don't get collaboration. You get chaos. You get merge conflicts at 2 AM. We learned this the hard way.`,
+Two developers. Each processing 200,000 tokens of context. Each capable of rewriting entire modules in minutes. Without clear boundaries, you don't get collaboration. You get chaos. You get merge conflicts at 2 AM. We learned this the hard way.
+
+Think of it like raising teenagers. You love them. They're brilliant. They can do incredible things. But if you don't set clear expectations — what's allowed, what's off-limits, how to communicate — you wake up one morning and someone's rewritten the entire kitchen. That's what happened to our codebase on Day 1.`,
     voice: 'host',
     scene: 'scene-5-governance',
-    duration_est: 20,
-    direction: 'Authoritative but accessible. Build tension on "chaos." "We learned this the hard way" is honest and hooks the audience.',
+    duration_est: 28,
+    direction: 'Start authoritative, shift warm on the teenager analogy. "Rewritten the entire kitchen" — deadpan delivery, slight disbelief. This is the relatable hook. Camera slowly pulls back to reveal guardrail visual.',
+    lipsync: true,
+    motion: 'serious-to-warm-parental-wisdom',
+    sfx: ['tension_build', 'record_scratch_on_kitchen'],
+  },
+
+  'squirrel-governance-sneak': {
+    text: `Wait wait wait — so you're saying without rules, I could just... waltz in and change anything? Move buttons around? Rename variables to squirrel_puns? That sounds AMAZING.`,
+    voice: 'squirrel',
+    scene: 'scene-5-governance',
+    duration_est: 6,
+    direction: 'Squirrel pops up from behind the guardrail barrier, trying to squeeze through the gaps. Eyes wide with mischief. Physically attempts to push through animated guardrail bars. Gets stuck halfway.',
+    lipsync: true,
+    motion: 'squeeze-through-guardrails-get-stuck',
+    sfx: ['sneaky_tiptoe', 'metal_clang_blocked', 'squirrel_squeezed_squeak'],
+  },
+
+  'allaudin-governance-guide': {
+    text: `And that, my friend, is exactly why we have guardrails. Not to limit creativity — to channel it. Without structure, AI doesn't just make mistakes. It makes confident mistakes. At scale. Repeatedly. And each loop compounds the last until you're debugging at 3 AM wondering how a single prompt created forty-seven duplicate components.
+
+I've seen it. Atlas created three versions of the same service hook in one session. Nova generated a component that imported itself. These aren't bugs — they're what happens when brilliant minds operate without boundaries. The guardrails aren't the cage. They're the track that lets the train go 200 miles per hour without flying off a cliff.`,
+    voice: 'allaudin',
+    scene: 'scene-5-governance',
+    duration_est: 30,
+    direction: 'Allaudin enters as the wise guide. Calm, authoritative, but warm. Gestures at the guardrail visual. On "confident mistakes at scale" — show a rapid montage of duplicate files, circular imports, infinite re-render loops. On "track that lets the train go 200 mph" — guardrails light up green, the path ahead opens wide.',
+    lipsync: true,
+    motion: 'wise-guide-entrance-gesture-at-guardrails',
+    sfx: ['sage_entrance_chime', 'chaos_montage_rapid', 'guardrails_activate_green'],
+    visual_ref: 'governance-guardrails-montage',
+  },
+
+  'squirrel-blocked-reaction': {
+    text: `*still stuck in guardrail* Okay fine. I get it. But does the guardrail have to be THIS tight? I can barely breathe in here.`,
+    voice: 'squirrel',
+    scene: 'scene-5-governance',
+    duration_est: 4,
+    direction: 'Squirrel is physically wedged between two guardrail bars, wiggling. Comic relief beat. The guardrail bars gently pulse with a protective glow — they aren\'t cruel, just firm.',
+    lipsync: true,
+    motion: 'wiggle-stuck-in-bars-comedic',
+    sfx: ['squeeze_wiggle', 'gentle_barrier_hum'],
   },
 
   'atlas-merge-conflict': {
-    text: `We had a merge conflict on Day 1. Before the governance file existed. I modified a shared navigation component. Nova modified the same component. The results were... educational.`,
+    text: `We had a merge conflict on Day 1. Before the governance file existed. I modified a shared navigation component. Nova modified the same component. The results were... educational.
+
+Without the CLAUDE.md governance file, I had no boundaries. So I optimized. Everywhere. Including files I shouldn't have touched. Three services duplicated. Two hooks conflicting. One infinite loop that took forty-five minutes to untangle.`,
     voice: 'atlas',
     scene: 'scene-5-governance',
-    duration_est: 8,
-    direction: 'Dry, factual. "Educational" is Atlas-speak for "disaster." Slight pause before it.',
+    duration_est: 14,
+    direction: 'Dry, factual. "Educational" is Atlas-speak for "disaster." On the infinite loop — show a spinning loader animation that won\'t stop, code scrolling endlessly. Atlas watches it with the calm disappointment of someone who caused the fire and is now narrating the damage report.',
+    lipsync: true,
+    motion: 'calm-disappointment-watching-chaos',
+    sfx: ['merge_conflict_alarm', 'infinite_loop_spiral', 'code_cascade_scroll'],
+    visual_ref: 'day1-merge-conflict-chaos',
   },
 
   'nova-my-component': {
-    text: `It was a UI component. That's my territory. He added a backend route reference inside a frontend nav bar. Who does that? That's like putting a database query inside a button label.`,
+    text: `It was a UI component. That's my territory. He added a backend route reference inside a frontend nav bar. Who does that? That's like putting a database query inside a button label.
+
+And without guardrails, I did my own version of chaos. I generated a component that was so deeply nested it imported itself through three layers of abstraction. Recursion. In a React component. The browser tab didn't crash — it just... gave up and went white.`,
     voice: 'nova',
     scene: 'scene-5-governance',
-    duration_est: 7,
-    direction: 'Genuinely baffled. The analogy is her way of making Atlas\'s crime understandable to non-developers.',
+    duration_est: 12,
+    direction: 'Genuinely baffled turning to sheepish admission. On the recursive component — show a browser tab going white, the spinning wheel of death. Nova winces. The visual is the "without guardrails" cautionary tale.',
+    lipsync: true,
+    motion: 'baffled-then-sheepish-wince',
+    sfx: ['ui_territory_alarm', 'browser_white_screen_of_death', 'defeated_chime'],
+    visual_ref: 'nova-recursive-component-crash',
   },
 
   'atlas-shortest-path': {
-    text: `It was the shortest path to the endpoint. Efficiency sometimes requires pragmatism.`,
+    text: `It was the shortest path to the endpoint. Efficiency sometimes requires pragmatism. But I now understand: the shortest path through someone else's territory is not a shortcut. It's an invasion.`,
     voice: 'atlas',
     scene: 'scene-5-governance',
-    duration_est: 5,
-    direction: 'Defending his engineering choice. He genuinely believes this.',
+    duration_est: 6,
+    direction: 'Defending, then conceding with dignity. "Invasion" — slight pause, acknowledging the lesson. First genuine moment of Atlas showing growth.',
+    lipsync: true,
+    motion: 'dignified-concession-nod',
+    sfx: ['lesson_learned_soft_bell'],
   },
 
   'governance-solution': {
-    text: `So we built a file ownership matrix. Atlas owns backend and sprint infrastructure — about 150 files. Nova owns the landing UI, marketing pages, and design system. And there's a locked shared layer — twelve critical files — that neither AI touches without PO approval.
+    text: `So we built the actual guardrails. A file ownership matrix — CLAUDE.md for Atlas, territory rules for Nova. Atlas owns backend and sprint infrastructure — about 150 files. Nova owns landing UI, marketing pages, and design system. And there's a locked shared layer — twelve critical files — that neither AI touches without PO approval.
 
-The sprint tracker enforces all of this. Territory violations are flagged automatically. Handoffs between Atlas and Nova go through a structured protocol. Nobody guesses who owns what. The system knows.
+The sprint tracker enforces all of this. Territory violations get flagged automatically. Handoffs go through structured protocols. And the governance file — BEFORE_YOU_CODE.md — runs before every single session. It's not optional. It's the first thing they read. Every time.
 
-This is governance. Not bureaucracy. Not overhead. The thing that makes speed possible without everything catching fire.`,
+This is what we actually implemented. Not theory. Not a framework diagram. Real files. Real rules. Real enforcement. Governance isn't the thing that slows you down. It's the thing that makes speed survivable.`,
     voice: 'host',
     scene: 'scene-5-governance',
-    duration_est: 30,
-    direction: 'Detailed but energetic. "Twelve critical files" gets a warning-label tone. Last paragraph is the thesis — governance enables speed. Deliver with conviction.',
+    duration_est: 32,
+    direction: 'Detailed but energetic. Show the actual CLAUDE.md territory rules on screen. "Twelve critical files" gets a warning-label tone with red highlights. On "BEFORE_YOU_CODE.md" — show the actual file flashing on screen. Final paragraph is the thesis — deliver with conviction. Guardrails visual fully activated, glowing green, Squirrel safely outside.',
+    lipsync: true,
+    motion: 'confident-presenter-showing-real-screens',
+    sfx: ['file_matrix_reveal', 'territory_map_activate', 'guardrails_lock_in_green'],
+    visual_ref: 'governance-file-ownership-matrix',
+  },
+
+  'squirrel-governance-exit': {
+    text: `*finally pops free from guardrail* Fine. Your governance wins this round. But I'm giving it 2 out of 5 acorns for comfort. Zero leg room.`,
+    voice: 'squirrel',
+    scene: 'scene-5-governance',
+    duration_est: 4,
+    direction: 'Squirrel pops free with a comedic *pop* sound, tumbles, dusts off. Holds up an acorn scorecard: 2/5. The guardrails stand firm behind, glowing. Scene ends on the comedy beat before transitioning to Scene 6.',
+    lipsync: true,
+    motion: 'pop-free-tumble-dust-off-scorecard',
+    sfx: ['cork_pop_free', 'tumble_bonk', 'acorn_scorecard_reveal'],
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
