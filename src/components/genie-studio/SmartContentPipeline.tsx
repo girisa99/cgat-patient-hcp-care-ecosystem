@@ -62,7 +62,8 @@ import { recordViolation, isUserRestricted } from '@/services/contentViolationTr
 import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import { urlToScriptService, ScriptOutputFormat as UrlScriptFormat } from '@/services/urlToScriptService';
 import { documentToScriptService, OutputFormat as DocOutputFormat } from '@/services/documentToScriptService';
-import { useUniversalEnrichment } from '@/services/enrichment';
+import { useUniversalEnrichment, mergeAudienceWithEnrichment } from '@/services/enrichment';
+import { EnrichmentStatusBadge } from '@/components/genie-studio/EnrichmentStatusBadge';
 import { imageToScriptService, ScriptStyle } from '@/services/imageToScriptService';
 import { audioToScriptService, ScriptOutputFormat as AudioScriptFormat } from '@/services/audioToScriptService';
 import { videoToScriptService, SlideVoiceover } from '@/services/videoToScriptService';
@@ -249,13 +250,11 @@ export function SmartContentPipeline({
   className,
 }: SmartContentPipelineProps) {
   // Universal enrichment — product knowledge, brand, audience, regional context
-  const { additionalContext: enrichmentContext } = useUniversalEnrichment({});
+  const { additionalContext: enrichmentContext, status: enrichmentStatus, isLoading: enrichmentLoading, isAvailable: enrichmentAvailable, productName: enrichmentProductName } = useUniversalEnrichment({ productName: 'Genie Spark' });
   
-  /** Merge user-provided targetAudience with enrichment context — single helper, no inline duplication */
-  const mergeAudienceWithEnrichment = (audience?: string): string | undefined => {
-    if (audience && enrichmentContext) return `${audience}\n\n--- Product & Brand Context ---\n${enrichmentContext}`;
-    return audience || enrichmentContext || undefined;
-  };
+  /** Merge user-provided targetAudience with enrichment context — delegates to shared barrel */
+  const mergeAudience = (audience?: string): string | undefined =>
+    mergeAudienceWithEnrichment(audience, enrichmentContext);
   
   // Session persistence hook
   const {
@@ -492,7 +491,7 @@ export function SmartContentPipeline({
           outputFormat: outputFormat as UrlScriptFormat,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
-          targetAudience: mergeAudienceWithEnrichment(targetAudience),
+          targetAudience: mergeAudience(targetAudience),
           aiProvider: aiProvider as 'openai' | 'claude' | 'gemini',
           enhanceWithAI: true,
           useKnowledgeBase: enableKnowledgeSearch,
@@ -547,7 +546,7 @@ export function SmartContentPipeline({
           outputFormat: docFormat,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic' | 'informative',
-           targetAudience: mergeAudienceWithEnrichment(targetAudience),
+           targetAudience: mergeAudience(targetAudience),
           enhanceWithAI: true,
           useKnowledgeBase: enableKnowledgeSearch,
         });
@@ -602,7 +601,7 @@ export function SmartContentPipeline({
           scriptStyle: scriptStyle,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'dramatic' | 'informative' | 'educational' | 'inspirational',
-          targetAudience: mergeAudienceWithEnrichment(targetAudience),
+          targetAudience: mergeAudience(targetAudience),
           imageProvider: 'gemini',
         });
 
@@ -655,7 +654,7 @@ export function SmartContentPipeline({
           outputFormat: audioFormat,
           duration: duration,
           tone: tone as 'professional' | 'casual' | 'educational' | 'documentary',
-          targetAudience: mergeAudienceWithEnrichment(targetAudience),
+          targetAudience: mergeAudience(targetAudience),
           enhanceWithAI: true,
           removeFillerWords: true,
           structureContent: true,
@@ -708,7 +707,7 @@ export function SmartContentPipeline({
           enhanceWithAI: true,
           removeFillerWords: true,
           tone: tone as 'professional' | 'casual' | 'educational' | 'inspirational' | 'dramatic',
-          targetAudience: mergeAudienceWithEnrichment(targetAudience),
+          targetAudience: mergeAudience(targetAudience),
         });
 
         if (progressIntervalRef.current) {
@@ -1566,6 +1565,17 @@ export function SmartContentPipeline({
           </Button>
         </div>
       )}
+
+      {/* Enrichment status indicator (B-006) */}
+      <div className="flex items-center justify-end">
+        <EnrichmentStatusBadge
+          status={enrichmentStatus}
+          isLoading={enrichmentLoading}
+          isAvailable={enrichmentAvailable}
+          productName={enrichmentProductName}
+          compact
+        />
+      </div>
 
       {/* Tabs for Generate vs Drafts */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'generate' | 'drafts')}>

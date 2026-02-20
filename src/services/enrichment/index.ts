@@ -27,6 +27,23 @@ export {
   type ProductKnowledgeContext,
 } from '@/hooks/useUniversalEnrichment';
 
+// Enrichment status UI component
+export { EnrichmentStatusBadge } from '@/components/genie-studio/EnrichmentStatusBadge';
+
+/**
+ * Merge user-provided targetAudience with enrichment context.
+ * Shared utility — use everywhere instead of inlining.
+ */
+export function mergeAudienceWithEnrichment(
+  audience?: string,
+  enrichmentContext?: string,
+): string | undefined {
+  if (audience && enrichmentContext) {
+    return `${audience}\n\n--- Product & Brand Context ---\n${enrichmentContext}`;
+  }
+  return audience || enrichmentContext || undefined;
+}
+
 // Scene-level enrichment (for products with scene/blueprint models: Cast, Spark)
 export {
   useSceneEnrichment,

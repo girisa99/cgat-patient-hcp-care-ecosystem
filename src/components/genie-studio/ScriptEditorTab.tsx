@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useUniversalEnrichment } from '@/services/enrichment';
+import { EnrichmentStatusBadge } from '@/components/genie-studio/EnrichmentStatusBadge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -210,7 +211,7 @@ export function ScriptEditorTab({
   onShowSelect
 }: ScriptEditorTabProps) {
   // Universal enrichment — product knowledge, brand, audience, regional context for AI enhancement
-  const { additionalContext: enrichmentContext } = useUniversalEnrichment({});
+  const { additionalContext: enrichmentContext, status: enrichmentStatus, isLoading: enrichmentLoading, isAvailable: enrichmentAvailable, productName: enrichmentProductName } = useUniversalEnrichment({ productName: 'Genie Mind' });
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -947,6 +948,17 @@ export function ScriptEditorTab({
   
   return (
     <div className="space-y-6">
+      {/* Enrichment status indicator (B-006) */}
+      <div className="flex items-center justify-end">
+        <EnrichmentStatusBadge
+          status={enrichmentStatus}
+          isLoading={enrichmentLoading}
+          isAvailable={enrichmentAvailable}
+          productName={enrichmentProductName}
+          compact
+        />
+      </div>
+
       {/* Show Linking Card - Only show if shows are available */}
       {availableShows.length > 0 && (
         <Card className="border-border/50 bg-gradient-to-r from-indigo-500/5 to-violet-500/5">
