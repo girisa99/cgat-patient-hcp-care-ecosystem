@@ -103,16 +103,21 @@ export function BlueprintTemplatesGrid({
     return source;
   }, [blueprints, intentFilter, categoryFilter, showBrowseAll]);
 
-  // Filter by search query
+  // Filter by search query — searches across ALL blueprints when Browse All is active
   const filteredTemplates = useMemo(() => {
     if (!searchQuery) return recommendedTemplates;
-    const query = searchQuery.toLowerCase();
-    return recommendedTemplates.filter(bp =>
+    const query = searchQuery.toLowerCase().trim();
+    // When searching, always search ALL blueprints (not just recommended subset)
+    const searchPool = showBrowseAll ? blueprints : recommendedTemplates;
+    const results = searchPool.filter(bp =>
       bp.name.toLowerCase().includes(query) ||
       bp.description?.toLowerCase().includes(query) ||
-      bp.category.toLowerCase().includes(query)
+      bp.category.toLowerCase().includes(query) ||
+      bp.industry_tags?.some(tag => tag.toLowerCase().includes(query))
     );
-  }, [recommendedTemplates, searchQuery]);
+    console.log(`[TemplateSearch] query="${query}" pool=${searchPool.length} results=${results.length}`);
+    return results;
+  }, [recommendedTemplates, searchQuery, showBrowseAll, blueprints]);
 
   const handleSelectTemplate = useCallback((blueprint: VideoBlueprint, overrides?: { targetPlatforms?: string[] }) => {
     const enriched = overrides?.targetPlatforms 
@@ -342,9 +347,9 @@ export function BlueprintTemplatesGrid({
               <Plus className="w-4 h-4" />
               Create Custom Template
             </Button>
-            {intentFilter && (
+            {(intentFilter || categoryFilter) && !showBrowseAll && (
               <Button variant="outline" onClick={() => setShowBrowseAll(true)}>
-                Browse All Templates
+                Browse All Templates ({blueprints.length})
               </Button>
             )}
           </div>
