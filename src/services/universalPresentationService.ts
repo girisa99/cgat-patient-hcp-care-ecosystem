@@ -17,6 +17,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import pptxgen from 'pptxgenjs';
+import { VOICE_CATALOG } from '@/config/voice-catalog';
 
 // ============================================
 // TYPES & INTERFACES
@@ -436,56 +437,19 @@ class UniversalPresentationService {
     voices: Array<{ id: string; name: string; style: string }>;
     features: string[];
   }> {
-    return [
-      {
-        id: 'openai',
-        name: 'OpenAI TTS',
-        voices: [
-          { id: 'alloy', name: 'Alloy', style: 'Neutral' },
-          { id: 'echo', name: 'Echo', style: 'Male' },
-          { id: 'fable', name: 'Fable', style: 'Storytelling' },
-          { id: 'onyx', name: 'Onyx', style: 'Deep Male' },
-          { id: 'nova', name: 'Nova', style: 'Female' },
-          { id: 'shimmer', name: 'Shimmer', style: 'Soft Female' },
-        ],
-        features: ['Fast', 'Natural', 'Multiple voices']
-      },
-      {
-        id: 'elevenlabs',
-        name: 'ElevenLabs',
-        voices: [
-          { id: 'CwhRBWXzGAHq8TQ4Fs17', name: 'Roger', style: 'Male Narrator' },
-          { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', style: 'Female' },
-          { id: 'FGY2WhTYpPnrIDTdsKH5', name: 'Laura', style: 'Female Warm' },
-          { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', style: 'British Male' },
-          { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', style: 'Deep Male' },
-          { id: 'pFZP5JQG7iQjIQuC4Bku', name: 'Lily', style: 'Female' },
-        ],
-        features: ['Ultra-realistic', 'Voice cloning', 'Emotional range']
-      },
-      {
-        id: 'amazon-polly',
-        name: 'Amazon Polly',
-        voices: [
-          { id: 'Matthew', name: 'Matthew', style: 'Male US' },
-          { id: 'Joanna', name: 'Joanna', style: 'Female US' },
-          { id: 'Amy', name: 'Amy', style: 'Female UK' },
-          { id: 'Brian', name: 'Brian', style: 'Male UK' },
-        ],
-        features: ['Cost-effective', 'SSML support', 'Neural voices']
-      },
-      {
-        id: 'google',
-        name: 'Google Cloud TTS',
-        voices: [
-          { id: 'en-US-Neural2-D', name: 'US Male', style: 'Male' },
-          { id: 'en-US-Neural2-F', name: 'US Female', style: 'Female' },
-          { id: 'en-GB-Neural2-B', name: 'UK Male', style: 'British Male' },
-          { id: 'en-GB-Neural2-A', name: 'UK Female', style: 'British Female' },
-        ],
-        features: ['WaveNet quality', 'Multi-language', 'Custom tuning']
-      }
-    ];
+    const providerMeta: Record<string, { name: string; features: string[] }> = {
+      openai: { name: 'OpenAI TTS', features: ['Fast', 'Natural', 'Multiple voices'] },
+      elevenlabs: { name: 'ElevenLabs', features: ['Ultra-realistic', 'Voice cloning', 'Emotional range'] },
+      'amazon-polly': { name: 'Amazon Polly', features: ['Cost-effective', 'SSML support', 'Neural voices'] },
+      google: { name: 'Google Cloud TTS', features: ['WaveNet quality', 'Multi-language', 'Custom tuning'] },
+    };
+    
+    return (['openai', 'elevenlabs', 'amazon-polly', 'google'] as VoiceProviderType[]).map(id => ({
+      id,
+      name: providerMeta[id]?.name || id,
+      voices: (VOICE_CATALOG[id] || []).map(v => ({ id: v.id, name: v.name, style: v.style })),
+      features: providerMeta[id]?.features || [],
+    }));
   }
 
   /**

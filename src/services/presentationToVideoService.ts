@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { VOICE_CATALOG } from '@/config/voice-catalog';
 
 export interface SlideForVideo {
   id: string;
@@ -78,34 +79,8 @@ export interface PublishResult {
   error?: string;
 }
 
-// Voice options for different providers
-export const VOICE_OPTIONS = {
-  openai: [
-    { id: 'alloy', name: 'Alloy', style: 'Neutral' },
-    { id: 'echo', name: 'Echo', style: 'Male' },
-    { id: 'fable', name: 'Fable', style: 'Storytelling' },
-    { id: 'onyx', name: 'Onyx', style: 'Deep Male' },
-    { id: 'nova', name: 'Nova', style: 'Female' },
-    { id: 'shimmer', name: 'Shimmer', style: 'Soft Female' },
-  ],
-  elevenlabs: [
-    { id: 'CwhRBWXzGAHq8TQ4Fs17', name: 'Roger', style: 'Male Narrator' },
-    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', style: 'Female' },
-    { id: 'FGY2WhTYpPnrIDTdsKH5', name: 'Laura', style: 'Female Warm' },
-    { id: 'IKne3meq5aSn9XLyUdCD', name: 'Charlie', style: 'Male' },
-    { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', style: 'British Male' },
-    { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', style: 'Deep Male' },
-    { id: 'pFZP5JQG7iQjIQuC4Bku', name: 'Lily', style: 'Female' },
-  ],
-  'amazon-polly': [
-    { id: 'Matthew', name: 'Matthew', style: 'Male US' },
-    { id: 'Joanna', name: 'Joanna', style: 'Female US' },
-    { id: 'Amy', name: 'Amy', style: 'Female UK' },
-    { id: 'Brian', name: 'Brian', style: 'Male UK' },
-    { id: 'Ivy', name: 'Ivy', style: 'Child Female' },
-    { id: 'Justin', name: 'Justin', style: 'Child Male' },
-  ],
-};
+/** Voice options — imported from shared voice-catalog (single source of truth) */
+export const VOICE_OPTIONS = VOICE_CATALOG;
 
 class PresentationToVideoService {
   private static instance: PresentationToVideoService;

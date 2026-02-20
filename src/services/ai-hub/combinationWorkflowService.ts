@@ -884,27 +884,26 @@ export function buildCustomWorkflow(
   // Determine providers
   const providers: CombinationWorkflow['providers'] = { llm: 'gemini' };
   
-  // Set providers based on region and elements
+  // Set providers based on region and elements — using zone-aware routing
+  const isCJK = context.region === 'cjk';
+  const isWest = context.region === 'west';
+  
   if (elements.some(e => e.category === 'avatar')) {
-    providers.avatar = 'alibaba';
+    providers.avatar = 'alibaba'; // Alibaba WAN is the only avatar provider
   }
   if (elements.some(e => e.category === 'video')) {
-    providers.tts = context.region === 'cjk' ? 'alibaba' : 'elevenlabs';
+    providers.tts = isCJK ? 'alibaba' : 'elevenlabs';
     providers.video = 'modelslab';
   }
   if (elements.some(e => e.category === 'immersive')) {
     providers['3d'] = 'meshy';
   }
   if (elements.some(e => e.id === 'multilang_dubbing')) {
-    providers.translation = context.region === 'cjk' ? 'alibaba' : 'deepl';
+    providers.translation = isCJK ? 'alibaba' : 'deepl';
   }
   
   // Set LLM based on region
-  if (context.region === 'cjk') {
-    providers.llm = 'alibaba';
-  } else if (context.region === 'west') {
-    providers.llm = 'claude';
-  }
+  providers.llm = isCJK ? 'alibaba' : isWest ? 'claude' : 'gemini';
   
   return {
     id: `custom_${Date.now()}`,
