@@ -34,6 +34,8 @@ export interface ScriptLine {
   sfx?: string[];
   /** Motion/animation cue for the character */
   motion?: string;
+  /** Clickable links for CTA scenes */
+  links?: { label: string; url: string; type: string }[];
 }
 
 export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
@@ -1196,25 +1198,38 @@ The sprint tracker wasn't planned. It was born from pain. From realizing that AI
   'close-rationale': {
     text: `Now — before I go, let me tell you why this podcast looks the way it does.
 
-I didn't hire a video team. I didn't use a traditional podcast format. I used the very tools I'm building — Genie AI — to create this episode. The characters? AI-generated. The animations? Built in the sprint. The voices? Multi-provider TTS routed through our own edge functions. The sprint tracker you saw? That's a real product. You can try it. It's linked below.
+I didn't hire a video team. I didn't use a traditional podcast format. I used the very tools I'm building — Genie AI — to create this episode. The characters? AI-generated. The animations? Built in the sprint. The voices? Multi-provider TTS routed through our own edge functions. The sprint tracker you saw? That's a real product — and it will be launched soon.
 
 This is what I mean when I say: I don't build — I show what I build. The podcast IS the product demo. The creativity IS the proof. And if you check our sprint tracker, you'll see this episode listed as a task — completed by Atlas and Nova, reviewed by me. That's the workflow. That's the process. That's what Genie AI actually does.`,
     voice: 'host',
     scene: 'scene-11-close',
     duration_est: 35,
-    direction: 'Meta-moment — breaking the fourth wall with purpose. This is the "how we made this" reveal. Each sentence builds the case. "The podcast IS the product demo" is the money line. Link to sprint tracker makes it tangible.',
+    direction: 'Meta-moment — breaking the fourth wall with purpose. Proud gestures, hands open showing the product. "Will be launched soon" delivered with confident nod. "The podcast IS the product demo" is the money line — lean forward on it.',
+    lipsync: true,
+    motion: 'proud-gestures-hands-open-lean-forward',
+    sfx: ['gentle_reveal_chime', 'soft_orchestral_swell'],
   },
 
   'close-cta': {
-    text: `So if you're watching this and thinking "I want to try this" — do it. Don't wait for the perfect setup. Don't wait for someone to write the playbook. Start experimenting. Start building.
+    text: `I believe messaging, marketing, and production shouldn't be that hard in this age of AI. We have all the tools at our disposal — we just need to know where and how to use them, and experiment.
+
+Head to genieaiexperimentationhub.tech to see how we experiment. Subscribe to the Genie AI Podcast wherever you listen. Follow us on LinkedIn and YouTube for the latest updates and newsletters.
 
 Because that's what "Beyond AI Hype" actually means. Stop reading about it. Stop debating about it. Start building with it. And see what happens.
 
 I'm Sai Dasika. This has been The Genie AI Podcast — Episode 2, with Allaudin. Atlas and Nova say goodbye — in their own way.`,
     voice: 'host',
     scene: 'scene-11-close',
-    duration_est: 30,
-    direction: 'Final CTA — permission energy. "Sai Dasika" sign-off is confident. "With Allaudin" ties back to the intro. Warm, personal, inviting.',
+    duration_est: 35,
+    direction: 'Final CTA — confident, warm, inviting. On "genieaiexperimentationhub.tech" — gesture toward screen as clickable link appears. On "LinkedIn and YouTube" — icons animate in. "Sai Dasika" sign-off is proud. "With Allaudin" ties back to the intro.',
+    lipsync: true,
+    motion: 'confident-pointing-gesture-toward-links',
+    sfx: ['link_appear_whoosh', 'subscribe_bell', 'warm_closing_chord'],
+    links: [
+      { label: '🔬 Experimentation Hub', url: 'https://genieaiexperimentationhub.tech', type: 'website' },
+      { label: '🎙️ Subscribe on YouTube', url: 'https://youtube.com/@GenieAIPodcast', type: 'youtube' },
+      { label: '💼 Follow on LinkedIn', url: 'https://linkedin.com/company/genie-ai-suite', type: 'linkedin' },
+    ],
   },
 
   'close-atlas-goodbye': {
@@ -1222,7 +1237,10 @@ I'm Sai Dasika. This has been The Genie AI Podcast — Episode 2, with Allaudin.
     voice: 'atlas',
     scene: 'scene-11-close',
     duration_est: 4,
-    direction: 'Classic Atlas sign-off. "You\'re welcome" is the catchphrase — delivered with zero awareness that it\'s funny.',
+    direction: 'Classic Atlas sign-off. "You\'re welcome" is the catchphrase — delivered with zero awareness that it\'s funny. Formal nod, hands clasped.',
+    lipsync: true,
+    motion: 'formal-nod-hands-clasped',
+    sfx: ['formal_chime'],
   },
 
   'close-nova-goodbye': {
@@ -1230,7 +1248,10 @@ I'm Sai Dasika. This has been The Genie AI Podcast — Episode 2, with Allaudin.
     voice: 'nova',
     scene: 'scene-11-close',
     duration_est: 4,
-    direction: 'Energetic, warm, on-brand. Dark mode is her final word. It always will be.',
+    direction: 'Energetic, warm, on-brand. Dark mode is her final word. It always will be. Big wave, sparkle exit.',
+    lipsync: true,
+    motion: 'energetic-wave-sparkle-exit',
+    sfx: ['sparkle_burst', 'happy_chime'],
   },
 
   // 🐿️ SQUIRREL — Final appearance
