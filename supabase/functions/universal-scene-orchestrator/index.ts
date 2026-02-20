@@ -224,8 +224,8 @@ function convertManifestToFlat(manifest: ManifestPayload): {
     voiceRouting[char.key] = {
       provider: char.voice.provider,
       voiceId: char.voice.voiceId,
-      fallbackProvider: char.voice.fallbackProvider || 'alibaba',
-      fallbackVoice: char.voice.fallbackVoice || 'longxiaochun',
+      fallbackProvider: char.voice.fallbackProvider || char.voice.provider,
+      fallbackVoice: char.voice.fallbackVoice || char.voice.voiceId,
       stability: char.voice.stability,
       similarityBoost: char.voice.similarityBoost,
       speed: char.voice.speed,
