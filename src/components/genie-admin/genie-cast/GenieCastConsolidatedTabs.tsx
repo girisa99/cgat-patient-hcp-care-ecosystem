@@ -74,6 +74,7 @@ import { styleIntentResolver } from '@/services/styleIntentResolver';
 import { useGenieCastSession } from '@/hooks/useGenieCastSession';
 import { useCastProjects } from '@/hooks/useCastProjects';
 import { CastProjectDropdown } from './CastProjectDropdown';
+import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
 import { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import { DynamicContentSelector } from './DynamicContentSelector';
 import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
@@ -294,6 +295,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // Cast projects for dropdown
   const castProjects = useCastProjects();
+  const persistence = useCastProjectPersistence();
   const [activeContentType, setActiveContentType] = useState<string>('video');
 
   // Dynamic content registry (DB-driven categories + formats)
@@ -433,7 +435,55 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     setTemplateMappingRef,
   ]);
 
-  // Regional dialect selection state
+  // ── Auto-save-as-you-go: persist scenes/lines to DB when template mapping changes ──
+  const autoSaveRef = persistence.autoSave;
+  React.useEffect(() => {
+    const projectId = castSession.session.projectId;
+    const mapping = authoring.state.templateMapping;
+    if (!projectId || !mapping || !mapping.scenes?.length) return;
+
+    // Convert templateMapping scenes → DB persistence format
+    const scenes = mapping.scenes.map((scene, idx) => ({
+      project_id: projectId,
+      scene_key: scene.sceneKey,
+      title: scene.title,
+      scene_index: idx,
+      duration_seconds: scene.durationSeconds,
+      scene_config: {
+        sourceType: scene.sourceType,
+        ttsConfig: scene.ttsConfig,
+        minDuration: scene.minDuration,
+        maxDuration: scene.maxDuration,
+      } as Record<string, unknown>,
+    }));
+
+    const scriptLines = mapping.scenes.flatMap((scene, _sIdx) => 
+      // Each scene has a single script block — persist as one line per scene
+      [{
+        project_id: projectId,
+        scene_id: scene.sceneKey, // Resolved to UUID by hook
+        line_key: `${scene.sceneKey}-script`,
+        line_index: scene.orderIndex,
+        character_id: 'narrator', // Default; overridden when characters are assigned
+        dialogue: scene.scriptText || '',
+        direction: null,
+        motion: null,
+        duration_hint: `${scene.durationSeconds}s`,
+        line_config: {
+          approvalStatus: scene.approvalStatus,
+          sourceType: scene.sourceType,
+        } as Record<string, unknown>,
+      }]
+    );
+
+    autoSaveRef(projectId, { scenes, scriptLines, characters: [] });
+  }, [
+    castSession.session.projectId,
+    authoring.state.templateMapping,
+    autoSaveRef,
+  ]);
+
+
   const [selectedDialectCodes, setSelectedDialectCodes] = useState<string[]>(['en-US']);
   const [avatarGender, setAvatarGender] = useState<'male' | 'female'>('female');
   const [productionQuality, setProductionQuality] = useState<'preview' | 'production' | 'cinematic'>('production');
@@ -556,6 +606,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               // Navigate to templates tab so user can see the project content
               setActiveMainTab('create');
               setSubTab('create', 'templates');
+              // Load token breakdown for this project
+              persistence.fetchTokenBreakdown(project.id);
               toast.success(`Loaded: ${project.title}`);
             }
           }}

@@ -1,20 +1,26 @@
 /**
- * useCastProjectPersistence — Save/load full production content to DB
+ * useCastProjectPersistence — Universal save/load for Cast production projects
  *
- * Persists scenes, script lines, and characters to:
+ * Dynamic persistence layer that works for ANY project (EP04, future episodes, etc.)
+ * with zero hardcoding. Reads/writes:
  * - cast_project_scenes
  * - cast_project_script_lines
  * - cast_project_characters
  *
- * Used by EP04Production and any future production page to save/restore
- * complete project state including TTS results.
+ * Features:
+ * - Save-as-you-go: auto-persists when content changes
+ * - Per-step token breakdown: TTS, video, avatar, 3D, animation
+ * - Full restore from DB: scenes, lines, characters, TTS results
+ * - Integrates with productionCostAccumulator for cost tracking
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { productionCostAccumulator, type ProjectCostSummary } from '@/services/productionCostAccumulator';
+import type { CastJobType } from '@/types/castProjects';
 
-// ── Types matching DB schema ────────────────────────────────────────────────
+// ── Types matching DB schema — no hardcoding ────────────────────────────────
 
 export interface PersistedScene {
   id?: string;
@@ -34,7 +40,7 @@ export interface PersistedScene {
 export interface PersistedScriptLine {
   id?: string;
   project_id: string;
-  scene_id: string;
+  scene_id: string; // Can be scene_key on input — resolved to UUID internally
   line_key: string;
   line_index: number;
   character_id: string;
@@ -71,12 +77,28 @@ export interface ProjectContentSnapshot {
   characters: PersistedCharacter[];
 }
 
+/** Per-step token breakdown */
+export interface StepTokenBreakdown {
+  tts: { estimated: number; actual: number; costUsd: number; jobCount: number };
+  video: { estimated: number; actual: number; costUsd: number; jobCount: number };
+  avatar: { estimated: number; actual: number; costUsd: number; jobCount: number };
+  animation: { estimated: number; actual: number; costUsd: number; jobCount: number };
+  '3d': { estimated: number; actual: number; costUsd: number; jobCount: number };
+  image: { estimated: number; actual: number; costUsd: number; jobCount: number };
+  thumbnail: { estimated: number; actual: number; costUsd: number; jobCount: number };
+  total: { estimated: number; actual: number; costUsd: number; jobCount: number };
+}
+
+const EMPTY_STEP = { estimated: 0, actual: 0, costUsd: 0, jobCount: 0 };
+
 // Untyped client for tables not yet in generated types
 const db = supabase as any;
 
 export function useCastProjectPersistence() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [tokenBreakdown, setTokenBreakdown] = useState<StepTokenBreakdown | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ──────────────────────────────────────────────────────────────────────
   // SAVE — upsert full project content (scenes → lines → characters)
@@ -127,9 +149,7 @@ export function useCastProjectPersistence() {
 
         // 3. Upsert script lines (need scene_id from above)
         if (content.scriptLines.length > 0) {
-          // Resolve scene_id for each line using the line's scene reference
           const linesWithSceneIds = content.scriptLines.map(line => {
-            // scene_id in the input might be a scene_key — resolve to actual UUID
             const resolvedSceneId = sceneIdMap[line.scene_id] || line.scene_id;
             return {
               ...line,
@@ -145,16 +165,31 @@ export function useCastProjectPersistence() {
         }
       }
 
-      toast.success('Project content saved');
       return true;
     } catch (err: any) {
-      console.error('[useCastProjectPersistence] Save error:', err);
+      console.error('[Persistence] Save error:', err);
       toast.error(`Failed to save: ${err.message}`);
       return false;
     } finally {
       setIsSaving(false);
     }
   }, []);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // SAVE-AS-YOU-GO — debounced auto-save (call after each step)
+  // ──────────────────────────────────────────────────────────────────────
+
+  const autoSave = useCallback((
+    projectId: string,
+    content: ProjectContentSnapshot,
+    delayMs = 2000,
+  ) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      const ok = await saveProjectContent(projectId, content);
+      if (ok) console.log('[Persistence] Auto-saved project content');
+    }, delayMs);
+  }, [saveProjectContent]);
 
   // ──────────────────────────────────────────────────────────────────────
   // LOAD — fetch full project content from DB
@@ -165,7 +200,6 @@ export function useCastProjectPersistence() {
   ): Promise<ProjectContentSnapshot | null> => {
     setIsLoading(true);
     try {
-      // Parallel fetch all three tables
       const [scenesRes, charsRes] = await Promise.all([
         db.from('cast_project_scenes')
           .select('*')
@@ -183,7 +217,6 @@ export function useCastProjectPersistence() {
       const scenes: PersistedScene[] = scenesRes.data || [];
       const characters: PersistedCharacter[] = charsRes.data || [];
 
-      // Fetch script lines (needs scene IDs)
       let scriptLines: PersistedScriptLine[] = [];
       if (scenes.length > 0) {
         const sceneIds = scenes.map((s: any) => s.id);
@@ -199,8 +232,7 @@ export function useCastProjectPersistence() {
 
       return { scenes, scriptLines, characters };
     } catch (err: any) {
-      console.error('[useCastProjectPersistence] Load error:', err);
-      toast.error(`Failed to load project content: ${err.message}`);
+      console.error('[Persistence] Load error:', err);
       return null;
     } finally {
       setIsLoading(false);
@@ -234,9 +266,103 @@ export function useCastProjectPersistence() {
       if (error) throw error;
       return true;
     } catch (err: any) {
-      console.error('[useCastProjectPersistence] TTS update error:', err);
+      console.error('[Persistence] TTS update error:', err);
       return false;
     }
+  }, []);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // PER-STEP TOKEN BREAKDOWN — fetches from cast_generation_jobs
+  // ──────────────────────────────────────────────────────────────────────
+
+  const fetchTokenBreakdown = useCallback(async (projectId: string): Promise<StepTokenBreakdown> => {
+    const summary = await productionCostAccumulator.getProjectCostSummary(projectId);
+    
+    if (!summary) {
+      const empty: StepTokenBreakdown = {
+        tts: { ...EMPTY_STEP },
+        video: { ...EMPTY_STEP },
+        avatar: { ...EMPTY_STEP },
+        animation: { ...EMPTY_STEP },
+        '3d': { ...EMPTY_STEP },
+        image: { ...EMPTY_STEP },
+        thumbnail: { ...EMPTY_STEP },
+        total: { ...EMPTY_STEP },
+      };
+      setTokenBreakdown(empty);
+      return empty;
+    }
+
+    const mapStep = (jobType: CastJobType) => {
+      const data = summary.byJobType[jobType];
+      if (!data) return { ...EMPTY_STEP };
+      return {
+        estimated: 0, // Will be filled from project-level estimate
+        actual: data.tokens,
+        costUsd: data.costUsd,
+        jobCount: data.count,
+      };
+    };
+
+    // Fetch project-level estimated_tokens for the total
+    const { data: project } = await db
+      .from('cast_projects')
+      .select('estimated_tokens')
+      .eq('id', projectId)
+      .single();
+
+    const breakdown: StepTokenBreakdown = {
+      tts: mapStep('tts'),
+      video: mapStep('video'),
+      avatar: mapStep('avatar'),
+      animation: mapStep('animation'),
+      '3d': mapStep('3d'),
+      image: mapStep('image'),
+      thumbnail: mapStep('thumbnail'),
+      total: {
+        estimated: project?.estimated_tokens || summary.totalEstimatedTokens,
+        actual: summary.totalActualTokens,
+        costUsd: summary.totalActualCostUsd,
+        jobCount: summary.totalJobs,
+      },
+    };
+
+    setTokenBreakdown(breakdown);
+    return breakdown;
+  }, []);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // TRACK GENERATION JOB — creates a job entry for cost tracking
+  // ──────────────────────────────────────────────────────────────────────
+
+  const trackGenerationJob = useCallback(async (input: {
+    projectId: string;
+    jobType: CastJobType;
+    sceneKey?: string;
+    lineKey?: string;
+    provider?: string;
+    estimatedTokens?: number;
+  }): Promise<string | null> => {
+    return productionCostAccumulator.createJob({
+      projectId: input.projectId,
+      jobType: input.jobType,
+      sceneKey: input.sceneKey,
+      lineKey: input.lineKey,
+      provider: input.provider,
+      estimatedTokens: input.estimatedTokens,
+    });
+  }, []);
+
+  const completeGenerationJob = useCallback(async (
+    jobId: string,
+    actualTokens: number,
+    outputUrl?: string,
+  ) => {
+    await productionCostAccumulator.completeJob({
+      jobId,
+      actualTokens,
+      outputUrl,
+    });
   }, []);
 
   // ──────────────────────────────────────────────────────────────────────
@@ -258,11 +384,21 @@ export function useCastProjectPersistence() {
   }, []);
 
   return {
+    // State
     isSaving,
     isLoading,
+    tokenBreakdown,
+
+    // Core CRUD
     saveProjectContent,
     loadProjectContent,
+    autoSave,
     updateLineTTS,
     hasPersistedContent,
+
+    // Token / cost tracking
+    fetchTokenBreakdown,
+    trackGenerationJob,
+    completeGenerationJob,
   };
 }
