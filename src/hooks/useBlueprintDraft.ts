@@ -102,6 +102,15 @@ export function useBlueprintDraft(
     pendingLogRef.current = [];
   }, [blueprintId]);
 
+  // Sync scenes when originalScenes loads asynchronously (e.g. from DB fetch)
+  // Only update if we don't have a draft and scenes were empty but now populated
+  useEffect(() => {
+    if (originalScenes.length > 0 && scenes.length === 0 && !hasDraft) {
+      setScenes(originalScenes);
+      console.log('[useBlueprintDraft] Synced async-loaded scenes:', originalScenes.length);
+    }
+  }, [originalScenes.length, scenes.length, hasDraft]);
+
   // Load existing draft from DB on mount
   useEffect(() => {
     if (!blueprintId) return;
