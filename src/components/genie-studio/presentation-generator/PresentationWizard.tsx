@@ -14,6 +14,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SocialPublisher } from '@/components/publish/SocialPublisher';
 import { supabase } from '@/integrations/supabase/client';
+import { useUniversalEnrichment } from '@/services/enrichment';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -350,6 +351,9 @@ export function PresentationWizard({
   onError,
   className,
 }: PresentationWizardProps) {
+  // Universal enrichment — product knowledge, brand, audience, regional context
+  const { additionalContext: enrichmentContext } = useUniversalEnrichment({});
+
   const {
     session,
     isLoading: isSessionLoading,
@@ -999,7 +1003,7 @@ export function PresentationWizard({
 
     const request = {
       inputSource,
-      content: processedContent,
+      content: enrichmentContext ? `${processedContent}\n\n--- Product & Brand Enrichment ---\n${enrichmentContext}` : processedContent,
       contentType: uploadedFile?.type,
       collateralType,
       outputFormat,

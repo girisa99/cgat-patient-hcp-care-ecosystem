@@ -65,6 +65,7 @@ import { useAskGenieVoice, LANGUAGE_VOICE_PAIRINGS, REGION_LABELS, getLanguagesB
 import { toast } from 'sonner';
 import { useRalphWiggumGlobal } from '@/contexts/RalphWiggumContext';
 import { useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
+import { useUniversalEnrichment } from '@/services/enrichment';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1075,6 +1076,8 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const labelStudioService = useLabelStudioBackground();
   const productContext = PRODUCT_CONTEXTS[product];
   
+  
+  
   // Voice integration for bidirectional conversation
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
@@ -1095,6 +1098,11 @@ export const AskGenie: React.FC<AskGenieProps> = ({
     }
   });
   
+  // Universal enrichment — injects product knowledge, brand, audience, regional context into all AI responses
+  const { additionalContext: enrichmentContext } = useUniversalEnrichment({
+    language: voice.userLanguage || 'en',
+  });
+
   // Auto-detect language from IP/country on mount
   useEffect(() => {
     detectCountryFromIP().then(result => {
@@ -1288,6 +1296,8 @@ CURRENT CONTEXT:
 - Current Tab: ${currentTab || 'main view'}
 - Session Info: ${sessionData ? JSON.stringify(sessionData).slice(0, 300) : 'New session'}
 - Subscription: ${subscriptionTier}
+
+${enrichmentContext ? `PRODUCT & BRAND KNOWLEDGE (use to give informed, contextual answers):\n${enrichmentContext}` : ''}
 
 ${diagram ? 'NOTE: User is asking about a workflow. Explain it AND offer to show the visual diagram.' : ''}
 
