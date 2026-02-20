@@ -366,6 +366,29 @@ At session start:
 
 ---
 
+### [10:00] Enrichment Integration — Sprint 2 Backlog Items
+- **File(s):** Multiple (see below)
+- **Changed By:** Lovable
+- **What Changed:** Logged enrichment rework items as Sprint 2 backlog
+- **Backlog Items:**
+  1. **B-001** Verify `enhance-script` edge function consumes `enrichmentContext` (1h) — File: `supabase/functions/enhance-script/index.ts`
+  2. **B-002** Wire Vibe enrichment into actual AI generation calls (2h) — File: `src/pages/GenieVibe.tsx`
+  3. **B-003** Conditional enrichment in Ask Genie — skip non-content queries (1h) — File: `src/components/genie-studio/AskGenie.tsx`
+  4. **B-004** Move `mergeAudienceWithEnrichment` to shared barrel `src/services/enrichment/index.ts` (30m)
+  5. **B-005** Pass explicit `productId` to `useUniversalEnrichment` calls per product (1h)
+  6. **B-006** Add enrichment status indicator in generation UIs (2h)
+- **Total Backlog Effort:** ~7.5 hours
+- **Impact on Your Work:**
+  - Claude: B-001 affects your edge function. Review when you work on `enhance-script`.
+  - Lovable: B-002, B-003, B-004 are Lovable-owned. Will tackle in Sprint 2.
+
+### [10:30] Day 4 — L-401 to L-404: Mobile, SEO, Performance, Cross-Browser
+- **File(s):** `src/components/landing/RegionalLandingPage.tsx`, `src/components/landing/**`
+- **Changed By:** Lovable
+- **What Changed:** Mobile responsiveness polish, SEO meta tag verification, performance optimization, cross-browser testing
+
+---
+
 ## Day 5 — Friday, Feb 21, 2026
 
 > Final merge day. Document any last-minute shared changes here.

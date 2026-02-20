@@ -150,6 +150,8 @@ const REGION_HERO_IMAGES: Record<RegionSlug, string[]> = {
 const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }> = ({ config, currentSlug }) => {
   const allSlugs = getAllRegionSlugs();
   const baseUrl = 'https://cgat-patient-hcp-care-ecosystem.lovable.app';
+  const pageUrl = `${baseUrl}/genie-landing/${currentSlug}`;
+  const ogImageUrl = `${baseUrl}/og-genie-suite.png`;
   
   return (
     <Helmet>
@@ -157,12 +159,26 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
       <title>{config.seo.title}</title>
       <meta name="description" content={config.seo.description} />
       <meta name="keywords" content={config.seo.keywords.join(', ')} />
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+      <meta name="robots" content="index, follow" />
+      <meta name="author" content="Genie Suite" />
+      {/* Open Graph */}
       <meta property="og:title" content={config.seo.title} />
       <meta property="og:description" content={config.seo.description} />
       <meta property="og:locale" content={config.seo.ogLocale} />
       <meta property="og:type" content="website" />
-      <meta property="og:url" content={`${baseUrl}/genie-landing/${currentSlug}`} />
-      <link rel="canonical" href={`${baseUrl}/genie-landing/${currentSlug}`} />
+      <meta property="og:url" content={pageUrl} />
+      <meta property="og:site_name" content="Genie Suite — Mind to Media" />
+      <meta property="og:image" content={ogImageUrl} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={`Genie Suite — AI Content Production for ${config.hero.regionName}`} />
+      {/* Twitter Card */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={config.seo.title} />
+      <meta name="twitter:description" content={config.seo.description} />
+      <meta name="twitter:image" content={ogImageUrl} />
+      <link rel="canonical" href={pageUrl} />
       {/* Hreflang tags for all regions */}
       {allSlugs.map(slug => (
         <link 
@@ -182,7 +198,8 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
           applicationCategory: 'MultimediaApplication',
           operatingSystem: 'Web',
           description: config.seo.description,
-          url: `${baseUrl}/genie-landing/${currentSlug}`,
+          url: pageUrl,
+          image: ogImageUrl,
           offers: {
             '@type': 'Offer',
             price: '0',
@@ -682,7 +699,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
   const slide = slides[current];
 
   return (
-    <section className={`relative min-h-[100vh] overflow-hidden ${hero.isRTL ? 'rtl' : 'ltr'}`}>
+    <section className={`relative min-h-[100dvh] overflow-hidden ${hero.isRTL ? 'rtl' : 'ltr'}`}>
       {/* Full-bleed hero image background with Ken Burns motion */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -695,8 +712,9 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
         >
           <motion.img
             src={heroImages[current]}
-            alt=""
+            alt={`Genie Suite — AI Content Production for ${hero.regionName}`}
             className="w-full h-full object-cover"
+            loading={current === 0 ? 'eager' : 'lazy'}
             animate={{ scale: [1, 1.06] }}
             transition={{ duration: 12, ease: 'linear', repeat: Infinity, repeatType: 'reverse' }}
           />
@@ -750,7 +768,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       <FloatingTemplateCards visible={current === 0} />
 
       {/* Main content */}
-      <div className="relative max-w-7xl mx-auto px-4 pt-28 pb-20 flex flex-col items-center justify-center min-h-[85vh] z-10">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-16 sm:pb-20 flex flex-col items-center justify-center min-h-[80dvh] sm:min-h-[85vh] z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.id}
@@ -769,7 +787,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 
             {/* Headline — massive cinematic type with strong drop-shadow */}
             <motion.h1
-              className="text-5xl md:text-7xl lg:text-8xl font-black leading-[0.92] tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
+              className="text-3xl xs:text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black leading-[0.92] tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.8, type: 'spring', stiffness: 100 }}
@@ -781,14 +799,14 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
             </motion.h1>
 
             <motion.p
-              className="text-xl md:text-3xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]"
+              className="text-base sm:text-xl md:text-3xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]"
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             >
               {slide.subtitle}
             </motion.p>
 
             <motion.p
-              className="text-base md:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed font-medium drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]"
+              className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto px-2 leading-relaxed font-medium drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
             >
               {slide.description}
@@ -921,7 +939,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       </div>
 
       {/* TTS Voiceover Widget — fixed bottom-right with dialect picker */}
-      <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-2">
+      <div className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-50 flex flex-col items-end gap-2">
         {/* Dialect picker dropdown */}
         <AnimatePresence>
           {showVoicePicker && (
@@ -977,7 +995,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 
           {/* Play/Stop button — prefers DB narration TTS, falls back to real-time */}
           <motion.button
-            className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center shadow-[0_4px_24px_rgba(59,130,246,0.5)] border-2 border-white/20 hover:shadow-[0_8px_40px_rgba(59,130,246,0.6)] transition-shadow"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-blue-600 text-white flex items-center justify-center shadow-[0_4px_24px_rgba(59,130,246,0.5)] border-2 border-white/20 hover:shadow-[0_8px_40px_rgba(59,130,246,0.6)] transition-shadow"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
@@ -1017,7 +1035,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 
       {/* DB Narration info badge — shows when pre-generated TTS is available */}
       {dbNarrationScript && (dbTtsAudio?.audio_url || dbNarrationScript.generated_audio_url) && (
-        <div className="fixed bottom-44 right-6 z-50">
+        <div className="hidden sm:block fixed bottom-40 sm:bottom-44 right-4 sm:right-6 z-50">
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -1048,21 +1066,21 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       {/* Provider ribbon moved outside banner — see below HeroCarousel */}
 
       {/* Navigation dots with labels */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-5 z-20">
+      <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 sm:gap-5 z-20">
         {slides.map((s, i) => (
           <button
             key={s.id}
             onClick={() => goTo(i)}
             className="group flex flex-col items-center gap-1.5"
           >
-            <span className={`text-[10px] font-bold transition-all duration-300 ${
+            <span className={`text-[9px] sm:text-[10px] font-bold transition-all duration-300 ${
               i === current ? 'text-white opacity-100' : 'text-white/0 group-hover:text-white/60 opacity-0 group-hover:opacity-100'
             }`}>
               {['Platform', 'Pipeline', 'Languages', 'Transcreation'][i]}
             </span>
             <div className="relative">
-              <div className={`h-2.5 rounded-full transition-all duration-500 ${
-                i === current ? 'w-14 bg-gradient-to-r from-primary to-cyan-400 shadow-lg shadow-primary/50' : 'w-3 bg-white/25 group-hover:bg-white/50'
+              <div className={`h-2 sm:h-2.5 rounded-full transition-all duration-500 ${
+                i === current ? 'w-10 sm:w-14 bg-gradient-to-r from-primary to-cyan-400 shadow-lg shadow-primary/50' : 'w-2.5 sm:w-3 bg-white/25 group-hover:bg-white/50'
               }`} />
               {i === current && (
                 <motion.div
