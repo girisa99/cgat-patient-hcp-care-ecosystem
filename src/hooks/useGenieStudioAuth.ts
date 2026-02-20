@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { localSessionStorage } from '@/utils/localSessionStorage';
 import type { User, Session } from '@supabase/supabase-js';
 
 // Genie Suite Role Types (matches database enum)
@@ -240,6 +241,13 @@ export function useGenieStudioAuth() {
         if (mounted) {
           if (genieUser) {
             localStorage.setItem(INTERNAL_USER_CACHE_KEY, String(genieUser.is_internal));
+            // Persist genie session locally for instant hydration
+            localSessionStorage.saveGenieSession({
+              authUserId: user.id,
+              genieUser: genieUser as unknown as Record<string, any>,
+              isInternalUser: genieUser.is_internal,
+              hasMarketingAccess: !!genieUser.marketing_access?.is_active,
+            });
           }
           setState(prev => ({
             ...prev,
@@ -442,6 +450,8 @@ export function useGenieStudioAuth() {
   // Sign out
   const signOut = useCallback(async () => {
     try {
+      // Clear local session data
+      localSessionStorage.clearGenieSession();
       await supabase.auth.signOut();
       setState({
         user: null,

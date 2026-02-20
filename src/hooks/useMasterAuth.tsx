@@ -2,12 +2,13 @@
 /**
  * MASTER AUTHENTICATION HOOK - SINGLE SOURCE OF TRUTH
  * Consolidates all authentication functionality across the application
- * Version: master-auth-v2.0.0
+ * Version: master-auth-v3.0.0 - Local Session Storage integration
  */
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthStateManager } from '@/utils/auth/authStateManager';
+import { localSessionStorage } from '@/utils/localSessionStorage';
 
 interface AuthContextType {
   user: User | null;
@@ -29,11 +30,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
   console.log('🔑 MasterAuthProvider rendering...');
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [userRoles, setUserRoles] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Hydrate initial state from local cache for instant display
+  const cachedAuth = localSessionStorage.loadAuthSession();
+
+  const [user, setUser] = useState<User | null>(cachedAuth?.user ?? null);
+  const [session, setSession] = useState<Session | null>(cachedAuth?.session ?? null);
+  const [profile, setProfile] = useState<any>(cachedAuth?.profile ?? null);
+  const [userRoles, setUserRoles] = useState<string[]>(cachedAuth?.userRoles ?? []);
+  const [isLoading, setIsLoading] = useState(!cachedAuth); // Skip loading spinner if cached
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -118,6 +123,13 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
       subscription.unsubscribe();
     };
   }, []); // No dependencies to prevent re-runs
+
+  // Persist auth state to local storage whenever it changes
+  useEffect(() => {
+    if (user && session) {
+      localSessionStorage.saveAuthSession({ user, session, profile, userRoles });
+    }
+  }, [user, session, profile, userRoles]);
 
   // Force loading to complete after 10 seconds to prevent infinite loading
   useEffect(() => {
@@ -264,6 +276,8 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
 
     try {
+      // Clear all local session data first
+      localSessionStorage.clearAll();
       // Use AuthStateManager for secure sign out with proper cleanup
       await AuthStateManager.secureSignOut();
       console.log('✅ Secure sign out completed');

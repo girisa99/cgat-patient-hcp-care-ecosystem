@@ -265,6 +265,7 @@ const GenieMind: React.FC = () => {
                       const { error } = await (await import('@/integrations/supabase/client')).supabase
                         .from('generated_media')
                         .insert({
+                          user_id: user.id,
                           name,
                           file_type: 'audio',
                           file_url: url,
