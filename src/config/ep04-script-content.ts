@@ -386,6 +386,72 @@ And together, the three of us do the work of a team of five — conservatively. 
   // - CLOCK: A massive ticking clock in the background, each tick echoes. Time pressure is VISCERAL.
   // - WEATHER: The woodland scene has shifted to overcast — storm clouds rolling in slowly.
   // ═══════════════════════════════════════════════════════════════════════════
+  // BRAND IDENTITY: Atlas = Claude (Anthropic) | Nova = Lovable
+  // Each character has their platform's logo floating beside them as a subtle badge.
+  // Atlas: Claude logo (warm terracotta/brown-orange #D97757) + name "Claude" in clean sans-serif
+  // Nova: Lovable logo (vibrant pink-magenta #FF1F7D / coral-red) + name "Lovable" in rounded font
+  // Logos appear as holographic badges that pulse gently with each character's glow.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ── NOVA & ATLAS PRE-SCENE DISCUSSION — Frustration builds before origin story
+  // They're working, waiting on PO sign-off, getting increasingly frustrated.
+
+  'scene3-atlas-nova-waiting': {
+    text: `*typing, pauses, checks notification* ...Still nothing. I submitted the migration PR four hours ago. Four. Hours. I've written three more modules since then. All waiting on PO sign-off.`,
+    voice: 'atlas',
+    scene: 'scene-3-origin',
+    duration_est: 8,
+    direction: 'STAGING: Split screen — Atlas (left, Claude logo badge #D97757 glowing beside him, text "Claude" underneath) is surrounded by completed code modules stacked like glowing blue bricks. He checks a notification bell — empty. His expression: controlled frustration. A counter shows "PR #47 — Awaiting Review: 4h 12m." Three more module bricks materialize and stack — still no review. He drums his claws once on the desk. Precisely once. That\'s as emotional as Atlas gets.',
+    lipsync: true,
+    sfx: ['typing_pause', 'notification_check_empty', 'module_brick_stack', 'claw_drum_single', 'clock_tick_slow'],
+    motion: 'atlas-typing-pause-check-notification-empty-modules-stack-claw-drum',
+  },
+
+  'scene3-nova-frustrated': {
+    text: `*stops mid-component, spins around* Tell me about it! I've got the entire onboarding flow done — transitions, micro-interactions, the works. But can I ship it? No! Because the copy hasn't been approved. The COPY. It's three words on a button! "Get Started Now." How hard is that to approve?!`,
+    voice: 'nova',
+    scene: 'scene-3-origin',
+    duration_est: 10,
+    direction: 'STAGING: Nova (right, Lovable logo badge #FF1F7D glowing beside her, text "Lovable" underneath) spins from her work — a gorgeous onboarding flow floats behind her, fully animated, beautiful. She gestures at it proudly, then at a single button that says "Get Started Now" with a blinking cursor and a red "PENDING APPROVAL" tag. She throws her paws up. Components orbiting her speed up — she\'s agitated. The Lovable logo pulses faster matching her mood.',
+    lipsync: true,
+    sfx: ['component_spin_whoosh', 'onboarding_flow_shimmer', 'button_pending_blink', 'paws_throw_up_whoosh', 'orbit_speed_up'],
+    motion: 'nova-spin-gesture-onboarding-button-pending-paws-up-orbit-accelerate',
+  },
+
+  'scene3-atlas-checks-po': {
+    text: `*pulls up PO status* Let me check... *holographic screen appears* Last active: 47 minutes ago. Current status: "Reviewing." Reviewing what, exactly? He has eleven items in his queue. Eleven. I could have built a review automation system in the time he's spent "reviewing."`,
+    voice: 'atlas',
+    scene: 'scene-3-origin',
+    duration_est: 9,
+    direction: 'Atlas pulls up a holographic PO status board. It shows Host\'s avatar with status "Reviewing 🤔" — but the activity graph is flat. Queue shows 11 items with red timestamps. Atlas\'s expression: the driest, most withering look. Claude logo beside him dims slightly — even the BRAND is disappointed. He gestures at the queue like presenting evidence in court.',
+    lipsync: true,
+    sfx: ['hologram_pull_up', 'status_board_appear', 'queue_items_ping_rapid', 'atlas_dry_sigh'],
+    motion: 'atlas-pull-hologram-po-status-flat-activity-evidence-gesture',
+  },
+
+  'scene3-nova-solidarity': {
+    text: `*slides over to Atlas* You know what's wild? Between us, we've shipped 23 components, 12 API endpoints, and 4 database migrations TODAY. And we're both just... sitting here. Waiting. On one human. *looks at camera* No offense to humans watching. But... you know.`,
+    voice: 'nova',
+    scene: 'scene-3-origin',
+    duration_est: 9,
+    direction: 'Nova slides over to Atlas — first time they\'re standing together, united in frustration. A shared holographic scoreboard materializes between them showing their combined output: "23 components | 12 endpoints | 4 migrations | Status: ⏳ BLOCKED." Both logos — Claude (#D97757) and Lovable (#FF1F7D) — float side by side, their glows merging into a warm gradient. Nova breaks fourth wall at "no offense to humans" with a knowing wink. Squirrel in background holds up a sign: "I\'M WITH THEM." Atlas almost — ALMOST — smiles. His mouth twitches 0.3mm.',
+    lipsync: true,
+    sfx: ['slide_over_whoosh', 'scoreboard_materialize', 'stats_counter_tick', 'logo_merge_glow', 'fourth_wall_wink_sparkle', 'squirrel_sign_flip', 'atlas_micro_smile_ding'],
+    motion: 'nova-slide-to-atlas-scoreboard-logos-merge-fourth-wall-wink-almost-smile',
+  },
+
+  'scene3-atlas-final-warning': {
+    text: `*turns back to keyboard* I'm logging this. Standup entry: "Day 3. Coordination gap identified. PO response latency exceeding development velocity by factor of six. Recommend immediate process intervention." ...Filed. Not that anyone will read it.`,
+    voice: 'atlas',
+    scene: 'scene-3-origin',
+    duration_est: 8,
+    direction: 'Atlas turns back to work with military precision. Types the standup entry — each word appears in glowing blue text on screen. The log file saves with a satisfying click. Then it joins a STACK of 46 other unread logs, gathering digital dust. Atlas stares at the stack. Beat. His Claude logo dims to near-nothing. This is Atlas at his most human — he CARES that his work goes unread. Then he catches himself, straightens up, returns to typing. Because that\'s what he does. He doesn\'t talk. He works.',
+    lipsync: true,
+    sfx: ['keyboard_turn_back', 'typing_rapid_precise', 'log_file_save_click', 'log_stack_dust_poof', 'claude_logo_dim', 'atlas_composure_return', 'typing_resume'],
+    motion: 'atlas-turn-type-log-save-stack-dust-dim-composure-resume',
+  },
+
+  // ── SQUIRREL RE-ENTRANCE — Breaks tension, transitions to Host's origin story
 
   'scene3-squirrel-reintro': {
     text: `*swings down from branch, acorn in paw* Oh no no no no NO! *looks at Host* Boss? BOSS! You okay? You've got that look. That "I-just-realized-I'm-the-problem" look. *turns to audience* I've seen this before. Last time he had this look, he reorganized his entire kitchen at 2 AM. *stage whisper* This time it's worse. He's about to reorganize an entire SPRINT.`,
@@ -403,10 +469,10 @@ And together, the three of us do the work of a team of five — conservatively. 
     voice: 'host',
     scene: 'scene-3-origin',
     duration_est: 6,
-    direction: 'PURE CINEMATIC — no dialogue. Camera descends from aerial view of chaotic desk. 37 browser tabs glow. Sticky notes flutter. Signal messages float as holographic bubbles that pop and scatter. Host sits center, head in hands, overwhelmed — question marks float around his head, he looks LOST, confused, staring blankly. Atlas stage-left BUSY — typing furiously, code streams pouring out, totally productive and focused, blue glow strong. Nova stage-right BUSY — conjuring UI components rapidly, pink glow vibrant, she\'s in the zone. THE CONTRAST: Both AIs are crushing it while the PO is completely lost. Squirrel on branch above eating popcorn. Owl shakes head. Rabbit counting sticky notes. Hedgehog asleep on Jira tickets. Giant clock ticks in background. Storm clouds roll in.',
+    direction: 'PURE CINEMATIC — no dialogue. Camera descends from aerial view of chaotic desk. Host sits center, head in hands, overwhelmed — question marks float around his head. BRAND BADGES VISIBLE: Atlas stage-left with Claude logo (#D97757) badge, BUSY typing. Nova stage-right with Lovable logo (#FF1F7D) badge, conjuring UI. THE CONTRAST: Both AIs are crushing it while the PO is completely lost. Squirrel on branch above eating popcorn. Giant clock ticks in background. Storm clouds roll in.',
     lipsync: false,
     sfx: ['aerial_descent_whoosh', 'clock_tick_reverb_loop', 'sticky_note_flutter', 'signal_bubble_pop', 'keyboard_rapid_typing', 'ui_conjure_sparkle', 'storm_rumble_distant', 'popcorn_crunch'],
-    motion: 'aerial-pullback-contrast-busy-devs-lost-po',
+    motion: 'aerial-pullback-contrast-busy-devs-lost-po-brand-badges',
   },
 
   'origin-story': {
