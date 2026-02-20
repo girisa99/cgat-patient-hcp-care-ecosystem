@@ -330,7 +330,7 @@ export default function EP04Production() {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get('projectId');
   const scriptKeys = Object.keys(EP04_SCRIPT_CONTENT);
-  const { saveProjectContent, loadProjectContent, updateLineTTS, isSaving, isLoading: isLoadingContent } = useCastProjectPersistence();
+  const { saveProjectContent, loadProjectContent, updateLineTTS, trackGenerationJob, completeGenerationJob, fetchTokenBreakdown, tokenBreakdown, isSaving, isLoading: isLoadingContent } = useCastProjectPersistence();
 
   // State
   const [audioMap, setAudioMap] = useState<Record<string, GeneratedAudio>>({});
@@ -374,6 +374,12 @@ export default function EP04Production() {
       setContentLoaded(true);
     })();
   }, [projectId, contentLoaded, loadProjectContent]);
+
+  // ─── Load token breakdown on mount ──────────────────────────────────────
+
+  useEffect(() => {
+    if (projectId) fetchTokenBreakdown(projectId);
+  }, [projectId, fetchTokenBreakdown]);
 
   // ─── Load screenshots from Supabase storage (auto-captured by MultiScreenshotGallery) ──
 
@@ -428,6 +434,20 @@ export default function EP04Production() {
     setStatusMap(prev => ({ ...prev, [key]: 'generating' }));
     const voiceConfig = getVoiceConfig(line.voice);
 
+    // Track generation job for per-step cost breakdown
+    let jobId: string | null = null;
+    if (projectId) {
+      const estimatedTokens = Math.ceil(line.text.length / 4); // rough char→token estimate
+      jobId = await trackGenerationJob({
+        projectId,
+        jobType: 'tts',
+        sceneKey: line.scene,
+        lineKey: key,
+        provider: voiceConfig.provider,
+        estimatedTokens,
+      });
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
@@ -450,9 +470,9 @@ export default function EP04Production() {
       if (!data?.audioContent && !data?.audioUrl) throw new Error('No audio returned');
 
       const audioUrl = data.audioUrl || `data:audio/mpeg;base64,${data.audioContent}`;
-
       const resolvedProvider = data.provider || voiceConfig.provider;
       const resolvedVoice = data.voice || voiceConfig.voiceId;
+      const actualTokens = data.tokensUsed || Math.ceil(line.text.length / 4);
 
       setAudioMap(prev => ({
         ...prev,
@@ -460,7 +480,7 @@ export default function EP04Production() {
       }));
       setStatusMap(prev => ({ ...prev, [key]: 'done' }));
 
-      // Auto-persist TTS result to DB
+      // Auto-persist TTS result + complete job tracking
       if (projectId) {
         updateLineTTS(projectId, key, {
           tts_audio_url: audioUrl,
@@ -468,6 +488,9 @@ export default function EP04Production() {
           tts_voice_id: resolvedVoice,
           tts_status: 'generated',
         });
+        if (jobId) {
+          completeGenerationJob(jobId, actualTokens, audioUrl);
+        }
       }
       return true;
     } catch (err: any) {
@@ -475,7 +498,7 @@ export default function EP04Production() {
       setStatusMap(prev => ({ ...prev, [key]: 'error' }));
       return false;
     }
-  }, []);
+  }, [projectId, trackGenerationJob, completeGenerationJob, updateLineTTS]);
 
   // ─── Batch generate all ──────────────────────────────────────────────────
 
@@ -694,6 +717,11 @@ export default function EP04Production() {
               <h1 className="text-xl font-bold">The Genie AI Podcast — Episode 2</h1>
               <p className="text-sm text-muted-foreground">
                 Beyond AI Hype · Host: Sai Dasika · with Allaudin · {doneCount}/{scriptKeys.length} lines · ~{Math.round(totalDuration / 60)}min
+                {tokenBreakdown && tokenBreakdown.total.actual > 0 && (
+                  <span className="ml-2 text-primary">
+                    · {tokenBreakdown.tts.jobCount} TTS jobs · {tokenBreakdown.total.actual.toLocaleString()} tokens · ${tokenBreakdown.total.costUsd.toFixed(4)}
+                  </span>
+                )}
               </p>
             </div>
           </div>
