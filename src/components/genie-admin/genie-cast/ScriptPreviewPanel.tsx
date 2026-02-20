@@ -81,33 +81,14 @@ const TTS_PROVIDERS = {
   'alibaba-qwen3-tts': { name: 'Qwen3-TTS (China)', region: 'china', quality: 'premium' },
 } as const;
 
-// Voice options per provider
-const VOICE_OPTIONS = {
-  'elevenlabs': [
-    { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George (UK Male)' },
-    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah (US Female)' },
-    { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel (US Male)' },
-  ],
-  'azure': [
-    { id: 'en-US-JennyNeural', name: 'Jenny (US Female)' },
-    { id: 'en-US-GuyNeural', name: 'Guy (US Male)' },
-    { id: 'en-GB-SoniaNeural', name: 'Sonia (UK Female)' },
-  ],
-  'google': [
-    { id: 'en-US-Neural2-D', name: 'David (US Male)' },
-    { id: 'en-US-Neural2-C', name: 'Claire (US Female)' },
-  ],
-  'alibaba': [
-    { id: 'longxiaochun', name: 'Xiaochun (Chinese Female)' },
-    { id: 'longxiaoxia', name: 'Xiaoxia (Chinese Female)' },
-    { id: 'longyue', name: 'Yue (Japanese Female)' },
-    { id: 'longfei', name: 'Fei (Korean Female)' },
-  ],
-  'alibaba-qwen3-tts': [
-    { id: 'qwen3-tts-flash', name: 'Qwen3-TTS Flash (CJK)' },
-    { id: 'qwen3-tts-pro', name: 'Qwen3-TTS Pro (Premium)' },
-  ],
-};
+// Voice options imported from shared voice catalog (single source of truth)
+import { VOICE_CATALOG } from '@/config/voice-catalog';
+const VOICE_OPTIONS: Record<string, Array<{ id: string; name: string }>> = Object.fromEntries(
+  Object.entries(VOICE_CATALOG).map(([provider, voices]) => [
+    provider,
+    voices.map(v => ({ id: v.id, name: `${v.name} (${v.style})` })),
+  ])
+);
 
 // Default chapter templates - dynamically built from Content Pool products when available
 // These serve as a fallback structure; actual product names come from the DB
