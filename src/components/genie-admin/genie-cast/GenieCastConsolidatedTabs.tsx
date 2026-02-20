@@ -528,6 +528,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               const intentValue = restored.selectedIntent || (project as any).content_type || 'video';
               castSession.updateSession({ ...restored, projectId: project.id, selectedIntent: intentValue });
               setActiveContentType((project as any).content_type || 'video');
+              
+              // Restore category/format/sub-format selections from DB
+              if ((restored as any)._categoryId) setSelectedCategoryId((restored as any)._categoryId);
+              if ((restored as any)._formatId) setSelectedFormatId((restored as any)._formatId);
+              if ((restored as any)._subFormatId) setSelectedSubFormatId((restored as any)._subFormatId);
+              
               // Navigate to templates tab so user can see the project content
               setActiveMainTab('create');
               setSubTab('create', 'templates');
@@ -687,11 +693,19 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   setSelectedCategoryId(cat.id);
                   setSelectedFormatId(null);
                   setSelectedSubFormatId(null);
+                  // Persist to DB if project exists
+                  if (castSession.session.projectId) {
+                    castProjects.updateProject(castSession.session.projectId, { category_id: cat.id, format_id: null, sub_format_id: null } as any).catch(() => {});
+                  }
                 }}
                 onFormatSelect={(fmt) => {
                   setSelectedFormatId(fmt.id);
                   setSelectedSubFormatId(null);
                   setActiveContentType(fmt.name);
+                  // Persist to DB
+                  if (castSession.session.projectId) {
+                    castProjects.updateProject(castSession.session.projectId, { format_id: fmt.id, sub_format_id: null } as any).catch(() => {});
+                  }
                   // Check if sub-formats exist for this format — if not, advance
                   const subs = contentRegistry.getSubFormatsForFormat(fmt.id);
                   if (subs.length === 0) {
@@ -703,7 +717,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 }}
                 onSubFormatSelect={(sf) => {
                   setSelectedSubFormatId(sf.id);
-                  // After sub-format selection, advance to messaging or templates
+                  // Persist to DB
+                  if (castSession.session.projectId) {
+                    castProjects.updateProject(castSession.session.projectId, { sub_format_id: sf.id } as any).catch(() => {});
+                  }
+                  // After sub-format selection, advance to templates
                   const needsMessaging = contentRegistry.requiresMessaging(selectedFormatId || '', selectedCategoryId || undefined);
                   castSession.selectIntent((sf.name || selectedFormatId) as any);
                   setSubTab('create', 'templates');

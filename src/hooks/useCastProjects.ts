@@ -283,7 +283,7 @@ export function useCastProjects() {
 
   const restoreToSession = async (
     projectId: string,
-  ): Promise<Partial<GenieCastSessionState> | null> => {
+  ): Promise<(Partial<GenieCastSessionState> & { _categoryId?: string | null; _formatId?: string | null; _subFormatId?: string | null }) | null> => {
     try {
       const { data: project, error: fetchErr } = await untypedSupabase
         .from('cast_projects')
@@ -314,6 +314,10 @@ export function useCastProjects() {
         selectedDialects: p.selected_dialects || ['en-US'],
         currentStage: p.current_stage as any,
         completedStages: (p.completed_stages || []) as any,
+        // Pass category/format/sub-format IDs for UI restoration
+        _categoryId: (p as any).category_id ?? null,
+        _formatId: (p as any).format_id ?? null,
+        _subFormatId: (p as any).sub_format_id ?? null,
       };
     } catch (err: any) {
       console.error('[useCastProjects] Error restoring session:', err);
