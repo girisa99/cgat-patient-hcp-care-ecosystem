@@ -67,9 +67,9 @@ export function getEP04PipelineStepCount(): number {
 function buildEP04Template(): SelectedTemplate {
   const totalDuration = getEP04TotalDuration();
   return {
-    id: 'ep04-beyond-ai-hype',
-    name: 'Beyond AI Hype — Episode 4',
-    category: 'brand-documentary',
+    id: 'cafcd78a-7957-4021-ba8f-c20daba331b2', // Real DB blueprint ID
+    name: 'EP04 — Beyond AI Hype',
+    category: 'technology',
     sceneCount: SCENE_IDS.length,
     estimatedDuration: totalDuration,
     styleIntent: 'product-hero',
@@ -175,8 +175,8 @@ function buildEP04TemplateMapping(): TemplateMapping {
   });
 
   return {
-    templateId: 'ep04-beyond-ai-hype',
-    templateName: 'Beyond AI Hype — Episode 4',
+    templateId: 'cafcd78a-7957-4021-ba8f-c20daba331b2',
+    templateName: 'EP04 — Beyond AI Hype',
     scenes,
     totalDuration: getEP04TotalDuration(),
     styleIntent: 'product-hero',
@@ -199,7 +199,7 @@ export function createEP04SessionSeed(): Partial<GenieCastSessionState> {
   return {
     // Product & intent
     selectedProductId: null, // Will be resolved by GenieCast's auto-select
-    selectedIntent: 'brand-documentary',
+    selectedIntent: 'video', // Maps to cast_content_formats.name = 'video'
     detectedRegion: 'en',
     selectedRegion: 'en',
 

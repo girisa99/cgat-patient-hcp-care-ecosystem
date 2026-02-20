@@ -595,6 +595,39 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               toast.success(`📊 Project created — token tracking active`);
             }
 
+            // ═══ MAP EP04 TO ALL 7 CREATE STEPS (local UI state) ═══
+            // Step 1: Category → Technology
+            const techCategory = contentRegistry.categories.find(c => c.name === 'technology');
+            if (techCategory) setSelectedCategoryId(techCategory.id);
+            // Step 2: Format → Video
+            const videoFormat = contentRegistry.formats.find(f => f.name === 'video');
+            if (videoFormat) {
+              setSelectedFormatId(videoFormat.id);
+              setActiveContentType(videoFormat.name);
+            }
+            // Step 4: Platform → YouTube, Language → en-US
+            setPrimaryPlatform('youtube');
+            setOutputLanguages(['en']);
+            setSelectedDialectCodes(['en-US']);
+            // Step 5: Visual Style → Cinematic
+            const cinematicStyle = contentRegistry.visualStyles.find(s => s.name === 'cinematic');
+            if (cinematicStyle) setSelectedVisualStyleId(cinematicStyle.id);
+            // Step 5: Capabilities → avatar, lip_sync, scene_voiceover, screen_recording
+            const ep04Caps = ['avatar_talking_head', 'lip_sync', 'scene_voiceover', 'screen_recording', 'text_to_video'];
+            const matchedCapIds = contentRegistry.productionCapabilities
+              .filter(c => ep04Caps.includes(c.name))
+              .map(c => c.id);
+            if (matchedCapIds.length > 0) setSelectedCapabilityIds(matchedCapIds);
+            // Step 5: Asset Source → screen_capture (EP04 uses dashboard screenshots)
+            setSelectedAssetSource('screen_capture');
+            // Step 5: Lip-sync ON, Dubbing OFF (single language)
+            setLipSyncEnabled(true);
+            setDubbingEnabled(false);
+            // Resolution & Quality
+            setSelectedResolution('1920x1080');
+            setSelectedAspectRatio('16:9');
+            setProductionQuality('cinematic');
+
             // Step D: Resolve screen capture assets from storage
             if (seed.templateMapping) {
               const { mapping, stats: screenStats } = await enrichWithScreenAssets(seed.templateMapping);
@@ -607,9 +640,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               }
             }
 
-            // Stay on CREATE tab to show loaded scenes/messaging
+            // Navigate to CREATE → configure to show all pre-populated steps
             setActiveMainTab('create');
-            setSubTab('create', 'templates');
+            setSubTab('create', 'configure');
           }}
         >
           <Film className="w-3.5 h-3.5" />
