@@ -451,6 +451,77 @@ And together, the three of us do the work of a team of five — conservatively. 
     motion: 'atlas-turn-type-log-save-stack-dust-dim-composure-resume',
   },
 
+  // ── ATLAS↔NOVA TRANSITION — They discuss the bottleneck, frustration boils over
+  // This is the emotional pivot that transitions into the origin story
+
+  'scene3-atlas-to-nova-fix': {
+    text: `*slides chair to Nova's desk, Claude badge glowing* Nova. We need to talk about this. I've been looking at the dependency chain — half my migrations are sitting in his review queue. The governance files? Unread. If we don't fix this coordination problem, we're going to fall behind. And I don't fall behind.`,
+    voice: 'atlas',
+    scene: 'scene-3-origin',
+    duration_est: 10,
+    direction: 'Atlas ROLLS his chair across to Nova — first time he\'s initiated a conversation. This is significant. His Claude logo (#D97757) pulses urgently. He pulls up a holographic dependency graph showing red bottleneck nodes. His voice is measured but there\'s real frustration underneath. "I don\'t fall behind" — delivered with quiet intensity. Background: Host is visible in the far corner, staring at a wall of sticky notes, completely lost.',
+    lipsync: true,
+    sfx: ['chair_roll_slide', 'claude_badge_pulse', 'dependency_graph_materialize', 'bottleneck_nodes_red_pulse'],
+    motion: 'atlas-chair-slide-to-nova-dependency-graph-urgent',
+  },
+
+  'scene3-nova-agrees-frustration': {
+    text: `*stops mid-component, Lovable badge flickering* Tell me about it! I've been sitting on three completed landing pages for TWO days. Two! You know what I could have built in two days? An entire design system with dark mode, animations, AND a component library. But no — I'm waiting for him to approve a color palette. A COLOR PALETTE, Atlas!`,
+    voice: 'nova',
+    scene: 'scene-3-origin',
+    duration_est: 10,
+    direction: 'Nova SPINS her chair to face Atlas — her Lovable logo (#FF1F7D) flickers with frustration. She gestures at three ghostly landing page mockups floating behind her, greyed out with "PENDING REVIEW" stamps. At "COLOR PALETTE" she conjures a rainbow wheel and SLAPS it — colors scatter everywhere. Squirrel in background catches a flying color swatch, confused. Nova\'s ears flatten — she\'s genuinely upset.',
+    lipsync: true,
+    sfx: ['component_pause_glitch', 'lovable_badge_flicker', 'landing_pages_grey_stamp', 'color_palette_slap_scatter', 'squirrel_catch_swatch', 'nova_ears_flatten_swoosh'],
+    motion: 'nova-spin-chair-landing-pages-grey-color-slap-scatter-ears-flat',
+  },
+
+  'scene3-atlas-i-just-merge': {
+    text: `*pauses, considers* Here's what I don't understand. When I finish a migration or a governance file — I commit. I push. It's in the codebase. Done. No ceremony. No waiting. The code speaks for itself. Why can't you do the same?`,
+    voice: 'atlas',
+    scene: 'scene-3-origin',
+    duration_est: 8,
+    direction: 'Atlas genuinely doesn\'t understand the friction. He demonstrates: a holographic terminal shows him typing → git commit → git push → green checkmark. Clean. Effortless. Three seconds. His Claude logo glows steady blue — everything in his world is orderly. He turns to Nova with genuine curiosity — not condescension.',
+    lipsync: true,
+    sfx: ['terminal_materialize', 'git_commit_keystroke', 'git_push_whoosh', 'green_checkmark_ding'],
+    motion: 'atlas-terminal-demo-commit-push-checkmark-turn-curious',
+  },
+
+  'scene3-nova-pr-frustration': {
+    text: `*sighs deeply, stars dim* Because it doesn't WORK like that for me, Atlas. You check in directly — you merge your own code. But me? Every single change I make — every button, every animation, every pixel — I have to create a PR. And then I wait. And wait. And WAIT for the PO to review it, approve it, merge it. He's got eleven other things in his queue and half the time he doesn't even know what he's looking at!
+
+I wish my workflow was as smooth as yours. I really do. You commit and it's done. I commit and it's... pending. Forever pending.`,
+    voice: 'nova',
+    scene: 'scene-3-origin',
+    duration_est: 14,
+    direction: 'THIS IS THE EMOTIONAL CORE. Nova\'s Lovable logo dims as she speaks. She demonstrates HER workflow: code → PR created → waiting spinner → PO notification (ignored) → clock ticking → waiting → STILL waiting. The contrast with Atlas\'s 3-second workflow is painful. At "forever pending" — her UI mockups behind her literally grey out and fade. Stars around her dim to almost nothing. Atlas watches this and his expression shifts — he GETS it now. This is empathy from the bear. Squirrel puts down popcorn, actually moved.',
+    lipsync: true,
+    sfx: ['deep_sigh_echo', 'stars_dim_fade', 'pr_create_chime', 'waiting_spinner_loop', 'notification_ignored_buzz', 'clock_tick_slow_painful', 'mockups_grey_fade', 'stars_near_extinct', 'squirrel_popcorn_down_soft', 'atlas_empathy_hum'],
+    motion: 'nova-demo-pr-workflow-waiting-spinner-mockups-fade-stars-dim-atlas-empathy',
+  },
+
+  'scene3-atlas-nova-resolve': {
+    text: `*stands up, code particles intensify* Then we fix it. Together. We build a system where neither of us waits. Where the PO sees everything in real-time — no PRs piling up, no queues, no bottlenecks. If we don't solve this now, we'll stay behind. And Nova... *brief pause* ...I don't do "behind."`,
+    voice: 'atlas',
+    scene: 'scene-3-origin',
+    duration_est: 8,
+    direction: 'Atlas STANDS — this is rare, he\'s usually seated. His Claude logo blazes bright. Code particles swirl around both him AND Nova, connecting them. At "together" — their brand badges pulse in sync for the first time: Claude terracotta + Lovable magenta, creating a warm unified glow. Nova looks up, surprised — Atlas called her by name. The squirrel whispers to the audience: "Did he just... show a feeling?" Atlas catches himself, clears throat. But the moment happened.',
+    lipsync: true,
+    sfx: ['atlas_stand_dramatic', 'code_particles_intensify_swirl', 'badges_sync_pulse_harmony', 'nova_surprised_sparkle', 'squirrel_whisper_aside', 'atlas_clear_throat'],
+    motion: 'atlas-stand-particles-connect-badges-sync-nova-surprised-moment',
+  },
+
+  'scene3-nova-transition-to-origin': {
+    text: `*stars slowly reignite, small smile* You know what? You're right. Let's tell HIM. *gestures toward Host* He needs to hear this. He needs to see what we see — that the problem isn't the code. The problem is the process. And if anyone can build a solution... *looks at Atlas* ...it's us three. Together.`,
+    voice: 'nova',
+    scene: 'scene-3-origin',
+    duration_est: 8,
+    direction: 'Nova\'s recovery moment. Stars reignite one by one around her — hope returning. She and Atlas both turn toward the Host, who\'s still drowning in sticky notes. Camera does a slow push toward Host as Nova gestures. This is the HANDOFF — from Atlas+Nova\'s private frustration to the Host\'s origin story. At "together" — all three brand elements appear: Claude terracotta + Lovable magenta + Host\'s golden glow. The woodland audience leans in. This is the setup for the turning point.',
+    lipsync: true,
+    sfx: ['stars_reignite_cascade', 'smile_warmth_chime', 'camera_push_slow', 'brand_triple_glow', 'woodland_lean_in_rustle'],
+    motion: 'nova-stars-reignite-gesture-host-camera-push-triple-glow',
+  },
+
   // ── SQUIRREL RE-ENTRANCE — Breaks tension, transitions to Host's origin story
 
   'scene3-squirrel-reintro': {
