@@ -28,6 +28,14 @@ import {
   type TaskScenario,
   type ProviderRecommendation 
 } from '@/hooks/useContextualAIProviders';
+import {
+  getTranscreationProfile,
+  getTranscreationTraits,
+  getTranscreationDirectionPrompt,
+  getMultiRegionProfiles,
+  getAllAvailableRegions,
+  isValidTranscreationRegion,
+} from '@/services/regionalTranscreationService';
 import { useEcosystemRouting } from '@/hooks/useEcosystemRouting';
 import type {
   AICapability,
@@ -479,30 +487,12 @@ export function useUniversalAIHub(options: UseUniversalAIHubOptions = {}) {
 
     // Transcreation (NEW — wired to Regional Transcreation Service)
     transcreation: {
-      getProfile: (regionCode: string) => {
-        const { getTranscreationProfile } = require('@/services/regionalTranscreationService');
-        return getTranscreationProfile(regionCode);
-      },
-      getTraits: (regionCode: string) => {
-        const { getTranscreationTraits } = require('@/services/regionalTranscreationService');
-        return getTranscreationTraits(regionCode);
-      },
-      getDirectionPrompt: (regionCode: string, tone: string) => {
-        const { getTranscreationDirectionPrompt } = require('@/services/regionalTranscreationService');
-        return getTranscreationDirectionPrompt(regionCode, tone, product);
-      },
-      getMultiRegionProfiles: (regionCodes: string[]) => {
-        const { getMultiRegionProfiles } = require('@/services/regionalTranscreationService');
-        return getMultiRegionProfiles(regionCodes);
-      },
-      getAllRegions: () => {
-        const { getAllAvailableRegions } = require('@/services/regionalTranscreationService');
-        return getAllAvailableRegions();
-      },
-      isValidRegion: (regionCode: string) => {
-        const { isValidTranscreationRegion } = require('@/services/regionalTranscreationService');
-        return isValidTranscreationRegion(regionCode);
-      },
+      getProfile: (regionCode: string) => getTranscreationProfile(regionCode),
+      getTraits: (regionCode: string) => getTranscreationTraits(regionCode),
+      getDirectionPrompt: (regionCode: string, tone: string) => getTranscreationDirectionPrompt(regionCode, tone as any, product as any),
+      getMultiRegionProfiles: (regionCodes: string[]) => getMultiRegionProfiles(regionCodes),
+      getAllRegions: () => getAllAvailableRegions(),
+      isValidRegion: (regionCode: string) => isValidTranscreationRegion(regionCode),
     },
   };
 }

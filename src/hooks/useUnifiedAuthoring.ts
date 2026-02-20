@@ -15,6 +15,12 @@
  import { toast } from 'sonner';
  import { styleIntentResolver, type StyleIntent, type RegionZone } from '@/services/styleIntentResolver';
  import { REGIONAL_CONFIG } from '@/components/shared/RegionalDialectSelector';
+ import {
+   getTranscreationTraits,
+   getTranscreationProfile,
+   getTranscreationDirectionPrompt,
+   getAllAvailableRegions,
+ } from '@/services/regionalTranscreationService';
  
  // ============================================
  // TYPES - All configurable, no hardcoding
@@ -612,27 +618,15 @@
      regionalConfig: REGIONAL_CONFIG,
 
      // Transcreation (NEW — wired to Universal Script Schema)
-     transcreation: {
+      transcreation: {
        /** Get cultural traits for a region */
-       getTraits: (regionCode: string) => {
-         const { getTranscreationTraits } = require('@/services/regionalTranscreationService');
-         return getTranscreationTraits(regionCode);
-       },
+       getTraits: (regionCode: string) => getTranscreationTraits(regionCode),
        /** Get full transcreation profile for a region */
-       getProfile: (regionCode: string) => {
-         const { getTranscreationProfile } = require('@/services/regionalTranscreationService');
-         return getTranscreationProfile(regionCode);
-       },
+       getProfile: (regionCode: string) => getTranscreationProfile(regionCode),
        /** Get direction prompt enriched with cultural context */
-       getDirectionPrompt: (regionCode: string, tone: string) => {
-         const { getTranscreationDirectionPrompt } = require('@/services/regionalTranscreationService');
-         return getTranscreationDirectionPrompt(regionCode, tone as any, productContext as any);
-       },
+       getDirectionPrompt: (regionCode: string, tone: string) => getTranscreationDirectionPrompt(regionCode, tone as any, productContext as any),
        /** Get all available regions for picker UI */
-       getAvailableRegions: () => {
-         const { getAllAvailableRegions } = require('@/services/regionalTranscreationService');
-         return getAllAvailableRegions();
-       },
+       getAvailableRegions: () => getAllAvailableRegions(),
      },
    };
  }
