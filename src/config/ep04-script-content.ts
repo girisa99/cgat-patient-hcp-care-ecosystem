@@ -373,7 +373,30 @@ And together, the three of us do the work of a team of five — conservatively. 
   // SCENE 3: THE ORIGIN — WHY WE BUILT THE SPRINT TRACKER (5:00–6:30)
   // VISUAL: Dramatic recreation of the "Day 2 bottleneck" moment. Sprint board
   // with tasks piling up. Host character overwhelmed. Clock ticking.
+  // CINEMATIC STAGING:
+  // - Scene opens: Aerial pullback from a desk COVERED in sticky notes, open tabs (37 browser tabs),
+  //   receipts, Signal messages floating as holographic bubbles. Host sits center, head in hands.
+  // - Atlas stands stage-left, arms folded, a single holographic log file floating beside him — unread.
+  //   His blue glow is dim — frustrated. Code particles drift slowly, scattered, purposeless.
+  // - Nova is stage-right, frozen mid-animation on a hero CTA button. A giant red "BLOCKED" stamp
+  //   appears over her work. Her pink glow flickers like a broken neon sign. Components orbit her
+  //   but they're greyed out, lifeless.
+  // - Background: Squirrel on a branch above, eating popcorn, watching the chaos. Owl shakes head slowly.
+  //   Rabbit is literally counting scattered sticky notes. Hedgehog has fallen asleep on a pile of Jira tickets.
+  // - CLOCK: A massive ticking clock in the background, each tick echoes. Time pressure is VISCERAL.
+  // - WEATHER: The woodland scene has shifted to overcast — storm clouds rolling in slowly.
   // ═══════════════════════════════════════════════════════════════════════════
+
+  'scene3-staging-open': {
+    text: '',
+    voice: 'host',
+    scene: 'scene-3-origin',
+    duration_est: 6,
+    direction: 'PURE CINEMATIC — no dialogue. Camera descends from aerial view of chaotic desk. 37 browser tabs glow. Sticky notes flutter. Signal messages float as holographic bubbles that pop and scatter. Host sits center, head in hands, overwhelmed. Atlas stage-left with dim blue glow, arms folded, a single unread log floating beside him. Nova stage-right, frozen on a CTA button with giant red "BLOCKED" stamp — her pink glow flickers like broken neon. Components orbit her greyed out. Squirrel on branch above eating popcorn. Owl shakes head. Rabbit counting sticky notes. Hedgehog asleep on Jira tickets. Giant clock ticks in background. Storm clouds roll in. Each clock tick reverberates.',
+    lipsync: false,
+    sfx: ['aerial_descent_whoosh', 'clock_tick_reverb_loop', 'sticky_note_flutter', 'signal_bubble_pop', 'neon_flicker_buzz', 'storm_rumble_distant', 'popcorn_crunch'],
+    motion: 'aerial-pullback-chaos-desk-reveal-host-head-in-hands',
+  },
 
   'origin-story': {
     text: `Three weeks into working with Atlas and Nova, I hit a wall.
@@ -388,7 +411,10 @@ I was the bottleneck. Me. The human. The one who's supposed to be in charge.`,
     voice: 'host',
     scene: 'scene-3-origin',
     duration_est: 45,
-    direction: 'Honest, vulnerable storytelling. Build the overwhelm gradually. Each tracking method gets more ridiculous. "Back of a receipt" is the punchline. The bottleneck confession should feel genuine — this is a founder admitting failure before showing the fix.',
+    direction: 'Honest, vulnerable storytelling. STAGING: Host lifts head slowly from hands — exhausted eyes. As he says "tracking in my head" — holographic sticky notes spawn around his head and multiply chaotically. At "note on my laptop" — laptop screen glitches. At "Signal" — a phone floats up showing a message-to-self. At "back of a receipt" — an actual receipt unfurls comically long, Squirrel grabs the end and tries to read it upside-down, confused. At "I was the bottleneck" — camera SNAP ZOOMS on Host face. All floating chaos FREEZES mid-air. Clock stops. Dead silence for 1.5 seconds. Then a single sticky note drifts down. Devastating.',
+    lipsync: true,
+    sfx: ['sticky_note_multiply_cascade', 'laptop_glitch_buzz', 'phone_float_chime', 'receipt_unfurl_paper', 'squirrel_confused_chirp', 'snap_zoom_impact', 'chaos_freeze_silence', 'single_note_drift'],
+    motion: 'host-head-lift-chaos-multiply-receipt-unfurl-snap-zoom-freeze',
   },
 
   'origin-atlas-observation': {
@@ -396,7 +422,10 @@ I was the bottleneck. Me. The human. The one who's supposed to be in charge.`,
     voice: 'atlas',
     scene: 'scene-3-origin',
     duration_est: 8,
-    direction: 'Dry observation. The irony is self-aware — he documented the problem in the system that didn\'t exist yet.',
+    direction: 'Dry observation — DEADPAN delivery. STAGING: Camera cuts to Atlas. He steps forward, one hand gesture — a holographic log file materializes. It\'s pristine, perfectly formatted, color-coded. Beautiful. Then it slowly fades to transparent — because nobody read it. Atlas watches it fade with the most subtle micro-expression of "I told you so." He doesn\'t blink. Squirrel in background holds up a sign: "HE DID WARN YOU." Owl nods solemnly. Atlas\'s blue code particles briefly form the words "LOG ENTRY #47" then scatter.',
+    lipsync: true,
+    sfx: ['hologram_log_materialize', 'log_fade_to_ghost', 'squirrel_sign_flip', 'owl_solemn_hoot', 'code_particles_scatter'],
+    motion: 'atlas-step-forward-log-materialize-fade-ghost-deadpan',
   },
 
   'origin-nova-blocked': {
@@ -404,7 +433,21 @@ I was the bottleneck. Me. The human. The one who's supposed to be in charge.`,
     voice: 'nova',
     scene: 'scene-3-origin',
     duration_est: 8,
-    direction: 'Not angry, just stating facts. "Six hours" is emphasized. "With animations and a confetti effect" is peak Nova — she\'s measuring opportunity cost in UI features.',
+    direction: 'STAGING: Nova breaks free from her frozen "BLOCKED" state with a dramatic shatter — red stamp explodes into fragments. She gestures wildly. At "six hours" — a giant holographic "6:00:00" timer appears and each digit BURNS with frustration-red. At "entire onboarding flow" — she speed-conjures a ghostly UI mockup in 2 seconds flat, proving her point. At "animations" — the mockup starts animating beautifully. At "confetti effect" — actual confetti EXPLODES from the mockup. Nova catches a piece, looks at it sadly, then it dissolves. The contrast between what she COULD have built vs being blocked — that\'s the emotion. Squirrel gets hit by confetti and tumbles off branch.',
+    lipsync: true,
+    sfx: ['blocked_stamp_shatter', 'timer_burn_sizzle', 'speed_conjure_whoosh', 'ui_animate_sparkle', 'confetti_explosion', 'confetti_dissolve_sad', 'squirrel_tumble_bonk'],
+    motion: 'nova-blocked-shatter-timer-burn-speed-build-confetti-explosion-dissolve',
+  },
+
+  'scene3-turning-point-beat': {
+    text: '',
+    voice: 'host',
+    scene: 'scene-3-origin',
+    duration_est: 4,
+    direction: 'PURE CINEMATIC BEAT — The storm clouds part. A single beam of light cuts through. Host stands up from the desk. Sticky notes fall away. The chaos around him SLOWS like bullet-time. Atlas and Nova both turn to look at Host. Atlas\'s blue glow intensifies. Nova\'s pink glow stabilizes — no more flickering. The clock in the background starts ticking BACKWARDS. Squirrel sits up straight, popcorn forgotten. Owl leans forward. This is THE MOMENT. Musical crescendo builds.',
+    lipsync: false,
+    sfx: ['storm_clouds_part', 'light_beam_breakthrough', 'chaos_slow_motion_whoosh', 'clock_reverse_tick', 'crescendo_build_orchestral'],
+    motion: 'host-stands-chaos-slows-light-breakthrough-clock-reverses',
   },
 
   'origin-decision': {
@@ -416,7 +459,10 @@ The tool that would govern our sprint — was built during the sprint. And hones
     voice: 'host',
     scene: 'scene-3-origin',
     duration_est: 30,
-    direction: 'Decision energy — the pivot moment. "Stop everything" should feel like a command. Build awe through the speed of execution. "847 lines" and "eighteen views" are the wow numbers. Last line is delivered like a thesis — let it breathe.',
+    direction: 'THE PIVOT. STAGING: At "stop everything" — Host SNAPS fingers. Everything freezes. Atlas\'s head tilts — he\'s listening. At "Atlas, stop everything" — Atlas cracks his knuckles. His blue glow SURGES. Code particles SWARM into formation like a military battalion. At "847 lines of SQL" — a massive holographic code waterfall cascades behind Atlas, each line glowing as it writes itself. Counter ticks up: 100... 300... 500... 847. Atlas doesn\'t break a sweat. At "Nova built the UI" — Nova LEAPS into action. Eighteen dashboard panels fly out from her paws like playing cards, each one landing perfectly in a grid. She conducts them like an orchestra — they light up one by one. At "built during the sprint" — camera pulls back to wide shot: the chaotic desk from the opening is now TRANSFORMED into a glowing command center. Storm has cleared. Stars visible. Squirrel is wearing a tiny hard hat. Owl is taking notes. Rabbit applauds. Hedgehog wakes up, blinks, impressed. Atlas and Nova stand on either side of the glowing dashboard, arms folded — satisfied. Fireflies spell out "BUILT IN ONE SPRINT." THAT is the origin story.',
+    lipsync: true,
+    sfx: ['finger_snap_echo', 'atlas_knuckle_crack', 'code_particles_swarm_formation', 'sql_waterfall_cascade', 'counter_tick_rapid', 'nova_leap_whoosh', 'dashboard_cards_deal', 'orchestra_conduct_chime', 'panels_light_sequence', 'desk_transform_magic', 'storm_clear_chime', 'squirrel_hard_hat_pop', 'rabbit_applause', 'hedgehog_wake_blink', 'firefly_spell_text'],
+    motion: 'host-snap-atlas-surge-sql-waterfall-nova-leap-cards-deal-desk-transform-stars-reveal',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
