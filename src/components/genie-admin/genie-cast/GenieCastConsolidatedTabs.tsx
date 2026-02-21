@@ -1382,7 +1382,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                                   </span>
                                   <span className="font-medium text-center leading-tight">{style.label}</span>
                                   {/* Size badge */}
-                                  <span className="text-[9px] text-muted-foreground">~{style.estimated_size_mb || 0}MB</span>
+                                  <span className="text-[9px] text-muted-foreground">~{style.estimated_size_mb || '?'}MB est.</span>
                                   {subStyles.length > 0 && (
                                     <ChevronDown className={cn(
                                       "w-3 h-3 transition-transform absolute top-1 right-1 text-muted-foreground",
@@ -1454,7 +1454,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                                   >
                                     <div className="flex items-center justify-between">
                                       <span className="font-medium">{sub.label}</span>
-                                      <span className="text-[9px] text-muted-foreground">~{sub.estimated_size_mb || 0}MB</span>
+                                      <span className="text-[9px] text-muted-foreground">~{sub.estimated_size_mb || '?'}MB est.</span>
                                     </div>
                                     {sub.description && (
                                       <span className="text-[10px] text-muted-foreground leading-tight line-clamp-2">{sub.description}</span>
