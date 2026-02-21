@@ -1,7 +1,13 @@
 /**
- * GENIE CAST HUB
- * Main wrapper for Genie Cast — StepWizard wraps existing consolidated tabs.
- * Wizard sidebar (desktop) / dots (mobile) navigate CREATE → PRODUCE → PUBLISH.
+ * GENIE CAST HUB — Redesigned 3-Column Liquid Glass Layout
+ * 
+ * Desktop: Left Modes Bar | Main Workspace | Guide Dock (Ori + Arc)
+ * Mobile: Compact horizontal mode bar + full workspace + sticky bottom nav
+ * 
+ * Architecture:
+ * - Zustand (useGuideStore) for global guide dock state
+ * - StepWizard for CREATE sub-step navigation
+ * - GuideDock for Ori + Arc character interactions
  */
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -9,15 +15,12 @@ import type { VideoStyleType } from './VideoStyleCards';
 import type { ProductGallery } from '../MultiScreenshotGallery';
 import { toast } from 'sonner';
 import { GenieCastConsolidatedTabs, type ConsolidatedTab } from './GenieCastConsolidatedTabs';
-import { StepWizardProvider, StepWizard, useStepWizard, type WizardStep } from '@/components/shared/step-wizard';
-import { Sparkles, Video, Share2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Globe } from 'lucide-react';
-
-// AI-generated step thumbnails
-import stepIntentThumb from '@/assets/wizard-icons/step-intent.png';
-import stepStyleThumb from '@/assets/wizard-icons/step-style.png';
-import stepReviewThumb from '@/assets/wizard-icons/step-review.png';
+import { GuideDock } from '@/components/shared/GuideDock';
+import { useGuideStore, GUIDE_CHARACTERS, type CastMode } from '@/stores/guideStore';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Video, Share2, Film } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Storage keys for persistence
 const STORAGE_KEY = 'genie_cast_hub_state';
@@ -34,66 +37,102 @@ const defaultStyles: VideoStyleType[] = [
   'product_demo',
 ];
 
-/** Maps wizard step index → consolidated tab key */
-const STEP_TO_TAB: ConsolidatedTab[] = ['create', 'produce', 'publish'];
-
-/**
- * Bridge component that syncs wizard step ↔ consolidated tabs.
- * Must be inside StepWizardProvider.
- */
-const WizardTabBridge: React.FC<{
-  selectedVideoStyles: VideoStyleType[];
-  onStylesChange: (styles: VideoStyleType[]) => void;
-  screenshotGalleries: ProductGallery[];
-  onGalleriesUpdated: (galleries: ProductGallery[]) => void;
-  totalScreenshots: number;
-  onGenerate: () => void;
-  isGenerating: boolean;
-  direction: 'ltr' | 'rtl';
-}> = ({
-  selectedVideoStyles,
-  onStylesChange,
-  screenshotGalleries,
-  onGalleriesUpdated,
-  totalScreenshots,
-  onGenerate,
-  isGenerating,
-  direction,
-}) => {
-  const { currentStep, goToStep } = useStepWizard();
-  const activeTab = STEP_TO_TAB[currentStep] || 'create';
-
-  // When the consolidated tabs want to change main tab, sync wizard
-  const handleMainTabChange = useCallback((tab: ConsolidatedTab) => {
-    const idx = STEP_TO_TAB.indexOf(tab);
-    if (idx >= 0 && idx !== currentStep) {
-      goToStep(idx);
-    }
-  }, [currentStep, goToStep]);
-
-  return (
-    <GenieCastConsolidatedTabs
-      selectedVideoStyles={selectedVideoStyles}
-      onStylesChange={onStylesChange}
-      screenshotGalleries={screenshotGalleries}
-      onGalleriesUpdated={onGalleriesUpdated}
-      totalScreenshots={totalScreenshots}
-      onGenerate={onGenerate}
-      isGenerating={isGenerating}
-      wizardMode
-      activeMainTabOverride={activeTab}
-      onMainTabChange={handleMainTabChange}
-      defaultTab="create"
-    />
-  );
+/** Maps mode to consolidated tab key */
+const MODE_TO_TAB: Record<CastMode, ConsolidatedTab> = {
+  create: 'create',
+  produce: 'produce',
+  publish: 'publish',
 };
 
+// ── Left Mode Bar ────────────────────────────────────────────────────────────
+
+const MODES: { id: CastMode; label: string; icon: React.ReactNode }[] = [
+  { id: 'create', label: 'Create', icon: <Sparkles className="w-5 h-5" /> },
+  { id: 'produce', label: 'Produce', icon: <Video className="w-5 h-5" /> },
+  { id: 'publish', label: 'Publish', icon: <Share2 className="w-5 h-5" /> },
+];
+
+const LeftModeBar: React.FC<{
+  activeMode: CastMode;
+  onModeChange: (mode: CastMode) => void;
+}> = ({ activeMode, onModeChange }) => (
+  <div className="w-[72px] flex-shrink-0 flex flex-col items-center py-6 gap-2 rounded-2xl backdrop-blur-xl bg-white/[0.02] border border-white/[0.06]"
+    style={{
+      boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+    }}
+  >
+    {/* Logo */}
+    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center mb-4">
+      <Film className="w-5 h-5 text-primary" />
+    </div>
+
+    {/* Mode buttons */}
+    {MODES.map((mode) => {
+      const isActive = activeMode === mode.id;
+      return (
+        <button
+          key={mode.id}
+          onClick={() => onModeChange(mode.id)}
+          className={cn(
+            'relative w-14 h-14 rounded-xl flex flex-col items-center justify-center gap-1 transition-all duration-300',
+            isActive
+              ? 'bg-white/[0.08] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]'
+              : 'text-muted-foreground hover:text-foreground/80 hover:bg-white/[0.04]',
+          )}
+        >
+          {mode.icon}
+          <span className="text-[10px] font-medium">{mode.label}</span>
+          
+          {/* Active indicator */}
+          {isActive && (
+            <motion.div
+              layoutId="activeModeBar"
+              className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb,99,102,241),0.5)]"
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+            />
+          )}
+        </button>
+      );
+    })}
+  </div>
+);
+
+// ── Mobile Mode Selector ─────────────────────────────────────────────────────
+
+const MobileModeSelector: React.FC<{
+  activeMode: CastMode;
+  onModeChange: (mode: CastMode) => void;
+}> = ({ activeMode, onModeChange }) => (
+  <div className="flex items-center gap-1 p-1 rounded-xl backdrop-blur-xl bg-white/[0.04] border border-white/[0.06]">
+    {MODES.map((mode) => {
+      const isActive = activeMode === mode.id;
+      return (
+        <button
+          key={mode.id}
+          onClick={() => onModeChange(mode.id)}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200',
+            isActive
+              ? 'bg-white/[0.08] text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground/80',
+          )}
+        >
+          {mode.icon}
+          {mode.label}
+        </button>
+      );
+    })}
+  </div>
+);
+
+// ── Main Hub ─────────────────────────────────────────────────────────────────
+
 export const GenieCastHub: React.FC = () => {
-  // Track component mount state
   const isMounted = useRef(true);
-  const [wizardDirection, setWizardDirection] = useState<'ltr' | 'rtl'>('ltr');
-  
-  // Persist state to localStorage
+  const isMobile = useIsMobile();
+  const { mode, setMode, dispatch } = useGuideStore();
+
+  // Persist video styles
   const [selectedVideoStyles, setSelectedVideoStyles] = useState<VideoStyleType[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -110,10 +149,9 @@ export const GenieCastHub: React.FC = () => {
   const [screenshotGalleries, setScreenshotGalleries] = useState<ProductGallery[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Calculate total screenshots
   const totalScreenshots = screenshotGalleries.reduce(
-    (total, gallery) => total + gallery.screenshots.length, 
-    0
+    (total, gallery) => total + gallery.screenshots.length,
+    0,
   );
 
   // Persist state changes
@@ -122,7 +160,6 @@ export const GenieCastHub: React.FC = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [selectedVideoStyles]);
 
-  // Track mount lifecycle
   useEffect(() => {
     isMounted.current = true;
     return () => { isMounted.current = false; };
@@ -148,81 +185,89 @@ export const GenieCastHub: React.FC = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       toast.success('Video generation started!');
+      dispatch({ type: 'STEP_COMPLETED', stepId: 'generate' });
     } catch (error) {
       console.error('[GenieCastHub] Generation failed:', error);
       toast.error('Failed to start generation');
     } finally {
       setIsGenerating(false);
     }
-  }, [selectedVideoStyles]);
+  }, [selectedVideoStyles, dispatch]);
 
-  // Wizard steps config
-  const steps = useMemo<WizardStep[]>(() => [
-    {
-      id: 'create',
-      label: 'CREATE',
-      localLabel: wizardDirection === 'rtl' ? 'إنشاء' : undefined,
-      description: 'Intent, Templates & Assets',
-      localDescription: wizardDirection === 'rtl' ? 'النية والقوالب والأصول' : undefined,
-      thumbnail: stepIntentThumb,
-      icon: <Sparkles className="w-4 h-4" />,
-    },
-    {
-      id: 'produce',
-      label: 'PRODUCE',
-      localLabel: wizardDirection === 'rtl' ? 'إنتاج' : undefined,
-      description: 'Generate, Edit & Manage',
-      localDescription: wizardDirection === 'rtl' ? 'توليد وتحرير وإدارة' : undefined,
-      thumbnail: stepStyleThumb,
-      icon: <Video className="w-4 h-4" />,
-    },
-    {
-      id: 'publish',
-      label: 'PUBLISH',
-      localLabel: wizardDirection === 'rtl' ? 'نشر' : undefined,
-      description: 'Schedule, Distribute & Optimize',
-      localDescription: wizardDirection === 'rtl' ? 'جدولة وتوزيع وتحسين' : undefined,
-      thumbnail: stepReviewThumb,
-      icon: <Share2 className="w-4 h-4" />,
-    },
-  ], [wizardDirection]);
+  const handleModeChange = useCallback((newMode: CastMode) => {
+    setMode(newMode);
+    dispatch({ type: 'SWITCH_MODE', mode: newMode });
+  }, [setMode, dispatch]);
 
-  return (
-    <div className="space-y-4">
-      {/* RTL toggle for testing */}
-      <div className="flex items-center justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setWizardDirection(d => d === 'ltr' ? 'rtl' : 'ltr')}
-          className="rounded-lg gap-1.5 h-8 text-xs"
-        >
-          <Globe className="w-3.5 h-3.5" />
-          {wizardDirection === 'ltr' ? 'LTR' : 'RTL'}
-        </Button>
+  // Sync mode to tab
+  const activeTab = MODE_TO_TAB[mode];
+
+  const handleMainTabChange = useCallback((tab: ConsolidatedTab) => {
+    const newMode = Object.entries(MODE_TO_TAB).find(([, t]) => t === tab)?.[0] as CastMode | undefined;
+    if (newMode && newMode !== mode) {
+      handleModeChange(newMode);
+    }
+  }, [mode, handleModeChange]);
+
+  // ── Mobile Layout ──────────────────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full min-h-[calc(100vh-4rem)] gap-3">
+        {/* Mode selector */}
+        <MobileModeSelector activeMode={mode} onModeChange={handleModeChange} />
+        
+        {/* Main workspace */}
+        <div className="flex-1 min-h-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+              className="h-full"
+            >
+              <GenieCastConsolidatedTabs
+                selectedVideoStyles={selectedVideoStyles}
+                onStylesChange={handleStylesChange}
+                screenshotGalleries={screenshotGalleries}
+                onGalleriesUpdated={handleGalleriesUpdated}
+                totalScreenshots={totalScreenshots}
+                onGenerate={handleGenerate}
+                isGenerating={isGenerating}
+                activeMainTabOverride={activeTab}
+                onMainTabChange={handleMainTabChange}
+                defaultTab="create"
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
+    );
+  }
 
-      {/* StepWizard wrapping the existing consolidated tabs */}
-      <div className="min-h-[500px]">
-        <StepWizardProvider
-          config={{
-            steps,
-            direction: wizardDirection,
-            locale: wizardDirection === 'rtl' ? 'ar' : 'en',
-            onComplete: () => toast.success('🚀 Workflow complete!'),
-            allowJumpBack: true,
-          }}
-        >
-          <StepWizard
-            completeLabel="Finish"
-            localCompleteLabel={wizardDirection === 'rtl' ? 'إنهاء' : undefined}
-            nextLabel="Next"
-            localNextLabel={wizardDirection === 'rtl' ? 'التالي' : undefined}
-            prevLabel="Back"
-            localPrevLabel={wizardDirection === 'rtl' ? 'السابق' : undefined}
+  // ── Desktop 3-Column Layout ────────────────────────────────────────────────
+  return (
+    <div className="flex h-full min-h-[calc(100vh-4rem)] gap-3">
+      {/* Column 1: Left Mode Bar */}
+      <LeftModeBar activeMode={mode} onModeChange={handleModeChange} />
+
+      {/* Column 2: Main Workspace */}
+      <div className="flex-1 min-w-0 overflow-y-auto rounded-2xl backdrop-blur-xl bg-white/[0.01] border border-white/[0.04]"
+        style={{
+          boxShadow: '0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.03)',
+        }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={mode}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+            className="h-full"
           >
-            {/* Single child — bridge reads currentStep from wizard context and syncs to consolidated tabs */}
-            <WizardTabBridge
+            <GenieCastConsolidatedTabs
               selectedVideoStyles={selectedVideoStyles}
               onStylesChange={handleStylesChange}
               screenshotGalleries={screenshotGalleries}
@@ -230,11 +275,16 @@ export const GenieCastHub: React.FC = () => {
               totalScreenshots={totalScreenshots}
               onGenerate={handleGenerate}
               isGenerating={isGenerating}
-              direction={wizardDirection}
+              activeMainTabOverride={activeTab}
+              onMainTabChange={handleMainTabChange}
+              defaultTab="create"
             />
-          </StepWizard>
-        </StepWizardProvider>
+          </motion.div>
+        </AnimatePresence>
       </div>
+
+      {/* Column 3: Guide Dock */}
+      <GuideDock className="flex-shrink-0" />
     </div>
   );
 };
