@@ -143,6 +143,7 @@ import { TranslationTranscreationToggle } from './TranslationTranscreationToggle
 import { CharacterPickerPopup, type CharacterOption } from './CharacterPickerPopup';
 import { PortalDropdown } from './create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from './StyleCustomizationPanel';
+import { CreateSubWizard } from './CreateSubWizard';
 
 /**
  * Detect transcreation zone from dialect code.
@@ -972,6 +973,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* CREATE TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="create" className="mt-4 space-y-4">
+          <CreateSubWizard
+            activeSubTab={subTabs.create}
+            onSubTabChange={(sub) => setSubTab('create', sub)}
+            direction={wizardMode ? (activeMainTabOverride ? 'ltr' : 'ltr') : 'ltr'}
+          >
           {/* GUIDED WIZARD: Show only the current step based on session state */}
 
           {/* STEP 1: Dynamic Category + Format selector (DB-driven) */}
@@ -2304,6 +2310,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
             {/* Old intent placeholder removed — guided wizard handles this */}
           </AnimatePresence>
+          </CreateSubWizard>
         </TabsContent>
 
         {/* ═══════════════════════════════════════════════════════════════ */}
