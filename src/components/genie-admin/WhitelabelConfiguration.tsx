@@ -1,9 +1,9 @@
 /**
  * WHITELABEL CONFIGURATION
- * Custom branding, colors, and domain settings for enterprise workspaces
+ * Custom branding, colors, domain, and advanced settings for enterprise workspaces
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Paintbrush, Globe, FileImage, Code, Lock, Crown, Save, Eye } from 'lucide-react';
+import { 
+  Paintbrush, Globe, FileImage, Code, Lock, Crown, Save, 
+  Upload, X, CheckCircle2, AlertCircle, Clock, Shield, ExternalLink 
+} from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface WhitelabelConfig {
@@ -45,8 +48,100 @@ const DEFAULT_CONFIG: Partial<WhitelabelConfig> = {
   is_active: true,
 };
 
-// Tiers that allow whitelabel
 const WHITELABEL_TIERS = ['business', 'enterprise'];
+
+// --- Logo Upload Sub-component ---
+const LogoUploader: React.FC<{
+  label: string;
+  currentUrl: string | null;
+  onUploaded: (url: string) => void;
+  onRemove: () => void;
+  teamId: string;
+  fileKey: string;
+}> = ({ label, currentUrl, onUploaded, onRemove, teamId, fileKey }) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please upload an image file (PNG, JPG, SVG)', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum 2MB', variant: 'destructive' });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `whitelabel/${teamId}/${fileKey}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('brand-assets')
+        .upload(path, file, { contentType: file.type, upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('brand-assets')
+        .getPublicUrl(path);
+
+      onUploaded(urlData.publicUrl);
+      toast({ title: `${label} uploaded successfully` });
+    } catch (err: any) {
+      toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  }, [teamId, fileKey, label, onUploaded]);
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex items-center gap-3">
+        {currentUrl ? (
+          <div className="relative group">
+            <div className="h-16 w-16 rounded-lg border bg-muted/30 flex items-center justify-center overflow-hidden">
+              <img src={currentUrl} alt={label} className="h-full w-full object-contain p-1" />
+            </div>
+            <button
+              onClick={onRemove}
+              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="h-16 w-16 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+            <FileImage className="h-6 w-6 text-muted-foreground/50" />
+          </div>
+        )}
+        <div className="flex-1">
+          <label className="cursor-pointer">
+            <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+            <Button variant="outline" size="sm" className="gap-2" asChild>
+              <span>
+                <Upload className="h-3.5 w-3.5" />
+                {uploading ? 'Uploading...' : currentUrl ? 'Replace' : 'Upload'}
+              </span>
+            </Button>
+          </label>
+          <p className="text-xs text-muted-foreground mt-1">PNG, JPG, SVG • Max 2MB</p>
+        </div>
+      </div>
+      {/* Also allow URL input */}
+      <Input
+        value={currentUrl || ''}
+        onChange={(e) => onUploaded(e.target.value)}
+        placeholder="Or paste image URL..."
+        className="text-xs"
+      />
+    </div>
+  );
+};
 
 export const WhitelabelConfiguration: React.FC = () => {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -60,7 +155,6 @@ export const WhitelabelConfiguration: React.FC = () => {
     queryFn: async () => {
       const { data: authData } = await supabase.auth.getUser();
       if (!authData.user) return null;
-      
       const { data } = await supabase
         .from('genie_studio_users')
         .select('*')
@@ -70,27 +164,23 @@ export const WhitelabelConfiguration: React.FC = () => {
     },
   });
 
-  // Fetch eligible teams (business/enterprise only)
+  // Fetch eligible teams
   const { data: teams } = useQuery({
     queryKey: ['genie-studio-teams-whitelabel'],
     queryFn: async () => {
       if (!currentUser) return [];
-      
       const { data: memberships } = await supabase
         .from('genie_studio_team_members')
         .select('team_id, role')
         .eq('user_id', currentUser.id)
         .in('role', ['owner', 'admin']);
-      
       if (!memberships?.length) return [];
-      
       const teamIds = memberships.map(m => m.team_id);
       const { data: teams } = await supabase
         .from('genie_studio_teams')
         .select('*')
         .in('id', teamIds)
         .in('subscription_tier', WHITELABEL_TIERS);
-      
       return teams || [];
     },
     enabled: !!currentUser,
@@ -101,19 +191,16 @@ export const WhitelabelConfiguration: React.FC = () => {
     queryKey: ['whitelabel-config', selectedTeamId],
     queryFn: async () => {
       if (!selectedTeamId) return null;
-      
       const { data } = await supabase
         .from('genie_studio_whitelabel_configs')
         .select('*')
         .eq('team_id', selectedTeamId)
         .maybeSingle();
-      
       return data;
     },
     enabled: !!selectedTeamId,
   });
 
-  // Initialize local config when data loads
   React.useEffect(() => {
     if (whitelabelConfig) {
       setLocalConfig(whitelabelConfig);
@@ -123,7 +210,6 @@ export const WhitelabelConfiguration: React.FC = () => {
     setHasChanges(false);
   }, [whitelabelConfig, selectedTeamId]);
 
-  // Auto-select first team if available
   React.useEffect(() => {
     if (teams?.length && !selectedTeamId) {
       setSelectedTeamId(teams[0].id);
@@ -134,31 +220,22 @@ export const WhitelabelConfiguration: React.FC = () => {
   const saveConfig = useMutation({
     mutationFn: async (config: Partial<WhitelabelConfig>) => {
       if (!selectedTeamId) throw new Error('No team selected');
-      
-      const payload = {
-        ...config,
-        team_id: selectedTeamId,
-      };
-      
+      const payload = { ...config, team_id: selectedTeamId };
       if (whitelabelConfig?.id) {
-        // Update existing
         const { data, error } = await supabase
           .from('genie_studio_whitelabel_configs')
           .update(payload)
           .eq('id', whitelabelConfig.id)
           .select()
           .single();
-        
         if (error) throw error;
         return data;
       } else {
-        // Create new
         const { data, error } = await supabase
           .from('genie_studio_whitelabel_configs')
           .insert(payload)
           .select()
           .single();
-        
         if (error) throw error;
         return data;
       }
@@ -212,7 +289,6 @@ export const WhitelabelConfiguration: React.FC = () => {
             Customize branding, colors, and domain for your workspace
           </p>
         </div>
-        
         <div className="flex gap-2">
           {teams && teams.length > 0 && (
             <Select value={selectedTeamId || ''} onValueChange={setSelectedTeamId}>
@@ -228,7 +304,6 @@ export const WhitelabelConfiguration: React.FC = () => {
               </SelectContent>
             </Select>
           )}
-          
           <Button
             onClick={() => saveConfig.mutate(localConfig)}
             disabled={!hasChanges || saveConfig.isPending}
@@ -256,28 +331,54 @@ export const WhitelabelConfiguration: React.FC = () => {
         <Tabs defaultValue="branding" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="branding" className="gap-2">
-              <FileImage className="w-4 h-4" />
-              Branding
+              <FileImage className="w-4 h-4" /> Branding
             </TabsTrigger>
             <TabsTrigger value="colors" className="gap-2">
-              <Paintbrush className="w-4 h-4" />
-              Colors
+              <Paintbrush className="w-4 h-4" /> Colors
             </TabsTrigger>
             <TabsTrigger value="domain" className="gap-2">
-              <Globe className="w-4 h-4" />
-              Domain
+              <Globe className="w-4 h-4" /> Domain
             </TabsTrigger>
             <TabsTrigger value="advanced" className="gap-2">
-              <Code className="w-4 h-4" />
-              Advanced
+              <Code className="w-4 h-4" /> Advanced
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="branding" className="mt-6">
+          {/* ==================== BRANDING TAB ==================== */}
+          <TabsContent value="branding" className="mt-6 space-y-6">
+            {/* Logo & Favicon Upload */}
             <Card>
               <CardHeader>
-                <CardTitle>Branding & Identity</CardTitle>
-                <CardDescription>Configure your app name, logo, and messaging</CardDescription>
+                <CardTitle>Logo & Favicon</CardTitle>
+                <CardDescription>Upload your brand logo and favicon for a fully branded experience</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <LogoUploader
+                    label="Brand Logo"
+                    currentUrl={localConfig.logo_url || null}
+                    onUploaded={(url) => updateConfig('logo_url', url)}
+                    onRemove={() => updateConfig('logo_url', null)}
+                    teamId={selectedTeamId}
+                    fileKey="logo"
+                  />
+                  <LogoUploader
+                    label="Favicon"
+                    currentUrl={localConfig.favicon_url || null}
+                    onUploaded={(url) => updateConfig('favicon_url', url)}
+                    onRemove={() => updateConfig('favicon_url', null)}
+                    teamId={selectedTeamId}
+                    fileKey="favicon"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Identity & Text */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Identity & Messaging</CardTitle>
+                <CardDescription>Configure your app name and text shown to users</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -287,24 +388,6 @@ export const WhitelabelConfiguration: React.FC = () => {
                       value={localConfig.app_name || ''}
                       onChange={(e) => updateConfig('app_name', e.target.value)}
                       placeholder="Your App Name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Logo URL</Label>
-                    <Input
-                      value={localConfig.logo_url || ''}
-                      onChange={(e) => updateConfig('logo_url', e.target.value)}
-                      placeholder="https://..."
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Favicon URL</Label>
-                    <Input
-                      value={localConfig.favicon_url || ''}
-                      onChange={(e) => updateConfig('favicon_url', e.target.value)}
-                      placeholder="https://..."
                     />
                   </div>
                   <div className="space-y-2">
@@ -347,6 +430,7 @@ export const WhitelabelConfiguration: React.FC = () => {
             </Card>
           </TabsContent>
 
+          {/* ==================== COLORS TAB ==================== */}
           <TabsContent value="colors" className="mt-6">
             <Card>
               <CardHeader>
@@ -355,68 +439,41 @@ export const WhitelabelConfiguration: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-6 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label>Primary Color</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="color"
-                        value={localConfig.primary_color || '#3B82F6'}
-                        onChange={(e) => updateConfig('primary_color', e.target.value)}
-                        className="w-12 h-10 p-1"
-                      />
-                      <Input
-                        value={localConfig.primary_color || '#3B82F6'}
-                        onChange={(e) => updateConfig('primary_color', e.target.value)}
-                        placeholder="#3B82F6"
-                      />
+                  {[
+                    { key: 'primary_color' as const, label: 'Primary Color', fallback: '#3B82F6' },
+                    { key: 'secondary_color' as const, label: 'Secondary Color', fallback: '#1F2937' },
+                    { key: 'accent_color' as const, label: 'Accent Color', fallback: '#10B981' },
+                  ].map(({ key, label, fallback }) => (
+                    <div key={key} className="space-y-2">
+                      <Label>{label}</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="color"
+                          value={(localConfig[key] as string) || fallback}
+                          onChange={(e) => updateConfig(key, e.target.value)}
+                          className="w-12 h-10 p-1"
+                        />
+                        <Input
+                          value={(localConfig[key] as string) || fallback}
+                          onChange={(e) => updateConfig(key, e.target.value)}
+                          placeholder={fallback}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Secondary Color</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="color"
-                        value={localConfig.secondary_color || '#1F2937'}
-                        onChange={(e) => updateConfig('secondary_color', e.target.value)}
-                        className="w-12 h-10 p-1"
-                      />
-                      <Input
-                        value={localConfig.secondary_color || '#1F2937'}
-                        onChange={(e) => updateConfig('secondary_color', e.target.value)}
-                        placeholder="#1F2937"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Accent Color</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="color"
-                        value={localConfig.accent_color || '#10B981'}
-                        onChange={(e) => updateConfig('accent_color', e.target.value)}
-                        className="w-12 h-10 p-1"
-                      />
-                      <Input
-                        value={localConfig.accent_color || '#10B981'}
-                        onChange={(e) => updateConfig('accent_color', e.target.value)}
-                        placeholder="#10B981"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
-                
                 {/* Preview */}
                 <div className="mt-6 p-4 border rounded-lg">
                   <Label className="mb-3 block">Preview</Label>
-                  <div className="flex gap-4">
+                  <div className="flex gap-4 items-center flex-wrap">
                     <Button style={{ backgroundColor: localConfig.primary_color }}>
                       Primary Button
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      style={{ 
+                    <Button
+                      variant="outline"
+                      style={{
                         borderColor: localConfig.secondary_color,
-                        color: localConfig.secondary_color 
+                        color: localConfig.secondary_color,
                       }}
                     >
                       Secondary
@@ -424,74 +481,194 @@ export const WhitelabelConfiguration: React.FC = () => {
                     <Badge style={{ backgroundColor: localConfig.accent_color, color: 'white' }}>
                       Accent Badge
                     </Badge>
+                    {localConfig.logo_url && (
+                      <div className="h-8 ml-auto">
+                        <img src={localConfig.logo_url} alt="Logo preview" className="h-full object-contain" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="domain" className="mt-6">
+          {/* ==================== DOMAIN TAB ==================== */}
+          <TabsContent value="domain" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Custom Domain</CardTitle>
-                <CardDescription>Configure your own domain for the workspace</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Custom Domain
+                </CardTitle>
+                <CardDescription>Point your own domain to this workspace for a fully branded URL</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label>Custom Domain</Label>
+                  <Label>Your Custom Domain</Label>
                   <Input
                     value={localConfig.custom_domain || ''}
                     onChange={(e) => updateConfig('custom_domain', e.target.value)}
                     placeholder="app.yourcompany.com"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    You'll need to configure DNS settings to point to our servers
-                  </p>
                 </div>
-                
-                <div className="p-4 bg-muted/50 rounded-lg space-y-2">
-                  <h4 className="font-medium">DNS Configuration</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Add the following CNAME record to your DNS:
+
+                {/* Domain verification status */}
+                {localConfig.custom_domain && (
+                  <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-500" />
+                      <span className="text-sm font-medium">Verification Pending</span>
+                      <Badge variant="outline" className="ml-auto text-xs">Awaiting DNS</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Once you configure DNS records below, verification will complete automatically (up to 72 hours).
+                    </p>
+                  </div>
+                )}
+
+                {/* DNS Instructions */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-sm flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary" />
+                    DNS Configuration Steps
+                  </h4>
+
+                  <div className="space-y-3">
+                    <div className="flex gap-3 items-start">
+                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">1</div>
+                      <div>
+                        <p className="text-sm font-medium">Add CNAME Record</p>
+                        <p className="text-xs text-muted-foreground mb-2">Log into your domain registrar and create a CNAME record:</p>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="p-2 bg-background rounded border">
+                            <span className="text-muted-foreground">Type</span>
+                            <p className="font-mono font-medium">CNAME</p>
+                          </div>
+                          <div className="p-2 bg-background rounded border">
+                            <span className="text-muted-foreground">Name</span>
+                            <p className="font-mono font-medium">{localConfig.custom_domain?.split('.')[0] || 'app'}</p>
+                          </div>
+                          <div className="p-2 bg-background rounded border">
+                            <span className="text-muted-foreground">Value</span>
+                            <p className="font-mono font-medium text-primary">genie-custom.genieaisuite.com</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 items-start">
+                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">2</div>
+                      <div>
+                        <p className="text-sm font-medium">Add TXT Verification Record</p>
+                        <p className="text-xs text-muted-foreground mb-2">Prove domain ownership:</p>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="p-2 bg-background rounded border">
+                            <span className="text-muted-foreground">Type</span>
+                            <p className="font-mono font-medium">TXT</p>
+                          </div>
+                          <div className="p-2 bg-background rounded border">
+                            <span className="text-muted-foreground">Name</span>
+                            <p className="font-mono font-medium">_genie-verify</p>
+                          </div>
+                          <div className="p-2 bg-background rounded border">
+                            <span className="text-muted-foreground">Value</span>
+                            <p className="font-mono font-medium text-primary truncate">
+                              genie_verify={selectedTeamId?.slice(0, 8)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 items-start">
+                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">3</div>
+                      <div>
+                        <p className="text-sm font-medium">Wait for Propagation</p>
+                        <p className="text-xs text-muted-foreground">
+                          DNS changes can take up to 72 hours. SSL certificate will be provisioned automatically once verified.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SSL Info */}
+                <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20 flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    <strong className="text-foreground">SSL Included:</strong> A free SSL certificate will be automatically provisioned for your domain once DNS is verified.
                   </p>
-                  <code className="block p-2 bg-background rounded text-sm">
-                    CNAME → genie-custom.genieaisuite.com
-                  </code>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="advanced" className="mt-6">
+          {/* ==================== ADVANCED TAB ==================== */}
+          <TabsContent value="advanced" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Advanced Customization</CardTitle>
-                <CardDescription>Add custom CSS for fine-grained control</CardDescription>
+                <CardTitle>Custom CSS</CardTitle>
+                <CardDescription>Fine-grained visual control with custom stylesheets</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Custom CSS</Label>
-                  <Textarea
-                    value={localConfig.custom_css || ''}
-                    onChange={(e) => updateConfig('custom_css', e.target.value)}
-                    placeholder={`.my-custom-class {\n  color: #333;\n}`}
-                    rows={10}
-                    className="font-mono text-sm"
-                  />
+                <Textarea
+                  value={localConfig.custom_css || ''}
+                  onChange={(e) => updateConfig('custom_css', e.target.value)}
+                  placeholder={`.my-header {\n  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n}\n\n.my-button {\n  border-radius: 999px;\n}`}
+                  rows={12}
+                  className="font-mono text-sm"
+                />
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                   <p className="text-xs text-muted-foreground">
-                    CSS will be injected into the page. Use with caution.
+                    CSS is injected into the page at runtime. Incorrect CSS may break the layout. Test thoroughly.
                   </p>
                 </div>
-                
-                <div className="flex items-center justify-between pt-4 border-t">
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Settings</CardTitle>
+                <CardDescription>Toggle whitelabel behavior</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
                     <Label>Enable Whitelabel</Label>
-                    <p className="text-xs text-muted-foreground">Toggle all whitelabel settings on/off</p>
+                    <p className="text-xs text-muted-foreground">Master toggle for all whitelabel customizations</p>
                   </div>
                   <Switch
                     checked={localConfig.is_active !== false}
                     onCheckedChange={(checked) => updateConfig('is_active', checked)}
                   />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div>
+                    <Label>Hide "Powered by" Badge</Label>
+                    <p className="text-xs text-muted-foreground">Remove Genie Suite attribution entirely</p>
+                  </div>
+                  <Switch
+                    checked={localConfig.hide_powered_by || false}
+                    onCheckedChange={(checked) => updateConfig('hide_powered_by', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Reference */}
+            <Card className="border-dashed">
+              <CardContent className="py-4">
+                <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <ExternalLink className="w-4 h-4" /> Whitelabel Applies To
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-muted-foreground">
+                  {['Login Screen', 'Navigation Bar', 'Email Templates', 'Public Genie Widget', 'Dashboard Header', 'Browser Tab (Favicon)', 'Footer', 'PDF Exports'].map(item => (
+                    <div key={item} className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3 h-3 text-green-500" />
+                      {item}
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
