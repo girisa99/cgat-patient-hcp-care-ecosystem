@@ -21,7 +21,8 @@ import { useStepWizard } from './StepWizardContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface StepWizardProps {
-  children: React.ReactNode[];
+  /** Step content — either an array (one per step) or a single ReactNode (shown for all steps) */
+  children: React.ReactNode[] | React.ReactNode;
   /** Custom class for the outer wrapper */
   className?: string;
   /** Label for the final action button */
@@ -206,7 +207,8 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   } = useStepWizard();
 
   const isMobile = useIsMobile();
-  const currentChild = children[currentStep] || children[children.length - 1];
+  const childArray = Array.isArray(children) ? children : [children];
+  const currentChild = childArray.length > 1 ? (childArray[currentStep] || childArray[childArray.length - 1]) : childArray[0];
 
   // ── Mobile Layout ────────────────────────────────────────────────────────
   if (isMobile) {
