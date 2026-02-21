@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Paintbrush, Globe, FileImage, Code, Lock, Crown, Save, 
-  Upload, X, CheckCircle2, AlertCircle, Clock, Shield, ExternalLink 
+  Upload, X, CheckCircle2, AlertCircle, Clock, Shield, ExternalLink, Copy, Check
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -49,6 +49,82 @@ const DEFAULT_CONFIG: Partial<WhitelabelConfig> = {
 };
 
 const WHITELABEL_TIERS = ['business', 'enterprise'];
+
+// --- Copyable DNS Value ---
+const CopyableValue: React.FC<{ label: string; value: string }> = ({ label, value }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="p-2 bg-background rounded border">
+      <span className="text-muted-foreground text-xs">{label}</span>
+      <div className="flex items-center gap-1.5 mt-0.5">
+        <p className="font-mono font-medium text-xs text-primary truncate flex-1">{value}</p>
+        <button onClick={handleCopy} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+          {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- DNS Instructions ---
+const DnsInstructions: React.FC<{ customDomain: string; teamId: string }> = ({ customDomain, teamId }) => {
+  const cnameHost = customDomain?.split('.')[0] || 'app';
+  const cnameTarget = 'genie-custom.genieaisuite.com';
+  const txtName = '_genie-verify';
+  const txtValue = `genie_verify=${teamId?.slice(0, 8) || 'xxxxxxxx'}`;
+
+  return (
+    <div className="space-y-4">
+      <h4 className="font-medium text-sm flex items-center gap-2">
+        <Shield className="w-4 h-4 text-primary" />
+        DNS Configuration Steps
+      </h4>
+      <div className="space-y-3">
+        {/* Step 1 - CNAME */}
+        <div className="flex gap-3 items-start">
+          <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">1</div>
+          <div className="flex-1">
+            <p className="text-sm font-medium">Add CNAME Record</p>
+            <p className="text-xs text-muted-foreground mb-2">Log into your domain registrar and create a CNAME record:</p>
+            <div className="grid grid-cols-3 gap-2">
+              <CopyableValue label="Type" value="CNAME" />
+              <CopyableValue label="Name" value={cnameHost} />
+              <CopyableValue label="Value" value={cnameTarget} />
+            </div>
+          </div>
+        </div>
+        {/* Step 2 - TXT */}
+        <div className="flex gap-3 items-start">
+          <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">2</div>
+          <div className="flex-1">
+            <p className="text-sm font-medium">Add TXT Verification Record</p>
+            <p className="text-xs text-muted-foreground mb-2">Prove domain ownership:</p>
+            <div className="grid grid-cols-3 gap-2">
+              <CopyableValue label="Type" value="TXT" />
+              <CopyableValue label="Name" value={txtName} />
+              <CopyableValue label="Value" value={txtValue} />
+            </div>
+          </div>
+        </div>
+        {/* Step 3 */}
+        <div className="flex gap-3 items-start">
+          <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">3</div>
+          <div>
+            <p className="text-sm font-medium">Wait for Propagation</p>
+            <p className="text-xs text-muted-foreground">
+              DNS changes can take up to 72 hours. SSL certificate will be provisioned automatically once verified.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // --- Logo Upload Sub-component ---
 const LogoUploader: React.FC<{
@@ -527,70 +603,10 @@ export const WhitelabelConfiguration: React.FC = () => {
                 )}
 
                 {/* DNS Instructions */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-sm flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-primary" />
-                    DNS Configuration Steps
-                  </h4>
-
-                  <div className="space-y-3">
-                    <div className="flex gap-3 items-start">
-                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">1</div>
-                      <div>
-                        <p className="text-sm font-medium">Add CNAME Record</p>
-                        <p className="text-xs text-muted-foreground mb-2">Log into your domain registrar and create a CNAME record:</p>
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div className="p-2 bg-background rounded border">
-                            <span className="text-muted-foreground">Type</span>
-                            <p className="font-mono font-medium">CNAME</p>
-                          </div>
-                          <div className="p-2 bg-background rounded border">
-                            <span className="text-muted-foreground">Name</span>
-                            <p className="font-mono font-medium">{localConfig.custom_domain?.split('.')[0] || 'app'}</p>
-                          </div>
-                          <div className="p-2 bg-background rounded border">
-                            <span className="text-muted-foreground">Value</span>
-                            <p className="font-mono font-medium text-primary">genie-custom.genieaisuite.com</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3 items-start">
-                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">2</div>
-                      <div>
-                        <p className="text-sm font-medium">Add TXT Verification Record</p>
-                        <p className="text-xs text-muted-foreground mb-2">Prove domain ownership:</p>
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div className="p-2 bg-background rounded border">
-                            <span className="text-muted-foreground">Type</span>
-                            <p className="font-mono font-medium">TXT</p>
-                          </div>
-                          <div className="p-2 bg-background rounded border">
-                            <span className="text-muted-foreground">Name</span>
-                            <p className="font-mono font-medium">_genie-verify</p>
-                          </div>
-                          <div className="p-2 bg-background rounded border">
-                            <span className="text-muted-foreground">Value</span>
-                            <p className="font-mono font-medium text-primary truncate">
-                              genie_verify={selectedTeamId?.slice(0, 8)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3 items-start">
-                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">3</div>
-                      <div>
-                        <p className="text-sm font-medium">Wait for Propagation</p>
-                        <p className="text-xs text-muted-foreground">
-                          DNS changes can take up to 72 hours. SSL certificate will be provisioned automatically once verified.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <DnsInstructions 
+                  customDomain={localConfig.custom_domain || ''} 
+                  teamId={selectedTeamId} 
+                />
 
                 {/* SSL Info */}
                 <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20 flex items-center gap-3">
