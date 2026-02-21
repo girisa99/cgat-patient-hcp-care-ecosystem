@@ -4400,6 +4400,54 @@ export type Database = {
           },
         ]
       }
+      cast_holiday_style_presets: {
+        Row: {
+          color_overrides: Json | null
+          created_at: string
+          greeting_script: string | null
+          holiday_id: string
+          id: string
+          is_auto_generated: boolean | null
+          style_id: string
+          template_prompt: string | null
+        }
+        Insert: {
+          color_overrides?: Json | null
+          created_at?: string
+          greeting_script?: string | null
+          holiday_id: string
+          id?: string
+          is_auto_generated?: boolean | null
+          style_id: string
+          template_prompt?: string | null
+        }
+        Update: {
+          color_overrides?: Json | null
+          created_at?: string
+          greeting_script?: string | null
+          holiday_id?: string
+          id?: string
+          is_auto_generated?: boolean | null
+          style_id?: string
+          template_prompt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_holiday_style_presets_holiday_id_fkey"
+            columns: ["holiday_id"]
+            isOneToOne: false
+            referencedRelation: "cast_regional_holidays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cast_holiday_style_presets_style_id_fkey"
+            columns: ["style_id"]
+            isOneToOne: false
+            referencedRelation: "cast_visual_styles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cast_intent_style_map: {
         Row: {
           created_at: string
@@ -5004,6 +5052,78 @@ export type Database = {
           },
         ]
       }
+      cast_regional_holidays: {
+        Row: {
+          color_palette: Json | null
+          confidence_score: number | null
+          created_at: string
+          description: string | null
+          greeting_templates: Json | null
+          holiday_date: string
+          holiday_type: string
+          id: string
+          is_active: boolean | null
+          is_recurring: boolean | null
+          local_name: string | null
+          music_mood: string | null
+          name: string
+          recurrence_rule: string | null
+          region_code: string
+          source: string | null
+          style_keywords: string[] | null
+          sub_region_code: string | null
+          suggested_capabilities: string[] | null
+          suggested_style_ids: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          color_palette?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          description?: string | null
+          greeting_templates?: Json | null
+          holiday_date: string
+          holiday_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_recurring?: boolean | null
+          local_name?: string | null
+          music_mood?: string | null
+          name: string
+          recurrence_rule?: string | null
+          region_code: string
+          source?: string | null
+          style_keywords?: string[] | null
+          sub_region_code?: string | null
+          suggested_capabilities?: string[] | null
+          suggested_style_ids?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          color_palette?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          description?: string | null
+          greeting_templates?: Json | null
+          holiday_date?: string
+          holiday_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_recurring?: boolean | null
+          local_name?: string | null
+          music_mood?: string | null
+          name?: string
+          recurrence_rule?: string | null
+          region_code?: string
+          source?: string | null
+          style_keywords?: string[] | null
+          sub_region_code?: string | null
+          suggested_capabilities?: string[] | null
+          suggested_style_ids?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cast_style_capability_map: {
         Row: {
           capability_value: string
@@ -5100,6 +5220,7 @@ export type Database = {
       cast_style_characters: {
         Row: {
           character_type: string
+          costume_variants: Json | null
           created_at: string | null
           description: string | null
           icon: string | null
@@ -5109,10 +5230,12 @@ export type Database = {
           name: string
           sort_order: number | null
           style_id: string
+          thumbnail_url: string | null
           updated_at: string | null
         }
         Insert: {
           character_type?: string
+          costume_variants?: Json | null
           created_at?: string | null
           description?: string | null
           icon?: string | null
@@ -5122,10 +5245,12 @@ export type Database = {
           name: string
           sort_order?: number | null
           style_id: string
+          thumbnail_url?: string | null
           updated_at?: string | null
         }
         Update: {
           character_type?: string
+          costume_variants?: Json | null
           created_at?: string | null
           description?: string | null
           icon?: string | null
@@ -5135,6 +5260,7 @@ export type Database = {
           name?: string
           sort_order?: number | null
           style_id?: string
+          thumbnail_url?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -5341,6 +5467,7 @@ export type Database = {
           render_time_estimate: string | null
           requires_face_consent: boolean
           sample_prompt: string | null
+          seasonal_tags: string[] | null
           sort_order: number
           style_config: Json
           style_variant: string | null
@@ -5367,6 +5494,7 @@ export type Database = {
           render_time_estimate?: string | null
           requires_face_consent?: boolean
           sample_prompt?: string | null
+          seasonal_tags?: string[] | null
           sort_order?: number
           style_config?: Json
           style_variant?: string | null
@@ -5393,6 +5521,7 @@ export type Database = {
           render_time_estimate?: string | null
           requires_face_consent?: boolean
           sample_prompt?: string | null
+          seasonal_tags?: string[] | null
           sort_order?: number
           style_config?: Json
           style_variant?: string | null

@@ -98,6 +98,9 @@ import { useAIRoutingIntelligence } from '@/hooks/useAIRoutingIntelligence';
 // Import P2 Live Generation Preview component (uses internal hooks)
 import { LiveGenerationPreview } from './LiveGenerationPreview';
 
+// Import Holiday Awareness
+import { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
+
 // Import Content Library component
 import { ContentLibraryGrid } from './ContentLibraryGrid';
 
@@ -338,6 +341,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // Global persistent multi-region selection (header-level context)
   const genieCastRegions = useGenieCastRegions();
+
+  // Holiday awareness for seasonal content suggestions
+  const holidayAwareness = useHolidayAwareness(
+    regionalDetection.selectedRegion,
+    genieCastRegions.selectedCodes?.[0]
+  );
 
   // Content Pool - unified data layer for all tabs
   const { pool, isLoading: isPoolLoading } = useContentPool();
@@ -1228,6 +1237,97 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Holiday/Festival Awareness Banner */}
+                    {holidayAwareness.topSuggestion && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">
+                              {holidayAwareness.topSuggestion.holiday.holiday_type === 'religious' ? '🙏' :
+                               holidayAwareness.topSuggestion.holiday.holiday_type === 'national' ? '🏳️' :
+                               holidayAwareness.topSuggestion.holiday.holiday_type === 'seasonal' ? '🌸' :
+                               holidayAwareness.topSuggestion.holiday.holiday_type === 'commercial' ? '🛍️' : '🎉'}
+                            </span>
+                            <div>
+                              <p className="text-xs font-semibold">
+                                {holidayAwareness.topSuggestion.holiday.name}
+                                {holidayAwareness.topSuggestion.holiday.local_name && (
+                                  <span className="text-muted-foreground font-normal ml-1">
+                                    ({holidayAwareness.topSuggestion.holiday.local_name})
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {holidayAwareness.topSuggestion.urgency === 'now' ? '🔴 Happening now!' :
+                                 holidayAwareness.topSuggestion.urgency === 'soon' ? `⏰ In ${holidayAwareness.topSuggestion.daysUntil} days` :
+                                 `📅 ${holidayAwareness.topSuggestion.daysUntil} days away`}
+                                {' · '}
+                                {holidayAwareness.topSuggestion.holiday.region_code.toUpperCase()}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-[10px] h-7"
+                            onClick={() => {
+                              // Apply holiday style suggestions
+                              const suggestedIds = holidayAwareness.topSuggestion?.holiday.suggested_style_ids || [];
+                              if (suggestedIds.length > 0) {
+                                const matchedStyle = contentRegistry.visualStyles.find(s => suggestedIds.includes(s.id));
+                                if (matchedStyle) setSelectedVisualStyleId(matchedStyle.id);
+                              }
+                              // Apply suggested capabilities
+                              const suggestedCaps = holidayAwareness.topSuggestion?.holiday.suggested_capabilities || [];
+                              if (suggestedCaps.length > 0) {
+                                const capIds = contentRegistry.productionCapabilities
+                                  .filter(c => suggestedCaps.includes(c.name))
+                                  .map(c => c.id);
+                                setSelectedCapabilityIds(prev => Array.from(new Set([...prev, ...capIds])));
+                              }
+                              toast.success(`Applied ${holidayAwareness.topSuggestion?.holiday.name} settings`);
+                            }}
+                          >
+                            <Wand2 className="w-3 h-3 mr-1" />
+                            Apply Holiday Style
+                          </Button>
+                        </div>
+                        {/* Color palette preview */}
+                        {holidayAwareness.topSuggestion.holiday.color_palette.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] text-muted-foreground mr-1">Colors:</span>
+                            {holidayAwareness.topSuggestion.holiday.color_palette.map((color: string, i: number) => (
+                              <div
+                                key={i}
+                                className="w-4 h-4 rounded-full border border-border"
+                                style={{ backgroundColor: color }}
+                                title={color}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {/* More upcoming holidays */}
+                        {holidayAwareness.suggestions.length > 1 && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {holidayAwareness.suggestions.slice(1, 4).map(s => (
+                              <Badge key={s.holiday.id} variant="outline" className="text-[9px] px-1.5 py-0">
+                                {s.holiday.name} · {s.daysUntil}d
+                              </Badge>
+                            ))}
+                            {holidayAwareness.suggestions.length > 4 && (
+                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                +{holidayAwareness.suggestions.length - 4} more
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+
                     {/* 5a: Generation Style with Accordion Sub-Styles */}
                     <div className="space-y-2">
                       <Label className="text-xs font-medium">Generation Style</Label>
@@ -1385,7 +1485,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       )}
                     </div>
 
-                    {/* 5a-ii: Character Selection (tag-based multi-select) */}
+                    {/* 5a-ii: Character Selection (tag-based multi-select with thumbnails) */}
                     {selectedVisualStyleId && (() => {
                       const chars = contentRegistry.getCharactersForStyle(selectedVisualStyleId);
                       if (chars.length === 0) return null;
@@ -1393,7 +1493,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         <div className="space-y-2">
                           <Label className="text-xs font-medium">🎭 Characters</Label>
                           <p className="text-[10px] text-muted-foreground">Select one or more characters for your production</p>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-2">
                             {chars.map(ch => (
                               <button
                                 key={ch.id}
@@ -1401,16 +1501,32 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                                   prev.includes(ch.id) ? prev.filter(c => c !== ch.id) : [...prev, ch.id]
                                 )}
                                 className={cn(
-                                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs transition-all",
+                                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs transition-all",
                                   selectedCharacterIds.includes(ch.id)
                                     ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
                                     : "border-border hover:border-primary/40 hover:bg-muted/50"
                                 )}
                                 title={ch.description || ch.label}
                               >
-                                <span>{ch.icon}</span>
+                                {ch.thumbnail_url ? (
+                                  <img
+                                    src={ch.thumbnail_url}
+                                    alt={ch.label}
+                                    className="w-6 h-6 rounded-full object-cover ring-1 ring-border"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                  />
+                                ) : null}
+                                <span className={ch.thumbnail_url ? 'hidden' : ''}>{ch.icon}</span>
                                 <span className="font-medium">{ch.label}</span>
                                 <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5">{ch.character_type}</Badge>
+                                {ch.costume_variants && ch.costume_variants.length > 0 && (
+                                  <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5">
+                                    🎃 {ch.costume_variants.length} costumes
+                                  </Badge>
+                                )}
                               </button>
                             ))}
                           </div>
