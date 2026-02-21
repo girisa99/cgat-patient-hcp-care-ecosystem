@@ -41,7 +41,9 @@ import {
   MessageSquare,
   Image,
   Volume2,
+  ChevronDown,
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCreateMode } from '@/hooks/useCreateMode';
 import { useRegionalDetection } from '@/hooks/useRegionalDetection';
 import { useProductContext } from '@/hooks/useProductContext';
@@ -60,7 +62,9 @@ import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -953,107 +957,213 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         </Select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs">Input Language</Label>
+                        <Label className="text-xs">Input Language <span className="text-muted-foreground">(DeepL)</span></Label>
                         <Select value={selectedDialectCodes[0] || 'en-US'} onValueChange={(v) => handleDialectChange([v])}>
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="max-h-[300px]">
-                            {/* Western / Europe */}
-                            <SelectItem value="en-US">English (US)</SelectItem>
-                            <SelectItem value="en-GB">English (UK)</SelectItem>
-                            <SelectItem value="es-ES">Spanish</SelectItem>
-                            <SelectItem value="fr-FR">French</SelectItem>
-                            <SelectItem value="de-DE">German</SelectItem>
-                            <SelectItem value="it-IT">Italian</SelectItem>
-                            <SelectItem value="pt-BR">Portuguese (BR)</SelectItem>
-                            <SelectItem value="pt-PT">Portuguese (PT)</SelectItem>
-                            <SelectItem value="nl-NL">Dutch</SelectItem>
-                            <SelectItem value="pl-PL">Polish</SelectItem>
-                            <SelectItem value="ru-RU">Russian</SelectItem>
-                            <SelectItem value="uk-UA">Ukrainian</SelectItem>
-                            <SelectItem value="sv-SE">Swedish</SelectItem>
-                            <SelectItem value="da-DK">Danish</SelectItem>
-                            <SelectItem value="nb-NO">Norwegian</SelectItem>
-                            <SelectItem value="fi-FI">Finnish</SelectItem>
-                            <SelectItem value="cs-CZ">Czech</SelectItem>
-                            <SelectItem value="sk-SK">Slovak</SelectItem>
-                            <SelectItem value="ro-RO">Romanian</SelectItem>
-                            <SelectItem value="hu-HU">Hungarian</SelectItem>
-                            <SelectItem value="bg-BG">Bulgarian</SelectItem>
-                            <SelectItem value="el-GR">Greek</SelectItem>
-                            <SelectItem value="et-EE">Estonian</SelectItem>
-                            <SelectItem value="lv-LV">Latvian</SelectItem>
-                            <SelectItem value="lt-LT">Lithuanian</SelectItem>
-                            <SelectItem value="sl-SI">Slovenian</SelectItem>
-                            {/* CJK */}
-                            <SelectItem value="zh-CN">Chinese (Simplified)</SelectItem>
-                            <SelectItem value="zh-TW">Chinese (Traditional)</SelectItem>
-                            <SelectItem value="ja-JP">Japanese</SelectItem>
-                            <SelectItem value="ko-KR">Korean</SelectItem>
-                            {/* MENA / RTL */}
-                            <SelectItem value="ar-SA">Arabic</SelectItem>
-                            <SelectItem value="he-IL">Hebrew</SelectItem>
-                            <SelectItem value="tr-TR">Turkish</SelectItem>
-                            <SelectItem value="fa-IR">Farsi/Persian</SelectItem>
-                            {/* India / South Asia */}
-                            <SelectItem value="hi-IN">Hindi</SelectItem>
-                            <SelectItem value="bn-BD">Bengali</SelectItem>
-                            <SelectItem value="te-IN">Telugu</SelectItem>
-                            <SelectItem value="ta-IN">Tamil</SelectItem>
-                            <SelectItem value="mr-IN">Marathi</SelectItem>
-                            <SelectItem value="gu-IN">Gujarati</SelectItem>
-                            <SelectItem value="kn-IN">Kannada</SelectItem>
-                            <SelectItem value="ml-IN">Malayalam</SelectItem>
-                            <SelectItem value="pa-IN">Punjabi</SelectItem>
-                            <SelectItem value="ur-PK">Urdu</SelectItem>
-                            {/* SEA */}
-                            <SelectItem value="id-ID">Indonesian</SelectItem>
-                            <SelectItem value="ms-MY">Malay</SelectItem>
-                            <SelectItem value="th-TH">Thai</SelectItem>
-                            <SelectItem value="vi-VN">Vietnamese</SelectItem>
-                            <SelectItem value="tl-PH">Filipino/Tagalog</SelectItem>
-                            {/* Africa */}
-                            <SelectItem value="sw-KE">Swahili</SelectItem>
-                            <SelectItem value="yo-NG">Yoruba</SelectItem>
-                            <SelectItem value="am-ET">Amharic</SelectItem>
+                          <SelectContent className="max-h-[340px] bg-popover z-50">
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌍 Europe & Americas (Claude Zone · DeepL)</SelectLabel>
+                              <SelectItem value="en-US">🇺🇸 English (US)</SelectItem>
+                              <SelectItem value="en-GB">🇬🇧 English (UK)</SelectItem>
+                              <SelectItem value="es-ES">🇪🇸 Spanish</SelectItem>
+                              <SelectItem value="fr-FR">🇫🇷 French</SelectItem>
+                              <SelectItem value="de-DE">🇩🇪 German</SelectItem>
+                              <SelectItem value="it-IT">🇮🇹 Italian</SelectItem>
+                              <SelectItem value="pt-BR">🇧🇷 Portuguese (BR)</SelectItem>
+                              <SelectItem value="pt-PT">🇵🇹 Portuguese (PT)</SelectItem>
+                              <SelectItem value="nl-NL">🇳🇱 Dutch</SelectItem>
+                              <SelectItem value="pl-PL">🇵🇱 Polish</SelectItem>
+                              <SelectItem value="ru-RU">🇷🇺 Russian</SelectItem>
+                              <SelectItem value="uk-UA">🇺🇦 Ukrainian</SelectItem>
+                              <SelectItem value="sv-SE">🇸🇪 Swedish</SelectItem>
+                              <SelectItem value="da-DK">🇩🇰 Danish</SelectItem>
+                              <SelectItem value="nb-NO">🇳🇴 Norwegian</SelectItem>
+                              <SelectItem value="fi-FI">🇫🇮 Finnish</SelectItem>
+                              <SelectItem value="cs-CZ">🇨🇿 Czech</SelectItem>
+                              <SelectItem value="sk-SK">🇸🇰 Slovak</SelectItem>
+                              <SelectItem value="ro-RO">🇷🇴 Romanian</SelectItem>
+                              <SelectItem value="hu-HU">🇭🇺 Hungarian</SelectItem>
+                              <SelectItem value="bg-BG">🇧🇬 Bulgarian</SelectItem>
+                              <SelectItem value="el-GR">🇬🇷 Greek</SelectItem>
+                              <SelectItem value="et-EE">🇪🇪 Estonian</SelectItem>
+                              <SelectItem value="lv-LV">🇱🇻 Latvian</SelectItem>
+                              <SelectItem value="lt-LT">🇱🇹 Lithuanian</SelectItem>
+                              <SelectItem value="sl-SI">🇸🇮 Slovenian</SelectItem>
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🀄 CJK (Qwen Zone · DeepL)</SelectLabel>
+                              <SelectItem value="zh-CN">🇨🇳 Chinese (Simplified)</SelectItem>
+                              <SelectItem value="zh-TW">🇹🇼 Chinese (Traditional)</SelectItem>
+                              <SelectItem value="ja-JP">🇯🇵 Japanese</SelectItem>
+                              <SelectItem value="ko-KR">🇰🇷 Korean</SelectItem>
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🕌 MENA (Qwen Zone)</SelectLabel>
+                              <SelectItem value="ar-SA">🇸🇦 Arabic · DeepL</SelectItem>
+                              <SelectItem value="he-IL">🇮🇱 Hebrew · DeepL</SelectItem>
+                              <SelectItem value="tr-TR">🇹🇷 Turkish · DeepL</SelectItem>
+                              <SelectItem value="fa-IR">🇮🇷 Farsi · Azure</SelectItem>
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🇮🇳 India / South Asia (Gemini Zone · Azure)</SelectLabel>
+                              <SelectItem value="hi-IN">🇮🇳 Hindi</SelectItem>
+                              <SelectItem value="bn-BD">🇧🇩 Bengali</SelectItem>
+                              <SelectItem value="te-IN">Telugu</SelectItem>
+                              <SelectItem value="ta-IN">Tamil</SelectItem>
+                              <SelectItem value="mr-IN">Marathi</SelectItem>
+                              <SelectItem value="gu-IN">Gujarati</SelectItem>
+                              <SelectItem value="kn-IN">Kannada</SelectItem>
+                              <SelectItem value="ml-IN">Malayalam</SelectItem>
+                              <SelectItem value="pa-IN">Punjabi</SelectItem>
+                              <SelectItem value="ur-PK">🇵🇰 Urdu</SelectItem>
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌏 Southeast Asia (Gemini Zone)</SelectLabel>
+                              <SelectItem value="id-ID">🇮🇩 Indonesian · DeepL</SelectItem>
+                              <SelectItem value="ms-MY">🇲🇾 Malay · Azure</SelectItem>
+                              <SelectItem value="th-TH">🇹🇭 Thai · DeepL</SelectItem>
+                              <SelectItem value="vi-VN">🇻🇳 Vietnamese · DeepL</SelectItem>
+                              <SelectItem value="tl-PH">🇵🇭 Filipino · Azure</SelectItem>
+                            </SelectGroup>
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌍 Africa (Gemini Zone · Azure)</SelectLabel>
+                              <SelectItem value="sw-KE">🇰🇪 Swahili</SelectItem>
+                              <SelectItem value="yo-NG">🇳🇬 Yoruba</SelectItem>
+                              <SelectItem value="am-ET">🇪🇹 Amharic</SelectItem>
+                            </SelectGroup>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
+
+                    {/* Output Languages — Multi-select dropdown for dubbing/subtitles */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Output Languages (for dubbing/subtitles)</Label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[
-                          { code: 'en', label: 'EN' }, { code: 'es', label: 'ES' }, { code: 'fr', label: 'FR' },
-                          { code: 'de', label: 'DE' }, { code: 'it', label: 'IT' }, { code: 'pt', label: 'PT' },
-                          { code: 'nl', label: 'NL' }, { code: 'pl', label: 'PL' }, { code: 'ru', label: 'RU' },
-                          { code: 'uk', label: 'UK' }, { code: 'sv', label: 'SV' }, { code: 'da', label: 'DA' },
-                          { code: 'nb', label: 'NO' }, { code: 'fi', label: 'FI' }, { code: 'cs', label: 'CS' },
-                          { code: 'sk', label: 'SK' }, { code: 'ro', label: 'RO' }, { code: 'hu', label: 'HU' },
-                          { code: 'bg', label: 'BG' }, { code: 'el', label: 'EL' }, { code: 'et', label: 'ET' },
-                          { code: 'lv', label: 'LV' }, { code: 'lt', label: 'LT' }, { code: 'sl', label: 'SL' },
-                          { code: 'zh', label: 'ZH' }, { code: 'ja', label: 'JA' }, { code: 'ko', label: 'KO' },
-                          { code: 'ar', label: 'AR' }, { code: 'he', label: 'HE' }, { code: 'tr', label: 'TR' },
-                          { code: 'fa', label: 'FA' }, { code: 'hi', label: 'HI' }, { code: 'bn', label: 'BN' },
-                          { code: 'te', label: 'TE' }, { code: 'ta', label: 'TA' }, { code: 'mr', label: 'MR' },
-                          { code: 'gu', label: 'GU' }, { code: 'ur', label: 'UR' },
-                          { code: 'id', label: 'ID' }, { code: 'th', label: 'TH' }, { code: 'vi', label: 'VI' },
-                          { code: 'ms', label: 'MS' }, { code: 'tl', label: 'TL' },
-                          { code: 'sw', label: 'SW' }, { code: 'yo', label: 'YO' }, { code: 'am', label: 'AM' },
-                        ].map(lang => (
-                          <Badge
-                            key={lang.code}
-                            variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'}
-                            className="text-[10px] cursor-pointer transition-colors"
-                            onClick={() => setOutputLanguages(prev =>
-                              prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code]
-                            )}
-                          >
-                            {lang.label}
-                          </Badge>
-                        ))}
-                      </div>
+                      <Label className="text-xs">Output Languages — Dubbing & Subtitles</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs font-normal">
+                            <span className="truncate">
+                              {outputLanguages.length === 0
+                                ? 'Select output languages…'
+                                : `${outputLanguages.length} language${outputLanguages.length > 1 ? 's' : ''} selected`}
+                            </span>
+                            <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[360px] p-0 z-50 bg-popover" align="start">
+                          <ScrollArea className="h-[320px]">
+                            <div className="p-2 space-y-3">
+                              {/* Selected summary */}
+                              {outputLanguages.length > 0 && (
+                                <div className="flex flex-wrap gap-1 pb-2 border-b border-border">
+                                  {outputLanguages.map(code => (
+                                    <Badge key={code} variant="default" className="text-[10px] gap-1 cursor-pointer" onClick={() => setOutputLanguages(prev => prev.filter(l => l !== code))}>
+                                      {code.toUpperCase()} ×
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Europe & Americas */}
+                              <div>
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🌍 Europe & Americas (Claude · DeepL)</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {[
+                                    { code: 'en', label: '🇺🇸 EN' }, { code: 'es', label: '🇪🇸 ES' }, { code: 'fr', label: '🇫🇷 FR' },
+                                    { code: 'de', label: '🇩🇪 DE' }, { code: 'it', label: '🇮🇹 IT' }, { code: 'pt', label: '🇧🇷 PT' },
+                                    { code: 'nl', label: '🇳🇱 NL' }, { code: 'pl', label: '🇵🇱 PL' }, { code: 'ru', label: '🇷🇺 RU' },
+                                    { code: 'uk', label: '🇺🇦 UK' }, { code: 'sv', label: '🇸🇪 SV' }, { code: 'da', label: '🇩🇰 DA' },
+                                    { code: 'nb', label: '🇳🇴 NO' }, { code: 'fi', label: '🇫🇮 FI' }, { code: 'cs', label: '🇨🇿 CS' },
+                                    { code: 'sk', label: '🇸🇰 SK' }, { code: 'ro', label: '🇷🇴 RO' }, { code: 'hu', label: '🇭🇺 HU' },
+                                    { code: 'bg', label: '🇧🇬 BG' }, { code: 'el', label: '🇬🇷 EL' }, { code: 'et', label: '🇪🇪 ET' },
+                                    { code: 'lv', label: '🇱🇻 LV' }, { code: 'lt', label: '🇱🇹 LT' }, { code: 'sl', label: '🇸🇮 SL' },
+                                  ].map(lang => (
+                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
+                                      {lang.label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* CJK */}
+                              <div>
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🀄 CJK (Qwen · DeepL)</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {[
+                                    { code: 'zh', label: '🇨🇳 ZH' }, { code: 'ja', label: '🇯🇵 JA' }, { code: 'ko', label: '🇰🇷 KO' },
+                                  ].map(lang => (
+                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
+                                      {lang.label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* MENA */}
+                              <div>
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🕌 MENA (Qwen)</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {[
+                                    { code: 'ar', label: '🇸🇦 AR' }, { code: 'he', label: '🇮🇱 HE' }, { code: 'tr', label: '🇹🇷 TR' }, { code: 'fa', label: '🇮🇷 FA' },
+                                  ].map(lang => (
+                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
+                                      {lang.label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* India */}
+                              <div>
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🇮🇳 India / South Asia (Gemini · Azure)</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {[
+                                    { code: 'hi', label: '🇮🇳 HI' }, { code: 'bn', label: '🇧🇩 BN' }, { code: 'te', label: 'TE' },
+                                    { code: 'ta', label: 'TA' }, { code: 'mr', label: 'MR' }, { code: 'gu', label: 'GU' },
+                                    { code: 'kn', label: 'KN' }, { code: 'ml', label: 'ML' }, { code: 'pa', label: 'PA' },
+                                    { code: 'ur', label: '🇵🇰 UR' },
+                                  ].map(lang => (
+                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
+                                      {lang.label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* SEA */}
+                              <div>
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🌏 Southeast Asia (Gemini)</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {[
+                                    { code: 'id', label: '🇮🇩 ID' }, { code: 'ms', label: '🇲🇾 MS' }, { code: 'th', label: '🇹🇭 TH' },
+                                    { code: 'vi', label: '🇻🇳 VI' }, { code: 'tl', label: '🇵🇭 TL' },
+                                  ].map(lang => (
+                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
+                                      {lang.label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Africa */}
+                              <div>
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🌍 Africa (Gemini · Azure)</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {[
+                                    { code: 'sw', label: '🇰🇪 SW' }, { code: 'yo', label: '🇳🇬 YO' }, { code: 'am', label: '🇪🇹 AM' },
+                                  ].map(lang => (
+                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
+                                      {lang.label}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </ScrollArea>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </CardContent>
                 </Card>
