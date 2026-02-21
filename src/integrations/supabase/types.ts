@@ -4570,6 +4570,57 @@ export type Database = {
         }
         Relationships: []
       }
+      cast_output_presets: {
+        Row: {
+          aspect_ratio: string
+          category: string
+          created_at: string | null
+          description: string | null
+          height: number
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          label: string
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+          width: number
+        }
+        Insert: {
+          aspect_ratio: string
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          height: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          label: string
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+          width: number
+        }
+        Update: {
+          aspect_ratio?: string
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          height?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          label?: string
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+          width?: number
+        }
+        Relationships: []
+      }
       cast_production_capabilities: {
         Row: {
           category: string

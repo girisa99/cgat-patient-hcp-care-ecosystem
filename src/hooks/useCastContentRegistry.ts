@@ -79,6 +79,13 @@ export interface VisualStyle {
   complexity_score: number;
   render_time_estimate: string;
   preview_image_url: string | null;
+  character_frame_percent: number;
+  is_user_created: boolean;
+  created_by: string | null;
+  is_saved_globally: boolean;
+  custom_prompt: string | null;
+  uploaded_reference_url: string | null;
+  uploaded_reference_type: string | null;
 }
 
 export interface OutputPreset {

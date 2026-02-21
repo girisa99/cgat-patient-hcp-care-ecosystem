@@ -142,6 +142,7 @@ import { ScriptPreviewPanel } from './ScriptPreviewPanel';
 import { TranslationTranscreationToggle } from './TranslationTranscreationToggle';
 import { CharacterPickerPopup, type CharacterOption } from './CharacterPickerPopup';
 import { PortalDropdown } from './create-wizard/PortalDropdown';
+import { StyleCustomizationPanel } from './StyleCustomizationPanel';
 
 /**
  * Detect transcreation zone from dialect code.
@@ -330,6 +331,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
   // Character picker popup state
   const [characterPickerOpen, setCharacterPickerOpen] = useState(false);
+  // Character frame percentage (10-100%)
+  const [characterFramePercent, setCharacterFramePercent] = useState(50);
   // Target duration for auto scene calculation
   const [targetDuration, setTargetDuration] = useState<number>(60); // seconds
   // Asset source type
@@ -1524,7 +1527,20 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       ) : null;
                     })()}
 
-                    {/* 5a-iii: Character selection — enlarged cards with thumbnails & descriptions */}
+                    {/* 5a-iii: Style Customization — AI preview, upload, character sizing, custom create */}
+                    {selectedVisualStyleIds.length > 0 && (
+                      <StyleCustomizationPanel
+                        selectedStyles={selectedVisualStyleIds
+                          .map(id => contentRegistry.visualStyles.find(s => s.id === id))
+                          .filter((s): s is NonNullable<typeof s> => !!s)}
+                        allStyles={contentRegistry.visualStyles}
+                        characterFramePercent={characterFramePercent}
+                        onCharacterFrameChange={setCharacterFramePercent}
+                        onStyleCreated={contentRegistry.refresh}
+                      />
+                    )}
+
+                    {/* 5a-iv: Character selection — enlarged cards with thumbnails & descriptions */}
                     {selectedVisualStyleIds.length > 0 && (() => {
                       // Collect characters for all selected styles
                       const allChars = selectedVisualStyleIds.flatMap(id => 
@@ -1804,12 +1820,32 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="3840x2160">4K (3840×2160)</SelectItem>
-                            <SelectItem value="1920x1080">Full HD (1920×1080)</SelectItem>
-                            <SelectItem value="1280x720">HD (1280×720)</SelectItem>
-                            <SelectItem value="1080x1920">Full HD Portrait (1080×1920)</SelectItem>
-                            <SelectItem value="1080x1080">Square HD (1080×1080)</SelectItem>
-                            <SelectItem value="720x1280">HD Portrait (720×1280)</SelectItem>
+                            {contentRegistry.outputPresets.length > 0 ? (
+                              (() => {
+                                const grouped = contentRegistry.outputPresets.reduce((acc, p) => {
+                                  const cat = p.category || 'general';
+                                  if (!acc[cat]) acc[cat] = [];
+                                  acc[cat].push(p);
+                                  return acc;
+                                }, {} as Record<string, typeof contentRegistry.outputPresets>);
+                                return Object.entries(grouped).map(([cat, presets]) => (
+                                  <SelectGroup key={cat}>
+                                    <SelectLabel className="text-[10px] uppercase">{cat}</SelectLabel>
+                                    {presets.map(p => (
+                                      <SelectItem key={p.id} value={`${p.width}x${p.height}`}>
+                                        {p.icon} {p.label} ({p.width}×{p.height})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectGroup>
+                                ));
+                              })()
+                            ) : (
+                              <>
+                                <SelectItem value="3840x2160">4K (3840×2160)</SelectItem>
+                                <SelectItem value="1920x1080">Full HD (1920×1080)</SelectItem>
+                                <SelectItem value="1280x720">HD (1280×720)</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
