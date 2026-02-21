@@ -39,6 +39,15 @@
  *
  *   // Enrich scenes for video production
  *   const enrichedScenes = bridge.enrichScenesWithFullContext(blueprintScenes, contentPool);
+ *
+ * Integration with Lovable's useUniversalEnrichment hook:
+ *   This bridge is the SERVICE LAYER — it works outside React components.
+ *   Lovable's useUniversalEnrichment (src/hooks/useUniversalEnrichment.ts) is the
+ *   REACT HOOK layer — it wraps content pool + product knowledge in React Query.
+ *   They complement each other:
+ *     - Hook: React component → content pool enrichment + product knowledge (DB)
+ *     - Bridge: Service layer → brand intelligence + competitive + regional creative + AI routing
+ *   Use enrichWithHookContext() to merge both layers.
  */
 
 import type { BrandIntelligenceProfile, BusinessTier, MarketingFramework } from './brandIntelligenceEngine';
@@ -53,6 +62,8 @@ import { generateScenePrompts, getRecommendedPlatforms } from './castEndToEndPro
 import { findArchetypesByRegion } from './informalEconomyProfiles';
 import type { EnrichedBlueprintScene } from '../contentPoolSceneEnricher';
 import { enrichScenesWithContext, generateAIPromptContext } from '../contentPoolSceneEnricher';
+import type { EnrichmentContext, ProductKnowledgeContext } from '../../hooks/useUniversalEnrichment';
+import { formatEnrichmentForAI, getAllGenieProductsKnowledge } from '../../hooks/useUniversalEnrichment';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -554,6 +565,58 @@ export class UniversalEnrichmentBridge {
       products: ['spark', 'mind', 'deck', 'cast', 'vibe', 'arc'] as GenieSuiteProduct[],
       busMessageCount: bus.getMessageLog().length,
     };
+  }
+  // ── Integration with Lovable's useUniversalEnrichment ──────
+
+  /**
+   * Merge the React hook's enrichment context (content pool + product knowledge)
+   * with the service layer's intelligence (brand + competitive + regional creative).
+   *
+   * Call this from a React component after useUniversalEnrichment() returns:
+   *
+   * @example
+   * const { enrichmentContext, additionalContext } = useUniversalEnrichment({ productId, region });
+   * const bridge = getEnrichmentBridge();
+   * const fullContext = await bridge.enrichWithHookContext(enrichmentContext, prompt);
+   */
+  async enrichWithHookContext(
+    hookContext: EnrichmentContext,
+    prompt: string,
+    options: {
+      product?: GenieSuiteProduct;
+      style?: CreativeStyleFamily;
+      includeCompetitive?: boolean;
+    } = {}
+  ): Promise<EnrichmentResult> {
+    // Start with the bridge's standard enrichment
+    const baseResult = await this.enrichPrompt(prompt, {
+      product: options.product,
+      style: options.style,
+      includeCompetitive: options.includeCompetitive,
+    });
+
+    // Layer in the hook's enrichment context (product knowledge, audience, regional scripts)
+    const hookAdditionalContext = formatEnrichmentForAI(hookContext);
+
+    // Merge: bridge context + hook context
+    const mergedPrompt = [
+      baseResult.enrichedPrompt,
+      hookAdditionalContext ? `\n[PRODUCT_KNOWLEDGE] ${hookAdditionalContext}` : '',
+    ].filter(Boolean).join('\n');
+
+    return {
+      ...baseResult,
+      enrichedPrompt: mergedPrompt.slice(0, this.config.maxPromptLength),
+      productContext: hookAdditionalContext || baseResult.productContext,
+    };
+  }
+
+  /**
+   * Get all Genie product knowledge as a single context block.
+   * Delegates to Lovable's getAllGenieProductsKnowledge() for ecosystem awareness.
+   */
+  getEcosystemKnowledge(): Record<string, ProductKnowledgeContext> {
+    return getAllGenieProductsKnowledge();
   }
 }
 
