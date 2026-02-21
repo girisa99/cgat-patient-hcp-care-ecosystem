@@ -1052,9 +1052,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       </div>
                     </div>
 
-                    {/* Output Languages — Dubbing & Subtitles (Transcreation + TTS per routing zone) */}
+                    {/* Output Languages — Script, Dubbing & Subtitles (Transcreation + TTS per routing zone) */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Output Languages — Dubbing & Subtitles <span className="text-muted-foreground">(Transcreation per routing zone)</span></Label>
+                      <Label className="text-xs">Output Languages — Script, Dubbing & Subtitles <span className="text-muted-foreground">(Transcreation per routing zone)</span></Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs font-normal">
