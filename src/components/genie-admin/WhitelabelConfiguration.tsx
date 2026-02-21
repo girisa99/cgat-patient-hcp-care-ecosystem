@@ -56,17 +56,31 @@ const CopyableValue: React.FC<{ label: string; value: string }> = ({ label, valu
   const handleCopy = () => {
     navigator.clipboard.writeText(value);
     setCopied(true);
+    toast({ title: 'Copied!', description: `${label}: ${value}` });
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="p-2 bg-background rounded border">
-      <span className="text-muted-foreground text-xs">{label}</span>
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <p className="font-mono font-medium text-xs text-primary truncate flex-1">{value}</p>
-        <button onClick={handleCopy} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
-          {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
-        </button>
-      </div>
+    <div className="p-3 bg-background rounded-lg border space-y-1.5">
+      <span className="text-muted-foreground text-xs font-medium">{label}</span>
+      <p className="font-mono font-semibold text-sm text-foreground break-all">{value}</p>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleCopy}
+        className="w-full gap-1.5 h-7 text-xs mt-1"
+      >
+        {copied ? (
+          <>
+            <Check className="h-3 w-3 text-green-500" />
+            Copied!
+          </>
+        ) : (
+          <>
+            <Copy className="h-3 w-3" />
+            Copy
+          </>
+        )}
+      </Button>
     </div>
   );
 };
