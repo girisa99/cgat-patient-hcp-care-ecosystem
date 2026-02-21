@@ -1337,15 +1337,27 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     <div className="space-y-3">
                       <Label className="text-xs font-medium">Generation Style</Label>
                       <div className="grid grid-cols-2 gap-3">
-                        {/* Parent Style Dropdown */}
+                        {/* Parent Style Dropdown — with sub-count hints */}
                         <PortalDropdown
                           label="Style"
                           icon={<span className="text-sm">🎨</span>}
                           placeholder="Select styles..."
                           options={contentRegistry.visualStyles
                             .filter(s => !s.parent_style_id)
-                            .sort((a, b) => a.sort_order - b.sort_order)
-                            .map(s => ({ value: s.id, label: s.label, icon: s.icon === 'Film' ? '🎬' : s.icon === 'Palette' ? '🎨' : s.icon === 'Camera' ? '📷' : s.icon === 'Star' ? '⭐' : s.icon === 'Box' ? '📦' : '🎭' }))}
+                            .sort((a, b) => {
+                              if (a.category !== b.category) return a.category.localeCompare(b.category);
+                              return a.sort_order - b.sort_order;
+                            })
+                            .map(s => {
+                              const subCount = contentRegistry.visualStyles.filter(sub => sub.parent_style_id === s.id).length;
+                              const catLabel = s.category ? s.category.charAt(0).toUpperCase() + s.category.slice(1) : '';
+                              return {
+                                value: s.id,
+                                label: s.label + (subCount > 0 ? ` (${subCount})` : ''),
+                                icon: s.icon === 'Film' ? '🎬' : s.icon === 'Palette' ? '🎨' : s.icon === 'Camera' ? '📷' : s.icon === 'Star' ? '⭐' : s.icon === 'Box' ? '📦' : '🎭',
+                                description: catLabel + (subCount > 0 ? ` • ${subCount} sub-styles` : ' • no sub-styles'),
+                              };
+                            })}
                           selected={selectedVisualStyleIds.filter(id => {
                             const style = contentRegistry.visualStyles.find(s => s.id === id);
                             return style && !style.parent_style_id;
@@ -1384,11 +1396,20 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                             .filter(s => s.parent_style_id && selectedParentIds.includes(s.parent_style_id))
                             .sort((a, b) => a.sub_sort_order - b.sub_sort_order);
                           
-                          if (availableSubStyles.length === 0) return (
+                          if (selectedParentIds.length === 0) return (
                             <div className="space-y-2">
                               <Label className="flex items-center gap-2 text-sm"><span className="text-sm">🎭</span>Sub-Style</Label>
                               <div className="flex items-center justify-center h-10 border rounded-md bg-muted/30 text-xs text-muted-foreground">
                                 Select a parent style first
+                              </div>
+                            </div>
+                          );
+
+                          if (availableSubStyles.length === 0) return (
+                            <div className="space-y-2">
+                              <Label className="flex items-center gap-2 text-sm"><span className="text-sm">🎭</span>Sub-Style</Label>
+                              <div className="flex items-center justify-center h-10 border rounded-md bg-muted/30 text-xs text-muted-foreground">
+                                No sub-styles for selected style(s)
                               </div>
                             </div>
                           );
@@ -1433,7 +1454,56 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       )}
                     </div>
 
-                    {/* 5a-ii: Character chips — inline below style dropdowns */}
+                    {/* 5a-ii: Output Resolution / Pixel Size */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">📐 Output Resolution</Label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { label: '720p', value: '1280x720', desc: 'HD — fast render', ratio: '16:9' },
+                          { label: '1080p', value: '1920x1080', desc: 'Full HD — standard', ratio: '16:9' },
+                          { label: '4K', value: '3840x2160', desc: 'Ultra HD — cinematic', ratio: '16:9' },
+                          { label: 'Square', value: '1080x1080', desc: 'Social media', ratio: '1:1' },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => { setSelectedResolution(opt.value); setSelectedAspectRatio(opt.ratio); }}
+                            className={cn(
+                              "flex flex-col items-center gap-0.5 p-2.5 rounded-lg border text-xs transition-all",
+                              selectedResolution === opt.value
+                                ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
+                                : "border-border hover:border-primary/40 hover:bg-muted/50"
+                            )}
+                          >
+                            <span className="font-bold text-sm">{opt.label}</span>
+                            <span className="text-[10px] text-muted-foreground">{opt.value.replace('x', '×')}</span>
+                            <span className="text-[9px] text-muted-foreground">{opt.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mt-1">
+                        {[
+                          { label: '9:16', value: '9:16', desc: 'Vertical / Reels' },
+                          { label: '16:9', value: '16:9', desc: 'Landscape / YouTube' },
+                          { label: '1:1', value: '1:1', desc: 'Square / Instagram' },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => setSelectedAspectRatio(opt.value)}
+                            className={cn(
+                              "flex flex-col items-center gap-0.5 p-2 rounded-lg border text-xs transition-all",
+                              selectedAspectRatio === opt.value
+                                ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
+                                : "border-border hover:border-primary/40 hover:bg-muted/50"
+                            )}
+                          >
+                            <span className="font-semibold">{opt.label}</span>
+                            <span className="text-[9px] text-muted-foreground">{opt.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 5a-iii: Character selection — enlarged cards with thumbnails & descriptions */}
                     {selectedVisualStyleIds.length > 0 && (() => {
                       // Collect characters for all selected styles
                       const allChars = selectedVisualStyleIds.flatMap(id => 
@@ -1441,12 +1511,19 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       );
                       // Deduplicate by id
                       const uniqueChars = Array.from(new Map(allChars.map(c => [c.id, c])).values());
-                      if (uniqueChars.length === 0) return null;
+                      if (uniqueChars.length === 0) return (
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">🎭 Characters</Label>
+                          <div className="flex items-center justify-center h-16 border rounded-md bg-muted/30 text-xs text-muted-foreground">
+                            No characters available for selected style(s)
+                          </div>
+                        </div>
+                      );
                       const selectedChars = uniqueChars.filter(ch => selectedCharacterIds.includes(ch.id));
                       return (
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium">🎭 Characters ({uniqueChars.length} available)</Label>
-                          <div className="flex flex-wrap gap-1.5">
+                          <Label className="text-xs font-medium">🎭 Characters ({uniqueChars.length} available{selectedChars.length > 0 ? ` • ${selectedChars.length} selected` : ''})</Label>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {uniqueChars.map(ch => {
                               const isSelected = selectedCharacterIds.includes(ch.id);
                               return (
@@ -1456,26 +1533,33 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                                     prev.includes(ch.id) ? prev.filter(c => c !== ch.id) : [...prev, ch.id]
                                   )}
                                   className={cn(
-                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs transition-all",
+                                    "flex items-start gap-3 p-3 rounded-lg border text-left transition-all",
                                     isSelected
-                                      ? "bg-primary/10 border-primary/30 text-primary ring-1 ring-primary/20"
-                                      : "bg-muted/30 border-border hover:border-primary/40 hover:bg-muted/60"
+                                      ? "bg-primary/10 border-primary/30 ring-2 ring-primary/20"
+                                      : "bg-muted/20 border-border hover:border-primary/40 hover:bg-muted/40"
                                   )}
                                 >
                                   {ch.thumbnail_url ? (
-                                    <img src={ch.thumbnail_url} alt={ch.label} className="w-5 h-5 rounded-full object-cover" />
+                                    <img src={ch.thumbnail_url} alt={ch.label} className="w-12 h-12 rounded-lg object-cover shrink-0 border border-border/50" />
                                   ) : (
-                                    <span>{ch.icon || '🎭'}</span>
+                                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-lg shrink-0">
+                                      {ch.icon || '🎭'}
+                                    </div>
                                   )}
-                                  <span className="font-medium">{ch.label}</span>
-                                  {isSelected && <Check className="w-3 h-3" />}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-medium text-xs truncate">{ch.label}</span>
+                                      {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                                    </div>
+                                    {ch.description && (
+                                      <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">{ch.description}</p>
+                                    )}
+                                    <span className="text-[9px] text-muted-foreground/70 mt-0.5 block">{ch.character_type}</span>
+                                  </div>
                                 </button>
                               );
                             })}
                           </div>
-                          {selectedChars.length > 0 && (
-                            <p className="text-[10px] text-muted-foreground">{selectedChars.length} character{selectedChars.length !== 1 ? 's' : ''} selected</p>
-                          )}
                         </div>
                       );
                     })()}
