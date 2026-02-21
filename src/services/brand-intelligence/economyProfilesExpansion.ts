@@ -1,28 +1,506 @@
 /**
  * Economy Profiles Expansion — SMB/Mid-Market/Enterprise archetypes
- * 
- * STUB: This file will be replaced by Claude's full implementation.
- * Provides minimal exports to prevent build errors until the expansion lands.
+ * Extends informalEconomyProfiles.ts (nano/micro street food) with retail,
+ * digital freelance, agricultural, SMB, mid-market, and enterprise tiers.
  */
-
 import type { InformalBusinessArchetype } from './informalEconomyProfiles';
 
-export const RETAIL_ARCHETYPES: InformalBusinessArchetype[] = [];
-export const DIGITAL_FREELANCE_ARCHETYPES: InformalBusinessArchetype[] = [];
-export const AGRICULTURAL_ARCHETYPES: InformalBusinessArchetype[] = [];
-export const SMB_ARCHETYPES: InformalBusinessArchetype[] = [];
-export const MID_MARKET_ARCHETYPES: InformalBusinessArchetype[] = [];
-export const ENTERPRISE_ARCHETYPES: InformalBusinessArchetype[] = [];
-export const ALL_EXPANDED_ARCHETYPES: InformalBusinessArchetype[] = [];
+// ─── Retail Archetypes ──────────────────────────────────────────────────────
+
+export const RETAIL_ARCHETYPES: InformalBusinessArchetype[] = [
+  {
+    id: 'ret-india-kirana',
+    type: 'retail',
+    tier: 'micro',
+    name: 'Indian Kirana Store',
+    localNames: { hi: 'किराना दुकान', ta: 'மளிகைக் கடை', te: 'కిరాణా షాపు', mr: 'किराणा दुकान', bn: 'মুদি দোকান' },
+    description: 'Neighborhood grocery store — the backbone of Indian retail, serving 10-50 families daily',
+    regions: ['INDIA_NORTH', 'INDIA_SOUTH', 'INDIA_WEST', 'INDIA_EAST', 'INDIA_PAN'],
+    typicalProducts: ['Rice & Atta', 'Cooking Oil', 'Spices', 'Dal/Pulses', 'Snacks', 'Daily Essentials', 'Cold Drinks'],
+    typicalRevenue: { min: 5000, max: 25000, currency: 'INR', period: 'day' },
+    customerBase: 'Neighborhood families, daily shoppers, housewives, domestic workers buying on credit',
+    marketingReality: 'Zero marketing. Relies on location, trust, credit (udhaar), and personal relationships.',
+    biggestChallenge: 'Competition from quick-commerce (Blinkit, Zepto), thin margins, inventory management',
+    contentNeeds: ['WhatsApp festival greetings with shop name', 'Daily offers poster', 'Google Maps listing', 'Delivery announcement'],
+    stormTemplate: {
+      story: { whoAreYou: 'Your neighborhood kirana — everything you need, 2 minutes from home', whyDoYouDoThis: 'Because every family deserves a shopkeeper who knows them by name', whatMakesYouSpecial: 'I know what you need before you ask — personal service no app can match' },
+      trust: { socialProof: ['Serving this colony for 20+ years', '200+ families shop here daily'], guarantees: ['Fresh stock daily', 'Udhaar (credit) for trusted families'], credentials: ['FSSAI licensed', 'Digital payments accepted'] },
+      offer: { whatYouSell: 'Everything for your kitchen and home — groceries, spices, snacks, essentials', whyNow: 'Festival special: 10% off on bulk atta and oil', pricingMessage: 'Same quality as supermarket, but with personal service and home delivery' },
+      reach: { whereCustomersAre: ['WhatsApp colony groups', 'Morning walk aunties', 'School pickup parents'], howToFind: 'Next to [Landmark] — blue shutter, everyone knows us', bestTimeToReach: '7 AM - 10 PM, busiest 9-11 AM and 5-8 PM' },
+      momentum: { repeatStrategy: 'Monthly credit settlement builds loyalty — families shop here for generations', referralStrategy: 'Refer a new neighbor, both get free 1kg sugar', growthGoal: 'Start home delivery via WhatsApp orders, list on Google Maps' },
+    },
+    samplePrompts: { hi: 'मेरी किराना दुकान के लिए दिवाली ऑफर का पोस्टर बनाओ — "शर्मा जनरल स्टोर" — 10% छूट', en: 'Create a Diwali offer poster for my kirana store "Sharma General Store" — 10% off on bulk orders' },
+  },
+  {
+    id: 'ret-africa-mobile',
+    type: 'retail',
+    tier: 'micro',
+    name: 'African Mobile Phone Shop',
+    localNames: { yo: 'Ilé Fóònù', ha: 'Shagon Waya', sw: 'Duka la Simu', en: 'Phone Shop' },
+    description: 'Mobile phone sales, repair, and accessories shop — the tech hub of every African market',
+    regions: ['AFRICA_WEST', 'AFRICA_EAST', 'AFRICA_SOUTH'],
+    typicalProducts: ['Budget Smartphones', 'Phone Accessories', 'Screen Repair', 'SIM Registration', 'Airtime/Data', 'Phone Cases'],
+    typicalRevenue: { min: 20000, max: 150000, currency: 'NGN', period: 'day' },
+    customerBase: 'Everyone with a phone — students, market traders, professionals needing repairs',
+    marketingReality: 'Signage and location. Instagram/TikTok for new arrivals. Word of mouth for repairs.',
+    biggestChallenge: 'Counterfeit parts competition, rapid tech changes, price wars, trust issues',
+    contentNeeds: ['New stock arrival posts for Instagram', 'Price list graphic', 'Repair service ad', 'Google Business listing'],
+    stormTemplate: {
+      story: { whoAreYou: 'Your trusted phone guy — sales, repairs, and accessories all in one place', whyDoYouDoThis: 'Because everyone deserves a working phone at a fair price', whatMakesYouSpecial: 'Genuine parts only, repairs done while you wait, 30-day warranty' },
+      trust: { socialProof: ['5 years in this market', '1000+ repairs completed'], guarantees: ['30-day warranty on all repairs', 'Original parts or money back'], credentials: ['Certified Samsung/Tecno repair', 'Registered business'] },
+      offer: { whatYouSell: 'Phones, repairs, and accessories — budget to premium', whyNow: 'Back-to-school special: free screen protector with every phone', pricingMessage: 'Best prices in the market — price match guarantee' },
+      reach: { whereCustomersAre: ['Instagram/TikTok', 'Market foot traffic', 'WhatsApp broadcast list'], howToFind: 'Shop 15, [Market Name] — look for the big phone sign', bestTimeToReach: '9 AM - 7 PM daily' },
+      momentum: { repeatStrategy: 'Free basic phone check-up for returning customers', referralStrategy: 'Refer a friend who buys, get free accessories worth ₦2000', growthGoal: 'Open second branch, start online delivery via Jumia/Konga' },
+    },
+    samplePrompts: { en: 'Create an Instagram post for my phone shop — new Tecno Spark 20 just arrived, best price in Lagos', yo: 'Ṣe poster fun ile fóònù mi — Tecno Spark 20 tuntun ti de, owo to dara julọ ni Lagos' },
+  },
+  {
+    id: 'ret-latam-tienda',
+    type: 'retail',
+    tier: 'micro',
+    name: 'Latin American Tienda / Bodega',
+    localNames: { es: 'Tienda de Abarrotes', pt: 'Mercearia / Venda', en: 'Corner Store' },
+    description: 'Family-run corner store selling groceries, snacks, drinks, and daily essentials',
+    regions: ['LATAM_MEXICO', 'LATAM_COLOMBIA', 'LATAM_PERU', 'LATAM_BRAZIL', 'LATAM_ARGENTINA'],
+    typicalProducts: ['Tortillas/Bread', 'Sodas & Agua', 'Snacks (Sabritas)', 'Eggs & Milk', 'Cleaning Supplies', 'Phone Credit'],
+    typicalRevenue: { min: 2000, max: 8000, currency: 'MXN', period: 'day' },
+    customerBase: 'Entire neighborhood — kids buying snacks, families buying daily essentials, workers grabbing lunch',
+    marketingReality: 'Location is everything. Hand-painted signs. Maybe a Facebook page.',
+    biggestChallenge: 'Competition from OXXO/convenience chains, thin margins, credit to neighbors',
+    contentNeeds: ['WhatsApp specials poster', 'Facebook post for promotions', 'Hand-out flyer', 'Google Maps listing'],
+    stormTemplate: {
+      story: { whoAreYou: 'La tienda de la esquina — your neighborhood store that has everything', whyDoYouDoThis: 'Because every colonia needs a store they can trust and walk to', whatMakesYouSpecial: 'We know you by name, we give you credit, we are always open' },
+      trust: { socialProof: ['La tienda de la familia desde hace 15 años', 'Everyone in the colonia shops here'], guarantees: ['Fresh products daily', 'Honest prices, no hidden costs'], credentials: ['Family-owned, community-trusted'] },
+      offer: { whatYouSell: 'Everything for your home — groceries, drinks, snacks, essentials', whyNow: 'Weekend special: 3x2 on sodas', pricingMessage: 'Same as the big store, but closer and friendlier' },
+      reach: { whereCustomersAre: ['WhatsApp neighborhood group', 'Kids after school', 'Sunday family shopping'], howToFind: 'On the corner of [Street] — the one with the Coca-Cola sign', bestTimeToReach: '7 AM - 10 PM, every day' },
+      momentum: { repeatStrategy: 'Fiar (credit system) keeps families coming back', referralStrategy: 'Bring a new neighbor, both get a free refresco', growthGoal: 'Start home delivery, create a Facebook page for promotions' },
+    },
+    samplePrompts: { es: 'Hazme un poster para mi tienda "Abarrotes Doña María" — ofertas de fin de semana, 3x2 en refrescos', en: 'Make a poster for my corner store "Doña Maria\'s" — weekend deals, buy 2 get 1 free sodas' },
+  },
+  {
+    id: 'ret-sea-provision',
+    type: 'retail',
+    tier: 'micro',
+    name: 'Southeast Asian Provision Shop',
+    localNames: { ms: 'Kedai Runcit', id: 'Toko Kelontong', th: 'ร้านชำ', tl: 'Tindahan / Sari-sari Store' },
+    description: 'Small provision shop selling daily essentials, snacks, and household items in single-serve sachets',
+    regions: ['SEA_MALAY', 'SEA_PHILIPPINES', 'SEA_THAILAND', 'SEA_VIETNAM'],
+    typicalProducts: ['Rice (by kilo)', 'Instant Noodles', 'Sachet Shampoo/Coffee', 'Cooking Oil', 'Eggs', 'Soft Drinks', 'Cigarettes'],
+    typicalRevenue: { min: 500, max: 3000, currency: 'MYR', period: 'day' },
+    customerBase: 'Neighborhood residents buying daily in small quantities, workers, students',
+    marketingReality: 'Zero marketing. Location and habit drive sales. Some use Facebook/Shopee.',
+    biggestChallenge: 'Thin margins, sachet economy, competition from minimarkets (7-Eleven), spoilage',
+    contentNeeds: ['Simple price list poster', 'Facebook/Instagram post', 'GrabMart listing photo', 'Promo announcement'],
+    stormTemplate: {
+      story: { whoAreYou: 'Your friendly neighborhood kedai — everything you need, right at your doorstep', whyDoYouDoThis: 'Because the community needs a shop they can trust at any hour', whatMakesYouSpecial: 'We sell in any quantity — one sachet or one carton, same friendly service' },
+      trust: { socialProof: ['Been here since your parents\' time', 'The whole kampung shops here'], guarantees: ['Fresh stock, checked expiry dates', 'Fair prices, no overcharging'], credentials: ['Licensed business', 'Halal products available'] },
+      offer: { whatYouSell: 'Daily essentials, snacks, drinks — everything for your home', whyNow: 'Ramadan special: dates and kurma at wholesale price', pricingMessage: 'Cheaper than minimarket, friendlier than supermarket' },
+      reach: { whereCustomersAre: ['Walk-in neighborhood traffic', 'WhatsApp group', 'Facebook community page'], howToFind: 'The blue shop at the end of Jalan [Name]', bestTimeToReach: '6 AM - 11 PM daily' },
+      momentum: { repeatStrategy: 'Hutang (credit) system for regular customers', referralStrategy: 'Bring a friend, both get free ice cream', growthGoal: 'List on GrabMart for delivery, start tracking inventory digitally' },
+    },
+    samplePrompts: { ms: 'Buat poster untuk kedai runcit saya "Kedai Pak Ali" — promosi Ramadan, kurma harga borong', en: 'Create a poster for my provision shop "Pak Ali\'s" — Ramadan promo, dates at wholesale price' },
+  },
+];
+
+// ─── Digital Freelance Archetypes ───────────────────────────────────────────
+
+export const DIGITAL_FREELANCE_ARCHETYPES: InformalBusinessArchetype[] = [
+  {
+    id: 'df-india-designer',
+    type: 'digital_freelance',
+    tier: 'nano',
+    name: 'Indian Freelance Designer',
+    localNames: { hi: 'फ्रीलांस डिज़ाइनर', en: 'Freelance Designer', ta: 'ஃப்ரீலான்ஸ் டிசைனர்' },
+    description: 'Self-taught or college-trained graphic designer doing logos, social media posts, and wedding cards',
+    regions: ['INDIA_PAN', 'INDIA_NORTH', 'INDIA_SOUTH'],
+    typicalProducts: ['Logo Design', 'Social Media Posts', 'Wedding Cards', 'Business Cards', 'YouTube Thumbnails', 'Menu Cards'],
+    typicalRevenue: { min: 15000, max: 60000, currency: 'INR', period: 'month' },
+    customerBase: 'Small businesses, restaurants, wedding families, YouTubers, Instagram influencers',
+    marketingReality: 'Instagram portfolio, WhatsApp network, Fiverr/Upwork side income. Word of mouth is king.',
+    biggestChallenge: 'Canva making clients DIY, price pressure, scope creep, late payments',
+    contentNeeds: ['Portfolio showcase reel', 'Client testimonial graphic', 'Service pricing post', 'Before/after design showcase'],
+    stormTemplate: {
+      story: { whoAreYou: 'I turn your ideas into designs that make people stop scrolling', whyDoYouDoThis: 'Because great design shouldn\'t cost a lakh — every business deserves to look premium', whatMakesYouSpecial: 'I understand Indian aesthetics AND global trends — your design will feel local and look world-class' },
+      trust: { socialProof: ['200+ logos designed', '50+ happy business clients'], guarantees: ['Unlimited revisions until you love it', '48-hour turnaround on social posts'], credentials: ['Adobe Certified', 'Portfolio on Behance/Dribbble'] },
+      offer: { whatYouSell: 'Professional design — logos, social media, wedding cards, branding packages', whyNow: 'Launch special: logo + business card + social media kit at ₹4999', pricingMessage: 'Agency quality at freelancer prices' },
+      reach: { whereCustomersAre: ['Instagram DMs', 'Fiverr/Upwork', 'WhatsApp business groups', 'Local business networks'], howToFind: 'DM me on Instagram @[handle] or WhatsApp me', bestTimeToReach: '10 AM - 8 PM, respond within 2 hours' },
+      momentum: { repeatStrategy: 'Monthly social media packages keep clients coming back', referralStrategy: '₹500 off for both you and your referral', growthGoal: 'Build a team of 3 designers, launch own design agency' },
+    },
+    samplePrompts: { hi: 'मेरे डिज़ाइन पोर्टफोलियो के लिए Instagram रील बनाओ — 5 बेस्ट लोगो दिखाओ', en: 'Create an Instagram reel showcasing my 5 best logo designs for my portfolio' },
+  },
+  {
+    id: 'df-africa-smm',
+    type: 'digital_freelance',
+    tier: 'nano',
+    name: 'African Social Media Manager',
+    localNames: { en: 'Social Media Manager', yo: 'Alákòóso Media', sw: 'Meneja wa Mitandao' },
+    description: 'Young professional managing Instagram, TikTok, and WhatsApp for local businesses',
+    regions: ['AFRICA_WEST', 'AFRICA_EAST', 'AFRICA_SOUTH'],
+    typicalProducts: ['Social Media Management', 'Content Creation', 'WhatsApp Marketing', 'TikTok Videos', 'Brand Photography'],
+    typicalRevenue: { min: 100000, max: 500000, currency: 'NGN', period: 'month' },
+    customerBase: 'Restaurants, fashion brands, event planners, real estate agents, beauty salons',
+    marketingReality: 'Own social media presence IS the marketing. Client results speak for themselves.',
+    biggestChallenge: 'Clients wanting miracles on tiny budgets, content fatigue, algorithm changes',
+    contentNeeds: ['Case study carousel', 'Before/after analytics screenshot', 'Service package post', 'Client testimonial video'],
+    stormTemplate: {
+      story: { whoAreYou: 'I make your business blow up on social media — more followers, more customers, more sales', whyDoYouDoThis: 'Because Nigerian/African businesses deserve world-class digital presence', whatMakesYouSpecial: 'I understand the African market — what makes people engage, share, and buy HERE' },
+      trust: { socialProof: ['Grew 5 brands from 0 to 10K followers', '3x average engagement rate increase'], guarantees: ['Weekly content calendar', 'Monthly analytics report'], credentials: ['Google Digital Skills certified', 'Meta Blueprint certified'] },
+      offer: { whatYouSell: 'Full social media management — strategy, content, posting, engagement, analytics', whyNow: 'New year, new brand — Q1 special packages available', pricingMessage: 'Starting at ₦50,000/month — cheaper than one billboard' },
+      reach: { whereCustomersAre: ['Twitter/X tech community', 'Instagram DMs', 'LinkedIn', 'WhatsApp business groups'], howToFind: 'DM me on any platform — I respond in 1 hour', bestTimeToReach: '9 AM - 9 PM WAT' },
+      momentum: { repeatStrategy: 'Monthly retainer with quarterly strategy reviews', referralStrategy: 'Refer a client, get one month 20% off', growthGoal: 'Build a 5-person agency, add paid ads management' },
+    },
+    samplePrompts: { en: 'Create an Instagram carousel showing my social media management results — 3 client case studies with before/after stats' },
+  },
+  {
+    id: 'df-global-fiverr',
+    type: 'digital_freelance',
+    tier: 'micro',
+    name: 'Global Fiverr/Upwork Seller',
+    localNames: { en: 'Freelancer', hi: 'फ्रीलांसर', es: 'Freelancer', ar: 'مستقل' },
+    description: 'International freelancer selling services on gig platforms — from anywhere to everywhere',
+    regions: ['INDIA_PAN', 'SOUTH_ASIA_PAKISTAN', 'SOUTH_ASIA_BANGLADESH', 'SEA_PHILIPPINES', 'AFRICA_WEST'],
+    typicalProducts: ['Video Editing', 'Voiceover', 'Translation', 'Data Entry', 'Virtual Assistant', 'Web Development'],
+    typicalRevenue: { min: 500, max: 5000, currency: 'USD', period: 'month' },
+    customerBase: 'International clients — US/EU businesses, YouTubers, startups, agencies outsourcing',
+    marketingReality: 'Platform SEO, profile optimization, and reviews ARE the marketing strategy.',
+    biggestChallenge: 'Platform fees (20%), race to the bottom on price, time zone differences, client disputes',
+    contentNeeds: ['Fiverr gig thumbnail', 'Portfolio video', 'LinkedIn presence', 'Client testimonial graphic'],
+    stormTemplate: {
+      story: { whoAreYou: 'Top-rated freelancer delivering world-class work from [Country]', whyDoYouDoThis: 'Because talent has no geography — I compete globally and deliver excellence', whatMakesYouSpecial: 'Top-rated with 500+ five-star reviews, delivering on time every time' },
+      trust: { socialProof: ['500+ completed orders', '4.9/5.0 rating', 'Top Rated Seller badge'], guarantees: ['100% satisfaction or free revision', 'On-time delivery guaranteed'], credentials: ['Level 2 / Top Rated Seller', 'Verified identity'] },
+      offer: { whatYouSell: 'Professional [service] — fast, affordable, top quality', whyNow: 'Limited slots available this month — book now', pricingMessage: 'Premium quality at competitive rates — see why 500+ clients chose me' },
+      reach: { whereCustomersAre: ['Fiverr/Upwork search', 'LinkedIn', 'YouTube', 'Reddit communities'], howToFind: 'Search "[service] [country]" on Fiverr — I\'m in the top results', bestTimeToReach: 'Available 16 hours/day across time zones' },
+      momentum: { repeatStrategy: 'Offer package deals — monthly retainers at 20% discount', referralStrategy: 'Leave a review, get priority delivery on next order', growthGoal: 'Build a team, create a micro-agency on the platform' },
+    },
+    samplePrompts: { en: 'Create a Fiverr gig thumbnail for my video editing service — professional, eye-catching, shows before/after' },
+  },
+];
+
+// ─── Agricultural Archetypes ────────────────────────────────────────────────
+
+export const AGRICULTURAL_ARCHETYPES: InformalBusinessArchetype[] = [
+  {
+    id: 'ag-india-farmer',
+    type: 'agriculture',
+    tier: 'nano',
+    name: 'Indian Small Farmer',
+    localNames: { hi: 'किसान', ta: 'விவசாயி', te: 'రైతు', mr: 'शेतकरी', bn: 'কৃষক', kn: 'ರೈತ' },
+    description: '1-5 acre farmer growing rice, wheat, vegetables, or sugarcane — backbone of India',
+    regions: ['INDIA_NORTH', 'INDIA_SOUTH', 'INDIA_WEST', 'INDIA_EAST'],
+    typicalProducts: ['Rice/Wheat', 'Vegetables (Seasonal)', 'Sugarcane', 'Cotton', 'Pulses', 'Milk'],
+    typicalRevenue: { min: 5000, max: 30000, currency: 'INR', period: 'month' },
+    customerBase: 'Local mandi (wholesale market), direct village buyers, government procurement',
+    marketingReality: 'Zero marketing — sells at mandi at whatever price middlemen offer. No bargaining power.',
+    biggestChallenge: 'Middlemen taking margins, weather dependency, input costs, MSP uncertainty',
+    contentNeeds: ['Mandi price tracker graphic', 'Direct-to-consumer WhatsApp catalog', 'Organic certification showcase', 'Government scheme awareness'],
+    stormTemplate: {
+      story: { whoAreYou: 'I grow the food that feeds India — fresh from my field to your plate', whyDoYouDoThis: 'This land has fed my family for generations — farming is our pride and identity', whatMakesYouSpecial: 'Organic, chemical-free farming — we grow with love and traditional knowledge' },
+      trust: { socialProof: ['Third generation farming this land', 'Our village is known for the best [crop] in the district'], guarantees: ['Fresh from farm — harvested this morning', 'No pesticides on vegetables'], credentials: ['Kisan credit card holder', 'FPO member'] },
+      offer: { whatYouSell: 'Farm-fresh produce — direct from field, no middlemen', whyNow: 'Seasonal harvest just in — limited quantity of organic [crop]', pricingMessage: 'Farm-gate price — 40% less than market because no middleman' },
+      reach: { whereCustomersAre: ['Village market', 'WhatsApp groups', 'Local FPO network'], howToFind: 'Ask for [Name] bhai in [Village] — everyone knows our farm', bestTimeToReach: 'Early morning 6-8 AM or evening 5-7 PM (after farm work)' },
+      momentum: { repeatStrategy: 'Weekly vegetable box subscription for city families', referralStrategy: 'Tell your society (apartment complex) — group orders get free delivery', growthGoal: 'Start FPO, sell directly to urban consumers via WhatsApp' },
+    },
+    samplePrompts: { hi: 'मेरे खेत की ताज़ी सब्ज़ियों के लिए WhatsApp कैटलॉग बनाओ — टमाटर, भिंडी, बैंगन — सीधा खेत से', en: 'Make a WhatsApp catalog for my farm-fresh vegetables — tomatoes, okra, eggplant — direct from farm' },
+  },
+  {
+    id: 'ag-africa-smallholder',
+    type: 'agriculture',
+    tier: 'nano',
+    name: 'African Smallholder Farmer',
+    localNames: { sw: 'Mkulima Mdogo', yo: 'Àgbẹ̀', ha: 'Manomi', en: 'Small Farmer' },
+    description: '0.5-3 hectare farmer growing maize, cassava, or vegetables for local market and family',
+    regions: ['AFRICA_WEST', 'AFRICA_EAST', 'AFRICA_SOUTHERN'],
+    typicalProducts: ['Maize/Corn', 'Cassava', 'Tomatoes', 'Peppers', 'Yam', 'Groundnuts', 'Poultry'],
+    typicalRevenue: { min: 30000, max: 150000, currency: 'NGN', period: 'month' },
+    customerBase: 'Local market, village buyers, aggregators, school feeding programs',
+    marketingReality: 'Sells at local market on market days. No online presence. Price set by market forces.',
+    biggestChallenge: 'Post-harvest losses (30%+), access to inputs, climate change, market access',
+    contentNeeds: ['Market day announcement', 'Crop showcase photo', 'Cooperative membership awareness', 'Weather/planting calendar'],
+    stormTemplate: {
+      story: { whoAreYou: 'I feed my community with fresh, locally-grown food from my farm', whyDoYouDoThis: 'Farming is life — it feeds my family and builds my community', whatMakesYouSpecial: 'Fresh harvest, no cold storage — from my farm to your pot today' },
+      trust: { socialProof: ['Known in this market for 10+ years', 'Best tomatoes in the local market'], guarantees: ['Harvested this morning', 'You can visit my farm anytime'], credentials: ['Cooperative member', 'Received county agriculture training'] },
+      offer: { whatYouSell: 'Fresh farm produce — maize, vegetables, poultry', whyNow: 'Harvest season — fresh [crop] available in bulk at farm-gate price', pricingMessage: 'Direct from farm — no middleman markup' },
+      reach: { whereCustomersAre: ['Thursday market day', 'WhatsApp group', 'Church/mosque community'], howToFind: 'My stall is near the big tree at [Market Name]', bestTimeToReach: 'Market days: 6 AM - 2 PM' },
+      momentum: { repeatStrategy: 'Regular customers get first pick of best produce', referralStrategy: 'Bring a new buyer, get extra measure free', growthGoal: 'Join cooperative for better prices, access cold storage' },
+    },
+    samplePrompts: { en: 'Create a simple poster for my farm produce — fresh tomatoes and peppers, available every Thursday at the market', sw: 'Tengeneza bango la mazao yangu — nyanya na pilipili safi, kila Alhamisi sokoni' },
+  },
+  {
+    id: 'ag-latam-coffee',
+    type: 'agriculture',
+    tier: 'micro',
+    name: 'Latin American Coffee Grower',
+    localNames: { es: 'Caficultor / Cafetero', pt: 'Cafeicultor', en: 'Coffee Farmer' },
+    description: 'Small-to-medium coffee farm producing specialty arabica for export and local roasters',
+    regions: ['LATAM_COLOMBIA', 'LATAM_PERU', 'LATAM_MEXICO', 'LATAM_BRAZIL'],
+    typicalProducts: ['Green Coffee Beans', 'Specialty Single-Origin', 'Honey Process', 'Washed Process', 'Natural Process'],
+    typicalRevenue: { min: 2000, max: 10000, currency: 'USD', period: 'month' },
+    customerBase: 'Coffee exporters, specialty roasters, direct trade buyers, local cafés',
+    marketingReality: 'Sells through cooperatives. Some direct trade via Instagram. Farm visits drive premium sales.',
+    biggestChallenge: 'Coffee price volatility, climate change (roya/leaf rust), labor costs, certification fees',
+    contentNeeds: ['Farm origin story video', 'Cupping score card design', 'Harvest season announcement', 'Direct trade landing page'],
+    stormTemplate: {
+      story: { whoAreYou: 'Third-generation coffee farmer growing specialty arabica at 1,800m elevation', whyDoYouDoThis: 'Coffee is our heritage — every bean tells the story of our mountains and our family', whatMakesYouSpecial: 'Single-origin, hand-picked, specialty grade 85+ — you can taste our altitude' },
+      trust: { socialProof: ['85+ SCA cupping score', 'Featured in [Country] Cup of Excellence'], guarantees: ['Full traceability — farm to cup', 'Sample before you buy'], credentials: ['Rainforest Alliance certified', 'Fair Trade member', 'Cooperative member'] },
+      offer: { whatYouSell: 'Specialty single-origin arabica — green beans or roasted to order', whyNow: 'New harvest just arrived — limited microlot from our best parcela', pricingMessage: 'Direct trade price: premium quality without the middleman premium' },
+      reach: { whereCustomersAre: ['Specialty coffee buyers on Instagram', 'Trade shows (SCAA)', 'Cooperative export network'], howToFind: 'Instagram @[FarmName] or contact our cooperative', bestTimeToReach: 'Harvest: Oct-Feb, Available year-round for orders' },
+      momentum: { repeatStrategy: 'Subscription program — quarterly shipments of each harvest', referralStrategy: 'Refer a roaster, both get free 5kg sample of next harvest', growthGoal: 'Build own micro-roastery, sell directly to consumers online' },
+    },
+    samplePrompts: { es: 'Haz un video de mi finca cafetera — "Finca La Esperanza" — mostrando el proceso del café, desde la cereza hasta el grano', en: 'Create a farm story video for "Finca La Esperanza" — showing coffee from cherry to bean' },
+  },
+];
+
+// ─── SMB Archetypes ─────────────────────────────────────────────────────────
+
+export const SMB_ARCHETYPES: InformalBusinessArchetype[] = [
+  {
+    id: 'smb-restaurant',
+    type: 'service_provider',
+    tier: 'small',
+    name: 'Local Restaurant Chain (2-5 locations)',
+    localNames: { en: 'Restaurant', hi: 'रेस्टोरेंट', es: 'Restaurante', ar: 'مطعم' },
+    description: 'Multi-location restaurant with consistent brand, menu, and service across 2-5 outlets',
+    regions: ['INDIA_PAN', 'AFRICA_WEST', 'LATAM_MEXICO', 'SEA_MALAY', 'MENA_GULF'],
+    typicalProducts: ['Dine-in meals', 'Takeaway', 'Delivery (Swiggy/Zomato)', 'Catering', 'Party orders'],
+    typicalRevenue: { min: 500000, max: 3000000, currency: 'INR', period: 'month' },
+    customerBase: 'Families, office lunch crowds, delivery customers, event catering clients',
+    marketingReality: 'Zomato/Swiggy listings, Google Maps, Instagram food photography, occasional newspaper ads.',
+    biggestChallenge: 'Consistency across locations, food cost management, staff retention, online reviews',
+    contentNeeds: ['Menu design', 'Instagram food reels', 'Festival special campaigns', 'New outlet launch campaign', 'Customer loyalty program materials'],
+    stormTemplate: {
+      story: { whoAreYou: 'The restaurant your whole family agrees on — great food, fair prices, multiple locations', whyDoYouDoThis: 'Because our city deserves restaurant-quality food that is consistent and affordable', whatMakesYouSpecial: 'Same great taste at every location — our recipes are standardized, our love for food is not' },
+      trust: { socialProof: ['4.2+ rating on Zomato/Google across all locations', '50,000+ orders delivered'], guarantees: ['Consistent taste at every outlet', '30-minute delivery or 10% off'], credentials: ['FSSAI Grade A', 'Zomato Gold partner'] },
+      offer: { whatYouSell: 'Multi-cuisine dining, takeaway, delivery, and catering', whyNow: 'New location opening special — 20% off for first week', pricingMessage: 'Restaurant quality at prices your wallet will thank you for' },
+      reach: { whereCustomersAre: ['Zomato/Swiggy', 'Instagram food pages', 'Google Maps', 'Office WhatsApp groups'], howToFind: 'Search us on Zomato or visit any of our 4 locations', bestTimeToReach: 'Lunch: 12-3 PM, Dinner: 7-10 PM' },
+      momentum: { repeatStrategy: 'Loyalty app — every 10th meal free', referralStrategy: 'Refer a friend, both get ₹200 off', growthGoal: 'Expand to 10 locations, launch own delivery app' },
+    },
+    samplePrompts: { en: 'Create an Instagram reel for our restaurant\'s new branch opening — show the ambiance, food, and grand opening offer' },
+  },
+  {
+    id: 'smb-salon',
+    type: 'service_provider',
+    tier: 'small',
+    name: 'Beauty Salon / Barbershop',
+    localNames: { hi: 'ब्यूटी पार्लर / सैलून', en: 'Salon', yo: 'Ile Irun', es: 'Salón de Belleza' },
+    description: 'Professional salon offering haircuts, styling, beauty treatments, and grooming services',
+    regions: ['INDIA_PAN', 'AFRICA_WEST', 'LATAM_MEXICO', 'SEA_MALAY', 'MENA_GULF'],
+    typicalProducts: ['Haircuts & Styling', 'Facials & Skincare', 'Bridal Makeup', 'Manicure/Pedicure', 'Hair Color', 'Spa Treatments'],
+    typicalRevenue: { min: 200000, max: 1000000, currency: 'INR', period: 'month' },
+    customerBase: 'Women (60%), men (40%), bridal clients, regular grooming customers',
+    marketingReality: 'Instagram before/after photos, Google reviews, walk-in traffic, word of mouth from bridal clients.',
+    biggestChallenge: 'Staff retention, product costs, seasonal demand (wedding season), competition from home services',
+    contentNeeds: ['Before/after transformation reels', 'Service menu design', 'Bridal portfolio', 'Festival/holiday offers', 'Staff showcase'],
+    stormTemplate: {
+      story: { whoAreYou: 'Where you come to look and feel your absolute best — every visit is a transformation', whyDoYouDoThis: 'Because everyone deserves to feel confident and beautiful', whatMakesYouSpecial: 'Trained stylists, premium products, and we actually listen to what you want' },
+      trust: { socialProof: ['1000+ bridal makeovers', '4.5 stars on Google'], guarantees: ['Not happy? We\'ll redo it free', 'Premium products only — no substitutes'], credentials: ['L\'Oréal certified stylists', 'VTCT/CIDESCO certified'] },
+      offer: { whatYouSell: 'Complete beauty and grooming — hair, skin, nails, bridal, spa', whyNow: 'Wedding season package — bridal makeup + trial + mehendi at special price', pricingMessage: 'Premium salon experience without the premium price tag' },
+      reach: { whereCustomersAre: ['Instagram reels', 'Google Maps', 'Bridal directories', 'Walk-in traffic'], howToFind: 'Book on our Instagram or walk in — [Location]', bestTimeToReach: '10 AM - 8 PM, busiest on weekends' },
+      momentum: { repeatStrategy: 'Membership card — monthly packages at 30% off', referralStrategy: 'Refer a bride, get free facial', growthGoal: 'Open second location, launch home-service offering' },
+    },
+    samplePrompts: { en: 'Create an Instagram reel showing 3 bridal makeup transformations — before and after with elegant music' },
+  },
+  {
+    id: 'smb-auto-repair',
+    type: 'service_provider',
+    tier: 'small',
+    name: 'Auto Repair Workshop',
+    localNames: { hi: 'गैराज / मैकेनिक', en: 'Auto Repair', yo: 'Ilé Àtúnṣe Ọkọ̀', es: 'Taller Mecánico' },
+    description: 'Multi-bay repair workshop handling cars, bikes, and commercial vehicles',
+    regions: ['INDIA_PAN', 'AFRICA_WEST', 'LATAM_MEXICO', 'SEA_MALAY'],
+    typicalProducts: ['Engine Repair', 'AC Service', 'Brake/Suspension', 'Oil Change', 'Denting & Painting', 'Electrical Work'],
+    typicalRevenue: { min: 300000, max: 1500000, currency: 'INR', period: 'month' },
+    customerBase: 'Car owners, fleet operators, taxi/auto drivers, commercial vehicle operators',
+    marketingReality: 'Purely word of mouth and location. Some use Google Maps. Zero digital marketing.',
+    biggestChallenge: 'Trust deficit (overcharging perception), skilled mechanic retention, genuine parts sourcing',
+    contentNeeds: ['Google Maps listing with photos', 'Service price list', 'Customer testimonial videos', 'Seasonal service campaign (monsoon/winter)'],
+    stormTemplate: {
+      story: { whoAreYou: 'The mechanic your car trusts — honest diagnosis, quality repair, fair pricing', whyDoYouDoThis: 'Because every car owner deserves a mechanic who won\'t cheat them', whatMakesYouSpecial: 'Video diagnosis — we show you the problem before we fix it. No unnecessary repairs.' },
+      trust: { socialProof: ['15+ years experience', '5000+ vehicles serviced'], guarantees: ['Video diagnosis of every issue', '6-month warranty on all repairs'], credentials: ['Bosch certified service center', 'Genuine OEM parts used'] },
+      offer: { whatYouSell: 'Complete car care — service, repair, AC, electrical, body work', whyNow: 'Monsoon check-up package — brakes + wipers + AC at ₹2999', pricingMessage: 'Authorized service center quality at 40% less — we show you the math' },
+      reach: { whereCustomersAre: ['Google Maps search', 'Word of mouth', 'Society parking lots', 'Taxi driver networks'], howToFind: 'Near [Landmark] — the workshop with the blue gate', bestTimeToReach: '8 AM - 7 PM, Mon-Sat' },
+      momentum: { repeatStrategy: 'Service reminder SMS at 5000km intervals', referralStrategy: 'Refer a friend, both get free car wash', growthGoal: 'Add computerized diagnostics, partner with insurance companies' },
+    },
+    samplePrompts: { en: 'Create a Google Maps listing photo set for my auto workshop — show the bays, equipment, and team' },
+  },
+];
+
+// ─── Mid-Market Archetypes ──────────────────────────────────────────────────
+
+export const MID_MARKET_ARCHETYPES: InformalBusinessArchetype[] = [
+  {
+    id: 'mid-hotel',
+    type: 'service_provider',
+    tier: 'medium',
+    name: 'Regional Hotel Chain (5-20 properties)',
+    localNames: { en: 'Hotel Chain', hi: 'होटल चेन', es: 'Cadena Hotelera', ar: 'سلسلة فنادق' },
+    description: 'Regional hospitality brand with multiple properties across a state or country',
+    regions: ['INDIA_PAN', 'SEA_MALAY', 'AFRICA_EAST', 'MENA_GULF', 'LATAM_MEXICO'],
+    typicalProducts: ['Room Bookings', 'Conference Facilities', 'Restaurant/Banquet', 'Wedding Venues', 'Corporate Packages'],
+    typicalRevenue: { min: 5000000, max: 50000000, currency: 'INR', period: 'month' },
+    customerBase: 'Business travelers, wedding families, tourists, corporate event planners',
+    marketingReality: 'OTA listings (MakeMyTrip, Booking.com), Google Ads, some social media, travel agent partnerships.',
+    biggestChallenge: 'OTA commission (15-25%), seasonal demand, maintaining standards across properties, online reputation',
+    contentNeeds: ['Property showcase videos', 'Wedding venue virtual tours', 'Corporate package presentations', 'Seasonal campaign creatives', 'OTA listing optimization'],
+    stormTemplate: {
+      story: { whoAreYou: 'Regional hospitality brand delivering consistent comfort across [N] cities', whyDoYouDoThis: 'Because every traveler deserves reliable comfort without the international chain price tag', whatMakesYouSpecial: 'Local hospitality with professional standards — we know every city we operate in' },
+      trust: { socialProof: ['4.0+ rating across all OTAs', '10,000+ guest reviews'], guarantees: ['Best rate guarantee on direct booking', 'Clean room or room change within 15 min'], credentials: ['FHRAI member', 'ISO 22000 certified kitchens'] },
+      offer: { whatYouSell: 'Rooms, conferences, weddings, and dining across [N] properties', whyNow: 'Book direct and save 20% vs OTAs — plus free breakfast', pricingMessage: '5-star comfort at 3-star prices — direct booking always cheaper' },
+      reach: { whereCustomersAre: ['MakeMyTrip/Booking.com', 'Google Search', 'Corporate travel desks', 'Wedding planners'], howToFind: 'Book direct at [website] or call our central reservation', bestTimeToReach: '24/7 reservation desk' },
+      momentum: { repeatStrategy: 'Loyalty program — stay 5 nights, get 1 free', referralStrategy: 'Refer a corporate client, get complimentary weekend stay', growthGoal: 'Expand to 25 properties, increase direct booking to 40%' },
+    },
+    samplePrompts: { en: 'Create a 60-second property showcase video for our hotel chain — show rooms, pool, restaurant, and wedding venue across 3 properties' },
+  },
+  {
+    id: 'mid-retail-chain',
+    type: 'retail',
+    tier: 'medium',
+    name: 'Multi-Branch Retail Store (5-50 outlets)',
+    localNames: { en: 'Retail Chain', hi: 'रिटेल चेन', es: 'Cadena de Tiendas', sw: 'Mtandao wa Maduka' },
+    description: 'Regional retail brand with multiple outlets — fashion, electronics, or home goods',
+    regions: ['INDIA_PAN', 'AFRICA_WEST', 'AFRICA_EAST', 'SEA_MALAY', 'MENA_GULF'],
+    typicalProducts: ['Fashion/Apparel', 'Electronics', 'Home Furnishing', 'Footwear', 'Accessories'],
+    typicalRevenue: { min: 10000000, max: 100000000, currency: 'INR', period: 'month' },
+    customerBase: 'Middle-class families, young professionals, festive shoppers, brand-conscious consumers',
+    marketingReality: 'Mix of digital (Instagram, Google), print (newspaper inserts), mall presence, and seasonal campaigns.',
+    biggestChallenge: 'E-commerce competition (Amazon/Flipkart), inventory management, same-store growth, omnichannel',
+    contentNeeds: ['Seasonal campaign videos', 'Store launch events', 'Product showcase reels', 'Sale/promotion creatives', 'Brand story content'],
+    stormTemplate: {
+      story: { whoAreYou: 'Your trusted regional brand — quality products, fair prices, stores near you', whyDoYouDoThis: 'Because our region deserves retail brands that understand local taste and value', whatMakesYouSpecial: 'Curated for local taste, priced for real families, available in your neighborhood' },
+      trust: { socialProof: ['25+ stores across [Region]', '500,000+ happy customers'], guarantees: ['Easy 30-day returns', 'Price match with online'], credentials: ['Trusted brand since [Year]', 'ISO certified operations'] },
+      offer: { whatYouSell: 'Curated [category] — fashion/electronics/home goods across 25+ stores', whyNow: 'End of season sale — up to 50% off across all stores', pricingMessage: 'Mall experience, online prices — why wait for delivery?' },
+      reach: { whereCustomersAre: ['Mall foot traffic', 'Instagram/Facebook', 'Google search', 'WhatsApp broadcast'], howToFind: 'Visit your nearest store or shop online at [website]', bestTimeToReach: '10 AM - 9 PM daily, sale weekends busiest' },
+      momentum: { repeatStrategy: 'Loyalty card with points and birthday discounts', referralStrategy: 'Refer and earn loyalty points', growthGoal: 'Launch e-commerce, expand to 50 stores, add private label' },
+    },
+    samplePrompts: { en: 'Create an end-of-season sale campaign — 30-second video ad + Instagram carousel + WhatsApp broadcast graphic' },
+  },
+  {
+    id: 'mid-clinic',
+    type: 'service_provider',
+    tier: 'medium',
+    name: 'Healthcare Clinic Network (3-15 clinics)',
+    localNames: { en: 'Clinic Network', hi: 'क्लिनिक नेटवर्क', es: 'Red de Clínicas', ar: 'شبكة عيادات' },
+    description: 'Multi-specialty clinic chain offering outpatient healthcare across a city or region',
+    regions: ['INDIA_PAN', 'AFRICA_WEST', 'MENA_GULF', 'SEA_MALAY', 'LATAM_MEXICO'],
+    typicalProducts: ['Consultations', 'Diagnostics/Lab Tests', 'Dental Care', 'Eye Care', 'Pharmacy', 'Health Checkups'],
+    typicalRevenue: { min: 3000000, max: 30000000, currency: 'INR', period: 'month' },
+    customerBase: 'Families, corporate employees (health checks), senior citizens, insurance patients',
+    marketingReality: 'Google search (doctor near me), Practo/Healthgrades listings, corporate tie-ups, some social media.',
+    biggestChallenge: 'Doctor retention, patient trust, insurance processing, maintaining quality across locations',
+    contentNeeds: ['Doctor profile videos', 'Health awareness campaigns', 'Patient testimonials', 'New clinic launch', 'Health package promotions'],
+    stormTemplate: {
+      story: { whoAreYou: 'Quality healthcare close to home — specialist doctors, modern diagnostics, multiple locations', whyDoYouDoThis: 'Because good healthcare shouldn\'t require a trip across the city', whatMakesYouSpecial: 'Specialist doctors + modern diagnostics + pharmacy under one roof — at neighborhood prices' },
+      trust: { socialProof: ['50+ specialist doctors', '100,000+ patients served annually'], guarantees: ['Reports within 24 hours', 'No unnecessary tests — evidence-based medicine'], credentials: ['NABH accredited', 'Empaneled with all major insurers'] },
+      offer: { whatYouSell: 'Multi-specialty consultations, diagnostics, dental, eye care, health checkups', whyNow: 'Annual health checkup package — comprehensive screening at ₹1999', pricingMessage: 'Hospital-quality care at clinic-friendly prices' },
+      reach: { whereCustomersAre: ['Google "doctor near me"', 'Practo/Healthgrades', 'Corporate HR departments', 'Insurance TPAs'], howToFind: 'Book at [website] or walk in to your nearest clinic', bestTimeToReach: '8 AM - 9 PM, walk-ins accepted' },
+      momentum: { repeatStrategy: 'Family health card — annual plans with priority booking', referralStrategy: 'Refer a family, both get free health checkup', growthGoal: 'Expand to 20 clinics, launch telemedicine, partner with hospitals for inpatient' },
+    },
+    samplePrompts: { en: 'Create a health awareness campaign video — "Know Your Numbers" — blood pressure, sugar, cholesterol — promote our annual checkup package' },
+  },
+];
+
+// ─── Enterprise Archetypes ──────────────────────────────────────────────────
+
+export const ENTERPRISE_ARCHETYPES: InformalBusinessArchetype[] = [
+  {
+    id: 'ent-fmcg',
+    type: 'retail',
+    tier: 'large',
+    name: 'National FMCG Brand',
+    localNames: { en: 'FMCG Brand', hi: 'एफएमसीजी ब्रांड', es: 'Marca de Consumo Masivo' },
+    description: 'National consumer goods brand selling through retail, e-commerce, and direct distribution',
+    regions: ['INDIA_PAN', 'AFRICA_WEST', 'LATAM_BRAZIL', 'SEA_MALAY', 'MENA_GULF'],
+    typicalProducts: ['Packaged Foods', 'Personal Care', 'Home Care', 'Beverages', 'Snacks'],
+    typicalRevenue: { min: 100000000, max: 1000000000, currency: 'INR', period: 'month' },
+    customerBase: 'Mass market — every household, across urban and rural India/regions',
+    marketingReality: 'Full-stack: TV, digital, influencer, trade marketing, shopper marketing, e-commerce.',
+    biggestChallenge: 'Brand relevance with Gen-Z, D2C competition, rural distribution, raw material costs',
+    contentNeeds: ['TV commercial production', 'Digital ad campaigns', 'Influencer collaboration content', 'Regional language adaptations', 'Festival campaigns'],
+    stormTemplate: {
+      story: { whoAreYou: 'India\'s trusted [category] brand — in every home, every day', whyDoYouDoThis: 'Because quality daily essentials should be affordable for every family', whatMakesYouSpecial: 'Trusted for [N] years — consistent quality, responsible sourcing, accessible pricing' },
+      trust: { socialProof: ['Present in 10 million+ households', 'India\'s #1 in [category]'], guarantees: ['Quality consistency batch after batch', 'Satisfaction guarantee'], credentials: ['ISO 9001/22000', 'Great Place to Work', 'Multiple FMCG awards'] },
+      offer: { whatYouSell: 'Daily essentials — [product line] available everywhere', whyNow: 'New product launch — try our [new variant] at introductory price', pricingMessage: 'Premium quality at a price point that works for every Indian family' },
+      reach: { whereCustomersAre: ['Every retail shelf in India', 'Amazon/Flipkart', 'D2C website', 'Quick commerce'], howToFind: 'Available at your nearest store or order online', bestTimeToReach: '24/7 across all channels' },
+      momentum: { repeatStrategy: 'Subscription on D2C site — auto-replenishment', referralStrategy: 'Share with friends campaign on social media', growthGoal: 'Expand rural distribution, launch premium D2C line, enter 3 new categories' },
+    },
+    samplePrompts: { en: 'Create a 30-second digital ad for our new organic snack line — target health-conscious millennials, upbeat tone' },
+  },
+  {
+    id: 'ent-bank',
+    type: 'service_provider',
+    tier: 'enterprise',
+    name: 'Regional Bank',
+    localNames: { en: 'Bank', hi: 'बैंक', es: 'Banco', ar: 'بنك', sw: 'Benki' },
+    description: 'Regional or national bank with 100+ branches serving retail and commercial customers',
+    regions: ['INDIA_PAN', 'AFRICA_WEST', 'AFRICA_EAST', 'LATAM_MEXICO', 'MENA_GULF'],
+    typicalProducts: ['Savings Accounts', 'Loans (Home/Auto/Personal)', 'Credit Cards', 'Insurance', 'Digital Banking', 'SME Banking'],
+    typicalRevenue: { min: 500000000, max: 5000000000, currency: 'INR', period: 'month' },
+    customerBase: 'Retail customers, SMEs, corporates, government accounts, NRIs',
+    marketingReality: 'Full marketing stack — brand campaigns, digital acquisition, branch marketing, partnership co-branding.',
+    biggestChallenge: 'Fintech disruption, digital transformation, NPA management, customer acquisition cost',
+    contentNeeds: ['Brand campaign videos', 'Product launch campaigns', 'Digital banking tutorials', 'Financial literacy content', 'Festival/seasonal offers'],
+    stormTemplate: {
+      story: { whoAreYou: 'Your neighborhood bank that has grown with you — from savings account to home loan', whyDoYouDoThis: 'Because every person and business deserves a bank that understands their journey', whatMakesYouSpecial: 'Local roots with national reach — we speak your language, literally and financially' },
+      trust: { socialProof: ['10 million+ customers', '100+ years of trust'], guarantees: ['RBI regulated', 'Deposits insured up to ₹5 lakh'], credentials: ['RBI licensed', 'DICGC insured', 'ISO 27001 for cybersecurity'] },
+      offer: { whatYouSell: 'Complete banking — savings, loans, cards, insurance, investments', whyNow: 'Home loan festival offer — lowest rates of the season + zero processing fee', pricingMessage: 'Competitive rates with personalized service — your money works harder here' },
+      reach: { whereCustomersAre: ['Bank branches', 'Mobile app', 'Website', 'Google search', 'Social media'], howToFind: 'Visit any of our 500+ branches or download our app', bestTimeToReach: 'Branch: 10 AM - 4 PM, Digital: 24/7' },
+      momentum: { repeatStrategy: 'Cross-sell — savings customer to loan to insurance to investments', referralStrategy: 'Refer a friend, both earn ₹500 cashback', growthGoal: 'Double digital banking adoption, launch neo-banking features, expand SME lending' },
+    },
+    samplePrompts: { en: 'Create a 45-second brand campaign video — "Banking that grows with you" — show a customer from first savings account to home loan to retirement' },
+  },
+  {
+    id: 'ent-telecom',
+    type: 'service_provider',
+    tier: 'enterprise',
+    name: 'Telecom Operator',
+    localNames: { en: 'Telecom', hi: 'टेलीकॉम', es: 'Operador Telecom', sw: 'Kampuni ya Simu' },
+    description: 'National mobile/broadband operator serving millions of subscribers',
+    regions: ['INDIA_PAN', 'AFRICA_WEST', 'AFRICA_EAST', 'SEA_MALAY', 'LATAM_BRAZIL'],
+    typicalProducts: ['Mobile Plans', 'Broadband', '5G Services', 'Enterprise Solutions', 'Digital Content', 'Mobile Money'],
+    typicalRevenue: { min: 1000000000, max: 50000000000, currency: 'INR', period: 'month' },
+    customerBase: 'Everyone with a phone — mass market prepaid to enterprise postpaid',
+    marketingReality: 'Massive ATL+digital spend, sponsorships, retail presence, dealer network, app-based engagement.',
+    biggestChallenge: 'ARPU growth, 5G monetization, churn reduction, OTT competition, spectrum costs',
+    contentNeeds: ['Brand campaigns', '5G launch content', 'Plan comparison graphics', 'Regional language ads', 'App feature tutorials'],
+    stormTemplate: {
+      story: { whoAreYou: 'The network that connects [Country] — from villages to cities, everyone stays connected', whyDoYouDoThis: 'Because connectivity is a fundamental right — we bridge the digital divide', whatMakesYouSpecial: 'Widest network coverage + fastest speeds + most affordable plans' },
+      trust: { socialProof: ['300 million+ subscribers', '#1 network coverage'], guarantees: ['99.9% uptime', 'Speed guarantee on premium plans'], credentials: ['Government licensed', 'ISO certified', 'Multiple Speedtest awards'] },
+      offer: { whatYouSell: 'Mobile, broadband, 5G, enterprise connectivity', whyNow: '5G now live in your city — experience the future at ₹299/month', pricingMessage: 'More data, more speed, more value — plans starting at ₹149' },
+      reach: { whereCustomersAre: ['Everywhere — retail stores, online, app, dealers'], howToFind: 'Visit our store, download our app, or call [number]', bestTimeToReach: '24/7 customer care' },
+      momentum: { repeatStrategy: 'Auto-recharge with loyalty rewards', referralStrategy: 'Refer and earn — both get 1GB free data', growthGoal: 'Monetize 5G, grow broadband, launch fintech/digital services' },
+    },
+    samplePrompts: { en: 'Create a 30-second 5G launch campaign — show how 5G transforms gaming, video calls, and streaming in a vibrant city setting' },
+  },
+];
+
+// ─── Combined Registry ──────────────────────────────────────────────────────
+
+export const ALL_EXPANDED_ARCHETYPES: InformalBusinessArchetype[] = [
+  ...RETAIL_ARCHETYPES,
+  ...DIGITAL_FREELANCE_ARCHETYPES,
+  ...AGRICULTURAL_ARCHETYPES,
+  ...SMB_ARCHETYPES,
+  ...MID_MARKET_ARCHETYPES,
+  ...ENTERPRISE_ARCHETYPES,
+];
+
+// ─── Lookup Functions ───────────────────────────────────────────────────────
 
 export function findExpandedArchetypesByTier(tier: string): InformalBusinessArchetype[] {
-  return [];
+  return ALL_EXPANDED_ARCHETYPES.filter(a => a.tier === tier);
 }
 
 export function findExpandedArchetypesByRegion(region: string): InformalBusinessArchetype[] {
-  return [];
+  return ALL_EXPANDED_ARCHETYPES.filter(a => a.regions.includes(region));
 }
 
 export function getArchetypesByCategory(category: string): InformalBusinessArchetype[] {
-  return [];
+  const categoryMap: Record<string, InformalBusinessArchetype[]> = {
+    retail: RETAIL_ARCHETYPES,
+    digital_freelance: DIGITAL_FREELANCE_ARCHETYPES,
+    agriculture: AGRICULTURAL_ARCHETYPES,
+    smb: SMB_ARCHETYPES,
+    mid_market: MID_MARKET_ARCHETYPES,
+    enterprise: ENTERPRISE_ARCHETYPES,
+  };
+  return categoryMap[category] || [];
 }
