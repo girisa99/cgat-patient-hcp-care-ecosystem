@@ -448,6 +448,22 @@ At session start:
   - Lovable: Can import pricing data for landing page pricing section, competitor data for comparison features
 - **Breaking Changes:** None
 
+### [11:00] NEW — Lovable: Cast Output Presets + Style Customization Panel
+- **File(s):** `supabase/migrations/` (new), `src/components/genie-admin/genie-cast/StyleCustomizationPanel.tsx` (NEW), `GenieCastConsolidatedTabs.tsx`, `useCastContentRegistry.ts`, `src/integrations/supabase/types.ts`
+- **Changed By:** Lovable
+- **What Changed:**
+  1. **DB: `cast_visual_styles`** — Added columns: `character_frame_percent` (10-100 slider), `is_user_created`, `custom_prompt`, `uploaded_reference_url`, `uploaded_reference_type`
+  2. **DB: `cast_output_presets`** — New table with 22 seeded presets across 6 categories: Video (720p→4K), Social (IG Story/Square, X, LinkedIn), Presentation (PPT 4:3/16:9, Keynote Retina), Web (Hero, Email GIF), Broadcast (Digital Signage, Podcast, 4K CTV), Cinematic (21:9, CinemaScope)
+  3. **NEW: `StyleCustomizationPanel.tsx`** — AI prompt-based style preview, reference file uploads (PNG/JPG/WEBP, SVG, MP4/MOV, PSD/AI), character sizing slider (10-100%), custom style creation (global/project-specific, culture-aware)
+  4. **GenieCastConsolidatedTabs.tsx** — Integrated StyleCustomizationPanel, replaced hardcoded resolution dropdown with DB-driven category-grouped preset selector
+  5. **useCastContentRegistry.ts** — Updated TypeScript interface with new fields
+  6. **RLS Policies** — Users can create/manage their own custom styles; presets publicly readable
+- **Why:** Cast production setup needs flexible output formats and user-customizable styles
+- **Impact on Your Work:**
+  - Claude: `cast_output_presets` table available for any production pipeline output config. `character_frame_percent` replaces S/M/L character sizing in style registry.
+  - Lovable: Style workflow complete — generate AI previews → save custom style → attach references → apply to production
+- **Breaking Changes:** `cast_visual_styles` schema expanded (additive only). Resolution picker no longer hardcoded.
+
 ---
 
 ## Cross-Functional Handoffs — Quick Reference
