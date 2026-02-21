@@ -5463,6 +5463,7 @@ export type Database = {
           label: string
           name: string
           parent_style_id: string | null
+          preview_image_url: string | null
           provider_routing: Json
           render_time_estimate: string | null
           requires_face_consent: boolean
@@ -5490,6 +5491,7 @@ export type Database = {
           label: string
           name: string
           parent_style_id?: string | null
+          preview_image_url?: string | null
           provider_routing?: Json
           render_time_estimate?: string | null
           requires_face_consent?: boolean
@@ -5517,6 +5519,7 @@ export type Database = {
           label?: string
           name?: string
           parent_style_id?: string | null
+          preview_image_url?: string | null
           provider_routing?: Json
           render_time_estimate?: string | null
           requires_face_consent?: boolean

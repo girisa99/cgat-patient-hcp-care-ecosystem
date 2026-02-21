@@ -78,6 +78,22 @@ export interface VisualStyle {
   estimated_size_mb: number;
   complexity_score: number;
   render_time_estimate: string;
+  preview_image_url: string | null;
+}
+
+export interface OutputPreset {
+  id: string;
+  name: string;
+  label: string;
+  category: string;
+  width: number;
+  height: number;
+  aspect_ratio: string;
+  description: string | null;
+  icon: string;
+  is_default: boolean;
+  sort_order: number;
+  is_active: boolean;
 }
 
 export interface StyleCharacter {
@@ -142,12 +158,13 @@ export function useCastContentRegistry() {
   const [formatCapabilities, setFormatCapabilities] = useState<FormatCapabilityLink[]>([]);
   const [styleCharacters, setStyleCharacters] = useState<StyleCharacter[]>([]);
   const [styleCapabilityRules, setStyleCapabilityRules] = useState<StyleCapabilityRule[]>([]);
+  const [outputPresets, setOutputPresets] = useState<OutputPreset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [catRes, fmtRes, sfRes, cfRes, vsRes, pcRes, asRes, fcRes, scRes, scrRes] = await Promise.all([
+      const [catRes, fmtRes, sfRes, cfRes, vsRes, pcRes, asRes, fcRes, scRes, scrRes, opRes] = await Promise.all([
         supabase.from('cast_content_categories').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_content_formats').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_content_sub_formats').select('*').eq('is_active', true).order('sort_order'),
@@ -158,6 +175,7 @@ export function useCastContentRegistry() {
         supabase.from('cast_format_capabilities').select('*').eq('is_active', true),
         supabase.from('cast_style_characters').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_style_capability_rules').select('*'),
+        supabase.from('cast_output_presets' as any).select('*').eq('is_active', true).order('sort_order'),
       ]);
 
       if (catRes.error) throw catRes.error;
@@ -175,6 +193,7 @@ export function useCastContentRegistry() {
       setFormatCapabilities((fcRes.data || []) as unknown as FormatCapabilityLink[]);
       setStyleCharacters((scRes.data || []) as unknown as StyleCharacter[]);
       setStyleCapabilityRules((scrRes.data || []) as unknown as StyleCapabilityRule[]);
+      setOutputPresets((opRes.data || []) as unknown as OutputPreset[]);
     } catch (err: any) {
       console.error('[useCastContentRegistry] Failed to fetch:', err);
     } finally {
@@ -362,6 +381,7 @@ export function useCastContentRegistry() {
     formatCapabilities,
     styleCharacters,
     styleCapabilityRules,
+    outputPresets,
     isLoading,
     refresh: fetchAll,
     getFormatsForCategory,
