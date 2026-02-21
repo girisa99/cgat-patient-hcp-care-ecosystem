@@ -69,6 +69,10 @@ export interface VisualStyle {
   ip_safe: boolean;
   sort_order: number;
   is_active: boolean;
+  parent_style_id: string | null;
+  sub_sort_order: number;
+  character_type: string | null;
+  style_variant: string | null;
 }
 
 export interface ProductionCapability {
