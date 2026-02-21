@@ -54,7 +54,6 @@ import { GlobalRegionSelector } from './GlobalRegionSelector';
 import { useGenieCastRegions } from '@/hooks/useGenieCastRegions';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { ZONE_PROVIDER_DISPLAY, getZoneFromRegion } from '@/config/regional-routing-registry';
-import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -118,7 +117,6 @@ import { createEP04SessionSeed, getEP04Stats, enrichWithScreenAssets } from '@/u
 
 // Import Landing Page Scripts
 import { LandingPageScriptsPanel } from './LandingPageScriptsPanel';
-import { AlibabaMeetingPrepDoc } from './AlibabaMeetingPrepDoc';
 import { RegionalAssetsLab } from './RegionalAssetsLab';
 import { HeroBannerCarouselMode } from './HeroBannerCarouselMode';
 

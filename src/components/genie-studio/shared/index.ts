@@ -1,21 +1,15 @@
 /**
  * Shared Genie Suite Components
- * Barrel export for all shared components
+ * Barrel export for shared types and constants
  */
 
 // Types
 export * from './types';
 
 // Constants
-export { 
-  CONTENT_TYPES, 
-  TONE_OPTIONS, 
+export {
+  CONTENT_TYPES,
+  TONE_OPTIONS,
   DURATION_OPTIONS,
-  getContentTypeById 
+  getContentTypeById
 } from './constants';
-
-// Components
-export { UploadZone } from './UploadZone';
-export { ContentTypeSelector } from './ContentTypeSelector';
-export { ScriptOptionsPanel } from './ScriptOptionsPanel';
-export { GenerationProgress, CompletionBadge } from './GenerationProgress';
