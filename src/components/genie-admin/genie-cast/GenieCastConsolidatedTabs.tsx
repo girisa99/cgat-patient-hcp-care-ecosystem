@@ -54,6 +54,7 @@ import { GlobalRegionSelector } from './GlobalRegionSelector';
 import { useGenieCastRegions } from '@/hooks/useGenieCastRegions';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { ZONE_PROVIDER_DISPLAY, getZoneFromRegion } from '@/config/regional-routing-registry';
+import { useGuideStore } from '@/stores/guideStore';
 import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -331,6 +332,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // Dynamic content registry (DB-driven categories + formats)
   const contentRegistry = useCastContentRegistry();
+  const guideDispatch = useGuideStore((s) => s.dispatch);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
   const [selectedSubFormatId, setSelectedSubFormatId] = useState<string | null>(null);
@@ -1000,9 +1002,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   setSelectedCategoryId(cat.id);
                   setSelectedFormatId(null);
                   setSelectedSubFormatId(null);
+                  // Dispatch guide signal
+                  guideDispatch({ type: 'SELECT_CATEGORY', categoryId: cat.id });
                   // Persist to DB if project exists
                   if (castSession.session.projectId) {
                     castProjects.updateProject(castSession.session.projectId, { category_id: cat.id, format_id: null, sub_format_id: null } as any).catch(() => {});
+                  }
+                }}
+                onCategoryHover={(cat) => {
+                  if (cat) {
+                    guideDispatch({ type: 'HOVER_CATEGORY', categoryId: cat.id });
                   }
                 }}
                 onFormatSelect={(fmt) => {

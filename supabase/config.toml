@@ -445,3 +445,6 @@ verify_jwt = false
 
 [functions.send-workspace-invite]
 verify_jwt = false
+
+[functions.guide-tts]
+verify_jwt = false

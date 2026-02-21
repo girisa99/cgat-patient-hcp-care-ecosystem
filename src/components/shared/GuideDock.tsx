@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useGuideStore, GUIDE_CHARACTERS, ANIM_TOKENS, type GuideAgent, type GuideMessage } from '@/stores/guideStore';
 import { useIdleTimer } from '@/hooks/useIdleTimer';
+import { useGuideTTS } from '@/hooks/useGuideTTS';
 
 // Character avatars
 import oriAvatar from '@/assets/characters/ori-avatar.png';
@@ -251,6 +252,9 @@ export const GuideDock: React.FC<{ className?: string }> = ({ className }) => {
 
   // Idle detection
   useIdleTimer(dispatch, 20000, surface !== 'open');
+
+  // TTS integration — auto-speaks guide messages when voice enabled
+  useGuideTTS();
 
   // Fire PAGE_LOAD on mount
   useEffect(() => {
