@@ -1222,28 +1222,110 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* 5a: Generation Style (from cast_visual_styles DB) */}
+                    {/* 5a: Generation Style with Accordion Sub-Styles */}
                     <div className="space-y-2">
                       <Label className="text-xs font-medium">Generation Style</Label>
+                      {/* Parent styles (no parent_style_id) */}
                       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                        {contentRegistry.visualStyles.map(style => (
-                          <button
-                            key={style.id}
-                            onClick={() => setSelectedVisualStyleId(style.id === selectedVisualStyleId ? null : style.id)}
-                            className={cn(
-                              "flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all",
-                              selectedVisualStyleId === style.id
-                                ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
-                                : "border-border hover:border-primary/40 hover:bg-muted/50"
-                            )}
-                          >
-                            <span className="text-base">
-                              {style.icon === 'Box' ? '📦' : style.icon === 'Smile' ? '😊' : style.icon === 'Star' ? '⭐' : style.icon === 'Camera' ? '📷' : style.icon === 'Film' ? '🎬' : style.icon === 'Palette' ? '🎨' : style.icon === 'Droplets' ? '💧' : style.icon === 'Minus' ? '➖' : style.icon === 'BarChart3' ? '📊' : style.icon === 'PenTool' ? '✏️' : style.icon === 'BookOpen' ? '📚' : '🎭'}
-                            </span>
-                            <span className="font-medium text-center leading-tight">{style.label}</span>
-                          </button>
-                        ))}
+                        {contentRegistry.visualStyles
+                          .filter(s => !s.parent_style_id)
+                          .sort((a, b) => a.sort_order - b.sort_order)
+                          .map(style => {
+                            const subStyles = contentRegistry.visualStyles
+                              .filter(s => s.parent_style_id === style.id)
+                              .sort((a, b) => a.sub_sort_order - b.sub_sort_order);
+                            const isParentSelected = selectedVisualStyleId === style.id;
+                            const hasSubSelected = subStyles.some(s => s.id === selectedVisualStyleId);
+                            const isExpanded = isParentSelected || hasSubSelected;
+
+                            return (
+                              <React.Fragment key={style.id}>
+                                <button
+                                  onClick={() => setSelectedVisualStyleId(isParentSelected ? null : style.id)}
+                                  className={cn(
+                                    "relative flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all",
+                                    isExpanded
+                                      ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                                      : "border-border hover:border-primary/40 hover:bg-muted/50"
+                                  )}
+                                >
+                                  <span className="text-base">
+                                    {style.icon === 'Box' ? '📦' : style.icon === 'Smile' ? '😊' : style.icon === 'Star' ? '⭐' : style.icon === 'Camera' ? '📷' : style.icon === 'Film' ? '🎬' : style.icon === 'Palette' ? '🎨' : style.icon === 'Droplets' ? '💧' : style.icon === 'Minus' ? '➖' : style.icon === 'BarChart3' ? '📊' : style.icon === 'PenTool' ? '✏️' : style.icon === 'BookOpen' ? '📚' : '🎭'}
+                                  </span>
+                                  <span className="font-medium text-center leading-tight">{style.label}</span>
+                                  {subStyles.length > 0 && (
+                                    <ChevronDown className={cn(
+                                      "w-3 h-3 transition-transform absolute top-1 right-1 text-muted-foreground",
+                                      isExpanded && "rotate-180 text-primary"
+                                    )} />
+                                  )}
+                                </button>
+                              </React.Fragment>
+                            );
+                          })}
                       </div>
+
+                      {/* Sub-style accordion for the selected parent */}
+                      {(() => {
+                        // Find which parent is expanded
+                        const selectedStyle = contentRegistry.visualStyles.find(s => s.id === selectedVisualStyleId);
+                        const expandedParentId = selectedStyle?.parent_style_id || 
+                          (selectedStyle && !selectedStyle.parent_style_id 
+                            ? selectedStyle.id 
+                            : null);
+                        
+                        if (!expandedParentId) return null;
+                        
+                        const subStyles = contentRegistry.visualStyles
+                          .filter(s => s.parent_style_id === expandedParentId)
+                          .sort((a, b) => a.sub_sort_order - b.sub_sort_order);
+                        
+                        if (subStyles.length === 0) return null;
+                        
+                        const parentStyle = contentRegistry.visualStyles.find(s => s.id === expandedParentId);
+                        
+                        return (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-2 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2">
+                              <p className="text-[10px] font-medium text-primary flex items-center gap-1">
+                                <ChevronDown className="w-3 h-3" />
+                                {parentStyle?.label} — Choose a sub-style
+                              </p>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                {subStyles.map(sub => (
+                                  <button
+                                    key={sub.id}
+                                    onClick={() => setSelectedVisualStyleId(sub.id)}
+                                    className={cn(
+                                      "flex flex-col gap-1 p-2 rounded-lg border text-xs transition-all text-left",
+                                      selectedVisualStyleId === sub.id
+                                        ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/40"
+                                        : "border-border/60 hover:border-primary/40 hover:bg-primary/5"
+                                    )}
+                                  >
+                                    <span className="font-medium">{sub.label}</span>
+                                    {sub.description && (
+                                      <span className="text-[10px] text-muted-foreground leading-tight line-clamp-2">{sub.description}</span>
+                                    )}
+                                    {sub.character_type && (
+                                      <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 w-fit mt-0.5">
+                                        {sub.character_type}
+                                      </Badge>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })()}
+
                       {selectedVisualStyleId && (
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                           🛡️ IP-safe style — prevents photorealistic deepfakes
@@ -1274,9 +1356,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                             )}
                           >
                             <span className="text-sm">
-                              {cap.name === 'lip_sync' ? '👄' : cap.name === 'dubbing' ? '🌍' : cap.name === 'avatar_talking_head' ? '🧑' : cap.name === 'avatar_full_body' ? '🕺' : cap.name === 'text_to_video' ? '🎬' : cap.name === 'text_to_image' ? '🖼️' : cap.name === 'image_to_image' ? '🔄' : cap.name === 'vr_ar_immersive' ? '🥽' : cap.name === 'pixar_3d' ? '📦' : cap.name === 'cartoon_animation' ? '🎨' : '⚡'}
+                              {cap.name === 'lip_sync' ? '👄' : cap.name === 'dubbing' ? '🌍' : cap.name === 'avatar_talking_head' ? '🧑' : cap.name === 'avatar_full_body' ? '🕺' : cap.name === 'text_to_video' ? '🎬' : cap.name === 'text_to_image' ? '🖼️' : cap.name === 'image_to_image' ? '🔄' : cap.name === 'vr_ar_immersive' ? '🥽' : cap.name === 'pixar_3d' ? '📦' : cap.name === 'cartoon_animation' ? '🎨' : cap.name === 'ar_filters' ? '✨' : cap.name === 'music_sfx_gen' ? '🎵' : cap.name === 'multi_camera' ? '📐' : cap.name === 'green_screen' ? '🟩' : cap.name === 'voice_clone' ? '🎙️' : cap.name === 'motion_capture' ? '🏃' : cap.name === 'brand_watermark' ? '🛡️' : cap.name === '3d_scene_gen' ? '🏔️' : cap.name === 'style_transfer' ? '🎨' : cap.name === 'subtitle_burn' ? '💬' : '⚡'}
                             </span>
-                            <span className="font-medium">{cap.label}</span>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{cap.label}</span>
+                              {cap.description && (
+                                <span className="text-[9px] text-muted-foreground leading-tight line-clamp-1">{cap.description}</span>
+                              )}
+                            </div>
                           </button>
                         ))}
                       </div>

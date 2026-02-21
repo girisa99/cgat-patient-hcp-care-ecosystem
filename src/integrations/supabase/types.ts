@@ -5226,6 +5226,7 @@ export type Database = {
         Row: {
           allows_photorealistic: boolean
           category: string
+          character_type: string | null
           color: string
           created_at: string
           default_provider: string | null
@@ -5235,16 +5236,20 @@ export type Database = {
           is_active: boolean
           label: string
           name: string
+          parent_style_id: string | null
           provider_routing: Json
           requires_face_consent: boolean
           sample_prompt: string | null
           sort_order: number
           style_config: Json
+          style_variant: string | null
+          sub_sort_order: number | null
           updated_at: string
         }
         Insert: {
           allows_photorealistic?: boolean
           category?: string
+          character_type?: string | null
           color?: string
           created_at?: string
           default_provider?: string | null
@@ -5254,16 +5259,20 @@ export type Database = {
           is_active?: boolean
           label: string
           name: string
+          parent_style_id?: string | null
           provider_routing?: Json
           requires_face_consent?: boolean
           sample_prompt?: string | null
           sort_order?: number
           style_config?: Json
+          style_variant?: string | null
+          sub_sort_order?: number | null
           updated_at?: string
         }
         Update: {
           allows_photorealistic?: boolean
           category?: string
+          character_type?: string | null
           color?: string
           created_at?: string
           default_provider?: string | null
@@ -5273,14 +5282,25 @@ export type Database = {
           is_active?: boolean
           label?: string
           name?: string
+          parent_style_id?: string | null
           provider_routing?: Json
           requires_face_consent?: boolean
           sample_prompt?: string | null
           sort_order?: number
           style_config?: Json
+          style_variant?: string | null
+          sub_sort_order?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cast_visual_styles_parent_style_id_fkey"
+            columns: ["parent_style_id"]
+            isOneToOne: false
+            referencedRelation: "cast_visual_styles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clinical_trials: {
         Row: {
