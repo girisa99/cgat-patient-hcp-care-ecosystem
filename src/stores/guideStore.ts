@@ -4,6 +4,9 @@
  * Manages the Ori (creative) + Arc (systems) character guide dock.
  * This is the GLOBAL baseline for all 7 Genie Suite products.
  * 
+ * NOW REGIONALIZED: Messages are pulled from guideMessageCatalog.ts
+ * using the same regional-routing-registry hierarchy (82+ regions).
+ * 
  * Architecture:
  *   Zustand → global state (guide dock, character, preferences)
  *   XState  → orchestration (generation pipeline, character handoffs) — added later
@@ -12,6 +15,12 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import {
+  resolveGuideRegion,
+  getGuideMessage,
+  type RegionalGuideContext,
+  type GuideMessageKey,
+} from '@/config/guideMessageCatalog';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -111,6 +120,9 @@ interface GuideState {
   // Mode
   mode: CastMode;
 
+  // Regional context (IP/browser/manual detection)
+  regionalContext: RegionalGuideContext;
+
   // User context
   selectedCategoryId?: string;
   hoveredCategoryId?: string;
@@ -130,6 +142,7 @@ interface GuideState {
   clearQueue: () => void;
   setVoiceEnabled: (enabled: boolean) => void;
   touchInteraction: () => void;
+  setRegionalContext: (ctx: RegionalGuideContext) => void;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -153,8 +166,19 @@ function buildMsg(
   };
 }
 
-function categoryHoverCopy(_categoryId: string): string {
-  return 'Great choice. This category works well for quick wins and scalable content.';
+/** Localized message helper — resolves from catalog using current region */
+function msg(key: GuideMessageKey, lang: string): string {
+  return getGuideMessage(key, lang);
+}
+
+// ── Initial region detection ─────────────────────────────────────────────────
+
+function getInitialRegion(): RegionalGuideContext {
+  if (typeof window === 'undefined') {
+    return { zone: 'western', languageCode: 'en-US', shortLang: 'en', isRTL: false };
+  }
+  const browserLang = navigator.languages?.[0] || navigator.language;
+  return resolveGuideRegion(browserLang);
 }
 
 // ── Store ────────────────────────────────────────────────────────────────────
@@ -163,6 +187,7 @@ export const useGuideStore = create<GuideState>()(
   persist(
     (set, get) => ({
       mode: 'create',
+      regionalContext: getInitialRegion(),
       lastInteractionAt: Date.now(),
       agent: 'ori',
       surface: 'collapsed',
@@ -171,6 +196,8 @@ export const useGuideStore = create<GuideState>()(
       voiceEnabled: false,
 
       touchInteraction: () => set({ lastInteractionAt: Date.now() }),
+
+      setRegionalContext: (ctx) => set({ regionalContext: ctx }),
 
       setMode: (mode) =>
         set({
@@ -188,6 +215,7 @@ export const useGuideStore = create<GuideState>()(
 
       dispatch: (signal) => {
         const state = get();
+        const lang = state.regionalContext.shortLang;
 
         switch (signal.type) {
           case 'PAGE_LOAD': {
@@ -199,10 +227,10 @@ export const useGuideStore = create<GuideState>()(
                 queue: [
                   buildMsg(
                     'ori',
-                    "Welcome. Tell me what you want to build — I'll help shape the story.",
+                    msg('PAGE_LOAD_WELCOME', lang),
                     [
-                      { label: 'Start with an idea', signal: { type: 'CLICK_HELP_ME_DECIDE' } },
-                      { label: 'Explore examples', signal: { type: 'DISMISS_GUIDE' } },
+                      { label: msg('PAGE_LOAD_CTA_START', lang), signal: { type: 'CLICK_HELP_ME_DECIDE' } },
+                      { label: msg('PAGE_LOAD_CTA_EXPLORE', lang), signal: { type: 'DISMISS_GUIDE' } },
                     ],
                     { selector: '[data-intent-panel]', style: 'spotlight' },
                     'encouraging',
@@ -219,7 +247,7 @@ export const useGuideStore = create<GuideState>()(
               agent: 'ori',
               surface: 'peek',
               queue: [
-                buildMsg('ori', categoryHoverCopy(signal.categoryId), undefined, undefined, 'neutral', 3000),
+                buildMsg('ori', msg('HOVER_CATEGORY', lang), undefined, undefined, 'neutral', 3000),
               ],
               lastInteractionAt: Date.now(),
             });
@@ -235,8 +263,8 @@ export const useGuideStore = create<GuideState>()(
               queue: [
                 buildMsg(
                   'arc',
-                  "I'll structure the workflow so this scales cleanly later.",
-                  [{ label: 'Continue', signal: { type: 'SWITCH_MODE', mode: 'create' } }],
+                  msg('SELECT_CATEGORY', lang),
+                  [{ label: '→', signal: { type: 'SWITCH_MODE', mode: 'create' } }],
                   { selector: '[data-templates-panel]', style: 'ring' },
                 ),
               ],
@@ -253,10 +281,10 @@ export const useGuideStore = create<GuideState>()(
               queue: [
                 buildMsg(
                   'ori',
-                  "Want help deciding, or do you already know what you're building?",
+                  msg('IDLE_TIMEOUT', lang),
                   [
-                    { label: 'Help me decide', signal: { type: 'CLICK_HELP_ME_DECIDE' } },
-                    { label: "I've got it", signal: { type: 'DISMISS_GUIDE' } },
+                    { label: msg('IDLE_CTA_HELP', lang), signal: { type: 'CLICK_HELP_ME_DECIDE' } },
+                    { label: msg('IDLE_CTA_GOT_IT', lang), signal: { type: 'DISMISS_GUIDE' } },
                   ],
                 ),
               ],
@@ -271,11 +299,11 @@ export const useGuideStore = create<GuideState>()(
               queue: [
                 buildMsg(
                   'ori',
-                  'Quick question: are you creating content for a product, an internal workflow, or a public audience?',
+                  msg('HELP_ME_DECIDE', lang),
                   [
-                    { label: 'Product', signal: { type: 'DISMISS_GUIDE' } },
-                    { label: 'Workflow', signal: { type: 'DISMISS_GUIDE' } },
-                    { label: 'Public', signal: { type: 'DISMISS_GUIDE' } },
+                    { label: msg('HELP_CTA_PRODUCT', lang), signal: { type: 'DISMISS_GUIDE' } },
+                    { label: msg('HELP_CTA_WORKFLOW', lang), signal: { type: 'DISMISS_GUIDE' } },
+                    { label: msg('HELP_CTA_PUBLIC', lang), signal: { type: 'DISMISS_GUIDE' } },
                   ],
                 ),
               ],
@@ -305,7 +333,7 @@ export const useGuideStore = create<GuideState>()(
               agent: 'arc',
               surface: 'peek',
               queue: [
-                buildMsg('arc', 'Nice. Everything\'s consistent so far.', undefined, undefined, 'encouraging', 2500),
+                buildMsg('arc', msg('STEP_COMPLETED', lang), undefined, undefined, 'encouraging', 2500),
               ],
             });
             break;
@@ -318,8 +346,8 @@ export const useGuideStore = create<GuideState>()(
               queue: [
                 buildMsg(
                   'arc',
-                  'The system is ready. Nothing left dangling.',
-                  [{ label: 'Publish', signal: { type: 'SWITCH_MODE', mode: 'publish' } }],
+                  msg('PUBLISH_READY', lang),
+                  [{ label: msg('PUBLISH_CTA', lang), signal: { type: 'SWITCH_MODE', mode: 'publish' } }],
                   undefined,
                   'celebratory',
                 ),
