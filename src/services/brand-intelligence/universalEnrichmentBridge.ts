@@ -383,10 +383,10 @@ export class UniversalEnrichmentBridge {
 
     if (this.config.enableModelRouting) {
       try {
-        const { AIRoutingIntelligenceService } = await import('../ai/AIRoutingIntelligenceService');
-        const routing = AIRoutingIntelligenceService.getInstance();
+        const AIRoutingIntelligenceServiceModule = await import('../ai/AIRoutingIntelligenceService');
+        const routing = new AIRoutingIntelligenceServiceModule.default();
         const classification = routing.classifyQuery(prompt);
-        const decision = routing.getRoutingDecision(prompt);
+        const decision = routing.makeRoutingDecision(prompt);
         modelRecommendation = {
           intent: classification.intent,
           suggestedProvider: decision.primaryRecommendation?.provider || 'anthropic',
@@ -470,7 +470,7 @@ export class UniversalEnrichmentBridge {
   }): Promise<{
     plan: ProductionPlan;
     enrichedPrompt: EnrichmentResult;
-    scenePrompts: ReturnType<typeof generateScenePrompts>;
+    scenePrompts: ReturnType<typeof generateScenePrompts>[];
     regional: RegionalCreativeEnrichment;
     estimatedCost: ReturnType<typeof estimateProductionCost>;
   }> {
@@ -495,28 +495,35 @@ export class UniversalEnrichmentBridge {
 
     // Generate per-scene prompts
     const profile = bus.getBrandProfile();
-    const scenePrompts = generateScenePrompts({
-      brandProfile: profile || undefined,
-      regionCode: bus.getRegionCode(),
-      style: params.style || 'pixar_3d',
-      scenes: plan.scenes.map(s => ({
+    const scenePrompts = plan.scenes.map(s => {
+      const sceneScript = {
+        sceneNumber: 0,
         title: s.title,
-        description: s.description,
         narrationText: s.audio?.narration?.text || '',
-      })),
-      language: params.language || 'en',
+        visualDescription: s.description,
+        cameraDirection: 'medium shot',
+        characterActions: [] as string[],
+        emotionalBeat: 'neutral',
+        musicCue: '',
+        sfxCues: [] as string[],
+        textOverlays: [] as string[],
+        duration: 5,
+        inputAssetHandling: 'ai_generate' as const,
+        generationPrompts: { imagePrompt: '', videoPrompt: '', audioPrompt: '', characterPrompt: '' },
+      };
+      return generateScenePrompts(
+        sceneScript,
+        params.style || 'pixar_3d',
+        bus.getRegionCode(),
+        profile || undefined,
+      );
     });
 
     // Get regional enrichments
     const regional = this.getRegionalCreativeEnrichment();
 
     // Estimate cost
-    const estimatedCostResult = estimateProductionCost(
-      params.useCase,
-      plan.outputs[0]?.quality || 'standard',
-      bus.getRegionCode(),
-      params.inputs
-    );
+    const estimatedCostResult = estimateProductionCost(plan);
 
     return {
       plan,
