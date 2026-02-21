@@ -958,18 +958,65 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-[300px]">
+                            {/* Western / Europe */}
                             <SelectItem value="en-US">English (US)</SelectItem>
                             <SelectItem value="en-GB">English (UK)</SelectItem>
                             <SelectItem value="es-ES">Spanish</SelectItem>
                             <SelectItem value="fr-FR">French</SelectItem>
                             <SelectItem value="de-DE">German</SelectItem>
+                            <SelectItem value="it-IT">Italian</SelectItem>
                             <SelectItem value="pt-BR">Portuguese (BR)</SelectItem>
-                            <SelectItem value="hi-IN">Hindi</SelectItem>
-                            <SelectItem value="ar-SA">Arabic</SelectItem>
-                            <SelectItem value="zh-CN">Chinese (Mandarin)</SelectItem>
+                            <SelectItem value="pt-PT">Portuguese (PT)</SelectItem>
+                            <SelectItem value="nl-NL">Dutch</SelectItem>
+                            <SelectItem value="pl-PL">Polish</SelectItem>
+                            <SelectItem value="ru-RU">Russian</SelectItem>
+                            <SelectItem value="uk-UA">Ukrainian</SelectItem>
+                            <SelectItem value="sv-SE">Swedish</SelectItem>
+                            <SelectItem value="da-DK">Danish</SelectItem>
+                            <SelectItem value="nb-NO">Norwegian</SelectItem>
+                            <SelectItem value="fi-FI">Finnish</SelectItem>
+                            <SelectItem value="cs-CZ">Czech</SelectItem>
+                            <SelectItem value="sk-SK">Slovak</SelectItem>
+                            <SelectItem value="ro-RO">Romanian</SelectItem>
+                            <SelectItem value="hu-HU">Hungarian</SelectItem>
+                            <SelectItem value="bg-BG">Bulgarian</SelectItem>
+                            <SelectItem value="el-GR">Greek</SelectItem>
+                            <SelectItem value="et-EE">Estonian</SelectItem>
+                            <SelectItem value="lv-LV">Latvian</SelectItem>
+                            <SelectItem value="lt-LT">Lithuanian</SelectItem>
+                            <SelectItem value="sl-SI">Slovenian</SelectItem>
+                            {/* CJK */}
+                            <SelectItem value="zh-CN">Chinese (Simplified)</SelectItem>
+                            <SelectItem value="zh-TW">Chinese (Traditional)</SelectItem>
                             <SelectItem value="ja-JP">Japanese</SelectItem>
                             <SelectItem value="ko-KR">Korean</SelectItem>
+                            {/* MENA / RTL */}
+                            <SelectItem value="ar-SA">Arabic</SelectItem>
+                            <SelectItem value="he-IL">Hebrew</SelectItem>
+                            <SelectItem value="tr-TR">Turkish</SelectItem>
+                            <SelectItem value="fa-IR">Farsi/Persian</SelectItem>
+                            {/* India / South Asia */}
+                            <SelectItem value="hi-IN">Hindi</SelectItem>
+                            <SelectItem value="bn-BD">Bengali</SelectItem>
+                            <SelectItem value="te-IN">Telugu</SelectItem>
+                            <SelectItem value="ta-IN">Tamil</SelectItem>
+                            <SelectItem value="mr-IN">Marathi</SelectItem>
+                            <SelectItem value="gu-IN">Gujarati</SelectItem>
+                            <SelectItem value="kn-IN">Kannada</SelectItem>
+                            <SelectItem value="ml-IN">Malayalam</SelectItem>
+                            <SelectItem value="pa-IN">Punjabi</SelectItem>
+                            <SelectItem value="ur-PK">Urdu</SelectItem>
+                            {/* SEA */}
+                            <SelectItem value="id-ID">Indonesian</SelectItem>
+                            <SelectItem value="ms-MY">Malay</SelectItem>
+                            <SelectItem value="th-TH">Thai</SelectItem>
+                            <SelectItem value="vi-VN">Vietnamese</SelectItem>
+                            <SelectItem value="tl-PH">Filipino/Tagalog</SelectItem>
+                            {/* Africa */}
+                            <SelectItem value="sw-KE">Swahili</SelectItem>
+                            <SelectItem value="yo-NG">Yoruba</SelectItem>
+                            <SelectItem value="am-ET">Amharic</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -977,16 +1024,33 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Output Languages (for dubbing/subtitles)</Label>
                       <div className="flex flex-wrap gap-1.5">
-                        {['en', 'es', 'fr', 'de', 'pt', 'hi', 'ar', 'zh', 'ja', 'ko', 'sv', 'pl', 'it', 'nl'].map(lang => (
+                        {[
+                          { code: 'en', label: 'EN' }, { code: 'es', label: 'ES' }, { code: 'fr', label: 'FR' },
+                          { code: 'de', label: 'DE' }, { code: 'it', label: 'IT' }, { code: 'pt', label: 'PT' },
+                          { code: 'nl', label: 'NL' }, { code: 'pl', label: 'PL' }, { code: 'ru', label: 'RU' },
+                          { code: 'uk', label: 'UK' }, { code: 'sv', label: 'SV' }, { code: 'da', label: 'DA' },
+                          { code: 'nb', label: 'NO' }, { code: 'fi', label: 'FI' }, { code: 'cs', label: 'CS' },
+                          { code: 'sk', label: 'SK' }, { code: 'ro', label: 'RO' }, { code: 'hu', label: 'HU' },
+                          { code: 'bg', label: 'BG' }, { code: 'el', label: 'EL' }, { code: 'et', label: 'ET' },
+                          { code: 'lv', label: 'LV' }, { code: 'lt', label: 'LT' }, { code: 'sl', label: 'SL' },
+                          { code: 'zh', label: 'ZH' }, { code: 'ja', label: 'JA' }, { code: 'ko', label: 'KO' },
+                          { code: 'ar', label: 'AR' }, { code: 'he', label: 'HE' }, { code: 'tr', label: 'TR' },
+                          { code: 'fa', label: 'FA' }, { code: 'hi', label: 'HI' }, { code: 'bn', label: 'BN' },
+                          { code: 'te', label: 'TE' }, { code: 'ta', label: 'TA' }, { code: 'mr', label: 'MR' },
+                          { code: 'gu', label: 'GU' }, { code: 'ur', label: 'UR' },
+                          { code: 'id', label: 'ID' }, { code: 'th', label: 'TH' }, { code: 'vi', label: 'VI' },
+                          { code: 'ms', label: 'MS' }, { code: 'tl', label: 'TL' },
+                          { code: 'sw', label: 'SW' }, { code: 'yo', label: 'YO' }, { code: 'am', label: 'AM' },
+                        ].map(lang => (
                           <Badge
-                            key={lang}
-                            variant={outputLanguages.includes(lang) ? 'default' : 'outline'}
+                            key={lang.code}
+                            variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'}
                             className="text-[10px] cursor-pointer transition-colors"
                             onClick={() => setOutputLanguages(prev =>
-                              prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]
+                              prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code]
                             )}
                           >
-                            {lang.toUpperCase()}
+                            {lang.label}
                           </Badge>
                         ))}
                       </div>
