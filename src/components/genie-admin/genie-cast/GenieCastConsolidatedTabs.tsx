@@ -42,6 +42,7 @@ import {
   Image,
   Volume2,
   ChevronDown,
+  Check,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCreateMode } from '@/hooks/useCreateMode';
@@ -140,6 +141,7 @@ import { type ProductionCapability } from '@/services/marketing/aiMessagingGener
 import { ScriptPreviewPanel } from './ScriptPreviewPanel';
 import { TranslationTranscreationToggle } from './TranslationTranscreationToggle';
 import { CharacterPickerPopup, type CharacterOption } from './CharacterPickerPopup';
+import { PortalDropdown } from './create-wizard/PortalDropdown';
 
 /**
  * Detect transcreation zone from dialect code.
@@ -318,8 +320,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   // Resolution / aspect ratio selection
   const [selectedResolution, setSelectedResolution] = useState<string>('1920x1080');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('16:9');
-  // Visual style from cast_visual_styles (DB-driven)
-  const [selectedVisualStyleId, setSelectedVisualStyleId] = useState<string | null>(null);
+  // Visual styles from cast_visual_styles (DB-driven, multi-select)
+  const [selectedVisualStyleIds, setSelectedVisualStyleIds] = useState<string[]>([]);
   // Production capabilities selection
   const [selectedCapabilityIds, setSelectedCapabilityIds] = useState<string[]>([]);
   // Auto-selected capability IDs (from style rules, user can override)
@@ -836,7 +838,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             setSelectedDialectCodes(['en-US']);
             // Step 5: Visual Style → Cinematic
             const cinematicStyle = contentRegistry.visualStyles.find(s => s.name === 'cinematic');
-            if (cinematicStyle) setSelectedVisualStyleId(cinematicStyle.id);
+            if (cinematicStyle) setSelectedVisualStyleIds([cinematicStyle.id]);
             // Step 5: Capabilities → avatar, lip_sync, scene_voiceover, screen_recording
             const ep04Caps = ['avatar_talking_head', 'lip_sync', 'scene_voiceover', 'screen_recording', 'text_to_video'];
             const matchedCapIds = contentRegistry.productionCapabilities
@@ -1281,8 +1283,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                               // Apply holiday style suggestions
                               const suggestedIds = holidayAwareness.topSuggestion?.holiday.suggested_style_ids || [];
                               if (suggestedIds.length > 0) {
-                                const matchedStyle = contentRegistry.visualStyles.find(s => suggestedIds.includes(s.id));
-                                if (matchedStyle) setSelectedVisualStyleId(matchedStyle.id);
+                                const matchedStyles = contentRegistry.visualStyles.filter(s => suggestedIds.includes(s.id));
+                                if (matchedStyles.length > 0) setSelectedVisualStyleIds(prev => Array.from(new Set([...prev, ...matchedStyles.map(s => s.id)])));
                               }
                               // Apply suggested capabilities
                               const suggestedCaps = holidayAwareness.topSuggestion?.holiday.suggested_capabilities || [];
@@ -1331,211 +1333,149 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       </motion.div>
                     )}
 
-                    {/* 5a: Generation Style with Accordion Sub-Styles */}
-                    <div className="space-y-2">
+                    {/* 5a: Generation Style — Side-by-side dropdowns (multi-select) */}
+                    <div className="space-y-3">
                       <Label className="text-xs font-medium">Generation Style</Label>
-                      {/* Parent styles (no parent_style_id) */}
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                        {contentRegistry.visualStyles
-                          .filter(s => !s.parent_style_id)
-                          .sort((a, b) => a.sort_order - b.sort_order)
-                          .map(style => {
-                            const subStyles = contentRegistry.visualStyles
-                              .filter(s => s.parent_style_id === style.id)
-                              .sort((a, b) => a.sub_sort_order - b.sub_sort_order);
-                            const isParentSelected = selectedVisualStyleId === style.id;
-                            const hasSubSelected = subStyles.some(s => s.id === selectedVisualStyleId);
-                            const isExpanded = isParentSelected || hasSubSelected;
-
-                            return (
-                              <React.Fragment key={style.id}>
-                                <button
-                                  onClick={() => {
-                                    const newId = isParentSelected ? null : style.id;
-                                    setSelectedVisualStyleId(newId);
-                                    setSelectedCharacterIds([]);
-                                    // Auto-select capabilities based on style rules
-                                    if (newId) {
-                                      const rules = contentRegistry.getCapabilityRulesForStyle(newId);
-                                      const autoIds = rules.filter(r => r.auto_select).map(r => r.capability_id);
-                                      setAutoSelectedCapIds(autoIds);
-                                      setSelectedCapabilityIds(prev => {
-                                        const merged = new Set([...prev, ...autoIds]);
-                                        return Array.from(merged);
-                                      });
-                                      // Auto-toggle lip-sync if in auto rules
-                                      const lipSyncCap = contentRegistry.productionCapabilities.find(c => c.name === 'lip_sync');
-                                      if (lipSyncCap && autoIds.includes(lipSyncCap.id)) setLipSyncEnabled(true);
-                                    } else {
-                                      setAutoSelectedCapIds([]);
-                                    }
-                                  }}
-                                  className={cn(
-                                    "relative flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all",
-                                    isExpanded
-                                      ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
-                                      : "border-border hover:border-primary/40 hover:bg-muted/50"
-                                  )}
-                                >
-                                  <span className="text-base">
-                                    {style.icon === 'Box' ? '📦' : style.icon === 'Smile' ? '😊' : style.icon === 'Star' ? '⭐' : style.icon === 'Camera' ? '📷' : style.icon === 'Film' ? '🎬' : style.icon === 'Palette' ? '🎨' : style.icon === 'Droplets' ? '💧' : style.icon === 'Minus' ? '➖' : style.icon === 'BarChart3' ? '📊' : style.icon === 'PenTool' ? '✏️' : style.icon === 'BookOpen' ? '📚' : '🎭'}
-                                  </span>
-                                  <span className="font-medium text-center leading-tight">{style.label}</span>
-                                  {/* Size badge */}
-                                  <span className="text-[9px] text-muted-foreground">~{style.estimated_size_mb || '?'}MB est.</span>
-                                  {subStyles.length > 0 && (
-                                    <ChevronDown className={cn(
-                                      "w-3 h-3 transition-transform absolute top-1 right-1 text-muted-foreground",
-                                      isExpanded && "rotate-180 text-primary"
-                                    )} />
-                                  )}
-                                </button>
-                              </React.Fragment>
-                            );
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Parent Style Dropdown */}
+                        <PortalDropdown
+                          label="Style"
+                          icon={<span className="text-sm">🎨</span>}
+                          placeholder="Select styles..."
+                          options={contentRegistry.visualStyles
+                            .filter(s => !s.parent_style_id)
+                            .sort((a, b) => a.sort_order - b.sort_order)
+                            .map(s => ({ value: s.id, label: s.label, icon: s.icon === 'Film' ? '🎬' : s.icon === 'Palette' ? '🎨' : s.icon === 'Camera' ? '📷' : s.icon === 'Star' ? '⭐' : s.icon === 'Box' ? '📦' : '🎭' }))}
+                          selected={selectedVisualStyleIds.filter(id => {
+                            const style = contentRegistry.visualStyles.find(s => s.id === id);
+                            return style && !style.parent_style_id;
                           })}
-                      </div>
+                          onToggle={(id) => {
+                            setSelectedVisualStyleIds(prev => {
+                              const isRemoving = prev.includes(id);
+                              if (isRemoving) {
+                                // Remove parent + its sub-styles
+                                const subIds = contentRegistry.visualStyles.filter(s => s.parent_style_id === id).map(s => s.id);
+                                return prev.filter(p => p !== id && !subIds.includes(p));
+                              } else {
+                                return [...prev, id];
+                              }
+                            });
+                            // Auto-select capabilities
+                            const rules = contentRegistry.getCapabilityRulesForStyle(id);
+                            const autoIds = rules.filter(r => r.auto_select).map(r => r.capability_id);
+                            if (autoIds.length > 0) {
+                              setAutoSelectedCapIds(p => Array.from(new Set([...p, ...autoIds])));
+                              setSelectedCapabilityIds(p => Array.from(new Set([...p, ...autoIds])));
+                              const lipSyncCap = contentRegistry.productionCapabilities.find(c => c.name === 'lip_sync');
+                              if (lipSyncCap && autoIds.includes(lipSyncCap.id)) setLipSyncEnabled(true);
+                            }
+                          }}
+                          multi
+                        />
 
-                      {/* Sub-style accordion for the selected parent */}
-                      {(() => {
-                        // Find which parent is expanded
-                        const selectedStyle = contentRegistry.visualStyles.find(s => s.id === selectedVisualStyleId);
-                        const expandedParentId = selectedStyle?.parent_style_id || 
-                          (selectedStyle && !selectedStyle.parent_style_id 
-                            ? selectedStyle.id 
-                            : null);
-                        
-                        if (!expandedParentId) return null;
-                        
-                        const subStyles = contentRegistry.visualStyles
-                          .filter(s => s.parent_style_id === expandedParentId)
-                          .sort((a, b) => a.sub_sort_order - b.sub_sort_order);
-                        
-                        if (subStyles.length === 0) return null;
-                        
-                        const parentStyle = contentRegistry.visualStyles.find(s => s.id === expandedParentId);
-                        
-                        return (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="mt-2 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2">
-                              <p className="text-[10px] font-medium text-primary flex items-center gap-1">
-                                <ChevronDown className="w-3 h-3" />
-                                {parentStyle?.label} — Choose a sub-style
-                              </p>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                                {subStyles.map(sub => (
-                                  <button
-                                    key={sub.id}
-                                    onClick={() => {
-                                      setSelectedVisualStyleId(sub.id);
-                                      setSelectedCharacterIds([]);
-                                      // Auto-select capabilities for sub-style
-                                      const rules = contentRegistry.getCapabilityRulesForStyle(sub.id);
-                                      const autoIds = rules.filter(r => r.auto_select).map(r => r.capability_id);
-                                      setAutoSelectedCapIds(autoIds);
-                                      setSelectedCapabilityIds(prev => {
-                                        const merged = new Set([...prev, ...autoIds]);
-                                        return Array.from(merged);
-                                      });
-                                      const lipSyncCap = contentRegistry.productionCapabilities.find(c => c.name === 'lip_sync');
-                                      if (lipSyncCap && autoIds.includes(lipSyncCap.id)) setLipSyncEnabled(true);
-                                    }}
-                                    className={cn(
-                                      "flex flex-col gap-1 p-2 rounded-lg border text-xs transition-all text-left",
-                                      selectedVisualStyleId === sub.id
-                                        ? "border-primary bg-primary/15 text-primary ring-1 ring-primary/40"
-                                        : "border-border/60 hover:border-primary/40 hover:bg-primary/5"
-                                    )}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-medium">{sub.label}</span>
-                                      <span className="text-[9px] text-muted-foreground">~{sub.estimated_size_mb || '?'}MB est.</span>
-                                    </div>
-                                    {sub.description && (
-                                      <span className="text-[10px] text-muted-foreground leading-tight line-clamp-2">{sub.description}</span>
-                                    )}
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                      {sub.character_type && (
-                                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 w-fit">
-                                          {sub.character_type}
-                                        </Badge>
-                                      )}
-                                      <Badge variant="outline" className={cn(
-                                        "text-[9px] px-1 py-0 h-4 w-fit",
-                                        sub.render_time_estimate === 'high' ? 'border-destructive/40 text-destructive' :
-                                        sub.render_time_estimate === 'low' ? 'border-green-500/40 text-green-600' : ''
-                                      )}>
-                                        {sub.render_time_estimate === 'high' ? '🔥 Heavy' : sub.render_time_estimate === 'low' ? '⚡ Light' : '⏱️ Medium'}
-                                      </Badge>
-                                    </div>
-                                  </button>
-                                ))}
+                        {/* Sub-Style Dropdown — shows sub-styles of all selected parents */}
+                        {(() => {
+                          const selectedParentIds = selectedVisualStyleIds.filter(id => {
+                            const style = contentRegistry.visualStyles.find(s => s.id === id);
+                            return style && !style.parent_style_id;
+                          });
+                          const availableSubStyles = contentRegistry.visualStyles
+                            .filter(s => s.parent_style_id && selectedParentIds.includes(s.parent_style_id))
+                            .sort((a, b) => a.sub_sort_order - b.sub_sort_order);
+                          
+                          if (availableSubStyles.length === 0) return (
+                            <div className="space-y-2">
+                              <Label className="flex items-center gap-2 text-sm"><span className="text-sm">🎭</span>Sub-Style</Label>
+                              <div className="flex items-center justify-center h-10 border rounded-md bg-muted/30 text-xs text-muted-foreground">
+                                Select a parent style first
                               </div>
                             </div>
-                          </motion.div>
-                        );
-                      })()}
+                          );
 
-                      {selectedVisualStyleId && (
+                          return (
+                            <PortalDropdown
+                              label="Sub-Style"
+                              icon={<span className="text-sm">🎭</span>}
+                              placeholder="Select sub-styles..."
+                              options={availableSubStyles.map(s => {
+                                const parent = contentRegistry.visualStyles.find(p => p.id === s.parent_style_id);
+                                return { value: s.id, label: s.label, description: parent ? `${parent.label}` : undefined };
+                              })}
+                              selected={selectedVisualStyleIds.filter(id => {
+                                const style = contentRegistry.visualStyles.find(s => s.id === id);
+                                return style && !!style.parent_style_id;
+                              })}
+                              onToggle={(id) => {
+                                setSelectedVisualStyleIds(prev =>
+                                  prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+                                );
+                                // Auto-select capabilities for sub-style
+                                const rules = contentRegistry.getCapabilityRulesForStyle(id);
+                                const autoIds = rules.filter(r => r.auto_select).map(r => r.capability_id);
+                                if (autoIds.length > 0) {
+                                  setAutoSelectedCapIds(p => Array.from(new Set([...p, ...autoIds])));
+                                  setSelectedCapabilityIds(p => Array.from(new Set([...p, ...autoIds])));
+                                  const lipSyncCap = contentRegistry.productionCapabilities.find(c => c.name === 'lip_sync');
+                                  if (lipSyncCap && autoIds.includes(lipSyncCap.id)) setLipSyncEnabled(true);
+                                }
+                              }}
+                              multi
+                            />
+                          );
+                        })()}
+                      </div>
+
+                      {selectedVisualStyleIds.length > 0 && (
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                           🛡️ IP-safe style — prevents photorealistic deepfakes
                         </p>
                       )}
                     </div>
 
-                    {/* 5a-ii: Character Selection — opens popup with thumbnail grid */}
-                    {selectedVisualStyleId && (() => {
-                      const chars = contentRegistry.getCharactersForStyle(selectedVisualStyleId);
-                      if (chars.length === 0) return null;
-                      const selectedChars = chars.filter(ch => selectedCharacterIds.includes(ch.id));
-                      const styleName = contentRegistry.visualStyles.find(s => s.id === selectedVisualStyleId)?.label || 'Style';
+                    {/* 5a-ii: Character chips — inline below style dropdowns */}
+                    {selectedVisualStyleIds.length > 0 && (() => {
+                      // Collect characters for all selected styles
+                      const allChars = selectedVisualStyleIds.flatMap(id => 
+                        contentRegistry.getCharactersForStyle(id)
+                      );
+                      // Deduplicate by id
+                      const uniqueChars = Array.from(new Map(allChars.map(c => [c.id, c])).values());
+                      if (uniqueChars.length === 0) return null;
+                      const selectedChars = uniqueChars.filter(ch => selectedCharacterIds.includes(ch.id));
                       return (
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium">🎭 Characters</Label>
-                          <p className="text-[10px] text-muted-foreground">Click to open character picker — select one or more for your production</p>
-                          
-                          <Button
-                            variant="outline"
-                            className="w-full justify-between h-auto min-h-10 py-2"
-                            onClick={() => setCharacterPickerOpen(true)}
-                          >
-                            {selectedChars.length > 0 ? (
-                              <div className="flex flex-wrap gap-1.5 flex-1">
-                                {selectedChars.slice(0, 4).map(ch => (
-                                  <div key={ch.id} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
-                                    {ch.thumbnail_url ? (
-                                      <img src={ch.thumbnail_url} alt={ch.label} className="w-5 h-5 rounded-full object-cover" />
-                                    ) : (
-                                      <span className="text-xs">{ch.icon}</span>
-                                    )}
-                                    <span className="text-xs font-medium text-primary">{ch.label}</span>
-                                  </div>
-                                ))}
-                                {selectedChars.length > 4 && (
-                                  <Badge variant="secondary" className="text-[10px]">+{selectedChars.length - 4} more</Badge>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">Choose characters ({chars.length} available)</span>
-                            )}
-                            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                          </Button>
-
-                          <CharacterPickerPopup
-                            open={characterPickerOpen}
-                            onOpenChange={setCharacterPickerOpen}
-                            styleName={styleName}
-                            characters={chars as CharacterOption[]}
-                            selectedIds={selectedCharacterIds}
-                            onToggle={(id) => setSelectedCharacterIds(prev =>
-                              prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-                            )}
-                          />
+                          <Label className="text-xs font-medium">🎭 Characters ({uniqueChars.length} available)</Label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {uniqueChars.map(ch => {
+                              const isSelected = selectedCharacterIds.includes(ch.id);
+                              return (
+                                <button
+                                  key={ch.id}
+                                  onClick={() => setSelectedCharacterIds(prev =>
+                                    prev.includes(ch.id) ? prev.filter(c => c !== ch.id) : [...prev, ch.id]
+                                  )}
+                                  className={cn(
+                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs transition-all",
+                                    isSelected
+                                      ? "bg-primary/10 border-primary/30 text-primary ring-1 ring-primary/20"
+                                      : "bg-muted/30 border-border hover:border-primary/40 hover:bg-muted/60"
+                                  )}
+                                >
+                                  {ch.thumbnail_url ? (
+                                    <img src={ch.thumbnail_url} alt={ch.label} className="w-5 h-5 rounded-full object-cover" />
+                                  ) : (
+                                    <span>{ch.icon || '🎭'}</span>
+                                  )}
+                                  <span className="font-medium">{ch.label}</span>
+                                  {isSelected && <Check className="w-3 h-3" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {selectedChars.length > 0 && (
+                            <p className="text-[10px] text-muted-foreground">{selectedChars.length} character{selectedChars.length !== 1 ? 's' : ''} selected</p>
+                          )}
                         </div>
                       );
                     })()}
@@ -1569,7 +1509,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       </div>
                       {/* Auto-calculated estimation */}
                       {(() => {
-                        const est = contentRegistry.estimateScenes(targetDuration, selectedVisualStyleId);
+                        const est = contentRegistry.estimateScenes(targetDuration, selectedVisualStyleIds[0] || null);
                         return (
                           <div className="mt-2 p-3 rounded-lg bg-muted/50 border border-border/60 grid grid-cols-4 gap-3 text-center">
                             <div>
@@ -1606,9 +1546,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         </p>
                       )}
                       {/* Show recommended capabilities */}
-                      {selectedVisualStyleId && (() => {
-                        const rules = contentRegistry.getCapabilityRulesForStyle(selectedVisualStyleId);
-                        const recommended = rules.filter(r => r.is_recommended && !r.auto_select);
+                      {selectedVisualStyleIds.length > 0 && (() => {
+                        const allRules = selectedVisualStyleIds.flatMap(id => contentRegistry.getCapabilityRulesForStyle(id));
+                        const recommended = allRules.filter(r => r.is_recommended && !r.auto_select);
                         if (recommended.length === 0) return null;
                         return (
                           <div className="flex flex-wrap gap-1 mb-1">
@@ -1864,9 +1804,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 {/* Continue to Templates */}
                 <div className="flex justify-between items-center">
                   <div className="text-xs text-muted-foreground flex flex-wrap gap-1">
-                    {selectedVisualStyleId && <span>✅ Style</span>}
+                    {selectedVisualStyleIds.length > 0 && <span>✅ {selectedVisualStyleIds.length} Style{selectedVisualStyleIds.length > 1 ? 's' : ''}</span>}
                     {selectedCharacterIds.length > 0 && <span>✅ {selectedCharacterIds.length} chars</span>}
-                    {targetDuration > 0 && <span>✅ {targetDuration}s / {contentRegistry.estimateScenes(targetDuration, selectedVisualStyleId).scenes} scenes</span>}
+                    {targetDuration > 0 && <span>✅ {targetDuration}s / {contentRegistry.estimateScenes(targetDuration, selectedVisualStyleIds[0] || null).scenes} scenes</span>}
                     {selectedCapabilityIds.length > 0 && <span>✅ {selectedCapabilityIds.length} capabilities</span>}
                     {enrichmentPrompt && <span>✅ Enrichment</span>}
                   </div>
