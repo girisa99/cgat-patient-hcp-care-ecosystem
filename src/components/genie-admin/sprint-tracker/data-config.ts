@@ -2,7 +2,7 @@
 import type { Developer, TaskOverride, StandupEntry, SprintDay } from './types';
 
 export const SPRINT_START_DATE = '2026-02-17';
-export const SPRINT_END_DATE = '2026-02-21';
+export const SPRINT_END_DATE = '2026-02-28'; // Extended to include Sprint 2 backlog
 
 export const SPRINT_DAYS: SprintDay[] = [
   { day: 1, theme: 'Foundation & Assessment' },
