@@ -5049,6 +5049,104 @@ export type Database = {
           },
         ]
       }
+      cast_style_capability_rules: {
+        Row: {
+          auto_select: boolean | null
+          capability_id: string
+          created_at: string | null
+          id: string
+          is_locked: boolean | null
+          is_recommended: boolean | null
+          reason: string | null
+          style_id: string
+        }
+        Insert: {
+          auto_select?: boolean | null
+          capability_id: string
+          created_at?: string | null
+          id?: string
+          is_locked?: boolean | null
+          is_recommended?: boolean | null
+          reason?: string | null
+          style_id: string
+        }
+        Update: {
+          auto_select?: boolean | null
+          capability_id?: string
+          created_at?: string | null
+          id?: string
+          is_locked?: boolean | null
+          is_recommended?: boolean | null
+          reason?: string | null
+          style_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_style_capability_rules_capability_id_fkey"
+            columns: ["capability_id"]
+            isOneToOne: false
+            referencedRelation: "cast_production_capabilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cast_style_capability_rules_style_id_fkey"
+            columns: ["style_id"]
+            isOneToOne: false
+            referencedRelation: "cast_visual_styles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cast_style_characters: {
+        Row: {
+          character_type: string
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          label: string
+          name: string
+          sort_order: number | null
+          style_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          character_type?: string
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          label: string
+          name: string
+          sort_order?: number | null
+          style_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          character_type?: string
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          name?: string
+          sort_order?: number | null
+          style_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cast_style_characters_style_id_fkey"
+            columns: ["style_id"]
+            isOneToOne: false
+            referencedRelation: "cast_visual_styles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cast_style_platform_map: {
         Row: {
           created_at: string
@@ -5228,9 +5326,11 @@ export type Database = {
           category: string
           character_type: string | null
           color: string
+          complexity_score: number | null
           created_at: string
           default_provider: string | null
           description: string | null
+          estimated_size_mb: number | null
           icon: string
           id: string
           is_active: boolean
@@ -5238,6 +5338,7 @@ export type Database = {
           name: string
           parent_style_id: string | null
           provider_routing: Json
+          render_time_estimate: string | null
           requires_face_consent: boolean
           sample_prompt: string | null
           sort_order: number
@@ -5251,9 +5352,11 @@ export type Database = {
           category?: string
           character_type?: string | null
           color?: string
+          complexity_score?: number | null
           created_at?: string
           default_provider?: string | null
           description?: string | null
+          estimated_size_mb?: number | null
           icon?: string
           id?: string
           is_active?: boolean
@@ -5261,6 +5364,7 @@ export type Database = {
           name: string
           parent_style_id?: string | null
           provider_routing?: Json
+          render_time_estimate?: string | null
           requires_face_consent?: boolean
           sample_prompt?: string | null
           sort_order?: number
@@ -5274,9 +5378,11 @@ export type Database = {
           category?: string
           character_type?: string | null
           color?: string
+          complexity_score?: number | null
           created_at?: string
           default_provider?: string | null
           description?: string | null
+          estimated_size_mb?: number | null
           icon?: string
           id?: string
           is_active?: boolean
@@ -5284,6 +5390,7 @@ export type Database = {
           name?: string
           parent_style_id?: string | null
           provider_routing?: Json
+          render_time_estimate?: string | null
           requires_face_consent?: boolean
           sample_prompt?: string | null
           sort_order?: number
