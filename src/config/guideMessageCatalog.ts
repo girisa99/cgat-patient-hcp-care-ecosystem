@@ -1,18 +1,23 @@
 /**
- * REGIONAL GUIDE MESSAGE CATALOG
+ * REGIONAL GUIDE MESSAGE CATALOG — Full 82+ Region Coverage
  * 
  * Provides localized messages for Ori (Creative) and Arc (Systems) guides.
- * Uses the same parent-child regional hierarchy as regional-routing-registry.ts.
+ * Uses parent→child inheritance from regional-routing-registry.ts:
+ *   Sub-region code → Parent language → Zone default → English
  * 
  * Structure:
- *   - English (en) = default fallback for all zones
- *   - Zone-level translations (e.g., 'ar' for MENA, 'hi' for India)
- *   - Sub-regional overrides where dialect matters
- * 
- * Message keys match ContextSignal types from guideStore.ts
+ *   - MESSAGES: Direct language translations (core 20+ languages)
+ *   - REGION_LANG_MAP: Maps all 82+ region codes → language code
+ *   - getGuideMessage(): Resolves with full inheritance chain
+ *   - resolveGuideRegion(): IP/browser/manual → RegionalGuideContext
  */
 
-import { type RegionalZone, getZoneFromLanguage, getZoneFromCountry, toLangBCP47 } from '@/config/regional-routing-registry';
+import { 
+  type RegionalZone, 
+  getZoneFromLanguage, 
+  getZoneFromCountry, 
+  toLangBCP47,
+} from '@/config/regional-routing-registry';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MESSAGE KEYS — map to ContextSignals in guideStore.ts
@@ -36,7 +41,7 @@ export type GuideMessageKey =
   | 'PUBLISH_CTA';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TRANSLATIONS — English default + regional languages
+// TRANSLATIONS — Core languages (20+). Sub-regions inherit from these.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const MESSAGES: Record<string, Record<GuideMessageKey, string>> = {
@@ -97,7 +102,7 @@ const MESSAGES: Record<string, Record<GuideMessageKey, string>> = {
     PUBLISH_CTA: 'प्रकाशित करें',
   },
 
-  // ── Spanish (LATAM/EU) ────────────────────────────────────────────────
+  // ── Spanish ───────────────────────────────────────────────────────────
   es: {
     PAGE_LOAD_WELCOME: 'Bienvenido. Cuéntame qué quieres construir — te ayudaré a dar forma a la historia.',
     PAGE_LOAD_CTA_START: 'Empezar con una idea',
@@ -116,16 +121,16 @@ const MESSAGES: Record<string, Record<GuideMessageKey, string>> = {
     PUBLISH_CTA: 'Publicar',
   },
 
-  // ── French (EU/Africa) ────────────────────────────────────────────────
+  // ── French ────────────────────────────────────────────────────────────
   fr: {
     PAGE_LOAD_WELCOME: "Bienvenue. Dites-moi ce que vous voulez créer — je vous aiderai à façonner l'histoire.",
     PAGE_LOAD_CTA_START: 'Commencer avec une idée',
     PAGE_LOAD_CTA_EXPLORE: 'Explorer les exemples',
     HOVER_CATEGORY: 'Excellent choix. Cette catégorie fonctionne bien pour des résultats rapides et du contenu évolutif.',
     SELECT_CATEGORY: "Je vais structurer le flux de travail pour qu'il s'adapte facilement par la suite.",
-    IDLE_TIMEOUT: 'Besoin d\'aide pour décider, ou vous savez déjà ce que vous voulez créer ?',
+    IDLE_TIMEOUT: "Besoin d'aide pour décider, ou vous savez déjà ce que vous voulez créer ?",
     IDLE_CTA_HELP: 'Aidez-moi à décider',
-    IDLE_CTA_GOT_IT: 'J\'ai compris',
+    IDLE_CTA_GOT_IT: "J'ai compris",
     HELP_ME_DECIDE: 'Question rapide : créez-vous du contenu pour un produit, un processus interne ou un public ?',
     HELP_CTA_PRODUCT: 'Produit',
     HELP_CTA_WORKFLOW: 'Processus',
@@ -154,7 +159,7 @@ const MESSAGES: Record<string, Record<GuideMessageKey, string>> = {
     PUBLISH_CTA: 'Veröffentlichen',
   },
 
-  // ── Portuguese (Brazil) ───────────────────────────────────────────────
+  // ── Portuguese ────────────────────────────────────────────────────────
   pt: {
     PAGE_LOAD_WELCOME: 'Bem-vindo. Me conte o que você quer construir — vou ajudar a moldar a história.',
     PAGE_LOAD_CTA_START: 'Começar com uma ideia',
@@ -173,7 +178,7 @@ const MESSAGES: Record<string, Record<GuideMessageKey, string>> = {
     PUBLISH_CTA: 'Publicar',
   },
 
-  // ── Chinese (CJK) ────────────────────────────────────────────────────
+  // ── Chinese ───────────────────────────────────────────────────────────
   zh: {
     PAGE_LOAD_WELCOME: '欢迎。告诉我你想要创建什么——我会帮助你构思故事。',
     PAGE_LOAD_CTA_START: '从一个想法开始',
@@ -362,13 +367,346 @@ const MESSAGES: Record<string, Record<GuideMessageKey, string>> = {
     PUBLISH_READY: 'ระบบพร้อมแล้ว ไม่มีอะไรค้างอยู่',
     PUBLISH_CTA: 'เผยแพร่',
   },
+
+  // ── Italian ───────────────────────────────────────────────────────────
+  it: {
+    PAGE_LOAD_WELCOME: 'Benvenuto. Dimmi cosa vuoi creare — ti aiuterò a dare forma alla storia.',
+    PAGE_LOAD_CTA_START: 'Inizia con un\'idea',
+    PAGE_LOAD_CTA_EXPLORE: 'Esplora esempi',
+    HOVER_CATEGORY: 'Ottima scelta. Questa categoria è ideale per risultati rapidi e contenuti scalabili.',
+    SELECT_CATEGORY: 'Organizzerò il flusso di lavoro in modo che si espanda facilmente in seguito.',
+    IDLE_TIMEOUT: 'Hai bisogno di aiuto per decidere, o sai già cosa vuoi creare?',
+    IDLE_CTA_HELP: 'Aiutami a decidere',
+    IDLE_CTA_GOT_IT: 'Lo so già',
+    HELP_ME_DECIDE: 'Domanda veloce: stai creando contenuti per un prodotto, un workflow interno o un pubblico?',
+    HELP_CTA_PRODUCT: 'Prodotto',
+    HELP_CTA_WORKFLOW: 'Workflow',
+    HELP_CTA_PUBLIC: 'Pubblico',
+    STEP_COMPLETED: 'Bene. Tutto coerente finora.',
+    PUBLISH_READY: 'Il sistema è pronto. Niente in sospeso.',
+    PUBLISH_CTA: 'Pubblica',
+  },
+
+  // ── Dutch ─────────────────────────────────────────────────────────────
+  nl: {
+    PAGE_LOAD_WELCOME: 'Welkom. Vertel me wat je wilt maken — ik help je het verhaal vorm te geven.',
+    PAGE_LOAD_CTA_START: 'Begin met een idee',
+    PAGE_LOAD_CTA_EXPLORE: 'Bekijk voorbeelden',
+    HOVER_CATEGORY: 'Goede keuze. Deze categorie werkt goed voor snelle resultaten en schaalbare content.',
+    SELECT_CATEGORY: 'Ik structureer de workflow zodat deze later goed schaalt.',
+    IDLE_TIMEOUT: 'Hulp nodig bij het kiezen, of weet je al wat je wilt maken?',
+    IDLE_CTA_HELP: 'Help me kiezen',
+    IDLE_CTA_GOT_IT: 'Ik weet het',
+    HELP_ME_DECIDE: 'Snelle vraag: maak je content voor een product, interne workflow of publiek?',
+    HELP_CTA_PRODUCT: 'Product',
+    HELP_CTA_WORKFLOW: 'Workflow',
+    HELP_CTA_PUBLIC: 'Publiek',
+    STEP_COMPLETED: 'Goed. Alles is tot nu toe consistent.',
+    PUBLISH_READY: 'Het systeem is klaar. Niets openstaand.',
+    PUBLISH_CTA: 'Publiceren',
+  },
+
+  // ── Polish ────────────────────────────────────────────────────────────
+  pl: {
+    PAGE_LOAD_WELCOME: 'Witaj. Powiedz mi, co chcesz stworzyć — pomogę ukształtować historię.',
+    PAGE_LOAD_CTA_START: 'Zacznij od pomysłu',
+    PAGE_LOAD_CTA_EXPLORE: 'Przeglądaj przykłady',
+    HOVER_CATEGORY: 'Świetny wybór. Ta kategoria sprawdza się w szybkich efektach i skalowalnych treściach.',
+    SELECT_CATEGORY: 'Zorganizuję przepływ pracy tak, aby łatwo się skalował.',
+    IDLE_TIMEOUT: 'Potrzebujesz pomocy w podjęciu decyzji, czy już wiesz, co chcesz stworzyć?',
+    IDLE_CTA_HELP: 'Pomóż mi zdecydować',
+    IDLE_CTA_GOT_IT: 'Już wiem',
+    HELP_ME_DECIDE: 'Szybkie pytanie: tworzysz treści dla produktu, wewnętrznego procesu czy odbiorców publicznych?',
+    HELP_CTA_PRODUCT: 'Produkt',
+    HELP_CTA_WORKFLOW: 'Proces',
+    HELP_CTA_PUBLIC: 'Publiczny',
+    STEP_COMPLETED: 'Dobrze. Wszystko jest spójne.',
+    PUBLISH_READY: 'System jest gotowy. Nic nie zostało.',
+    PUBLISH_CTA: 'Opublikuj',
+  },
+
+  // ── Ukrainian ─────────────────────────────────────────────────────────
+  uk: {
+    PAGE_LOAD_WELCOME: 'Ласкаво просимо. Розкажіть, що хочете створити — я допоможу сформувати історію.',
+    PAGE_LOAD_CTA_START: 'Почніть з ідеї',
+    PAGE_LOAD_CTA_EXPLORE: 'Переглянути приклади',
+    HOVER_CATEGORY: 'Чудовий вибір. Ця категорія підходить для швидких результатів і масштабованого контенту.',
+    SELECT_CATEGORY: 'Я структурую робочий процес для легкого масштабування.',
+    IDLE_TIMEOUT: 'Потрібна допомога з вибором, чи вже знаєте що створити?',
+    IDLE_CTA_HELP: 'Допоможіть обрати',
+    IDLE_CTA_GOT_IT: 'Я знаю',
+    HELP_ME_DECIDE: 'Швидке запитання: ви створюєте контент для продукту, внутрішнього процесу чи публічної аудиторії?',
+    HELP_CTA_PRODUCT: 'Продукт',
+    HELP_CTA_WORKFLOW: 'Процес',
+    HELP_CTA_PUBLIC: 'Публічний',
+    STEP_COMPLETED: 'Чудово. Все послідовно.',
+    PUBLISH_READY: 'Система готова. Нічого не залишилося.',
+    PUBLISH_CTA: 'Опублікувати',
+  },
+
+  // ── Tamil (India South) ───────────────────────────────────────────────
+  ta: {
+    PAGE_LOAD_WELCOME: 'வரவேற்கிறோம். நீங்கள் என்ன உருவாக்க விரும்புகிறீர்கள் என்று சொல்லுங்கள் — கதையை வடிவமைக்க உதவுவேன்.',
+    PAGE_LOAD_CTA_START: 'ஒரு யோசனையில் தொடங்குங்கள்',
+    PAGE_LOAD_CTA_EXPLORE: 'எடுத்துக்காட்டுகள் பாருங்கள்',
+    HOVER_CATEGORY: 'நல்ல தேர்வு. இந்த வகை விரைவான முடிவுகளுக்கும் அளவிடக்கூடிய உள்ளடக்கத்திற்கும் ஏற்றது.',
+    SELECT_CATEGORY: 'பின்னர் எளிதாக விரிவடையும் வகையில் பணிப்பாய்வை ஒழுங்கமைக்கிறேன்.',
+    IDLE_TIMEOUT: 'முடிவெடுக்க உதவி வேண்டுமா, அல்லது என்ன உருவாக்குவது என்று தெரியுமா?',
+    IDLE_CTA_HELP: 'உதவுங்கள்',
+    IDLE_CTA_GOT_IT: 'எனக்கு தெரியும்',
+    HELP_ME_DECIDE: 'விரைவான கேள்வி: தயாரிப்பு, உள் பணிப்பாய்வு அல்லது பொது பார்வையாளர்களுக்கா உள்ளடக்கம் உருவாக்குகிறீர்கள்?',
+    HELP_CTA_PRODUCT: 'தயாரிப்பு',
+    HELP_CTA_WORKFLOW: 'பணிப்பாய்வு',
+    HELP_CTA_PUBLIC: 'பொது',
+    STEP_COMPLETED: 'நன்று. இதுவரை எல்லாம் சரியாக உள்ளது.',
+    PUBLISH_READY: 'அமைப்பு தயார். எதுவும் நிலுவையில் இல்லை.',
+    PUBLISH_CTA: 'வெளியிடு',
+  },
+
+  // ── Telugu (India South) ──────────────────────────────────────────────
+  te: {
+    PAGE_LOAD_WELCOME: 'స్వాగతం. మీరు ఏమి తయారు చేయాలనుకుంటున్నారో చెప్పండి — కథను రూపొందించడంలో సహాయం చేస్తాను.',
+    PAGE_LOAD_CTA_START: 'ఒక ఆలోచనతో ప్రారంభించండి',
+    PAGE_LOAD_CTA_EXPLORE: 'ఉదాహరణలు చూడండి',
+    HOVER_CATEGORY: 'మంచి ఎంపిక. ఈ వర్గం త్వరిత ఫలితాలకు మరియు స్కేలబుల్ కంటెంట్‌కు అనుకూలం.',
+    SELECT_CATEGORY: 'తర్వాత సులభంగా స్కేల్ అయ్యేలా వర్క్‌ఫ్లోను నిర్మిస్తాను.',
+    IDLE_TIMEOUT: 'నిర్ణయించుకోవడంలో సహాయం కావాలా, లేదా ఏమి తయారు చేయాలో తెలుసా?',
+    IDLE_CTA_HELP: 'సహాయం చేయండి',
+    IDLE_CTA_GOT_IT: 'నాకు తెలుసు',
+    HELP_ME_DECIDE: 'త్వరిత ప్రశ్న: మీరు ఉత్పత్తి, అంతర్గత వర్క్‌ఫ్లో లేదా పబ్లిక్ ప్రేక్షకుల కోసం కంటెంట్ తయారు చేస్తున్నారా?',
+    HELP_CTA_PRODUCT: 'ఉత్పత్తి',
+    HELP_CTA_WORKFLOW: 'వర్క్‌ఫ్లో',
+    HELP_CTA_PUBLIC: 'పబ్లిక్',
+    STEP_COMPLETED: 'బాగుంది. ఇప్పటివరకు అంతా సరిగ్గా ఉంది.',
+    PUBLISH_READY: 'సిస్టమ్ సిద్ధంగా ఉంది. ఏమీ మిగిలి లేదు.',
+    PUBLISH_CTA: 'ప్రచురించు',
+  },
+
+  // ── Marathi (India West) ──────────────────────────────────────────────
+  mr: {
+    PAGE_LOAD_WELCOME: 'स्वागत आहे. तुम्हाला काय बनवायचे आहे ते सांगा — मी कथा तयार करण्यात मदत करेन.',
+    PAGE_LOAD_CTA_START: 'एका कल्पनेने सुरुवात करा',
+    PAGE_LOAD_CTA_EXPLORE: 'उदाहरणे पहा',
+    HOVER_CATEGORY: 'छान निवड. या श्रेणीत जलद निकाल आणि स्केलेबल कंटेंट चांगले काम करते.',
+    SELECT_CATEGORY: 'मी वर्कफ्लो असा तयार करेन की नंतर सहज स्केल होईल.',
+    IDLE_TIMEOUT: 'ठरवण्यात मदत हवी आहे, की तुम्हाला काय बनवायचे आहे ते माहीत आहे?',
+    IDLE_CTA_HELP: 'मला मदत करा',
+    IDLE_CTA_GOT_IT: 'मला माहीत आहे',
+    HELP_ME_DECIDE: 'झटपट प्रश्न: तुम्ही प्रॉडक्ट, अंतर्गत वर्कफ्लो, की सार्वजनिक प्रेक्षकांसाठी कंटेंट बनवत आहात?',
+    HELP_CTA_PRODUCT: 'प्रॉडक्ट',
+    HELP_CTA_WORKFLOW: 'वर्कफ्लो',
+    HELP_CTA_PUBLIC: 'सार्वजनिक',
+    STEP_COMPLETED: 'छान. आतापर्यंत सर्वकाही सुसंगत आहे.',
+    PUBLISH_READY: 'सिस्टम तयार आहे. काहीही बाकी नाही.',
+    PUBLISH_CTA: 'प्रकाशित करा',
+  },
+
+  // ── Gujarati (India West) ─────────────────────────────────────────────
+  gu: {
+    PAGE_LOAD_WELCOME: 'સ્વાગત છે. તમે શું બનાવવા માંગો છો તે કહો — હું વાર્તા ઘડવામાં મદદ કરીશ.',
+    PAGE_LOAD_CTA_START: 'એક વિચારથી શરૂ કરો',
+    PAGE_LOAD_CTA_EXPLORE: 'ઉદાહરણો જુઓ',
+    HOVER_CATEGORY: 'સરસ પસંદગી. આ શ્રેણી ઝડપી પરિણામો અને સ્કેલેબલ કન્ટેન્ટ માટે યોગ્ય છે.',
+    SELECT_CATEGORY: 'હું વર્કફ્લોને એવી રીતે ગોઠવીશ કે પછીથી સરળતાથી સ્કેલ થાય.',
+    IDLE_TIMEOUT: 'નિર્ણય લેવામાં મદદ જોઈએ છે, કે તમે જાણો છો શું બનાવવું છે?',
+    IDLE_CTA_HELP: 'મને મદદ કરો',
+    IDLE_CTA_GOT_IT: 'મને ખબર છે',
+    HELP_ME_DECIDE: 'ઝડપી પ્રશ્ન: તમે પ્રોડક્ટ, આંતરિક વર્કફ્લો કે જાહેર દર્શકો માટે કન્ટેન્ટ બનાવી રહ્યા છો?',
+    HELP_CTA_PRODUCT: 'પ્રોડક્ટ',
+    HELP_CTA_WORKFLOW: 'વર્કફ્લો',
+    HELP_CTA_PUBLIC: 'જાહેર',
+    STEP_COMPLETED: 'સરસ. અત્યાર સુધી બધું સુસંગત છે.',
+    PUBLISH_READY: 'સિસ્ટમ તૈયાર છે. કંઈ બાકી નથી.',
+    PUBLISH_CTA: 'પ્રકાશિત કરો',
+  },
+
+  // ── Kannada (India South) ─────────────────────────────────────────────
+  kn: {
+    PAGE_LOAD_WELCOME: 'ಸ್ವಾಗತ. ನೀವು ಏನನ್ನು ರಚಿಸಲು ಬಯಸುತ್ತೀರಿ ಎಂದು ಹೇಳಿ — ಕಥೆಯನ್ನು ರೂಪಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.',
+    PAGE_LOAD_CTA_START: 'ಒಂದು ಆಲೋಚನೆಯಿಂದ ಪ್ರಾರಂಭಿಸಿ',
+    PAGE_LOAD_CTA_EXPLORE: 'ಉದಾಹರಣೆಗಳನ್ನು ನೋಡಿ',
+    HOVER_CATEGORY: 'ಉತ್ತಮ ಆಯ್ಕೆ. ಈ ವರ್ಗವು ತ್ವರಿತ ಫಲಿತಾಂಶಗಳು ಮತ್ತು ಸ್ಕೇಲೆಬಲ್ ವಿಷಯಕ್ಕೆ ಸೂಕ್ತ.',
+    SELECT_CATEGORY: 'ನಂತರ ಸುಲಭವಾಗಿ ಸ್ಕೇಲ್ ಆಗುವಂತೆ ವರ್ಕ್‌ಫ್ಲೋ ಅನ್ನು ರಚಿಸುತ್ತೇನೆ.',
+    IDLE_TIMEOUT: 'ನಿರ್ಧರಿಸಲು ಸಹಾಯ ಬೇಕೇ, ಅಥವಾ ಏನು ರಚಿಸಬೇಕೆಂದು ಗೊತ್ತಿದೆಯೇ?',
+    IDLE_CTA_HELP: 'ಸಹಾಯ ಮಾಡಿ',
+    IDLE_CTA_GOT_IT: 'ನನಗೆ ಗೊತ್ತು',
+    HELP_ME_DECIDE: 'ತ್ವರಿತ ಪ್ರಶ್ನೆ: ನೀವು ಉತ್ಪನ್ನ, ಆಂತರಿಕ ವರ್ಕ್‌ಫ್ಲೋ ಅಥವಾ ಸಾರ್ವಜನಿಕ ಪ್ರೇಕ್ಷಕರಿಗಾಗಿ ವಿಷಯ ರಚಿಸುತ್ತಿದ್ದೀರಾ?',
+    HELP_CTA_PRODUCT: 'ಉತ್ಪನ್ನ',
+    HELP_CTA_WORKFLOW: 'ವರ್ಕ್‌ಫ್ಲೋ',
+    HELP_CTA_PUBLIC: 'ಸಾರ್ವಜನಿಕ',
+    STEP_COMPLETED: 'ಚೆನ್ನಾಗಿದೆ. ಇಲ್ಲಿಯವರೆಗೆ ಎಲ್ಲಾ ಸ್ಥಿರವಾಗಿದೆ.',
+    PUBLISH_READY: 'ಸಿಸ್ಟಮ್ ಸಿದ್ಧವಾಗಿದೆ. ಏನೂ ಬಾಕಿ ಇಲ್ಲ.',
+    PUBLISH_CTA: 'ಪ್ರಕಟಿಸಿ',
+  },
+
+  // ── Malayalam (India South) ───────────────────────────────────────────
+  ml: {
+    PAGE_LOAD_WELCOME: 'സ്വാഗതം. നിങ്ങൾ എന്ത് സൃഷ്ടിക്കാൻ ആഗ്രഹിക്കുന്നു എന്ന് പറയൂ — കഥ രൂപപ്പെടുത്താൻ സഹായിക്കാം.',
+    PAGE_LOAD_CTA_START: 'ഒരു ആശയത്തിൽ നിന്ന് ആരംഭിക്കൂ',
+    PAGE_LOAD_CTA_EXPLORE: 'ഉദാഹരണങ്ങൾ കാണുക',
+    HOVER_CATEGORY: 'മികച്ച തിരഞ്ഞെടുപ്പ്. ഈ വിഭാഗം വേഗത്തിലുള്ള ഫലങ്ങൾക്കും സ്കെയിലബിൾ ഉള്ളടക്കത്തിനും അനുയോജ്യമാണ്.',
+    SELECT_CATEGORY: 'പിന്നീട് എളുപ്പത്തിൽ സ്കെയിൽ ചെയ്യാവുന്ന വിധത്തിൽ വർക്ക്ഫ്ലോ ക്രമീകരിക്കാം.',
+    IDLE_TIMEOUT: 'തീരുമാനിക്കാൻ സഹായം വേണോ, അതോ എന്ത് സൃഷ്ടിക്കണമെന്ന് അറിയാമോ?',
+    IDLE_CTA_HELP: 'എന്നെ സഹായിക്കൂ',
+    IDLE_CTA_GOT_IT: 'എനിക്ക് അറിയാം',
+    HELP_ME_DECIDE: 'ദ്രുത ചോദ്യം: നിങ്ങൾ ഉൽപ്പന്നം, ആന്തരിക വർക്ക്ഫ്ലോ, അല്ലെങ്കിൽ പൊതു പ്രേക്ഷകർക്കായി ഉള്ളടക്കം സൃഷ്ടിക്കുകയാണോ?',
+    HELP_CTA_PRODUCT: 'ഉൽപ്പന്നം',
+    HELP_CTA_WORKFLOW: 'വർക്ക്ഫ്ലോ',
+    HELP_CTA_PUBLIC: 'പൊതു',
+    STEP_COMPLETED: 'നന്നായി. ഇതുവരെ എല്ലാം സ്ഥിരതയുള്ളതാണ്.',
+    PUBLISH_READY: 'സിസ്റ്റം തയ്യാറാണ്. ഒന്നും ബാക്കിയില്ല.',
+    PUBLISH_CTA: 'പ്രസിദ്ധീകരിക്കുക',
+  },
+
+  // ── Punjabi (India North) ─────────────────────────────────────────────
+  pa: {
+    PAGE_LOAD_WELCOME: 'ਜੀ ਆਇਆਂ ਨੂੰ। ਦੱਸੋ ਤੁਸੀਂ ਕੀ ਬਣਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ — ਮੈਂ ਕਹਾਣੀ ਘੜਨ ਵਿੱਚ ਮਦਦ ਕਰਾਂਗਾ।',
+    PAGE_LOAD_CTA_START: 'ਇੱਕ ਵਿਚਾਰ ਨਾਲ ਸ਼ੁਰੂ ਕਰੋ',
+    PAGE_LOAD_CTA_EXPLORE: 'ਉਦਾਹਰਣਾਂ ਵੇਖੋ',
+    HOVER_CATEGORY: 'ਵਧੀਆ ਚੋਣ। ਇਹ ਸ਼੍ਰੇਣੀ ਤੇਜ਼ ਨਤੀਜਿਆਂ ਅਤੇ ਸਕੇਲੇਬਲ ਸਮੱਗਰੀ ਲਈ ਢੁਕਵੀਂ ਹੈ।',
+    SELECT_CATEGORY: 'ਮੈਂ ਵਰਕਫ਼ਲੋ ਨੂੰ ਇਸ ਤਰ੍ਹਾਂ ਤਿਆਰ ਕਰਾਂਗਾ ਕਿ ਬਾਅਦ ਵਿੱਚ ਆਸਾਨੀ ਨਾਲ ਸਕੇਲ ਹੋ ਸਕੇ।',
+    IDLE_TIMEOUT: 'ਫ਼ੈਸਲਾ ਕਰਨ ਵਿੱਚ ਮਦਦ ਚਾਹੀਦੀ ਹੈ, ਜਾਂ ਤੁਸੀਂ ਜਾਣਦੇ ਹੋ ਕੀ ਬਣਾਉਣਾ ਹੈ?',
+    IDLE_CTA_HELP: 'ਮਦਦ ਕਰੋ',
+    IDLE_CTA_GOT_IT: 'ਮੈਨੂੰ ਪਤਾ ਹੈ',
+    HELP_ME_DECIDE: 'ਛੋਟਾ ਸਵਾਲ: ਤੁਸੀਂ ਪ੍ਰੋਡਕਟ, ਅੰਦਰੂਨੀ ਵਰਕਫ਼ਲੋ, ਜਾਂ ਜਨਤਕ ਦਰਸ਼ਕਾਂ ਲਈ ਸਮੱਗਰੀ ਬਣਾ ਰਹੇ ਹੋ?',
+    HELP_CTA_PRODUCT: 'ਪ੍ਰੋਡਕਟ',
+    HELP_CTA_WORKFLOW: 'ਵਰਕਫ਼ਲੋ',
+    HELP_CTA_PUBLIC: 'ਜਨਤਕ',
+    STEP_COMPLETED: 'ਬਹੁਤ ਵਧੀਆ। ਹੁਣ ਤੱਕ ਸਭ ਕੁਝ ਸਹੀ ਹੈ।',
+    PUBLISH_READY: 'ਸਿਸਟਮ ਤਿਆਰ ਹੈ। ਕੁਝ ਵੀ ਬਾਕੀ ਨਹੀਂ।',
+    PUBLISH_CTA: 'ਪ੍ਰਕਾਸ਼ਿਤ ਕਰੋ',
+  },
+
+  // ── Hebrew (MENA Israel) ──────────────────────────────────────────────
+  he: {
+    PAGE_LOAD_WELCOME: 'ברוכים הבאים. ספרו לי מה אתם רוצים ליצור — אעזור לעצב את הסיפור.',
+    PAGE_LOAD_CTA_START: 'התחילו עם רעיון',
+    PAGE_LOAD_CTA_EXPLORE: 'חקרו דוגמאות',
+    HOVER_CATEGORY: 'בחירה מצוינת. הקטגוריה הזו מתאימה לתוצאות מהירות ותוכן סקיילבילי.',
+    SELECT_CATEGORY: 'אסדר את תהליך העבודה כך שיתרחב בקלות בהמשך.',
+    IDLE_TIMEOUT: 'צריכים עזרה בהחלטה, או שכבר יודעים מה ליצור?',
+    IDLE_CTA_HELP: 'עזרו לי להחליט',
+    IDLE_CTA_GOT_IT: 'אני יודע',
+    HELP_ME_DECIDE: 'שאלה מהירה: אתם יוצרים תוכן למוצר, תהליך פנימי, או קהל ציבורי?',
+    HELP_CTA_PRODUCT: 'מוצר',
+    HELP_CTA_WORKFLOW: 'תהליך',
+    HELP_CTA_PUBLIC: 'ציבורי',
+    STEP_COMPLETED: 'מצוין. הכל עקבי עד כה.',
+    PUBLISH_READY: 'המערכת מוכנה. שום דבר לא תלוי.',
+    PUBLISH_CTA: 'פרסום',
+  },
+
+  // ── Malay/Filipino (SEA) ──────────────────────────────────────────────
+  ms: {
+    PAGE_LOAD_WELCOME: 'Selamat datang. Beritahu saya apa yang anda mahu cipta — saya akan bantu membentuk cerita.',
+    PAGE_LOAD_CTA_START: 'Mula dengan idea',
+    PAGE_LOAD_CTA_EXPLORE: 'Terokai contoh',
+    HOVER_CATEGORY: 'Pilihan bagus. Kategori ini sesuai untuk hasil cepat dan kandungan berskala.',
+    SELECT_CATEGORY: 'Saya akan menyusun aliran kerja supaya boleh berkembang kemudian.',
+    IDLE_TIMEOUT: 'Perlukan bantuan untuk memutuskan, atau sudah tahu apa yang mahu dicipta?',
+    IDLE_CTA_HELP: 'Bantu saya',
+    IDLE_CTA_GOT_IT: 'Saya tahu',
+    HELP_ME_DECIDE: 'Soalan cepat: adakah anda mencipta kandungan untuk produk, aliran kerja dalaman, atau audiens awam?',
+    HELP_CTA_PRODUCT: 'Produk',
+    HELP_CTA_WORKFLOW: 'Aliran kerja',
+    HELP_CTA_PUBLIC: 'Awam',
+    STEP_COMPLETED: 'Bagus. Semuanya konsisten setakat ini.',
+    PUBLISH_READY: 'Sistem sedia. Tiada yang tertunda.',
+    PUBLISH_CTA: 'Terbit',
+  },
+
+  // ── Romanian ──────────────────────────────────────────────────────────
+  ro: {
+    PAGE_LOAD_WELCOME: 'Bine ați venit. Spuneți-mi ce doriți să creați — vă voi ajuta să conturați povestea.',
+    PAGE_LOAD_CTA_START: 'Începeți cu o idee',
+    PAGE_LOAD_CTA_EXPLORE: 'Explorați exemple',
+    HOVER_CATEGORY: 'Alegere excelentă. Această categorie funcționează bine pentru rezultate rapide și conținut scalabil.',
+    SELECT_CATEGORY: 'Voi structura fluxul de lucru pentru a se scala ușor ulterior.',
+    IDLE_TIMEOUT: 'Aveți nevoie de ajutor să decideți, sau știți deja ce doriți să creați?',
+    IDLE_CTA_HELP: 'Ajută-mă să decid',
+    IDLE_CTA_GOT_IT: 'Știu deja',
+    HELP_ME_DECIDE: 'Întrebare rapidă: creați conținut pentru un produs, un flux intern sau un public?',
+    HELP_CTA_PRODUCT: 'Produs',
+    HELP_CTA_WORKFLOW: 'Flux de lucru',
+    HELP_CTA_PUBLIC: 'Public',
+    STEP_COMPLETED: 'Bine. Totul este consistent până acum.',
+    PUBLISH_READY: 'Sistemul este gata. Nimic în așteptare.',
+    PUBLISH_CTA: 'Publică',
+  },
+
+  // ── Swedish ───────────────────────────────────────────────────────────
+  sv: {
+    PAGE_LOAD_WELCOME: 'Välkommen. Berätta vad du vill skapa — jag hjälper dig forma berättelsen.',
+    PAGE_LOAD_CTA_START: 'Börja med en idé',
+    PAGE_LOAD_CTA_EXPLORE: 'Utforska exempel',
+    HOVER_CATEGORY: 'Bra val. Denna kategori fungerar bra för snabba resultat och skalbart innehåll.',
+    SELECT_CATEGORY: 'Jag strukturerar arbetsflödet så att det skalas smidigt senare.',
+    IDLE_TIMEOUT: 'Behöver du hjälp att bestämma, eller vet du redan vad du vill skapa?',
+    IDLE_CTA_HELP: 'Hjälp mig',
+    IDLE_CTA_GOT_IT: 'Jag vet',
+    HELP_ME_DECIDE: 'Snabb fråga: skapar du innehåll för en produkt, internt arbetsflöde eller publik?',
+    HELP_CTA_PRODUCT: 'Produkt',
+    HELP_CTA_WORKFLOW: 'Arbetsflöde',
+    HELP_CTA_PUBLIC: 'Publik',
+    STEP_COMPLETED: 'Bra. Allt är konsekvent hittills.',
+    PUBLISH_READY: 'Systemet är redo. Inget kvarstår.',
+    PUBLISH_CTA: 'Publicera',
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ZONE → LANGUAGE RESOLUTION (parent-child)
+// REGION CODE → LANGUAGE MAPPING (82+ codes → language inheritance)
+// ═══════════════════════════════════════════════════════════════════════════
+// Sub-region inherits from parent language. Parent inherits from zone default.
+// Chain: Region code → REGION_LANG_MAP → MESSAGES[lang] → MESSAGES['en']
+
+const REGION_LANG_MAP: Record<string, string> = {
+  // ── NAM ──
+  NAM_US: 'en', NAM_CA: 'en',
+  // ── EU ──
+  EU_WEST: 'en', EU_DE: 'de', EU_AT: 'de', EU_CH: 'de', EU_DACH: 'de',
+  EU_FR: 'fr', EU_BE_FR: 'fr', EU_FRANCE: 'fr',
+  EU_NL: 'nl', EU_BE_NL: 'nl', EU_BENELUX: 'nl',
+  EU_ES: 'es', EU_PT: 'pt', EU_IBERIA: 'es',
+  EU_ITALY: 'it',
+  EU_SE: 'sv', EU_NO: 'sv', EU_DK: 'sv', EU_FI: 'sv', EU_NORDIC: 'sv',
+  EU_PL: 'pl', EU_CZ: 'pl', EU_RO: 'ro', EU_HU: 'pl', EU_GR: 'en', EU_BG: 'en', EU_SK: 'pl', EU_EAST: 'pl',
+  // ── Eastern Europe & Caucasus ──
+  EU_UKRAINE: 'uk', EU_BALKANS: 'en', EU_CAUCASUS: 'en',
+  // ── Turkey ──
+  TURKEY: 'tr',
+  // ── MENA ──
+  MENA_GULF: 'ar', MENA_EGYPT: 'ar', MENA_LEVANT: 'ar', MENA_MAGHREB: 'ar', MENA_MSA: 'ar', MENA_ISRAEL: 'he',
+  // ── Africa ──
+  AFRICA_WEST: 'en', AFRICA_EAST: 'sw', AFRICA_SOUTH: 'en', AFRICA_FRANCO: 'fr',
+  // ── India ──
+  INDIA_NORTH: 'hi', INDIA_NORTH_HI: 'hi', INDIA_NORTH_UR: 'ur', INDIA_NORTH_PA: 'pa',
+  INDIA_SOUTH: 'ta', INDIA_SOUTH_TA: 'ta', INDIA_SOUTH_TE: 'te', INDIA_SOUTH_KN: 'kn', INDIA_SOUTH_ML: 'ml',
+  INDIA_WEST: 'mr', INDIA_WEST_MR: 'mr', INDIA_WEST_GU: 'gu',
+  INDIA_EAST: 'bn', INDIA_EAST_BN: 'bn', INDIA_EAST_OR: 'hi',
+  INDIA_PAN: 'en', INDIA_PAN_EN: 'en',
+  // ── Pakistan & Bangladesh ──
+  PAKISTAN: 'ur', BANGLADESH: 'bn',
+  // ── South Asia ──
+  SA_NEPAL: 'hi', SA_SRILANKA: 'ta', SA_BHUTAN: 'en', SA_MALDIVES: 'en',
+  // ── SEA ──
+  SEA_MALAY: 'ms', SEA_THAI: 'th', SEA_VIET: 'vi', SEA_PHIL: 'en', SEA_PAN: 'en',
+  // ── CJK ──
+  CJK_CN: 'zh', CJK_TW: 'zh', CJK_JP: 'ja', CJK_KR: 'ko',
+  // ── LATAM ──
+  LATAM_BRAZIL: 'pt', LATAM_MEXICO: 'es', LATAM_ANDEAN: 'es', LATAM_CONESUR: 'es', LATAM_CARIB: 'es',
+  // ── Caribbean ──
+  CARIBBEAN_EN: 'en', CARIBBEAN_FR: 'fr',
+  // ── Oceania ──
+  OCEANIA_AU: 'en', OCEANIA_NZ: 'en',
+  // ── Central Asia ──
+  ASIA_CENTRAL_KZ: 'en', ASIA_CENTRAL_UZ: 'en', ASIA_CENTRAL_AZ: 'tr',
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ZONE → DEFAULT LANGUAGE
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Map zones to their primary language for message lookup */
 const ZONE_DEFAULT_LANGUAGE: Record<RegionalZone, string> = {
   western: 'en',
   cjk: 'zh',
@@ -378,7 +716,7 @@ const ZONE_DEFAULT_LANGUAGE: Record<RegionalZone, string> = {
   oceania: 'en',
   turkey: 'tr',
   caribbean: 'en',
-  eastern_europe: 'en', // English default, regional languages added later
+  eastern_europe: 'uk',
   central_asia: 'en',
   pakistan: 'ur',
   bangladesh: 'bn',
@@ -396,67 +734,79 @@ export interface RegionalGuideContext {
   languageCode: string; // BCP47
   shortLang: string;    // 2-letter
   isRTL: boolean;
+  regionCode?: string;  // e.g., 'INDIA_SOUTH_TA', 'MENA_GULF'
 }
 
 /**
- * Resolve regional context from available signals (IP country, browser lang, manual override).
- * Uses the same detection chain as landing pages and script/TTS.
+ * Resolve regional context from available signals.
+ * Priority: manual → browser lang → IP country → default
  */
 export function resolveGuideRegion(
   browserLang?: string,
   countryCode?: string,
   manualLang?: string,
+  regionCode?: string,
 ): RegionalGuideContext {
-  // 1. Manual override (highest priority)
-  if (manualLang) {
-    const short = manualLang.split('-')[0].toLowerCase();
-    const zone = getZoneFromLanguage(short);
-    return {
-      zone,
-      languageCode: toLangBCP47(short),
-      shortLang: short,
-      isRTL: ['ar', 'he', 'fa', 'ur'].includes(short),
-    };
-  }
-
-  // 2. Browser language
-  if (browserLang) {
-    const short = browserLang.split('-')[0].toLowerCase();
-    const zone = getZoneFromLanguage(short);
-    return {
-      zone,
-      languageCode: toLangBCP47(short),
-      shortLang: short,
-      isRTL: ['ar', 'he', 'fa', 'ur'].includes(short),
-    };
-  }
-
-  // 3. IP-based country code
-  if (countryCode) {
-    const zone = getZoneFromCountry(countryCode);
-    const lang = ZONE_DEFAULT_LANGUAGE[zone];
+  // 1. If regionCode provided, use REGION_LANG_MAP directly
+  if (regionCode) {
+    const lang = REGION_LANG_MAP[regionCode] || REGION_LANG_MAP[regionCode.toUpperCase()] || 'en';
+    const zone = getZoneFromLanguage(lang);
     return {
       zone,
       languageCode: toLangBCP47(lang),
       shortLang: lang,
       isRTL: ['ar', 'he', 'fa', 'ur'].includes(lang),
+      regionCode,
     };
   }
 
-  // 4. Default
+  // 2. Manual override
+  if (manualLang) {
+    const short = manualLang.split('-')[0].toLowerCase();
+    const zone = getZoneFromLanguage(short);
+    return { zone, languageCode: toLangBCP47(short), shortLang: short, isRTL: ['ar', 'he', 'fa', 'ur'].includes(short) };
+  }
+
+  // 3. Browser language
+  if (browserLang) {
+    const short = browserLang.split('-')[0].toLowerCase();
+    const zone = getZoneFromLanguage(short);
+    return { zone, languageCode: toLangBCP47(short), shortLang: short, isRTL: ['ar', 'he', 'fa', 'ur'].includes(short) };
+  }
+
+  // 4. IP-based country code
+  if (countryCode) {
+    const zone = getZoneFromCountry(countryCode);
+    const lang = ZONE_DEFAULT_LANGUAGE[zone];
+    return { zone, languageCode: toLangBCP47(lang), shortLang: lang, isRTL: ['ar', 'he', 'fa', 'ur'].includes(lang) };
+  }
+
   return { zone: 'western', languageCode: 'en-US', shortLang: 'en', isRTL: false };
 }
 
 /**
  * Get a localized guide message.
- * Falls back: exact language → zone default language → English
+ * Inheritance: regionCode → REGION_LANG_MAP → exact lang → zone default → English
  */
-export function getGuideMessage(key: GuideMessageKey, shortLang: string): string {
-  // 1. Exact language match
+export function getGuideMessage(key: GuideMessageKey, shortLang: string, regionCode?: string): string {
+  // 1. If regionCode, resolve language from map
+  if (regionCode) {
+    const mappedLang = REGION_LANG_MAP[regionCode] || REGION_LANG_MAP[regionCode.toUpperCase()];
+    if (mappedLang && MESSAGES[mappedLang]?.[key]) return MESSAGES[mappedLang][key];
+  }
+
+  // 2. Exact language match
   if (MESSAGES[shortLang]?.[key]) return MESSAGES[shortLang][key];
-  
-  // 2. English fallback
+
+  // 3. English fallback
   return MESSAGES.en[key] || key;
+}
+
+/**
+ * Get language code for a region code (e.g., 'INDIA_SOUTH_TA' → 'ta')
+ */
+export function getRegionLanguage(regionCode: string): string {
+  return REGION_LANG_MAP[regionCode] || REGION_LANG_MAP[regionCode.toUpperCase()] || 'en';
 }
 
 /**
@@ -478,4 +828,11 @@ export function hasGuideTranslation(shortLang: string): boolean {
  */
 export function getSupportedGuideLanguages(): string[] {
   return Object.keys(MESSAGES);
+}
+
+/**
+ * Get all mapped region codes
+ */
+export function getMappedRegionCodes(): string[] {
+  return Object.keys(REGION_LANG_MAP);
 }
