@@ -1,28 +1,29 @@
 /**
  * GENIE CAST HUB
- * Main wrapper for Genie Cast — now supports both legacy tabs and new StepWizard.
- * Toggle between views during migration; wizard will become default.
+ * Main wrapper for Genie Cast — StepWizard wraps existing consolidated tabs.
+ * Wizard sidebar (desktop) / dots (mobile) navigate CREATE → PRODUCE → PUBLISH.
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import type { VideoStyleType } from './VideoStyleCards';
 import type { ProductGallery } from '../MultiScreenshotGallery';
 import { toast } from 'sonner';
-import { GenieCastConsolidatedTabs } from './GenieCastConsolidatedTabs';
-import { CreateWizardDemo } from './CreateWizardDemo';
+import { GenieCastConsolidatedTabs, type ConsolidatedTab } from './GenieCastConsolidatedTabs';
+import { StepWizardProvider, StepWizard, useStepWizard, type WizardStep } from '@/components/shared/step-wizard';
+import { Sparkles, Video, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Sparkles, LayoutGrid, Globe } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Globe } from 'lucide-react';
 
-type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish' | 'landing';
+// AI-generated step thumbnails
+import stepIntentThumb from '@/assets/wizard-icons/step-intent.png';
+import stepStyleThumb from '@/assets/wizard-icons/step-style.png';
+import stepReviewThumb from '@/assets/wizard-icons/step-review.png';
 
 // Storage keys for persistence
 const STORAGE_KEY = 'genie_cast_hub_state';
 
 interface GenieCastHubState {
   selectedVideoStyles: VideoStyleType[];
-  activeTab: ConsolidatedTab;
 }
 
 const defaultStyles: VideoStyleType[] = [
@@ -33,10 +34,63 @@ const defaultStyles: VideoStyleType[] = [
   'product_demo',
 ];
 
+/** Maps wizard step index → consolidated tab key */
+const STEP_TO_TAB: ConsolidatedTab[] = ['create', 'produce', 'publish'];
+
+/**
+ * Bridge component that syncs wizard step ↔ consolidated tabs.
+ * Must be inside StepWizardProvider.
+ */
+const WizardTabBridge: React.FC<{
+  selectedVideoStyles: VideoStyleType[];
+  onStylesChange: (styles: VideoStyleType[]) => void;
+  screenshotGalleries: ProductGallery[];
+  onGalleriesUpdated: (galleries: ProductGallery[]) => void;
+  totalScreenshots: number;
+  onGenerate: () => void;
+  isGenerating: boolean;
+  direction: 'ltr' | 'rtl';
+}> = ({
+  selectedVideoStyles,
+  onStylesChange,
+  screenshotGalleries,
+  onGalleriesUpdated,
+  totalScreenshots,
+  onGenerate,
+  isGenerating,
+  direction,
+}) => {
+  const { currentStep, goToStep } = useStepWizard();
+  const activeTab = STEP_TO_TAB[currentStep] || 'create';
+
+  // When the consolidated tabs want to change main tab, sync wizard
+  const handleMainTabChange = useCallback((tab: ConsolidatedTab) => {
+    const idx = STEP_TO_TAB.indexOf(tab);
+    if (idx >= 0 && idx !== currentStep) {
+      goToStep(idx);
+    }
+  }, [currentStep, goToStep]);
+
+  return (
+    <GenieCastConsolidatedTabs
+      selectedVideoStyles={selectedVideoStyles}
+      onStylesChange={onStylesChange}
+      screenshotGalleries={screenshotGalleries}
+      onGalleriesUpdated={onGalleriesUpdated}
+      totalScreenshots={totalScreenshots}
+      onGenerate={onGenerate}
+      isGenerating={isGenerating}
+      wizardMode
+      activeMainTabOverride={activeTab}
+      onMainTabChange={handleMainTabChange}
+      defaultTab="create"
+    />
+  );
+};
+
 export const GenieCastHub: React.FC = () => {
   // Track component mount state
   const isMounted = useRef(true);
-  const [useWizardView, setUseWizardView] = useState(true);
   const [wizardDirection, setWizardDirection] = useState<'ltr' | 'rtl'>('ltr');
   
   // Persist state to localStorage
@@ -64,19 +118,14 @@ export const GenieCastHub: React.FC = () => {
 
   // Persist state changes
   useEffect(() => {
-    const state: GenieCastHubState = {
-      selectedVideoStyles,
-      activeTab: 'create',
-    };
+    const state: GenieCastHubState = { selectedVideoStyles };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [selectedVideoStyles]);
 
   // Track mount lifecycle
   useEffect(() => {
     isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
+    return () => { isMounted.current = false; };
   }, []);
 
   // Handlers
@@ -95,7 +144,6 @@ export const GenieCastHub: React.FC = () => {
       toast.error('Please select at least one video style');
       return;
     }
-
     setIsGenerating(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -108,65 +156,85 @@ export const GenieCastHub: React.FC = () => {
     }
   }, [selectedVideoStyles]);
 
+  // Wizard steps config
+  const steps = useMemo<WizardStep[]>(() => [
+    {
+      id: 'create',
+      label: 'CREATE',
+      localLabel: wizardDirection === 'rtl' ? 'إنشاء' : undefined,
+      description: 'Intent, Templates & Assets',
+      localDescription: wizardDirection === 'rtl' ? 'النية والقوالب والأصول' : undefined,
+      thumbnail: stepIntentThumb,
+      icon: <Sparkles className="w-4 h-4" />,
+    },
+    {
+      id: 'produce',
+      label: 'PRODUCE',
+      localLabel: wizardDirection === 'rtl' ? 'إنتاج' : undefined,
+      description: 'Generate, Edit & Manage',
+      localDescription: wizardDirection === 'rtl' ? 'توليد وتحرير وإدارة' : undefined,
+      thumbnail: stepStyleThumb,
+      icon: <Video className="w-4 h-4" />,
+    },
+    {
+      id: 'publish',
+      label: 'PUBLISH',
+      localLabel: wizardDirection === 'rtl' ? 'نشر' : undefined,
+      description: 'Schedule, Distribute & Optimize',
+      localDescription: wizardDirection === 'rtl' ? 'جدولة وتوزيع وتحسين' : undefined,
+      thumbnail: stepReviewThumb,
+      icon: <Share2 className="w-4 h-4" />,
+    },
+  ], [wizardDirection]);
+
   return (
     <div className="space-y-4">
-      {/* View toggle + RTL demo switch */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={useWizardView ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setUseWizardView(true)}
-            className={cn(
-              'rounded-lg gap-1.5 h-8 text-xs',
-              useWizardView && 'bg-gradient-to-r from-primary to-primary/80 shadow-[0_0_12px_rgba(var(--primary-rgb,99,102,241),0.25)]',
-            )}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Wizard
-            <Badge variant="outline" className="text-[9px] px-1 py-0 border-white/20 ml-1">NEW</Badge>
-          </Button>
-          <Button
-            variant={!useWizardView ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setUseWizardView(false)}
-            className="rounded-lg gap-1.5 h-8 text-xs"
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            Classic Tabs
-          </Button>
-        </div>
-
-        {useWizardView && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setWizardDirection(d => d === 'ltr' ? 'rtl' : 'ltr')}
-            className="rounded-lg gap-1.5 h-8 text-xs"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            {wizardDirection === 'ltr' ? 'LTR' : 'RTL'}
-          </Button>
-        )}
+      {/* RTL toggle for testing */}
+      <div className="flex items-center justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setWizardDirection(d => d === 'ltr' ? 'rtl' : 'ltr')}
+          className="rounded-lg gap-1.5 h-8 text-xs"
+        >
+          <Globe className="w-3.5 h-3.5" />
+          {wizardDirection === 'ltr' ? 'LTR' : 'RTL'}
+        </Button>
       </div>
 
-      {/* Content */}
-      {useWizardView ? (
-        <div className="min-h-[500px]">
-          <CreateWizardDemo direction={wizardDirection} locale={wizardDirection === 'rtl' ? 'ar' : 'en'} />
-        </div>
-      ) : (
-        <GenieCastConsolidatedTabs
-          selectedVideoStyles={selectedVideoStyles}
-          onStylesChange={handleStylesChange}
-          screenshotGalleries={screenshotGalleries}
-          onGalleriesUpdated={handleGalleriesUpdated}
-          totalScreenshots={totalScreenshots}
-          onGenerate={handleGenerate}
-          isGenerating={isGenerating}
-          defaultTab="create"
-        />
-      )}
+      {/* StepWizard wrapping the existing consolidated tabs */}
+      <div className="min-h-[500px]">
+        <StepWizardProvider
+          config={{
+            steps,
+            direction: wizardDirection,
+            locale: wizardDirection === 'rtl' ? 'ar' : 'en',
+            onComplete: () => toast.success('🚀 Workflow complete!'),
+            allowJumpBack: true,
+          }}
+        >
+          <StepWizard
+            completeLabel="Finish"
+            localCompleteLabel={wizardDirection === 'rtl' ? 'إنهاء' : undefined}
+            nextLabel="Next"
+            localNextLabel={wizardDirection === 'rtl' ? 'التالي' : undefined}
+            prevLabel="Back"
+            localPrevLabel={wizardDirection === 'rtl' ? 'السابق' : undefined}
+          >
+            {/* Single child — bridge reads currentStep from wizard context and syncs to consolidated tabs */}
+            <WizardTabBridge
+              selectedVideoStyles={selectedVideoStyles}
+              onStylesChange={handleStylesChange}
+              screenshotGalleries={screenshotGalleries}
+              onGalleriesUpdated={handleGalleriesUpdated}
+              totalScreenshots={totalScreenshots}
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
+              direction={wizardDirection}
+            />
+          </StepWizard>
+        </StepWizardProvider>
+      </div>
     </div>
   );
 };

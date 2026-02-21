@@ -210,6 +210,13 @@ interface GenieCastConsolidatedTabsProps {
   // Optional: For navigation from other components
   defaultTab?: ConsolidatedTab;
   defaultSubTab?: string;
+
+  /** When true, hides the main 3-tab navigation (wizard sidebar controls it instead) */
+  wizardMode?: boolean;
+  /** Externally controlled active main tab (used by wizard) */
+  activeMainTabOverride?: ConsolidatedTab;
+  /** Called when consolidated tabs wants to change the main tab (so wizard can sync) */
+  onMainTabChange?: (tab: ConsolidatedTab) => void;
 }
 
 // STAGE 1: Consolidated 3-Tab Structure
@@ -272,8 +279,18 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   onAuthoringStageChange,
   onMessagingApproved,
   onScriptApproved,
+  wizardMode = false,
+  activeMainTabOverride,
+  onMainTabChange,
 }) => {
-  const [activeMainTab, setActiveMainTab] = useState<ConsolidatedTab>(defaultTab);
+  const [activeMainTabInternal, setActiveMainTabInternal] = useState<ConsolidatedTab>(defaultTab);
+  
+  // Use override when in wizard mode
+  const activeMainTab = wizardMode && activeMainTabOverride ? activeMainTabOverride : activeMainTabInternal;
+  const setActiveMainTab = useCallback((tab: ConsolidatedTab) => {
+    setActiveMainTabInternal(tab);
+    onMainTabChange?.(tab);
+  }, [onMainTabChange]);
   
   // Smart sub-tab init: if session already has progress, skip past intent
   const [subTabs, setSubTabs] = useState<Record<ConsolidatedTab, string>>(() => {
@@ -880,8 +897,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         </Button>
       </div>
 
-      {/* Main 3-Tab Navigation */}
+      {/* Main 3-Tab Navigation — hidden in wizard mode (sidebar handles it) */}
       <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as ConsolidatedTab)}>
+        {!wizardMode && (
         <TabsList className="grid w-full grid-cols-3 h-auto p-1.5 bg-card border rounded-lg shadow-sm">
           {(Object.entries(TAB_DEFINITIONS) as [ConsolidatedTab, typeof TAB_DEFINITIONS.create][]).map(([key, def]) => (
             <TabsTrigger 
@@ -900,6 +918,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             </TabsTrigger>
           ))}
         </TabsList>
+        )}
 
         {/* Workflow Context Banner - Only show on PRODUCE/PUBLISH (CREATE uses guided wizard instead) */}
         {activeMainTab !== 'create' && (
