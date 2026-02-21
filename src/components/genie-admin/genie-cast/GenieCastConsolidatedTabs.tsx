@@ -1454,54 +1454,75 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       )}
                     </div>
 
-                    {/* 5a-ii: Output Resolution / Pixel Size */}
+                    {/* 5a-ii: Output Resolution / Pixel Size — DB-driven */}
                     <div className="space-y-2">
                       <Label className="text-xs font-medium">📐 Output Resolution</Label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[
-                          { label: '720p', value: '1280x720', desc: 'HD — fast render', ratio: '16:9' },
-                          { label: '1080p', value: '1920x1080', desc: 'Full HD — standard', ratio: '16:9' },
-                          { label: '4K', value: '3840x2160', desc: 'Ultra HD — cinematic', ratio: '16:9' },
-                          { label: 'Square', value: '1080x1080', desc: 'Social media', ratio: '1:1' },
-                        ].map(opt => (
-                          <button
-                            key={opt.value}
-                            onClick={() => { setSelectedResolution(opt.value); setSelectedAspectRatio(opt.ratio); }}
-                            className={cn(
-                              "flex flex-col items-center gap-0.5 p-2.5 rounded-lg border text-xs transition-all",
-                              selectedResolution === opt.value
-                                ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
-                                : "border-border hover:border-primary/40 hover:bg-muted/50"
-                            )}
-                          >
-                            <span className="font-bold text-sm">{opt.label}</span>
-                            <span className="text-[10px] text-muted-foreground">{opt.value.replace('x', '×')}</span>
-                            <span className="text-[9px] text-muted-foreground">{opt.desc}</span>
-                          </button>
-                        ))}
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 mt-1">
-                        {[
-                          { label: '9:16', value: '9:16', desc: 'Vertical / Reels' },
-                          { label: '16:9', value: '16:9', desc: 'Landscape / YouTube' },
-                          { label: '1:1', value: '1:1', desc: 'Square / Instagram' },
-                        ].map(opt => (
-                          <button
-                            key={opt.value}
-                            onClick={() => setSelectedAspectRatio(opt.value)}
-                            className={cn(
-                              "flex flex-col items-center gap-0.5 p-2 rounded-lg border text-xs transition-all",
-                              selectedAspectRatio === opt.value
-                                ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
-                                : "border-border hover:border-primary/40 hover:bg-muted/50"
-                            )}
-                          >
-                            <span className="font-semibold">{opt.label}</span>
-                            <span className="text-[9px] text-muted-foreground">{opt.desc}</span>
-                          </button>
-                        ))}
-                      </div>
+                      {contentRegistry.outputPresets.length > 0 ? (
+                        <>
+                          <div className="grid grid-cols-4 gap-2">
+                            {contentRegistry.outputPresets.map(preset => (
+                              <button
+                                key={preset.id}
+                                onClick={() => { setSelectedResolution(`${preset.width}x${preset.height}`); setSelectedAspectRatio(preset.aspect_ratio); }}
+                                className={cn(
+                                  "flex flex-col items-center gap-0.5 p-2.5 rounded-lg border text-xs transition-all",
+                                  selectedResolution === `${preset.width}x${preset.height}`
+                                    ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
+                                    : "border-border hover:border-primary/40 hover:bg-muted/50"
+                                )}
+                              >
+                                <span className="text-sm">{preset.icon}</span>
+                                <span className="font-bold text-xs">{preset.label}</span>
+                                <span className="text-[10px] text-muted-foreground">{preset.width}×{preset.height}</span>
+                                <span className="text-[9px] text-muted-foreground">{preset.description}</span>
+                                {preset.is_default && <Badge variant="secondary" className="text-[8px] px-1 py-0">Default</Badge>}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                            <span>Aspect: <span className="font-semibold text-foreground">{selectedAspectRatio}</span></span>
+                            <span>•</span>
+                            <span>Res: <span className="font-semibold text-foreground">{selectedResolution.replace('x', '×')}</span></span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-center h-16 border rounded-md bg-muted/30 text-xs text-muted-foreground">
+                          Loading resolution presets...
+                        </div>
+                      )}
                     </div>
+
+                    {/* 5a-ii-b: Style Preview — show AI-generated preview for selected styles */}
+                    {selectedVisualStyleIds.length > 0 && (() => {
+                      const selectedStyles = selectedVisualStyleIds
+                        .map(id => contentRegistry.visualStyles.find(s => s.id === id))
+                        .filter((s): s is NonNullable<typeof s> => !!s);
+                      const withPreview = selectedStyles.filter(s => s.preview_image_url);
+                      if (withPreview.length === 0 && selectedStyles.length > 0) return (
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">🖼️ Style Preview</Label>
+                          <div className="flex items-center justify-center h-20 border border-dashed rounded-lg bg-muted/20 text-xs text-muted-foreground">
+                            <Sparkles className="w-4 h-4 mr-2 text-primary/50" />
+                            AI preview images will be generated for {selectedStyles.map(s => s.label).join(', ')}
+                          </div>
+                        </div>
+                      );
+                      return withPreview.length > 0 ? (
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">🖼️ Style Preview</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {withPreview.map(style => (
+                              <div key={style.id} className="rounded-lg border overflow-hidden bg-muted/20">
+                                <img src={style.preview_image_url!} alt={style.label} className="w-full h-28 object-cover" />
+                                <div className="p-1.5 text-center">
+                                  <span className="text-[10px] font-medium">{style.label}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
 
                     {/* 5a-iii: Character selection — enlarged cards with thumbnails & descriptions */}
                     {selectedVisualStyleIds.length > 0 && (() => {
