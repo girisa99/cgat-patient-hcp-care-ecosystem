@@ -197,6 +197,92 @@ Do NOT change: data structures, types, hook logic, or data-dependencies.ts hando
     acknowledgedAt: '2026-02-21T10:00:00Z',
     priority: 'critical',
   },
+
+  // ── Sprint 2: Day 7–9 — Genie Cast Pipeline Handoffs ──
+
+  // Claude → Lovable: Scene mapper data structure needed for progress UI
+  {
+    id: 'H-701',
+    title: 'Scene-to-chunk data contract → Lovable progress tracker',
+    from: 'claude', to: 'lovable', direction: 'claude-to-lovable',
+    day: 7,
+    producerTaskId: 'B-016',
+    consumerTaskId: 'B-021',
+    artifact: 'SceneChunkMap interface: { sceneId, chunkIndex, startMs, endMs, status, audioUrl? }',
+    consumerNotes: 'Lovable needs this interface to render per-scene progress bars. Claude should define and export from audioSplitStitch.ts by Day 7 EOD so Lovable can build UI against it.',
+    status: 'pending',
+    priority: 'critical',
+  },
+
+  // Claude → Lovable: TTS provider lock metadata for preview player
+  {
+    id: 'H-702',
+    title: 'TTS provider lock result → Lovable TTS preview player',
+    from: 'claude', to: 'lovable', direction: 'claude-to-lovable',
+    day: 7,
+    producerTaskId: 'B-013',
+    consumerTaskId: 'B-022',
+    artifact: 'TTSLockResult: { provider, voiceId, sampleAudioUrl, chunkDurations[] }',
+    consumerNotes: 'Lovable\'s TTS preview player (B-022) needs chunk boundary data and the locked voice ID to display waveform with chunk highlights. Define interface early.',
+    status: 'pending',
+    priority: 'high',
+  },
+
+  // Claude → Lovable: Avatar video generation API contract
+  {
+    id: 'H-703',
+    title: 'Avatar generation API → Lovable avatar preview UI',
+    from: 'claude', to: 'lovable', direction: 'claude-to-lovable',
+    day: 8,
+    producerTaskId: 'B-014',
+    consumerTaskId: 'B-023',
+    artifact: 'AvatarGenerationResult: { sourceImageUrl, generatedVideoUrl, status, durationMs }',
+    consumerNotes: 'Lovable\'s AvatarSourceManager (B-023) needs to know the upload path convention and status polling endpoint. Claude defines the edge function contract.',
+    status: 'pending',
+    priority: 'high',
+  },
+
+  // Claude → Lovable: Scene rendering status for production timeline
+  {
+    id: 'H-704',
+    title: 'Scene render status events → Lovable production timeline',
+    from: 'claude', to: 'lovable', direction: 'claude-to-lovable',
+    day: 8,
+    producerTaskId: 'B-017',
+    consumerTaskId: 'B-024',
+    artifact: 'SceneRenderStatus: { sceneId, status, progress%, videoUrl?, error? } via Supabase realtime or polling',
+    consumerNotes: 'Lovable\'s ProductionTimeline (B-024) subscribes to scene render updates. Claude must define the table/channel for realtime updates.',
+    status: 'pending',
+    priority: 'high',
+  },
+
+  // Lovable → Claude: Cast storage bucket must exist before uploads
+  {
+    id: 'H-705',
+    title: 'cast-assets bucket → Claude avatar pipeline',
+    from: 'lovable', to: 'claude', direction: 'lovable-to-claude',
+    day: 7,
+    producerTaskId: 'B-008',
+    consumerTaskId: 'B-014',
+    artifact: 'Supabase storage bucket `cast-assets` with user-scoped RLS',
+    consumerNotes: 'Claude\'s avatar pipeline (B-014) uploads generated videos to cast-assets/. Lovable provisions the bucket and RLS policies first.',
+    status: 'pending',
+    priority: 'high',
+  },
+
+  // Claude → Lovable: Output presets table columns for timeline display
+  {
+    id: 'H-706',
+    title: 'Output preset schema → Lovable export UI',
+    from: 'claude', to: 'lovable', direction: 'bidirectional',
+    day: 9,
+    producerTaskId: 'B-019',
+    consumerTaskId: 'B-011',
+    artifact: 'cast_output_presets table with bitrate, codec, fps, resolution columns',
+    consumerNotes: 'Lovable adds encoding config columns (B-011), Claude\'s export logic (B-019) reads them. Agree on column names before either implements.',
+    status: 'pending',
+    priority: 'medium',
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -229,6 +315,30 @@ export const DEPENDENCY_CHAINS: DependencyChain[] = [
   { taskId: 'L-501', blockedBy: ['L-101', 'L-201', 'L-301', 'L-401'], unblocks: ['L-504'] },
   { taskId: 'L-504', blockedBy: ['L-501', 'L-502', 'L-503', 'H-501'], unblocks: ['S-501'] },
   { taskId: 'S-501', blockedBy: ['C-504', 'L-504'], unblocks: [] },
+
+  // ── Sprint 2: Day 7–9 dependency chains ──
+
+  // Day 7: Scene mapper + TTS lock are parallel but both feed into Day 8+
+  { taskId: 'B-016', blockedBy: [], unblocks: ['B-021', 'H-701'] },
+  { taskId: 'B-013', blockedBy: [], unblocks: ['B-022', 'H-702'] },
+  { taskId: 'B-008', blockedBy: [], unblocks: ['B-014', 'H-705'] },
+  { taskId: 'B-007', blockedBy: [], unblocks: ['B-009'] },
+  { taskId: 'B-021', blockedBy: ['H-701'], unblocks: ['B-024'] },
+  { taskId: 'B-022', blockedBy: ['H-702'], unblocks: [] },
+  { taskId: 'B-009', blockedBy: ['B-007'], unblocks: [] },
+
+  // Day 8: Avatar + scene rendering depend on Day 7 outputs
+  { taskId: 'B-014', blockedBy: ['B-013', 'B-016', 'H-705'], unblocks: ['B-017', 'B-023', 'H-703'] },
+  { taskId: 'B-017', blockedBy: ['B-014', 'B-016'], unblocks: ['B-018', 'B-024', 'H-704'] },
+  { taskId: 'B-015', blockedBy: [], unblocks: [] },
+  { taskId: 'B-023', blockedBy: ['B-008', 'H-703'], unblocks: [] },
+
+  // Day 9: Assembly + export depend on Day 8 rendering
+  { taskId: 'B-018', blockedBy: ['B-017'], unblocks: ['B-019'] },
+  { taskId: 'B-019', blockedBy: ['B-017', 'B-011'], unblocks: ['B-020', 'H-706'] },
+  { taskId: 'B-020', blockedBy: ['B-019'], unblocks: [] },
+  { taskId: 'B-024', blockedBy: ['B-021', 'H-704'], unblocks: [] },
+  { taskId: 'B-011', blockedBy: [], unblocks: ['B-019'] },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,7 +360,6 @@ export const PO_CHECKLISTS: POChecklistItem[] = [
   { id: 'PO-203', day: 2, category: 'approve', title: 'Pricing tiers match between landing and studio', description: 'Compare pricing on /products page with tier gating in genieStudioNavItems.ts', developer: 'both', relatedTasks: ['L-202', 'H-203'], completed: false },
   { id: 'PO-204', day: 2, category: 'decide', title: 'Landing CTA → Deck link approved', description: 'Lovable\'s product page links to /genie-deck. Verify Claude\'s Deck is ready.', developer: 'both', relatedTasks: ['H-201'], completed: false },
   { id: 'PO-205', day: 2, category: 'unblock', title: 'Handoff H-201 acknowledged', description: 'Confirm Lovable has acknowledged the Deck route is live and working.', developer: 'lovable', relatedTasks: ['H-201'], completed: false },
-  // D-003: Tier gating route guard
   { id: 'PO-206', day: 2, category: 'decide', title: 'D-003: Tier gating approach for /genie-deck', description: 'genieStudioNavItems.ts is locked. PO must decide: (A) soft-gate via landing CTA only (no code change needed), or (B) hard redirect guard requiring Claude to implement. Lovable cannot touch locked file.', developer: 'both', relatedTasks: ['L-201', 'L-202'], completed: false },
 
   // ── Day 3 ──
@@ -274,4 +383,22 @@ export const PO_CHECKLISTS: POChecklistItem[] = [
   { id: 'PO-504', day: 5, category: 'approve', title: 'Claude merge to main approved', description: 'Build passes. All CREATE fixes verified. Approve merge.', developer: 'claude', relatedTasks: ['C-504', 'H-501'], completed: false },
   { id: 'PO-505', day: 5, category: 'approve', title: 'Lovable rebase + merge approved', description: 'Lovable rebased onto main (after Claude). Build passes. Approve merge.', developer: 'lovable', relatedTasks: ['L-504'], completed: false },
   { id: 'PO-506', day: 5, category: 'verify', title: 'Final build on main passes', description: 'Both branches merged. npm run build on main. All routes work.', developer: 'both', relatedTasks: ['S-501'], completed: false },
+
+  // ── Sprint 2: Day 7 ──
+  { id: 'PO-701', day: 7, category: 'verify', title: 'H-701: Scene chunk interface defined by Claude', description: 'Claude exports SceneChunkMap from audioSplitStitch.ts. Lovable can build progress tracker against it.', developer: 'claude', relatedTasks: ['B-016', 'B-021'], completed: false },
+  { id: 'PO-702', day: 7, category: 'verify', title: 'H-702: TTS lock result interface defined', description: 'Claude defines TTSLockResult interface. Lovable can build TTS preview player.', developer: 'claude', relatedTasks: ['B-013', 'B-022'], completed: false },
+  { id: 'PO-703', day: 7, category: 'verify', title: 'H-705: cast-assets bucket provisioned by Lovable', description: 'Lovable creates cast-assets Supabase bucket with RLS. Claude can upload avatar videos.', developer: 'lovable', relatedTasks: ['B-008', 'B-014'], completed: false },
+  { id: 'PO-704', day: 7, category: 'approve', title: 'Style customization panel UX approved', description: 'Review B-007 — style panel visible without pre-select gate. Good UX?', developer: 'lovable', relatedTasks: ['B-007'], completed: false },
+
+  // ── Sprint 2: Day 8 ──
+  { id: 'PO-801', day: 8, category: 'verify', title: 'H-703: Avatar generation contract defined', description: 'Claude defines AvatarGenerationResult interface for B-014. Lovable can build AvatarSourceManager.', developer: 'claude', relatedTasks: ['B-014', 'B-023'], completed: false },
+  { id: 'PO-802', day: 8, category: 'verify', title: 'H-704: Scene render status channel defined', description: 'Claude defines realtime channel/table for scene render updates. Lovable can build ProductionTimeline.', developer: 'claude', relatedTasks: ['B-017', 'B-024'], completed: false },
+  { id: 'PO-803', day: 8, category: 'verify', title: 'Per-chunk avatar stitching works end-to-end', description: 'Test B-014: upload source image → generate avatar video per chunk → FFmpeg concat → final video.', developer: 'claude', relatedTasks: ['B-014'], completed: false },
+  { id: 'PO-804', day: 8, category: 'verify', title: 'Azure Viseme preview renders correctly', description: 'Test B-015: canvas overlay syncs mouth shapes to viseme data on still image.', developer: 'lovable', relatedTasks: ['B-015'], completed: false },
+
+  // ── Sprint 2: Day 9 ──
+  { id: 'PO-901', day: 9, category: 'verify', title: 'H-706: Output preset columns agreed', description: 'Both devs aligned on cast_output_presets schema: bitrate, codec, fps, resolution.', developer: 'both', relatedTasks: ['B-011', 'B-019'], completed: false },
+  { id: 'PO-902', day: 9, category: 'verify', title: 'Full EP04 assembly pipeline tested', description: 'All 104 scenes render, B-roll inserted, output exported in at least one preset format.', developer: 'claude', relatedTasks: ['B-017', 'B-018', 'B-019', 'B-020'], completed: false },
+  { id: 'PO-903', day: 9, category: 'approve', title: 'Production timeline UI review', description: 'Review B-024: horizontal timeline shows scenes, chunks, transitions, durations. UX acceptable?', developer: 'lovable', relatedTasks: ['B-024'], completed: false },
+  { id: 'PO-904', day: 9, category: 'decide', title: 'Quality gate pass/fail criteria finalized', description: 'B-020 auto-checks: audio sync, branding, captions. Are thresholds acceptable for MVP?', developer: 'both', relatedTasks: ['B-020'], completed: false },
 ];
