@@ -73,6 +73,31 @@ export interface VisualStyle {
   sub_sort_order: number;
   character_type: string | null;
   style_variant: string | null;
+  estimated_size_mb: number;
+  complexity_score: number;
+  render_time_estimate: string;
+}
+
+export interface StyleCharacter {
+  id: string;
+  style_id: string;
+  name: string;
+  label: string;
+  character_type: string;
+  icon: string;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface StyleCapabilityRule {
+  id: string;
+  style_id: string;
+  capability_id: string;
+  auto_select: boolean;
+  is_recommended: boolean;
+  is_locked: boolean;
+  reason: string | null;
 }
 
 export interface ProductionCapability {
@@ -111,12 +136,14 @@ export function useCastContentRegistry() {
   const [productionCapabilities, setProductionCapabilities] = useState<ProductionCapability[]>([]);
   const [assetSourceTypes, setAssetSourceTypes] = useState<AssetSourceType[]>([]);
   const [formatCapabilities, setFormatCapabilities] = useState<FormatCapabilityLink[]>([]);
+  const [styleCharacters, setStyleCharacters] = useState<StyleCharacter[]>([]);
+  const [styleCapabilityRules, setStyleCapabilityRules] = useState<StyleCapabilityRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [catRes, fmtRes, sfRes, cfRes, vsRes, pcRes, asRes, fcRes] = await Promise.all([
+      const [catRes, fmtRes, sfRes, cfRes, vsRes, pcRes, asRes, fcRes, scRes, scrRes] = await Promise.all([
         supabase.from('cast_content_categories').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_content_formats').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_content_sub_formats').select('*').eq('is_active', true).order('sort_order'),
@@ -125,6 +152,8 @@ export function useCastContentRegistry() {
         supabase.from('cast_production_capabilities').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_asset_source_types').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_format_capabilities').select('*').eq('is_active', true),
+        supabase.from('cast_style_characters').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('cast_style_capability_rules').select('*'),
       ]);
 
       if (catRes.error) throw catRes.error;
@@ -140,6 +169,8 @@ export function useCastContentRegistry() {
       setProductionCapabilities((pcRes.data || []) as unknown as ProductionCapability[]);
       setAssetSourceTypes((asRes.data || []) as unknown as AssetSourceType[]);
       setFormatCapabilities((fcRes.data || []) as unknown as FormatCapabilityLink[]);
+      setStyleCharacters((scRes.data || []) as unknown as StyleCharacter[]);
+      setStyleCapabilityRules((scrRes.data || []) as unknown as StyleCapabilityRule[]);
     } catch (err: any) {
       console.error('[useCastContentRegistry] Failed to fetch:', err);
     } finally {
@@ -284,6 +315,38 @@ export function useCastContentRegistry() {
     return productionCapabilities.filter(pc => linkedCapIds.has(pc.id));
   }, [productionCapabilities, formatCapabilities]);
 
+  /** Get characters available for a given style (including parent) */
+  const getCharactersForStyle = useCallback((styleId: string): StyleCharacter[] => {
+    const style = visualStyles.find(s => s.id === styleId);
+    if (!style) return [];
+    // Get characters for this style AND parent style
+    const ids = new Set([styleId]);
+    if (style.parent_style_id) ids.add(style.parent_style_id);
+    return styleCharacters.filter(sc => ids.has(sc.style_id)).sort((a, b) => a.sort_order - b.sort_order);
+  }, [styleCharacters, visualStyles]);
+
+  /** Get auto-select capability rules for a given style */
+  const getCapabilityRulesForStyle = useCallback((styleId: string): StyleCapabilityRule[] => {
+    const style = visualStyles.find(s => s.id === styleId);
+    if (!style) return [];
+    const ids = new Set([styleId]);
+    if (style.parent_style_id) ids.add(style.parent_style_id);
+    return styleCapabilityRules.filter(r => ids.has(r.style_id));
+  }, [styleCapabilityRules, visualStyles]);
+
+  /** Calculate estimated scenes from target duration and style complexity */
+  const estimateScenes = useCallback((targetDurationSeconds: number, styleId: string | null): { scenes: number; perSceneDuration: number; totalSizeMb: number; renderTime: string } => {
+    const style = styleId ? visualStyles.find(s => s.id === styleId) : null;
+    const complexity = style?.complexity_score || 5;
+    // Higher complexity = longer per-scene duration (5-15s range)
+    const perSceneDuration = Math.round(5 + (complexity / 10) * 10);
+    const scenes = Math.max(1, Math.round(targetDurationSeconds / perSceneDuration));
+    const baseSizeMb = style?.estimated_size_mb || 80;
+    const totalSizeMb = Math.round(baseSizeMb * (scenes / 5)); // base is for ~5 scenes
+    const renderTime = style?.render_time_estimate || 'medium';
+    return { scenes, perSceneDuration, totalSizeMb, renderTime };
+  }, [visualStyles]);
+
   return {
     categories,
     formats,
@@ -293,11 +356,16 @@ export function useCastContentRegistry() {
     productionCapabilities,
     assetSourceTypes,
     formatCapabilities,
+    styleCharacters,
+    styleCapabilityRules,
     isLoading,
     refresh: fetchAll,
     getFormatsForCategory,
     getSubFormatsForFormat,
     getCapabilitiesForFormat,
+    getCharactersForStyle,
+    getCapabilityRulesForStyle,
+    estimateScenes,
     requiresMessaging,
     addCategory,
     addFormat,

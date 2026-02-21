@@ -318,6 +318,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const [selectedVisualStyleId, setSelectedVisualStyleId] = useState<string | null>(null);
   // Production capabilities selection
   const [selectedCapabilityIds, setSelectedCapabilityIds] = useState<string[]>([]);
+  // Auto-selected capability IDs (from style rules, user can override)
+  const [autoSelectedCapIds, setAutoSelectedCapIds] = useState<string[]>([]);
+  // Selected characters (tag-based multi-select)
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
+  // Target duration for auto scene calculation
+  const [targetDuration, setTargetDuration] = useState<number>(60); // seconds
   // Asset source type
   const [selectedAssetSource, setSelectedAssetSource] = useState<string>('generate');
   // Lip-sync and dubbing toggles
@@ -1241,7 +1247,26 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                             return (
                               <React.Fragment key={style.id}>
                                 <button
-                                  onClick={() => setSelectedVisualStyleId(isParentSelected ? null : style.id)}
+                                  onClick={() => {
+                                    const newId = isParentSelected ? null : style.id;
+                                    setSelectedVisualStyleId(newId);
+                                    setSelectedCharacterIds([]);
+                                    // Auto-select capabilities based on style rules
+                                    if (newId) {
+                                      const rules = contentRegistry.getCapabilityRulesForStyle(newId);
+                                      const autoIds = rules.filter(r => r.auto_select).map(r => r.capability_id);
+                                      setAutoSelectedCapIds(autoIds);
+                                      setSelectedCapabilityIds(prev => {
+                                        const merged = new Set([...prev, ...autoIds]);
+                                        return Array.from(merged);
+                                      });
+                                      // Auto-toggle lip-sync if in auto rules
+                                      const lipSyncCap = contentRegistry.productionCapabilities.find(c => c.name === 'lip_sync');
+                                      if (lipSyncCap && autoIds.includes(lipSyncCap.id)) setLipSyncEnabled(true);
+                                    } else {
+                                      setAutoSelectedCapIds([]);
+                                    }
+                                  }}
                                   className={cn(
                                     "relative flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all",
                                     isExpanded
@@ -1253,6 +1278,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                                     {style.icon === 'Box' ? '📦' : style.icon === 'Smile' ? '😊' : style.icon === 'Star' ? '⭐' : style.icon === 'Camera' ? '📷' : style.icon === 'Film' ? '🎬' : style.icon === 'Palette' ? '🎨' : style.icon === 'Droplets' ? '💧' : style.icon === 'Minus' ? '➖' : style.icon === 'BarChart3' ? '📊' : style.icon === 'PenTool' ? '✏️' : style.icon === 'BookOpen' ? '📚' : '🎭'}
                                   </span>
                                   <span className="font-medium text-center leading-tight">{style.label}</span>
+                                  {/* Size badge */}
+                                  <span className="text-[9px] text-muted-foreground">~{style.estimated_size_mb || 0}MB</span>
                                   {subStyles.length > 0 && (
                                     <ChevronDown className={cn(
                                       "w-3 h-3 transition-transform absolute top-1 right-1 text-muted-foreground",
@@ -1301,7 +1328,20 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                                 {subStyles.map(sub => (
                                   <button
                                     key={sub.id}
-                                    onClick={() => setSelectedVisualStyleId(sub.id)}
+                                    onClick={() => {
+                                      setSelectedVisualStyleId(sub.id);
+                                      setSelectedCharacterIds([]);
+                                      // Auto-select capabilities for sub-style
+                                      const rules = contentRegistry.getCapabilityRulesForStyle(sub.id);
+                                      const autoIds = rules.filter(r => r.auto_select).map(r => r.capability_id);
+                                      setAutoSelectedCapIds(autoIds);
+                                      setSelectedCapabilityIds(prev => {
+                                        const merged = new Set([...prev, ...autoIds]);
+                                        return Array.from(merged);
+                                      });
+                                      const lipSyncCap = contentRegistry.productionCapabilities.find(c => c.name === 'lip_sync');
+                                      if (lipSyncCap && autoIds.includes(lipSyncCap.id)) setLipSyncEnabled(true);
+                                    }}
                                     className={cn(
                                       "flex flex-col gap-1 p-2 rounded-lg border text-xs transition-all text-left",
                                       selectedVisualStyleId === sub.id
@@ -1309,15 +1349,27 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                                         : "border-border/60 hover:border-primary/40 hover:bg-primary/5"
                                     )}
                                   >
-                                    <span className="font-medium">{sub.label}</span>
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium">{sub.label}</span>
+                                      <span className="text-[9px] text-muted-foreground">~{sub.estimated_size_mb || 0}MB</span>
+                                    </div>
                                     {sub.description && (
                                       <span className="text-[10px] text-muted-foreground leading-tight line-clamp-2">{sub.description}</span>
                                     )}
-                                    {sub.character_type && (
-                                      <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 w-fit mt-0.5">
-                                        {sub.character_type}
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      {sub.character_type && (
+                                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 w-fit">
+                                          {sub.character_type}
+                                        </Badge>
+                                      )}
+                                      <Badge variant="outline" className={cn(
+                                        "text-[9px] px-1 py-0 h-4 w-fit",
+                                        sub.render_time_estimate === 'high' ? 'border-destructive/40 text-destructive' :
+                                        sub.render_time_estimate === 'low' ? 'border-green-500/40 text-green-600' : ''
+                                      )}>
+                                        {sub.render_time_estimate === 'high' ? '🔥 Heavy' : sub.render_time_estimate === 'low' ? '⚡ Light' : '⏱️ Medium'}
                                       </Badge>
-                                    )}
+                                    </div>
                                   </button>
                                 ))}
                               </div>
@@ -1333,39 +1385,159 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       )}
                     </div>
 
+                    {/* 5a-ii: Character Selection (tag-based multi-select) */}
+                    {selectedVisualStyleId && (() => {
+                      const chars = contentRegistry.getCharactersForStyle(selectedVisualStyleId);
+                      if (chars.length === 0) return null;
+                      return (
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">🎭 Characters</Label>
+                          <p className="text-[10px] text-muted-foreground">Select one or more characters for your production</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {chars.map(ch => (
+                              <button
+                                key={ch.id}
+                                onClick={() => setSelectedCharacterIds(prev =>
+                                  prev.includes(ch.id) ? prev.filter(c => c !== ch.id) : [...prev, ch.id]
+                                )}
+                                className={cn(
+                                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs transition-all",
+                                  selectedCharacterIds.includes(ch.id)
+                                    ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                                    : "border-border hover:border-primary/40 hover:bg-muted/50"
+                                )}
+                                title={ch.description || ch.label}
+                              >
+                                <span>{ch.icon}</span>
+                                <span className="font-medium">{ch.label}</span>
+                                <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5">{ch.character_type}</Badge>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <Separator />
 
-                    {/* 5b: Production Capabilities (from cast_production_capabilities, filtered by format) */}
+                    {/* 5a-iii: Duration & Scene Planning */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">⏱️ Target Duration & Scene Planning</Label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { label: '30s', value: 30, desc: 'Short clip' },
+                          { label: '1 min', value: 60, desc: 'Standard' },
+                          { label: '3 min', value: 180, desc: 'Detailed' },
+                          { label: '5 min', value: 300, desc: 'Full production' },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => setTargetDuration(opt.value)}
+                            className={cn(
+                              "flex flex-col items-center gap-0.5 p-2.5 rounded-lg border text-xs transition-all",
+                              targetDuration === opt.value
+                                ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                                : "border-border hover:border-primary/40 hover:bg-muted/50"
+                            )}
+                          >
+                            <span className="font-bold">{opt.label}</span>
+                            <span className="text-[9px] text-muted-foreground">{opt.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                      {/* Auto-calculated estimation */}
+                      {(() => {
+                        const est = contentRegistry.estimateScenes(targetDuration, selectedVisualStyleId);
+                        return (
+                          <div className="mt-2 p-3 rounded-lg bg-muted/50 border border-border/60 grid grid-cols-4 gap-3 text-center">
+                            <div>
+                              <p className="text-lg font-bold text-foreground">{est.scenes}</p>
+                              <p className="text-[9px] text-muted-foreground">Scenes</p>
+                            </div>
+                            <div>
+                              <p className="text-lg font-bold text-foreground">{est.perSceneDuration}s</p>
+                              <p className="text-[9px] text-muted-foreground">Per scene</p>
+                            </div>
+                            <div>
+                              <p className="text-lg font-bold text-foreground">{est.totalSizeMb < 1000 ? `${est.totalSizeMb}MB` : `${(est.totalSizeMb / 1000).toFixed(1)}GB`}</p>
+                              <p className="text-[9px] text-muted-foreground">Est. size</p>
+                            </div>
+                            <div>
+                              <p className={cn("text-lg font-bold", est.renderTime === 'high' ? 'text-destructive' : est.renderTime === 'low' ? 'text-green-600' : 'text-foreground')}>
+                                {est.renderTime === 'high' ? '🔥' : est.renderTime === 'low' ? '⚡' : '⏱️'}
+                              </p>
+                              <p className="text-[9px] text-muted-foreground">{est.renderTime} load</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <Separator />
+
+                    {/* 5b: Production Capabilities (with auto-select indicators) */}
                     <div className="space-y-2">
                       <Label className="text-xs font-medium">Production Capabilities</Label>
+                      {autoSelectedCapIds.length > 0 && (
+                        <p className="text-[10px] text-primary flex items-center gap-1">
+                          ⚡ {autoSelectedCapIds.length} auto-selected based on your style — you can toggle them off
+                        </p>
+                      )}
+                      {/* Show recommended capabilities */}
+                      {selectedVisualStyleId && (() => {
+                        const rules = contentRegistry.getCapabilityRulesForStyle(selectedVisualStyleId);
+                        const recommended = rules.filter(r => r.is_recommended && !r.auto_select);
+                        if (recommended.length === 0) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1 mb-1">
+                            {recommended.map(r => {
+                              const cap = contentRegistry.productionCapabilities.find(c => c.id === r.capability_id);
+                              if (!cap) return null;
+                              return (
+                                <Badge key={r.id} variant="outline" className="text-[9px] cursor-pointer hover:bg-primary/10" 
+                                  onClick={() => setSelectedCapabilityIds(prev => prev.includes(cap.id) ? prev : [...prev, cap.id])}>
+                                  💡 {cap.label} — {r.reason}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                         {(selectedFormatId
                           ? contentRegistry.getCapabilitiesForFormat(selectedFormatId)
                           : contentRegistry.productionCapabilities
-                        ).map(cap => (
-                          <button
-                            key={cap.id}
-                            onClick={() => setSelectedCapabilityIds(prev =>
-                              prev.includes(cap.id) ? prev.filter(c => c !== cap.id) : [...prev, cap.id]
-                            )}
-                            className={cn(
-                              "flex items-center gap-2 p-2 rounded-lg border text-xs transition-all text-left",
-                              selectedCapabilityIds.includes(cap.id)
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-border hover:border-primary/40 hover:bg-muted/50"
-                            )}
-                          >
-                            <span className="text-sm">
-                              {cap.name === 'lip_sync' ? '👄' : cap.name === 'dubbing' ? '🌍' : cap.name === 'avatar_talking_head' ? '🧑' : cap.name === 'avatar_full_body' ? '🕺' : cap.name === 'text_to_video' ? '🎬' : cap.name === 'text_to_image' ? '🖼️' : cap.name === 'image_to_image' ? '🔄' : cap.name === 'vr_ar_immersive' ? '🥽' : cap.name === 'pixar_3d' ? '📦' : cap.name === 'cartoon_animation' ? '🎨' : cap.name === 'ar_filters' ? '✨' : cap.name === 'music_sfx_gen' ? '🎵' : cap.name === 'multi_camera' ? '📐' : cap.name === 'green_screen' ? '🟩' : cap.name === 'voice_clone' ? '🎙️' : cap.name === 'motion_capture' ? '🏃' : cap.name === 'brand_watermark' ? '🛡️' : cap.name === '3d_scene_gen' ? '🏔️' : cap.name === 'style_transfer' ? '🎨' : cap.name === 'subtitle_burn' ? '💬' : '⚡'}
-                            </span>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{cap.label}</span>
-                              {cap.description && (
-                                <span className="text-[9px] text-muted-foreground leading-tight line-clamp-1">{cap.description}</span>
+                        ).map(cap => {
+                          const isAutoSelected = autoSelectedCapIds.includes(cap.id);
+                          const isSelected = selectedCapabilityIds.includes(cap.id);
+                          return (
+                            <button
+                              key={cap.id}
+                              onClick={() => setSelectedCapabilityIds(prev =>
+                                prev.includes(cap.id) ? prev.filter(c => c !== cap.id) : [...prev, cap.id]
                               )}
-                            </div>
-                          </button>
-                        ))}
+                              className={cn(
+                                "flex items-center gap-2 p-2 rounded-lg border text-xs transition-all text-left relative",
+                                isSelected
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border hover:border-primary/40 hover:bg-muted/50"
+                              )}
+                            >
+                              {isAutoSelected && isSelected && (
+                                <span className="absolute -top-1 -right-1 text-[8px] bg-primary text-primary-foreground rounded-full w-3.5 h-3.5 flex items-center justify-center">⚡</span>
+                              )}
+                              <span className="text-sm">
+                                {cap.name === 'lip_sync' ? '👄' : cap.name === 'dubbing' ? '🌍' : cap.name === 'avatar_talking_head' ? '🧑' : cap.name === 'avatar_full_body' ? '🕺' : cap.name === 'text_to_video' ? '🎬' : cap.name === 'text_to_image' ? '🖼️' : cap.name === 'image_to_image' ? '🔄' : cap.name === 'vr_ar_immersive' ? '🥽' : cap.name === 'pixar_3d' ? '📦' : cap.name === 'cartoon_animation' ? '🎨' : cap.name === 'ar_filters' ? '✨' : cap.name === 'music_sfx_gen' ? '🎵' : cap.name === 'multi_camera' ? '📐' : cap.name === 'green_screen' ? '🟩' : cap.name === 'voice_clone' ? '🎙️' : cap.name === 'motion_capture' ? '🏃' : cap.name === 'brand_watermark' ? '🛡️' : cap.name === '3d_scene_gen' ? '🏔️' : cap.name === 'style_transfer' ? '🎨' : cap.name === 'subtitle_burn' ? '💬' : '⚡'}
+                              </span>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{cap.label}</span>
+                                {cap.description && (
+                                  <span className="text-[9px] text-muted-foreground leading-tight line-clamp-1">{cap.description}</span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1569,9 +1741,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
                 {/* Continue to Templates */}
                 <div className="flex justify-between items-center">
-                  <div className="text-xs text-muted-foreground">
-                    {selectedVisualStyleId && <span className="mr-2">✅ Style</span>}
-                    {selectedCapabilityIds.length > 0 && <span className="mr-2">✅ {selectedCapabilityIds.length} capabilities</span>}
+                  <div className="text-xs text-muted-foreground flex flex-wrap gap-1">
+                    {selectedVisualStyleId && <span>✅ Style</span>}
+                    {selectedCharacterIds.length > 0 && <span>✅ {selectedCharacterIds.length} chars</span>}
+                    {targetDuration > 0 && <span>✅ {targetDuration}s / {contentRegistry.estimateScenes(targetDuration, selectedVisualStyleId).scenes} scenes</span>}
+                    {selectedCapabilityIds.length > 0 && <span>✅ {selectedCapabilityIds.length} capabilities</span>}
                     {enrichmentPrompt && <span>✅ Enrichment</span>}
                   </div>
                   <Button
