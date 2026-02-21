@@ -1,19 +1,22 @@
 /**
- * useGuideTTS — Connects guide store voiceEnabled state to the guide-tts edge function.
+ * useGuideTTS — Connects guide store to the regionalized guide-tts edge function.
  * 
- * When voice is enabled and a new guide message appears, automatically
- * calls the guide-tts edge function and plays the audio.
- * 
- * Uses the existing AI routing pattern (dedicated edge function with fallbacks).
+ * Now passes regional context (zone, sub-region, language, country) from
+ * useIPBasedContent + guideStore.regionalContext so the edge function uses
+ * the correct TTS provider chain and sub-regional voice (parent-child inheritance).
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useGuideStore, type GuideMessage, type GuideAgent } from '@/stores/guideStore';
+import { useGuideStore, type GuideMessage } from '@/stores/guideStore';
 import { supabase } from '@/integrations/supabase/client';
 
 interface GuideTTSOptions {
-  /** Language code for TTS routing (e.g., 'en-US', 'ar-SA') */
+  /** Override language code (otherwise uses store's regional context) */
   languageCode?: string;
+  /** Sub-region code from IP detection (e.g., 'MENA_GULF', 'INDIA_SOUTH_TA') */
+  region?: string;
+  /** ISO country code from IP detection */
+  countryCode?: string;
   /** Speech speed multiplier */
   speed?: number;
   /** Whether to auto-play when new messages arrive */
@@ -21,11 +24,16 @@ interface GuideTTSOptions {
 }
 
 export function useGuideTTS(options: GuideTTSOptions = {}) {
-  const { languageCode = 'en-US', speed = 1.0, autoPlay = true } = options;
-  const { voiceEnabled, queue, agent } = useGuideStore();
+  const { speed = 1.0, autoPlay = true } = options;
+  const { voiceEnabled, queue, regionalContext } = useGuideStore();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastSpokenId = useRef<string>('');
   const isSpeaking = useRef(false);
+
+  // Resolve language from options → store regional context
+  const languageCode = options.languageCode || regionalContext.languageCode;
+  const region = options.region;
+  const countryCode = options.countryCode;
 
   const stopSpeaking = useCallback(() => {
     if (audioRef.current) {
@@ -49,6 +57,8 @@ export function useGuideTTS(options: GuideTTSOptions = {}) {
           text: message.text,
           agent: message.agent,
           languageCode,
+          region,
+          countryCode,
           speed,
         },
       });
@@ -89,12 +99,12 @@ export function useGuideTTS(options: GuideTTSOptions = {}) {
       };
       await audio.play();
 
-      console.log(`🔊 GuideTTS: Playing ${data.agent} via ${data.provider} (${data.chars} chars)`);
+      console.log(`🔊 GuideTTS: Playing ${data.agent} via ${data.provider} zone=${data.zone} locale=${data.locale} (${data.chars} chars)`);
     } catch (err) {
       console.warn('[GuideTTS] Failed:', err);
       isSpeaking.current = false;
     }
-  }, [voiceEnabled, languageCode, speed]);
+  }, [voiceEnabled, languageCode, region, countryCode, speed]);
 
   // Auto-speak newest message when queue changes
   useEffect(() => {
