@@ -139,6 +139,7 @@ import { StyleDrivenProductionConfig, deriveProductionRequirements, estimateGene
 import { type ProductionCapability } from '@/services/marketing/aiMessagingGeneratorService';
 import { ScriptPreviewPanel } from './ScriptPreviewPanel';
 import { TranslationTranscreationToggle } from './TranslationTranscreationToggle';
+import { CharacterPickerPopup, type CharacterOption } from './CharacterPickerPopup';
 
 /**
  * Detect transcreation zone from dialect code.
@@ -325,6 +326,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const [autoSelectedCapIds, setAutoSelectedCapIds] = useState<string[]>([]);
   // Selected characters (tag-based multi-select)
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
+  // Character picker popup state
+  const [characterPickerOpen, setCharacterPickerOpen] = useState(false);
   // Target duration for auto scene calculation
   const [targetDuration, setTargetDuration] = useState<number>(60); // seconds
   // Asset source type
@@ -1485,51 +1488,54 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       )}
                     </div>
 
-                    {/* 5a-ii: Character Selection (tag-based multi-select with thumbnails) */}
+                    {/* 5a-ii: Character Selection — opens popup with thumbnail grid */}
                     {selectedVisualStyleId && (() => {
                       const chars = contentRegistry.getCharactersForStyle(selectedVisualStyleId);
                       if (chars.length === 0) return null;
+                      const selectedChars = chars.filter(ch => selectedCharacterIds.includes(ch.id));
+                      const styleName = contentRegistry.visualStyles.find(s => s.id === selectedVisualStyleId)?.label || 'Style';
                       return (
                         <div className="space-y-2">
                           <Label className="text-xs font-medium">🎭 Characters</Label>
-                          <p className="text-[10px] text-muted-foreground">Select one or more characters for your production</p>
-                          <div className="flex flex-wrap gap-2">
-                            {chars.map(ch => (
-                              <button
-                                key={ch.id}
-                                onClick={() => setSelectedCharacterIds(prev =>
-                                  prev.includes(ch.id) ? prev.filter(c => c !== ch.id) : [...prev, ch.id]
+                          <p className="text-[10px] text-muted-foreground">Click to open character picker — select one or more for your production</p>
+                          
+                          <Button
+                            variant="outline"
+                            className="w-full justify-between h-auto min-h-10 py-2"
+                            onClick={() => setCharacterPickerOpen(true)}
+                          >
+                            {selectedChars.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5 flex-1">
+                                {selectedChars.slice(0, 4).map(ch => (
+                                  <div key={ch.id} className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                                    {ch.thumbnail_url ? (
+                                      <img src={ch.thumbnail_url} alt={ch.label} className="w-5 h-5 rounded-full object-cover" />
+                                    ) : (
+                                      <span className="text-xs">{ch.icon}</span>
+                                    )}
+                                    <span className="text-xs font-medium text-primary">{ch.label}</span>
+                                  </div>
+                                ))}
+                                {selectedChars.length > 4 && (
+                                  <Badge variant="secondary" className="text-[10px]">+{selectedChars.length - 4} more</Badge>
                                 )}
-                                className={cn(
-                                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs transition-all",
-                                  selectedCharacterIds.includes(ch.id)
-                                    ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
-                                    : "border-border hover:border-primary/40 hover:bg-muted/50"
-                                )}
-                                title={ch.description || ch.label}
-                              >
-                                {ch.thumbnail_url ? (
-                                  <img
-                                    src={ch.thumbnail_url}
-                                    alt={ch.label}
-                                    className="w-6 h-6 rounded-full object-cover ring-1 ring-border"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                      (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                                    }}
-                                  />
-                                ) : null}
-                                <span className={ch.thumbnail_url ? 'hidden' : ''}>{ch.icon}</span>
-                                <span className="font-medium">{ch.label}</span>
-                                <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5">{ch.character_type}</Badge>
-                                {ch.costume_variants && ch.costume_variants.length > 0 && (
-                                  <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5">
-                                    🎃 {ch.costume_variants.length} costumes
-                                  </Badge>
-                                )}
-                              </button>
-                            ))}
-                          </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Choose characters ({chars.length} available)</span>
+                            )}
+                            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          </Button>
+
+                          <CharacterPickerPopup
+                            open={characterPickerOpen}
+                            onOpenChange={setCharacterPickerOpen}
+                            styleName={styleName}
+                            characters={chars as CharacterOption[]}
+                            selectedIds={selectedCharacterIds}
+                            onToggle={(id) => setSelectedCharacterIds(prev =>
+                              prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+                            )}
+                          />
                         </div>
                       );
                     })()}
