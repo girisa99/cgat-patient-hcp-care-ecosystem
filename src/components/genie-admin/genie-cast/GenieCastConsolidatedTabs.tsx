@@ -52,6 +52,7 @@ import { ProductSelector } from './ProductSelector';
 import { GlobalRegionSelector } from './GlobalRegionSelector';
 import { useGenieCastRegions } from '@/hooks/useGenieCastRegions';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
+import { ZONE_PROVIDER_DISPLAY, getZoneFromRegion } from '@/config/regional-routing-registry';
 import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -958,90 +959,102 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         </Select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs">Input Language <span className="text-muted-foreground">(Translation: DeepL only)</span></Label>
-                        <Select value={selectedDialectCodes[0] || 'en-US'} onValueChange={(v) => handleDialectChange([v])}>
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[340px] bg-popover z-50">
-                            <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌍 Europe & Americas · DeepL</SelectLabel>
-                              <SelectItem value="en-US">🇺🇸 English (US)</SelectItem>
-                              <SelectItem value="en-GB">🇬🇧 English (UK)</SelectItem>
-                              <SelectItem value="es-ES">🇪🇸 Spanish</SelectItem>
-                              <SelectItem value="fr-FR">🇫🇷 French</SelectItem>
-                              <SelectItem value="de-DE">🇩🇪 German</SelectItem>
-                              <SelectItem value="it-IT">🇮🇹 Italian</SelectItem>
-                              <SelectItem value="pt-BR">🇧🇷 Portuguese (BR)</SelectItem>
-                              <SelectItem value="pt-PT">🇵🇹 Portuguese (PT)</SelectItem>
-                              <SelectItem value="nl-NL">🇳🇱 Dutch</SelectItem>
-                              <SelectItem value="pl-PL">🇵🇱 Polish</SelectItem>
-                              <SelectItem value="ru-RU">🇷🇺 Russian</SelectItem>
-                              <SelectItem value="uk-UA">🇺🇦 Ukrainian</SelectItem>
-                              <SelectItem value="sv-SE">🇸🇪 Swedish</SelectItem>
-                              <SelectItem value="da-DK">🇩🇰 Danish</SelectItem>
-                              <SelectItem value="nb-NO">🇳🇴 Norwegian</SelectItem>
-                              <SelectItem value="fi-FI">🇫🇮 Finnish</SelectItem>
-                              <SelectItem value="cs-CZ">🇨🇿 Czech</SelectItem>
-                              <SelectItem value="sk-SK">🇸🇰 Slovak</SelectItem>
-                              <SelectItem value="ro-RO">🇷🇴 Romanian</SelectItem>
-                              <SelectItem value="hu-HU">🇭🇺 Hungarian</SelectItem>
-                              <SelectItem value="bg-BG">🇧🇬 Bulgarian</SelectItem>
-                              <SelectItem value="el-GR">🇬🇷 Greek</SelectItem>
-                              <SelectItem value="et-EE">🇪🇪 Estonian</SelectItem>
-                              <SelectItem value="lv-LV">🇱🇻 Latvian</SelectItem>
-                              <SelectItem value="lt-LT">🇱🇹 Lithuanian</SelectItem>
-                              <SelectItem value="sl-SI">🇸🇮 Slovenian</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🀄 CJK · DeepL</SelectLabel>
-                              <SelectItem value="zh-CN">🇨🇳 Chinese (Simplified)</SelectItem>
-                              <SelectItem value="zh-TW">🇹🇼 Chinese (Traditional)</SelectItem>
-                              <SelectItem value="ja-JP">🇯🇵 Japanese</SelectItem>
-                              <SelectItem value="ko-KR">🇰🇷 Korean</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🕌 MENA · DeepL</SelectLabel>
-                              <SelectItem value="ar-SA">🇸🇦 Arabic</SelectItem>
-                              <SelectItem value="he-IL">🇮🇱 Hebrew</SelectItem>
-                              <SelectItem value="tr-TR">🇹🇷 Turkish</SelectItem>
-                              <SelectItem value="fa-IR">🇮🇷 Farsi</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🇮🇳 India / South Asia · DeepL</SelectLabel>
-                              <SelectItem value="hi-IN">🇮🇳 Hindi</SelectItem>
-                              <SelectItem value="bn-BD">🇧🇩 Bengali</SelectItem>
-                              <SelectItem value="te-IN">Telugu</SelectItem>
-                              <SelectItem value="ta-IN">Tamil</SelectItem>
-                              <SelectItem value="mr-IN">Marathi</SelectItem>
-                              <SelectItem value="gu-IN">Gujarati</SelectItem>
-                              <SelectItem value="kn-IN">Kannada</SelectItem>
-                              <SelectItem value="ml-IN">Malayalam</SelectItem>
-                              <SelectItem value="pa-IN">Punjabi</SelectItem>
-                              <SelectItem value="ur-PK">🇵🇰 Urdu</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌏 Southeast Asia · DeepL</SelectLabel>
-                              <SelectItem value="id-ID">🇮🇩 Indonesian</SelectItem>
-                              <SelectItem value="ms-MY">🇲🇾 Malay</SelectItem>
-                              <SelectItem value="th-TH">🇹🇭 Thai</SelectItem>
-                              <SelectItem value="vi-VN">🇻🇳 Vietnamese</SelectItem>
-                              <SelectItem value="tl-PH">🇵🇭 Filipino</SelectItem>
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌍 Africa · DeepL</SelectLabel>
-                              <SelectItem value="sw-KE">🇰🇪 Swahili</SelectItem>
-                              <SelectItem value="yo-NG">🇳🇬 Yoruba</SelectItem>
-                              <SelectItem value="am-ET">🇪🇹 Amharic</SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
+                        <Label className="text-xs">Input Language <span className="text-muted-foreground">(Transcreation: DeepL)</span></Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs font-normal">
+                              <span className="truncate">
+                                {selectedDialectCodes[0]
+                                  ? (() => {
+                                      // Find region name from hierarchy
+                                      for (const g of REGION_HIERARCHY) {
+                                        for (const c of g.children) {
+                                          if (c.code === selectedDialectCodes[0]) return `${c.flag} ${c.name}`;
+                                          if (c.children) {
+                                            for (const gc of c.children) {
+                                              if (gc.code === selectedDialectCodes[0]) return `${gc.flag} ${gc.name}`;
+                                            }
+                                          }
+                                        }
+                                      }
+                                      return selectedDialectCodes[0];
+                                    })()
+                                  : 'Select input language…'}
+                              </span>
+                              <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[420px] p-0 z-50 bg-popover" align="start">
+                            <ScrollArea className="h-[380px]">
+                              <div className="p-2 space-y-1">
+                                {REGION_HIERARCHY.map(group => (
+                                  <div key={group.groupCode} className="mb-1">
+                                    {/* Parent region header */}
+                                    <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                      <span>{group.groupFlag}</span>
+                                      <span>{group.groupName}</span>
+                                    </div>
+                                    {/* Zones and leaves */}
+                                    <div className="ml-2 space-y-0.5">
+                                      {group.children.map(zone => {
+                                        if (zone.children && zone.children.length > 0) {
+                                          return (
+                                            <div key={zone.code}>
+                                              <div className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                                {zone.flag} {zone.name}
+                                              </div>
+                                              <div className="ml-4 space-y-0.5">
+                                                {zone.children.map(leaf => (
+                                                  <button
+                                                    key={leaf.code}
+                                                    type="button"
+                                                    className={cn(
+                                                      "w-full flex items-center gap-1.5 px-2 py-1 rounded text-left text-[10px] transition-colors",
+                                                      selectedDialectCodes[0] === leaf.code
+                                                        ? "bg-primary/10 text-primary font-medium"
+                                                        : "hover:bg-muted/50"
+                                                    )}
+                                                    onClick={() => { handleDialectChange([leaf.code]); }}
+                                                  >
+                                                    <span>{leaf.flag}</span>
+                                                    <span className="flex-1">{leaf.name}</span>
+                                                  </button>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        // Flat leaf
+                                        return (
+                                          <button
+                                            key={zone.code}
+                                            type="button"
+                                            className={cn(
+                                              "w-full flex items-center gap-1.5 px-2 py-1 rounded text-left text-[10px] transition-colors",
+                                              selectedDialectCodes[0] === zone.code
+                                                ? "bg-primary/10 text-primary font-medium"
+                                                : "hover:bg-muted/50"
+                                            )}
+                                            onClick={() => { handleDialectChange([zone.code]); }}
+                                          >
+                                            <span>{zone.flag}</span>
+                                            <span className="flex-1">{zone.name}</span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </ScrollArea>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
 
-                    {/* Output Languages — Dubbing & Subtitles (Region Hierarchy + TTS Routing) */}
+                    {/* Output Languages — Dubbing & Subtitles (Transcreation + TTS per routing zone) */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Output Languages — Dubbing & Subtitles <span className="text-muted-foreground">(TTS routing per zone)</span></Label>
+                      <Label className="text-xs">Output Languages — Dubbing & Subtitles <span className="text-muted-foreground">(Transcreation per routing zone)</span></Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs font-normal">
@@ -1053,7 +1066,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                             <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[400px] p-0 z-50 bg-popover" align="start">
+                        <PopoverContent className="w-[420px] p-0 z-50 bg-popover" align="start">
                           <ScrollArea className="h-[380px]">
                             <div className="p-2 space-y-1">
                               {/* Selected summary */}
@@ -1070,18 +1083,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                                 </div>
                               )}
 
-                              {/* Hierarchical region list from REGION_HIERARCHY */}
+                              {/* Hierarchical region list from REGION_HIERARCHY with routing providers */}
                               {REGION_HIERARCHY.map(group => {
-                                // Determine TTS provider per parent region
-                                const ttsProvider = (() => {
-                                  const code = group.groupCode;
-                                  if (['NAM', 'EU', 'EURASIA', 'LATAM', 'CARIBBEAN', 'OCEANIA'].includes(code)) return 'ElevenLabs';
-                                  if (['CJK', 'MENA'].includes(code)) return 'CosyVoice';
-                                  if (['INDIA', 'PAKISTAN', 'BANGLADESH', 'SOUTH_ASIA', 'SEA', 'AFRICA'].includes(code)) return 'Azure Neural';
-                                  if (code === 'TURKEY') return 'Azure Neural';
-                                  if (code === 'CENTRAL_ASIA') return 'Azure Neural';
-                                  return 'Azure Neural';
-                                })();
+                                // Get actual providers from routing registry
+                                const zone = getZoneFromRegion(group.groupCode);
+                                const zoneDisplay = ZONE_PROVIDER_DISPLAY[zone] || ZONE_PROVIDER_DISPLAY.fallback;
+                                const providerLabel = `${zoneDisplay.llmModel} · ${zoneDisplay.ttsProvider === 'alibaba_qwen3_tts' ? 'Qwen3-TTS' : zoneDisplay.ttsProvider === 'azure' ? 'Azure Neural' : zoneDisplay.ttsProvider} · ${zoneDisplay.translationProvider === 'deepl' ? 'DeepL' : zoneDisplay.translationProvider === 'qwen_mt' ? 'Qwen-MT' : zoneDisplay.translationProvider === 'azure_translator' ? 'Azure Translator' : 'Google Translate'}`;
 
                                 // Collect all leaf codes for this group
                                 const groupLeafCodes: string[] = group.children.flatMap(c =>
@@ -1110,7 +1117,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                                     >
                                       <span>{group.groupFlag}</span>
                                       <span className="flex-1">{group.groupName}</span>
-                                      <span className="text-[9px] text-muted-foreground font-normal">{ttsProvider}</span>
+                                      <span className="text-[9px] text-muted-foreground font-normal truncate max-w-[180px]">{providerLabel}</span>
                                       <span className="text-[9px] text-muted-foreground font-mono">
                                         {groupLeafCodes.filter(c => outputLanguages.includes(c)).length}/{groupLeafCodes.length}
                                       </span>
@@ -1315,7 +1322,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       <div className="flex items-center justify-between p-3 rounded-lg border">
                         <div className="space-y-0.5">
                           <Label className="text-xs font-medium">🌍 Dubbing</Label>
-                          <p className="text-[10px] text-muted-foreground">Auto for output languages</p>
+                          <p className="text-[10px] text-muted-foreground">Auto transcreation for output regions</p>
                         </div>
                         <Button
                           variant={dubbingEnabled ? 'default' : 'outline'}
