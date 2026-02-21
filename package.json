@@ -67,6 +67,7 @@
     "@tanstack/react-query": "^5.81.5",
     "@types/dagre": "^0.7.53",
     "@vitejs/plugin-react": "^4.6.0",
+    "@xstate/react": "^6.0.0",
     "@xyflow/react": "^12.8.2",
     "@xyflow/system": "^0.0.68",
     "chokidar": "^4.0.3",
@@ -118,8 +119,10 @@
     "wait-on": "^7.2.0",
     "web-vitals": "^5.0.3",
     "xlsx": "^0.18.5",
+    "xstate": "^5.28.0",
     "yaml": "^2.8.0",
-    "zod": "^3.25.67"
+    "zod": "^3.25.67",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

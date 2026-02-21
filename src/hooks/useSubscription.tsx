@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getTierPriceId, getTierProductId } from '@/services/stripe/stripeConfigService';
 
 // Import centralized product taglines - SINGLE SOURCE OF TRUTH
 import { GENIE_PRODUCTS as CENTRAL_PRODUCTS } from '@/constants/genie-products';
@@ -219,8 +220,8 @@ export const SUBSCRIPTION_TIERS = {
   },
   starter: {
     name: 'Starter',
-    price_id: 'price_1SoD2hCEkh96ps4f9SU3pLVL',
-    product_id: 'prod_TlkXDVA4NXZrx6',
+    price_id: getTierPriceId('starter', 'monthly'),
+    product_id: getTierProductId('starter'),
     price: 9.99,
     billing: 'month',
     recommended: false,
@@ -248,8 +249,8 @@ export const SUBSCRIPTION_TIERS = {
   },
   business: {
     name: 'Business',
-    price_id: 'price_1SoD35CEkh96ps4f5bUVwLVm',
-    product_id: 'prod_TlkYpiRUnldeAk',
+    price_id: getTierPriceId('business', 'monthly'),
+    product_id: getTierProductId('business'),
     price: 29.99,
     billing: 'month',
     recommended: true,
@@ -280,8 +281,8 @@ export const SUBSCRIPTION_TIERS = {
   },
   pro: {
     name: 'Pro',
-    price_id: 'price_1SoD3QCEkh96ps4fI0kTG9oo',
-    product_id: 'prod_TlkYBT75Nu2vt5',
+    price_id: getTierPriceId('pro', 'monthly'),
+    product_id: getTierProductId('pro'),
     price: 79.99,
     billing: 'month',
     recommended: false,
