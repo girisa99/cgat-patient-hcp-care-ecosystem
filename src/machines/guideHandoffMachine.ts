@@ -197,7 +197,7 @@ export function getHandoffVariants(style: HandoffStyle) {
       y: config.exit.y?.[config.exit.y.length - 1] ?? 0,
       scale: config.exit.scale?.[config.exit.scale.length - 1] ?? 1,
       rotate: config.exit.rotate?.[config.exit.rotate.length - 1] ?? 0,
-      transition: { duration: config.exit.duration, ease: config.exit.ease },
+      transition: { duration: config.exit.duration, ease: config.exit.ease as any },
     },
     enterInitial: {
       opacity: config.enter.opacity[0],
@@ -212,7 +212,7 @@ export function getHandoffVariants(style: HandoffStyle) {
       y: config.enter.y?.[config.enter.y.length - 1] ?? 0,
       scale: config.enter.scale?.[config.enter.scale.length - 1] ?? 1,
       rotate: config.enter.rotate?.[config.enter.rotate.length - 1] ?? 0,
-      transition: { duration: config.enter.duration, ease: config.enter.ease, delay: config.enter.delay },
+      transition: { duration: config.enter.duration, ease: config.enter.ease as any, delay: config.enter.delay },
     },
     glowPulse: config.glowPulse,
     overlapMs: config.overlapMs,

@@ -1,13 +1,13 @@
 /**
  * GENIE CAST HUB — Redesigned 3-Column Liquid Glass Layout
  * 
- * Desktop: Left Modes Bar | Main Workspace | Guide Dock (Ori + Arc)
- * Mobile: Compact horizontal mode bar + full workspace + sticky bottom nav
+ * Full Cast UI Redesign:
+ * - Left Mode Bar: Sleek vertical nav with animated active indicator
+ * - Main Workspace: Content area with refined tab system
+ * - Guide Dock: Ori + Arc with handoff animations
  * 
- * Architecture:
- * - Zustand (useGuideStore) for global guide dock state
- * - StepWizard for CREATE sub-step navigation
- * - GuideDock for Ori + Arc character interactions
+ * Desktop: Left Modes Bar | Main Workspace | Guide Dock
+ * Mobile: Horizontal mode selector + workspace + bottom nav
  */
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -19,10 +19,10 @@ import { GuideDock } from '@/components/shared/GuideDock';
 import { useGuideStore, GUIDE_CHARACTERS, type CastMode } from '@/stores/guideStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Video, Share2, Film } from 'lucide-react';
+import { Sparkles, Video, Share2, Film, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Storage keys for persistence
+// Storage keys
 const STORAGE_KEY = 'genie_cast_hub_state';
 
 interface GenieCastHubState {
@@ -37,95 +37,135 @@ const defaultStyles: VideoStyleType[] = [
   'product_demo',
 ];
 
-/** Maps mode to consolidated tab key */
 const MODE_TO_TAB: Record<CastMode, ConsolidatedTab> = {
   create: 'create',
   produce: 'produce',
   publish: 'publish',
 };
 
-// ── Left Mode Bar ────────────────────────────────────────────────────────────
+// ── Mode Config ──────────────────────────────────────────────────────────────
 
-const MODES: { id: CastMode; label: string; icon: React.ReactNode }[] = [
-  { id: 'create', label: 'Create', icon: <Sparkles className="w-5 h-5" /> },
-  { id: 'produce', label: 'Produce', icon: <Video className="w-5 h-5" /> },
-  { id: 'publish', label: 'Publish', icon: <Share2 className="w-5 h-5" /> },
+const MODES: { id: CastMode; label: string; icon: React.ElementType; accent: string }[] = [
+  { id: 'create', label: 'Create', icon: Sparkles, accent: 'from-orange-500/20 to-amber-500/10' },
+  { id: 'produce', label: 'Produce', icon: Video, accent: 'from-blue-500/20 to-cyan-500/10' },
+  { id: 'publish', label: 'Publish', icon: Share2, accent: 'from-purple-500/20 to-violet-500/10' },
 ];
+
+// ── Left Mode Bar (Redesigned) ───────────────────────────────────────────────
 
 const LeftModeBar: React.FC<{
   activeMode: CastMode;
   onModeChange: (mode: CastMode) => void;
 }> = ({ activeMode, onModeChange }) => (
-  <div className="w-[72px] flex-shrink-0 flex flex-col items-center py-6 gap-2 rounded-2xl backdrop-blur-xl bg-white/[0.02] border border-white/[0.06]"
-    style={{
-      boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
-    }}
+  <div
+    className={cn(
+      'w-[76px] flex-shrink-0 flex flex-col items-center py-5 gap-1',
+      'rounded-2xl backdrop-blur-2xl',
+      'bg-background/80 border border-border/30',
+      'shadow-[0_4px_24px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.06)]',
+    )}
   >
-    {/* Logo */}
-    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center mb-4">
+    {/* Logo mark */}
+    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/15 flex items-center justify-center mb-5">
       <Film className="w-5 h-5 text-primary" />
     </div>
 
     {/* Mode buttons */}
-    {MODES.map((mode) => {
-      const isActive = activeMode === mode.id;
-      return (
-        <button
-          key={mode.id}
-          onClick={() => onModeChange(mode.id)}
-          className={cn(
-            'relative w-14 h-14 rounded-xl flex flex-col items-center justify-center gap-1 transition-all duration-300',
-            isActive
-              ? 'bg-white/[0.08] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]'
-              : 'text-muted-foreground hover:text-foreground/80 hover:bg-white/[0.04]',
-          )}
-        >
-          {mode.icon}
-          <span className="text-[10px] font-medium">{mode.label}</span>
-          
-          {/* Active indicator */}
-          {isActive && (
-            <motion.div
-              layoutId="activeModeBar"
-              className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb,99,102,241),0.5)]"
-              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-            />
-          )}
-        </button>
-      );
-    })}
+    <div className="flex flex-col gap-1 w-full px-2">
+      {MODES.map((mode) => {
+        const isActive = activeMode === mode.id;
+        const Icon = mode.icon;
+        return (
+          <button
+            key={mode.id}
+            onClick={() => onModeChange(mode.id)}
+            className={cn(
+              'relative w-full rounded-xl flex flex-col items-center justify-center gap-1 py-3.5 transition-all duration-300',
+              isActive
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground/80',
+            )}
+          >
+            {/* Active background glow */}
+            {isActive && (
+              <motion.div
+                layoutId="modeBarBg"
+                className={cn('absolute inset-0 rounded-xl bg-gradient-to-b', mode.accent)}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                style={{
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.08)',
+                }}
+              />
+            )}
+
+            {/* Active left indicator */}
+            {isActive && (
+              <motion.div
+                layoutId="modeBarIndicator"
+                className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-primary"
+                style={{ boxShadow: '0 0 10px hsl(var(--primary) / 0.5)' }}
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
+
+            <Icon className={cn('w-5 h-5 relative z-10', isActive && 'text-primary')} />
+            <span className={cn(
+              'text-[10px] font-semibold relative z-10 tracking-wide',
+              isActive && 'text-foreground',
+            )}>
+              {mode.label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+
+    {/* Spacer */}
+    <div className="flex-1" />
+
+    {/* Bottom separator */}
+    <div className="w-8 h-[1px] bg-border/20 mb-2" />
+    <div className="text-[9px] text-muted-foreground/40 font-mono tracking-widest">CAST</div>
   </div>
 );
 
-// ── Mobile Mode Selector ─────────────────────────────────────────────────────
+// ── Mobile Mode Selector (Redesigned) ────────────────────────────────────────
 
 const MobileModeSelector: React.FC<{
   activeMode: CastMode;
   onModeChange: (mode: CastMode) => void;
 }> = ({ activeMode, onModeChange }) => (
-  <div className="flex items-center gap-1 p-1 rounded-xl backdrop-blur-xl bg-white/[0.04] border border-white/[0.06]">
+  <div className="flex items-center gap-1 p-1.5 rounded-xl backdrop-blur-2xl bg-background/80 border border-border/30 shadow-sm">
     {MODES.map((mode) => {
       const isActive = activeMode === mode.id;
+      const Icon = mode.icon;
       return (
         <button
           key={mode.id}
           onClick={() => onModeChange(mode.id)}
           className={cn(
-            'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200',
+            'relative flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200',
             isActive
-              ? 'bg-white/[0.08] text-foreground shadow-sm'
+              ? 'text-foreground'
               : 'text-muted-foreground hover:text-foreground/80',
           )}
         >
-          {mode.icon}
-          {mode.label}
+          {isActive && (
+            <motion.div
+              layoutId="mobileModeBar"
+              className={cn('absolute inset-0 rounded-lg bg-gradient-to-r', mode.accent)}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <Icon className={cn('w-4 h-4 relative z-10', isActive && 'text-primary')} />
+          <span className="relative z-10">{mode.label}</span>
         </button>
       );
     })}
   </div>
 );
 
-// ── Main Hub ─────────────────────────────────────────────────────────────────
+// ── Main Hub (Redesigned) ────────────────────────────────────────────────────
 
 export const GenieCastHub: React.FC = () => {
   const isMounted = useRef(true);
@@ -154,7 +194,6 @@ export const GenieCastHub: React.FC = () => {
     0,
   );
 
-  // Persist state changes
   useEffect(() => {
     const state: GenieCastHubState = { selectedVideoStyles };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -165,7 +204,6 @@ export const GenieCastHub: React.FC = () => {
     return () => { isMounted.current = false; };
   }, []);
 
-  // Handlers
   const handleStylesChange = useCallback((styles: VideoStyleType[]) => {
     if (!isMounted.current) return;
     setSelectedVideoStyles(styles);
@@ -199,7 +237,6 @@ export const GenieCastHub: React.FC = () => {
     dispatch({ type: 'SWITCH_MODE', mode: newMode });
   }, [setMode, dispatch]);
 
-  // Sync mode to tab
   const activeTab = MODE_TO_TAB[mode];
 
   const handleMainTabChange = useCallback((tab: ConsolidatedTab) => {
@@ -212,11 +249,8 @@ export const GenieCastHub: React.FC = () => {
   // ── Mobile Layout ──────────────────────────────────────────────────────────
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full min-h-[calc(100vh-4rem)] gap-3">
-        {/* Mode selector */}
+      <div className="flex flex-col h-full min-h-[calc(100vh-4rem)] gap-3 p-3">
         <MobileModeSelector activeMode={mode} onModeChange={handleModeChange} />
-        
-        {/* Main workspace */}
         <div className="flex-1 min-h-0">
           <AnimatePresence mode="wait">
             <motion.div
@@ -224,7 +258,7 @@ export const GenieCastHub: React.FC = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
               className="h-full"
             >
               <GenieCastConsolidatedTabs
@@ -248,23 +282,27 @@ export const GenieCastHub: React.FC = () => {
 
   // ── Desktop 3-Column Layout ────────────────────────────────────────────────
   return (
-    <div className="flex h-full min-h-[calc(100vh-4rem)] gap-3">
+    <div className="flex h-full min-h-[calc(100vh-4rem)] gap-3 p-2">
       {/* Column 1: Left Mode Bar */}
       <LeftModeBar activeMode={mode} onModeChange={handleModeChange} />
 
       {/* Column 2: Main Workspace */}
-      <div className="flex-1 min-w-0 overflow-y-auto rounded-2xl backdrop-blur-xl bg-white/[0.01] border border-white/[0.04]"
+      <div
+        className={cn(
+          'flex-1 min-w-0 overflow-y-auto rounded-2xl',
+          'backdrop-blur-2xl bg-background/60 border border-border/20',
+        )}
         style={{
-          boxShadow: '0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.03)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.04)',
         }}
       >
         <AnimatePresence mode="wait">
           <motion.div
             key={mode}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25 }}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 8 }}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
             className="h-full"
           >
             <GenieCastConsolidatedTabs

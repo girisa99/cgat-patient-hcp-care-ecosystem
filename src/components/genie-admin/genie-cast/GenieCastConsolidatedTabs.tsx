@@ -747,43 +747,33 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   }, []);
 
   return (
-    <div className="space-y-4">
-      {/* Compact navigation bar - back to Genie Suite */}
-      <div className="flex items-center gap-3 mb-4 pb-3 border-b">
+    <div className="space-y-3 p-4">
+      {/* ── Redesigned Top Navigation Bar ── */}
+      <div className="flex items-center gap-2 pb-3 border-b border-border/20">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => window.location.href = '/genie-studio'}
-          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground h-8 px-2"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Genie Suite
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Suite
         </Button>
-        <Separator orientation="vertical" className="h-5" />
-        <div className="flex items-center gap-2">
+        <div className="w-[1px] h-4 bg-border/20" />
+        <div className="flex items-center gap-1.5">
           <Film className="w-4 h-4 text-primary" />
-          <span className="text-sm font-semibold">Genie Cast</span>
+          <span className="text-sm font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Genie Cast</span>
         </div>
-        <Separator orientation="vertical" className="h-5" />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => window.location.href = '/genie-admin?tab=subscriber-admin'}
-          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <Settings2 className="w-4 h-4" />
-          Admin
-        </Button>
-        <Separator orientation="vertical" className="h-5" />
+        <div className="w-[1px] h-4 bg-border/20" />
         <ProductSelector
           products={pool?.products || []}
           selectedProductId={castSession.session.selectedProductId}
           onProductChange={handleProductSelect}
           isLoading={isPoolLoading}
         />
-        <Separator orientation="vertical" className="h-5" />
+        <div className="w-[1px] h-4 bg-border/20" />
         <GlobalRegionSelector regions={genieCastRegions} />
-        <Separator orientation="vertical" className="h-5" />
+        <div className="w-[1px] h-4 bg-border/20" />
         <CastProjectDropdown
           projects={castProjects.projects}
           isLoading={castProjects.isLoading}
@@ -791,20 +781,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           onProjectSelect={async (project) => {
             const restored = await castProjects.restoreToSession(project.id);
             if (restored) {
-              // Ensure intent is set so the templates tab guard passes
               const intentValue = restored.selectedIntent || (project as any).content_type || 'video';
               castSession.updateSession({ ...restored, projectId: project.id, selectedIntent: intentValue });
               setActiveContentType((project as any).content_type || 'video');
-              
-              // Restore category/format/sub-format selections from DB
               if ((restored as any)._categoryId) setSelectedCategoryId((restored as any)._categoryId);
               if ((restored as any)._formatId) setSelectedFormatId((restored as any)._formatId);
               if ((restored as any)._subFormatId) setSelectedSubFormatId((restored as any)._subFormatId);
-              
-              // Navigate to templates tab so user can see the project content
               setActiveMainTab('create');
               setSubTab('create', 'templates');
-              // Load token breakdown for this project
               persistence.fetchTokenBreakdown(project.id);
               toast.success(`Loaded: ${project.title}`);
             }
@@ -820,14 +804,24 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           }}
           onContentTypeChange={setActiveContentType}
         />
+        
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => window.location.href = '/genie-admin?tab=subscriber-admin'}
+          className="gap-1 text-xs text-muted-foreground hover:text-foreground h-8 px-2"
+        >
+          <Settings2 className="w-3.5 h-3.5" />
+        </Button>
         <Button
           variant="outline"
           size="sm"
-          className="gap-1.5 text-xs font-medium border-primary/30 hover:bg-primary/10"
+          className="gap-1.5 text-xs font-medium border-primary/20 hover:bg-primary/10 h-8"
           onClick={async () => {
             const seed = createEP04SessionSeed();
-            
-            // Create a cast_project for token/cost tracking
             const { createCastProject } = await import('@/services/productionCostAccumulator');
             const projectId = await createCastProject({
               title: 'EP04 — Genie Reel Episode 2',
@@ -837,134 +831,109 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               quality: 'cinematic',
               metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
             });
-            
             castSession.updateSession({ ...seed, projectId });
             const stats = getEP04Stats();
             toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
-            if (projectId) {
-              toast.success(`📊 Project created — token tracking active`);
-            }
-
-            // ═══ MAP EP04 TO ALL 7 CREATE STEPS (local UI state) ═══
-            // Step 1: Category → Technology
+            if (projectId) toast.success(`📊 Project created — token tracking active`);
             const techCategory = contentRegistry.categories.find(c => c.name === 'technology');
             if (techCategory) setSelectedCategoryId(techCategory.id);
-            // Step 2: Format → Video
             const videoFormat = contentRegistry.formats.find(f => f.name === 'video');
             if (videoFormat) {
               setSelectedFormatId(videoFormat.id);
               setActiveContentType(videoFormat.name);
             }
-            // Step 4: Platform → YouTube, Language → en-US
             setPrimaryPlatform('youtube');
             setOutputLanguages(['en']);
             setSelectedDialectCodes(['en-US']);
-            // Step 5: Visual Style → Cinematic
             const cinematicStyle = contentRegistry.visualStyles.find(s => s.name === 'cinematic');
             if (cinematicStyle) setSelectedVisualStyleIds([cinematicStyle.id]);
-            // Step 5: Capabilities → avatar, lip_sync, scene_voiceover, screen_recording
             const ep04Caps = ['avatar_talking_head', 'lip_sync', 'scene_voiceover', 'screen_recording', 'text_to_video'];
             const matchedCapIds = contentRegistry.productionCapabilities
               .filter(c => ep04Caps.includes(c.name))
               .map(c => c.id);
             if (matchedCapIds.length > 0) setSelectedCapabilityIds(matchedCapIds);
-            // Step 5: Asset Source → screen_capture (EP04 uses dashboard screenshots)
             setSelectedAssetSource('screen_capture');
-            // Step 5: Lip-sync ON, Dubbing OFF (single language)
             setLipSyncEnabled(true);
             setDubbingEnabled(false);
-            // Resolution & Quality
             setSelectedResolution('1920x1080');
             setSelectedAspectRatio('16:9');
             setProductionQuality('cinematic');
-
-            // Step D: Resolve screen capture assets from storage
             if (seed.templateMapping) {
               const { mapping, stats: screenStats } = await enrichWithScreenAssets(seed.templateMapping);
               castSession.updateSession({ templateMapping: mapping });
-              if (screenStats.found > 0) {
-                toast.success(`📸 ${screenStats.found}/${screenStats.total} screenshots resolved`);
-              }
-              if (screenStats.missing.length > 0) {
-                toast.info(`⚠️ ${screenStats.missing.length} screenshots pending capture`, { description: screenStats.missing.slice(0, 3).join(', ') + (screenStats.missing.length > 3 ? '...' : '') });
-              }
+              if (screenStats.found > 0) toast.success(`📸 ${screenStats.found}/${screenStats.total} screenshots resolved`);
+              if (screenStats.missing.length > 0) toast.info(`⚠️ ${screenStats.missing.length} screenshots pending capture`, { description: screenStats.missing.slice(0, 3).join(', ') + (screenStats.missing.length > 3 ? '...' : '') });
             }
-
-            // Navigate to CREATE → configure to show all pre-populated steps
             setActiveMainTab('create');
             setSubTab('create', 'configure');
           }}
         >
           <Film className="w-3.5 h-3.5" />
-          Load EP04
+          EP04
         </Button>
       </div>
 
-      {/* Main 3-Tab Navigation — hidden in wizard mode (sidebar handles it) */}
+      {/* ── Main 3-Tab Navigation (Redesigned) ── */}
       <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as ConsolidatedTab)}>
         {!wizardMode && (
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1.5 bg-card border rounded-lg shadow-sm">
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/30 border border-border/20 rounded-xl backdrop-blur-xl">
           {(Object.entries(TAB_DEFINITIONS) as [ConsolidatedTab, typeof TAB_DEFINITIONS.create][]).map(([key, def]) => (
             <TabsTrigger 
               key={key}
               value={key}
               className={cn(
-                "flex flex-col items-center gap-1 py-3 px-2 transition-all rounded-md",
-                "text-foreground font-semibold",
-                "data-[state=active]:shadow-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
-                "data-[state=inactive]:bg-transparent data-[state=inactive]:hover:bg-muted/50"
+                "relative flex items-center justify-center gap-2 py-2.5 px-3 transition-all rounded-lg",
+                "text-sm font-semibold",
+                "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/30",
+                "data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground/70",
               )}
             >
-              <def.icon className="w-5 h-5" />
+              <def.icon className="w-4 h-4" />
               <span className="text-xs font-bold tracking-wide">{def.label}</span>
-              <span className="text-[10px] opacity-70 hidden sm:block">{def.description}</span>
             </TabsTrigger>
           ))}
         </TabsList>
         )}
 
-        {/* Workflow Context Banner - Only show on PRODUCE/PUBLISH (CREATE uses guided wizard instead) */}
+        {/* Workflow Context Banner */}
         {activeMainTab !== 'create' && (
           <WorkflowContextBanner
             session={castSession.session}
             currentSubTab={currentSubTab}
             onNavigate={handleBannerNavigate}
             onResetSession={castSession.resetSession}
-            className="mt-4"
+            className="mt-3"
           />
         )}
 
-        {/* Sub-Tab Navigation — GUIDED for CREATE (no tabs shown), normal for PRODUCE/PUBLISH */}
+        {/* ── Sub-Tab Navigation (Redesigned pill buttons) ── */}
         {activeMainTab !== 'create' && (
-          <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
+          <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1">
             {currentMainDef.subTabs.map((sub) => {
               const isActive = currentSubTab === sub.id;
               return (
-                <Button
+                <button
                   key={sub.id}
-                  variant="outline"
-                  size="sm"
                   className={cn(
-                    "flex-shrink-0 gap-1.5 text-xs font-medium",
-                    isActive 
-                      ? currentMainDef.activeColor 
-                      : currentMainDef.inactiveColor
+                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-transparent",
                   )}
                   onClick={() => setSubTab(activeMainTab, sub.id)}
                 >
                   <sub.icon className="w-3.5 h-3.5" />
                   {sub.label}
-                </Button>
+                </button>
               );
             })}
             
             {/* Pipeline indicator */}
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="ml-auto flex items-center gap-2 text-[10px] text-muted-foreground/60 pl-3">
               <span className="font-medium">{activePipelines.length} active</span>
               {inactivePipelines.length > 0 && (
-                <Badge variant="outline" className="text-[10px]">
-                  +{inactivePipelines.length} available
+                <Badge variant="outline" className="text-[9px] h-4 border-border/20">
+                  +{inactivePipelines.length}
                 </Badge>
               )}
             </div>
