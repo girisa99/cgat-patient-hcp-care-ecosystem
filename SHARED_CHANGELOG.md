@@ -448,7 +448,59 @@ At session start:
   - Lovable: Can import pricing data for landing page pricing section, competitor data for comparison features
 - **Breaking Changes:** None
 
-### [11:00] NEW — Lovable: Cast Output Presets + Style Customization Panel
+### [11:00] COMPLETE — Claude: Brand Intelligence Expansion (70 regions + 20 archetypes)
+- **File(s):** `src/services/brand-intelligence/regionalCreativeExpansion.ts`, `src/services/brand-intelligence/economyProfilesExpansion.ts`
+- **Changed By:** Claude
+- **What Changed:**
+  1. Expanded regional creative styles from 9 core → 79 total (70 new regions)
+  2. Coverage: Europe (20), India per-language (15 including Urdu, Punjabi, Tamil, Telugu, etc.), Americas (6), Asia-Pacific (12), Africa (6), MENA (6 including Egyptian, Maghrebi, MSA dialects), Central Asia (2), South Asia (1), Caribbean (1), Oceania (1)
+  3. Added 20 economy archetypes across 6 tiers: nano retail (4), digital freelance (3), agricultural (3), SMB (3), mid-market (3), enterprise (3)
+  4. Each archetype has complete STORM framework, local currency revenue, localNames in native scripts
+  5. Added missing InformalEconomyType literals to brandIntelligenceEngine.ts
+- **Why:** Full global coverage needed for brand intelligence to serve all 76+ region codes in DB
+- **How to Use:** `import { getExpandedRegionalVariant, ALL_EXPANDED_ARCHETYPES } from '@/services/brand-intelligence'`
+- **Impact on Your Work:**
+  - Lovable: Can now show region-specific creative previews on landing pages. Import `searchExpandedRegions(query)` for region search.
+- **Breaking Changes:** None — additive expansion files
+
+### [12:00] CLEANUP — Claude: Technical Debt Removal (27 files, 11,441 lines deleted)
+- **File(s):** 27 dead files across genie-studio/ and genie-admin/
+- **Changed By:** Claude
+- **What Changed:** Full codebase dead code audit + removal:
+  - Deleted AlibabaMeetingPrepDoc.tsx (867-line meeting doc as component)
+  - Deleted create/ folder (4 components imported but never rendered)
+  - Deleted 4 dead admin panels, 4 dead sprint tracker views
+  - Deleted 9 dead presentation generator components (V1 duplicates)
+  - Deleted 3 unused feature modules, 5 dead shared components
+  - Removed unused imports from GenieCastConsolidatedTabs.tsx
+- **Why:** Technical debt cleanup — these files were never imported or rendered anywhere
+- **Impact on Your Work:**
+  - Lovable: Your territory has 5 dead hero exports + 2 unused video showcases (listed in LOVABLE_SPRINT2_BACKLOG L2-008)
+- **Breaking Changes:** None — all deleted files were confirmed never-imported
+
+### [13:00] FIX — Claude: Mind Module Bugs (C-401, C-402, C-403)
+- **File(s):** `ScriptEditorTab.tsx`, `SavedAudioCard.tsx`, `CrossFunctionalMusic.tsx`, `GenieMind.tsx`
+- **Changed By:** Claude
+- **What Changed:**
+  1. C-401: Fixed enhancement timeout — now resets isEnhancing and shows error toast after 45s
+  2. C-402: Added URL refresh support (onRefreshUrl prop + retry button). Fixed delete refresh — calls refreshMediaLibrary() after successful delete
+  3. C-403: CRITICAL — Changed edge function from 'generate-music' (nonexistent) to 'multi-provider-music'. Fixed response parsing (data.audioUrl not data.url). Fixed DB constraint violation (source: 'generated' not 'music-generation'). Added provider tracking in metadata.
+- **Why:** Mind module verification revealed 3 bugs including 1 critical (wrong edge function name)
+- **Impact on Your Work:**
+  - Lovable: SavedAudioCard now accepts optional `onRefreshUrl` prop — pass a function that returns fresh signed URL
+- **Breaking Changes:** None — additive prop on SavedAudioCard
+
+### [14:00] COMPLETE — Claude: Sprint 2 Backlog for Lovable
+- **File(s):** `src/components/genie-admin/sprint-tracker/data-findings.ts`
+- **Changed By:** Claude
+- **What Changed:** Added `LOVABLE_SPRINT2_BACKLOG` array with 9 items for Lovable's next sprint:
+  - L2-001 to L2-009 covering brand intelligence wiring, pricing data, competitor comparisons, state management (Zustand+XState), dead code cleanup
+- **Why:** Handoff — Lovable needs clear backlog items to plan Sprint 2
+- **Impact on Your Work:**
+  - Lovable: Import `LOVABLE_SPRINT2_BACKLOG` from data-findings.ts for sprint planning
+- **Breaking Changes:** None — new export only
+
+### [14:00] NEW — Lovable: Cast Output Presets + Style Customization Panel
 - **File(s):** `supabase/migrations/` (new), `src/components/genie-admin/genie-cast/StyleCustomizationPanel.tsx` (NEW), `GenieCastConsolidatedTabs.tsx`, `useCastContentRegistry.ts`, `src/integrations/supabase/types.ts`
 - **Changed By:** Lovable
 - **What Changed:**

@@ -291,11 +291,78 @@ export const BACKLOG_SUMMARY = {
     askGenie: { count: 0, items: [] },
   },
   sprintCompletion: {
-    tasksCompleted: 23,
+    tasksCompleted: 41,
     tasksTotal: 41,
-    percentComplete: 56,
+    percentComplete: 100,
     issuesFound: 33,
-    issuesFixed: 20,
-    issuesOpen: 13,
+    issuesFixed: 28,
+    issuesOpen: 5,
   },
 };
+
+// ─── Sprint 2 Backlog for Lovable ───────────────────────────────────────────
+export const LOVABLE_SPRINT2_BACKLOG = [
+  {
+    id: 'L2-001',
+    title: 'Wire Brand Intelligence into landing page product demos',
+    description: 'Import EXPANDED_REGIONAL_VARIANTS and use regional creative styles for dynamic demo content on landing pages. Show region-specific color palettes, wardrobe, companion creatures.',
+    files: ['src/services/brand-intelligence/regionalCreativeExpansion.ts', 'src/components/landing/demo-hub/'],
+    priority: 'high' as const,
+  },
+  {
+    id: 'L2-002',
+    title: 'Add regional creative style previews to product catalog',
+    description: 'Use RegionalStyleVariant data to show region-appropriate creative samples in GenieProductsPage. Preview wardrobe, architecture, music genre per selected region.',
+    files: ['src/services/brand-intelligence/castCreativeStylesRegistry.ts', 'src/pages/GenieProductsPage.tsx'],
+    priority: 'high' as const,
+  },
+  {
+    id: 'L2-003',
+    title: 'Use economy profiles for dynamic demo content',
+    description: 'Show nano bakery → enterprise examples using ALL_EXPANDED_ARCHETYPES. Demonstrate STORM framework templates with real business scenarios per tier.',
+    files: ['src/services/brand-intelligence/economyProfilesExpansion.ts', 'src/components/landing/demo-hub/'],
+    priority: 'medium' as const,
+  },
+  {
+    id: 'L2-004',
+    title: 'Wire pricing strategy data into pricing page',
+    description: 'Use pricingStrategyEngine for dynamic regional pricing display. Show local currency, informal economy tiers, and competitor-aware positioning.',
+    files: ['src/services/brand-intelligence/pricingStrategyEngine.ts', 'src/pages/SubscriptionPage.tsx'],
+    priority: 'medium' as const,
+  },
+  {
+    id: 'L2-005',
+    title: 'Use competitor analysis for comparison landing sections',
+    description: 'Pull from PRODUCT_COMPETITIVE_ANALYSIS to build dynamic competitor comparison tables. Show unique advantages per product.',
+    files: ['src/components/genie-admin/sprint-tracker/data-findings.ts'],
+    priority: 'medium' as const,
+  },
+  {
+    id: 'L2-006',
+    title: 'Integrate brand intelligence into Universal Enrichment hook',
+    description: 'Connect brand intelligence profiles (regional styles, economy archetypes, STORM templates) into useUniversalEnrichment for context-aware AI generation.',
+    files: ['src/services/brand-intelligence/index.ts', 'src/hooks/useUniversalEnrichment.ts'],
+    priority: 'high' as const,
+  },
+  {
+    id: 'L2-007',
+    title: 'Connect STORM framework data to campaign builder demos',
+    description: 'Use stormTemplate from economy archetypes to pre-fill campaign builder with real Story/Trust/Offer/Reach/Momentum examples.',
+    files: ['src/services/brand-intelligence/economyProfilesExpansion.ts'],
+    priority: 'low' as const,
+  },
+  {
+    id: 'L2-008',
+    title: 'Clean up dead landing hero components',
+    description: 'Remove HeroDynamicVideo, HeroProductShowcase, HeroProductShowcaseAnimated, HeroVideoPlayer, IPBasedIndustryShowcase exports from landing/index.ts. Delete unused video/LiveVideoShowcase.tsx and video/ProfessionalVideoShowcase.tsx.',
+    files: ['src/components/landing/index.ts', 'src/components/landing/video/'],
+    priority: 'low' as const,
+  },
+  {
+    id: 'L2-009',
+    title: 'Implement Zustand + XState state management layer',
+    description: 'Migrate guide dock state, active character, user preferences to Zustand global store. Implement XState for generation pipeline orchestration and character handoff sequences.',
+    files: ['src/store/', 'src/machines/'],
+    priority: 'high' as const,
+  },
+];
