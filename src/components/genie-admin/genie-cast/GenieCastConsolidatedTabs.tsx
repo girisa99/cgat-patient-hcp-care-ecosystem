@@ -326,6 +326,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   // Platform + Languages
   const [primaryPlatform, setPrimaryPlatform] = useState<string>('youtube');
   const [outputLanguages, setOutputLanguages] = useState<string[]>(['en']);
+  const [dubbingSubtitleLanguages, setDubbingSubtitleLanguages] = useState<string[]>(['en']);
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
 
@@ -563,6 +564,144 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     if (caps.animation) return 'motion_graphics';
     return undefined;
   }, [castSession.session.selectedTemplate?.capabilities]);
+
+  // ─── Reusable region hierarchy selector for Script / Dubbing splits ───
+  const renderRegionHierarchySelector = useCallback((
+    selected: string[],
+    setSelected: React.Dispatch<React.SetStateAction<string[]>>,
+    variant: 'script' | 'dubbing'
+  ) => {
+    const triggerLabel = selected.length === 0
+      ? `Select ${variant === 'script' ? 'script' : 'dubbing/subtitle'} languages…`
+      : `${selected.length} language${selected.length > 1 ? 's' : ''} selected`;
+
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs font-normal">
+            <span className="truncate">{triggerLabel}</span>
+            <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[420px] p-0 z-50 bg-popover" align="start">
+          <ScrollArea className="h-[360px]">
+            <div className="p-2 space-y-1">
+              {/* Selected summary */}
+              {selected.length > 0 && (
+                <div className="flex flex-wrap gap-1 pb-2 border-b border-border mb-2">
+                  {selected.map(code => (
+                    <Badge key={code} variant="default" className="text-[10px] gap-1 cursor-pointer" onClick={() => setSelected(prev => prev.filter(l => l !== code))}>
+                      {code.toUpperCase()} ×
+                    </Badge>
+                  ))}
+                  <Badge variant="outline" className="text-[10px] cursor-pointer text-destructive" onClick={() => setSelected([])}>
+                    Clear all ×
+                  </Badge>
+                </div>
+              )}
+
+              {/* Region hierarchy */}
+              {REGION_HIERARCHY.map(group => {
+                const zone = getZoneFromRegion(group.groupCode);
+                const zd = ZONE_PROVIDER_DISPLAY[zone] || ZONE_PROVIDER_DISPLAY.fallback;
+                const provLabel = variant === 'script'
+                  ? `${zd.llmModel} · ${zd.translationProvider === 'deepl' ? 'DeepL' : zd.translationProvider === 'qwen_mt' ? 'Qwen-MT' : zd.translationProvider === 'azure_translator' ? 'Azure Translator' : 'Google Translate'}`
+                  : `${zd.ttsProvider === 'alibaba_qwen3_tts' ? 'Qwen3-TTS' : zd.ttsProvider === 'azure' ? 'Azure Neural' : zd.ttsProvider} · ${zd.translationProvider === 'deepl' ? 'DeepL' : zd.translationProvider === 'qwen_mt' ? 'Qwen-MT' : zd.translationProvider === 'azure_translator' ? 'Azure Translator' : 'Google Translate'}`;
+
+                const groupLeafCodes: string[] = group.children.flatMap(c =>
+                  c.children && c.children.length > 0 ? c.children.map(gc => gc.code) : [c.code]
+                );
+                const allSel = groupLeafCodes.length > 0 && groupLeafCodes.every(c => selected.includes(c));
+                const someSel = groupLeafCodes.some(c => selected.includes(c));
+
+                return (
+                  <div key={group.groupCode} className="mb-1">
+                    <button
+                      type="button"
+                      className={cn(
+                        "w-full flex items-center gap-1.5 px-2 py-1 rounded text-left text-[11px] font-semibold transition-colors",
+                        allSel ? "bg-primary/10 text-primary" : someSel ? "bg-muted" : "hover:bg-muted/50"
+                      )}
+                      onClick={() => {
+                        setSelected(prev => allSel
+                          ? prev.filter(c => !groupLeafCodes.includes(c))
+                          : [...new Set([...prev, ...groupLeafCodes])]
+                        );
+                      }}
+                    >
+                      <span>{group.groupFlag}</span>
+                      <span className="flex-1">{group.groupName}</span>
+                      <span className="text-[9px] text-muted-foreground font-normal truncate max-w-[160px]">{provLabel}</span>
+                      <span className="text-[9px] text-muted-foreground font-mono">
+                        {groupLeafCodes.filter(c => selected.includes(c)).length}/{groupLeafCodes.length}
+                      </span>
+                    </button>
+
+                    <div className="ml-3 mt-0.5 space-y-0.5">
+                      {group.children.map(zoneItem => {
+                        if (zoneItem.children && zoneItem.children.length > 0) {
+                          const zoneCodes = zoneItem.children.map(gc => gc.code);
+                          const zAllSel = zoneCodes.every(c => selected.includes(c));
+                          const zSomeSel = zoneCodes.some(c => selected.includes(c));
+                          return (
+                            <div key={zoneItem.code}>
+                              <button
+                                type="button"
+                                className={cn(
+                                  "w-full flex items-center gap-1.5 px-2 py-0.5 rounded text-left text-[10px] transition-colors",
+                                  zAllSel ? "bg-primary/5 font-medium" : zSomeSel ? "bg-muted/40" : "hover:bg-muted/30"
+                                )}
+                                onClick={() => {
+                                  setSelected(prev => zAllSel
+                                    ? prev.filter(c => !zoneCodes.includes(c))
+                                    : [...new Set([...prev, ...zoneCodes])]
+                                  );
+                                }}
+                              >
+                                <span>{zoneItem.flag}</span>
+                                <span className="flex-1">{zoneItem.name}</span>
+                                <span className="text-[9px] text-muted-foreground font-mono">{zoneCodes.filter(c => selected.includes(c)).length}/{zoneCodes.length}</span>
+                              </button>
+                              <div className="ml-4 flex flex-wrap gap-1 py-0.5">
+                                {zoneItem.children.map(leaf => (
+                                  <Badge
+                                    key={leaf.code}
+                                    variant={selected.includes(leaf.code) ? 'default' : 'outline'}
+                                    className="text-[9px] cursor-pointer transition-colors"
+                                    onClick={() => setSelected(prev =>
+                                      prev.includes(leaf.code) ? prev.filter(l => l !== leaf.code) : [...prev, leaf.code]
+                                    )}
+                                  >
+                                    {leaf.flag} {leaf.name.split('(')[0].trim()}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <Badge
+                            key={zoneItem.code}
+                            variant={selected.includes(zoneItem.code) ? 'default' : 'outline'}
+                            className="text-[9px] cursor-pointer transition-colors mr-1 mb-0.5"
+                            onClick={() => setSelected(prev =>
+                              prev.includes(zoneItem.code) ? prev.filter(l => l !== zoneItem.code) : [...prev, zoneItem.code]
+                            )}
+                          >
+                            {zoneItem.flag} {zoneItem.name.split('(')[0].trim()}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </PopoverContent>
+      </Popover>
+    );
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -1052,148 +1191,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       </div>
                     </div>
 
-                    {/* Output Languages — Script, Dubbing & Subtitles (Transcreation + TTS per routing zone) */}
+                    {/* ── Script Transcreation Languages ── */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Output Languages — Script, Dubbing & Subtitles <span className="text-muted-foreground">(Transcreation per routing zone)</span></Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs font-normal">
-                            <span className="truncate">
-                              {outputLanguages.length === 0
-                                ? 'Select output languages…'
-                                : `${outputLanguages.length} language${outputLanguages.length > 1 ? 's' : ''} selected`}
-                            </span>
-                            <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[420px] p-0 z-50 bg-popover" align="start">
-                          <ScrollArea className="h-[380px]">
-                            <div className="p-2 space-y-1">
-                              {/* Selected summary */}
-                              {outputLanguages.length > 0 && (
-                                <div className="flex flex-wrap gap-1 pb-2 border-b border-border mb-2">
-                                  {outputLanguages.map(code => (
-                                    <Badge key={code} variant="default" className="text-[10px] gap-1 cursor-pointer" onClick={() => setOutputLanguages(prev => prev.filter(l => l !== code))}>
-                                      {code.toUpperCase()} ×
-                                    </Badge>
-                                  ))}
-                                  <Badge variant="outline" className="text-[10px] cursor-pointer text-destructive" onClick={() => setOutputLanguages([])}>
-                                    Clear all ×
-                                  </Badge>
-                                </div>
-                              )}
+                      <Label className="text-xs">📝 Script Transcreation Languages <span className="text-muted-foreground">(LLM transcreation per zone)</span></Label>
+                      {renderRegionHierarchySelector(outputLanguages, setOutputLanguages, 'script')}
+                    </div>
 
-                              {/* Hierarchical region list from REGION_HIERARCHY with routing providers */}
-                              {REGION_HIERARCHY.map(group => {
-                                // Get actual providers from routing registry
-                                const zone = getZoneFromRegion(group.groupCode);
-                                const zoneDisplay = ZONE_PROVIDER_DISPLAY[zone] || ZONE_PROVIDER_DISPLAY.fallback;
-                                const providerLabel = `${zoneDisplay.llmModel} · ${zoneDisplay.ttsProvider === 'alibaba_qwen3_tts' ? 'Qwen3-TTS' : zoneDisplay.ttsProvider === 'azure' ? 'Azure Neural' : zoneDisplay.ttsProvider} · ${zoneDisplay.translationProvider === 'deepl' ? 'DeepL' : zoneDisplay.translationProvider === 'qwen_mt' ? 'Qwen-MT' : zoneDisplay.translationProvider === 'azure_translator' ? 'Azure Translator' : 'Google Translate'}`;
-
-                                // Collect all leaf codes for this group
-                                const groupLeafCodes: string[] = group.children.flatMap(c =>
-                                  c.children && c.children.length > 0
-                                    ? c.children.map(gc => gc.code)
-                                    : [c.code]
-                                );
-                                const allSelected = groupLeafCodes.length > 0 && groupLeafCodes.every(c => outputLanguages.includes(c));
-                                const someSelected = groupLeafCodes.some(c => outputLanguages.includes(c));
-
-                                return (
-                                  <div key={group.groupCode} className="mb-1">
-                                    {/* Parent region header — click to select/deselect all */}
-                                    <button
-                                      type="button"
-                                      className={cn(
-                                        "w-full flex items-center gap-1.5 px-2 py-1 rounded text-left text-[11px] font-semibold transition-colors",
-                                        allSelected ? "bg-primary/10 text-primary" : someSelected ? "bg-muted" : "hover:bg-muted/50"
-                                      )}
-                                      onClick={() => {
-                                        setOutputLanguages(prev => {
-                                          if (allSelected) return prev.filter(c => !groupLeafCodes.includes(c));
-                                          return [...new Set([...prev, ...groupLeafCodes])];
-                                        });
-                                      }}
-                                    >
-                                      <span>{group.groupFlag}</span>
-                                      <span className="flex-1">{group.groupName}</span>
-                                      <span className="text-[9px] text-muted-foreground font-normal truncate max-w-[180px]">{providerLabel}</span>
-                                      <span className="text-[9px] text-muted-foreground font-mono">
-                                        {groupLeafCodes.filter(c => outputLanguages.includes(c)).length}/{groupLeafCodes.length}
-                                      </span>
-                                    </button>
-
-                                    {/* Children: zones and leaves */}
-                                    <div className="ml-3 mt-0.5 space-y-0.5">
-                                      {group.children.map(zone => {
-                                        if (zone.children && zone.children.length > 0) {
-                                          // Zone with grandchildren
-                                          const zoneCodes = zone.children.map(gc => gc.code);
-                                          const zoneAllSel = zoneCodes.every(c => outputLanguages.includes(c));
-                                          const zoneSomeSel = zoneCodes.some(c => outputLanguages.includes(c));
-                                          return (
-                                            <div key={zone.code}>
-                                              <button
-                                                type="button"
-                                                className={cn(
-                                                  "w-full flex items-center gap-1.5 px-2 py-0.5 rounded text-left text-[10px] transition-colors",
-                                                  zoneAllSel ? "bg-primary/5 font-medium" : zoneSomeSel ? "bg-muted/40" : "hover:bg-muted/30"
-                                                )}
-                                                onClick={() => {
-                                                  setOutputLanguages(prev => {
-                                                    if (zoneAllSel) return prev.filter(c => !zoneCodes.includes(c));
-                                                    return [...new Set([...prev, ...zoneCodes])];
-                                                  });
-                                                }}
-                                              >
-                                                <span>{zone.flag}</span>
-                                                <span className="flex-1">{zone.name}</span>
-                                                <span className="text-[9px] text-muted-foreground font-mono">{zoneCodes.filter(c => outputLanguages.includes(c)).length}/{zoneCodes.length}</span>
-                                              </button>
-                                              {/* Grandchildren (leaf nodes) */}
-                                              <div className="ml-4 flex flex-wrap gap-1 py-0.5">
-                                                {zone.children.map(leaf => (
-                                                  <Badge
-                                                    key={leaf.code}
-                                                    variant={outputLanguages.includes(leaf.code) ? 'default' : 'outline'}
-                                                    className="text-[9px] cursor-pointer transition-colors"
-                                                    onClick={() => setOutputLanguages(prev =>
-                                                      prev.includes(leaf.code)
-                                                        ? prev.filter(l => l !== leaf.code)
-                                                        : [...prev, leaf.code]
-                                                    )}
-                                                  >
-                                                    {leaf.flag} {leaf.name.split('(')[0].trim()}
-                                                  </Badge>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          );
-                                        }
-                                        // Flat leaf node
-                                        return (
-                                          <Badge
-                                            key={zone.code}
-                                            variant={outputLanguages.includes(zone.code) ? 'default' : 'outline'}
-                                            className="text-[9px] cursor-pointer transition-colors mr-1 mb-0.5"
-                                            onClick={() => setOutputLanguages(prev =>
-                                              prev.includes(zone.code)
-                                                ? prev.filter(l => l !== zone.code)
-                                                : [...prev, zone.code]
-                                            )}
-                                          >
-                                            {zone.flag} {zone.name.split('(')[0].trim()}
-                                          </Badge>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </ScrollArea>
-                        </PopoverContent>
-                      </Popover>
+                    {/* ── Dubbing & Subtitle Languages ── */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">🎙️ Dubbing & Subtitle Languages <span className="text-muted-foreground">(TTS + subtitles per zone)</span></Label>
+                      {renderRegionHierarchySelector(dubbingSubtitleLanguages, setDubbingSubtitleLanguages, 'dubbing')}
                     </div>
                   </CardContent>
                 </Card>
