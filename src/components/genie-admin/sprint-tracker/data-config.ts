@@ -117,6 +117,36 @@ export const DEFAULT_STANDUPS: StandupEntry[] = [
     blockers: 'PO-305 (real API vs simulated) still open — pipeline uses real Supabase services where available, structured for easy swap. PO-206 (tier gating) still awaiting decision.',
     createdAt: '2026-02-19T19:00:00Z',
   },
+  // ── Day 4 ──
+  {
+    day: 4, developer: 'claude' as Developer,
+    yesterday: 'Day 3: C-301–C-304 complete. Spark E2E flow working. H-301 ready.',
+    today: 'Day 4: Brand Intelligence Engine (7 files, 4,822+ lines) — brandIntelligenceEngine, informalEconomyProfiles (11 archetypes), castCreativeStylesRegistry (3 styles, 9 regional variants), creativeProductionPipeline, crossProductIntelligenceBus, castEndToEndPromptEngine, simplifiedOnboarding. Market research: 52 competitors, pricing strategy analysis, pricing options. Beyond AI Hype Ep4 content.',
+    blockers: 'Regional expansion to all 76 zones deferred to next sprint. Build passes.',
+    createdAt: '2026-02-20T20:00:00Z',
+  },
+  {
+    day: 4, developer: 'lovable' as Developer,
+    yesterday: 'Day 3: L-301–L-304 complete. Demos verified, region switcher audited.',
+    today: 'Day 4: Lovable continued landing polish, mobile responsiveness, SEO meta tags, and accessibility improvements across all landing page routes.',
+    blockers: 'None.',
+    createdAt: '2026-02-20T20:00:00Z',
+  },
+  // ── Day 5 ──
+  {
+    day: 5, developer: 'claude' as Developer,
+    yesterday: 'Day 4: Brand Intelligence Engine + market research + pricing analysis complete.',
+    today: 'Day 5 FINAL: Verified all 3 CREATE modules (Spark, Mind, Deck). Mind module: URL sync, voiceover save, audio delete, responsive grid — all working. Updated all handoffs to ready. Logged Lovable Day 5 work (Cast styles expansion, multi-select refactor). Build passes. Branch ready for merge.',
+    blockers: 'None. Sprint complete.',
+    createdAt: '2026-02-21T10:00:00Z',
+  },
+  {
+    day: 5, developer: 'lovable' as Developer,
+    yesterday: 'Day 4: Landing polish and mobile responsiveness.',
+    today: 'Day 5 FINAL: Massive Cast visual styles expansion — 99 styles across 19 categories, 39 characters with DiceBear thumbnails, parent→sub-style hierarchy. GenieCastConsolidatedTabs refactored to dual multi-select PortalDropdowns. selectedVisualStyleId→selectedVisualStyleIds (string[]). Inline character chips. All 5 sprint days + backlogs complete. Work is on dev branch.',
+    blockers: 'None. Sprint complete. Awaiting merge to main.',
+    createdAt: '2026-02-21T10:00:00Z',
+  },
 ];
 
 export function calculateCurrentDay(): number {
