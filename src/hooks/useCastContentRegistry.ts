@@ -64,7 +64,9 @@ export interface VisualStyle {
   id: string;
   name: string;
   label: string;
+  category: string;
   icon: string;
+  color: string | null;
   description: string | null;
   ip_safe: boolean;
   sort_order: number;
