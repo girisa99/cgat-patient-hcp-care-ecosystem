@@ -86,6 +86,8 @@ export interface StyleCharacter {
   character_type: string;
   icon: string;
   description: string | null;
+  thumbnail_url: string | null;
+  costume_variants: { holiday_id: string; costume_url: string; label: string }[];
   sort_order: number;
   is_active: boolean;
 }
