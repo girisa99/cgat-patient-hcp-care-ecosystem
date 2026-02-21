@@ -7,9 +7,12 @@
  * NOW REGIONALIZED: Messages are pulled from guideMessageCatalog.ts
  * using the same regional-routing-registry hierarchy (82+ regions).
  * 
+ * HANDOFF MACHINE: Character transitions now route through the XState-compatible
+ * handoff state machine for contextual motion (crossfade, tag-team, split-morph, instant).
+ * 
  * Architecture:
  *   Zustand → global state (guide dock, character, preferences)
- *   XState  → orchestration (generation pipeline, character handoffs) — added later
+ *   Handoff Machine → orchestrated character transitions with motion variants
  *   useReducer → isolated component forms
  */
 
@@ -21,6 +24,14 @@ import {
   type RegionalGuideContext,
   type GuideMessageKey,
 } from '@/config/guideMessageCatalog';
+import {
+  type HandoffContext,
+  type HandoffStyle,
+  type HandoffTrigger,
+  INITIAL_HANDOFF_CONTEXT,
+  handoffTransition,
+  resolveHandoffStyle,
+} from '@/machines/guideHandoffMachine';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -135,6 +146,9 @@ interface GuideState {
   seenOnboarding: boolean;
   voiceEnabled: boolean;
 
+  // Handoff machine state — drives character transition animations
+  handoff: HandoffContext;
+
   // Actions
   dispatch: (signal: ContextSignal) => void;
   setMode: (mode: CastMode) => void;
@@ -171,6 +185,37 @@ function msg(key: GuideMessageKey, lang: string): string {
   return getGuideMessage(key, lang);
 }
 
+/** Map context signal to handoff trigger for motion style resolution */
+function signalToTrigger(signal: ContextSignal): HandoffTrigger {
+  switch (signal.type) {
+    case 'PAGE_LOAD': return 'page_load';
+    case 'SWITCH_MODE': return 'mode_switch';
+    case 'SELECT_CATEGORY': return 'category_select';
+    case 'STEP_COMPLETED': return 'step_completed';
+    case 'PUBLISH_READY': return 'publish_ready';
+    case 'IDLE_TIMEOUT': return 'idle_timeout';
+    case 'CLICK_HELP_ME_DECIDE': return 'help_me_decide';
+    default: return 'user_click';
+  }
+}
+
+/** Initiate a handoff transition from current agent to target agent */
+function startHandoff(
+  currentHandoff: HandoffContext,
+  fromAgent: GuideAgent,
+  toAgent: GuideAgent,
+  trigger: HandoffTrigger,
+): HandoffContext {
+  if (fromAgent === toAgent) return currentHandoff;
+  const style = resolveHandoffStyle(trigger);
+  return handoffTransition(currentHandoff, {
+    type: 'START_HANDOFF',
+    from: fromAgent,
+    to: toAgent,
+    style,
+  });
+}
+
 // ── Initial region detection ─────────────────────────────────────────────────
 
 function getInitialRegion(): RegionalGuideContext {
@@ -194,18 +239,24 @@ export const useGuideStore = create<GuideState>()(
       queue: [],
       seenOnboarding: false,
       voiceEnabled: false,
+      handoff: INITIAL_HANDOFF_CONTEXT,
 
       touchInteraction: () => set({ lastInteractionAt: Date.now() }),
 
       setRegionalContext: (ctx) => set({ regionalContext: ctx }),
 
-      setMode: (mode) =>
+      setMode: (mode) => {
+        const state = get();
+        const newAgent: GuideAgent = mode === 'produce' || mode === 'publish' ? 'arc' : 'ori';
+        const newHandoff = startHandoff(state.handoff, state.agent, newAgent, 'mode_switch');
         set({
           mode,
-          agent: mode === 'produce' || mode === 'publish' ? 'arc' : 'ori',
+          agent: newAgent,
           surface: 'collapsed',
           queue: [],
-        }),
+          handoff: newHandoff,
+        });
+      },
 
       dismissGuide: () => set({ surface: 'collapsed', queue: [] }),
 
@@ -216,6 +267,7 @@ export const useGuideStore = create<GuideState>()(
       dispatch: (signal) => {
         const state = get();
         const lang = state.regionalContext.shortLang;
+        const trigger = signalToTrigger(signal);
 
         switch (signal.type) {
           case 'PAGE_LOAD': {
@@ -224,6 +276,7 @@ export const useGuideStore = create<GuideState>()(
                 agent: 'ori',
                 surface: 'peek',
                 seenOnboarding: true,
+                handoff: startHandoff(state.handoff, state.agent, 'ori', trigger),
                 queue: [
                   buildMsg(
                     'ori',
@@ -246,6 +299,7 @@ export const useGuideStore = create<GuideState>()(
               hoveredCategoryId: signal.categoryId,
               agent: 'ori',
               surface: 'peek',
+              handoff: startHandoff(state.handoff, state.agent, 'ori', trigger),
               queue: [
                 buildMsg('ori', msg('HOVER_CATEGORY', lang), undefined, undefined, 'neutral', 3000),
               ],
@@ -255,11 +309,14 @@ export const useGuideStore = create<GuideState>()(
           }
 
           case 'SELECT_CATEGORY': {
+            // Tag-team handoff: Ori → Arc with baton-pass
+            const newHandoff = startHandoff(state.handoff, state.agent, 'arc', trigger);
             set({
               selectedCategoryId: signal.categoryId,
               hoveredCategoryId: undefined,
               agent: 'arc',
               surface: 'peek',
+              handoff: newHandoff,
               queue: [
                 buildMsg(
                   'arc',
@@ -278,6 +335,7 @@ export const useGuideStore = create<GuideState>()(
             set({
               agent: 'ori',
               surface: 'peek',
+              handoff: startHandoff(state.handoff, state.agent, 'ori', trigger),
               queue: [
                 buildMsg(
                   'ori',
@@ -296,6 +354,7 @@ export const useGuideStore = create<GuideState>()(
             set({
               agent: 'ori',
               surface: 'open',
+              handoff: startHandoff(state.handoff, state.agent, 'ori', trigger),
               queue: [
                 buildMsg(
                   'ori',
@@ -313,25 +372,33 @@ export const useGuideStore = create<GuideState>()(
           }
 
           case 'SWITCH_MODE': {
+            const newAgent: GuideAgent = signal.mode === 'produce' || signal.mode === 'publish' ? 'arc' : 'ori';
             set({
               mode: signal.mode,
-              agent: signal.mode === 'produce' || signal.mode === 'publish' ? 'arc' : 'ori',
+              agent: newAgent,
               surface: 'collapsed',
               queue: [],
+              handoff: startHandoff(state.handoff, state.agent, newAgent, trigger),
               lastInteractionAt: Date.now(),
             });
             break;
           }
 
           case 'DISMISS_GUIDE': {
-            set({ surface: 'collapsed', queue: [] });
+            set({
+              surface: 'collapsed',
+              queue: [],
+              handoff: handoffTransition(state.handoff, { type: 'CANCEL' }),
+            });
             break;
           }
 
           case 'STEP_COMPLETED': {
+            // Tag-team: current → Arc with encouraging tone
             set({
               agent: 'arc',
               surface: 'peek',
+              handoff: startHandoff(state.handoff, state.agent, 'arc', trigger),
               queue: [
                 buildMsg('arc', msg('STEP_COMPLETED', lang), undefined, undefined, 'encouraging', 2500),
               ],
@@ -340,9 +407,11 @@ export const useGuideStore = create<GuideState>()(
           }
 
           case 'PUBLISH_READY': {
+            // Split-morph: dramatic handoff for milestone
             set({
               agent: 'arc',
               surface: 'peek',
+              handoff: startHandoff(state.handoff, state.agent, 'arc', trigger),
               queue: [
                 buildMsg(
                   'arc',
