@@ -747,79 +747,36 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   }, []);
 
   return (
-    <div className="space-y-3 p-4">
-      {/* ── Redesigned Top Navigation Bar ── */}
-      <div className="flex items-center gap-2 pb-3 border-b border-border/20">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => window.location.href = '/genie-studio'}
-          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground h-8 px-2"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Suite
-        </Button>
-        <div className="w-[1px] h-4 bg-border/20" />
-        <div className="flex items-center gap-1.5">
-          <Film className="w-4 h-4 text-primary" />
-          <span className="text-sm font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Genie Cast</span>
+    <div className="space-y-0 h-full flex flex-col">
+      {/* ── Modern SaaS Top Bar ── */}
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-border/15 bg-background/95 backdrop-blur-xl sticky top-0 z-20">
+        {/* Region context */}
+        <GlobalRegionSelector regions={genieCastRegions} />
+        
+        {/* Search */}
+        <div className="flex-1 max-w-md">
+          <div className="flex items-center gap-2 h-8 px-3 rounded-lg bg-muted/30 border border-border/20 text-muted-foreground">
+            <Search className="w-3.5 h-3.5" />
+            <span className="text-xs">Search projects, assets, AI...</span>
+          </div>
         </div>
-        <div className="w-[1px] h-4 bg-border/20" />
+        
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Product selector */}
         <ProductSelector
           products={pool?.products || []}
           selectedProductId={castSession.session.selectedProductId}
           onProductChange={handleProductSelect}
           isLoading={isPoolLoading}
         />
-        <div className="w-[1px] h-4 bg-border/20" />
-        <GlobalRegionSelector regions={genieCastRegions} />
-        <div className="w-[1px] h-4 bg-border/20" />
-        <CastProjectDropdown
-          projects={castProjects.projects}
-          isLoading={castProjects.isLoading}
-          selectedProjectId={castSession.session.projectId}
-          onProjectSelect={async (project) => {
-            const restored = await castProjects.restoreToSession(project.id);
-            if (restored) {
-              const intentValue = restored.selectedIntent || (project as any).content_type || 'video';
-              castSession.updateSession({ ...restored, projectId: project.id, selectedIntent: intentValue });
-              setActiveContentType((project as any).content_type || 'video');
-              if ((restored as any)._categoryId) setSelectedCategoryId((restored as any)._categoryId);
-              if ((restored as any)._formatId) setSelectedFormatId((restored as any)._formatId);
-              if ((restored as any)._subFormatId) setSelectedSubFormatId((restored as any)._subFormatId);
-              setActiveMainTab('create');
-              setSubTab('create', 'templates');
-              persistence.fetchTokenBreakdown(project.id);
-              toast.success(`Loaded: ${project.title}`);
-            }
-          }}
-          onNewProject={async (title, contentType) => {
-            try {
-              const project = await castProjects.createProject({ title, content_type: contentType });
-              if (project) {
-                castSession.updateSession({ projectId: project.id });
-                setActiveContentType(contentType);
-              }
-            } catch {}
-          }}
-          onContentTypeChange={setActiveContentType}
-        />
-        
-        {/* Spacer */}
-        <div className="flex-1" />
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => window.location.href = '/genie-admin?tab=subscriber-admin'}
-          className="gap-1 text-xs text-muted-foreground hover:text-foreground h-8 px-2"
-        >
-          <Settings2 className="w-3.5 h-3.5" />
-        </Button>
+        {/* EP04 loader */}
         <Button
           variant="outline"
           size="sm"
-          className="gap-1.5 text-xs font-medium border-primary/20 hover:bg-primary/10 h-8"
+          className="gap-1.5 text-xs font-medium border-border/30 h-8 rounded-lg"
           onClick={async () => {
             const seed = createEP04SessionSeed();
             const { createCastProject } = await import('@/services/productionCostAccumulator');
@@ -869,22 +826,65 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           }}
         >
           <Film className="w-3.5 h-3.5" />
-          EP04
+          Load EP04
+        </Button>
+
+        {/* Cast project dropdown */}
+        <CastProjectDropdown
+          projects={castProjects.projects}
+          isLoading={castProjects.isLoading}
+          selectedProjectId={castSession.session.projectId}
+          onProjectSelect={async (project) => {
+            const restored = await castProjects.restoreToSession(project.id);
+            if (restored) {
+              const intentValue = restored.selectedIntent || (project as any).content_type || 'video';
+              castSession.updateSession({ ...restored, projectId: project.id, selectedIntent: intentValue });
+              setActiveContentType((project as any).content_type || 'video');
+              if ((restored as any)._categoryId) setSelectedCategoryId((restored as any)._categoryId);
+              if ((restored as any)._formatId) setSelectedFormatId((restored as any)._formatId);
+              if ((restored as any)._subFormatId) setSelectedSubFormatId((restored as any)._subFormatId);
+              setActiveMainTab('create');
+              setSubTab('create', 'templates');
+              persistence.fetchTokenBreakdown(project.id);
+              toast.success(`Loaded: ${project.title}`);
+            }
+          }}
+          onNewProject={async (title, contentType) => {
+            try {
+              const project = await castProjects.createProject({ title, content_type: contentType });
+              if (project) {
+                castSession.updateSession({ projectId: project.id });
+                setActiveContentType(contentType);
+              }
+            } catch {}
+          }}
+          onContentTypeChange={setActiveContentType}
+        />
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => window.location.href = '/genie-admin?tab=subscriber-admin'}
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+        >
+          <Settings2 className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* ── Main 3-Tab Navigation (Redesigned) ── */}
+      {/* ── Main Content Area ── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-5 space-y-4">
       <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as ConsolidatedTab)}>
         {!wizardMode && (
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/30 border border-border/20 rounded-xl backdrop-blur-xl">
+        <TabsList className="inline-flex h-10 p-1 bg-muted/20 border border-border/15 rounded-xl">
           {(Object.entries(TAB_DEFINITIONS) as [ConsolidatedTab, typeof TAB_DEFINITIONS.create][]).map(([key, def]) => (
             <TabsTrigger 
               key={key}
               value={key}
               className={cn(
-                "relative flex items-center justify-center gap-2 py-2.5 px-3 transition-all rounded-lg",
+                "relative flex items-center justify-center gap-2 px-5 py-2 transition-all rounded-lg",
                 "text-sm font-semibold",
-                "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/30",
+                "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
                 "data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground/70",
               )}
             >
@@ -2931,6 +2931,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
         {/* LANDING FEATURES NOW IN CREATE → ASSETS */}
       </Tabs>
+        </div>
+      </div>
     </div>
   );
 };
