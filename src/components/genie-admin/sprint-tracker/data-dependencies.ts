@@ -208,9 +208,10 @@ Do NOT change: data structures, types, hook logic, or data-dependencies.ts hando
     day: 7,
     producerTaskId: 'B-016',
     consumerTaskId: 'B-021',
-    artifact: 'SceneChunkMap interface: { sceneId, chunkIndex, startMs, endMs, status, audioUrl? }',
-    consumerNotes: 'Lovable needs this interface to render per-scene progress bars. Claude should define and export from audioSplitStitch.ts by Day 7 EOD so Lovable can build UI against it.',
-    status: 'pending',
+    artifact: 'SceneChunkMap, SceneChunkMapping, buildSceneChunkMap() exported from src/utils/audioSplitStitch.ts',
+    consumerNotes: `Import: import { SceneChunkMap, SceneChunkMapping, buildSceneChunkMap } from '@/utils/audioSplitStitch';
+Key fields: scenes[].status tracks per-scene progress, chunks[] has all audio chunks with stitching context.`,
+    status: 'ready',
     priority: 'critical',
   },
 
@@ -222,9 +223,10 @@ Do NOT change: data structures, types, hook logic, or data-dependencies.ts hando
     day: 7,
     producerTaskId: 'B-013',
     consumerTaskId: 'B-022',
-    artifact: 'TTSLockResult: { provider, voiceId, sampleAudioUrl, chunkDurations[] }',
-    consumerNotes: 'Lovable\'s TTS preview player (B-022) needs chunk boundary data and the locked voice ID to display waveform with chunk highlights. Define interface early.',
-    status: 'pending',
+    artifact: 'TTSLockResult, TTSProviderLock exported from src/utils/audioSplitStitch.ts',
+    consumerNotes: `Import: import { TTSLockResult, TTSProviderLock } from '@/utils/audioSplitStitch';
+Key fields: chunkBoundaries[] for waveform visualization, lockedProvider/lockedVoiceId for display, verifiedCapabilities for feature detection.`,
+    status: 'ready',
     priority: 'high',
   },
 
@@ -236,9 +238,10 @@ Do NOT change: data structures, types, hook logic, or data-dependencies.ts hando
     day: 8,
     producerTaskId: 'B-014',
     consumerTaskId: 'B-023',
-    artifact: 'AvatarGenerationResult: { sourceImageUrl, generatedVideoUrl, status, durationMs }',
-    consumerNotes: 'Lovable\'s AvatarSourceManager (B-023) needs to know the upload path convention and status polling endpoint. Claude defines the edge function contract.',
-    status: 'pending',
+    artifact: 'AvatarGenerationResult exported from src/utils/audioSplitStitch.ts',
+    consumerNotes: `Import: import { AvatarGenerationResult } from '@/utils/audioSplitStitch';
+Key fields: status for polling ('queued'|'processing'|'uploading'|'complete'|'failed'), storagePath for cast-assets bucket, visemeData for lip-sync overlay.`,
+    status: 'ready',
     priority: 'high',
   },
 
@@ -250,9 +253,11 @@ Do NOT change: data structures, types, hook logic, or data-dependencies.ts hando
     day: 8,
     producerTaskId: 'B-017',
     consumerTaskId: 'B-024',
-    artifact: 'SceneRenderStatus: { sceneId, status, progress%, videoUrl?, error? } via Supabase realtime or polling',
-    consumerNotes: 'Lovable\'s ProductionTimeline (B-024) subscribes to scene render updates. Claude must define the table/channel for realtime updates.',
-    status: 'pending',
+    artifact: 'SceneRenderStatus exported from src/utils/audioSplitStitch.ts — realtime on channel cast:production:{id}',
+    consumerNotes: `Import: import { SceneRenderStatus } from '@/utils/audioSplitStitch';
+Channel: supabase.channel('cast:production:' + productionId).on('broadcast', { event: 'scene_status' }, handler)
+Key fields: phase, phaseProgress, overallProgress, artifacts[].`,
+    status: 'ready',
     priority: 'high',
   },
 

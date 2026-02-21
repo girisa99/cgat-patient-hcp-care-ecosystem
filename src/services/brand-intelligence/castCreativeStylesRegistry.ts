@@ -719,25 +719,42 @@ export const CREATIVE_STYLES: CreativeStyleProfile[] = [
 // ─── Prompt Enrichment Functions ─────────────────────────────────────────────
 // These are the functions Lovable's handoff mentioned — enrichPromptWithRegion(), etc.
 // Consolidated here as part of our unified system.
+//
+// IMPORTANT: All lookup functions search BOTH the core CREATIVE_STYLES variants (9 regions)
+// AND the expanded REGIONAL_EXPANSION registry (40+ regions). This ensures the
+// UniversalEnrichmentBridge and Cast production pipeline can resolve ANY region globally.
 
-export function enrichPromptWithRegion(basePrompt: string, regionCode: string): string {
-  // Find the best matching style variant
+import { getExpandedRegionalVariant, getAllExpandedRegionCodes } from './regionalCreativeExpansion';
+
+/**
+ * Internal helper: resolve a RegionalStyleVariant from either core styles or expansion.
+ * Core styles take precedence (they have richer per-style-family data).
+ */
+function resolveRegionalVariant(regionCode: string): RegionalStyleVariant | undefined {
+  // First check core CREATIVE_STYLES (per-style-family variants)
   for (const style of CREATIVE_STYLES) {
     const variant = style.regionalVariants[regionCode];
-    if (variant) {
-      const culturalContext = [
-        `Setting: ${variant.environmentStyle}`,
-        `Clothing: ${variant.wardrobe.modern}`,
-        `Architecture: ${variant.culturalElements.architecture}`,
-        `Vegetation: ${variant.culturalElements.vegetation}`,
-        `Patterns: ${variant.culturalElements.patterns}`,
-        variant.colorOverrides ? `Color palette: ${variant.colorOverrides.join(', ')}` : '',
-        variant.lightingOverride ? `Lighting: ${variant.lightingOverride}` : '',
-        variant.companionCreature ? `Companion: ${variant.companionCreature.description}` : '',
-      ].filter(Boolean).join('. ');
+    if (variant) return variant;
+  }
+  // Fallback to expansion registry (style-family-agnostic variants)
+  return getExpandedRegionalVariant(regionCode);
+}
 
-      return `${basePrompt}. Cultural context for ${variant.regionName}: ${culturalContext}`;
-    }
+export function enrichPromptWithRegion(basePrompt: string, regionCode: string): string {
+  const variant = resolveRegionalVariant(regionCode);
+  if (variant) {
+    const culturalContext = [
+      `Setting: ${variant.environmentStyle}`,
+      `Clothing: ${variant.wardrobe.modern}`,
+      `Architecture: ${variant.culturalElements.architecture}`,
+      `Vegetation: ${variant.culturalElements.vegetation}`,
+      `Patterns: ${variant.culturalElements.patterns}`,
+      variant.colorOverrides ? `Color palette: ${variant.colorOverrides.join(', ')}` : '',
+      variant.lightingOverride ? `Lighting: ${variant.lightingOverride}` : '',
+      variant.companionCreature ? `Companion: ${variant.companionCreature.description}` : '',
+    ].filter(Boolean).join('. ');
+
+    return `${basePrompt}. Cultural context for ${variant.regionName}: ${culturalContext}`;
   }
 
   return basePrompt;
@@ -749,17 +766,15 @@ export function getRegionalMusicPrompt(regionCode: string): {
   bpm: number;
   instruments: string[];
 } {
-  for (const style of CREATIVE_STYLES) {
-    const variant = style.regionalVariants[regionCode];
-    if (variant) {
-      const avgBPM = Math.round((variant.music.bpmRange.min + variant.music.bpmRange.max) / 2);
-      return {
-        prompt: `${variant.music.genre} music, ${variant.music.moodDescription}. Instruments: ${variant.music.instruments.join(', ')}. ${avgBPM} BPM.`,
-        genre: variant.music.genre,
-        bpm: avgBPM,
-        instruments: variant.music.instruments,
-      };
-    }
+  const variant = resolveRegionalVariant(regionCode);
+  if (variant) {
+    const avgBPM = Math.round((variant.music.bpmRange.min + variant.music.bpmRange.max) / 2);
+    return {
+      prompt: `${variant.music.genre} music, ${variant.music.moodDescription}. Instruments: ${variant.music.instruments.join(', ')}. ${avgBPM} BPM.`,
+      genre: variant.music.genre,
+      bpm: avgBPM,
+      instruments: variant.music.instruments,
+    };
   }
 
   // Default fallback
@@ -777,26 +792,21 @@ export function getRegionalNarrativeStyle(regionCode: string): {
   formalityLevel: number;
   emotionalTone: string;
 } | undefined {
-  for (const style of CREATIVE_STYLES) {
-    const variant = style.regionalVariants[regionCode];
-    if (variant) {
-      return {
-        approach: variant.narrative.storytellingApproach,
-        humorStyle: variant.narrative.humorStyle,
-        formalityLevel: variant.narrative.formalityLevel,
-        emotionalTone: variant.narrative.emotionalTone,
-      };
-    }
+  const variant = resolveRegionalVariant(regionCode);
+  if (variant) {
+    return {
+      approach: variant.narrative.storytellingApproach,
+      humorStyle: variant.narrative.humorStyle,
+      formalityLevel: variant.narrative.formalityLevel,
+      emotionalTone: variant.narrative.emotionalTone,
+    };
   }
   return undefined;
 }
 
 export function getRegionalCompanionCreature(regionCode: string): RegionalStyleVariant['companionCreature'] | undefined {
-  for (const style of CREATIVE_STYLES) {
-    const variant = style.regionalVariants[regionCode];
-    if (variant?.companionCreature) return variant.companionCreature;
-  }
-  return undefined;
+  const variant = resolveRegionalVariant(regionCode);
+  return variant?.companionCreature;
 }
 
 export function getStyleForRegion(family: CreativeStyleFamily, regionCode: string): CreativeStyleProfile | undefined {
@@ -809,4 +819,25 @@ export function getAllStyleFamilies(): CreativeStyleFamily[] {
 
 export function getStyleById(id: string): CreativeStyleProfile | undefined {
   return CREATIVE_STYLES.find(s => s.id === id);
+}
+
+/**
+ * Get ALL supported region codes — core (9) + expanded (40+).
+ */
+export function getAllSupportedRegionCodes(): string[] {
+  const coreRegions = new Set<string>();
+  for (const style of CREATIVE_STYLES) {
+    for (const code of Object.keys(style.regionalVariants)) {
+      coreRegions.add(code);
+    }
+  }
+  const expandedRegions = getAllExpandedRegionCodes();
+  return [...new Set([...coreRegions, ...expandedRegions])];
+}
+
+/**
+ * Get a RegionalStyleVariant by code — searches both core and expansion.
+ */
+export function getRegionalVariant(regionCode: string): RegionalStyleVariant | undefined {
+  return resolveRegionalVariant(regionCode);
 }

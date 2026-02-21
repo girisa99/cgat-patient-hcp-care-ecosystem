@@ -6,13 +6,22 @@
  *
  * Architecture:
  *   brandIntelligenceEngine      → Core types, business tiers, marketing frameworks
- *   informalEconomyProfiles      → Pre-built profiles for micro-businesses globally
+ *   informalEconomyProfiles      → Pre-built profiles for nano/micro businesses (11 archetypes)
+ *   economyProfilesExpansion     → SMB/mid-market/enterprise archetypes (25+ archetypes)
  *   creativeProductionPipeline   → Universal production pipeline (all input/output types)
- *   castCreativeStylesRegistry   → Pixar/Disney/Anime/Regional styles with cultural mapping
- *   crossProductIntelligenceBus  → Connects brand context across all 6 products
+ *   castCreativeStylesRegistry   → Pixar/Disney/Anime styles + 9 core regional variants
+ *   regionalCreativeExpansion    → 40+ expanded regional variants (EU, MENA, Africa, Asia, LATAM, Oceania)
+ *   crossProductIntelligenceBus  → Connects brand context across all 7 products
  *   castEndToEndPromptEngine     → Full production from prompt to final video
  *   simplifiedOnboarding         → Natural language → marketing intelligence
  *   universalEnrichmentBridge    → Connects ALL intelligence services into unified pipeline
+ *
+ * Data flow:
+ *   User prompt → UniversalEnrichmentBridge → [brand + competitive + regional + product context]
+ *     → enrichPromptWithRegion() checks core (9) + expanded (40+) regions
+ *     → getRegionalMusicPrompt() / getRegionalNarrativeStyle() / getRegionalCompanionCreature()
+ *     → ALL resolve from both core and expansion registries transparently
+ *     → Cast production pipeline receives fully enriched prompts
  */
 
 // ─── Core Engine ─────────────────────────────────────────────────────────────
@@ -51,6 +60,20 @@ export {
   getSamplePrompt,
   generatePersonaFromArchetype,
 } from './informalEconomyProfiles';
+
+// ─── Economy Profiles Expansion (SMB → Enterprise) ──────────────────────────
+export {
+  RETAIL_ARCHETYPES,
+  DIGITAL_FREELANCE_ARCHETYPES,
+  AGRICULTURAL_ARCHETYPES,
+  SMB_ARCHETYPES,
+  MID_MARKET_ARCHETYPES,
+  ENTERPRISE_ARCHETYPES,
+  ALL_EXPANDED_ARCHETYPES,
+  findExpandedArchetypesByTier,
+  findExpandedArchetypesByRegion,
+  getArchetypesByCategory,
+} from './economyProfilesExpansion';
 
 // ─── Creative Production Pipeline ────────────────────────────────────────────
 export type {
@@ -111,7 +134,16 @@ export {
   getStyleForRegion,
   getAllStyleFamilies,
   getStyleById,
+  getAllSupportedRegionCodes,
+  getRegionalVariant,
 } from './castCreativeStylesRegistry';
+
+// ─── Regional Creative Expansion (40+ zones) ────────────────────────────────
+export {
+  REGIONAL_EXPANSION,
+  getExpandedRegionalVariant,
+  getAllExpandedRegionCodes,
+} from './regionalCreativeExpansion';
 
 // ─── Cross-Product Intelligence Bus ──────────────────────────────────────────
 export type {

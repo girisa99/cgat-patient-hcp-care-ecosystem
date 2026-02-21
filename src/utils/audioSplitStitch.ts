@@ -204,3 +204,169 @@ export function estimateAudioDuration(text: string, speed = 1.0): number {
 export function needsSplitting(text: string, speed = 1.0, maxSeconds = 20): boolean {
   return estimateAudioDuration(text, speed) > maxSeconds;
 }
+
+// ─── SPRINT 2 HANDOFF INTERFACES ────────────────────────────────────────────
+// These interfaces are the data contracts between Claude (backend) and Lovable (frontend).
+// They MUST NOT be changed without coordinating with both developers.
+// Handoff IDs map to data-dependencies.ts entries H-701 through H-704.
+
+// ── H-701: SceneChunkMap ─────────────────────────────────────────────────────
+// Maps production scenes to audio chunks for Lovable's B-021 progress tracker UI.
+
+export interface SceneChunkMapping {
+  sceneId: string;
+  sceneNumber: number;
+  sceneTitle: string;
+  /** Which AudioChunk indices belong to this scene */
+  chunkIndices: number[];
+  /** Total text length for this scene across all its chunks */
+  totalCharacters: number;
+  /** Estimated duration in seconds for this scene's audio */
+  estimatedDuration: number;
+  /** Scene-level status for progress tracking */
+  status: 'pending' | 'splitting' | 'generating_tts' | 'generating_avatar' | 'stitching' | 'complete' | 'error';
+  /** Error message if status is 'error' */
+  error?: string;
+}
+
+export interface SceneChunkMap {
+  /** Production/project ID */
+  productionId: string;
+  /** Total number of scenes */
+  totalScenes: number;
+  /** Total number of audio chunks across all scenes */
+  totalChunks: number;
+  /** Per-scene mapping to chunks */
+  scenes: SceneChunkMapping[];
+  /** All audio chunks (flat list) */
+  chunks: AudioChunk[];
+  /** Overall estimated duration in seconds */
+  estimatedTotalDuration: number;
+  /** When this mapping was generated */
+  createdAt: string;
+}
+
+// ── H-702: TTSLockResult ────────────────────────────────────────────────────
+// Result of pre-flight TTS provider selection for Lovable's B-022 preview player.
+
+export type TTSProviderLock = 'elevenlabs' | 'azure' | 'google' | 'alibaba' | 'openai';
+
+export interface TTSLockResult {
+  success: boolean;
+  lockedProvider: TTSProviderLock;
+  lockedVoiceId: string;
+  voiceDisplayName: string;
+  language: string;
+  selectionReason: string;
+  verifiedCapabilities: {
+    maxChunkDuration: number;
+    supportsSSML: boolean;
+    supportsRequestStitching: boolean;
+    supportedOutputFormats: string[];
+    estimatedLatencyMs: number;
+  };
+  chunkBoundaries: Array<{
+    chunkIndex: number;
+    text: string;
+    estimatedStartTime: number;
+    estimatedEndTime: number;
+    characterCount: number;
+  }>;
+  lockedAt: string;
+  lockTTLMs: number;
+}
+
+// ── H-703: AvatarGenerationResult ──────────────────────────────────────────
+// Per-chunk avatar video result for Lovable's B-023 avatar preview & upload UI.
+
+export interface AvatarGenerationResult {
+  success: boolean;
+  chunkIndex: number;
+  sceneId: string;
+  videoUrl?: string;
+  videoDuration?: number;
+  provider: string;
+  model: string;
+  sourceImageUrl: string;
+  storagePath?: string;
+  status: 'queued' | 'processing' | 'uploading' | 'complete' | 'failed';
+  progress: number;
+  error?: string;
+  visemeData?: Array<{ offset: number; visemeId: number }>;
+  generatedAt: string;
+}
+
+// ── H-704: SceneRenderStatus ──────────────────────────────────────────────
+// Realtime channel event for Lovable's B-024 production timeline/storyboard.
+// Published on Supabase Realtime channel: `cast:production:{productionId}`.
+
+export interface SceneRenderStatus {
+  productionId: string;
+  sceneId: string;
+  sceneNumber: number;
+  phase: 'idle' | 'tts' | 'avatar' | 'broll' | 'transition' | 'stitching' | 'complete' | 'error';
+  phaseProgress: number;
+  overallProgress: number;
+  activeProvider?: string;
+  estimatedRemainingSeconds?: number;
+  artifacts: Array<{
+    type: 'tts_audio' | 'avatar_video' | 'broll_clip' | 'transition' | 'final_scene';
+    url: string;
+    duration: number;
+  }>;
+  error?: string;
+  updatedAt: string;
+}
+
+// ── Scene-to-Chunk Mapper (B-016) ──────────────────────────────────────────
+// Main function: given production scenes, build the chunk map.
+
+export function buildSceneChunkMap(
+  productionId: string,
+  scenes: Array<{ id: string; number: number; title: string; narrationText: string }>,
+  maxCharsPerChunk = MAX_CHARS_PER_CHUNK,
+): SceneChunkMap {
+  let globalChunkIndex = 0;
+  const allChunks: AudioChunk[] = [];
+  const sceneMappings: SceneChunkMapping[] = [];
+
+  for (const scene of scenes) {
+    const textChunks = splitTextIntoChunks(scene.narrationText, maxCharsPerChunk);
+    const chunkIndices: number[] = [];
+
+    for (const chunkText of textChunks) {
+      allChunks.push({
+        index: globalChunkIndex,
+        text: chunkText,
+        previousText: globalChunkIndex > 0 ? getLastSentences(allChunks[globalChunkIndex - 1]?.text || '', 2) : undefined,
+      });
+      chunkIndices.push(globalChunkIndex);
+      globalChunkIndex++;
+    }
+
+    sceneMappings.push({
+      sceneId: scene.id,
+      sceneNumber: scene.number,
+      sceneTitle: scene.title,
+      chunkIndices,
+      totalCharacters: scene.narrationText.length,
+      estimatedDuration: estimateAudioDuration(scene.narrationText),
+      status: 'pending',
+    });
+  }
+
+  // Fill in nextText stitching context across all chunks
+  for (let i = 0; i < allChunks.length - 1; i++) {
+    allChunks[i].nextText = getFirstSentences(allChunks[i + 1].text, 2);
+  }
+
+  return {
+    productionId,
+    totalScenes: scenes.length,
+    totalChunks: allChunks.length,
+    scenes: sceneMappings,
+    chunks: allChunks,
+    estimatedTotalDuration: sceneMappings.reduce((sum, s) => sum + s.estimatedDuration, 0),
+    createdAt: new Date().toISOString(),
+  };
+}
