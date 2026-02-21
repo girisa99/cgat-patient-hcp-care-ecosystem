@@ -1,7 +1,7 @@
 /**
  * GENIE CAST HUB
- * Main wrapper for the consolidated 4-tab Genie Cast interface
- * Manages state and passes to GenieCastConsolidatedTabs
+ * Main wrapper for Genie Cast — now supports both legacy tabs and new StepWizard.
+ * Toggle between views during migration; wizard will become default.
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -9,6 +9,11 @@ import type { VideoStyleType } from './VideoStyleCards';
 import type { ProductGallery } from '../MultiScreenshotGallery';
 import { toast } from 'sonner';
 import { GenieCastConsolidatedTabs } from './GenieCastConsolidatedTabs';
+import { CreateWizardDemo } from './CreateWizardDemo';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles, LayoutGrid, Globe } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish' | 'landing';
 
@@ -31,6 +36,8 @@ const defaultStyles: VideoStyleType[] = [
 export const GenieCastHub: React.FC = () => {
   // Track component mount state
   const isMounted = useRef(true);
+  const [useWizardView, setUseWizardView] = useState(true);
+  const [wizardDirection, setWizardDirection] = useState<'ltr' | 'rtl'>('ltr');
   
   // Persist state to localStorage
   const [selectedVideoStyles, setSelectedVideoStyles] = useState<VideoStyleType[]>(() => {
@@ -91,7 +98,6 @@ export const GenieCastHub: React.FC = () => {
 
     setIsGenerating(true);
     try {
-      // TODO: Implement actual generation
       await new Promise(resolve => setTimeout(resolve, 2000));
       toast.success('Video generation started!');
     } catch (error) {
@@ -104,16 +110,63 @@ export const GenieCastHub: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <GenieCastConsolidatedTabs
-        selectedVideoStyles={selectedVideoStyles}
-        onStylesChange={handleStylesChange}
-        screenshotGalleries={screenshotGalleries}
-        onGalleriesUpdated={handleGalleriesUpdated}
-        totalScreenshots={totalScreenshots}
-        onGenerate={handleGenerate}
-        isGenerating={isGenerating}
-        defaultTab="create"
-      />
+      {/* View toggle + RTL demo switch */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={useWizardView ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setUseWizardView(true)}
+            className={cn(
+              'rounded-lg gap-1.5 h-8 text-xs',
+              useWizardView && 'bg-gradient-to-r from-primary to-primary/80 shadow-[0_0_12px_rgba(var(--primary-rgb,99,102,241),0.25)]',
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Wizard
+            <Badge variant="outline" className="text-[9px] px-1 py-0 border-white/20 ml-1">NEW</Badge>
+          </Button>
+          <Button
+            variant={!useWizardView ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setUseWizardView(false)}
+            className="rounded-lg gap-1.5 h-8 text-xs"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Classic Tabs
+          </Button>
+        </div>
+
+        {useWizardView && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setWizardDirection(d => d === 'ltr' ? 'rtl' : 'ltr')}
+            className="rounded-lg gap-1.5 h-8 text-xs"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            {wizardDirection === 'ltr' ? 'LTR' : 'RTL'}
+          </Button>
+        )}
+      </div>
+
+      {/* Content */}
+      {useWizardView ? (
+        <div className="min-h-[500px]">
+          <CreateWizardDemo direction={wizardDirection} locale={wizardDirection === 'rtl' ? 'ar' : 'en'} />
+        </div>
+      ) : (
+        <GenieCastConsolidatedTabs
+          selectedVideoStyles={selectedVideoStyles}
+          onStylesChange={handleStylesChange}
+          screenshotGalleries={screenshotGalleries}
+          onGalleriesUpdated={handleGalleriesUpdated}
+          totalScreenshots={totalScreenshots}
+          onGenerate={handleGenerate}
+          isGenerating={isGenerating}
+          defaultTab="create"
+        />
+      )}
     </div>
   );
 };
