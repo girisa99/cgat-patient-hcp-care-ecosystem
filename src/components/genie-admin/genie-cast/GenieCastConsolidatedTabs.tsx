@@ -51,6 +51,7 @@ import { useContentPool } from '@/hooks/useContentPool';
 import { ProductSelector } from './ProductSelector';
 import { GlobalRegionSelector } from './GlobalRegionSelector';
 import { useGenieCastRegions } from '@/hooks/useGenieCastRegions';
+import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -957,14 +958,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                         </Select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs">Input Language <span className="text-muted-foreground">(DeepL)</span></Label>
+                        <Label className="text-xs">Input Language <span className="text-muted-foreground">(Translation: DeepL only)</span></Label>
                         <Select value={selectedDialectCodes[0] || 'en-US'} onValueChange={(v) => handleDialectChange([v])}>
                           <SelectTrigger className="h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="max-h-[340px] bg-popover z-50">
                             <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌍 Europe & Americas (Claude Zone · DeepL)</SelectLabel>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌍 Europe & Americas · DeepL</SelectLabel>
                               <SelectItem value="en-US">🇺🇸 English (US)</SelectItem>
                               <SelectItem value="en-GB">🇬🇧 English (UK)</SelectItem>
                               <SelectItem value="es-ES">🇪🇸 Spanish</SelectItem>
@@ -993,21 +994,21 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                               <SelectItem value="sl-SI">🇸🇮 Slovenian</SelectItem>
                             </SelectGroup>
                             <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🀄 CJK (Qwen Zone · DeepL)</SelectLabel>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🀄 CJK · DeepL</SelectLabel>
                               <SelectItem value="zh-CN">🇨🇳 Chinese (Simplified)</SelectItem>
                               <SelectItem value="zh-TW">🇹🇼 Chinese (Traditional)</SelectItem>
                               <SelectItem value="ja-JP">🇯🇵 Japanese</SelectItem>
                               <SelectItem value="ko-KR">🇰🇷 Korean</SelectItem>
                             </SelectGroup>
                             <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🕌 MENA (Qwen Zone)</SelectLabel>
-                              <SelectItem value="ar-SA">🇸🇦 Arabic · DeepL</SelectItem>
-                              <SelectItem value="he-IL">🇮🇱 Hebrew · DeepL</SelectItem>
-                              <SelectItem value="tr-TR">🇹🇷 Turkish · DeepL</SelectItem>
-                              <SelectItem value="fa-IR">🇮🇷 Farsi · Azure</SelectItem>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🕌 MENA · DeepL</SelectLabel>
+                              <SelectItem value="ar-SA">🇸🇦 Arabic</SelectItem>
+                              <SelectItem value="he-IL">🇮🇱 Hebrew</SelectItem>
+                              <SelectItem value="tr-TR">🇹🇷 Turkish</SelectItem>
+                              <SelectItem value="fa-IR">🇮🇷 Farsi</SelectItem>
                             </SelectGroup>
                             <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🇮🇳 India / South Asia (Gemini Zone · Azure)</SelectLabel>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🇮🇳 India / South Asia · DeepL</SelectLabel>
                               <SelectItem value="hi-IN">🇮🇳 Hindi</SelectItem>
                               <SelectItem value="bn-BD">🇧🇩 Bengali</SelectItem>
                               <SelectItem value="te-IN">Telugu</SelectItem>
@@ -1020,15 +1021,15 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                               <SelectItem value="ur-PK">🇵🇰 Urdu</SelectItem>
                             </SelectGroup>
                             <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌏 Southeast Asia (Gemini Zone)</SelectLabel>
-                              <SelectItem value="id-ID">🇮🇩 Indonesian · DeepL</SelectItem>
-                              <SelectItem value="ms-MY">🇲🇾 Malay · Azure</SelectItem>
-                              <SelectItem value="th-TH">🇹🇭 Thai · DeepL</SelectItem>
-                              <SelectItem value="vi-VN">🇻🇳 Vietnamese · DeepL</SelectItem>
-                              <SelectItem value="tl-PH">🇵🇭 Filipino · Azure</SelectItem>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌏 Southeast Asia · DeepL</SelectLabel>
+                              <SelectItem value="id-ID">🇮🇩 Indonesian</SelectItem>
+                              <SelectItem value="ms-MY">🇲🇾 Malay</SelectItem>
+                              <SelectItem value="th-TH">🇹🇭 Thai</SelectItem>
+                              <SelectItem value="vi-VN">🇻🇳 Vietnamese</SelectItem>
+                              <SelectItem value="tl-PH">🇵🇭 Filipino</SelectItem>
                             </SelectGroup>
                             <SelectGroup>
-                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌍 Africa (Gemini Zone · Azure)</SelectLabel>
+                              <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">🌍 Africa · DeepL</SelectLabel>
                               <SelectItem value="sw-KE">🇰🇪 Swahili</SelectItem>
                               <SelectItem value="yo-NG">🇳🇬 Yoruba</SelectItem>
                               <SelectItem value="am-ET">🇪🇹 Amharic</SelectItem>
@@ -1038,9 +1039,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       </div>
                     </div>
 
-                    {/* Output Languages — Multi-select dropdown for dubbing/subtitles */}
+                    {/* Output Languages — Dubbing & Subtitles (Region Hierarchy + TTS Routing) */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Output Languages — Dubbing & Subtitles</Label>
+                      <Label className="text-xs">Output Languages — Dubbing & Subtitles <span className="text-muted-foreground">(TTS routing per zone)</span></Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs font-normal">
@@ -1052,114 +1053,136 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                             <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[360px] p-0 z-50 bg-popover" align="start">
-                          <ScrollArea className="h-[320px]">
-                            <div className="p-2 space-y-3">
+                        <PopoverContent className="w-[400px] p-0 z-50 bg-popover" align="start">
+                          <ScrollArea className="h-[380px]">
+                            <div className="p-2 space-y-1">
                               {/* Selected summary */}
                               {outputLanguages.length > 0 && (
-                                <div className="flex flex-wrap gap-1 pb-2 border-b border-border">
+                                <div className="flex flex-wrap gap-1 pb-2 border-b border-border mb-2">
                                   {outputLanguages.map(code => (
                                     <Badge key={code} variant="default" className="text-[10px] gap-1 cursor-pointer" onClick={() => setOutputLanguages(prev => prev.filter(l => l !== code))}>
                                       {code.toUpperCase()} ×
                                     </Badge>
                                   ))}
+                                  <Badge variant="outline" className="text-[10px] cursor-pointer text-destructive" onClick={() => setOutputLanguages([])}>
+                                    Clear all ×
+                                  </Badge>
                                 </div>
                               )}
 
-                              {/* Europe & Americas */}
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🌍 Europe & Americas (Claude · DeepL)</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {[
-                                    { code: 'en', label: '🇺🇸 EN' }, { code: 'es', label: '🇪🇸 ES' }, { code: 'fr', label: '🇫🇷 FR' },
-                                    { code: 'de', label: '🇩🇪 DE' }, { code: 'it', label: '🇮🇹 IT' }, { code: 'pt', label: '🇧🇷 PT' },
-                                    { code: 'nl', label: '🇳🇱 NL' }, { code: 'pl', label: '🇵🇱 PL' }, { code: 'ru', label: '🇷🇺 RU' },
-                                    { code: 'uk', label: '🇺🇦 UK' }, { code: 'sv', label: '🇸🇪 SV' }, { code: 'da', label: '🇩🇰 DA' },
-                                    { code: 'nb', label: '🇳🇴 NO' }, { code: 'fi', label: '🇫🇮 FI' }, { code: 'cs', label: '🇨🇿 CS' },
-                                    { code: 'sk', label: '🇸🇰 SK' }, { code: 'ro', label: '🇷🇴 RO' }, { code: 'hu', label: '🇭🇺 HU' },
-                                    { code: 'bg', label: '🇧🇬 BG' }, { code: 'el', label: '🇬🇷 EL' }, { code: 'et', label: '🇪🇪 ET' },
-                                    { code: 'lv', label: '🇱🇻 LV' }, { code: 'lt', label: '🇱🇹 LT' }, { code: 'sl', label: '🇸🇮 SL' },
-                                  ].map(lang => (
-                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
-                                      {lang.label}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
+                              {/* Hierarchical region list from REGION_HIERARCHY */}
+                              {REGION_HIERARCHY.map(group => {
+                                // Determine TTS provider per parent region
+                                const ttsProvider = (() => {
+                                  const code = group.groupCode;
+                                  if (['NAM', 'EU', 'EURASIA', 'LATAM', 'CARIBBEAN', 'OCEANIA'].includes(code)) return 'ElevenLabs';
+                                  if (['CJK', 'MENA'].includes(code)) return 'CosyVoice';
+                                  if (['INDIA', 'PAKISTAN', 'BANGLADESH', 'SOUTH_ASIA', 'SEA', 'AFRICA'].includes(code)) return 'Azure Neural';
+                                  if (code === 'TURKEY') return 'Azure Neural';
+                                  if (code === 'CENTRAL_ASIA') return 'Azure Neural';
+                                  return 'Azure Neural';
+                                })();
 
-                              {/* CJK */}
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🀄 CJK (Qwen · DeepL)</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {[
-                                    { code: 'zh', label: '🇨🇳 ZH' }, { code: 'ja', label: '🇯🇵 JA' }, { code: 'ko', label: '🇰🇷 KO' },
-                                  ].map(lang => (
-                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
-                                      {lang.label}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
+                                // Collect all leaf codes for this group
+                                const groupLeafCodes: string[] = group.children.flatMap(c =>
+                                  c.children && c.children.length > 0
+                                    ? c.children.map(gc => gc.code)
+                                    : [c.code]
+                                );
+                                const allSelected = groupLeafCodes.length > 0 && groupLeafCodes.every(c => outputLanguages.includes(c));
+                                const someSelected = groupLeafCodes.some(c => outputLanguages.includes(c));
 
-                              {/* MENA */}
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🕌 MENA (Qwen)</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {[
-                                    { code: 'ar', label: '🇸🇦 AR' }, { code: 'he', label: '🇮🇱 HE' }, { code: 'tr', label: '🇹🇷 TR' }, { code: 'fa', label: '🇮🇷 FA' },
-                                  ].map(lang => (
-                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
-                                      {lang.label}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
+                                return (
+                                  <div key={group.groupCode} className="mb-1">
+                                    {/* Parent region header — click to select/deselect all */}
+                                    <button
+                                      type="button"
+                                      className={cn(
+                                        "w-full flex items-center gap-1.5 px-2 py-1 rounded text-left text-[11px] font-semibold transition-colors",
+                                        allSelected ? "bg-primary/10 text-primary" : someSelected ? "bg-muted" : "hover:bg-muted/50"
+                                      )}
+                                      onClick={() => {
+                                        setOutputLanguages(prev => {
+                                          if (allSelected) return prev.filter(c => !groupLeafCodes.includes(c));
+                                          return [...new Set([...prev, ...groupLeafCodes])];
+                                        });
+                                      }}
+                                    >
+                                      <span>{group.groupFlag}</span>
+                                      <span className="flex-1">{group.groupName}</span>
+                                      <span className="text-[9px] text-muted-foreground font-normal">{ttsProvider}</span>
+                                      <span className="text-[9px] text-muted-foreground font-mono">
+                                        {groupLeafCodes.filter(c => outputLanguages.includes(c)).length}/{groupLeafCodes.length}
+                                      </span>
+                                    </button>
 
-                              {/* India */}
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🇮🇳 India / South Asia (Gemini · Azure)</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {[
-                                    { code: 'hi', label: '🇮🇳 HI' }, { code: 'bn', label: '🇧🇩 BN' }, { code: 'te', label: 'TE' },
-                                    { code: 'ta', label: 'TA' }, { code: 'mr', label: 'MR' }, { code: 'gu', label: 'GU' },
-                                    { code: 'kn', label: 'KN' }, { code: 'ml', label: 'ML' }, { code: 'pa', label: 'PA' },
-                                    { code: 'ur', label: '🇵🇰 UR' },
-                                  ].map(lang => (
-                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
-                                      {lang.label}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* SEA */}
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🌏 Southeast Asia (Gemini)</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {[
-                                    { code: 'id', label: '🇮🇩 ID' }, { code: 'ms', label: '🇲🇾 MS' }, { code: 'th', label: '🇹🇭 TH' },
-                                    { code: 'vi', label: '🇻🇳 VI' }, { code: 'tl', label: '🇵🇭 TL' },
-                                  ].map(lang => (
-                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
-                                      {lang.label}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Africa */}
-                              <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">🌍 Africa (Gemini · Azure)</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {[
-                                    { code: 'sw', label: '🇰🇪 SW' }, { code: 'yo', label: '🇳🇬 YO' }, { code: 'am', label: '🇪🇹 AM' },
-                                  ].map(lang => (
-                                    <Badge key={lang.code} variant={outputLanguages.includes(lang.code) ? 'default' : 'outline'} className="text-[10px] cursor-pointer transition-colors" onClick={() => setOutputLanguages(prev => prev.includes(lang.code) ? prev.filter(l => l !== lang.code) : [...prev, lang.code])}>
-                                      {lang.label}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
+                                    {/* Children: zones and leaves */}
+                                    <div className="ml-3 mt-0.5 space-y-0.5">
+                                      {group.children.map(zone => {
+                                        if (zone.children && zone.children.length > 0) {
+                                          // Zone with grandchildren
+                                          const zoneCodes = zone.children.map(gc => gc.code);
+                                          const zoneAllSel = zoneCodes.every(c => outputLanguages.includes(c));
+                                          const zoneSomeSel = zoneCodes.some(c => outputLanguages.includes(c));
+                                          return (
+                                            <div key={zone.code}>
+                                              <button
+                                                type="button"
+                                                className={cn(
+                                                  "w-full flex items-center gap-1.5 px-2 py-0.5 rounded text-left text-[10px] transition-colors",
+                                                  zoneAllSel ? "bg-primary/5 font-medium" : zoneSomeSel ? "bg-muted/40" : "hover:bg-muted/30"
+                                                )}
+                                                onClick={() => {
+                                                  setOutputLanguages(prev => {
+                                                    if (zoneAllSel) return prev.filter(c => !zoneCodes.includes(c));
+                                                    return [...new Set([...prev, ...zoneCodes])];
+                                                  });
+                                                }}
+                                              >
+                                                <span>{zone.flag}</span>
+                                                <span className="flex-1">{zone.name}</span>
+                                                <span className="text-[9px] text-muted-foreground font-mono">{zoneCodes.filter(c => outputLanguages.includes(c)).length}/{zoneCodes.length}</span>
+                                              </button>
+                                              {/* Grandchildren (leaf nodes) */}
+                                              <div className="ml-4 flex flex-wrap gap-1 py-0.5">
+                                                {zone.children.map(leaf => (
+                                                  <Badge
+                                                    key={leaf.code}
+                                                    variant={outputLanguages.includes(leaf.code) ? 'default' : 'outline'}
+                                                    className="text-[9px] cursor-pointer transition-colors"
+                                                    onClick={() => setOutputLanguages(prev =>
+                                                      prev.includes(leaf.code)
+                                                        ? prev.filter(l => l !== leaf.code)
+                                                        : [...prev, leaf.code]
+                                                    )}
+                                                  >
+                                                    {leaf.flag} {leaf.name.split('(')[0].trim()}
+                                                  </Badge>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        // Flat leaf node
+                                        return (
+                                          <Badge
+                                            key={zone.code}
+                                            variant={outputLanguages.includes(zone.code) ? 'default' : 'outline'}
+                                            className="text-[9px] cursor-pointer transition-colors mr-1 mb-0.5"
+                                            onClick={() => setOutputLanguages(prev =>
+                                              prev.includes(zone.code)
+                                                ? prev.filter(l => l !== zone.code)
+                                                : [...prev, zone.code]
+                                            )}
+                                          >
+                                            {zone.flag} {zone.name.split('(')[0].trim()}
+                                          </Badge>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </ScrollArea>
                         </PopoverContent>
