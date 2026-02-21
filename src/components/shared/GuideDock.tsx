@@ -12,7 +12,7 @@
  * Part of the Genie Suite global guide system.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,11 @@ import { useIdleTimer } from '@/hooks/useIdleTimer';
 import { useGuideTTS } from '@/hooks/useGuideTTS';
 import { useIPBasedContent } from '@/hooks/useIPBasedContent';
 import { resolveGuideRegion } from '@/config/guideMessageCatalog';
+import {
+  type HandoffContext, type HandoffStyle,
+  INITIAL_HANDOFF_CONTEXT, handoffTransition,
+  resolveHandoffStyle, getHandoffVariants, HANDOFF_MOTIONS,
+} from '@/machines/guideHandoffMachine';
 
 // Character avatars
 import oriAvatar from '@/assets/characters/ori-avatar.png';
