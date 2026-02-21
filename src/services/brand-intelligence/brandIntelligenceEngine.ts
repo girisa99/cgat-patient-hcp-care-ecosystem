@@ -29,7 +29,13 @@ export type InformalEconomyType =
   | 'personal_service'    // Barber, tailor, beautician, tutor
   | 'micro_retail'        // Kiosk, corner shop, paan shop, tienda
   | 'digital_freelance'   // Gig worker, content creator, online seller
-  | 'community_service';  // Community healer, religious service, local guide
+  | 'community_service'   // Community healer, religious service, local guide
+  | 'service_provider'    // SMB/enterprise service businesses
+  | 'artisan'             // Artisan alias for expanded profiles
+  | 'transport'           // Transport services
+  | 'agriculture'         // Agriculture alias for expanded profiles
+  | 'retail'              // Retail businesses (SMB to enterprise)
+  | 'education';          // Education services
 
 // ─── Marketing Framework Types ───────────────────────────────────────────────
 // From academic rigor to street-level instinct — same intelligence, different depth.
