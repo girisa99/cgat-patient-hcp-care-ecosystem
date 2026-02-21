@@ -5,13 +5,14 @@
  * From Fortune 500 boardrooms to roadside food carts — one engine, all businesses.
  *
  * Architecture:
- *   brandIntelligenceEngine    → Core types, business tiers, marketing frameworks
- *   informalEconomyProfiles    → Pre-built profiles for micro-businesses globally
- *   creativeProductionPipeline → Universal production pipeline (all input/output types)
- *   castCreativeStylesRegistry → Pixar/Disney/Anime/Regional styles with cultural mapping
- *   crossProductIntelligenceBus→ Connects brand context across all 6 products
- *   castEndToEndPromptEngine   → Full production from prompt to final video
- *   simplifiedOnboarding       → Natural language → marketing intelligence
+ *   brandIntelligenceEngine      → Core types, business tiers, marketing frameworks
+ *   informalEconomyProfiles      → Pre-built profiles for micro-businesses globally
+ *   creativeProductionPipeline   → Universal production pipeline (all input/output types)
+ *   castCreativeStylesRegistry   → Pixar/Disney/Anime/Regional styles with cultural mapping
+ *   crossProductIntelligenceBus  → Connects brand context across all 6 products
+ *   castEndToEndPromptEngine     → Full production from prompt to final video
+ *   simplifiedOnboarding         → Natural language → marketing intelligence
+ *   universalEnrichmentBridge    → Connects ALL intelligence services into unified pipeline
  */
 
 // ─── Core Engine ─────────────────────────────────────────────────────────────
@@ -161,3 +162,18 @@ export {
   getQuestionInLanguage,
   getMinimumQuestionsForProfile,
 } from './simplifiedOnboarding';
+
+// ─── Universal Enrichment Bridge ────────────────────────────────────────────
+export type {
+  CompetitiveEnrichment,
+  RegionalCreativeEnrichment,
+  UnifiedProductContext,
+  EnrichmentResult,
+  BridgeConfig,
+} from './universalEnrichmentBridge';
+
+export {
+  UniversalEnrichmentBridge,
+  getEnrichmentBridge,
+  resetEnrichmentBridge,
+} from './universalEnrichmentBridge';
