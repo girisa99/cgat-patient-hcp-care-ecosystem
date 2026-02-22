@@ -661,29 +661,18 @@ export const GenieCastHub: React.FC = () => {
       <div className="flex flex-col h-full min-h-[calc(100vh-4rem)] gap-3 p-3">
         <MobileModeSelector activeMode={mode} onModeChange={handleModeChange} />
         <div className="flex-1 min-h-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-              className="h-full"
-            >
-              <GenieCastConsolidatedTabs
-                selectedVideoStyles={selectedVideoStyles}
-                onStylesChange={handleStylesChange}
-                screenshotGalleries={screenshotGalleries}
-                onGalleriesUpdated={handleGalleriesUpdated}
-                totalScreenshots={totalScreenshots}
-                onGenerate={handleGenerate}
-                isGenerating={isGenerating}
-                activeMainTabOverride={activeTab}
-                onMainTabChange={handleMainTabChange}
-                defaultTab="create"
-              />
-            </motion.div>
-          </AnimatePresence>
+            <GenieCastConsolidatedTabs
+              selectedVideoStyles={selectedVideoStyles}
+              onStylesChange={handleStylesChange}
+              screenshotGalleries={screenshotGalleries}
+              onGalleriesUpdated={handleGalleriesUpdated}
+              totalScreenshots={totalScreenshots}
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
+              activeMainTabOverride={activeTab}
+              onMainTabChange={handleMainTabChange}
+              defaultTab="create"
+            />
         </div>
       </div>
     );
@@ -705,41 +694,31 @@ export const GenieCastHub: React.FC = () => {
         <TopHeader userName={userName} />
 
         <div className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            {isHomeDashboard ? (
-              <motion.div
-                key="home"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <HomeDashboard userName={userName} onOpenWorkspace={openWorkspace} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key={`workspace-${mode}`}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 8 }}
-                transition={{ duration: 0.22 }}
-                className="h-full"
-              >
-                <GenieCastConsolidatedTabs
-                  selectedVideoStyles={selectedVideoStyles}
-                  onStylesChange={handleStylesChange}
-                  screenshotGalleries={screenshotGalleries}
-                  onGalleriesUpdated={handleGalleriesUpdated}
-                  totalScreenshots={totalScreenshots}
-                  onGenerate={handleGenerate}
-                  isGenerating={isGenerating}
-                  activeMainTabOverride={activeTab}
-                  onMainTabChange={handleMainTabChange}
-                  defaultTab="create"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {isHomeDashboard ? (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <HomeDashboard userName={userName} onOpenWorkspace={openWorkspace} />
+            </motion.div>
+          ) : (
+            <div className="h-full">
+              <GenieCastConsolidatedTabs
+                selectedVideoStyles={selectedVideoStyles}
+                onStylesChange={handleStylesChange}
+                screenshotGalleries={screenshotGalleries}
+                onGalleriesUpdated={handleGalleriesUpdated}
+                totalScreenshots={totalScreenshots}
+                onGenerate={handleGenerate}
+                isGenerating={isGenerating}
+                activeMainTabOverride={activeTab}
+                onMainTabChange={handleMainTabChange}
+                defaultTab="create"
+              />
+            </div>
+          )}
         </div>
       </div>
 
