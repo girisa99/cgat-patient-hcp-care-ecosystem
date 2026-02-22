@@ -2,7 +2,7 @@
  * SavedAudioCard - Display saved audio files with script viewing and download options
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -25,7 +25,8 @@ import {
   FileText,
   Eye,
   Headphones,
-  FileAudio
+  FileAudio,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -45,17 +46,33 @@ interface SavedAudioCardProps {
   isTTS?: boolean;
   isVoiceover?: boolean;
   onDelete: () => void;
+  onRefreshUrl?: (id: string) => Promise<string | null>;
 }
 
 export function SavedAudioCard({
   audio,
   isTTS = false,
   isVoiceover = false,
-  onDelete
+  onDelete,
+  onRefreshUrl
 }: SavedAudioCardProps) {
   const [showScriptDialog, setShowScriptDialog] = useState(false);
   const [viewVersion, setViewVersion] = useState<'original' | 'enhanced'>('enhanced');
   const [audioError, setAudioError] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshUrl = useCallback(async () => {
+    if (!onRefreshUrl) return;
+    setIsRefreshing(true);
+    try {
+      const newUrl = await onRefreshUrl(audio.id);
+      if (newUrl) {
+        setAudioError(false);
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [onRefreshUrl, audio.id]);
   
   const hasScript = !!(audio.scriptText || audio.originalScript);
   const hasOriginal = !!audio.originalScript;
@@ -143,9 +160,22 @@ export function SavedAudioCard({
           />
         )}
         {audioError && (
-          <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
-            URL expired
-          </Badge>
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
+              URL expired
+            </Badge>
+            {onRefreshUrl && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={handleRefreshUrl}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
+              </Button>
+            )}
+          </div>
         )}
         
         <DropdownMenu>

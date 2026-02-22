@@ -286,7 +286,7 @@ Key fields: phase, phaseProgress, overallProgress, artifacts[].`,
     consumerTaskId: 'B-011',
     artifact: 'cast_output_presets table with bitrate, codec, fps, resolution columns',
     consumerNotes: 'Lovable adds encoding config columns (B-011), Claude\'s export logic (B-019) reads them. Agree on column names before either implements.',
-    status: 'pending',
+    status: 'ready',
     priority: 'medium',
   },
 ];

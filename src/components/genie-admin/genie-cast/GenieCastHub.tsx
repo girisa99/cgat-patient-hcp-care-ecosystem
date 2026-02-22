@@ -1,9 +1,12 @@
 /**
- * GENIE CAST HUB — Full-Width Single-Panel Layout
- * 
+ * GENIE CAST HUB — Full-Width Single-Panel Layout with Region-Aware Provider Routing
+ *
  * No sidebar. Everything navigated via a clean top bar.
  * Workflow modes (Create/Produce/Publish) + nav in one horizontal strip.
  * AI Devs / Timeline accessible via a slide-out drawer.
+ *
+ * Provider routing: CastRegionSelector drives useProviderRouting → ProviderPipelineBadge.
+ * Language selection persisted to localStorage, drives ALL AI provider routing.
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -13,13 +16,16 @@ import type { VideoStyleType } from './VideoStyleCards';
 import type { ProductGallery } from '../MultiScreenshotGallery';
 import { toast } from 'sonner';
 import { GenieCastConsolidatedTabs, type ConsolidatedTab } from './GenieCastConsolidatedTabs';
+import { CastRegionSelector } from './CastRegionSelector';
+import { useProviderRouting } from '@/hooks/useProviderRouting';
+import { ProviderPipelineBadge } from '@/components/ui/ProviderPipelineBadge';
 import { GuideDock } from '@/components/shared/GuideDock';
 import { useGuideStore, type CastMode } from '@/stores/guideStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, Video, Share2, Film, 
+  Sparkles, Video, Share2, Film,
   Users, Zap, X, PanelRight,
   FolderOpen, LayoutTemplate, Package, Palette, BarChart3, Settings, Image
 } from 'lucide-react';
@@ -31,6 +37,7 @@ const STORAGE_KEY = 'genie_cast_hub_state';
 
 interface GenieCastHubState {
   selectedVideoStyles: VideoStyleType[];
+  languageCode: string;
 }
 
 const defaultStyles: VideoStyleType[] = [
@@ -303,13 +310,27 @@ export const GenieCastHub: React.FC = () => {
     return defaultStyles;
   });
 
+  // Language / region — persisted, drives provider routing
+  const [languageCode, setLanguageCode] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved).languageCode || 'en';
+    } catch { /* ignore */ }
+    return 'en';
+  });
+
+  // Provider routing — single source of truth for ALL AI providers
+  const routing = useProviderRouting(languageCode);
+
   const [screenshotGalleries, setScreenshotGalleries] = useState<ProductGallery[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const totalScreenshots = screenshotGalleries.reduce((t, g) => t + g.screenshots.length, 0);
 
+  // Persist state changes (styles + language)
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ selectedVideoStyles }));
-  }, [selectedVideoStyles]);
+    const state: GenieCastHubState = { selectedVideoStyles, languageCode };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [selectedVideoStyles, languageCode]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -333,6 +354,7 @@ export const GenieCastHub: React.FC = () => {
     }
     setIsGenerating(true);
     try {
+      // TODO: Wire to genie-cast-assembler edge function with routing.tts.provider, routing.video.provider etc.
       await new Promise(resolve => setTimeout(resolve, 2000));
       toast.success('Video generation started!');
       dispatch({ type: 'STEP_COMPLETED', stepId: 'generate' });
@@ -361,7 +383,19 @@ export const GenieCastHub: React.FC = () => {
   // ── Mobile: simple mode tabs + workspace ───────────────────────────────────
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]">
+      <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]" dir={routing.isRTL ? 'rtl' : 'ltr'}>
+        {/* Region selector + pipeline badge — compact on mobile */}
+        <div className="flex items-center gap-2 px-3 pt-3">
+          <CastRegionSelector
+            languageCode={languageCode}
+            onLanguageChange={setLanguageCode}
+            className="flex-1"
+          />
+        </div>
+        <div className="px-3 pt-1">
+          <ProviderPipelineBadge routing={routing} mode="compact" />
+        </div>
+
         <div className="flex items-center gap-0.5 p-1.5 mx-3 mt-3 rounded-lg bg-muted/30 border border-border/10">
           {MODES.map(m => {
             const active = mode === m.id;
@@ -429,7 +463,7 @@ export const GenieCastHub: React.FC = () => {
 
   // ── Desktop: Top nav + full-width glassmorphic workspace ───────────────────
   return (
-    <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]" dir={routing.isRTL ? 'rtl' : 'ltr'}>
       <TopNav
         activeMode={mode}
         onModeChange={handleModeChange}
@@ -437,6 +471,15 @@ export const GenieCastHub: React.FC = () => {
         onViewChange={setActiveView}
         onToggleDrawer={() => setDrawerOpen(prev => !prev)}
       />
+
+      {/* Region selector + AI Pipeline Badge — below top nav */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 pt-3">
+        <CastRegionSelector
+          languageCode={languageCode}
+          onLanguageChange={setLanguageCode}
+        />
+        <ProviderPipelineBadge routing={routing} mode="compact" className="flex-1" />
+      </div>
 
       <div className="flex-1 overflow-y-auto p-4">
         {/* Glassmorphic workspace container */}

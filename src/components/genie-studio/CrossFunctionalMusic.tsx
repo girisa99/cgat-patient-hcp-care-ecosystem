@@ -108,14 +108,13 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
         return;
       }
 
-      // Call the music generation edge function
-      const { data, error } = await supabase.functions.invoke('generate-music', {
+      // Call the multi-provider music edge function
+      const { data, error } = await supabase.functions.invoke('multi-provider-music', {
         body: {
-          prompt: prompt.trim(),
-          genre,
-          mood,
+          prompt: `${mood} ${genre} music: ${prompt.trim()}`,
           duration: duration[0],
-          product,
+          style: genre,
+          instrumental: true,
         }
       });
 
@@ -127,7 +126,7 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
       const newTrack: MusicTrack = {
         id: trackId,
         name: trackName,
-        url: data?.url || undefined,
+        url: data?.audioUrl || undefined,
         duration: duration[0],
         genre,
         mood,
@@ -142,8 +141,8 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
         file_type: 'audio',
         storage_bucket: 'generated_media',
         storage_path: `audio/${trackId}`,
-        file_url: data?.url || null,
-        source: 'music-generation',
+        file_url: data?.audioUrl || null,
+        source: 'generated',
         metadata: {
           type: 'instrumental',
           genre,
@@ -151,6 +150,7 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
           prompt: prompt.trim(),
           duration: duration[0],
           product,
+          provider: data?.provider || 'unknown',
         }
       });
 
@@ -182,7 +182,7 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
             file_type: 'audio',
             storage_bucket: 'generated_media',
             storage_path: `audio/${trackId}`,
-            source: 'music-generation',
+            source: 'generated',
             metadata: { type: 'instrumental', genre, mood, prompt: prompt.trim(), duration: duration[0], product }
           });
         }

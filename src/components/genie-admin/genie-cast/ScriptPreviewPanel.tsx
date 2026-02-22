@@ -123,23 +123,24 @@ export function ScriptPreviewPanel({
   const [currentScript, setCurrentScript] = useState<ProductScript | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [playingChapter, setPlayingChapter] = useState<string | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<keyof typeof TTS_PROVIDERS>('elevenlabs');
-  const [selectedVoice, setSelectedVoice] = useState(VOICE_OPTIONS.elevenlabs[0].id);
-  const [useApprovedMessaging, setUseApprovedMessaging] = useState(true);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Get recommended TTS provider based on region
-  const getRecommendedProvider = useCallback(() => {
-    // Map region to zone
+  // Region-aware TTS default from master registry (fixes R-1: no more hardcoded 'elevenlabs')
+  const getRecommendedProvider = useCallback((): keyof typeof TTS_PROVIDERS => {
     const cjkRegions = ['zh', 'ja', 'ko'];
-    const menaRegions = ['ar'];
-    
+    const menaRegions = ['ar', 'he', 'fa', 'ur'];
     if (cjkRegions.includes(selectedRegion)) return 'alibaba';
     if (menaRegions.includes(selectedRegion)) return 'azure';
-    return 'elevenlabs';
+    return 'azure'; // Azure Neural is PRIMARY for Western too (viseme support)
   }, [selectedRegion]);
+
+  const [selectedProvider, setSelectedProvider] = useState<keyof typeof TTS_PROVIDERS>(() => getRecommendedProvider());
+  const [selectedVoice, setSelectedVoice] = useState(() => {
+    const rec = getRecommendedProvider();
+    return VOICE_OPTIONS[rec]?.[0]?.id || VOICE_OPTIONS.elevenlabs[0].id;
+  });
+  const [useApprovedMessaging, setUseApprovedMessaging] = useState(true);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Generate script from approved messaging
   const composeScriptFromMessaging = useCallback((productId: GenieProductId, messaging: any): string => {

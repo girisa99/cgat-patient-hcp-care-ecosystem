@@ -675,3 +675,202 @@
 .font-thai {
   font-family: 'Noto Sans Thai', 'Tahoma', sans-serif;
 }
+
+/* ═══════════════════════════════════════════════════════
+   GLASS MORPHISM DESIGN SYSTEM — Genie Cast v1.0
+   Single source of truth for all glass effects.
+   Usage: Apply .glass-* classes or use CSS vars directly.
+   ═══════════════════════════════════════════════════════ */
+
+/* --- Glass Keyframes --- */
+@keyframes glass-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes glass-glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.10); }
+  50% { box-shadow: 0 0 30px hsl(var(--primary) / 0.20); }
+}
+
+@keyframes glass-border-flow {
+  0% { border-color: hsl(var(--primary) / 0.15); }
+  50% { border-color: hsl(var(--accent) / 0.20); }
+  100% { border-color: hsl(var(--primary) / 0.15); }
+}
+
+/* --- Glass Base Classes --- */
+.glass-card {
+  background: hsl(var(--card) / 0.60);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid hsl(var(--border) / 0.15);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px hsl(var(--primary) / 0.06), inset 0 1px 0 hsl(0 0% 100% / 0.05);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: hsl(var(--primary) / 0.25);
+  box-shadow: 0 12px 40px hsl(var(--primary) / 0.10), inset 0 1px 0 hsl(0 0% 100% / 0.08);
+  transform: translateY(-1px);
+}
+
+.glass-panel {
+  background: hsl(var(--card) / 0.40);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.10);
+  border-radius: var(--radius);
+}
+
+.glass-elevated {
+  background: hsl(var(--card) / 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid hsl(var(--border) / 0.20);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 48px hsl(var(--primary) / 0.10), inset 0 1px 0 hsl(0 0% 100% / 0.08);
+}
+
+.glass-sidebar {
+  background: hsl(var(--sidebar-background) / 0.70);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid hsl(var(--sidebar-border) / 0.15);
+}
+
+.glass-tabs {
+  background: hsl(var(--card) / 0.30);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid hsl(var(--border) / 0.08);
+  border-radius: var(--radius);
+}
+
+.glass-tab-active {
+  background: hsl(var(--primary) / 0.12);
+  border: 1px solid hsl(var(--primary) / 0.25);
+  box-shadow: 0 0 16px hsl(var(--primary) / 0.10);
+}
+
+.glass-input {
+  background: hsl(var(--card) / 0.50);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid hsl(var(--border) / 0.15);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-input:focus-within {
+  border-color: hsl(var(--primary) / 0.40);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
+}
+
+.glass-modal {
+  background: hsl(var(--card) / 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid hsl(var(--border) / 0.20);
+  border-radius: calc(var(--radius) * 2);
+  box-shadow: 0 24px 64px hsl(0 0% 0% / 0.20), inset 0 1px 0 hsl(0 0% 100% / 0.05);
+}
+
+/* --- Glass Glow Variants (per-provider) --- */
+.glass-glow-primary { box-shadow: 0 0 20px hsl(var(--primary) / 0.15), inset 0 1px 0 hsl(0 0% 100% / 0.05); }
+.glass-glow-accent { box-shadow: 0 0 20px hsl(var(--accent) / 0.15), inset 0 1px 0 hsl(0 0% 100% / 0.05); }
+.glass-glow-success { box-shadow: 0 0 20px hsl(var(--status-success) / 0.15); }
+.glass-glow-warning { box-shadow: 0 0 20px hsl(var(--status-warning) / 0.15); }
+.glass-glow-error { box-shadow: 0 0 20px hsl(var(--status-error) / 0.15); }
+.glass-glow-azure { box-shadow: 0 0 20px hsl(var(--provider-azure) / 0.15); }
+.glass-glow-alibaba { box-shadow: 0 0 20px hsl(var(--provider-alibaba) / 0.15); }
+.glass-glow-gemini { box-shadow: 0 0 20px hsl(var(--provider-gemini) / 0.15); }
+
+/* --- Glass Animation Utilities --- */
+.glass-animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, hsl(0 0% 100% / 0.04) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: glass-shimmer 3s ease-in-out infinite;
+}
+
+.glass-animate-glow {
+  animation: glass-glow-pulse 3s ease-in-out infinite;
+}
+
+.glass-animate-border {
+  animation: glass-border-flow 4s ease-in-out infinite;
+}
+
+/* --- Glass Badge (compact provider/tier indicator) --- */
+.glass-badge {
+  background: hsl(var(--card) / 0.50);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid hsl(var(--border) / 0.15);
+  border-radius: 9999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* --- Glass Mobile Touch Targets --- */
+@media (max-width: 640px) {
+  .glass-card { border-radius: calc(var(--radius) * 1.5); }
+  .glass-touch-target { min-height: 44px; min-width: 44px; }
+  .glass-modal { border-radius: var(--radius); margin: 0.5rem; }
+}
+
+/* --- Dark Mode Glass Adjustments --- */
+.dark .glass-card {
+  background: hsl(var(--card) / 0.40);
+  box-shadow: 0 8px 32px hsl(0 0% 0% / 0.30), inset 0 1px 0 hsl(0 0% 100% / 0.03);
+}
+
+.dark .glass-panel {
+  background: hsl(var(--card) / 0.25);
+}
+
+.dark .glass-elevated {
+  background: hsl(var(--card) / 0.55);
+  box-shadow: 0 16px 48px hsl(0 0% 0% / 0.40), inset 0 1px 0 hsl(0 0% 100% / 0.04);
+}
+
+.dark .glass-sidebar {
+  background: hsl(var(--sidebar-background) / 0.50);
+}
+
+.dark .glass-card:hover {
+  box-shadow: 0 12px 40px hsl(var(--primary) / 0.15), inset 0 1px 0 hsl(0 0% 100% / 0.05);
+}
+
+/* ═══════════════════════════════════════════════════════
+   RTL GLASS — Flips sidebar, spacing, icons for RTL
+   ═══════════════════════════════════════════════════════ */
+[dir="rtl"] .glass-sidebar {
+  border-right: none;
+  border-left: 1px solid hsl(var(--sidebar-border) / 0.15);
+}
+
+[dir="rtl"] .glass-card,
+[dir="rtl"] .glass-panel,
+[dir="rtl"] .glass-elevated {
+  text-align: right;
+}
+
+/* RTL-aware flex: tabs flow right-to-left */
+[dir="rtl"] .glass-tabs-list {
+  flex-direction: row-reverse;
+}
+
+/* RTL navigation items */
+[dir="rtl"] .glass-nav-item {
+  flex-direction: row-reverse;
+  text-align: right;
+  padding-left: unset;
+  padding-right: 0.75rem;
+}
+
+[dir="rtl"] .glass-nav-icon {
+  margin-right: unset;
+  margin-left: 0.5rem;
+}

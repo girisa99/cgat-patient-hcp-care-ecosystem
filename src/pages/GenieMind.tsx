@@ -66,11 +66,12 @@ const GenieMind: React.FC = () => {
   } = useGenieScripts();
   
   // Use the actual return type from the hook
-  const { 
+  const {
     voiceovers,
     instrumentalMusic,
     ttsFiles,
-    isLoading: mediaLoading
+    isLoading: mediaLoading,
+    refresh: refreshMediaLibrary
   } = useGenieMediaLibrary();
 
   // Stats
@@ -358,6 +359,7 @@ const GenieMind: React.FC = () => {
                               const { error } = await sb.from('generated_media').delete().eq('id', audio.id);
                               if (error) throw error;
                               toast.success(`Deleted "${audio.name}"`);
+                              await refreshMediaLibrary();
                             } catch (err) {
                               console.error('Delete failed:', err);
                               toast.error('Failed to delete audio');

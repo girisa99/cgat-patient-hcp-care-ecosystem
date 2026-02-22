@@ -692,7 +692,8 @@ export function ScriptEditorTab({
       
       // Create timeout for enhancement call
       const enhanceTimeoutId = setTimeout(() => {
-        console.log('Enhancement timeout reached');
+        setIsEnhancing(false);
+        toast.error('Enhancement took too long. Please try again.');
       }, 45000); // 45s timeout for enhancement (longer operation)
       
       const { data, error } = await supabase.functions.invoke('enhance-script', {

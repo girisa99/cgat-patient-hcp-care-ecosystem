@@ -10,7 +10,7 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QuadrantLayout, QuadrantProductHeader } from '@/components/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sparkles, LayoutTemplate, Image, Wand2 } from 'lucide-react';
@@ -21,10 +21,17 @@ import type { GeneratedContent } from '@/components/genie-studio/PostGenerationA
 import { ImageScriptAssembler } from '@/components/shared';
 import { QuickTemplateSelector } from '@/components/templates';
 import { SparkGuidedWizard } from '@/components/genie-spark/SparkGuidedWizard';
+import { productionEpisodesService } from '@/services/production/productionEpisodesService';
 
 const GenieSpark: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('pipeline');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'pipeline');
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
   const [hasGeneratedContent, setHasGeneratedContent] = useState(false);
   const [lastSavedScriptId, setLastSavedScriptId] = useState<string | null>(null);
   const { saveScript } = useGenieScripts();
@@ -68,6 +75,10 @@ const GenieSpark: React.FC = () => {
         toast.error('Failed to save script. Please try again.');
         return;
       }
+
+      // Create production episode linking Spark → Mind
+      await productionEpisodesService.createFromScript(saved.id, saved.name);
+
       navigate(`/genie-mind?tab=script-editor&scriptId=${saved.id}`);
       toast.success('Script sent to Script Editor for refinement!');
     } catch (err) {
@@ -128,7 +139,7 @@ const GenieSpark: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="bg-muted/50 border border-border/50">
             <TabsTrigger value="guide" className="gap-2">
               <Wand2 className="h-4 w-4" />
@@ -205,7 +216,7 @@ const GenieSpark: React.FC = () => {
                 onSelect={(template) => {
                   toast.success(`Template "${template.name}" selected!`);
                   // Navigate to pipeline with template pre-loaded
-                  setActiveTab('pipeline');
+                  handleTabChange('pipeline');
                 }}
               />
             </TabsContent>
