@@ -8,15 +8,15 @@
  * Day 3 (C-304): Fixed wizard onGenerate integration, removed temp IDs,
  * connected save flow to use returned DB ids
  *
- * Day 6: Phase 5 — Wired capabilityDiscoveryEngine + createFlowOrchestrator
- * to new glass-morphism Create tab. Old tabs preserved.
+ * Day 6: Phase 5 — Glass-morphism tabs. Create flow moved to GenieCast (Architecture B).
+ * Spark stays focused: Guide (default) → Pipeline → Templates → Images.
  */
 
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QuadrantLayout, QuadrantProductHeader } from '@/components/navigation';
 import { GlassTabs, GlassTabsList, GlassTabsTrigger, GlassTabsContent } from '@/components/ui/glass-primitives';
-import { Sparkles, LayoutTemplate, Image, Wand2, Rocket } from 'lucide-react';
+import { Sparkles, LayoutTemplate, Image, Wand2 } from 'lucide-react';
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { toast } from 'sonner';
@@ -24,22 +24,17 @@ import type { GeneratedContent } from '@/components/genie-studio/PostGenerationA
 import { ImageScriptAssembler } from '@/components/shared';
 import { QuickTemplateSelector } from '@/components/templates';
 import { SparkGuidedWizard } from '@/components/genie-spark/SparkGuidedWizard';
-import { CreateDiscovery } from '@/components/genie-spark/CreateDiscovery';
-import { CreateFlowWizard } from '@/components/genie-spark/CreateFlowWizard';
 import { productionEpisodesService } from '@/services/production/productionEpisodesService';
 
 const GenieSpark: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'create');
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'guide');
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setSearchParams({ tab }, { replace: true });
   };
-
-  // Create flow state: discovery → wizard
-  const [selectedChainId, setSelectedChainId] = useState<string | null>(null);
 
   const [hasGeneratedContent, setHasGeneratedContent] = useState(false);
   const [lastSavedScriptId, setLastSavedScriptId] = useState<string | null>(null);
@@ -150,10 +145,6 @@ const GenieSpark: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 py-6">
         <GlassTabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <GlassTabsList>
-            <GlassTabsTrigger value="create" className="gap-2">
-              <Rocket className="h-4 w-4" />
-              Create
-            </GlassTabsTrigger>
             <GlassTabsTrigger value="guide" className="gap-2">
               <Wand2 className="h-4 w-4" />
               Guide
@@ -171,20 +162,6 @@ const GenieSpark: React.FC = () => {
               Images
             </GlassTabsTrigger>
           </GlassTabsList>
-
-            {/* NEW: Create Tab — Discovery + Flow Wizard */}
-            <GlassTabsContent value="create" className="mt-0">
-              {selectedChainId ? (
-                <CreateFlowWizard
-                  onBack={() => setSelectedChainId(null)}
-                  initialChainId={selectedChainId}
-                />
-              ) : (
-                <CreateDiscovery
-                  onChainSelect={(chainId) => setSelectedChainId(chainId)}
-                />
-              )}
-            </GlassTabsContent>
 
             {/* Guided Wizard Tab */}
             <GlassTabsContent value="guide" className="mt-0">
