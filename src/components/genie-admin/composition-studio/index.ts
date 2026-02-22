@@ -65,5 +65,10 @@ export { ScriptEnhanceEditor } from './ScriptEnhanceEditor';
 export { ProjectPickerDropdown } from './ProjectPickerDropdown';
 export type { StoredProjectInfo } from './ProjectPickerDropdown';
 
+// Scene Composition Engine - Scene-level creative freedom
+// Service: src/services/sceneCompositionEngine.ts
+// Hook: src/hooks/useSceneComposition.ts
+// Recommendations: src/services/sceneRecommendationEngine.ts
+
 export * from './types';
 export type { LandingPageSection } from './TemplatePreviewDialog';
