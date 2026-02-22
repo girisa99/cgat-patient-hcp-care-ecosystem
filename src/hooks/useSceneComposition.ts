@@ -27,6 +27,10 @@ import type {
   CompositionElementType,
   ChapterVisual,
   MultiOutputConfig,
+  DataSource,
+  ContentVerification,
+  SceneDataVisualization,
+  SceneEditState,
 } from '@/components/genie-admin/composition-studio/types';
 import {
   createScene,
@@ -60,6 +64,19 @@ import {
   buildStitchPlan,
   createFromTemplate,
   SCENE_TEMPLATES,
+  // New: cross-format + data + verification
+  convertSlidesToCinematic,
+  convertInfographicToVideo,
+  addDataSource,
+  removeDataSource,
+  verifyDataSource,
+  addVerification,
+  flagForReview,
+  getUnverifiedScenes,
+  addDataVisualization,
+  removeDataVisualization,
+  startEditing,
+  stopEditing,
 } from '@/services/sceneCompositionEngine';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -143,6 +160,26 @@ export interface UseSceneCompositionReturn {
   setAllScenes: (scenes: CompositionScene[]) => void;
   applyStyleToAll: (style: SceneStyle, stylePrompt?: string) => void;
   markAllAsClips: (platforms: string[]) => void;
+
+  // Cross-format conversion
+  slidesToCinematic: (options?: { cinematicStyle?: SceneStyle; renderAs3D?: boolean; keepOriginalSlides?: boolean }) => void;
+  infographicsToVideo: () => void;
+
+  // Data sources & verification
+  addSource: (sceneId: string, source: DataSource) => void;
+  removeSource: (sceneId: string, sourceId: string) => void;
+  verifySource: (sceneId: string, sourceId: string, notes?: string) => void;
+  addVerificationResult: (sceneId: string, verification: ContentVerification) => void;
+  flagSceneForReview: (sceneId: string, reason: string) => void;
+  unverifiedScenes: CompositionScene[];
+
+  // Data visualizations
+  addVisualization: (sceneId: string, viz: SceneDataVisualization) => void;
+  removeVisualization: (sceneId: string, vizId: string) => void;
+
+  // Inline editing
+  startEditingField: (sceneId: string, field: SceneEditState['editingField']) => void;
+  stopEditingField: (sceneId: string) => void;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -494,6 +531,93 @@ export function useSceneComposition(
 
   const templateKeys = useMemo(() => Object.keys(SCENE_TEMPLATES), []);
 
+  // ─── Cross-Format Conversion ────────────────────────────────────────────
+
+  const slidesToCinematicFn = useCallback((options?: { cinematicStyle?: SceneStyle; renderAs3D?: boolean; keepOriginalSlides?: boolean }) => {
+    updateScenes(
+      scenes => convertSlidesToCinematic(scenes, options || {}),
+      'Convert slides to cinematic video',
+    );
+  }, [updateScenes]);
+
+  const infographicsToVideoFn = useCallback(() => {
+    updateScenes(
+      scenes => convertInfographicToVideo(scenes),
+      'Convert infographics to animated video',
+    );
+  }, [updateScenes]);
+
+  // ─── Data Sources & Verification ────────────────────────────────────────
+
+  const addSourceFn = useCallback((sceneId: string, source: DataSource) => {
+    updateScenes(
+      scenes => addDataSource(scenes, sceneId, source),
+      `Add data source to scene`,
+    );
+  }, [updateScenes]);
+
+  const removeSourceFn = useCallback((sceneId: string, sourceId: string) => {
+    updateScenes(
+      scenes => removeDataSource(scenes, sceneId, sourceId),
+      `Remove data source`,
+    );
+  }, [updateScenes]);
+
+  const verifySourceFn = useCallback((sceneId: string, sourceId: string, notes?: string) => {
+    updateScenes(
+      scenes => verifyDataSource(scenes, sceneId, sourceId, notes),
+      `Verify data source`,
+    );
+  }, [updateScenes]);
+
+  const addVerificationFn = useCallback((sceneId: string, verification: ContentVerification) => {
+    updateScenes(
+      scenes => addVerification(scenes, sceneId, verification),
+      `Add verification result`,
+    );
+  }, [updateScenes]);
+
+  const flagForReviewFn = useCallback((sceneId: string, reason: string) => {
+    updateScenes(
+      scenes => flagForReview(scenes, sceneId, reason),
+      `Flag scene for review: ${reason}`,
+    );
+  }, [updateScenes]);
+
+  const unverifiedScenes = useMemo(() => getUnverifiedScenes(state.scenes), [state.scenes]);
+
+  // ─── Data Visualizations ────────────────────────────────────────────────
+
+  const addVisualizationFn = useCallback((sceneId: string, viz: SceneDataVisualization) => {
+    updateScenes(
+      scenes => addDataVisualization(scenes, sceneId, viz),
+      `Add visualization: ${viz.title}`,
+    );
+  }, [updateScenes]);
+
+  const removeVisualizationFn = useCallback((sceneId: string, vizId: string) => {
+    updateScenes(
+      scenes => removeDataVisualization(scenes, sceneId, vizId),
+      `Remove visualization`,
+    );
+  }, [updateScenes]);
+
+  // ─── Inline Editing ─────────────────────────────────────────────────────
+
+  const startEditingFieldFn = useCallback((sceneId: string, field: SceneEditState['editingField']) => {
+    updateScenes(
+      scenes => startEditing(scenes, sceneId, field),
+      `Start editing ${field}`,
+    );
+  }, [updateScenes]);
+
+  const stopEditingFieldFn = useCallback((sceneId: string) => {
+    updateScenes(
+      scenes => stopEditing(scenes, sceneId),
+      `Stop editing`,
+    );
+  }, [updateScenes]);
+
   return {
     // State
     scenes: state.scenes,
@@ -561,5 +685,25 @@ export function useSceneComposition(
     setAllScenes: setAllScenesFn,
     applyStyleToAll: applyStyleToAllFn,
     markAllAsClips: markAllAsClipsFn,
+
+    // Cross-format conversion
+    slidesToCinematic: slidesToCinematicFn,
+    infographicsToVideo: infographicsToVideoFn,
+
+    // Data sources & verification
+    addSource: addSourceFn,
+    removeSource: removeSourceFn,
+    verifySource: verifySourceFn,
+    addVerificationResult: addVerificationFn,
+    flagSceneForReview: flagForReviewFn,
+    unverifiedScenes,
+
+    // Data visualizations
+    addVisualization: addVisualizationFn,
+    removeVisualization: removeVisualizationFn,
+
+    // Inline editing
+    startEditingField: startEditingFieldFn,
+    stopEditingField: stopEditingFieldFn,
   };
 }

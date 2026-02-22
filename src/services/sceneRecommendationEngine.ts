@@ -42,6 +42,12 @@ import type {
   CharacterScale,
   RenderingMode,
   SceneRenderConfig,
+  ChartType,
+  DataSource,
+  ContentVerification,
+  CrossFormatConversionType,
+  LanguageQualityCheck,
+  CitationConfig,
 } from '@/components/genie-admin/composition-studio/types';
 
 // ─── Recommendation Generator ────────────────────────────────────────────────
@@ -106,6 +112,14 @@ export function generateRecommendations(
   recommendations.push(...recommendSlideFrameworks(scenes, context));
   recommendations.push(...recommendCharacterStyles(scenes, context));
   recommendations.push(...recommendRenderingModes(scenes, context));
+
+  // Data, verification, spell check, cross-format
+  recommendations.push(...recommendVisualizationTypes(scenes, context));
+  recommendations.push(...recommendDataSources(scenes, context));
+  recommendations.push(...recommendContentVerification(scenes, context));
+  recommendations.push(...recommendSpellGrammar(scenes, context));
+  recommendations.push(...recommendCrossFormatConversions(scenes, context));
+  recommendations.push(...recommendCitations(scenes, context));
 
   // Sort by confidence (highest first)
   return recommendations.sort((a, b) => b.confidence - a.confidence);
@@ -792,6 +806,335 @@ const SCENARIO_PIPELINES: ScenarioPipelineTemplate[] = [
       { step: 6, label: 'Cinematic Score', pipelineId: 'audio-mixer', description: 'Emotional background music' },
       { step: 7, label: 'Color Grade', pipelineId: 'pipeline-editor-processor', description: 'Consistent cinematic color grading' },
       { step: 8, label: 'Transcreation', pipelineId: 'translation-service', description: 'Cultural adaptation per region' },
+    ],
+  },
+  // ─── NEW SCENARIO PIPELINES ─────────────────────────────────────────────────
+  {
+    scenario: 'ppt_to_cinematic',
+    description: 'Create PPT slides (optionally in 3D), then convert to cinematic video storytelling — customer journey, infographics, data as narrative',
+    recommendedSceneTypes: [
+      { title: 'Title / Hook', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'slow_zoom_in', style: 'cinematic', duration: 8, hasBRoll: false },
+      { title: 'Problem / Context', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 15, hasBRoll: false },
+      { title: 'Customer Journey Map', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'corporate', duration: 20, hasBRoll: false },
+      { title: 'Data / Infographic', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'futuristic', duration: 15, hasBRoll: false },
+      { title: 'Key Insight', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'dolly_zoom', style: 'cinematic', duration: 12, hasBRoll: true },
+      { title: 'Solution Showcase (3D)', visualType: '3d', visualSource: 'ai_from_script', motionPreset: 'orbit', style: 'futuristic', duration: 15, hasBRoll: false },
+      { title: 'Conclusion + CTA', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'slow_zoom_out', style: 'luxury', duration: 10, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Slide Generation', pipelineId: 'slides-generate', description: 'Generate slides with framework layout (customer journey, infographic, data)' },
+      { step: 2, label: '3D Slide Rendering', pipelineId: 'alibaba-3d-generator', description: 'Convert flat slides to 3D rendered presentations with depth and perspective' },
+      { step: 3, label: 'Data Visualization', pipelineId: 'ai-universal-processor', description: 'Generate animated charts, graphs, and infographics from slide data' },
+      { step: 4, label: 'Cinematic Scene Gen', pipelineId: 'video-generate', description: 'Convert each slide into a cinematic video scene with motion and effects' },
+      { step: 5, label: 'Narration', pipelineId: 'text-to-speech', description: 'Generate voiceover narration telling the slide content as a story' },
+      { step: 6, label: 'Cinematic Score', pipelineId: 'audio-mixer', description: 'Add dramatic/emotional music to match the narrative arc' },
+      { step: 7, label: 'Transitions + Color', pipelineId: 'pipeline-editor-processor', description: 'Cinematic transitions between scenes, consistent color grading' },
+      { step: 8, label: 'Fact Check + Citations', pipelineId: 'ai-quality-assessment', description: 'Verify all data claims, add source citations to end card' },
+      { step: 9, label: 'Assembly', pipelineId: 'video-assembly', description: 'Stitch slides→3D→cinematic into final video' },
+    ],
+  },
+  {
+    scenario: 'market_analysis',
+    description: 'Market research presentation — statistics, graphs, data sources, competitive study with referenced URLs',
+    recommendedSceneTypes: [
+      { title: 'Executive Summary', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'corporate', duration: 12, hasBRoll: false },
+      { title: 'Market Size (TAM/SAM/SOM)', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'minimalist', duration: 20, hasBRoll: false },
+      { title: 'Industry Trends', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'futuristic', duration: 18, hasBRoll: true },
+      { title: 'Competitive Landscape', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'corporate', duration: 20, hasBRoll: false },
+      { title: 'Customer Segments', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'corporate', duration: 15, hasBRoll: false },
+      { title: 'Key Statistics', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 12, hasBRoll: false },
+      { title: 'Sources & References', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'static', style: 'minimalist', duration: 8, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Research Collection', pipelineId: 'crawl-relevant-content', description: 'Web crawl for market data, statistics, and research reports' },
+      { step: 2, label: 'Data Extraction', pipelineId: 'ai-universal-processor', description: 'Extract statistics, graphs, and key data points with source URLs' },
+      { step: 3, label: 'Data Visualization', pipelineId: 'slides-generate', description: 'Generate charts, graphs, and infographic slides from data' },
+      { step: 4, label: 'Narrative Script', pipelineId: 'ai-universal-processor', description: 'Generate analytical narration from data (with source attribution)' },
+      { step: 5, label: 'Spell + Fact Check', pipelineId: 'ai-quality-assessment', description: 'Verify statistics, check sources, flag AI-generated approximations' },
+      { step: 6, label: 'Animated Data', pipelineId: 'video-generate', description: 'Animate charts and statistics with count-up effects' },
+      { step: 7, label: 'Citations End Card', pipelineId: 'slides-generate', description: 'Generate bibliography/sources slide with all URLs and references' },
+      { step: 8, label: 'Assembly', pipelineId: 'video-assembly', description: 'Stitch into cohesive research presentation video' },
+    ],
+  },
+  {
+    scenario: 'data_story',
+    description: 'Data storytelling — transform raw statistics and research into a narrative video journey',
+    recommendedSceneTypes: [
+      { title: 'The Big Question', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'slow_zoom_in', style: 'cinematic', duration: 10, hasBRoll: false },
+      { title: 'Context / Background', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'documentary', duration: 18, hasBRoll: true },
+      { title: 'Key Statistic 1', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 12, hasBRoll: false },
+      { title: 'The Journey (Timeline)', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'minimalist', duration: 20, hasBRoll: false },
+      { title: 'Key Statistic 2', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 12, hasBRoll: false },
+      { title: 'Insight / So What', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'dolly_zoom', style: 'cinematic', duration: 15, hasBRoll: true },
+      { title: 'Sources & Disclaimer', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'static', style: 'minimalist', duration: 6, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Data Import', pipelineId: 'document-processor', description: 'Import data from CSV, PDF, URL, or manual input' },
+      { step: 2, label: 'Story Arc Gen', pipelineId: 'ai-universal-processor', description: 'Transform raw data into narrative arc with characters and journey' },
+      { step: 3, label: 'Visualization Gen', pipelineId: 'slides-generate', description: 'Generate animated charts, infographics, and stat callouts' },
+      { step: 4, label: 'Cinematic Scenes', pipelineId: 'video-generate', description: 'Generate visual metaphors and B-roll for emotional impact' },
+      { step: 5, label: 'Narration', pipelineId: 'text-to-speech', description: 'Storyteller-style voice generation' },
+      { step: 6, label: 'Verification', pipelineId: 'ai-quality-assessment', description: 'Cross-check all data claims against source documents' },
+      { step: 7, label: 'Assembly', pipelineId: 'video-assembly', description: 'Final story assembly with pacing and music' },
+    ],
+  },
+  {
+    scenario: 'case_study_video',
+    description: 'Case study — before/after journey with metrics, testimonial, and transformation arc',
+    recommendedSceneTypes: [
+      { title: 'Client Introduction', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'static', style: 'corporate', duration: 12, hasBRoll: false },
+      { title: 'The Challenge (Before)', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'documentary', duration: 18, hasBRoll: true },
+      { title: 'Key Metrics (Before)', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 10, hasBRoll: false },
+      { title: 'Solution Implementation', visualType: 'screen_recording', visualSource: 'screen_capture_enhanced', motionPreset: 'tracking_shot', style: 'corporate', duration: 25, hasBRoll: false },
+      { title: 'Transformation Journey', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'minimalist', duration: 15, hasBRoll: false },
+      { title: 'Key Metrics (After)', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'playful', duration: 12, hasBRoll: false },
+      { title: 'Testimonial Quote', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'static', style: 'documentary', duration: 15, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Case Data Import', pipelineId: 'document-processor', description: 'Import case study data, metrics, testimonials' },
+      { step: 2, label: 'Before/After Script', pipelineId: 'ai-universal-processor', description: 'Generate transformation narrative with data points' },
+      { step: 3, label: 'Metrics Visualization', pipelineId: 'slides-generate', description: 'Before/after comparison charts and KPI cards' },
+      { step: 4, label: 'Journey Map', pipelineId: 'slides-generate', description: 'Customer journey visualization with touchpoints' },
+      { step: 5, label: 'Cinematic B-Roll', pipelineId: 'video-generate', description: 'Contextual visuals for challenge and solution' },
+      { step: 6, label: 'Fact Check', pipelineId: 'ai-quality-assessment', description: 'Verify all metrics and claims' },
+      { step: 7, label: 'Assembly', pipelineId: 'video-assembly', description: 'Full case study video with dramatic arc' },
+    ],
+  },
+  {
+    scenario: 'infographic_video',
+    description: 'Transform infographic data into an animated video — statistics come alive with motion and narration',
+    recommendedSceneTypes: [
+      { title: 'Title / Topic', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'playful', duration: 6, hasBRoll: false },
+      { title: 'Stat Block 1', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 10, hasBRoll: false },
+      { title: 'Process / Flow', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'minimalist', duration: 15, hasBRoll: false },
+      { title: 'Comparison Chart', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 12, hasBRoll: false },
+      { title: 'Stat Block 2', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 10, hasBRoll: false },
+      { title: 'Key Takeaway', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'slow_zoom_in', style: 'playful', duration: 8, hasBRoll: false },
+      { title: 'Sources', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'static', style: 'minimalist', duration: 5, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Data Input', pipelineId: 'document-processor', description: 'Import data, statistics, or existing infographic image' },
+      { step: 2, label: 'Infographic Layout', pipelineId: 'ai-universal-processor', description: 'Generate infographic layout with icons, stats, and flow' },
+      { step: 3, label: 'Animation', pipelineId: 'video-generate', description: 'Animate each data block with count-up, grow, reveal effects' },
+      { step: 4, label: 'Narration', pipelineId: 'text-to-speech', description: 'Generate voiceover explaining the data points' },
+      { step: 5, label: 'Source Citations', pipelineId: 'ai-universal-processor', description: 'Generate source attribution cards with URLs' },
+      { step: 6, label: 'Assembly', pipelineId: 'video-assembly', description: 'Stitch animated infographic into video' },
+    ],
+  },
+  // ─── INDUSTRY-SPECIFIC SCENARIO PIPELINES ─────────────────────────────────
+  { scenario: 'patient_education', description: 'Patient-friendly medical education — simple animations, clear narration, accessible language',
+    recommendedSceneTypes: [
+      { title: 'Condition Overview', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'playful', duration: 15, hasBRoll: false },
+      { title: 'How It Affects You', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'minimalist', duration: 20, hasBRoll: false },
+      { title: 'Treatment Options', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 20, hasBRoll: false },
+      { title: 'What to Expect', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'playful', duration: 15, hasBRoll: false },
+      { title: 'Next Steps', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'static', style: 'corporate', duration: 12, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Medical Content', pipelineId: 'ai-universal-processor', description: 'Generate patient-friendly content (8th grade reading level)' },
+      { step: 2, label: 'Medical Illustrations', pipelineId: 'video-generate', description: 'Simple medical animations and illustrations' },
+      { step: 3, label: 'Accessibility Check', pipelineId: 'ai-quality-assessment', description: 'Verify reading level, medical accuracy, accessibility' },
+      { step: 4, label: 'Narration', pipelineId: 'text-to-speech', description: 'Clear, slow-paced narration' },
+      { step: 5, label: 'Multi-Language', pipelineId: 'translation-service', description: 'Translate with cultural sensitivity' },
+      { step: 6, label: 'Assembly', pipelineId: 'video-assembly', description: 'Assemble with captions and large text' },
+    ],
+  },
+  { scenario: 'hcp_training', description: 'Healthcare professional training — clinical data, protocols, evidence-based',
+    recommendedSceneTypes: [
+      { title: 'Clinical Background', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'corporate', duration: 20, hasBRoll: false },
+      { title: 'Mechanism of Action', visualType: '3d', visualSource: 'ai_from_script', motionPreset: 'orbit', style: 'futuristic', duration: 30, hasBRoll: false },
+      { title: 'Clinical Trial Data', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'minimalist', duration: 25, hasBRoll: false },
+      { title: 'Treatment Protocol', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'corporate', duration: 20, hasBRoll: false },
+      { title: 'References', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'static', style: 'minimalist', duration: 8, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Clinical Research', pipelineId: 'crawl-relevant-content', description: 'Gather clinical data, guidelines, peer-reviewed research' },
+      { step: 2, label: 'Data Extract', pipelineId: 'ai-universal-processor', description: 'Extract endpoints, p-values, confidence intervals' },
+      { step: 3, label: '3D Medical Viz', pipelineId: 'alibaba-3d-generator', description: '3D molecular/anatomical visualizations' },
+      { step: 4, label: 'Evidence Slides', pipelineId: 'slides-generate', description: 'Forest plots, survival curves, KM curves' },
+      { step: 5, label: 'Compliance', pipelineId: 'ai-quality-assessment', description: 'Verify fair balance, ISI, off-label disclaimers' },
+      { step: 6, label: 'Assembly', pipelineId: 'video-assembly', description: 'Assemble with references footer' },
+    ],
+  },
+  { scenario: 'recruitment_video', description: 'Employer brand / recruitment — culture, team, benefits, open positions',
+    recommendedSceneTypes: [
+      { title: 'Company Intro', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'cinematic', duration: 10, hasBRoll: true },
+      { title: 'Culture & Values', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'static', style: 'corporate', duration: 20, hasBRoll: true },
+      { title: 'Benefits & Perks', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'playful', duration: 15, hasBRoll: false },
+      { title: 'Open Positions', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'corporate', duration: 12, hasBRoll: false },
+      { title: 'Apply CTA', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'slow_zoom_out', style: 'corporate', duration: 8, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Company Data', pipelineId: 'local-business-enrichment', description: 'Pull company info, photos, reviews' },
+      { step: 2, label: 'Culture Script', pipelineId: 'ai-universal-processor', description: 'Authentic employer brand narrative' },
+      { step: 3, label: 'Team Visuals', pipelineId: 'video-generate', description: 'Office/team B-roll' },
+      { step: 4, label: 'Avatar', pipelineId: 'avatar-generate', description: 'Diverse team member avatars' },
+      { step: 5, label: 'Assembly', pipelineId: 'video-assembly', description: 'Upbeat recruitment video' },
+    ],
+  },
+  { scenario: 'quarterly_report', description: 'QBR — KPI dashboards, trend analysis, strategic commentary',
+    recommendedSceneTypes: [
+      { title: 'Quarter Highlights', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'corporate', duration: 12, hasBRoll: false },
+      { title: 'Revenue & Growth', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'minimalist', duration: 20, hasBRoll: false },
+      { title: 'KPI Dashboard', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 20, hasBRoll: false },
+      { title: 'Next Quarter', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'futuristic', duration: 15, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Data Import', pipelineId: 'document-processor', description: 'Import KPIs and metrics' },
+      { step: 2, label: 'Dashboard', pipelineId: 'slides-generate', description: 'Animated KPI dashboards' },
+      { step: 3, label: 'Commentary', pipelineId: 'ai-universal-processor', description: 'Strategic commentary' },
+      { step: 4, label: 'Verification', pipelineId: 'ai-quality-assessment', description: 'Verify financial data' },
+      { step: 5, label: 'Assembly', pipelineId: 'video-assembly', description: 'QBR video' },
+    ],
+  },
+  { scenario: 'ad_creative', description: 'Paid ad creative — hook, problem, solution, social proof, CTA (15-60s)',
+    recommendedSceneTypes: [
+      { title: 'Hook (3s)', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'whip_pan', style: 'street', duration: 3, hasBRoll: false },
+      { title: 'Problem', visualType: 'video', visualSource: 'ai_from_script', motionPreset: 'slow_zoom_in', style: 'playful', duration: 5, hasBRoll: false },
+      { title: 'Solution', visualType: 'video', visualSource: 'ai_from_script', motionPreset: 'tracking_shot', style: 'playful', duration: 8, hasBRoll: false },
+      { title: 'Social Proof', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 4, hasBRoll: false },
+      { title: 'CTA', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'playful', duration: 3, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Ad Copy', pipelineId: 'ai-universal-processor', description: 'Hook-first ad script' },
+      { step: 2, label: 'Visuals', pipelineId: 'video-generate', description: 'Attention-grabbing visuals' },
+      { step: 3, label: 'Captions', pipelineId: 'caption-generate', description: 'Bold animated captions' },
+      { step: 4, label: 'Multi-Size', pipelineId: 'pipeline-editor-processor', description: '9:16, 1:1, 16:9, 4:5' },
+      { step: 5, label: 'A/B Variants', pipelineId: 'pipeline-editor-processor', description: '3-5 ad variants for testing' },
+    ],
+  },
+  { scenario: 'course_lecture', description: 'E-learning lecture — avatar teacher, slides, whiteboard, quiz',
+    recommendedSceneTypes: [
+      { title: 'Lesson Overview', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'static', style: 'corporate', duration: 15, hasBRoll: false },
+      { title: 'Theory', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 30, hasBRoll: false },
+      { title: 'Visual Explanation', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'hand_drawn', duration: 25, hasBRoll: false },
+      { title: 'Demo', visualType: 'screen_recording', visualSource: 'screen_capture_enhanced', motionPreset: 'slow_zoom_in', style: 'minimalist', duration: 30, hasBRoll: false },
+      { title: 'Quiz', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'playful', duration: 15, hasBRoll: false },
+      { title: 'Summary', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'static', style: 'corporate', duration: 10, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Curriculum', pipelineId: 'ai-universal-processor', description: 'Structured lesson script' },
+      { step: 2, label: 'Slides', pipelineId: 'slides-generate', description: 'Educational slides with diagrams' },
+      { step: 3, label: 'Avatar', pipelineId: 'avatar-generate', description: 'Teacher avatar' },
+      { step: 4, label: 'Quiz Cards', pipelineId: 'ai-universal-processor', description: 'Quiz questions and answers' },
+      { step: 5, label: 'Narration', pipelineId: 'text-to-speech', description: 'Educational pacing' },
+      { step: 6, label: 'Assembly', pipelineId: 'video-assembly', description: 'Lecture with chapters' },
+    ],
+  },
+  { scenario: 'destination_showcase', description: 'Travel destination — aerial, attractions, cuisine, accommodation, itinerary',
+    recommendedSceneTypes: [
+      { title: 'Aerial Opening', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'drone_aerial', style: 'cinematic', duration: 10, hasBRoll: true },
+      { title: 'Attractions', visualType: 'broll', visualSource: 'stock_footage', motionPreset: 'tracking_shot', style: 'cinematic', duration: 20, hasBRoll: true },
+      { title: 'Cuisine', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'slow_zoom_in', style: 'luxury', duration: 15, hasBRoll: true },
+      { title: 'Itinerary Map', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'playful', duration: 15, hasBRoll: false },
+      { title: 'Book Now', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'luxury', duration: 8, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Google Places', pipelineId: 'local-business-enrichment', description: 'Destination data, reviews, photos, POIs' },
+      { step: 2, label: 'Script', pipelineId: 'ai-universal-processor', description: 'Engaging travel narrative' },
+      { step: 3, label: 'Aerial Visuals', pipelineId: 'video-generate', description: 'Drone-style destination footage' },
+      { step: 4, label: 'Route Map', pipelineId: 'slides-generate', description: 'Animated itinerary map' },
+      { step: 5, label: 'Transcreation', pipelineId: 'translation-service', description: 'Adapt for tourist markets' },
+      { step: 6, label: 'Assembly', pipelineId: 'video-assembly', description: 'Cinematic travel video' },
+    ],
+  },
+  { scenario: 'product_showcase', description: 'E-commerce product showcase — 3D orbit, features, specs, reviews, buy CTA',
+    recommendedSceneTypes: [
+      { title: 'Product Hero', visualType: '3d', visualSource: 'ai_from_script', motionPreset: 'orbit', style: 'luxury', duration: 10, hasBRoll: false },
+      { title: 'Features', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 15, hasBRoll: false },
+      { title: 'Close-Ups', visualType: '3d', visualSource: 'ai_from_script', motionPreset: 'slow_zoom_in', style: 'luxury', duration: 12, hasBRoll: false },
+      { title: 'Reviews', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'playful', duration: 10, hasBRoll: false },
+      { title: 'Buy CTA', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'luxury', duration: 5, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: '3D Model', pipelineId: 'alibaba-3d-generator', description: '3D product model from photos/description' },
+      { step: 2, label: 'Product Copy', pipelineId: 'ai-universal-processor', description: 'Feature descriptions and persuasive copy' },
+      { step: 3, label: 'Reviews', pipelineId: 'local-business-enrichment', description: 'Real customer reviews and ratings' },
+      { step: 4, label: 'Render', pipelineId: 'video-generate', description: '3D product with orbit and zoom' },
+      { step: 5, label: 'Multi-Size', pipelineId: 'pipeline-editor-processor', description: 'Website, social, marketplace' },
+    ],
+  },
+  { scenario: 'vehicle_showcase', description: 'Automotive showcase — 3D orbit, interior/exterior, specs, test drive',
+    recommendedSceneTypes: [
+      { title: 'Reveal', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'slow_zoom_in', style: 'luxury', duration: 8, hasBRoll: false },
+      { title: 'Exterior 360', visualType: '3d', visualSource: 'ai_from_script', motionPreset: 'orbit', style: 'luxury', duration: 15, hasBRoll: false },
+      { title: 'Interior', visualType: '3d', visualSource: 'ai_from_script', motionPreset: 'tracking_shot', style: 'luxury', duration: 20, hasBRoll: false },
+      { title: 'Performance', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'futuristic', duration: 12, hasBRoll: false },
+      { title: 'Driving', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'drone_aerial', style: 'cinematic', duration: 15, hasBRoll: true },
+      { title: 'Configure', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'luxury', duration: 8, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: '3D Vehicle', pipelineId: 'alibaba-3d-generator', description: 'Detailed 3D vehicle model' },
+      { step: 2, label: 'Renders', pipelineId: 'video-generate', description: 'Cinematic exterior/interior renders' },
+      { step: 3, label: 'Spec Cards', pipelineId: 'slides-generate', description: 'Animated specs (HP, torque, 0-60, range)' },
+      { step: 4, label: 'Driving Footage', pipelineId: 'video-generate', description: 'AI driving experience footage' },
+      { step: 5, label: 'Narration', pipelineId: 'text-to-speech', description: 'Premium voice narration' },
+      { step: 6, label: 'Assembly', pipelineId: 'video-assembly', description: 'Cinematic vehicle showcase' },
+    ],
+  },
+  { scenario: 'fundraising_appeal', description: 'Nonprofit fundraising — emotional story, impact data, donation CTA',
+    recommendedSceneTypes: [
+      { title: 'The Challenge', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'documentary', duration: 15, hasBRoll: true },
+      { title: 'A Story', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'static', style: 'documentary', duration: 20, hasBRoll: false },
+      { title: 'Impact Numbers', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 12, hasBRoll: false },
+      { title: 'How You Help', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'playful', duration: 15, hasBRoll: false },
+      { title: 'Donate CTA', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'slow_zoom_in', style: 'documentary', duration: 10, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'Impact Story', pipelineId: 'ai-universal-processor', description: 'Emotional fundraising narrative' },
+      { step: 2, label: 'Impact Viz', pipelineId: 'slides-generate', description: 'Animated impact statistics' },
+      { step: 3, label: 'Avatar', pipelineId: 'avatar-generate', description: 'Culturally appropriate avatars' },
+      { step: 4, label: 'Score', pipelineId: 'audio-mixer', description: 'Emotional background music' },
+      { step: 5, label: 'Assembly', pipelineId: 'video-assembly', description: 'With donation link overlay' },
+    ],
+  },
+  { scenario: 'architectural_walkthrough', description: 'Architecture walkthrough — 3D renders, floor plans, VR tour',
+    recommendedSceneTypes: [
+      { title: 'Aerial Approach', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'drone_aerial', style: 'cinematic', duration: 10, hasBRoll: false },
+      { title: 'Exterior', visualType: '3d', visualSource: 'ai_from_script', motionPreset: 'orbit', style: 'luxury', duration: 15, hasBRoll: false },
+      { title: 'Floor Plan', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'slow_zoom_in', style: 'minimalist', duration: 12, hasBRoll: false },
+      { title: 'Interior Walk', visualType: '3d', visualSource: 'ai_from_script', motionPreset: 'tracking_shot', style: 'luxury', duration: 30, hasBRoll: false },
+      { title: 'Contact', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'corporate', duration: 8, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: '3D Model', pipelineId: 'alibaba-3d-generator', description: '3D architectural walkthrough' },
+      { step: 2, label: 'Floor Plans', pipelineId: 'slides-generate', description: 'Annotated floor plans' },
+      { step: 3, label: 'Materials', pipelineId: 'video-generate', description: 'Material/texture renders' },
+      { step: 4, label: 'Narration', pipelineId: 'text-to-speech', description: 'Premium narration' },
+      { step: 5, label: 'VR Export', pipelineId: 'pipeline-editor-processor', description: 'Optional VR/360 export' },
+      { step: 6, label: 'Assembly', pipelineId: 'video-assembly', description: 'Cinematic architecture video' },
+    ],
+  },
+  { scenario: 'youtube_series', description: 'YouTube series — branded intro, chapters, end screen, SEO optimized',
+    recommendedSceneTypes: [
+      { title: 'Branded Intro', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'playful', duration: 5, hasBRoll: false },
+      { title: 'Hook', visualType: 'avatar', visualSource: 'ai_from_prompt', motionPreset: 'static', style: 'corporate', duration: 15, hasBRoll: false },
+      { title: 'Chapter 1', visualType: 'video', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'corporate', duration: 90, hasBRoll: true },
+      { title: 'Chapter 2', visualType: 'video', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'corporate', duration: 90, hasBRoll: true },
+      { title: 'End Screen', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'playful', duration: 15, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'SEO Research', pipelineId: 'crawl-relevant-content', description: 'Keywords, trending topics' },
+      { step: 2, label: 'Script + Chapters', pipelineId: 'ai-universal-processor', description: 'YouTube-optimized script' },
+      { step: 3, label: 'Avatar', pipelineId: 'avatar-generate', description: 'Consistent series presenter' },
+      { step: 4, label: 'Visuals', pipelineId: 'video-generate', description: 'Supporting visuals and B-roll' },
+      { step: 5, label: 'Thumbnail', pipelineId: 'thumbnail-generate', description: 'Click-worthy thumbnail' },
+      { step: 6, label: 'Captions', pipelineId: 'caption-generate', description: 'Auto-captions for SEO' },
+      { step: 7, label: 'Assembly', pipelineId: 'video-assembly', description: 'With intro, chapters, end screen' },
+    ],
+  },
+  { scenario: 'sustainability_report', description: 'ESG / sustainability report — environmental metrics, initiatives, impact',
+    recommendedSceneTypes: [
+      { title: 'ESG Summary', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'minimalist', duration: 12, hasBRoll: false },
+      { title: 'Environmental Metrics', visualType: 'animation', visualSource: 'ai_from_script', motionPreset: 'morph', style: 'minimalist', duration: 20, hasBRoll: false },
+      { title: 'Initiatives', visualType: 'cinematic', visualSource: 'ai_from_script', motionPreset: 'slow_pan', style: 'documentary', duration: 20, hasBRoll: true },
+      { title: 'Goals', visualType: 'slide', visualSource: 'ai_from_script', motionPreset: 'kinetic_text', style: 'corporate', duration: 15, hasBRoll: false },
+    ],
+    pipelineChain: [
+      { step: 1, label: 'ESG Data', pipelineId: 'document-processor', description: 'Import sustainability metrics' },
+      { step: 2, label: 'Impact Viz', pipelineId: 'slides-generate', description: 'Environmental impact visualizations' },
+      { step: 3, label: 'Narrative', pipelineId: 'text-to-speech', description: 'Inspiring sustainability narration' },
+      { step: 4, label: 'Assembly', pipelineId: 'video-assembly', description: 'ESG video report' },
     ],
   },
 ];
@@ -1748,6 +2091,462 @@ function getRecommendedRenderingModes(scene: CompositionScene, context: Recommen
   return suggestions.sort((a, b) => b.confidence - a.confidence);
 }
 
+// ─── Visualization Type Recommendations ──────────────────────────────────────
+
+function recommendVisualizationTypes(scenes: CompositionScene[], context: RecommendationContext): SceneRecommendation[] {
+  const recs: SceneRecommendation[] = [];
+
+  for (const scene of scenes) {
+    // Only recommend for slides/animation/static scenes that discuss data
+    if (!['slide', 'animation', 'static'].includes(scene.visual.type)) continue;
+    if (scene.dataVisualizations && scene.dataVisualizations.length > 0) continue;
+
+    const script = scene.voiceover.text.toLowerCase();
+    const title = scene.title.toLowerCase();
+    const chartSuggestions = detectChartType(title, script, context);
+
+    if (chartSuggestions.length === 0) continue;
+
+    const primary = chartSuggestions[0];
+    recs.push({
+      id: crypto.randomUUID(),
+      type: 'visualization',
+      sceneId: scene.id,
+      title: `Add ${primary.label} visualization`,
+      description: primary.description,
+      confidence: primary.confidence,
+      reason: primary.reason,
+      action: {
+        dataVisualizations: [{
+          id: crypto.randomUUID(),
+          chartType: primary.chartType,
+          title: scene.title,
+          data: [],
+          dataSources: [],
+          chartConfig: { animated: true, animationStyle: primary.animationStyle, showLegend: true },
+          requiresVerification: true,
+        }],
+      },
+      alternatives: chartSuggestions.slice(1, 4).map(c => ({
+        label: c.label,
+        action: { chartType: c.chartType },
+      })),
+    });
+  }
+
+  return recs;
+}
+
+interface ChartSuggestion {
+  chartType: ChartType;
+  label: string;
+  description: string;
+  confidence: number;
+  reason: string;
+  animationStyle: 'count_up' | 'grow' | 'reveal' | 'fade_in' | 'draw';
+}
+
+function detectChartType(title: string, script: string, context: RecommendationContext): ChartSuggestion[] {
+  const suggestions: ChartSuggestion[] = [];
+  const combined = `${title} ${script}`;
+
+  if (combined.includes('market size') || combined.includes('tam') || combined.includes('sam') || combined.includes('som')) {
+    suggestions.push({ chartType: 'funnel', label: 'Market Funnel (TAM/SAM/SOM)', description: 'Nested funnel showing addressable market layers', confidence: 0.9, reason: 'Market sizing data is best visualized as a nested funnel', animationStyle: 'grow' });
+  }
+  if (combined.includes('growth') || combined.includes('trend') || combined.includes('over time') || combined.includes('year')) {
+    suggestions.push({ chartType: 'line', label: 'Trend Line Chart', description: 'Line/area chart showing growth or trend over time', confidence: 0.85, reason: 'Time-series data is most intuitive as a line chart', animationStyle: 'draw' });
+    suggestions.push({ chartType: 'area', label: 'Area Chart', description: 'Filled area chart showing cumulative growth', confidence: 0.7, reason: 'Area charts emphasize volume of growth', animationStyle: 'grow' });
+  }
+  if (combined.includes('compare') || combined.includes('vs') || combined.includes('versus') || combined.includes('competitor')) {
+    suggestions.push({ chartType: 'bar', label: 'Comparison Bar Chart', description: 'Side-by-side bar chart for direct comparison', confidence: 0.85, reason: 'Bar charts make comparisons instantly scannable', animationStyle: 'grow' });
+    suggestions.push({ chartType: 'radar', label: 'Radar Comparison', description: 'Multi-axis radar for capability comparison', confidence: 0.65, reason: 'Radar charts compare across multiple dimensions simultaneously', animationStyle: 'draw' });
+  }
+  if (combined.includes('share') || combined.includes('breakdown') || combined.includes('portion') || combined.includes('distribution')) {
+    suggestions.push({ chartType: 'pie', label: 'Pie/Donut Chart', description: 'Proportional breakdown visualization', confidence: 0.75, reason: 'Pie charts clearly show parts of a whole', animationStyle: 'grow' });
+    suggestions.push({ chartType: 'treemap', label: 'Treemap', description: 'Hierarchical proportional rectangles', confidence: 0.6, reason: 'Treemaps show proportional hierarchy with more detail than pie', animationStyle: 'grow' });
+  }
+  if (combined.includes('journey') || combined.includes('stages') || combined.includes('flow') || combined.includes('conversion')) {
+    suggestions.push({ chartType: 'funnel', label: 'Funnel Diagram', description: 'Stage-by-stage funnel with drop-off rates', confidence: 0.85, reason: 'Funnel visualizes conversion progression', animationStyle: 'reveal' });
+    suggestions.push({ chartType: 'sankey', label: 'Sankey Flow', description: 'Flow quantities between stages', confidence: 0.7, reason: 'Sankey diagrams show flow and drop-off between stages', animationStyle: 'draw' });
+  }
+  if (combined.includes('kpi') || combined.includes('metric') || combined.includes('score') || combined.includes('nps')) {
+    suggestions.push({ chartType: 'gauge', label: 'Gauge Meter', description: 'KPI gauges with progress toward target', confidence: 0.85, reason: 'Gauge meters instantly communicate performance vs target', animationStyle: 'count_up' });
+  }
+  if (combined.includes('map') || combined.includes('region') || combined.includes('country') || combined.includes('geographic')) {
+    suggestions.push({ chartType: 'geographic', label: 'Geographic Map', description: 'Map-based visualization with regional data', confidence: 0.85, reason: 'Geographic data is most intuitive on a map', animationStyle: 'reveal' });
+  }
+  if (combined.includes('timeline') || combined.includes('milestone') || combined.includes('roadmap')) {
+    suggestions.push({ chartType: 'timeline', label: 'Timeline', description: 'Chronological timeline with milestones', confidence: 0.9, reason: 'Timelines visualize chronological progression', animationStyle: 'reveal' });
+  }
+  if (combined.includes('network') || combined.includes('connection') || combined.includes('relationship') || combined.includes('partner')) {
+    suggestions.push({ chartType: 'network', label: 'Network Graph', description: 'Node-and-edge relationship visualization', confidence: 0.75, reason: 'Network graphs show complex relationships', animationStyle: 'fade_in' });
+  }
+  if (combined.includes('stat') || combined.includes('number') || combined.includes('percentage') || combined.includes('%')) {
+    suggestions.push({ chartType: 'bar', label: 'Statistic Bar', description: 'Animated stat bars with count-up numbers', confidence: 0.7, reason: 'Key statistics benefit from animated count-up presentation', animationStyle: 'count_up' });
+  }
+  if (combined.includes('org') || combined.includes('team') || combined.includes('hierarchy') || combined.includes('structure')) {
+    suggestions.push({ chartType: 'org_chart', label: 'Org Chart', description: 'Organizational hierarchy visualization', confidence: 0.85, reason: 'Org charts show reporting structure clearly', animationStyle: 'reveal' });
+  }
+  if (combined.includes('idea') || combined.includes('brainstorm') || combined.includes('concept')) {
+    suggestions.push({ chartType: 'mind_map', label: 'Mind Map', description: 'Radial concept map with branches', confidence: 0.8, reason: 'Mind maps visualize ideation and concept relationships', animationStyle: 'reveal' });
+  }
+
+  return suggestions.sort((a, b) => b.confidence - a.confidence);
+}
+
+// ─── Data Source Recommendations ─────────────────────────────────────────────
+
+function recommendDataSources(scenes: CompositionScene[], context: RecommendationContext): SceneRecommendation[] {
+  const recs: SceneRecommendation[] = [];
+
+  for (const scene of scenes) {
+    const script = scene.voiceover.text.toLowerCase();
+    if (script.length < 30) continue;
+
+    // Detect claims that need data sources
+    const hasStatistics = /\d+%|\$[\d,.]+|[\d,.]+\s*(million|billion|trillion|users|customers|revenue)/i.test(scene.voiceover.text);
+    const hasClaims = /(according to|research shows|studies show|data suggests|survey found|report by)/i.test(scene.voiceover.text);
+    const hasUnreferencedData = hasStatistics && (!scene.dataSources || scene.dataSources.length === 0);
+
+    if (hasUnreferencedData) {
+      recs.push({
+        id: crypto.randomUUID(),
+        type: 'data_source',
+        sceneId: scene.id,
+        title: 'Add data sources for statistics',
+        description: `"${scene.title}" contains statistics or data claims — add source URLs for credibility and transparency`,
+        confidence: 0.9,
+        reason: 'Statistics and data claims should cite their source for credibility. AI-generated data may contain errors.',
+        action: {
+          dataSources: [{
+            id: crypto.randomUUID(),
+            type: 'ai_generated' as const,
+            label: 'AI-Generated (needs verification)',
+            verified: false,
+            dataConfidence: 0.5,
+          }],
+        },
+        alternatives: [
+          { label: 'Add URL source', action: { sourceType: 'url' } },
+          { label: 'Add research paper', action: { sourceType: 'research_paper' } },
+          { label: 'Mark as estimated', action: { sourceType: 'ai_generated', dataConfidence: 0.3 } },
+          { label: 'Google Places data', action: { sourceType: 'google_places' } },
+        ],
+      });
+    }
+
+    if (hasClaims && (!scene.dataSources || scene.dataSources.length === 0)) {
+      recs.push({
+        id: crypto.randomUUID(),
+        type: 'data_source',
+        sceneId: scene.id,
+        title: 'Verify cited claims',
+        description: `"${scene.title}" references external data ("according to...", "research shows...") — attach the actual source`,
+        confidence: 0.85,
+        reason: 'Claims referencing external research should link to the actual source document',
+        action: {
+          needsSourceVerification: true,
+        },
+      });
+    }
+
+    // For Google Places enriched projects — recommend live data injection
+    if (context.hasGooglePlaces && !scene.dataSources?.some(d => d.type === 'google_places')) {
+      const mentionsBusiness = /review|rating|star|hour|competitor|nearby|location/i.test(scene.voiceover.text);
+      if (mentionsBusiness) {
+        recs.push({
+          id: crypto.randomUUID(),
+          type: 'data_source',
+          sceneId: scene.id,
+          title: 'Inject Google Places live data',
+          description: 'Use real business data (ratings, reviews, hours, competitors) from Google Places API',
+          confidence: 0.8,
+          reason: 'Live Google Places data adds authenticity — real reviews and ratings are more compelling than generic claims',
+          action: {
+            dataSources: [{
+              id: crypto.randomUUID(),
+              type: 'google_places' as const,
+              label: 'Google Places API (Live)',
+              verified: true,
+              dataConfidence: 0.95,
+            }],
+          },
+        });
+      }
+    }
+  }
+
+  return recs;
+}
+
+// ─── Content Verification Recommendations ───────────────────────────────────
+
+function recommendContentVerification(scenes: CompositionScene[], context: RecommendationContext): SceneRecommendation[] {
+  const recs: SceneRecommendation[] = [];
+
+  for (const scene of scenes) {
+    if (scene.verifications && scene.verifications.length > 0) continue;
+    const script = scene.voiceover.text;
+    if (script.length < 20) continue;
+
+    // Detect verifiable claims
+    const verifiablePatterns = [
+      { pattern: /\d+%/g, target: 'statistic' as const, label: 'percentages' },
+      { pattern: /\$[\d,.]+\s*(million|billion|trillion)?/gi, target: 'statistic' as const, label: 'monetary values' },
+      { pattern: /in\s+\d{4}/g, target: 'date' as const, label: 'dates/years' },
+      { pattern: /(founded|established|launched)\s+in/gi, target: 'date' as const, label: 'founding dates' },
+      { pattern: /"[^"]{10,}"/g, target: 'quote' as const, label: 'quotes' },
+      { pattern: /(https?:\/\/[^\s]+)/g, target: 'url' as const, label: 'URLs' },
+      { pattern: /(?:CEO|CTO|founder|president)\s+of\s+\w+/gi, target: 'name' as const, label: 'named people' },
+    ];
+
+    const detectedClaims: string[] = [];
+    for (const { pattern, label } of verifiablePatterns) {
+      const matches = script.match(pattern);
+      if (matches && matches.length > 0) {
+        detectedClaims.push(`${matches.length} ${label}`);
+      }
+    }
+
+    if (detectedClaims.length > 0) {
+      recs.push({
+        id: crypto.randomUUID(),
+        type: 'verification',
+        sceneId: scene.id,
+        title: `Verify AI-generated content in "${scene.title}"`,
+        description: `Detected: ${detectedClaims.join(', ')}. AI-generated content may contain errors — please verify.`,
+        confidence: 0.85,
+        reason: 'AI-generated statistics, dates, names, and quotes should be verified before publishing. Errors can damage credibility.',
+        action: {
+          verifications: detectedClaims.map(claim => ({
+            id: crypto.randomUUID(),
+            target: 'claim' as const,
+            content: claim,
+            status: 'unverified' as const,
+            confidence: 0.5,
+          })),
+        },
+        alternatives: [
+          { label: 'Auto-verify with AI', action: { verifyMode: 'ai_auto' } },
+          { label: 'Flag for human review', action: { verifyMode: 'human' } },
+          { label: 'Add disclaimer', action: { addDisclaimer: true } },
+        ],
+      });
+    }
+  }
+
+  return recs;
+}
+
+// ─── Spell Check & Grammar Recommendations ──────────────────────────────────
+
+function recommendSpellGrammar(scenes: CompositionScene[], context: RecommendationContext): SceneRecommendation[] {
+  const recs: SceneRecommendation[] = [];
+
+  for (const scene of scenes) {
+    if (scene.languageQuality) continue; // Already checked
+    const script = scene.voiceover.text;
+    if (script.length < 20) continue;
+
+    // Basic heuristic checks (real spell check would use API)
+    const issues: string[] = [];
+
+    // Check for common doubled words
+    const doubledWords = script.match(/\b(\w+)\s+\1\b/gi);
+    if (doubledWords) issues.push(`${doubledWords.length} doubled word(s)`);
+
+    // Check for missing capitalization after periods
+    const missingCaps = script.match(/\.\s+[a-z]/g);
+    if (missingCaps && missingCaps.length > 0) issues.push(`${missingCaps.length} missing capitalization(s)`);
+
+    // Check for very long sentences (readability)
+    const sentences = script.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const longSentences = sentences.filter(s => s.split(/\s+/).length > 40);
+    if (longSentences.length > 0) issues.push(`${longSentences.length} very long sentence(s) — may reduce clarity`);
+
+    // Check for passive voice indicators
+    const passiveIndicators = script.match(/\b(was|were|been|being|is|are)\s+\w+ed\b/gi);
+    if (passiveIndicators && passiveIndicators.length > 2) issues.push(`${passiveIndicators.length} passive voice instance(s)`);
+
+    // Check for jargon/complexity (simple readability heuristic)
+    const avgWordLength = script.split(/\s+/).reduce((sum, w) => sum + w.length, 0) / Math.max(script.split(/\s+/).length, 1);
+    if (avgWordLength > 6.5) issues.push('High average word length — may be too complex for general audience');
+
+    // Always recommend spell/grammar check for scripts over a certain length
+    if (script.length > 100 || issues.length > 0) {
+      recs.push({
+        id: crypto.randomUUID(),
+        type: 'spell_grammar',
+        sceneId: scene.id,
+        title: issues.length > 0 ? `Review language quality in "${scene.title}"` : `Run spell & grammar check on "${scene.title}"`,
+        description: issues.length > 0
+          ? `Detected: ${issues.join('; ')}. Run full spell check + grammar + clarity analysis.`
+          : `No obvious issues detected, but a full spell check + readability analysis is recommended before publishing.`,
+        confidence: issues.length > 0 ? 0.8 : 0.5,
+        reason: 'AI-generated scripts can contain spelling errors, grammar issues, and unclear phrasing. Checking ensures professional quality.',
+        action: {
+          runSpellCheck: true,
+          runGrammarCheck: true,
+          runClarityCheck: true,
+          detectedIssues: issues,
+        },
+        alternatives: [
+          { label: 'Auto-fix all', action: { autoFix: true } },
+          { label: 'Review manually', action: { manualReview: true } },
+          { label: 'Simplify language', action: { simplify: true, targetReadingLevel: 'Grade 8' } },
+        ],
+      });
+    }
+  }
+
+  return recs;
+}
+
+// ─── Cross-Format Conversion Recommendations ────────────────────────────────
+
+function recommendCrossFormatConversions(scenes: CompositionScene[], context: RecommendationContext): SceneRecommendation[] {
+  const recs: SceneRecommendation[] = [];
+
+  const hasSlides = scenes.some(s => s.visual.type === 'slide');
+  const hasCinematic = scenes.some(s => s.visual.type === 'cinematic');
+  const has3D = scenes.some(s => s.visual.type === '3d');
+  const hasVoiceover = scenes.some(s => s.voiceover.type !== 'none');
+  const hasAnimation = scenes.some(s => s.visual.type === 'animation');
+
+  // Slides → cinematic video (the PPT to cinematic flow)
+  if (hasSlides && !hasCinematic) {
+    recs.push({
+      id: crypto.randomUUID(),
+      type: 'cross_format',
+      title: 'Convert slides to cinematic video',
+      description: 'Transform your slide scenes into a cinematic storytelling video — each slide becomes a movie scene with motion, effects, and narration',
+      confidence: 0.8,
+      reason: 'Slide content can reach a wider audience as cinematic video — story format is more engaging than static slides',
+      action: {
+        conversionType: 'slides_to_cinematic',
+        settings: {
+          cinematicStyle: 'cinematic',
+          narrationStyle: 'voiceover',
+          animationIntensity: 0.7,
+          preserveSources: true,
+        },
+      },
+      combinationSteps: [
+        { step: 1, label: 'Slide Analysis', description: 'Extract content, data points, and narrative from each slide' },
+        { step: 2, label: 'Story Arc', description: 'Reorganize slide content into a narrative arc' },
+        { step: 3, label: 'Cinematic Generation', description: 'Generate cinematic visuals for each story beat' },
+        { step: 4, label: 'Motion + Transitions', description: 'Add cinematic motion, camera angles, transitions' },
+        { step: 5, label: 'Narration', description: 'Generate storytelling voiceover from slide content' },
+        { step: 6, label: 'Assembly', description: 'Final cinematic video assembly' },
+      ],
+      alternatives: [
+        { label: 'Slides → 3D Presentation', action: { conversionType: 'slides_to_3d' } },
+        { label: 'Slides → Narrated Video', action: { conversionType: 'slides_to_video' } },
+        { label: 'Keep as slides', action: { conversionType: 'none' } },
+      ],
+    });
+  }
+
+  // Slides + 3D → cinematic (the user's exact flow: PPT in 3D → cinematic video)
+  if (hasSlides && has3D) {
+    recs.push({
+      id: crypto.randomUUID(),
+      type: 'cross_format',
+      title: '3D slides → cinematic story video',
+      description: 'Your 3D slide scenes can be converted into a cinematic video — customer journey, infographics, and data come alive as a story',
+      confidence: 0.85,
+      reason: '3D presentation content makes stunning cinematic video — data visualizations look impressive in motion',
+      action: {
+        conversionType: 'slides_to_cinematic',
+        settings: {
+          renderAs3D: true,
+          cinematicStyle: 'cinematic',
+          animationIntensity: 0.8,
+        },
+      },
+    });
+  }
+
+  // Infographic/data scenes → animated video
+  if (hasAnimation && scenes.some(s => s.dataVisualizations && s.dataVisualizations.length > 0)) {
+    recs.push({
+      id: crypto.randomUUID(),
+      type: 'cross_format',
+      title: 'Convert infographics to animated video',
+      description: 'Transform static data visualizations into animated video with count-up effects, transitions, and narration',
+      confidence: 0.75,
+      reason: 'Animated data videos get higher engagement than static infographics on social media',
+      action: {
+        conversionType: 'infographic_to_video',
+        settings: { animationIntensity: 0.6 },
+      },
+    });
+  }
+
+  // Any project with voiceover → podcast extraction
+  if (hasVoiceover && scenes.length >= 3) {
+    const totalDuration = scenes.reduce((sum, s) => sum + s.duration, 0);
+    if (totalDuration > 120) {
+      recs.push({
+        id: crypto.randomUUID(),
+        type: 'cross_format',
+        title: 'Extract as podcast episode',
+        description: 'Your voiceover content can be repurposed as a podcast — add intro/outro music and publish to podcast platforms',
+        confidence: 0.6,
+        reason: 'Video content easily repurposes as audio — doubles your content output with minimal extra effort',
+        action: {
+          conversionType: 'video_to_podcast',
+          settings: { narrationStyle: 'voiceover' },
+        },
+      });
+    }
+  }
+
+  return recs;
+}
+
+// ─── Citation / Reference Recommendations ───────────────────────────────────
+
+function recommendCitations(scenes: CompositionScene[], context: RecommendationContext): SceneRecommendation[] {
+  const recs: SceneRecommendation[] = [];
+
+  // Check if any scenes have data sources but no citation config
+  const scenesWithSources = scenes.filter(s => s.dataSources && s.dataSources.length > 0);
+  const hasAnyCitationConfig = scenes.some(s => s.citationConfig);
+
+  if (scenesWithSources.length > 0 && !hasAnyCitationConfig) {
+    const aiGeneratedSources = scenesWithSources
+      .flatMap(s => s.dataSources || [])
+      .filter(d => d.type === 'ai_generated');
+
+    recs.push({
+      id: crypto.randomUUID(),
+      type: 'citation',
+      title: 'Configure citation display',
+      description: `${scenesWithSources.length} scene(s) have data sources. Choose how to display references and AI disclaimers.`,
+      confidence: 0.75,
+      reason: 'Transparent data attribution builds trust. AI-generated content should be disclosed.',
+      action: {
+        citationConfig: {
+          displayMode: 'footnote',
+          format: 'apa',
+          showAIDisclaimer: aiGeneratedSources.length > 0,
+          disclaimerPosition: 'end_card',
+          aiDisclaimerText: 'Some data in this content was AI-generated. Sources have been verified where possible.',
+        },
+      },
+      alternatives: [
+        { label: 'Footnotes', action: { displayMode: 'footnote' } },
+        { label: 'End card bibliography', action: { displayMode: 'bibliography' } },
+        { label: 'Inline tooltips', action: { displayMode: 'tooltip' } },
+        { label: 'Voiceover mention', action: { disclaimerPosition: 'voiceover_mention' } },
+      ],
+    });
+  }
+
+  return recs;
+}
+
 // ─── Apply Recommendation ────────────────────────────────────────────────────
 
 /** Apply a recommendation's action to a scene or project */
@@ -1833,12 +2632,47 @@ export function applyRecommendation(
             status: 'draft',
           };
         case 'combination':
-          // Combination chains are project-level actions
+        case 'cross_format':
+          // Combination chains and cross-format conversions are project-level actions
           return s;
         case 'reorder': {
           // Handled at project level, not scene level
           return s;
         }
+        case 'visualization':
+          return {
+            ...s,
+            dataVisualizations: [
+              ...(s.dataVisualizations || []),
+              ...((action as any).dataVisualizations || []),
+            ],
+          };
+        case 'data_source':
+          return {
+            ...s,
+            dataSources: [
+              ...(s.dataSources || []),
+              ...((action as any).dataSources || []),
+            ],
+          };
+        case 'verification':
+          return {
+            ...s,
+            verifications: [
+              ...(s.verifications || []),
+              ...((action as any).verifications || []),
+            ],
+          };
+        case 'spell_grammar':
+          return {
+            ...s,
+            languageQuality: (action as any).languageQuality || s.languageQuality,
+          };
+        case 'citation':
+          return {
+            ...s,
+            citationConfig: (action as any).citationConfig || s.citationConfig,
+          };
         default:
           return s;
       }
