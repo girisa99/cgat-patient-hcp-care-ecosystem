@@ -392,6 +392,7 @@ export const GenieCastHub: React.FC = () => {
             totalScreenshots={totalScreenshots}
             onGenerate={handleGenerate}
             isGenerating={isGenerating}
+            wizardMode
             activeMainTabOverride={activeTab}
             onMainTabChange={handleMainTabChange}
             defaultTab="create"
@@ -401,7 +402,36 @@ export const GenieCastHub: React.FC = () => {
     );
   }
 
-  // ── Desktop: Top nav + full-width workspace ────────────────────────────────
+  // ── Floating AI Dev indicators (always visible) ────────────────────────────
+  const FloatingAIDevs: React.FC = () => {
+    const { agent } = useGuideStore();
+    return (
+      <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-2">
+        {[
+          { id: 'arc', name: 'Arc', icon: Zap, gradient: 'from-primary to-primary/60' },
+          { id: 'ori', name: 'Ori', icon: Sparkles, gradient: 'from-accent to-accent/60' },
+        ].map(dev => (
+          <button
+            key={dev.id}
+            onClick={() => setDrawerOpen(true)}
+            className={cn(
+              'group flex items-center gap-2 px-3 py-2 rounded-full border backdrop-blur-xl shadow-lg transition-all hover:scale-105',
+              'bg-card/60 border-border/20',
+              agent === dev.id && 'ring-2 ring-primary/30',
+            )}
+          >
+            <div className={cn('w-7 h-7 rounded-full bg-gradient-to-br flex items-center justify-center', dev.gradient)}>
+              <dev.icon className="w-3.5 h-3.5 text-primary-foreground" />
+            </div>
+            <span className="text-xs font-semibold text-foreground hidden group-hover:inline">{dev.name}</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  // ── Desktop: Top nav + full-width glassmorphic workspace ───────────────────
   return (
     <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]">
       <TopNav
@@ -412,25 +442,36 @@ export const GenieCastHub: React.FC = () => {
         onToggleDrawer={() => setDrawerOpen(prev => !prev)}
       />
 
-      <div className="flex-1 overflow-y-auto">
-        {/* Always mounted to prevent flickering */}
-        <div className={activeView === 'workspace' ? '' : 'hidden'}>
-          <GenieCastConsolidatedTabs
-            selectedVideoStyles={selectedVideoStyles}
-            onStylesChange={handleStylesChange}
-            screenshotGalleries={screenshotGalleries}
-            onGalleriesUpdated={handleGalleriesUpdated}
-            totalScreenshots={totalScreenshots}
-            onGenerate={handleGenerate}
-            isGenerating={isGenerating}
-            activeMainTabOverride={activeTab}
-            onMainTabChange={handleMainTabChange}
-            defaultTab="create"
-          />
+      <div className="flex-1 overflow-y-auto p-4">
+        {/* Glassmorphic workspace container */}
+        <div className={cn(
+          activeView === 'workspace' ? '' : 'hidden',
+          'rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl shadow-xl',
+          'bg-gradient-to-br from-card/60 via-background/40 to-card/50',
+          'relative overflow-hidden',
+        )}>
+          {/* Inner glass shine */}
+          <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02]" />
+          <div className="relative">
+            <GenieCastConsolidatedTabs
+              selectedVideoStyles={selectedVideoStyles}
+              onStylesChange={handleStylesChange}
+              screenshotGalleries={screenshotGalleries}
+              onGalleriesUpdated={handleGalleriesUpdated}
+              totalScreenshots={totalScreenshots}
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
+              wizardMode
+              activeMainTabOverride={activeTab}
+              onMainTabChange={handleMainTabChange}
+              defaultTab="create"
+            />
+          </div>
         </div>
         {placeholderInfo && <PlaceholderView {...placeholderInfo} />}
       </div>
 
+      <FloatingAIDevs />
       <RightDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
