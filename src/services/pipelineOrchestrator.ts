@@ -5,7 +5,7 @@
  * User provides MINIMAL input (business name + location + intent), the orchestrator
  * determines which pipelines to chain, in what order, with what providers.
  *
- * Combination Chains (C1-C20):
+ * Combination Chains (C1-C35):
  * - C1: Business-to-Global-Campaign (15 pipelines)
  * - C2: Script-Edit-Regenerate (7 pipelines, zero-restart)
  * - C3: Record-to-Everywhere (12 pipelines)
@@ -17,7 +17,30 @@
  * - C9: Multi-Zone-Simultaneous-Render (4-zone parallel)
  * - C10: Brand-Intelligence-to-Video (11 pipelines)
  * - C11: Podcast-to-Multichannel-Empire (14 pipelines)
- * - C14: Compliance-Aware-Content (auto quality gates)
+ * - C12: Video-Remix-Stitch (12 pipelines)
+ * - C13: Testimonial-Compilation (9 pipelines)
+ * - C14: Long-Form-Chunked-Production (17 pipelines)
+ * - C15: Website-Package-Generator (15 pipelines)
+ * - C16: Landing-Page-Quick (8 pipelines)
+ * - C17: Hero-Banner-Generator (4 pipelines)
+ * - C18: Whitepaper-Infographic-Package (9 pipelines)
+ * - C19: Interactive-Demo-Product-Page (11 pipelines)
+ * - C20: Video-to-Everything-Empire (19 pipelines)
+ * - C21: Podcast-to-Website (podcast → landing page + blog + show notes)
+ * - C22: Blog-to-Multimedia (blog → video + podcast + social + carousel)
+ * - C23: Recording-to-Course-Series (recording → chaptered course + quizzes)
+ * - C24: Event-Recap-Empire (event video → recap + highlights + social)
+ * - C25: Webinar-Replay-Repurpose (webinar → on-demand + clips + blog)
+ * - C26: Multilingual-Simultaneous-Campaign (script → N languages simultaneously)
+ * - C27: Franchise-Multi-Location (template → N locations with local data)
+ * - C28: Episodic-Series-Producer (content → episodic series with branding)
+ * - C29: A/B-Testing-Variants (content → N variants for testing)
+ * - C30: UGC-Curation-Remix (user clips → curated compilation)
+ * - C31: Screen-Recording-to-Tutorial (screen capture → polished tutorial)
+ * - C32: Newsletter-to-Social-Campaign (newsletter → social posts + video)
+ * - C33: Training-Manual-Producer (content → chapters + slides + quizzes)
+ * - C34: Kids-Book-Animator (story → illustrations + animation + narration)
+ * - C35: Course-Series-Producer (curriculum → episodic courses + assessments)
  *
  * Data Sources:
  * - Google Places API (live business data: reviews, hours, competitors)
@@ -67,7 +90,23 @@ export type ContentFormat =
   | 'infographic'        // Static or animated infographic
   | 'whitepaper'         // Long-form PDF whitepaper with data viz
   | 'case_study_page'    // Customer case study page with journey + metrics
-  | 'interactive_demo';  // Interactive product demo page
+  | 'interactive_demo'   // Interactive product demo page
+  // ─── Training & Education ─────────────────────────────────────────────
+  | 'training_manual'    // Full training manual: chapters, slides, quizzes, assessments
+  | 'course_series'      // Multi-episode course with progressive learning path
+  | 'kids_book'          // Animated kids book: illustrations, narration, interactive elements
+  | 'animated_infographic'  // Motion infographic: counter animations, chart transitions, data flow
+  | 'e_learning_module'  // SCORM/xAPI-compatible e-learning module
+  | 'tutorial_series'    // Step-by-step tutorial with screen recordings + narration
+  | 'animated_journey'   // Animated customer/patient/user journey with motion
+  | 'slide_deck_video'   // Slide-by-slide video: each slide with different style (Pixar, cinematic, etc.)
+  // ─── Repurposing & Derivatives ────────────────────────────────────────
+  | 'event_recap'        // Event recap: highlights + best moments + social clips
+  | 'webinar_replay'     // On-demand webinar replay with chapters + clips
+  | 'franchise_local'    // Franchise/multi-location variant with local data
+  | 'ugc_compilation'    // User-generated content curation and remix
+  | 'newsletter_social'  // Newsletter content repurposed for social
+  | 'email_campaign';    // Full email campaign: template + subject lines + A/B variants
 
 export type ContentIntent =
   | 'promo'              // Business promotion
@@ -81,7 +120,16 @@ export type ContentIntent =
   | 'product_demo'       // Product demonstration
   | 'brand_story'        // Origin / brand narrative
   | 'event_recap'        // Event summary
-  | 'investor_pitch';    // Fundraising pitch
+  | 'investor_pitch'     // Fundraising pitch
+  | 'training'           // Training / e-learning / onboarding
+  | 'kids_education'     // Children's educational content
+  | 'explainer'          // Explainer / how-it-works
+  | 'repurpose'          // Repurpose existing content into new formats
+  | 'franchise'          // Franchise / multi-location local variants
+  | 'series'             // Episodic / series content
+  | 'ugc'               // User-generated content curation
+  | 'newsletter'        // Newsletter / email campaign
+  | 'webinar';          // Webinar / live session replay
 
 export type InputType =
   | 'text'               // Raw text / description
@@ -916,6 +964,362 @@ const ATOMIC_STEPS: Record<string, PipelineStep> = {
     estimatedDuration: 10,
     creditMultiplier: 0.5,
   },
+
+  // ─── Standalone Asset Generation ─────────────────────────────────────────
+
+  image_generate: {
+    id: 'image_generate',
+    name: 'AI Image Generation',
+    description: 'Generate standalone images: product shots, illustrations, backgrounds, icons',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_image',
+    inputType: 'image_prompt',
+    outputType: 'generated_images',
+    optional: true,
+    estimatedDuration: 10,
+    creditMultiplier: 1,
+    zonePreference: 'auto',
+  },
+  qrcode_generate: {
+    id: 'qrcode_generate',
+    name: 'QR Code Generation',
+    description: 'Generate dynamic QR codes with tracking, branding, and custom styling',
+    edgeFunction: 'qrcode-generator',
+    inputType: 'url_or_data',
+    outputType: 'qr_code',
+    optional: true,
+    estimatedDuration: 2,
+    creditMultiplier: 0,
+  },
+  watermark_apply: {
+    id: 'watermark_apply',
+    name: 'Watermark / Branding Overlay',
+    description: 'Apply brand logo watermark, copyright, or regional compliance marks',
+    edgeFunction: 'video-watermark-processor',
+    inputType: 'video_or_image',
+    outputType: 'watermarked_content',
+    optional: true,
+    estimatedDuration: 5,
+    creditMultiplier: 0,
+  },
+  logo_animate: {
+    id: 'logo_animate',
+    name: 'Logo Animation / Motion Graphics',
+    description: 'Animate brand logo: reveal, spin, morph, particle, glitch, cinematic',
+    edgeFunction: 'motion-graphics-generator',
+    action: 'logo_animate',
+    inputType: 'logo_image',
+    outputType: 'animated_logo',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 1,
+  },
+  color_palette_generate: {
+    id: 'color_palette_generate',
+    name: 'Color Palette Generation',
+    description: 'Generate complementary color schemes, accessibility-checked, exportable as CSS/Tailwind',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_palette',
+    inputType: 'brand_or_image',
+    outputType: 'color_palette',
+    optional: true,
+    estimatedDuration: 3,
+    creditMultiplier: 0,
+  },
+  social_caption_generate: {
+    id: 'social_caption_generate',
+    name: 'Social Caption & Hashtag Generation',
+    description: 'Generate platform-specific captions, hashtags, hooks, and engagement-optimized copy',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_caption',
+    inputType: 'content_summary',
+    outputType: 'social_captions',
+    optional: true,
+    estimatedDuration: 5,
+    creditMultiplier: 0.5,
+  },
+  seo_metadata_generate: {
+    id: 'seo_metadata_generate',
+    name: 'SEO Metadata Generation',
+    description: 'Generate meta descriptions, H1/H2, schema markup, keywords, OG tags',
+    edgeFunction: 'seo-optimizer',
+    inputType: 'content',
+    outputType: 'seo_metadata',
+    optional: true,
+    estimatedDuration: 5,
+    creditMultiplier: 0.5,
+  },
+  email_template_generate: {
+    id: 'email_template_generate',
+    name: 'Email Template Generation',
+    description: 'Generate responsive HTML email templates with A/B subject line variants',
+    edgeFunction: 'email-template-generator',
+    inputType: 'content_summary',
+    outputType: 'email_template',
+    optional: true,
+    estimatedDuration: 10,
+    creditMultiplier: 1,
+  },
+  print_export: {
+    id: 'print_export',
+    name: 'Print / PDF Export',
+    description: 'Export as print-ready PDF: flyers, brochures, posters, business cards, tri-fold',
+    edgeFunction: 'print-pdf-generator',
+    inputType: 'design_content',
+    outputType: 'print_pdf',
+    optional: true,
+    estimatedDuration: 8,
+    creditMultiplier: 0.5,
+  },
+
+  // ─── Audio & Voice Effects ───────────────────────────────────────────────
+
+  voice_effect_apply: {
+    id: 'voice_effect_apply',
+    name: 'Voice Effect Processing',
+    description: 'Apply reverb, echo, pitch shift, radio effect, vintage, dramatic tone',
+    edgeFunction: 'audio-mixer',
+    action: 'apply_effects',
+    inputType: 'audio',
+    outputType: 'processed_audio',
+    optional: true,
+    estimatedDuration: 5,
+    creditMultiplier: 0.5,
+  },
+  soundscape_generate: {
+    id: 'soundscape_generate',
+    name: 'Soundscape / Ambient Audio',
+    description: 'Generate ambient audio: nature, urban, office, cafe, rain, cultural ambience',
+    edgeFunction: 'audio-generator',
+    action: 'soundscape',
+    inputType: 'soundscape_config',
+    outputType: 'ambient_audio',
+    optional: true,
+    estimatedDuration: 8,
+    creditMultiplier: 0.5,
+  },
+
+  // ─── Subtitles, Chapters & Indexing ──────────────────────────────────────
+
+  subtitle_translate: {
+    id: 'subtitle_translate',
+    name: 'Subtitle Translation (Literal)',
+    description: 'Literal translation of subtitles for accessibility (not transcreation)',
+    edgeFunction: 'translation-service',
+    action: 'translate_subtitles',
+    inputType: 'captions',
+    outputType: 'translated_subtitles',
+    optional: true,
+    estimatedDuration: 5,
+    creditMultiplier: 0.5,
+  },
+  chapters_auto_detect: {
+    id: 'chapters_auto_detect',
+    name: 'Auto-Chapter Detection',
+    description: 'AI detects chapter boundaries, generates titles, timestamps, and summaries',
+    edgeFunction: 'ai-chapter-detector',
+    inputType: 'video_or_transcript',
+    outputType: 'chapter_markers',
+    optional: true,
+    estimatedDuration: 8,
+    creditMultiplier: 0.5,
+  },
+  transcript_index: {
+    id: 'transcript_index',
+    name: 'Transcript Indexing',
+    description: 'Create searchable, time-coded transcript with keyword highlighting',
+    edgeFunction: 'transcript-indexer',
+    inputType: 'transcript',
+    outputType: 'indexed_transcript',
+    optional: true,
+    estimatedDuration: 3,
+    creditMultiplier: 0,
+  },
+  rss_feed_generate: {
+    id: 'rss_feed_generate',
+    name: 'RSS Feed Generation',
+    description: 'Generate RSS/Atom feed for podcasts, blogs, video series',
+    edgeFunction: 'feed-generator',
+    inputType: 'content_series',
+    outputType: 'rss_feed',
+    optional: true,
+    estimatedDuration: 2,
+    creditMultiplier: 0,
+  },
+
+  // ─── Analysis & Testing ──────────────────────────────────────────────────
+
+  sentiment_analyze: {
+    id: 'sentiment_analyze',
+    name: 'Sentiment & Tone Analysis',
+    description: 'Analyze script tone, match to brand voice, detect emotional arcs',
+    edgeFunction: 'sentiment-analyzer',
+    inputType: 'text',
+    outputType: 'sentiment_report',
+    optional: true,
+    estimatedDuration: 3,
+    creditMultiplier: 0,
+  },
+  copy_variant_generate: {
+    id: 'copy_variant_generate',
+    name: 'Copy Variant / A/B Generator',
+    description: 'Generate 3+ headline/CTA/hook variants for A/B testing',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_variants',
+    inputType: 'script',
+    outputType: 'script_variants',
+    optional: true,
+    estimatedDuration: 8,
+    creditMultiplier: 1,
+  },
+  content_schedule: {
+    id: 'content_schedule',
+    name: 'Content Scheduling',
+    description: 'Schedule posts at AI-recommended optimal times per platform',
+    edgeFunction: 'scheduling-orchestrator',
+    inputType: 'publish_plan',
+    outputType: 'schedule_result',
+    optional: true,
+    estimatedDuration: 2,
+    creditMultiplier: 0,
+  },
+
+  // ─── 3D & AR/VR ─────────────────────────────────────────────────────────
+
+  model_3d_generate: {
+    id: 'model_3d_generate',
+    name: '3D Model Generation',
+    description: 'Generate 3D models for product showcase, exploded views, or virtual environments',
+    edgeFunction: '3d-model-generator',
+    inputType: 'product_data',
+    outputType: '3d_model',
+    optional: true,
+    estimatedDuration: 30,
+    creditMultiplier: 2,
+  },
+  ar_filter_generate: {
+    id: 'ar_filter_generate',
+    name: 'AR Filter Generation',
+    description: 'Generate AR filters for Instagram/Snapchat: product try-on, brand effects',
+    edgeFunction: 'ar-filter-generator',
+    inputType: 'brand_assets',
+    outputType: 'ar_filter',
+    optional: true,
+    estimatedDuration: 20,
+    creditMultiplier: 2,
+  },
+
+  // ─── Training & Education Pipeline ───────────────────────────────────────
+
+  chapter_structure_generate: {
+    id: 'chapter_structure_generate',
+    name: 'Chapter / Module Structure',
+    description: 'AI generates chapter structure: modules, lessons, objectives, assessments per chapter',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_chapters',
+    inputType: 'training_content',
+    outputType: 'chapter_structure',
+    optional: false,
+    estimatedDuration: 10,
+    creditMultiplier: 1,
+  },
+  slide_by_slide_generate: {
+    id: 'slide_by_slide_generate',
+    name: 'Slide-by-Slide Generation',
+    description: 'Generate individual slides with different styles per slide: Pixar, cinematic, whiteboard, infographic',
+    edgeFunction: 'generate-template-ai',
+    action: 'slide_by_slide',
+    inputType: 'chapter_structure',
+    outputType: 'styled_slides',
+    optional: false,
+    estimatedDuration: 20,
+    creditMultiplier: 1.5,
+  },
+  quiz_assessment_generate: {
+    id: 'quiz_assessment_generate',
+    name: 'Quiz / Assessment Generation',
+    description: 'Generate quizzes, MCQs, fill-in-the-blank, drag-and-drop per chapter',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_quiz',
+    inputType: 'chapter_content',
+    outputType: 'quiz_assessment',
+    optional: true,
+    estimatedDuration: 8,
+    creditMultiplier: 0.5,
+  },
+  animated_character_scene: {
+    id: 'animated_character_scene',
+    name: 'Animated Character Scene',
+    description: 'Generate Pixar/Disney/anime character scenes with narration for education',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_character_scene',
+    inputType: 'scene_script',
+    outputType: 'animated_scene',
+    optional: true,
+    estimatedDuration: 30,
+    creditMultiplier: 2,
+    zonePreference: 'auto',
+  },
+  kids_illustration_generate: {
+    id: 'kids_illustration_generate',
+    name: 'Kids Book Illustration',
+    description: 'Generate colorful, age-appropriate illustrations for children\'s content',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_kids_illustration',
+    inputType: 'story_scene',
+    outputType: 'kids_illustration',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 1.5,
+  },
+  motion_infographic_generate: {
+    id: 'motion_infographic_generate',
+    name: 'Motion Infographic / Animated Data',
+    description: 'Generate animated infographics: counter animations, chart transitions, data flow, journey animations',
+    edgeFunction: 'motion-graphics-generator',
+    action: 'animate_infographic',
+    inputType: 'infographic_data',
+    outputType: 'motion_infographic',
+    optional: true,
+    estimatedDuration: 20,
+    creditMultiplier: 1.5,
+  },
+  customer_journey_animate: {
+    id: 'customer_journey_animate',
+    name: 'Animated Customer Journey',
+    description: 'Animate customer journey map: stages flow, touchpoints pulse, emotions animate, KPIs count up',
+    edgeFunction: 'motion-graphics-generator',
+    action: 'animate_journey',
+    inputType: 'journey_map',
+    outputType: 'animated_journey',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 1,
+  },
+  training_manual_compile: {
+    id: 'training_manual_compile',
+    name: 'Training Manual Compilation',
+    description: 'Compile chapters, slides, quizzes, and assessments into downloadable training manual (PDF + interactive)',
+    edgeFunction: 'print-pdf-generator',
+    action: 'training_manual',
+    inputType: 'chapter_structure',
+    outputType: 'training_manual',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 1,
+  },
+  episodic_metadata: {
+    id: 'episodic_metadata',
+    name: 'Episodic Metadata Generator',
+    description: 'Generate episode numbers, titles, teasers, next/prev links, series branding',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_episodic',
+    inputType: 'content_chunks',
+    outputType: 'episodic_metadata',
+    optional: true,
+    estimatedDuration: 5,
+    creditMultiplier: 0.5,
+  },
 };
 
 // ─── Pre-Built Combination Chains ────────────────────────────────────────────
@@ -1394,6 +1798,408 @@ export const PIPELINE_CHAINS: Record<string, PipelineChain> = {
     products: ['spark', 'mind', 'vibe', 'deck', 'cast'],
   },
 
+  // ─── C21: Podcast-to-Website ──────────────────────────────────────────
+  podcast_to_website: {
+    id: 'podcast_to_website',
+    name: 'Podcast-to-Website',
+    description: 'Podcast recording → landing page + blog post + show notes + social cards + RSS',
+    outputFormats: ['audio_podcast', 'landing_page', 'blog_post', 'newsletter'],
+    steps: [
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.podcast_show_notes,
+      ATOMIC_STEPS.script_generate,         // Blog from transcript
+      ATOMIC_STEPS.music_generate,
+      ATOMIC_STEPS.audio_mix,
+      ATOMIC_STEPS.audiogram_generate,
+      ATOMIC_STEPS.website_scaffold,         // Landing page
+      ATOMIC_STEPS.hero_banner_generate,
+      ATOMIC_STEPS.section_generate,
+      ATOMIC_STEPS.cta_generate,
+      ATOMIC_STEPS.seo_metadata_generate,
+      ATOMIC_STEPS.rss_feed_generate,
+      ATOMIC_STEPS.social_caption_generate,
+      ATOMIC_STEPS.website_export,
+    ],
+    estimatedDuration: 300,
+    minTier: 'creator',
+    products: ['vibe', 'mind', 'deck', 'cast'],
+  },
+
+  // ─── C22: Blog-to-Multimedia ────────────────────────────────────────
+  blog_to_multimedia: {
+    id: 'blog_to_multimedia',
+    name: 'Blog-to-Multimedia',
+    description: 'Blog post / article → video + podcast + social carousel + infographic + email',
+    outputFormats: ['short_video', 'long_video', 'audio_podcast', 'social_carousel', 'infographic', 'newsletter'],
+    steps: [
+      ATOMIC_STEPS.script_generate,         // Script from blog
+      ATOMIC_STEPS.script_enhance,
+      ATOMIC_STEPS.tts_generate,            // Voice narration
+      ATOMIC_STEPS.video_generate,          // Video version
+      ATOMIC_STEPS.music_generate,
+      ATOMIC_STEPS.audio_mix,               // Podcast version
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.infographic_generate,    // Key points infographic
+      ATOMIC_STEPS.social_caption_generate, // Social captions
+      ATOMIC_STEPS.email_template_generate, // Newsletter version
+      ATOMIC_STEPS.shorts_extract,          // Short clips
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.platform_adapt,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 300,
+    minTier: 'creator',
+    products: ['mind', 'cast'],
+  },
+
+  // ─── C23: Recording-to-Course-Series ─────────────────────────────────
+  recording_to_course: {
+    id: 'recording_to_course',
+    name: 'Recording-to-Course-Series',
+    description: 'Raw recording → chaptered course with slides, quizzes, and progressive learning path',
+    outputFormats: ['course_series', 'training_manual', 'slide_deck_video', 'e_learning_module'],
+    steps: [
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.chapter_structure_generate,  // AI module/chapter structure
+      ATOMIC_STEPS.slide_by_slide_generate,     // Slides per chapter
+      ATOMIC_STEPS.tts_generate,                // Clean narration per chapter
+      ATOMIC_STEPS.animated_character_scene,     // Animated characters for engagement
+      ATOMIC_STEPS.quiz_assessment_generate,     // Quizzes per chapter
+      ATOMIC_STEPS.video_generate,              // Video per chapter
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.episodic_metadata,           // Episode numbering + branding
+      ATOMIC_STEPS.training_manual_compile,     // Downloadable PDF manual
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 360,
+    minTier: 'pro',
+    products: ['vibe', 'mind', 'deck', 'cast'],
+  },
+
+  // ─── C24: Event-Recap-Empire ─────────────────────────────────────────
+  event_recap_empire: {
+    id: 'event_recap_empire',
+    name: 'Event-Recap-Empire',
+    description: 'Event video → recap video + highlights + social clips + blog + thank you email + infographic',
+    outputFormats: ['event_recap', 'highlight_reel', 'short_video', 'platform_clips', 'blog_post', 'infographic'],
+    steps: [
+      ATOMIC_STEPS.video_extract_audio,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.video_scene_detect,
+      ATOMIC_STEPS.video_clip_extract,
+      ATOMIC_STEPS.best_moments_ai,
+      ATOMIC_STEPS.script_generate,         // Blog + recap script
+      ATOMIC_STEPS.video_stitch,            // Recap video
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.shorts_extract,          // Social clips
+      ATOMIC_STEPS.infographic_generate,    // Event stats infographic
+      ATOMIC_STEPS.email_template_generate, // Thank you email
+      ATOMIC_STEPS.social_caption_generate,
+      ATOMIC_STEPS.multi_thumbnail,
+      ATOMIC_STEPS.platform_adapt,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 360,
+    minTier: 'creator',
+    products: ['vibe', 'mind', 'cast'],
+  },
+
+  // ─── C25: Webinar-Replay-Repurpose ───────────────────────────────────
+  webinar_replay: {
+    id: 'webinar_replay',
+    name: 'Webinar-Replay-Repurpose',
+    description: 'Webinar recording → on-demand with chapters + blog + clips + slides + quiz',
+    outputFormats: ['webinar_replay', 'blog_post', 'short_video', 'presentation', 'e_learning_module'],
+    steps: [
+      ATOMIC_STEPS.video_extract_audio,
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.chapters_auto_detect,    // Auto-chapter the webinar
+      ATOMIC_STEPS.transcript_index,        // Searchable transcript
+      ATOMIC_STEPS.script_generate,         // Blog from transcript
+      ATOMIC_STEPS.slides_generate,         // Slides from content
+      ATOMIC_STEPS.quiz_assessment_generate, // Knowledge check quiz
+      ATOMIC_STEPS.shorts_extract,          // Best moment clips
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.seo_metadata_generate,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 300,
+    minTier: 'creator',
+    products: ['vibe', 'mind', 'deck', 'cast'],
+  },
+
+  // ─── C26: Multilingual-Simultaneous-Campaign ─────────────────────────
+  multilingual_campaign: {
+    id: 'multilingual_campaign',
+    name: 'Multilingual-Simultaneous-Campaign',
+    description: 'One script → N languages simultaneously with transcreation + avatar + lip-sync per language',
+    outputFormats: ['short_video', 'long_video'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.script_generate,
+      ATOMIC_STEPS.script_enhance,
+      ATOMIC_STEPS.transcreation,           // Cultural adaptation per region
+      ATOMIC_STEPS.tts_generate,            // Multi-language TTS
+      ATOMIC_STEPS.avatar_generate,         // Regional wardrobe avatars
+      ATOMIC_STEPS.lipsync,                 // Lip-sync per language
+      ATOMIC_STEPS.caption_generate,        // Subtitles per language
+      ATOMIC_STEPS.multi_language_dub,      // Full dubbing
+      ATOMIC_STEPS.video_assemble,
+      ATOMIC_STEPS.multi_thumbnail,
+      ATOMIC_STEPS.platform_adapt,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 480,
+    minTier: 'pro',
+    products: ['spark', 'mind', 'vibe', 'cast'],
+  },
+
+  // ─── C27: Franchise-Multi-Location ────────────────────────────────────
+  franchise_multi_location: {
+    id: 'franchise_multi_location',
+    name: 'Franchise-Multi-Location',
+    description: 'Template → N location variants, each enriched with local Google Places data',
+    outputFormats: ['short_video', 'long_video', 'landing_page', 'franchise_local'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,    // Per-location enrichment
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.economy_archetype,       // Local economy context
+      ATOMIC_STEPS.competitive_analysis,    // Local competitors
+      ATOMIC_STEPS.script_generate,         // Location-specific script
+      ATOMIC_STEPS.transcreation,           // Regional adaptation
+      ATOMIC_STEPS.tts_generate,
+      ATOMIC_STEPS.video_generate,
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.website_scaffold,        // Location landing page
+      ATOMIC_STEPS.seo_metadata_generate,   // Local SEO
+      ATOMIC_STEPS.social_caption_generate,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 300,
+    minTier: 'business',
+    products: ['spark', 'mind', 'cast', 'deck'],
+  },
+
+  // ─── C28: Episodic-Series-Producer ────────────────────────────────────
+  episodic_series: {
+    id: 'episodic_series',
+    name: 'Episodic-Series-Producer',
+    description: 'Content → episodic series with consistent branding, numbering, teasers, and cross-promotion',
+    outputFormats: ['long_video', 'short_video', 'audio_podcast', 'teaser_clip', 'course_series'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.script_generate,
+      ATOMIC_STEPS.long_form_chunk,         // Split into episodes
+      ATOMIC_STEPS.episodic_metadata,       // Episode numbering + branding
+      ATOMIC_STEPS.tts_generate,            // Per-episode narration
+      ATOMIC_STEPS.video_generate,          // Per-episode video
+      ATOMIC_STEPS.logo_animate,            // Series intro animation
+      ATOMIC_STEPS.music_generate,          // Series theme music
+      ATOMIC_STEPS.audio_mix,
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.teaser_generate,         // Next episode teaser
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.rss_feed_generate,       // Series RSS
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 480,
+    minTier: 'pro',
+    products: ['spark', 'mind', 'vibe', 'cast'],
+  },
+
+  // ─── C29: A/B-Testing-Variants ────────────────────────────────────────
+  ab_testing_variants: {
+    id: 'ab_testing_variants',
+    name: 'A/B-Testing-Variants',
+    description: 'Content → N variants with different hooks, CTAs, thumbnails, and styles for testing',
+    outputFormats: ['short_video', 'long_video', 'landing_page'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.script_generate,
+      ATOMIC_STEPS.copy_variant_generate,   // Generate A/B variants
+      ATOMIC_STEPS.tts_generate,
+      ATOMIC_STEPS.video_generate,
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.multi_thumbnail,         // Multiple thumbnails
+      ATOMIC_STEPS.viral_score,             // Score each variant
+      ATOMIC_STEPS.sentiment_analyze,       // Tone analysis per variant
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 300,
+    minTier: 'pro',
+    products: ['spark', 'mind', 'cast'],
+  },
+
+  // ─── C30: UGC-Curation-Remix ──────────────────────────────────────────
+  ugc_curation: {
+    id: 'ugc_curation',
+    name: 'UGC-Curation-Remix',
+    description: 'User-generated clips → curated compilation with branding, transitions, and music',
+    outputFormats: ['ugc_compilation', 'highlight_reel', 'short_video', 'testimonial_video'],
+    steps: [
+      ATOMIC_STEPS.video_scene_detect,      // Analyze each UGC clip
+      ATOMIC_STEPS.video_clip_extract,      // Extract best parts
+      ATOMIC_STEPS.best_moments_ai,         // AI ranks best moments
+      ATOMIC_STEPS.testimonial_extract,     // Extract testimonials
+      ATOMIC_STEPS.logo_animate,            // Brand intro/outro
+      ATOMIC_STEPS.music_generate,          // Background music
+      ATOMIC_STEPS.video_stitch,            // Stitch compilation
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.watermark_apply,         // Brand watermark
+      ATOMIC_STEPS.multi_thumbnail,
+      ATOMIC_STEPS.platform_adapt,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 300,
+    minTier: 'creator',
+    products: ['vibe', 'cast'],
+  },
+
+  // ─── C31: Screen-Recording-to-Tutorial ─────────────────────────────────
+  screen_to_tutorial: {
+    id: 'screen_to_tutorial',
+    name: 'Screen-Recording-to-Tutorial',
+    description: 'Screen recording → polished tutorial with chapters, captions, zoom effects, and steps',
+    outputFormats: ['tutorial_series', 'long_video', 'short_video', 'blog_post'],
+    steps: [
+      ATOMIC_STEPS.video_extract_audio,
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.chapters_auto_detect,    // Auto-detect tutorial steps
+      ATOMIC_STEPS.script_generate,         // Clean up narration + blog post
+      ATOMIC_STEPS.tts_generate,            // Re-record clean narration
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.shorts_extract,          // Quick tip clips
+      ATOMIC_STEPS.infographic_generate,    // Steps infographic
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.seo_metadata_generate,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 240,
+    minTier: 'starter',
+    products: ['vibe', 'mind', 'cast'],
+  },
+
+  // ─── C32: Newsletter-to-Social-Campaign ────────────────────────────────
+  newsletter_to_social: {
+    id: 'newsletter_to_social',
+    name: 'Newsletter-to-Social-Campaign',
+    description: 'Newsletter content → social videos + carousel + audiogram + email + blog',
+    outputFormats: ['newsletter_social', 'short_video', 'social_carousel', 'audiogram', 'blog_post'],
+    steps: [
+      ATOMIC_STEPS.script_generate,         // Adapt newsletter for each format
+      ATOMIC_STEPS.tts_generate,            // Voice version
+      ATOMIC_STEPS.video_generate,          // Video version
+      ATOMIC_STEPS.audiogram_generate,      // Audio snippet
+      ATOMIC_STEPS.infographic_generate,    // Key stats
+      ATOMIC_STEPS.social_caption_generate, // Platform captions
+      ATOMIC_STEPS.email_template_generate, // Email campaign version
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.platform_adapt,
+      ATOMIC_STEPS.content_schedule,        // Schedule across platforms
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 240,
+    minTier: 'creator',
+    products: ['mind', 'cast'],
+  },
+
+  // ─── C33: Training-Manual-Producer ─────────────────────────────────────
+  training_manual: {
+    id: 'training_manual',
+    name: 'Training-Manual-Producer',
+    description: 'Content → full training manual with chapters, Pixar/cinematic slides, quizzes, video per chapter',
+    outputFormats: ['training_manual', 'slide_deck_video', 'course_series', 'e_learning_module'],
+    steps: [
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.chapter_structure_generate,  // AI module structure
+      ATOMIC_STEPS.slide_by_slide_generate,     // Different style per slide (Pixar, cinematic, whiteboard)
+      ATOMIC_STEPS.animated_character_scene,     // Animated guide characters
+      ATOMIC_STEPS.tts_generate,                // Per-chapter narration
+      ATOMIC_STEPS.video_generate,              // Per-chapter video
+      ATOMIC_STEPS.quiz_assessment_generate,    // Per-chapter assessments
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.motion_infographic_generate, // Animated data/process diagrams
+      ATOMIC_STEPS.customer_journey_animate,    // Animated process flows
+      ATOMIC_STEPS.episodic_metadata,           // Chapter numbering
+      ATOMIC_STEPS.training_manual_compile,     // Final PDF + interactive manual
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 420,
+    minTier: 'pro',
+    products: ['mind', 'deck', 'cast'],
+  },
+
+  // ─── C34: Kids-Book-Animator ───────────────────────────────────────────
+  kids_book_animator: {
+    id: 'kids_book_animator',
+    name: 'Kids-Book-Animator',
+    description: 'Story → illustrated kids book with Pixar-style animation, narration, and interactive elements',
+    outputFormats: ['kids_book', 'slide_deck_video', 'animated_infographic'],
+    steps: [
+      ATOMIC_STEPS.script_generate,             // Story adaptation
+      ATOMIC_STEPS.script_enhance,              // Age-appropriate language
+      ATOMIC_STEPS.chapter_structure_generate,  // Story chapters/scenes
+      ATOMIC_STEPS.kids_illustration_generate,  // Colorful illustrations per scene
+      ATOMIC_STEPS.animated_character_scene,    // Animate characters (Pixar/Disney style)
+      ATOMIC_STEPS.tts_generate,               // Child-friendly narration
+      ATOMIC_STEPS.music_generate,             // Playful background music
+      ATOMIC_STEPS.audio_mix,
+      ATOMIC_STEPS.video_generate,             // Animated video per scene
+      ATOMIC_STEPS.video_assemble,             // Stitch all scenes
+      ATOMIC_STEPS.caption_generate,           // Subtitles for reading along
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 360,
+    minTier: 'creator',
+    products: ['mind', 'cast'],
+  },
+
+  // ─── C35: Course-Series-Producer ───────────────────────────────────────
+  course_series: {
+    id: 'course_series',
+    name: 'Course-Series-Producer',
+    description: 'Curriculum → multi-episode course with progressive learning, assessments, and certificates',
+    outputFormats: ['course_series', 'e_learning_module', 'training_manual', 'slide_deck_video'],
+    steps: [
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.chapter_structure_generate,  // Curriculum → modules → lessons
+      ATOMIC_STEPS.slide_by_slide_generate,     // Slides per lesson
+      ATOMIC_STEPS.animated_character_scene,     // AI instructor character
+      ATOMIC_STEPS.tts_generate,                // Per-lesson narration
+      ATOMIC_STEPS.video_generate,              // Per-lesson video
+      ATOMIC_STEPS.motion_infographic_generate, // Animated diagrams/processes
+      ATOMIC_STEPS.quiz_assessment_generate,    // Per-module assessments
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.episodic_metadata,           // Module + lesson numbering
+      ATOMIC_STEPS.training_manual_compile,     // Companion PDF manual
+      ATOMIC_STEPS.rss_feed_generate,           // Course RSS for LMS
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 480,
+    minTier: 'pro',
+    products: ['mind', 'deck', 'cast'],
+  },
+
   // Presentation chain
   smart_presentation: {
     id: 'smart_presentation',
@@ -1414,11 +2220,175 @@ export const PIPELINE_CHAINS: Record<string, PipelineChain> = {
   },
 };
 
-// ─── Chain Selection Logic ───────────────────────────────────────────────────
+// ─── Intent × Format Matrix ─────────────────────────────────────────────────
+
+/**
+ * INTENT × FORMAT MATRIX
+ *
+ * Maps every (intent, format) pair to the best chain. This replaces the old
+ * tier-only fallback that ignored intent for many format types.
+ *
+ * Matrix precedence:
+ * 1. Exact (intent, format) match in INTENT_FORMAT_MATRIX
+ * 2. Format-only match in FORMAT_CHAIN_MAP
+ * 3. Intent-only match in INTENT_CHAIN_MAP
+ * 4. Context-aware fallback (tier, Google Places, etc.)
+ */
+
+const FORMAT_CHAIN_MAP: Partial<Record<ContentFormat, string>> = {
+  // Video remix & clip extraction
+  video_remix: 'video_remix',
+  testimonial_video: 'testimonial_compilation',
+  teaser_clip: 'video_remix',
+  best_clips: 'video_remix',
+  highlight_reel: 'video_remix',
+  platform_clips: 'long_form_production',
+  ugc_compilation: 'ugc_curation',
+
+  // Podcast / audio
+  audio_podcast: 'podcast_multichannel',
+  video_podcast: 'podcast_multichannel',
+  audiogram: 'record_to_everywhere',
+
+  // Presentation
+  presentation: 'smart_presentation',
+  investor_deck: 'investor_deck',
+  slide_deck_video: 'training_manual',
+
+  // Website package
+  website_package: 'website_package',
+  microsite: 'website_package',
+  landing_page: 'landing_page_quick',
+  product_page: 'interactive_demo_package',
+  hero_banner: 'hero_banner_only',
+  interactive_demo: 'interactive_demo_package',
+
+  // Document / data
+  whitepaper: 'whitepaper_package',
+  case_study_page: 'whitepaper_package',
+  infographic: 'whitepaper_package',
+  animated_infographic: 'training_manual',
+
+  // Training & education
+  training_manual: 'training_manual',
+  course_series: 'course_series',
+  kids_book: 'kids_book_animator',
+  e_learning_module: 'course_series',
+  tutorial_series: 'screen_to_tutorial',
+  animated_journey: 'training_manual',
+
+  // Repurposing & derivatives
+  event_recap: 'event_recap_empire',
+  webinar_replay: 'webinar_replay',
+  franchise_local: 'franchise_multi_location',
+  newsletter_social: 'newsletter_to_social',
+  email_campaign: 'newsletter_to_social',
+
+  // Social
+  social_carousel: 'blog_to_multimedia',
+  newsletter: 'blog_to_multimedia',
+  blog_post: 'blog_to_multimedia',
+};
+
+const INTENT_CHAIN_MAP: Partial<Record<ContentIntent, string>> = {
+  comparison: 'competitor_battlecard',
+  investor_pitch: 'investor_deck',
+  training: 'training_manual',
+  kids_education: 'kids_book_animator',
+  repurpose: 'video_to_everything',
+  franchise: 'franchise_multi_location',
+  series: 'episodic_series',
+  ugc: 'ugc_curation',
+  newsletter: 'newsletter_to_social',
+  webinar: 'webinar_replay',
+  event_recap: 'event_recap_empire',
+  interview: 'record_to_everywhere',
+};
+
+/**
+ * Specific (intent, format) overrides that are more precise than either
+ * format-only or intent-only mappings. Key format: "intent::format".
+ */
+const INTENT_FORMAT_OVERRIDES: Record<string, string> = {
+  // Training intents with specific formats
+  'training::short_video': 'training_manual',
+  'training::long_video': 'course_series',
+  'training::presentation': 'training_manual',
+  'training::blog_post': 'blog_to_multimedia',
+
+  // Kids education
+  'kids_education::short_video': 'kids_book_animator',
+  'kids_education::long_video': 'kids_book_animator',
+
+  // Promo with specific output formats
+  'promo::landing_page': 'landing_page_quick',
+  'promo::website_package': 'website_package',
+  'promo::infographic': 'whitepaper_package',
+  'promo::email_campaign': 'newsletter_to_social',
+
+  // Tutorial
+  'tutorial::short_video': 'screen_to_tutorial',
+  'tutorial::long_video': 'screen_to_tutorial',
+  'tutorial::course_series': 'course_series',
+  'tutorial::training_manual': 'training_manual',
+  'tutorial::blog_post': 'blog_to_multimedia',
+
+  // Case study with different formats
+  'case_study::whitepaper': 'whitepaper_package',
+  'case_study::landing_page': 'landing_page_quick',
+  'case_study::short_video': 'brand_to_video',
+
+  // Announcement → different formats
+  'announcement::landing_page': 'landing_page_quick',
+  'announcement::email_campaign': 'newsletter_to_social',
+  'announcement::social_carousel': 'blog_to_multimedia',
+
+  // Series content
+  'series::audio_podcast': 'episodic_series',
+  'series::long_video': 'episodic_series',
+  'series::course_series': 'course_series',
+
+  // Behind the scenes
+  'behind_scenes::short_video': 'video_remix',
+  'behind_scenes::long_video': 'record_to_everywhere',
+
+  // Product demo
+  'product_demo::interactive_demo': 'interactive_demo_package',
+  'product_demo::landing_page': 'interactive_demo_package',
+  'product_demo::short_video': 'brand_to_video',
+  'product_demo::website_package': 'interactive_demo_package',
+
+  // Brand story
+  'brand_story::landing_page': 'website_package',
+  'brand_story::website_package': 'website_package',
+  'brand_story::infographic': 'whitepaper_package',
+
+  // Testimonial
+  'testimonial::short_video': 'testimonial_compilation',
+  'testimonial::long_video': 'testimonial_compilation',
+  'testimonial::landing_page': 'landing_page_quick',
+
+  // Explainer
+  'explainer::short_video': 'brand_to_video',
+  'explainer::long_video': 'long_form_production',
+  'explainer::animated_infographic': 'training_manual',
+  'explainer::infographic': 'whitepaper_package',
+
+  // Repurpose
+  'repurpose::short_video': 'long_to_shorts',
+  'repurpose::audio_podcast': 'record_to_everywhere',
+  'repurpose::blog_post': 'blog_to_multimedia',
+  'repurpose::social_carousel': 'newsletter_to_social',
+  'repurpose::newsletter_social': 'newsletter_to_social',
+
+  // Franchise
+  'franchise::short_video': 'franchise_multi_location',
+  'franchise::landing_page': 'franchise_multi_location',
+};
 
 /**
  * Select the best pipeline chain based on user intent and format.
- * This is the "easy" experience — user picks intent + format, we pick the chain.
+ * Uses a 4-level precedence: exact match → format → intent → context fallback.
  */
 export function selectChain(
   intent: ContentIntent,
@@ -1426,39 +2396,53 @@ export function selectChain(
   tier: string,
   hasGooglePlaces: boolean,
 ): PipelineChain {
-  // Intent + format → chain mapping
-  if (format === 'investor_deck') return PIPELINE_CHAINS.investor_deck;
-  if (format === 'presentation') return PIPELINE_CHAINS.smart_presentation;
-  if (format === 'audio_podcast') return PIPELINE_CHAINS.podcast_multichannel;
-  if (format === 'video_podcast') return PIPELINE_CHAINS.podcast_multichannel;
+  // 1. Check exact (intent, format) override
+  const overrideKey = `${intent}::${format}`;
+  const overrideChainId = INTENT_FORMAT_OVERRIDES[overrideKey];
+  if (overrideChainId && PIPELINE_CHAINS[overrideChainId]) {
+    return PIPELINE_CHAINS[overrideChainId];
+  }
 
-  // Video remix & clip extraction
-  if (format === 'video_remix') return PIPELINE_CHAINS.video_remix;
-  if (format === 'testimonial_video') return PIPELINE_CHAINS.testimonial_compilation;
-  if (format === 'teaser_clip' || format === 'best_clips' || format === 'highlight_reel') return PIPELINE_CHAINS.video_remix;
-  if (format === 'platform_clips') return PIPELINE_CHAINS.video_remix;
+  // 2. Check format-only mapping
+  const formatChainId = FORMAT_CHAIN_MAP[format];
+  if (formatChainId && PIPELINE_CHAINS[formatChainId]) {
+    return PIPELINE_CHAINS[formatChainId];
+  }
 
-  // Website package formats
-  if (format === 'website_package' || format === 'microsite') return PIPELINE_CHAINS.website_package;
-  if (format === 'landing_page' || format === 'product_page') return PIPELINE_CHAINS.landing_page_quick;
-  if (format === 'hero_banner') return PIPELINE_CHAINS.hero_banner_only;
-  if (format === 'whitepaper' || format === 'case_study_page') return PIPELINE_CHAINS.whitepaper_package;
-  if (format === 'infographic') return PIPELINE_CHAINS.whitepaper_package;
-  if (format === 'interactive_demo') return PIPELINE_CHAINS.interactive_demo_package;
+  // 3. Check intent-only mapping
+  const intentChainId = INTENT_CHAIN_MAP[intent];
+  if (intentChainId && PIPELINE_CHAINS[intentChainId]) {
+    return PIPELINE_CHAINS[intentChainId];
+  }
 
-  if (intent === 'comparison') return PIPELINE_CHAINS.competitor_battlecard;
-  if (intent === 'investor_pitch') return PIPELINE_CHAINS.investor_deck;
+  // 4. Context-aware fallback
+  // Long video → long-form production (chunked)
+  if (format === 'long_video') {
+    if (tier === 'pro' || tier === 'business' || tier === 'enterprise') {
+      return PIPELINE_CHAINS.long_form_production;
+    }
+    if (hasGooglePlaces) return PIPELINE_CHAINS.brand_to_video;
+    return PIPELINE_CHAINS.business_to_campaign;
+  }
 
-  // Tier-based selection
+  // Short video with Google Places → brand intelligence
+  if (format === 'short_video' && hasGooglePlaces) {
+    if (intent === 'promo' || intent === 'brand_story' || intent === 'announcement') {
+      return PIPELINE_CHAINS.brand_to_video;
+    }
+  }
+
+  // Free/starter → quick promo (accessible)
   if (tier === 'free' || tier === 'starter') {
     return PIPELINE_CHAINS.quick_promo;
   }
 
+  // Creator with Google Places → brand-to-video
   if (hasGooglePlaces && (intent === 'promo' || intent === 'brand_story')) {
     return PIPELINE_CHAINS.brand_to_video;
   }
 
-  // Default to business-to-campaign for pro+ tiers
+  // Default: business-to-campaign for pro+ tiers
   return PIPELINE_CHAINS.business_to_campaign;
 }
 
@@ -1533,6 +2517,62 @@ export function getAvailableChains(tier: string): PipelineChain[] {
  */
 export function getAllAtomicSteps(): PipelineStep[] {
   return Object.values(ATOMIC_STEPS);
+}
+
+/**
+ * Get all chains that produce a given format.
+ */
+export function getChainsForFormat(format: ContentFormat): PipelineChain[] {
+  return Object.values(PIPELINE_CHAINS).filter(chain =>
+    chain.outputFormats.includes(format),
+  );
+}
+
+/**
+ * Get the recommended chain for an intent+format pair (for UI selection).
+ * Returns the chain + all alternatives so the user can override.
+ */
+export function getChainRecommendation(
+  intent: ContentIntent,
+  format: ContentFormat,
+  tier: string,
+  hasGooglePlaces: boolean,
+): { recommended: PipelineChain; alternatives: PipelineChain[] } {
+  const recommended = selectChain(intent, format, tier, hasGooglePlaces);
+  const alternatives = getChainsForFormat(format).filter(c => c.id !== recommended.id);
+  return { recommended, alternatives };
+}
+
+/**
+ * Get all unique output formats across all chains.
+ */
+export function getAllOutputFormats(): ContentFormat[] {
+  const formats = new Set<ContentFormat>();
+  for (const chain of Object.values(PIPELINE_CHAINS)) {
+    for (const f of chain.outputFormats) {
+      formats.add(f);
+    }
+  }
+  return Array.from(formats);
+}
+
+/**
+ * Get pipeline step count and estimated totals for a chain.
+ */
+export function getChainStats(chainId: string): {
+  stepCount: number;
+  estimatedDuration: number;
+  estimatedCredits: number;
+  products: string[];
+} | null {
+  const chain = PIPELINE_CHAINS[chainId];
+  if (!chain) return null;
+  return {
+    stepCount: chain.steps.length,
+    estimatedDuration: chain.estimatedDuration,
+    estimatedCredits: chain.steps.reduce((sum, s) => sum + s.creditMultiplier, 0),
+    products: chain.products,
+  };
 }
 
 /**
