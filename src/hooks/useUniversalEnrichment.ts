@@ -49,6 +49,8 @@ export interface UniversalEnrichmentOptions {
   contentStyle?: string;
   /** Subscriber user ID — loads subscriber-specific product knowledge alongside defaults */
   userId?: string;
+  /** Google Places enrichment data — pass from fetchLocalBusinessEnrichment() */
+  googlePlaces?: GooglePlacesEnrichment;
 }
 
 export interface ProductKnowledgeContext {
@@ -66,6 +68,23 @@ export interface ProductKnowledgeContext {
   regionalBenefits?: Record<string, unknown>;
   /** Source: 'db' from product_knowledge_registry, 'static' from GENIE_PRODUCTS, 'merged' from both */
   source?: 'db' | 'static' | 'merged';
+}
+
+/** Google Places live business data — REAL data from Google Places API */
+export interface GooglePlacesEnrichment {
+  businessName: string;
+  address: string;
+  rating: number | null;
+  totalReviews: number;
+  placeId: string;
+  businessTypes: string[];
+  website: string | null;
+  phoneNumber: string | null;
+  openingHours: string[] | null;
+  topReviews: Array<{ author: string; rating: number; text: string }>;
+  editorialSummary: string | null;
+  competitorInsights: Array<{ name: string; snippet: string }>;
+  mapsUrl: string | null;
 }
 
 export interface EnrichmentContext {
@@ -98,6 +117,8 @@ export interface EnrichmentContext {
   };
   /** Product knowledge from product_knowledge_registry */
   knowledge?: ProductKnowledgeContext;
+  /** Google Places live business data — enriches content with REAL reviews, hours, competitors */
+  googlePlaces?: GooglePlacesEnrichment;
 }
 
 export interface UniversalEnrichmentResult {
@@ -274,6 +295,7 @@ export function buildEnrichmentContext(
   language?: string,
   audienceFramework?: string,
   knowledge?: ProductKnowledgeContext | null,
+  googlePlaces?: GooglePlacesEnrichment,
 ): EnrichmentContext {
   const product = productId ? pool.getProductById(productId) : undefined;
   const brandAssets = productId ? pool.getBrandAssetsForProduct(productId) : [];
@@ -318,6 +340,8 @@ export function buildEnrichmentContext(
     },
 
     knowledge: knowledge || undefined,
+
+    googlePlaces: googlePlaces || undefined,
   };
 }
 
@@ -389,6 +413,39 @@ export function formatEnrichmentForAI(
     }
   }
 
+  // Google Places live data (REAL business data — reviews, hours, competitors)
+  if (ctx.googlePlaces) {
+    const gp = ctx.googlePlaces;
+    parts.push(`\n=== REAL BUSINESS DATA (Google Places) ===`);
+    parts.push(`Business: ${gp.businessName}`);
+    parts.push(`Location: ${gp.address}`);
+    if (gp.rating != null) {
+      parts.push(`Rating: ${gp.rating}★ (${gp.totalReviews} reviews)`);
+    }
+    if (gp.openingHours?.length) {
+      parts.push(`Hours: ${gp.openingHours.join(', ')}`);
+    }
+    if (gp.editorialSummary) {
+      parts.push(`About: ${gp.editorialSummary}`);
+    }
+    if (gp.topReviews.length > 0) {
+      parts.push(`Customer Quotes:`);
+      for (const r of gp.topReviews.slice(0, 3)) {
+        parts.push(`  - "${r.text}" — ${r.author} (${r.rating}★)`);
+      }
+    }
+    if (gp.competitorInsights.length > 0) {
+      parts.push(`Nearby Competitors:`);
+      for (const c of gp.competitorInsights.slice(0, 3)) {
+        parts.push(`  - ${c.name}: ${c.snippet}`);
+      }
+    }
+    if (gp.website) {
+      parts.push(`Website: ${gp.website}`);
+    }
+    parts.push(`=== END REAL BUSINESS DATA ===`);
+  }
+
   if (contentStyle) {
     parts.push(`Content Style: ${contentStyle}`);
   }
@@ -410,6 +467,7 @@ export function useUniversalEnrichment(
     audienceFramework = 'StoryBrand',
     contentStyle,
     userId,
+    googlePlaces,
   } = options;
 
   // Resolve productName → productId if UUID not provided
@@ -456,8 +514,8 @@ export function useUniversalEnrichment(
 
   const enrichmentContext = useMemo<EnrichmentContext>(() => {
     if (!pool) return { regional: { region, language, scriptStatus: 'pending' } };
-    return buildEnrichmentContext(pool, productId, region, language, audienceFramework, mergedKnowledge);
-  }, [pool, productId, region, language, audienceFramework, mergedKnowledge]);
+    return buildEnrichmentContext(pool, productId, region, language, audienceFramework, mergedKnowledge, googlePlaces);
+  }, [pool, productId, region, language, audienceFramework, mergedKnowledge, googlePlaces]);
 
   const additionalContext = useMemo(
     () => formatEnrichmentForAI(enrichmentContext, contentStyle),
@@ -470,6 +528,7 @@ export function useUniversalEnrichment(
     hasAudienceContext: !!enrichmentContext.audience,
     hasRegionalScript: !!enrichmentContext.regional?.approvedScript,
     hasProductKnowledge: !!enrichmentContext.knowledge,
+    hasGooglePlaces: !!enrichmentContext.googlePlaces,
     approvedScriptCount: pool
       ? pool.regionalScripts.filter(s => s.status === 'approved').length
       : 0,
