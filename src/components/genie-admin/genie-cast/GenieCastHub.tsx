@@ -1,14 +1,22 @@
 /**
  * GENIE CAST HUB
- * Main wrapper for the consolidated 4-tab Genie Cast interface
- * Manages state and passes to GenieCastConsolidatedTabs
+ * Main wrapper for the consolidated 4-tab Genie Cast interface.
+ * Glass morphism shell with region-aware ProviderPipelineBadge.
+ *
+ * Architecture:
+ *   GenieCastHub (shell + provider context)
+ *     └─ ProviderPipelineBadge (shows AI pipeline for selected region)
+ *     └─ GenieCastConsolidatedTabs (4-tab UI)
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { VideoStyleType } from './VideoStyleCards';
 import type { ProductGallery } from '../MultiScreenshotGallery';
 import { toast } from 'sonner';
 import { GenieCastConsolidatedTabs } from './GenieCastConsolidatedTabs';
+import { useProviderRouting } from '@/hooks/useProviderRouting';
+import { ProviderPipelineBadge } from '@/components/ui/ProviderPipelineBadge';
 
 type ConsolidatedTab = 'create' | 'produce' | 'manage' | 'publish' | 'landing';
 
@@ -18,6 +26,7 @@ const STORAGE_KEY = 'genie_cast_hub_state';
 interface GenieCastHubState {
   selectedVideoStyles: VideoStyleType[];
   activeTab: ConsolidatedTab;
+  languageCode: string;
 }
 
 const defaultStyles: VideoStyleType[] = [
@@ -29,10 +38,10 @@ const defaultStyles: VideoStyleType[] = [
 ];
 
 export const GenieCastHub: React.FC = () => {
-  // Track component mount state
+  const [searchParams] = useSearchParams();
   const isMounted = useRef(true);
-  
-  // Persist state to localStorage
+
+  // Restore persisted state
   const [selectedVideoStyles, setSelectedVideoStyles] = useState<VideoStyleType[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -46,13 +55,24 @@ export const GenieCastHub: React.FC = () => {
     return defaultStyles;
   });
 
+  // Language / region — persisted, drives provider routing
+  const [languageCode, setLanguageCode] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved).languageCode || 'en';
+    } catch { /* ignore */ }
+    return searchParams.get('lang') || 'en';
+  });
+
+  // Provider routing — single source of truth for ALL AI providers
+  const routing = useProviderRouting(languageCode);
+
   const [screenshotGalleries, setScreenshotGalleries] = useState<ProductGallery[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Calculate total screenshots
   const totalScreenshots = screenshotGalleries.reduce(
-    (total, gallery) => total + gallery.screenshots.length, 
-    0
+    (total, gallery) => total + gallery.screenshots.length,
+    0,
   );
 
   // Persist state changes
@@ -60,16 +80,14 @@ export const GenieCastHub: React.FC = () => {
     const state: GenieCastHubState = {
       selectedVideoStyles,
       activeTab: 'create',
+      languageCode,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [selectedVideoStyles]);
+  }, [selectedVideoStyles, languageCode]);
 
-  // Track mount lifecycle
   useEffect(() => {
     isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
+    return () => { isMounted.current = false; };
   }, []);
 
   // Handlers
@@ -91,7 +109,7 @@ export const GenieCastHub: React.FC = () => {
 
     setIsGenerating(true);
     try {
-      // TODO: Implement actual generation
+      // TODO: Wire to genie-cast-assembler edge function with routing.tts.provider, routing.video.provider etc.
       await new Promise(resolve => setTimeout(resolve, 2000));
       toast.success('Video generation started!');
     } catch (error) {
@@ -102,8 +120,15 @@ export const GenieCastHub: React.FC = () => {
     }
   }, [selectedVideoStyles]);
 
+  // Deep link support: ?tab=produce&action=generate
+  const defaultTab = (searchParams.get('tab') as ConsolidatedTab) || 'create';
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3" dir={routing.isRTL ? 'rtl' : 'ltr'}>
+      {/* AI Pipeline Badge — shows resolved providers for current region */}
+      <ProviderPipelineBadge routing={routing} mode="compact" />
+
+      {/* Main 4-Tab Interface */}
       <GenieCastConsolidatedTabs
         selectedVideoStyles={selectedVideoStyles}
         onStylesChange={handleStylesChange}
@@ -112,7 +137,7 @@ export const GenieCastHub: React.FC = () => {
         totalScreenshots={totalScreenshots}
         onGenerate={handleGenerate}
         isGenerating={isGenerating}
-        defaultTab="create"
+        defaultTab={defaultTab}
       />
     </div>
   );
