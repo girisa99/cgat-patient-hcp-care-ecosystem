@@ -106,7 +106,16 @@ export type ContentFormat =
   | 'franchise_local'    // Franchise/multi-location variant with local data
   | 'ugc_compilation'    // User-generated content curation and remix
   | 'newsletter_social'  // Newsletter content repurposed for social
-  | 'email_campaign';    // Full email campaign: template + subject lines + A/B variants
+  | 'email_campaign'     // Full email campaign: template + subject lines + A/B variants
+  // ─── Podcast / Webcast / Meeting Intelligence ─────────────────────────
+  | 'podcast_episode'    // Full podcast episode with intro, outro, music, show notes
+  | 'video_from_podcast' // Video generated from podcast audio (avatar + visuals)
+  | 'meeting_recap'      // Meeting intelligence: MoM, tasks, diagrams, next steps
+  | 'meeting_poc'        // Quick PoC/sample screens generated from meeting decisions
+  | 'architecture_diagram'  // Technical architecture flow diagram from discussion
+  | 'business_flow'      // Business process flow diagram from discussion
+  | 'webcast_replay'     // Polished webcast replay with chapters + demo highlights
+  | 'live_recording_processed'; // Processed live recording with edit/rewind/chapters
 
 export type ContentIntent =
   | 'promo'              // Business promotion
@@ -129,7 +138,11 @@ export type ContentIntent =
   | 'series'             // Episodic / series content
   | 'ugc'               // User-generated content curation
   | 'newsletter'        // Newsletter / email campaign
-  | 'webinar';          // Webinar / live session replay
+  | 'webinar'           // Webinar / live session replay
+  | 'meeting'           // Meeting recording → MoM, tasks, diagrams
+  | 'podcast_create'    // Create podcast from topic/upload/recording
+  | 'live_session'      // Live webcast / product demo
+  | 'product_walkthrough'; // Product walkthrough / demo recording
 
 export type InputType =
   | 'text'               // Raw text / description
@@ -1320,6 +1333,179 @@ const ATOMIC_STEPS: Record<string, PipelineStep> = {
     estimatedDuration: 5,
     creditMultiplier: 0.5,
   },
+
+  // ─── Podcast / Webcast / Meeting Intelligence ─────────────────────────
+
+  podcast_outline_generate: {
+    id: 'podcast_outline_generate',
+    name: 'Podcast Outline & Structure',
+    description: 'Generate podcast outline: intro hook, segments, talking points, transitions, outro CTA',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_podcast_outline',
+    inputType: 'topic_or_transcript',
+    outputType: 'podcast_outline',
+    optional: false,
+    estimatedDuration: 8,
+    creditMultiplier: 0.5,
+  },
+  podcast_intro_outro: {
+    id: 'podcast_intro_outro',
+    name: 'Podcast Intro/Outro Generator',
+    description: 'Generate branded podcast intro and outro with music, branding, and episode-specific hooks',
+    edgeFunction: 'audio-mixer',
+    action: 'podcast_bookends',
+    inputType: 'podcast_config',
+    outputType: 'intro_outro_audio',
+    optional: true,
+    estimatedDuration: 10,
+    creditMultiplier: 0.5,
+  },
+  speaker_diarization: {
+    id: 'speaker_diarization',
+    name: 'Speaker Identification & Diarization',
+    description: 'Identify individual speakers, label turns, track who said what with timestamps',
+    edgeFunction: 'ai-universal-processor',
+    action: 'speaker_diarization',
+    inputType: 'audio',
+    outputType: 'diarized_transcript',
+    optional: false,
+    estimatedDuration: 10,
+    creditMultiplier: 1,
+  },
+  meeting_agenda_extract: {
+    id: 'meeting_agenda_extract',
+    name: 'Agenda & Topic Extraction',
+    description: 'Extract agenda items, discussion topics, time spent per topic, decision points',
+    edgeFunction: 'ai-universal-processor',
+    action: 'extract_agenda',
+    inputType: 'diarized_transcript',
+    outputType: 'meeting_agenda',
+    optional: false,
+    estimatedDuration: 5,
+    creditMultiplier: 0.5,
+  },
+  mom_generate: {
+    id: 'mom_generate',
+    name: 'Minutes of Meeting (MoM)',
+    description: 'Generate formal MoM: attendees, agenda, decisions, action items, deadlines, owners',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_mom',
+    inputType: 'diarized_transcript',
+    outputType: 'meeting_minutes',
+    optional: false,
+    estimatedDuration: 8,
+    creditMultiplier: 1,
+  },
+  task_extract_assign: {
+    id: 'task_extract_assign',
+    name: 'Task Extraction & Assignment',
+    description: 'Extract action items, assign to speakers, set deadlines, generate task board (Jira/Linear/Trello format)',
+    edgeFunction: 'ai-universal-processor',
+    action: 'extract_tasks',
+    inputType: 'meeting_minutes',
+    outputType: 'task_board',
+    optional: false,
+    estimatedDuration: 5,
+    creditMultiplier: 0.5,
+  },
+  architecture_diagram_generate: {
+    id: 'architecture_diagram_generate',
+    name: 'Architecture Diagram Generation',
+    description: 'Generate technical architecture diagrams: system design, data flow, sequence diagrams, ERD from discussion',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_architecture',
+    inputType: 'technical_discussion',
+    outputType: 'architecture_diagrams',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 1.5,
+  },
+  business_flow_generate: {
+    id: 'business_flow_generate',
+    name: 'Business Flow Diagram',
+    description: 'Generate business process flows: swimlane, BPMN, decision trees, org charts from discussion',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_business_flow',
+    inputType: 'business_discussion',
+    outputType: 'business_flow_diagrams',
+    optional: true,
+    estimatedDuration: 12,
+    creditMultiplier: 1,
+  },
+  poc_screen_generate: {
+    id: 'poc_screen_generate',
+    name: 'Quick PoC / Sample Screens',
+    description: 'Generate quick wireframes, mockups, or sample screens from meeting decisions and requirements',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_poc_screens',
+    inputType: 'meeting_decisions',
+    outputType: 'poc_screens',
+    optional: true,
+    estimatedDuration: 20,
+    creditMultiplier: 1.5,
+    zonePreference: 'auto',
+  },
+  meeting_summary_distribute: {
+    id: 'meeting_summary_distribute',
+    name: 'Meeting Package & Distribution',
+    description: 'Package MoM + tasks + diagrams + PoC screens and distribute to participants via email/Slack',
+    edgeFunction: 'meeting-distributor',
+    action: 'distribute',
+    inputType: 'meeting_package',
+    outputType: 'distribution_result',
+    optional: true,
+    estimatedDuration: 5,
+    creditMultiplier: 0,
+  },
+  session_checkpoint: {
+    id: 'session_checkpoint',
+    name: 'Session Checkpoint / Resume',
+    description: 'Save session checkpoint for pause/resume without restart — preserves transcript, edits, and generation state',
+    edgeFunction: 'session-manager',
+    action: 'checkpoint',
+    inputType: 'session_state',
+    outputType: 'checkpoint_id',
+    optional: false,
+    estimatedDuration: 2,
+    creditMultiplier: 0,
+  },
+  transcript_edit_rewind: {
+    id: 'transcript_edit_rewind',
+    name: 'Transcript Edit & Rewind',
+    description: 'Edit transcript inline, rewind to any point, re-generate from that point without restarting',
+    edgeFunction: 'transcript-editor',
+    action: 'edit_rewind',
+    inputType: 'transcript_with_edits',
+    outputType: 'edited_transcript',
+    optional: true,
+    estimatedDuration: 3,
+    creditMultiplier: 0,
+  },
+  webcast_product_demo: {
+    id: 'webcast_product_demo',
+    name: 'Webcast Product Demo Processing',
+    description: 'Process product demo recording: highlight key features, generate feature-specific clips, demo recap',
+    edgeFunction: 'ai-universal-processor',
+    action: 'process_product_demo',
+    inputType: 'demo_recording',
+    outputType: 'demo_highlights',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 1,
+  },
+  podcast_to_video: {
+    id: 'podcast_to_video',
+    name: 'Podcast-to-Video Conversion',
+    description: 'Convert podcast audio → video with avatar, waveform, slides, B-roll, or animated visuals',
+    edgeFunction: 'ai-universal-processor',
+    action: 'podcast_to_video',
+    inputType: 'podcast_audio',
+    outputType: 'podcast_video',
+    optional: true,
+    estimatedDuration: 30,
+    creditMultiplier: 2,
+    zonePreference: 'auto',
+  },
 };
 
 // ─── Pre-Built Combination Chains ────────────────────────────────────────────
@@ -2200,6 +2386,231 @@ export const PIPELINE_CHAINS: Record<string, PipelineChain> = {
     products: ['mind', 'deck', 'cast'],
   },
 
+  // ─── C36: Audio-Upload-to-Podcast ──────────────────────────────────────
+  audio_to_podcast: {
+    id: 'audio_to_podcast',
+    name: 'Audio-Upload-to-Podcast',
+    description: 'Upload raw audio → full podcast episode with intro/outro, music, show notes, transcript, clips',
+    outputFormats: ['podcast_episode', 'audio_podcast', 'short_video', 'audiogram', 'blog_post'],
+    steps: [
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.speaker_diarization,      // Identify speakers
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.podcast_outline_generate, // Structure the episode
+      ATOMIC_STEPS.script_enhance,           // Clean up transcript
+      ATOMIC_STEPS.podcast_intro_outro,      // Branded intro/outro
+      ATOMIC_STEPS.music_generate,           // Background music
+      ATOMIC_STEPS.audio_mix,               // Mix everything
+      ATOMIC_STEPS.podcast_show_notes,       // Show notes
+      ATOMIC_STEPS.script_generate,          // Blog post from transcript
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.audiogram_generate,       // Social audio clips
+      ATOMIC_STEPS.shorts_extract,           // Best moment clips
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.rss_feed_generate,
+      ATOMIC_STEPS.seo_metadata_generate,
+      ATOMIC_STEPS.session_checkpoint,
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 300,
+    minTier: 'creator',
+    products: ['vibe', 'mind', 'cast'],
+  },
+
+  // ─── C37: Podcast-to-Video ──────────────────────────────────────────
+  podcast_to_video_chain: {
+    id: 'podcast_to_video_chain',
+    name: 'Podcast-to-Video',
+    description: 'Podcast audio → full video with avatar/visuals + clips + social + landing page',
+    outputFormats: ['video_from_podcast', 'video_podcast', 'short_video', 'platform_clips', 'landing_page'],
+    steps: [
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.speaker_diarization,
+      ATOMIC_STEPS.podcast_outline_generate,
+      ATOMIC_STEPS.podcast_to_video,          // Generate video from podcast
+      ATOMIC_STEPS.avatar_generate,           // Speaking avatar per speaker
+      ATOMIC_STEPS.lipsync,                   // Lip-sync avatar to audio
+      ATOMIC_STEPS.broll_inject,              // B-roll between segments
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.shorts_extract,            // Best moment clips
+      ATOMIC_STEPS.teaser_generate,           // Episode teaser
+      ATOMIC_STEPS.multi_thumbnail,
+      ATOMIC_STEPS.platform_adapt,            // TikTok, Reels, Shorts
+      ATOMIC_STEPS.website_scaffold,          // Episode landing page
+      ATOMIC_STEPS.hero_banner_generate,
+      ATOMIC_STEPS.seo_metadata_generate,
+      ATOMIC_STEPS.session_checkpoint,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 420,
+    minTier: 'pro',
+    products: ['vibe', 'mind', 'cast', 'deck'],
+  },
+
+  // ─── C38: Meeting-Intelligence ──────────────────────────────────────
+  meeting_intelligence: {
+    id: 'meeting_intelligence',
+    name: 'Meeting-Intelligence',
+    description: 'Meeting recording → MoM + tasks + architecture/business diagrams + PoC screens + distribution',
+    outputFormats: ['meeting_recap', 'meeting_poc', 'architecture_diagram', 'business_flow', 'presentation'],
+    steps: [
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.speaker_diarization,       // Who said what
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.transcript_edit_rewind,    // Edit/correct transcript
+      ATOMIC_STEPS.meeting_agenda_extract,    // Extract agenda + topics
+      ATOMIC_STEPS.mom_generate,              // Minutes of Meeting
+      ATOMIC_STEPS.task_extract_assign,       // Tasks + owners + deadlines
+      ATOMIC_STEPS.architecture_diagram_generate, // Tech architecture if technical
+      ATOMIC_STEPS.business_flow_generate,    // Business flows if business
+      ATOMIC_STEPS.poc_screen_generate,       // Quick PoC / wireframes
+      ATOMIC_STEPS.slides_generate,           // Summary presentation
+      ATOMIC_STEPS.infographic_generate,      // Key decisions infographic
+      ATOMIC_STEPS.email_template_generate,   // Follow-up email
+      ATOMIC_STEPS.session_checkpoint,
+      ATOMIC_STEPS.meeting_summary_distribute, // Send to participants
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 180,
+    minTier: 'creator',
+    products: ['mind', 'deck', 'cast', 'hub'],
+  },
+
+  // ─── C39: Webcast-Product-Demo ──────────────────────────────────────
+  webcast_product_demo: {
+    id: 'webcast_product_demo',
+    name: 'Webcast-Product-Demo',
+    description: 'Product demo webcast → replay with highlights + feature clips + landing page + follow-up',
+    outputFormats: ['webcast_replay', 'short_video', 'platform_clips', 'landing_page', 'interactive_demo', 'email_campaign'],
+    steps: [
+      ATOMIC_STEPS.video_extract_audio,
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.speaker_diarization,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.chapters_auto_detect,       // Auto-chapter the demo
+      ATOMIC_STEPS.webcast_product_demo,       // Extract demo highlights
+      ATOMIC_STEPS.video_clip_extract,         // Feature-specific clips
+      ATOMIC_STEPS.script_generate,            // Blog recap
+      ATOMIC_STEPS.shorts_extract,             // Social clips
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.website_scaffold,           // Product landing page
+      ATOMIC_STEPS.hero_banner_generate,
+      ATOMIC_STEPS.interactive_demo_generate,  // Interactive demo version
+      ATOMIC_STEPS.email_template_generate,    // Follow-up email
+      ATOMIC_STEPS.multi_thumbnail,
+      ATOMIC_STEPS.platform_adapt,
+      ATOMIC_STEPS.session_checkpoint,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 360,
+    minTier: 'pro',
+    products: ['vibe', 'mind', 'deck', 'cast'],
+  },
+
+  // ─── C40: Technical-Meeting-to-Architecture ──────────────────────────
+  tech_meeting_to_arch: {
+    id: 'tech_meeting_to_arch',
+    name: 'Technical-Meeting-to-Architecture',
+    description: 'Technical meeting → architecture diagrams + system design docs + PoC screens + task board',
+    outputFormats: ['architecture_diagram', 'meeting_recap', 'meeting_poc', 'whitepaper', 'presentation'],
+    steps: [
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.speaker_diarization,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.transcript_edit_rewind,
+      ATOMIC_STEPS.meeting_agenda_extract,
+      ATOMIC_STEPS.mom_generate,
+      ATOMIC_STEPS.task_extract_assign,
+      ATOMIC_STEPS.architecture_diagram_generate,  // System design, data flow, sequence diagrams
+      ATOMIC_STEPS.poc_screen_generate,            // Wireframes / sample screens
+      ATOMIC_STEPS.whitepaper_generate,            // Technical design doc
+      ATOMIC_STEPS.slides_generate,                // Architecture presentation
+      ATOMIC_STEPS.motion_infographic_generate,    // Animated architecture diagrams
+      ATOMIC_STEPS.session_checkpoint,
+      ATOMIC_STEPS.meeting_summary_distribute,
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 240,
+    minTier: 'pro',
+    products: ['mind', 'deck', 'cast', 'hub'],
+  },
+
+  // ─── C41: Live-Recording-to-Everything ──────────────────────────────
+  live_to_everything: {
+    id: 'live_to_everything',
+    name: 'Live-Recording-to-Everything',
+    description: 'Live recording → podcast + video + MoM + blog + social + transcript (edit/rewind/resume)',
+    outputFormats: ['live_recording_processed', 'podcast_episode', 'video_podcast', 'meeting_recap', 'blog_post', 'short_video'],
+    steps: [
+      ATOMIC_STEPS.audio_enhance,
+      ATOMIC_STEPS.speaker_diarization,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.transcript_edit_rewind,     // Edit, rewind, correct
+      ATOMIC_STEPS.chapters_auto_detect,       // Auto-chapter detection
+      ATOMIC_STEPS.meeting_agenda_extract,     // If meeting-like
+      ATOMIC_STEPS.mom_generate,               // MoM if applicable
+      ATOMIC_STEPS.task_extract_assign,        // Tasks if applicable
+      ATOMIC_STEPS.podcast_outline_generate,   // Podcast structure
+      ATOMIC_STEPS.podcast_intro_outro,        // Branded intro/outro
+      ATOMIC_STEPS.music_generate,
+      ATOMIC_STEPS.audio_mix,
+      ATOMIC_STEPS.podcast_to_video,           // Video version
+      ATOMIC_STEPS.script_generate,            // Blog post
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.shorts_extract,
+      ATOMIC_STEPS.audiogram_generate,
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.session_checkpoint,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 480,
+    minTier: 'pro',
+    products: ['vibe', 'mind', 'cast', 'hub'],
+  },
+
+  // ─── C42: Podcast-Create-from-Scratch ──────────────────────────────
+  podcast_from_scratch: {
+    id: 'podcast_from_scratch',
+    name: 'Podcast-Create-from-Scratch',
+    description: 'Topic/script → full podcast episode with AI narration, intro/outro, video, social clips, landing page',
+    outputFormats: ['podcast_episode', 'video_from_podcast', 'short_video', 'audiogram', 'landing_page', 'blog_post'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.podcast_outline_generate,   // Episode structure
+      ATOMIC_STEPS.script_generate,            // Full script from outline
+      ATOMIC_STEPS.script_enhance,             // Polish
+      ATOMIC_STEPS.transcreation,              // Multi-language versions
+      ATOMIC_STEPS.tts_generate,               // AI narration
+      ATOMIC_STEPS.podcast_intro_outro,        // Branded intro/outro
+      ATOMIC_STEPS.music_generate,             // Background music
+      ATOMIC_STEPS.soundscape_generate,        // Ambient audio
+      ATOMIC_STEPS.audio_mix,                  // Mix everything
+      ATOMIC_STEPS.podcast_to_video,           // Video version
+      ATOMIC_STEPS.avatar_generate,            // Speaking avatar
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.shorts_extract,             // Social clips
+      ATOMIC_STEPS.audiogram_generate,         // Social waveform
+      ATOMIC_STEPS.podcast_show_notes,         // Show notes
+      ATOMIC_STEPS.script_generate,            // Blog post
+      ATOMIC_STEPS.website_scaffold,           // Episode landing page
+      ATOMIC_STEPS.hero_banner_generate,
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.rss_feed_generate,
+      ATOMIC_STEPS.seo_metadata_generate,
+      ATOMIC_STEPS.session_checkpoint,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 480,
+    minTier: 'creator',
+    products: ['spark', 'vibe', 'mind', 'cast', 'deck'],
+  },
+
   // Presentation chain
   smart_presentation: {
     id: 'smart_presentation',
@@ -2245,10 +2656,18 @@ const FORMAT_CHAIN_MAP: Partial<Record<ContentFormat, string>> = {
   platform_clips: 'long_form_production',
   ugc_compilation: 'ugc_curation',
 
-  // Podcast / audio
-  audio_podcast: 'podcast_multichannel',
-  video_podcast: 'podcast_multichannel',
+  // Podcast / audio / meeting
+  audio_podcast: 'audio_to_podcast',
+  video_podcast: 'podcast_to_video_chain',
   audiogram: 'record_to_everywhere',
+  podcast_episode: 'audio_to_podcast',
+  video_from_podcast: 'podcast_to_video_chain',
+  meeting_recap: 'meeting_intelligence',
+  meeting_poc: 'meeting_intelligence',
+  architecture_diagram: 'tech_meeting_to_arch',
+  business_flow: 'meeting_intelligence',
+  webcast_replay: 'webcast_product_demo',
+  live_recording_processed: 'live_to_everything',
 
   // Presentation
   presentation: 'smart_presentation',
@@ -2303,6 +2722,10 @@ const INTENT_CHAIN_MAP: Partial<Record<ContentIntent, string>> = {
   webinar: 'webinar_replay',
   event_recap: 'event_recap_empire',
   interview: 'record_to_everywhere',
+  meeting: 'meeting_intelligence',
+  podcast_create: 'podcast_from_scratch',
+  live_session: 'live_to_everything',
+  product_walkthrough: 'webcast_product_demo',
 };
 
 /**
@@ -2384,6 +2807,51 @@ const INTENT_FORMAT_OVERRIDES: Record<string, string> = {
   // Franchise
   'franchise::short_video': 'franchise_multi_location',
   'franchise::landing_page': 'franchise_multi_location',
+
+  // Meeting intelligence
+  'meeting::meeting_recap': 'meeting_intelligence',
+  'meeting::architecture_diagram': 'tech_meeting_to_arch',
+  'meeting::meeting_poc': 'meeting_intelligence',
+  'meeting::presentation': 'meeting_intelligence',
+  'meeting::business_flow': 'meeting_intelligence',
+  'meeting::whitepaper': 'tech_meeting_to_arch',
+
+  // Podcast creation
+  'podcast_create::audio_podcast': 'podcast_from_scratch',
+  'podcast_create::podcast_episode': 'podcast_from_scratch',
+  'podcast_create::video_from_podcast': 'podcast_from_scratch',
+  'podcast_create::video_podcast': 'podcast_to_video_chain',
+  'podcast_create::short_video': 'podcast_from_scratch',
+  'podcast_create::blog_post': 'podcast_from_scratch',
+  'podcast_create::landing_page': 'podcast_from_scratch',
+
+  // Live session / webcast
+  'live_session::webcast_replay': 'webcast_product_demo',
+  'live_session::meeting_recap': 'live_to_everything',
+  'live_session::audio_podcast': 'live_to_everything',
+  'live_session::short_video': 'live_to_everything',
+  'live_session::blog_post': 'live_to_everything',
+
+  // Product walkthrough / demo
+  'product_walkthrough::interactive_demo': 'webcast_product_demo',
+  'product_walkthrough::landing_page': 'webcast_product_demo',
+  'product_walkthrough::short_video': 'webcast_product_demo',
+  'product_walkthrough::webcast_replay': 'webcast_product_demo',
+  'product_walkthrough::email_campaign': 'webcast_product_demo',
+
+  // Webinar
+  'webinar::audio_podcast': 'webinar_replay',
+  'webinar::short_video': 'webinar_replay',
+  'webinar::blog_post': 'webinar_replay',
+  'webinar::presentation': 'webinar_replay',
+  'webinar::e_learning_module': 'webinar_replay',
+
+  // Interview → different outputs
+  'interview::audio_podcast': 'audio_to_podcast',
+  'interview::video_podcast': 'podcast_to_video_chain',
+  'interview::podcast_episode': 'audio_to_podcast',
+  'interview::blog_post': 'record_to_everywhere',
+  'interview::short_video': 'record_to_everywhere',
 };
 
 /**
