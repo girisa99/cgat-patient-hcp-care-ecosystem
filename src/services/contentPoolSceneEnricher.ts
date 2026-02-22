@@ -13,7 +13,7 @@
 
 import type { BlueprintScene } from '@/hooks/useVideoBlueprints';
 import type { ContentPoolContext } from '@/hooks/useContentPool';
-import { buildEnrichmentContext } from '@/hooks/useUniversalEnrichment';
+import { buildEnrichmentContext, type GooglePlacesEnrichment } from '@/hooks/useUniversalEnrichment';
 
 export interface EnrichedBlueprintScene extends BlueprintScene {
   productContext?: {
@@ -56,6 +56,17 @@ export interface EnrichedBlueprintScene extends BlueprintScene {
     region: string;
     tone: string;
   };
+
+  /** Real-world data from Google Places API — actual reviews, hours, competitors */
+  realWorldData?: {
+    businessName: string;
+    rating: number | null;
+    totalReviews: number;
+    topReviewQuotes: string[];
+    openingHours: string[] | null;
+    competitorNames: string[];
+    editorialSummary: string | null;
+  };
 }
 
 /**
@@ -68,15 +79,16 @@ export function enrichSceneWithContext(
   productId?: string,
   region?: string,
   language?: string,
-  audienceFramework?: string
+  audienceFramework?: string,
+  googlePlaces?: GooglePlacesEnrichment,
 ): EnrichedBlueprintScene {
   // Delegate to universal enrichment (single source of truth)
-  const ctx = buildEnrichmentContext(contentPool, productId, region, language, audienceFramework);
+  const ctx = buildEnrichmentContext(contentPool, productId, region, language, audienceFramework, undefined, googlePlaces);
   const product = productId ? contentPool.getProductById(productId) : undefined;
 
   return {
     ...scene,
-    
+
     productContext: ctx.product && product ? {
       productId: product.id,
       productName: ctx.product.name,
@@ -87,13 +99,13 @@ export function enrichSceneWithContext(
       secondaryColor: ctx.product.secondaryColor,
       icon: product.icon || '',
     } : undefined,
-    
+
     brandContext: ctx.brand ? {
       logoUrl: ctx.brand.logoUrl,
       primaryColor: ctx.brand.primaryColor,
       secondaryColor: ctx.brand.secondaryColor,
     } : undefined,
-    
+
     audienceContext: ctx.audience ? {
       label: ctx.audience.label,
       industry: ctx.audience.industry,
@@ -101,7 +113,7 @@ export function enrichSceneWithContext(
       painPoints: ctx.audience.painPoints,
       messagingAngles: ctx.audience.messagingAngles,
     } : undefined,
-    
+
     regionalContext: ctx.regional ? {
       region: ctx.regional.region,
       language: ctx.regional.language,
@@ -109,7 +121,7 @@ export function enrichSceneWithContext(
       scriptStatus: ctx.regional.scriptStatus,
       ttsProviderRecommended: ctx.regional.ttsProvider,
     } : undefined,
-    
+
     enrichedPromptContext: {
       brand: ctx.product?.name || 'Genie',
       audience: ctx.audience?.label || 'General Audience',
@@ -117,6 +129,16 @@ export function enrichSceneWithContext(
       region: ctx.regional?.region || 'global',
       tone: ctx.product?.category || 'professional',
     },
+
+    realWorldData: ctx.googlePlaces ? {
+      businessName: ctx.googlePlaces.businessName,
+      rating: ctx.googlePlaces.rating,
+      totalReviews: ctx.googlePlaces.totalReviews,
+      topReviewQuotes: ctx.googlePlaces.topReviews.map(r => r.text),
+      openingHours: ctx.googlePlaces.openingHours,
+      competitorNames: ctx.googlePlaces.competitorInsights.map(c => c.name),
+      editorialSummary: ctx.googlePlaces.editorialSummary,
+    } : undefined,
   };
 }
 
@@ -126,10 +148,11 @@ export function enrichScenesWithContext(
   productId?: string,
   region?: string,
   language?: string,
-  audienceFramework?: string
+  audienceFramework?: string,
+  googlePlaces?: GooglePlacesEnrichment,
 ): EnrichedBlueprintScene[] {
   return scenes.map(scene =>
-    enrichSceneWithContext(scene, contentPool, productId, region, language, audienceFramework)
+    enrichSceneWithContext(scene, contentPool, productId, region, language, audienceFramework, googlePlaces)
   );
 }
 
@@ -160,7 +183,21 @@ export function generateAIPromptContext(
   if (firstScene.audienceContext?.messagingAngles?.length) {
     parts.push(`Messaging Angles: ${firstScene.audienceContext.messagingAngles.join(', ')}`);
   }
-  
+
+  // Include real-world Google Places data in AI prompts
+  if (firstScene.realWorldData) {
+    const rwd = firstScene.realWorldData;
+    parts.push(`\n--- REAL BUSINESS DATA ---`);
+    parts.push(`Business: ${rwd.businessName}`);
+    if (rwd.rating != null) parts.push(`Google Rating: ${rwd.rating}★ (${rwd.totalReviews} reviews)`);
+    if (rwd.editorialSummary) parts.push(`About: ${rwd.editorialSummary}`);
+    if (rwd.topReviewQuotes.length > 0) {
+      parts.push(`Customer Quotes: ${rwd.topReviewQuotes.slice(0, 2).map(q => `"${q}"`).join('; ')}`);
+    }
+    if (rwd.openingHours?.length) parts.push(`Hours: ${rwd.openingHours[0]}`);
+    if (rwd.competitorNames.length > 0) parts.push(`Nearby Competitors: ${rwd.competitorNames.join(', ')}`);
+  }
+
   return parts.join('\n');
 }
 

@@ -62,6 +62,15 @@ export interface TranscreationContext {
   sourceText: string;
   /** How deeply to culturally adapt (light = localize, deep = full reimagine) */
   adaptationLevel: 'light' | 'moderate' | 'deep';
+  /** Google Places live data — real reviews, hours, competitors from source business */
+  googlePlacesData?: {
+    businessName: string;
+    rating: number | null;
+    totalReviews: number;
+    topReviewQuotes: string[];
+    editorialSummary: string | null;
+    competitorNames: string[];
+  };
 }
 
 /** Full transcreation profile combining creative + routing + voice data */
@@ -239,6 +248,7 @@ export function getTranscreationDirectionPrompt(
   regionCode: string,
   emotionalTone: EmotionalTone,
   product: GenieProduct,
+  googlePlacesData?: TranscreationContext['googlePlacesData'],
 ): string {
   const { creative, parent } = findCreativeProfile(regionCode);
   if (!creative) return `Tone: ${emotionalTone}. Product: ${product}.`;
@@ -292,7 +302,23 @@ export function getTranscreationDirectionPrompt(
   
   // Product context
   parts.push(`Product: ${product}.`);
-  
+
+  // Google Places live data — inject REAL business context into transcreation
+  if (googlePlacesData) {
+    if (googlePlacesData.rating != null) {
+      parts.push(`Real business rating: ${googlePlacesData.rating}★ (${googlePlacesData.totalReviews} reviews).`);
+    }
+    if (googlePlacesData.editorialSummary) {
+      parts.push(`About: ${googlePlacesData.editorialSummary}.`);
+    }
+    if (googlePlacesData.topReviewQuotes.length > 0) {
+      parts.push(`Use these real customer quotes for authenticity: "${googlePlacesData.topReviewQuotes[0]}".`);
+    }
+    if (googlePlacesData.competitorNames.length > 0) {
+      parts.push(`Position against competitors: ${googlePlacesData.competitorNames.slice(0, 2).join(', ')}.`);
+    }
+  }
+
   return parts.join(' ');
 }
 

@@ -62,8 +62,9 @@ import { generateScenePrompts, getRecommendedPlatforms } from './castEndToEndPro
 import { findArchetypesByRegion } from './informalEconomyProfiles';
 import type { EnrichedBlueprintScene } from '../contentPoolSceneEnricher';
 import { enrichScenesWithContext, generateAIPromptContext } from '../contentPoolSceneEnricher';
-import type { EnrichmentContext, ProductKnowledgeContext } from '../../hooks/useUniversalEnrichment';
+import type { EnrichmentContext, ProductKnowledgeContext, GooglePlacesEnrichment } from '../../hooks/useUniversalEnrichment';
 import { formatEnrichmentForAI, getAllGenieProductsKnowledge } from '../../hooks/useUniversalEnrichment';
+import { enrichWithGooglePlaces } from './simplifiedOnboarding';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -134,6 +135,7 @@ export class UniversalEnrichmentBridge {
   private config: BridgeConfig;
   private competitiveCache: CompetitiveEnrichment | null = null;
   private competitiveCacheExpiry: number = 0;
+  private googlePlacesCache: Map<string, { data: GooglePlacesEnrichment; expiry: number }> = new Map();
 
   constructor(config: Partial<BridgeConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -531,6 +533,83 @@ export class UniversalEnrichmentBridge {
       scenePrompts,
       regional,
       estimatedCost: estimatedCostResult,
+    };
+  }
+
+  // ── Google Places Enrichment (Live Data) ────────────────────
+
+  /**
+   * Fetch and cache Google Places data for a business.
+   * This is the LIVE DATA moat — real reviews, hours, competitors from Google.
+   *
+   * Data flows into:
+   * - enrichPrompt() → [GOOGLE_PLACES] block in every AI prompt
+   * - enrichScenesWithFullContext() → real data in video scenes
+   * - enrichWithHookContext() → merged with React hook enrichment
+   *
+   * Cache TTL: 15 minutes (Google Places data doesn't change often)
+   */
+  async getGooglePlacesEnrichment(
+    businessName: string,
+    location: string,
+    vertical?: string,
+  ): Promise<GooglePlacesEnrichment | null> {
+    const cacheKey = `${businessName}|${location}`.toLowerCase();
+    const cached = this.googlePlacesCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiry) {
+      return cached.data;
+    }
+
+    try {
+      const { enrichment } = await enrichWithGooglePlaces(businessName, location, vertical);
+      if (enrichment) {
+        this.googlePlacesCache.set(cacheKey, {
+          data: enrichment,
+          expiry: Date.now() + 15 * 60 * 1000, // 15 min cache
+        });
+      }
+      return enrichment;
+    } catch {
+      console.warn('[EnrichmentBridge] Google Places fetch failed — continuing without live data');
+      return null;
+    }
+  }
+
+  /**
+   * Enrich a prompt with Google Places data layered in.
+   * Wraps enrichPrompt() with an additional [GOOGLE_PLACES] context block.
+   */
+  async enrichPromptWithGooglePlaces(
+    prompt: string,
+    businessName: string,
+    location: string,
+    options: Parameters<typeof this.enrichPrompt>[1] & { vertical?: string } = {}
+  ): Promise<EnrichmentResult> {
+    const [baseResult, googlePlaces] = await Promise.all([
+      this.enrichPrompt(prompt, options),
+      this.getGooglePlacesEnrichment(businessName, location, options.vertical),
+    ]);
+
+    if (!googlePlaces) return baseResult;
+
+    // Layer Google Places data into enriched prompt
+    const gpContext = [
+      `[GOOGLE_PLACES] Real business data:`,
+      `  Name: ${googlePlaces.businessName}`,
+      `  Address: ${googlePlaces.address}`,
+      googlePlaces.rating != null ? `  Rating: ${googlePlaces.rating}★ (${googlePlaces.totalReviews} reviews)` : '',
+      googlePlaces.editorialSummary ? `  About: ${googlePlaces.editorialSummary}` : '',
+      googlePlaces.topReviews.length > 0
+        ? `  Top Reviews: ${googlePlaces.topReviews.slice(0, 3).map(r => `"${r.text}"`).join('; ')}`
+        : '',
+      googlePlaces.competitorInsights.length > 0
+        ? `  Competitors: ${googlePlaces.competitorInsights.map(c => c.name).join(', ')}`
+        : '',
+    ].filter(Boolean).join('\n');
+
+    return {
+      ...baseResult,
+      enrichedPrompt: `${gpContext}\n\n${baseResult.enrichedPrompt}`.slice(0, this.config.maxPromptLength),
     };
   }
 

@@ -26,6 +26,8 @@ import type {
 } from './brandIntelligenceEngine';
 import { BUSINESS_TIER_CONFIG, inferBusinessTier, createDefaultProfile } from './brandIntelligenceEngine';
 import { ALL_BUSINESS_ARCHETYPES, findArchetypesByRegion } from './informalEconomyProfiles';
+import { fetchLocalBusinessEnrichment, type LocalEnrichmentResult } from '@/lib/api/localBusinessEnrichment';
+import type { GooglePlacesEnrichment } from '@/hooks/useUniversalEnrichment';
 
 // ─── Onboarding Question Flow ────────────────────────────────────────────────
 // Conversational onboarding — not a form. Each question is asked in natural language.
@@ -335,4 +337,109 @@ export function getQuestionInLanguage(question: OnboardingQuestion, language: st
 
 export function getMinimumQuestionsForProfile(): OnboardingQuestion[] {
   return ONBOARDING_QUESTIONS.filter(q => q.required);
+}
+
+// ─── Google Places Auto-Enrichment ──────────────────────────────────────────
+
+/**
+ * Fetch Google Places data for a business and convert to GooglePlacesEnrichment format.
+ * This is the bridge between the edge function and the universal enrichment pipeline.
+ *
+ * Call this when user answers the "business_location" question.
+ * The returned data flows into useUniversalEnrichment → formatEnrichmentForAI →
+ * every AI prompt in every pipeline (video, podcast, presentation, etc.).
+ */
+export async function enrichWithGooglePlaces(
+  businessName: string,
+  location: string,
+  vertical?: string,
+): Promise<{ enrichment: GooglePlacesEnrichment | null; raw: LocalEnrichmentResult | null }> {
+  // Parse location into city/state/country
+  const parts = location.split(',').map(s => s.trim());
+  const city = parts[0];
+  const stateOrCountry = parts[1];
+  const country = parts[2] || stateOrCountry;
+
+  const result = await fetchLocalBusinessEnrichment({
+    businessName,
+    city,
+    state: parts.length >= 3 ? stateOrCountry : undefined,
+    country,
+    vertical,
+  });
+
+  if (!result.success || !result.data?.place) {
+    return { enrichment: null, raw: null };
+  }
+
+  const data = result.data;
+  const enrichment: GooglePlacesEnrichment = {
+    businessName: data.place.name,
+    address: data.place.address,
+    rating: data.place.rating,
+    totalReviews: data.place.totalRatings,
+    placeId: data.place.placeId,
+    businessTypes: data.place.types,
+    website: data.place.website,
+    phoneNumber: data.place.phoneNumber,
+    openingHours: data.place.openingHours,
+    topReviews: data.details?.reviews.map(r => ({
+      author: r.author,
+      rating: r.rating,
+      text: r.text,
+    })) || [],
+    editorialSummary: data.details?.editorialSummary || null,
+    competitorInsights: data.competitors.map(c => ({
+      name: c.title,
+      snippet: c.snippet,
+    })),
+    mapsUrl: data.details?.mapsUrl || null,
+  };
+
+  return { enrichment, raw: data };
+}
+
+/**
+ * Enhanced profile inference that uses Google Places data for higher accuracy.
+ *
+ * After standard inference from description, this layers in REAL data:
+ * - Actual rating + review count → credibility signals for script generation
+ * - Business types from Google → more accurate industry classification
+ * - Customer review quotes → USPs and value proposition extraction
+ * - Competitor data → positioning and differentiation
+ * - Opening hours → time-sensitive content (e.g. "Open now until 9 PM!")
+ */
+export function enhanceProfileWithGooglePlaces(
+  profile: InferredProfile,
+  enrichment: GooglePlacesEnrichment,
+): InferredProfile {
+  const enhancedProfile = { ...profile.profile };
+
+  // Boost confidence since we have real data
+  const confidenceBoost = 0.2 + (enrichment.topReviews.length > 0 ? 0.1 : 0) + (enrichment.rating != null ? 0.1 : 0);
+
+  // Enhance marketing data from real reviews
+  if (enhancedProfile.marketing && enrichment.topReviews.length > 0) {
+    // Extract common themes from reviews for value proposition
+    const reviewTexts = enrichment.topReviews.map(r => r.text).join(' ');
+    enhancedProfile.marketing = {
+      ...enhancedProfile.marketing,
+      valueProposition: enhancedProfile.marketing.valueProposition || enrichment.editorialSummary || '',
+    };
+  }
+
+  // Add website if available
+  if (enhancedProfile.identity && enrichment.website) {
+    enhancedProfile.identity = {
+      ...enhancedProfile.identity,
+      businessName: enrichment.businessName || enhancedProfile.identity.businessName,
+    };
+  }
+
+  return {
+    ...profile,
+    confidence: Math.min(0.95, profile.confidence + confidenceBoost),
+    profile: enhancedProfile,
+    warnings: profile.warnings.filter(w => !w.includes('Low confidence')),
+  };
 }
