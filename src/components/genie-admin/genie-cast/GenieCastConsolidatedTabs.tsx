@@ -54,6 +54,8 @@ import { GlobalRegionSelector } from './GlobalRegionSelector';
 import { useGenieCastRegions } from '@/hooks/useGenieCastRegions';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { ZONE_PROVIDER_DISPLAY, getZoneFromRegion } from '@/config/regional-routing-registry';
+import { useGuideStore } from '@/stores/guideStore';
+import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, type CreateStep } from './create';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -141,6 +143,7 @@ import { TranslationTranscreationToggle } from './TranslationTranscreationToggle
 import { CharacterPickerPopup, type CharacterOption } from './CharacterPickerPopup';
 import { PortalDropdown } from './create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from './StyleCustomizationPanel';
+import { CreateSubWizard } from './CreateSubWizard';
 
 /**
  * Detect transcreation zone from dialect code.
@@ -208,6 +211,13 @@ interface GenieCastConsolidatedTabsProps {
   // Optional: For navigation from other components
   defaultTab?: ConsolidatedTab;
   defaultSubTab?: string;
+
+  /** When true, hides the main 3-tab navigation (wizard sidebar controls it instead) */
+  wizardMode?: boolean;
+  /** Externally controlled active main tab (used by wizard) */
+  activeMainTabOverride?: ConsolidatedTab;
+  /** Called when consolidated tabs wants to change the main tab (so wizard can sync) */
+  onMainTabChange?: (tab: ConsolidatedTab) => void;
 }
 
 // STAGE 1: Consolidated 3-Tab Structure
@@ -270,8 +280,18 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   onAuthoringStageChange,
   onMessagingApproved,
   onScriptApproved,
+  wizardMode = false,
+  activeMainTabOverride,
+  onMainTabChange,
 }) => {
-  const [activeMainTab, setActiveMainTab] = useState<ConsolidatedTab>(defaultTab);
+  const [activeMainTabInternal, setActiveMainTabInternal] = useState<ConsolidatedTab>(defaultTab);
+  
+  // Use override when in wizard mode
+  const activeMainTab = wizardMode && activeMainTabOverride ? activeMainTabOverride : activeMainTabInternal;
+  const setActiveMainTab = useCallback((tab: ConsolidatedTab) => {
+    setActiveMainTabInternal(tab);
+    onMainTabChange?.(tab);
+  }, [onMainTabChange]);
   
   // Smart sub-tab init: if session already has progress, skip past intent
   const [subTabs, setSubTabs] = useState<Record<ConsolidatedTab, string>>(() => {
@@ -311,6 +331,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // Dynamic content registry (DB-driven categories + formats)
   const contentRegistry = useCastContentRegistry();
+  const guideDispatch = useGuideStore((s) => s.dispatch);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
   const [selectedSubFormatId, setSelectedSubFormatId] = useState<string | null>(null);
@@ -725,43 +746,89 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   }, []);
 
   return (
-    <div className="space-y-4">
-      {/* Compact navigation bar - back to Genie Suite */}
-      <div className="flex items-center gap-3 mb-4 pb-3 border-b">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => window.location.href = '/genie-studio'}
-          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Genie Suite
-        </Button>
-        <Separator orientation="vertical" className="h-5" />
-        <div className="flex items-center gap-2">
-          <Film className="w-4 h-4 text-primary" />
-          <span className="text-sm font-semibold">Genie Cast</span>
+    <div className="space-y-0 h-full flex flex-col">
+      {/* ── Modern SaaS Top Bar ── */}
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-border/15 bg-background/95 backdrop-blur-xl sticky top-0 z-20">
+        {/* Region context */}
+        <GlobalRegionSelector regions={genieCastRegions} />
+        
+        {/* Search */}
+        <div className="flex-1 max-w-md">
+          <div className="flex items-center gap-2 h-8 px-3 rounded-lg bg-muted/30 border border-border/20 text-muted-foreground">
+            <Search className="w-3.5 h-3.5" />
+            <span className="text-xs">Search projects, assets, AI...</span>
+          </div>
         </div>
-        <Separator orientation="vertical" className="h-5" />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => window.location.href = '/genie-admin?tab=subscriber-admin'}
-          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <Settings2 className="w-4 h-4" />
-          Admin
-        </Button>
-        <Separator orientation="vertical" className="h-5" />
+        
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Product selector */}
         <ProductSelector
           products={pool?.products || []}
           selectedProductId={castSession.session.selectedProductId}
           onProductChange={handleProductSelect}
           isLoading={isPoolLoading}
         />
-        <Separator orientation="vertical" className="h-5" />
-        <GlobalRegionSelector regions={genieCastRegions} />
-        <Separator orientation="vertical" className="h-5" />
+
+        {/* EP04 loader */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-xs font-medium border-border/30 h-8 rounded-lg"
+          onClick={async () => {
+            const seed = createEP04SessionSeed();
+            const { createCastProject } = await import('@/services/productionCostAccumulator');
+            const projectId = await createCastProject({
+              title: 'EP04 — Genie Reel Episode 2',
+              description: 'AI-powered cinematic product demo',
+              estimatedTokens: 850000,
+              productContext: 'genie-reel-ep04',
+              quality: 'cinematic',
+              metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
+            });
+            castSession.updateSession({ ...seed, projectId });
+            const stats = getEP04Stats();
+            toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
+            if (projectId) toast.success(`📊 Project created — token tracking active`);
+            const techCategory = contentRegistry.categories.find(c => c.name === 'technology');
+            if (techCategory) setSelectedCategoryId(techCategory.id);
+            const videoFormat = contentRegistry.formats.find(f => f.name === 'video');
+            if (videoFormat) {
+              setSelectedFormatId(videoFormat.id);
+              setActiveContentType(videoFormat.name);
+            }
+            setPrimaryPlatform('youtube');
+            setOutputLanguages(['en']);
+            setSelectedDialectCodes(['en-US']);
+            const cinematicStyle = contentRegistry.visualStyles.find(s => s.name === 'cinematic');
+            if (cinematicStyle) setSelectedVisualStyleIds([cinematicStyle.id]);
+            const ep04Caps = ['avatar_talking_head', 'lip_sync', 'scene_voiceover', 'screen_recording', 'text_to_video'];
+            const matchedCapIds = contentRegistry.productionCapabilities
+              .filter(c => ep04Caps.includes(c.name))
+              .map(c => c.id);
+            if (matchedCapIds.length > 0) setSelectedCapabilityIds(matchedCapIds);
+            setSelectedAssetSource('screen_capture');
+            setLipSyncEnabled(true);
+            setDubbingEnabled(false);
+            setSelectedResolution('1920x1080');
+            setSelectedAspectRatio('16:9');
+            setProductionQuality('cinematic');
+            if (seed.templateMapping) {
+              const { mapping, stats: screenStats } = await enrichWithScreenAssets(seed.templateMapping);
+              castSession.updateSession({ templateMapping: mapping });
+              if (screenStats.found > 0) toast.success(`📸 ${screenStats.found}/${screenStats.total} screenshots resolved`);
+              if (screenStats.missing.length > 0) toast.info(`⚠️ ${screenStats.missing.length} screenshots pending capture`, { description: screenStats.missing.slice(0, 3).join(', ') + (screenStats.missing.length > 3 ? '...' : '') });
+            }
+            setActiveMainTab('create');
+            setSubTab('create', 'configure');
+          }}
+        >
+          <Film className="w-3.5 h-3.5" />
+          Load EP04
+        </Button>
+
+        {/* Cast project dropdown */}
         <CastProjectDropdown
           projects={castProjects.projects}
           isLoading={castProjects.isLoading}
@@ -769,20 +836,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           onProjectSelect={async (project) => {
             const restored = await castProjects.restoreToSession(project.id);
             if (restored) {
-              // Ensure intent is set so the templates tab guard passes
               const intentValue = restored.selectedIntent || (project as any).content_type || 'video';
               castSession.updateSession({ ...restored, projectId: project.id, selectedIntent: intentValue });
               setActiveContentType((project as any).content_type || 'video');
-              
-              // Restore category/format/sub-format selections from DB
               if ((restored as any)._categoryId) setSelectedCategoryId((restored as any)._categoryId);
               if ((restored as any)._formatId) setSelectedFormatId((restored as any)._formatId);
               if ((restored as any)._subFormatId) setSelectedSubFormatId((restored as any)._subFormatId);
-              
-              // Navigate to templates tab so user can see the project content
               setActiveMainTab('create');
               setSubTab('create', 'templates');
-              // Load token breakdown for this project
               persistence.fetchTokenBreakdown(project.id);
               toast.success(`Loaded: ${project.title}`);
             }
@@ -798,149 +859,80 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           }}
           onContentTypeChange={setActiveContentType}
         />
+
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="gap-1.5 text-xs font-medium border-primary/30 hover:bg-primary/10"
-          onClick={async () => {
-            const seed = createEP04SessionSeed();
-            
-            // Create a cast_project for token/cost tracking
-            const { createCastProject } = await import('@/services/productionCostAccumulator');
-            const projectId = await createCastProject({
-              title: 'EP04 — Genie Reel Episode 2',
-              description: 'AI-powered cinematic product demo',
-              estimatedTokens: 850000,
-              productContext: 'genie-reel-ep04',
-              quality: 'cinematic',
-              metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
-            });
-            
-            castSession.updateSession({ ...seed, projectId });
-            const stats = getEP04Stats();
-            toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
-            if (projectId) {
-              toast.success(`📊 Project created — token tracking active`);
-            }
-
-            // ═══ MAP EP04 TO ALL 7 CREATE STEPS (local UI state) ═══
-            // Step 1: Category → Technology
-            const techCategory = contentRegistry.categories.find(c => c.name === 'technology');
-            if (techCategory) setSelectedCategoryId(techCategory.id);
-            // Step 2: Format → Video
-            const videoFormat = contentRegistry.formats.find(f => f.name === 'video');
-            if (videoFormat) {
-              setSelectedFormatId(videoFormat.id);
-              setActiveContentType(videoFormat.name);
-            }
-            // Step 4: Platform → YouTube, Language → en-US
-            setPrimaryPlatform('youtube');
-            setOutputLanguages(['en']);
-            setSelectedDialectCodes(['en-US']);
-            // Step 5: Visual Style → Cinematic
-            const cinematicStyle = contentRegistry.visualStyles.find(s => s.name === 'cinematic');
-            if (cinematicStyle) setSelectedVisualStyleIds([cinematicStyle.id]);
-            // Step 5: Capabilities → avatar, lip_sync, scene_voiceover, screen_recording
-            const ep04Caps = ['avatar_talking_head', 'lip_sync', 'scene_voiceover', 'screen_recording', 'text_to_video'];
-            const matchedCapIds = contentRegistry.productionCapabilities
-              .filter(c => ep04Caps.includes(c.name))
-              .map(c => c.id);
-            if (matchedCapIds.length > 0) setSelectedCapabilityIds(matchedCapIds);
-            // Step 5: Asset Source → screen_capture (EP04 uses dashboard screenshots)
-            setSelectedAssetSource('screen_capture');
-            // Step 5: Lip-sync ON, Dubbing OFF (single language)
-            setLipSyncEnabled(true);
-            setDubbingEnabled(false);
-            // Resolution & Quality
-            setSelectedResolution('1920x1080');
-            setSelectedAspectRatio('16:9');
-            setProductionQuality('cinematic');
-
-            // Step D: Resolve screen capture assets from storage
-            if (seed.templateMapping) {
-              const { mapping, stats: screenStats } = await enrichWithScreenAssets(seed.templateMapping);
-              castSession.updateSession({ templateMapping: mapping });
-              if (screenStats.found > 0) {
-                toast.success(`📸 ${screenStats.found}/${screenStats.total} screenshots resolved`);
-              }
-              if (screenStats.missing.length > 0) {
-                toast.info(`⚠️ ${screenStats.missing.length} screenshots pending capture`, { description: screenStats.missing.slice(0, 3).join(', ') + (screenStats.missing.length > 3 ? '...' : '') });
-              }
-            }
-
-            // Navigate to CREATE → configure to show all pre-populated steps
-            setActiveMainTab('create');
-            setSubTab('create', 'configure');
-          }}
+          onClick={() => window.location.href = '/genie-admin?tab=subscriber-admin'}
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
         >
-          <Film className="w-3.5 h-3.5" />
-          Load EP04
+          <Settings2 className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Main 3-Tab Navigation */}
+      {/* ── Main Content Area ── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-5 space-y-4">
       <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as ConsolidatedTab)}>
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1.5 bg-card border rounded-lg shadow-sm">
+        {!wizardMode && (
+        <TabsList className="inline-flex h-10 p-1 bg-muted/20 border border-border/15 rounded-xl">
           {(Object.entries(TAB_DEFINITIONS) as [ConsolidatedTab, typeof TAB_DEFINITIONS.create][]).map(([key, def]) => (
             <TabsTrigger 
               key={key}
               value={key}
               className={cn(
-                "flex flex-col items-center gap-1 py-3 px-2 transition-all rounded-md",
-                "text-foreground font-semibold",
-                "data-[state=active]:shadow-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
-                "data-[state=inactive]:bg-transparent data-[state=inactive]:hover:bg-muted/50"
+                "relative flex items-center justify-center gap-2 px-5 py-2 transition-all rounded-lg",
+                "text-sm font-semibold",
+                "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+                "data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground/70",
               )}
             >
-              <def.icon className="w-5 h-5" />
+              <def.icon className="w-4 h-4" />
               <span className="text-xs font-bold tracking-wide">{def.label}</span>
-              <span className="text-[10px] opacity-70 hidden sm:block">{def.description}</span>
             </TabsTrigger>
           ))}
         </TabsList>
+        )}
 
-        {/* Workflow Context Banner - Only show on PRODUCE/PUBLISH (CREATE uses guided wizard instead) */}
+        {/* Workflow Context Banner */}
         {activeMainTab !== 'create' && (
           <WorkflowContextBanner
             session={castSession.session}
             currentSubTab={currentSubTab}
             onNavigate={handleBannerNavigate}
             onResetSession={castSession.resetSession}
-            className="mt-4"
+            className="mt-3"
           />
         )}
 
-        {/* Sub-Tab Navigation — GUIDED for CREATE (no tabs shown), normal for PRODUCE/PUBLISH */}
+        {/* ── Sub-Tab Navigation (Redesigned pill buttons) ── */}
         {activeMainTab !== 'create' && (
-          <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-2">
+          <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1">
             {currentMainDef.subTabs.map((sub) => {
               const isActive = currentSubTab === sub.id;
               return (
-                <Button
+                <button
                   key={sub.id}
-                  variant="outline"
-                  size="sm"
                   className={cn(
-                    "flex-shrink-0 gap-1.5 text-xs font-medium",
-                    isActive 
-                      ? currentMainDef.activeColor 
-                      : currentMainDef.inactiveColor
+                    "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-transparent",
                   )}
                   onClick={() => setSubTab(activeMainTab, sub.id)}
                 >
                   <sub.icon className="w-3.5 h-3.5" />
                   {sub.label}
-                </Button>
+                </button>
               );
             })}
             
             {/* Pipeline indicator */}
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="ml-auto flex items-center gap-2 text-[10px] text-muted-foreground/60 pl-3">
               <span className="font-medium">{activePipelines.length} active</span>
               {inactivePipelines.length > 0 && (
-                <Badge variant="outline" className="text-[10px]">
-                  +{inactivePipelines.length} available
+                <Badge variant="outline" className="text-[9px] h-4 border-border/20">
+                  +{inactivePipelines.length}
                 </Badge>
               )}
             </div>
@@ -951,6 +943,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* CREATE TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="create" className="mt-4 space-y-4">
+          <CreateSubWizard
+            activeSubTab={subTabs.create}
+            onSubTabChange={(sub) => setSubTab('create', sub)}
+            direction={wizardMode ? (activeMainTabOverride ? 'ltr' : 'ltr') : 'ltr'}
+          >
           {/* GUIDED WIZARD: Show only the current step based on session state */}
 
           {/* STEP 1: Dynamic Category + Format selector (DB-driven) */}
@@ -973,9 +970,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   setSelectedCategoryId(cat.id);
                   setSelectedFormatId(null);
                   setSelectedSubFormatId(null);
+                  // Dispatch guide signal
+                  guideDispatch({ type: 'SELECT_CATEGORY', categoryId: cat.id });
                   // Persist to DB if project exists
                   if (castSession.session.projectId) {
                     castProjects.updateProject(castSession.session.projectId, { category_id: cat.id, format_id: null, sub_format_id: null } as any).catch(() => {});
+                  }
+                }}
+                onCategoryHover={(cat) => {
+                  if (cat) {
+                    guideDispatch({ type: 'HOVER_CATEGORY', categoryId: cat.id });
                   }
                 }}
                 onFormatSelect={(fmt) => {
@@ -2283,6 +2287,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
             {/* Old intent placeholder removed — guided wizard handles this */}
           </AnimatePresence>
+          </CreateSubWizard>
         </TabsContent>
 
         {/* ═══════════════════════════════════════════════════════════════ */}
@@ -2559,27 +2564,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                    {authoring.state.templateMapping ? (
                     <ScriptTemplateMapper
-                      mapping={authoring.state.templateMapping || {
-                        templateId: 'demo-template',
-                        templateName: 'Product Demo Template',
-                        scenes: [
-                          { sceneId: 'scene-1', sceneKey: 'opening', title: 'Opening Hook', orderIndex: 0, scriptText: 'Discover the solution you\'ve been waiting for.', sourceType: 'template', durationSeconds: 15, minDuration: 10, maxDuration: 30, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'pending' },
-                          { sceneId: 'scene-2', sceneKey: 'problem', title: 'Problem Statement', orderIndex: 1, scriptText: 'Are you struggling with manual processes? You\'re not alone.', sourceType: 'template', durationSeconds: 20, minDuration: 15, maxDuration: 40, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'pending' },
-                          { sceneId: 'scene-3', sceneKey: 'solution', title: 'Solution Intro', orderIndex: 2, scriptText: 'Our platform uses AI-powered automation to transform your workflow.', sourceType: 'messaging', durationSeconds: 25, minDuration: 15, maxDuration: 45, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'draft' },
-                          { sceneId: 'scene-4', sceneKey: 'benefits', title: 'Key Benefits', orderIndex: 3, scriptText: 'Experience faster workflows, reduced errors, and cost savings.', sourceType: 'messaging', durationSeconds: 30, minDuration: 20, maxDuration: 50, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'draft' },
-                          { sceneId: 'scene-5', sceneKey: 'proof', title: 'Social Proof', orderIndex: 4, scriptText: 'Join thousands of satisfied customers who trust our platform.', sourceType: 'template', durationSeconds: 20, minDuration: 10, maxDuration: 35, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'pending' },
-                          { sceneId: 'scene-6', sceneKey: 'cta', title: 'Call to Action', orderIndex: 5, scriptText: 'Get started today! Visit our website for a free trial.', sourceType: 'custom', durationSeconds: 15, minDuration: 10, maxDuration: 25, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                        ],
-                        totalDuration: 125,
-                        styleIntent: 'product-hero',
-                        resolvedProviders: {
-                          image: 'Gemini 3 Pro',
-                          video: 'Vertex Veo 3',
-                          tts: 'Azure Neural',
-                          llm: 'Gemini 3.0',
-                        },
-                      }}
+                      mapping={authoring.state.templateMapping}
                       onSceneUpdate={(sceneId, updates) => {
                         console.log('[Studio] Scene updated:', sceneId, updates);
                         authoring.updateSceneScript(sceneId, updates);
@@ -2596,6 +2583,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       }}
                       isProcessing={authoring.state.isProcessing}
                     />
+                    ) : (
+                      <div className="flex items-center justify-center h-24 border border-dashed rounded-lg bg-muted/20 text-sm text-muted-foreground">
+                        Select a template in CREATE to populate scene mapping
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -2649,27 +2641,10 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 />
 
                 {/* A/V Sync Preview */}
+                {authoring.state.templateMapping ? (
+                <>
                 <AVSyncPreview
-                  mapping={authoring.state.templateMapping || {
-                    templateId: 'demo-template',
-                    templateName: 'Product Demo Template',
-                    scenes: [
-                      { sceneId: 'scene-1', sceneKey: 'opening', title: 'Opening Hook', orderIndex: 0, scriptText: 'Discover the solution you\'ve been waiting for.', sourceType: 'template', durationSeconds: 15, minDuration: 10, maxDuration: 30, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-2', sceneKey: 'problem', title: 'Problem Statement', orderIndex: 1, scriptText: 'Are you struggling with manual processes? You\'re not alone.', sourceType: 'template', durationSeconds: 20, minDuration: 15, maxDuration: 40, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-3', sceneKey: 'solution', title: 'Solution Intro', orderIndex: 2, scriptText: 'Our platform uses AI-powered automation to transform your workflow.', sourceType: 'messaging', durationSeconds: 25, minDuration: 15, maxDuration: 45, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-4', sceneKey: 'benefits', title: 'Key Benefits', orderIndex: 3, scriptText: 'Experience faster workflows, reduced errors, and cost savings.', sourceType: 'messaging', durationSeconds: 30, minDuration: 20, maxDuration: 50, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-5', sceneKey: 'proof', title: 'Social Proof', orderIndex: 4, scriptText: 'Join thousands of satisfied customers who trust our platform.', sourceType: 'template', durationSeconds: 20, minDuration: 10, maxDuration: 35, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-6', sceneKey: 'cta', title: 'Call to Action', orderIndex: 5, scriptText: 'Get started today! Visit our website for a free trial.', sourceType: 'custom', durationSeconds: 15, minDuration: 10, maxDuration: 25, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                    ],
-                    totalDuration: 125,
-                    styleIntent: 'product-hero',
-                    resolvedProviders: {
-                      image: 'Gemini 3 Pro',
-                      video: 'Vertex Veo 3',
-                      tts: 'Azure Neural',
-                      llm: 'Gemini 3.0',
-                    },
-                  }}
+                  mapping={authoring.state.templateMapping}
                   onPlayScene={(sceneId) => {
                     console.log('[Studio] Play scene:', sceneId);
                     toast.info(`Playing scene preview for ${sceneId}...`);
@@ -2685,26 +2660,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
                 {/* P2: Live Generation Preview */}
                 <LiveGenerationPreview
-                  mapping={authoring.state.templateMapping || {
-                    templateId: 'demo-template',
-                    templateName: 'Product Demo Template',
-                    scenes: [
-                      { sceneId: 'scene-1', sceneKey: 'opening', title: 'Opening Hook', orderIndex: 0, scriptText: 'Discover the solution you\'ve been waiting for.', sourceType: 'template', durationSeconds: 15, minDuration: 10, maxDuration: 30, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-2', sceneKey: 'problem', title: 'Problem Statement', orderIndex: 1, scriptText: 'Are you struggling with manual processes? You\'re not alone.', sourceType: 'template', durationSeconds: 20, minDuration: 15, maxDuration: 40, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-3', sceneKey: 'solution', title: 'Solution Intro', orderIndex: 2, scriptText: 'Our platform uses AI-powered automation to transform your workflow.', sourceType: 'messaging', durationSeconds: 25, minDuration: 15, maxDuration: 45, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-4', sceneKey: 'benefits', title: 'Key Benefits', orderIndex: 3, scriptText: 'Experience faster workflows, reduced errors, and cost savings.', sourceType: 'messaging', durationSeconds: 30, minDuration: 20, maxDuration: 50, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-5', sceneKey: 'proof', title: 'Social Proof', orderIndex: 4, scriptText: 'Join thousands of satisfied customers who trust our platform.', sourceType: 'template', durationSeconds: 20, minDuration: 10, maxDuration: 35, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                      { sceneId: 'scene-6', sceneKey: 'cta', title: 'Call to Action', orderIndex: 5, scriptText: 'Get started today! Visit our website for a free trial.', sourceType: 'custom', durationSeconds: 15, minDuration: 10, maxDuration: 25, ttsConfig: { provider: 'Azure Neural', speed: 1.0, pitch: 1.0 }, approvalStatus: 'approved' },
-                    ],
-                    totalDuration: 125,
-                    styleIntent: 'product-hero',
-                    resolvedProviders: {
-                      image: 'Gemini 3 Pro',
-                      video: 'Vertex Veo 3',
-                      tts: 'Azure Neural',
-                      llm: 'Gemini 3.0',
-                    },
-                  }}
+                  mapping={authoring.state.templateMapping}
                   styleIntent="product-hero"
                   region={selectedDialectCodes[0]?.startsWith('ar-') ? 'mena' : 
                           ['zh-CN', 'ja-JP', 'ko-KR'].includes(selectedDialectCodes[0] || '') ? 'cjk' : 
@@ -2726,6 +2682,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   }}
                   showAdvancedControls={true}
                 />
+                </>
+                ) : (
+                  <div className="flex items-center justify-center h-24 border border-dashed rounded-lg bg-muted/20 text-sm text-muted-foreground">
+                    Select a template in CREATE to enable A/V sync and live generation
+                  </div>
+                )}
               </motion.div>
             )}
             
@@ -2968,6 +2930,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
         {/* LANDING FEATURES NOW IN CREATE → ASSETS */}
       </Tabs>
+        </div>
+      </div>
     </div>
   );
 };

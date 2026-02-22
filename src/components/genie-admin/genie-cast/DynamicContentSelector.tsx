@@ -36,6 +36,7 @@ interface DynamicContentSelectorProps {
   onAddCategory: (data: { name: string; label: string; description?: string }) => Promise<any>;
   onAddFormat: (data: { name: string; label: string; description?: string }) => Promise<any>;
   onAddSubFormat?: (data: { format_id: string; name: string; label: string; description?: string }) => Promise<any>;
+  onCategoryHover?: (category: ContentCategory | null) => void;
   isLoading?: boolean;
 }
 
@@ -60,6 +61,7 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
   onAddCategory,
   onAddFormat,
   onAddSubFormat,
+  onCategoryHover,
   isLoading,
 }) => {
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -146,6 +148,8 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
                   isSelected && 'ring-2 ring-primary/30'
                 )}
                 onClick={() => onCategorySelect(cat)}
+                onMouseEnter={() => onCategoryHover?.(cat)}
+                onMouseLeave={() => onCategoryHover?.(null)}
               >
                 <IconComp className={cn('w-4 h-4 shrink-0', !isSelected && cat.color)} />
                 <div className="min-w-0">
