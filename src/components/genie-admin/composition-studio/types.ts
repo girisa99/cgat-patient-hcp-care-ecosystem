@@ -858,6 +858,19 @@ export type CrossFormatConversionType =
   | 'data_to_story'            // Raw data → narrative video (data storytelling)
   | 'blog_to_video'            // Blog post text → video
   | 'blog_to_slides'           // Blog post text → slide deck
+  | 'blog_to_podcast'          // Blog post → audio podcast narration
+  | 'blog_to_carousel'         // Blog post → social carousel images
+  | 'video_to_blog'            // Video transcript → blog post
+  | 'video_to_audiogram'       // Video → animated waveform audiogram
+  | 'podcast_to_blog'          // Podcast transcript → blog post
+  | 'podcast_to_newsletter'    // Podcast highlights → email newsletter
+  | 'carousel_to_video'        // Social carousel → animated video
+  | 'newsletter_to_social'     // Newsletter → social media posts
+  | 'script_to_video'          // Script only → full video production
+  | 'script_to_podcast'        // Script → podcast episode
+  | 'script_to_slides'         // Script → presentation slides
+  | 'webinar_to_highlights'    // Webinar recording → highlight reel
+  | 'presentation_to_infographic' // Slide deck → infographic summary
   | 'custom_conversion';       // User-defined
 
 export interface CrossFormatConversion {
