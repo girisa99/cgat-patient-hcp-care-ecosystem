@@ -7,6 +7,8 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import arcAvatar from '@/assets/characters/arc-avatar.png';
+import oriAvatar from '@/assets/characters/ori-avatar.png';
 import type { VideoStyleType } from './VideoStyleCards';
 import type { ProductGallery } from '../MultiScreenshotGallery';
 import { toast } from 'sonner';
@@ -227,8 +229,8 @@ const RightDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">AI Developers</h4>
                 <div className="space-y-2">
                   {[
-                    { id: 'arc', name: 'Arc', role: 'Systems Architect', icon: Zap, activeClass: 'bg-primary/10 border-primary/20', iconClass: 'text-primary' },
-                    { id: 'ori', name: 'Ori', role: 'UI/UX & Creative', icon: Sparkles, activeClass: 'bg-accent/10 border-accent/20', iconClass: 'text-accent' },
+                    { id: 'arc', name: 'Arc', role: 'Systems Architect', avatar: arcAvatar, activeClass: 'bg-primary/10 border-primary/20' },
+                    { id: 'ori', name: 'Ori', role: 'UI/UX & Creative', avatar: oriAvatar, activeClass: 'bg-accent/10 border-accent/20' },
                   ].map((dev) => (
                     <div key={dev.id} className={cn(
                       'flex items-center gap-3 p-3 rounded-xl border transition-all',
@@ -236,11 +238,7 @@ const RightDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
                         ? dev.activeClass
                         : 'bg-card/40 border-border/10 hover:bg-card/60',
                     )}>
-                      <div className={cn(
-                        'w-9 h-9 rounded-full flex items-center justify-center border bg-muted/20 border-border/20',
-                      )}>
-                        <dev.icon className={cn('w-4 h-4', dev.iconClass)} />
-                      </div>
+                      <img src={dev.avatar} alt={dev.name} className="w-10 h-10 rounded-full object-cover border-2 border-border/20 shadow-sm" />
                       <div className="flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-bold text-foreground">{dev.name}</span>
@@ -408,21 +406,19 @@ export const GenieCastHub: React.FC = () => {
     return (
       <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-2">
         {[
-          { id: 'arc', name: 'Arc', icon: Zap, gradient: 'from-primary to-primary/60' },
-          { id: 'ori', name: 'Ori', icon: Sparkles, gradient: 'from-accent to-accent/60' },
+          { id: 'arc', name: 'Arc', avatar: arcAvatar },
+          { id: 'ori', name: 'Ori', avatar: oriAvatar },
         ].map(dev => (
           <button
             key={dev.id}
             onClick={() => setDrawerOpen(true)}
             className={cn(
-              'group flex items-center gap-2 px-3 py-2 rounded-full border backdrop-blur-xl shadow-lg transition-all hover:scale-105',
+              'group flex items-center gap-2 px-2 py-1.5 rounded-full border backdrop-blur-xl shadow-lg transition-all hover:scale-105',
               'bg-card/60 border-border/20',
               agent === dev.id && 'ring-2 ring-primary/30',
             )}
           >
-            <div className={cn('w-7 h-7 rounded-full bg-gradient-to-br flex items-center justify-center', dev.gradient)}>
-              <dev.icon className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
+            <img src={dev.avatar} alt={dev.name} className="w-8 h-8 rounded-full object-cover border border-border/20" />
             <span className="text-xs font-semibold text-foreground hidden group-hover:inline">{dev.name}</span>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           </button>
