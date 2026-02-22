@@ -113,27 +113,150 @@ export type SceneStyle =
 
 /** Content scenario — determines which pipeline combination to recommend */
 export type ContentScenario =
-  | 'product_video'       // Software/app demo — screen capture + AI enhance + voiceover
-  | 'product_launch'      // New product announcement — cinematic + avatar + 3D
-  | 'explainer'           // How-it-works — whiteboard/animation + voiceover
-  | 'testimonial_video'   // Customer story — avatar or real video + captions
-  | 'investor_pitch'      // Investor deck — slides + avatar + live data
-  | 'social_promo'        // Short social clip — AI video + music + captions
-  | 'podcast_episode'     // Audio-first — TTS/recording + audiogram
-  | 'webinar_recording'   // Live webinar — screen + avatar PiP + slides
-  | 'training_tutorial'   // Internal training — screen capture + voiceover + slides
-  | 'brand_story'         // Brand narrative — cinematic + B-roll + avatar
-  | 'comparison_review'   // Side-by-side — split screen + data viz + voiceover
-  | 'event_highlight'     // Event recap — B-roll montage + music + captions
-  | 'gaming_stream'       // Gaming content — screen capture + face cam + overlay
-  | 'real_estate_tour'    // Property walkthrough — video/3D + voiceover + map
-  | 'recipe_demo'         // Cooking/DIY — overhead cam + steps + voiceover
-  | 'ppt_to_cinematic'    // PPT slides → 3D → cinematic video of slide content as a story
-  | 'market_analysis'     // Market research — data, stats, graphs, sources, study
-  | 'data_story'          // Data storytelling — statistics → journey → narrative video
-  | 'case_study_video'    // Case study — before/after, journey, metrics, testimonial
-  | 'infographic_video'   // Infographic → animated video (data viz in motion)
-  | 'custom_scenario';    // User-defined
+  // ─── Product & SaaS ──────────────────────────────────────────────────────
+  | 'product_video'            // Software/app demo — screen capture + AI enhance + voiceover
+  | 'product_launch'           // New product announcement — cinematic + avatar + 3D
+  | 'product_walkthrough'      // Detailed feature walkthrough — screen + tooltips + voiceover
+  | 'product_comparison'       // Product vs competitor — split screen + data + scores
+  | 'product_unboxing'         // Physical product reveal — 3D orbit + cinematic + close-ups
+  | 'saas_onboarding'          // App onboarding flow — screen capture + animated tooltips
+  | 'saas_feature_update'      // Release notes video — screen + kinetic text + changelog
+  | 'api_documentation'        // API demo — code editor + screen + diagrams
+  | 'mobile_app_preview'       // Mobile app showcase — device mockup + scroll + tap animations
+  // ─── Marketing & Sales ───────────────────────────────────────────────────
+  | 'social_promo'             // Short social clip — AI video + music + captions
+  | 'brand_story'              // Brand narrative — cinematic + B-roll + avatar
+  | 'testimonial_video'        // Customer story — avatar or real video + captions
+  | 'comparison_review'        // Side-by-side — split screen + data viz + voiceover
+  | 'ad_creative'              // Paid ad — hook + problem + solution + CTA (15-60s)
+  | 'seasonal_campaign'        // Holiday/season campaign — themed visuals + offers
+  | 'influencer_collab'        // Influencer-style — casual avatar + B-roll + music
+  | 'email_video'              // Email embed video — GIF/short + CTA overlay
+  | 'landing_page_hero'        // Website hero — looping cinematic + text overlay
+  | 'retargeting_ad'           // Retargeting — personalized + dynamic content
+  | 'coupon_offer'             // Flash sale / coupon — kinetic text + countdown + urgency
+  // ─── Education & Training ────────────────────────────────────────────────
+  | 'explainer'                // How-it-works — whiteboard/animation + voiceover
+  | 'training_tutorial'        // Internal training — screen capture + voiceover + slides
+  | 'course_lecture'           // E-learning lecture — avatar + slides + quiz cards
+  | 'microlearning'            // Bite-size lesson (60-120s) — animation + quiz
+  | 'language_lesson'          // Language learning — dual-language subtitles + pronunciation
+  | 'certification_prep'       // Exam prep — slides + practice questions + timer
+  | 'safety_training'          // Workplace safety — animation + scenarios + compliance
+  | 'student_presentation'     // Student project — slides + narration + data
+  | 'kids_educational'         // Children's content — colorful animation + characters + songs
+  // ─── Business & Corporate ────────────────────────────────────────────────
+  | 'investor_pitch'           // Investor deck — slides + avatar + live data
+  | 'webinar_recording'        // Live webinar — screen + avatar PiP + slides
+  | 'board_presentation'       // Board meeting — formal slides + exec summary + financials
+  | 'quarterly_report'         // QBR — KPI dashboards + trends + commentary
+  | 'company_all_hands'        // All-hands meeting — avatar CEO + slides + culture
+  | 'recruitment_video'        // Hiring video — office B-roll + team avatars + culture
+  | 'employee_onboarding'      // New hire — company overview + processes + welcome
+  | 'internal_comms'           // Internal update — avatar + slides + announcements
+  | 'sales_enablement'         // Sales deck — product slides + ROI calculator + demo
+  | 'proposal_presentation'    // Client proposal — problem + solution + pricing + timeline
+  | 'annual_report'            // Annual report — data viz + milestones + outlook
+  | 'change_management'        // Org change comms — timeline + impact + FAQ
+  // ─── Data & Research ─────────────────────────────────────────────────────
+  | 'ppt_to_cinematic'         // PPT slides → 3D → cinematic video
+  | 'market_analysis'          // Market research — data, stats, graphs, sources
+  | 'data_story'               // Data storytelling — statistics → narrative video
+  | 'case_study_video'         // Case study — before/after, journey, metrics
+  | 'infographic_video'        // Infographic → animated video
+  | 'research_presentation'    // Academic research — methodology + findings + charts
+  | 'survey_results'           // Survey/poll results — animated bar/pie + insights
+  | 'competitive_intelligence' // Competitor analysis — quadrant + comparison + SWOT
+  | 'trend_report'             // Industry trends — timeline + predictions + expert quotes
+  | 'white_paper_video'        // White paper → video summary with key data points
+  // ─── Healthcare & Pharma ─────────────────────────────────────────────────
+  | 'patient_education'        // Patient info — simple animation + medical illustration
+  | 'hcp_training'             // Healthcare professional — clinical data + protocols
+  | 'clinical_trial_summary'   // Trial results — data viz + endpoints + p-values
+  | 'drug_mechanism'           // Mechanism of action — 3D molecular animation
+  | 'telemedicine_guide'       // Telehealth how-to — screen + avatar doctor
+  | 'wellness_tips'            // Health tips — friendly animation + lifestyle B-roll
+  | 'medical_device_demo'      // Device demo — 3D model + usage steps + safety
+  // ─── Real Estate & Property ──────────────────────────────────────────────
+  | 'real_estate_tour'         // Property walkthrough — video/3D + voiceover + map
+  | 'virtual_staging'          // Empty room → furnished — before/after + 3D
+  | 'neighborhood_guide'       // Area overview — map + POI + B-roll + lifestyle
+  | 'property_investment'      // Investment pitch — ROI data + comparables + projections
+  | 'construction_progress'    // Build update — timeline + drone footage + milestones
+  // ─── E-commerce & Retail ─────────────────────────────────────────────────
+  | 'product_showcase'         // E-commerce listing — 3D orbit + features + specs
+  | 'fashion_lookbook'         // Fashion collection — cinematic + model + styling
+  | 'recipe_demo'              // Cooking/DIY — overhead cam + steps + voiceover
+  | 'unboxing_review'          // Unboxing experience — close-up + reaction + verdict
+  | 'size_guide'               // Size/fit guide — model + measurements + AR try-on
+  | 'flash_sale'               // Limited offer — countdown + product highlights + urgency
+  // ─── Travel & Hospitality ────────────────────────────────────────────────
+  | 'destination_showcase'     // Travel destination — drone + B-roll + itinerary
+  | 'hotel_tour'               // Hotel/resort — room walkthrough + amenities + booking
+  | 'restaurant_promo'         // Restaurant — food close-ups + ambiance + menu
+  | 'travel_vlog'              // Travel diary — multiple locations + narration + map
+  | 'experience_package'       // Tour package — itinerary + pricing + highlights
+  // ─── Entertainment & Media ───────────────────────────────────────────────
+  | 'music_video'              // Music content — cinematic + effects + lyrics
+  | 'movie_trailer'            // Film trailer — dramatic cuts + voiceover + score
+  | 'podcast_episode'          // Audio-first — TTS/recording + audiogram
+  | 'gaming_stream'            // Gaming content — screen capture + face cam + overlay
+  | 'event_highlight'          // Event recap — B-roll montage + music + captions
+  | 'sports_highlight'         // Sports recap — action clips + stats + commentary
+  | 'comedy_sketch'            // Comedy content — multi-avatar + timing + effects
+  | 'documentary_short'        // Mini-doc — interviews + B-roll + narration
+  | 'book_trailer'             // Book promo — atmospheric visuals + quotes + narration
+  // ─── Nonprofit & Government ──────────────────────────────────────────────
+  | 'fundraising_appeal'       // Donation ask — emotional story + impact data + CTA
+  | 'impact_report'            // Impact metrics — before/after + beneficiary stories
+  | 'public_service'           // PSA — awareness + call to action + resources
+  | 'government_report'        // Gov data — charts + policy + transparency
+  | 'ngo_campaign'             // Campaign video — cause + story + volunteer CTA
+  // ─── Finance & Legal ─────────────────────────────────────────────────────
+  | 'financial_report'         // Financial results — charts + KPIs + commentary
+  | 'investment_thesis'        // Investment analysis — data + thesis + risk factors
+  | 'compliance_training'      // Regulatory compliance — rules + scenarios + quiz
+  | 'insurance_explainer'      // Policy explanation — animation + scenarios + coverage
+  | 'tax_guide'                // Tax tips/guide — step-by-step + calculator + deadlines
+  // ─── Automotive & Manufacturing ──────────────────────────────────────────
+  | 'vehicle_showcase'         // Car/vehicle — 3D orbit + interior + specs + test drive
+  | 'manufacturing_process'    // Factory process — step-by-step + quality + safety
+  | 'maintenance_guide'        // Repair/maintenance — 3D exploded view + steps
+  // ─── Architecture & Design ───────────────────────────────────────────────
+  | 'architectural_walkthrough' // Building walkthrough — 3D render + floor plans + VR
+  | 'interior_design'          // Interior showcase — before/after + mood boards
+  | 'landscape_design'         // Landscape/garden — aerial + 3D + seasonal views
+  // ─── Agriculture & Environment ───────────────────────────────────────────
+  | 'farm_showcase'            // Farm/agriculture — drone + process + sustainability
+  | 'sustainability_report'    // ESG/sustainability — metrics + initiatives + impact
+  | 'environmental_awareness'  // Climate/environment — data viz + impact + call to action
+  // ─── Events & Ceremonies ─────────────────────────────────────────────────
+  | 'wedding_highlight'        // Wedding recap — cinematic + music + photo montage
+  | 'conference_recap'         // Conference — speaker clips + key takeaways + slides
+  | 'award_ceremony'           // Awards — nominee intros + winner reveals + highlights
+  | 'birthday_celebration'     // Birthday/anniversary — photo montage + music + message
+  // ─── Regional / Cultural Specific ────────────────────────────────────────
+  | 'ramadan_campaign'         // Ramadan-themed — cultural sensitivity + iftar + charity
+  | 'diwali_campaign'          // Diwali-themed — lights + celebration + offers
+  | 'lunar_new_year'           // Chinese/Lunar NY — red/gold + family + traditions
+  | 'christmas_campaign'       // Christmas — festive + gifts + seasonal offers
+  | 'national_day'             // National day celebration — patriotic + history + pride
+  | 'eid_campaign'             // Eid celebration — family + food + community
+  | 'thanksgiving_campaign'    // Thanksgiving — gratitude + family + seasonal
+  | 'golden_week'              // Japan Golden Week — travel + culture + offers
+  | 'carnival_campaign'        // Brazil Carnival — music + dance + celebration
+  | 'holi_campaign'            // Holi festival — colors + joy + community
+  // ─── Multi-Format & Cross-Platform ───────────────────────────────────────
+  | 'youtube_series'           // YouTube series — intro + chapters + outro + cards
+  | 'tiktok_series'            // TikTok series — hook + story + stitch-ready
+  | 'instagram_carousel'       // IG carousel — slide-by-slide + swipe CTA
+  | 'linkedin_thought_piece'   // LinkedIn article → video with data + expertise
+  | 'newsletter_video'         // Newsletter embed — summary + key points + CTA
+  | 'podcast_to_video'         // Podcast → video podcast (add visuals to audio)
+  | 'blog_to_video'            // Blog post → narrated video with visuals
+  | 'presentation_to_video'    // Full PPT → video with narration + transitions
+  // ─── Custom ──────────────────────────────────────────────────────────────
+  | 'custom_scenario';         // User-defined
 
 /** How the visual was sourced — affects what enhancements are available */
 export type VisualSource =
@@ -272,58 +395,160 @@ export interface SceneStyleVariant {
 
 /** Consulting framework templates — user picks the framework, AI builds the slides */
 export type SlideFramework =
-  // Strategy & Analysis
-  | 'swot'               // SWOT Analysis (Strengths, Weaknesses, Opportunities, Threats)
-  | 'porters_five'       // Porter's Five Forces
-  | 'pestle'             // PESTLE Analysis (Political, Economic, Social, Tech, Legal, Environmental)
-  | 'bcg_matrix'         // BCG Growth-Share Matrix
-  | 'ansoff_matrix'      // Ansoff Matrix (Market Penetration, Development, etc.)
-  | 'value_chain'        // Porter's Value Chain
-  | 'blue_ocean'         // Blue Ocean Strategy Canvas
-  | 'tam_sam_som'        // TAM/SAM/SOM Market Sizing
-  // Storytelling & Narrative
-  | 'pyramid_principle'  // Minto Pyramid Principle (top-down)
-  | 'scqa'              // Situation, Complication, Question, Answer
-  | 'star'              // Situation, Task, Action, Result
-  | 'aida'              // Attention, Interest, Desire, Action
-  | 'hero_journey'      // Hero's Journey (3-act structure)
-  | 'problem_solution'  // Problem → Solution → Benefit
-  // Data & Comparison
-  | 'quadrant'          // 2x2 Quadrant (Gartner Magic Quadrant style)
-  | 'bridge_waterfall'  // Bridge/Waterfall chart
-  | 'funnel'            // Funnel diagram (sales, conversion)
-  | 'timeline_roadmap'  // Timeline / Roadmap
-  | 'maturity_model'    // Capability Maturity Model
-  | 'kpi_dashboard'     // KPI Dashboard layout
-  // Process & Flow
-  | 'swimlane'          // Swimlane process diagram
-  | 'gantt'             // Gantt chart / project plan
-  | 'decision_tree'     // Decision tree
-  | 'customer_journey'  // Customer journey map
-  | 'ecosystem_map'     // Ecosystem / stakeholder map
-  // McKinsey / BCG / Bain style
-  | 'mckinsey_7s'       // McKinsey 7-S Framework
-  | 'three_horizons'    // Three Horizons of Growth
-  | 'ge_matrix'         // GE-McKinsey Matrix
-  | 'exec_summary'      // Executive Summary (insight → so what → now what)
-  | 'custom_framework' // User-defined framework
-  // Visualization & Infographic
-  | 'infographic'       // Full-page infographic layout (data + icons + text)
-  | 'data_dashboard'    // Multi-chart dashboard (KPIs, gauges, trends)
-  | 'comparison_table'  // Feature comparison matrix / checklist table
-  | 'org_chart'         // Organizational hierarchy chart
-  | 'mind_map'          // Radial mind map / concept map
-  | 'process_flow'      // Step-by-step process flow diagram
-  | 'venn_diagram'      // Venn / Euler diagram (overlap relationships)
-  | 'sankey_flow'       // Sankey diagram (flow quantities between stages)
-  | 'geographic_map'    // Map-based visualization (heatmap, pin map, choropleth)
-  | 'network_graph'     // Network / relationship graph (nodes + edges)
-  | 'treemap'           // Treemap (hierarchical proportional rectangles)
-  | 'radar_chart'       // Radar / spider chart (multi-axis comparison)
-  | 'bubble_chart'      // Bubble chart (3-dimensional scatter)
-  | 'gauge_meter'       // Gauge / meter visualization (progress, score)
-  | 'before_after'      // Before/After comparison (split view)
-  | 'stat_callout';     // Big number / statistic callout with context
+  // ─── Strategy & Analysis (Consulting) ────────────────────────────────────
+  | 'swot'                    // SWOT Analysis (Strengths, Weaknesses, Opportunities, Threats)
+  | 'porters_five'            // Porter's Five Forces
+  | 'pestle'                  // PESTLE Analysis (Political, Economic, Social, Tech, Legal, Environmental)
+  | 'bcg_matrix'              // BCG Growth-Share Matrix
+  | 'ansoff_matrix'           // Ansoff Matrix (Market Penetration, Development, etc.)
+  | 'value_chain'             // Porter's Value Chain
+  | 'blue_ocean'              // Blue Ocean Strategy Canvas
+  | 'tam_sam_som'             // TAM/SAM/SOM Market Sizing
+  | 'mckinsey_7s'             // McKinsey 7-S Framework
+  | 'three_horizons'          // Three Horizons of Growth
+  | 'ge_matrix'               // GE-McKinsey Matrix
+  | 'exec_summary'            // Executive Summary (insight → so what → now what)
+  | 'balanced_scorecard'      // Kaplan & Norton Balanced Scorecard (4 perspectives)
+  | 'okr_framework'           // OKR (Objectives & Key Results)
+  | 'vrio_analysis'           // VRIO (Value, Rarity, Imitability, Organization)
+  | 'stakeholder_matrix'      // Power/Interest stakeholder matrix
+  | 'risk_matrix'             // Probability/Impact risk assessment matrix
+  | 'business_model_canvas'   // Osterwalder Business Model Canvas (9 blocks)
+  | 'lean_canvas'             // Lean Startup Canvas
+  | 'value_proposition_canvas' // Value Proposition Canvas (jobs, pains, gains)
+  | 'jobs_to_be_done'         // Jobs-to-be-Done framework
+  | 'five_whys'               // Root cause analysis — 5 Whys
+  | 'fishbone_diagram'        // Ishikawa / Fishbone cause-effect diagram
+  | 'pareto_chart'            // 80/20 Pareto analysis
+  | 'moscow_prioritization'   // MoSCoW (Must/Should/Could/Won't)
+  | 'kano_model'              // Kano customer satisfaction model
+  | 'raci_matrix'             // RACI (Responsible, Accountable, Consulted, Informed)
+  | 'impact_effort_matrix'    // Impact vs Effort 2x2 for prioritization
+  | 'swot_tows'               // TOWS matrix (SWOT-derived strategies)
+  | 'core_competency'         // Prahalad & Hamel Core Competency framework
+  // ─── Storytelling & Narrative ────────────────────────────────────────────
+  | 'pyramid_principle'       // Minto Pyramid Principle (top-down)
+  | 'scqa'                    // Situation, Complication, Question, Answer
+  | 'star'                    // Situation, Task, Action, Result
+  | 'aida'                    // Attention, Interest, Desire, Action
+  | 'hero_journey'            // Hero's Journey (3-act structure)
+  | 'problem_solution'        // Problem → Solution → Benefit
+  | 'pas_framework'           // Problem, Agitate, Solve
+  | 'bab_framework'           // Before, After, Bridge
+  | 'faq_format'              // Question → Answer sequential format
+  | 'listicle'                // Top N list format (5 reasons, 10 tips, etc.)
+  | 'story_arc'               // 5-act story arc (exposition → rising → climax → falling → resolution)
+  | 'case_narrative'          // Case study narrative (challenge → approach → result)
+  | 'comparison_narrative'    // Then vs Now / Old Way vs New Way
+  | 'day_in_the_life'         // Walk through a day/journey
+  // ─── Data & Comparison ───────────────────────────────────────────────────
+  | 'quadrant'                // 2x2 Quadrant (Gartner Magic Quadrant style)
+  | 'bridge_waterfall'        // Bridge/Waterfall chart
+  | 'funnel'                  // Funnel diagram (sales, conversion)
+  | 'timeline_roadmap'        // Timeline / Roadmap
+  | 'maturity_model'          // Capability Maturity Model
+  | 'kpi_dashboard'           // KPI Dashboard layout
+  | 'scorecard'               // Scorecard with metrics and RAG status
+  | 'leaderboard'             // Ranked leaderboard / top-N
+  | 'cohort_analysis'         // Cohort retention / behavior matrix
+  | 'correlation_matrix'      // Variable correlation heatmap
+  | 'histogram'               // Frequency distribution histogram
+  | 'box_whisker'             // Box and whisker statistical chart
+  | 'candlestick'             // Financial candlestick chart
+  | 'waterfall_financial'     // Revenue/cost waterfall (financial bridge)
+  | 'sparkline_grid'          // Grid of sparkline mini-charts for KPIs
+  | 'bullet_chart'            // Bullet chart (performance vs target)
+  | 'slope_chart'             // Slope chart (before/after comparison)
+  | 'dumbbell_chart'          // Dumbbell chart (range comparison)
+  | 'small_multiples'         // Small multiples / trellis charts
+  // ─── Process & Flow ──────────────────────────────────────────────────────
+  | 'swimlane'                // Swimlane process diagram
+  | 'gantt'                   // Gantt chart / project plan
+  | 'decision_tree'           // Decision tree
+  | 'customer_journey'        // Customer journey map
+  | 'ecosystem_map'           // Ecosystem / stakeholder map
+  | 'service_blueprint'       // Service design blueprint (frontstage/backstage)
+  | 'user_flow'               // User flow / wireflow diagram
+  | 'state_machine'           // State machine / status flow diagram
+  | 'value_stream_map'        // Lean value stream mapping
+  | 'architecture_diagram'    // System / tech architecture diagram
+  | 'data_flow'               // Data flow diagram (sources → transformations → outputs)
+  | 'er_diagram'              // Entity-relationship diagram
+  | 'sequence_diagram'        // UML sequence diagram
+  | 'deployment_diagram'      // Infrastructure / deployment topology
+  | 'kanban_board'            // Kanban board visualization
+  | 'sprint_board'            // Agile sprint board (backlog → in progress → done)
+  | 'dependency_map'          // Dependency / prerequisite map
+  | 'critical_path'           // Critical path method diagram
+  // ─── Visualization & Infographic ─────────────────────────────────────────
+  | 'infographic'             // Full-page infographic layout (data + icons + text)
+  | 'data_dashboard'          // Multi-chart dashboard (KPIs, gauges, trends)
+  | 'comparison_table'        // Feature comparison matrix / checklist table
+  | 'org_chart'               // Organizational hierarchy chart
+  | 'mind_map'                // Radial mind map / concept map
+  | 'process_flow'            // Step-by-step process flow diagram
+  | 'venn_diagram'            // Venn / Euler diagram (overlap relationships)
+  | 'sankey_flow'             // Sankey diagram (flow quantities between stages)
+  | 'geographic_map'          // Map-based visualization (heatmap, pin map, choropleth)
+  | 'network_graph'           // Network / relationship graph (nodes + edges)
+  | 'treemap'                 // Treemap (hierarchical proportional rectangles)
+  | 'radar_chart'             // Radar / spider chart (multi-axis comparison)
+  | 'bubble_chart'            // Bubble chart (3-dimensional scatter)
+  | 'gauge_meter'             // Gauge / meter visualization (progress, score)
+  | 'before_after'            // Before/After comparison (split view)
+  | 'stat_callout'            // Big number / statistic callout with context
+  | 'donut_chart'             // Donut / ring chart (proportional with center metric)
+  | 'sunburst'                // Sunburst diagram (hierarchical ring chart)
+  | 'chord_diagram'           // Chord diagram (relationship flow between categories)
+  | 'word_cloud'              // Word cloud / tag cloud visualization
+  | 'icon_array'              // Icon/pictogram array (people, items, objects)
+  | 'waffle_chart'            // Waffle chart (grid-based proportional)
+  | 'isotype_chart'           // Isotype pictorial chart (rows of icons)
+  | 'alluvial_diagram'        // Alluvial / parallel sets diagram (categorical flow)
+  | 'force_directed_graph'    // Force-directed network graph (physics simulation)
+  | 'heatmap_calendar'        // Calendar heatmap (GitHub-style activity map)
+  | 'density_map'             // Geographic density / point cloud map
+  | 'choropleth_map'          // Choropleth (color-coded regions by value)
+  | 'pin_map'                 // Pin/marker map with location data
+  | 'route_map'               // Route/path visualization on map
+  | 'floor_plan'              // Floor plan / spatial layout diagram
+  // ─── Healthcare & Science ────────────────────────────────────────────────
+  | 'anatomy_diagram'         // Anatomical illustration with labels
+  | 'molecular_structure'     // 3D molecular / chemical structure
+  | 'clinical_trial_phases'   // Clinical trial phase progression (I → II → III → IV)
+  | 'patient_pathway'         // Patient care pathway / treatment journey
+  | 'dose_response_curve'     // Pharmacological dose-response curve
+  | 'survival_curve'          // Kaplan-Meier survival analysis curve
+  | 'epidemiology_map'        // Disease prevalence / spread map
+  // ─── Financial & Accounting ──────────────────────────────────────────────
+  | 'income_statement'        // P&L / income statement layout
+  | 'balance_sheet'           // Balance sheet visualization
+  | 'cash_flow'               // Cash flow waterfall
+  | 'cap_table'               // Capitalization table (equity ownership)
+  | 'financial_projections'   // Revenue/cost projections with scenarios
+  | 'unit_economics'          // Unit economics breakdown (LTV, CAC, payback)
+  | 'pricing_table'           // Pricing tier comparison table
+  | 'roi_calculator'          // ROI / payback calculator visualization
+  // ─── Real Estate & Property ──────────────────────────────────────────────
+  | 'property_comparison'     // Property comparison grid (features, price, location)
+  | 'market_comps'            // Comparable property analysis
+  | 'investment_returns'      // Real estate ROI / cap rate analysis
+  | 'neighborhood_profile'    // Neighborhood stats (schools, transit, demographics)
+  // ─── Education & Academic ────────────────────────────────────────────────
+  | 'periodic_table'          // Periodic table style grid visualization
+  | 'taxonomy'                // Taxonomy / classification hierarchy
+  | 'concept_ladder'          // Concept abstraction ladder
+  | 'bloom_taxonomy'          // Bloom's Taxonomy pyramid
+  | 'learning_objectives'     // Learning objectives + assessment alignment
+  | 'quiz_card'               // Interactive quiz / poll / assessment card
+  // ─── Project Management ──────────────────────────────────────────────────
+  | 'milestone_timeline'      // Project milestone timeline with dependencies
+  | 'resource_allocation'     // Resource allocation / capacity chart
+  | 'burndown_chart'          // Sprint burndown / burnup chart
+  | 'workload_heatmap'        // Team workload heatmap by week/sprint
+  | 'risk_register'           // Risk register table with ratings
+  // ─── Custom ──────────────────────────────────────────────────────────────
+  | 'custom_framework';       // User-defined framework
 
 export interface SlideFrameworkConfig {
   framework: SlideFramework;
@@ -670,12 +895,50 @@ export interface CrossFormatConversion {
 
 /** Visualization chart type for data-driven scenes */
 export type ChartType =
-  | 'bar' | 'line' | 'area' | 'pie' | 'donut'
-  | 'scatter' | 'bubble' | 'radar' | 'treemap'
-  | 'sankey' | 'heatmap' | 'gauge' | 'funnel'
-  | 'waterfall' | 'candlestick' | 'histogram'
-  | 'geographic' | 'network' | 'timeline'
-  | 'org_chart' | 'mind_map' | 'venn'
+  // Basic charts
+  | 'bar' | 'stacked_bar' | 'grouped_bar' | 'horizontal_bar'
+  | 'line' | 'multi_line' | 'sparkline' | 'step_line'
+  | 'area' | 'stacked_area' | 'stream_graph'
+  | 'pie' | 'donut' | 'semi_donut' | 'nested_donut'
+  // Statistical
+  | 'scatter' | 'bubble' | 'box_whisker' | 'violin'
+  | 'histogram' | 'density' | 'qq_plot' | 'regression'
+  // Comparison
+  | 'radar' | 'parallel_coordinates' | 'slope' | 'dumbbell'
+  | 'bullet' | 'lollipop' | 'dot_plot'
+  // Hierarchical
+  | 'treemap' | 'sunburst' | 'icicle' | 'circle_packing'
+  | 'dendrogram' | 'taxonomy_tree'
+  // Flow & Relationship
+  | 'sankey' | 'chord' | 'alluvial' | 'arc_diagram'
+  | 'network' | 'force_directed' | 'adjacency_matrix'
+  // Heat & Matrix
+  | 'heatmap' | 'calendar_heatmap' | 'correlation_matrix'
+  | 'waffle' | 'isotype' | 'unit_chart'
+  // Gauge & Progress
+  | 'gauge' | 'progress_ring' | 'speedometer' | 'thermometer'
+  | 'battery' | 'progress_bar'
+  // Funnel & Waterfall
+  | 'funnel' | 'inverted_funnel' | 'waterfall' | 'bridge'
+  // Financial
+  | 'candlestick' | 'ohlc' | 'kagi' | 'renko'
+  // Time-series
+  | 'timeline' | 'gantt' | 'event_timeline' | 'milestone'
+  // Geographic
+  | 'geographic' | 'choropleth' | 'bubble_map' | 'pin_map'
+  | 'flow_map' | 'hexbin_map' | 'tile_map' | 'route_map'
+  // Organizational
+  | 'org_chart' | 'mind_map' | 'venn' | 'euler'
+  | 'decision_tree' | 'flowchart' | 'swimlane'
+  // Specialized
+  | 'word_cloud' | 'icon_array' | 'pictogram'
+  | 'small_multiples' | 'trellis' | 'facet_grid'
+  // 3D Charts
+  | '3d_bar' | '3d_scatter' | '3d_surface' | '3d_globe'
+  // Healthcare/Science
+  | 'kaplan_meier' | 'forest_plot' | 'dose_response'
+  | 'phylogenetic_tree' | 'molecular_structure'
+  // Custom
   | 'custom';
 
 /** Data visualization configuration for a scene */
@@ -718,6 +981,204 @@ export interface SceneDataVisualization {
     geographicScope?: string;
     confidence?: string;         // e.g., "95% CI"
   };
+}
+
+// ─── Industry Verticals ──────────────────────────────────────────────────────
+
+/** Industry vertical — determines default scenarios, frameworks, terminology, and compliance rules */
+export type IndustryVertical =
+  // Technology
+  | 'saas' | 'fintech' | 'edtech' | 'healthtech' | 'proptech' | 'agritech'
+  | 'ai_ml' | 'cybersecurity' | 'iot' | 'blockchain' | 'gaming' | 'telecom'
+  // Healthcare & Life Sciences
+  | 'pharma' | 'biotech' | 'medical_devices' | 'hospitals' | 'telemedicine'
+  | 'mental_health' | 'dental' | 'veterinary' | 'clinical_research'
+  // Finance & Insurance
+  | 'banking' | 'investment' | 'insurance' | 'wealth_management' | 'crypto'
+  | 'accounting' | 'payments' | 'lending'
+  // Real Estate & Construction
+  | 'residential_real_estate' | 'commercial_real_estate' | 'construction'
+  | 'architecture' | 'interior_design' | 'property_management'
+  // Retail & E-commerce
+  | 'fashion' | 'beauty' | 'food_beverage' | 'electronics' | 'luxury_goods'
+  | 'grocery' | 'marketplace' | 'direct_to_consumer'
+  // Education
+  | 'k12_education' | 'higher_education' | 'corporate_training'
+  | 'online_courses' | 'language_learning' | 'test_prep'
+  // Media & Entertainment
+  | 'film_production' | 'music_industry' | 'publishing' | 'sports'
+  | 'podcasting' | 'live_events' | 'esports'
+  // Travel & Hospitality
+  | 'hotels' | 'airlines' | 'restaurants' | 'tourism' | 'cruise'
+  | 'car_rental' | 'travel_agency'
+  // Automotive & Manufacturing
+  | 'automotive' | 'aerospace' | 'manufacturing' | 'logistics'
+  | 'supply_chain' | 'energy' | 'oil_gas' | 'mining'
+  // Government & Nonprofit
+  | 'government' | 'defense' | 'nonprofit' | 'ngo' | 'political'
+  | 'public_health' | 'social_services'
+  // Agriculture & Environment
+  | 'agriculture' | 'farming' | 'forestry' | 'fishery' | 'sustainability'
+  // Legal & Professional Services
+  | 'legal' | 'consulting' | 'hr_recruiting' | 'marketing_agency'
+  | 'pr_communications' | 'research'
+  // Other
+  | 'general' | 'custom_industry';
+
+export interface IndustryVerticalConfig {
+  vertical: IndustryVertical;
+  label: string;
+  /** Default content scenarios for this industry */
+  defaultScenarios: ContentScenario[];
+  /** Default slide frameworks commonly used */
+  defaultFrameworks: SlideFramework[];
+  /** Industry-specific terminology / jargon */
+  terminology?: Record<string, string>;
+  /** Compliance requirements (e.g., HIPAA for healthcare, SEC for finance) */
+  complianceRules?: Array<{
+    rule: string;
+    description: string;
+    severity: 'required' | 'recommended' | 'optional';
+  }>;
+  /** Industry-specific data source types */
+  dataSources?: string[];
+  /** Default chart types for this industry */
+  preferredCharts?: ChartType[];
+  /** Regional considerations for this industry */
+  regionalNotes?: Record<string, string>;
+}
+
+// ─── Regional Configuration ──────────────────────────────────────────────────
+
+/** Regional zone for provider routing and cultural adaptation */
+export type RegionalZone = 'western' | 'cjk' | 'mena' | 'sea' | 'south_asian' | 'latam' | 'africa';
+
+/** Sub-region with specific cultural, linguistic, and regulatory requirements */
+export type SubRegion =
+  // Western
+  | 'us_en' | 'uk_en' | 'ca_en' | 'ca_fr' | 'au_en' | 'nz_en'
+  | 'de_de' | 'fr_fr' | 'es_es' | 'it_it' | 'pt_pt' | 'nl_nl'
+  | 'be_nl' | 'be_fr' | 'ch_de' | 'ch_fr' | 'ch_it' | 'at_de'
+  | 'se_sv' | 'no_no' | 'dk_da' | 'fi_fi' | 'is_is'
+  | 'ie_en' | 'pl_pl' | 'cz_cs' | 'hu_hu' | 'ro_ro'
+  | 'bg_bg' | 'hr_hr' | 'sk_sk' | 'si_sl' | 'rs_sr'
+  | 'gr_el' | 'cy_el' | 'mt_mt' | 'lt_lt' | 'lv_lv' | 'ee_et'
+  // CJK (China, Japan, Korea)
+  | 'cn_zh' | 'cn_zh_cantonese' | 'tw_zh' | 'hk_zh'
+  | 'jp_ja' | 'kr_ko'
+  // MENA (Middle East & North Africa)
+  | 'ae_ar' | 'sa_ar' | 'qa_ar' | 'kw_ar' | 'bh_ar' | 'om_ar'
+  | 'eg_ar' | 'ma_ar' | 'tn_ar' | 'dz_ar' | 'ly_ar'
+  | 'jo_ar' | 'lb_ar' | 'iq_ar' | 'sy_ar' | 'ps_ar' | 'ye_ar'
+  | 'il_he' | 'ir_fa' | 'tr_tr'
+  // South & Southeast Asia
+  | 'in_hi' | 'in_en' | 'in_ta' | 'in_te' | 'in_bn' | 'in_mr'
+  | 'in_gu' | 'in_kn' | 'in_ml' | 'in_pa' | 'in_ur'
+  | 'pk_ur' | 'bd_bn' | 'lk_si' | 'np_ne' | 'mm_my'
+  | 'th_th' | 'vn_vi' | 'id_id' | 'my_ms' | 'sg_en' | 'sg_zh'
+  | 'ph_tl' | 'ph_en' | 'kh_km' | 'la_lo'
+  // Latin America
+  | 'mx_es' | 'br_pt' | 'ar_es' | 'co_es' | 'cl_es' | 'pe_es'
+  | 've_es' | 'ec_es' | 'bo_es' | 'py_es' | 'uy_es'
+  | 'cr_es' | 'pa_es' | 'gt_es' | 'cu_es' | 'do_es' | 'hn_es' | 'sv_es'
+  | 'pr_es' | 'ni_es'
+  // Africa
+  | 'ng_en' | 'ng_yo' | 'ng_ha' | 'ng_ig'
+  | 'za_en' | 'za_zu' | 'za_af' | 'za_xh'
+  | 'ke_en' | 'ke_sw' | 'gh_en' | 'et_am' | 'tz_sw'
+  | 'ug_en' | 'rw_rw' | 'cm_fr' | 'sn_fr' | 'ci_fr'
+  | 'ma_fr' | 'dz_fr' | 'tn_fr'
+  // Custom
+  | 'custom_region';
+
+export interface RegionalScenarioVariant {
+  /** Base scenario being adapted */
+  baseScenario: ContentScenario;
+  /** Target sub-region */
+  subRegion: SubRegion;
+  /** Zone for provider routing */
+  zone: RegionalZone;
+  /** Cultural adaptations applied */
+  adaptations: {
+    /** Wardrobe/dress code adjustments for avatars */
+    wardrobeAdjustment?: string;
+    /** Companion/model demographics */
+    companionStyle?: string;
+    /** Music genre/mood adaptation */
+    musicAdaptation?: string;
+    /** Setting/backdrop changes */
+    settingAdaptation?: string;
+    /** Color palette adjustments (e.g., red for CNY, green for Ramadan) */
+    colorPalette?: string[];
+    /** Reading direction (LTR or RTL) */
+    readingDirection?: 'ltr' | 'rtl';
+    /** Calendar system adjustments */
+    calendarSystem?: 'gregorian' | 'hijri' | 'chinese_lunar' | 'hebrew' | 'buddhist';
+    /** Currency symbol and format */
+    currencyFormat?: string;
+    /** Number format (e.g., 1,000.00 vs 1.000,00) */
+    numberFormat?: string;
+    /** Date format preference */
+    dateFormat?: 'mdy' | 'dmy' | 'ymd';
+    /** Greeting / salutation style */
+    greetingStyle?: string;
+    /** Forbidden imagery or content (cultural sensitivity) */
+    contentRestrictions?: string[];
+    /** Festival/holiday-specific branding */
+    seasonalBranding?: string;
+    /** Local regulatory disclaimers */
+    legalDisclaimers?: string[];
+    /** Dialect selection within language */
+    dialectPreference?: string;
+    /** Font family recommendations for the script */
+    fontRecommendation?: string;
+  };
+  /** Provider overrides for this region */
+  providerOverrides?: {
+    tts?: string;           // e.g., 'elevenlabs' | 'alibaba_cosyvoice' | 'azure'
+    videoGen?: string;      // e.g., 'veo3' | 'wan2.6' | 'modelslab'
+    avatarGen?: string;     // e.g., 'hedra' | 'alibaba' | 'modelslab'
+    translation?: string;   // e.g., 'deepl' | 'google' | 'azure'
+  };
+}
+
+// ─── Scene Template Categories ───────────────────────────────────────────────
+
+/** Scene template category for organizing the template library */
+export type SceneTemplateCategory =
+  | 'intro_outro'      // Opening/closing scenes
+  | 'presenter'        // Avatar/talking head scenes
+  | 'data_viz'         // Data visualization & charts
+  | 'product'          // Product demo & showcase
+  | 'storytelling'     // Narrative & story scenes
+  | 'social'           // Social media optimized
+  | 'education'        // Learning & tutorial scenes
+  | 'healthcare'       // Medical & health content
+  | 'real_estate'      // Property & architecture
+  | 'ecommerce'        // Shopping & product display
+  | 'travel'           // Travel & destination
+  | 'finance'          // Financial & business data
+  | 'entertainment'    // Media & entertainment
+  | 'event'            // Events & celebrations
+  | 'cultural'         // Regional/cultural content
+  | 'technical'        // Technical/engineering
+  | 'immersive'        // VR/AR/3D immersive
+  | 'transition'       // Transition/interstitial scenes
+  | 'interactive';     // Interactive/quiz/poll scenes
+
+export interface SceneTemplateConfig {
+  key: string;
+  label: string;
+  description: string;
+  category: SceneTemplateCategory;
+  /** Recommended scenarios this template works well with */
+  recommendedScenarios?: ContentScenario[];
+  /** Industries this template is designed for */
+  targetIndustries?: IndustryVertical[];
+  /** Regions where this template has cultural relevance */
+  targetRegions?: SubRegion[];
+  /** The template scene defaults */
+  template: Partial<CompositionScene>;
 }
 
 /** Extended chapter with scene-level creative freedom */
