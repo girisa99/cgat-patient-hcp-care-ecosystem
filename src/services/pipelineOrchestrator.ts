@@ -50,7 +50,24 @@ export type ContentFormat =
   | 'social_carousel'    // Multi-image social post
   | 'newsletter'         // Email newsletter content
   | 'blog_post'          // Long-form written content
-  | 'investor_deck';     // Investor presentation with live demos
+  | 'investor_deck'      // Investor presentation with live demos
+  // ─── Video Remix & Clip Extraction ─────────────────────────────────────
+  | 'video_remix'        // Re-edit existing video with new clips, testimonials, B-roll
+  | 'teaser_clip'        // Auto-generated teaser/trailer from long-form content
+  | 'best_clips'         // AI-extracted best moments compilation
+  | 'platform_clips'     // Platform-optimized clips (TikTok, Reels, Shorts, FB)
+  | 'highlight_reel'     // Highlight reel from multiple videos/events
+  | 'testimonial_video'  // Stitched testimonial compilation from multiple sources
+  // ─── Website Package ───────────────────────────────────────────────────
+  | 'website_package'    // Full website: landing page + hero banner + sections + CTA
+  | 'landing_page'       // Single landing page with hero, sections, CTA
+  | 'hero_banner'        // Standalone hero banner (video/image/animated)
+  | 'product_page'       // Product page with features, pricing, testimonials
+  | 'microsite'          // Multi-page microsite (3-5 pages)
+  | 'infographic'        // Static or animated infographic
+  | 'whitepaper'         // Long-form PDF whitepaper with data viz
+  | 'case_study_page'    // Customer case study page with journey + metrics
+  | 'interactive_demo';  // Interactive product demo page
 
 export type ContentIntent =
   | 'promo'              // Business promotion
@@ -598,6 +615,307 @@ const ATOMIC_STEPS: Record<string, PipelineStep> = {
     estimatedDuration: 15,
     creditMultiplier: 1,
   },
+
+  // ─── Video Remix & Clip Extraction ───────────────────────────────────────
+
+  video_scene_detect: {
+    id: 'video_scene_detect',
+    name: 'Scene Detection',
+    description: 'AI scene detection: cut points, key frames, shot types, transitions',
+    edgeFunction: 'ai-universal-processor',
+    action: 'analyze_video',
+    inputType: 'video',
+    outputType: 'scene_map',
+    optional: false,
+    estimatedDuration: 15,
+    creditMultiplier: 1,
+  },
+  video_clip_extract: {
+    id: 'video_clip_extract',
+    name: 'Clip Extraction',
+    description: 'Extract clips by time range, scene, or AI-selected best moments',
+    edgeFunction: 'magic-clips-generator',
+    action: 'extract',
+    inputType: 'scene_map',
+    outputType: 'video_clips',
+    optional: false,
+    estimatedDuration: 20,
+    creditMultiplier: 1,
+  },
+  video_stitch: {
+    id: 'video_stitch',
+    name: 'Video Stitching',
+    description: 'Stitch clips together with transitions, B-roll, and new segments',
+    edgeFunction: 'genie-cast-assembler',
+    action: 'stitch',
+    inputType: 'video_clips',
+    outputType: 'stitched_video',
+    optional: false,
+    estimatedDuration: 30,
+    creditMultiplier: 1.5,
+  },
+  testimonial_extract: {
+    id: 'testimonial_extract',
+    name: 'Testimonial Extraction',
+    description: 'Extract testimonial clips from reviews, interviews, or uploaded videos',
+    edgeFunction: 'ai-universal-processor',
+    action: 'extract_testimonials',
+    inputType: 'video_or_text',
+    outputType: 'testimonial_clips',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 1,
+  },
+  broll_inject: {
+    id: 'broll_inject',
+    name: 'B-Roll Injection',
+    description: 'Insert B-roll footage (stock, AI-generated, or uploaded) between cuts',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_video',
+    inputType: 'stitch_plan',
+    outputType: 'broll_segments',
+    optional: true,
+    estimatedDuration: 20,
+    creditMultiplier: 1,
+    zonePreference: 'auto',
+  },
+  teaser_generate: {
+    id: 'teaser_generate',
+    name: 'Teaser/Trailer Generation',
+    description: 'AI-generate teaser/trailer from best moments with dramatic pacing',
+    edgeFunction: 'magic-clips-generator',
+    action: 'teaser',
+    inputType: 'scene_map',
+    outputType: 'teaser_video',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 1,
+  },
+  platform_adapt: {
+    id: 'platform_adapt',
+    name: 'Platform Adaptation',
+    description: 'Auto-adapt video to platform specs (TikTok 9:16, YouTube 16:9, IG 1:1, FB 4:5)',
+    edgeFunction: 'genie-cast-assembler',
+    action: 'platform_adapt',
+    inputType: 'video',
+    outputType: 'platform_videos',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 0.5,
+  },
+
+  // ─── Long-Form Chunking & Assembly ───────────────────────────────────────
+
+  long_form_chunk: {
+    id: 'long_form_chunk',
+    name: 'Long-Form Chunking',
+    description: 'Split long content into manageable chunks for parallel processing',
+    edgeFunction: 'ai-universal-processor',
+    action: 'chunk_content',
+    inputType: 'long_script',
+    outputType: 'content_chunks',
+    optional: false,
+    estimatedDuration: 5,
+    creditMultiplier: 0.5,
+  },
+  chunk_tts: {
+    id: 'chunk_tts',
+    name: 'Chunk TTS Generation',
+    description: 'Generate TTS for each chunk in parallel, then assemble',
+    edgeFunction: 'multi-provider-tts',
+    action: 'parallel_tts',
+    inputType: 'content_chunks',
+    outputType: 'audio_chunks',
+    optional: false,
+    estimatedDuration: 30,
+    creditMultiplier: 1.5,
+    zonePreference: 'auto',
+  },
+  chunk_video: {
+    id: 'chunk_video',
+    name: 'Chunk Video Generation',
+    description: 'Generate video for each chunk in parallel, then assemble',
+    edgeFunction: 'ai-universal-processor',
+    action: 'parallel_video',
+    inputType: 'content_chunks',
+    outputType: 'video_chunks',
+    optional: false,
+    estimatedDuration: 90,
+    creditMultiplier: 2,
+    zonePreference: 'auto',
+  },
+  chunk_assembly: {
+    id: 'chunk_assembly',
+    name: 'Chunk Assembly',
+    description: 'Assemble all chunks (video, audio, captions) into final long-form content',
+    edgeFunction: 'genie-cast-assembler',
+    action: 'chunk_assembly',
+    inputType: 'media_chunks',
+    outputType: 'assembled_long_form',
+    optional: false,
+    estimatedDuration: 30,
+    creditMultiplier: 1,
+  },
+  best_moments_ai: {
+    id: 'best_moments_ai',
+    name: 'AI Best Moments',
+    description: 'AI identifies most engaging, shareable, viral-worthy moments from long content',
+    edgeFunction: 'magic-clips-generator',
+    action: 'best_moments',
+    inputType: 'assembled_long_form',
+    outputType: 'best_moment_clips',
+    optional: true,
+    estimatedDuration: 10,
+    creditMultiplier: 0.5,
+  },
+  multi_thumbnail: {
+    id: 'multi_thumbnail',
+    name: 'Multi-Thumbnail Generation',
+    description: 'Generate multiple thumbnail variants for A/B testing',
+    edgeFunction: 'auto-thumbnail-generator',
+    action: 'multi',
+    inputType: 'video',
+    outputType: 'thumbnail_variants',
+    optional: true,
+    estimatedDuration: 8,
+    creditMultiplier: 0.5,
+  },
+
+  // ─── Website Package Generation ──────────────────────────────────────────
+
+  website_scaffold: {
+    id: 'website_scaffold',
+    name: 'Website Scaffold',
+    description: 'Generate website structure: pages, sections, navigation, layout',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_website',
+    inputType: 'enriched_prompt',
+    outputType: 'website_structure',
+    optional: false,
+    estimatedDuration: 15,
+    creditMultiplier: 2,
+  },
+  hero_banner_generate: {
+    id: 'hero_banner_generate',
+    name: 'Hero Banner Generation',
+    description: 'Generate hero banner: video loop, animated gradient, or static with parallax',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_hero',
+    inputType: 'brand_profile',
+    outputType: 'hero_banner',
+    optional: false,
+    estimatedDuration: 20,
+    creditMultiplier: 1.5,
+    zonePreference: 'auto',
+  },
+  section_generate: {
+    id: 'section_generate',
+    name: 'Section Generation',
+    description: 'Generate website sections: features, pricing, testimonials, FAQ, CTAs',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_sections',
+    inputType: 'website_structure',
+    outputType: 'website_sections',
+    optional: false,
+    estimatedDuration: 20,
+    creditMultiplier: 1.5,
+  },
+  card_generate: {
+    id: 'card_generate',
+    name: 'Card Component Generation',
+    description: 'Generate card components: feature cards, team cards, testimonial cards, pricing cards',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_cards',
+    inputType: 'website_sections',
+    outputType: 'card_components',
+    optional: true,
+    estimatedDuration: 10,
+    creditMultiplier: 1,
+  },
+  scroll_animation: {
+    id: 'scroll_animation',
+    name: 'Scroll Animation',
+    description: 'Add scroll-triggered animations: fade-in, slide, parallax, reveal, counter',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_animations',
+    inputType: 'website_sections',
+    outputType: 'animated_sections',
+    optional: true,
+    estimatedDuration: 8,
+    creditMultiplier: 0.5,
+  },
+  cta_generate: {
+    id: 'cta_generate',
+    name: 'CTA Generation',
+    description: 'Generate CTAs: buttons, banners, popups, exit-intent, floating, inline',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_cta',
+    inputType: 'website_structure',
+    outputType: 'cta_components',
+    optional: false,
+    estimatedDuration: 5,
+    creditMultiplier: 0.5,
+  },
+  infographic_generate: {
+    id: 'infographic_generate',
+    name: 'Infographic Generation',
+    description: 'Generate data-driven infographic: charts, icons, stats, timelines',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_infographic',
+    inputType: 'data_or_script',
+    outputType: 'infographic',
+    optional: true,
+    estimatedDuration: 15,
+    creditMultiplier: 1,
+  },
+  whitepaper_generate: {
+    id: 'whitepaper_generate',
+    name: 'Whitepaper Generation',
+    description: 'Generate long-form whitepaper PDF: cover, exec summary, chapters, charts, citations',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_whitepaper',
+    inputType: 'enriched_prompt',
+    outputType: 'whitepaper_pdf',
+    optional: true,
+    estimatedDuration: 25,
+    creditMultiplier: 2,
+  },
+  customer_journey_generate: {
+    id: 'customer_journey_generate',
+    name: 'Customer Journey Map',
+    description: 'Generate visual customer journey: stages, touchpoints, emotions, actions, KPIs',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_journey',
+    inputType: 'enriched_prompt',
+    outputType: 'journey_map',
+    optional: true,
+    estimatedDuration: 10,
+    creditMultiplier: 1,
+  },
+  interactive_demo_generate: {
+    id: 'interactive_demo_generate',
+    name: 'Interactive Demo',
+    description: 'Generate interactive product demo: clickable prototype, guided tour, tooltips',
+    edgeFunction: 'ai-universal-processor',
+    action: 'generate_demo',
+    inputType: 'product_data',
+    outputType: 'interactive_demo',
+    optional: true,
+    estimatedDuration: 30,
+    creditMultiplier: 2,
+  },
+  website_export: {
+    id: 'website_export',
+    name: 'Website Export',
+    description: 'Export as deployable HTML/CSS/JS, React components, or CMS-ready blocks',
+    edgeFunction: 'website-export',
+    action: 'export',
+    inputType: 'website_complete',
+    outputType: 'exported_website',
+    optional: true,
+    estimatedDuration: 10,
+    creditMultiplier: 0.5,
+  },
 };
 
 // ─── Pre-Built Combination Chains ────────────────────────────────────────────
@@ -855,6 +1173,227 @@ export const PIPELINE_CHAINS: Record<string, PipelineChain> = {
     products: ['mind', 'cast'],
   },
 
+  // ─── C12: Video Remix Pipeline ──────────────────────────────────────────
+  video_remix: {
+    id: 'video_remix',
+    name: 'Video-Remix-Stitch',
+    description: 'Upload existing video → re-edit, add testimonials/B-roll, stitch new clips, generate teasers',
+    outputFormats: ['video_remix', 'teaser_clip', 'best_clips', 'platform_clips', 'short_video'],
+    steps: [
+      ATOMIC_STEPS.video_extract_audio,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.video_scene_detect,
+      ATOMIC_STEPS.video_clip_extract,
+      ATOMIC_STEPS.testimonial_extract,
+      ATOMIC_STEPS.broll_inject,
+      ATOMIC_STEPS.video_stitch,
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.teaser_generate,
+      ATOMIC_STEPS.multi_thumbnail,
+      ATOMIC_STEPS.platform_adapt,
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 240,
+    minTier: 'creator',
+    products: ['mind', 'vibe', 'cast'],
+  },
+
+  // ─── C13: Testimonial Compilation ─────────────────────────────────────
+  testimonial_compilation: {
+    id: 'testimonial_compilation',
+    name: 'Testimonial-Compilation',
+    description: 'Collect testimonials from reviews/videos → stitch into compelling testimonial reel',
+    outputFormats: ['testimonial_video', 'short_video', 'highlight_reel'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.testimonial_extract,
+      ATOMIC_STEPS.script_generate,
+      ATOMIC_STEPS.tts_generate,
+      ATOMIC_STEPS.video_stitch,
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.platform_adapt,
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 180,
+    minTier: 'creator',
+    products: ['vibe', 'cast'],
+  },
+
+  // ─── C14: Long-Form Production (Chunked Assembly) ─────────────────────
+  long_form_production: {
+    id: 'long_form_production',
+    name: 'Long-Form-Chunked-Production',
+    description: 'Script → chunk → parallel TTS + video generation → assembly → teasers + shorts + thumbnails',
+    outputFormats: ['long_video', 'teaser_clip', 'best_clips', 'platform_clips', 'short_video'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.script_generate,
+      ATOMIC_STEPS.script_enhance,
+      ATOMIC_STEPS.transcreation,
+      ATOMIC_STEPS.long_form_chunk,
+      ATOMIC_STEPS.chunk_tts,
+      ATOMIC_STEPS.chunk_video,
+      ATOMIC_STEPS.chunk_assembly,
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.best_moments_ai,
+      ATOMIC_STEPS.shorts_extract,
+      ATOMIC_STEPS.teaser_generate,
+      ATOMIC_STEPS.multi_thumbnail,
+      ATOMIC_STEPS.platform_adapt,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 420,
+    minTier: 'pro',
+    products: ['spark', 'mind', 'vibe', 'cast'],
+  },
+
+  // ─── C15: Website Package ─────────────────────────────────────────────
+  website_package: {
+    id: 'website_package',
+    name: 'Website-Package-Generator',
+    description: 'Business data → full website: landing page, hero banner, sections, cards, scroll animations, CTAs',
+    outputFormats: ['website_package', 'landing_page', 'hero_banner', 'infographic'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.economy_archetype,
+      ATOMIC_STEPS.competitive_analysis,
+      ATOMIC_STEPS.script_generate,
+      ATOMIC_STEPS.website_scaffold,
+      ATOMIC_STEPS.hero_banner_generate,
+      ATOMIC_STEPS.section_generate,
+      ATOMIC_STEPS.card_generate,
+      ATOMIC_STEPS.scroll_animation,
+      ATOMIC_STEPS.cta_generate,
+      ATOMIC_STEPS.infographic_generate,
+      ATOMIC_STEPS.customer_journey_generate,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.website_export,
+    ],
+    estimatedDuration: 300,
+    minTier: 'pro',
+    products: ['spark', 'mind', 'deck', 'cast'],
+  },
+
+  // ─── C16: Landing Page Quick ──────────────────────────────────────────
+  landing_page_quick: {
+    id: 'landing_page_quick',
+    name: 'Landing-Page-Quick',
+    description: 'Quick single landing page with hero, features, testimonials, and CTA',
+    outputFormats: ['landing_page', 'hero_banner'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.script_generate,
+      ATOMIC_STEPS.website_scaffold,
+      ATOMIC_STEPS.hero_banner_generate,
+      ATOMIC_STEPS.section_generate,
+      ATOMIC_STEPS.cta_generate,
+      ATOMIC_STEPS.website_export,
+    ],
+    estimatedDuration: 120,
+    minTier: 'starter',
+    products: ['spark', 'deck'],
+  },
+
+  // ─── C17: Hero Banner Only ────────────────────────────────────────────
+  hero_banner_only: {
+    id: 'hero_banner_only',
+    name: 'Hero-Banner-Generator',
+    description: 'Generate standalone hero banner: video loop, animated gradient, or cinematic still',
+    outputFormats: ['hero_banner'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.hero_banner_generate,
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 45,
+    minTier: 'free',
+    products: ['spark', 'cast'],
+  },
+
+  // ─── C18: Whitepaper + Infographic Package ────────────────────────────
+  whitepaper_package: {
+    id: 'whitepaper_package',
+    name: 'Whitepaper-Infographic-Package',
+    description: 'Research/data → whitepaper PDF + animated infographic + customer journey map',
+    outputFormats: ['whitepaper', 'infographic', 'case_study_page', 'presentation'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.competitive_analysis,
+      ATOMIC_STEPS.script_generate,
+      ATOMIC_STEPS.whitepaper_generate,
+      ATOMIC_STEPS.infographic_generate,
+      ATOMIC_STEPS.customer_journey_generate,
+      ATOMIC_STEPS.slides_generate,
+      ATOMIC_STEPS.quality_check,
+    ],
+    estimatedDuration: 180,
+    minTier: 'pro',
+    products: ['spark', 'deck', 'cast'],
+  },
+
+  // ─── C19: Interactive Demo + Product Page ─────────────────────────────
+  interactive_demo_package: {
+    id: 'interactive_demo_package',
+    name: 'Interactive-Demo-Product-Page',
+    description: 'Product data → interactive demo + product page + hero video + feature cards',
+    outputFormats: ['interactive_demo', 'product_page', 'hero_banner', 'short_video'],
+    steps: [
+      ATOMIC_STEPS.google_places_enrich,
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.script_generate,
+      ATOMIC_STEPS.website_scaffold,
+      ATOMIC_STEPS.hero_banner_generate,
+      ATOMIC_STEPS.section_generate,
+      ATOMIC_STEPS.card_generate,
+      ATOMIC_STEPS.interactive_demo_generate,
+      ATOMIC_STEPS.video_generate,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.website_export,
+    ],
+    estimatedDuration: 240,
+    minTier: 'pro',
+    products: ['spark', 'mind', 'deck', 'cast'],
+  },
+
+  // ─── C20: Video-to-Everything Empire ──────────────────────────────────
+  video_to_everything: {
+    id: 'video_to_everything',
+    name: 'Video-to-Everything-Empire',
+    description: 'One video → shorts + teasers + thumbnails + blog + audiogram + social + landing page + infographic',
+    outputFormats: ['short_video', 'teaser_clip', 'best_clips', 'platform_clips', 'blog_post', 'audiogram', 'social_carousel', 'landing_page', 'infographic'],
+    steps: [
+      ATOMIC_STEPS.video_extract_audio,
+      ATOMIC_STEPS.audio_transcribe,
+      ATOMIC_STEPS.video_scene_detect,
+      ATOMIC_STEPS.script_generate,         // Blog from transcript
+      ATOMIC_STEPS.shorts_extract,           // Best short clips
+      ATOMIC_STEPS.teaser_generate,          // Teaser trailer
+      ATOMIC_STEPS.best_moments_ai,          // Best moments compilation
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.audiogram_generate,       // Audio waveform
+      ATOMIC_STEPS.multi_thumbnail,          // Multiple thumbnails
+      ATOMIC_STEPS.infographic_generate,     // Key data infographic
+      ATOMIC_STEPS.website_scaffold,         // Landing page
+      ATOMIC_STEPS.hero_banner_generate,
+      ATOMIC_STEPS.section_generate,
+      ATOMIC_STEPS.cta_generate,
+      ATOMIC_STEPS.platform_adapt,           // Platform-specific clips
+      ATOMIC_STEPS.transcreation,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 480,
+    minTier: 'business',
+    products: ['spark', 'mind', 'vibe', 'deck', 'cast'],
+  },
+
   // Presentation chain
   smart_presentation: {
     id: 'smart_presentation',
@@ -892,6 +1431,20 @@ export function selectChain(
   if (format === 'presentation') return PIPELINE_CHAINS.smart_presentation;
   if (format === 'audio_podcast') return PIPELINE_CHAINS.podcast_multichannel;
   if (format === 'video_podcast') return PIPELINE_CHAINS.podcast_multichannel;
+
+  // Video remix & clip extraction
+  if (format === 'video_remix') return PIPELINE_CHAINS.video_remix;
+  if (format === 'testimonial_video') return PIPELINE_CHAINS.testimonial_compilation;
+  if (format === 'teaser_clip' || format === 'best_clips' || format === 'highlight_reel') return PIPELINE_CHAINS.video_remix;
+  if (format === 'platform_clips') return PIPELINE_CHAINS.video_remix;
+
+  // Website package formats
+  if (format === 'website_package' || format === 'microsite') return PIPELINE_CHAINS.website_package;
+  if (format === 'landing_page' || format === 'product_page') return PIPELINE_CHAINS.landing_page_quick;
+  if (format === 'hero_banner') return PIPELINE_CHAINS.hero_banner_only;
+  if (format === 'whitepaper' || format === 'case_study_page') return PIPELINE_CHAINS.whitepaper_package;
+  if (format === 'infographic') return PIPELINE_CHAINS.whitepaper_package;
+  if (format === 'interactive_demo') return PIPELINE_CHAINS.interactive_demo_package;
 
   if (intent === 'comparison') return PIPELINE_CHAINS.competitor_battlecard;
   if (intent === 'investor_pitch') return PIPELINE_CHAINS.investor_deck;

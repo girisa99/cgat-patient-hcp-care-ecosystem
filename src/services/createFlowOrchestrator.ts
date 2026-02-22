@@ -450,7 +450,7 @@ export type InlineEditAction =
   | 'enhance'      // Ask AI to improve this specific field
   | 'analyze'      // Ask AI to explain/analyze this content
   | 'regenerate'   // Regenerate this specific field only
-  | 'translate'    // Translate this field to another language
+  | 'transcreate'  // Transcreate (culturally adapt) this field for target regions
   | 'simplify'     // Simplify language/reading level
   | 'expand'       // Expand with more detail
   | 'shorten';     // Condense/shorten
@@ -1089,7 +1089,7 @@ export function createEditableField(
     aiSuggestionPending: false,
     editHistory: [{ value, action: 'accept', timestamp: new Date().toISOString(), source: 'ai' }],
     historyIndex: 0,
-    availableActions: ['accept', 'reject', 'update', 'enhance', 'analyze', 'regenerate', 'translate', 'simplify', 'expand', 'shorten'],
+    availableActions: ['accept', 'reject', 'update', 'enhance', 'analyze', 'regenerate', 'transcreate', 'simplify', 'expand', 'shorten'],
     fieldType,
     isDirty: false,
     language,
@@ -1491,7 +1491,844 @@ export function getFormatsByCategory(): Record<string, OutputFormatConfig[]> {
 export function getAvailableConversions(selectedFormats: ContentFormat[]): CrossFormatConversionType[] {
   const conversions = new Set<CrossFormatConversionType>();
   selectedFormats.forEach(f => {
-    OUTPUT_FORMAT_CONFIGS[f].crossFormatConversions.forEach(c => conversions.add(c));
+    if (OUTPUT_FORMAT_CONFIGS[f]) {
+      OUTPUT_FORMAT_CONFIGS[f].crossFormatConversions.forEach(c => conversions.add(c));
+    }
   });
   return Array.from(conversions);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VIDEO REMIX & CLIP EXTRACTION PIPELINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Video Remix Flow — Re-edit existing video with new content
+ *
+ * User uploads existing video → system detects scenes, extracts clips,
+ * allows stitching with new testimonials, B-roll, and segments →
+ * generates teasers, best clips, thumbnails, and platform-specific shorts.
+ */
+
+export type VideoRemixAction =
+  | 'scene_split'           // Split video into scenes at detected cut points
+  | 'clip_select'           // Select specific clips by time range or AI selection
+  | 'clip_reorder'          // Drag-and-drop reorder clips on timeline
+  | 'clip_trim'             // Trim start/end of a clip
+  | 'add_testimonial'       // Add testimonial clip from review/video/avatar
+  | 'add_broll'             // Insert B-roll between clips (stock, AI, uploaded)
+  | 'add_intro'             // Add intro sequence with branding
+  | 'add_outro'             // Add outro with CTA
+  | 'add_transition'        // Add transition between clips (fade, wipe, morph, zoom)
+  | 'add_overlay'           // Add text/logo/lower-third overlay
+  | 'add_music'             // Add/change background music
+  | 'add_voiceover'         // Record or generate voiceover for a segment
+  | 'replace_audio'         // Replace audio track for a clip
+  | 'speed_adjust'          // Speed up or slow down a clip
+  | 'color_grade'           // Apply color grading / LUT to clips
+  | 'remove_clip'           // Remove a clip from the timeline
+  | 'duplicate_clip'        // Duplicate a clip for repeat/emphasis
+  | 'extract_best_moments'  // AI selects best N moments from the video
+  | 'generate_teaser'       // Generate teaser/trailer from best moments
+  | 'generate_thumbnails'   // Generate multiple thumbnail variants
+  | 'adapt_for_platform';   // Auto-adapt to TikTok/Reels/Shorts/FB/LinkedIn
+
+export interface VideoRemixClip {
+  id: string;
+  /** Source: original video, uploaded, AI-generated, testimonial, B-roll */
+  source: 'original' | 'uploaded' | 'ai_generated' | 'testimonial' | 'broll' | 'stock';
+  /** Time range in the original video (for original clips) */
+  sourceTimeRange?: { start: number; end: number };
+  /** Duration in seconds */
+  duration: number;
+  /** Thumbnail preview URL */
+  thumbnailUrl?: string;
+  /** Transcript for this clip */
+  transcript?: string;
+  /** Scene type detected by AI */
+  sceneType?: 'talking_head' | 'product_shot' | 'b_roll' | 'title_card' | 'testimonial' | 'demo' | 'outro' | 'intro' | 'transition';
+  /** AI-scored engagement potential (0-100) */
+  engagementScore?: number;
+  /** Overlays applied to this clip */
+  overlays: Array<{
+    type: 'text' | 'logo' | 'lower_third' | 'cta' | 'timer' | 'subtitle';
+    content: string;
+    position: 'top' | 'bottom' | 'center' | 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right';
+    startTime: number;
+    endTime: number;
+  }>;
+  /** Transition to next clip */
+  transition?: {
+    type: 'cut' | 'fade' | 'dissolve' | 'wipe' | 'zoom' | 'morph' | 'slide' | 'glitch';
+    duration: number;
+  };
+  /** Speed multiplier (1 = normal, 0.5 = slow-mo, 2 = fast) */
+  speedMultiplier: number;
+  /** Color grading / LUT applied */
+  colorGrade?: string;
+  /** Edit state for inline editing of transcript */
+  editState?: InlineEditableField;
+}
+
+export interface VideoRemixTimeline {
+  /** All clips in order */
+  clips: VideoRemixClip[];
+  /** Total duration */
+  totalDuration: number;
+  /** Audio tracks */
+  audioTracks: Array<{
+    id: string;
+    type: 'original' | 'voiceover' | 'music' | 'sfx';
+    label: string;
+    volume: number; // 0-1
+    startTime: number;
+    duration: number;
+    muteOriginal?: boolean;
+  }>;
+  /** Output configs for different platforms */
+  platformOutputs: Array<{
+    platform: 'youtube' | 'tiktok' | 'instagram_reels' | 'instagram_feed' | 'youtube_shorts' | 'facebook' | 'linkedin' | 'twitter';
+    aspectRatio: '16:9' | '9:16' | '1:1' | '4:5';
+    maxDuration: number;
+    selectedClipIds: string[]; // Which clips to include for this platform
+    autoTrim: boolean;        // AI auto-trim to fit platform limits
+  }>;
+}
+
+/** Create a new empty remix timeline */
+export function createRemixTimeline(): VideoRemixTimeline {
+  return {
+    clips: [],
+    totalDuration: 0,
+    audioTracks: [],
+    platformOutputs: [
+      { platform: 'youtube', aspectRatio: '16:9', maxDuration: 600, selectedClipIds: [], autoTrim: false },
+      { platform: 'tiktok', aspectRatio: '9:16', maxDuration: 60, selectedClipIds: [], autoTrim: true },
+      { platform: 'instagram_reels', aspectRatio: '9:16', maxDuration: 90, selectedClipIds: [], autoTrim: true },
+      { platform: 'youtube_shorts', aspectRatio: '9:16', maxDuration: 60, selectedClipIds: [], autoTrim: true },
+      { platform: 'facebook', aspectRatio: '4:5', maxDuration: 240, selectedClipIds: [], autoTrim: true },
+      { platform: 'linkedin', aspectRatio: '16:9', maxDuration: 600, selectedClipIds: [], autoTrim: true },
+    ],
+  };
+}
+
+/** Add a clip to the remix timeline */
+export function addClipToTimeline(
+  timeline: VideoRemixTimeline,
+  clip: Omit<VideoRemixClip, 'id'>,
+  insertAt?: number,
+): VideoRemixTimeline {
+  const newClip: VideoRemixClip = {
+    ...clip,
+    id: `clip_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+  };
+  const clips = [...timeline.clips];
+  if (insertAt !== undefined && insertAt >= 0 && insertAt <= clips.length) {
+    clips.splice(insertAt, 0, newClip);
+  } else {
+    clips.push(newClip);
+  }
+  return {
+    ...timeline,
+    clips,
+    totalDuration: clips.reduce((sum, c) => sum + c.duration / c.speedMultiplier, 0),
+  };
+}
+
+/** Remove a clip from the timeline */
+export function removeClipFromTimeline(timeline: VideoRemixTimeline, clipId: string): VideoRemixTimeline {
+  const clips = timeline.clips.filter(c => c.id !== clipId);
+  return {
+    ...timeline,
+    clips,
+    totalDuration: clips.reduce((sum, c) => sum + c.duration / c.speedMultiplier, 0),
+  };
+}
+
+/** Reorder clips in the timeline */
+export function reorderClips(timeline: VideoRemixTimeline, fromIndex: number, toIndex: number): VideoRemixTimeline {
+  const clips = [...timeline.clips];
+  const [moved] = clips.splice(fromIndex, 1);
+  clips.splice(toIndex, 0, moved);
+  return { ...timeline, clips };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LONG-FORM CHUNKING & ASSEMBLY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Long-Form Production Pipeline — Handles content longer than single-generation limits
+ *
+ * Script is split into chunks → each chunk gets parallel TTS + video generation →
+ * chunks are assembled into final long-form video → AI extracts best moments →
+ * generates teasers, shorts, thumbnails for each platform
+ */
+
+export interface ContentChunk {
+  id: string;
+  index: number;
+  /** Script lines in this chunk */
+  scriptLines: Array<{
+    key: string;
+    text: string;
+    voice: string;
+    durationEst: number;
+    direction: string;
+  }>;
+  /** Chunk duration estimate */
+  durationEst: number;
+  /** Processing status */
+  status: 'pending' | 'tts_generating' | 'video_generating' | 'tts_done' | 'video_done' | 'assembled' | 'failed';
+  /** Generated assets for this chunk */
+  assets: {
+    audioUrl?: string;
+    videoUrl?: string;
+    captionsUrl?: string;
+    thumbnailUrl?: string;
+  };
+  /** Processing progress (0-100) */
+  progress: number;
+  /** Error if failed */
+  error?: string;
+}
+
+export interface LongFormAssembly {
+  /** All chunks in order */
+  chunks: ContentChunk[];
+  /** Assembly status */
+  status: 'chunking' | 'generating' | 'assembling' | 'extracting' | 'complete' | 'failed';
+  /** Total duration estimate */
+  totalDurationEst: number;
+  /** Final assembled video */
+  assembledVideoUrl?: string;
+  /** Extracted derivatives */
+  derivatives: {
+    /** Best moment clips (AI-selected) */
+    bestMoments: Array<{
+      id: string;
+      timeRange: { start: number; end: number };
+      engagementScore: number;
+      thumbnailUrl?: string;
+      videoUrl?: string;
+      reason: string; // Why AI selected this moment
+    }>;
+    /** Auto-generated teaser */
+    teaserUrl?: string;
+    teaserDuration?: number;
+    /** Platform-specific short clips */
+    platformClips: Array<{
+      platform: string;
+      aspectRatio: string;
+      clipUrls: string[];
+      thumbnailUrls: string[];
+    }>;
+    /** Multiple thumbnail variants for A/B testing */
+    thumbnails: Array<{
+      url: string;
+      style: 'dramatic' | 'bright' | 'minimal' | 'text_heavy' | 'face_focused';
+      clickPrediction: number; // 0-100 estimated CTR
+    }>;
+  };
+  /** Checkpoint for resume on failure */
+  checkpoint: {
+    lastCompletedChunkIndex: number;
+    completedSteps: string[];
+    retryCount: number;
+  };
+}
+
+/** Split script into optimal chunks for parallel processing */
+export function chunkScript(
+  scriptLines: Array<{ key: string; text: string; voice: string; durationEst: number; direction: string }>,
+  maxChunkDuration: number = 120, // 2 minutes per chunk default
+): ContentChunk[] {
+  const chunks: ContentChunk[] = [];
+  let currentChunk: ContentChunk = {
+    id: `chunk_0`,
+    index: 0,
+    scriptLines: [],
+    durationEst: 0,
+    status: 'pending',
+    assets: {},
+    progress: 0,
+  };
+
+  for (const line of scriptLines) {
+    if (currentChunk.durationEst + line.durationEst > maxChunkDuration && currentChunk.scriptLines.length > 0) {
+      chunks.push(currentChunk);
+      currentChunk = {
+        id: `chunk_${chunks.length}`,
+        index: chunks.length,
+        scriptLines: [],
+        durationEst: 0,
+        status: 'pending',
+        assets: {},
+        progress: 0,
+      };
+    }
+    currentChunk.scriptLines.push(line);
+    currentChunk.durationEst += line.durationEst;
+  }
+
+  if (currentChunk.scriptLines.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
+
+/** Create a new long-form assembly */
+export function createLongFormAssembly(chunks: ContentChunk[]): LongFormAssembly {
+  return {
+    chunks,
+    status: 'chunking',
+    totalDurationEst: chunks.reduce((sum, c) => sum + c.durationEst, 0),
+    derivatives: {
+      bestMoments: [],
+      platformClips: [],
+      thumbnails: [],
+    },
+    checkpoint: {
+      lastCompletedChunkIndex: -1,
+      completedSteps: [],
+      retryCount: 0,
+    },
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WEBSITE PACKAGE PIPELINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Website Package — Full website generation from business data
+ *
+ * Business name + enrichment → complete website with:
+ * - Landing page with hero banner (video/animated/static)
+ * - Feature sections with cards (scroll left-to-right carousel)
+ * - Pricing tables, testimonials, FAQ
+ * - CTAs (buttons, banners, popups, exit-intent)
+ * - Infographics, whitepapers, customer journeys
+ * - Interactive product demos
+ * - Scroll-triggered animations (fade, slide, parallax, reveal, counter)
+ * - Mobile-responsive, SEO-optimized
+ * - Export as HTML/CSS/JS, React, or CMS blocks
+ */
+
+export type WebsiteSectionType =
+  // Hero & Headers
+  | 'hero_video_loop'        // Full-width video loop with overlay text + CTA
+  | 'hero_animated_gradient' // Animated gradient with floating elements
+  | 'hero_parallax'          // Parallax scrolling hero image
+  | 'hero_split'             // Split screen: media left, copy right
+  | 'hero_carousel'          // Hero carousel with multiple slides
+  // Feature Sections
+  | 'features_grid'          // Feature cards in 2x2, 3x3, or 4x4 grid
+  | 'features_carousel'      // Horizontal scroll carousel of feature cards
+  | 'features_tabs'          // Tabbed feature sections
+  | 'features_accordion'     // Expandable accordion feature list
+  | 'features_timeline'      // Vertical timeline of features/milestones
+  | 'features_bento'         // Bento grid layout (varied card sizes)
+  // Social Proof
+  | 'testimonials_carousel'  // Testimonial cards in carousel
+  | 'testimonials_grid'      // Testimonial grid with photos + quotes
+  | 'testimonials_video'     // Video testimonials with play buttons
+  | 'reviews_wall'           // Social proof wall (Google reviews, Trustpilot, etc.)
+  | 'logo_cloud'             // Client/partner logo cloud
+  | 'stats_counter'          // Animated stat counters (users, revenue, growth)
+  // Pricing & Comparison
+  | 'pricing_table'          // Pricing tier cards with feature comparison
+  | 'pricing_toggle'         // Monthly/annual toggle pricing
+  | 'comparison_table'       // Feature comparison table (us vs competitors)
+  // Content Sections
+  | 'how_it_works'           // Numbered steps with icons/illustrations
+  | 'use_cases'              // Use case cards with industry icons
+  | 'customer_journey'       // Visual customer journey map
+  | 'before_after'           // Before/after slider comparison
+  | 'infographic_section'    // Embedded infographic
+  | 'whitepaper_download'    // Whitepaper preview with download CTA
+  | 'case_study_preview'     // Case study card with key metrics
+  | 'blog_preview'           // Latest blog posts grid
+  | 'video_embed'            // Embedded video player (product demo, explainer)
+  // Interactive
+  | 'interactive_demo'       // Clickable product demo embed
+  | 'calculator_roi'         // ROI calculator with sliders
+  | 'quiz_assessment'        // Interactive quiz/assessment
+  | 'configurator'           // Product configurator (build-your-own)
+  // CTA & Conversion
+  | 'cta_banner'             // Full-width CTA banner
+  | 'cta_floating'           // Floating sticky CTA button
+  | 'cta_exit_intent'        // Exit-intent popup
+  | 'cta_inline'             // Inline CTA between content sections
+  | 'newsletter_signup'      // Email signup form
+  | 'booking_widget'         // Calendar booking widget
+  // Footer & Navigation
+  | 'footer_comprehensive'   // Full footer with links, social, newsletter
+  | 'footer_minimal'         // Minimal footer with copyright + links
+  | 'navbar_sticky'          // Sticky navigation bar
+  | 'navbar_hamburger';      // Mobile hamburger menu
+
+export type ScrollAnimationType =
+  | 'fade_in'               // Fade in on scroll
+  | 'slide_up'              // Slide up from below
+  | 'slide_left'            // Slide in from left
+  | 'slide_right'           // Slide in from right
+  | 'zoom_in'               // Scale up from small
+  | 'parallax'              // Parallax depth effect
+  | 'reveal'                // Reveal with clip-path
+  | 'counter_up'            // Animated number counter
+  | 'stagger'               // Staggered children animation
+  | 'typewriter'            // Typewriter text effect
+  | 'morph'                 // Shape morphing
+  | 'rotate_in'             // Rotate in from angle
+  | 'flip'                  // 3D flip reveal
+  | 'bounce'                // Bounce in
+  | 'blur_in';              // Blur to sharp
+
+export interface WebsiteSection {
+  id: string;
+  type: WebsiteSectionType;
+  /** Section order (0-based) */
+  order: number;
+  /** Section heading (inline-editable) */
+  heading: InlineEditableField;
+  /** Section subheading (inline-editable) */
+  subheading: InlineEditableField;
+  /** Section body content (inline-editable) */
+  bodyContent: InlineEditableField;
+  /** Cards within this section */
+  cards: Array<{
+    id: string;
+    title: InlineEditableField;
+    description: InlineEditableField;
+    icon?: string;
+    imageUrl?: string;
+    ctaLabel?: string;
+    ctaUrl?: string;
+    /** Stats (for counter sections) */
+    stat?: { value: number; suffix: string; prefix?: string };
+  }>;
+  /** Background style */
+  background: 'white' | 'light_gray' | 'dark' | 'gradient' | 'image' | 'video' | 'pattern';
+  /** Scroll animation */
+  scrollAnimation?: {
+    type: ScrollAnimationType;
+    duration: number;
+    delay: number;
+    staggerChildren?: number;
+  };
+  /** Whether this section is above the fold */
+  aboveFold: boolean;
+  /** SEO metadata */
+  seo?: {
+    heading?: string;
+    description?: string;
+    keywords?: string[];
+  };
+}
+
+export interface WebsitePackageConfig {
+  /** Business info for enrichment */
+  businessName: string;
+  businessLocation?: string;
+  industry?: string;
+  /** Website type */
+  websiteType: 'landing_page' | 'product_page' | 'microsite' | 'portfolio' | 'saas' | 'ecommerce' | 'restaurant' | 'real_estate' | 'healthcare' | 'education';
+  /** Theme */
+  theme: {
+    primaryColor: string;
+    secondaryColor: string;
+    accentColor: string;
+    fontFamily: 'modern' | 'classic' | 'playful' | 'minimal' | 'premium';
+    borderRadius: 'none' | 'small' | 'medium' | 'large' | 'full';
+    darkMode: boolean;
+  };
+  /** Sections to include */
+  sections: WebsiteSection[];
+  /** Hero banner config */
+  heroBanner: {
+    type: 'video_loop' | 'animated_gradient' | 'parallax_image' | 'split_screen' | 'carousel';
+    headline: InlineEditableField;
+    subheadline: InlineEditableField;
+    ctaLabel: InlineEditableField;
+    ctaUrl: string;
+    mediaUrl?: string;
+    /** Overlay opacity (0-1) */
+    overlayOpacity: number;
+  };
+  /** Global scroll animations */
+  globalAnimations: {
+    enabled: boolean;
+    defaultType: ScrollAnimationType;
+    defaultDuration: number;
+    defaultDelay: number;
+    staggerChildren: number;
+    reducedMotionFallback: boolean;
+  };
+  /** Export config */
+  exportFormat: 'html_css_js' | 'react_components' | 'nextjs_pages' | 'wordpress_blocks' | 'webflow_json';
+  /** SEO */
+  seo: {
+    title: string;
+    description: string;
+    keywords: string[];
+    ogImage?: string;
+    canonicalUrl?: string;
+  };
+  /** Analytics */
+  analytics: {
+    googleAnalyticsId?: string;
+    facebookPixelId?: string;
+    heatmapEnabled: boolean;
+  };
+  /** Responsive breakpoints */
+  responsive: {
+    mobile: boolean;
+    tablet: boolean;
+    desktop: boolean;
+    widescreen: boolean;
+  };
+}
+
+/** Create a default website package config from business data */
+export function createWebsitePackageConfig(
+  businessName: string,
+  businessLocation?: string,
+  industry?: string,
+): WebsitePackageConfig {
+  return {
+    businessName,
+    businessLocation,
+    industry,
+    websiteType: 'landing_page',
+    theme: {
+      primaryColor: '#3B82F6',
+      secondaryColor: '#1E293B',
+      accentColor: '#F59E0B',
+      fontFamily: 'modern',
+      borderRadius: 'medium',
+      darkMode: false,
+    },
+    sections: [],
+    heroBanner: {
+      type: 'video_loop',
+      headline: createEditableField('hero_headline', 'Headline', businessName),
+      subheadline: createEditableField('hero_subheadline', 'Subheadline', `Welcome to ${businessName}`),
+      ctaLabel: createEditableField('hero_cta', 'CTA', 'Get Started'),
+      ctaUrl: '#contact',
+      overlayOpacity: 0.4,
+    },
+    globalAnimations: {
+      enabled: true,
+      defaultType: 'fade_in',
+      defaultDuration: 0.6,
+      defaultDelay: 0.1,
+      staggerChildren: 0.1,
+      reducedMotionFallback: true,
+    },
+    exportFormat: 'html_css_js',
+    seo: {
+      title: businessName,
+      description: `${businessName} - ${industry || 'Your Business'}`,
+      keywords: [businessName, industry || ''].filter(Boolean),
+    },
+    analytics: { heatmapEnabled: false },
+    responsive: { mobile: true, tablet: true, desktop: true, widescreen: true },
+  };
+}
+
+/** Generate default sections for a website type */
+export function getDefaultSectionsForType(websiteType: WebsitePackageConfig['websiteType']): WebsiteSectionType[] {
+  const WEBSITE_TYPE_SECTIONS: Record<string, WebsiteSectionType[]> = {
+    landing_page: [
+      'hero_video_loop', 'features_grid', 'how_it_works', 'testimonials_carousel',
+      'stats_counter', 'cta_banner', 'footer_comprehensive',
+    ],
+    product_page: [
+      'hero_split', 'features_tabs', 'video_embed', 'pricing_table',
+      'comparison_table', 'testimonials_grid', 'cta_inline', 'footer_comprehensive',
+    ],
+    microsite: [
+      'hero_carousel', 'features_bento', 'use_cases', 'case_study_preview',
+      'testimonials_video', 'infographic_section', 'booking_widget', 'footer_comprehensive',
+    ],
+    portfolio: [
+      'hero_parallax', 'features_grid', 'before_after', 'testimonials_carousel',
+      'blog_preview', 'cta_banner', 'footer_minimal',
+    ],
+    saas: [
+      'hero_video_loop', 'features_tabs', 'how_it_works', 'pricing_toggle',
+      'comparison_table', 'testimonials_grid', 'calculator_roi', 'cta_floating', 'footer_comprehensive',
+    ],
+    ecommerce: [
+      'hero_carousel', 'features_carousel', 'before_after', 'reviews_wall',
+      'stats_counter', 'newsletter_signup', 'cta_exit_intent', 'footer_comprehensive',
+    ],
+    restaurant: [
+      'hero_video_loop', 'features_bento', 'testimonials_carousel', 'booking_widget',
+      'logo_cloud', 'cta_floating', 'footer_comprehensive',
+    ],
+    real_estate: [
+      'hero_parallax', 'features_grid', 'before_after', 'interactive_demo',
+      'stats_counter', 'testimonials_video', 'booking_widget', 'footer_comprehensive',
+    ],
+    healthcare: [
+      'hero_split', 'features_accordion', 'how_it_works', 'testimonials_grid',
+      'stats_counter', 'quiz_assessment', 'booking_widget', 'footer_comprehensive',
+    ],
+    education: [
+      'hero_video_loop', 'features_tabs', 'customer_journey', 'testimonials_carousel',
+      'pricing_table', 'blog_preview', 'cta_banner', 'footer_comprehensive',
+    ],
+  };
+  return WEBSITE_TYPE_SECTIONS[websiteType] || WEBSITE_TYPE_SECTIONS.landing_page;
+}
+
+// ─── Extended Output Format Configs (Video Remix + Website) ──────────────────
+
+export const EXTENDED_FORMAT_CONFIGS: Record<string, OutputFormatConfig> = {
+  // Video Remix formats
+  video_remix: {
+    format: 'video_remix' as ContentFormat,
+    label: 'Video Remix',
+    description: 'Re-edit existing video: clip extraction, testimonial stitching, B-roll, new intros/outros',
+    icon: 'Scissors',
+    category: 'video',
+    aspectRatios: ['16:9', '9:16', '1:1', '4:5'],
+    durationRange: { min: 15, max: 600 },
+    primaryChainId: 'video_remix',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'creator',
+    creditMultiplier: 2,
+    canCombine: true,
+    crossFormatConversions: ['video_to_podcast', 'video_to_blog', 'video_to_shorts', 'video_to_audiogram'],
+  },
+  teaser_clip: {
+    format: 'teaser_clip' as ContentFormat,
+    label: 'Teaser / Trailer',
+    description: 'AI-generated teaser with dramatic pacing from best moments',
+    icon: 'Clapperboard',
+    category: 'video',
+    aspectRatios: ['16:9', '9:16'],
+    durationRange: { min: 15, max: 60 },
+    primaryChainId: 'video_remix',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'creator',
+    creditMultiplier: 1,
+    canCombine: true,
+    crossFormatConversions: [],
+  },
+  best_clips: {
+    format: 'best_clips' as ContentFormat,
+    label: 'Best Clips Compilation',
+    description: 'AI-extracted best/most-engaging moments stitched into highlight reel',
+    icon: 'Star',
+    category: 'video',
+    aspectRatios: ['16:9', '9:16', '1:1'],
+    durationRange: { min: 30, max: 180 },
+    primaryChainId: 'video_remix',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'creator',
+    creditMultiplier: 1.5,
+    canCombine: true,
+    crossFormatConversions: ['video_to_audiogram'],
+  },
+  platform_clips: {
+    format: 'platform_clips' as ContentFormat,
+    label: 'Platform-Specific Clips',
+    description: 'Auto-adapted clips for TikTok (9:16), Instagram Reels (9:16), YouTube Shorts (9:16), Facebook (4:5), LinkedIn (16:9)',
+    icon: 'ScreenShare',
+    category: 'social',
+    aspectRatios: ['9:16', '1:1', '4:5', '16:9'],
+    durationRange: { min: 15, max: 90 },
+    primaryChainId: 'video_remix',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'starter',
+    creditMultiplier: 1,
+    canCombine: true,
+    crossFormatConversions: [],
+  },
+  highlight_reel: {
+    format: 'highlight_reel' as ContentFormat,
+    label: 'Highlight Reel',
+    description: 'Compilation of highlights from multiple videos or events',
+    icon: 'Trophy',
+    category: 'video',
+    aspectRatios: ['16:9', '9:16'],
+    durationRange: { min: 60, max: 300 },
+    primaryChainId: 'video_remix',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'creator',
+    creditMultiplier: 2,
+    canCombine: true,
+    crossFormatConversions: ['video_to_podcast', 'video_to_blog'],
+  },
+  testimonial_video: {
+    format: 'testimonial_video' as ContentFormat,
+    label: 'Testimonial Compilation',
+    description: 'Stitched testimonial reel from reviews, interviews, and uploaded clips',
+    icon: 'MessageCircleHeart',
+    category: 'video',
+    aspectRatios: ['16:9', '9:16', '1:1'],
+    durationRange: { min: 30, max: 300 },
+    primaryChainId: 'testimonial_compilation',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'creator',
+    creditMultiplier: 1.5,
+    canCombine: true,
+    crossFormatConversions: ['video_to_audiogram'],
+  },
+
+  // Website Package formats
+  website_package: {
+    format: 'website_package' as ContentFormat,
+    label: 'Full Website Package',
+    description: 'Complete website: landing + hero + sections + cards + scroll animations + CTAs + export',
+    icon: 'Globe',
+    category: 'presentation',
+    aspectRatios: [],
+    durationRange: { min: 0, max: 0 },
+    primaryChainId: 'website_package',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'pro',
+    creditMultiplier: 5,
+    canCombine: true,
+    crossFormatConversions: [],
+  },
+  landing_page: {
+    format: 'landing_page' as ContentFormat,
+    label: 'Landing Page',
+    description: 'Single landing page with hero, features, testimonials, and CTA',
+    icon: 'LayoutTemplate',
+    category: 'presentation',
+    aspectRatios: [],
+    durationRange: { min: 0, max: 0 },
+    primaryChainId: 'landing_page_quick',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'starter',
+    creditMultiplier: 2,
+    canCombine: true,
+    crossFormatConversions: [],
+  },
+  hero_banner: {
+    format: 'hero_banner' as ContentFormat,
+    label: 'Hero Banner',
+    description: 'Standalone hero banner: video loop, animated gradient, or cinematic still',
+    icon: 'Image',
+    category: 'social',
+    aspectRatios: ['16:9', '21:9', '4:3'],
+    durationRange: { min: 5, max: 30 },
+    primaryChainId: 'hero_banner_only',
+    supportsTranscreation: false,
+    supportsMultiLanguage: true,
+    minTier: 'free',
+    creditMultiplier: 1,
+    canCombine: true,
+    crossFormatConversions: [],
+  },
+  product_page: {
+    format: 'product_page' as ContentFormat,
+    label: 'Product Page',
+    description: 'Product page with features, pricing, testimonials, and demo embed',
+    icon: 'ShoppingBag',
+    category: 'presentation',
+    aspectRatios: [],
+    durationRange: { min: 0, max: 0 },
+    primaryChainId: 'interactive_demo_package',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'pro',
+    creditMultiplier: 3,
+    canCombine: true,
+    crossFormatConversions: [],
+  },
+  infographic: {
+    format: 'infographic' as ContentFormat,
+    label: 'Infographic',
+    description: 'Data-driven infographic: charts, stats, timelines, icons — static or animated',
+    icon: 'PieChart',
+    category: 'presentation',
+    aspectRatios: ['9:16', '1:1', '16:9'],
+    durationRange: { min: 0, max: 0 },
+    primaryChainId: 'whitepaper_package',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'starter',
+    creditMultiplier: 1,
+    canCombine: true,
+    crossFormatConversions: ['infographic_to_video'],
+  },
+  whitepaper: {
+    format: 'whitepaper' as ContentFormat,
+    label: 'Whitepaper',
+    description: 'Long-form PDF whitepaper: cover, exec summary, chapters, data viz, citations',
+    icon: 'BookOpen',
+    category: 'text',
+    aspectRatios: [],
+    durationRange: { min: 0, max: 0 },
+    primaryChainId: 'whitepaper_package',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'pro',
+    creditMultiplier: 2,
+    canCombine: true,
+    crossFormatConversions: ['blog_to_video'],
+  },
+  case_study_page: {
+    format: 'case_study_page' as ContentFormat,
+    label: 'Case Study',
+    description: 'Customer case study page: challenge → solution → results with metrics',
+    icon: 'Target',
+    category: 'presentation',
+    aspectRatios: [],
+    durationRange: { min: 0, max: 0 },
+    primaryChainId: 'whitepaper_package',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'creator',
+    creditMultiplier: 1.5,
+    canCombine: true,
+    crossFormatConversions: ['blog_to_video'],
+  },
+  interactive_demo: {
+    format: 'interactive_demo' as ContentFormat,
+    label: 'Interactive Demo',
+    description: 'Clickable product demo: guided tour, tooltips, hotspots',
+    icon: 'MousePointerClick',
+    category: 'presentation',
+    aspectRatios: [],
+    durationRange: { min: 0, max: 0 },
+    primaryChainId: 'interactive_demo_package',
+    supportsTranscreation: false,
+    supportsMultiLanguage: true,
+    minTier: 'pro',
+    creditMultiplier: 3,
+    canCombine: true,
+    crossFormatConversions: [],
+  },
+  microsite: {
+    format: 'microsite' as ContentFormat,
+    label: 'Microsite (3-5 pages)',
+    description: 'Multi-page microsite with navigation, multiple sections, and full branding',
+    icon: 'Layers',
+    category: 'presentation',
+    aspectRatios: [],
+    durationRange: { min: 0, max: 0 },
+    primaryChainId: 'website_package',
+    supportsTranscreation: true,
+    supportsMultiLanguage: true,
+    minTier: 'business',
+    creditMultiplier: 8,
+    canCombine: false,
+    crossFormatConversions: [],
+  },
+};
