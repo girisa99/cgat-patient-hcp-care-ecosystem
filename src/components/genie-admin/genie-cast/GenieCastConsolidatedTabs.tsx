@@ -145,6 +145,9 @@ import { PortalDropdown } from './create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from './StyleCustomizationPanel';
 import { CreateSubWizard } from './CreateSubWizard';
 
+// Architecture B: Unified Create flow (Discovery + 8-step wizard)
+import { CreateDiscovery, CreateFlowWizard } from '@/components/create-flow';
+
 /**
  * Detect transcreation zone from dialect code.
  * Aligned with master-provider-routing-registry.ts:
@@ -187,7 +190,7 @@ import {
 // STAGE 1: 3-Tab Consolidated Structure (CREATE, PRODUCE, PUBLISH)
 // MANAGE and LANDING have been consolidated into PRODUCE and CREATE respectively
 export type ConsolidatedTab = 'create' | 'produce' | 'publish';
-export type CreateSubTab = 'intent' | 'configure' | 'templates' | 'assets';
+export type CreateSubTab = 'discover' | 'intent' | 'configure' | 'templates' | 'assets';
 export type ProduceSubTab = 'generate' | 'matrix' | 'studio' | 'review' | 'library' | 'analytics' | 'flow';
 export type PublishSubTab = 'scheduler' | 'distribution' | 'seo' | 'testing';
 
@@ -226,10 +229,11 @@ const TAB_DEFINITIONS = {
   create: {
     label: 'CREATE',
     icon: Sparkles,
-    description: 'Intent, Templates & Assets',
+    description: 'Discover, Configure & Build',
     activeColor: 'bg-orange-600 text-white border-orange-600',
     inactiveColor: 'border-orange-300 text-orange-700 hover:bg-orange-50',
     subTabs: [
+      { id: 'discover', label: 'Discover', icon: Globe, description: '9 categories, 42 pipelines — what do you want to create?' },
       { id: 'intent', label: 'Intent', icon: Sparkles, description: 'What are you creating?' },
       { id: 'configure', label: 'Style & Enrichment', icon: Palette, description: 'Visual style, enrichment & resolution' },
       { id: 'templates', label: 'Templates', icon: LayoutTemplate, description: 'Select a blueprint' },
@@ -300,11 +304,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
       if (stored) {
         const parsed = JSON.parse(stored);
         // If template already selected, go to templates; if intent set, go to configure; otherwise start at intent
-        const createSub = (parsed.selectedTemplate || parsed.approvedMessaging) ? 'templates' : parsed.selectedIntent ? 'configure' : 'intent';
+        const createSub = (parsed.selectedTemplate || parsed.approvedMessaging) ? 'templates' : parsed.selectedIntent ? 'configure' : 'discover';
         return { create: createSub, produce: 'generate', publish: 'scheduler' };
       }
     } catch {}
-    return { create: defaultSubTab || 'intent', produce: 'generate', publish: 'scheduler' };
+    return { create: defaultSubTab || 'discover', produce: 'generate', publish: 'scheduler' };
   });
 
   // Initialize unified authoring hook for cross-functional workflow
@@ -542,6 +546,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // Production Setup internal section state
   const [productionSection, setProductionSection] = useState<'styles' | 'assets' | 'regional'>('styles');
+
+  // Architecture B: Discovery flow state (Create → Discover sub-tab)
+  const [discoveryChainId, setDiscoveryChainId] = useState<string | null>(null);
 
   // Simple/Advanced mode for CREATE tab
   const createMode = useCreateMode();
@@ -948,6 +955,26 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             onSubTabChange={(sub) => setSubTab('create', sub)}
             direction={wizardMode ? (activeMainTabOverride ? 'ltr' : 'ltr') : 'ltr'}
           >
+          {/* ── DISCOVER SUB-TAB: Capability Discovery + Create Flow Wizard ── */}
+          {currentSubTab === 'discover' && (
+            <motion.div
+              key="discover"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              {discoveryChainId ? (
+                <CreateFlowWizard
+                  onBack={() => setDiscoveryChainId(null)}
+                  initialChainId={discoveryChainId}
+                />
+              ) : (
+                <CreateDiscovery
+                  onChainSelect={(chainId) => setDiscoveryChainId(chainId)}
+                />
+              )}
+            </motion.div>
+          )}
+
           {/* GUIDED WIZARD: Show only the current step based on session state */}
 
           {/* STEP 1: Dynamic Category + Format selector (DB-driven) */}

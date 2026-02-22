@@ -7,12 +7,15 @@
  *
  * Day 3 (C-304): Fixed wizard onGenerate integration, removed temp IDs,
  * connected save flow to use returned DB ids
+ *
+ * Day 6: Phase 5 — Glass-morphism tabs. Create flow moved to GenieCast (Architecture B).
+ * Spark stays focused: Guide (default) → Pipeline → Templates → Images.
  */
 
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QuadrantLayout, QuadrantProductHeader } from '@/components/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { GlassTabs, GlassTabsList, GlassTabsTrigger, GlassTabsContent } from '@/components/ui/glass-primitives';
 import { Sparkles, LayoutTemplate, Image, Wand2 } from 'lucide-react';
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
@@ -26,12 +29,13 @@ import { productionEpisodesService } from '@/services/production/productionEpiso
 const GenieSpark: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'pipeline');
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'guide');
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setSearchParams({ tab }, { replace: true });
   };
+
   const [hasGeneratedContent, setHasGeneratedContent] = useState(false);
   const [lastSavedScriptId, setLastSavedScriptId] = useState<string | null>(null);
   const { saveScript } = useGenieScripts();
@@ -139,28 +143,28 @@ const GenieSpark: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="bg-muted/50 border border-border/50">
-            <TabsTrigger value="guide" className="gap-2">
+        <GlassTabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <GlassTabsList>
+            <GlassTabsTrigger value="guide" className="gap-2">
               <Wand2 className="h-4 w-4" />
               Guide
-            </TabsTrigger>
-            <TabsTrigger value="pipeline" className="gap-2">
+            </GlassTabsTrigger>
+            <GlassTabsTrigger value="pipeline" className="gap-2">
               <Sparkles className="h-4 w-4" />
-              Content Pipeline
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="gap-2">
+              Pipeline
+            </GlassTabsTrigger>
+            <GlassTabsTrigger value="templates" className="gap-2">
               <LayoutTemplate className="h-4 w-4" />
-              Quick Templates
-            </TabsTrigger>
-            <TabsTrigger value="images" className="gap-2">
+              Templates
+            </GlassTabsTrigger>
+            <GlassTabsTrigger value="images" className="gap-2">
               <Image className="h-4 w-4" />
-              Image to Script
-            </TabsTrigger>
-          </TabsList>
+              Images
+            </GlassTabsTrigger>
+          </GlassTabsList>
 
             {/* Guided Wizard Tab */}
-            <TabsContent value="guide" className="mt-0">
+            <GlassTabsContent value="guide" className="mt-0">
               <SparkGuidedWizard
                 onContentTypeSelect={(type) => {
                   toast.success(`Content type: ${type}`);
@@ -170,7 +174,6 @@ const GenieSpark: React.FC = () => {
                 }}
                 onGenerate={async (prompt) => {
                   toast.info('Generating content...');
-                  // Save the prompt as a draft script in the DB
                   const saved = await saveScript({
                     name: `Spark Draft — ${prompt.slice(0, 40)}...`,
                     content: prompt,
@@ -198,38 +201,36 @@ const GenieSpark: React.FC = () => {
                 }}
                 hasGeneratedContent={hasGeneratedContent}
               />
-            </TabsContent>
+            </GlassTabsContent>
 
             {/* Content Pipeline Tab */}
-            <TabsContent value="pipeline" className="mt-0">
+            <GlassTabsContent value="pipeline" className="mt-0">
               <SmartContentPipeline
                 onSendToScriptEditor={handleSendToScriptEditor}
                 onSendToVibe={handleSendToVibe}
                 onSendToProductionHub={handleSendToProductionHub}
                 onSaveToKnowledgeBase={handleSaveToKnowledgeBase}
               />
-            </TabsContent>
+            </GlassTabsContent>
 
             {/* Quick Templates Tab */}
-            <TabsContent value="templates" className="mt-0">
+            <GlassTabsContent value="templates" className="mt-0">
               <QuickTemplateSelector
                 onSelect={(template) => {
                   toast.success(`Template "${template.name}" selected!`);
-                  // Navigate to pipeline with template pre-loaded
                   handleTabChange('pipeline');
                 }}
               />
-            </TabsContent>
+            </GlassTabsContent>
 
             {/* Image to Script Tab */}
-            <TabsContent value="images" className="mt-0">
+            <GlassTabsContent value="images" className="mt-0">
               <ImageScriptAssembler
                 onAssemblyComplete={(slides) => {
                   toast.success(`Assembly complete with ${slides.length} slides!`);
                 }}
                 onGenerateVideo={(slides) => {
                   toast.success(`Generating video from ${slides.length} slides!`);
-                  // Create script from slides — no temp ID
                   const scriptContent = slides.map(s => s.scriptText).join('\n\n');
                   saveScript({
                     name: 'Image-Based Script',
@@ -239,8 +240,8 @@ const GenieSpark: React.FC = () => {
                   });
                 }}
               />
-          </TabsContent>
-        </Tabs>
+          </GlassTabsContent>
+        </GlassTabs>
       </div>
       {/* AskGenie removed - now centralized in QuadrantLayout */}
     </QuadrantLayout>
