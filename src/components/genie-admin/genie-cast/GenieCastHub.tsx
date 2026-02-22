@@ -1,8 +1,9 @@
 /**
- * GENIE CAST HUB — Clean 2-Panel Layout
+ * GENIE CAST HUB — Full-Width Single-Panel Layout
  * 
- * Fixed: Removed 3-column nesting / iframe-in-iframe feel
- * Now: Slim sidebar + full workspace. Timeline/AI devs in slide-out drawer.
+ * No sidebar. Everything navigated via a clean top bar.
+ * Workflow modes (Create/Produce/Publish) + nav in one horizontal strip.
+ * AI Devs / Timeline accessible via a slide-out drawer.
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -16,11 +17,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, Video, Share2, Film, Plus,
-  Home, FolderOpen, Users, LayoutTemplate, Package,
-  Palette, BarChart3, Settings, ChevronRight,
-  Zap, Clock, PanelRightOpen, PanelRightClose, X,
-  Megaphone, Brain, Wand2, Play, FileText, Image
+  Sparkles, Video, Share2, Film, 
+  Users, Zap, X, PanelRight,
+  FolderOpen, LayoutTemplate, Package, Palette, BarChart3, Settings, Image
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -49,37 +48,38 @@ const MODES: { id: CastMode; label: string; icon: React.ElementType }[] = [
 
 type NavView = 'workspace' | 'projects' | 'templates' | 'assets' | 'brand-kit' | 'analytics' | 'settings';
 
-const NAV_ITEMS: { id: NavView; label: string; icon: React.ElementType }[] = [
-  { id: 'workspace', label: 'Workspace', icon: Home },
+const SECONDARY_NAV: { id: NavView; label: string; icon: React.ElementType }[] = [
   { id: 'projects', label: 'Projects', icon: FolderOpen },
   { id: 'templates', label: 'Templates', icon: LayoutTemplate },
   { id: 'assets', label: 'Assets', icon: Package },
   { id: 'brand-kit', label: 'Brand Kit', icon: Palette },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-// ── Slim Left Sidebar ────────────────────────────────────────────────────────
-const LeftSidebar: React.FC<{
+// ── Top Navigation Bar ───────────────────────────────────────────────────────
+const TopNav: React.FC<{
   activeMode: CastMode;
   onModeChange: (mode: CastMode) => void;
   activeView: NavView;
   onViewChange: (view: NavView) => void;
-  onTogglePanel: () => void;
-  panelOpen: boolean;
-}> = ({ activeMode, onModeChange, activeView, onViewChange, onTogglePanel, panelOpen }) => (
-  <div className="w-[200px] flex-shrink-0 flex flex-col bg-[hsl(230_25%_8%)] rounded-xl overflow-hidden">
-    {/* Brand */}
-    <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-        <Film className="w-3.5 h-3.5 text-white" />
+  onToggleDrawer: () => void;
+}> = ({ activeMode, onModeChange, activeView, onViewChange, onToggleDrawer }) => (
+  <div className="border-b border-border/15 bg-background/80 backdrop-blur-md">
+    <div className="flex items-center h-12 px-4 gap-4">
+      {/* Brand */}
+      <div className="flex items-center gap-2 mr-2">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+          <Film className="w-3.5 h-3.5 text-primary-foreground" />
+        </div>
+        <span className="text-sm font-bold text-foreground hidden sm:inline">Genie Cast</span>
       </div>
-      <span className="text-sm font-bold text-white">Genie Cast</span>
-    </div>
 
-    {/* Workflow Modes */}
-    <div className="px-3 py-2">
-      <p className="text-[9px] font-semibold text-white/30 uppercase tracking-wider mb-1.5 px-1">Workflow</p>
-      <div className="space-y-0.5">
+      {/* Divider */}
+      <div className="w-px h-5 bg-border/20" />
+
+      {/* Workflow Mode Switcher */}
+      <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/30 border border-border/10">
         {MODES.map(m => {
           const active = activeMode === m.id;
           const Icon = m.icon;
@@ -88,63 +88,63 @@ const LeftSidebar: React.FC<{
               key={m.id}
               onClick={() => { onModeChange(m.id); onViewChange('workspace'); }}
               className={cn(
-                'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all',
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                 active
-                  ? 'bg-primary/20 text-primary'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]',
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className={cn('w-3.5 h-3.5', active && 'text-primary')} />
               {m.label}
             </button>
           );
         })}
       </div>
-    </div>
 
-    <div className="h-px bg-white/[0.06] mx-3" />
+      {/* Divider */}
+      <div className="w-px h-5 bg-border/20" />
 
-    {/* Nav */}
-    <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-      {NAV_ITEMS.map((item) => {
-        const isActive = activeView === item.id;
-        const Icon = item.icon;
-        return (
+      {/* Secondary Nav — scrollable on smaller screens */}
+      <div className="flex-1 flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+        <button
+          onClick={() => onViewChange('workspace')}
+          className={cn(
+            'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap',
+            activeView === 'workspace'
+              ? 'text-primary bg-primary/5'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/20',
+          )}
+        >
+          Workspace
+        </button>
+        {SECONDARY_NAV.map(item => (
           <button
             key={item.id}
             onClick={() => onViewChange(item.id)}
             className={cn(
-              'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all',
-              isActive
-                ? 'bg-white/[0.08] text-white font-medium'
-                : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]',
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap',
+              activeView === item.id
+                ? 'text-primary bg-primary/5'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/20',
             )}
           >
-            <Icon className="w-4 h-4 flex-shrink-0" />
-            {item.label}
+            <item.icon className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">{item.label}</span>
           </button>
-        );
-      })}
-    </nav>
+        ))}
+      </div>
 
-    {/* AI Devs + Panel Toggle */}
-    <div className="px-3 pb-3 space-y-2">
-      <button
-        onClick={onTogglePanel}
-        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all"
+      {/* AI Devs toggle */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onToggleDrawer}
+        className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
       >
-        <Users className="w-4 h-4" />
-        <span className="flex-1 text-left">AI Devs</span>
-        <Badge className="h-4 px-1 text-[8px] bg-emerald-500/20 text-emerald-400 border-0">2</Badge>
-      </button>
-
-      <button
-        onClick={() => onViewChange('settings')}
-        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all"
-      >
-        <Settings className="w-4 h-4" />
-        Settings
-      </button>
+        <Users className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">AI Devs</span>
+        <Badge className="h-4 px-1 text-[8px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0">2</Badge>
+      </Button>
     </div>
   </div>
 );
@@ -165,7 +165,6 @@ const RightDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -173,7 +172,6 @@ const RightDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
             onClick={onClose}
             className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
           />
-          {/* Drawer */}
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
@@ -199,7 +197,7 @@ const RightDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
                         <div className={cn(
                           'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2',
                           step.status === 'done'
-                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500'
+                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400'
                             : step.status === 'active'
                               ? 'bg-primary/20 border-primary text-primary'
                               : 'bg-muted/20 border-border/30 text-muted-foreground',
@@ -216,7 +214,7 @@ const RightDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
                         <p className={cn('text-xs font-medium',
                           step.status === 'active' ? 'text-foreground' : 'text-muted-foreground',
                         )}>{step.label}</p>
-                        {step.status === 'done' && <Badge className="h-4 px-1.5 text-[9px] bg-emerald-500/15 text-emerald-500 border-0 mt-0.5">Done</Badge>}
+                        {step.status === 'done' && <Badge className="h-4 px-1.5 text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0 mt-0.5">Done</Badge>}
                         {step.status === 'active' && <span className="text-[10px] text-primary">In Progress</span>}
                       </div>
                     </div>
@@ -229,25 +227,24 @@ const RightDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">AI Developers</h4>
                 <div className="space-y-2">
                   {[
-                    { id: 'arc', name: 'Arc', role: 'Systems Architect', icon: Zap, color: 'indigo' },
-                    { id: 'ori', name: 'Ori', role: 'UI/UX & Creative', icon: Sparkles, color: 'cyan' },
+                    { id: 'arc', name: 'Arc', role: 'Systems Architect', icon: Zap, activeClass: 'bg-primary/10 border-primary/20', iconClass: 'text-primary' },
+                    { id: 'ori', name: 'Ori', role: 'UI/UX & Creative', icon: Sparkles, activeClass: 'bg-accent/10 border-accent/20', iconClass: 'text-accent' },
                   ].map((dev) => (
                     <div key={dev.id} className={cn(
                       'flex items-center gap-3 p-3 rounded-xl border transition-all',
                       agent === dev.id
-                        ? `bg-${dev.color}-500/10 border-${dev.color}-500/20`
+                        ? dev.activeClass
                         : 'bg-card/40 border-border/10 hover:bg-card/60',
                     )}>
                       <div className={cn(
-                        'w-9 h-9 rounded-full flex items-center justify-center border',
-                        `bg-${dev.color}-500/20 border-${dev.color}-500/20`,
+                        'w-9 h-9 rounded-full flex items-center justify-center border bg-muted/20 border-border/20',
                       )}>
-                        <dev.icon className={cn('w-4 h-4', `text-${dev.color}-400`)} />
+                        <dev.icon className={cn('w-4 h-4', dev.iconClass)} />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-bold text-foreground">{dev.name}</span>
-                          <Badge className="h-3.5 px-1 text-[8px] bg-emerald-500/20 text-emerald-400 border-0">Active</Badge>
+                          <Badge className="h-3.5 px-1 text-[8px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0">Active</Badge>
                         </div>
                         <p className="text-[10px] text-muted-foreground">{dev.role}</p>
                       </div>
@@ -278,7 +275,7 @@ const NAV_PLACEHOLDERS: Record<string, { title: string; description: string; ico
 
 const PlaceholderView: React.FC<{ title: string; description: string; icon: React.ElementType }> = ({ title, description, icon: Icon }) => (
   <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-8">
-    <div className="p-8 text-center max-w-md rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl">
+    <div className="p-8 text-center max-w-md rounded-2xl border border-border/15 bg-card/40">
       <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/15">
         <Icon className="w-7 h-7 text-primary" />
       </div>
@@ -288,38 +285,11 @@ const PlaceholderView: React.FC<{ title: string; description: string; icon: Reac
   </div>
 );
 
-// ── Mobile Mode Selector ────────────────────────────────────────────────────
-const MobileModeSelector: React.FC<{
-  activeMode: CastMode;
-  onModeChange: (mode: CastMode) => void;
-}> = ({ activeMode, onModeChange }) => (
-  <div className="flex items-center gap-1 p-1 rounded-xl bg-card/40 border border-border/15">
-    {MODES.map((m) => {
-      const isActive = activeMode === m.id;
-      const Icon = m.icon;
-      return (
-        <button
-          key={m.id}
-          onClick={() => onModeChange(m.id)}
-          className={cn(
-            'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all',
-            isActive ? 'text-foreground bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground/80',
-          )}
-        >
-          <Icon className={cn('w-4 h-4', isActive && 'text-primary')} />
-          {m.label}
-        </button>
-      );
-    })}
-  </div>
-);
-
 // ── Main Hub ─────────────────────────────────────────────────────────────────
 export const GenieCastHub: React.FC = () => {
   const isMounted = useRef(true);
   const isMobile = useIsMobile();
   const { mode, setMode, dispatch } = useGuideStore();
-  const { profile } = useMasterAuth();
 
   const [activeView, setActiveView] = useState<NavView>('workspace');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -388,7 +358,6 @@ export const GenieCastHub: React.FC = () => {
     if (newMode && newMode !== mode) handleModeChange(newMode);
   }, [mode, handleModeChange]);
 
-  // Render workspace or placeholder
   const renderMainContent = () => {
     if (activeView === 'workspace') {
       return (
@@ -411,12 +380,30 @@ export const GenieCastHub: React.FC = () => {
     return null;
   };
 
-  // ── Mobile ─────────────────────────────────────────────────────────────────
+  // ── Mobile: simple mode tabs + workspace ───────────────────────────────────
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full min-h-[calc(100vh-4rem)] gap-3 p-3">
-        <MobileModeSelector activeMode={mode} onModeChange={handleModeChange} />
-        <div className="flex-1 min-h-0">
+      <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]">
+        <div className="flex items-center gap-0.5 p-1.5 mx-3 mt-3 rounded-lg bg-muted/30 border border-border/10">
+          {MODES.map(m => {
+            const active = mode === m.id;
+            const Icon = m.icon;
+            return (
+              <button
+                key={m.id}
+                onClick={() => handleModeChange(m.id)}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-all',
+                  active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
+                )}
+              >
+                <Icon className={cn('w-3.5 h-3.5', active && 'text-primary')} />
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex-1 min-h-0 p-3">
           <GenieCastConsolidatedTabs
             selectedVideoStyles={selectedVideoStyles}
             onStylesChange={handleStylesChange}
@@ -434,24 +421,21 @@ export const GenieCastHub: React.FC = () => {
     );
   }
 
-  // ── Desktop: Sidebar + Full Workspace ──────────────────────────────────────
+  // ── Desktop: Top nav + full-width workspace ────────────────────────────────
   return (
-    <div className="flex h-full min-h-[calc(100vh-4rem)] gap-2 p-2">
-      <LeftSidebar
+    <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]">
+      <TopNav
         activeMode={mode}
         onModeChange={handleModeChange}
         activeView={activeView}
         onViewChange={setActiveView}
-        onTogglePanel={() => setDrawerOpen(prev => !prev)}
-        panelOpen={drawerOpen}
+        onToggleDrawer={() => setDrawerOpen(prev => !prev)}
       />
 
-      {/* Main workspace — takes full remaining width */}
-      <div className="flex-1 min-w-0 overflow-y-auto rounded-xl border border-border/10 bg-background/60 backdrop-blur-sm">
+      <div className="flex-1 overflow-y-auto">
         {renderMainContent()}
       </div>
 
-      {/* Right drawer — slides over, not inline */}
       <RightDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
