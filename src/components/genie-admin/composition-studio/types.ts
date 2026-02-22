@@ -128,6 +128,11 @@ export type ContentScenario =
   | 'gaming_stream'       // Gaming content — screen capture + face cam + overlay
   | 'real_estate_tour'    // Property walkthrough — video/3D + voiceover + map
   | 'recipe_demo'         // Cooking/DIY — overhead cam + steps + voiceover
+  | 'ppt_to_cinematic'    // PPT slides → 3D → cinematic video of slide content as a story
+  | 'market_analysis'     // Market research — data, stats, graphs, sources, study
+  | 'data_story'          // Data storytelling — statistics → journey → narrative video
+  | 'case_study_video'    // Case study — before/after, journey, metrics, testimonial
+  | 'infographic_video'   // Infographic → animated video (data viz in motion)
   | 'custom_scenario';    // User-defined
 
 /** How the visual was sourced — affects what enhancements are available */
@@ -301,7 +306,24 @@ export type SlideFramework =
   | 'three_horizons'    // Three Horizons of Growth
   | 'ge_matrix'         // GE-McKinsey Matrix
   | 'exec_summary'      // Executive Summary (insight → so what → now what)
-  | 'custom_framework'; // User-defined framework
+  | 'custom_framework' // User-defined framework
+  // Visualization & Infographic
+  | 'infographic'       // Full-page infographic layout (data + icons + text)
+  | 'data_dashboard'    // Multi-chart dashboard (KPIs, gauges, trends)
+  | 'comparison_table'  // Feature comparison matrix / checklist table
+  | 'org_chart'         // Organizational hierarchy chart
+  | 'mind_map'          // Radial mind map / concept map
+  | 'process_flow'      // Step-by-step process flow diagram
+  | 'venn_diagram'      // Venn / Euler diagram (overlap relationships)
+  | 'sankey_flow'       // Sankey diagram (flow quantities between stages)
+  | 'geographic_map'    // Map-based visualization (heatmap, pin map, choropleth)
+  | 'network_graph'     // Network / relationship graph (nodes + edges)
+  | 'treemap'           // Treemap (hierarchical proportional rectangles)
+  | 'radar_chart'       // Radar / spider chart (multi-axis comparison)
+  | 'bubble_chart'      // Bubble chart (3-dimensional scatter)
+  | 'gauge_meter'       // Gauge / meter visualization (progress, score)
+  | 'before_after'      // Before/After comparison (split view)
+  | 'stat_callout';     // Big number / statistic callout with context
 
 export interface SlideFrameworkConfig {
   framework: SlideFramework;
@@ -334,6 +356,23 @@ export const SLIDE_FRAMEWORKS: SlideFrameworkConfig[] = [
   { framework: 'kpi_dashboard', label: 'KPI Dashboard', description: 'Key metrics with gauges, charts, and trend arrows', slideCount: 2 },
   { framework: 'blue_ocean', label: 'Blue Ocean Strategy', description: 'Strategy canvas — eliminate, reduce, raise, create', slideCount: 3 },
   { framework: 'custom_framework', label: 'Custom Framework', description: 'Define your own slide structure', slideCount: 1 },
+  // Visualization & Infographic frameworks
+  { framework: 'infographic', label: 'Infographic', description: 'Full-page data infographic with icons, stats, and flow', slideCount: 2, dataPoints: ['title', 'sections', 'stats', 'icons'] },
+  { framework: 'data_dashboard', label: 'Data Dashboard', description: 'Multi-chart dashboard with KPIs, gauges, and trend lines', slideCount: 2, dataPoints: ['kpis', 'charts', 'trends'] },
+  { framework: 'comparison_table', label: 'Comparison Table', description: 'Feature matrix comparing options side-by-side', slideCount: 1, dataPoints: ['features', 'options', 'ratings'] },
+  { framework: 'org_chart', label: 'Org Chart', description: 'Organizational hierarchy with roles and reporting lines', slideCount: 1, dataPoints: ['nodes', 'relationships'] },
+  { framework: 'mind_map', label: 'Mind Map', description: 'Radial concept map with central idea and branches', slideCount: 1, dataPoints: ['center', 'branches', 'sub_branches'] },
+  { framework: 'process_flow', label: 'Process Flow', description: 'Step-by-step process with decision points and outcomes', slideCount: 2, dataPoints: ['steps', 'decisions', 'outcomes'] },
+  { framework: 'venn_diagram', label: 'Venn Diagram', description: 'Overlapping circles showing relationships and intersections', slideCount: 1, dataPoints: ['sets', 'intersections'] },
+  { framework: 'sankey_flow', label: 'Sankey Flow', description: 'Flow diagram showing quantities between stages (budget, conversion)', slideCount: 1, dataPoints: ['sources', 'targets', 'values'] },
+  { framework: 'geographic_map', label: 'Geographic Map', description: 'Map-based data viz — heatmap, pins, regional coloring', slideCount: 1, dataPoints: ['regions', 'values', 'markers'] },
+  { framework: 'network_graph', label: 'Network Graph', description: 'Node-and-edge relationship diagram (partnerships, integrations)', slideCount: 1, dataPoints: ['nodes', 'edges', 'weights'] },
+  { framework: 'treemap', label: 'Treemap', description: 'Hierarchical proportional rectangles (budget breakdown, market share)', slideCount: 1, dataPoints: ['categories', 'values'] },
+  { framework: 'radar_chart', label: 'Radar Chart', description: 'Multi-axis spider chart for capability comparison', slideCount: 1, dataPoints: ['axes', 'values', 'comparisons'] },
+  { framework: 'bubble_chart', label: 'Bubble Chart', description: '3D scatter with size as third dimension (market map)', slideCount: 1, dataPoints: ['x_axis', 'y_axis', 'size', 'labels'] },
+  { framework: 'gauge_meter', label: 'Gauge / Score Meter', description: 'Progress gauges, NPS scores, completion meters', slideCount: 1, dataPoints: ['metrics', 'targets', 'values'] },
+  { framework: 'before_after', label: 'Before / After', description: 'Split-view comparison of before and after states', slideCount: 1, dataPoints: ['before', 'after', 'metrics'] },
+  { framework: 'stat_callout', label: 'Statistic Callout', description: 'Big number hero stat with supporting context and source', slideCount: 1, dataPoints: ['stat', 'label', 'context', 'source'] },
 ];
 
 // ─── Character & Visual Rendering Styles ─────────────────────────────────────
@@ -432,6 +471,255 @@ export interface SceneRenderConfig {
   filmGrain?: number;
 }
 
+// ─── Data Sources, References & Citations ────────────────────────────────────
+
+/** Where a piece of data or claim came from — for transparency and verification */
+export interface DataSource {
+  id: string;
+  /** Source type */
+  type: 'url' | 'api' | 'google_places' | 'uploaded_file' | 'user_input' | 'ai_generated' | 'database' | 'research_paper';
+  /** Display label (e.g., "Statista 2025", "Google Places API") */
+  label: string;
+  /** Source URL (if applicable) */
+  url?: string;
+  /** Citation text for footnote/reference */
+  citation?: string;
+  /** When the data was fetched/generated */
+  fetchedAt?: string;
+  /** Whether the data has been verified by user */
+  verified: boolean;
+  /** Verification notes from user */
+  verificationNotes?: string;
+  /** Confidence in data accuracy (0-1) — lower for AI-generated */
+  dataConfidence?: number;
+  /** The specific data points this source provides */
+  dataPoints?: Array<{
+    key: string;
+    value: string | number;
+    unit?: string;
+  }>;
+}
+
+/** Reference/citation display configuration */
+export interface CitationConfig {
+  /** Show sources in footnotes, bibliography, or inline */
+  displayMode: 'footnote' | 'bibliography' | 'inline' | 'tooltip' | 'hidden';
+  /** Citation format */
+  format: 'apa' | 'mla' | 'chicago' | 'custom';
+  /** Whether to include "AI-generated" disclaimers */
+  showAIDisclaimer: boolean;
+  /** Custom disclaimer text */
+  aiDisclaimerText?: string;
+  /** Where to show the disclaimer */
+  disclaimerPosition?: 'slide_footer' | 'end_card' | 'voiceover_mention' | 'watermark';
+}
+
+// ─── Content Verification & Quality Assurance ────────────────────────────────
+
+/** Verification status for AI-generated content */
+export type VerificationStatus = 'unverified' | 'auto_checked' | 'human_verified' | 'flagged' | 'corrected';
+
+/** Content verification result for a scene or data point */
+export interface ContentVerification {
+  id: string;
+  /** What was checked */
+  target: 'script' | 'data' | 'claim' | 'statistic' | 'quote' | 'date' | 'name' | 'url';
+  /** The specific text/value being verified */
+  content: string;
+  /** Verification status */
+  status: VerificationStatus;
+  /** Confidence that the content is accurate (0-1) */
+  confidence: number;
+  /** Issues found (if any) */
+  issues?: Array<{
+    type: 'factual_error' | 'outdated' | 'unverifiable' | 'misleading' | 'hallucination' | 'source_mismatch';
+    description: string;
+    suggestedFix?: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+  }>;
+  /** Data source backing this claim (if any) */
+  sourceId?: string;
+  /** Timestamp of verification */
+  verifiedAt?: string;
+  /** Who verified (user, AI, or both) */
+  verifiedBy?: 'ai_auto' | 'human' | 'ai_human_reviewed';
+}
+
+// ─── Spell Check, Grammar & Clarity ──────────────────────────────────────────
+
+/** Language quality check result */
+export interface LanguageQualityCheck {
+  /** Overall readability score (0-100, Flesch-Kincaid style) */
+  readabilityScore: number;
+  /** Reading level (e.g., "Grade 8", "College") */
+  readingLevel: string;
+  /** Clarity score (0-100) — how easy the message is to understand */
+  clarityScore: number;
+  /** Tone analysis */
+  tone: 'formal' | 'conversational' | 'persuasive' | 'educational' | 'humorous' | 'urgent';
+  /** Spell check results */
+  spellCheck: {
+    errors: Array<{
+      word: string;
+      position: number;
+      suggestions: string[];
+      context: string;        // Surrounding text for context
+    }>;
+    autoFixApplied: boolean;  // Whether auto-fix was applied
+  };
+  /** Grammar check results */
+  grammarCheck: {
+    issues: Array<{
+      type: 'grammar' | 'punctuation' | 'style' | 'word_choice' | 'redundancy' | 'passive_voice' | 'jargon';
+      text: string;
+      position: number;
+      suggestion: string;
+      severity: 'info' | 'warning' | 'error';
+    }>;
+  };
+  /** Consistency checks across all scenes */
+  consistencyCheck?: {
+    /** Terminology: same term used consistently (not "product" in one scene, "solution" in another) */
+    terminologyIssues: Array<{
+      variants: string[];
+      suggestedTerm: string;
+      sceneIds: string[];
+    }>;
+    /** Tone consistency across scenes */
+    toneConsistent: boolean;
+    /** Brand voice alignment score (0-1) */
+    brandVoiceScore?: number;
+  };
+}
+
+/** Per-scene editing state */
+export interface SceneEditState {
+  /** Whether the scene is in edit mode */
+  isEditing: boolean;
+  /** Which field is being edited (script, title, visual prompt, etc.) */
+  editingField?: 'script' | 'title' | 'visual_prompt' | 'sfx_prompt' | 'music_prompt' | 'caption' | 'data';
+  /** Undo stack for this scene's edits */
+  undoStack?: string[];
+  /** Redo stack for this scene's edits */
+  redoStack?: string[];
+  /** Auto-save timer (ms since last save) */
+  lastAutoSave?: string;
+  /** Whether there are unsaved changes */
+  isDirty: boolean;
+  /** Inline suggestions while editing (AI assist) */
+  inlineSuggestions?: Array<{
+    position: number;
+    original: string;
+    suggestion: string;
+    type: 'rephrase' | 'grammar' | 'clarity' | 'tone' | 'shorten' | 'expand' | 'data_insert';
+    accepted?: boolean;
+  }>;
+}
+
+// ─── Cross-Format Conversion ─────────────────────────────────────────────────
+
+/** Convert between formats: slides→video, video→podcast, PPT→3D→cinematic, etc. */
+export type CrossFormatConversionType =
+  | 'slides_to_video'          // PPT/slides → narrated video
+  | 'slides_to_cinematic'      // Slides → cinematic storytelling video (3D, effects)
+  | 'slides_to_3d'             // Flat slides → 3D rendered slides with depth
+  | 'video_to_podcast'         // Extract audio, add intro/outro, format as podcast
+  | 'video_to_shorts'          // Long video → short clips (15s/30s/60s)
+  | 'video_to_slides'          // Extract key frames → slide deck
+  | 'podcast_to_video'         // Audio → video podcast (avatar, waveform, visuals)
+  | 'podcast_to_audiogram'     // Audio → animated audiogram for social
+  | 'infographic_to_video'     // Static infographic → animated data video
+  | 'data_to_infographic'      // Raw data → infographic slide
+  | 'data_to_story'            // Raw data → narrative video (data storytelling)
+  | 'blog_to_video'            // Blog post text → video
+  | 'blog_to_slides'           // Blog post text → slide deck
+  | 'custom_conversion';       // User-defined
+
+export interface CrossFormatConversion {
+  id: string;
+  type: CrossFormatConversionType;
+  /** Source scene IDs (input) */
+  sourceSceneIds: string[];
+  /** Target format for the output */
+  targetFormat: SceneOutputFormat;
+  /** Conversion-specific settings */
+  settings: {
+    /** For slides→cinematic: visual style to apply */
+    cinematicStyle?: SceneStyle;
+    /** For slides→3D: rendering mode */
+    renderAs3D?: boolean;
+    renderingMode?: RenderingMode;
+    /** For slides→video: narration style */
+    narrationStyle?: 'voiceover' | 'avatar_presenter' | 'text_only' | 'music_only';
+    /** For video→shorts: how to select clips */
+    clipSelection?: 'ai_best_moments' | 'equal_segments' | 'manual';
+    /** For data→story: narrative arc */
+    narrativeArc?: 'chronological' | 'problem_solution' | 'comparison' | 'journey';
+    /** Motion/animation intensity for conversions (0-1) */
+    animationIntensity?: number;
+    /** Whether to preserve original data sources/citations */
+    preserveSources?: boolean;
+  };
+  /** Status of the conversion */
+  status: 'pending' | 'converting' | 'complete' | 'error';
+  /** Output scene IDs (generated) */
+  outputSceneIds?: string[];
+}
+
+// ─── Data Visualization for Scenes ───────────────────────────────────────────
+
+/** Visualization chart type for data-driven scenes */
+export type ChartType =
+  | 'bar' | 'line' | 'area' | 'pie' | 'donut'
+  | 'scatter' | 'bubble' | 'radar' | 'treemap'
+  | 'sankey' | 'heatmap' | 'gauge' | 'funnel'
+  | 'waterfall' | 'candlestick' | 'histogram'
+  | 'geographic' | 'network' | 'timeline'
+  | 'org_chart' | 'mind_map' | 'venn'
+  | 'custom';
+
+/** Data visualization configuration for a scene */
+export interface SceneDataVisualization {
+  id: string;
+  /** Chart/graph type */
+  chartType: ChartType;
+  /** Title of the visualization */
+  title: string;
+  /** Data to visualize */
+  data: Array<Record<string, unknown>>;
+  /** Data source references */
+  dataSources: DataSource[];
+  /** Chart-specific config (axes, colors, labels, etc.) */
+  chartConfig?: {
+    xAxis?: string;
+    yAxis?: string;
+    colorBy?: string;
+    sortBy?: string;
+    showLegend?: boolean;
+    showGrid?: boolean;
+    animated?: boolean;          // Animate data appearing
+    animationStyle?: 'count_up' | 'grow' | 'reveal' | 'fade_in' | 'draw';
+    colorPalette?: string[];     // Custom colors
+    annotations?: Array<{       // Callout annotations on chart
+      value: string | number;
+      label: string;
+      position: 'above' | 'below' | 'left' | 'right';
+    }>;
+  };
+  /** Whether data should be fact-checked */
+  requiresVerification: boolean;
+  /** Market research / study metadata */
+  studyMetadata?: {
+    studyName?: string;
+    publisher?: string;
+    publishDate?: string;
+    sampleSize?: number;
+    methodology?: string;
+    geographicScope?: string;
+    confidence?: string;         // e.g., "95% CI"
+  };
+}
+
 /** Extended chapter with scene-level creative freedom */
 export interface CompositionScene extends CompositionChapter {
   // Scenario context — what kind of content this scene is part of
@@ -511,6 +799,29 @@ export interface CompositionScene extends CompositionChapter {
     previousState: Partial<CompositionScene>;
     description: string;
   }>;
+
+  // ─── Data, Sources & Verification (NEW) ────────────────────────────────────
+
+  /** Data sources and references for facts/stats in this scene */
+  dataSources?: DataSource[];
+
+  /** Citation configuration for this scene */
+  citationConfig?: CitationConfig;
+
+  /** Content verification results (AI fact-checking + human review) */
+  verifications?: ContentVerification[];
+
+  /** Language quality (spell check, grammar, clarity, readability) */
+  languageQuality?: LanguageQualityCheck;
+
+  /** Inline editing state */
+  editState?: SceneEditState;
+
+  /** Data visualizations (charts, graphs, infographics) embedded in this scene */
+  dataVisualizations?: SceneDataVisualization[];
+
+  /** Cross-format conversion (e.g., this slide scene → cinematic video scene) */
+  crossFormatConversions?: CrossFormatConversion[];
 }
 
 /** Multi-output project configuration */
@@ -558,7 +869,14 @@ export interface SceneRecommendation {
     // Framework, character & rendering recommendations
     | 'slide_framework' // Consulting framework for presentation slides
     | 'character_style' // Character art style (Pixar, anime, flat, realistic, etc.)
-    | 'rendering_mode'; // Rendering pipeline (photorealistic, cel-shaded, watercolor, etc.)
+    | 'rendering_mode'  // Rendering pipeline (photorealistic, cel-shaded, watercolor, etc.)
+    // Data, verification & quality recommendations
+    | 'visualization'   // Chart/graph type for data scenes
+    | 'data_source'     // Data source suggestion (URL, API, research)
+    | 'verification'    // Content verification flag (AI-generated content needs checking)
+    | 'spell_grammar'   // Spell check, grammar, or clarity improvement
+    | 'cross_format'    // Cross-format conversion (slides→video, video→podcast, etc.)
+    | 'citation';       // Citation / reference formatting
   sceneId?: string;
   title: string;
   description: string;
@@ -709,6 +1027,15 @@ export interface CompositionProject {
 
   // AI recommendations (suggest, never restrict)
   recommendations?: SceneRecommendation[];
+
+  // Project-level data & verification settings
+  citationConfig?: CitationConfig;
+  /** Auto-run spell check + grammar on all scripts */
+  autoSpellCheck?: boolean;
+  /** Auto-run content verification on AI-generated claims */
+  autoVerification?: boolean;
+  /** Cross-format conversions applied to this project */
+  crossFormatConversions?: CrossFormatConversion[];
 
   // Metadata
   createdAt: Date;

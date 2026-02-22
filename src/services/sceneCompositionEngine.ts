@@ -46,6 +46,15 @@ import type {
   ChapterVisual,
   ChapterVoiceover,
   ChapterBackgroundMusic,
+  DataSource,
+  ContentVerification,
+  CrossFormatConversion,
+  CrossFormatConversionType,
+  SceneDataVisualization,
+  ChartType,
+  LanguageQualityCheck,
+  CitationConfig,
+  SceneEditState,
 } from '@/components/genie-admin/composition-studio/types';
 
 // ─── Scene Operations ────────────────────────────────────────────────────────
@@ -803,3 +812,364 @@ export function buildStitchPlan(
     estimatedCredits: creditEstimate.total,
   };
 }
+
+// ─── Cross-Format Conversion ─────────────────────────────────────────────────
+
+/** Convert slide scenes to cinematic video scenes */
+export function convertSlidesToCinematic(
+  scenes: CompositionScene[],
+  options: {
+    cinematicStyle?: SceneStyle;
+    renderAs3D?: boolean;
+    keepOriginalSlides?: boolean;
+  } = {},
+): CompositionScene[] {
+  const slideScenes = scenes.filter(s => s.visual.type === 'slide');
+  if (slideScenes.length === 0) return scenes;
+
+  const newScenes: CompositionScene[] = [];
+
+  for (const scene of scenes) {
+    // Keep non-slide scenes as-is
+    if (scene.visual.type !== 'slide') {
+      newScenes.push(scene);
+      continue;
+    }
+
+    // Optionally keep original slide
+    if (options.keepOriginalSlides) {
+      newScenes.push(scene);
+    }
+
+    // Create cinematic version of the slide
+    const cinematicScene: CompositionScene = {
+      ...structuredClone(scene),
+      id: crypto.randomUUID(),
+      title: `${scene.title} (Cinematic)`,
+      visual: {
+        type: options.renderAs3D ? '3d' : 'cinematic',
+        prompt: `Cinematic storytelling version of: ${scene.title}. ${scene.voiceover.text.slice(0, 200)}`,
+      },
+      sceneStyle: options.cinematicStyle || 'cinematic',
+      motionPreset: 'tracking_shot',
+      renderConfig: {
+        renderingMode: options.renderAs3D ? 'stylized_3d' : 'photorealistic',
+        lighting: 'dramatic',
+        colorGrade: 'cinematic_teal_orange',
+        depthOfField: 'shallow',
+        filmGrain: 0.1,
+      },
+      status: 'draft',
+      previewUrls: {},
+      crossFormatConversions: [{
+        id: crypto.randomUUID(),
+        type: 'slides_to_cinematic',
+        sourceSceneIds: [scene.id],
+        targetFormat: 'video_16_9',
+        settings: {
+          cinematicStyle: options.cinematicStyle || 'cinematic',
+          renderAs3D: options.renderAs3D || false,
+          animationIntensity: 0.7,
+          preserveSources: true,
+        },
+        status: 'pending',
+      }],
+    };
+
+    newScenes.push(cinematicScene);
+  }
+
+  return reindexScenes(newScenes);
+}
+
+/** Convert data/infographic scenes to animated video scenes */
+export function convertInfographicToVideo(
+  scenes: CompositionScene[],
+): CompositionScene[] {
+  const newScenes: CompositionScene[] = [];
+
+  for (const scene of scenes) {
+    newScenes.push(scene);
+
+    // If scene has data visualizations, create an animated video version
+    if (scene.dataVisualizations && scene.dataVisualizations.length > 0) {
+      const animatedScene: CompositionScene = {
+        ...structuredClone(scene),
+        id: crypto.randomUUID(),
+        title: `${scene.title} (Animated)`,
+        visual: {
+          type: 'animation',
+          prompt: `Animated data visualization: ${scene.dataVisualizations.map(d => d.title).join(', ')}`,
+        },
+        sceneStyle: 'minimalist',
+        motionPreset: 'kinetic_text',
+        status: 'draft',
+        previewUrls: {},
+      };
+      newScenes.push(animatedScene);
+    }
+  }
+
+  return reindexScenes(newScenes);
+}
+
+// ─── Data Source Management ──────────────────────────────────────────────────
+
+/** Add a data source to a scene */
+export function addDataSource(
+  scenes: CompositionScene[],
+  sceneId: string,
+  source: DataSource,
+): CompositionScene[] {
+  return scenes.map(s => {
+    if (s.id !== sceneId) return s;
+    return {
+      ...s,
+      dataSources: [...(s.dataSources || []), source],
+    };
+  });
+}
+
+/** Remove a data source from a scene */
+export function removeDataSource(
+  scenes: CompositionScene[],
+  sceneId: string,
+  sourceId: string,
+): CompositionScene[] {
+  return scenes.map(s => {
+    if (s.id !== sceneId) return s;
+    return {
+      ...s,
+      dataSources: (s.dataSources || []).filter(d => d.id !== sourceId),
+    };
+  });
+}
+
+/** Mark a data source as verified */
+export function verifyDataSource(
+  scenes: CompositionScene[],
+  sceneId: string,
+  sourceId: string,
+  notes?: string,
+): CompositionScene[] {
+  return scenes.map(s => {
+    if (s.id !== sceneId) return s;
+    return {
+      ...s,
+      dataSources: (s.dataSources || []).map(d =>
+        d.id === sourceId
+          ? { ...d, verified: true, verificationNotes: notes, dataConfidence: 1.0 }
+          : d
+      ),
+    };
+  });
+}
+
+// ─── Content Verification ───────────────────────────────────────────────────
+
+/** Add a verification result to a scene */
+export function addVerification(
+  scenes: CompositionScene[],
+  sceneId: string,
+  verification: ContentVerification,
+): CompositionScene[] {
+  return scenes.map(s => {
+    if (s.id !== sceneId) return s;
+    return {
+      ...s,
+      verifications: [...(s.verifications || []), verification],
+    };
+  });
+}
+
+/** Flag a scene's content as needing human review */
+export function flagForReview(
+  scenes: CompositionScene[],
+  sceneId: string,
+  reason: string,
+): CompositionScene[] {
+  return scenes.map(s => {
+    if (s.id !== sceneId) return s;
+    return {
+      ...s,
+      verifications: [
+        ...(s.verifications || []),
+        {
+          id: crypto.randomUUID(),
+          target: 'script' as const,
+          content: s.voiceover.text,
+          status: 'flagged' as const,
+          confidence: 0,
+          issues: [{
+            type: 'unverifiable' as const,
+            description: reason,
+            severity: 'medium' as const,
+          }],
+          verifiedAt: new Date().toISOString(),
+          verifiedBy: 'ai_auto' as const,
+        },
+      ],
+    };
+  });
+}
+
+/** Get all unverified scenes */
+export function getUnverifiedScenes(scenes: CompositionScene[]): CompositionScene[] {
+  return scenes.filter(s => {
+    // Has data but no verification
+    const hasUnverifiedData = s.dataSources?.some(d => !d.verified);
+    const hasUnverifiedClaims = s.verifications?.some(v => v.status === 'unverified' || v.status === 'flagged');
+    const hasAIContent = s.dataSources?.some(d => d.type === 'ai_generated');
+    return hasUnverifiedData || hasUnverifiedClaims || (hasAIContent && !s.verifications?.length);
+  });
+}
+
+// ─── Data Visualization Management ──────────────────────────────────────────
+
+/** Add a data visualization to a scene */
+export function addDataVisualization(
+  scenes: CompositionScene[],
+  sceneId: string,
+  visualization: SceneDataVisualization,
+): CompositionScene[] {
+  return scenes.map(s => {
+    if (s.id !== sceneId) return s;
+    return {
+      ...s,
+      dataVisualizations: [...(s.dataVisualizations || []), visualization],
+    };
+  });
+}
+
+/** Remove a data visualization from a scene */
+export function removeDataVisualization(
+  scenes: CompositionScene[],
+  sceneId: string,
+  vizId: string,
+): CompositionScene[] {
+  return scenes.map(s => {
+    if (s.id !== sceneId) return s;
+    return {
+      ...s,
+      dataVisualizations: (s.dataVisualizations || []).filter(v => v.id !== vizId),
+    };
+  });
+}
+
+// ─── Scene Edit State Management ─────────────────────────────────────────────
+
+/** Start editing a scene field */
+export function startEditing(
+  scenes: CompositionScene[],
+  sceneId: string,
+  field: SceneEditState['editingField'],
+): CompositionScene[] {
+  return scenes.map(s => {
+    if (s.id !== sceneId) return s;
+    return {
+      ...s,
+      editState: {
+        isEditing: true,
+        editingField: field,
+        isDirty: false,
+        undoStack: [s.voiceover.text],
+        redoStack: [],
+      },
+    };
+  });
+}
+
+/** Stop editing a scene */
+export function stopEditing(
+  scenes: CompositionScene[],
+  sceneId: string,
+): CompositionScene[] {
+  return scenes.map(s => {
+    if (s.id !== sceneId) return s;
+    return {
+      ...s,
+      editState: {
+        isEditing: false,
+        isDirty: false,
+        lastAutoSave: new Date().toISOString(),
+      },
+    };
+  });
+}
+
+// ─── Additional Scene Templates (Data & Cross-Format) ────────────────────────
+
+Object.assign(SCENE_TEMPLATES, {
+  infographic: {
+    title: 'Infographic',
+    duration: 20,
+    visual: { type: 'animation' as const, prompt: 'Animated infographic with data, icons, and statistics' },
+    voiceover: { type: 'tts' as const, text: '', language: 'en' },
+    sceneStyle: 'minimalist' as const,
+    motionPreset: 'kinetic_text' as const,
+    slideFramework: 'infographic' as const,
+  },
+  customer_journey: {
+    title: 'Customer Journey',
+    duration: 25,
+    visual: { type: 'slide' as const },
+    voiceover: { type: 'tts' as const, text: '', language: 'en' },
+    sceneStyle: 'corporate' as const,
+    motionPreset: 'slow_pan' as const,
+    slideFramework: 'customer_journey' as const,
+  },
+  data_dashboard: {
+    title: 'Data Dashboard',
+    duration: 15,
+    visual: { type: 'slide' as const },
+    voiceover: { type: 'tts' as const, text: '', language: 'en' },
+    sceneStyle: 'minimalist' as const,
+    motionPreset: 'kinetic_text' as const,
+    slideFramework: 'data_dashboard' as const,
+  },
+  stat_callout: {
+    title: 'Big Statistic',
+    duration: 8,
+    visual: { type: 'animation' as const, prompt: 'Animated big number statistic with count-up effect' },
+    voiceover: { type: 'tts' as const, text: '', language: 'en' },
+    sceneStyle: 'minimalist' as const,
+    motionPreset: 'kinetic_text' as const,
+    slideFramework: 'stat_callout' as const,
+  },
+  comparison_chart: {
+    title: 'Comparison Chart',
+    duration: 15,
+    visual: { type: 'animation' as const, prompt: 'Animated comparison chart with side-by-side data' },
+    voiceover: { type: 'tts' as const, text: '', language: 'en' },
+    sceneStyle: 'minimalist' as const,
+    motionPreset: 'morph' as const,
+    slideFramework: 'comparison_table' as const,
+  },
+  geographic_map: {
+    title: 'Geographic Map',
+    duration: 15,
+    visual: { type: 'animation' as const, prompt: 'Animated map visualization with regional data' },
+    voiceover: { type: 'tts' as const, text: '', language: 'en' },
+    sceneStyle: 'minimalist' as const,
+    motionPreset: 'slow_zoom_out' as const,
+    slideFramework: 'geographic_map' as const,
+  },
+  before_after: {
+    title: 'Before / After',
+    duration: 15,
+    visual: { type: 'animation' as const, prompt: 'Split-screen before and after comparison with metrics' },
+    voiceover: { type: 'tts' as const, text: '', language: 'en' },
+    sceneStyle: 'minimalist' as const,
+    motionPreset: 'split_screen' as const,
+    slideFramework: 'before_after' as const,
+  },
+  process_flow: {
+    title: 'Process Flow',
+    duration: 20,
+    visual: { type: 'animation' as const, prompt: 'Step-by-step process flow diagram with sequential reveal' },
+    voiceover: { type: 'tts' as const, text: '', language: 'en' },
+    sceneStyle: 'minimalist' as const,
+    motionPreset: 'morph' as const,
+    slideFramework: 'process_flow' as const,
+  },
+});
