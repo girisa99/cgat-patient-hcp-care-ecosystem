@@ -358,27 +358,7 @@ export const GenieCastHub: React.FC = () => {
     if (newMode && newMode !== mode) handleModeChange(newMode);
   }, [mode, handleModeChange]);
 
-  const renderMainContent = () => {
-    if (activeView === 'workspace') {
-      return (
-        <GenieCastConsolidatedTabs
-          selectedVideoStyles={selectedVideoStyles}
-          onStylesChange={handleStylesChange}
-          screenshotGalleries={screenshotGalleries}
-          onGalleriesUpdated={handleGalleriesUpdated}
-          totalScreenshots={totalScreenshots}
-          onGenerate={handleGenerate}
-          isGenerating={isGenerating}
-          activeMainTabOverride={activeTab}
-          onMainTabChange={handleMainTabChange}
-          defaultTab="create"
-        />
-      );
-    }
-    const placeholder = NAV_PLACEHOLDERS[activeView];
-    if (placeholder) return <PlaceholderView {...placeholder} />;
-    return null;
-  };
+  const placeholderInfo = activeView !== 'workspace' ? NAV_PLACEHOLDERS[activeView] : null;
 
   // ── Mobile: simple mode tabs + workspace ───────────────────────────────────
   if (isMobile) {
@@ -433,7 +413,22 @@ export const GenieCastHub: React.FC = () => {
       />
 
       <div className="flex-1 overflow-y-auto">
-        {renderMainContent()}
+        {/* Always mounted to prevent flickering */}
+        <div className={activeView === 'workspace' ? '' : 'hidden'}>
+          <GenieCastConsolidatedTabs
+            selectedVideoStyles={selectedVideoStyles}
+            onStylesChange={handleStylesChange}
+            screenshotGalleries={screenshotGalleries}
+            onGalleriesUpdated={handleGalleriesUpdated}
+            totalScreenshots={totalScreenshots}
+            onGenerate={handleGenerate}
+            isGenerating={isGenerating}
+            activeMainTabOverride={activeTab}
+            onMainTabChange={handleMainTabChange}
+            defaultTab="create"
+          />
+        </div>
+        {placeholderInfo && <PlaceholderView {...placeholderInfo} />}
       </div>
 
       <RightDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
