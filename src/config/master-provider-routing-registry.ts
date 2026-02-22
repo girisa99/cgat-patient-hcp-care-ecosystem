@@ -620,8 +620,85 @@ export const TEMPLATE_MASTER_ROUTING = {
 } as const;
 
 // ============================================
+// REGION-SPECIFIC ROUTING (Video, Avatar, Translation, Image)
+// Fills gaps identified in routing audit — R-6, R-7, R-8, R-12
+// ============================================
+
+/**
+ * VIDEO_REGION_ROUTING — Zone-specific primary video provider.
+ * CJK prefers Alibaba WAN 2.6 (native content optimization).
+ * All other zones default to Vertex Veo 3.
+ */
+export const VIDEO_REGION_ROUTING: Record<RegionalZone, { primary: string; secondary: string; tertiary: string }> = {
+  claude_zone:   { primary: 'vertex_veo3',   secondary: 'sora2',          tertiary: 'alibaba_wan26' },
+  alibaba_zone:  { primary: 'alibaba_wan26', secondary: 'vertex_veo3',    tertiary: 'sora2' },
+  gemini_zone:   { primary: 'vertex_veo3',   secondary: 'alibaba_wan26',  tertiary: 'modelslab' },
+  fallback_zone: { primary: 'vertex_veo3',   secondary: 'modelslab',      tertiary: 'replicate' },
+};
+
+/**
+ * AVATAR_REGION_ROUTING — Zone-specific avatar + lip-sync method.
+ * MENA/RTL: Azure Viseme PRIMARY for lip-sync (7 Arabic dialects).
+ * CJK: Alibaba WAN 2.2 native (keigo, tones, cultural nuance).
+ */
+export const AVATAR_REGION_ROUTING: Record<RegionalZone, { primary: string; lipSync: string; secondary: string }> = {
+  claude_zone:   { primary: 'alibaba_wan22', lipSync: 'azure_viseme',    secondary: 'modelslab' },
+  alibaba_zone:  { primary: 'alibaba_wan22', lipSync: 'alibaba_wan22',   secondary: 'azure_viseme' },
+  gemini_zone:   { primary: 'alibaba_wan22', lipSync: 'azure_viseme',    secondary: 'modelslab' },
+  fallback_zone: { primary: 'alibaba_wan22', lipSync: 'azure_viseme',    secondary: 'modelslab' },
+};
+
+/**
+ * TRANSLATION_REGION_ROUTING — Zone-specific translation provider.
+ * EU → DeepL (best quality for European languages).
+ * CJK → Alibaba Qwen-MT (native CJK handling).
+ * MENA → Azure Translator (RTL + Arabic dialect support).
+ * India/SEA/Africa → Google Translate (widest coverage).
+ */
+export const TRANSLATION_REGION_ROUTING: Record<RegionalZone, { primary: string; secondary: string; tertiary: string }> = {
+  claude_zone:   { primary: 'deepl',              secondary: 'azure_translator',  tertiary: 'google_translate' },
+  alibaba_zone:  { primary: 'alibaba_qwen_mt',    secondary: 'azure_translator',  tertiary: 'google_translate' },
+  gemini_zone:   { primary: 'google_translate',    secondary: 'azure_translator',  tertiary: 'deepl' },
+  fallback_zone: { primary: 'google_translate',    secondary: 'azure_translator',  tertiary: 'aws_translate' },
+};
+
+/**
+ * IMAGE_REGION_ROUTING — Zone-specific image generation provider.
+ * CJK → Alibaba WanX (native style optimization).
+ * All others → Gemini 3 Pro (best general quality).
+ */
+export const IMAGE_REGION_ROUTING: Record<RegionalZone, { primary: string; secondary: string; tertiary: string }> = {
+  claude_zone:   { primary: 'gemini_3_pro',    secondary: 'vertex_imagen3', tertiary: 'modelslab_flux' },
+  alibaba_zone:  { primary: 'alibaba_wanx',    secondary: 'gemini_3_pro',   tertiary: 'vertex_imagen3' },
+  gemini_zone:   { primary: 'gemini_3_pro',    secondary: 'vertex_imagen3', tertiary: 'modelslab_flux' },
+  fallback_zone: { primary: 'gemini_3_pro',    secondary: 'modelslab_flux', tertiary: 'openai_dalle' },
+};
+
+Object.freeze(VIDEO_REGION_ROUTING);
+Object.freeze(AVATAR_REGION_ROUTING);
+Object.freeze(TRANSLATION_REGION_ROUTING);
+Object.freeze(IMAGE_REGION_ROUTING);
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
+
+export function getVideoRegionRouting(zone: RegionalZone) {
+  return VIDEO_REGION_ROUTING[zone];
+}
+
+export function getAvatarRegionRouting(zone: RegionalZone) {
+  return AVATAR_REGION_ROUTING[zone];
+}
+
+export function getTranslationRegionRouting(zone: RegionalZone) {
+  return TRANSLATION_REGION_ROUTING[zone];
+}
+
+export function getImageRegionRouting(zone: RegionalZone) {
+  return IMAGE_REGION_ROUTING[zone];
+}
+
 export function getTTSRouting(languageCode: string): TTSRoutingConfig {
   // Check specific language first
   if (TTS_LANGUAGE_ROUTING[languageCode]) {

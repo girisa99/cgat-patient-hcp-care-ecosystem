@@ -1,10 +1,11 @@
 /**
  * GENIE CAST HUB
  * Main wrapper for the consolidated 4-tab Genie Cast interface.
- * Glass morphism shell with region-aware ProviderPipelineBadge.
+ * Glass morphism shell with region-aware CastRegionSelector + ProviderPipelineBadge.
  *
  * Architecture:
  *   GenieCastHub (shell + provider context)
+ *     └─ CastRegionSelector (language/zone picker — drives ALL provider routing)
  *     └─ ProviderPipelineBadge (shows AI pipeline for selected region)
  *     └─ GenieCastConsolidatedTabs (4-tab UI)
  */
@@ -15,6 +16,7 @@ import type { VideoStyleType } from './VideoStyleCards';
 import type { ProductGallery } from '../MultiScreenshotGallery';
 import { toast } from 'sonner';
 import { GenieCastConsolidatedTabs } from './GenieCastConsolidatedTabs';
+import { CastRegionSelector } from './CastRegionSelector';
 import { useProviderRouting } from '@/hooks/useProviderRouting';
 import { ProviderPipelineBadge } from '@/components/ui/ProviderPipelineBadge';
 
@@ -125,8 +127,14 @@ export const GenieCastHub: React.FC = () => {
 
   return (
     <div className="space-y-3" dir={routing.isRTL ? 'rtl' : 'ltr'}>
-      {/* AI Pipeline Badge — shows resolved providers for current region */}
-      <ProviderPipelineBadge routing={routing} mode="compact" />
+      {/* Shell Header — Region selector + AI Pipeline Badge */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+        <CastRegionSelector
+          languageCode={languageCode}
+          onLanguageChange={setLanguageCode}
+        />
+        <ProviderPipelineBadge routing={routing} mode="compact" className="flex-1" />
+      </div>
 
       {/* Main 4-Tab Interface */}
       <GenieCastConsolidatedTabs

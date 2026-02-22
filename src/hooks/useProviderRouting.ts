@@ -24,6 +24,10 @@ import {
   get3DRouting,
   getAudioRouting,
   getZoneForLanguage,
+  getVideoRegionRouting,
+  getAvatarRegionRouting,
+  getTranslationRegionRouting,
+  getImageRegionRouting,
   TTS_MASTER_ROUTING,
   RTL_LANGUAGES,
   ARABIC_DIALECTS,
@@ -251,35 +255,36 @@ export function useProviderRouting(
       voiceClone: ttsRouting.voiceClone,
     };
 
-    // Video
-    const videoRouting = getVideoRouting('text_to_video');
+    // Video — zone-specific routing (R-6 fix)
+    const videoRegion = getVideoRegionRouting(zone);
     const video: ResolvedVideoProvider = {
-      provider: resolve('video', zone === 'alibaba_zone' ? 'alibaba_wan26' : videoRouting.primary),
-      fallbackChain: [videoRouting.primary, videoRouting.secondary, videoRouting.tertiary, videoRouting.fallback],
+      provider: resolve('video', videoRegion.primary),
+      fallbackChain: [videoRegion.primary, videoRegion.secondary, videoRegion.tertiary],
       videoType: 'text_to_video',
     };
 
-    // Avatar
-    const avatarRouting = getAvatarRouting('talking_head');
+    // Avatar — zone-specific with RTL lip-sync routing (R-7 fix)
+    const avatarRegion = getAvatarRegionRouting(zone);
     const avatar: ResolvedAvatarProvider = {
-      provider: resolve('avatar', avatarRouting.primary),
-      fallbackChain: [avatarRouting.primary, avatarRouting.secondary, avatarRouting.tertiary, avatarRouting.fallback],
+      provider: resolve('avatar', avatarRegion.primary),
+      fallbackChain: [avatarRegion.primary, avatarRegion.secondary],
       avatarType: 'talking_head',
-      lipSyncMethod: isRTL ? 'azure_viseme' : 'alibaba_wan22',
+      lipSyncMethod: avatarRegion.lipSync,
     };
 
-    // Image
-    const imageRouting = getImageRouting('text_to_image');
+    // Image — zone-specific routing (R-12 fix)
+    const imageRegion = getImageRegionRouting(zone);
     const image: ResolvedProvider = {
-      provider: resolve('image', zone === 'alibaba_zone' ? 'alibaba_wanx' : imageRouting.primary),
-      fallbackChain: [imageRouting.primary, imageRouting.secondary, imageRouting.tertiary, imageRouting.fallback],
+      provider: resolve('image', imageRegion.primary),
+      fallbackChain: [imageRegion.primary, imageRegion.secondary, imageRegion.tertiary],
     };
 
-    // Translation
-    const translationBase = getTranslationProvider(zone, languageCode);
+    // Translation — zone-specific routing (R-8 fix)
+    const translationRegion = getTranslationRegionRouting(zone);
     const translation: ResolvedTranslationProvider = {
-      ...translationBase,
-      provider: resolve('translation', translationBase.provider),
+      provider: resolve('translation', translationRegion.primary),
+      fallbackChain: [translationRegion.primary, translationRegion.secondary, translationRegion.tertiary],
+      isRTL,
     };
 
     // LLM
