@@ -39,6 +39,7 @@ import { Button } from '@/components/ui/button';
 
 // Lazy-loaded navigation view components
 const LazyContentLibraryGrid = lazy(() => import('./ContentLibraryGrid'));
+const LazyCastProjectsList = lazy(() => import('./CastProjectsList'));
 const LazyBlueprintTemplatesGrid = lazy(() =>
   import('./BlueprintTemplatesGrid').then(m => ({ default: m.BlueprintTemplatesGrid as React.ComponentType<Record<string, never>> }))
 );
@@ -111,7 +112,7 @@ const TopNav: React.FC<{
           return (
             <button
               key={m.id}
-              onClick={() => { onModeChange(m.id); onViewChange('workspace'); }}
+              onClick={() => { onModeChange(m.id); }}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                 active
@@ -322,7 +323,7 @@ const NavViewContent: React.FC<{ view: NavView; onBack: () => void }> = ({ view,
             </div>
           </div>
           <Suspense fallback={<NavViewFallback />}>
-            <LazyContentLibraryGrid />
+            <LazyCastProjectsList />
           </Suspense>
         </div>
       );
@@ -535,7 +536,7 @@ export const GenieCastHub: React.FC = () => {
     setMode(newMode);
     dispatch({ type: 'SWITCH_MODE', mode: newMode });
     setActiveView('workspace');
-    setShowDashboard(false); // Hide dashboard when entering a workflow mode
+    setShowDashboard(false); // Hide dashboard — go straight to Create/Produce/Publish workspace
   }, [setMode, dispatch]);
 
   const activeTab = MODE_TO_TAB[mode];
