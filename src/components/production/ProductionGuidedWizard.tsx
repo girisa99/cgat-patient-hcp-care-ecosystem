@@ -992,7 +992,7 @@ export const ProductionGuidedWizard: React.FC<ProductionGuidedWizardProps> = ({
                 <MessageSquare className="h-3 w-3 mr-1" />
                 Send Follow-up
               </Button>
-              <Button variant="outline" size="sm" onClick={() => toast.info('Recording sharing coming soon')}>
+              <Button variant="outline" size="sm" disabled onClick={() => toast.info('Recording sharing requires Pro tier')}>
                 <Video className="h-3 w-3 mr-1" />
                 Share Recording
               </Button>

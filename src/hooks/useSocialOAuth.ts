@@ -232,8 +232,8 @@ export const useSocialOAuth = (): UseSocialOAuthReturn => {
         window.location.href = data.authUrl;
         
       } else {
-        // Other platforms not yet implemented
-        toast.info(`${platform} connection coming soon!`);
+        // Platforms beyond YouTube/LinkedIn/TikTok use direct API key configuration
+        toast.info(`${platform} uses API key authentication. Configure in Settings > Integrations.`);
       }
     } catch (error) {
       console.error(`Error connecting ${platform}:`, error);

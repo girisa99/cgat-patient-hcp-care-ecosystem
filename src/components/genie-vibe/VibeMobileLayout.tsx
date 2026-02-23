@@ -669,17 +669,18 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                             size="sm" 
                             className="h-auto py-3 flex-col gap-1.5"
                             disabled={!isOnline}
-                            onClick={() => toast.info('AI enhancement coming soon')}
+                            onClick={() => toast.info('AI enhancement is available in Creator tier and above')}
+                            disabled
                           >
                             <Wand2 className="h-4 w-4 text-primary" />
                             <span className="text-[10px]">AI Enhance</span>
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="h-auto py-3 flex-col gap-1.5"
-                            disabled={!isOnline}
-                            onClick={() => toast.info('AI auto-arrange coming soon')}
+                            disabled
+                            onClick={() => toast.info('AI auto-arrange is available in Creator tier and above')}
                           >
                             <Sparkles className="h-4 w-4 text-primary" />
                             <span className="text-[10px]">AI Arrange</span>

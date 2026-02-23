@@ -358,9 +358,15 @@ async function translateWithAmazon(
   targetLanguage: string,
   formality?: 'formal' | 'informal' | 'neutral'
 ): Promise<TranslationResponse> {
-  // Amazon Translate requires AWS SDK which is complex in Deno
-  // Fallback to Gemini translation (NO LOVABLE AI)
-  console.log('[TranslationService] Amazon Translate not implemented, using Gemini translation');
+  // Amazon Translate requires AWS SDK (not available natively in Deno)
+  // Route to Microsoft Translator as equivalent enterprise-grade alternative
+  const microsoftKey = Deno.env.get("MICROSOFT_TRANSLATE_API_KEY");
+  if (microsoftKey) {
+    console.log('[TranslationService] Amazon Translate unavailable in Deno, routing to Microsoft Translator');
+    return translateWithMicrosoft(text, sourceLanguage, targetLanguage, formality);
+  }
+  // Final fallback to Gemini LLM translation
+  console.log('[TranslationService] Amazon Translate unavailable, falling back to Gemini translation');
   return translateWithGemini(text, sourceLanguage, targetLanguage, undefined, formality);
 }
 

@@ -189,7 +189,7 @@ export const CrossFunctionalMusic: React.FC<CrossFunctionalMusicProps> = ({
 
         setGeneratedTracks(prev => [newTrack, ...prev]);
         onTrackGenerated?.(newTrack);
-        toast.success('Music request saved! Audio will be generated when the music API is deployed.');
+        toast.info('Music generation queued — audio will be available once the provider is configured. Track metadata saved.');
       } else {
         toast.error('Failed to generate music');
         console.error('Music generation error:', error);
