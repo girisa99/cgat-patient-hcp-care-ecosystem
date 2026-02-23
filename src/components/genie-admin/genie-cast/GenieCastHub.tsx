@@ -21,7 +21,9 @@ import { useProviderRouting } from '@/hooks/useProviderRouting';
 import { ProviderPipelineBadge } from '@/components/ui/ProviderPipelineBadge';
 import { GuideDock } from '@/components/shared/GuideDock';
 import { useGuideStore, type CastMode } from '@/stores/guideStore';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useDeviceType } from '@/hooks/use-mobile';
+import { CastMobileLayout } from './CastMobileLayout';
+import { CastTabletLayout } from './CastTabletLayout';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useCastProduction } from '@/hooks/useCastProduction';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -423,6 +425,7 @@ const NavViewContent: React.FC<{ view: NavView; onBack: () => void }> = ({ view,
 export const GenieCastHub: React.FC = () => {
   const isMounted = useRef(true);
   const isMobile = useIsMobile();
+  const deviceType = useDeviceType();
   const { mode, setMode, dispatch } = useGuideStore();
 
   const [activeView, setActiveView] = useState<NavView>('workspace');
@@ -552,60 +555,76 @@ export const GenieCastHub: React.FC = () => {
 
   const isNavView = activeView !== 'workspace';
 
-  // ── Mobile: simple mode tabs + workspace ───────────────────────────────────
-  if (isMobile) {
-    return (
-      <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]" dir={routing.isRTL ? 'rtl' : 'ltr'}>
-        {/* Region selector + pipeline badge — compact on mobile */}
-        <div className="flex items-center gap-2 px-3 pt-3">
-          <CastRegionSelector
-            languageCode={languageCode}
-            onLanguageChange={setLanguageCode}
-            className="flex-1"
-          />
-        </div>
-        <div className="px-3 pt-1">
-          <ProviderPipelineBadge routing={routing} mode="compact" />
-        </div>
+  // Shared workspace content for mobile/tablet
+  const workspaceContent = (
+    <GenieCastConsolidatedTabs
+      selectedVideoStyles={selectedVideoStyles}
+      onStylesChange={handleStylesChange}
+      screenshotGalleries={screenshotGalleries}
+      onGalleriesUpdated={handleGalleriesUpdated}
+      totalScreenshots={totalScreenshots}
+      onGenerate={handleGenerate}
+      isGenerating={isGenerating}
+      wizardMode
+      activeMainTabOverride={activeTab}
+      onMainTabChange={handleMainTabChange}
+      defaultTab="create"
+    />
+  );
 
-        <div className="flex items-center gap-0.5 p-1.5 mx-3 mt-3 rounded-lg bg-muted/30 border border-border/10">
-          {MODES.map(m => {
-            const active = mode === m.id;
-            const Icon = m.icon;
-            return (
-              <button
-                key={m.id}
-                onClick={() => handleModeChange(m.id)}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-all',
-                  active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
-                )}
-              >
-                <Icon className={cn('w-3.5 h-3.5', active && 'text-primary')} />
-                {m.label}
-              </button>
-            );
-          })}
-        </div>
-        <div className="flex-1 min-h-0 p-3">
-          <GenieCastConsolidatedTabs
-            selectedVideoStyles={selectedVideoStyles}
-            onStylesChange={handleStylesChange}
-            screenshotGalleries={screenshotGalleries}
-            onGalleriesUpdated={handleGalleriesUpdated}
-            totalScreenshots={totalScreenshots}
-            onGenerate={handleGenerate}
-            isGenerating={isGenerating}
-            wizardMode
-            activeMainTabOverride={activeTab}
-            onMainTabChange={handleMainTabChange}
-            defaultTab="create"
-          />
-        </div>
+  const dashboardContent = (
+    <Suspense fallback={<NavViewFallback />}>
+      <LazyCastDashboard
+        onNavigate={handleViewChange}
+        onStartCreate={() => { setShowDashboard(false); handleModeChange('create'); }}
+      />
+    </Suspense>
+  );
+
+  // ── Mobile: App-like bottom nav + progressive disclosure ──────────────────
+  if (deviceType === 'mobile') {
+    return (
+      <div dir={routing.isRTL ? 'rtl' : 'ltr'}>
+        <CastMobileLayout
+          mode={mode}
+          onModeChange={handleModeChange}
+          showDashboard={showDashboard}
+          onShowDashboard={setShowDashboard}
+          onStartCreate={() => { setShowDashboard(false); handleModeChange('create'); }}
+          dashboardContent={dashboardContent}
+        >
+          {workspaceContent}
+        </CastMobileLayout>
       </div>
     );
   }
 
+  // ── Tablet: Split-view with sidebar nav ────────────────────────────────────
+  if (deviceType === 'tablet') {
+    return (
+      <div dir={routing.isRTL ? 'rtl' : 'ltr'}>
+        <CastTabletLayout
+          mode={mode}
+          onModeChange={handleModeChange}
+          showDashboard={showDashboard}
+          onShowDashboard={setShowDashboard}
+          onStartCreate={() => { setShowDashboard(false); handleModeChange('create'); }}
+          regionSelector={
+            <CastRegionSelector
+              languageCode={languageCode}
+              onLanguageChange={setLanguageCode}
+            />
+          }
+          pipelineBadge={
+            <ProviderPipelineBadge routing={routing} mode="compact" />
+          }
+          dashboardContent={dashboardContent}
+        >
+          {workspaceContent}
+        </CastTabletLayout>
+      </div>
+    );
+  }
   // ── Floating AI Dev indicators (always visible) ────────────────────────────
   const FloatingAIDevs: React.FC = () => {
     const { agent } = useGuideStore();
