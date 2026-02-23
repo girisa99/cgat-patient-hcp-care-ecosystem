@@ -27,3 +27,14 @@ export type { HeroInput, HeroResult, HeroStep, HeroStepUpdate, BrandInference } 
 
 export { multiRegionEngine } from './multiRegionEngine';
 export type { RegionalVariant, MultiRegionPlan, RegionCode } from './multiRegionEngine';
+
+export {
+  assembleEnrichmentContext,
+  calculateEnrichmentScore,
+  buildEnrichedPrompt,
+  generateSceneScripts,
+  buildProductionInput,
+  startCastProduction,
+  buildRequestFromSession,
+} from './castProductionBridge';
+export type { EnrichmentContext, CastProductionRequest } from './castProductionBridge';
