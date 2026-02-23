@@ -80,12 +80,14 @@ export interface RoutedAIRequest {
   enrich?: boolean;
 }
 
+export type RoutingTier = 'primary' | 'secondary' | 'tertiary' | 'last_resort' | 'override';
+
 export interface RoutedAIResponse {
-  data: any;
+  data: unknown;
   provider: string;
   model: string;
   zone: RegionalZone;
-  tier: 'primary' | 'secondary' | 'tertiary' | 'last_resort';
+  tier: RoutingTier;
   routingDecision: string;
   enriched: boolean;
   latencyMs: number;
@@ -153,6 +155,10 @@ const SUBREGION_TO_COUNTRY: Record<string, string> = {
   BD_DHAKA: 'BD', BD_CHITTAGONG: 'BD',
   EE_UKRAINE: 'UA', EE_BALKANS: 'RS', EE_CAUCASUS: 'GE',
   CARIBBEAN_EN: 'JM', CARIBBEAN_FR: 'HT',
+  CA_KZ: 'KZ', CA_UZ: 'UZ', CA_AZ: 'AZ',
+  SA_NEPAL: 'NP', SA_SRILANKA: 'LK', SA_BHUTAN: 'BT', SA_MALDIVES: 'MV',
+  EU_WEST: 'GB', EU_EAST: 'PL',
+  MENA_YEMEN: 'YE', MENA_MSA: 'SA',
 };
 
 Object.freeze(SUBREGION_TO_COUNTRY);
@@ -162,7 +168,7 @@ Object.freeze(SUBREGION_TO_COUNTRY);
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let enforcementLevel: EnforcementLevel = 'warn';
-const routingLog: Array<{ timestamp: number; action: AIAction; zone: RegionalZone; provider: string; tier: string; latencyMs: number }> = [];
+const routingLog: Array<{ timestamp: number; action: AIAction; zone: RegionalZone; provider: string; tier: RoutingTier; latencyMs: number }> = [];
 
 export function setEnforcementLevel(level: EnforcementLevel) {
   enforcementLevel = level;
@@ -199,7 +205,7 @@ export function resolveZone(request: Pick<RoutedAIRequest, 'regionCode' | 'count
 // ROUTING CHAIN BUILDER (from master registry)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function getRoutingChain(action: AIAction, zone: RegionalZone): Array<{ registryId: string; provider: string; model: string; tier: string }> {
+function getRoutingChain(action: AIAction, zone: RegionalZone): Array<{ registryId: string; provider: string; model: string; tier: RoutingTier }> {
   let routing: { primary: string; secondary: string; tertiary: string };
 
   switch (action) {
@@ -226,7 +232,7 @@ function getRoutingChain(action: AIAction, zone: RegionalZone): Array<{ registry
       break;
   }
 
-  const chain: Array<{ registryId: string; provider: string; model: string; tier: string }> = [];
+  const chain: Array<{ registryId: string; provider: string; model: string; tier: RoutingTier }> = [];
 
   for (const [tier, registryId] of [
     ['primary', routing.primary],
@@ -361,13 +367,14 @@ export async function routeAIRequest(request: RoutedAIRequest): Promise<RoutedAI
         provider,
         model,
         zone,
-        tier: tier as any,
+        tier,
         routingDecision: `Zone: ${zone} → ${tier}: ${provider}/${model}`,
         enriched: wasEnriched,
         latencyMs,
       };
-    } catch (err: any) {
-      console.warn(`[RoutingGateway] ${tier} '${provider}/${model}' failed for zone '${zone}': ${err.message}. Trying next...`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`[RoutingGateway] ${tier} '${provider}/${model}' failed for zone '${zone}': ${message}. Trying next...`);
       continue;
     }
   }
@@ -507,23 +514,13 @@ export function validateRoutingIntegrity(): { valid: boolean; issues: string[] }
   }
 
   // Verify Object.freeze is in effect
-  try {
-    (IMAGE_REGION_ROUTING as any)['test_zone'] = { primary: 'hack', secondary: 'hack', tertiary: 'hack' };
-    if ((IMAGE_REGION_ROUTING as any)['test_zone']) {
-      issues.push('IMAGE_REGION_ROUTING is NOT frozen — Object.freeze failed');
-    }
-  } catch {
-    // Good — it's frozen (strict mode throws on frozen object mutation)
+  if (!Object.isFrozen(IMAGE_REGION_ROUTING)) {
+    issues.push('IMAGE_REGION_ROUTING is NOT frozen — Object.freeze failed');
   }
 
   // Verify provider model map is frozen
-  try {
-    (PROVIDER_MODEL_MAP as any)['hack'] = { provider: 'hack', model: 'hack' };
-    if ((PROVIDER_MODEL_MAP as any)['hack']) {
-      issues.push('PROVIDER_MODEL_MAP is NOT frozen');
-    }
-  } catch {
-    // Good
+  if (!Object.isFrozen(PROVIDER_MODEL_MAP)) {
+    issues.push('PROVIDER_MODEL_MAP is NOT frozen');
   }
 
   return { valid: issues.length === 0, issues };
