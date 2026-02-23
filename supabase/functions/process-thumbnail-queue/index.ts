@@ -16,6 +16,50 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ============================================
+// CIRCUIT BREAKER — Prevents cascade failures when providers are down
+// ============================================
+// If a provider fails 3 times in a row, skip it for 5 minutes
+const providerFailures: Record<string, { count: number; lastFailure: number }> = {};
+const CIRCUIT_BREAKER_THRESHOLD = 3;
+const CIRCUIT_BREAKER_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+function isProviderCircuitOpen(provider: string): boolean {
+  const state = providerFailures[provider];
+  if (!state || state.count < CIRCUIT_BREAKER_THRESHOLD) return false;
+  // Check if cooldown has elapsed
+  if (Date.now() - state.lastFailure > CIRCUIT_BREAKER_COOLDOWN_MS) {
+    // Reset — allow retry
+    providerFailures[provider] = { count: 0, lastFailure: 0 };
+    return false;
+  }
+  return true; // Circuit is open — skip this provider
+}
+
+function recordProviderFailure(provider: string): void {
+  const state = providerFailures[provider] || { count: 0, lastFailure: 0 };
+  state.count++;
+  state.lastFailure = Date.now();
+  providerFailures[provider] = state;
+}
+
+function recordProviderSuccess(provider: string): void {
+  providerFailures[provider] = { count: 0, lastFailure: 0 };
+}
+
+// Per-provider timeout wrapper (30s max per provider attempt)
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeoutId: number;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs) as unknown as number;
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId!);
+  }
+}
+
 // Helper: Convert base64 to Uint8Array
 function base64ToUint8Array(base64: string): Uint8Array {
   const binaryString = atob(base64);
@@ -176,7 +220,7 @@ async function generateWithDeepSeek(prompt: string): Promise<{ url: string | nul
   }
 }
 
-// HuggingFace Image Generation
+// HuggingFace Image Generation (Pro subscription — FLUX.1-schnell via Router API)
 async function generateWithHuggingFace(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
   const HF_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN') || Deno.env.get('HUGGINGFACE_API_KEY');
   if (!HF_TOKEN) {
@@ -185,24 +229,31 @@ async function generateWithHuggingFace(prompt: string): Promise<{ url: string | 
   }
 
   try {
-    console.log('🔄 Trying HuggingFace FLUX...');
-    const response = await fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
+    // Use Router API (required for Pro subscription models like FLUX.1-schnell)
+    // Legacy api-inference.huggingface.co returns 404 for gated models
+    const model = 'black-forest-labs/FLUX.1-schnell';
+    console.log('🔄 Trying HuggingFace FLUX.1-schnell (Pro)...');
+    const response = await fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${HF_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ inputs: prompt }),
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: { num_inference_steps: 4, guidance_scale: 1.0 },
+      }),
     });
 
     if (!response.ok) {
-      console.log(`❌ HuggingFace error: ${response.status}`);
+      const errText = await response.text().catch(() => '');
+      console.log(`❌ HuggingFace error: ${response.status} - ${errText.substring(0, 100)}`);
       return { url: null, provider: 'huggingface', isBase64: false };
     }
 
     const arrayBuffer = await response.arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    console.log('✅ HuggingFace image generated');
+    console.log('✅ HuggingFace FLUX.1-schnell image generated');
     return { url: base64, provider: 'huggingface_flux', isBase64: true };
   } catch (error) {
     console.error('HuggingFace error:', error);
@@ -350,7 +401,7 @@ async function generateWithBanana(prompt: string): Promise<{ url: string | null;
   }
 }
 
-// Vertex AI Imagen 3 (PRIMARY - via Service Account)
+// Vertex AI Imagen 3 (PRIMARY - via Service Account JWT)
 async function generateWithVertexImagen(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
   const SERVICE_ACCOUNT = Deno.env.get('GOOGLE_VERTEX_SERVICE_ACCOUNT');
   if (!SERVICE_ACCOUNT) {
@@ -360,13 +411,74 @@ async function generateWithVertexImagen(prompt: string): Promise<{ url: string |
 
   try {
     console.log('🔄 Trying Vertex AI Imagen 3.0 (PRIMARY)...');
-    // Vertex AI requires JWT auth - will implement in production
-    // For now, fall through to Gemini API
+    const sa = JSON.parse(SERVICE_ACCOUNT);
+    const token = await getVertexAccessToken(sa);
+    const projectId = sa.project_id;
+    const model = 'imagen-3.0-generate-002';
+    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${model}:predict`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        instances: [{ prompt: `Professional 16:9 video thumbnail: ${prompt}` }],
+        parameters: { sampleCount: 1, aspectRatio: '16:9' },
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      console.log(`❌ Vertex Imagen error: ${response.status} - ${errText.substring(0, 100)}`);
+      return { url: null, provider: 'vertex', isBase64: false };
+    }
+
+    const data = await response.json();
+    const b64 = data.predictions?.[0]?.bytesBase64Encoded;
+    if (b64) {
+      console.log('✅ Vertex AI Imagen 3.0 image generated');
+      return { url: b64, provider: 'vertex_imagen3', isBase64: true };
+    }
     return { url: null, provider: 'vertex', isBase64: false };
   } catch (error) {
     console.error('Vertex error:', error);
     return { url: null, provider: 'vertex', isBase64: false };
   }
+}
+
+// JWT auth for Vertex AI service account
+async function getVertexAccessToken(sa: { client_email: string; private_key: string }): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const payload = btoa(JSON.stringify({
+    iss: sa.client_email,
+    scope: 'https://www.googleapis.com/auth/cloud-platform',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now, exp: now + 3600,
+  }));
+
+  const signInput = `${header}.${payload}`;
+  const keyData = sa.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '');
+  const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', binaryKey, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(signInput));
+  const sig64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${header}.${payload}.${sig64}`,
+  });
+
+  if (!tokenResp.ok) throw new Error(`Vertex auth failed: ${tokenResp.status}`);
+  return (await tokenResp.json()).access_token;
 }
 
 async function generateWithGemini(prompt: string): Promise<{ url: string | null; provider: string; isBase64: boolean }> {
@@ -493,8 +605,9 @@ async function generateWithAlibaba(prompt: string): Promise<{ url: string | null
 
   try {
     // PRIMARY: Try Wan 2.6 T2I (latest, best quality)
+    // wan2.6 requires the multimodal-generation endpoint + messages body format
     console.log('🔄 Trying Alibaba Wan 2.6 T2I (Singapore)...');
-    const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis', {
+    const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${ALIBABA_API_KEY}`,
@@ -503,7 +616,7 @@ async function generateWithAlibaba(prompt: string): Promise<{ url: string | null
       },
       body: JSON.stringify({
         model: 'wan2.6-t2i',
-        input: { prompt },
+        input: { messages: [{ role: 'user', content: [{ text: prompt }] }] },
         parameters: { size: '1280*720', n: 1 },
       }),
     });
@@ -657,39 +770,55 @@ Requirements: 16:9 aspect ratio, 1280x720, high quality, no text overlays, no wa
 
   const providers = REGIONAL_PRIORITY[region] || REGIONAL_PRIORITY.global;
   
+  const PROVIDER_TIMEOUT_MS = 30000; // 30s max per provider attempt
+
   for (const provider of providers) {
-    let result: { url: string | null; provider: string; isBase64: boolean } = { url: null, provider: '', isBase64: false };
-    
-    // Route to integrated AI providers with correct priority:
-    // Gemini 3 → Banana → Vertex Imagen → Alibaba → ModelsLab → DeepSeek → Replicate → HuggingFace → OpenAI (last)
-    switch (provider) {
-      case 'gemini':
-        // Tries Gemini 3 Pro → Imagen 3 → Gemini 2.0 Flash (fallback chain inside)
-        result = await generateWithGemini(prompt);
-        break;
-      case 'banana':
-        // Banana Nano via Lovable Gateway (Gemini 2.5 Flash Image)
-        result = await generateWithBanana(prompt);
-        break;
-      case 'alibaba':
-        result = await generateWithAlibaba(prompt);
-        break;
-      case 'modelslab':
-        result = await generateWithModelsLab(prompt);
-        break;
-      case 'replicate':
-        result = await generateWithReplicate(prompt);
-        break;
-      case 'huggingface':
-        result = await generateWithHuggingFace(prompt);
-        break;
-      case 'openai':
-        // OpenAI DALL-E is LAST RESORT (expensive)
-        result = await generateWithOpenAI(prompt);
-        break;
+    // Circuit breaker: skip providers that have failed repeatedly
+    if (isProviderCircuitOpen(provider)) {
+      console.log(`⚡ [CircuitBreaker] Skipping ${provider} — circuit open (${providerFailures[provider]?.count} recent failures)`);
+      continue;
     }
-    
+
+    let result: { url: string | null; provider: string; isBase64: boolean } = { url: null, provider: '', isBase64: false };
+
+    try {
+      // Route to integrated AI providers with timeout protection
+      // Priority: Gemini 3 → Banana → Alibaba → ModelsLab → Replicate → HuggingFace → OpenAI (last)
+      switch (provider) {
+        case 'gemini':
+          result = await withTimeout(generateWithGemini(prompt), PROVIDER_TIMEOUT_MS, 'Gemini');
+          break;
+        case 'banana':
+          result = await withTimeout(generateWithBanana(prompt), PROVIDER_TIMEOUT_MS, 'Banana');
+          break;
+        case 'alibaba':
+          // Alibaba polls for results — allow 90s
+          result = await withTimeout(generateWithAlibaba(prompt), 90000, 'Alibaba');
+          break;
+        case 'modelslab':
+          // ModelsLab polls — allow 90s
+          result = await withTimeout(generateWithModelsLab(prompt), 90000, 'ModelsLab');
+          break;
+        case 'replicate':
+          // Replicate polls — allow 60s
+          result = await withTimeout(generateWithReplicate(prompt), 60000, 'Replicate');
+          break;
+        case 'huggingface':
+          result = await withTimeout(generateWithHuggingFace(prompt), PROVIDER_TIMEOUT_MS, 'HuggingFace');
+          break;
+        case 'openai':
+          result = await withTimeout(generateWithOpenAI(prompt), PROVIDER_TIMEOUT_MS, 'OpenAI');
+          break;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`⏱️ ${provider} failed/timed out: ${msg}`);
+      recordProviderFailure(provider);
+      continue;
+    }
+
     if (result.url) {
+      recordProviderSuccess(provider);
       // CRITICAL: Upload to Supabase Storage to get permanent URL
       console.log(`🔄 Uploading ${result.provider} result to storage...`);
       const permanentUrl = await uploadToStorage(
@@ -698,11 +827,14 @@ Requirements: 16:9 aspect ratio, 1280x720, high quality, no text overlays, no wa
         blueprint.id,
         result.isBase64
       );
-      
+
       if (permanentUrl) {
         console.log(`✅ Permanent URL created: ${permanentUrl}`);
         return { url: permanentUrl, provider: result.provider };
       }
+    } else {
+      // Provider returned null — count as failure for circuit breaker
+      recordProviderFailure(provider);
     }
   }
   
