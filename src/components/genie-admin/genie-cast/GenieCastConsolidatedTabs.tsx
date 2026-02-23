@@ -57,6 +57,7 @@ import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { ZONE_PROVIDER_DISPLAY, getZoneFromRegion } from '@/config/regional-routing-registry';
 import { useGuideStore } from '@/stores/guideStore';
 import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, type CreateStep } from './create';
+import { CreateHeroBanner } from './create/CreateHeroBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1011,7 +1012,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               key="discover"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
             >
+              <CreateHeroBanner pageId="discover" />
               {discoveryChainId ? (
                 <CreateFlowWizard
                   onBack={() => setDiscoveryChainId(null)}
@@ -1034,7 +1037,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               key="content-selector"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
             >
+              <CreateHeroBanner pageId="intent" />
               <DynamicContentSelector
                 categories={contentRegistry.categories}
                 formats={contentRegistry.formats}
@@ -1146,6 +1151,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-5"
               >
+                <CreateHeroBanner pageId="configure" />
                 {/* Back to Content Selection */}
                 <Button
                   variant="ghost"
@@ -2051,6 +2057,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
+                <CreateHeroBanner pageId="templates" />
                 {/* Back to Configure */}
                 <Button
                   variant="ghost"
@@ -2171,6 +2178,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
+                <CreateHeroBanner pageId="assets" />
                 {/* Back to Templates */}
                 <Button
                   variant="ghost"
