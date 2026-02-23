@@ -48,12 +48,15 @@ import {
   Layers,
   Sparkles,
   Sun,
-  Moon
+  Moon,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ShowWithParticipants, ShowType, EventCategory } from '@/types/shows';
 import { UnifiedScheduleShowDialog, type ScheduleShowData } from './UnifiedScheduleShowDialog';
 import { useShows } from '@/hooks/useShows';
+import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { toast } from 'sonner';
 
 // Color legend configuration for different show types - grouped by category
@@ -139,7 +142,8 @@ export function ProductionCalendar({
   onAddToOutlook 
 }: ProductionCalendarProps) {
   const { createShow } = useShows();
-  
+  const { createCalendarEvent, isLoading: isCalendarSyncing } = useCalendarSync();
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [selectedShow, setSelectedShow] = useState<ShowWithParticipants | null>(null);
@@ -904,6 +908,32 @@ export function ProductionCalendar({
               >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 Add to Outlook
+              </Button>
+            </div>
+            {/* API Calendar Sync */}
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 border-blue-500/30 hover:bg-blue-500/10"
+                disabled={isCalendarSyncing}
+                onClick={async () => {
+                  try {
+                    await createCalendarEvent('google', '', {
+                      title: selectedShow.title,
+                      description: selectedShow.description || `${selectedShow.show_type} - ${selectedShow.current_stage}`,
+                      startTime: selectedShow.scheduled_date || new Date().toISOString(),
+                      endTime: new Date(new Date(selectedShow.scheduled_date || Date.now()).getTime() + (selectedShow.estimated_duration || 60) * 60000).toISOString(),
+                      showId: selectedShow.id,
+                      attendees: selectedShow.guest_info?.map((g: any) => g.email).filter(Boolean) || [],
+                    });
+                  } catch {
+                    // Error handled in hook
+                  }
+                }}
+              >
+                {isCalendarSyncing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                Sync via API
               </Button>
             </div>
           </div>
