@@ -1014,7 +1014,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              <CreateHeroBanner pageId="discover" />
+              {/* Hero banner removed — mascot context is in sidebar */}
               {discoveryChainId ? (
                 <CreateFlowWizard
                   onBack={() => setDiscoveryChainId(null)}
@@ -1039,7 +1039,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              <CreateHeroBanner pageId="intent" />
+              {/* Hero banner removed — mascot context is in sidebar */}
               <DynamicContentSelector
                 categories={contentRegistry.categories}
                 formats={contentRegistry.formats}
@@ -1151,7 +1151,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-5"
               >
-                <CreateHeroBanner pageId="configure" />
+                {/* Hero banner removed — mascot context is in sidebar */}
                 {/* Back to Content Selection */}
                 <Button
                   variant="ghost"
@@ -2057,7 +2057,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                <CreateHeroBanner pageId="templates" />
+                {/* Hero banner removed — mascot context is in sidebar */}
                 {/* Back to Configure */}
                 <Button
                   variant="ghost"
@@ -2178,7 +2178,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                <CreateHeroBanner pageId="assets" />
+                {/* Hero banner removed — mascot context is in sidebar */}
                 {/* Back to Templates */}
                 <Button
                   variant="ghost"
