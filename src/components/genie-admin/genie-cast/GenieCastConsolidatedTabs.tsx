@@ -1556,18 +1556,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       ) : null;
                     })()}
 
-                    {/* 5a-iii: Style Customization — AI preview, upload, character sizing, custom create */}
-                    {selectedVisualStyleIds.length > 0 && (
-                      <StyleCustomizationPanel
-                        selectedStyles={selectedVisualStyleIds
-                          .map(id => contentRegistry.visualStyles.find(s => s.id === id))
-                          .filter((s): s is NonNullable<typeof s> => !!s)}
-                        allStyles={contentRegistry.visualStyles}
-                        characterFramePercent={characterFramePercent}
-                        onCharacterFrameChange={setCharacterFramePercent}
-                        onStyleCreated={contentRegistry.refresh}
-                      />
-                    )}
+                    {/* 5a-iii: Style Customization — B-007: Always visible (no pre-select gate) */}
+                    <StyleCustomizationPanel
+                      selectedStyles={selectedVisualStyleIds
+                        .map(id => contentRegistry.visualStyles.find(s => s.id === id))
+                        .filter((s): s is NonNullable<typeof s> => !!s)}
+                      allStyles={contentRegistry.visualStyles}
+                      characterFramePercent={characterFramePercent}
+                      onCharacterFrameChange={setCharacterFramePercent}
+                      onStyleCreated={contentRegistry.refresh}
+                    />
 
                     {/* 5a-iv: Character selection — enlarged cards with thumbnails & descriptions */}
                     {selectedVisualStyleIds.length > 0 && (() => {

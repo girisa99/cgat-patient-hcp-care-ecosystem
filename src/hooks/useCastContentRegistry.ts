@@ -101,6 +101,14 @@ export interface OutputPreset {
   is_default: boolean;
   sort_order: number;
   is_active: boolean;
+  // B-011: Encoding config
+  codec: string;
+  fps: number;
+  bitrate: string;
+  audio_codec: string;
+  audio_bitrate: string;
+  max_file_size_mb: number;
+  encoding_profile: string;
 }
 
 export interface StyleCharacter {

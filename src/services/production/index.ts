@@ -38,3 +38,6 @@ export {
   buildRequestFromSession,
 } from './castProductionBridge';
 export type { EnrichmentContext, CastProductionRequest } from './castProductionBridge';
+
+export { generateStylePreview, generateBatchPreviews } from './imagePreviewService';
+export type { ImagePreviewRequest, ImagePreviewResult, ImageProvider } from './imagePreviewService';
