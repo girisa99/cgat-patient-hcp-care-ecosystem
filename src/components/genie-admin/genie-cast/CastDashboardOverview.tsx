@@ -37,8 +37,10 @@ import {
   getRegionVisualStyle,
   REGION_GROUP_DISPLAY,
   type DashboardSection,
+  type ThumbnailResult,
 } from '@/services/production/dashboardThumbnailService';
 import { REGIONAL_SUB_REGIONS } from '@/config/regionalSubRegions';
+import { GlassProductHeroBanner, AllProductsHeroGrid } from '@/components/genie-studio/GlassProductHeroBanner';
 
 type NavView = 'workspace' | 'projects' | 'templates' | 'assets' | 'brand-kit' | 'analytics' | 'settings';
 
@@ -104,7 +106,7 @@ const HeroBanner: React.FC<{
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      {/* Background — AI-generated or gradient fallback */}
+      {/* Background — AI-generated or gradient+SVG fallback */}
       <div className="absolute inset-0 z-0">
         {heroThumb?.imageUrl ? (
           <img
@@ -113,10 +115,17 @@ const HeroBanner: React.FC<{
             className="w-full h-full object-cover opacity-30 blur-sm scale-105"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/20 via-purple-600/15 to-pink-500/10" />
+          <div className={cn('w-full h-full bg-gradient-to-br', heroThumb?.gradient || 'from-primary/20 via-purple-600/15 to-pink-500/10')} />
         )}
-        {/* Glass overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/50 backdrop-blur-sm" />
+        {/* SVG pattern overlay */}
+        {heroThumb?.svgPattern && (
+          <div
+            className="absolute inset-0 opacity-60"
+            style={{ backgroundImage: heroThumb.svgPattern, backgroundRepeat: 'repeat' }}
+          />
+        )}
+        {/* Glass frost overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/65 to-background/45 backdrop-blur-xl" />
       </div>
 
       {/* Content */}
@@ -128,7 +137,7 @@ const HeroBanner: React.FC<{
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">Genie Cast Studio</h1>
-              <p className="text-xs text-muted-foreground">AI-powered video production with regional intelligence</p>
+              <p className="text-xs text-muted-foreground">AI-powered content production — Video, PPT, Scripts, Podcasts with regional intelligence</p>
             </div>
           </div>
 
@@ -161,7 +170,7 @@ const HeroBanner: React.FC<{
           className="gap-2 bg-gradient-to-r from-primary via-purple-600 to-pink-500 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0"
         >
           <Sparkles className="w-4 h-4" />
-          Create New Video
+          Create New Content
         </Button>
       </div>
     </div>
@@ -195,7 +204,7 @@ const WorkflowStepCard: React.FC<{
           'border border-white/[0.08]',
         )}
       >
-        {/* AI thumbnail background */}
+        {/* AI thumbnail or gradient+SVG background */}
         <div className="absolute inset-0 z-0">
           {thumb?.imageUrl ? (
             <img
@@ -204,7 +213,14 @@ const WorkflowStepCard: React.FC<{
               className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity scale-110"
             />
           ) : (
-            <div className={cn('w-full h-full bg-gradient-to-br opacity-30', gradientFrom, gradientTo)} />
+            <div className={cn('w-full h-full bg-gradient-to-br', thumb?.gradient || `${gradientFrom} ${gradientTo}`, !thumb?.gradient && 'opacity-30')} />
+          )}
+          {/* SVG pattern overlay */}
+          {thumb?.svgPattern && (
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{ backgroundImage: thumb.svgPattern, backgroundRepeat: 'repeat' }}
+            />
           )}
           {/* Glass frost overlay */}
           <div className="absolute inset-0 backdrop-blur-xl bg-background/60" />
@@ -405,7 +421,7 @@ const NavCard: React.FC<{
         'border border-white/[0.08]',
       )}
     >
-      {/* AI thumbnail background */}
+      {/* AI thumbnail or gradient+SVG background */}
       <div className="absolute inset-0 z-0">
         {thumb?.imageUrl ? (
           <img
@@ -413,7 +429,16 @@ const NavCard: React.FC<{
             alt={title}
             className="w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-opacity"
           />
+        ) : thumb?.gradient ? (
+          <div className={cn('w-full h-full bg-gradient-to-br', thumb.gradient)} />
         ) : null}
+        {/* SVG pattern overlay */}
+        {thumb?.svgPattern && (
+          <div
+            className="absolute inset-0 opacity-50"
+            style={{ backgroundImage: thumb.svgPattern, backgroundRepeat: 'repeat' }}
+          />
+        )}
         <div className="absolute inset-0 backdrop-blur-xl bg-card/60" />
       </div>
 
@@ -552,6 +577,21 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
         ttsProvider={regional.ttsProvider || 'Azure Neural'}
       />
 
+      {/* ── Genie Suite Product Heroes ─────────────────────────────────── */}
+      <div>
+        <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
+          <PanelTop className="w-3 h-3" /> Genie Suite Products
+        </h3>
+        <AllProductsHeroGrid
+          onProductClick={(product) => {
+            if (product === 'cast' || product === 'suite') onStartCreate();
+            else if (product === 'spark') onNavigate('projects');
+            else if (product === 'deck') onNavigate('templates');
+            else onNavigate('workspace');
+          }}
+        />
+      </div>
+
       {/* ── Region Zones Bar ────────────────────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between px-1 mb-2">
@@ -596,7 +636,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
             step={1}
             icon={<Wand2 className="w-5 h-5 text-purple-300" />}
             title="Create"
-            description="Write scripts, choose styles, select characters and set your creative direction with AI assistance"
+            description="Write scripts, choose output (Video, PPT, Podcast, Script), select styles and set your creative direction with AI"
             iconBg="bg-purple-500/15 border-purple-500/25"
             glowColor="purple"
             gradientFrom="from-purple-500/20"
@@ -609,7 +649,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
             step={2}
             icon={<Clapperboard className="w-5 h-5 text-blue-300" />}
             title="Produce"
-            description="Generate videos with AI, apply regional intelligence and multi-language dubbing support"
+            description="Generate videos, presentations, podcasts with AI. Apply regional intelligence and multi-language support"
             iconBg="bg-blue-500/15 border-blue-500/25"
             glowColor="blue"
             gradientFrom="from-blue-500/20"
@@ -622,7 +662,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
             step={3}
             icon={<Send className="w-5 h-5 text-emerald-300" />}
             title="Publish"
-            description="Distribute to platforms, track analytics and optimize engagement across all regions"
+            description="Distribute content to platforms, track analytics and optimize engagement across all regions"
             iconBg="bg-emerald-500/15 border-emerald-500/25"
             glowColor="green"
             gradientFrom="from-emerald-500/20"
