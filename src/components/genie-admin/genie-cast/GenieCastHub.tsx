@@ -604,6 +604,9 @@ export const GenieCastHub: React.FC = () => {
           onModeChange={handleModeChange}
           showDashboard={showDashboard}
           onShowDashboard={setShowDashboard}
+          videoStats={production.state}
+          totalProjects={0}
+          totalTemplates={0}
           onStartCreate={() => { setShowDashboard(false); handleModeChange('create'); }}
           dashboardContent={dashboardContent}
         >
