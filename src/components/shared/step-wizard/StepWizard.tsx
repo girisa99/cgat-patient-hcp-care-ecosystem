@@ -327,7 +327,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
         {/* Background image with overlay — lighter overlay to show image */}
         <div className="absolute inset-0 z-0">
           <img src={sidebarBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/50 to-background/65 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/35 to-background/50 backdrop-blur-[1px]" />
           {/* Animated ambient glow */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-cyan-500/10"

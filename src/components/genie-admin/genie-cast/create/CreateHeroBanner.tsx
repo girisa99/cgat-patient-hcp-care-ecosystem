@@ -172,13 +172,17 @@ export const CreateHeroBanner: React.FC<CreateHeroBannerProps> = ({
           </motion.p>
         </div>
 
-        {/* Mascot */}
-        <AnimatedMascot
-          character={config.character}
-          pose={config.pose}
-          message={isMobile ? undefined : config.message}
-          size={isMobile ? 'sm' : 'md'}
-        />
+        {/* Mascot message only (mascot visual is in sidebar progress) */}
+        {!isMobile && config.message && (
+          <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+            className="max-w-[280px] rounded-xl px-3 py-2 bg-background/70 backdrop-blur-md border border-border/30 shadow-lg"
+          >
+            <p className="text-xs text-foreground/80 leading-relaxed">{config.message}</p>
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );
