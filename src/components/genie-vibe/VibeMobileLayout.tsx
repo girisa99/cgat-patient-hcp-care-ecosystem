@@ -668,7 +668,6 @@ export const VibeMobileLayout: React.FC<VibeMobileLayoutProps> = ({
                             variant="outline" 
                             size="sm" 
                             className="h-auto py-3 flex-col gap-1.5"
-                            disabled={!isOnline}
                             onClick={() => toast.info('AI enhancement is available in Creator tier and above')}
                             disabled
                           >

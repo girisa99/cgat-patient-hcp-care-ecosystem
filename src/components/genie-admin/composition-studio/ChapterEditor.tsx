@@ -44,7 +44,7 @@ interface ChapterEditorProps {
   onToggleExpand?: () => void;
 }
 
-const VISUAL_TYPE_ICONS: Record<CompositionElementType, React.ReactNode> = {
+const VISUAL_TYPE_ICONS: Partial<Record<CompositionElementType, React.ReactNode>> = {
   video: <Video className="w-4 h-4" />,
   avatar: <User className="w-4 h-4" />,
   '3d': <Box className="w-4 h-4" />,
@@ -54,7 +54,7 @@ const VISUAL_TYPE_ICONS: Record<CompositionElementType, React.ReactNode> = {
   custom: <Upload className="w-4 h-4" />,
 };
 
-const VISUAL_TYPE_LABELS: Record<CompositionElementType, string> = {
+const VISUAL_TYPE_LABELS: Partial<Record<CompositionElementType, string>> = {
   video: 'AI Video',
   avatar: 'AI Avatar',
   '3d': '3D Model',
@@ -62,6 +62,11 @@ const VISUAL_TYPE_LABELS: Record<CompositionElementType, string> = {
   static: 'Static Image',
   screen_recording: 'Screen Recording',
   custom: 'Custom Upload',
+  cinematic: 'Cinematic',
+  vr_360: 'VR 360°',
+  ar_overlay: 'AR Overlay',
+  broll: 'B-Roll',
+  slide: 'Slide',
 };
 
 const AVATAR_STYLES: { value: AvatarStyle; label: string }[] = [

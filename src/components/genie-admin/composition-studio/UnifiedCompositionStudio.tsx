@@ -412,7 +412,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
         outputFormat: 'avatar_ppt',
         visualType: target === 'avatar_only' ? 'avatar' : 
                     target === 'animation_only' ? 'animation' : 
-                    (chapter.visual?.type === 'custom' ? 'video' : chapter.visual?.type) || 'video',
+                    ((chapter.visual?.type === 'custom' ? 'video' : chapter.visual?.type) || 'video') as any,
         duration: chapter.duration || 30,
         scriptContent: options.newScript || chapter.voiceover?.text || '',
         userTier: 'creator'
@@ -568,7 +568,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
         chapterIndex: chapters.findIndex(c => c.id === chapterId),
         language,
         outputFormat: 'avatar_ppt', // Default format
-        visualType: (chapter.visual?.type === 'custom' ? 'video' : chapter.visual?.type) || 'video',
+        visualType: ((chapter.visual?.type === 'custom' ? 'video' : chapter.visual?.type) || 'video') as any,
         duration: chapter.duration || 30,
         scriptContent: chapter.visual?.prompt || chapter.voiceover?.text || '',
         userTier: 'creator' // TODO: Get from user context

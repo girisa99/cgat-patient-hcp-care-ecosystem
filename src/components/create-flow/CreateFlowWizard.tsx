@@ -275,7 +275,7 @@ const EnrichmentStep: React.FC<FlowProps> = ({ flow }) => (
     </div>
 
     <div className="space-y-3">
-      {Object.entries(flow.enrichment.sections || {}).map(([section, fields]) => (
+      {Object.entries((flow.enrichment as any).sections || {}).map(([section, fields]) => (
         <GlassCard key={section}>
           <GlassCardContent className="p-3">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
@@ -352,13 +352,13 @@ const ScriptStep: React.FC<FlowProps> = ({ flow }) => (
           </div>
         ) : (
           flow.scriptLines.map((line, i) => (
-            <div key={line.id || i} className="glass-panel rounded-lg p-2.5 space-y-1">
+             <div key={(line as any).id || i} className="glass-panel rounded-lg p-2.5 space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                  {line.speaker || `Line ${i + 1}`}
+                  {(line as any).speaker || line.voice || `Line ${i + 1}`}
                 </span>
                 <span className="text-[10px] text-muted-foreground">
-                  {line.duration ? `${line.duration}s` : ''}
+                  {(line as any).duration ? `${(line as any).duration}s` : line.durationEst ? `${line.durationEst}s` : ''}
                 </span>
               </div>
               <Textarea
@@ -388,7 +388,7 @@ const LanguageStep: React.FC<FlowProps> = ({ flow }) => (
       <GlassCardContent className="p-3 space-y-2">
         <h4 className="text-xs font-semibold text-muted-foreground">Input Language</h4>
         <div className="glass-panel rounded-lg p-2.5 flex items-center gap-2">
-          <span className="text-sm font-medium">{flow.inputLanguage.nativeLabel || flow.inputLanguage.name}</span>
+          <span className="text-sm font-medium">{(flow.inputLanguage as any).nativeLabel || flow.inputLanguage.name}</span>
           <GlassBadge className="text-[10px]">{flow.inputLanguage.code}</GlassBadge>
         </div>
       </GlassCardContent>
@@ -414,10 +414,10 @@ const LanguageStep: React.FC<FlowProps> = ({ flow }) => (
           {flow.outputLanguages.map((lang) => (
             <div key={lang.code} className="glass-panel rounded-lg p-2.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm">{lang.nativeLabel || lang.name}</span>
+                <span className="text-sm">{(lang as any).nativeLabel || lang.name}</span>
                 <GlassBadge className="text-[10px]">{lang.code}</GlassBadge>
-                {lang.region && (
-                  <span className="text-[10px] text-muted-foreground">{lang.region}</span>
+                {(lang as any).region && (
+                  <span className="text-[10px] text-muted-foreground">{(lang as any).region}</span>
                 )}
               </div>
               <button
@@ -472,7 +472,7 @@ const FormatStep: React.FC<FlowProps> = ({ flow }) => (
                   >
                     <p className="text-xs font-medium">{fmt.label}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">
-                      {fmt.aspectRatio} &middot; {fmt.duration}s &middot; {fmt.quality}
+                      {fmt.aspectRatios?.[0] || '16:9'} &middot; {fmt.durationRange?.min || 0}s &middot; {fmt.minTier || 'free'}
                     </p>
                     {isSelected && (
                       <Check className="h-3 w-3 text-primary mt-1" />

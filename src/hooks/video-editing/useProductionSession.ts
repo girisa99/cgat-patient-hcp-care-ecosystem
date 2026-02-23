@@ -266,9 +266,8 @@ export function useProductionSession(timeline: VideoTimelineHook) {
         label: scene.title,
         generationParams: {
           prompt: scene.visualPrompt || scene.scriptText.slice(0, 200),
-          narration: scene.scriptText,
           format: scene.format,
-        },
+        } as any,
         locked: false,
       });
 
@@ -369,7 +368,7 @@ export function useProductionSession(timeline: VideoTimelineHook) {
           generationParams: {
             ...timeline.state.clips[scene.videoClipId]?.generationParams,
             narration: newText,
-          },
+          } as any,
         });
       }
       if (scene.subtitleClipId) {

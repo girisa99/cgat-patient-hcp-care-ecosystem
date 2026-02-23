@@ -548,7 +548,7 @@ export interface OutputFormatConfig {
   crossFormatConversions: CrossFormatConversionType[];
 }
 
-export const OUTPUT_FORMAT_CONFIGS: Record<ContentFormat, OutputFormatConfig> = {
+export const OUTPUT_FORMAT_CONFIGS: Partial<Record<ContentFormat, OutputFormatConfig>> = {
   short_video: {
     format: 'short_video',
     label: 'Short Video',

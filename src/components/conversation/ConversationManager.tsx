@@ -365,7 +365,7 @@ Let's begin with your basic information. Could you please provide your full name
         const blob = new Blob(chunks, { type: 'audio/webm' });
         const url = URL.createObjectURL(blob);
         // Send as a message with audio attachment info
-        handleSendMessage(`[Voice recording: ${Math.round(blob.size / 1024)}KB]`);
+        sendMessage();
         URL.revokeObjectURL(url);
         stream.getTracks().forEach(track => track.stop());
       };

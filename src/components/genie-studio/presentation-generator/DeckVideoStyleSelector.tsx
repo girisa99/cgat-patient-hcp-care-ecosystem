@@ -252,7 +252,7 @@ export function DeckVideoStyleSelector({
 
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <ScrollArea className="w-full" orientation="horizontal">
+          <ScrollArea className="w-full">
             <TabsList className="h-8 flex-nowrap">
               {tabs.map(tab => {
                 const Icon = tab.icon;

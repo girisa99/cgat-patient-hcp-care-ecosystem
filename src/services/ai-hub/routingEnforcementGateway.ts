@@ -210,7 +210,7 @@ function getRoutingChain(action: AIAction, zone: RegionalZone): Array<{ registry
       routing = getVideoRegionRouting(zone);
       break;
     case 'avatar_generation':
-      routing = getAvatarRegionRouting(zone);
+      routing = getAvatarRegionRouting(zone) as any;
       break;
     case 'translation':
       routing = getTranslationRegionRouting(zone);
@@ -301,7 +301,7 @@ export async function routeAIRequest(request: RoutedAIRequest): Promise<RoutedAI
       // Layer 2: Enrichment bridge (brand + competitive + regional narrative)
       const bridge = getEnrichmentBridge();
       const result = await bridge.enrichPrompt(enrichedPrompt, {
-        product: request.product,
+        product: request.product as any,
         includeCompetitive: false,
         includeRegional: true,
       });

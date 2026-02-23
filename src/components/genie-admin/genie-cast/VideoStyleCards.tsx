@@ -83,11 +83,11 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 // Category display info
-const CATEGORY_INFO: Record<VideoStyleCategory, { 
+const CATEGORY_INFO: Partial<Record<VideoStyleCategory, { 
   label: string; 
   icon: React.ElementType;
   description: string;
-}> = {
+}>> = {
   storytelling: { label: 'Storytelling', icon: BookOpen, description: 'Narrative-driven content' },
   avatar: { label: 'Avatar & Presenters', icon: User, description: 'AI presenters and characters' },
   animation: { label: 'Animation', icon: Wand2, description: 'Motion and visual effects' },
@@ -100,6 +100,13 @@ const CATEGORY_INFO: Record<VideoStyleCategory, {
   entertainment: { label: 'Entertainment', icon: Film, description: 'Creative & media' },
   news_media: { label: 'News & Media', icon: Newspaper, description: 'Journalism & reporting' },
   social_platform: { label: 'Social Platforms', icon: Share2, description: 'Platform-specific content' },
+  presentation: { label: 'Presentation', icon: Layers, description: 'Slides & decks' },
+  infographic: { label: 'Infographic', icon: TrendingUp, description: 'Data visualizations' },
+  data_visualization: { label: 'Data Viz', icon: Activity, description: 'Charts & analytics' },
+  hand_drawn: { label: 'Hand-Drawn', icon: PenTool, description: 'Sketch-style content' },
+  photorealistic: { label: 'Photorealistic', icon: Camera, description: 'Realistic imagery' },
+  character: { label: 'Character', icon: Users, description: 'Character-driven content' },
+  cyber_tech: { label: 'Cyber Tech', icon: Crown, description: 'Futuristic tech aesthetic' },
 };
 
 // Get categories that have styles
