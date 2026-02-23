@@ -159,11 +159,12 @@ import { StyleCustomizationPanel } from './StyleCustomizationPanel';
 import { CreateSubWizard } from './CreateSubWizard';
 
 // P1: Universal Video Editing + Distribution
-import { VideoTimelineEditor, ExportDistributionPanel } from './editing';
+import { VideoTimelineEditor, ExportDistributionPanel, SceneAwareTeleprompter } from './editing';
 import { useVideoTimeline } from '@/hooks/video-editing/useVideoTimeline';
 import { useClipOperations } from '@/hooks/video-editing/useClipOperations';
 import { usePlatformExport } from '@/hooks/video-editing/usePlatformExport';
 import { useAVSync } from '@/hooks/video-editing/useAVSync';
+import { useProductionSession } from '@/hooks/video-editing/useProductionSession';
 
 // Architecture B: Unified Create flow (Discovery + 8-step wizard)
 import { CreateDiscovery, CreateFlowWizard } from '@/components/create-flow';
@@ -363,6 +364,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // P2: A/V Sync engine (audio-video alignment, pre-render validation, teleprompter)
   const avSync = useAVSync(videoTimeline);
+
+  // P3: Unified Production Session — bridges script→TTS→video→timeline for all formats
+  const productionSession = useProductionSession(videoTimeline);
 
   const guideDispatch = useGuideStore((s) => s.dispatch);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -2784,6 +2788,33 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     console.log('[Studio] Reset production');
                   }}
                 />
+
+                {/* P3: Scene-Aware Teleprompter — narration + visual script editing */}
+                {productionSession.session.totalScenes > 0 && (
+                  <SceneAwareTeleprompter
+                    productionSession={productionSession}
+                    isPlaying={videoTimeline.state.isPlaying}
+                    onPlay={() => videoTimeline.play()}
+                    onPause={() => videoTimeline.pause()}
+                    onSeekToScene={(sceneIndex) => {
+                      const scenes = productionSession.session.scenes;
+                      let targetMs = 0;
+                      for (let i = 0; i < sceneIndex && i < scenes.length; i++) {
+                        targetMs += scenes[i].actualAudioDurationMs || scenes[i].scriptedDurationMs;
+                      }
+                      videoTimeline.seek(targetMs);
+                    }}
+                    onRegenerateTTS={(sceneId) => {
+                      toast.info(`Regenerating TTS for scene: ${sceneId}`);
+                    }}
+                    onRegenerateVideo={(sceneId) => {
+                      toast.info(`Regenerating video for scene: ${sceneId}`);
+                    }}
+                    onRecordScene={(sceneId) => {
+                      toast.info(`Recording mode for scene: ${sceneId}`);
+                    }}
+                  />
+                )}
 
                 {/* P2: A/V Sync Status + Pre-Render Validation */}
                 {videoTimeline.stats.totalClips > 0 && (
