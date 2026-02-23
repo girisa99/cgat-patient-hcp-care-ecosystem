@@ -226,12 +226,15 @@ const QuickActions: React.FC<{
     let raf: number;
     const speed = 0.5; // px per frame
 
+    // Start scrolled to the middle (duplicate set) so we can scroll backward
+    el.scrollLeft = el.scrollWidth / 2;
+
     const step = () => {
       if (!paused && el) {
-        el.scrollLeft += speed;
-        // Loop: when we've scrolled past half (the duplicated set), reset
-        if (el.scrollLeft >= el.scrollWidth / 2) {
-          el.scrollLeft = 0;
+        el.scrollLeft -= speed; // Scroll right-to-left (content moves left-to-right visually)
+        // Loop: when we've scrolled back to 0, jump to the middle again
+        if (el.scrollLeft <= 0) {
+          el.scrollLeft = el.scrollWidth / 2;
         }
       }
       raf = requestAnimationFrame(step);
