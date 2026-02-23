@@ -11,7 +11,6 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AnimatedMascot, type MascotCharacter, type MascotPose } from './AnimatedMascot';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Hero images
@@ -25,8 +24,6 @@ export type CreatePageId = 'discover' | 'intent' | 'configure' | 'templates' | '
 
 interface HeroConfig {
   image: string;
-  character: MascotCharacter;
-  pose: MascotPose;
   message: string;
   title: string;
   subtitle: string;
@@ -36,8 +33,6 @@ interface HeroConfig {
 const HERO_CONFIG: Record<CreatePageId, HeroConfig> = {
   discover: {
     image: discoverHero,
-    character: 'ori',
-    pose: 'waving',
     message: "Hey! What shall we create today? Pick a category to explore! 🎯",
     title: 'Discover',
     subtitle: 'Explore categories, pipelines & AI capabilities',
@@ -45,8 +40,6 @@ const HERO_CONFIG: Record<CreatePageId, HeroConfig> = {
   },
   intent: {
     image: intentHero,
-    character: 'arc',
-    pose: 'pointing',
     message: "Choose your content format — I'll set up the perfect AI pipeline! ⚡",
     title: 'Content Intent',
     subtitle: 'Pick your format: Video, Banner, Social or Landing',
@@ -54,8 +47,6 @@ const HERO_CONFIG: Record<CreatePageId, HeroConfig> = {
   },
   configure: {
     image: configureHero,
-    character: 'ori',
-    pose: 'thinking',
     message: "Let's fine-tune your settings — platform, languages, visual style... 🎨",
     title: 'Style & Configure',
     subtitle: 'Platform, languages, visual style & AI enrichment',
@@ -63,8 +54,6 @@ const HERO_CONFIG: Record<CreatePageId, HeroConfig> = {
   },
   templates: {
     image: templatesHero,
-    character: 'arc',
-    pose: 'celebrating',
     message: "Great picks! Now select a blueprint that matches your vision 🎬",
     title: 'Templates',
     subtitle: 'Choose a blueprint with pre-configured scenes & AI routing',
@@ -72,8 +61,6 @@ const HERO_CONFIG: Record<CreatePageId, HeroConfig> = {
   },
   assets: {
     image: assetsHero,
-    character: 'ori',
-    pose: 'waving',
     message: "Almost ready! Add your brand assets and we're off to production! 🚀",
     title: 'Assets & Brand',
     subtitle: 'Upload brand assets, hero banners & regional config',
