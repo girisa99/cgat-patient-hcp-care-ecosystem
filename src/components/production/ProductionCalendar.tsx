@@ -923,9 +923,9 @@ export function ProductionCalendar({
                       title: selectedShow.title,
                       description: selectedShow.description || `${selectedShow.show_type} - ${selectedShow.current_stage}`,
                       startTime: selectedShow.scheduled_date || new Date().toISOString(),
-                      endTime: new Date(new Date(selectedShow.scheduled_date || Date.now()).getTime() + (selectedShow.estimated_duration || 60) * 60000).toISOString(),
+                      endTime: new Date(new Date(selectedShow.scheduled_date || Date.now()).getTime() + ((selectedShow as any).estimated_duration || 60) * 60000).toISOString(),
                       showId: selectedShow.id,
-                      attendees: selectedShow.guest_info?.map((g: any) => g.email).filter(Boolean) || [],
+                      attendees: ((selectedShow as any).guest_info as any[])?.map((g: any) => g.email).filter(Boolean) || [],
                     });
                   } catch {
                     // Error handled in hook

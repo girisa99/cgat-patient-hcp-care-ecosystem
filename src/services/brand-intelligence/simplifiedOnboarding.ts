@@ -424,7 +424,7 @@ export function enhanceProfileWithGooglePlaces(
     const reviewTexts = enrichment.topReviews.map(r => r.text).join(' ');
     enhancedProfile.marketing = {
       ...enhancedProfile.marketing,
-      valueProposition: enhancedProfile.marketing.valueProposition || enrichment.editorialSummary || '',
+      valueProposition: (enhancedProfile.marketing.valueProposition || enrichment.editorialSummary || '') as any,
     };
   }
 

@@ -96,7 +96,7 @@ export const mediaBridgeService = {
       .order('created_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map(mapToAudioAsset);
+    return data.map((row: any) => mapToAudioAsset(row));
   },
 
   /** Get voiceovers only (TTS + recorded narration) */
@@ -131,7 +131,7 @@ export const mediaBridgeService = {
       .order('created_at', { ascending: false });
 
     if (error || !data) return [];
-    return data.map(mapToAudioAsset);
+    return data.map((row: any) => mapToAudioAsset(row));
   },
 
   // ── Scene Bindings (localStorage, upgradable to DB) ────────────────────

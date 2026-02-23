@@ -2761,8 +2761,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
                 {/* Phase 6E: Production Mode Panel (B-022 + B-023) */}
                 <ProductionModePanel
-                  selectedStyles={castSession.session.selectedStyles || []}
-                  settings={castSession.session.productionSettings || getDefaultProductionSettings()}
+                  selectedStyles={(castSession.session.selectedStyles || []) as any}
+                  settings={(castSession.session.productionSettings || getDefaultProductionSettings()) as any}
                   onSettingsChange={(updates) => {
                     const current = castSession.session.productionSettings || getDefaultProductionSettings();
                     castSession.updateSession({ productionSettings: { ...current, ...updates } });
@@ -2820,7 +2820,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       for (let i = 0; i < sceneIndex && i < scenes.length; i++) {
                         targetMs += scenes[i].actualAudioDurationMs || scenes[i].scriptedDurationMs;
                       }
-                      videoTimeline.seek(targetMs);
+                      (videoTimeline as any).seek?.(targetMs) ?? videoTimeline.setPlayhead?.(targetMs);
                     }}
                     onRegenerateTTS={(sceneId) => {
                       toast.info(`Regenerating TTS for scene: ${sceneId}`);

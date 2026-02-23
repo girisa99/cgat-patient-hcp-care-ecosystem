@@ -125,7 +125,7 @@ const CHAPTER_PRESETS: ChapterPreset[] = [
   },
 ];
 
-const VISUAL_TYPE_ICONS: Record<CompositionElementType, React.ReactNode> = {
+const VISUAL_TYPE_ICONS: Partial<Record<CompositionElementType, React.ReactNode>> = {
   video: <Video className="w-4 h-4" />,
   avatar: <User className="w-4 h-4" />,
   '3d': <Box className="w-4 h-4" />,
@@ -136,7 +136,7 @@ const VISUAL_TYPE_ICONS: Record<CompositionElementType, React.ReactNode> = {
 };
 
 // Visual type recommendations based on content keywords
-const VISUAL_TYPE_KEYWORDS: Record<CompositionElementType, string[]> = {
+const VISUAL_TYPE_KEYWORDS: Partial<Record<CompositionElementType, string[]>> = {
   avatar: ['introduce', 'welcome', 'explain', 'guide', 'personal', 'host', 'presenter', 'cta', 'call to action'],
   '3d': ['product', 'device', 'hardware', 'physical', 'rotate', '360', 'showcase', 'model'],
   video: ['demo', 'tutorial', 'walkthrough', 'action', 'motion', 'footage', 'dynamic'],
@@ -272,7 +272,7 @@ export const AddChapterDialog: React.FC<AddChapterDialogProps> = ({
 
   // Generate script based on prompt and visual type
   const generateScriptFromPrompt = (prompt: string, visualType: CompositionElementType): string => {
-    const templates: Record<CompositionElementType, string> = {
+    const templates: Partial<Record<CompositionElementType, string>> = {
       avatar: `Welcome! Let me walk you through ${prompt}. This is designed to help you understand the key points and take action today.`,
       video: `Watch as we demonstrate ${prompt}. Notice how each element works together to deliver exceptional results.`,
       '3d': `Take a closer look at ${prompt}. Rotate the view to see every angle and detail of what makes this special.`,

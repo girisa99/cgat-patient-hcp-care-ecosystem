@@ -296,7 +296,7 @@ export function useStreamingDownload() {
       }
 
       // Combine chunks into blob
-      const blob = new Blob(chunks, { type: contentType });
+      const blob = new Blob(chunks as any[], { type: contentType });
       const blobUrl = URL.createObjectURL(blob);
 
       // Trigger browser download

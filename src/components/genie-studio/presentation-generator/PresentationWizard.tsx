@@ -734,7 +734,7 @@ export function PresentationWizard({
             length,
             imageSource,
             imageStyles: selectedImageStyles,
-            videoStyles: selectedVideoStyles,
+            // videoStyles: selectedVideoStyles, // TODO: add to PresentationSessionConfig when ready
             imageModel,
             selectedTones,
             selectedEnhancements,
