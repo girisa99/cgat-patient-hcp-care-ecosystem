@@ -12,7 +12,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Check, X, AlertCircle, Clock, Download, Search, Zap, Target, Plus, Save, Edit2, Info, FileSpreadsheet, Layers, GitBranch, Map, ListOrdered, Ban } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -388,12 +388,26 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
     return selectedCategory === 'all' ? localFeatures : localFeatures.filter(f => f.category === selectedCategory);
   };
 
+  // Helper: add rows from array-of-arrays to an ExcelJS worksheet
+  const addSheet = (workbook: ExcelJS.Workbook, name: string, rows: (string | number)[][]) => {
+    const sheet = workbook.addWorksheet(name.slice(0, 31));
+    rows.forEach(row => sheet.addRow(row));
+    // Bold header row
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true };
+    // Auto-width columns
+    sheet.columns.forEach((col, i) => {
+      const maxLen = rows.reduce((max, row) => Math.max(max, String(row[i] ?? '').length), 0);
+      col.width = Math.min(Math.max(maxLen + 2, 10), 60);
+    });
+  };
+
   // Multi-sheet Excel export - respects category filter
-  const handleExportExcel = (exportAll: boolean = false) => {
-    const workbook = XLSX.utils.book_new();
+  const handleExportExcel = async (exportAll: boolean = false) => {
+    const workbook = new ExcelJS.Workbook();
     const featuresToExport = exportAll ? localFeatures : getFilteredFeaturesForExport();
     const categoryLabel = selectedCategory === 'all' ? 'All' : CATEGORY_LABELS[selectedCategory].replace(/[^\w\s]/g, '').trim();
-    
+
     // Sheet 1: Feature Matrix (filtered)
     const matrixData: (string | number)[][] = [
       ['Feature', 'Category', 'Priority', ...PROVIDER_SUMMARIES.map(p => p.name)]
@@ -406,15 +420,14 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
       });
       matrixData.push(row);
     });
-    const matrixSheet = XLSX.utils.aoa_to_sheet(matrixData);
-    XLSX.utils.book_append_sheet(workbook, matrixSheet, `Features - ${categoryLabel}`.slice(0, 31));
-    
+    addSheet(workbook, `Features - ${categoryLabel}`, matrixData);
+
     // Sheet 2: Input Features (if INPUT selected or all)
     if (selectedCategory === 'all' || selectedCategory === 'INPUT' || exportAll) {
       const inputData: (string | number)[][] = [
         ['Feature', 'Description', 'Scenarios', 'Providers', 'Best For', 'Limitations']
       ];
-      const inputFeatures = exportAll 
+      const inputFeatures = exportAll
         ? localFeatures.filter(f => f.category === 'INPUT')
         : featuresToExport.filter(f => f.category === 'INPUT');
       inputFeatures.forEach(f => {
@@ -433,59 +446,44 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         ]);
       });
       if (inputData.length > 1) {
-        const inputSheet = XLSX.utils.aoa_to_sheet(inputData);
-        XLSX.utils.book_append_sheet(workbook, inputSheet, 'Input Features');
+        addSheet(workbook, 'Input Features', inputData);
       }
     }
-    
-    // Sheet 3: Providers Summary (filtered by features they support in selected category)
+
+    // Sheet 3: Providers Summary
     const providerData: (string | number)[][] = [
       ['Provider', 'Status', 'Cost Tier', 'Implemented', 'Partial', 'Total', 'Coverage %', 'Capabilities', 'Strengths', 'Weaknesses']
     ];
     PROVIDER_SUMMARIES.forEach(p => {
-      const implementedCount = featuresToExport.filter(f => 
+      const implementedCount = featuresToExport.filter(f =>
         localMatrix[f.id]?.[p.id as ProviderId]?.implementation === 'implemented'
       ).length;
-      const partialCount = featuresToExport.filter(f => 
+      const partialCount = featuresToExport.filter(f =>
         localMatrix[f.id]?.[p.id as ProviderId]?.implementation === 'partial'
       ).length;
       const totalCount = featuresToExport.length;
-      
       providerData.push([
-        p.name,
-        p.status,
-        p.costTier,
-        implementedCount,
-        partialCount,
-        totalCount,
+        p.name, p.status, p.costTier,
+        implementedCount, partialCount, totalCount,
         totalCount > 0 ? Math.round((implementedCount / totalCount) * 100) : 0,
-        p.capabilities.join('; '),
-        p.strengths.join('; '),
-        p.weaknesses.join('; ')
+        p.capabilities.join('; '), p.strengths.join('; '), p.weaknesses.join('; ')
       ]);
     });
-    const providerSheet = XLSX.utils.aoa_to_sheet(providerData);
-    XLSX.utils.book_append_sheet(workbook, providerSheet, 'Providers');
-    
-    // Sheet 4: LLM Comparison (always include, it's model-focused)
+    addSheet(workbook, 'Providers', providerData);
+
+    // Sheet 4: LLM Comparison
     const llmData: (string | number)[][] = [
       ['Model', 'Provider', 'Cost Tier', 'Accuracy %', 'Industries', 'Output Types', 'Input Strengths', 'Notes']
     ];
     LLM_COMPARISONS.forEach(llm => {
       llmData.push([
-        llm.model,
-        llm.provider,
-        llm.costTier,
-        llm.accuracy,
-        llm.bestForIndustries.join('; '),
-        llm.bestForOutputTypes.join('; '),
-        llm.inputStrengths.join('; '),
-        llm.notes
+        llm.model, llm.provider, llm.costTier, llm.accuracy,
+        llm.bestForIndustries.join('; '), llm.bestForOutputTypes.join('; '),
+        llm.inputStrengths.join('; '), llm.notes
       ]);
     });
-    const llmSheet = XLSX.utils.aoa_to_sheet(llmData);
-    XLSX.utils.book_append_sheet(workbook, llmSheet, 'LLM Analysis');
-    
+    addSheet(workbook, 'LLM Analysis', llmData);
+
     // Sheet 5: Gap Analysis (filtered)
     const gapData: (string | number)[][] = [
       ['Feature', 'Category', 'Priority', 'Partial Providers', 'Missing Providers', 'Potential Providers']
@@ -498,33 +496,35 @@ export const ProviderCapabilityMatrix: React.FC<{ className?: string }> = ({ cla
         const partialProviders = providers.filter(([_, p]) => p?.implementation === 'partial').map(([id]) => PROVIDER_SUMMARIES.find(pr => pr.id === id)?.name || id);
         const missingProviders = PROVIDER_SUMMARIES.filter(p => !featureImpl[p.id as ProviderId]).map(p => p.name);
         gapData.push([
-          feature.name,
-          feature.category,
-          feature.priority,
-          partialProviders.join('; '),
-          missingProviders.slice(0, 5).join('; '),
+          feature.name, feature.category, feature.priority,
+          partialProviders.join('; '), missingProviders.slice(0, 5).join('; '),
           missingProviders.slice(0, 3).join('; ')
         ]);
       }
     });
-    const gapSheet = XLSX.utils.aoa_to_sheet(gapData);
-    XLSX.utils.book_append_sheet(workbook, gapSheet, `Gaps - ${categoryLabel}`.slice(0, 31));
-    
-    // Sheet 6: Critical Gaps (always include)
+    addSheet(workbook, `Gaps - ${categoryLabel}`, gapData);
+
+    // Sheet 6: Critical Gaps
     const criticalData: (string | number)[][] = [
       ['Feature', 'Provider', 'Priority', 'Effort', 'Notes']
     ];
     CRITICAL_GAPS.forEach(gap => {
       criticalData.push([gap.feature, gap.provider, gap.priority, gap.effort, gap.notes]);
     });
-    const criticalSheet = XLSX.utils.aoa_to_sheet(criticalData);
-    XLSX.utils.book_append_sheet(workbook, criticalSheet, 'Critical Gaps');
-    
-    // Download
-    const filename = exportAll 
-      ? 'provider_capability_matrix_full.xlsx' 
+    addSheet(workbook, 'Critical Gaps', criticalData);
+
+    // Download via Blob
+    const filename = exportAll
+      ? 'provider_capability_matrix_full.xlsx'
       : `provider_capability_matrix_${categoryLabel.toLowerCase().replace(/\s+/g, '_')}.xlsx`;
-    XLSX.writeFile(workbook, filename);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
     toast.success(`Exported ${featuresToExport.length} features to Excel!`);
   };
 
