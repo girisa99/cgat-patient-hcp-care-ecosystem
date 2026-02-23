@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useAutoScrollOnHover } from '@/hooks/useAutoScrollOnHover';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCastProjects } from '@/hooks/useCastProjects';
@@ -442,7 +443,24 @@ const RegionZonesBar: React.FC<{ currentRegion: string }> = ({ currentRegion }) 
   );
 };
 
-// ── Quick Access with scroll arrows ──────────────────────────────────────────
+// ── Workflow Auto-Scroll Section ─────────────────────────────────────────────
+const WorkflowAutoScroll: React.FC<{ onStartCreate: () => void }> = ({ onStartCreate }) => {
+  const { scrollRef, onMouseEnter, onMouseLeave } = useAutoScrollOnHover({ speed: 0.8 });
+  return (
+    <div
+      ref={scrollRef}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className="flex gap-3 overflow-x-auto pb-2 scrollbar-none scroll-smooth cursor-default"
+    >
+      <WorkflowStepCard step={1} icon={<Wand2 className="w-4 h-4 text-purple-300" />} title="Create" description="Write scripts, choose output format, set your creative direction with AI" iconBg="bg-purple-500/15 border-purple-500/25" thumbnailSrc={castWorkflowCreate} gradientFrom="from-purple-500/20" onClick={onStartCreate} />
+      <WorkflowStepCard step={2} icon={<Clapperboard className="w-4 h-4 text-blue-300" />} title="Produce" description="Generate videos, presentations, podcasts with regional AI intelligence" iconBg="bg-blue-500/15 border-blue-500/25" thumbnailSrc={castWorkflowProduce} gradientFrom="from-blue-500/20" onClick={onStartCreate} />
+      <WorkflowStepCard step={3} icon={<Send className="w-4 h-4 text-emerald-300" />} title="Publish" description="Distribute content to platforms, track analytics across all regions" iconBg="bg-emerald-500/15 border-emerald-500/25" thumbnailSrc={castWorkflowPublish} gradientFrom="from-emerald-500/20" onClick={onStartCreate} />
+    </div>
+  );
+};
+
+// ── Quick Access with auto-scroll on hover ───────────────────────────────────
 const QuickAccessSection: React.FC<{
   totalProjects: number;
   totalTemplates: number;
@@ -450,28 +468,7 @@ const QuickAccessSection: React.FC<{
   videoStats: any;
   onNavigate: (view: NavView) => void;
 }> = ({ totalProjects, totalTemplates, totalStyles, videoStats, onNavigate }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-  }, []);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    checkScroll();
-    el.addEventListener('scroll', checkScroll, { passive: true });
-    return () => el.removeEventListener('scroll', checkScroll);
-  }, [checkScroll]);
-
-  const scroll = (dir: 'left' | 'right') => {
-    scrollRef.current?.scrollBy({ left: dir === 'left' ? -240 : 240, behavior: 'smooth' });
-  };
+  const { scrollRef, onMouseEnter, onMouseLeave } = useAutoScrollOnHover({ speed: 1.0 });
 
   const items = [
     { icon: <FolderOpen className="w-4 h-4 text-blue-300" />, title: 'Projects', desc: 'Manage video projects', count: totalProjects, countLabel: 'projects', iconBg: 'bg-blue-500/15 border-blue-500/25', accent: 'bg-blue-500', thumb: castNavProjects, nav: 'projects' as NavView },
@@ -488,36 +485,13 @@ const QuickAccessSection: React.FC<{
         <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
           <Boxes className="w-3 h-3" /> Quick Access
         </h3>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => scroll('left')}
-            disabled={!canScrollLeft}
-            className={cn(
-              'w-7 h-7 rounded-full flex items-center justify-center border transition-all',
-              canScrollLeft
-                ? 'bg-white/[0.06] border-white/[0.12] text-foreground hover:bg-white/[0.1]'
-                : 'bg-transparent border-white/[0.04] text-muted-foreground/20 cursor-default',
-            )}
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => scroll('right')}
-            disabled={!canScrollRight}
-            className={cn(
-              'w-7 h-7 rounded-full flex items-center justify-center border transition-all',
-              canScrollRight
-                ? 'bg-white/[0.06] border-white/[0.12] text-foreground hover:bg-white/[0.1]'
-                : 'bg-transparent border-white/[0.04] text-muted-foreground/20 cursor-default',
-            )}
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <span className="text-[9px] text-muted-foreground/40 italic">hover to scroll →</span>
       </div>
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-2 scrollbar-none scroll-smooth"
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        className="flex gap-3 overflow-x-auto pb-2 scrollbar-none scroll-smooth cursor-default"
       >
         {items.map(item => (
           <div key={item.title} className="min-w-[200px] w-[200px] shrink-0">
@@ -570,8 +544,8 @@ const ContentPipelineSection: React.FC<{
   onStartCreate: () => void;
 }> = ({ projects, videoStats, onNavigate, onStartCreate }) => {
   const allProjects = projects.projects || [];
+  const { scrollRef, onMouseEnter, onMouseLeave } = useAutoScrollOnHover({ speed: 1.0 });
 
-  // Derive pipeline items from projects + videos
   const pipelineItems = useMemo(() => {
     const items: Array<{
       id: string;
@@ -581,9 +555,9 @@ const ContentPipelineSection: React.FC<{
       platforms?: string[];
       time: string;
       status: string;
+      thumbnail?: string | null;
     }> = [];
 
-    // From cast_projects
     allProjects.forEach((p: any) => {
       const stage = p.final_video_url ? 'published' : p.status === 'completed' ? 'produced' : 'created';
       items.push({
@@ -594,10 +568,10 @@ const ContentPipelineSection: React.FC<{
         platforms: p.secondary_platforms || [],
         time: p.updated_at || p.created_at,
         status: p.status || 'draft',
+        thumbnail: p.thumbnail_url || null,
       });
     });
 
-    // From landing_page_videos
     (videoStats?.recentVideos || []).forEach((v: any) => {
       if (items.some(i => i.title === v.title)) return;
       items.push({
@@ -607,10 +581,11 @@ const ContentPipelineSection: React.FC<{
         contentType: v.content_type || 'video',
         time: v.created_at,
         status: v.generation_status || 'pending',
+        thumbnail: v.thumbnail_url || null,
       });
     });
 
-    return items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 8);
+    return items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 10);
   }, [allProjects, videoStats?.recentVideos]);
 
   const stageCounts = useMemo(() => ({
@@ -619,44 +594,67 @@ const ContentPipelineSection: React.FC<{
     published: pipelineItems.filter(i => i.stage === 'published').length,
   }), [pipelineItems]);
 
-  return (
-    <div>
-      <div className="flex items-center justify-between px-1 mb-3">
-        <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
-          <Layers className="w-3 h-3" /> Content Pipeline
-        </h3>
-        <div className="flex items-center gap-2">
-          {PIPELINE_STAGES.map(s => (
-            <span key={s.key} className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border', s.bg)}>
-              {s.icon} {stageCounts[s.key as keyof typeof stageCounts]} {s.label}
-            </span>
-          ))}
-        </div>
-      </div>
+  // Stage-specific background images for empty thumbnail fallback
+  const STAGE_BG: Record<string, string> = {
+    created: castWorkflowCreate,
+    produced: castWorkflowProduce,
+    published: castWorkflowPublish,
+  };
 
-      {pipelineItems.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-2">
-          {pipelineItems.map(item => {
-            const typeMeta = CONTENT_TYPE_META[item.contentType] || CONTENT_TYPE_META.video;
-            const stageInfo = PIPELINE_STAGES.find(s => s.key === item.stage)!;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate('projects')}
-                className="group glass-card rounded-xl p-3 text-left hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                <div className="flex items-start gap-2">
-                  <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center border shrink-0', stageInfo.bg)}>
-                    {typeMeta.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold text-foreground truncate">{item.title}</p>
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      <span className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium border', stageInfo.bg)}>
-                        {stageInfo.label}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground/50">{typeMeta.label}</span>
+  return (
+    <div className="relative glass-card rounded-2xl overflow-hidden">
+      {/* Background image */}
+      <div className="absolute inset-0 z-0">
+        <img src={castHero2} alt="" className="w-full h-full object-cover opacity-[0.08]" loading="lazy" />
+        <div className="absolute inset-0 bg-gradient-to-br from-card/90 via-card/80 to-card/70" />
+      </div>
+      <div className="absolute -top-8 -left-8 w-24 h-24 rounded-full blur-2xl opacity-15 bg-blue-500" />
+
+      <div className="relative z-10 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+            <Layers className="w-3 h-3" /> Content Pipeline
+          </h3>
+          <div className="flex items-center gap-2">
+            {PIPELINE_STAGES.map(s => (
+              <span key={s.key} className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border', s.bg)}>
+                {s.icon} {stageCounts[s.key as keyof typeof stageCounts]} {s.label}
+              </span>
+            ))}
+            <span className="text-[9px] text-muted-foreground/40 italic hidden sm:inline">hover to scroll →</span>
+          </div>
+        </div>
+
+        {pipelineItems.length > 0 ? (
+          <div
+            ref={scrollRef}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            className="flex gap-3 overflow-x-auto pb-2 scrollbar-none scroll-smooth cursor-default"
+          >
+            {pipelineItems.map(item => {
+              const typeMeta = CONTENT_TYPE_META[item.contentType] || CONTENT_TYPE_META.video;
+              const stageInfo = PIPELINE_STAGES.find(s => s.key === item.stage)!;
+              const thumbSrc = item.thumbnail || STAGE_BG[item.stage] || castWorkflowCreate;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onNavigate('projects')}
+                  className="group glass-card rounded-xl overflow-hidden text-left hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all min-w-[200px] w-[200px] shrink-0"
+                >
+                  {/* Thumbnail */}
+                  <div className="relative w-full aspect-[16/10] overflow-hidden">
+                    <img src={thumbSrc} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).src = STAGE_BG[item.stage] || castWorkflowCreate; }} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-card/20 to-transparent" />
+                    <div className={cn('absolute top-1.5 left-1.5 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[9px] font-semibold border backdrop-blur-md', stageInfo.bg)}>
+                      {stageInfo.icon} {stageInfo.label}
                     </div>
+                    <div className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-black/40 backdrop-blur-md text-[9px] text-white/80">
+                      {typeMeta.icon} {typeMeta.label}
+                    </div>
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-[11px] font-semibold text-foreground truncate">{item.title}</p>
                     {item.platforms && item.platforms.length > 0 && (
                       <div className="flex items-center gap-1 mt-1.5">
                         {item.platforms.slice(0, 3).map((p: string) => (
@@ -670,20 +668,20 @@ const ContentPipelineSection: React.FC<{
                       {item.time ? formatDistanceToNow(new Date(item.time), { addSuffix: true }) : ''}
                     </p>
                   </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="glass-card rounded-xl p-6 flex flex-col items-center justify-center text-center">
-          <Layers className="w-6 h-6 text-muted-foreground/20 mb-2" />
-          <p className="text-xs text-muted-foreground/60">No content in pipeline yet</p>
-          <Button variant="outline" size="sm" className="mt-3 text-xs gap-1.5" onClick={onStartCreate}>
-            <Sparkles className="w-3 h-3" /> Create First Content
-          </Button>
-        </div>
-      )}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl p-6 flex flex-col items-center justify-center text-center">
+            <Layers className="w-6 h-6 text-muted-foreground/20 mb-2" />
+            <p className="text-xs text-muted-foreground/60">No content in pipeline yet</p>
+            <Button variant="outline" size="sm" className="mt-3 text-xs gap-1.5" onClick={onStartCreate}>
+              <Sparkles className="w-3 h-3" /> Create First Content
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -771,38 +769,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
         <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
           <Radar className="w-3 h-3" /> Your Workflow
         </h3>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
-          <WorkflowStepCard
-            step={1}
-            icon={<Wand2 className="w-4 h-4 text-purple-300" />}
-            title="Create"
-            description="Write scripts, choose output format, set your creative direction with AI"
-            iconBg="bg-purple-500/15 border-purple-500/25"
-            thumbnailSrc={castWorkflowCreate}
-            gradientFrom="from-purple-500/20"
-            onClick={onStartCreate}
-          />
-          <WorkflowStepCard
-            step={2}
-            icon={<Clapperboard className="w-4 h-4 text-blue-300" />}
-            title="Produce"
-            description="Generate videos, presentations, podcasts with regional AI intelligence"
-            iconBg="bg-blue-500/15 border-blue-500/25"
-            thumbnailSrc={castWorkflowProduce}
-            gradientFrom="from-blue-500/20"
-            onClick={onStartCreate}
-          />
-          <WorkflowStepCard
-            step={3}
-            icon={<Send className="w-4 h-4 text-emerald-300" />}
-            title="Publish"
-            description="Distribute content to platforms, track analytics across all regions"
-            iconBg="bg-emerald-500/15 border-emerald-500/25"
-            thumbnailSrc={castWorkflowPublish}
-            gradientFrom="from-emerald-500/20"
-            onClick={onStartCreate}
-          />
-        </div>
+        <WorkflowAutoScroll onStartCreate={onStartCreate} />
       </div>
 
       {/* ── KPI Stats — horizontal scroll on mobile, 4-col on desktop ── */}
