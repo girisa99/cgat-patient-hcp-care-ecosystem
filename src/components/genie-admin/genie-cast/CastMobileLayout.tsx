@@ -244,10 +244,10 @@ const QuickActions: React.FC<{
   }, [paused]);
 
   const actions = [
-    { icon: <Sparkles className="w-3 h-3 text-primary" />, label: 'Create', subtitle: 'New', image: imgCreate, action: () => onTabChange('create') },
-    { icon: <FolderOpen className="w-3 h-3 text-blue-400" />, label: 'Projects', subtitle: `${totalProjects}`, image: imgProjects, action: () => onTabChange('produce') },
-    { icon: <LayoutTemplate className="w-3 h-3 text-purple-400" />, label: 'Templates', subtitle: `${totalTemplates}`, image: imgTemplates, action: () => onTabChange('create') },
-    { icon: <BarChart3 className="w-3 h-3 text-emerald-400" />, label: 'Analytics', subtitle: `${videoStats?.completed || 0}`, image: imgAnalytics, action: () => onTabChange('produce') },
+    { icon: <Sparkles className="w-2.5 h-2.5 text-primary" />, label: 'Create', image: imgCreate, action: () => onTabChange('create') },
+    { icon: <FolderOpen className="w-2.5 h-2.5 text-blue-400" />, label: 'Projects', image: imgProjects, action: () => onTabChange('produce') },
+    { icon: <LayoutTemplate className="w-2.5 h-2.5 text-purple-400" />, label: 'Templates', image: imgTemplates, action: () => onTabChange('create') },
+    { icon: <BarChart3 className="w-2.5 h-2.5 text-emerald-400" />, label: 'Analytics', image: imgAnalytics, action: () => onTabChange('produce') },
   ];
 
   // Duplicate for seamless loop
@@ -257,18 +257,17 @@ const QuickActions: React.FC<{
     <button
       key={`${a.label}-${idx}`}
       onClick={a.action}
-      className="relative overflow-hidden rounded-lg border border-border/10 backdrop-blur-md transition-all active:scale-[0.96] text-left shrink-0 w-20 h-[68px]"
+      className="relative overflow-hidden rounded-md border border-border/10 backdrop-blur-md transition-all active:scale-[0.96] text-left shrink-0 w-16 h-14"
     >
       <div className="absolute inset-0">
         <img src={a.image} alt="" className="w-full h-full object-cover opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-card/20" />
       </div>
-      <div className="relative z-10 p-1.5 flex flex-col gap-0.5 h-full justify-end">
-        <div className="w-5 h-5 rounded bg-background/60 backdrop-blur-md flex items-center justify-center border border-border/10">
+      <div className="relative z-10 p-1 flex flex-col gap-0 h-full justify-end">
+        <div className="w-4 h-4 rounded bg-background/60 backdrop-blur-md flex items-center justify-center border border-border/10">
           {a.icon}
         </div>
-        <span className="text-[9px] font-bold text-foreground leading-tight">{a.label}</span>
-        <span className="text-[8px] text-muted-foreground leading-tight">{a.subtitle}</span>
+        <span className="text-[8px] font-bold text-foreground leading-tight">{a.label}</span>
       </div>
     </button>
   );
