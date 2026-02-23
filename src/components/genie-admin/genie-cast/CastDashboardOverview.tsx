@@ -31,6 +31,15 @@ import {
   Cpu, Languages, Map, Radar, Boxes, PanelTop,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Workflow + Nav card thumbnails
+import castWorkflowCreate from '@/assets/cast-workflow-create.jpg';
+import castWorkflowProduce from '@/assets/cast-workflow-produce.jpg';
+import castWorkflowPublish from '@/assets/cast-workflow-publish.jpg';
+import castNavProjects from '@/assets/cast-nav-projects.jpg';
+import castNavTemplates from '@/assets/cast-nav-templates.jpg';
+import castNavAssets from '@/assets/cast-nav-assets.jpg';
+import castNavBrand from '@/assets/cast-nav-brand.jpg';
 import { formatDistanceToNow } from 'date-fns';
 import {
   REGION_GROUP_DISPLAY,
@@ -103,7 +112,7 @@ const HeroBanner: React.FC<{
       </div>
 
       {/* Content */}
-      <div className="relative z-10 p-6 flex items-center justify-between gap-6">
+      <div className="relative z-10 p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-primary/25">
@@ -161,13 +170,14 @@ const WorkflowStepCard: React.FC<{
   glowColor: string;
   gradientFrom: string;
   gradientTo: string;
+  thumbnailSrc: string;
   section: DashboardSection;
   regionCode: string;
   onClick: () => void;
   isLast?: boolean;
-}> = ({ step, icon, title, description, iconBg, glowColor, gradientFrom, gradientTo, section, regionCode, onClick, isLast }) => {
+}> = ({ step, icon, title, description, iconBg, glowColor, gradientFrom, gradientTo, thumbnailSrc, section, regionCode, onClick, isLast }) => {
   return (
-    <div className="flex items-start gap-3 flex-1 min-w-[200px]">
+    <div className="flex items-start gap-3 flex-1 min-w-0">
       <button
         onClick={onClick}
         className={cn(
@@ -176,33 +186,37 @@ const WorkflowStepCard: React.FC<{
           'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]',
         )}
       >
-        {/* Themed gradient background matching card purpose */}
-        <div className="absolute inset-0 z-0">
-          <div className={cn('w-full h-full bg-gradient-to-br opacity-40', gradientFrom, gradientTo)} />
-          <div className="absolute inset-0 backdrop-blur-xl bg-card/65" />
+        {/* Thumbnail image */}
+        <div className="relative w-full aspect-[16/9] overflow-hidden">
+          <img
+            src={thumbnailSrc}
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
+          <div className={cn('absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-80', gradientFrom.replace('from-', 'from-'))} />
+          <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-card/30 to-transparent" />
+          {/* Step badge on image */}
+          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-bold text-white uppercase tracking-widest">
+            Step {step}
+          </div>
         </div>
 
-        {/* Inner shine */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none z-[1]" />
-
         {/* Content */}
-        <div className="relative z-10 p-5">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="relative z-10 p-4">
+          <div className="flex items-center gap-2.5 mb-2">
             <div className={cn(
-              'w-11 h-11 rounded-xl flex items-center justify-center backdrop-blur-md transition-all',
+              'w-9 h-9 rounded-xl flex items-center justify-center backdrop-blur-md transition-all',
               'group-hover:scale-110 group-hover:shadow-lg',
               'border',
               iconBg,
             )}>
               {icon}
             </div>
-            <div>
-              <span className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">Step {step}</span>
-              <h4 className="text-sm font-bold text-foreground">{title}</h4>
-            </div>
+            <h4 className="text-sm font-bold text-foreground">{title}</h4>
           </div>
-          <p className="text-xs text-muted-foreground/80 leading-relaxed">{description}</p>
-          <div className="mt-3 flex items-center gap-1 text-primary text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+          <p className="text-xs text-muted-foreground/80 leading-relaxed line-clamp-2">{description}</p>
+          <div className="mt-2.5 flex items-center gap-1 text-primary text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
             Get Started <ArrowRight className="w-3 h-3" />
           </div>
         </div>
@@ -352,10 +366,11 @@ const NavCard: React.FC<{
   countLabel?: string;
   iconBg: string;
   accentColor: string;
+  thumbnailSrc?: string;
   section: DashboardSection;
   regionCode: string;
   onClick: () => void;
-}> = ({ icon, title, description, count, countLabel, iconBg, accentColor, section, regionCode, onClick }) => {
+}> = ({ icon, title, description, count, countLabel, iconBg, accentColor, thumbnailSrc, section, regionCode, onClick }) => {
   return (
     <button
       onClick={onClick}
@@ -365,14 +380,19 @@ const NavCard: React.FC<{
         'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] cursor-pointer',
       )}
     >
+      {/* Thumbnail */}
+      {thumbnailSrc && (
+        <div className="relative w-full aspect-[2/1] overflow-hidden">
+          <img src={thumbnailSrc} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+          <div className="absolute inset-0 bg-gradient-to-t from-card/95 via-card/40 to-transparent" />
+        </div>
+      )}
+
       {/* Glow orb */}
       <div className={cn(
         'absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity',
         accentColor,
       )} />
-
-      {/* Inner shine */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.07] via-transparent to-transparent pointer-events-none z-[1]" />
 
       {/* Content */}
       <div className="relative z-10 p-4">
@@ -488,7 +508,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
   const totalCategories = registry.categories?.length || 0;
 
   return (
-    <div className={cn('space-y-6 p-5', className)}>
+    <div className={cn('space-y-4 md:space-y-6 p-3 md:p-5', className)}>
       {/* ── Hero Banner with Region Context ─────────────────────────────── */}
       <HeroBanner
         regionCode={regionCode}
@@ -549,6 +569,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
             glowColor="purple"
             gradientFrom="from-purple-500/20"
             gradientTo="to-violet-600/10"
+            thumbnailSrc={castWorkflowCreate}
             section="workflow-create"
             regionCode={regionCode}
             onClick={onStartCreate}
@@ -562,6 +583,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
             glowColor="blue"
             gradientFrom="from-blue-500/20"
             gradientTo="to-cyan-600/10"
+            thumbnailSrc={castWorkflowProduce}
             section="workflow-produce"
             regionCode={regionCode}
             onClick={onStartCreate}
@@ -575,6 +597,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
             glowColor="green"
             gradientFrom="from-emerald-500/20"
             gradientTo="to-green-600/10"
+            thumbnailSrc={castWorkflowPublish}
             section="workflow-publish"
             regionCode={regionCode}
             onClick={onStartCreate}
@@ -674,6 +697,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
               countLabel="projects"
               iconBg="bg-blue-500/15 border-blue-500/25"
               accentColor="bg-blue-500"
+              thumbnailSrc={castNavProjects}
               section="projects"
               regionCode={regionCode}
               onClick={() => onNavigate('projects')}
@@ -686,6 +710,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
               countLabel="blueprints"
               iconBg="bg-purple-500/15 border-purple-500/25"
               accentColor="bg-purple-500"
+              thumbnailSrc={castNavTemplates}
               section="templates"
               regionCode={regionCode}
               onClick={() => onNavigate('templates')}
@@ -698,6 +723,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
               countLabel="visual styles"
               iconBg="bg-emerald-500/15 border-emerald-500/25"
               accentColor="bg-emerald-500"
+              thumbnailSrc={castNavAssets}
               section="assets"
               regionCode={regionCode}
               onClick={() => onNavigate('assets')}
@@ -708,6 +734,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
               description="Brand colors, fonts, voice and logos"
               iconBg="bg-amber-500/15 border-amber-500/25"
               accentColor="bg-amber-500"
+              thumbnailSrc={castNavBrand}
               section="brand-kit"
               regionCode={regionCode}
               onClick={() => onNavigate('brand-kit')}
