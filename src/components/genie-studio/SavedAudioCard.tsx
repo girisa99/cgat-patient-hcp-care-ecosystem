@@ -2,7 +2,7 @@
  * SavedAudioCard - Display saved audio files with script viewing and download options
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -60,6 +60,23 @@ export function SavedAudioCard({
   const [viewVersion, setViewVersion] = useState<'original' | 'enhanced'>('enhanced');
   const [audioError, setAudioError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const blobUrlsRef = useRef<string[]>([]);
+
+  // Detect stale blob URLs on mount — mark as error immediately
+  useEffect(() => {
+    if (audio.url && (audio.url.startsWith('blob:') || audio.url.startsWith('data:'))) {
+      setAudioError(true);
+    }
+  }, [audio.url]);
+
+  // Cleanup any created blob URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      blobUrlsRef.current.forEach(url => {
+        try { URL.revokeObjectURL(url); } catch {}
+      });
+    };
+  }, []);
 
   const handleRefreshUrl = useCallback(async () => {
     if (!onRefreshUrl) return;

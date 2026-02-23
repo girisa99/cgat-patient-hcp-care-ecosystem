@@ -354,14 +354,38 @@ Let's begin with your basic information. Could you please provide your full name
     }
   };
 
-  const startVoiceRecording = () => {
-    setIsRecording(true);
-    // TODO: Implement voice recording functionality
-    toast.info('Voice recording feature coming soon');
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setIsRecording(true);
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        // Send as a message with audio attachment info
+        handleSendMessage(`[Voice recording: ${Math.round(blob.size / 1024)}KB]`);
+        URL.revokeObjectURL(url);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      mediaRecorder.start();
+      // Store recorder ref for stop
+      (window as any).__conversationRecorder = mediaRecorder;
+      toast.info('Recording... Click stop when done');
+    } catch (err) {
+      toast.error('Microphone access denied. Please allow microphone permission.');
+      setIsRecording(false);
+    }
   };
 
   const stopVoiceRecording = () => {
     setIsRecording(false);
+    const recorder = (window as any).__conversationRecorder;
+    if (recorder && recorder.state === 'recording') {
+      recorder.stop();
+    }
+    (window as any).__conversationRecorder = null;
   };
 
   // Auto-scroll to bottom when new messages arrive

@@ -1,4 +1,3 @@
-
 import { useMasterUserManagement } from './useMasterUserManagement';
 import { useMasterAuth } from './useMasterAuth';
 
@@ -8,7 +7,7 @@ export const useDashboard = () => {
 
   const getDashboardStats = () => {
     const stats = userManagement.getUserStats();
-    
+
     return {
       totalUsers: stats.totalUsers,
       totalFacilities: 0, // TODO: implement facilities count
@@ -37,7 +36,7 @@ export const useDashboard = () => {
 
   const getUserPermissions = () => {
     if (!isAuthenticated) return [];
-    
+
     const permissions = [];
     if (userRoles.includes('superAdmin')) {
       permissions.push('admin', 'manage_users', 'manage_facilities');
@@ -45,7 +44,7 @@ export const useDashboard = () => {
     if (userRoles.includes('onboardingTeam')) {
       permissions.push('onboarding', 'manage_applications');
     }
-    
+
     return permissions;
   };
 

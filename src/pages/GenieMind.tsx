@@ -260,29 +260,55 @@ const GenieMind: React.FC = () => {
                 onUpdateScript={updateScript}
                 onSaveVoiceover={async (url, name, scriptId, audioBlob, scriptMeta) => {
                   try {
-                    // Save voiceover metadata to generated_media table
-                    const { data: { user } } = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
-                    if (user) {
-                      const { error } = await (await import('@/integrations/supabase/client')).supabase
-                        .from('generated_media')
-                        .insert({
-                          user_id: user.id,
-                          name,
-                          file_type: 'audio',
-                          file_url: url,
-                          storage_bucket: 'generated_media',
-                          storage_path: `tts/${Date.now()}`,
-                          source: 'tts',
-                          metadata: {
-                            type: 'tts',
-                            scriptId,
-                            scriptText: scriptMeta?.scriptText,
-                            originalScript: scriptMeta?.originalScript,
-                            scriptType: scriptMeta?.scriptType
-                          }
+                    const { supabase } = await import('@/integrations/supabase/client');
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) throw new Error('Not authenticated');
+
+                    const audioId = crypto.randomUUID();
+                    const storagePath = `tts/${audioId}.mp3`;
+                    let persistentUrl = url;
+
+                    // Upload audioBlob to Supabase storage for persistent URL
+                    if (audioBlob) {
+                      const { error: uploadError } = await supabase.storage
+                        .from('generated-audio')
+                        .upload(storagePath, audioBlob, {
+                          contentType: 'audio/mpeg',
+                          upsert: true,
                         });
-                      if (error) throw error;
+
+                      if (uploadError) {
+                        console.warn('Storage upload failed, falling back to blob URL:', uploadError.message);
+                      } else {
+                        const { data: urlData } = supabase.storage
+                          .from('generated-audio')
+                          .getPublicUrl(storagePath);
+                        persistentUrl = urlData.publicUrl;
+                      }
                     }
+
+                    // Save metadata with persistent URL to generated_media table
+                    const { error } = await supabase
+                      .from('generated_media')
+                      .insert({
+                        user_id: user.id,
+                        name,
+                        file_type: 'audio',
+                        file_url: persistentUrl,
+                        storage_bucket: 'generated-audio',
+                        storage_path: storagePath,
+                        file_size_bytes: audioBlob?.size || null,
+                        source: 'generated',
+                        metadata: {
+                          type: 'tts',
+                          scriptId,
+                          scriptText: scriptMeta?.scriptText,
+                          originalScript: scriptMeta?.originalScript,
+                          scriptType: scriptMeta?.scriptType
+                        }
+                      });
+                    if (error) throw error;
+
                     toast.success(`Voiceover "${name}" saved!`);
                     if (scriptId) {
                       updateScript(scriptId, { hasVoiceover: true });

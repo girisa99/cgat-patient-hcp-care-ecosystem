@@ -200,8 +200,15 @@ export const GenieSessionManager: React.FC<GenieSessionManagerProps> = ({
           await updateSession(session.conversation_id, { is_active: true });
           break;
         case 'delete':
-          // Note: Delete functionality would need to be implemented in useGenieState
-          console.log('Delete not implemented yet');
+          try {
+            const { supabase } = await import('@/integrations/supabase/client');
+            await supabase
+              .from('genie_conversations')
+              .delete()
+              .eq('id', session.conversation_id);
+          } catch (err) {
+            console.error('Failed to delete session:', err);
+          }
           break;
       }
     }

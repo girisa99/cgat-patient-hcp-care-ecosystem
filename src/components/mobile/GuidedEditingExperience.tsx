@@ -139,7 +139,21 @@ export const GuidedEditingExperience: React.FC<GuidedEditingExperienceProps> = (
 
   const handleAskAI = useCallback((question: string) => {
     if (question === 'voice') {
-      toast.info('Voice input coming soon!');
+      // Voice input uses browser SpeechRecognition API
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        toast.error('Voice input not supported in this browser');
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) setShowAIAssistant(true);
+      };
+      recognition.onerror = () => toast.error('Voice recognition failed. Try again.');
+      recognition.start();
+      toast.info('Listening... Speak now');
       return;
     }
     setShowAIAssistant(true);

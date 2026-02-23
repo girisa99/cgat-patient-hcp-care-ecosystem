@@ -1086,9 +1086,9 @@ export default function SubAgentRecommendationDialog({
     if (method === 'navigate_upload') {
       navigate('/dashboard/documents');
     } else if (method === 'inline_upload') {
-      toast.info('Upload functionality coming soon', {
-        description: 'For now, please use the document upload section'
-      });
+      // Redirect to documents section which has the upload functionality
+      navigate('/dashboard/documents');
+      toast.info('Redirecting to document upload');
     }
     setShowSetupWizard(false);
   };

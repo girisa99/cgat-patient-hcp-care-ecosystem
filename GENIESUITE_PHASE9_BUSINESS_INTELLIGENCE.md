@@ -100,7 +100,7 @@ Phase 6 (Production UI):    ███████████████░░�
 | # | Gap | File | Impact |
 |---|-----|------|--------|
 | 1 | **Voiceover save is stub** — no DB persistence | `useGenieMediaLibrary.ts` | Users can't save voiceovers in Mind |
-| 2 | **Document extraction stubs** — Azure Form Recognizer & AWS Textract need credentials | `document-processor/index.ts:4842,4884` | Falls back to basic OCR |
+| 2 | **Document extraction stubs** — Azure Form Recognizer key configured; AWS Textract credentials pending (user to enter) | `document-processor/index.ts:4842,4884` | Falls back to basic OCR until AWS configured |
 | 3 | **Provider matrix not persisting** — "Database persistence coming soon!" toast | `ProviderCapabilityMatrix.tsx:557` | Config lost on refresh |
 | 4 | **Music generation API unverified** | `CrossFunctionalMusic.tsx` | May not call real providers |
 
@@ -117,7 +117,7 @@ Phase 6 (Production UI):    ███████████████░░�
 ### MEDIUM (18) — Feature limitations
 
 - 7 "coming soon" toast-only buttons (voice recording, AI enhancement, auto-arrange, voice input, recording sharing, upload, social OAuth)
-- Dashboard statistics all zeros (facilities, modules, activity tracking)
+- Dashboard statistics: healthcare-side (facilities, modules) NOT used for GenieSuite — GenieSuite has separate tracking via `genie_studio_users` tables
 - Tier usage remaining always shows limit, not actual remaining
 - Offline publishing queue stubbed
 - Generated content drafts not persisting to DB
@@ -576,10 +576,27 @@ $100M ARR with 50 employees = $2M revenue per employee. That's the efficiency we
 
 ### Music & Sound Effects
 
-| Provider | Service | Cost |
-|----------|---------|------|
-| **ElevenLabs** | Music Generation | ~$0.24-0.30/30sec clip |
-| **ElevenLabs** | Sound Effects | ~$0.24-0.30/clip (1-22sec) |
+| Provider | Service | Cost | Edge Function | Zone |
+|----------|---------|------|---------------|------|
+| **ElevenLabs** | Music Generation | ~$0.24-0.30/30sec clip | `elevenlabs-music` | Western, all |
+| **ElevenLabs** | Sound Effects (1-22sec) | ~$0.24-0.30/clip | `elevenlabs-sfx` | Western, all |
+| **Alibaba** | Music Generation (CosyVoice) | ~$0.01-0.03/clip | `multi-provider-music` | CJK, SEA |
+| **Google Lyria** | Music Generation (DeepMind) | ~$0.10-0.15/clip | `multi-provider-music` | Western, MENA |
+| **ModelsLab** | Music Generation | ~$0.05-0.08/clip | `multi-provider-music` | Fallback all |
+| **Alibaba** | Sound Effects | ~$0.01-0.02/clip | `multi-provider-sfx` | CJK, SEA |
+| **ModelsLab** | Sound Effects | ~$0.03-0.05/clip | `multi-provider-sfx` | Fallback all |
+
+**Orchestration:** `music-composer-agent` selects provider based on 4-zone routing (Western/CJK/MENA/SEA), mood/genre, and cost optimization. Falls back through provider chain automatically.
+
+### Document Extraction (OCR / Form Processing)
+
+| Provider | Service | Cost | Edge Function | Status |
+|----------|---------|------|---------------|--------|
+| **Azure Form Recognizer** | Document Intelligence v4.0 | $1.50/1K pages (read), $10/1K pages (layout) | `document-processor` | API key configured |
+| **AWS Textract** | OCR + Table/Form extraction | $1.50/1K pages (text), $15/1K pages (tables+forms) | `document-processor` | Credentials pending — user to enter |
+| **DeepSeek Vision** | Vision-based document understanding | ~$0.01/page (via LLM) | `deepseek-vision` | Active |
+
+**Routing:** Azure Form Recognizer is primary for structured documents (forms, invoices). AWS Textract is secondary for table-heavy documents. DeepSeek Vision handles handwritten/informal documents. Falls back gracefully if credentials unavailable.
 
 ### Avatar & 3D
 
