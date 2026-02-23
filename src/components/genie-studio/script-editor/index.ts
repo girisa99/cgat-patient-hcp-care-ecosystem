@@ -34,3 +34,6 @@ export { AnalysisResultsPanel } from './AnalysisResultsPanel';
 export { EnhancementReviewPanel } from './EnhancementReviewPanel';
 export { EnhancementDialog } from './EnhancementDialog';
 export { TTSOptionsPanel } from './TTSOptionsPanel';
+export { TranscreationPreview } from './TranscreationPreview';
+export { BrandVoiceChecker } from './BrandVoiceChecker';
+export { VersionHistoryPanel, type ScriptVersionEntry } from './VersionHistoryPanel';

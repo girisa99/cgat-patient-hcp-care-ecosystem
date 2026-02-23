@@ -34,6 +34,9 @@ import {
   Plus,
   Edit3,
   Upload,
+  Globe,
+  Shield,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -55,6 +58,9 @@ import { AnalysisResultsPanel } from './script-editor/AnalysisResultsPanel';
 import { EnhancementReviewPanel } from './script-editor/EnhancementReviewPanel';
 import { EnhancementDialog } from './script-editor/EnhancementDialog';
 import { TTSOptionsPanel } from './script-editor/TTSOptionsPanel';
+import { TranscreationPreview } from './script-editor/TranscreationPreview';
+import { BrandVoiceChecker } from './script-editor/BrandVoiceChecker';
+import { VersionHistoryPanel, type ScriptVersionEntry } from './script-editor/VersionHistoryPanel';
 import type {
   SavedScript,
   ScriptPurpose,
@@ -166,6 +172,16 @@ export function ScriptEditorTab({
 
   // ──── AI Provider State ────
   const [aiProvider, setAiProvider] = useState<AIProvider>('gemini');
+
+  // ──── Transcreation State ────
+  const [showTranscreation, setShowTranscreation] = useState(false);
+
+  // ──── Brand Voice State ────
+  const [showBrandVoice, setShowBrandVoice] = useState(false);
+
+  // ──── Version History State ────
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [scriptVersions, setScriptVersions] = useState<ScriptVersionEntry[]>([]);
 
   // ──── TTS Hook ────
   const { isGenerating: isTTSGenerating, lastResult: ttsResult, generate: generateTTS, play: playTTS, stop: stopTTS, download: downloadTTS } = useTTSGeneration();
@@ -604,6 +620,40 @@ export function ScriptEditorTab({
     if (newContent !== scriptContent) { setScriptContent(newContent); toast.success('Applied fix to script'); }
   };
 
+  // Version history handlers
+  const addVersionEntry = useCallback((content: string, type: ScriptVersionEntry['versionType'], summary: string) => {
+    const newVersion: ScriptVersionEntry = {
+      id: crypto.randomUUID(),
+      versionNumber: scriptVersions.length + 1,
+      content,
+      versionType: type,
+      changeSummary: summary,
+      createdAt: Date.now(),
+      wordCount: content.trim().split(/\s+/).length,
+    };
+    setScriptVersions(prev => [...prev, newVersion]);
+  }, [scriptVersions.length]);
+
+  const handleRestoreVersion = useCallback((version: ScriptVersionEntry) => {
+    setScriptContent(version.content);
+    if (version.enhancedContent) setEnhancedContent(version.enhancedContent);
+    setActiveVersion('original');
+    addVersionEntry(version.content, 'manual_edit', `Restored from v${version.versionNumber}`);
+    toast.success(`Restored to version ${version.versionNumber}`);
+  }, [addVersionEntry]);
+
+  // Track version on save
+  const handleSaveScriptWithVersion = () => {
+    handleSaveScript();
+    addVersionEntry(scriptContent, enhancedContent ? 'enhanced' : 'original', `Saved: ${scriptName}`);
+  };
+
+  // Transcreation handler
+  const handleApplyTranscreation = (transcreatedText: string, languageCode: string) => {
+    addVersionEntry(transcreatedText, 'transcreation', `Transcreated to ${languageCode}`);
+    toast.success(`Saved ${languageCode} transcreation as version`);
+  };
+
   // ════════════════════════════════════════
   // RENDER
   // ════════════════════════════════════════
@@ -742,8 +792,8 @@ export function ScriptEditorTab({
             </span>
           </div>
 
-          {/* Action Buttons Grid */}
-          <div className="grid grid-cols-4 gap-3 mb-6">
+          {/* Action Buttons Grid - Row 1: Core */}
+          <div className="grid grid-cols-4 gap-3 mb-3">
             <ActionButton icon={<Search className="h-6 w-6 mx-auto mb-2 text-blue-500" />} isActive={isAnalyzing} activeColor="blue" label="AI Analyze" sublabel="Recommendations" onClick={handleAnalyze} />
             <ActionButton icon={<Sparkles className="h-6 w-6 mx-auto mb-2 text-purple-500" />} isActive={isEnhancing} activeColor="purple" label="AI Enhance" sublabel="Customize & improve" onClick={openEnhancementDialog} />
             {isTTSEnabled ? (
@@ -755,7 +805,13 @@ export function ScriptEditorTab({
                 <p className="text-xs text-muted-foreground mt-1">Podcast mode</p>
               </div>
             )}
-            <ActionButton icon={<Save className="h-6 w-6 mx-auto mb-2 text-primary" />} isActive={false} activeColor="primary" label="Save Script" sublabel="Store to library" onClick={handleSaveScript} />
+            <ActionButton icon={<Save className="h-6 w-6 mx-auto mb-2 text-primary" />} isActive={false} activeColor="primary" label="Save Script" sublabel="Store to library" onClick={handleSaveScriptWithVersion} />
+          </div>
+          {/* Action Buttons Grid - Row 2: Extended */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <ActionButton icon={<Globe className="h-6 w-6 mx-auto mb-2 text-cyan-500" />} isActive={false} activeColor="cyan" label="Transcreation" sublabel="Regional adaptation" onClick={() => setShowTranscreation(!showTranscreation)} />
+            <ActionButton icon={<Shield className="h-6 w-6 mx-auto mb-2 text-emerald-500" />} isActive={false} activeColor="emerald" label="Brand Voice" sublabel="Compliance check" onClick={() => setShowBrandVoice(!showBrandVoice)} />
+            <ActionButton icon={<History className="h-6 w-6 mx-auto mb-2 text-indigo-500" />} isActive={false} activeColor="indigo" label="Version History" sublabel={`${scriptVersions.length} versions`} onClick={() => setShowVersionHistory(!showVersionHistory)} />
           </div>
 
           {/* TTS Options Panel */}
@@ -836,6 +892,33 @@ export function ScriptEditorTab({
               onApplyChange={handleApplyEnhancementChange}
             />
           )}
+
+          {/* Transcreation Preview */}
+          <TranscreationPreview
+            originalScript={currentContent}
+            scriptName={scriptName || 'Script'}
+            isVisible={showTranscreation}
+            onClose={() => setShowTranscreation(false)}
+            onApplyTranscreation={handleApplyTranscreation}
+          />
+
+          {/* Brand Voice Checker */}
+          <BrandVoiceChecker
+            scriptContent={currentContent}
+            isVisible={showBrandVoice}
+            onClose={() => setShowBrandVoice(false)}
+            onApplyFix={handleApplyAnalysisFix}
+          />
+
+          {/* Version History */}
+          <VersionHistoryPanel
+            isVisible={showVersionHistory}
+            onClose={() => setShowVersionHistory(false)}
+            versions={scriptVersions}
+            currentContent={currentContent}
+            onRestoreVersion={handleRestoreVersion}
+            onSaveVersion={addVersionEntry}
+          />
 
           {/* Revert Option */}
           {originalContent && activeVersion === 'enhanced' && !showEnhancementReview && (
