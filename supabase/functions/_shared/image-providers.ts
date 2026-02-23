@@ -388,13 +388,32 @@ async function generateWithHuggingFace(prompt: string, options: ImageGenOptions)
   if (!token) throw new Error('HuggingFace token missing');
   const model = options.model || 'black-forest-labs/FLUX.1-schnell';
 
-  const resp = await fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 4, guidance_scale: 1.0 } }),
-  });
+  // Try the standard Inference API endpoint first, fall back to router endpoint
+  const endpoints = [
+    `https://api-inference.huggingface.co/models/${model}`,
+    `https://router.huggingface.co/hf-inference/models/${model}`,
+  ];
 
-  if (!resp.ok) throw new Error(`HuggingFace Error: ${resp.status} - ${await resp.text()}`);
+  let lastResp: Response | null = null;
+  for (const endpoint of endpoints) {
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 4, guidance_scale: 1.0 } }),
+      });
+      if (resp.ok) {
+        const buf = await resp.arrayBuffer();
+        return `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(buf)))}`;
+      }
+      lastResp = resp;
+    } catch {
+      // try next endpoint
+    }
+  }
+
+  const errText = lastResp ? await lastResp.text().catch(() => 'Unknown') : 'All endpoints failed';
+  throw new Error(`HuggingFace Error: ${lastResp?.status || 0} - ${errText}`);
   const buf = await resp.arrayBuffer();
   return `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(buf)))}`;
 }
