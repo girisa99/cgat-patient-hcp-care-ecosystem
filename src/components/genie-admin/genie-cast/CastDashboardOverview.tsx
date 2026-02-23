@@ -97,20 +97,20 @@ function useVideoStats() {
 const HERO_BANNERS = [
   {
     image: castHero1,
-    title: 'AI-Powered Content Studio',
-    subtitle: 'Create professional videos, presentations & podcasts with regional intelligence',
+    title: 'Make It. Show It. Scale It.',
+    subtitle: 'We built Cast to market our own products — now use it to market yours. Universal Enrichment powers every asset.',
     gradient: 'from-purple-900/80 via-purple-900/50 to-transparent',
   },
   {
     image: castHero2,
-    title: 'Production at Scale',
-    subtitle: 'Generate content in 75+ languages across 56 zones with one click',
+    title: '14 Regions × 40+ Sub-Regions × 6 Platforms',
+    subtitle: 'One production run → localized for every market. Enrichment handles voiceover, captions, and brand context per region.',
     gradient: 'from-blue-900/80 via-blue-900/50 to-transparent',
   },
   {
     image: castHero3,
-    title: 'Global Distribution',
-    subtitle: 'Publish and track content performance across every region worldwide',
+    title: 'Your Tools. Your Pipeline. No Agency.',
+    subtitle: 'Cast pulls from 5 enrichment layers — Product, Brand, Audience, Regional, Competitor — and routes to the optimal AI model.',
     gradient: 'from-emerald-900/80 via-emerald-900/50 to-transparent',
   },
 ];
