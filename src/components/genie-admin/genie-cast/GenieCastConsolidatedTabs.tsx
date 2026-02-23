@@ -817,51 +817,68 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           size="sm"
           className="gap-1.5 text-xs font-medium border-border/30 h-8 rounded-lg"
           onClick={async () => {
-            const seed = createEP04SessionSeed();
-            const { createCastProject } = await import('@/services/productionCostAccumulator');
-            const projectId = await createCastProject({
-              title: 'EP04 — Genie Reel Episode 2',
-              description: 'AI-powered cinematic product demo',
-              estimatedTokens: 850000,
-              productContext: 'genie-reel-ep04',
-              quality: 'cinematic',
-              metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
-            });
-            castSession.updateSession({ ...seed, projectId });
-            const stats = getEP04Stats();
-            toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
-            if (projectId) toast.success(`📊 Project created — token tracking active`);
-            const techCategory = contentRegistry.categories.find(c => c.name === 'technology');
-            if (techCategory) setSelectedCategoryId(techCategory.id);
-            const videoFormat = contentRegistry.formats.find(f => f.name === 'video');
-            if (videoFormat) {
-              setSelectedFormatId(videoFormat.id);
-              setActiveContentType(videoFormat.name);
+            try {
+              toast.info('Loading EP04 project...');
+              const seed = createEP04SessionSeed();
+              let projectId: string | null = null;
+              try {
+                const { createCastProject } = await import('@/services/productionCostAccumulator');
+                projectId = await createCastProject({
+                  title: 'EP04 — Genie Reel Episode 2',
+                  description: 'AI-powered cinematic product demo',
+                  estimatedTokens: 850000,
+                  productContext: 'genie-reel-ep04',
+                  quality: 'cinematic',
+                  metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
+                });
+              } catch (projErr) {
+                console.warn('EP04: Could not create project tracker, continuing without:', projErr);
+              }
+              castSession.updateSession({ ...seed, projectId: projectId || undefined });
+              const stats = getEP04Stats();
+              toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
+              if (projectId) toast.success('Project created — token tracking active');
+              const techCategory = contentRegistry.categories.find(c => c.name === 'technology');
+              if (techCategory) setSelectedCategoryId(techCategory.id);
+              const videoFormat = contentRegistry.formats.find(f => f.name === 'video');
+              if (videoFormat) {
+                setSelectedFormatId(videoFormat.id);
+                setActiveContentType(videoFormat.name);
+              }
+              setPrimaryPlatform('youtube');
+              setOutputLanguages(['en']);
+              setSelectedDialectCodes(['en-US']);
+              const cinematicStyle = contentRegistry.visualStyles.find(s => s.name === 'cinematic');
+              if (cinematicStyle) setSelectedVisualStyleIds([cinematicStyle.id]);
+              const ep04Caps = ['avatar_talking_head', 'lip_sync', 'scene_voiceover', 'screen_recording', 'text_to_video'];
+              const matchedCapIds = contentRegistry.productionCapabilities
+                .filter(c => ep04Caps.includes(c.name))
+                .map(c => c.id);
+              if (matchedCapIds.length > 0) setSelectedCapabilityIds(matchedCapIds);
+              setSelectedAssetSource('screen_capture');
+              setLipSyncEnabled(true);
+              setDubbingEnabled(false);
+              setSelectedResolution('1920x1080');
+              setSelectedAspectRatio('16:9');
+              setProductionQuality('cinematic');
+              if (seed.templateMapping) {
+                try {
+                  const { mapping, stats: screenStats } = await enrichWithScreenAssets(seed.templateMapping);
+                  castSession.updateSession({ templateMapping: mapping });
+                  if (screenStats.found > 0) toast.success(`${screenStats.found}/${screenStats.total} screenshots resolved`);
+                  if (screenStats.missing.length > 0) toast.info(`${screenStats.missing.length} screenshots pending capture`, { description: screenStats.missing.slice(0, 3).join(', ') + (screenStats.missing.length > 3 ? '...' : '') });
+                } catch (enrichErr) {
+                  console.warn('EP04: Screen asset enrichment failed, using raw template:', enrichErr);
+                }
+              }
+              // Navigate to configure after loading — use selectIntent to mark session as having a selection
+              castSession.selectIntent('video' as any);
+              setActiveMainTab('create');
+              setSubTab('create', 'configure');
+            } catch (err: any) {
+              console.error('EP04 load error:', err);
+              toast.error(`Failed to load EP04: ${err.message || 'Unknown error'}`);
             }
-            setPrimaryPlatform('youtube');
-            setOutputLanguages(['en']);
-            setSelectedDialectCodes(['en-US']);
-            const cinematicStyle = contentRegistry.visualStyles.find(s => s.name === 'cinematic');
-            if (cinematicStyle) setSelectedVisualStyleIds([cinematicStyle.id]);
-            const ep04Caps = ['avatar_talking_head', 'lip_sync', 'scene_voiceover', 'screen_recording', 'text_to_video'];
-            const matchedCapIds = contentRegistry.productionCapabilities
-              .filter(c => ep04Caps.includes(c.name))
-              .map(c => c.id);
-            if (matchedCapIds.length > 0) setSelectedCapabilityIds(matchedCapIds);
-            setSelectedAssetSource('screen_capture');
-            setLipSyncEnabled(true);
-            setDubbingEnabled(false);
-            setSelectedResolution('1920x1080');
-            setSelectedAspectRatio('16:9');
-            setProductionQuality('cinematic');
-            if (seed.templateMapping) {
-              const { mapping, stats: screenStats } = await enrichWithScreenAssets(seed.templateMapping);
-              castSession.updateSession({ templateMapping: mapping });
-              if (screenStats.found > 0) toast.success(`📸 ${screenStats.found}/${screenStats.total} screenshots resolved`);
-              if (screenStats.missing.length > 0) toast.info(`⚠️ ${screenStats.missing.length} screenshots pending capture`, { description: screenStats.missing.slice(0, 3).join(', ') + (screenStats.missing.length > 3 ? '...' : '') });
-            }
-            setActiveMainTab('create');
-            setSubTab('create', 'configure');
           }}
         >
           <Film className="w-3.5 h-3.5" />
@@ -1011,7 +1028,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           {/* GUIDED WIZARD: Show only the current step based on session state */}
 
           {/* STEP 1: Dynamic Category + Format selector (DB-driven) */}
-          {!castSession.session.selectedIntent && !castSession.session.selectedTemplate && (
+          {/* Guard: Only show when on intent subtab AND no selection made yet — prevents flash during transitions */}
+          {(currentSubTab === 'intent' || currentSubTab === 'discover') && !castSession.session.selectedIntent && !castSession.session.selectedTemplate && (
             <motion.div
               key="content-selector"
               initial={{ opacity: 0, y: 10 }}

@@ -7,7 +7,7 @@
  * Syncs with parent's subTab state and castSession guards.
  */
 
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback, useEffect, useRef } from 'react';
 import { StepWizardProvider, StepWizard, useStepWizard, type WizardStep } from '@/components/shared/step-wizard';
 import { GenieMascot, type MascotHint } from '@/components/shared/GenieMascot';
 import { Sparkles, Palette, LayoutTemplate, Image } from 'lucide-react';
@@ -43,22 +43,36 @@ const SubWizardBridge: React.FC<{
   children: React.ReactNode;
 }> = ({ activeSubTab, onSubTabChange, direction, children }) => {
   const { currentStep, goToStep, markStepComplete } = useStepWizard();
+  // Guard ref prevents bidirectional sync loop that causes flickering.
+  // When one side initiates a change, the ref blocks the other side from
+  // echoing it back, breaking the parent→wizard→parent ping-pong cycle.
+  const syncSourceRef = useRef<'parent' | 'wizard' | null>(null);
 
   // Sync: when parent changes subTab externally, update wizard step
   useEffect(() => {
+    if (syncSourceRef.current === 'wizard') {
+      syncSourceRef.current = null;
+      return;
+    }
     const targetIdx = STEP_TO_SUBTAB.indexOf(activeSubTab as CreateSubTab);
     if (targetIdx >= 0 && targetIdx !== currentStep) {
+      syncSourceRef.current = 'parent';
       goToStep(targetIdx);
     }
-  }, [activeSubTab, currentStep, goToStep]);
+  }, [activeSubTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync: when wizard step changes, update parent subTab
   useEffect(() => {
+    if (syncSourceRef.current === 'parent') {
+      syncSourceRef.current = null;
+      return;
+    }
     const currentSubTab = STEP_TO_SUBTAB[currentStep];
     if (currentSubTab && currentSubTab !== activeSubTab) {
+      syncSourceRef.current = 'wizard';
       onSubTabChange(currentSubTab);
     }
-  }, [currentStep, activeSubTab, onSubTabChange]);
+  }, [currentStep]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-3">
