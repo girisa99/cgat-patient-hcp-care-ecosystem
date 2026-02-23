@@ -145,6 +145,8 @@ export interface PresentationRequest {
   imageSource?: ImageSourceType;
   imageStyles?: ImageStyleType[];
   generateImages: boolean;
+  // Phase 6E: Video/animation production styles (shared with Cast — 93 styles)
+  videoStyles?: string[];
   imageStyle?: 'professional' | 'creative' | 'minimal' | 'infographic' | 'healthcare' | 'tech';
   colorScheme?: 'default' | 'dark' | 'light' | 'brand';
   includeJourneyMaps?: boolean;

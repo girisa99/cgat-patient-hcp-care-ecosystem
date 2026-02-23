@@ -61,7 +61,7 @@ export interface AIProviderEntry {
   wiredToGenieCast: boolean;
 }
 
-export type VideoStyleCategory = 
+export type VideoStyleCategory =
   | 'storytelling'
   | 'avatar'
   | 'animation'
@@ -73,17 +73,26 @@ export type VideoStyleCategory =
   | 'healthcare'
   | 'entertainment'
   | 'news_media'
-  | 'social_platform';
+  | 'social_platform'
+  // Phase 6E: Presentation + Infographic + Data Viz (shared Cast + Deck)
+  | 'presentation'
+  | 'infographic'
+  | 'data_visualization'
+  // Extended categories (merged from extended-video-styles.ts)
+  | 'hand_drawn'
+  | 'photorealistic'
+  | 'character'
+  | 'cyber_tech';
 
-export type VideoStyleId = 
+export type VideoStyleId =
   // Storytelling (6)
-  | 'smart_storytelling' | 'hook_videos' | 'micro_drama' 
+  | 'smart_storytelling' | 'hook_videos' | 'micro_drama'
   | 'documentary' | 'narrative_arc' | 'testimonial'
   // Avatar (7)
   | 'ugc_avatar_photorealistic' | 'ugc_avatar_3d_pixar' | 'ugc_avatar_2d_animated'
   | 'talking_photos' | 'full_body_avatar' | 'digital_twin' | 'mascot_character'
   // Animation (6)
-  | 'anime' | 'image_to_life' | 'explainer_3d' 
+  | 'anime' | 'image_to_life' | 'explainer_3d'
   | 'motion_graphics' | 'kinetic_typography' | 'whiteboard'
   // Interactive (5)
   | 'educational' | 'interactive_quiz' | 'cta_videos'
@@ -96,7 +105,30 @@ export type VideoStyleId =
   // Healthcare (3)
   | 'patient_education' | 'provider_training' | 'medical_explainer'
   // Entertainment (4)
-  | 'gaming_trailer' | 'music_video' | 'short_film' | 'podcast_video';
+  | 'gaming_trailer' | 'music_video' | 'short_film' | 'podcast_video'
+  // ── Presentation & Infographic (20 — shared Cast + Deck) ──
+  | 'animated_infographic' | 'customer_journey' | 'animated_process_flow'
+  | 'animated_timeline' | 'animated_org_chart' | 'animated_mind_map'
+  | 'data_story' | 'animated_chart' | 'animated_comparison'
+  | 'pitch_deck' | 'animated_funnel' | 'roadmap_animation'
+  | 'animated_dashboard' | 'animated_map' | 'animated_hierarchy'
+  | 'animated_cycle' | 'animated_matrix' | 'animated_swot'
+  | 'animated_kpi' | 'narrated_walkthrough'
+  // ── Extended: Hand-drawn (7) ──
+  | 'crayon_sketch' | 'hand_sketch' | 'microworld' | 'stop_motion'
+  | 'paper_cutout' | 'watercolor' | 'oil_painting'
+  // ── Extended: Photorealistic (4) ──
+  | 'photorealistic_4k' | 'image_upscaler' | 'hyper_real' | 'cinematic_film'
+  // ── Extended: Character (5) ──
+  | 'pixar_disney' | 'universal_dreamworks' | 'character_vlog'
+  | 'mascot_presenter' | 'anime_character'
+  // ── Extended: Cyber/Tech (5) ──
+  | 'cyberpunk' | 'neon_glow' | 'glitch_art' | 'holographic' | 'retro_synthwave'
+  // ── Extended: Educational (6) ──
+  | 'explainer_video' | 'school_learning' | 'tutorial_walkthrough'
+  | 'science_documentary' | 'motivational_inspirational' | 'innovation_tech'
+  // ── Extended: Artistic (3) ──
+  | 'car_racing' | 'creative_abstract' | 'vintage_retro';
 
 export interface VideoStyleEntry {
   id: VideoStyleId;
@@ -1177,6 +1209,266 @@ export const MASTER_VIDEO_STYLES: VideoStyleEntry[] = [
     ttsStyle: 'conversational',
     pacing: 'normal',
     industries: ['podcast', 'creator', 'media'],
+    new: true,
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // PRESENTATION & INFOGRAPHIC (20 styles — shared Cast + Deck)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'animated_infographic',
+    title: 'Animated Infographic',
+    category: 'infographic',
+    description: 'Data-rich infographic slides with animated reveals, counters, and icon transitions',
+    icon: 'BarChart3',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'professional',
+    pacing: 'normal',
+    industries: ['marketing', 'enterprise', 'consulting', 'finance'],
+    popular: true,
+    new: true,
+  },
+  {
+    id: 'customer_journey',
+    title: 'Customer Journey',
+    category: 'presentation',
+    description: 'Animated customer journey map with touchpoints, emotions, and milestone highlights',
+    icon: 'Route',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'narrative',
+    pacing: 'dynamic',
+    industries: ['marketing', 'saas', 'ecommerce', 'consulting'],
+    popular: true,
+    new: true,
+  },
+  {
+    id: 'animated_process_flow',
+    title: 'Animated Process Flow',
+    category: 'infographic',
+    description: 'Step-by-step process with animated arrows, nodes, and progressive reveal',
+    icon: 'GitBranch',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'instructional',
+    pacing: 'normal',
+    industries: ['enterprise', 'manufacturing', 'consulting', 'tech'],
+    popular: true,
+  },
+  {
+    id: 'animated_timeline',
+    title: 'Animated Timeline',
+    category: 'presentation',
+    description: 'Chronological timeline with animated milestones, dates, and event details',
+    icon: 'Clock',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'narrative',
+    pacing: 'normal',
+    industries: ['enterprise', 'education', 'marketing', 'hr'],
+  },
+  {
+    id: 'animated_org_chart',
+    title: 'Animated Org Chart',
+    category: 'infographic',
+    description: 'Organizational hierarchy with animated node expansion and role highlights',
+    icon: 'Users',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'professional',
+    pacing: 'normal',
+    industries: ['enterprise', 'hr', 'consulting'],
+  },
+  {
+    id: 'animated_mind_map',
+    title: 'Animated Mind Map',
+    category: 'infographic',
+    description: 'Branching idea map with animated node growth, colors, and category clustering',
+    icon: 'Network',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'creative',
+    pacing: 'dynamic',
+    industries: ['education', 'consulting', 'brainstorming', 'marketing'],
+    new: true,
+  },
+  {
+    id: 'data_story',
+    title: 'Data Story',
+    category: 'data_visualization',
+    description: 'Narrative-driven data visualization with animated charts, annotations, and insights',
+    icon: 'TrendingUp',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'analytical',
+    pacing: 'dynamic',
+    industries: ['finance', 'analytics', 'enterprise', 'consulting'],
+    popular: true,
+    new: true,
+  },
+  {
+    id: 'animated_chart',
+    title: 'Animated Chart',
+    category: 'data_visualization',
+    description: 'Bar, line, pie, radar, and waterfall charts with animated data entry and transitions',
+    icon: 'BarChart',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'professional',
+    pacing: 'normal',
+    industries: ['finance', 'marketing', 'enterprise', 'analytics'],
+    popular: true,
+  },
+  {
+    id: 'animated_comparison',
+    title: 'Animated Comparison',
+    category: 'presentation',
+    description: 'Side-by-side animated comparison with feature highlights, scoring, and verdict',
+    icon: 'Scale',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'analytical',
+    pacing: 'normal',
+    industries: ['saas', 'ecommerce', 'tech', 'consulting'],
+  },
+  {
+    id: 'pitch_deck',
+    title: 'Pitch Deck',
+    category: 'presentation',
+    description: 'Investor-ready animated pitch with problem, solution, traction, and ask slides',
+    icon: 'Rocket',
+    videoProvider: 'vertex-ai',
+    avatarProvider: 'alibaba-wan2.2',
+    ttsStyle: 'persuasive',
+    pacing: 'dynamic',
+    industries: ['startup', 'finance', 'enterprise'],
+    popular: true,
+    new: true,
+  },
+  {
+    id: 'animated_funnel',
+    title: 'Animated Funnel',
+    category: 'infographic',
+    description: 'Marketing/sales funnel with animated stage transitions, metrics, and drop-off rates',
+    icon: 'Filter',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'analytical',
+    pacing: 'normal',
+    industries: ['marketing', 'saas', 'ecommerce'],
+  },
+  {
+    id: 'roadmap_animation',
+    title: 'Roadmap Animation',
+    category: 'presentation',
+    description: 'Product/project roadmap with animated phases, milestones, and deliverables',
+    icon: 'Map',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'professional',
+    pacing: 'normal',
+    industries: ['tech', 'enterprise', 'startup', 'product'],
+    popular: true,
+  },
+  {
+    id: 'animated_dashboard',
+    title: 'Animated Dashboard',
+    category: 'data_visualization',
+    description: 'Executive dashboard with animated KPIs, charts, and real-time data simulation',
+    icon: 'LayoutDashboard',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'professional',
+    pacing: 'normal',
+    industries: ['enterprise', 'finance', 'analytics', 'marketing'],
+    new: true,
+  },
+  {
+    id: 'animated_map',
+    title: 'Animated Map',
+    category: 'data_visualization',
+    description: 'Geographic data visualization with animated regions, heatmaps, and flow lines',
+    icon: 'Globe',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'documentary',
+    pacing: 'slow',
+    industries: ['logistics', 'enterprise', 'nonprofit', 'marketing'],
+  },
+  {
+    id: 'animated_hierarchy',
+    title: 'Animated Hierarchy',
+    category: 'infographic',
+    description: 'Nested hierarchy visualization with animated drill-down, expansion, and breadcrumbs',
+    icon: 'ListTree',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'educational',
+    pacing: 'normal',
+    industries: ['enterprise', 'education', 'tech'],
+  },
+  {
+    id: 'animated_cycle',
+    title: 'Animated Cycle',
+    category: 'infographic',
+    description: 'Circular process diagram with rotating stages, feedback loops, and phase highlights',
+    icon: 'RefreshCw',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'educational',
+    pacing: 'normal',
+    industries: ['consulting', 'education', 'enterprise'],
+  },
+  {
+    id: 'animated_matrix',
+    title: 'Animated Matrix',
+    category: 'presentation',
+    description: '2x2 or NxN matrix with animated quadrant placement, labels, and scoring',
+    icon: 'Grid3X3',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'analytical',
+    pacing: 'normal',
+    industries: ['consulting', 'strategy', 'marketing'],
+  },
+  {
+    id: 'animated_swot',
+    title: 'Animated SWOT',
+    category: 'presentation',
+    description: 'SWOT analysis with animated quadrants, color-coded entries, and strategic insights',
+    icon: 'Target',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'analytical',
+    pacing: 'normal',
+    industries: ['consulting', 'strategy', 'enterprise'],
+  },
+  {
+    id: 'animated_kpi',
+    title: 'Animated KPI Cards',
+    category: 'data_visualization',
+    description: 'Animated metric cards with counters, sparklines, trend arrows, and status indicators',
+    icon: 'Gauge',
+    videoProvider: 'modelslab',
+    animationProvider: 'modelslab',
+    ttsStyle: 'professional',
+    pacing: 'fast',
+    industries: ['enterprise', 'finance', 'saas', 'marketing'],
+    popular: true,
+  },
+  {
+    id: 'narrated_walkthrough',
+    title: 'Narrated Walkthrough',
+    category: 'presentation',
+    description: 'Screen-by-screen walkthrough with avatar narrator, highlights, and zoom-ins',
+    icon: 'MonitorPlay',
+    videoProvider: 'vertex-ai',
+    avatarProvider: 'alibaba-wan2.2',
+    ttsStyle: 'instructional',
+    pacing: 'slow',
+    industries: ['saas', 'tech', 'training', 'education'],
+    popular: true,
     new: true,
   },
 ];

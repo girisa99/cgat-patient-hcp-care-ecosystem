@@ -137,6 +137,8 @@ import {
   type CollateralType as WorkflowCollateralType,
 } from './wizardConstants';
 import { ContentTypeSelector, CONTENT_CATEGORIES, EXTENDED_COLLATERAL_TYPES } from './ContentTypeSelector';
+// Phase 6E: Unified video/animation style selector (shared with Cast)
+import { DeckVideoStyleSelector } from './DeckVideoStyleSelector';
 import { AIModelConfigPanel } from './AIModelConfigPanel';
 import { ConfigurationPanel } from './ConfigurationPanel';
 import { TemplateBrandingPanelV2 as TemplateBrandingPanel, BrandConfig } from './TemplateBrandingPanelV2';
@@ -395,6 +397,8 @@ export function PresentationWizard({
   const [videoModel, setVideoModel] = useState<VideoModelType>('auto');
   const [includeVideo, setIncludeVideo] = useState(false);
   const [selectedImageStyles, setSelectedImageStyles] = useState<ImageStyleType[]>(['ai-realistic']);
+  // Phase 6E: Unified video/animation production styles (shared with Cast)
+  const [selectedVideoStyles, setSelectedVideoStyles] = useState<string[]>([]);
   const [selectedTones, setSelectedTones] = useState<PresentationTone[]>(['balanced']);
   const [selectedEnhancements, setSelectedEnhancements] = useState<ContentEnhancement[]>([]);
   
@@ -730,6 +734,7 @@ export function PresentationWizard({
             length,
             imageSource,
             imageStyles: selectedImageStyles,
+            videoStyles: selectedVideoStyles,
             imageModel,
             selectedTones,
             selectedEnhancements,
@@ -1010,6 +1015,7 @@ export function PresentationWizard({
       length,
       imageSource,
       imageStyles: selectedImageStyles,
+            videoStyles: selectedVideoStyles,
       generateImages: imageSource !== 'placeholder',
       // FIX #3: Use unified detection results
       includeJourneyMaps: finalIncludeJourneyMaps,
@@ -1244,6 +1250,7 @@ export function PresentationWizard({
         length,
         imageSource,
         imageStyles: selectedImageStyles,
+            videoStyles: selectedVideoStyles,
         generateImages: imageSource !== 'placeholder',
         includeJourneyMaps,
         includeInfographics,
@@ -1315,6 +1322,7 @@ export function PresentationWizard({
         length,
         imageSource,
         imageStyles: selectedImageStyles,
+            videoStyles: selectedVideoStyles,
         generateImages: imageSource !== 'placeholder',
         includeJourneyMaps,
         includeInfographics,
@@ -1948,11 +1956,28 @@ export function PresentationWizard({
                   onModelSelectionsChange={setModelSelections}
                 />
 
+                {/* Phase 6E: Video/Animation Production Style Selector (shared with Cast) */}
+                <DeckVideoStyleSelector
+                  selectedStyles={selectedVideoStyles}
+                  onStyleToggle={(styleId) => {
+                    setSelectedVideoStyles(prev =>
+                      prev.includes(styleId)
+                        ? prev.filter(s => s !== styleId)
+                        : [...prev, styleId]
+                    );
+                    // Auto-enable video when a video style is selected
+                    if (!includeVideo) setIncludeVideo(true);
+                  }}
+                  onStylesClear={() => setSelectedVideoStyles([])}
+                  maxSelections={5}
+                  showRecommended={true}
+                />
+
                 {/* Step Feedback */}
-                <StepFeedbackPanel 
-                  stepNumber={3} 
-                  stepName="Output Type" 
-                  variant="compact" 
+                <StepFeedbackPanel
+                  stepNumber={3}
+                  stepName="Output Type"
+                  variant="compact"
                 />
               </div>
             )}
