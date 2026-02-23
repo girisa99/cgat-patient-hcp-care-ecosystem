@@ -5,20 +5,23 @@
  * Mobile (<768px): Horizontal progress dots (top) + full-width card + sticky bottom nav
  * 
  * Features:
- * - Liquid Glass translucent surfaces
+ * - Liquid Glass translucent surfaces with hero background
+ * - Animated mascot with contextual dialogue per step
  * - RTL-aware layout flipping
  * - Transcreation labels (local language shown alongside English)
  * - Smooth framer-motion transitions
  * - AI-generated step thumbnails
+ * - Pipeline & combination stats
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Sparkles, Zap, Layers, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useStepWizard } from './StepWizardContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import sidebarBg from '@/assets/wizard-sidebar-bg.jpg';
 
 interface StepWizardProps {
   /** Step content — either an array (one per step) or a single ReactNode (shown for all steps) */
@@ -210,6 +213,24 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   const childArray = Array.isArray(children) ? children : [children];
   const currentChild = childArray.length > 1 ? (childArray[currentStep] || childArray[childArray.length - 1]) : childArray[0];
 
+  // Contextual mascot dialogues per step (must be before conditional return)
+  const STEP_DIALOGUES = useMemo(() => [
+    { emoji: '🎯', title: 'Choose Your Content', message: "Pick a category & format — I'll match the best AI providers from 17+ models across 4 global zones." },
+    { emoji: '⚡', title: 'Configure Your Style', message: "Set platform, language, and visual style. I'm auto-routing to the optimal AI pipeline for your region." },
+    { emoji: '📋', title: 'Select a Blueprint', message: "Each template includes pre-built scenes, timing, and AI routing. 43 styles across 12 categories!" },
+    { emoji: '🚀', title: 'Add Your Assets', message: "Upload brand assets, hero banners, and regional configs. Then we produce across 25 marketing pipelines!" },
+  ], []);
+
+  const currentDialogue = STEP_DIALOGUES[currentStep] || STEP_DIALOGUES[0];
+
+  // Pipeline stats
+  const pipelineStats = useMemo(() => ({
+    providers: 17,
+    styles: 43,
+    pipelines: 25,
+    zones: 4,
+  }), []);
+
   // ── Mobile Layout ────────────────────────────────────────────────────────
   if (isMobile) {
     return (
@@ -297,72 +318,168 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   // ── Desktop Layout ───────────────────────────────────────────────────────
   return (
     <div className={cn('flex h-full min-h-0 gap-0', direction === 'rtl' && 'flex-row-reverse', className)} dir={direction}>
-      {/* Sidebar stepper — Liquid Glass panel */}
-      <div className="w-[260px] flex-shrink-0 flex flex-col border-white/[0.06] bg-white/[0.02] backdrop-blur-xl rounded-2xl p-3 mr-4"
+      {/* Sidebar stepper — Enhanced Liquid Glass panel with background */}
+      <div className="w-[280px] flex-shrink-0 flex flex-col rounded-2xl overflow-hidden relative mr-4"
         style={{
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          borderImage: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%) 1',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 0 rgba(255,255,255,0.06)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.2), inset 0 1px 0 0 rgba(255,255,255,0.08)',
         }}
       >
-        {/* Progress indicator */}
-        <div className="px-4 pt-2 pb-3 mb-1">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-            <span>Progress</span>
-            <span className="text-primary font-medium">{progress}%</span>
-          </div>
-          <div className="h-1.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-primary via-primary/80 to-emerald-500 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-            />
-          </div>
+        {/* Background image with overlay */}
+        <div className="absolute inset-0 z-0">
+          <img src={sidebarBg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/75 to-background/90 backdrop-blur-sm" />
+          {/* Animated ambient glow */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5"
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          />
         </div>
 
-        {/* Steps */}
-        <nav className="flex-1 space-y-0">
-          {steps.map((step, i) => (
-            <React.Fragment key={step.id}>
-              <DesktopStepItem
-                step={step}
-                index={i}
-                isActive={i === currentStep}
-                isCompleted={completedSteps.has(i)}
-                onClick={() => goToStep(i)}
-                direction={direction}
-              />
-              {i < steps.length - 1 && (
-                <StepConnector isCompleted={completedSteps.has(i)} />
-              )}
-            </React.Fragment>
-          ))}
-        </nav>
+        {/* Glass border overlay */}
+        <div className="absolute inset-0 z-[1] rounded-2xl border border-white/[0.1] pointer-events-none" />
+        <div className="absolute inset-0 z-[1] rounded-2xl bg-gradient-to-br from-white/[0.06] via-transparent to-transparent pointer-events-none" />
 
-        {/* Bottom action */}
-        <div className="mt-4 pt-3 border-t border-white/[0.06]">
-          <Button
-            onClick={nextStep}
-            className={cn(
-              'w-full h-11 rounded-xl bg-gradient-to-r from-primary to-primary/80',
-              'shadow-[0_0_20px_rgba(var(--primary-rgb,99,102,241),0.25)]',
-              'hover:shadow-[0_0_30px_rgba(var(--primary-rgb,99,102,241),0.45)]',
-              'transition-all duration-300',
-              direction === 'rtl' && 'flex-row-reverse',
-            )}
-          >
-            <span className="flex flex-col items-center leading-tight">
-              <span className="text-sm font-medium">{isLastStep ? completeLabel : nextLabel}</span>
-              {(isLastStep ? localCompleteLabel : localNextLabel) && (
-                <span className="text-[10px] text-primary-foreground/60">
-                  {isLastStep ? localCompleteLabel : localNextLabel}
-                </span>
+        {/* Content (above background) */}
+        <div className="relative z-[2] flex flex-col h-full p-3">
+          {/* Progress indicator with animated gradient */}
+          <div className="px-3 pt-2 pb-3 mb-1">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="text-foreground/70 font-medium">Progress</span>
+              <motion.span 
+                className="text-primary font-bold text-sm"
+                key={progress}
+                initial={{ scale: 1.3, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 300 }}
+              >
+                {progress}%
+              </motion.span>
+            </div>
+            <div className="h-2 w-full bg-white/[0.08] rounded-full overflow-hidden backdrop-blur-sm border border-white/[0.05]">
+              <motion.div
+                className="h-full rounded-full relative overflow-hidden"
+                style={{ background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.7), #10b981)' }}
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+              >
+                {/* Shimmer effect */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1 }}
+                />
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Steps with enhanced styling */}
+          <nav className="flex-1 space-y-0">
+            {steps.map((step, i) => (
+              <React.Fragment key={step.id}>
+                <DesktopStepItem
+                  step={step}
+                  index={i}
+                  isActive={i === currentStep}
+                  isCompleted={completedSteps.has(i)}
+                  onClick={() => goToStep(i)}
+                  direction={direction}
+                />
+                {i < steps.length - 1 && (
+                  <StepConnector isCompleted={completedSteps.has(i)} />
+                )}
+              </React.Fragment>
+            ))}
+          </nav>
+
+          {/* Pipeline & Combination Stats */}
+          <div className="mt-3 px-2">
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                { icon: Zap, label: 'AI Models', value: pipelineStats.providers, color: 'text-amber-400' },
+                { icon: Layers, label: 'Styles', value: pipelineStats.styles, color: 'text-cyan-400' },
+                { icon: Sparkles, label: 'Pipelines', value: pipelineStats.pipelines, color: 'text-purple-400' },
+                { icon: Globe, label: 'Zones', value: pipelineStats.zones, color: 'text-emerald-400' },
+              ].map((stat) => (
+                <motion.div
+                  key={stat.label}
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] backdrop-blur-sm"
+                  whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.08)' }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <stat.icon className={cn('w-3 h-3', stat.color)} />
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground/60 leading-none">{stat.label}</p>
+                    <p className="text-xs font-bold text-foreground/90 leading-tight">{stat.value}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Mascot with contextual dialogue */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="mt-3 px-1"
+            >
+              <div className="relative rounded-xl overflow-hidden bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl p-3">
+                {/* Mascot glow */}
+                <motion.div
+                  className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-primary/20 blur-xl"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+                <div className="relative flex items-start gap-2.5">
+                  {/* Mascot avatar */}
+                  <motion.div
+                    className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center text-lg"
+                    animate={{ 
+                      y: [0, -3, 0],
+                      rotate: [0, 3, -3, 0],
+                    }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    {currentDialogue.emoji}
+                  </motion.div>
+                  {/* Dialogue */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-semibold text-primary mb-0.5">{currentDialogue.title}</p>
+                    <p className="text-[10px] text-foreground/70 leading-relaxed">{currentDialogue.message}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Bottom action */}
+          <div className="mt-3 pt-3 border-t border-white/[0.06]">
+            <Button
+              onClick={nextStep}
+              className={cn(
+                'w-full h-11 rounded-xl bg-gradient-to-r from-primary to-primary/80',
+                'shadow-[0_0_20px_rgba(var(--primary-rgb,99,102,241),0.25)]',
+                'hover:shadow-[0_0_30px_rgba(var(--primary-rgb,99,102,241),0.45)]',
+                'transition-all duration-300',
+                direction === 'rtl' && 'flex-row-reverse',
               )}
-            </span>
-            {isLastStep ? <Sparkles className="w-4 h-4 ml-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
-          </Button>
+            >
+              <span className="flex flex-col items-center leading-tight">
+                <span className="text-sm font-medium">{isLastStep ? completeLabel : nextLabel}</span>
+                {(isLastStep ? localCompleteLabel : localNextLabel) && (
+                  <span className="text-[10px] text-primary-foreground/60">
+                    {isLastStep ? localCompleteLabel : localNextLabel}
+                  </span>
+                )}
+              </span>
+              {isLastStep ? <Sparkles className="w-4 h-4 ml-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
+            </Button>
+          </div>
         </div>
       </div>
 
