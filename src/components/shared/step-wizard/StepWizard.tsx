@@ -214,12 +214,12 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   const childArray = Array.isArray(children) ? children : [children];
   const currentChild = childArray.length > 1 ? (childArray[currentStep] || childArray[childArray.length - 1]) : childArray[0];
 
-  // Contextual mascot dialogues per step (must be before conditional return)
+  // Contextual mascot dialogues — aligned with Cast's "Make It. Show It. Scale It." dogfooding philosophy
   const STEP_DIALOGUES = useMemo(() => [
-    { emoji: '🧞', title: 'Hey Creator! 👋', message: "Welcome to the CREATE studio! Pick your content category & format — I'll match you with the best AI providers from 17+ models across 4 global zones. Let's build something amazing!", tip: '💡 Tip: Try "Healthcare + Short-form" for viral content' },
-    { emoji: '🎨', title: "Great Choice! Let's Style It ⚡", message: "Now set your platform, language, and visual style. I'm auto-routing to the optimal AI pipeline for your region. The combination engine will mix styles across 43 presets!", tip: '💡 Tip: Regional routing auto-selects the best CDN & model' },
-    { emoji: '📋', title: 'Pick Your Blueprint 🎬', message: "Each template includes pre-built scenes, timing curves, and AI routing logic. I've curated 25 pipelines — pick one and I'll pre-load all the scene configs for you!", tip: '💡 Tip: Templates with ⭐ are top performers in your region' },
-    { emoji: '🚀', title: "Almost There! Final Touch 🎉", message: "Upload brand assets, hero banners, and regional configs. Once done, I'll orchestrate production across all pipelines simultaneously. Your content goes global!", tip: '💡 Tip: Drag & drop multiple assets — I batch-process them' },
+    { emoji: '🧞', title: 'Make It. Show It. Scale It. 🏗️', message: "We built Cast to market our own products — now it's yours too. Pick your industry & format. Universal Enrichment auto-injects your brand context, product knowledge, and regional scripts into every asset.", tip: '💡 We dogfood this: every GenieSuite launch video was made right here in Cast' },
+    { emoji: '🎨', title: "Your Brand, Your Pipeline ⚡", message: "Cast pulls from your enrichment layers — brand assets, audience profiles, competitor insights — and routes to the optimal AI model for your region. No marketing agency needed, just your tools doing the work.", tip: '💡 Enrichment layers active: Product · Brand · Audience · Regional · Competitor' },
+    { emoji: '📋', title: 'Blueprints That Ship 🎬', message: "These aren't mockups — they're production-ready pipelines we use ourselves. Each blueprint wires up scenes, voiceover routing, and platform-specific exports. Pick one and Cast handles the orchestration.", tip: '💡 Same blueprints we used for EP01–EP04 production runs' },
+    { emoji: '🚀', title: "Ship It Everywhere 🌍", message: "Add your assets and Cast distributes across 14 regions, 6+ platforms — YouTube, LinkedIn, TikTok, Instagram, X, Blogs. Universal Enrichment localizes everything. Make it once, scale it globally.", tip: '💡 One click → 14 regions × 6 platforms = your content everywhere' },
   ], []);
 
   const currentDialogue = STEP_DIALOGUES[currentStep] || STEP_DIALOGUES[0];
