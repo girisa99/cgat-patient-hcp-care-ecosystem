@@ -387,19 +387,18 @@ async function generateWithHuggingFace(prompt: string, options: ImageGenOptions)
   const token = keys.huggingface();
   if (!token) throw new Error('HuggingFace token missing');
 
-  // Use models known to be available on HF Inference API (free tier)
+  // Use router.huggingface.co (current endpoint) with models available on free Inference API
   const candidateModels = [
     options.model || 'stabilityai/stable-diffusion-xl-base-1.0',
     'stabilityai/stable-diffusion-xl-base-1.0',
     'runwayml/stable-diffusion-v1-5',
   ];
-
-  // Deduplicate
   const models = [...new Set(candidateModels)];
 
   let lastResp: Response | null = null;
   for (const model of models) {
-    const endpoint = `https://api-inference.huggingface.co/models/${model}`;
+    // Use the current router endpoint, NOT the deprecated api-inference endpoint
+    const endpoint = `https://router.huggingface.co/hf-inference/models/${model}`;
     try {
       const resp = await fetch(endpoint, {
         method: 'POST',
@@ -411,15 +410,15 @@ async function generateWithHuggingFace(prompt: string, options: ImageGenOptions)
         return `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(buf)))}`;
       }
       lastResp = resp;
-      // Consume body to avoid leak
       await resp.text().catch(() => {});
+      console.warn(`[ImageProviders] HF model ${model} returned ${resp.status}, trying next...`);
     } catch {
       // try next model
     }
   }
 
-  const errText = lastResp ? `${lastResp.status} - Not Found` : 'All endpoints failed';
-  throw new Error(`HuggingFace Error: ${errText}`);
+  const statusText = lastResp ? `${lastResp.status}` : 'no response';
+  throw new Error(`HuggingFace Error: ${statusText} - All models exhausted`);
 }
 
 // ============================================================================
