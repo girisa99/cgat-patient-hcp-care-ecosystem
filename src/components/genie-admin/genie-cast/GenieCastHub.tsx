@@ -9,7 +9,7 @@
  * Language selection persisted to localStorage, drives ALL AI provider routing.
  */
 
-import React, { useState, useCallback, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
 import arcAvatar from '@/assets/characters/arc-avatar.png';
 import oriAvatar from '@/assets/characters/ori-avatar.png';
 import type { VideoStyleType } from './VideoStyleCards';
@@ -616,9 +616,27 @@ export const GenieCastHub: React.FC = () => {
     );
   };
 
+  // Derive zone for CSS accent coloring
+  const castZone = useMemo(() => {
+    const lc = languageCode.split('-')[0]?.toLowerCase() || 'en';
+    if (['ar', 'he', 'fa'].includes(lc)) return 'mena';
+    if (['zh', 'ja', 'ko'].includes(lc)) return 'cjk';
+    if (['hi', 'te', 'ta', 'bn', 'ur', 'mr', 'gu', 'pa', 'ml', 'kn'].includes(lc)) return 'india';
+    if (['id', 'ms', 'th', 'vi', 'tl'].includes(lc)) return 'sea';
+    if (['sw', 'yo', 'am', 'ha'].includes(lc)) return 'africa';
+    if (['fr', 'de', 'it', 'nl', 'pl', 'ru', 'sv', 'da', 'no', 'fi', 'el', 'ro', 'cs'].includes(lc)) return 'europe';
+    if (['es', 'pt'].includes(lc)) return 'latam';
+    if (['en'].includes(lc)) return 'nam';
+    return 'nam';
+  }, [languageCode]);
+
   // ── Desktop: Top nav + full-width glassmorphic workspace ───────────────────
   return (
-    <div className="flex flex-col h-full min-h-[calc(100vh-4rem)]" dir={routing.isRTL ? 'rtl' : 'ltr'}>
+    <div
+      className="flex flex-col h-full min-h-[calc(100vh-4rem)]"
+      dir={routing.isRTL ? 'rtl' : 'ltr'}
+      data-cast-zone={castZone}
+    >
       <TopNav
         activeMode={mode}
         onModeChange={handleModeChange}
@@ -639,13 +657,14 @@ export const GenieCastHub: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-4">
         {/* Dashboard overview — shown when on workspace + dashboard mode */}
         {!isNavView && showDashboard && (
-          <div className={cn(
-            'rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl shadow-xl',
-            'bg-gradient-to-br from-card/60 via-background/40 to-card/50',
-            'relative overflow-hidden',
-          )}>
-            <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02]" />
-            <div className="relative">
+          <div className="cast-workspace-glass">
+            {/* Ambient gradient mesh — the WOW depth layer */}
+            <div className="cast-ambient-mesh">
+              <div className="cast-ambient-blob" />
+            </div>
+            {/* Glass shine overlay */}
+            <div className="cast-glass-shine" />
+            <div className="relative z-[2]">
               <Suspense fallback={<NavViewFallback />}>
                 <LazyCastDashboard
                   onNavigate={handleViewChange}
@@ -657,14 +676,14 @@ export const GenieCastHub: React.FC = () => {
         )}
         {/* Glassmorphic workspace container — Create/Produce/Publish tabs */}
         {!isNavView && !showDashboard && (
-          <div className={cn(
-            'rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl shadow-xl',
-            'bg-gradient-to-br from-card/60 via-background/40 to-card/50',
-            'relative overflow-hidden',
-          )}>
-            {/* Inner glass shine */}
-            <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02]" />
-            <div className="relative">
+          <div className="cast-workspace-glass">
+            {/* Ambient gradient mesh */}
+            <div className="cast-ambient-mesh">
+              <div className="cast-ambient-blob" />
+            </div>
+            {/* Glass shine overlay */}
+            <div className="cast-glass-shine" />
+            <div className="relative z-[2]">
               <GenieCastConsolidatedTabs
                 selectedVideoStyles={selectedVideoStyles}
                 onStylesChange={handleStylesChange}
@@ -683,13 +702,12 @@ export const GenieCastHub: React.FC = () => {
         )}
         {/* Navigation views — glassmorphic container for non-workspace views */}
         {isNavView && (
-          <div className={cn(
-            'rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl shadow-xl',
-            'bg-gradient-to-br from-card/60 via-background/40 to-card/50',
-            'relative overflow-hidden min-h-[500px]',
-          )}>
-            <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02]" />
-            <div className="relative">
+          <div className="cast-workspace-glass min-h-[500px]">
+            <div className="cast-ambient-mesh">
+              <div className="cast-ambient-blob" />
+            </div>
+            <div className="cast-glass-shine" />
+            <div className="relative z-[2]">
               <NavViewContent view={activeView} />
             </div>
           </div>

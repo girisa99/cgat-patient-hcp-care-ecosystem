@@ -874,3 +874,124 @@
   margin-right: unset;
   margin-left: 0.5rem;
 }
+
+/* ═══════════════════════════════════════════════════════
+   AMBIENT GRADIENT MESH — Depth layer for glass cards
+   Animated, region-aware, gives glass something to blur against
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes ambient-mesh-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(2%, -3%) scale(1.02); }
+  50% { transform: translate(-1%, 2%) scale(0.98); }
+  75% { transform: translate(-3%, -1%) scale(1.01); }
+}
+
+@keyframes ambient-mesh-drift-alt {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-2%, 3%) scale(1.03); }
+  66% { transform: translate(3%, -2%) scale(0.97); }
+}
+
+@keyframes ambient-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.cast-ambient-mesh {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+.cast-ambient-mesh::before,
+.cast-ambient-mesh::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+}
+
+.cast-ambient-mesh::before {
+  width: 50%;
+  height: 60%;
+  top: -10%;
+  right: -5%;
+  background: radial-gradient(ellipse, hsl(var(--cast-accent, 160 84% 39%) / 0.25), transparent 70%);
+  animation: ambient-mesh-drift 20s ease-in-out infinite;
+}
+
+.cast-ambient-mesh::after {
+  width: 40%;
+  height: 50%;
+  bottom: -5%;
+  left: -5%;
+  background: radial-gradient(ellipse, hsl(var(--primary) / 0.15), transparent 70%);
+  animation: ambient-mesh-drift-alt 25s ease-in-out infinite;
+}
+
+/* Third ambient blob via child element */
+.cast-ambient-mesh > .cast-ambient-blob {
+  position: absolute;
+  width: 35%;
+  height: 40%;
+  top: 40%;
+  left: 35%;
+  border-radius: 50%;
+  filter: blur(60px);
+  background: radial-gradient(ellipse, hsl(var(--accent) / 0.12), transparent 70%);
+  animation: ambient-pulse 15s ease-in-out infinite;
+}
+
+/* Region-aware accent overrides — Cast = emerald by default */
+:root {
+  --cast-accent: 160 84% 39%;
+}
+
+/* Zone-specific accent tints */
+[data-cast-zone="mena"] { --cast-accent: 45 93% 47%; }
+[data-cast-zone="cjk"] { --cast-accent: 0 72% 51%; }
+[data-cast-zone="india"] { --cast-accent: 25 95% 53%; }
+[data-cast-zone="sea"] { --cast-accent: 174 72% 56%; }
+[data-cast-zone="africa"] { --cast-accent: 36 100% 50%; }
+[data-cast-zone="europe"] { --cast-accent: 199 89% 48%; }
+[data-cast-zone="latam"] { --cast-accent: 142 71% 45%; }
+[data-cast-zone="nam"] { --cast-accent: 217 91% 60%; }
+[data-cast-zone="oceania"] { --cast-accent: 187 85% 53%; }
+
+/* Enhanced glass workspace container */
+.cast-workspace-glass {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border) / 0.12);
+  background: hsl(var(--card) / 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 16px 48px hsl(0 0% 0% / 0.12),
+    0 0 0 1px hsl(0 0% 100% / 0.03) inset,
+    0 1px 0 0 hsl(0 0% 100% / 0.06) inset;
+  overflow: hidden;
+}
+
+.dark .cast-workspace-glass {
+  background: hsl(var(--card) / 0.25);
+  box-shadow:
+    0 16px 48px hsl(0 0% 0% / 0.35),
+    0 0 0 1px hsl(0 0% 100% / 0.02) inset,
+    0 1px 0 0 hsl(0 0% 100% / 0.04) inset;
+}
+
+/* Glass shine overlay — reusable via className */
+.cast-glass-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, hsl(0 0% 100% / 0.06) 0%, transparent 50%, hsl(0 0% 100% / 0.02) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
