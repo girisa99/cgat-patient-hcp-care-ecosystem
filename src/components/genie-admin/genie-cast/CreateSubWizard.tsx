@@ -82,31 +82,31 @@ const SubWizardBridge: React.FC<{
   );
 };
 
-/** Contextual mascot hints for each CREATE sub-step */
+/** Contextual mascot hints — Cast dogfooding philosophy */
 const MASCOT_HINTS: MascotHint[] = [
   {
     stepId: 'intent',
-    message: "Let's start! Pick your content category and format. I'll suggest the best AI providers for your choice. 🎯",
+    message: "Make It. Show It. Scale It. — Pick your industry & format. Cast uses Universal Enrichment to auto-inject your brand context into every asset. We built this to market our own products. 🏗️",
     localMessage: undefined,
     icon: '🧞',
     pose: 'waving',
   },
   {
     stepId: 'configure',
-    message: "Great choice! Now set your platform, languages, and visual style. I'm auto-selecting the best AI models for your region. ⚡",
+    message: "Your enrichment layers are active — brand, audience, competitor insights all feeding into the pipeline. Cast auto-routes to the best AI model for your region. No agency needed. ⚡",
     icon: '🎨',
     pose: 'pointing',
   },
   {
     stepId: 'templates',
-    message: "Pick a blueprint that matches your vision. Each template comes with pre-configured scenes, timing, and AI routing. 🎬",
+    message: "These are the same production blueprints we used for EP01–EP04. Each one wires up scenes, voiceover routing, and platform exports. Pick and ship. 🎬",
     icon: '📋',
     pose: 'thinking',
   },
   {
     stepId: 'assets',
-    message: "Almost ready! Add your brand assets, hero banners, and regional configurations. Then we're off to production! 🚀",
-    icon: '🎉',
+    message: "Add your assets and Cast distributes across 14 regions, 6+ platforms. Universal Enrichment localizes everything. Make it once, scale it globally. 🌍",
+    icon: '🚀',
     pose: 'celebrating',
   },
 ];
