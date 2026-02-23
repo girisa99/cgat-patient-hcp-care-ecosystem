@@ -91,11 +91,11 @@ export function ProviderPipelineBadge({
   const overrideCount = routing.overrides.size;
 
   return (
-    <div className={cn('glass-panel', className)}>
+    <div className={cn('glass-panel overflow-hidden max-w-full', className)}>
       {/* Compact header — always visible */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 p-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="w-full flex items-center gap-2 p-2 text-xs text-muted-foreground hover:text-foreground transition-colors min-w-0 overflow-hidden"
       >
         <Cpu className="w-3.5 h-3.5" />
         <span className="font-medium">AI Pipeline</span>
