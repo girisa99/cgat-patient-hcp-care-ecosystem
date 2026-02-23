@@ -553,6 +553,20 @@ export const GenieCastHub: React.FC = () => {
     }
   }, []);
 
+  // Derive zone for CSS accent coloring (must be before early returns to respect Rules of Hooks)
+  const castZone = useMemo(() => {
+    const lc = languageCode.split('-')[0]?.toLowerCase() || 'en';
+    if (['ar', 'he', 'fa'].includes(lc)) return 'mena';
+    if (['zh', 'ja', 'ko'].includes(lc)) return 'cjk';
+    if (['hi', 'te', 'ta', 'bn', 'ur', 'mr', 'gu', 'pa', 'ml', 'kn'].includes(lc)) return 'india';
+    if (['id', 'ms', 'th', 'vi', 'tl'].includes(lc)) return 'sea';
+    if (['sw', 'yo', 'am', 'ha'].includes(lc)) return 'africa';
+    if (['fr', 'de', 'it', 'nl', 'pl', 'ru', 'sv', 'da', 'no', 'fi', 'el', 'ro', 'cs'].includes(lc)) return 'europe';
+    if (['es', 'pt'].includes(lc)) return 'latam';
+    if (['en'].includes(lc)) return 'nam';
+    return 'nam';
+  }, [languageCode]);
+
   const isNavView = activeView !== 'workspace';
 
   // Shared workspace content for mobile/tablet
@@ -652,19 +666,7 @@ export const GenieCastHub: React.FC = () => {
     );
   };
 
-  // Derive zone for CSS accent coloring
-  const castZone = useMemo(() => {
-    const lc = languageCode.split('-')[0]?.toLowerCase() || 'en';
-    if (['ar', 'he', 'fa'].includes(lc)) return 'mena';
-    if (['zh', 'ja', 'ko'].includes(lc)) return 'cjk';
-    if (['hi', 'te', 'ta', 'bn', 'ur', 'mr', 'gu', 'pa', 'ml', 'kn'].includes(lc)) return 'india';
-    if (['id', 'ms', 'th', 'vi', 'tl'].includes(lc)) return 'sea';
-    if (['sw', 'yo', 'am', 'ha'].includes(lc)) return 'africa';
-    if (['fr', 'de', 'it', 'nl', 'pl', 'ru', 'sv', 'da', 'no', 'fi', 'el', 'ro', 'cs'].includes(lc)) return 'europe';
-    if (['es', 'pt'].includes(lc)) return 'latam';
-    if (['en'].includes(lc)) return 'nam';
-    return 'nam';
-  }, [languageCode]);
+  // castZone moved above early returns (Rules of Hooks)
 
   // ── Desktop: Top nav + full-width glassmorphic workspace ───────────────────
   return (
