@@ -85,10 +85,13 @@ export interface GenieCastSessionState {
   
   // Approval queue
   approvalItems: ApprovalItem[];
-  
+
   // Current stage tracking
   currentStage: AuthoringStage;
   completedStages: AuthoringStage[];
+
+  // Production mode settings (Phase 6E — multi-mode: avatar, 3D, animation, cinematic)
+  productionSettings?: Record<string, unknown>;
 }
 
 const STORAGE_KEY = 'genie-cast-session';

@@ -100,6 +100,18 @@ import { useAIRoutingIntelligence } from '@/hooks/useAIRoutingIntelligence';
 // Import P2 Live Generation Preview component (uses internal hooks)
 import { LiveGenerationPreview } from './LiveGenerationPreview';
 
+// Import Phase 6E Production UI components (B-021 to B-025)
+import {
+  SceneProgressTracker,
+  ProductionModePanel,
+  ProductionTimeline,
+  ProductionControlPanel,
+  getDefaultProductionSettings,
+  createTimelinePhases,
+  deriveSceneRenderMode,
+} from './production';
+import type { SceneProgress, ProductionModeSettings, TimelinePhase } from './production';
+
 // Import Holiday Awareness
 import { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
 
@@ -2706,6 +2718,54 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     setSubTab('produce', 'review');
                   }}
                   showAdvancedControls={true}
+                />
+
+                {/* Phase 6E: Production Mode Panel (B-022 + B-023) */}
+                <ProductionModePanel
+                  selectedStyles={castSession.session.selectedStyles || []}
+                  settings={castSession.session.productionSettings || getDefaultProductionSettings()}
+                  onSettingsChange={(updates) => {
+                    const current = castSession.session.productionSettings || getDefaultProductionSettings();
+                    castSession.updateSession({ productionSettings: { ...current, ...updates } });
+                  }}
+                  selectedLanguage={selectedDialectCodes[0] || 'en-US'}
+                />
+
+                {/* Phase 6E: Production Timeline (B-024) */}
+                <ProductionTimeline
+                  phases={createTimelinePhases(
+                    deriveSceneRenderMode(castSession.session.selectedStyles?.[0] || 'smart_storytelling'),
+                  )}
+                  currentPhaseId={null}
+                  overallProgress={0}
+                  elapsedMs={0}
+                  estimatedTotalMs={180000}
+                />
+
+                {/* Phase 6E: Production Controls (B-025) */}
+                <ProductionControlPanel
+                  productionState={{
+                    status: 'idle',
+                    job: null,
+                    progress: 0,
+                    currentTask: '',
+                    scenes: [],
+                    enrichment: null,
+                    enrichmentScore: 0,
+                    error: null,
+                    startedAt: null,
+                    completedAt: null,
+                  }}
+                  onStart={() => {
+                    console.log('[Studio] Start production');
+                    toast.info('Starting production pipeline...');
+                  }}
+                  onCancel={() => {
+                    console.log('[Studio] Cancel production');
+                  }}
+                  onReset={() => {
+                    console.log('[Studio] Reset production');
+                  }}
                 />
                 </>
                 ) : (
