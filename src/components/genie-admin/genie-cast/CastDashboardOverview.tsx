@@ -40,7 +40,6 @@ import {
   type ThumbnailResult,
 } from '@/services/production/dashboardThumbnailService';
 import { REGIONAL_SUB_REGIONS } from '@/config/regionalSubRegions';
-import { GlassProductHeroBanner, AllProductsHeroGrid } from '@/components/genie-studio/GlassProductHeroBanner';
 
 type NavView = 'workspace' | 'projects' | 'templates' | 'assets' | 'brand-kit' | 'analytics' | 'settings';
 
@@ -576,21 +575,6 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
         llmProvider={regional.llmProvider || 'Claude'}
         ttsProvider={regional.ttsProvider || 'Azure Neural'}
       />
-
-      {/* ── Genie Suite Product Heroes ─────────────────────────────────── */}
-      <div>
-        <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
-          <PanelTop className="w-3 h-3" /> Genie Suite Products
-        </h3>
-        <AllProductsHeroGrid
-          onProductClick={(product) => {
-            if (product === 'cast' || product === 'suite') onStartCreate();
-            else if (product === 'spark') onNavigate('projects');
-            else if (product === 'deck') onNavigate('templates');
-            else onNavigate('workspace');
-          }}
-        />
-      </div>
 
       {/* ── Region Zones Bar ────────────────────────────────────────────── */}
       <div>
