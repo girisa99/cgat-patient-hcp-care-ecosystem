@@ -387,33 +387,42 @@ async function generateWithHuggingFace(prompt: string, options: ImageGenOptions)
   const token = keys.huggingface();
   if (!token) throw new Error('HuggingFace token missing');
 
-  // Use router.huggingface.co (current endpoint) with models available on free Inference API
+  // Models confirmed available on HF Serverless Inference (free tier) as of 2026
   const candidateModels = [
-    options.model || 'stabilityai/stable-diffusion-xl-base-1.0',
+    options.model,
+    'black-forest-labs/FLUX.1-schnell',
+    'ByteDance/SDXL-Lightning',
     'stabilityai/stable-diffusion-xl-base-1.0',
-    'runwayml/stable-diffusion-v1-5',
-  ];
+  ].filter(Boolean) as string[];
   const models = [...new Set(candidateModels)];
 
   let lastResp: Response | null = null;
   for (const model of models) {
-    // Use the current router endpoint, NOT the deprecated api-inference endpoint
     const endpoint = `https://router.huggingface.co/hf-inference/models/${model}`;
     try {
       const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 25, guidance_scale: 7.5 } }),
+        body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 4, guidance_scale: 3.5 } }),
       });
       if (resp.ok) {
-        const buf = await resp.arrayBuffer();
-        return `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(buf)))}`;
+        const contentType = resp.headers.get('content-type') || '';
+        if (contentType.includes('image') || contentType.includes('octet-stream')) {
+          const buf = await resp.arrayBuffer();
+          if (buf.byteLength > 100) {
+            return `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(buf)))}`;
+          }
+        }
+        // If response is JSON (e.g. queued), treat as not ready
+        await resp.text().catch(() => {});
+        console.warn(`[ImageProviders] HF model ${model} returned non-image content, trying next...`);
+        continue;
       }
       lastResp = resp;
-      await resp.text().catch(() => {});
-      console.warn(`[ImageProviders] HF model ${model} returned ${resp.status}, trying next...`);
-    } catch {
-      // try next model
+      const errBody = await resp.text().catch(() => '');
+      console.warn(`[ImageProviders] HF model ${model} returned ${resp.status}: ${errBody.slice(0, 200)}, trying next...`);
+    } catch (e) {
+      console.warn(`[ImageProviders] HF model ${model} fetch error: ${e}`);
     }
   }
 
