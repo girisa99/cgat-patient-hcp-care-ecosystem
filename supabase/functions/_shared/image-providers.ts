@@ -386,36 +386,40 @@ async function generateWithModelsLab(prompt: string, options: ImageGenOptions): 
 async function generateWithHuggingFace(prompt: string, options: ImageGenOptions): Promise<string> {
   const token = keys.huggingface();
   if (!token) throw new Error('HuggingFace token missing');
-  const model = options.model || 'black-forest-labs/FLUX.1-schnell';
 
-  // Try the standard Inference API endpoint first, fall back to router endpoint
-  const endpoints = [
-    `https://api-inference.huggingface.co/models/${model}`,
-    `https://router.huggingface.co/hf-inference/models/${model}`,
+  // Use models known to be available on HF Inference API (free tier)
+  const candidateModels = [
+    options.model || 'stabilityai/stable-diffusion-xl-base-1.0',
+    'stabilityai/stable-diffusion-xl-base-1.0',
+    'runwayml/stable-diffusion-v1-5',
   ];
 
+  // Deduplicate
+  const models = [...new Set(candidateModels)];
+
   let lastResp: Response | null = null;
-  for (const endpoint of endpoints) {
+  for (const model of models) {
+    const endpoint = `https://api-inference.huggingface.co/models/${model}`;
     try {
       const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 4, guidance_scale: 1.0 } }),
+        body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 25, guidance_scale: 7.5 } }),
       });
       if (resp.ok) {
         const buf = await resp.arrayBuffer();
         return `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(buf)))}`;
       }
       lastResp = resp;
+      // Consume body to avoid leak
+      await resp.text().catch(() => {});
     } catch {
-      // try next endpoint
+      // try next model
     }
   }
 
-  const errText = lastResp ? await lastResp.text().catch(() => 'Unknown') : 'All endpoints failed';
-  throw new Error(`HuggingFace Error: ${lastResp?.status || 0} - ${errText}`);
-  const buf = await resp.arrayBuffer();
-  return `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(buf)))}`;
+  const errText = lastResp ? `${lastResp.status} - Not Found` : 'All endpoints failed';
+  throw new Error(`HuggingFace Error: ${errText}`);
 }
 
 // ============================================================================
