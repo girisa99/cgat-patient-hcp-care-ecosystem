@@ -7,6 +7,7 @@
  * - Progressive disclosure: simplified dashboard with drill-down
  * - Pixar characters (Ori & Arc) in glassmorphism welcome area
  * - Device-specific hero imagery and messaging
+ * - Unique mobile images for quick action cards
  */
 
 import React, { useState, Suspense, lazy } from 'react';
@@ -24,6 +25,10 @@ import type { CastMode } from '@/stores/guideStore';
 import castHeroMobile from '@/assets/cast-hero-mobile.jpg';
 import oriAvatar from '@/assets/characters/ori-avatar.png';
 import arcAvatar from '@/assets/characters/arc-avatar.png';
+import imgCreate from '@/assets/cast-mobile-create.jpg';
+import imgProjects from '@/assets/cast-mobile-projects.jpg';
+import imgTemplates from '@/assets/cast-mobile-templates.jpg';
+import imgAnalytics from '@/assets/cast-mobile-analytics.jpg';
 
 type MobileTab = 'dashboard' | 'create' | 'produce' | 'publish';
 
@@ -73,7 +78,7 @@ const BottomTabBar: React.FC<{
   onTabChange: (tab: MobileTab) => void;
 }> = ({ activeTab, onTabChange }) => (
   <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border/20 safe-area-bottom">
-    <div className="flex items-center justify-around h-16 px-2">
+    <div className="flex items-center justify-around h-14 px-2">
       {TABS.map(tab => {
         const active = activeTab === tab.id;
         const Icon = tab.icon;
@@ -82,19 +87,17 @@ const BottomTabBar: React.FC<{
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-[60px]',
-              active
-                ? 'text-primary'
-                : 'text-muted-foreground',
+              'flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all min-w-[56px]',
+              active ? 'text-primary' : 'text-muted-foreground',
             )}
           >
             <div className={cn(
-              'w-10 h-7 rounded-full flex items-center justify-center transition-all',
+              'w-9 h-6 rounded-full flex items-center justify-center transition-all',
               active && 'bg-primary/10',
             )}>
-              <Icon className={cn('w-5 h-5 transition-all', active && 'scale-110')} />
+              <Icon className={cn('w-4 h-4 transition-all', active && 'scale-110')} />
             </div>
-            <span className={cn('text-[10px] font-medium', active && 'font-bold')}>{tab.label}</span>
+            <span className={cn('text-[9px] font-medium', active && 'font-bold')}>{tab.label}</span>
           </button>
         );
       })}
@@ -102,11 +105,11 @@ const BottomTabBar: React.FC<{
   </div>
 );
 
-// ── Mobile Hero with Pixar Characters ────────────────────────────────────────
+// ── Mobile Hero with Pixar Characters (compact) ──────────────────────────────
 const MobileHero: React.FC<{
   onStartCreate: () => void;
 }> = ({ onStartCreate }) => (
-  <div className="relative overflow-hidden rounded-2xl mx-3">
+  <div className="relative overflow-hidden rounded-xl mx-3">
     {/* Hero image */}
     <div className="absolute inset-0 z-0">
       <img src={castHeroMobile} alt="" className="w-full h-full object-cover" />
@@ -114,34 +117,34 @@ const MobileHero: React.FC<{
     </div>
 
     {/* Pixar character badges */}
-    <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+    <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
       <div className="flex -space-x-2">
-        <div className="w-8 h-8 rounded-full border-2 border-background/60 overflow-hidden backdrop-blur-md bg-card/40">
+        <div className="w-7 h-7 rounded-full border-2 border-background/60 overflow-hidden backdrop-blur-md bg-card/40">
           <img src={oriAvatar} alt="Ori" className="w-full h-full object-cover" />
         </div>
-        <div className="w-8 h-8 rounded-full border-2 border-background/60 overflow-hidden backdrop-blur-md bg-card/40">
+        <div className="w-7 h-7 rounded-full border-2 border-background/60 overflow-hidden backdrop-blur-md bg-card/40">
           <img src={arcAvatar} alt="Arc" className="w-full h-full object-cover" />
         </div>
       </div>
-      <span className="text-[9px] font-medium text-white/70 bg-black/30 backdrop-blur-md px-2 py-0.5 rounded-full">
+      <span className="text-[8px] font-medium text-white/70 bg-black/30 backdrop-blur-md px-1.5 py-0.5 rounded-full">
         AI Guides
       </span>
     </div>
 
-    {/* Content */}
-    <div className="relative z-10 pt-28 pb-5 px-4">
-      <h1 className="text-2xl font-bold text-foreground leading-tight">
+    {/* Content — compact */}
+    <div className="relative z-10 pt-20 pb-4 px-3">
+      <h1 className="text-xl font-bold text-foreground leading-tight">
         {MOBILE_MESSAGES.welcome.title}
       </h1>
-      <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
         {MOBILE_MESSAGES.welcome.subtitle}
       </p>
       <Button
         onClick={onStartCreate}
         size="sm"
-        className="mt-4 gap-2 bg-primary text-primary-foreground shadow-lg"
+        className="mt-3 gap-1.5 bg-primary text-primary-foreground shadow-lg h-8 text-xs"
       >
-        <Plus className="w-4 h-4" /> New Content
+        <Plus className="w-3.5 h-3.5" /> New Content
       </Button>
     </div>
   </div>
@@ -166,7 +169,7 @@ const StoryCard: React.FC<{
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-2xl overflow-hidden glass-card text-left transition-all active:scale-[0.98]"
+      className="w-full rounded-xl overflow-hidden glass-card text-left transition-all active:scale-[0.98]"
     >
       {/* Large thumbnail */}
       <div className="relative w-full aspect-[16/9] overflow-hidden">
@@ -174,38 +177,38 @@ const StoryCard: React.FC<{
           <img src={thumbnail} alt={title} className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/15 via-purple-600/10 to-pink-500/10 flex items-center justify-center">
-            <Film className="w-10 h-10 text-muted-foreground/30" />
+            <Film className="w-8 h-8 text-muted-foreground/30" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
         
         {/* Stage badge */}
-        <div className={cn('absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold border backdrop-blur-md uppercase tracking-wider', stageColors[stage] || stageColors.created)}>
+        <div className={cn('absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold border backdrop-blur-md uppercase tracking-wider', stageColors[stage] || stageColors.created)}>
           {stage}
         </div>
 
         {/* Play button overlay */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/25">
-            <Play className="w-6 h-6 text-white ml-0.5" />
+          <div className="w-11 h-11 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/25">
+            <Play className="w-5 h-5 text-white ml-0.5" />
           </div>
         </div>
       </div>
 
       {/* Info */}
-      <div className="p-4">
-        <h3 className="text-base font-bold text-foreground">{title}</h3>
-        <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
-        <div className="flex items-center gap-3 mt-2">
-          <span className="text-[11px] text-muted-foreground/60">{contentType}</span>
-          <span className="text-[11px] text-muted-foreground/40">{time}</span>
+      <div className="p-3">
+        <h3 className="text-sm font-bold text-foreground">{title}</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+        <div className="flex items-center gap-3 mt-1.5">
+          <span className="text-[10px] text-muted-foreground/60">{contentType}</span>
+          <span className="text-[10px] text-muted-foreground/40">{time}</span>
         </div>
       </div>
     </button>
   );
 };
 
-// ── Quick Action Grid (Progressive Disclosure) ───────────────────────────────
+// ── Quick Action Grid with Images ────────────────────────────────────────────
 const QuickActions: React.FC<{
   videoStats?: any;
   totalProjects?: number;
@@ -214,25 +217,33 @@ const QuickActions: React.FC<{
   onTabChange: (tab: MobileTab) => void;
 }> = ({ videoStats, totalProjects = 0, totalTemplates = 0, onStartCreate, onTabChange }) => {
   const actions = [
-    { icon: <Sparkles className="w-5 h-5 text-primary" />, label: 'Create', count: undefined, bg: 'bg-primary/10 border-primary/20', action: () => onTabChange('create') },
-    { icon: <FolderOpen className="w-5 h-5 text-blue-400" />, label: 'Projects', count: totalProjects, bg: 'bg-blue-500/10 border-blue-500/20', action: () => onTabChange('produce') },
-    { icon: <LayoutTemplate className="w-5 h-5 text-purple-400" />, label: 'Templates', count: totalTemplates, bg: 'bg-purple-500/10 border-purple-500/20', action: () => onTabChange('create') },
-    { icon: <BarChart3 className="w-5 h-5 text-emerald-400" />, label: 'Analytics', count: videoStats?.completed || 0, bg: 'bg-emerald-500/10 border-emerald-500/20', action: () => onTabChange('produce') },
+    { icon: <Sparkles className="w-4 h-4 text-primary" />, label: 'Create', subtitle: 'Start new content', count: undefined, image: imgCreate, action: () => onTabChange('create') },
+    { icon: <FolderOpen className="w-4 h-4 text-blue-400" />, label: 'Projects', subtitle: `${totalProjects} active`, count: totalProjects, image: imgProjects, action: () => onTabChange('produce') },
+    { icon: <LayoutTemplate className="w-4 h-4 text-purple-400" />, label: 'Templates', subtitle: `${totalTemplates} available`, count: totalTemplates, image: imgTemplates, action: () => onTabChange('create') },
+    { icon: <BarChart3 className="w-4 h-4 text-emerald-400" />, label: 'Analytics', subtitle: `${videoStats?.completed || 0} completed`, count: videoStats?.completed || 0, image: imgAnalytics, action: () => onTabChange('produce') },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 px-3">
+    <div className="grid grid-cols-2 gap-2.5 px-3">
       {actions.map(a => (
         <button
           key={a.label}
           onClick={a.action}
-          className={cn('flex flex-col items-center gap-2 p-4 rounded-2xl border backdrop-blur-md transition-all active:scale-[0.96]', a.bg)}
+          className="relative overflow-hidden rounded-xl border border-border/10 backdrop-blur-md transition-all active:scale-[0.96] text-left"
         >
-          {a.icon}
-          <span className="text-xs font-semibold text-foreground">{a.label}</span>
-          {a.count !== undefined && (
-            <span className="text-[10px] text-muted-foreground">{a.count} items</span>
-          )}
+          {/* Background image */}
+          <div className="absolute inset-0">
+            <img src={a.image} alt="" className="w-full h-full object-cover opacity-40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-card/30" />
+          </div>
+          {/* Content */}
+          <div className="relative z-10 p-3 flex flex-col gap-1.5">
+            <div className="w-8 h-8 rounded-lg bg-background/60 backdrop-blur-md flex items-center justify-center border border-border/10">
+              {a.icon}
+            </div>
+            <span className="text-xs font-bold text-foreground">{a.label}</span>
+            <span className="text-[10px] text-muted-foreground leading-tight">{a.subtitle}</span>
+          </div>
         </button>
       ))}
     </div>
