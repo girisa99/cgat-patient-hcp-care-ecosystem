@@ -76,14 +76,7 @@ const SubWizardBridge: React.FC<{
 
   return (
     <div className="space-y-3">
-      {/* Mascot with contextual hints */}
-      <GenieMascot
-        currentStepId={STEP_TO_SUBTAB[currentStep] || 'intent'}
-        hints={MASCOT_HINTS}
-        direction={direction}
-        position="inline"
-      />
-      {/* Step content */}
+      {/* Step content — mascot is shown in sidebar progress panel */}
       {children}
     </div>
   );
