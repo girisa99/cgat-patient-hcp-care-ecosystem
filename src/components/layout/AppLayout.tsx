@@ -27,7 +27,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   showNavigation = true 
 }) => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
       {/* Navigation */}
       {showNavigation && <RoleBasedNavigation />}
       

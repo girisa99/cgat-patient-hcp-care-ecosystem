@@ -17,25 +17,30 @@ const SimpleUnifiedDashboard: React.FC = () => {
   console.log('🎯 Simple Unified Dashboard - Rendering for user:', user?.id);
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="container mx-auto px-4 py-8 space-y-8 relative">
+      {/* Ambient Mesh Background */}
+      <div className="cast-ambient-mesh">
+        <div className="cast-ambient-blob" />
+      </div>
+
       {/* Welcome Section */}
-      <div className="text-center">
+      <div className="text-center relative z-10">
         <h1 className="text-3xl font-bold mb-2">Welcome to Healthcare Management</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           {user?.email ? `Welcome back, ${user.email}` : 'Welcome to your dashboard'}
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
         {/* System Status Card */}
-        <Card>
+        <Card className="glass-card">
           <CardHeader>
             <CardTitle>System Status</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span>System Online</span>
               </div>
               <div className="text-sm text-muted-foreground">
@@ -46,7 +51,7 @@ const SimpleUnifiedDashboard: React.FC = () => {
         </Card>
 
         {/* Users Card */}
-        <Card>
+        <Card className="glass-card">
           <CardHeader>
             <CardTitle>Users</CardTitle>
           </CardHeader>
@@ -59,7 +64,7 @@ const SimpleUnifiedDashboard: React.FC = () => {
         </Card>
 
         {/* Patients Card */}
-        <Card>
+        <Card className="glass-card">
           <CardHeader>
             <CardTitle>Patients</CardTitle>
           </CardHeader>
@@ -72,7 +77,7 @@ const SimpleUnifiedDashboard: React.FC = () => {
         </Card>
 
         {/* Facilities Card */}
-        <Card>
+        <Card className="glass-card">
           <CardHeader>
             <CardTitle>Facilities</CardTitle>
           </CardHeader>
@@ -86,23 +91,23 @@ const SimpleUnifiedDashboard: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="glass-elevated relative z-10">
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <div className="p-4 glass-card rounded-lg cursor-pointer">
               <h3 className="font-semibold">User Management</h3>
-              <p className="text-sm text-gray-600">Manage users and roles</p>
+              <p className="text-sm text-muted-foreground">Manage users and roles</p>
             </div>
-            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <div className="p-4 glass-card rounded-lg cursor-pointer">
               <h3 className="font-semibold">Facilities</h3>
-              <p className="text-sm text-gray-600">Manage healthcare facilities</p>
+              <p className="text-sm text-muted-foreground">Manage healthcare facilities</p>
             </div>
-            <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <div className="p-4 glass-card rounded-lg cursor-pointer">
               <h3 className="font-semibold">API Services</h3>
-              <p className="text-sm text-gray-600">Manage API integrations</p>
+              <p className="text-sm text-muted-foreground">Manage API integrations</p>
             </div>
           </div>
         </CardContent>

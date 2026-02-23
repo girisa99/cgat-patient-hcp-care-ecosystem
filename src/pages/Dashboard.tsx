@@ -464,9 +464,14 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
   if (isHealthcareProvider) {
     return (
       <AppLayout>
-        <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 space-y-6">
+        <div className="min-h-screen space-y-6 relative">
+          {/* Ambient Mesh Background for Glass Depth */}
+          <div className="cast-ambient-mesh">
+            <div className="cast-ambient-blob" />
+          </div>
+
           {/* Enhanced Header with Live Status */}
-          <div className="bg-card/50 backdrop-blur-sm border rounded-lg p-6 animate-fade-in">
+          <div className="glass-elevated rounded-xl p-6 animate-fade-in relative z-10">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -877,16 +882,20 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 relative">
+        {/* Ambient Mesh Background for Glass Depth */}
+        <div className="cast-ambient-mesh">
+          <div className="cast-ambient-blob" />
+        </div>
 
         {/* Presentation Display */}
         {showPresentation && (
-          <div className="mb-8">
+          <div className="mb-8 relative z-10">
             <AgenticAIPresentation onExit={() => setShowPresentation(false)} />
           </div>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between relative z-10">
           <div>
             <h1 className="text-3xl font-bold text-foreground">SuperAdmin Dashboard</h1>
             <p className="text-muted-foreground mt-2">
@@ -896,9 +905,9 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
         </div>
 
         {/* Quick Stats with Real Data */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 relative z-10">
           {/* AI Presentation Card */}
-          <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20 hover:shadow-lg transition-all cursor-pointer" onClick={() => setShowPresentation(!showPresentation)}>
+          <Card className="glass-card glass-glow-primary border-primary/20 hover:shadow-lg transition-all cursor-pointer" onClick={() => setShowPresentation(!showPresentation)}>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
                 <Presentation className="h-8 w-8 text-primary" />
@@ -912,7 +921,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               </Button>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
                 <Users className="h-8 w-8 text-primary" />
@@ -925,7 +934,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
                 <Stethoscope className="h-8 w-8 text-green-600" />
@@ -938,7 +947,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
                 <Building2 className="h-8 w-8 text-blue-600" />
@@ -951,7 +960,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="glass-card">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
                 <Activity className="h-8 w-8 text-orange-600" />
@@ -967,9 +976,9 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
           {/* Real Recent Activity */}
-          <Card>
+          <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5" />
@@ -1013,7 +1022,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
 
           {/* Enrollment Workflow Status */}
           {enrollmentStatusPayload ? (
-            <Card>
+            <Card className="glass-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Workflow className="h-5 w-5" />
@@ -1029,7 +1038,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card className="glass-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Workflow className="h-5 w-5" />
@@ -1045,7 +1054,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
           )}
 
           {/* Real System Overview */}
-          <Card>
+          <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
@@ -1084,7 +1093,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
         </div>
 
         {/* Quick Actions with Navigation */}
-        <Card>
+        <Card className="glass-elevated relative z-10">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
@@ -1135,7 +1144,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
         </Card>
 
         {/* Role Distribution Chart */}
-        <Card>
+        <Card className="glass-card relative z-10">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
