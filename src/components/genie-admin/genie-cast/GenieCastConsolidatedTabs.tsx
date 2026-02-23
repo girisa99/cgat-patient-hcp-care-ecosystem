@@ -157,6 +157,12 @@ import { PortalDropdown } from './create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from './StyleCustomizationPanel';
 import { CreateSubWizard } from './CreateSubWizard';
 
+// P1: Universal Video Editing + Distribution
+import { VideoTimelineEditor, ExportDistributionPanel } from './editing';
+import { useVideoTimeline } from '@/hooks/video-editing/useVideoTimeline';
+import { useClipOperations } from '@/hooks/video-editing/useClipOperations';
+import { usePlatformExport } from '@/hooks/video-editing/usePlatformExport';
+
 // Architecture B: Unified Create flow (Discovery + 8-step wizard)
 import { CreateDiscovery, CreateFlowWizard } from '@/components/create-flow';
 
@@ -347,6 +353,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // Dynamic content registry (DB-driven categories + formats)
   const contentRegistry = useCastContentRegistry();
+
+  // P1: Universal Video Timeline + Export hooks
+  const videoTimeline = useVideoTimeline();
+  const clipOps = useClipOperations(videoTimeline);
+  const platformExport = usePlatformExport();
+
   const guideDispatch = useGuideStore((s) => s.dispatch);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
@@ -2767,6 +2779,32 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     console.log('[Studio] Reset production');
                   }}
                 />
+
+                {/* P1: Universal Multi-Track Timeline Editor */}
+                <VideoTimelineEditor
+                  timeline={videoTimeline}
+                  clipOps={clipOps}
+                  onImportFile={(file) => {
+                    const videoTrack = videoTimeline.state.tracks.find(t => t.type === 'primary_video');
+                    if (!videoTrack) return;
+                    const trackId = file.type.startsWith('audio/')
+                      ? (videoTimeline.state.tracks.find(t => t.type === 'audio_voice')?.id || videoTrack.id)
+                      : videoTrack.id;
+                    videoTimeline.importOfflineClip(
+                      trackId,
+                      file,
+                      videoTimeline.state.totalDurationMs,
+                      file.type.startsWith('image/') ? 5000 : 30000,
+                    );
+                    toast.success(`Imported: ${file.name}`);
+                  }}
+                />
+
+                {/* P1: Multi-Platform Export */}
+                <ExportDistributionPanel
+                  exportHook={platformExport}
+                  timelineDurationMs={videoTimeline.state.totalDurationMs}
+                />
                 </>
                 ) : (
                   <div className="flex items-center justify-center h-24 border border-dashed rounded-lg bg-muted/20 text-sm text-muted-foreground">
@@ -2973,7 +3011,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
+                {/* P1: Multi-Platform Export & Distribution */}
+                <ExportDistributionPanel
+                  exportHook={platformExport}
+                  timelineDurationMs={videoTimeline.state.totalDurationMs}
+                />
+
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                   {/* Left: Scene character visualizer */}
                   <div>
