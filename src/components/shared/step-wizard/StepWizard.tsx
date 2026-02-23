@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { useStepWizard } from './StepWizardContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import sidebarBg from '@/assets/wizard-sidebar-bg.jpg';
+import genieMascot from '@/assets/characters/allaudin-genie.png';
 
 interface StepWizardProps {
   /** Step content — either an array (one per step) or a single ReactNode (shown for all steps) */
@@ -327,7 +328,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
         {/* Background image with overlay — lighter overlay to show image */}
         <div className="absolute inset-0 z-0">
           <img src={sidebarBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/35 to-background/50 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/75 via-background/70 to-background/80 backdrop-blur-[3px]" />
           {/* Animated ambient glow */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-cyan-500/10"
@@ -466,19 +467,17 @@ export const StepWizard: React.FC<StepWizardProps> = ({
                       animate={{ opacity: [0.4, 0.8, 0.4], scale: [0.95, 1.05, 0.95] }}
                       transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                     />
-                    {/* Avatar container */}
+                    {/* Avatar container — real genie with lamp */}
                     <div
-                      className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-2xl overflow-hidden"
+                      className="relative w-14 h-14 rounded-2xl overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, rgba(99,102,241,0.25) 0%, rgba(6,182,212,0.2) 50%, rgba(99,102,241,0.15) 100%)',
                         border: '1.5px solid rgba(255,255,255,0.18)',
-                        boxShadow: '0 4px 20px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.1)',
+                        boxShadow: '0 4px 20px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
                       }}
                     >
+                      <img src={genieMascot} alt="Genie" className="w-full h-full object-cover" />
                       {/* Inner glass shine */}
                       <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-transparent pointer-events-none" />
-                      <div className="absolute bottom-0 inset-x-0 h-1/3 bg-gradient-to-t from-white/[0.05] to-transparent pointer-events-none" />
-                      <span className="relative z-10 drop-shadow-lg">{currentDialogue.emoji}</span>
                     </div>
                   </motion.div>
 
