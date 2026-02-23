@@ -637,7 +637,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 flex items-center gap-1.5">
             <Boxes className="w-3 h-3" /> Quick Access
           </h3>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible sm:pb-0">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory scroll-smooth hover:cursor-grab active:cursor-grabbing">
             {[
               { icon: <FolderOpen className="w-4 h-4 text-blue-300" />, title: 'Projects', desc: 'Manage video projects', count: totalProjects, countLabel: 'projects', iconBg: 'bg-blue-500/15 border-blue-500/25', accent: 'bg-blue-500', thumb: castNavProjects, nav: 'projects' as NavView },
               { icon: <LayoutTemplate className="w-4 h-4 text-purple-300" />, title: 'Templates', desc: 'Browse blueprints & presets', count: totalTemplates, countLabel: 'blueprints', iconBg: 'bg-purple-500/15 border-purple-500/25', accent: 'bg-purple-500', thumb: castNavTemplates, nav: 'templates' as NavView },
@@ -646,7 +646,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
               { icon: <BarChart3 className="w-4 h-4 text-indigo-300" />, title: 'Analytics', desc: 'Performance & engagement', count: videoStats?.completed || 0, countLabel: 'videos', iconBg: 'bg-indigo-500/15 border-indigo-500/25', accent: 'bg-indigo-500', thumb: castNavAnalytics, nav: 'analytics' as NavView },
               { icon: <Settings className="w-4 h-4 text-slate-300" />, title: 'Settings', desc: 'Integrations & preferences', iconBg: 'bg-slate-500/15 border-slate-500/25', accent: 'bg-slate-500', thumb: castNavSettings, nav: 'settings' as NavView },
             ].map(item => (
-              <div key={item.title} className="min-w-[200px] sm:min-w-0 shrink-0">
+              <div key={item.title} className="min-w-[220px] w-[220px] shrink-0 snap-start">
                 <NavCard
                   icon={item.icon}
                   title={item.title}
@@ -672,11 +672,12 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           <div className="glass-elevated rounded-2xl overflow-hidden relative">
             {/* Background image */}
             <div className="absolute inset-0 z-0">
-              <img src={castNavAnalytics} alt="" className="w-full h-full object-cover opacity-[0.12]" loading="lazy" />
-              <div className="absolute inset-0 bg-gradient-to-br from-card/85 via-card/75 to-card/65 backdrop-blur-sm" />
+              <img src={castNavAnalytics} alt="" className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" loading="lazy" />
+              <div className="absolute inset-0 bg-gradient-to-br from-card/80 via-card/60 to-card/50" />
             </div>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.06] via-transparent to-transparent pointer-events-none" />
-            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-20 bg-emerald-500" />
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full blur-2xl opacity-25 bg-emerald-500" />
+            <div className="absolute bottom-4 left-4 w-16 h-16 rounded-full blur-xl opacity-15 bg-cyan-400" />
             <div className="relative z-10 p-3">
               {videoStats?.recentVideos && videoStats.recentVideos.length > 0 ? (
                 <ScrollArea className="h-[180px]">
@@ -726,11 +727,12 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           <div className="glass-elevated rounded-2xl overflow-hidden relative">
             {/* Background image */}
             <div className="absolute inset-0 z-0">
-              <img src={castAiEngine} alt="" className="w-full h-full object-cover opacity-[0.18]" loading="lazy" />
-              <div className="absolute inset-0 bg-gradient-to-br from-card/80 via-card/70 to-card/60 backdrop-blur-sm" />
+              <img src={castAiEngine} alt="" className="w-full h-full object-cover opacity-25" loading="lazy" />
+              <div className="absolute inset-0 bg-gradient-to-br from-card/75 via-card/60 to-card/50" />
             </div>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.06] via-transparent to-transparent pointer-events-none" />
-            <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full blur-2xl opacity-20 bg-purple-500" />
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full blur-2xl opacity-25 bg-purple-500" />
+            <div className="absolute top-4 right-4 w-16 h-16 rounded-full blur-xl opacity-15 bg-pink-400" />
             <div className="relative z-10 p-3">
               <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                 <Cpu className="w-3 h-3" /> AI Engine
