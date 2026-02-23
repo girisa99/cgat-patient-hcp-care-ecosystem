@@ -669,7 +669,14 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 flex items-center gap-1.5">
             <Activity className="w-3 h-3" /> Activity Feed
           </h3>
-          <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="glass-elevated rounded-2xl overflow-hidden relative">
+            {/* Background image */}
+            <div className="absolute inset-0 z-0">
+              <img src={castNavAnalytics} alt="" className="w-full h-full object-cover opacity-[0.12]" loading="lazy" />
+              <div className="absolute inset-0 bg-gradient-to-br from-card/85 via-card/75 to-card/65 backdrop-blur-sm" />
+            </div>
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.06] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-20 bg-emerald-500" />
             <div className="relative z-10 p-3">
               {videoStats?.recentVideos && videoStats.recentVideos.length > 0 ? (
                 <ScrollArea className="h-[180px]">
@@ -716,13 +723,14 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           </div>
 
           {/* AI Engine — with background image + glass */}
-          <div className="glass-card rounded-2xl overflow-hidden relative">
+          <div className="glass-elevated rounded-2xl overflow-hidden relative">
             {/* Background image */}
             <div className="absolute inset-0 z-0">
-              <img src={castAiEngine} alt="" className="w-full h-full object-cover opacity-10" />
-              <div className="absolute inset-0 bg-gradient-to-br from-card/90 via-card/80 to-card/70 backdrop-blur-sm" />
+              <img src={castAiEngine} alt="" className="w-full h-full object-cover opacity-[0.18]" loading="lazy" />
+              <div className="absolute inset-0 bg-gradient-to-br from-card/80 via-card/70 to-card/60 backdrop-blur-sm" />
             </div>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.06] via-transparent to-transparent pointer-events-none" />
+            <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full blur-2xl opacity-20 bg-purple-500" />
             <div className="relative z-10 p-3">
               <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                 <Cpu className="w-3 h-3" /> AI Engine
