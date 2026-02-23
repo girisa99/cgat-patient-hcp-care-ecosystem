@@ -23,6 +23,7 @@ import { GuideDock } from '@/components/shared/GuideDock';
 import { useGuideStore, type CastMode } from '@/stores/guideStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useCastProduction } from '@/hooks/useCastProduction';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Video, Share2, Film,
@@ -323,8 +324,11 @@ export const GenieCastHub: React.FC = () => {
   const routing = useProviderRouting(languageCode);
 
   const [screenshotGalleries, setScreenshotGalleries] = useState<ProductGallery[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
   const totalScreenshots = screenshotGalleries.reduce((t, g) => t + g.screenshots.length, 0);
+
+  // Production pipeline hook (Phase 6A — replaces fake 2s timeout)
+  const production = useCastProduction();
+  const isGenerating = production.isProducing;
 
   // Persist state changes (styles + language)
   useEffect(() => {
@@ -336,6 +340,11 @@ export const GenieCastHub: React.FC = () => {
     isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
+
+  // Refresh enrichment when language/region changes
+  useEffect(() => {
+    production.refreshEnrichment(languageCode);
+  }, [languageCode, production.refreshEnrichment]);
 
   const handleStylesChange = useCallback((styles: VideoStyleType[]) => {
     if (!isMounted.current) return;
@@ -352,18 +361,43 @@ export const GenieCastHub: React.FC = () => {
       toast.error('Please select at least one video style');
       return;
     }
-    setIsGenerating(true);
+
+    // Collect CREATE flow session data from localStorage
+    let sessionData: Record<string, any> = {};
     try {
-      // TODO: Wire to genie-cast-assembler edge function with routing.tts.provider, routing.video.provider etc.
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success('Video generation started!');
+      const stored = localStorage.getItem('genie-cast-session');
+      if (stored) sessionData = JSON.parse(stored);
+    } catch { /* use defaults */ }
+
+    const scriptContent = sessionData.approvedMessaging?.hook
+      || sessionData.scriptContent
+      || `Generate ${selectedVideoStyles[0]?.replace(/_/g, ' ')} video`;
+
+    toast.info(`Starting production (enrichment: ${production.state.enrichmentScore}/100)...`);
+
+    try {
+      await production.startProduction({
+        scriptContent,
+        scriptTitle: sessionData.title || 'Untitled Production',
+        inputMode: 'text_to_script',
+        intent: sessionData.selectedIntent || 'marketing',
+        selectedFormats: ['short_video'],
+        inputLanguage: languageCode.split('-')[0] || 'en',
+        outputLanguages: [{ code: languageCode.split('-')[0] || 'en', adaptationLevel: 'moderate' }],
+        videoStyles: selectedVideoStyles,
+        scenario: sessionData.scenario || 'default',
+        sceneStyle: sessionData.sceneStyle || 'cinematic',
+        quality: sessionData.quality || 'production',
+        avatarGender: sessionData.avatarGender || 'neutral',
+        includeMusic: true,
+        includeCaptions: true,
+      });
+
       dispatch({ type: 'STEP_COMPLETED', stepId: 'generate' });
     } catch {
-      toast.error('Failed to start generation');
-    } finally {
-      setIsGenerating(false);
+      toast.error('Failed to start production');
     }
-  }, [selectedVideoStyles, dispatch]);
+  }, [selectedVideoStyles, languageCode, dispatch, production]);
 
   const handleModeChange = useCallback((newMode: CastMode) => {
     setMode(newMode);

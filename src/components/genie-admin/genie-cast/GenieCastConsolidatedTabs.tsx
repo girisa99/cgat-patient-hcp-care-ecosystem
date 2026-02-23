@@ -3,7 +3,7 @@
  *
  * Consolidates 10+ scattered tabs into unified workflow:
  * - CREATE: Intent, Messaging, Templates, Production Setup (Styles + Assets + Regional)
- * - PRODUCE: Generate, Matrix, Studio Editor, Review
+ * - PRODUCE: Generate, Matrix, Suite (Timeline & Production), Review
  * - MANAGE: Library, Analytics, Flow, Content Repurposing
  * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing
  *
@@ -43,6 +43,7 @@ import {
   Volume2,
   ChevronDown,
   Check,
+  RefreshCw,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCreateMode } from '@/hooks/useCreateMode';
@@ -100,6 +101,18 @@ import { useAIRoutingIntelligence } from '@/hooks/useAIRoutingIntelligence';
 // Import P2 Live Generation Preview component (uses internal hooks)
 import { LiveGenerationPreview } from './LiveGenerationPreview';
 
+// Import Phase 6E Production UI components (B-021 to B-025)
+import {
+  SceneProgressTracker,
+  ProductionModePanel,
+  ProductionTimeline,
+  ProductionControlPanel,
+  getDefaultProductionSettings,
+  createTimelinePhases,
+  deriveSceneRenderMode,
+} from './production';
+import type { SceneProgress, ProductionModeSettings, TimelinePhase } from './production';
+
 // Import Holiday Awareness
 import { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
 
@@ -144,6 +157,13 @@ import { CharacterPickerPopup, type CharacterOption } from './CharacterPickerPop
 import { PortalDropdown } from './create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from './StyleCustomizationPanel';
 import { CreateSubWizard } from './CreateSubWizard';
+
+// P1: Universal Video Editing + Distribution
+import { VideoTimelineEditor, ExportDistributionPanel } from './editing';
+import { useVideoTimeline } from '@/hooks/video-editing/useVideoTimeline';
+import { useClipOperations } from '@/hooks/video-editing/useClipOperations';
+import { usePlatformExport } from '@/hooks/video-editing/usePlatformExport';
+import { useAVSync } from '@/hooks/video-editing/useAVSync';
 
 // Architecture B: Unified Create flow (Discovery + 8-step wizard)
 import { CreateDiscovery, CreateFlowWizard } from '@/components/create-flow';
@@ -249,7 +269,7 @@ const TAB_DEFINITIONS = {
     subTabs: [
       { id: 'generate', label: 'Generate', icon: Play, description: 'Single or batch video generation' },
       { id: 'matrix', label: 'Matrix', icon: Grid3X3, description: 'Batch production matrix' },
-      { id: 'studio', label: 'Studio', icon: Film, description: 'Timeline editor' },
+      { id: 'studio', label: 'Suite', icon: Film, description: 'Timeline editor & production suite' },
       { id: 'review', label: 'Review', icon: Eye, description: 'Quality review & enhance' },
       { id: 'library', label: 'Library', icon: Layers, description: 'Video content library' },
       { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Performance metrics & insights' },
@@ -335,6 +355,15 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // Dynamic content registry (DB-driven categories + formats)
   const contentRegistry = useCastContentRegistry();
+
+  // P1: Universal Video Timeline + Export hooks
+  const videoTimeline = useVideoTimeline();
+  const clipOps = useClipOperations(videoTimeline);
+  const platformExport = usePlatformExport();
+
+  // P2: A/V Sync engine (audio-video alignment, pre-render validation, teleprompter)
+  const avSync = useAVSync(videoTimeline);
+
   const guideDispatch = useGuideStore((s) => s.dispatch);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
@@ -1556,18 +1585,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       ) : null;
                     })()}
 
-                    {/* 5a-iii: Style Customization — AI preview, upload, character sizing, custom create */}
-                    {selectedVisualStyleIds.length > 0 && (
-                      <StyleCustomizationPanel
-                        selectedStyles={selectedVisualStyleIds
-                          .map(id => contentRegistry.visualStyles.find(s => s.id === id))
-                          .filter((s): s is NonNullable<typeof s> => !!s)}
-                        allStyles={contentRegistry.visualStyles}
-                        characterFramePercent={characterFramePercent}
-                        onCharacterFrameChange={setCharacterFramePercent}
-                        onStyleCreated={contentRegistry.refresh}
-                      />
-                    )}
+                    {/* 5a-iii: Style Customization — B-007: Always visible (no pre-select gate) */}
+                    <StyleCustomizationPanel
+                      selectedStyles={selectedVisualStyleIds
+                        .map(id => contentRegistry.visualStyles.find(s => s.id === id))
+                        .filter((s): s is NonNullable<typeof s> => !!s)}
+                      allStyles={contentRegistry.visualStyles}
+                      characterFramePercent={characterFramePercent}
+                      onCharacterFrameChange={setCharacterFramePercent}
+                      onStyleCreated={contentRegistry.refresh}
+                    />
 
                     {/* 5a-iv: Character selection — enlarged cards with thumbnails & descriptions */}
                     {selectedVisualStyleIds.length > 0 && (() => {
@@ -2709,6 +2736,140 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   }}
                   showAdvancedControls={true}
                 />
+
+                {/* Phase 6E: Production Mode Panel (B-022 + B-023) */}
+                <ProductionModePanel
+                  selectedStyles={castSession.session.selectedStyles || []}
+                  settings={castSession.session.productionSettings || getDefaultProductionSettings()}
+                  onSettingsChange={(updates) => {
+                    const current = castSession.session.productionSettings || getDefaultProductionSettings();
+                    castSession.updateSession({ productionSettings: { ...current, ...updates } });
+                  }}
+                  selectedLanguage={selectedDialectCodes[0] || 'en-US'}
+                />
+
+                {/* Phase 6E: Production Timeline (B-024) */}
+                <ProductionTimeline
+                  phases={createTimelinePhases(
+                    deriveSceneRenderMode(castSession.session.selectedStyles?.[0] || 'smart_storytelling'),
+                  )}
+                  currentPhaseId={null}
+                  overallProgress={0}
+                  elapsedMs={0}
+                  estimatedTotalMs={180000}
+                />
+
+                {/* Phase 6E: Production Controls (B-025) */}
+                <ProductionControlPanel
+                  productionState={{
+                    status: 'idle',
+                    job: null,
+                    progress: 0,
+                    currentTask: '',
+                    scenes: [],
+                    enrichment: null,
+                    enrichmentScore: 0,
+                    error: null,
+                    startedAt: null,
+                    completedAt: null,
+                  }}
+                  onStart={() => {
+                    console.log('[Studio] Start production');
+                    toast.info('Starting production pipeline...');
+                  }}
+                  onCancel={() => {
+                    console.log('[Studio] Cancel production');
+                  }}
+                  onReset={() => {
+                    console.log('[Studio] Reset production');
+                  }}
+                />
+
+                {/* P2: A/V Sync Status + Pre-Render Validation */}
+                {videoTimeline.stats.totalClips > 0 && (
+                  <Card className={cn(
+                    'border',
+                    avSync.syncReport.overallStatus === 'perfect' && 'border-emerald-400/30 bg-emerald-50/10',
+                    avSync.syncReport.overallStatus === 'acceptable' && 'border-blue-400/30 bg-blue-50/10',
+                    avSync.syncReport.overallStatus === 'needs_attention' && 'border-amber-400/30 bg-amber-50/10',
+                    avSync.syncReport.overallStatus === 'critical' && 'border-red-400/30 bg-red-50/10',
+                  )}>
+                    <CardContent className="py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Volume2 className="h-4 w-4" />
+                          <span className="text-sm font-medium">A/V Sync</span>
+                          <Badge variant={avSync.syncReport.isReadyForRender ? 'default' : 'destructive'} className="text-[9px]">
+                            {avSync.syncReport.overallStatus.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground">
+                            {avSync.syncReport.alignedCount}/{avSync.syncReport.totalPairs} aligned
+                          </span>
+                          {avSync.syncReport.mismatchCount > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-[10px] gap-1"
+                              onClick={avSync.autoFixAll}
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                              Auto-fix {avSync.syncReport.mismatchCount} mismatch{avSync.syncReport.mismatchCount > 1 ? 'es' : ''}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      {/* Pre-render validation */}
+                      {(() => {
+                        const validation = avSync.validateForRender();
+                        if (validation.errors.length === 0 && validation.warnings.length === 0) return null;
+                        return (
+                          <div className="space-y-1 mt-2">
+                            {validation.errors.map((err, i) => (
+                              <div key={`err-${i}`} className="text-[10px] text-red-500 flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                                {err}
+                              </div>
+                            ))}
+                            {validation.warnings.map((warn, i) => (
+                              <div key={`warn-${i}`} className="text-[10px] text-amber-600 flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                                {warn}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* P1: Universal Multi-Track Timeline Editor */}
+                <VideoTimelineEditor
+                  timeline={videoTimeline}
+                  clipOps={clipOps}
+                  onImportFile={(file) => {
+                    const videoTrack = videoTimeline.state.tracks.find(t => t.type === 'primary_video');
+                    if (!videoTrack) return;
+                    const trackId = file.type.startsWith('audio/')
+                      ? (videoTimeline.state.tracks.find(t => t.type === 'audio_voice')?.id || videoTrack.id)
+                      : videoTrack.id;
+                    videoTimeline.importOfflineClip(
+                      trackId,
+                      file,
+                      videoTimeline.state.totalDurationMs,
+                      file.type.startsWith('image/') ? 5000 : 30000,
+                    );
+                    toast.success(`Imported: ${file.name}`);
+                  }}
+                />
+
+                {/* P1: Multi-Platform Export */}
+                <ExportDistributionPanel
+                  exportHook={platformExport}
+                  timelineDurationMs={videoTimeline.state.totalDurationMs}
+                />
                 </>
                 ) : (
                   <div className="flex items-center justify-center h-24 border border-dashed rounded-lg bg-muted/20 text-sm text-muted-foreground">
@@ -2915,7 +3076,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
+                {/* P1: Multi-Platform Export & Distribution */}
+                <ExportDistributionPanel
+                  exportHook={platformExport}
+                  timelineDurationMs={videoTimeline.state.totalDurationMs}
+                />
+
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                   {/* Left: Scene character visualizer */}
                   <div>

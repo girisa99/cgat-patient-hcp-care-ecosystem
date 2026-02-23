@@ -27,3 +27,41 @@ export type { HeroInput, HeroResult, HeroStep, HeroStepUpdate, BrandInference } 
 
 export { multiRegionEngine } from './multiRegionEngine';
 export type { RegionalVariant, MultiRegionPlan, RegionCode } from './multiRegionEngine';
+
+export {
+  assembleEnrichmentContext,
+  calculateEnrichmentScore,
+  buildEnrichedPrompt,
+  generateSceneScripts,
+  buildProductionInput,
+  startCastProduction,
+  buildRequestFromSession,
+} from './castProductionBridge';
+export type { EnrichmentContext, CastProductionRequest } from './castProductionBridge';
+
+export { generateStylePreview, generateBatchPreviews } from './imagePreviewService';
+export type { ImagePreviewRequest, ImagePreviewResult, ImageProvider } from './imagePreviewService';
+
+export { lockTTSProvider, isLockValid, getVoicesForLanguage, getProvidersForRegion } from './ttsProviderLock';
+
+export {
+  generateChunkAvatar,
+  generateSceneAvatarVideo,
+  requestAzureVisemes,
+  VISEME_SHAPES,
+} from './avatarGenerationPipeline';
+export type { AvatarProvider, AvatarConfig, ChunkVideoRequest, SceneVideoResult } from './avatarGenerationPipeline';
+
+export {
+  renderProduction,
+  createDefaultRenderPlan,
+} from './sceneRenderingOrchestrator';
+export type {
+  RenderPlan,
+  RenderScene,
+  TransitionConfig,
+  TransitionType,
+  BRollConfig,
+  RenderResult,
+  QualityReport,
+} from './sceneRenderingOrchestrator';
