@@ -35,10 +35,10 @@ interface GenieCastHeroProps {
 }
 
 const SAMPLE_THUMBNAILS = [
-  { id: 1, title: 'Home Traveller', gradient: 'from-amber-500 to-orange-600' },
-  { id: 2, title: 'The Drive', gradient: 'from-slate-700 to-slate-900' },
-  { id: 3, title: 'Oath of the Blade', gradient: 'from-red-600 to-rose-800' },
-  { id: 4, title: 'Caretaker', gradient: 'from-orange-700 to-amber-900' },
+  { id: 1, title: 'EP01 — Launch', gradient: 'from-amber-500 to-orange-600' },
+  { id: 2, title: 'EP02 — Product', gradient: 'from-slate-700 to-slate-900' },
+  { id: 3, title: 'EP03 — Scale', gradient: 'from-red-600 to-rose-800' },
+  { id: 4, title: 'EP04 — Global', gradient: 'from-orange-700 to-amber-900' },
 ];
 
 export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
@@ -59,13 +59,13 @@ export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
       <div className="relative z-10 px-4 py-6 lg:px-8 lg:py-8">
         {/* Trust Badges */}
         <div className="flex items-center justify-center gap-3 mb-6">
-          <Badge variant="outline" className="bg-background/80 backdrop-blur-sm border-primary/20 px-3 py-1.5">
-            <Star className="w-3.5 h-3.5 mr-1.5 text-yellow-500 fill-yellow-500" />
-            <span className="text-xs font-medium">4.9 Rating</span>
+           <Badge variant="outline" className="bg-background/80 backdrop-blur-sm border-primary/20 px-3 py-1.5">
+            <Zap className="w-3.5 h-3.5 mr-1.5 text-yellow-500" />
+            <span className="text-xs font-medium">Dogfooded Daily</span>
           </Badge>
           <Badge variant="outline" className="bg-background/80 backdrop-blur-sm border-green-500/30 px-3 py-1.5">
-            <Award className="w-3.5 h-3.5 mr-1.5 text-green-500" />
-            <span className="text-xs font-medium">Enterprise Ready</span>
+            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-green-500" />
+            <span className="text-xs font-medium">Universal Enrichment</span>
           </Badge>
         </div>
 
@@ -77,14 +77,13 @@ export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
           className="text-center max-w-3xl mx-auto mb-5"
         >
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-            Create a video in{' '}
+            Make It. Show It.{' '}
             <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              2 mins
+              Scale It.
             </span>
-            . Period.
           </h1>
           <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
-            Bring your stories to life with AI visuals, consistent characters, voices, and special effects.
+            We use our own tools to market our products — now use them to market yours. Universal Enrichment powers every asset across 14 regions × 6+ platforms.
           </p>
         </motion.div>
 
@@ -158,31 +157,31 @@ export const GenieCastHero: React.FC<GenieCastHeroProps> = ({
         >
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <Video className="w-4 h-4 text-primary" />
-              <span className="text-2xl md:text-3xl font-bold">{totalVideos}k+</span>
+              <Globe className="w-4 h-4 text-primary" />
+              <span className="text-2xl md:text-3xl font-bold">14</span>
             </div>
-            <p className="text-xs text-muted-foreground">Videos Created</p>
+            <p className="text-xs text-muted-foreground">Regions</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <Globe className="w-4 h-4 text-accent" />
-              <span className="text-2xl md:text-3xl font-bold">{totalLanguages}</span>
+              <TrendingUp className="w-4 h-4 text-accent" />
+              <span className="text-2xl md:text-3xl font-bold">40+</span>
             </div>
-            <p className="text-xs text-muted-foreground">Languages</p>
+            <p className="text-xs text-muted-foreground">Sub-Regions</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <Users className="w-4 h-4 text-green-500" />
-              <span className="text-2xl md:text-3xl font-bold">50k+</span>
+              <Video className="w-4 h-4 text-green-500" />
+              <span className="text-2xl md:text-3xl font-bold">6+</span>
             </div>
-            <p className="text-xs text-muted-foreground">Creators</p>
+            <p className="text-xs text-muted-foreground">Platforms</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <Clock className="w-4 h-4 text-orange-500" />
-              <span className="text-2xl md:text-3xl font-bold">2min</span>
+              <Sparkles className="w-4 h-4 text-orange-500" />
+              <span className="text-2xl md:text-3xl font-bold">5</span>
             </div>
-            <p className="text-xs text-muted-foreground">Avg. Time</p>
+            <p className="text-xs text-muted-foreground">Enrichment Layers</p>
           </div>
         </motion.div>
       </div>
