@@ -257,7 +257,7 @@ const QuickActions: React.FC<{
     <button
       key={`${a.label}-${idx}`}
       onClick={a.action}
-      className="relative overflow-hidden rounded-md border border-border/10 backdrop-blur-md transition-all active:scale-[0.96] text-left shrink-0 w-16 h-14"
+      className="relative overflow-hidden rounded border border-border/10 backdrop-blur-md transition-all active:scale-[0.96] text-left shrink-0 w-14 h-12"
     >
       <div className="absolute inset-0">
         <img src={a.image} alt="" className="w-full h-full object-cover opacity-30" />
