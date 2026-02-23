@@ -257,15 +257,17 @@ const QuickActions: React.FC<{
     <button
       key={`${a.label}-${idx}`}
       onClick={a.action}
-      className="relative overflow-hidden rounded border border-border/10 backdrop-blur-md transition-all active:scale-[0.96] text-left shrink-0 w-12 h-10"
+      className="relative overflow-hidden rounded-md border border-border/10 backdrop-blur-md transition-all active:scale-[0.96] text-left shrink-0 w-16 h-14"
     >
       <div className="absolute inset-0">
-        <img src={a.image} alt="" className="w-full h-full object-cover opacity-25" />
+        <img src={a.image} alt="" className="w-full h-full object-cover opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-card/20" />
       </div>
-      <div className="relative z-10 p-0.5 flex flex-col items-center justify-center gap-0 h-full">
-        {a.icon}
-        <span className="text-[7px] font-bold text-foreground leading-tight mt-0.5">{a.label}</span>
+      <div className="relative z-10 p-1 flex flex-col gap-0 h-full justify-end">
+        <div className="w-4 h-4 rounded bg-background/60 backdrop-blur-md flex items-center justify-center border border-border/10">
+          {a.icon}
+        </div>
+        <span className="text-[8px] font-bold text-foreground leading-tight">{a.label}</span>
       </div>
     </button>
   );
@@ -279,7 +281,7 @@ const QuickActions: React.FC<{
         onMouseLeave={() => setPaused(false)}
         onTouchStart={() => setPaused(true)}
         onTouchEnd={() => setPaused(false)}
-        className="flex gap-1.5 overflow-x-auto scrollbar-none"
+        className="flex gap-2 overflow-x-auto scrollbar-none"
       >
         {items.map((a, i) => renderCard(a, i))}
       </div>
