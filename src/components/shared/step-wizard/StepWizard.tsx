@@ -483,15 +483,15 @@ export const StepWizard: React.FC<StepWizardProps> = ({
 
                   {/* Dialogue content */}
                   <div className="flex-1 min-w-0 pt-0.5">
-                    <p className="text-xs font-bold text-primary mb-1 drop-shadow-sm">{currentDialogue.title}</p>
-                    <p className="text-[11px] text-foreground/80 leading-relaxed mb-2">{currentDialogue.message}</p>
+                    <p className="text-sm font-bold text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] mb-1.5">{currentDialogue.title}</p>
+                    <p className="text-xs text-foreground/90 leading-relaxed mb-2 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">{currentDialogue.message}</p>
                     {/* Tip callout with glass effect */}
                     <motion.div 
-                      className="text-[10px] text-cyan-400/90 rounded-lg px-2.5 py-1.5 leading-snug"
+                      className="text-[11px] text-cyan-300 font-medium rounded-lg px-2.5 py-1.5 leading-snug drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]"
                       style={{
-                        background: 'rgba(6,182,212,0.06)',
-                        border: '1px solid rgba(6,182,212,0.12)',
-                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                        background: 'rgba(6,182,212,0.1)',
+                        border: '1px solid rgba(6,182,212,0.2)',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
                       }}
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
