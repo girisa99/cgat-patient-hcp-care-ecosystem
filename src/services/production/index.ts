@@ -41,3 +41,13 @@ export type { EnrichmentContext, CastProductionRequest } from './castProductionB
 
 export { generateStylePreview, generateBatchPreviews } from './imagePreviewService';
 export type { ImagePreviewRequest, ImagePreviewResult, ImageProvider } from './imagePreviewService';
+
+export { lockTTSProvider, isLockValid, getVoicesForLanguage, getProvidersForRegion } from './ttsProviderLock';
+
+export {
+  generateChunkAvatar,
+  generateSceneAvatarVideo,
+  requestAzureVisemes,
+  VISEME_SHAPES,
+} from './avatarGenerationPipeline';
+export type { AvatarProvider, AvatarConfig, ChunkVideoRequest, SceneVideoResult } from './avatarGenerationPipeline';
