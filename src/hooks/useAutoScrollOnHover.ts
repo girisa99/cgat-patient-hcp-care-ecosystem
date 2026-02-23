@@ -1,25 +1,27 @@
 /**
- * useAutoScrollOnHover — Marquee-like auto-scroll on mouse hover
- * Scrolls the container left-to-right continuously while hovered.
- * Pauses on mouse leave, reverses direction at edges.
+ * useAutoScrollOnHover — Continuous marquee auto-scroll
+ * Scrolls left-to-right continuously. PAUSES on mouse hover so users can click.
+ * Resumes when mouse leaves.
  */
 import { useRef, useCallback, useEffect } from 'react';
 
-interface UseAutoScrollOnHoverOptions {
+interface UseAutoScrollOptions {
   speed?: number; // px per frame (~60fps)
-  pauseOnClick?: boolean;
 }
 
-export function useAutoScrollOnHover(options: UseAutoScrollOnHoverOptions = {}) {
-  const { speed = 1.2 } = options;
+export function useAutoScrollOnHover(options: UseAutoScrollOptions = {}) {
+  const { speed = 1.0 } = options;
   const scrollRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number | null>(null);
   const dirRef = useRef<1 | -1>(1);
-  const isHovered = useRef(false);
+  const isPaused = useRef(false);
 
   const animate = useCallback(() => {
     const el = scrollRef.current;
-    if (!el || !isHovered.current) return;
+    if (!el || isPaused.current) {
+      animRef.current = requestAnimationFrame(animate);
+      return;
+    }
 
     el.scrollLeft += speed * dirRef.current;
 
@@ -33,23 +35,21 @@ export function useAutoScrollOnHover(options: UseAutoScrollOnHoverOptions = {}) 
     animRef.current = requestAnimationFrame(animate);
   }, [speed]);
 
-  const onMouseEnter = useCallback(() => {
-    isHovered.current = true;
-    animRef.current = requestAnimationFrame(animate);
-  }, [animate]);
-
-  const onMouseLeave = useCallback(() => {
-    isHovered.current = false;
-    if (animRef.current) {
-      cancelAnimationFrame(animRef.current);
-      animRef.current = null;
-    }
-  }, []);
-
+  // Start scrolling on mount
   useEffect(() => {
+    animRef.current = requestAnimationFrame(animate);
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
+  }, [animate]);
+
+  // Pause on hover, resume on leave
+  const onMouseEnter = useCallback(() => {
+    isPaused.current = true;
+  }, []);
+
+  const onMouseLeave = useCallback(() => {
+    isPaused.current = false;
   }, []);
 
   return { scrollRef, onMouseEnter, onMouseLeave };
