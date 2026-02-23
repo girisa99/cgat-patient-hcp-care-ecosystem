@@ -29,7 +29,7 @@ import {
   Sparkles, Video, Share2, Film,
   Users, Zap, X, PanelRight,
   FolderOpen, LayoutTemplate, Package, Palette, BarChart3, Settings, Image,
-  Loader2,
+  Loader2, ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -292,12 +292,24 @@ const NavViewFallback: React.FC = () => (
   </div>
 );
 
+// ── Back Button (scoped to Cast — never navigates outside) ──────────────────
+const CastBackButton: React.FC<{ onClick: () => void; label?: string }> = ({ onClick, label = 'Back to Dashboard' }) => (
+  <button
+    onClick={onClick}
+    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors mb-3 group"
+  >
+    <ChevronLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+    {label}
+  </button>
+);
+
 // ── Navigation View Renderer ────────────────────────────────────────────────
-const NavViewContent: React.FC<{ view: NavView }> = ({ view }) => {
+const NavViewContent: React.FC<{ view: NavView; onBack: () => void }> = ({ view, onBack }) => {
   switch (view) {
     case 'projects':
       return (
         <div className="p-4 space-y-4">
+          <CastBackButton onClick={onBack} />
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <FolderOpen className="w-4 h-4 text-primary" />
@@ -315,6 +327,7 @@ const NavViewContent: React.FC<{ view: NavView }> = ({ view }) => {
     case 'templates':
       return (
         <div className="p-4 space-y-4">
+          <CastBackButton onClick={onBack} />
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
               <LayoutTemplate className="w-4 h-4 text-purple-500" />
@@ -332,6 +345,7 @@ const NavViewContent: React.FC<{ view: NavView }> = ({ view }) => {
     case 'assets':
       return (
         <div className="p-4 space-y-4">
+          <CastBackButton onClick={onBack} />
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
               <Package className="w-4 h-4 text-emerald-500" />
@@ -349,6 +363,7 @@ const NavViewContent: React.FC<{ view: NavView }> = ({ view }) => {
     case 'brand-kit':
       return (
         <div className="p-4 space-y-4">
+          <CastBackButton onClick={onBack} />
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
               <Palette className="w-4 h-4 text-amber-500" />
@@ -366,6 +381,7 @@ const NavViewContent: React.FC<{ view: NavView }> = ({ view }) => {
     case 'analytics':
       return (
         <div className="p-4 space-y-4">
+          <CastBackButton onClick={onBack} />
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
               <BarChart3 className="w-4 h-4 text-blue-500" />
@@ -383,6 +399,7 @@ const NavViewContent: React.FC<{ view: NavView }> = ({ view }) => {
     case 'settings':
       return (
         <div className="p-4 space-y-4">
+          <CastBackButton onClick={onBack} />
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-slate-500/10 flex items-center justify-center">
               <Settings className="w-4 h-4 text-slate-500" />
@@ -684,6 +701,7 @@ export const GenieCastHub: React.FC = () => {
             {/* Glass shine overlay */}
             <div className="cast-glass-shine" />
             <div className="relative z-[2]">
+              <CastBackButton onClick={() => { setShowDashboard(true); }} label="Back to Dashboard" />
               <GenieCastConsolidatedTabs
                 selectedVideoStyles={selectedVideoStyles}
                 onStylesChange={handleStylesChange}
@@ -708,7 +726,7 @@ export const GenieCastHub: React.FC = () => {
             </div>
             <div className="cast-glass-shine" />
             <div className="relative z-[2]">
-              <NavViewContent view={activeView} />
+              <NavViewContent view={activeView} onBack={() => handleViewChange('workspace')} />
             </div>
           </div>
         )}
