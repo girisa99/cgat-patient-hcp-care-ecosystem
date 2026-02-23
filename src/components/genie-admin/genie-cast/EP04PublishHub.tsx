@@ -50,6 +50,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { EP04_SOCIAL_CLIPS, EP04_THUMBNAILS } from '@/config/ep04-production-config';
+import { useStreamingDownload, VIDEO_DOWNLOAD_PRESETS, type DownloadJob } from '@/hooks/video-editing/useStreamingDownload';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PLATFORM DEFINITIONS
@@ -532,13 +533,28 @@ function TeaserClipsSection() {
 // ──────────────────────────────────────────────────────────────────────────────
 
 function DownloadSection() {
+  const dlManager = useStreamingDownload();
   const downloads = [
-    { label: 'Full Video (MP4 · 4K)', icon: Video, size: '~2.4 GB', quality: 'cinematic' },
-    { label: 'Full Video (MP4 · 1080p)', icon: Video, size: '~680 MB', quality: 'production' },
-    { label: 'Audio Only (MP3 · 320kbps)', icon: Music2, size: '~145 MB', quality: 'audio' },
-    { label: 'Transcript (SRT · subtitles)', icon: FileText, size: '~42 KB', quality: 'text' },
-    { label: 'Thumbnail Pack (ZIP · all variants)', icon: ImageIcon, size: '~18 MB', quality: 'images' },
+    { presetId: 'mp4_4k', label: 'Full Video (MP4 · 4K)', icon: Video, size: '~2.4 GB', quality: 'cinematic' },
+    { presetId: 'mp4_1080p', label: 'Full Video (MP4 · 1080p)', icon: Video, size: '~680 MB', quality: 'production' },
+    { presetId: 'audio_mp3', label: 'Audio Only (MP3 · 320kbps)', icon: Music2, size: '~145 MB', quality: 'audio' },
+    { presetId: 'srt_captions', label: 'Transcript (SRT · subtitles)', icon: FileText, size: '~42 KB', quality: 'text' },
+    { presetId: 'thumbnail_zip', label: 'Thumbnail Pack (ZIP · all variants)', icon: ImageIcon, size: '~18 MB', quality: 'images' },
   ];
+
+  const handleDownload = (presetId: string, label: string) => {
+    const preset = VIDEO_DOWNLOAD_PRESETS.find(p => p.id === presetId);
+    if (!preset) return;
+    // In production: URL would come from assembled video storage
+    // For now, show preparing toast and queue the download
+    toast.info(`Preparing ${label}…`);
+    const filename = `genie-cast-${presetId.replace(/_/g, '-')}.${preset.format}`;
+    dlManager.startDownload(
+      `/api/production/download/${presetId}`, // Production endpoint
+      presetId,
+      filename,
+    );
+  };
 
   return (
     <Card>
@@ -548,13 +564,16 @@ function DownloadSection() {
           Download Assets
         </CardTitle>
         <CardDescription className="text-xs">
-          Download all production assets for manual distribution
+          Download all production assets — streaming with progress, pause/resume, retry on failure
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
           {downloads.map((item) => {
             const Icon = item.icon;
+            const activeJob = dlManager.jobs.find(j => j.presetId === item.presetId && j.status !== 'complete' && j.status !== 'failed' && j.status !== 'cancelled');
+            const isDownloading = !!activeJob;
+
             return (
               <div
                 key={item.label}
@@ -564,22 +583,67 @@ function DownloadSection() {
                   <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <div>
                     <div className="text-xs font-medium">{item.label}</div>
-                    <div className="text-[10px] text-muted-foreground">{item.size}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {isDownloading
+                        ? `${activeJob.progress}% · ${dlManager.formatSpeed(activeJob.speedBytesPerSec)} · ETA ${dlManager.formatEta(activeJob.etaSeconds)}`
+                        : item.size}
+                    </div>
+                    {isDownloading && (
+                      <Progress value={activeJob.progress} className="h-1 mt-1 w-32" />
+                    )}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs gap-1"
-                  onClick={() => toast.info(`Preparing ${item.label}…`)}
-                >
-                  <Download className="w-3 h-3" />
-                  Download
-                </Button>
+                <div className="flex items-center gap-1">
+                  {isDownloading ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => dlManager.pauseDownload(activeJob.id)}
+                    >
+                      Pause
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => handleDownload(item.presetId, item.label)}
+                    >
+                      <Download className="w-3 h-3" />
+                      Download
+                    </Button>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
+
+        {/* Active/completed download jobs */}
+        {dlManager.jobs.length > 0 && (
+          <div className="mt-3 pt-3 border-t">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] text-muted-foreground font-medium">
+                Downloads: {dlManager.stats.completedJobs}/{dlManager.stats.totalJobs} complete
+              </span>
+              {dlManager.stats.completedJobs > 0 && (
+                <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={dlManager.clearCompleted}>
+                  Clear completed
+                </Button>
+              )}
+            </div>
+            {dlManager.jobs.filter(j => j.status === 'failed').map(job => (
+              <div key={job.id} className="flex items-center gap-2 text-[10px] text-red-500 p-1.5 rounded bg-red-50 dark:bg-red-950/20">
+                <AlertCircle className="h-3 w-3" />
+                <span className="flex-1 truncate">{job.error}</span>
+                <Button variant="ghost" size="sm" className="h-5 text-[10px]" onClick={() => dlManager.retryDownload(job.id)}>
+                  Retry
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

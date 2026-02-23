@@ -43,6 +43,7 @@ import {
   Volume2,
   ChevronDown,
   Check,
+  RefreshCw,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCreateMode } from '@/hooks/useCreateMode';
@@ -162,6 +163,7 @@ import { VideoTimelineEditor, ExportDistributionPanel } from './editing';
 import { useVideoTimeline } from '@/hooks/video-editing/useVideoTimeline';
 import { useClipOperations } from '@/hooks/video-editing/useClipOperations';
 import { usePlatformExport } from '@/hooks/video-editing/usePlatformExport';
+import { useAVSync } from '@/hooks/video-editing/useAVSync';
 
 // Architecture B: Unified Create flow (Discovery + 8-step wizard)
 import { CreateDiscovery, CreateFlowWizard } from '@/components/create-flow';
@@ -358,6 +360,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const videoTimeline = useVideoTimeline();
   const clipOps = useClipOperations(videoTimeline);
   const platformExport = usePlatformExport();
+
+  // P2: A/V Sync engine (audio-video alignment, pre-render validation, teleprompter)
+  const avSync = useAVSync(videoTimeline);
 
   const guideDispatch = useGuideStore((s) => s.dispatch);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -2779,6 +2784,66 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     console.log('[Studio] Reset production');
                   }}
                 />
+
+                {/* P2: A/V Sync Status + Pre-Render Validation */}
+                {videoTimeline.stats.totalClips > 0 && (
+                  <Card className={cn(
+                    'border',
+                    avSync.syncReport.overallStatus === 'perfect' && 'border-emerald-400/30 bg-emerald-50/10',
+                    avSync.syncReport.overallStatus === 'acceptable' && 'border-blue-400/30 bg-blue-50/10',
+                    avSync.syncReport.overallStatus === 'needs_attention' && 'border-amber-400/30 bg-amber-50/10',
+                    avSync.syncReport.overallStatus === 'critical' && 'border-red-400/30 bg-red-50/10',
+                  )}>
+                    <CardContent className="py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Volume2 className="h-4 w-4" />
+                          <span className="text-sm font-medium">A/V Sync</span>
+                          <Badge variant={avSync.syncReport.isReadyForRender ? 'default' : 'destructive'} className="text-[9px]">
+                            {avSync.syncReport.overallStatus.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground">
+                            {avSync.syncReport.alignedCount}/{avSync.syncReport.totalPairs} aligned
+                          </span>
+                          {avSync.syncReport.mismatchCount > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-[10px] gap-1"
+                              onClick={avSync.autoFixAll}
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                              Auto-fix {avSync.syncReport.mismatchCount} mismatch{avSync.syncReport.mismatchCount > 1 ? 'es' : ''}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      {/* Pre-render validation */}
+                      {(() => {
+                        const validation = avSync.validateForRender();
+                        if (validation.errors.length === 0 && validation.warnings.length === 0) return null;
+                        return (
+                          <div className="space-y-1 mt-2">
+                            {validation.errors.map((err, i) => (
+                              <div key={`err-${i}`} className="text-[10px] text-red-500 flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                                {err}
+                              </div>
+                            ))}
+                            {validation.warnings.map((warn, i) => (
+                              <div key={`warn-${i}`} className="text-[10px] text-amber-600 flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                                {warn}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* P1: Universal Multi-Track Timeline Editor */}
                 <VideoTimelineEditor
