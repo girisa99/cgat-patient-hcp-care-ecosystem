@@ -215,10 +215,10 @@ export const StepWizard: React.FC<StepWizardProps> = ({
 
   // Contextual mascot dialogues per step (must be before conditional return)
   const STEP_DIALOGUES = useMemo(() => [
-    { emoji: '🎯', title: 'Choose Your Content', message: "Pick a category & format — I'll match the best AI providers from 17+ models across 4 global zones." },
-    { emoji: '⚡', title: 'Configure Your Style', message: "Set platform, language, and visual style. I'm auto-routing to the optimal AI pipeline for your region." },
-    { emoji: '📋', title: 'Select a Blueprint', message: "Each template includes pre-built scenes, timing, and AI routing. 43 styles across 12 categories!" },
-    { emoji: '🚀', title: 'Add Your Assets', message: "Upload brand assets, hero banners, and regional configs. Then we produce across 25 marketing pipelines!" },
+    { emoji: '🧞', title: 'Hey Creator! 👋', message: "Welcome to the CREATE studio! Pick your content category & format — I'll match you with the best AI providers from 17+ models across 4 global zones. Let's build something amazing!", tip: '💡 Tip: Try "Healthcare + Short-form" for viral content' },
+    { emoji: '🎨', title: "Great Choice! Let's Style It ⚡", message: "Now set your platform, language, and visual style. I'm auto-routing to the optimal AI pipeline for your region. The combination engine will mix styles across 43 presets!", tip: '💡 Tip: Regional routing auto-selects the best CDN & model' },
+    { emoji: '📋', title: 'Pick Your Blueprint 🎬', message: "Each template includes pre-built scenes, timing curves, and AI routing logic. I've curated 25 pipelines — pick one and I'll pre-load all the scene configs for you!", tip: '💡 Tip: Templates with ⭐ are top performers in your region' },
+    { emoji: '🚀', title: "Almost There! Final Touch 🎉", message: "Upload brand assets, hero banners, and regional configs. Once done, I'll orchestrate production across all pipelines simultaneously. Your content goes global!", tip: '💡 Tip: Drag & drop multiple assets — I batch-process them' },
   ], []);
 
   const currentDialogue = STEP_DIALOGUES[currentStep] || STEP_DIALOGUES[0];
@@ -324,14 +324,14 @@ export const StepWizard: React.FC<StepWizardProps> = ({
           boxShadow: '0 8px 40px rgba(0,0,0,0.2), inset 0 1px 0 0 rgba(255,255,255,0.08)',
         }}
       >
-        {/* Background image with overlay */}
+        {/* Background image with overlay — lighter overlay to show image */}
         <div className="absolute inset-0 z-0">
           <img src={sidebarBg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/75 to-background/90 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/50 to-background/65 backdrop-blur-[2px]" />
           {/* Animated ambient glow */}
           <motion.div
-            className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5"
-            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            className="absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-cyan-500/10"
+            animate={{ opacity: [0.4, 0.7, 0.4] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           />
         </div>
@@ -418,7 +418,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
             </div>
           </div>
 
-          {/* Mascot with contextual dialogue */}
+          {/* Mascot with rich contextual dialogue */}
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -428,29 +428,43 @@ export const StepWizard: React.FC<StepWizardProps> = ({
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               className="mt-3 px-1"
             >
-              <div className="relative rounded-xl overflow-hidden bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl p-3">
+              <div className="relative rounded-xl overflow-hidden bg-white/[0.06] border border-white/[0.1] backdrop-blur-xl p-3">
                 {/* Mascot glow */}
                 <motion.div
-                  className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-primary/20 blur-xl"
-                  animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+                  className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-primary/25 blur-2xl"
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.7, 0.3] }}
                   transition={{ duration: 3, repeat: Infinity }}
                 />
-                <div className="relative flex items-start gap-2.5">
-                  {/* Mascot avatar */}
+                <motion.div
+                  className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-cyan-500/20 blur-xl"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.5, 0.2] }}
+                  transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+                />
+                <div className="relative flex items-start gap-3">
+                  {/* Mascot avatar — larger and more animated */}
                   <motion.div
-                    className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center text-lg"
+                    className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-primary/30 to-cyan-500/20 border border-primary/30 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(var(--primary-rgb,99,102,241),0.3)]"
                     animate={{ 
-                      y: [0, -3, 0],
-                      rotate: [0, 3, -3, 0],
+                      y: [0, -4, 0],
+                      rotate: [0, 5, -5, 0],
                     }}
                     transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                   >
                     {currentDialogue.emoji}
                   </motion.div>
-                  {/* Dialogue */}
+                  {/* Dialogue content */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-semibold text-primary mb-0.5">{currentDialogue.title}</p>
-                    <p className="text-[10px] text-foreground/70 leading-relaxed">{currentDialogue.message}</p>
+                    <p className="text-xs font-bold text-primary mb-1">{currentDialogue.title}</p>
+                    <p className="text-[11px] text-foreground/80 leading-relaxed mb-2">{currentDialogue.message}</p>
+                    {/* Tip callout */}
+                    <motion.div 
+                      className="text-[10px] text-cyan-400/90 bg-cyan-500/[0.08] border border-cyan-500/[0.12] rounded-lg px-2 py-1.5 leading-snug"
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      {currentDialogue.tip}
+                    </motion.div>
                   </div>
                 </div>
               </div>
