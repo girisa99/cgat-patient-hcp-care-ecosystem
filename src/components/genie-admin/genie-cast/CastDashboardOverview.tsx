@@ -33,11 +33,8 @@ import {
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  generateDashboardThumbnail,
-  getRegionVisualStyle,
   REGION_GROUP_DISPLAY,
   type DashboardSection,
-  type ThumbnailResult,
 } from '@/services/production/dashboardThumbnailService';
 import { REGIONAL_SUB_REGIONS } from '@/config/regionalSubRegions';
 
@@ -80,16 +77,6 @@ function useVideoStats() {
   });
 }
 
-// ── AI Thumbnail hook — generates region-aware thumbnails via core engine ────
-function useAIThumbnail(section: DashboardSection, regionCode: string) {
-  return useQuery({
-    queryKey: ['ai-thumbnail', section, regionCode],
-    queryFn: () => generateDashboardThumbnail(section, regionCode),
-    staleTime: 1000 * 60 * 30, // 30 min cache
-    retry: 1,
-    enabled: !!regionCode,
-  });
-}
 
 // ── Glassmorphic Hero Banner with region-aware AI thumbnail ─────────────────
 const HeroBanner: React.FC<{
@@ -101,30 +88,18 @@ const HeroBanner: React.FC<{
   llmProvider: string;
   ttsProvider: string;
 }> = ({ regionCode, regionLabel, regionFlag, culturalTone, onStartCreate, llmProvider, ttsProvider }) => {
-  const { data: heroThumb } = useAIThumbnail('hero', regionCode);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
-      {/* Background — AI-generated or gradient+SVG fallback */}
+    <div className="relative overflow-hidden rounded-2xl glass-elevated">
+      {/* Background — themed gradient (no AI thumbnail — they don't match intent) */}
       <div className="absolute inset-0 z-0">
-        {heroThumb?.imageUrl ? (
-          <img
-            src={heroThumb.imageUrl}
-            alt="AI-generated hero"
-            className="w-full h-full object-cover opacity-30 blur-sm scale-105"
-          />
-        ) : (
-          <div className={cn('w-full h-full bg-gradient-to-br', heroThumb?.gradient || 'from-primary/20 via-purple-600/15 to-pink-500/10')} />
-        )}
-        {/* SVG pattern overlay */}
-        {heroThumb?.svgPattern && (
-          <div
-            className="absolute inset-0 opacity-60"
-            style={{ backgroundImage: heroThumb.svgPattern, backgroundRepeat: 'repeat' }}
-          />
-        )}
+        <div className={cn('w-full h-full bg-gradient-to-br from-primary/20 via-purple-600/15 to-pink-500/10')} />
+        {/* Ambient mesh for depth */}
+        <div className="cast-ambient-mesh">
+          <div className="cast-ambient-blob" />
+        </div>
         {/* Glass frost overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/65 to-background/45 backdrop-blur-xl" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/50 backdrop-blur-2xl" />
       </div>
 
       {/* Content */}
@@ -191,50 +166,24 @@ const WorkflowStepCard: React.FC<{
   onClick: () => void;
   isLast?: boolean;
 }> = ({ step, icon, title, description, iconBg, glowColor, gradientFrom, gradientTo, section, regionCode, onClick, isLast }) => {
-  const { data: thumb } = useAIThumbnail(section, regionCode);
-
   return (
     <div className="flex items-start gap-3 flex-1 min-w-[200px]">
       <button
         onClick={onClick}
         className={cn(
           'group relative flex-1 rounded-2xl overflow-hidden text-left transition-all cursor-pointer',
+          'glass-card',
           'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]',
-          'border border-white/[0.08]',
         )}
       >
-        {/* AI thumbnail or gradient+SVG background */}
+        {/* Themed gradient background matching card purpose */}
         <div className="absolute inset-0 z-0">
-          {thumb?.imageUrl ? (
-            <img
-              src={thumb.imageUrl}
-              alt={title}
-              className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity scale-110"
-            />
-          ) : (
-            <div className={cn('w-full h-full bg-gradient-to-br', thumb?.gradient || `${gradientFrom} ${gradientTo}`, !thumb?.gradient && 'opacity-30')} />
-          )}
-          {/* SVG pattern overlay */}
-          {thumb?.svgPattern && (
-            <div
-              className="absolute inset-0 opacity-60"
-              style={{ backgroundImage: thumb.svgPattern, backgroundRepeat: 'repeat' }}
-            />
-          )}
-          {/* Glass frost overlay */}
-          <div className="absolute inset-0 backdrop-blur-xl bg-background/60" />
+          <div className={cn('w-full h-full bg-gradient-to-br opacity-40', gradientFrom, gradientTo)} />
+          <div className="absolute inset-0 backdrop-blur-xl bg-card/65" />
         </div>
 
-        {/* Glass glow effect */}
-        <div className={cn(
-          'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300',
-          'bg-gradient-to-br',
-          gradientFrom, gradientTo,
-          'mix-blend-soft-light',
-        )} style={{ opacity: 0.05 }} />
-
         {/* Inner shine */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.06] via-transparent to-transparent pointer-events-none z-[1]" />
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none z-[1]" />
 
         {/* Content */}
         <div className="relative z-10 p-5">
@@ -283,19 +232,17 @@ const StatCard: React.FC<{
     onClick={onClick}
     className={cn(
       'group relative rounded-2xl text-left transition-all w-full overflow-hidden',
+      'glass-card',
       'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]',
-      'border border-white/[0.08]',
     )}
   >
-    {/* Glass background */}
-    <div className="absolute inset-0 backdrop-blur-xl bg-card/50" />
     {/* Glow accent */}
     <div className={cn(
-      'absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity',
+      'absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-25 group-hover:opacity-45 transition-opacity',
       accentColor,
     )} />
     {/* Inner shine */}
-    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.06] via-transparent to-transparent pointer-events-none" />
+    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none" />
 
     <div className="relative z-10 p-4">
       <div className="flex items-start justify-between">
@@ -343,7 +290,7 @@ const VideoThumbCard: React.FC<{
   };
 
   return (
-    <div className="group rounded-2xl overflow-hidden transition-all hover:shadow-xl hover:scale-[1.02] border border-white/[0.08] relative">
+    <div className="group glass-card rounded-2xl overflow-hidden transition-all hover:shadow-xl hover:scale-[1.02] relative">
       {/* Glass background */}
       <div className="absolute inset-0 backdrop-blur-xl bg-card/40" />
 
@@ -409,46 +356,23 @@ const NavCard: React.FC<{
   regionCode: string;
   onClick: () => void;
 }> = ({ icon, title, description, count, countLabel, iconBg, accentColor, section, regionCode, onClick }) => {
-  const { data: thumb } = useAIThumbnail(section, regionCode);
-
   return (
     <button
       onClick={onClick}
       className={cn(
         'group relative rounded-2xl text-left transition-all w-full overflow-hidden',
+        'glass-card',
         'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] cursor-pointer',
-        'border border-white/[0.08]',
       )}
     >
-      {/* AI thumbnail or gradient+SVG background */}
-      <div className="absolute inset-0 z-0">
-        {thumb?.imageUrl ? (
-          <img
-            src={thumb.imageUrl}
-            alt={title}
-            className="w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-opacity"
-          />
-        ) : thumb?.gradient ? (
-          <div className={cn('w-full h-full bg-gradient-to-br', thumb.gradient)} />
-        ) : null}
-        {/* SVG pattern overlay */}
-        {thumb?.svgPattern && (
-          <div
-            className="absolute inset-0 opacity-50"
-            style={{ backgroundImage: thumb.svgPattern, backgroundRepeat: 'repeat' }}
-          />
-        )}
-        <div className="absolute inset-0 backdrop-blur-xl bg-card/60" />
-      </div>
-
       {/* Glow orb */}
       <div className={cn(
-        'absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-15 group-hover:opacity-30 transition-opacity',
+        'absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity',
         accentColor,
       )} />
 
       {/* Inner shine */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.05] via-transparent to-transparent pointer-events-none z-[1]" />
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.07] via-transparent to-transparent pointer-events-none z-[1]" />
 
       {/* Content */}
       <div className="relative z-10 p-4">
@@ -820,9 +744,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           </h3>
 
           {/* Activity panel */}
-          <div className="relative rounded-2xl overflow-hidden border border-white/[0.08]">
-            <div className="absolute inset-0 backdrop-blur-xl bg-card/50" />
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-transparent pointer-events-none" />
+          <div className="glass-card rounded-2xl overflow-hidden">
             <div className="relative z-10 p-3">
               {videoStats?.recentVideos && videoStats.recentVideos.length > 0 ? (
                 <ScrollArea className="h-[200px]">
@@ -869,8 +791,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           </div>
 
           {/* AI Engine Capabilities */}
-          <div className="relative rounded-2xl overflow-hidden border border-white/[0.08]">
-            <div className="absolute inset-0 backdrop-blur-xl bg-card/50" />
+          <div className="glass-card rounded-2xl overflow-hidden">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-transparent pointer-events-none" />
             <div className="relative z-10 p-3">
               <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-3 flex items-center gap-1.5">
