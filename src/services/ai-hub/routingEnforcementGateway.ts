@@ -114,7 +114,7 @@ const PROVIDER_MODEL_MAP: Record<string, { provider: string; model: string }> = 
   banana_nano:     { provider: 'gemini',    model: 'gemini-2.5-flash' },
   // Video
   vertex_veo3:     { provider: 'google',    model: 'veo-3' },
-  sora_2:          { provider: 'openai',    model: 'sora-2' },
+  sora2:           { provider: 'openai',    model: 'sora-2' },
   alibaba_wan26:   { provider: 'alibaba',   model: 'wan-2.6' },
   modelslab_video: { provider: 'modelslab', model: 'animatediff' },
   // LLM
