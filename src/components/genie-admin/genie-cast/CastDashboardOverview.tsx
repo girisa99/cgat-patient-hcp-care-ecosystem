@@ -1,16 +1,17 @@
 /**
- * CastDashboardOverview — Glassmorphic + AI Thumbnail + Region-Aware Dashboard
+ * CastDashboardOverview — Glassmorphic + Region-Aware Dashboard v2
  *
  * Features:
- * - LiquidGlass + glass-card/glass-panel CSS for real glassmorphism with backdrop-blur
- * - AI-powered thumbnail generation via core engine (Gemini 2 Pro / WanX / FLUX)
- * - Region/subregion-aware: adapts visuals, icons, hero content per user's region
- * - Supports all 16 parent regions, 56 zones via useRegionalLanguage
- * - Workflow visualization: Create -> Produce -> Publish with glassmorphic step cards
- * - Provider-routed image generation: CJK→Alibaba, SEA/India→Gemini, Western→Gemini
+ * - 3 rotating hero banners with region-positioned content
+ * - Horizontal scrolling workflow steps on mobile
+ * - Stat cards with themed background images
+ * - Glass morphism throughout with backdrop-blur
+ * - AI Engine panel with background image
+ * - Broken thumbnail fallback handling
+ * - Fully responsive: distinct mobile vs desktop layouts
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCastProjects } from '@/hooks/useCastProjects';
@@ -18,21 +19,26 @@ import { useVideoBlueprints } from '@/hooks/useVideoBlueprints';
 import { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import { useCastProduction } from '@/hooks/useCastProduction';
 import { useRegionalLanguage } from '@/hooks/useRegionalLanguage';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Video, FolderOpen, LayoutTemplate, Package, Palette, BarChart3,
-  Settings, Sparkles, TrendingUp, Globe, Zap, CheckCircle2,
-  Clock, Play, ArrowRight, Layers, Film, Users, DollarSign,
-  Activity, Shield, ChevronRight, Star, Eye, Share2,
+  Video, FolderOpen, LayoutTemplate, Palette, BarChart3,
+  Settings, Sparkles, TrendingUp, Globe, Zap,
+  Play, ArrowRight, Layers, Film,
+  Activity, ChevronRight, Star,
   Clapperboard, Wand2, Send, MonitorPlay, FileVideo, Image,
-  Cpu, Languages, Map, Radar, Boxes, PanelTop,
+  Cpu, Languages, Map, Radar, Boxes, ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import {
+  REGION_GROUP_DISPLAY,
+  type DashboardSection,
+} from '@/services/production/dashboardThumbnailService';
+import { REGIONAL_SUB_REGIONS } from '@/config/regionalSubRegions';
 
-// Workflow + Nav card thumbnails
+// ── Asset imports ───────────────────────────────────────────────────────────
 import castWorkflowCreate from '@/assets/cast-workflow-create.jpg';
 import castWorkflowProduce from '@/assets/cast-workflow-produce.jpg';
 import castWorkflowPublish from '@/assets/cast-workflow-publish.jpg';
@@ -40,12 +46,12 @@ import castNavProjects from '@/assets/cast-nav-projects.jpg';
 import castNavTemplates from '@/assets/cast-nav-templates.jpg';
 import castNavAssets from '@/assets/cast-nav-assets.jpg';
 import castNavBrand from '@/assets/cast-nav-brand.jpg';
-import { formatDistanceToNow } from 'date-fns';
-import {
-  REGION_GROUP_DISPLAY,
-  type DashboardSection,
-} from '@/services/production/dashboardThumbnailService';
-import { REGIONAL_SUB_REGIONS } from '@/config/regionalSubRegions';
+import castNavAnalytics from '@/assets/cast-nav-analytics.jpg';
+import castNavSettings from '@/assets/cast-nav-settings.jpg';
+import castAiEngine from '@/assets/cast-ai-engine.jpg';
+import castHero1 from '@/assets/cast-hero-1.jpg';
+import castHero2 from '@/assets/cast-hero-2.jpg';
+import castHero3 from '@/assets/cast-hero-3.jpg';
 
 type NavView = 'workspace' | 'projects' | 'templates' | 'assets' | 'brand-kit' | 'analytics' | 'settings';
 
@@ -55,7 +61,7 @@ interface CastDashboardOverviewProps {
   className?: string;
 }
 
-// ── Video stats + thumbnails from database ──────────────────────────────────
+// ── Video stats from database ───────────────────────────────────────────────
 function useVideoStats() {
   return useQuery({
     queryKey: ['dashboard-video-stats-v2'],
@@ -68,15 +74,13 @@ function useVideoStats() {
       if (error) throw error;
       const videos = data || [];
       const completed = videos.filter(v => v.generation_status === 'completed').length;
-      const processing = videos.filter(v => v.generation_status === 'processing').length;
-      const failed = videos.filter(v => v.generation_status === 'failed').length;
       const languages = new Set(videos.map(v => v.language_name).filter(Boolean));
       const recentVideos = videos.slice(0, 6);
       return {
         total: videos.length,
         completed,
-        processing,
-        failed,
+        processing: videos.filter(v => v.generation_status === 'processing').length,
+        failed: videos.filter(v => v.generation_status === 'failed').length,
         languageCount: languages.size,
         successRate: videos.length > 0 ? Math.round((completed / videos.length) * 100) : 0,
         recentVideos,
@@ -86,194 +90,199 @@ function useVideoStats() {
   });
 }
 
+// ── Hero banner data per region ─────────────────────────────────────────────
+const HERO_BANNERS = [
+  {
+    image: castHero1,
+    title: 'AI-Powered Content Studio',
+    subtitle: 'Create professional videos, presentations & podcasts with regional intelligence',
+    gradient: 'from-purple-900/80 via-purple-900/50 to-transparent',
+  },
+  {
+    image: castHero2,
+    title: 'Production at Scale',
+    subtitle: 'Generate content in 75+ languages across 56 zones with one click',
+    gradient: 'from-blue-900/80 via-blue-900/50 to-transparent',
+  },
+  {
+    image: castHero3,
+    title: 'Global Distribution',
+    subtitle: 'Publish and track content performance across every region worldwide',
+    gradient: 'from-emerald-900/80 via-emerald-900/50 to-transparent',
+  },
+];
 
-// ── Glassmorphic Hero Banner with region-aware AI thumbnail ─────────────────
-const HeroBanner: React.FC<{
-  regionCode: string;
+// ── 3-Banner Carousel ───────────────────────────────────────────────────────
+const HeroCarousel: React.FC<{
   regionLabel: string;
   regionFlag: string;
   culturalTone: string;
   onStartCreate: () => void;
   llmProvider: string;
   ttsProvider: string;
-}> = ({ regionCode, regionLabel, regionFlag, culturalTone, onStartCreate, llmProvider, ttsProvider }) => {
+}> = ({ regionLabel, regionFlag, culturalTone, onStartCreate, llmProvider, ttsProvider }) => {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setActive(i => (i + 1) % 3), 6000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const banner = HERO_BANNERS[active];
 
   return (
     <div className="relative overflow-hidden rounded-2xl glass-elevated">
-      {/* Background — themed gradient (no AI thumbnail — they don't match intent) */}
+      {/* Background image */}
       <div className="absolute inset-0 z-0">
-        <div className={cn('w-full h-full bg-gradient-to-br from-primary/20 via-purple-600/15 to-pink-500/10')} />
-        {/* Ambient mesh for depth */}
-        <div className="cast-ambient-mesh">
-          <div className="cast-ambient-blob" />
-        </div>
-        {/* Glass frost overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/50 backdrop-blur-2xl" />
+        {HERO_BANNERS.map((b, i) => (
+          <img
+            key={i}
+            src={b.image}
+            alt=""
+            className={cn(
+              'absolute inset-0 w-full h-full object-cover transition-opacity duration-700',
+              i === active ? 'opacity-100' : 'opacity-0',
+            )}
+          />
+        ))}
+        <div className={cn('absolute inset-0 bg-gradient-to-r', banner.gradient)} />
+        <div className="absolute inset-0 backdrop-blur-[2px]" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+      <div className="relative z-10 p-4 md:p-8 min-h-[160px] md:min-h-[200px] flex flex-col justify-between">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-primary/25">
-              <Film className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Genie Cast Studio</h1>
-              <p className="text-xs text-muted-foreground">AI-powered content production — Video, PPT, Scripts, Podcasts with regional intelligence</p>
-            </div>
-          </div>
+          <h1 className="text-xl md:text-2xl font-bold text-white mb-1 drop-shadow-lg">{banner.title}</h1>
+          <p className="text-xs md:text-sm text-white/80 max-w-lg drop-shadow">{banner.subtitle}</p>
 
-          {/* Region context badge */}
-          <div className="flex items-center gap-2 flex-wrap mt-3">
-            <div className="glass-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-primary/20">
-              <Globe className="w-3 h-3 text-primary" />
-              <span className="text-primary">{regionFlag} {regionLabel}</span>
-            </div>
-            <div className="glass-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium border border-muted-foreground/10">
-              <Cpu className="w-3 h-3 text-muted-foreground" />
-              <span className="text-muted-foreground">LLM: {llmProvider}</span>
-            </div>
-            <div className="glass-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium border border-muted-foreground/10">
-              <Languages className="w-3 h-3 text-muted-foreground" />
-              <span className="text-muted-foreground">TTS: {ttsProvider}</span>
-            </div>
+          {/* Region badges — desktop */}
+          <div className="hidden sm:flex items-center gap-2 flex-wrap mt-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-white/10 backdrop-blur-md border border-white/20 text-white">
+              <Globe className="w-3 h-3" /> {regionFlag} {regionLabel}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-white/10 backdrop-blur-md border border-white/10 text-white/70">
+              <Cpu className="w-3 h-3" /> LLM: {llmProvider}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-white/10 backdrop-blur-md border border-white/10 text-white/70">
+              <Languages className="w-3 h-3" /> TTS: {ttsProvider}
+            </span>
             {culturalTone && (
-              <div className="glass-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium border border-amber-500/20">
-                <Star className="w-3 h-3 text-amber-400" />
-                <span className="text-amber-300/80">{culturalTone}</span>
-              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-amber-500/20 backdrop-blur-md border border-amber-400/20 text-amber-200">
+                <Star className="w-3 h-3" /> {culturalTone}
+              </span>
             )}
           </div>
         </div>
 
-        <Button
-          onClick={onStartCreate}
-          size="lg"
-          className="gap-2 bg-gradient-to-r from-primary via-purple-600 to-pink-500 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0"
-        >
-          <Sparkles className="w-4 h-4" />
-          Create New Content
-        </Button>
+        {/* Bottom row: CTA + dots */}
+        <div className="flex items-center justify-between mt-4">
+          <Button
+            onClick={onStartCreate}
+            size="sm"
+            className="gap-2 bg-white/20 backdrop-blur-md border border-white/20 text-white hover:bg-white/30 shadow-lg"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> Create New Content
+          </Button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setActive(i => (i - 1 + 3) % 3)} className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex gap-1.5">
+              {[0, 1, 2].map(i => (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  className={cn(
+                    'h-1.5 rounded-full transition-all',
+                    i === active ? 'w-6 bg-white' : 'w-1.5 bg-white/30 hover:bg-white/50',
+                  )}
+                />
+              ))}
+            </div>
+            <button onClick={() => setActive(i => (i + 1) % 3)} className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-// ── Glassmorphic Workflow Step with AI thumbnail background ──────────────────
+// ── Workflow Step Card ───────────────────────────────────────────────────────
 const WorkflowStepCard: React.FC<{
   step: number;
   icon: React.ReactNode;
   title: string;
   description: string;
   iconBg: string;
-  glowColor: string;
-  gradientFrom: string;
-  gradientTo: string;
   thumbnailSrc: string;
-  section: DashboardSection;
-  regionCode: string;
+  gradientFrom: string;
   onClick: () => void;
-  isLast?: boolean;
-}> = ({ step, icon, title, description, iconBg, glowColor, gradientFrom, gradientTo, thumbnailSrc, section, regionCode, onClick, isLast }) => {
-  return (
-    <div className="flex items-start gap-3 flex-1 min-w-0">
-      <button
-        onClick={onClick}
-        className={cn(
-          'group relative flex-1 rounded-2xl overflow-hidden text-left transition-all cursor-pointer',
-          'glass-card',
-          'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]',
-        )}
-      >
-        {/* Thumbnail image */}
-        <div className="relative w-full aspect-[16/9] overflow-hidden">
-          <img
-            src={thumbnailSrc}
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-          />
-          <div className={cn('absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-80', gradientFrom.replace('from-', 'from-'))} />
-          <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-card/30 to-transparent" />
-          {/* Step badge on image */}
-          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-bold text-white uppercase tracking-widest">
-            Step {step}
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 p-4">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className={cn(
-              'w-9 h-9 rounded-xl flex items-center justify-center backdrop-blur-md transition-all',
-              'group-hover:scale-110 group-hover:shadow-lg',
-              'border',
-              iconBg,
-            )}>
-              {icon}
-            </div>
-            <h4 className="text-sm font-bold text-foreground">{title}</h4>
-          </div>
-          <p className="text-xs text-muted-foreground/80 leading-relaxed line-clamp-2">{description}</p>
-          <div className="mt-2.5 flex items-center gap-1 text-primary text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-            Get Started <ArrowRight className="w-3 h-3" />
-          </div>
-        </div>
-      </button>
-      {!isLast && (
-        <div className="hidden lg:flex items-center self-center pt-3">
-          <ArrowRight className="w-5 h-5 text-muted-foreground/20" />
-        </div>
-      )}
+}> = ({ step, icon, title, description, iconBg, thumbnailSrc, gradientFrom, onClick }) => (
+  <button
+    onClick={onClick}
+    className="group relative rounded-2xl overflow-hidden text-left transition-all cursor-pointer glass-card hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] min-w-[220px] md:min-w-0 md:flex-1 shrink-0"
+  >
+    <div className="relative w-full aspect-[16/9] overflow-hidden">
+      <img src={thumbnailSrc} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+      <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-card/30 to-transparent" />
+      <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-bold text-white uppercase tracking-widest">Step {step}</div>
     </div>
-  );
-};
+    <div className="relative z-10 p-3 md:p-4">
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className={cn('w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center backdrop-blur-md border transition-all group-hover:scale-110', iconBg)}>
+          {icon}
+        </div>
+        <h4 className="text-sm font-bold text-foreground">{title}</h4>
+      </div>
+      <p className="text-[11px] text-muted-foreground/80 leading-relaxed line-clamp-2">{description}</p>
+      <div className="mt-2 flex items-center gap-1 text-primary text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+        Get Started <ArrowRight className="w-3 h-3" />
+      </div>
+    </div>
+  </button>
+);
 
-// ── Glassmorphic Stat Card with glow ────────────────────────────────────────
+// ── Stat Card with background image ─────────────────────────────────────────
 const StatCard: React.FC<{
   icon: React.ReactNode;
   label: string;
   value: string | number;
   subtitle?: string;
   trend?: string;
-  glowClass: string;
   iconBg: string;
   accentColor: string;
+  backgroundSrc?: string;
   onClick?: () => void;
-}> = ({ icon, label, value, subtitle, trend, glowClass, iconBg, accentColor, onClick }) => (
+}> = ({ icon, label, value, subtitle, trend, iconBg, accentColor, backgroundSrc, onClick }) => (
   <button
     onClick={onClick}
-    className={cn(
-      'group relative rounded-2xl text-left transition-all w-full overflow-hidden',
-      'glass-card',
-      'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]',
-    )}
+    className="group relative rounded-2xl text-left transition-all w-full overflow-hidden glass-card hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
   >
+    {/* Background image */}
+    {backgroundSrc && (
+      <div className="absolute inset-0 z-0">
+        <img src={backgroundSrc} alt="" className="w-full h-full object-cover opacity-15 group-hover:opacity-25 transition-opacity" loading="lazy" />
+      </div>
+    )}
     {/* Glow accent */}
-    <div className={cn(
-      'absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-25 group-hover:opacity-45 transition-opacity',
-      accentColor,
-    )} />
-    {/* Inner shine */}
+    <div className={cn('absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-25 group-hover:opacity-45 transition-opacity', accentColor)} />
     <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none" />
 
-    <div className="relative z-10 p-4">
+    <div className="relative z-10 p-3 md:p-4">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{label}</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{value}</p>
+          <p className="text-xl md:text-2xl font-bold text-foreground mt-1">{value}</p>
           {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
-        <div className={cn(
-          'p-2.5 rounded-xl backdrop-blur-md transition-all group-hover:scale-110 group-hover:shadow-lg border',
-          iconBg,
-        )}>
+        <div className={cn('p-2 md:p-2.5 rounded-xl backdrop-blur-md transition-all group-hover:scale-110 group-hover:shadow-lg border', iconBg)}>
           {icon}
         </div>
       </div>
       {trend && (
-        <div className="flex items-center gap-1 mt-2.5">
+        <div className="flex items-center gap-1 mt-2">
           <TrendingUp className="w-3 h-3 text-emerald-400" />
           <span className="text-[10px] font-medium text-emerald-400">{trend}</span>
         </div>
@@ -282,7 +291,7 @@ const StatCard: React.FC<{
   </button>
 );
 
-// ── Video Thumbnail Card with glassmorphic overlay ──────────────────────────
+// ── Video Thumbnail with broken-image fallback ──────────────────────────────
 const VideoThumbCard: React.FC<{
   title: string;
   thumbnail?: string | null;
@@ -291,65 +300,53 @@ const VideoThumbCard: React.FC<{
   duration?: number | null;
   time: string;
 }> = ({ title, thumbnail, status, language, duration, time }) => {
+  const [imgError, setImgError] = useState(false);
+
   const statusStyles = status === 'completed'
     ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
     : status === 'processing'
       ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
       : 'bg-red-500/20 text-red-300 border-red-500/30';
 
-  const formatDuration = (s: number) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m}:${sec.toString().padStart(2, '0')}`;
-  };
+  const formatDuration = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
     <div className="group glass-card rounded-2xl overflow-hidden transition-all hover:shadow-xl hover:scale-[1.02] relative">
-      {/* Glass background */}
       <div className="absolute inset-0 backdrop-blur-xl bg-card/40" />
-
-      {/* Thumbnail */}
       <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-purple-600/10 overflow-hidden">
-        {thumbnail ? (
+        {thumbnail && !imgError ? (
           <img
             src={thumbnail}
             alt={title || 'Video'}
             className="w-full h-full object-cover transition-transform group-hover:scale-105"
             loading="lazy"
+            onError={() => setImgError(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/15 via-purple-600/10 to-pink-500/10">
             <div className="w-12 h-12 rounded-xl bg-white/[0.06] backdrop-blur-md flex items-center justify-center border border-white/[0.1]">
               <Film className="w-5 h-5 text-muted-foreground/40" />
             </div>
           </div>
         )}
-        {/* Play overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all">
           <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100">
             <Play className="w-4 h-4 text-white ml-0.5" />
           </div>
         </div>
-        {/* Duration badge */}
         {duration && (
           <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-lg bg-black/50 backdrop-blur-md border border-white/10 text-[9px] font-medium text-white">
             {formatDuration(duration)}
           </div>
         )}
-        {/* Status badge */}
         <div className={cn('absolute top-1.5 left-1.5 px-2 py-0.5 rounded-lg border text-[9px] font-semibold capitalize backdrop-blur-md', statusStyles)}>
           {status}
         </div>
       </div>
-      {/* Info */}
       <div className="relative z-10 p-2.5">
         <p className="text-xs font-semibold text-foreground truncate">{title || 'Untitled Video'}</p>
         <div className="flex items-center gap-2 mt-1">
-          {language && (
-            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <Globe className="w-2.5 h-2.5" /> {language}
-            </span>
-          )}
+          {language && <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground"><Globe className="w-2.5 h-2.5" /> {language}</span>}
           <span className="text-[10px] text-muted-foreground">{time}</span>
         </div>
       </div>
@@ -357,7 +354,7 @@ const VideoThumbCard: React.FC<{
   );
 };
 
-// ── Navigation Card with AI thumbnail + glassmorphism ───────────────────────
+// ── Navigation Card with thumbnail ──────────────────────────────────────────
 const NavCard: React.FC<{
   icon: React.ReactNode;
   title: string;
@@ -367,69 +364,48 @@ const NavCard: React.FC<{
   iconBg: string;
   accentColor: string;
   thumbnailSrc?: string;
-  section: DashboardSection;
-  regionCode: string;
   onClick: () => void;
-}> = ({ icon, title, description, count, countLabel, iconBg, accentColor, thumbnailSrc, section, regionCode, onClick }) => {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'group relative rounded-2xl text-left transition-all w-full overflow-hidden',
-        'glass-card',
-        'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] cursor-pointer',
-      )}
-    >
-      {/* Thumbnail */}
-      {thumbnailSrc && (
-        <div className="relative w-full aspect-[2/1] overflow-hidden">
-          <img src={thumbnailSrc} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-          <div className="absolute inset-0 bg-gradient-to-t from-card/95 via-card/40 to-transparent" />
+}> = ({ icon, title, description, count, countLabel, iconBg, accentColor, thumbnailSrc, onClick }) => (
+  <button
+    onClick={onClick}
+    className="group relative rounded-2xl text-left transition-all w-full overflow-hidden glass-card hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+  >
+    {thumbnailSrc && (
+      <div className="relative w-full aspect-[2/1] overflow-hidden">
+        <img src={thumbnailSrc} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+        <div className="absolute inset-0 bg-gradient-to-t from-card/95 via-card/40 to-transparent" />
+      </div>
+    )}
+    <div className={cn('absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity', accentColor)} />
+    <div className="relative z-10 p-3 md:p-4">
+      <div className="flex items-start gap-3">
+        <div className={cn('w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center backdrop-blur-md shrink-0 transition-all group-hover:scale-110 group-hover:shadow-lg border', iconBg)}>
+          {icon}
         </div>
-      )}
-
-      {/* Glow orb */}
-      <div className={cn(
-        'absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity',
-        accentColor,
-      )} />
-
-      {/* Content */}
-      <div className="relative z-10 p-4">
-        <div className="flex items-start gap-3">
-          <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-md shrink-0',
-            'transition-all group-hover:scale-110 group-hover:shadow-lg border',
-            iconBg,
-          )}>
-            {icon}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-bold text-foreground">{title}</h4>
+            <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-foreground">{title}</h4>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5 line-clamp-1">{description}</p>
+          {count !== undefined && (
+            <div className="mt-1.5">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border backdrop-blur-sm bg-white/[0.04] border-white/[0.08] text-muted-foreground">
+                {count} {countLabel || 'items'}
+              </span>
             </div>
-            <p className="text-[11px] text-muted-foreground/70 mt-0.5 line-clamp-1">{description}</p>
-            {count !== undefined && (
-              <div className="mt-2">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border backdrop-blur-sm bg-white/[0.04] border-white/[0.08] text-muted-foreground">
-                  {count} {countLabel || 'items'}
-                </span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
-    </button>
-  );
-};
+    </div>
+  </button>
+);
 
-// ── Region Zones Overview — shows supported regions as glass badges ─────────
+// ── Region Zones Bar ────────────────────────────────────────────────────────
 const RegionZonesBar: React.FC<{ currentRegion: string }> = ({ currentRegion }) => {
   const topRegions = ['nam', 'europe', 'mena', 'india', 'cjk', 'sea', 'africa', 'latam'];
-
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
       {topRegions.map(key => {
         const info = REGION_GROUP_DISPLAY[key];
         if (!info) return null;
@@ -446,7 +422,7 @@ const RegionZonesBar: React.FC<{ currentRegion: string }> = ({ currentRegion }) 
           <div
             key={key}
             className={cn(
-              'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium border backdrop-blur-sm transition-all',
+              'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium border backdrop-blur-sm transition-all shrink-0',
               isActive
                 ? 'bg-primary/10 border-primary/30 text-primary shadow-[0_0_8px_rgba(var(--primary-rgb,99,102,241),0.2)]'
                 : 'bg-white/[0.03] border-white/[0.06] text-muted-foreground/50 hover:bg-white/[0.06] hover:text-muted-foreground',
@@ -457,14 +433,14 @@ const RegionZonesBar: React.FC<{ currentRegion: string }> = ({ currentRegion }) 
           </div>
         );
       })}
-      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-white/[0.03] border border-white/[0.06] text-muted-foreground/40">
+      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-white/[0.03] border border-white/[0.06] text-muted-foreground/40 shrink-0">
         +8 more
       </div>
     </div>
   );
 };
 
-// ── Main Dashboard ──────────────────────────────────────────────────────────
+// ── MAIN DASHBOARD ──────────────────────────────────────────────────────────
 export function CastDashboardOverview({ onNavigate, onStartCreate, className }: CastDashboardOverviewProps) {
   const projects = useCastProjects();
   const blueprints = useVideoBlueprints();
@@ -472,26 +448,17 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
   const production = useCastProduction();
   const { data: videoStats } = useVideoStats();
 
-  // Region awareness via core engine
   const regional = useRegionalLanguage();
   const regionCode = useMemo(() => {
-    // Derive region code from the current bundle/detection
     const bundle = regional.currentBundle;
     if (!bundle) return 'NAM_US';
-    // Map bundle type to a default region code
     const bundleToRegion: Record<string, string> = {
-      english_core: 'NAM_US',
-      europe: 'EU_DACH',
-      asia: 'CJK_JP',
-      india: 'INDIA_PAN',
-      mea: 'MENA_GULF',
-      africa: 'AFRICA_EAST',
-      latam: 'LATAM_BR',
+      english_core: 'NAM_US', europe: 'EU_DACH', asia: 'CJK_JP',
+      india: 'INDIA_PAN', mea: 'MENA_GULF', africa: 'AFRICA_EAST', latam: 'LATAM_BR',
     };
     return bundleToRegion[bundle.id] || 'NAM_US';
   }, [regional.currentBundle]);
 
-  // Find current region's display info
   const currentSubRegion = useMemo(() => {
     for (const group of Object.values(REGIONAL_SUB_REGIONS)) {
       const found = group.find(sr => sr.code === regionCode);
@@ -509,9 +476,9 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
 
   return (
     <div className={cn('space-y-4 md:space-y-6 p-3 md:p-5', className)}>
-      {/* ── Hero Banner with Region Context ─────────────────────────────── */}
-      <HeroBanner
-        regionCode={regionCode}
+
+      {/* ── 3-Banner Hero Carousel ─────────────────────────────────────── */}
+      <HeroCarousel
         regionLabel={currentSubRegion.label}
         regionFlag={currentSubRegion.flag}
         culturalTone={currentSubRegion.culturalTone}
@@ -520,21 +487,20 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
         ttsProvider={regional.ttsProvider || 'Azure Neural'}
       />
 
-      {/* ── Region Zones Bar ────────────────────────────────────────────── */}
+      {/* ── Region Zones — horizontal scroll on mobile ─────────────────── */}
       <div>
         <div className="flex items-center justify-between px-1 mb-2">
           <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
             <Map className="w-3 h-3" /> Supported Regions
           </h3>
-          <span className="text-[10px] text-muted-foreground/40">16 regions | 56+ zones | 75+ languages</span>
+          <span className="text-[10px] text-muted-foreground/40 hidden sm:inline">16 regions | 56+ zones | 75+ languages</span>
         </div>
         <RegionZonesBar currentRegion={regionCode} />
       </div>
 
-      {/* ── Active Production Banner ─────────────────────────────────────── */}
+      {/* ── Active Production Banner ──────────────────────────────────── */}
       {production.isProducing && (
-        <div className="relative rounded-2xl overflow-hidden border border-amber-500/20">
-          <div className="absolute inset-0 backdrop-blur-xl bg-card/50" />
+        <div className="relative rounded-2xl overflow-hidden border border-amber-500/20 glass-card">
           <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-orange-500/5" />
           <div className="relative z-10 p-4">
             <div className="flex items-center gap-3">
@@ -545,236 +511,168 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
                 <p className="text-sm font-semibold text-foreground">Production in Progress</p>
                 <p className="text-xs text-muted-foreground">{production.state.currentTask || 'Processing...'}</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-amber-400">{production.state.progress}%</p>
-              </div>
+              <p className="text-2xl font-bold text-amber-400">{production.state.progress}%</p>
             </div>
             <Progress value={production.state.progress} className="mt-3 h-2 [&>div]:bg-gradient-to-r [&>div]:from-amber-500 [&>div]:to-orange-400" />
           </div>
         </div>
       )}
 
-      {/* ── Workflow Steps: Create → Produce → Publish ──────────────────── */}
+      {/* ── Workflow Steps — horizontal scroll on mobile ──────────────── */}
       <div>
         <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
           <Radar className="w-3 h-3" /> Your Workflow
         </h3>
-        <div className="flex flex-col lg:flex-row gap-3">
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
           <WorkflowStepCard
             step={1}
-            icon={<Wand2 className="w-5 h-5 text-purple-300" />}
+            icon={<Wand2 className="w-4 h-4 text-purple-300" />}
             title="Create"
-            description="Write scripts, choose output (Video, PPT, Podcast, Script), select styles and set your creative direction with AI"
+            description="Write scripts, choose output format, set your creative direction with AI"
             iconBg="bg-purple-500/15 border-purple-500/25"
-            glowColor="purple"
-            gradientFrom="from-purple-500/20"
-            gradientTo="to-violet-600/10"
             thumbnailSrc={castWorkflowCreate}
-            section="workflow-create"
-            regionCode={regionCode}
+            gradientFrom="from-purple-500/20"
             onClick={onStartCreate}
           />
           <WorkflowStepCard
             step={2}
-            icon={<Clapperboard className="w-5 h-5 text-blue-300" />}
+            icon={<Clapperboard className="w-4 h-4 text-blue-300" />}
             title="Produce"
-            description="Generate videos, presentations, podcasts with AI. Apply regional intelligence and multi-language support"
+            description="Generate videos, presentations, podcasts with regional AI intelligence"
             iconBg="bg-blue-500/15 border-blue-500/25"
-            glowColor="blue"
-            gradientFrom="from-blue-500/20"
-            gradientTo="to-cyan-600/10"
             thumbnailSrc={castWorkflowProduce}
-            section="workflow-produce"
-            regionCode={regionCode}
+            gradientFrom="from-blue-500/20"
             onClick={onStartCreate}
           />
           <WorkflowStepCard
             step={3}
-            icon={<Send className="w-5 h-5 text-emerald-300" />}
+            icon={<Send className="w-4 h-4 text-emerald-300" />}
             title="Publish"
-            description="Distribute content to platforms, track analytics and optimize engagement across all regions"
+            description="Distribute content to platforms, track analytics across all regions"
             iconBg="bg-emerald-500/15 border-emerald-500/25"
-            glowColor="green"
-            gradientFrom="from-emerald-500/20"
-            gradientTo="to-green-600/10"
             thumbnailSrc={castWorkflowPublish}
-            section="workflow-publish"
-            regionCode={regionCode}
+            gradientFrom="from-emerald-500/20"
             onClick={onStartCreate}
-            isLast
           />
         </div>
       </div>
 
-      {/* ── KPI Stats Grid ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* ── KPI Stats — horizontal scroll on mobile, 4-col on desktop ── */}
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
         <StatCard
-          icon={<Video className="w-5 h-5 text-primary" />}
-          label="Videos Produced"
+          icon={<Video className="w-4 h-4 text-primary" />}
+          label="Videos"
           value={videoStats?.total || 0}
           subtitle={`${videoStats?.completed || 0} completed`}
           trend={videoStats?.successRate ? `${videoStats.successRate}% success` : undefined}
-          glowClass="glass-glow-primary"
           iconBg="bg-primary/15 border-primary/25"
           accentColor="bg-primary"
+          backgroundSrc={castWorkflowProduce}
           onClick={() => onNavigate('projects')}
         />
         <StatCard
-          icon={<FolderOpen className="w-5 h-5 text-blue-300" />}
-          label="Active Projects"
+          icon={<FolderOpen className="w-4 h-4 text-blue-300" />}
+          label="Projects"
           value={activeProjects.length}
-          subtitle={`${totalProjects} total projects`}
-          glowClass="glass-glow-azure"
+          subtitle={`${totalProjects} total`}
           iconBg="bg-blue-500/15 border-blue-500/25"
           accentColor="bg-blue-500"
+          backgroundSrc={castNavProjects}
           onClick={() => onNavigate('projects')}
         />
         <StatCard
-          icon={<LayoutTemplate className="w-5 h-5 text-purple-300" />}
+          icon={<LayoutTemplate className="w-4 h-4 text-purple-300" />}
           label="Templates"
           value={totalTemplates}
           subtitle={`${Object.keys(blueprints.blueprintsByCategory || {}).length} categories`}
-          glowClass=""
           iconBg="bg-purple-500/15 border-purple-500/25"
           accentColor="bg-purple-500"
+          backgroundSrc={castNavTemplates}
           onClick={() => onNavigate('templates')}
         />
         <StatCard
-          icon={<Globe className="w-5 h-5 text-cyan-300" />}
+          icon={<Globe className="w-4 h-4 text-cyan-300" />}
           label="Languages"
           value={videoStats?.languageCount || 0}
-          subtitle={`${totalFormats} formats available`}
-          glowClass=""
+          subtitle={`${totalFormats} formats`}
           iconBg="bg-cyan-500/15 border-cyan-500/25"
           accentColor="bg-cyan-500"
+          backgroundSrc={castHero3}
           onClick={() => onNavigate('analytics')}
         />
       </div>
 
-      {/* ── Recent Videos with Thumbnails ─────────────────────────────────── */}
+      {/* ── Recent Videos ─────────────────────────────────────────────── */}
       {videoStats?.recentVideos && videoStats.recentVideos.length > 0 && (
         <div>
           <div className="flex items-center justify-between px-1 mb-3">
             <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
               <Film className="w-3 h-3" /> Recent Videos
             </h3>
-            <button
-              onClick={() => onNavigate('projects')}
-              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
-            >
+            <button onClick={() => onNavigate('projects')} className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors">
               View All <ArrowRight className="w-3 h-3" />
             </button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none md:grid md:grid-cols-3 lg:grid-cols-6 md:overflow-visible md:pb-0">
             {videoStats.recentVideos.map((video: any) => (
-              <VideoThumbCard
-                key={video.id}
-                title={video.title}
-                thumbnail={video.thumbnail_url}
-                status={video.generation_status || 'pending'}
-                language={video.language_name}
-                duration={video.duration_seconds}
-                time={video.created_at ? formatDistanceToNow(new Date(video.created_at), { addSuffix: true }) : ''}
-              />
+              <div key={video.id} className="min-w-[180px] md:min-w-0">
+                <VideoThumbCard
+                  title={video.title}
+                  thumbnail={video.thumbnail_url}
+                  status={video.generation_status || 'pending'}
+                  language={video.language_name}
+                  duration={video.duration_seconds}
+                  time={video.created_at ? formatDistanceToNow(new Date(video.created_at), { addSuffix: true }) : ''}
+                />
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* ── Quick Access Navigation + Activity ─────────────────────────── */}
+      {/* ── Quick Access + Activity + AI Engine ────────────────────────── */}
       <div className="grid lg:grid-cols-3 gap-4">
-        {/* Navigation Cards */}
+        {/* Navigation Cards — horizontal scroll on mobile, 2-col grid desktop */}
         <div className="lg:col-span-2 space-y-3">
           <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 flex items-center gap-1.5">
             <Boxes className="w-3 h-3" /> Quick Access
           </h3>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <NavCard
-              icon={<FolderOpen className="w-5 h-5 text-blue-300" />}
-              title="Projects"
-              description="View and manage all video projects"
-              count={totalProjects}
-              countLabel="projects"
-              iconBg="bg-blue-500/15 border-blue-500/25"
-              accentColor="bg-blue-500"
-              thumbnailSrc={castNavProjects}
-              section="projects"
-              regionCode={regionCode}
-              onClick={() => onNavigate('projects')}
-            />
-            <NavCard
-              icon={<LayoutTemplate className="w-5 h-5 text-purple-300" />}
-              title="Templates"
-              description="Browse video blueprints and presets"
-              count={totalTemplates}
-              countLabel="blueprints"
-              iconBg="bg-purple-500/15 border-purple-500/25"
-              accentColor="bg-purple-500"
-              thumbnailSrc={castNavTemplates}
-              section="templates"
-              regionCode={regionCode}
-              onClick={() => onNavigate('templates')}
-            />
-            <NavCard
-              icon={<Image className="w-5 h-5 text-emerald-300" />}
-              title="Asset Library"
-              description="Images, videos, audio and visual styles"
-              count={totalStyles}
-              countLabel="visual styles"
-              iconBg="bg-emerald-500/15 border-emerald-500/25"
-              accentColor="bg-emerald-500"
-              thumbnailSrc={castNavAssets}
-              section="assets"
-              regionCode={regionCode}
-              onClick={() => onNavigate('assets')}
-            />
-            <NavCard
-              icon={<Palette className="w-5 h-5 text-amber-300" />}
-              title="Brand Kit"
-              description="Brand colors, fonts, voice and logos"
-              iconBg="bg-amber-500/15 border-amber-500/25"
-              accentColor="bg-amber-500"
-              thumbnailSrc={castNavBrand}
-              section="brand-kit"
-              regionCode={regionCode}
-              onClick={() => onNavigate('brand-kit')}
-            />
-            <NavCard
-              icon={<BarChart3 className="w-5 h-5 text-indigo-300" />}
-              title="Analytics"
-              description="Performance, engagement and ROI metrics"
-              count={videoStats?.completed || 0}
-              countLabel="completed videos"
-              iconBg="bg-indigo-500/15 border-indigo-500/25"
-              accentColor="bg-indigo-500"
-              section="analytics"
-              regionCode={regionCode}
-              onClick={() => onNavigate('analytics')}
-            />
-            <NavCard
-              icon={<Settings className="w-5 h-5 text-slate-300" />}
-              title="Settings"
-              description="Integrations, publishing and preferences"
-              iconBg="bg-slate-500/15 border-slate-500/25"
-              accentColor="bg-slate-500"
-              section="settings"
-              regionCode={regionCode}
-              onClick={() => onNavigate('settings')}
-            />
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible sm:pb-0">
+            {[
+              { icon: <FolderOpen className="w-4 h-4 text-blue-300" />, title: 'Projects', desc: 'Manage video projects', count: totalProjects, countLabel: 'projects', iconBg: 'bg-blue-500/15 border-blue-500/25', accent: 'bg-blue-500', thumb: castNavProjects, nav: 'projects' as NavView },
+              { icon: <LayoutTemplate className="w-4 h-4 text-purple-300" />, title: 'Templates', desc: 'Browse blueprints & presets', count: totalTemplates, countLabel: 'blueprints', iconBg: 'bg-purple-500/15 border-purple-500/25', accent: 'bg-purple-500', thumb: castNavTemplates, nav: 'templates' as NavView },
+              { icon: <Image className="w-4 h-4 text-emerald-300" />, title: 'Assets', desc: 'Images, video & audio styles', count: totalStyles, countLabel: 'styles', iconBg: 'bg-emerald-500/15 border-emerald-500/25', accent: 'bg-emerald-500', thumb: castNavAssets, nav: 'assets' as NavView },
+              { icon: <Palette className="w-4 h-4 text-amber-300" />, title: 'Brand Kit', desc: 'Colors, fonts & logos', iconBg: 'bg-amber-500/15 border-amber-500/25', accent: 'bg-amber-500', thumb: castNavBrand, nav: 'brand-kit' as NavView },
+              { icon: <BarChart3 className="w-4 h-4 text-indigo-300" />, title: 'Analytics', desc: 'Performance & engagement', count: videoStats?.completed || 0, countLabel: 'videos', iconBg: 'bg-indigo-500/15 border-indigo-500/25', accent: 'bg-indigo-500', thumb: castNavAnalytics, nav: 'analytics' as NavView },
+              { icon: <Settings className="w-4 h-4 text-slate-300" />, title: 'Settings', desc: 'Integrations & preferences', iconBg: 'bg-slate-500/15 border-slate-500/25', accent: 'bg-slate-500', thumb: castNavSettings, nav: 'settings' as NavView },
+            ].map(item => (
+              <div key={item.title} className="min-w-[200px] sm:min-w-0 shrink-0">
+                <NavCard
+                  icon={item.icon}
+                  title={item.title}
+                  description={item.desc}
+                  count={item.count}
+                  countLabel={item.countLabel}
+                  iconBg={item.iconBg}
+                  accentColor={item.accent}
+                  thumbnailSrc={item.thumb}
+                  onClick={() => onNavigate(item.nav)}
+                />
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Right column — Activity + AI Capabilities */}
+        {/* Right column — Activity + AI Engine */}
         <div className="space-y-3">
+          {/* Activity Feed */}
           <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 flex items-center gap-1.5">
             <Activity className="w-3 h-3" /> Activity Feed
           </h3>
-
-          {/* Activity panel */}
           <div className="glass-card rounded-2xl overflow-hidden">
             <div className="relative z-10 p-3">
               {videoStats?.recentVideos && videoStats.recentVideos.length > 0 ? (
-                <ScrollArea className="h-[200px]">
+                <ScrollArea className="h-[180px]">
                   <div className="space-y-2">
                     {videoStats.recentVideos.map((video: any) => {
                       const statusDot = video.generation_status === 'completed'
@@ -808,7 +706,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
                     <MonitorPlay className="w-6 h-6 opacity-30" />
                   </div>
                   <p className="text-xs font-medium">No videos yet</p>
-                  <p className="text-[10px] text-muted-foreground/50 mt-0.5">Create your first video to see activity</p>
+                  <p className="text-[10px] text-muted-foreground/50 mt-0.5">Create your first video</p>
                   <Button variant="outline" size="sm" className="mt-3 text-xs gap-1.5 backdrop-blur-md bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08]" onClick={onStartCreate}>
                     <Sparkles className="w-3 h-3" /> Get Started
                   </Button>
@@ -817,8 +715,13 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
             </div>
           </div>
 
-          {/* AI Engine Capabilities */}
-          <div className="glass-card rounded-2xl overflow-hidden">
+          {/* AI Engine — with background image + glass */}
+          <div className="glass-card rounded-2xl overflow-hidden relative">
+            {/* Background image */}
+            <div className="absolute inset-0 z-0">
+              <img src={castAiEngine} alt="" className="w-full h-full object-cover opacity-10" />
+              <div className="absolute inset-0 bg-gradient-to-br from-card/90 via-card/80 to-card/70 backdrop-blur-sm" />
+            </div>
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-transparent pointer-events-none" />
             <div className="relative z-10 p-3">
               <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-3 flex items-center gap-1.5">
