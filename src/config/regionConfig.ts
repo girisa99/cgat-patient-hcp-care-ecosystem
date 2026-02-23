@@ -74,6 +74,8 @@ export const MASTER_REGION_GROUPS: RegionGroupConfig[] = [
       { code: 'MENA_EGYPT', label: '🇪🇬 Egypt', languages: ['ar_eg'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-EG' },
       { code: 'MENA_LEVANT', label: '🇯🇴 Levant', languages: ['ar_lb', 'ar_jo', 'ar_iq'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-JO' },
       { code: 'MENA_MAGHREB', label: '🇲🇦 Maghreb', languages: ['ar_ma', 'ar_dz', 'ar_tn'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-MA' },
+      { code: 'MENA_IRAQ', label: '🇮🇶 Iraq', languages: ['ar_iq'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-IQ' },
+      { code: 'MENA_YEMEN', label: '🇾🇪 Yemen', languages: ['ar_ye'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-YE' },
       { code: 'MENA_MSA', label: '🕌 Pan-Arab (MSA)', languages: ['ar_sa'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'ar-SA' },
       { code: 'MENA_ISRAEL', label: '🇮🇱 Israel', languages: ['he'], llm: 'GPT-4o', ttsProvider: 'Azure', ttsLocale: 'he-IL' },
     ]

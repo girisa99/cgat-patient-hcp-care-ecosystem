@@ -200,20 +200,50 @@ function deriveParentRegion(code: string): string {
   if (code.startsWith('BD')) return 'bangladesh';
   if (code.startsWith('EE')) return 'eastern_europe';
   if (code.startsWith('CARIBBEAN')) return 'caribbean';
+  if (code.startsWith('CA_')) return 'central_asia';
+  if (code.startsWith('SA_')) return 'south_asia';
   return 'nam';
 }
 
 const COUNTRY_TO_REGION: Record<string, string> = {
+  // NAM
   US: 'NAM_US', CA: 'NAM_CA',
-  DE: 'EU_DACH', FR: 'EU_FRANCE', ES: 'EU_IBERIA', SE: 'EU_NORDIC', NL: 'EU_BENELUX', IT: 'EU_ITALY', GB: 'EU_DACH',
-  AE: 'MENA_GULF', SA: 'MENA_GULF', EG: 'MENA_EGYPT', JO: 'MENA_LEVANT', MA: 'MENA_MAGHREB', IL: 'MENA_ISRAEL',
+  // Europe
+  DE: 'EU_DACH', AT: 'EU_DACH', CH: 'EU_DACH',
+  FR: 'EU_FRANCE', BE: 'EU_BENELUX',
+  ES: 'EU_IBERIA', PT: 'EU_IBERIA',
+  SE: 'EU_NORDIC', NO: 'EU_NORDIC', DK: 'EU_NORDIC', FI: 'EU_NORDIC',
+  NL: 'EU_BENELUX', IT: 'EU_ITALY', GB: 'EU_WEST', IE: 'EU_WEST',
+  PL: 'EU_EAST', CZ: 'EU_EAST', HU: 'EU_EAST', RO: 'EU_EAST', GR: 'EU_EAST',
+  // Eastern Europe
+  UA: 'EE_UKRAINE', RS: 'EE_BALKANS', HR: 'EE_BALKANS', GE: 'EE_CAUCASUS',
+  // MENA
+  AE: 'MENA_GULF', SA: 'MENA_GULF', KW: 'MENA_GULF', QA: 'MENA_GULF', BH: 'MENA_GULF', OM: 'MENA_GULF',
+  EG: 'MENA_EGYPT', JO: 'MENA_LEVANT', LB: 'MENA_LEVANT',
+  MA: 'MENA_MAGHREB', DZ: 'MENA_MAGHREB', TN: 'MENA_MAGHREB',
+  IQ: 'MENA_IRAQ', YE: 'MENA_YEMEN', IL: 'MENA_ISRAEL',
+  // India
   IN: 'INDIA_PAN',
-  CN: 'CJK_CN', JP: 'CJK_JP', KR: 'CJK_KR', TW: 'CJK_TW',
-  MY: 'SEA_MALAY', TH: 'SEA_THAI', VN: 'SEA_VIET', PH: 'SEA_PHIL', SG: 'SEA_PAN',
-  KE: 'AFRICA_EAST', NG: 'AFRICA_WEST', ZA: 'AFRICA_SOUTH',
-  MX: 'LATAM_MX', BR: 'LATAM_BR', AR: 'LATAM_CONE', CO: 'LATAM_ANDES',
+  // CJK
+  CN: 'CJK_CN', HK: 'CJK_CN', JP: 'CJK_JP', KR: 'CJK_KR', TW: 'CJK_TW',
+  // SEA
+  MY: 'SEA_MALAY', ID: 'SEA_MALAY', TH: 'SEA_THAI', VN: 'SEA_VIET', PH: 'SEA_PHIL', SG: 'SEA_PAN',
+  MM: 'SEA_MALAY', KH: 'SEA_VIET',
+  // Africa
+  KE: 'AFRICA_EAST', TZ: 'AFRICA_EAST', UG: 'AFRICA_EAST', ET: 'AFRICA_EAST', RW: 'AFRICA_EAST',
+  NG: 'AFRICA_WEST', GH: 'AFRICA_WEST',
+  ZA: 'AFRICA_SOUTH', SN: 'AFRICA_FRANCO',
+  // LATAM
+  MX: 'LATAM_MX', BR: 'LATAM_BR', AR: 'LATAM_CONE', CL: 'LATAM_CONE',
+  CO: 'LATAM_ANDES', PE: 'LATAM_ANDES',
+  // Oceania
   AU: 'OCEANIA_AU', NZ: 'OCEANIA_NZ',
+  // Turkey / Pakistan / Bangladesh
   TR: 'TURKEY_ISTANBUL', PK: 'PK_URDU', BD: 'BD_DHAKA',
+  // Central Asia
+  KZ: 'CA_KZ', UZ: 'CA_UZ', AZ: 'CA_AZ',
+  // South Asia
+  LK: 'SA_SRILANKA', NP: 'SA_NEPAL',
 };
 
 function deriveRegionFromCountry(countryCode: string): string {
