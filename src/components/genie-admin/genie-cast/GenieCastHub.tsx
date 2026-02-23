@@ -45,6 +45,7 @@ const LazyAnalyticsDashboard = lazy(() =>
 );
 const LazyWorkspaceManagement = lazy(() => import('@/components/genie-admin/WorkspaceManagement'));
 const LazyIntegrationsSettings = lazy(() => import('@/components/settings/IntegrationsSettingsPage'));
+const LazyCastDashboard = lazy(() => import('./CastDashboardOverview'));
 
 const STORAGE_KEY = 'genie_cast_hub_state';
 
@@ -408,6 +409,7 @@ export const GenieCastHub: React.FC = () => {
   const { mode, setMode, dispatch } = useGuideStore();
 
   const [activeView, setActiveView] = useState<NavView>('workspace');
+  const [showDashboard, setShowDashboard] = useState(true); // Show dashboard overview by default
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [selectedVideoStyles, setSelectedVideoStyles] = useState<VideoStyleType[]>(() => {
@@ -513,6 +515,7 @@ export const GenieCastHub: React.FC = () => {
     setMode(newMode);
     dispatch({ type: 'SWITCH_MODE', mode: newMode });
     setActiveView('workspace');
+    setShowDashboard(false); // Hide dashboard when entering a workflow mode
   }, [setMode, dispatch]);
 
   const activeTab = MODE_TO_TAB[mode];
@@ -521,6 +524,14 @@ export const GenieCastHub: React.FC = () => {
     const newMode = Object.entries(MODE_TO_TAB).find(([, t]) => t === tab)?.[0] as CastMode | undefined;
     if (newMode && newMode !== mode) handleModeChange(newMode);
   }, [mode, handleModeChange]);
+
+  // Handle nav view changes — show dashboard when going back to workspace
+  const handleViewChange = useCallback((view: NavView) => {
+    setActiveView(view);
+    if (view === 'workspace') {
+      setShowDashboard(true);
+    }
+  }, []);
 
   const isNavView = activeView !== 'workspace';
 
@@ -612,7 +623,7 @@ export const GenieCastHub: React.FC = () => {
         activeMode={mode}
         onModeChange={handleModeChange}
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={handleViewChange}
         onToggleDrawer={() => setDrawerOpen(prev => !prev)}
       />
 
@@ -626,8 +637,26 @@ export const GenieCastHub: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {/* Glassmorphic workspace container — shown for workspace mode */}
-        {!isNavView && (
+        {/* Dashboard overview — shown when on workspace + dashboard mode */}
+        {!isNavView && showDashboard && (
+          <div className={cn(
+            'rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl shadow-xl',
+            'bg-gradient-to-br from-card/60 via-background/40 to-card/50',
+            'relative overflow-hidden',
+          )}>
+            <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02]" />
+            <div className="relative">
+              <Suspense fallback={<NavViewFallback />}>
+                <LazyCastDashboard
+                  onNavigate={handleViewChange}
+                  onStartCreate={() => { setShowDashboard(false); handleModeChange('create'); }}
+                />
+              </Suspense>
+            </div>
+          </div>
+        )}
+        {/* Glassmorphic workspace container — Create/Produce/Publish tabs */}
+        {!isNavView && !showDashboard && (
           <div className={cn(
             'rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl shadow-xl',
             'bg-gradient-to-br from-card/60 via-background/40 to-card/50',
