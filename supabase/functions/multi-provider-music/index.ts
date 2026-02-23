@@ -1,11 +1,10 @@
 /**
  * Multi-Provider Music Edge Function
  * 
- * Regional routing for music generation across 5 zones:
- * - ElevenLabs: Western/EU/LatAm (Claude Zone)
- * - Alibaba: CJK (Qwen Zone)  
- * - Suno: Premium tier globally
- * - ModelsLab: Budget/Fallback
+ * Regional routing for music generation across 3 active zones:
+ * - ElevenLabs: Premium tier + Western fallback
+ * - Alibaba: CJK (Qwen Zone)
+ * - ModelsLab: Default/Budget/Global (most reliable)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -29,13 +28,15 @@ const ELEVENLABS_REGIONS = [
 
 const CJK_REGIONS = ['CN', 'HK', 'TW', 'JP', 'KR', 'SG', 'MO'];
 
-const GEMINI_REGIONS = [
+// South Asia, SEA, Africa regions — routed to ModelsLab (global fallback)
+// Previously routed to Google Lyria which has no public API
+const SOUTH_ASIA_SEA_AFRICA_REGIONS = [
   'IN', 'PK', 'BD', 'LK', 'NP', 'BT',
   'ID', 'VN', 'TH', 'PH', 'MY', 'MM', 'KH', 'LA',
   'NG', 'KE', 'GH', 'ET', 'TZ', 'UG', 'ZW', 'ZM', 'RW', 'SN', 'CI'
 ];
 
-type MusicProvider = 'elevenlabs' | 'alibaba' | 'modelslab' | 'google-lyria';
+type MusicProvider = 'elevenlabs' | 'alibaba' | 'modelslab';
 
 interface MusicRequest {
   prompt: string;
@@ -62,9 +63,8 @@ interface MusicRouting {
 function getAvailableMusicProviders(): { id: MusicProvider; available: boolean; priority: number }[] {
   return [
     { id: 'modelslab', available: !!Deno.env.get('MODELSLAB_API_KEY'), priority: 1 },
-    { id: 'google-lyria', available: !!Deno.env.get('GOOGLE_VERTEX_API_KEY') || !!Deno.env.get('GEMINI_API_KEY'), priority: 2 },
-    { id: 'alibaba', available: !!Deno.env.get('ALIBABA_API_KEY'), priority: 3 },
-    { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 4 }, // Deprioritized due to permission issues
+    { id: 'alibaba', available: !!Deno.env.get('ALIBABA_API_KEY'), priority: 2 },
+    { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 3 },
   ];
 }
 
@@ -102,15 +102,15 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
     };
   }
 
-  // Gemini Zone: Prefer Google Lyria for Indian/SEA/African music
-  if (GEMINI_REGIONS.includes(region) && hasProvider('google-lyria')) {
-    console.log('🎵 Gemini Zone: Routing to Google Lyria');
+  // South Asia/SEA/Africa Zone: Use ModelsLab (global, most reliable)
+  if (SOUTH_ASIA_SEA_AFRICA_REGIONS.includes(region) && hasProvider('modelslab')) {
+    console.log('🌍 South Asia/SEA/Africa Zone: Routing to ModelsLab');
     return {
-      provider: 'google-lyria',
-      cost: 0.05,
-      zone: 'gemini',
-      quality: 'premium',
-      maxDuration: 30
+      provider: 'modelslab',
+      cost: 0.015,
+      zone: 'global',
+      quality: 'standard',
+      maxDuration: 60
     };
   }
 
@@ -390,59 +390,6 @@ async function generateAlibabaMusic(prompt: string, duration: number): Promise<A
   return generateElevenLabsMusic(prompt, duration);
 }
 
-async function generateGoogleLyriaMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
-  const API_KEY = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_VERTEX_API_KEY');
-  if (!API_KEY) {
-    console.warn('Google Lyria not configured, falling back to ElevenLabs');
-    return generateElevenLabsMusic(prompt, duration);
-  }
-
-  const PROJECT_ID = Deno.env.get('GOOGLE_CLOUD_PROJECT') || 'geniesuite';
-  const LOCATION = Deno.env.get('GOOGLE_CLOUD_LOCATION') || 'us-central1';
-
-  try {
-    const response = await fetch(
-      `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/lyria-002:predict`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          instances: [{
-            prompt: `${prompt}. Duration: approximately ${duration} seconds.`,
-            negative_prompt: 'low quality, distorted, noise, static',
-          }],
-          parameters: { sample_count: 1 },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      console.warn(`Google Lyria generation failed (${response.status}), falling back to ElevenLabs`);
-      return generateElevenLabsMusic(prompt, Math.min(duration, 60));
-    }
-
-    const result = await response.json();
-
-    if (result.predictions?.[0]?.audioContent) {
-      // Decode base64 WAV response
-      const binaryStr = atob(result.predictions[0].audioContent);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
-      return bytes.buffer;
-    }
-
-    throw new Error('Google Lyria returned no audio content');
-  } catch (error) {
-    console.warn('Google Lyria Music failed, falling back to ElevenLabs:', error);
-    return generateElevenLabsMusic(prompt, Math.min(duration, 60));
-  }
-}
-
 async function generateModelsLabMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
   const MODELSLAB_API_KEY = Deno.env.get('MODELSLAB_API_KEY');
   
@@ -531,9 +478,6 @@ serve(async (req) => {
         break;
       case 'modelslab':
         audioBuffer = await generateModelsLabMusic(request.prompt, duration);
-        break;
-      case 'google-lyria':
-        audioBuffer = await generateGoogleLyriaMusic(request.prompt, duration);
         break;
       default:
         audioBuffer = await generateElevenLabsMusic(request.prompt, duration);

@@ -32,6 +32,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { useViralScorePredictor, type ViralScorePrediction } from '@/hooks/useViralScorePredictor';
 import type { PublishingDestination, CompositionElementType } from './types';
 
 interface ContentLibraryProps {
@@ -211,7 +212,9 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [activeDialogTab, setActiveDialogTab] = useState<string>('details');
+  const [viralScore, setViralScore] = useState<ViralScorePrediction | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { predictViralScore, isLoading: isViralScoreLoading } = useViralScorePredictor();
 
   // Magic clips handler - generate platform-specific clips
   const handleGenerateMagicClips = async (item: ContentItem) => {
@@ -1017,6 +1020,88 @@ export const ContentLibrary: React.FC<ContentLibraryProps> = ({
                     </div>
                   </div>
                   
+                  {/* Viral Score Predictor */}
+                  <div className="pt-3 border-t">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <Label className="text-sm font-medium flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-orange-500" />
+                          Viral Score Prediction
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          AI predicts viral potential before publishing
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 h-7 text-xs border-orange-500/30 hover:bg-orange-500/10"
+                        disabled={isViralScoreLoading || !selectedContent?.title}
+                        onClick={async () => {
+                          if (!selectedContent) return;
+                          try {
+                            const result = await predictViralScore(
+                              { title: selectedContent.title, description: selectedContent.description || '', category: selectedContent.industry || '', duration: selectedContent.duration_seconds },
+                              'youtube'
+                            );
+                            setViralScore(result);
+                            toast.success(`Viral score: ${result.overallScore}/100`);
+                          } catch { /* Error handled in hook */ }
+                        }}
+                      >
+                        {isViralScoreLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                        Predict Score
+                      </Button>
+                    </div>
+                    {viralScore && (
+                      <div className="p-3 rounded-lg bg-gradient-to-r from-orange-500/5 to-pink-500/5 border border-orange-500/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Overall Score</span>
+                          <Badge variant="outline" className={cn(
+                            "text-sm font-bold",
+                            viralScore.overallScore >= 70 && "bg-green-500/10 text-green-600 border-green-500/30",
+                            viralScore.overallScore >= 40 && viralScore.overallScore < 70 && "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
+                            viralScore.overallScore < 40 && "bg-red-500/10 text-red-600 border-red-500/30"
+                          )}>
+                            {viralScore.overallScore}/100
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-5 gap-2 text-center">
+                          {Object.entries(viralScore.breakdown || {}).map(([key, val]) => (
+                            <div key={key}>
+                              <p className="text-lg font-bold text-primary">{val as number}</p>
+                              <p className="text-[10px] text-muted-foreground capitalize">{key.replace('Score', '').replace(/([A-Z])/g, ' $1')}</p>
+                            </div>
+                          ))}
+                        </div>
+                        {viralScore.prediction && (
+                          <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground">
+                            <span>Views: {viralScore.prediction.estimatedViews?.mid?.toLocaleString() || 'N/A'} (est.)</span>
+                            <span>Engagement: {viralScore.prediction.estimatedEngagement || 0}%</span>
+                            <span>Viral Prob: {((viralScore.prediction.viralProbability || 0) * 100).toFixed(0)}%</span>
+                          </div>
+                        )}
+                        {viralScore.factors && viralScore.factors.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-border/50">
+                            <p className="text-xs font-medium mb-1">Key Factors:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {viralScore.factors.slice(0, 4).map((f, i) => (
+                                <Badge key={i} variant="outline" className={cn(
+                                  "text-[10px]",
+                                  f.impact === 'positive' && "bg-green-500/10 text-green-600",
+                                  f.impact === 'negative' && "bg-red-500/10 text-red-600",
+                                  f.impact === 'neutral' && "bg-gray-500/10 text-gray-600"
+                                )}>
+                                  {f.impact === 'positive' ? '+' : f.impact === 'negative' ? '-' : '~'} {f.factor}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Publish to platforms */}
                   <div className="pt-3 border-t">
                     <Label className="text-muted-foreground text-xs mb-2 block">Publish to Platforms</Label>
