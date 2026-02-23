@@ -9,7 +9,7 @@
  * Language selection persisted to localStorage, drives ALL AI provider routing.
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, Suspense, lazy } from 'react';
 import arcAvatar from '@/assets/characters/arc-avatar.png';
 import oriAvatar from '@/assets/characters/ori-avatar.png';
 import type { VideoStyleType } from './VideoStyleCards';
@@ -28,11 +28,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Video, Share2, Film,
   Users, Zap, X, PanelRight,
-  FolderOpen, LayoutTemplate, Package, Palette, BarChart3, Settings, Image
+  FolderOpen, LayoutTemplate, Package, Palette, BarChart3, Settings, Image,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+
+// Lazy-loaded navigation view components
+const LazyContentLibraryGrid = lazy(() => import('./ContentLibraryGrid'));
+const LazyBlueprintTemplatesGrid = lazy(() =>
+  import('./BlueprintTemplatesGrid').then(m => ({ default: m.BlueprintTemplatesGrid as React.ComponentType<Record<string, never>> }))
+);
+const LazyAnalyticsDashboard = lazy(() =>
+  import('./AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard }))
+);
+const LazyWorkspaceManagement = lazy(() => import('@/components/genie-admin/WorkspaceManagement'));
+const LazyIntegrationsSettings = lazy(() => import('@/components/settings/IntegrationsSettingsPage'));
 
 const STORAGE_KEY = 'genie_cast_hub_state';
 
@@ -269,27 +281,125 @@ const RightDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({ open, o
   );
 };
 
-// ── Placeholder views ───────────────────────────────────────────────────────
-const NAV_PLACEHOLDERS: Record<string, { title: string; description: string; icon: React.ElementType }> = {
-  projects: { title: 'Projects', description: 'View and manage all your video projects.', icon: FolderOpen },
-  templates: { title: 'Templates', description: 'Browse templates for rapid production.', icon: LayoutTemplate },
-  assets: { title: 'Asset Library', description: 'Manage images, videos, audio, and brand assets.', icon: Image },
-  'brand-kit': { title: 'Brand Kit', description: 'Configure brand colors, fonts, logos.', icon: Palette },
-  analytics: { title: 'Analytics', description: 'Track performance and engagement.', icon: BarChart3 },
-  settings: { title: 'Settings', description: 'Configure workspace and preferences.', icon: Settings },
-};
-
-const PlaceholderView: React.FC<{ title: string; description: string; icon: React.ElementType }> = ({ title, description, icon: Icon }) => (
-  <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-8">
-    <div className="p-8 text-center max-w-md rounded-2xl border border-border/15 bg-card/40">
-      <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/15">
-        <Icon className="w-7 h-7 text-primary" />
-      </div>
-      <h2 className="text-lg font-bold text-foreground mb-1">{title}</h2>
-      <p className="text-sm text-muted-foreground">{description}</p>
+// ── Loading fallback for lazy views ──────────────────────────────────────────
+const NavViewFallback: React.FC = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="flex flex-col items-center gap-3 text-muted-foreground">
+      <Loader2 className="w-6 h-6 animate-spin" />
+      <p className="text-sm">Loading...</p>
     </div>
   </div>
 );
+
+// ── Navigation View Renderer ────────────────────────────────────────────────
+const NavViewContent: React.FC<{ view: NavView }> = ({ view }) => {
+  switch (view) {
+    case 'projects':
+      return (
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <FolderOpen className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Projects</h2>
+              <p className="text-xs text-muted-foreground">Your video content library</p>
+            </div>
+          </div>
+          <Suspense fallback={<NavViewFallback />}>
+            <LazyContentLibraryGrid />
+          </Suspense>
+        </div>
+      );
+    case 'templates':
+      return (
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+              <LayoutTemplate className="w-4 h-4 text-purple-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Templates</h2>
+              <p className="text-xs text-muted-foreground">Browse and manage video blueprints</p>
+            </div>
+          </div>
+          <Suspense fallback={<NavViewFallback />}>
+            <LazyBlueprintTemplatesGrid />
+          </Suspense>
+        </div>
+      );
+    case 'assets':
+      return (
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <Package className="w-4 h-4 text-emerald-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Asset Library</h2>
+              <p className="text-xs text-muted-foreground">Images, videos, audio, and brand assets</p>
+            </div>
+          </div>
+          <Suspense fallback={<NavViewFallback />}>
+            <LazyContentLibraryGrid />
+          </Suspense>
+        </div>
+      );
+    case 'brand-kit':
+      return (
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+              <Palette className="w-4 h-4 text-amber-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Brand Kit</h2>
+              <p className="text-xs text-muted-foreground">Colors, fonts, logos, and voice guidelines</p>
+            </div>
+          </div>
+          <Suspense fallback={<NavViewFallback />}>
+            <LazyWorkspaceManagement />
+          </Suspense>
+        </div>
+      );
+    case 'analytics':
+      return (
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-blue-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Analytics</h2>
+              <p className="text-xs text-muted-foreground">Performance metrics and engagement</p>
+            </div>
+          </div>
+          <Suspense fallback={<NavViewFallback />}>
+            <LazyAnalyticsDashboard />
+          </Suspense>
+        </div>
+      );
+    case 'settings':
+      return (
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-slate-500/10 flex items-center justify-center">
+              <Settings className="w-4 h-4 text-slate-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Settings</h2>
+              <p className="text-xs text-muted-foreground">Integrations, workspace, and preferences</p>
+            </div>
+          </div>
+          <Suspense fallback={<NavViewFallback />}>
+            <LazyIntegrationsSettings />
+          </Suspense>
+        </div>
+      );
+    default:
+      return null;
+  }
+};
 
 // ── Main Hub ─────────────────────────────────────────────────────────────────
 export const GenieCastHub: React.FC = () => {
@@ -412,7 +522,7 @@ export const GenieCastHub: React.FC = () => {
     if (newMode && newMode !== mode) handleModeChange(newMode);
   }, [mode, handleModeChange]);
 
-  const placeholderInfo = activeView !== 'workspace' ? NAV_PLACEHOLDERS[activeView] : null;
+  const isNavView = activeView !== 'workspace';
 
   // ── Mobile: simple mode tabs + workspace ───────────────────────────────────
   if (isMobile) {
@@ -516,32 +626,45 @@ export const GenieCastHub: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {/* Glassmorphic workspace container */}
-        <div className={cn(
-          activeView === 'workspace' ? '' : 'hidden',
-          'rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl shadow-xl',
-          'bg-gradient-to-br from-card/60 via-background/40 to-card/50',
-          'relative overflow-hidden',
-        )}>
-          {/* Inner glass shine */}
-          <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02]" />
-          <div className="relative">
-            <GenieCastConsolidatedTabs
-              selectedVideoStyles={selectedVideoStyles}
-              onStylesChange={handleStylesChange}
-              screenshotGalleries={screenshotGalleries}
-              onGalleriesUpdated={handleGalleriesUpdated}
-              totalScreenshots={totalScreenshots}
-              onGenerate={handleGenerate}
-              isGenerating={isGenerating}
-              wizardMode
-              activeMainTabOverride={activeTab}
-              onMainTabChange={handleMainTabChange}
-              defaultTab="create"
-            />
+        {/* Glassmorphic workspace container — shown for workspace mode */}
+        {!isNavView && (
+          <div className={cn(
+            'rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl shadow-xl',
+            'bg-gradient-to-br from-card/60 via-background/40 to-card/50',
+            'relative overflow-hidden',
+          )}>
+            {/* Inner glass shine */}
+            <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02]" />
+            <div className="relative">
+              <GenieCastConsolidatedTabs
+                selectedVideoStyles={selectedVideoStyles}
+                onStylesChange={handleStylesChange}
+                screenshotGalleries={screenshotGalleries}
+                onGalleriesUpdated={handleGalleriesUpdated}
+                totalScreenshots={totalScreenshots}
+                onGenerate={handleGenerate}
+                isGenerating={isGenerating}
+                wizardMode
+                activeMainTabOverride={activeTab}
+                onMainTabChange={handleMainTabChange}
+                defaultTab="create"
+              />
+            </div>
           </div>
-        </div>
-        {placeholderInfo && <PlaceholderView {...placeholderInfo} />}
+        )}
+        {/* Navigation views — glassmorphic container for non-workspace views */}
+        {isNavView && (
+          <div className={cn(
+            'rounded-2xl border border-border/15 bg-card/40 backdrop-blur-xl shadow-xl',
+            'bg-gradient-to-br from-card/60 via-background/40 to-card/50',
+            'relative overflow-hidden min-h-[500px]',
+          )}>
+            <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02]" />
+            <div className="relative">
+              <NavViewContent view={activeView} />
+            </div>
+          </div>
+        )}
       </div>
 
       <FloatingAIDevs />
