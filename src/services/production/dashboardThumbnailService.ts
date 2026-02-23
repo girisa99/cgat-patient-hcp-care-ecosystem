@@ -249,7 +249,7 @@ export async function generateDashboardThumbnail(
 
     if (result.data && !result.error) {
       return {
-        imageUrl: result.data?.imageUrl || result.data?.url || '',
+        imageUrl: (result.data as any)?.imageUrl || (result.data as any)?.url || '',
         gradient: style.cssGradient,
         svgPattern: getSVGPattern(section, regionCode),
         provider: result.provider,
@@ -298,7 +298,7 @@ export async function generateProductHeroThumbnail(
 
     if (result.data && !result.error) {
       return {
-        imageUrl: result.data?.imageUrl || result.data?.url || '',
+        imageUrl: (result.data as any)?.imageUrl || (result.data as any)?.url || '',
         gradient: style.cssGradient,
         svgPattern: getSVGPattern('hero', regionCode),
         provider: result.provider,

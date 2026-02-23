@@ -147,7 +147,7 @@ async function generateWithProvider(
 async function generateWithGemini(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.gemini();
   if (!apiKey) throw new Error('Gemini key missing');
-  const model = options.model || 'gemini-2.0-flash-exp';
+  const model = options.model || 'gemini-2.0-flash-preview-image-generation';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {
@@ -282,7 +282,7 @@ async function generateWithOpenAI(prompt: string, options: ImageGenOptions): Pro
 async function generateWithAlibaba(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.alibabaSG() || keys.alibabaVA();
   if (!apiKey) throw new Error('Alibaba key missing');
-  const model = options.model || 'wan2.6-t2i-turbo';
+  const model = options.model || 'wan2.6-t2i';
   const endpoint = 'https://dashscope-intl.aliyuncs.com';
 
   const sizeMap: Record<string, string> = {
