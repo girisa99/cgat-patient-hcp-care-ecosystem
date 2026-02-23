@@ -572,15 +572,16 @@ In addition to the 10 remaining tasks, Claude will redesign landing pages to ref
 
 Update CLAUDE.md: Remove "Never Touch" restriction — Claude now owns ALL files.
 
-### Execution Plan (Phase 7)
-1. **Week 1:** L-301 to L-304 (fix demos, region switching)
-2. **Week 1-2:** Landing page redesign with real data from 206 pipelines
-3. **Week 2:** L-401 to L-404 (mobile, SEO, performance, cross-browser)
-4. **Week 2:** L-501, L-502 (E2E verification — final step)
+### Execution Plan → **MOVED TO PHASE 9** (Landing + RBAC)
+1. **Phase 9:** L-301 to L-304 (fix demos, region switching)
+2. **Phase 9:** Landing page redesign with real data from 206 pipelines
+3. **Phase 9:** RBAC evaluation + role management UI
+4. **Phase 9:** L-401 to L-404 (mobile, SEO, performance, cross-browser)
+5. **Phase 9:** L-501, L-502 (E2E verification — final step)
 
 ---
 
-## 11. SCRIPT EDITOR PHASE 7 PLAN
+## 11. SCRIPT EDITOR — PHASE 7 (Refactor Before UAT)
 
 ### Current State (Working)
 
@@ -590,58 +591,80 @@ Update CLAUDE.md: Remove "Never Touch" restriction — Claude now owns ALL files
 | `SegmentedScriptEditor` | `src/components/genie-studio/segmented-editor/` | Working — per-segment editing + TTS |
 | `ScriptEnhanceEditor` | `src/components/genie-admin/composition-studio/` | Working — AI enhancement |
 
-### Phase 7 Script Editor Enhancements (Planned)
+### Phase 7 Script Editor Enhancements (CONFIRMED — Ship before UAT)
 
 | Enhancement | Description | Priority |
 |-------------|-------------|----------|
-| MLR compliance markers | Flag medical/legal claims in script for review | P1 (if pharma target) |
-| Version history | Script diff between versions, rollback | P2 |
-| Collaborative editing | Real-time multi-user script editing | P3 (future) |
-| Brand voice enforcement | AI checks script against brand guidelines | P2 |
-| Transcreation preview | Side-by-side original vs transcreated script | P1 |
-| Script templates by industry | Pre-built script structures for pharma, retail, etc. | P2 |
+| **Transcreation preview** | Side-by-side original vs transcreated script | **P0** |
+| **Script refactor** | Break up 127KB monolith into smaller, maintainable modules | **P0** |
+| **Brand voice enforcement** | AI checks script against brand guidelines | P1 |
+| **Version history** | Script diff between versions, rollback | P1 |
+| **Script templates by industry** | Pre-built structures for pharma, retail, tech | P2 |
+
+### Deferred to Phase 10 (Future)
+
+| Enhancement | Reason |
+|-------------|--------|
+| MLR compliance markers | Pharma-specific, no pharma customers yet |
+| Collaborative editing | Complex real-time sync, future feature |
 
 ---
 
-## 12. EXISTING PLANS VS PRODUCTION PLANS
+## 12. REORGANIZED PHASE ROADMAP (Feb 23, 2026)
 
-### What We Planned (Original Sprint)
+### Phase Completion Status
 
-| Phase | Planned | Actual | Delta |
-|-------|---------|--------|-------|
-| P0 | Foundation + Auth | Done | On track |
-| P1 | AI Provider Routing | Done | 206 master pipelines + 96 capability matrix + 141 IO specs + 39 pending = 419 unique concepts |
+| Phase | Original Scope | Actual | Status |
+|-------|---------------|--------|--------|
+| P0 | Foundation + Auth | Done | 100% |
+| P1 | AI Provider Routing | Done | 206 pipelines, 96 capability matrix, 141 IO specs |
 | P2 | Content Creation | Done | 63 visual styles, 30 AI providers, 19 capability types |
 | P3 | Production Pipeline | Done | 226 service files, 203 edge functions |
-| P4 | CREATE tab + Google Places | Not started | Deferred to Phase 7+ |
-| P5 | PRODUCE tab | Partially done | Video timeline, A/V sync built |
+| P4 | CREATE tab + Google Places | Absorbed into P1-P3 | 95% |
+| P5 | PRODUCE tab | Absorbed into P3-P4 | 80% |
 | P6 | EDIT + MANAGE | Done | +teleprompter, +podcast EP04 |
-| P7 | MLR + CRM | Not started | Planned |
-| P8 | Analytics + Personalization | Not started | Planned |
-| P9 | Business Intelligence | Done | Comprehensive BI doc created |
-| P10 | Growth + GTM | Not started | Planned |
-| P11 | Production Audit | **THIS DOC** | In progress |
 
-### What Changed from Plan to Reality
+### Phases 7-11: REORGANIZED
 
-1. **Phases 4-5 partially absorbed into P1-P3** — Google Places, video generation, TTS already working
-2. **Phase 9 moved up** — Business intelligence needed before Phase 7 decisions
-3. **Phase 11 created** — Production readiness audit needed before UAT
-4. **Lovable tasks deferred** — 10 remaining tasks absorbed by Claude
-5. **RBAC evaluation deferred** — User wants proper review, not rushed implementation
-6. **Healthcare infrastructure separated** — DocuSign, document extraction, RBAC confirmed NOT for GenieSuite
+| Phase | **NEW Scope** | Priority | Gate |
+|-------|--------------|----------|------|
+| **P7** | **Core Feature Completion** — Script editor refactor, wire ALL orphaned edge functions, music cleanup, merge to dev | **NEXT** | Must complete before UAT |
+| **P8** | **Analytics + Personalization** — Funnel analytics, cohort analysis, A/B testing, AI personalization | Planned | After UAT stable |
+| **P9** | **BI (done) + Landing Redesign + RBAC** — Landing page takeover from Lovable, RBAC evaluation + management UI, pricing page updates, SEO, mobile | Partially done | After P7 ships |
+| **P10** | **ALL Future Enhancements (PARKED)** — MLR Compliance, CRM (Veeva/Salesforce), HCP Segmentation, Omnichannel, GTM, viral loops, enterprise sales, collaborative editing, live streaming | Future | After PROD stable |
+| **P11** | **AUDIT ONLY** — Stage gates review, API key audit, OAuth verification, UAT deployment checklist, go-live checklist | **In progress** | Completes before UAT move |
 
-### Production Priority Order
+### Execution Order
 
 ```
-1. Phase 11 (THIS): Production audit + stage gates → Immediate
-2. Phase 7: MLR + CRM + Lovable task absorption → Next
-3. MERGE TO DEV: Get all code into dev branch → Blocked on user action
-4. UAT DEPLOYMENT: Apply stage gates G1.1-G1.12 → After merge
-5. UAT TESTING: Verify T2.1-T2.15 → After deployment
-6. Phase 8: Analytics → After UAT stable
-7. Phase 10: GTM → After PROD go-live
+CURRENT:
+  1. Phase 11: Complete audit doc + stage gates → IN PROGRESS
+  2. Phase 7: Script editor refactor + wire edge functions → NEXT
+
+THEN:
+  3. MERGE TO DEV: Get all P1-P7 code into dev → User merges PR
+  4. Phase 11 GATE CHECK: Review stage gates → Before UAT
+  5. UAT DEPLOYMENT: Apply G1.1-G1.12 → User deploys
+  6. UAT TESTING: Verify T2.1-T2.15 → Both
+
+AFTER UAT STABLE:
+  7. Phase 9: Landing redesign + RBAC + Lovable tasks
+  8. Phase 8: Analytics + Personalization
+
+AFTER PROD:
+  9. Phase 10: All future enhancements (MLR, CRM, GTM, etc.)
 ```
+
+### What Changed from Original Plan
+
+1. **Phases 4-5 absorbed into P1-P3** — video gen, TTS, Google Places already working
+2. **Phase 9 BI completed early** — pricing, competitive analysis, ROI model done
+3. **Phase 11 created** — production audit needed before UAT
+4. **Landing redesign moved to Phase 9** — not blocking UAT, ships after
+5. **RBAC moved to Phase 9** — current 11 roles ship to UAT as-is, redesign later
+6. **MLR/CRM/GTM parked to Phase 10** — no pharma customers yet, don't overbuild
+7. **Lovable closed** — Claude owns everything including 47 landing components
+8. **Healthcare infra separated** — DocuSign, Textract, Form Recognizer NOT for GenieSuite
 
 ---
 
@@ -758,46 +781,92 @@ PROD (TBD):
 
 ---
 
-## 15. PHASE 7 — WHAT'S PENDING (After P1-P6 100%)
+## 15. PHASE 7 — CORE FEATURE COMPLETION (Ship-Ready for UAT)
 
-### Phase 1-6 Status: COMPLETE
+### What Phase 7 IS (Focused Scope)
 
-All core GenieSuite functionality is built and working:
-- 206 master marketing pipelines registered
-- 203 edge functions deployed (DEV)
-- 351 genie components built
-- 63 visual styles, 30 AI providers, 4-zone routing
-- Google OAuth + GenieSuite RBAC system
-- Spark (create) → Mind (edit/TTS) → Deck (present) → Cast (produce/publish)
-- Subscription tiers + credit system + Stripe integration
-- PWA + offline mode
-- 14 regional zones with transcreation
+Phase 7 = **make everything work end-to-end before UAT**. No new features. No landing redesign. Just wire, refactor, and clean up.
 
-### Phase 7 Scope (What Needs to Be Done)
+#### 7A. Script Editor Refactor (P0 — Ship before UAT)
 
-#### 7A. Landing Page Full Takeover & Redesign (Absorbed from Lovable)
+| Task | Description | Priority |
+|------|-------------|----------|
+| **Refactor 127KB monolith** | Break `ScriptEditorTab.tsx` into smaller modules | P0 |
+| **Transcreation preview** | Side-by-side original vs adapted script | P0 |
+| **Brand voice enforcement** | AI checks script against brand guidelines | P1 |
+| **Version history** | Script diff between versions, rollback | P1 |
+| **Script templates by industry** | Pre-built structures for pharma, retail, tech | P2 |
+
+#### 7B. Wire ALL Orphaned Edge Functions (P0-P1)
+
+| Task | Description | Priority |
+|------|-------------|----------|
+| Wire `social-publish` + OAuth functions | Multi-platform publish from Cast | P0 |
+| Wire `auto-thumbnail-generator` | Thumbnails in PRODUCE tab | P0 |
+| Wire `ai-caption-generator` | Auto-captions in PRODUCE | P0 |
+| Wire `analytics-dashboard` | Cross-platform analytics view | P1 |
+| Wire `calendar-sync` | Scheduling in Cast PUBLISH tab | P1 |
+| Wire `bulk-operations` | Batch generate/edit/publish | P1 |
+| Wire `viral-score-predictor` | Score before publish | P2 |
+| Clean up `multi-provider-music` | Remove Google Lyria from routing | P0 |
+
+#### 7C. Merge to Dev (Blocked on User)
+
+| Task | Description | Owner |
+|------|-------------|-------|
+| Merge feature branch to dev | All P1-P7 code into dev | User (GitHub UI) |
+
+### Phase 7 Priority Order
+
+```
+1. Script editor refactor (break up 127KB monolith)
+2. Transcreation preview in script editor
+3. Clean up music routing (remove Lyria)
+4. Wire orphaned edge functions (thumbnails, captions, social-publish)
+5. Brand voice + version history
+6. MERGE TO DEV (user merges PR)
+```
+
+### What Is NOT In Phase 7 (Moved Elsewhere)
+
+| Item | Moved To | Reason |
+|------|----------|--------|
+| Landing page redesign | **Phase 9** | Not blocking UAT |
+| RBAC evaluation + UI | **Phase 9** | Current roles work for UAT |
+| Lovable task absorption (L-301 to L-502) | **Phase 9** | Landing work, not core |
+| Mobile responsiveness | **Phase 9** | Landing scope |
+| SEO + OG tags | **Phase 9** | Landing scope |
+| MLR Compliance | **Phase 10** | No pharma customers yet |
+| CRM (Veeva/Salesforce) | **Phase 10** | Enterprise feature |
+| HCP Segmentation | **Phase 10** | Pharma-specific |
+| GTM + viral loops | **Phase 10** | After PROD stable |
+| Collaborative editing | **Phase 10** | Future feature |
+| DocuSign | **N/A** | Healthcare only |
+| AWS Textract | **N/A** | Healthcare only |
+| Google Lyria | **N/A** | No public API, parked |
+| Suno | **N/A** | Future music provider |
+
+---
+
+## 16. PHASE 9 — LANDING REDESIGN + RBAC (After UAT Stable)
+
+### 9A. Landing Page Full Takeover (Absorbed from Lovable)
+
 | Task | Description | Priority |
 |------|-------------|----------|
 | Fix interactive demos (STT, Try Genie) | Wire real API calls | P0 |
 | Fix DeepL translation demo | Connect to translation-service | P1 |
-| Fix video showcases | Real video playback from pipeline output | P0 |
-| Verify region switching (14 regions) | All regions render correctly | P1 |
-| Landing page redesign | Update with real capabilities (206 pipelines, 63 styles, 30 providers) | P0 |
+| Fix video showcases | Real video playback | P0 |
+| Verify region switching (14 regions) | All regions render | P1 |
+| Landing page redesign | Real capabilities (206 pipelines, 63 styles, 30 providers) | P0 |
 | Update pricing pages | New tiers ($0/$19/$49/$99/$299/custom) | P0 |
 | Mobile responsiveness | 320px-1280px breakpoints | P1 |
 | SEO meta tags + OG | Per-region meta, social sharing | P1 |
 | Performance (lazy loading, code splitting) | Lighthouse > 80 | P2 |
-| E2E navigation | Landing → auth → genie-studio verified | P1 |
+| E2E navigation | Landing → auth → genie-studio | P1 |
 
-#### 7B. Script Editor Enhancements
-| Task | Description | Priority |
-|------|-------------|----------|
-| Transcreation preview | Side-by-side original vs adapted script | P1 |
-| Brand voice enforcement | AI checks script against brand guidelines | P2 |
-| Script templates by industry | Pre-built structures for pharma, retail, tech | P2 |
-| Version history | Diff between versions, rollback | P2 |
+### 9B. RBAC Evaluation & Implementation
 
-#### 7C. RBAC Evaluation (User-Requested Proper Review)
 | Task | Description | Priority |
 |------|-------------|----------|
 | Evaluate existing 11 GenieSuite roles | Are all needed? Too many? | P1 |
@@ -805,50 +874,28 @@ All core GenieSuite functionality is built and working:
 | Environment-specific roles | Dev/UAT/Prod role differences | P2 |
 | Role management UI | Admin panel for role assignment | P2 |
 
-#### 7D. Orphaned Edge Function Wiring
-| Task | Description | Priority |
-|------|-------------|----------|
-| Wire `social-publish` + OAuth functions | Multi-platform publish from Cast | P1 |
-| Wire `calendar-sync` | Scheduling in Cast PUBLISH tab | P2 |
-| Wire `analytics-dashboard` | Cross-platform analytics view | P1 |
-| Wire `bulk-operations` | Batch generate/edit/publish | P2 |
-| Wire `auto-thumbnail-generator` | Thumbnails in PRODUCE tab | P1 |
-| Wire `ai-caption-generator` | Auto-captions in PRODUCE | P1 |
-| Wire `viral-score-predictor` | Score before publish | P2 |
-| Clean up `multi-provider-music` | Remove Google Lyria from routing | P1 |
+---
 
-#### 7E. Stage Gate Execution (Infrastructure)
-| Task | Description | Owner |
-|------|-------------|-------|
-| Merge feature branch to dev | All P1-P6 code into dev | User (GitHub UI) |
-| Apply migrations to UAT Supabase | `supabase db push` | User |
-| Deploy edge functions to UAT | `supabase functions deploy` | User |
-| Set API secrets in UAT | 58 GenieSuite keys | User |
-| Configure Google OAuth for UAT | Add redirect URIs | User |
-| UAT smoke test | Login + create + save + publish | Both |
+## 17. PHASE 10 — ALL FUTURE ENHANCEMENTS (PARKED)
 
-### Phase 7 Priority Order
+Everything below is parked until after PROD is stable. These are enterprise/pharma features that require customers and revenue first.
 
-```
-1. MERGE TO DEV (blocked on user action — merge PR)
-2. Landing page redesign (P0 — user-facing, first impression)
-3. Clean up music routing (remove Lyria, verify ElevenLabs/Alibaba/ModelsLab)
-4. Wire orphaned edge functions (thumbnails, captions, analytics)
-5. Script editor transcreation preview
-6. RBAC evaluation (user-led review, Claude supports)
-7. UAT deployment + testing (stage gates)
-```
-
-### What Is NOT In Phase 7
-
-| Item | Reason | Where |
-|------|--------|-------|
-| DocuSign | Healthcare only, removed from GenieSuite | N/A |
-| AWS Textract | Healthcare only, removed from GenieSuite | Healthcare side |
-| Azure Form Recognizer | Healthcare only | Healthcare side |
-| Google Lyria | No public API, parked | Future |
-| Suno | Not integrated, parked | Future |
-| MLR Compliance | Deferred until pharma customers | Phase 8+ |
-| Veeva/Salesforce CRM | Deferred until enterprise pipeline | Phase 8+ |
-| Collaborative editing | Future feature | Phase 10+ |
-| Live streaming | Future feature | Phase 10+ |
+| Feature | Original Phase | Effort | Trigger |
+|---------|---------------|--------|---------|
+| MLR Compliance & Approval | P7 original | 3-4 weeks | First pharma customer |
+| CRM Integration (Veeva/Salesforce) | P7 original | 4-6 weeks | Enterprise deal |
+| HCP Engagement & Segmentation | P7 original | 3-4 weeks | Pharma vertical |
+| Omnichannel Automation | P7 original | 4-5 weeks | Enterprise deal |
+| Advanced Analytics (funnel, cohort, LTV) | P8 | 2-3 weeks | After UAT stable |
+| A/B Testing Framework | P8 | 2 weeks | After UAT stable |
+| Lead Management & Scoring | P8 | 2-3 weeks | Enterprise deal |
+| AI Personalization Engine | P8 | 3-4 weeks | After analytics |
+| PLG Viral Loops | P10 original | 2-3 weeks | After PROD launch |
+| Content Marketing | P10 original | Ongoing | After PROD launch |
+| Integration Partnerships (Veeva ecosystem) | P10 original | 4-6 weeks | Enterprise deal |
+| Regional Launches (India first) | P10 original | 2-3 weeks | After PROD stable |
+| Enterprise Sales Team | P10 original | Hiring | Revenue milestone |
+| Collaborative Editing | New | 4-6 weeks | User demand |
+| Live Streaming | New | 3-4 weeks | User demand |
+| Suno Music Integration | New | 1 week | If API matures |
+| Google Lyria Integration | New | 1 week | If Google launches public API |
