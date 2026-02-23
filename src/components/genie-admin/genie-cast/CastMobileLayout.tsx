@@ -208,7 +208,7 @@ const StoryCard: React.FC<{
   );
 };
 
-// ── Quick Action Grid with Images ────────────────────────────────────────────
+// ── Auto-scrolling Workflow Strip ─────────────────────────────────────────────
 const QuickActions: React.FC<{
   videoStats?: any;
   totalProjects?: number;
@@ -216,36 +216,73 @@ const QuickActions: React.FC<{
   onStartCreate: () => void;
   onTabChange: (tab: MobileTab) => void;
 }> = ({ videoStats, totalProjects = 0, totalTemplates = 0, onStartCreate, onTabChange }) => {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = React.useState(false);
+
+  // Auto-scroll marquee effect
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let raf: number;
+    const speed = 0.5; // px per frame
+
+    const step = () => {
+      if (!paused && el) {
+        el.scrollLeft += speed;
+        // Loop: when we've scrolled past half (the duplicated set), reset
+        if (el.scrollLeft >= el.scrollWidth / 2) {
+          el.scrollLeft = 0;
+        }
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [paused]);
+
   const actions = [
-    { icon: <Sparkles className="w-4 h-4 text-primary" />, label: 'Create', subtitle: 'Start new content', count: undefined, image: imgCreate, action: () => onTabChange('create') },
-    { icon: <FolderOpen className="w-4 h-4 text-blue-400" />, label: 'Projects', subtitle: `${totalProjects} active`, count: totalProjects, image: imgProjects, action: () => onTabChange('produce') },
-    { icon: <LayoutTemplate className="w-4 h-4 text-purple-400" />, label: 'Templates', subtitle: `${totalTemplates} available`, count: totalTemplates, image: imgTemplates, action: () => onTabChange('create') },
-    { icon: <BarChart3 className="w-4 h-4 text-emerald-400" />, label: 'Analytics', subtitle: `${videoStats?.completed || 0} completed`, count: videoStats?.completed || 0, image: imgAnalytics, action: () => onTabChange('produce') },
+    { icon: <Sparkles className="w-3.5 h-3.5 text-primary" />, label: 'Create', subtitle: 'New content', image: imgCreate, action: () => onTabChange('create') },
+    { icon: <FolderOpen className="w-3.5 h-3.5 text-blue-400" />, label: 'Projects', subtitle: `${totalProjects} active`, image: imgProjects, action: () => onTabChange('produce') },
+    { icon: <LayoutTemplate className="w-3.5 h-3.5 text-purple-400" />, label: 'Templates', subtitle: `${totalTemplates} avail`, image: imgTemplates, action: () => onTabChange('create') },
+    { icon: <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />, label: 'Analytics', subtitle: `${videoStats?.completed || 0} done`, image: imgAnalytics, action: () => onTabChange('produce') },
   ];
 
+  // Duplicate for seamless loop
+  const items = [...actions, ...actions];
+
+  const renderCard = (a: typeof actions[0], idx: number) => (
+    <button
+      key={`${a.label}-${idx}`}
+      onClick={a.action}
+      className="relative overflow-hidden rounded-lg border border-border/10 backdrop-blur-md transition-all active:scale-[0.96] text-left shrink-0 w-28 h-24"
+    >
+      <div className="absolute inset-0">
+        <img src={a.image} alt="" className="w-full h-full object-cover opacity-35" />
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-card/20" />
+      </div>
+      <div className="relative z-10 p-2 flex flex-col gap-1 h-full justify-end">
+        <div className="w-6 h-6 rounded-md bg-background/60 backdrop-blur-md flex items-center justify-center border border-border/10">
+          {a.icon}
+        </div>
+        <span className="text-[11px] font-bold text-foreground leading-tight">{a.label}</span>
+        <span className="text-[9px] text-muted-foreground leading-tight">{a.subtitle}</span>
+      </div>
+    </button>
+  );
+
   return (
-    <div className="grid grid-cols-2 gap-2.5 px-3">
-      {actions.map(a => (
-        <button
-          key={a.label}
-          onClick={a.action}
-          className="relative overflow-hidden rounded-xl border border-border/10 backdrop-blur-md transition-all active:scale-[0.96] text-left"
-        >
-          {/* Background image */}
-          <div className="absolute inset-0">
-            <img src={a.image} alt="" className="w-full h-full object-cover opacity-40" />
-            <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-card/30" />
-          </div>
-          {/* Content */}
-          <div className="relative z-10 p-3 flex flex-col gap-1.5">
-            <div className="w-8 h-8 rounded-lg bg-background/60 backdrop-blur-md flex items-center justify-center border border-border/10">
-              {a.icon}
-            </div>
-            <span className="text-xs font-bold text-foreground">{a.label}</span>
-            <span className="text-[10px] text-muted-foreground leading-tight">{a.subtitle}</span>
-          </div>
-        </button>
-      ))}
+    <div className="px-3">
+      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-0.5">Your Workflow</p>
+      <div
+        ref={scrollRef}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onTouchStart={() => setPaused(true)}
+        onTouchEnd={() => setPaused(false)}
+        className="flex gap-2 overflow-x-auto scrollbar-none"
+      >
+        {items.map((a, i) => renderCard(a, i))}
+      </div>
     </div>
   );
 };
