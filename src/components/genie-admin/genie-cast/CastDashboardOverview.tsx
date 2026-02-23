@@ -11,7 +11,7 @@
  * - Fully responsive: distinct mobile vs desktop layouts
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCastProjects } from '@/hooks/useCastProjects';
@@ -29,6 +29,8 @@ import {
   Activity, ChevronRight, Star,
   Clapperboard, Wand2, Send, MonitorPlay, FileVideo, Image,
   Cpu, Languages, Map, Radar, Boxes, ChevronLeft,
+  FileText, Mic, Presentation, Share2, Youtube, Linkedin,
+  Instagram, Music, Headphones, PenTool, Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -440,6 +442,252 @@ const RegionZonesBar: React.FC<{ currentRegion: string }> = ({ currentRegion }) 
   );
 };
 
+// ── Quick Access with scroll arrows ──────────────────────────────────────────
+const QuickAccessSection: React.FC<{
+  totalProjects: number;
+  totalTemplates: number;
+  totalStyles: number;
+  videoStats: any;
+  onNavigate: (view: NavView) => void;
+}> = ({ totalProjects, totalTemplates, totalStyles, videoStats, onNavigate }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    return () => el.removeEventListener('scroll', checkScroll);
+  }, [checkScroll]);
+
+  const scroll = (dir: 'left' | 'right') => {
+    scrollRef.current?.scrollBy({ left: dir === 'left' ? -240 : 240, behavior: 'smooth' });
+  };
+
+  const items = [
+    { icon: <FolderOpen className="w-4 h-4 text-blue-300" />, title: 'Projects', desc: 'Manage video projects', count: totalProjects, countLabel: 'projects', iconBg: 'bg-blue-500/15 border-blue-500/25', accent: 'bg-blue-500', thumb: castNavProjects, nav: 'projects' as NavView },
+    { icon: <LayoutTemplate className="w-4 h-4 text-purple-300" />, title: 'Templates', desc: 'Browse blueprints', count: totalTemplates, countLabel: 'blueprints', iconBg: 'bg-purple-500/15 border-purple-500/25', accent: 'bg-purple-500', thumb: castNavTemplates, nav: 'templates' as NavView },
+    { icon: <Image className="w-4 h-4 text-emerald-300" />, title: 'Assets', desc: 'Images, video & audio', count: totalStyles, countLabel: 'styles', iconBg: 'bg-emerald-500/15 border-emerald-500/25', accent: 'bg-emerald-500', thumb: castNavAssets, nav: 'assets' as NavView },
+    { icon: <Palette className="w-4 h-4 text-amber-300" />, title: 'Brand Kit', desc: 'Colors, fonts & logos', iconBg: 'bg-amber-500/15 border-amber-500/25', accent: 'bg-amber-500', thumb: castNavBrand, nav: 'brand-kit' as NavView },
+    { icon: <BarChart3 className="w-4 h-4 text-indigo-300" />, title: 'Analytics', desc: 'Performance metrics', count: videoStats?.completed || 0, countLabel: 'videos', iconBg: 'bg-indigo-500/15 border-indigo-500/25', accent: 'bg-indigo-500', thumb: castNavAnalytics, nav: 'analytics' as NavView },
+    { icon: <Settings className="w-4 h-4 text-slate-300" />, title: 'Settings', desc: 'Integrations & prefs', iconBg: 'bg-slate-500/15 border-slate-500/25', accent: 'bg-slate-500', thumb: castNavSettings, nav: 'settings' as NavView },
+  ];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between px-1 mb-3">
+        <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+          <Boxes className="w-3 h-3" /> Quick Access
+        </h3>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => scroll('left')}
+            disabled={!canScrollLeft}
+            className={cn(
+              'w-7 h-7 rounded-full flex items-center justify-center border transition-all',
+              canScrollLeft
+                ? 'bg-white/[0.06] border-white/[0.12] text-foreground hover:bg-white/[0.1]'
+                : 'bg-transparent border-white/[0.04] text-muted-foreground/20 cursor-default',
+            )}
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => scroll('right')}
+            disabled={!canScrollRight}
+            className={cn(
+              'w-7 h-7 rounded-full flex items-center justify-center border transition-all',
+              canScrollRight
+                ? 'bg-white/[0.06] border-white/[0.12] text-foreground hover:bg-white/[0.1]'
+                : 'bg-transparent border-white/[0.04] text-muted-foreground/20 cursor-default',
+            )}
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto pb-2 scrollbar-none scroll-smooth"
+      >
+        {items.map(item => (
+          <div key={item.title} className="min-w-[200px] w-[200px] shrink-0">
+            <NavCard
+              icon={item.icon}
+              title={item.title}
+              description={item.desc}
+              count={item.count}
+              countLabel={item.countLabel}
+              iconBg={item.iconBg}
+              accentColor={item.accent}
+              thumbnailSrc={item.thumb}
+              onClick={() => onNavigate(item.nav)}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Content Pipeline — Created / Produced / Published ───────────────────────
+const PIPELINE_STAGES = [
+  { key: 'created', label: 'Created', icon: <PenTool className="w-3.5 h-3.5" />, color: 'text-purple-300', bg: 'bg-purple-500/10 border-purple-500/20' },
+  { key: 'produced', label: 'Produced', icon: <Clapperboard className="w-3.5 h-3.5" />, color: 'text-blue-300', bg: 'bg-blue-500/10 border-blue-500/20' },
+  { key: 'published', label: 'Published', icon: <Share2 className="w-3.5 h-3.5" />, color: 'text-emerald-300', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+] as const;
+
+const CONTENT_TYPE_META: Record<string, { icon: React.ReactNode; label: string }> = {
+  video: { icon: <Video className="w-3 h-3" />, label: 'Video' },
+  full_demo_production: { icon: <Film className="w-3 h-3" />, label: 'Full Demo' },
+  script: { icon: <FileText className="w-3 h-3" />, label: 'Script' },
+  tts: { icon: <Headphones className="w-3 h-3" />, label: 'TTS Audio' },
+  audio: { icon: <Music className="w-3 h-3" />, label: 'Audio' },
+  presentation: { icon: <Presentation className="w-3 h-3" />, label: 'PPT' },
+  podcast: { icon: <Mic className="w-3 h-3" />, label: 'Podcast' },
+};
+
+const PLATFORM_ICONS: Record<string, React.ReactNode> = {
+  youtube: <Youtube className="w-3 h-3" />,
+  linkedin: <Linkedin className="w-3 h-3" />,
+  instagram: <Instagram className="w-3 h-3" />,
+  tiktok: <Share2 className="w-3 h-3" />,
+};
+
+const ContentPipelineSection: React.FC<{
+  projects: any;
+  videoStats: any;
+  onNavigate: (view: NavView) => void;
+  onStartCreate: () => void;
+}> = ({ projects, videoStats, onNavigate, onStartCreate }) => {
+  const allProjects = projects.projects || [];
+
+  // Derive pipeline items from projects + videos
+  const pipelineItems = useMemo(() => {
+    const items: Array<{
+      id: string;
+      title: string;
+      stage: 'created' | 'produced' | 'published';
+      contentType: string;
+      platforms?: string[];
+      time: string;
+      status: string;
+    }> = [];
+
+    // From cast_projects
+    allProjects.forEach((p: any) => {
+      const stage = p.final_video_url ? 'published' : p.status === 'completed' ? 'produced' : 'created';
+      items.push({
+        id: p.id,
+        title: p.title || 'Untitled Project',
+        stage,
+        contentType: p.content_type || 'video',
+        platforms: p.secondary_platforms || [],
+        time: p.updated_at || p.created_at,
+        status: p.status || 'draft',
+      });
+    });
+
+    // From landing_page_videos
+    (videoStats?.recentVideos || []).forEach((v: any) => {
+      if (items.some(i => i.title === v.title)) return;
+      items.push({
+        id: v.id,
+        title: v.title || 'Untitled Video',
+        stage: v.generation_status === 'completed' ? 'produced' : 'created',
+        contentType: v.content_type || 'video',
+        time: v.created_at,
+        status: v.generation_status || 'pending',
+      });
+    });
+
+    return items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 8);
+  }, [allProjects, videoStats?.recentVideos]);
+
+  const stageCounts = useMemo(() => ({
+    created: pipelineItems.filter(i => i.stage === 'created').length,
+    produced: pipelineItems.filter(i => i.stage === 'produced').length,
+    published: pipelineItems.filter(i => i.stage === 'published').length,
+  }), [pipelineItems]);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between px-1 mb-3">
+        <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+          <Layers className="w-3 h-3" /> Content Pipeline
+        </h3>
+        <div className="flex items-center gap-2">
+          {PIPELINE_STAGES.map(s => (
+            <span key={s.key} className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border', s.bg)}>
+              {s.icon} {stageCounts[s.key as keyof typeof stageCounts]} {s.label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {pipelineItems.length > 0 ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-2">
+          {pipelineItems.map(item => {
+            const typeMeta = CONTENT_TYPE_META[item.contentType] || CONTENT_TYPE_META.video;
+            const stageInfo = PIPELINE_STAGES.find(s => s.key === item.stage)!;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onNavigate('projects')}
+                className="group glass-card rounded-xl p-3 text-left hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                <div className="flex items-start gap-2">
+                  <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center border shrink-0', stageInfo.bg)}>
+                    {typeMeta.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-foreground truncate">{item.title}</p>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium border', stageInfo.bg)}>
+                        {stageInfo.label}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground/50">{typeMeta.label}</span>
+                    </div>
+                    {item.platforms && item.platforms.length > 0 && (
+                      <div className="flex items-center gap-1 mt-1.5">
+                        {item.platforms.slice(0, 3).map((p: string) => (
+                          <span key={p} className="w-4 h-4 rounded bg-white/[0.04] flex items-center justify-center text-muted-foreground/40">
+                            {PLATFORM_ICONS[p] || <Share2 className="w-2.5 h-2.5" />}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-[9px] text-muted-foreground/40 mt-1">
+                      {item.time ? formatDistanceToNow(new Date(item.time), { addSuffix: true }) : ''}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="glass-card rounded-xl p-6 flex flex-col items-center justify-center text-center">
+          <Layers className="w-6 h-6 text-muted-foreground/20 mb-2" />
+          <p className="text-xs text-muted-foreground/60">No content in pipeline yet</p>
+          <Button variant="outline" size="sm" className="mt-3 text-xs gap-1.5" onClick={onStartCreate}>
+            <Sparkles className="w-3 h-3" /> Create First Content
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── MAIN DASHBOARD ──────────────────────────────────────────────────────────
 export function CastDashboardOverview({ onNavigate, onStartCreate, className }: CastDashboardOverviewProps) {
   const projects = useCastProjects();
@@ -630,128 +878,140 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
         </div>
       )}
 
-      {/* ── Quick Access + Activity + AI Engine ────────────────────────── */}
-      <div className="grid lg:grid-cols-3 gap-4">
-        {/* Navigation Cards — horizontal scroll on mobile, 2-col grid desktop */}
-        <div className="lg:col-span-2 space-y-3">
-          <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 flex items-center gap-1.5">
-            <Boxes className="w-3 h-3" /> Quick Access
-          </h3>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory scroll-smooth hover:cursor-grab active:cursor-grabbing">
-            {[
-              { icon: <FolderOpen className="w-4 h-4 text-blue-300" />, title: 'Projects', desc: 'Manage video projects', count: totalProjects, countLabel: 'projects', iconBg: 'bg-blue-500/15 border-blue-500/25', accent: 'bg-blue-500', thumb: castNavProjects, nav: 'projects' as NavView },
-              { icon: <LayoutTemplate className="w-4 h-4 text-purple-300" />, title: 'Templates', desc: 'Browse blueprints & presets', count: totalTemplates, countLabel: 'blueprints', iconBg: 'bg-purple-500/15 border-purple-500/25', accent: 'bg-purple-500', thumb: castNavTemplates, nav: 'templates' as NavView },
-              { icon: <Image className="w-4 h-4 text-emerald-300" />, title: 'Assets', desc: 'Images, video & audio styles', count: totalStyles, countLabel: 'styles', iconBg: 'bg-emerald-500/15 border-emerald-500/25', accent: 'bg-emerald-500', thumb: castNavAssets, nav: 'assets' as NavView },
-              { icon: <Palette className="w-4 h-4 text-amber-300" />, title: 'Brand Kit', desc: 'Colors, fonts & logos', iconBg: 'bg-amber-500/15 border-amber-500/25', accent: 'bg-amber-500', thumb: castNavBrand, nav: 'brand-kit' as NavView },
-              { icon: <BarChart3 className="w-4 h-4 text-indigo-300" />, title: 'Analytics', desc: 'Performance & engagement', count: videoStats?.completed || 0, countLabel: 'videos', iconBg: 'bg-indigo-500/15 border-indigo-500/25', accent: 'bg-indigo-500', thumb: castNavAnalytics, nav: 'analytics' as NavView },
-              { icon: <Settings className="w-4 h-4 text-slate-300" />, title: 'Settings', desc: 'Integrations & preferences', iconBg: 'bg-slate-500/15 border-slate-500/25', accent: 'bg-slate-500', thumb: castNavSettings, nav: 'settings' as NavView },
-            ].map(item => (
-              <div key={item.title} className="min-w-[220px] w-[220px] shrink-0 snap-start">
-                <NavCard
-                  icon={item.icon}
-                  title={item.title}
-                  description={item.desc}
-                  count={item.count}
-                  countLabel={item.countLabel}
-                  iconBg={item.iconBg}
-                  accentColor={item.accent}
-                  thumbnailSrc={item.thumb}
-                  onClick={() => onNavigate(item.nav)}
-                />
-              </div>
-            ))}
+      {/* ── Quick Access — horizontal scroll with arrows ───────────────── */}
+      <QuickAccessSection
+        totalProjects={totalProjects}
+        totalTemplates={totalTemplates}
+        totalStyles={totalStyles}
+        videoStats={videoStats}
+        onNavigate={onNavigate}
+      />
+
+      {/* ── Content Pipeline — what was created, produced, published ──── */}
+      <ContentPipelineSection
+        projects={projects}
+        videoStats={videoStats}
+        onNavigate={onNavigate}
+        onStartCreate={onStartCreate}
+      />
+
+      {/* ── Bottom Row: AI Engine (compact) + Activity + Templates ────── */}
+      <div className="grid md:grid-cols-3 gap-4">
+        {/* AI Engine — compact card */}
+        <div className="glass-card rounded-2xl overflow-hidden relative">
+          <div className="absolute inset-0 z-0">
+            <img src={castAiEngine} alt="" className="w-full h-full object-cover opacity-20" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-br from-card/80 via-card/65 to-card/55" />
+          </div>
+          <div className="absolute -bottom-6 -left-6 w-20 h-20 rounded-full blur-2xl opacity-20 bg-purple-500" />
+          <div className="relative z-10 p-3">
+            <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <Cpu className="w-3 h-3" /> AI Engine
+            </h4>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                { icon: <Cpu className="w-3 h-3 text-purple-300" />, label: 'LLM', value: regional.llmProvider || 'Claude' },
+                { icon: <Languages className="w-3 h-3 text-blue-300" />, label: 'TTS', value: regional.ttsProvider || 'Azure' },
+                { icon: <FileVideo className="w-3 h-3 text-emerald-300" />, label: 'Formats', value: totalFormats },
+                { icon: <Palette className="w-3 h-3 text-amber-300" />, label: 'Styles', value: totalStyles },
+                { icon: <Layers className="w-3 h-3 text-cyan-300" />, label: 'Categories', value: totalCategories },
+                { icon: <Zap className="w-3 h-3 text-pink-300" />, label: 'Capabilities', value: registry.productionCapabilities?.length || 0 },
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  {item.icon}
+                  <span className="text-[10px] text-muted-foreground/60">{item.label}</span>
+                  <span className="text-[10px] font-bold text-foreground ml-auto">{item.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Right column — Activity + AI Engine */}
-        <div className="space-y-3">
-          {/* Activity Feed */}
-          <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 flex items-center gap-1.5">
-            <Activity className="w-3 h-3" /> Activity Feed
-          </h3>
-          <div className="glass-elevated rounded-2xl overflow-hidden relative">
-            {/* Background image */}
-            <div className="absolute inset-0 z-0">
-              <img src={castNavAnalytics} alt="" className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" loading="lazy" />
-              <div className="absolute inset-0 bg-gradient-to-br from-card/80 via-card/60 to-card/50" />
-            </div>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none" />
-            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full blur-2xl opacity-25 bg-emerald-500" />
-            <div className="absolute bottom-4 left-4 w-16 h-16 rounded-full blur-xl opacity-15 bg-cyan-400" />
-            <div className="relative z-10 p-3">
-              {videoStats?.recentVideos && videoStats.recentVideos.length > 0 ? (
-                <ScrollArea className="h-[180px]">
-                  <div className="space-y-2">
-                    {videoStats.recentVideos.map((video: any) => {
-                      const statusDot = video.generation_status === 'completed'
-                        ? 'bg-emerald-400' : video.generation_status === 'processing'
-                          ? 'bg-amber-400' : 'bg-red-400';
-                      const statusBadge = video.generation_status === 'completed'
-                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                        : video.generation_status === 'processing'
-                          ? 'bg-amber-500/10 text-amber-300 border-amber-500/20'
-                          : 'bg-red-500/10 text-red-300 border-red-500/20';
-                      return (
-                        <div key={video.id} className="flex items-center gap-2.5 py-1.5 px-1">
-                          <div className={cn('w-2 h-2 rounded-full shrink-0 shadow-lg', statusDot)} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-foreground truncate">{video.title || 'Untitled'}</p>
-                            <p className="text-[10px] text-muted-foreground/60">
-                              {video.created_at ? formatDistanceToNow(new Date(video.created_at), { addSuffix: true }) : ''}
-                            </p>
-                          </div>
-                          <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-medium border backdrop-blur-sm capitalize shrink-0', statusBadge)}>
-                            {video.generation_status || 'pending'}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                  <div className="w-12 h-12 rounded-xl bg-white/[0.04] backdrop-blur-md flex items-center justify-center border border-white/[0.08] mb-3">
-                    <MonitorPlay className="w-6 h-6 opacity-30" />
-                  </div>
-                  <p className="text-xs font-medium">No videos yet</p>
-                  <p className="text-[10px] text-muted-foreground/50 mt-0.5">Create your first video</p>
-                  <Button variant="outline" size="sm" className="mt-3 text-xs gap-1.5 backdrop-blur-md bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08]" onClick={onStartCreate}>
-                    <Sparkles className="w-3 h-3" /> Get Started
-                  </Button>
-                </div>
-              )}
-            </div>
+        {/* Activity Feed — compact */}
+        <div className="glass-card rounded-2xl overflow-hidden relative">
+          <div className="absolute inset-0 z-0">
+            <img src={castNavAnalytics} alt="" className="w-full h-full object-cover opacity-15" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-br from-card/85 via-card/70 to-card/55" />
           </div>
+          <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 bg-emerald-500" />
+          <div className="relative z-10 p-3">
+            <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <Activity className="w-3 h-3" /> Activity Feed
+            </h4>
+            {videoStats?.recentVideos && videoStats.recentVideos.length > 0 ? (
+              <ScrollArea className="h-[160px]">
+                <div className="space-y-1.5">
+                  {videoStats.recentVideos.slice(0, 5).map((video: any) => {
+                    const dotColor = video.generation_status === 'completed' ? 'bg-emerald-400' : video.generation_status === 'processing' ? 'bg-amber-400' : 'bg-red-400';
+                    return (
+                      <div key={video.id} className="flex items-center gap-2 py-1 px-1">
+                        <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotColor)} />
+                        <p className="text-[11px] text-foreground truncate flex-1">{video.title || 'Untitled'}</p>
+                        <span className="text-[9px] text-muted-foreground/50 shrink-0">
+                          {video.created_at ? formatDistanceToNow(new Date(video.created_at), { addSuffix: true }) : ''}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+                <MonitorPlay className="w-5 h-5 opacity-30 mb-2" />
+                <p className="text-[11px]">No activity yet</p>
+              </div>
+            )}
+          </div>
+        </div>
 
-          {/* AI Engine — with background image + glass */}
-          <div className="glass-elevated rounded-2xl overflow-hidden relative">
-            {/* Background image */}
-            <div className="absolute inset-0 z-0">
-              <img src={castAiEngine} alt="" className="w-full h-full object-cover opacity-25" loading="lazy" />
-              <div className="absolute inset-0 bg-gradient-to-br from-card/75 via-card/60 to-card/50" />
-            </div>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none" />
-            <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full blur-2xl opacity-25 bg-purple-500" />
-            <div className="absolute top-4 right-4 w-16 h-16 rounded-full blur-xl opacity-15 bg-pink-400" />
-            <div className="relative z-10 p-3">
-              <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                <Cpu className="w-3 h-3" /> AI Engine
-              </h4>
-              <div className="space-y-2">
-                {[
-                  { icon: <Cpu className="w-3.5 h-3.5 text-purple-300" />, label: 'LLM Provider', value: regional.llmProvider || 'Claude', bg: 'bg-purple-500/10' },
-                  { icon: <Languages className="w-3.5 h-3.5 text-blue-300" />, label: 'TTS Provider', value: regional.ttsProvider || 'Azure Neural', bg: 'bg-blue-500/10' },
-                  { icon: <FileVideo className="w-3.5 h-3.5 text-emerald-300" />, label: 'Video Formats', value: totalFormats, bg: 'bg-emerald-500/10' },
-                  { icon: <Palette className="w-3.5 h-3.5 text-amber-300" />, label: 'Visual Styles', value: totalStyles, bg: 'bg-amber-500/10' },
-                  { icon: <Layers className="w-3.5 h-3.5 text-cyan-300" />, label: 'Categories', value: totalCategories, bg: 'bg-cyan-500/10' },
-                  { icon: <Zap className="w-3.5 h-3.5 text-pink-300" />, label: 'AI Capabilities', value: registry.productionCapabilities?.length || 0, bg: 'bg-pink-500/10' },
-                ].map(item => (
-                  <div key={item.label} className="flex items-center gap-2.5">
-                    <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center backdrop-blur-md border border-white/[0.06]', item.bg)}>
-                      {item.icon}
-                    </div>
-                    <span className="text-[11px] text-muted-foreground/70 flex-1">{item.label}</span>
-                    <span className="text-[11px] font-bold text-foreground">{item.value}</span>
+        {/* Templates — new vs existing */}
+        <div className="glass-card rounded-2xl overflow-hidden relative">
+          <div className="absolute inset-0 z-0">
+            <img src={castNavTemplates} alt="" className="w-full h-full object-cover opacity-15" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-br from-card/85 via-card/70 to-card/55" />
+          </div>
+          <div className="absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-20 bg-purple-500" />
+          <div className="relative z-10 p-3">
+            <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+              <LayoutTemplate className="w-3 h-3" /> Templates
+            </h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-2 py-2 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center">
+                    <LayoutTemplate className="w-3.5 h-3.5 text-purple-300" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">{totalTemplates}</p>
+                    <p className="text-[9px] text-muted-foreground/60">Existing Templates</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[10px] gap-1 text-primary"
+                  onClick={() => onNavigate('templates')}
+                >
+                  Browse <ArrowRight className="w-2.5 h-2.5" />
+                </Button>
+              </div>
+              <button
+                onClick={onStartCreate}
+                className="w-full flex items-center gap-2 px-2 py-2 rounded-lg bg-primary/5 border border-primary/15 hover:bg-primary/10 transition-colors"
+              >
+                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                  <Plus className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-semibold text-foreground">Create New</p>
+                  <p className="text-[9px] text-muted-foreground/60">Start from scratch or AI</p>
+                </div>
+              </button>
+              <div className="grid grid-cols-2 gap-1.5 mt-1">
+                {Object.entries(blueprints.blueprintsByCategory || {}).slice(0, 4).map(([cat, items]) => (
+                  <div key={cat} className="px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                    <p className="text-[10px] font-medium text-foreground truncate capitalize">{cat}</p>
+                    <p className="text-[9px] text-muted-foreground/50">{(items as any[]).length} items</p>
                   </div>
                 ))}
               </div>
