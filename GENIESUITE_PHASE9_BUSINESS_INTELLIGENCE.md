@@ -581,22 +581,24 @@ $100M ARR with 50 employees = $2M revenue per employee. That's the efficiency we
 | **ElevenLabs** | Music Generation | ~$0.24-0.30/30sec clip | `elevenlabs-music` | Western, all |
 | **ElevenLabs** | Sound Effects (1-22sec) | ~$0.24-0.30/clip | `elevenlabs-sfx` | Western, all |
 | **Alibaba** | Music Generation (CosyVoice) | ~$0.01-0.03/clip | `multi-provider-music` | CJK, SEA |
-| **Google Lyria** | Music Generation (DeepMind) | ~$0.10-0.15/clip | `multi-provider-music` | Western, MENA |
+| ~~Google Lyria~~ | ~~Music Generation~~ | N/A | `multi-provider-music` | **PARKED** — type ref only, no implementation |
+| **Suno** | Music Generation | TBD | Not integrated | **PARKED** — future provider, no API integration yet |
 | **ModelsLab** | Music Generation | ~$0.05-0.08/clip | `multi-provider-music` | Fallback all |
 | **Alibaba** | Sound Effects | ~$0.01-0.02/clip | `multi-provider-sfx` | CJK, SEA |
 | **ModelsLab** | Sound Effects | ~$0.03-0.05/clip | `multi-provider-sfx` | Fallback all |
 
 **Orchestration:** `music-composer-agent` selects provider based on 4-zone routing (Western/CJK/MENA/SEA), mood/genre, and cost optimization. Falls back through provider chain automatically.
 
-### Document Extraction (OCR / Form Processing)
+### Document Extraction (OCR / Form Processing) — HEALTHCARE ONLY, NOT GENIESUITE
 
-| Provider | Service | Cost | Edge Function | Status |
-|----------|---------|------|---------------|--------|
-| **Azure Form Recognizer** | Document Intelligence v4.0 | $1.50/1K pages (read), $10/1K pages (layout) | `document-processor` | API key configured |
-| **AWS Textract** | OCR + Table/Form extraction | $1.50/1K pages (text), $15/1K pages (tables+forms) | `document-processor` | Credentials pending — user to enter |
-| **DeepSeek Vision** | Vision-based document understanding | ~$0.01/page (via LLM) | `deepseek-vision` | Active |
+> **SCOPE NOTE:** Document extraction is used exclusively by the healthcare platform (insurance cards, prescriptions, enrollment forms). GenieSuite does NOT use these services. DocuSign is also healthcare-only.
 
-**Routing:** Azure Form Recognizer is primary for structured documents (forms, invoices). AWS Textract is secondary for table-heavy documents. DeepSeek Vision handles handwritten/informal documents. Falls back gracefully if credentials unavailable.
+| Provider | Service | Cost | Edge Function | GenieSuite? |
+|----------|---------|------|---------------|-------------|
+| **Azure Form Recognizer** | Document Intelligence v4.0 | $1.50/1K pages | `document-processor` | NO — healthcare only |
+| **AWS Textract** | OCR + Table/Form extraction | $1.50/1K pages | `document-processor` | NO — healthcare only |
+| **DeepSeek Vision** | Vision-based document understanding | ~$0.01/page | `deepseek-vision` | NO — healthcare only |
+| **DocuSign** | E-signatures, consent forms | Per-envelope pricing | `docusign-integration` | NO — healthcare only |
 
 ### Avatar & 3D
 
