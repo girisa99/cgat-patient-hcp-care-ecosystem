@@ -416,65 +416,176 @@ No competitor chains input→script→video→audio→avatar→presentation→di
 
 ## 8. AI PROVIDER COSTS (Our Internal Costs)
 
-> **Status**: Research agent calculating per-operation costs
-> Data will be populated as research completes.
+> **Updated**: Feb 23, 2026 — Based on actual API pricing research
+> **Source**: 30 registered providers across 4 routing zones (Claude, Alibaba, Gemini, Fallback)
 
-### Per-Operation Cost Estimates (Current API Pricing)
+### LLM (Text Generation) — Per 1M Tokens
 
-#### LLM (Text Generation)
+| Provider | Model | Input $/1M | Output $/1M | Cost per Script Gen | Zone |
+|----------|-------|-----------|-------------|-------------------|------|
+| **Anthropic** | Claude Opus 4.6 | $5.00 | $25.00 | $0.0175 | claude |
+| **Anthropic** | Claude Sonnet 4.5 | $3.00 | $15.00 | $0.0135 | claude |
+| **Anthropic** | Claude Haiku 4.5 | $1.00 | $5.00 | $0.0045 | claude/fallback |
+| **OpenAI** | GPT-4o | $2.50 | $10.00 | $0.0100 | claude/fallback |
+| **OpenAI** | GPT-4o-mini | $0.15 | $0.60 | $0.0006 | fallback |
+| **Google** | Gemini 2.5 Pro | $1.25 | $10.00 | $0.0075 | gemini |
+| **Google** | Gemini 2.5 Flash | $0.30 | $2.50 | $0.0019 | gemini/fallback |
+| **Alibaba** | Qwen3 Max | $1.20 | $6.00 | $0.0054 | alibaba |
+| **Alibaba** | Qwen 2.5-72B | $0.23 | $0.23 | $0.0006 | alibaba |
+| **DeepSeek** | DeepSeek V3.2 | $0.28 | $0.42 | $0.0008 | alibaba/fallback |
 
-| Provider | Input ($/1M tokens) | Output ($/1M tokens) | Typical Script Gen Cost |
-|----------|---------------------|----------------------|------------------------|
-| Claude 4 Opus | $15.00 | $75.00 | ~$0.08 per 2K script |
-| Claude 4 Sonnet | $3.00 | $15.00 | ~$0.02 per 2K script |
-| Claude 4 Haiku | $0.25 | $1.25 | ~$0.002 per 2K script |
-| GPT-4o | $2.50 | $10.00 | ~$0.015 per 2K script |
-| GPT-4o-mini | $0.15 | $0.60 | ~$0.001 per 2K script |
-| Gemini 2.0 Pro | $1.25 | $5.00 | ~$0.008 per 2K script |
-| Gemini 2.0 Flash | $0.10 | $0.40 | ~$0.001 per 2K script |
-| Qwen Max | ~$1.00 | ~$4.00 | ~$0.006 per 2K script |
+*Script gen = ~2,000 input + 1,000 output tokens*
 
-#### TTS (Text-to-Speech)
+### TTS (Text-to-Speech) — Per Minute of Audio
 
-| Provider | Cost per 1M Characters | Cost per Minute (~150 words) |
-|----------|----------------------|------------------------------|
-| Azure Neural TTS | $16.00 | ~$0.013 |
-| Google Cloud TTS | $16.00 | ~$0.013 |
-| ElevenLabs API | $30.00 (Starter) | ~$0.024 |
-| OpenAI TTS | $15.00 | ~$0.012 |
-| Alibaba Qwen3-TTS | ~$8.00 | ~$0.006 |
+| Provider | Model | $/1M Chars | $/min | Zone | Notes |
+|----------|-------|-----------|-------|------|-------|
+| **Azure** | Neural TTS | $16.00 | **$0.013** | ALL | PRIMARY — Viseme lip-sync support |
+| **Azure** | Neural HD V2 | $30.00 | $0.024 | ALL | Premium voices |
+| **Google Cloud** | WaveNet/Neural2 | $16.00 | $0.013 | gemini | Fallback |
+| **OpenAI** | tts-1 | $15.00 | $0.012 | claude | Fallback |
+| **OpenAI** | tts-1-hd | $30.00 | $0.024 | claude | Premium |
+| **Amazon Polly** | Neural | $16.00 | $0.013 | fallback | AWS fallback |
+| **Alibaba** | Qwen3-TTS-Flash | $13.00 | **$0.010** | alibaba | CJK primary — CHEAPEST |
+| **ElevenLabs** | Multilingual V2 | $180-240 | **$0.144** | claude | Voice cloning ONLY — 11x more expensive |
 
-#### Video Generation
+### STT (Speech-to-Text) — Per Minute
 
-| Provider | Cost per Generation | Typical Duration | Cost per Minute |
-|----------|--------------------|-----------------|-----------------|
-| Vertex Veo 3 | ~$0.10-0.50/generation | 4-16 sec | ~$0.75-3.00 |
-| Alibaba Wan 2.6 | ~$0.05-0.20/generation | 5-10 sec | ~$0.30-1.20 |
-| Runway Gen-3 | ~$0.05/sec | 5-10 sec | ~$3.00 |
-| Sora 2 | ~$0.15-0.50/generation | 5-20 sec | ~$0.45-3.00 |
+| Provider | Model | $/min | Priority | Notes |
+|----------|-------|-------|----------|-------|
+| **Deepgram** | Nova-2 (batch) | **$0.0043** | 1st | CHEAPEST + fastest (<100ms) |
+| **OpenAI** | GPT-4o-mini Transcribe | $0.003 | Budget | Cheapest absolute |
+| **OpenAI** | Whisper | $0.006 | 3rd | Fallback |
+| **Azure** | Speech STT | $0.017 | 2nd | HIPAA-compliant |
 
-#### Translation
+### Video Generation — Per Minute of Video
 
-| Provider | Cost per 1M Characters | Cost per 1K Words |
-|----------|----------------------|-------------------|
-| DeepL API | $25.00 | ~$0.13 |
-| Google Translate | $20.00 | ~$0.10 |
-| Azure Translator | $10.00 | ~$0.05 |
-| Alibaba Qwen-MT | ~$5.00 | ~$0.025 |
+| Provider | Model | $/sec | $/minute | Zone | Notes |
+|----------|-------|-------|---------|------|-------|
+| **ModelsLab** | AnimateDiff | $0.02 | **$1.20** | fallback | CHEAPEST — artistic styles |
+| **Replicate** | Luma Ray | $0.06 | $3.60 | fallback | Fallback |
+| **Alibaba** | Wan 2.6 T2V (720p) | $0.08 | **$4.80** | alibaba | CJK primary — best value |
+| **OpenAI** | Sora 2 Standard (720p) | $0.10 | **$6.00** | claude | Cinematic primary |
+| **Alibaba** | Wan 2.6 T2V (1080p) | $0.12 | $7.20 | alibaba | CJK HD |
+| **Google** | Veo 3.1 Fast | $0.10 | $9.60 | gemini | Draft iterations |
+| **OpenAI** | Sora 2 Pro (1080p) | $0.50 | $30.00 | claude | HD video |
+| **Google** | Veo 3.0 (no audio) | $0.50 | $48.00 | gemini | Quality primary |
+| **Google** | Veo 3.0 (with audio) | $0.75 | **$72.00** | gemini | MOST EXPENSIVE |
 
-### Typical Workflow Costs (Our Internal Cost)
+*Max clip length 5-8 sec per generation. 60-second video = 12+ clips stitched.*
 
-| Workflow | Components | Estimated Cost |
-|----------|-----------|----------------|
-| **2-min marketing video** | Script gen + TTS + video gen + subtitles | ~$2.00-5.00 |
-| **10-slide presentation** | Script gen + slide content + image gen | ~$0.50-1.50 |
-| **15-min podcast** | Script gen + TTS + music + SFX | ~$1.00-3.00 |
-| **Translation to 5 languages** | Translation + TTS per language | ~$0.50-2.00 |
-| **2-min avatar video** | Script + avatar gen + TTS + lip-sync | ~$3.00-8.00 |
-| **Full campaign (all formats)** | Video + podcast + presentation + 5 translations | ~$10.00-25.00 |
+### Image Generation — Per Image
 
-> **Note**: Costs are estimates based on current API pricing as of Feb 2026.
-> Volume discounts, committed use agreements, and provider negotiations will reduce these.
+| Provider | Model | $/image | Notes |
+|----------|-------|---------|-------|
+| **ModelsLab** | FLUX Schnell | **$0.003** | CHEAPEST — budget/artistic |
+| **Alibaba** | Wan 2.6 T2I | $0.010 | CJK styles |
+| **Google** | Imagen 4 Fast | $0.020 | Fast generation |
+| **OpenAI** | GPT Image 1 Mini | $0.036 | Budget with text |
+| **Google** | Gemini 2.5 Flash Image | $0.039 | Primary corporate |
+| **Google** | Imagen 4 Standard | $0.040 | Quality images |
+| **OpenAI** | DALL-E 3 Standard | $0.040 | Fallback |
+| **OpenAI** | DALL-E 3 HD | $0.080 | HD fallback |
+
+### Translation — Per 1K Words
+
+| Provider | $/1M Chars | $/1K Words | Zone |
+|----------|-----------|-----------|------|
+| **Alibaba** | Qwen (via LLM) | **$0.006** | alibaba — CHEAPEST |
+| **Azure** | Translator | $0.050 | all — HIPAA |
+| **Google** | Translate NMT | $0.100 | gemini |
+| **DeepL** | API Pro | $0.125 | claude — best EU quality |
+
+### Music & Sound Effects
+
+| Provider | Service | Cost |
+|----------|---------|------|
+| **ElevenLabs** | Music Generation | ~$0.24-0.30/30sec clip |
+| **ElevenLabs** | Sound Effects | ~$0.24-0.30/clip (1-22sec) |
+
+### Avatar & 3D
+
+| Provider | Service | Cost |
+|----------|---------|------|
+| **Alibaba** | Wan 2.2 S2V (Avatar) | ~$0.08-0.12/sec |
+| **Meshy** | Text-to-3D | ~$0.20-0.50/model |
+| **Replicate** | SadTalker/Wav2Lip | ~$0.05-0.10/sec |
+
+---
+
+### WORKFLOW COST CALCULATIONS (Actual)
+
+#### Workflow A: 2-Minute Marketing Video with TTS
+
+| Step | Operation | Provider | Cost |
+|------|-----------|---------|------|
+| Script generation | Claude Sonnet 4.5 | 2K+1K tokens | $0.021 |
+| TTS voiceover (2 min) | Azure Neural TTS | 1,600 chars | $0.026 |
+| Video generation (120 sec) | Varies by provider | 24 clips x 5s | See below |
+| Subtitle generation | Deepgram Nova-2 | 2 min | $0.009 |
+| Video assembly | JSON2Video | 1 render | $0.50 |
+
+| Provider Path | Video Cost | **TOTAL** |
+|--------------|-----------|-----------|
+| ModelsLab (budget) | $2.40 | **$2.96** |
+| Alibaba Wan 2.6 720p | $9.60 | **$10.16** |
+| Sora 2 Standard 720p | $12.00 | **$12.56** |
+| Veo 3.0 (premium) | $48.00 | **$48.56** |
+
+#### Workflow B: 10-Slide Presentation
+
+| Provider Path | **TOTAL** |
+|--------------|-----------|
+| Budget (FLUX + DeepSeek) | **$0.14** |
+| Standard (Gemini Flash Image + Sonnet) | **$0.95** |
+| Premium (DALL-E 3 HD + Opus) | **$2.17** |
+
+#### Workflow C: 15-Minute Podcast
+
+| Step | Cost |
+|------|------|
+| Script (Claude Sonnet) | $0.069 |
+| TTS 15 min (Azure Neural) | $0.192 |
+| Music (3 x 30s ElevenLabs) | $0.90 |
+| SFX (5 clips ElevenLabs) | $1.50 |
+| **TOTAL** | **$2.66** |
+| **TOTAL (ElevenLabs premium TTS)** | **$4.82** |
+
+#### Workflow D: Translate to 5 Languages + TTS
+
+| Provider Path | **TOTAL** |
+|--------------|-----------|
+| Alibaba Qwen (CJK) | **$0.17** |
+| Google + Azure TTS | **$1.13** |
+| DeepL + ElevenLabs | **$3.63** |
+
+#### Workflow E: 2-Minute Avatar Video
+
+| Provider Path | **TOTAL** |
+|--------------|-----------|
+| ModelsLab lipsync (budget) | **$3.35-$6.55** |
+| Alibaba Wan 2.2 avatar | **$10.15-$14.95** |
+
+#### Workflow F: Full Campaign (All Formats)
+
+| Component | Budget | Standard | Premium |
+|-----------|--------|----------|---------|
+| 2-min video | $2.96 | $10.16 | $12.56 |
+| 10-slide deck | $0.14 | $0.95 | $2.17 |
+| 15-min podcast | $2.66 | $2.66 | $4.82 |
+| 5-language translation | $0.17 | $1.13 | $3.63 |
+| **FULL CAMPAIGN TOTAL** | **$5.93** | **$14.90** | **$23.18** |
+
+---
+
+### COST OPTIMIZATION RECOMMENDATIONS
+
+1. **Video generation is 80-95% of costs** — Use Alibaba Wan 2.6 ($4.80/min) as default, Sora 2 Standard ($6/min) for cinematic, avoid Veo 3.0 ($48-72/min) unless premium quality required
+2. **Azure Neural TTS is the winner** at $0.013/min with Viseme lip-sync. Keep ElevenLabs ($0.144/min) ONLY for voice cloning — 11x more expensive
+3. **Use Gemini 2.5 Flash for routing/classification** at $0.30/$2.50 per 1M tokens — 10x cheaper than Sonnet for non-creative tasks
+4. **Deepgram Nova-2 ($0.0043/min)** is cheapest AND fastest STT — correctly prioritized in fallback chain
+5. **Batch API discounts (50% off)** available from Anthropic, OpenAI, Google for background operations
+6. **Prompt caching** — 90% off on Anthropic, 75% off on Google for repeated context patterns
 
 ---
 
@@ -519,42 +630,119 @@ No competitor chains input→script→video→audio→avatar→presentation→di
 
 ## 10. ROI MODEL & BREAKEVEN ANALYSIS
 
-> **Status**: Will be calculated once competitor pricing and AI provider cost research completes.
+> **Updated**: Feb 23, 2026 — Based on actual AI provider cost research
 
-### Framework
+### Customer ROI (What They Save)
 
-#### For Customers (Their ROI)
+| Content Type | Traditional Cost | GenieSuite Cost | Savings | ROI Multiple |
+|-------------|-----------------|-----------------|---------|-------------|
+| 2-min marketing video | $5,000-50,000 (agency) | $2.96-12.56 (our cost) | 99.9% | 400x-16,800x |
+| 31-language video dub | $150,000+ (Synthesia study) | ~$6.00 (31 x $0.17 translate + TTS) | 99.99% | 25,000x |
+| 10-slide presentation | $500-2,000 (designer) | $0.14-0.95 (our cost) | 99.9% | 525x-14,300x |
+| 15-min podcast | $3,000-10,000 (studio) | $2.66-4.82 (our cost) | 99.9% | 620x-3,750x |
+| Content to 5 languages | $10,000-50,000 (agencies) | $0.17-3.63 (our cost) | 99.99% | 2,750x-294,000x |
+| 2-min avatar video | $3,000-15,000 (Synthesia/HeyGen) | $3.35-14.95 (our cost) | 99.8% | 200x-4,475x |
+| Full campaign (all formats) | $20,000-100,000 (agencies) | $5.93-23.18 (our cost) | 99.97% | 860x-16,860x |
 
-| Metric | Traditional | With GenieSuite | Savings |
-|--------|------------|-----------------|---------|
-| 2-min marketing video | $5,000-50,000 (agency) | $29.99/mo subscription | 99%+ cost reduction |
-| 31-language video dub | $150,000+ (Synthesia case study) | $149/mo subscription | 99%+ cost reduction |
-| 10-slide presentation | $500-2,000 (designer) | $12/mo subscription | 95%+ cost reduction |
-| Content localization (5 markets) | $10,000-50,000 (agencies) | $29.99/mo subscription | 99%+ cost reduction |
+**Bottom line for customers**: What costs $20K-100K with agencies costs us $6-23 to produce. Even at 10x markup, customers save 99%+.
 
-#### For Us (Our ROI)
+### Our Unit Economics (Per User/Month)
 
-| Metric | Calculation |
-|--------|------------|
-| **Average internal cost per user/month** | ~$5-15 (based on typical usage) |
-| **Average revenue per user/month** | $12-149 (depends on tier mix) |
-| **Gross margin target** | 70-80% |
-| **CAC (Customer Acquisition Cost)** | TBD |
-| **LTV (Lifetime Value)** | TBD (depends on churn rate) |
-| **Breakeven users (Free→Paid conversion)** | TBD |
-| **Monthly burn rate** | TBD (hosting + AI provider costs) |
+#### Usage Assumptions by Tier
 
-### Breakeven Scenarios
+| Tier | Typical Monthly Usage | Est. Internal Cost |
+|------|----------------------|-------------------|
+| **Free** | 2 scripts, 1 short video (30s), 1 presentation | ~$1.50 |
+| **Starter** | 5 scripts, 2 videos (1 min each), 3 presentations, 1 translation | ~$8.00 |
+| **Creator** | 10 scripts, 4 videos (2 min each), 5 presentations, 2 avatar videos, 3 translations | ~$35.00 |
+| **Pro** | 15 scripts, 8 videos (2 min each), 10 presentations, 5 avatar videos, 1 podcast, 5 translations | ~$85.00 |
+| **Business** | 30 scripts, 15 videos, 20 presentations, 10 avatar videos, 3 podcasts, 10 translations | ~$200.00 |
+| **Enterprise** | Custom (typically 5-10x Business) | ~$500-2,000 |
 
-| Scenario | Monthly Cost | Revenue Needed | Users Needed (at $30 ARPU) |
-|----------|-------------|---------------|---------------------------|
-| Infrastructure only | ~$5,000/mo | $5,000/mo | 167 paid users |
-| + AI provider costs (1K users) | ~$20,000/mo | $20,000/mo | 667 paid users |
-| + Team (5 engineers) | ~$70,000/mo | $70,000/mo | 2,333 paid users |
-| + Marketing + Sales | ~$120,000/mo | $120,000/mo | 4,000 paid users |
-| Full operation | ~$200,000/mo | $200,000/mo | 6,667 paid users |
+#### Gross Margin Analysis
 
-> **Note**: These are placeholder estimates. Will be refined with actual provider cost data.
+| Tier | Revenue | Internal Cost | Gross Margin | Margin % |
+|------|---------|--------------|--------------|----------|
+| **Free** | $0 | $1.50 | -$1.50 | -∞ (acquisition cost) |
+| **Starter ($12)** | $12 | $8.00 | $4.00 | 33% |
+| **Creator ($29)** | $29 | $35.00 | **-$6.00** | **-21% (UNDERWATER)** |
+| **Pro ($30)** | $30 | $85.00 | **-$55.00** | **-183% (DEEPLY UNDERWATER)** |
+| **Business ($149)** | $149 | $200.00 | **-$51.00** | **-34% (UNDERWATER)** |
+| **Enterprise (custom)** | $500-5,000 | $500-2,000 | $0-3,000 | 0-60% |
+
+**CRITICAL FINDING**: At current pricing, Creator/Pro/Business tiers are UNDERWATER because video generation costs $4.80-12.56 per minute. A user generating 8x 2-min videos burns $77-200 in AI costs against $30 revenue.
+
+#### Pricing Implications
+
+**The existing pricing ($12/$29/$30/$149) was designed BEFORE video generation costs were understood.** Video is the dominant cost driver (80-95% of workflow costs). Options:
+
+1. **Raise prices**: Pro should be $99-149/mo, Business $299-499/mo to achieve 60%+ margins
+2. **Credit-based video**: Charge per minute of video generated (e.g., $0.50-2.00/min to users)
+3. **Tier video quality**: Free/Starter get budget providers (ModelsLab $1.20/min), Pro gets standard (Sora $6/min), Enterprise gets premium (Veo $48/min)
+4. **Cap video minutes**: Free: 1 min/mo, Starter: 5 min, Creator: 15 min, Pro: 30 min, Business: 60 min
+5. **Hybrid model**: Base subscription + video credits purchased separately
+
+### Breakeven Analysis
+
+#### Scenario 1: Infrastructure + AI Costs Only
+
+| Users (paid) | Tier Mix | Monthly Revenue | Monthly AI Cost | Margin |
+|-------------|---------|----------------|----------------|--------|
+| 100 | 60S/30C/10P | $1,620 | $1,780 | **-$160** |
+| 500 | 60S/30C/10P | $8,100 | $8,900 | **-$800** |
+| 1,000 | 60S/30C/10P | $16,200 | $17,800 | **-$1,600** |
+
+*At current pricing, MORE users = MORE losses because heavy tiers are underwater.*
+
+#### Scenario 2: With Corrected Pricing ($12/$49/$99/$299/custom)
+
+| Users (paid) | Tier Mix | Monthly Revenue | Monthly AI Cost | Infra Cost | Margin |
+|-------------|---------|----------------|----------------|-----------|--------|
+| 100 | 60S/30C/10P | $3,420 | $1,780 | $2,000 | **-$360** |
+| 500 | 60S/30C/10P | $17,100 | $8,900 | $3,000 | **$5,200** |
+| 1,000 | 60S/30C/10P | $34,200 | $17,800 | $5,000 | **$11,400** |
+| 2,500 | 60S/30C/10P | $85,500 | $44,500 | $8,000 | **$33,000** |
+
+*Breakeven at corrected pricing: ~350-400 paid users*
+
+#### Scenario 3: Full Operation Breakeven
+
+| Expense | Monthly Cost |
+|---------|-------------|
+| Infrastructure (Vercel, Supabase, CDN) | $5,000-10,000 |
+| AI Provider costs (1K users) | $17,800 |
+| Engineering team (5 people) | $50,000-75,000 |
+| Marketing + Sales | $20,000-30,000 |
+| Support + Operations | $10,000-15,000 |
+| **Total Monthly Burn** | **$102,800-147,800** |
+
+| At Corrected Pricing | Users Needed for Breakeven |
+|----------------------|--------------------------|
+| Avg $34.20 ARPU (corrected) | **3,000-4,300 paid users** |
+| With 5% free→paid conversion | **60,000-86,000 total signups** |
+| With 10% free→paid conversion | **30,000-43,000 total signups** |
+
+### Key Insight: Video Credits Must Be Separate
+
+The data clearly shows that **video generation cannot be included in flat-rate subscriptions** at current AI provider costs. Recommended model:
+
+```
+BASE SUBSCRIPTION (flat monthly fee):
+  - Script generation (unlimited — costs $0.001-0.01 each)
+  - Presentations (unlimited — costs $0.14-0.95 each)
+  - TTS voiceover (generous limits — costs $0.013/min)
+  - Translation (generous limits — costs $0.006-0.125/1K words)
+  - Podcast audio (generous limits — costs $0.013/min TTS)
+
+VIDEO CREDITS (purchased separately or limited by tier):
+  - Standard video: $0.50-1.00/min to user (our cost: $1.20-6.00/min)
+  - HD video: $2.00-3.00/min to user (our cost: $7.20-30.00/min)
+  - Premium video: $5.00-10.00/min to user (our cost: $48.00-72.00/min)
+  - Avatar video: $2.00-5.00/min to user (our cost: $3.35-14.95/min)
+
+This aligns with industry standard (Synthesia charges $22-67/mo for limited videos,
+ElevenLabs charges $5-330/mo with character limits, Runway charges per-second)
+```
 
 ---
 
