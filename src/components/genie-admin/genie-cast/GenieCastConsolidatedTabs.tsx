@@ -1014,7 +1014,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              {/* Hero banner removed — mascot context is in sidebar */}
+              <CreateHeroBanner pageId="discover" />
               {discoveryChainId ? (
                 <CreateFlowWizard
                   onBack={() => setDiscoveryChainId(null)}
@@ -1039,7 +1039,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              {/* Hero banner removed — mascot context is in sidebar */}
+              <CreateHeroBanner pageId="intent" />
               <DynamicContentSelector
                 categories={contentRegistry.categories}
                 formats={contentRegistry.formats}
@@ -1151,7 +1151,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-5"
               >
-                {/* Hero banner removed — mascot context is in sidebar */}
+                <CreateHeroBanner pageId="configure" />
                 {/* Back to Content Selection */}
                 <Button
                   variant="ghost"
@@ -2057,7 +2057,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                {/* Hero banner removed — mascot context is in sidebar */}
+                <CreateHeroBanner pageId="templates" />
                 {/* Back to Configure */}
                 <Button
                   variant="ghost"
@@ -2178,7 +2178,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                {/* Hero banner removed — mascot context is in sidebar */}
+                <CreateHeroBanner pageId="assets" />
                 {/* Back to Templates */}
                 <Button
                   variant="ghost"
@@ -2378,7 +2378,20 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* PRODUCE TAB CONTENT (includes former MANAGE) */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="produce" className="mt-4 space-y-4">
-          {/* WorkflowContextBanner already shown at top level for non-create tabs */}
+          {/* Produce hero banner — dogfooding messaging */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-2xl border border-border/20 h-32 bg-gradient-to-r from-blue-900/40 via-background to-cyan-900/20"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/50 to-transparent" />
+            <div className="relative z-10 h-full flex items-end p-4 md:p-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Produce & Orchestrate 🎬</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Same pipelines we used for EP01–EP04 · Universal Enrichment routes to optimal AI models per region</p>
+              </div>
+            </div>
+          </motion.div>
           
           <AnimatePresence mode="wait">
             {currentSubTab === 'generate' && (
@@ -3113,6 +3126,20 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* PUBLISH TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="publish" className="mt-4 space-y-6">
+          {/* Publish hero banner — dogfooding messaging */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-2xl border border-border/20 h-32 bg-gradient-to-r from-emerald-900/40 via-background to-purple-900/20"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/50 to-transparent" />
+            <div className="relative z-10 h-full flex items-end p-4 md:p-6">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Publish & Scale 🚀</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">14 regions × 40+ sub-regions × 6 platforms · Make it once, scale it everywhere</p>
+              </div>
+            </div>
+          </motion.div>
           <AnimatePresence mode="wait">
             {currentSubTab === 'scheduler' && (
               <motion.div
