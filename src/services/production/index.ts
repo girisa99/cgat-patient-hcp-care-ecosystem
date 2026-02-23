@@ -51,3 +51,17 @@ export {
   VISEME_SHAPES,
 } from './avatarGenerationPipeline';
 export type { AvatarProvider, AvatarConfig, ChunkVideoRequest, SceneVideoResult } from './avatarGenerationPipeline';
+
+export {
+  renderProduction,
+  createDefaultRenderPlan,
+} from './sceneRenderingOrchestrator';
+export type {
+  RenderPlan,
+  RenderScene,
+  TransitionConfig,
+  TransitionType,
+  BRollConfig,
+  RenderResult,
+  QualityReport,
+} from './sceneRenderingOrchestrator';
