@@ -20,6 +20,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar utility */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Gradient text animation */
 @keyframes gradient-shift {
   0%, 100% { background-position: 0% 50%; }
