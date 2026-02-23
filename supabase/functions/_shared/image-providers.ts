@@ -387,22 +387,22 @@ async function generateWithHuggingFace(prompt: string, options: ImageGenOptions)
   const token = keys.huggingface();
   if (!token) throw new Error('HuggingFace token missing');
 
-  // Models confirmed available on HF Serverless Inference (free tier) as of 2026
+  // HuggingFace Pro subscription — use FLUX.1-schnell as primary via Pro Router API
   const candidateModels = [
     options.model,
     'black-forest-labs/FLUX.1-schnell',
-    'ByteDance/SDXL-Lightning',
     'stabilityai/stable-diffusion-xl-base-1.0',
   ].filter(Boolean) as string[];
   const models = [...new Set(candidateModels)];
 
   let lastResp: Response | null = null;
   for (const model of models) {
+    // Use the Pro Router API endpoint (requires HF Pro subscription)
     const endpoint = `https://router.huggingface.co/hf-inference/models/${model}`;
     try {
       const resp = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'x-wait-for-model': 'true' },
         body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 4, guidance_scale: 3.5 } }),
       });
       if (resp.ok) {
@@ -410,7 +410,14 @@ async function generateWithHuggingFace(prompt: string, options: ImageGenOptions)
         if (contentType.includes('image') || contentType.includes('octet-stream')) {
           const buf = await resp.arrayBuffer();
           if (buf.byteLength > 100) {
-            return `data:image/png;base64,${btoa(String.fromCharCode(...new Uint8Array(buf)))}`;
+            // Chunk-based base64 to avoid stack overflow on large images
+            const bytes = new Uint8Array(buf);
+            let binary = '';
+            const chunkSize = 8192;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+              binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+            }
+            return `data:image/png;base64,${btoa(binary)}`;
           }
         }
         // If response is JSON (e.g. queued), treat as not ready
