@@ -616,32 +616,8 @@ export const GenieCastHub: React.FC = () => {
     );
   }
 
-  // ── Tablet: Split-view with sidebar nav ────────────────────────────────────
-  if (deviceType === 'tablet') {
-    return (
-      <div dir={routing.isRTL ? 'rtl' : 'ltr'}>
-        <CastTabletLayout
-          mode={mode}
-          onModeChange={handleModeChange}
-          showDashboard={showDashboard}
-          onShowDashboard={setShowDashboard}
-          onStartCreate={() => { setShowDashboard(false); handleModeChange('create'); }}
-          regionSelector={
-            <CastRegionSelector
-              languageCode={languageCode}
-              onLanguageChange={setLanguageCode}
-            />
-          }
-          pipelineBadge={
-            <ProviderPipelineBadge routing={routing} mode="compact" />
-          }
-          dashboardContent={dashboardContent}
-        >
-          {workspaceContent}
-        </CastTabletLayout>
-      </div>
-    );
-  }
+  // Tablet uses the same desktop layout (no sidebar)
+
   // ── Floating AI Dev indicators (always visible) ────────────────────────────
   const FloatingAIDevs: React.FC = () => {
     const { agent } = useGuideStore();
