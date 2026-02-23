@@ -218,8 +218,8 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   const STEP_DIALOGUES = useMemo(() => [
     { emoji: '🧞', title: 'Make It. Show It. Scale It. 🏗️', message: "We built Cast to market our own products — now it's yours too. Pick your industry & format. Universal Enrichment auto-injects your brand context, product knowledge, and regional scripts into every asset.", tip: '💡 We dogfood this: every GenieSuite launch video was made right here in Cast' },
     { emoji: '🎨', title: "Your Brand, Your Pipeline ⚡", message: "Cast pulls from your enrichment layers — brand assets, audience profiles, competitor insights — and routes to the optimal AI model for your region. No marketing agency needed, just your tools doing the work.", tip: '💡 Enrichment layers active: Product · Brand · Audience · Regional · Competitor' },
-    { emoji: '📋', title: 'Blueprints That Ship 🎬', message: "These aren't mockups — they're production-ready pipelines we use ourselves. Each blueprint wires up scenes, voiceover routing, and platform-specific exports. Pick one and Cast handles the orchestration.", tip: '💡 Same blueprints we used for EP01–EP04 production runs' },
-    { emoji: '🚀', title: "Ship It Everywhere 🌍", message: "Add your assets and Cast distributes across 14 regions, 6+ platforms — YouTube, LinkedIn, TikTok, Instagram, X, Blogs. Universal Enrichment localizes everything. Make it once, scale it globally.", tip: '💡 One click → 14 regions × 6 platforms = your content everywhere' },
+    { emoji: '📋', title: 'Production-Ready Blueprints 🎬', message: "These aren't shareable templates — they're your internal production pipelines. Each blueprint wires up scenes, voiceover routing, enrichment layers, and platform exports. Pick one and Cast orchestrates it end-to-end.", tip: '💡 Same blueprints we used for EP01–EP04 production runs' },
+    { emoji: '🚀', title: 'Scale to 14 Regions × 6+ Platforms 🌍', message: "Cast distributes across 14 regions with 40+ sub-regions — YouTube, LinkedIn, TikTok, Instagram, X, Blogs. Universal Enrichment localizes voiceover, captions, and brand context per region. Make it once, scale it everywhere.", tip: '💡 One click → 14 regions × 40+ sub-regions × 6 platforms' },
   ], []);
 
   const currentDialogue = STEP_DIALOGUES[currentStep] || STEP_DIALOGUES[0];
@@ -229,7 +229,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
     providers: 17,
     styles: 43,
     pipelines: 25,
-    zones: 4,
+    regions: 14,
   }), []);
 
   // ── Mobile Layout ────────────────────────────────────────────────────────
@@ -401,7 +401,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
                 { icon: Zap, label: 'AI Models', value: pipelineStats.providers, color: 'text-amber-400' },
                 { icon: Layers, label: 'Styles', value: pipelineStats.styles, color: 'text-cyan-400' },
                 { icon: Sparkles, label: 'Pipelines', value: pipelineStats.pipelines, color: 'text-purple-400' },
-                { icon: Globe, label: 'Zones', value: pipelineStats.zones, color: 'text-emerald-400' },
+                { icon: Globe, label: 'Regions', value: pipelineStats.regions, color: 'text-emerald-400' },
               ].map((stat) => (
                 <motion.div
                   key={stat.label}
