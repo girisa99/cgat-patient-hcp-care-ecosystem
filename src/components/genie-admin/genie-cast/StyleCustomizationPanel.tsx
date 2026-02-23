@@ -103,6 +103,7 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
     try {
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
+          provider: 'gemini',
           action: 'generate_style_preview',
           prompt: aiPrompt,
           style_context: targetStyleId 
