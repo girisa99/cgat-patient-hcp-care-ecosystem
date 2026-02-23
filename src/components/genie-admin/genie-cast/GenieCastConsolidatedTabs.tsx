@@ -3,7 +3,7 @@
  *
  * Consolidates 10+ scattered tabs into unified workflow:
  * - CREATE: Intent, Messaging, Templates, Production Setup (Styles + Assets + Regional)
- * - PRODUCE: Generate, Matrix, Studio Editor, Review
+ * - PRODUCE: Generate, Matrix, Suite (Timeline & Production), Review
  * - MANAGE: Library, Analytics, Flow, Content Repurposing
  * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing
  *
@@ -269,7 +269,7 @@ const TAB_DEFINITIONS = {
     subTabs: [
       { id: 'generate', label: 'Generate', icon: Play, description: 'Single or batch video generation' },
       { id: 'matrix', label: 'Matrix', icon: Grid3X3, description: 'Batch production matrix' },
-      { id: 'studio', label: 'Studio', icon: Film, description: 'Timeline editor' },
+      { id: 'studio', label: 'Suite', icon: Film, description: 'Timeline editor & production suite' },
       { id: 'review', label: 'Review', icon: Eye, description: 'Quality review & enhance' },
       { id: 'library', label: 'Library', icon: Layers, description: 'Video content library' },
       { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Performance metrics & insights' },

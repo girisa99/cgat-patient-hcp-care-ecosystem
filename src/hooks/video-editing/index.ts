@@ -15,3 +15,4 @@ export { useClipOperations, type ClipOperationsHook } from './useClipOperations'
 export { usePlatformExport, type PlatformExportHook } from './usePlatformExport';
 export { useAVSync, type AVSyncHook } from './useAVSync';
 export { useStreamingDownload, type StreamingDownloadHook, VIDEO_DOWNLOAD_PRESETS } from './useStreamingDownload';
+export { useProductionEstimator, type ProductionEstimatorHook, PROVIDER_LIMITS, TTS_PROVIDER_LIMITS } from './useProductionEstimator';
