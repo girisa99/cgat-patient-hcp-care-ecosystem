@@ -428,37 +428,72 @@ export const StepWizard: React.FC<StepWizardProps> = ({
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               className="mt-3 px-1"
             >
-              <div className="relative rounded-xl overflow-hidden bg-white/[0.06] border border-white/[0.1] backdrop-blur-xl p-3">
-                {/* Mascot glow */}
+              <div className="relative rounded-2xl overflow-hidden bg-white/[0.05] border border-white/[0.12] backdrop-blur-2xl p-3.5"
+                style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 0 rgba(255,255,255,0.1)' }}
+              >
+                {/* Cinematic ambient glows */}
                 <motion.div
-                  className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-primary/25 blur-2xl"
-                  animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.7, 0.3] }}
-                  transition={{ duration: 3, repeat: Infinity }}
+                  className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-primary/30 blur-3xl"
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.6, 0.2] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.div
-                  className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-cyan-500/20 blur-xl"
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.5, 0.2] }}
-                  transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+                  className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-cyan-500/25 blur-2xl"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.45, 0.15] }}
+                  transition={{ duration: 5, repeat: Infinity, delay: 1, ease: 'easeInOut' }}
                 />
+                <motion.div
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-indigo-400/15 blur-xl"
+                  animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.1, 0.3, 0.1] }}
+                  transition={{ duration: 3.5, repeat: Infinity, delay: 0.5, ease: 'easeInOut' }}
+                />
+                {/* Glass highlight strip */}
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
                 <div className="relative flex items-start gap-3">
-                  {/* Mascot avatar — larger and more animated */}
+                  {/* Cinematic Mascot Avatar — bigger, multi-layered glass */}
                   <motion.div
-                    className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-primary/30 to-cyan-500/20 border border-primary/30 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(var(--primary-rgb,99,102,241),0.3)]"
+                    className="relative flex-shrink-0"
                     animate={{ 
-                      y: [0, -4, 0],
-                      rotate: [0, 5, -5, 0],
+                      y: [0, -5, 0],
+                      rotate: [0, 3, -3, 0],
                     }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
                   >
-                    {currentDialogue.emoji}
+                    {/* Outer glow ring */}
+                    <motion.div
+                      className="absolute -inset-1.5 rounded-2xl bg-gradient-to-br from-primary/40 via-cyan-500/30 to-indigo-500/40 blur-md"
+                      animate={{ opacity: [0.4, 0.8, 0.4], scale: [0.95, 1.05, 0.95] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    {/* Avatar container */}
+                    <div
+                      className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-2xl overflow-hidden"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(99,102,241,0.25) 0%, rgba(6,182,212,0.2) 50%, rgba(99,102,241,0.15) 100%)',
+                        border: '1.5px solid rgba(255,255,255,0.18)',
+                        boxShadow: '0 4px 20px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.1)',
+                      }}
+                    >
+                      {/* Inner glass shine */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute bottom-0 inset-x-0 h-1/3 bg-gradient-to-t from-white/[0.05] to-transparent pointer-events-none" />
+                      <span className="relative z-10 drop-shadow-lg">{currentDialogue.emoji}</span>
+                    </div>
                   </motion.div>
+
                   {/* Dialogue content */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-primary mb-1">{currentDialogue.title}</p>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <p className="text-xs font-bold text-primary mb-1 drop-shadow-sm">{currentDialogue.title}</p>
                     <p className="text-[11px] text-foreground/80 leading-relaxed mb-2">{currentDialogue.message}</p>
-                    {/* Tip callout */}
+                    {/* Tip callout with glass effect */}
                     <motion.div 
-                      className="text-[10px] text-cyan-400/90 bg-cyan-500/[0.08] border border-cyan-500/[0.12] rounded-lg px-2 py-1.5 leading-snug"
+                      className="text-[10px] text-cyan-400/90 rounded-lg px-2.5 py-1.5 leading-snug"
+                      style={{
+                        background: 'rgba(6,182,212,0.06)',
+                        border: '1px solid rgba(6,182,212,0.12)',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                      }}
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.5 }}
