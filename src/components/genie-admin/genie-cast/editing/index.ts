@@ -13,3 +13,4 @@
 export { VideoTimelineEditor } from './VideoTimelineEditor';
 export { ExportDistributionPanel } from './ExportDistributionPanel';
 export { SceneAwareTeleprompter } from './SceneAwareTeleprompter';
+export { VideoEffectsPanel } from './VideoEffectsPanel';

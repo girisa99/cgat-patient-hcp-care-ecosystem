@@ -19,3 +19,4 @@ export { useAVSync, type AVSyncHook } from './useAVSync';
 export { useStreamingDownload, type StreamingDownloadHook, VIDEO_DOWNLOAD_PRESETS } from './useStreamingDownload';
 export { useProductionEstimator, type ProductionEstimatorHook, PROVIDER_LIMITS, TTS_PROVIDER_LIMITS } from './useProductionEstimator';
 export { useProductionSession, type ProductionSessionHook, type ProductionFormat, type SceneMediaState, type SceneSegmentType } from './useProductionSession';
+export { useVideoEffects, type VideoEffectsHook, type VideoEffect, type EffectPreset, type EffectCategory, type ColorGradingPreset, type FilterType, type MotionEffect, type CompositionMode } from './useVideoEffects';
