@@ -378,6 +378,12 @@ export type ProductionUseCase =
   | 'industry_education'            // School, university, e-learning platform showcase
   | 'industry_hospitality'          // Hotel, resort, restaurant ambiance showcase
   | 'industry_manufacturing'        // Factory tour, production process, quality showcase
+  // ─── Education-Specific Content Templates ──────────────────────────────────
+  | 'edu_course_module'             // Course lesson/module video — structured teaching content
+  | 'edu_student_testimonial'       // Student success story / placement highlight
+  | 'edu_open_day'                  // Open Day / admission event promotion
+  | 'edu_alumni_spotlight'          // Alumni achievement showcase for brand building
+  | 'edu_annual_day'               // Annual Day / Convocation / Sports Day highlights
   | 'custom';
 
 // ─── Pipeline Routing ────────────────────────────────────────────────────────
@@ -1061,6 +1067,125 @@ export const USE_CASE_TEMPLATES: UseCaseTemplate[] = [
     suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
     supportedStyles: ['corporate_premium', 'cinematic_dramatic', 'modern_clean', 'industrial_modern', 'documentary'],
     tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  // ─── Education-Specific Content Templates ─────────────────────────────────
+
+  {
+    useCase: 'edu_course_module',
+    name: 'Course Module / Lesson Video',
+    description: 'Structured teaching content — concept explanation, visual aids, examples, practice problems, summary. For online courses, classroom supplements, or self-paced learning.',
+    suggestedInputs: ['text', 'presentation', 'document', 'image_sequence', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 6, max: 15 },
+    typicalDuration: { min: 120, max: 600 },
+    defaultAssetHandling: 'ai_generate',
+    sceneTemplates: [
+      { title: 'Module Introduction', description: 'What you will learn — learning objectives, prerequisites, expected outcomes', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Concept 1 — Foundation', description: 'Core concept explanation with visual aids — diagrams, animations, real-world analogies', suggestedVisual: 'ai_generated', suggestedDuration: 45, suggestedTransition: 'slide_left' },
+      { title: 'Worked Example 1', description: 'Step-by-step problem solving — show the process, not just the answer', suggestedVisual: 'ai_generated', suggestedDuration: 30, suggestedTransition: 'crossfade' },
+      { title: 'Concept 2 — Building On', description: 'Advanced concept building on the foundation — connecting ideas', suggestedVisual: 'ai_generated', suggestedDuration: 45, suggestedTransition: 'slide_left' },
+      { title: 'Practice Challenge', description: 'Try it yourself — pause point with a problem to solve, then reveal the solution', suggestedVisual: 'ai_generated', suggestedDuration: 20, suggestedTransition: 'crossfade' },
+      { title: 'Real-World Application', description: 'Where this applies — industry use case, daily life example, career relevance', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Summary & Key Takeaways', description: 'Recap all concepts visually — cheat sheet, formula summary, mind map', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Next Steps', description: 'What comes next — preview next module, homework assignment, further reading', suggestedVisual: 'ai_generated', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'character_generate', 'text_to_image', 'image_to_video', 'text_to_speech', 'lip_sync', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['whiteboard', 'infographic_motion', 'pixar_3d', 'flat_design', 'modern_clean', 'playful_fun'],
+    tierAvailability: ['nano', 'micro', 'small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'edu_student_testimonial',
+    name: 'Student Success Story / Placement Highlight',
+    description: 'Student or alumni success narrative — from enrollment to achievement. For admissions, brand building, or social proof. Works for placement announcements, toppers, and scholarship winners.',
+    suggestedInputs: ['text', 'image', 'video', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 5, max: 8 },
+    typicalDuration: { min: 30, max: 120 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Meet the Student', description: 'Introduction — name, background, where they came from, their dream', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'The Challenge', description: 'What they faced — financial constraints, academic struggles, career confusion', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'The Journey', description: 'How the institution helped — mentorship, facilities, opportunities, support system', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'The Achievement', description: 'The big result — exam score, placement offer, research paper, competition win, scholarship', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'zoom_through' },
+      { title: 'In Their Words', description: 'Student/parent quote — emotional, authentic, specific praise for what made the difference', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Your Story Starts Here', description: 'CTA — join the institution, next batch info, apply now, visit campus', suggestedVisual: 'ai_generated', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'character_generate', 'lip_sync', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['warm_homestyle', 'documentary', 'modern_clean', 'cultural_rich', 'cinematic_dramatic'],
+    tierAvailability: ['micro', 'small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'edu_open_day',
+    name: 'Open Day / Admission Event Promo',
+    description: 'Invitation video for open days, campus visits, admission fairs, parent orientation, or career counseling sessions. Builds FOMO and drives RSVPs.',
+    suggestedInputs: ['text', 'image', 'brand_assets'],
+    suggestedMode: 'instant',
+    suggestedQuality: 'standard',
+    typicalSceneCount: { min: 4, max: 7 },
+    typicalDuration: { min: 20, max: 60 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'The Invitation', description: 'You\'re invited — exciting, welcoming tone with date and event name', suggestedVisual: 'ai_generated', suggestedDuration: 6, suggestedTransition: 'crossfade' },
+      { title: 'What to Expect', description: 'Campus tour, meet teachers, lab demos, student interaction, Q&A, scholarship info', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'slide_left' },
+      { title: 'Why Attend', description: 'Exclusive offers for attendees — fee waiver, early admission, scholarship priority', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Event Details', description: 'Date, time, venue, how to reach, what to bring, registration link', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'crossfade' },
+      { title: 'Register Now', description: 'CTA — limited seats, RSVP link, phone number, urgency element', suggestedVisual: 'ai_generated', suggestedDuration: 6, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['playful_fun', 'modern_clean', 'warm_homestyle', 'vibrant_street', 'pixar_3d', 'cultural_rich'],
+    tierAvailability: ['nano', 'micro', 'small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'edu_alumni_spotlight',
+    name: 'Alumni Achievement Showcase',
+    description: 'Highlight notable alumni achievements for brand building — career milestones, entrepreneurship, research, social impact. Strengthens institutional reputation.',
+    suggestedInputs: ['text', 'image', 'video', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 5, max: 10 },
+    typicalDuration: { min: 45, max: 150 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Alumni Introduction', description: 'Name, graduation year, current role/company — establish credibility', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'crossfade' },
+      { title: 'The College Days', description: 'Throwback — what they studied, campus memories, formative experiences, mentors', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Career Journey', description: 'How their education translated to career — first job, growth, pivots, breakthroughs', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Current Impact', description: 'What they do now — leadership, innovation, social impact, industry recognition', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Message to Students', description: 'Advice and inspiration — what they wish they knew, how to make the most of college', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Alumni Network', description: 'Join a legacy — alumni count, notable achievers, mentorship programs, events', suggestedVisual: 'ai_generated', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'character_generate', 'lip_sync', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['documentary', 'cinematic_dramatic', 'modern_clean', 'warm_homestyle', 'corporate_premium'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'edu_annual_day',
+    name: 'Annual Day / Event Highlights',
+    description: 'Capture and showcase school/college events — Annual Day, Convocation, Sports Day, Science Fair, Cultural Fest. Shareable highlights reel.',
+    suggestedInputs: ['video', 'image_sequence', 'image', 'text', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 6, max: 12 },
+    typicalDuration: { min: 60, max: 180 },
+    defaultAssetHandling: 'enhance',
+    sceneTemplates: [
+      { title: 'Event Opening', description: 'Title card with event name, date, institution name — set the mood with music', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'crossfade' },
+      { title: 'Venue & Setup', description: 'Decorated venue, stage, seating, banners — the visual grandeur', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'zoom_through' },
+      { title: 'Inauguration', description: 'Chief guest arrival, lamp lighting, inaugural address, national anthem', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Performances', description: 'Best moments — dance, music, drama, speeches, competitions, awards', suggestedVisual: 'hybrid', suggestedDuration: 30, suggestedTransition: 'slide_left' },
+      { title: 'Achievements & Awards', description: 'Prize distribution, topper recognition, special awards, certificates', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Happy Faces', description: 'Montage of students, parents, teachers — joy, pride, celebration', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Thank You & Credits', description: 'Acknowledgments, sponsors, organizing team, save-the-date for next year', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['warm_homestyle', 'cultural_rich', 'cinematic_dramatic', 'playful_fun', 'modern_clean', 'documentary'],
+    tierAvailability: ['nano', 'micro', 'small', 'medium', 'large', 'enterprise'],
   },
 ];
 
