@@ -1,5 +1,5 @@
 /**
- * CREATE CONFIGURE STEP
+ * CREATE CONFIGURE STEP — Redesigned for Intuitive UX
  *
  * Steps 4-7 of the CREATE workflow:
  * - Step 4: Platform & Languages (primary platform, input language, script transcreation, dubbing/subtitle)
@@ -7,11 +7,17 @@
  * - Step 6: Universal Enrichment Prompt
  * - Step 7: Production & Safety Pipeline (info only)
  *
+ * UX Improvements:
+ * - Tooltips on every section explaining what it does
+ * - Collapsible sections for progressive disclosure (not overwhelming)
+ * - Preview popout button for real-time configuration preview
+ * - Cleaner visual hierarchy with step numbers and completion indicators
+ *
  * Extracted from GenieCastConsolidatedTabs.tsx for maintainability.
  */
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,14 +29,29 @@ import {
   AlertTriangle,
   Check,
   ChevronDown,
+  ChevronUp,
+  HelpCircle,
+  Eye,
+  ZoomIn,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   Select,
   SelectContent,
@@ -43,11 +64,102 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { CreateHeroBanner } from './CreateHeroBanner';
+import { PreviewPopout } from './PreviewPopout';
 import { PortalDropdown } from '../create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from '../StyleCustomizationPanel';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import type { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import type { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
+
+/**
+ * Collapsible section wrapper with tooltip, step indicator, and completion state.
+ * Progressive disclosure: only the section the user is actively working on is open.
+ */
+function ConfigSection({
+  step,
+  title,
+  description,
+  tooltip,
+  icon,
+  isComplete,
+  defaultOpen = false,
+  children,
+}: {
+  step: number;
+  title: string;
+  description: string;
+  tooltip: string;
+  icon: React.ReactNode;
+  isComplete: boolean;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <TooltipProvider>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <Card className={cn(
+          "transition-all",
+          isComplete && !open && "border-green-500/30 bg-green-500/[0.02]",
+          open && "ring-1 ring-primary/20"
+        )}>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-2 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  {/* Step number circle */}
+                  <div className={cn(
+                    "h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors",
+                    isComplete
+                      ? "bg-green-500 text-white"
+                      : "bg-primary/10 text-primary"
+                  )}>
+                    {isComplete ? <Check className="h-3 w-3" /> : step}
+                  </div>
+                  {icon}
+                  <span>{title}</span>
+                  {/* Tooltip */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-[250px] text-xs">
+                      {tooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  {isComplete && !open && (
+                    <Badge variant="secondary" className="text-[9px] bg-green-500/10 text-green-600">
+                      Done
+                    </Badge>
+                  )}
+                  {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </div>
+              </div>
+              <CardDescription className="text-xs">{description}</CardDescription>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CardContent className="space-y-4 pt-0">
+                  {children}
+                </CardContent>
+              </motion.div>
+            </AnimatePresence>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+    </TooltipProvider>
+  );
+}
 
 interface CreateConfigureStepProps {
   // Session state (read)
@@ -155,6 +267,13 @@ export function CreateConfigureStep({
   onContinueToTemplates,
   renderRegionHierarchySelector,
 }: CreateConfigureStepProps) {
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Completion checks
+  const isPlatformComplete = !!primaryPlatform;
+  const isStyleComplete = selectedVisualStyleIds.length > 0;
+  const isEnrichmentComplete = !!enrichmentPrompt;
+
   return (
     <motion.div
       key="configure"
@@ -165,34 +284,62 @@ export function CreateConfigureStep({
       className="space-y-5"
     >
       <CreateHeroBanner pageId="configure" />
-      {/* Back to Content Selection */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="gap-1.5 mb-1 text-muted-foreground hover:text-foreground"
-        onClick={onBackToIntent}
-      >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        Back to Content Selection
-      </Button>
+
+      {/* Top bar: Back + Preview button */}
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-muted-foreground hover:text-foreground"
+          onClick={onBackToIntent}
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back to Content Selection
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setShowPreview(true)}
+        >
+          <Eye className="w-3.5 h-3.5" />
+          Preview Configuration
+        </Button>
+      </div>
+
+      {/* Preview Popout */}
+      <PreviewPopout
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        selectedCategoryId={selectedCategoryId}
+        selectedFormatId={selectedFormatId}
+        selectedSubFormatId={selectedSubFormatId}
+        selectedVisualStyleIds={selectedVisualStyleIds}
+        selectedCapabilityIds={selectedCapabilityIds}
+        selectedCharacterIds={selectedCharacterIds}
+        targetDuration={targetDuration}
+        selectedResolution={selectedResolution}
+        selectedAspectRatio={selectedAspectRatio}
+        productionQuality={productionQuality}
+        enrichmentPrompt={enrichmentPrompt}
+        primaryPlatform={primaryPlatform}
+        lipSyncEnabled={lipSyncEnabled}
+        dubbingEnabled={dubbingEnabled}
+        contentRegistry={contentRegistry}
+      />
 
       {/* ================================================================ */}
       {/* STEP 4: Platform + Languages                                     */}
       {/* ================================================================ */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Globe className="w-4 h-4 text-primary" />
-            <span className="flex items-center gap-1.5">
-              <Badge variant="outline" className="text-[10px] px-1.5 font-mono">Step 4</Badge>
-              Platform & Languages
-            </span>
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Select your primary platform and output languages for regional distribution.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <ConfigSection
+        step={4}
+        title="Platform & Languages"
+        description="Select your primary platform and output languages for regional distribution."
+        tooltip="Choose where your content will be published (YouTube, TikTok, etc.) and which languages to generate. The platform choice auto-optimizes aspect ratio and duration. Languages enable AI transcreation for each region."
+        icon={<Globe className="w-4 h-4 text-primary" />}
+        isComplete={isPlatformComplete}
+        defaultOpen={true}
+      >
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs">Primary Platform</Label>
@@ -321,26 +468,21 @@ export function CreateConfigureStep({
             <Label className="text-xs">Dubbing & Subtitle Languages <span className="text-muted-foreground">(TTS + subtitles per zone)</span></Label>
             {renderRegionHierarchySelector(dubbingSubtitleLanguages, setDubbingSubtitleLanguages, 'dubbing')}
           </div>
-        </CardContent>
-      </Card>
+      </ConfigSection>
 
       {/* ================================================================ */}
       {/* STEP 5: Visual & Asset Configuration                             */}
       {/* ================================================================ */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Palette className="w-4 h-4 text-primary" />
-            <span className="flex items-center gap-1.5">
-              <Badge variant="outline" className="text-[10px] px-1.5 font-mono">Step 5</Badge>
-              Visual & Asset Configuration
-            </span>
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Generation style, capabilities, asset source, lip-sync & dubbing settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <ConfigSection
+        step={5}
+        title="Visual & Asset Configuration"
+        description="Generation style, capabilities, asset source, lip-sync & dubbing settings."
+        tooltip="Define the look and feel of your content. Pick visual styles (cinematic, minimal, etc.), choose AI capabilities (avatar, lip-sync, 3D), set resolution, and configure how assets are sourced. Each style auto-selects recommended capabilities."
+        icon={<Palette className="w-4 h-4 text-primary" />}
+        isComplete={isStyleComplete}
+        defaultOpen={false}
+      >
+        <div className="space-y-4">
           {/* Holiday/Festival Awareness Banner */}
           {holidayAwareness?.topSuggestion && (
             <motion.div
@@ -877,20 +1019,21 @@ export function CreateConfigureStep({
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </ConfigSection>
 
       {/* ================================================================ */}
       {/* Resolution & Quality (extends Step 5)                            */}
       {/* ================================================================ */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Settings2 className="w-4 h-4 text-primary" />
-            Resolution & Quality
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <ConfigSection
+        step={5}
+        title="Resolution & Quality"
+        description="Output resolution, aspect ratio, and production quality settings."
+        tooltip="Set the pixel resolution and aspect ratio for your output. Higher resolution takes longer to render. Quality presets control encoding: Preview is fast/low-size, Production is balanced, Cinematic is highest fidelity."
+        icon={<Settings2 className="w-4 h-4 text-primary" />}
+        isComplete={!!selectedResolution}
+        defaultOpen={false}
+      >
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs">Aspect Ratio</Label>
@@ -960,26 +1103,21 @@ export function CreateConfigureStep({
               ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
+      </ConfigSection>
 
       {/* ================================================================ */}
       {/* STEP 6: Universal Enrichment Prompt                              */}
       {/* ================================================================ */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Wand2 className="w-4 h-4 text-primary" />
-            <span className="flex items-center gap-1.5">
-              <Badge variant="outline" className="text-[10px] px-1.5 font-mono">Step 6</Badge>
-              Universal Enrichment Prompt
-            </span>
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Describe your vision in any language. AI generates scenes/templates scoped by ALL above selections.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <ConfigSection
+        step={6}
+        title="Universal Enrichment Prompt"
+        description="Describe your vision in any language. AI generates scenes/templates scoped by ALL above selections."
+        tooltip="This is your creative brief to the AI. Be as specific as possible: describe tone, audience, key messages, call-to-action. The AI combines this with your style, platform, and language selections to generate optimized content."
+        icon={<Wand2 className="w-4 h-4 text-primary" />}
+        isComplete={isEnrichmentComplete}
+        defaultOpen={false}
+      >
+        <div className="space-y-3">
           <textarea
             className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
             placeholder="e.g. Create a cinematic product demo for our AI platform. Focus on enterprise decision-makers. Tone: professional yet innovative. Highlight ROI metrics and competitive advantages..."
@@ -999,26 +1137,21 @@ export function CreateConfigureStep({
               </Badge>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </ConfigSection>
 
       {/* ================================================================ */}
       {/* STEP 7 Preview: Safety Pipeline (info only)                      */}
       {/* ================================================================ */}
-      <Card className="border-dashed">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <span className="flex items-center gap-1.5">
-              <Badge variant="outline" className="text-[10px] px-1.5 font-mono">Step 7</Badge>
-              Production & Safety Pipeline
-            </span>
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Automated safety checks run during production.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ConfigSection
+        step={7}
+        title="Production & Safety Pipeline"
+        description="Automated safety checks run during production."
+        tooltip="These safety checks run automatically when your content is produced. They detect faces, enforce style guidelines (no deepfakes), add provenance watermarks (C2PA), and handle legal consent workflows. No action needed from you."
+        icon={<AlertTriangle className="w-4 h-4 text-amber-500" />}
+        isComplete={true}
+        defaultOpen={false}
+      >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {[
               { icon: '\uD83D\uDD0D', label: 'Upload Scan', desc: 'Face & trademark detection' },
@@ -1033,8 +1166,7 @@ export function CreateConfigureStep({
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+      </ConfigSection>
 
       {/* Continue to Templates */}
       <div className="flex justify-between items-center">

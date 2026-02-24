@@ -4,7 +4,7 @@
  * Connected to universal enrichment via format config.
  */
 import React, { useState, useMemo } from 'react';
-import { Plus, ChevronRight, Sparkles } from 'lucide-react';
+import { Plus, ChevronRight, Sparkles, HelpCircle } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ContentCategory, ContentFormat, ContentSubFormat } from '@/hooks/useCastContentRegistry';
 
@@ -121,16 +127,30 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
   const showSubFormatStep = selectedFormatId && hasSubFormats;
 
   return (
+    <TooltipProvider>
     <div className="space-y-6">
       {/* STEP 1: Category Selection */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+          <div className={cn(
+            "flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors",
+            selectedCategoryId ? "bg-green-500 text-white" : "bg-primary text-primary-foreground"
+          )}>
             {selectedCategoryId ? '✓' : '1'}
           </div>
-          <div>
-            <h3 className="text-sm font-semibold">What are you creating?</h3>
-            <p className="text-xs text-muted-foreground">Pick an industry or content category</p>
+          <div className="flex items-center gap-1.5">
+            <div>
+              <h3 className="text-sm font-semibold">What are you creating?</h3>
+              <p className="text-xs text-muted-foreground">Pick an industry or content category</p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-help shrink-0" />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-[250px] text-xs">
+                Choose the industry or topic area for your content. This filters the available formats and templates to match your use case. You can also add custom categories.
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -177,14 +197,27 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
       {selectedCategoryId && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+            <div className={cn(
+              "flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors",
+              selectedFormatId ? "bg-green-500 text-white" : "bg-primary text-primary-foreground"
+            )}>
               {selectedFormatId ? '✓' : '2'}
             </div>
-            <div>
-              <h3 className="text-sm font-semibold">Choose a format</h3>
-              <p className="text-xs text-muted-foreground">
-                {selectedCategory?.label} → Select output format
-              </p>
+            <div className="flex items-center gap-1.5">
+              <div>
+                <h3 className="text-sm font-semibold">Choose a format</h3>
+                <p className="text-xs text-muted-foreground">
+                  {selectedCategory?.label} → Select output format
+                </p>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-help shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-[250px] text-xs">
+                  Select the output format for your content (e.g. Short Video, Podcast, Social Post). Each format has specific capabilities like TTS, video generation, and messaging. Badges show what's included.
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -235,14 +268,27 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
       {showSubFormatStep && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+            <div className={cn(
+              "flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors",
+              selectedSubFormatId ? "bg-green-500 text-white" : "bg-primary text-primary-foreground"
+            )}>
               {selectedSubFormatId ? '✓' : '3'}
             </div>
-            <div>
-              <h3 className="text-sm font-semibold">Refine your content type</h3>
-              <p className="text-xs text-muted-foreground">
-                {selectedCategory?.label} → {selectedFormat?.label} → Choose a specific type
-              </p>
+            <div className="flex items-center gap-1.5">
+              <div>
+                <h3 className="text-sm font-semibold">Refine your content type</h3>
+                <p className="text-xs text-muted-foreground">
+                  {selectedCategory?.label} → {selectedFormat?.label} → Choose a specific type
+                </p>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-help shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-[250px] text-xs">
+                  Pick a more specific content type within your chosen format. For example, within "Video" you might choose "Explainer Video", "Testimonial", or "Product Demo". This fine-tunes the AI generation.
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -378,5 +424,6 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 };
