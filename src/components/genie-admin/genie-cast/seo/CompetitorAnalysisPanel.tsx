@@ -108,7 +108,7 @@ export const CompetitorAnalysisPanel: React.FC<CompetitorAnalysisPanelProps> = (
       const { data: aiResult, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           action: 'competitor_seo_analysis',
           prompt: `Analyze video content competitors for the keyword/niche: "${searchKeyword}"
           ${competitorUrls ? `Competitor channels to analyze: ${competitorUrls}` : ''}

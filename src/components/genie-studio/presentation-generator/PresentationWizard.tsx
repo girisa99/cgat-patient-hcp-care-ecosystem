@@ -3414,7 +3414,7 @@ Respond with JSON:
                   const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
                     body: {
                       provider: 'gemini',
-                      model: 'gemini-2.0-flash',
+                      model: 'gemini-2.5-flash',
                       prompt,
                       systemPrompt: 'You are a presentation enhancement expert. Improve slide content while maintaining the core message. Always respond with valid JSON.',
                     },
@@ -3476,7 +3476,7 @@ Respond with JSON: { "title": "...", "bullets": ["...", "..."], "speakerNotes": 
                     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
                       body: {
                         provider: 'gemini',
-                        model: 'gemini-2.0-flash',
+                        model: 'gemini-2.5-flash',
                         prompt,
                         systemPrompt: 'You are a presentation enhancement expert. Always respond with valid JSON.',
                       },

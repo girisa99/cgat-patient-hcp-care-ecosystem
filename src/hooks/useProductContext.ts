@@ -27,6 +27,24 @@ export interface ProductContextProduct {
   description: string | null;
   icon: string | null;
   is_system_default: boolean | null;
+  // Phase 4: Location data for Google Places enrichment
+  business_city: string | null;
+  business_state: string | null;
+  business_country: string | null;
+  business_zipcode: string | null;
+}
+
+export interface GooglePlacesSnapshot {
+  businessName: string;
+  address: string | null;
+  rating: number | null;
+  totalReviews: number;
+  placeId: string | null;
+  businessTypes: string[];
+  website: string | null;
+  editorialSummary: string | null;
+  competitorInsights: Array<{ name: string; snippet: string }>;
+  fetchedAt: string;
 }
 
 export interface ProductContextAsset {
@@ -94,6 +112,12 @@ export interface UseProductContextReturn {
   ttsVersions: ProductContextTTS[];
   /** Computed summary stats */
   summary: ProductContextSummary;
+  /** Phase 4: Google Places enrichment snapshot (fetched on product select) */
+  googlePlaces: GooglePlacesSnapshot | null;
+  /** Phase 4: Whether Google Places data is available for this product */
+  hasGooglePlaces: boolean;
+  /** Phase 4: Location string for display */
+  locationDisplay: string | null;
   /** Loading state */
   isLoading: boolean;
   /** Error state */
@@ -124,7 +148,7 @@ export function useProductContext(productId: string | null): UseProductContextRe
     queryFn: async () => {
       const { data, error } = await supabase
         .from('marketing_products')
-        .select('id, name, category, description, icon, is_system_default')
+        .select('id, name, category, description, icon, is_system_default, business_city, business_state, business_country, business_zipcode')
         .eq('is_active', true)
         .order('sort_order');
       if (error) throw error;
@@ -188,6 +212,54 @@ export function useProductContext(productId: string | null): UseProductContextRe
     return productsQuery.data.find(p => p.id === productId) || null;
   }, [productId, productsQuery.data]);
 
+  // Phase 4: Google Places enrichment (lazy — fetches when product has location)
+  const hasLocation = !!(product?.business_city || product?.business_state);
+  const locationDisplay = useMemo(() => {
+    if (!product) return null;
+    const parts = [product.business_city, product.business_state, product.business_country].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : null;
+  }, [product]);
+
+  const googlePlacesQuery = useQuery({
+    queryKey: ['product-context', 'google-places', productId, locationDisplay],
+    queryFn: async (): Promise<GooglePlacesSnapshot | null> => {
+      if (!product || !locationDisplay) return null;
+      try {
+        const { data, error } = await supabase.functions.invoke('local-business-enrichment', {
+          body: {
+            businessName: product.name,
+            city: product.business_city || undefined,
+            state: product.business_state || undefined,
+            country: product.business_country || undefined,
+            zipcode: product.business_zipcode || undefined,
+            vertical: product.category || undefined,
+          },
+        });
+        if (error || !data?.success) return null;
+        const place = data.data;
+        return {
+          businessName: place?.place?.name || product.name,
+          address: place?.place?.formatted_address || null,
+          rating: place?.place?.rating || null,
+          totalReviews: place?.details?.reviews?.length || 0,
+          placeId: place?.place?.place_id || null,
+          businessTypes: place?.place?.types || [],
+          website: place?.details?.website || null,
+          editorialSummary: place?.details?.editorialSummary || null,
+          competitorInsights: (place?.competitors || []).map((c: any) => ({
+            name: c.title || c.name || '',
+            snippet: c.snippet || c.markdown?.substring(0, 200) || '',
+          })),
+          fetchedAt: new Date().toISOString(),
+        };
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!productId && hasLocation,
+    staleTime: 15 * 60 * 1000, // Cache for 15 minutes
+  });
+
   // Compute summary
   const summary = useMemo((): ProductContextSummary => {
     const assets = assetsQuery.data || [];
@@ -243,6 +315,9 @@ export function useProductContext(productId: string | null): UseProductContextRe
     scripts: scriptsQuery.data || [],
     ttsVersions: ttsQuery.data || [],
     summary,
+    googlePlaces: googlePlacesQuery.data || null,
+    hasGooglePlaces: !!googlePlacesQuery.data,
+    locationDisplay,
     isLoading,
     error,
     hasProduct: !!productId && !!product,

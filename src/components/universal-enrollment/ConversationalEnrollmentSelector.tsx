@@ -168,7 +168,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
           'Filesystem MCP Server - Secure document handling',
           'BioMCP Server - Specialized biotech/pharma workflows (if applicable)'
         ],
-        aiProviders: 'Works with OpenAI GPT-5, Claude 3.5, Gemini 2.0 (Provider-agnostic)',
+        aiProviders: 'Works with OpenAI GPT-5, Claude 3.5, Gemini 2.5 (Provider-agnostic)',
         techStack: ['React + TypeScript', 'Supabase Backend', 'MCP Protocol', 'Real-time WebSockets', 'WhatsApp Business API'],
         benefits: ['WhatsApp patient enrollment', 'NPI real-time verification', 'Fastest completion time', 'Highest accuracy', 'Real-time validation', 'Smart assistance'],
         timeEstimate: '3-5 minutes (with WhatsApp)',

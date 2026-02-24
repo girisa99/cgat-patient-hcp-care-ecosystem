@@ -115,9 +115,9 @@ export const GEMINI_MODELS = {
   // Primary - Quality-critical tasks
   GEMINI_3_FLASH: 'gemini-3.0-flash-preview',
   GEMINI_2_5_PRO: 'gemini-2.5-pro-preview-05-06',
-  // Backup - Speed/cost-optimized  
-  GEMINI_2_FLASH: 'gemini-2.0-flash',
-  GEMINI_2_FLASH_LITE: 'gemini-2.0-flash-lite',
+  // Backup - Speed/cost-optimized
+  GEMINI_2_FLASH: 'gemini-2.5-flash',
+  GEMINI_2_FLASH_LITE: 'gemini-2.5-flash',
   // Vision/Image
   IMAGEN_3: 'imagen-3.0-generate-001',
   // Video
@@ -143,9 +143,9 @@ export function getAIProviders(): Record<string, AIProviderConfig> {
       available: !!geminiKey,
       tier: 'primary',
     },
-    // Backup: Gemini 2.0 Flash (speed-optimized)
+    // Backup: Gemini 2.5 Flash (speed-optimized)
     gemini_backup: {
-      name: 'Google Gemini 2.0 Flash',
+      name: 'Google Gemini 2.5 Flash',
       model: GEMINI_MODELS.GEMINI_2_FLASH,
       apiKey: geminiKey,
       available: !!geminiKey,
@@ -170,12 +170,12 @@ export function getAIProviders(): Record<string, AIProviderConfig> {
 
 /**
  * Get the first available AI provider by tier priority
- * Priority: primary (Gemini 3.0) -> backup (Gemini 2.0) -> fallback (OpenAI/Claude)
+ * Priority: primary (Gemini 3.0) -> backup (Gemini 2.5) -> fallback (OpenAI/Claude)
  */
 export function getFirstAvailableProvider(): AIProviderConfig | null {
   const providers = getAIProviders();
   
-  // Priority order: Gemini 3.0 (primary) -> Gemini 2.0 (backup) -> OpenAI -> Claude
+  // Priority order: Gemini 3.0 (primary) -> Gemini 2.5 (backup) -> OpenAI -> Claude
   const priorityOrder = ['gemini_primary', 'gemini_backup', 'openai', 'claude'];
   
   for (const providerId of priorityOrder) {

@@ -147,7 +147,7 @@ async function generateWithProvider(
 async function generateWithGemini(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.gemini();
   if (!apiKey) throw new Error('Gemini key missing');
-  const model = options.model || 'gemini-2.0-flash-preview-image-generation';
+  const model = options.model || 'gemini-2.5-flash-preview-image-generation';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {

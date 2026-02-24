@@ -33,7 +33,7 @@ export const PROCESSING_STAGE_LABELS: Record<string, string> = {
 // ============================================================================
 
 export const AI_MODELS = {
-  GEMINI_PRO_VISION: 'gemini-2.0-flash',
+  GEMINI_PRO_VISION: 'gemini-2.5-flash',
   GEMINI_1_5_PRO: 'gemini-2.5-pro',
   GPT_4O_VISION: 'gpt-4o',
   GPT_4O: 'gpt-4o',

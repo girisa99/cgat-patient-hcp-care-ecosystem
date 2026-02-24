@@ -297,7 +297,7 @@ Return as JSON array:
   const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
     body: {
       provider: 'gemini',
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       prompt,
       systemPrompt: 'You are an expert visual content strategist. Return only valid JSON array, no markdown.',
       temperature: 0.7,
@@ -410,7 +410,7 @@ Return as JSON:
   const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
     body: {
       provider,
-      model: provider === 'gemini' ? 'gemini-2.0-flash' : provider === 'openai' ? 'gpt-4o' : 'claude-3-5-haiku-20241022',
+      model: provider === 'gemini' ? 'gemini-2.5-flash' : provider === 'openai' ? 'gpt-4o' : 'claude-3-5-haiku-20241022',
       prompt,
       systemPrompt: `You are an expert scriptwriter for ${outputFormat.replace('_', ' ')}s. Create engaging, well-structured content that maintains audience attention throughout. Return only valid JSON, no markdown.`,
       temperature: 0.7,
@@ -449,7 +449,7 @@ export async function analyzeURLContent(url: string): Promise<{
   const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
     body: {
       provider: 'gemini',
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       prompt: `Analyze this URL and extract key information for script creation: ${url}
 
 Return JSON:

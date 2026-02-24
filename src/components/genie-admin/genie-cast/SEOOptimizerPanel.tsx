@@ -226,7 +226,7 @@ export const SEOOptimizerPanel: React.FC = () => {
       const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           action: 'analyze_seo',
           prompt: `Analyze this video content for SEO optimization:
             Title: "${title}"

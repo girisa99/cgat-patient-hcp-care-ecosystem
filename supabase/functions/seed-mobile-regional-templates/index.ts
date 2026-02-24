@@ -53,7 +53,7 @@ const VIDEO_ROUTING = {
 
 // ============================================
 // IMAGE/THUMBNAIL PROVIDER ROUTING
-// Gemini 3 (Vertex AI) PRIMARY, Gemini 2.0 FALLBACK
+// Gemini 3 (Vertex AI) PRIMARY, Gemini 2.5 FALLBACK
 // ============================================
 const IMAGE_ROUTING = {
   primary: ['vertex_imagen3', 'banana_nano', 'gemini_3_pro'],

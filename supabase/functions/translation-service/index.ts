@@ -467,7 +467,7 @@ Text to translate:
 ${text}`;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -554,7 +554,7 @@ CRITICAL INSTRUCTIONS:
       },
       body: JSON.stringify({
         provider: 'gemini',  // Use Gemini for translation (Claude/OpenAI also available)
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         prompt: text,
         systemPrompt: systemPrompt,
         temperature: 0.3,
@@ -641,7 +641,7 @@ ${text}`;
     console.log(`[TranslationService] Transcreating to ${targetLangName} (region: ${region || 'global'})`);
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -706,7 +706,7 @@ async function handleLanguageDetection(request: TranslationRequest): Promise<Tra
       },
       body: JSON.stringify({
         provider: 'gemini',
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         prompt: text.slice(0, 500),
         systemPrompt: 'You are a language detection expert. Analyze the text and return ONLY a JSON object with the detected language code (ISO 639-1) and confidence score between 0 and 1. Example: {"language": "en", "confidence": 0.95, "alternatives": [{"language": "de", "confidence": 0.03}]}',
         temperature: 0.1,

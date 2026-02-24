@@ -88,7 +88,7 @@ const providers: ProviderCapability[] = [
       translation: true, imageGen: true, videoGen: true, avatars: false,
       threeD: false, voiceClone: false, embeddings: true
     },
-    models: ['Gemini 2.0 Flash', 'Gemini 1.5 Pro', 'Veo 2', 'Imagen 3'],
+    models: ['Gemini 2.5 Flash', 'Gemini 1.5 Pro', 'Veo 2', 'Imagen 3'],
     regions: ['India', 'SEA', 'Africa', 'Global'],
     tier: 'premium',
     costTier: 'medium',

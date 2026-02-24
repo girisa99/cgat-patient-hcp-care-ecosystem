@@ -216,7 +216,7 @@ async function callVertexGemini(model: string, description: string): Promise<any
 
 async function callGeminiConsumer(apiKey: string, description: string): Promise<any> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -408,7 +408,7 @@ function buildRegionChain(zone: string, description: string): ProviderEntry[] {
             id: 'consumer_gemini',
             call: () => callGeminiConsumer(geminiKey, description),
             provider: 'google',
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
           });
         }
         break;

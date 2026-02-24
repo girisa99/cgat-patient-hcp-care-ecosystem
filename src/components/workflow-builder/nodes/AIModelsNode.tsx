@@ -36,7 +36,7 @@ export const AIModelsNode: React.FC<{ id: string; data: any; selected: boolean }
     { value: 'claude-opus-4-5', label: 'Claude Opus 4.5' },
     { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
     { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' }
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' }
   ];
 
   const handleToggleConfig = () => {

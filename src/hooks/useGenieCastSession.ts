@@ -90,6 +90,11 @@ export interface GenieCastSessionState {
   currentStage: AuthoringStage;
   completedStages: AuthoringStage[];
 
+  // Phase 3: Dynamic discovery state (persists across CREATE/PRODUCE/PUBLISH)
+  selectedIndustryCategory: string | null;  // cast_content_categories.id
+  selectedFormats: string[];                // cast_content_formats.id[]
+  selectedContentTypes: string[];           // cast_content_sub_formats.id[]
+
   // Production mode settings (Phase 6E — multi-mode: avatar, 3D, animation, cinematic)
   productionSettings?: Record<string, unknown>;
 }
@@ -116,6 +121,9 @@ const createDefaultSession = (): GenieCastSessionState => ({
   approvalItems: [],
   currentStage: 'template_selection',
   completedStages: [],
+  selectedIndustryCategory: null,
+  selectedFormats: [],
+  selectedContentTypes: [],
 });
 
 // ============================================

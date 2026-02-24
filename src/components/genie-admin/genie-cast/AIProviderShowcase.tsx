@@ -43,7 +43,7 @@ const AI_PROVIDERS: AIProvider[] = [
   // LLM (5)
   { name: 'Claude 3.5', category: 'llm' },
   { name: 'GPT-4o', category: 'llm' },
-  { name: 'Gemini 2.0', category: 'llm' },
+  { name: 'Gemini 2.5', category: 'llm' },
   { name: 'Qwen 2.5', category: 'llm' },
   { name: 'DeepSeek V3', category: 'llm' },
   
@@ -176,7 +176,7 @@ export default AIProviderShowcase;
  * === LLM (5) ===
  * 12. Claude 3.5 Sonnet - Primary reasoning
  * 13. GPT-4o - OpenAI multimodal
- * 14. Gemini 2.0 Flash - Google fast LLM
+ * 14. Gemini 2.5 Flash - Google fast LLM
  * 15. Qwen 2.5 Max - Alibaba LLM
  * 16. DeepSeek V3 - Chinese LLM
  * 

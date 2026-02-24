@@ -318,7 +318,7 @@ function buildSlideContentString(slide: SlideData): string {
 }
 
 async function callGeminiAI(apiKey: string, prompt: string, quick = false): Promise<string> {
-  const model = quick ? 'gemini-2.0-flash-lite' : 'gemini-2.0-flash';
+  const model = quick ? 'gemini-2.5-flash' : 'gemini-2.5-flash';
   
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
     method: 'POST',

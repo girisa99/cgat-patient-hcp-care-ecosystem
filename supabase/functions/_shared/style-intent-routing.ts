@@ -309,7 +309,7 @@ export function resolveVideoProviderOrder(
  */
 export function getDefaultImageModel(provider: ImageProvider): string {
   switch (provider) {
-    case 'gemini': return 'gemini-2.0-flash-preview-image-generation';
+    case 'gemini': return 'gemini-2.5-flash-preview-image-generation';
     case 'vertex-imagen': return 'imagen-3.0-generate-002';
     case 'openai': return 'gpt-image-1';
     case 'alibaba': return 'wan2.6-t2i';
@@ -317,7 +317,7 @@ export function getDefaultImageModel(provider: ImageProvider): string {
     case 'huggingface': return 'black-forest-labs/FLUX.1-schnell';
     case 'replicate': return 'black-forest-labs/flux-schnell';
     case 'deepseek': return 'deepseek-image';
-    default: return 'gemini-2.0-flash-preview-image-generation';
+    default: return 'gemini-2.5-flash-preview-image-generation';
   }
 }
 

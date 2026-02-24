@@ -72,7 +72,7 @@ export const InlineNodeConfig: React.FC<InlineNodeConfigProps> = ({
               <SelectItem value="gpt-4o">GPT-4o</SelectItem>
               <SelectItem value="claude-opus-4-5">Claude Opus 4.5</SelectItem>
               <SelectItem value="claude-sonnet-4-5">Claude Sonnet 4.5</SelectItem>
-              <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
+              <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
             </SelectContent>
           </Select>
         </div>

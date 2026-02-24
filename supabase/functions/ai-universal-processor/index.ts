@@ -91,7 +91,7 @@ const UNIVERSAL_AI_REGISTRY = {
   llm: {
     openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'gpt-4o', 'gpt-4o-mini'],
     claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
-    gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-1.5-pro', 'gemini-2.0-flash', 'google/gemini-3-flash-preview', 'google/gemini-2.5-pro'],
+    gemini: ['gemini-2.5-flash', 'gemini-pro', 'gemini-1.5-pro', 'gemini-2.5-flash', 'google/gemini-3-flash-preview', 'google/gemini-2.5-pro'],
     alibaba: ['qwen-turbo', 'qwen-plus', 'qwen-max']
   },
   image: {
@@ -115,7 +115,7 @@ const UNIVERSAL_AI_REGISTRY = {
   vision: {
     openai: ['gpt-4o', 'o4-mini-2025-04-16'],
     claude: ['claude-3-5-sonnet-20241022'],
-    gemini: ['gemini-1.5-pro-latest', 'gemini-2.0-flash-exp'],
+    gemini: ['gemini-1.5-pro-latest', 'gemini-2.5-flash'],
     alibaba: ['qwen-vl-plus']
   }
 };
@@ -399,7 +399,7 @@ Return a JSON object with:
 Make it more detailed, engaging, and optimized for AI generation.`;
 
       try {
-        const result = await callGemini('gemini-2.0-flash', enhancePrompt, enhanceSystemPrompt, 0.7, 2000);
+        const result = await callGemini('gemini-2.5-flash', enhancePrompt, enhanceSystemPrompt, 0.7, 2000);
         
         // Try to parse JSON from response
         let enhancement;
@@ -426,7 +426,7 @@ Make it more detailed, engaging, and optimized for AI generation.`;
           success: true,
           enhancement,
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           timestamp: new Date().toISOString(),
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -462,7 +462,7 @@ Make it more detailed, engaging, and optimized for AI generation.`;
       // For now, generate content description and placeholder preview
       // In production, this would call actual video/avatar generation APIs
       const targetProvider = provider || 'gemini';
-      const targetModel = model || 'gemini-2.0-flash';
+      const targetModel = model || 'gemini-2.5-flash';
       
       try {
         // Generate content script/description using LLM
@@ -586,7 +586,7 @@ Return ONLY valid JSON:
 }`;
 
       const targetProvider = provider || 'gemini';
-      const targetModel = model || 'gemini-2.0-flash';
+      const targetModel = model || 'gemini-2.5-flash';
 
       try {
         let result;
@@ -679,7 +679,7 @@ Return ONLY valid JSON:
           break;
         case 'gemini':
           try {
-            response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
+            response = await callGemini(model || 'gemini-2.5-flash', prompt, systemPrompt, temperature, maxTokens);
           } catch (geminiErr) {
             const errMsg = geminiErr instanceof Error ? geminiErr.message : String(geminiErr);
             if (errMsg.includes('429') || errMsg.includes('rate limit') || errMsg.includes('RESOURCE_EXHAUSTED')) {
@@ -700,7 +700,7 @@ Return ONLY valid JSON:
         default:
           console.log(`[UniversalAI] Auto-selecting gemini for provider: ${provider}`);
           try {
-            response = await callGemini(model || 'gemini-2.0-flash', prompt, systemPrompt, temperature, maxTokens);
+            response = await callGemini(model || 'gemini-2.5-flash', prompt, systemPrompt, temperature, maxTokens);
           } catch (defaultErr) {
             const errMsg = defaultErr instanceof Error ? defaultErr.message : String(defaultErr);
             if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
@@ -977,21 +977,21 @@ function normalizeGeminiModel(model: string, isImageGeneration?: boolean): strin
     return model; // Return as-is for image generation routing
   }
   
-  // Map to currently available Gemini models - gemini-2.0-flash is stable now
+  // Map to currently available Gemini models - gemini-2.5-flash is stable now
   if (ml.includes('gemini-2.5') || ml.includes('gemini-2.0') || ml.includes('gemini-2')) {
-    return 'gemini-2.0-flash';
+    return 'gemini-2.5-flash';
   }
   if (ml.includes('gemini-1.5-flash') || ml.includes('flash')) {
-    return 'gemini-2.0-flash'; // 1.5 deprecated, use 2.0
+    return 'gemini-2.5-flash'; // 1.5 deprecated, use 2.5
   }
   if (ml.includes('gemini-1.5-pro') || ml.includes('pro')) {
-    return 'gemini-2.0-flash';
+    return 'gemini-2.5-flash';
   }
   if (ml.includes('gemini-pro')) {
-    return 'gemini-2.0-flash';
+    return 'gemini-2.5-flash';
   }
   // Default to stable model
-  return 'gemini-2.0-flash';
+  return 'gemini-2.5-flash';
 }
 
 async function callGemini(model: string, prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
@@ -1152,7 +1152,7 @@ async function callGeminiImage(
   }
 
   // Normalize model name for image generation
-  const targetModel = model.includes('imagen') ? model : 'gemini-2.0-flash-exp';
+  const targetModel = model.includes('imagen') ? model : 'gemini-2.5-flash';
   
   console.log(`[UniversalAI-Gemini] Generating image: model=${targetModel}`);
 
@@ -1250,12 +1250,12 @@ Analyze the provided image and return a JSON object with:
     case 'claude':
       return await callClaudeVision(model || 'claude-3-5-sonnet-20241022', analysisPrompt, fullSystemPrompt, imageBase64);
     case 'gemini':
-      return await callGeminiVision(model || 'gemini-2.0-flash-exp', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
     case 'lovable': // DEPRECATED - route to Gemini direct API
     case 'default':
     default:
       // Default to Gemini Vision (NO LOVABLE AI)
-      return await callGeminiVision(model || 'gemini-2.0-flash-exp', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
   }
 }
 
@@ -1379,7 +1379,7 @@ async function callGeminiVision(model: string, prompt: string, systemPrompt: str
     throw new Error('Gemini API key not configured for vision analysis.');
   }
 
-  const normalizedModel = 'gemini-2.0-flash-exp'; // Best vision model
+  const normalizedModel = 'gemini-2.5-flash'; // Best vision model
 
   console.log(`[Vision-Gemini] Using model: ${normalizedModel}`);
 
@@ -1427,7 +1427,7 @@ async function callGeminiVision(model: string, prompt: string, systemPrompt: str
  */
 async function callLovableAIVision(model: string, prompt: string, systemPrompt: string, imageBase64: string) {
   console.log('[Vision] DEPRECATED: callLovableAIVision routing to Gemini Vision API');
-  return await callGeminiVision('gemini-2.0-flash-exp', prompt, systemPrompt, imageBase64);
+  return await callGeminiVision('gemini-2.5-flash', prompt, systemPrompt, imageBase64);
 }
 
 /**
@@ -1437,7 +1437,7 @@ async function callLovableAIVision(model: string, prompt: string, systemPrompt: 
  */
 async function callLovableAI(model: string, prompt: string, systemPrompt: string, json?: boolean) {
   console.log('[LLM] DEPRECATED: callLovableAI routing to Gemini API');
-  return await callGemini('gemini-2.0-flash', prompt, systemPrompt);
+  return await callGemini('gemini-2.5-flash', prompt, systemPrompt);
 }
 
 // ============================================
@@ -1591,7 +1591,7 @@ Return ONLY the translated text, no explanations.`;
     case 'gemini':
     default:
       // Use Gemini direct API (NO LOVABLE AI)
-      result = await callGemini('gemini-2.0-flash', text, systemPrompt, 0.3, 4000);
+      result = await callGemini('gemini-2.5-flash', text, systemPrompt, 0.3, 4000);
   }
 
   return {
@@ -1880,7 +1880,7 @@ Return as JSON.`;
     case 'gemini':
     default:
       // Use Gemini direct API (NO LOVABLE AI)
-      result = await callGemini('gemini-2.0-flash', text, systemPrompt, 0.3, 4000);
+      result = await callGemini('gemini-2.5-flash', text, systemPrompt, 0.3, 4000);
   }
 
   // Try to parse JSON from response

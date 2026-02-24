@@ -363,7 +363,7 @@ export function useRalphWiggum(): UseRalphWiggumReturn {
           systemPrompt: `You are Ralph Wiggum, an AI content reviewer for Genie Suite.
 You provide helpful, constructive feedback to improve content quality.
 Always respond with valid JSON. Be specific and actionable in your suggestions.`,
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           maxTokens: 2000
         }
       });

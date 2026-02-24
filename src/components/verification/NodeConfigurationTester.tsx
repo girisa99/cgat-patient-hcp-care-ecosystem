@@ -48,7 +48,7 @@ export const NodeConfigurationTester: React.FC = () => {
       icon: Bot,
       parameters: [
         { name: 'name', type: 'string', value: '', required: true, description: 'Agent name' },
-        { name: 'model', type: 'select', value: 'gpt-4o-mini', options: ['gpt-4o-mini', 'claude-3.5-sonnet', 'gemini-2.0-flash'], description: 'AI model' },
+        { name: 'model', type: 'select', value: 'gpt-4o-mini', options: ['gpt-4o-mini', 'claude-3.5-sonnet', 'gemini-2.5-flash'], description: 'AI model' },
         { name: 'system_prompt', type: 'textarea', value: '', description: 'System instructions' },
         { name: 'temperature', type: 'number', value: 0.7, description: 'Response creativity (0-2)' },
         { name: 'max_tokens', type: 'number', value: 1000, description: 'Maximum response length' },

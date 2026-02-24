@@ -667,7 +667,7 @@ Return ONLY the JSON array, no other text.`;
 
       const response = await generateResponse({
         provider: selectedProvider,
-        model: selectedProvider === 'gemini' ? 'gemini-2.0-flash' : undefined,
+        model: selectedProvider === 'gemini' ? 'gemini-2.5-flash' : undefined,
         prompt: contextPrompt,
       });
 

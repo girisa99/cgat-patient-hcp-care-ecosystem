@@ -2499,7 +2499,7 @@ export const PricingStrategyTab: React.FC = () => {
   ]);
 
   const [aiProviders, setAiProviders] = useState<AIProvider[]>([
-    { id: 1, name: 'Gemini 2.0 Flash', provider: 'Google', inputPer1M: 0.075, outputPer1M: 0.30, enabled: true, usagePercent: 50 },
+    { id: 1, name: 'Gemini 2.5 Flash', provider: 'Google', inputPer1M: 0.075, outputPer1M: 0.30, enabled: true, usagePercent: 50 },
     { id: 2, name: 'Gemini 2.5 Pro', provider: 'Google', inputPer1M: 1.25, outputPer1M: 5.00, enabled: true, usagePercent: 20 },
     { id: 3, name: 'Claude 3.5 Sonnet', provider: 'Anthropic', inputPer1M: 3.00, outputPer1M: 15.00, enabled: true, usagePercent: 20 },
     { id: 4, name: 'GPT-4o Mini', provider: 'OpenAI', inputPer1M: 0.15, outputPer1M: 0.60, enabled: true, usagePercent: 10 },

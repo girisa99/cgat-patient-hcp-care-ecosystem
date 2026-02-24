@@ -97,7 +97,7 @@ export const RealTimeTrendsPanel: React.FC<RealTimeTrendsPanelProps> = ({
       const { data: aiResult, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           action: 'trend_analysis',
           prompt: `Analyze current trending topics for video content creation in the ${industry} industry, region: ${region}.
           ${searchTopic ? `Focus area: ${searchTopic}` : ''}

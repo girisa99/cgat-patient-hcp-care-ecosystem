@@ -334,7 +334,7 @@ async function classifyWithUniversalAI(content: string, context?: any): Promise<
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash',
         prompt: `Classify this healthcare/biotech content:
 
 CONTENT:
@@ -385,7 +385,7 @@ async function extractEntitiesWithUniversalAI(content: string, entityTypes?: str
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash',
         prompt: `Extract medical/scientific entities from this content:
 
 CONTENT:
@@ -439,7 +439,7 @@ async function summarizeWithUniversalAI(content: string, maxWords: number = 100)
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash',
         prompt: `Summarize this healthcare/biotech content in ${maxWords} words or less:
 
 ${content.substring(0, 3000)}
@@ -489,7 +489,7 @@ async function generateAIRecommendations(query: string, entries: any[], context:
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash',
         prompt: `Generate healthcare recommendations based on this query and knowledge:
 
 QUERY: "${query}"

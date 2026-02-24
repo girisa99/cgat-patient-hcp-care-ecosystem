@@ -108,7 +108,7 @@ export interface RoutingViolation {
 
 const PROVIDER_MODEL_MAP: Record<string, { provider: string; model: string }> = {
   // Image
-  gemini_3_pro:    { provider: 'gemini',    model: 'gemini-2.0-flash' },
+  gemini_3_pro:    { provider: 'gemini',    model: 'gemini-2.5-flash' },
   vertex_imagen3:  { provider: 'gemini',    model: 'imagen-3.0-generate-001' },
   alibaba_wanx:    { provider: 'alibaba',   model: 'wanx-v1' },
   modelslab_flux:  { provider: 'modelslab', model: 'flux-schnell' },
@@ -323,7 +323,7 @@ export async function routeAIRequest(request: RoutedAIRequest): Promise<RoutedAI
 
   // If override is allowed (warn/audit mode), prepend it
   if (request.overrideProvider) {
-    const overrideModel = request.overrideModel || chain[0]?.model || 'gemini-2.0-flash';
+    const overrideModel = request.overrideModel || chain[0]?.model || 'gemini-2.5-flash';
     chain.unshift({
       registryId: 'manual_override',
       provider: request.overrideProvider,

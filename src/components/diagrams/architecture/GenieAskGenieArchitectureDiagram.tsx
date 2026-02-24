@@ -26,7 +26,7 @@ const modelRouting = [
   { region: 'Western/EU', primary: 'Claude 3.5 Sonnet', fallback: 'GPT-4o', latency: '~800ms' },
   { region: 'CJK', primary: 'Qwen-Max', fallback: 'Claude', latency: '~600ms' },
   { region: 'MENA', primary: 'GPT-4o', fallback: 'Claude', latency: '~900ms' },
-  { region: 'India/SEA', primary: 'Gemini 2.0', fallback: 'GPT-4o', latency: '~700ms' },
+  { region: 'India/SEA', primary: 'Gemini 2.5', fallback: 'GPT-4o', latency: '~700ms' },
 ];
 
 const integrationPoints = [

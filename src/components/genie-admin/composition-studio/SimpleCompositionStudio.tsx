@@ -1604,7 +1604,7 @@ IMPORTANT:
       const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           prompt: scriptPrompt,
           systemPrompt: 'You are a professional TTS scriptwriter for video content. Generate ONLY the voiceover script text - no headings, stage directions, timestamps, or formatting marks. The script must be ready for direct text-to-speech conversion. Write naturally as if speaking to the audience.',
           temperature: 0.7,
@@ -1750,7 +1750,7 @@ IMPORTANT:
           const { data: scriptData, error: scriptError } = await supabase.functions.invoke('ai-universal-processor', {
             body: {
               provider: 'gemini',
-              model: 'gemini-2.0-flash',
+              model: 'gemini-2.5-flash',
               prompt: scriptPrompt,
               systemPrompt: 'You are a professional TTS scriptwriter for video content. Generate ONLY the voiceover script text - no headings, stage directions, timestamps, or formatting marks. The script must be ready for direct text-to-speech conversion. Write naturally as if speaking to the audience.',
               temperature: 0.7,
@@ -2454,7 +2454,7 @@ Primary Language: ${primaryLanguage}`;
                   const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
                     body: {
                       provider: 'gemini',
-                      model: 'gemini-2.0-flash',
+                      model: 'gemini-2.5-flash',
                       prompt: scriptPrompt,
                       systemPrompt: 'You are a professional TTS scriptwriter. Generate ONLY the voiceover script text - no headings or formatting.',
                       temperature: 0.7,

@@ -863,7 +863,7 @@ export const TEXT_MODELS: ModelConfig[] = [
   // Tier 1 - Standard
   {
     id: 'gemini-flash',
-    name: 'Gemini 2.0 Flash',
+    name: 'Gemini 2.5 Flash',
     provider: 'Google',
     tier: 1,
     description: 'Fast and efficient text generation',
@@ -921,7 +921,7 @@ export const TEXT_MODELS: ModelConfig[] = [
   },
   {
     id: 'gemini-pro',
-    name: 'Gemini 2.0 Pro',
+    name: 'Gemini 2.5 Pro',
     provider: 'Google',
     tier: 2,
     description: 'Advanced reasoning capabilities',

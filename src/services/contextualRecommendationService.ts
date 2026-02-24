@@ -174,7 +174,7 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: numbe
   // ═══════════════════════════════════════════════════════════════════════════
   'qwen-turbo': { quality: 85, speed: 95, cost: 95, tier: 'standard' },
   'gemini-flash': { quality: 86, speed: 96, cost: 92, tier: 'standard' },
-  'gemini-2.0-flash': { quality: 86, speed: 96, cost: 92, tier: 'standard' },
+  'gemini-2.5-flash': { quality: 86, speed: 96, cost: 92, tier: 'standard' },
   'gpt-4o-mini': { quality: 88, speed: 94, cost: 90, tier: 'standard' },
   'claude-haiku-4-5': { quality: 85, speed: 95, cost: 92, tier: 'standard' },
   

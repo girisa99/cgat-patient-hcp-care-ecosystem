@@ -666,7 +666,7 @@ export function useStudioEcosystem() {
         const { data } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
             provider: 'gemini',
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             prompt: `Generate a ${chapter.duration}-second professional voiceover script for: ${chapter.title}`,
             action: 'generate_script',
           }

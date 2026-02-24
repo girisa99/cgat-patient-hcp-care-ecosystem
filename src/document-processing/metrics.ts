@@ -32,7 +32,7 @@ export const DOCUMENT_PROCESSING_EDGE_FUNCTIONS = [
     purpose: 'Core multi-model OCR/Extraction',
     phase: 'P0',
     status: 'production',
-    aiModels: ['gemini-2.0-flash', 'gpt-4o'],
+    aiModels: ['gemini-2.5-flash', 'gpt-4o'],
   },
   {
     name: 'process-documents',
@@ -67,7 +67,7 @@ export const DOCUMENT_PROCESSING_EDGE_FUNCTIONS = [
     purpose: 'Enrollment form extraction',
     phase: 'P1',
     status: 'production',
-    aiModels: ['gemini-2.0-flash'],
+    aiModels: ['gemini-2.5-flash'],
   },
   {
     name: 'medical-imaging-cnn',
