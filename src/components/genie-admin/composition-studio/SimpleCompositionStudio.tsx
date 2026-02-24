@@ -48,11 +48,15 @@ import { ReviewEnhanceStep } from './ReviewEnhanceStep';
 import { GeneratedAssetsSidebar, GeneratedAssetsTrigger } from './GeneratedAssetsSidebar';
 import { ProjectPickerDropdown, StoredProjectInfo } from './ProjectPickerDropdown';
 import { useCompositionSync } from '@/hooks/useCompositionSync';
+import { useIndustryTemplates } from '@/hooks/useIndustryTemplates';
 
 // ============================================
-// INDUSTRY-SPECIFIC TEMPLATES (Multi-select ready) - 80+ templates
+// INDUSTRY-SPECIFIC TEMPLATES — NOW DB-DRIVEN
+// The hardcoded array below is kept ONLY as a fallback reference.
+// Live data comes from useIndustryTemplates() hook → video_blueprints table.
+// After migration (seedIndustryTemplates), this constant is unused.
 // ============================================
-const INDUSTRY_TEMPLATES: MultiSelectOption[] = [
+const INDUSTRY_TEMPLATES_FALLBACK: MultiSelectOption[] = [
   // === GOVERNMENT & NATIONAL INITIATIVES ===
   { id: 'saudi_vision_2030', value: 'saudi_vision_2030', label: 'Saudi Vision 2030', category: 'Government', description: 'Digital transformation for Saudi initiatives' },
   { id: 'uae_digital', value: 'uae_digital', label: 'UAE Digital Government', category: 'Government', description: 'UAE smart services' },
@@ -910,6 +914,19 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
   className,
   onClose,
 }) => {
+  // ── DB-driven industry templates (replaces hardcoded INDUSTRY_TEMPLATES) ──
+  const industryTemplatesHook = useIndustryTemplates();
+
+  // Bridge: use DB options when available, fall back to hardcoded
+  const INDUSTRY_TEMPLATES: MultiSelectOption[] = industryTemplatesHook.fromDB
+    ? industryTemplatesHook.asMultiSelectOptions
+    : INDUSTRY_TEMPLATES_FALLBACK;
+
+  // Bridge: chapter lookup — reads from DB blueprint_scenes, falls back to hardcoded
+  const getTemplateChapters = (templateId: string): string[] => {
+    return industryTemplatesHook.getChapters(templateId);
+  };
+
   // IP-based content detection
   const { defaultLanguage, isLoading: isDetectingLocation, geoData } = useIPBasedContent();
 
@@ -1364,7 +1381,7 @@ export const SimpleCompositionStudio: React.FC<SimpleCompositionStudioProps> = (
 
     const newChapters: SimpleChapter[] = [];
     templateIds.forEach(templateId => {
-      const chapterTitles = TEMPLATE_CHAPTERS[templateId] || [];
+      const chapterTitles = getTemplateChapters(templateId);
       const defaultVisuals = getDefaultVisualsForTemplate(templateId);
       
       chapterTitles.forEach((title) => {
