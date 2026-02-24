@@ -232,6 +232,35 @@ export const useVideoBlueprints = () => {
     }
   });
 
+  // Migrate to industry templates
+  const migrateToIndustryMutation = useMutation({
+    mutationFn: async () => {
+      const { migrateToIndustryTemplates } = await import('@/services/industryTemplateSeed');
+      return migrateToIndustryTemplates();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['video-blueprints'] });
+      queryClient.invalidateQueries({ queryKey: ['industry-templates'] });
+      toast({
+        title: 'Migration Complete',
+        description: `Soft-deleted ${result.softDeleted} legacy, inserted ${result.inserted} industry templates. EP04 protected: ${result.ep04Protected ? 'Yes' : 'No'}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Migration Failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  // Filter: industry templates only
+  const industryTemplates = (blueprintsQuery.data || []).filter(
+    bp => (bp.industry_tags || []).includes('industry_template')
+  );
+
+  // Filter: non-industry (legacy) blueprints
+  const legacyBlueprints = (blueprintsQuery.data || []).filter(
+    bp => !(bp.industry_tags || []).includes('industry_template')
+  );
+
   // Group blueprints by category
   const blueprintsByCategory = (blueprintsQuery.data || []).reduce((acc, bp) => {
     const category = bp.category || 'other';
@@ -240,8 +269,17 @@ export const useVideoBlueprints = () => {
     return acc;
   }, {} as Record<string, VideoBlueprint[]>);
 
-  // Get category display names - EXPANDED for all categories
+  // Group industry templates by category
+  const industryByCategory = industryTemplates.reduce((acc, bp) => {
+    const category = bp.category || 'other';
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(bp);
+    return acc;
+  }, {} as Record<string, VideoBlueprint[]>);
+
+  // Get category display names - EXPANDED for all categories including industry
   const categoryLabels: Record<string, string> = {
+    // Legacy categories
     marketing: 'Marketing',
     educational: 'Educational',
     storytelling: 'Storytelling',
@@ -259,12 +297,37 @@ export const useVideoBlueprints = () => {
     ppt: 'PPT/Slides',
     smb: 'Small Business',
     oil_gas: 'Oil & Gas',
-    other: 'Other'
+    other: 'Other',
+    // Industry categories
+    government: 'Government & National Initiatives',
+    india: 'India',
+    pakistan: 'Pakistan',
+    bangladesh: 'Bangladesh',
+    cjk: 'CJK (China, Japan, Korea)',
+    'indo-asia': 'Indo-Asia / Southeast Asia',
+    'indo_asia': 'Indo-Asia / Southeast Asia',
+    caribbean: 'Caribbean',
+    africa: 'Africa',
+    tourism: 'Tourism',
+    finance: 'Finance',
+    technology: 'Technology',
+    education: 'Education',
+    'landing_page': 'Landing Pages',
+    'social_media': 'Social Media',
+    'use_cases': 'Use Cases & Scenarios',
+    'north_america': 'North America',
+    europe: 'Europe',
+    'australia_oceania': 'Australia & Oceania',
+    'latin_america': 'Latin America',
+    'quick_start': 'Quick Start',
   };
 
   return {
     blueprints: blueprintsQuery.data || [],
+    industryTemplates,
+    legacyBlueprints,
     blueprintsByCategory,
+    industryByCategory,
     categoryLabels,
     isLoading: blueprintsQuery.isLoading,
     error: blueprintsQuery.error,
@@ -272,6 +335,8 @@ export const useVideoBlueprints = () => {
     useBlueprintWithScenes,
     seedBlueprints: seedBlueprintsMutation.mutate,
     isSeeding: seedBlueprintsMutation.isPending,
+    migrateToIndustry: migrateToIndustryMutation.mutate,
+    isMigrating: migrateToIndustryMutation.isPending,
     assignBlueprint: assignBlueprintMutation.mutate,
     isAssigning: assignBlueprintMutation.isPending,
     trackUsage: trackUsageMutation.mutate,
