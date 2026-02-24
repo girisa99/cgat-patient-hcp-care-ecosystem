@@ -588,6 +588,90 @@ This section is a living index of shared resources both developers can use. Upda
 |--------|---------|-------|
 | `product-config.ts` | Product boundaries, routes, feature flags | Pre-sprint |
 
+---
+
+## Day 8 — Monday, Feb 24, 2026
+
+> Post-Sprint 1. Cast pipeline Phase 6-8 implementation: GPU rendering, PUBLISH distribution, analytics.
+
+### [10:00] NEW — Claude: Phase 6 GPU Rendering Pipeline (5 action handlers + DeepSeek)
+- **File(s):** `supabase/functions/ai-universal-processor/index.ts`, `supabase/functions/audio-mixer/index.ts`
+- **Changed By:** Claude
+- **What Changed:**
+  1. **`assemble_video` action** — Stitches scene videos with transitions (crossfade, fade_black, slide, wipe). Builds FFmpeg filter graph. Routes to RunPod/Replicate cloud or falls back to client-side WASM.
+  2. **`transcode_video` action** — 19 platform presets (4K, 1080p, tiktok, reels, whatsapp, email, gif, ctv, signage, etc). FFmpeg transcoding via cloud GPU.
+  3. **`burn_captions` action** — SRT/VTT/ASS caption overlay with configurable style (font, size, color, position, outline). FFmpeg subtitle filter.
+  4. **`add_watermark` action** — Image/text watermark with position, opacity, scale. FFmpeg overlay filter.
+  5. **`mix_audio` action** — Multi-track mixing with ducking, normalization (-16 LUFS), fade in/out, pan. Replaces console.log stubs.
+  6. **DeepSeek provider** — `callDeepSeek()` for `deepseek-chat` and `deepseek-reasoner` models ($0.28/$0.42 per 1M tokens — cheapest LLM). Added to registry, routing switch, and fallback chain.
+  7. **Audio mixer rewrite** — Replaced ALL Math.random() placeholders with real FFmpeg filter graphs, cloud GPU routing, and honest heuristic fallbacks. Each function now returns `method` field indicating processing path.
+- **Why:** Phase 6 of plan.md — the 5 missing action handlers blocked the entire production pipeline. sceneRenderingOrchestrator was calling these actions but getting silent errors.
+- **How to Use:** All actions available via `supabase.functions.invoke('ai-universal-processor', { body: { action: 'assemble_video', ... } })`. DeepSeek: set `provider: 'deepseek'` in any LLM call.
+- **Impact on Your Work:**
+  - Claude: Production pipeline now has real handlers for assembly, transcoding, captions, watermarks, and audio mixing. Quality gate (B-020) still non-blocking but functional.
+  - Lovable: No impact — edge functions only. ProduceEditStep already wired to these actions.
+- **Breaking Changes:** None — additive.
+
+### [11:00] ENHANCE — Claude: Phase 7C Wire Real Export Pipeline
+- **File(s):** `src/hooks/video-editing/usePlatformExport.ts`
+- **Changed By:** Claude
+- **What Changed:**
+  1. Replaced simulated `startExport()` with real edge function calls
+  2. Export flow: transcode_video → burn_captions → add_watermark → social-publish
+  3. Maps all 30+ platforms to transcode presets
+  4. Wired caption burning for `burned_in` and `both` caption styles
+  5. Wired watermark overlay when `includeWatermark` is enabled
+  6. Social platforms call `social-publish` edge function with title/description/hashtags
+  7. Added `scheduledAt` to ExportConfig for scheduled publishing
+  8. Added `sourceVideoUrl` parameter to `startExport()`
+- **Why:** Phase 7C — ExportDistributionPanel was simulating all export jobs. Now calls real edge functions.
+- **How to Use:** `startExport(timelineDurationMs, sourceVideoUrl)` — second param is the assembled video URL from PRODUCE.
+- **Impact on Your Work:**
+  - Claude: Export pipeline is end-to-end: CREATE → PRODUCE → transcode → publish
+  - Lovable: No impact — hook API unchanged. ExportDistributionPanel works as before.
+- **Breaking Changes:** `startExport` signature changed from `(timelineDurationMs)` to `(timelineDurationMs, sourceVideoUrl?)`. Optional param, backward compatible.
+
+### [11:30] NEW — Claude: Phase 7D CollateralGenerator Service
+- **File(s):** `src/services/collateralGeneratorService.ts`
+- **Changed By:** Claude
+- **What Changed:**
+  1. New `generateCollaterals()` function — generates 8 collateral types from production artifacts
+  2. Types: social_card (1200x630 + 1080x1080), email_banner, blog_post, show_notes, social_quote, press_release, landing_hero
+  3. Image collaterals use `ai-universal-processor` image generation
+  4. Text collaterals use Gemini 2.5 Flash LLM with structured prompts
+  5. Brand kit integration (colors, logo, company name, tagline)
+  6. `generatePostProductionDerivatives()` — orchestrates collaterals + magic-clips + shorts in sequence
+- **Why:** Phase 7D — auto-generate marketing materials after production approval
+- **How to Use:** `import { generateCollaterals, generatePostProductionDerivatives } from '@/services/collateralGeneratorService'`
+- **Impact on Your Work:**
+  - Claude: Call from ProduceReviewStep after approval gate passes
+  - Lovable: No direct impact — new service, not yet wired to UI
+- **Breaking Changes:** None — new file.
+
+### [12:00] NEW — Claude: Phase 7H+8 Cast Analytics Hook
+- **File(s):** `src/hooks/useCastAnalytics.ts`
+- **Changed By:** Claude
+- **What Changed:**
+  1. New `useCastAnalytics()` hook with comprehensive analytics:
+     - Overview: total productions, success rate, credits used/remaining, cost
+     - Time series: productions per day with credits
+     - Format distribution, provider breakdown, status funnel
+     - Language/region coverage
+     - Cost per format (credit + USD)
+     - Pipeline performance (avg TTS/video/assembly time)
+     - Derivative metrics (shorts, clips, thumbnails, captions, collaterals)
+     - Platform distribution (publish targets)
+     - Credit burn rate with pace alerts (slow/normal/fast/critical)
+  2. Queries: `landing_page_videos`, `ai_credit_transactions`, `social_publish_analytics`
+  3. Computed `summary` with gross margin, top format, top provider, top platform
+  4. Supports filter: scope (current_project/all_projects), dateRange
+- **Why:** Phase 7H — foundation for subscription breakeven analysis (7G). Phase 8 — data source for Cast analytics dashboard.
+- **How to Use:** `const { data, summary, isLoading, refresh } = useCastAnalytics({ scope: 'all_projects' })`
+- **Impact on Your Work:**
+  - Claude: Wire into AnalyticsDashboard component to replace placeholder data
+  - Lovable: No direct impact — new hook
+- **Breaking Changes:** None — new file.
+
 ### Shared Constants (import from `@/constants/`)
 | Constant | Purpose | Added |
 |----------|---------|-------|

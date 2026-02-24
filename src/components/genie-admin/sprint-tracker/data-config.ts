@@ -147,6 +147,14 @@ export const DEFAULT_STANDUPS: StandupEntry[] = [
     blockers: 'None. Sprint complete. Awaiting merge to main.',
     createdAt: '2026-02-21T10:00:00Z',
   },
+  // ── Day 8 (Sprint 2) ──
+  {
+    day: 5, developer: 'claude' as Developer,
+    yesterday: 'Sprint 1 complete. Phases 1-5, 7B, 9 of Cast pipeline plan done.',
+    today: 'Sprint 2 Day 8: Phase 6 — 5 GPU rendering action handlers (assemble_video, transcode_video, burn_captions, add_watermark, mix_audio) + DeepSeek LLM provider. Audio mixer rewrite (replaced ALL Math.random stubs). Phase 7C — wired real export pipeline (transcode→captions→watermark→social-publish). Phase 7D — CollateralGenerator service (8 types). Phase 7H+8 — useCastAnalytics hook (17 metrics + burn rate). Build passes.',
+    blockers: 'Cloud GPU (RunPod/Replicate API keys) needed for full video processing. JSON2Video key needed for magic-clips. Platform OAuth tokens needed for social publishing.',
+    createdAt: '2026-02-24T12:00:00Z',
+  },
 ];
 
 export function calculateCurrentDay(): number {
