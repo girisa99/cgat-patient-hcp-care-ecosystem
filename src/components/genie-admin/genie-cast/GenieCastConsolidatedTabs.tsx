@@ -628,7 +628,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     const mapping = authoring.state.templateMapping;
     if (mapping && productionSession.session.totalScenes === 0) {
       const formatName = castSession.session.selectedFormatId || 'video';
-      initFromMappingRef(mapping, formatName);
+      initFromMappingRef(mapping, formatName as any);
       console.log('[GenieCast] Initialized production session from template mapping:', mapping.scenes.length, 'scenes');
     }
   }, [authoring.state.templateMapping, productionSession.session.totalScenes, castSession.session.selectedFormatId, initFromMappingRef]);
@@ -1571,7 +1571,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 <DocumentImportPanel
                   compact
                   onImportComplete={(text, metadata) => {
-                    castSession.updateSession({ importedContent: text, importMetadata: metadata });
+                    castSession.updateSession({ metadata: { importedContent: text, importMetadata: metadata } } as any);
                     toast.success('Source material imported — will be used during generation');
                   }}
                 />
@@ -1641,20 +1641,21 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             {/* ── PRODUCE EDIT — Extracted to ProduceEditStep ── */}
             {currentSubTab === 'edit' && (
               <ProduceEditStep
-                authoring={authoring}
-                routing={routing}
-                castSession={castSession}
-                production={production}
-                productionSession={productionSession}
-                videoTimeline={videoTimeline}
-                avSync={avSync}
+                authoring={authoring as any}
+                routing={routing as any}
+                castSession={castSession as any}
+                production={production as any}
+                productionSession={productionSession as any}
+                videoTimeline={videoTimeline as any}
+                avSync={avSync as any}
                 clipOps={clipOps}
                 selectedDialectCodes={selectedDialectCodes}
                 selectedProductId={selectedProductId}
                 productionQuality={productionQuality}
+                onGenerate={() => { /* handled by FormatStudioRouter */ }}
                 setSubTab={setSubTab}
                 setActiveMainTab={setActiveMainTab}
-                setProductionSection={setProductionSection}
+                setProductionSection={setProductionSection as (section: string) => void}
               />
             )}
 

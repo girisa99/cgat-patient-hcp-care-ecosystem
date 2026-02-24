@@ -142,9 +142,9 @@ export const RegionalCoverageMatrix: React.FC<RegionalCoverageMatrixProps> = ({
       setIsLoadingDb(true);
       try {
         // Query regional_narration_scripts for this project
-        const { data, error } = await supabase
-          .from('regional_narration_scripts')
-          .select('region_code, language_code, script_text, audio_url, visual_assets_ready, final_output_ready')
+        const { data, error } = await (supabase
+          .from('regional_narration_scripts') as any)
+          .select('region_code, language_code, narration_text, audio_url, visual_assets_ready, final_output_ready')
           .eq('project_id', projectId);
 
         if (error) throw error;
@@ -153,10 +153,10 @@ export const RegionalCoverageMatrix: React.FC<RegionalCoverageMatrixProps> = ({
         const statusMap: Record<string, Partial<Record<StatusColumnKey, CellStatus>>> = {};
 
         if (data) {
-          for (const row of data) {
+          for (const row of data as any[]) {
             const key = `${row.region_code}__${row.language_code}`;
             statusMap[key] = {
-              script: row.script_text ? 'complete' : 'not_started',
+              script: row.narration_text ? 'complete' : 'not_started',
               tts: row.audio_url ? 'complete' : 'not_started',
               assets: row.visual_assets_ready ? 'complete' : 'not_started',
               generation: row.final_output_ready ? 'complete' : 'not_started',
