@@ -17,7 +17,7 @@
  *   - Multi-track video timeline editor
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -38,6 +38,8 @@ import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndic
 import { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
 import { SceneScriptAIPanel } from '@/components/shared/SceneScriptAIPanel';
 import { AVSyncPreview } from '@/components/shared/AVSyncPreview';
+import { UnifiedScriptPanel } from '@/components/shared/UnifiedScriptPanel';
+import { useUnifiedEditorState } from '@/hooks/useUnifiedEditorState';
 
 // AI routing
 import { RoutingDecisionCard } from '@/components/ai/RoutingDecisionCard';
@@ -214,6 +216,23 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
   setActiveMainTab,
   setProductionSection,
 }) => {
+  // Unified editor state — works for both single-scene and multi-scene Cast
+  const unifiedEditor = useUnifiedEditorState({
+    productContext: 'cast',
+    templateMapping: authoring.state.templateMapping || undefined,
+    initialContent: castSession.session.approvedMessaging?.mediumScript || '',
+    initialTitle: castSession.session.selectedTemplate?.name || 'Script',
+    onContentChange: (sceneId, content) => {
+      authoring.updateSceneScript(sceneId, { editedText: content });
+    },
+    onTTSStale: (sceneId) => {
+      toast.info(`Script changed — TTS for scene "${sceneId}" needs regeneration`);
+    },
+    onVideoStale: (sceneId) => {
+      toast.info(`Content changed — video for scene "${sceneId}" needs regeneration`);
+    },
+  });
+
   return (
     <motion.div
       key="studio"
@@ -289,6 +308,37 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
         onSceneUpdate={(sceneId, updates) => {
           authoring.updateSceneScript(sceneId, updates);
         }}
+      />
+
+      {/* Unified Script Editor — single-scene or multi-scene, shared with Mind */}
+      <UnifiedScriptPanel
+        editor={unifiedEditor}
+        showVisualPrompt
+        renderActions={(scene) => (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs gap-1"
+              onClick={() => {
+                toast.info(`Generating TTS preview for "${scene.title}"...`);
+                authoring.generateTTSForScene(scene.id);
+              }}
+            >
+              <Volume2 className="w-3 h-3" /> Generate TTS
+            </Button>
+            {scene.status !== 'approved' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1 text-green-600"
+                onClick={() => unifiedEditor.approveScene(scene.id)}
+              >
+                Approve Scene
+              </Button>
+            )}
+          </div>
+        )}
       />
 
       {/* Script-to-Template Mapper */}
