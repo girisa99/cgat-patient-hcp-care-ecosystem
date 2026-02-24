@@ -14,6 +14,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 // ─── Platform Definitions ───────────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ export interface ExportConfig {
   hashtags: string[];
   title: string;
   description: string;
+  scheduledAt?: string; // ISO date for scheduled publishing
 }
 
 // ─── ALL Platform Presets ───────────────────────────────────────────────────
@@ -469,7 +471,7 @@ export function usePlatformExport() {
 
   // ── Export Actions ───────────────────────────────────────────────────────
 
-  const startExport = useCallback(async (timelineDurationMs: number) => {
+  const startExport = useCallback(async (timelineDurationMs: number, sourceVideoUrl?: string) => {
     if (config.selectedPlatforms.length === 0) return;
     setIsExporting(true);
 
@@ -483,7 +485,7 @@ export function usePlatformExport() {
 
     setJobs(newJobs);
 
-    // Process sequentially (in real impl, could parallel within provider limits)
+    // Process exports sequentially (respects provider rate limits)
     for (const job of newJobs) {
       const preset = getPreset(job.platformId);
       if (!preset) continue;
@@ -499,25 +501,171 @@ export function usePlatformExport() {
         continue;
       }
 
-      // Simulate processing
+      // Step 1: Transcode to platform-specific format
       setJobs(prev => prev.map(j =>
-        j.id === job.id ? { ...j, status: 'processing', progress: 20 } : j
+        j.id === job.id ? { ...j, status: 'processing', progress: 10 } : j
       ));
 
-      // In real implementation: call edge function with timeline + preset
-      // await supabase.functions.invoke('genie-cast-assembler', {
-      //   body: { timeline, preset, config }
-      // });
+      try {
+        let videoUrl = sourceVideoUrl || '';
 
-      setJobs(prev => prev.map(j =>
-        j.id === job.id ? { ...j, status: 'encoding', progress: 60 } : j
-      ));
+        // Only transcode if we have a source video
+        if (videoUrl) {
+          // Map platform to transcode preset name
+          const transcodePresetMap: Record<string, string> = {
+            youtube: 'youtube', youtube_shorts: 'shorts', tiktok: 'tiktok',
+            instagram_reels: 'reels', instagram_feed: 'square', instagram_story: 'reels',
+            facebook_feed: '1080p', facebook_reels: 'reels', facebook_story: 'reels',
+            linkedin_feed: 'linkedin', linkedin_story: 'reels', x_twitter: 'twitter',
+            threads: 'square', bluesky: '720p', pinterest: 'square',
+            whatsapp_status: 'whatsapp', whatsapp_message: 'whatsapp',
+            telegram: '720p', wechat_moments: 'square', line_timeline: 'square',
+            kakaotalk: 'square', email_embed: 'email', website_embed: '1080p',
+            landing_page: '1080p', digital_signage: 'signage', ctv_ott: 'ctv',
+            podcast_video: '1080p', snapchat_spotlight: 'reels', vimeo: '1080p',
+            download_mp4: '1080p', download_webm: 'webm', download_mov: '1080p',
+            download_gif: 'gif',
+          };
 
-      setJobs(prev => prev.map(j =>
-        j.id === job.id
-          ? { ...j, status: 'complete', progress: 100, completedAt: new Date().toISOString() }
-          : j
-      ));
+          const transcodePreset = transcodePresetMap[job.platformId] || '1080p';
+
+          setJobs(prev => prev.map(j =>
+            j.id === job.id ? { ...j, status: 'encoding', progress: 30 } : j
+          ));
+
+          const { data: transcodeData, error: transcodeError } = await supabase.functions.invoke(
+            'ai-universal-processor',
+            {
+              body: {
+                action: 'transcode_video',
+                sourceUrl: videoUrl,
+                preset: transcodePreset,
+                targetResolution: `${preset.resolution.width}x${preset.resolution.height}`,
+                targetCodec: preset.codec,
+                targetFps: preset.fps,
+              },
+            }
+          );
+
+          if (!transcodeError && transcodeData?.videoUrl) {
+            videoUrl = transcodeData.videoUrl;
+          }
+
+          // Step 2: Burn captions if requested
+          if (config.includeCaptions && (config.captionStyle === 'burned_in' || config.captionStyle === 'both')) {
+            setJobs(prev => prev.map(j =>
+              j.id === job.id ? { ...j, progress: 50 } : j
+            ));
+
+            const { data: captionData } = await supabase.functions.invoke(
+              'ai-universal-processor',
+              {
+                body: {
+                  action: 'burn_captions',
+                  videoUrl,
+                  captionFormat: 'srt',
+                  style: {
+                    fontSize: preset.safeZone.bottom > 10 ? 20 : 24,
+                    position: 'bottom',
+                    marginV: Math.round(preset.safeZone.bottom * preset.resolution.height / 100),
+                  },
+                },
+              }
+            );
+
+            if (captionData?.videoUrl) {
+              videoUrl = captionData.videoUrl;
+            }
+          }
+
+          // Step 3: Add watermark if requested
+          if (config.includeWatermark) {
+            const { data: wmData } = await supabase.functions.invoke(
+              'ai-universal-processor',
+              {
+                body: {
+                  action: 'add_watermark',
+                  videoUrl,
+                  watermark: {
+                    type: 'text',
+                    text: 'GenieSuite',
+                    position: 'bottom_right',
+                    opacity: 0.2,
+                  },
+                },
+              }
+            );
+
+            if (wmData?.videoUrl) {
+              videoUrl = wmData.videoUrl;
+            }
+          }
+        }
+
+        // Step 4: Upload to platform (for non-download presets)
+        setJobs(prev => prev.map(j =>
+          j.id === job.id ? { ...j, status: 'uploading', progress: 75 } : j
+        ));
+
+        const isDownload = job.platformId.startsWith('download_');
+        const isSocial = ['youtube', 'tiktok', 'instagram_reels', 'instagram_feed', 'instagram_story',
+          'facebook_feed', 'facebook_reels', 'linkedin_feed', 'x_twitter', 'threads', 'bluesky'].includes(job.platformId);
+
+        if (isSocial && videoUrl) {
+          const { data: publishData, error: publishError } = await supabase.functions.invoke(
+            'social-publish',
+            {
+              body: {
+                platform: job.platformId.replace('_feed', '').replace('_reels', '').replace('_story', ''),
+                videoUrl,
+                title: config.title || 'Untitled',
+                description: config.description || '',
+                hashtags: config.hashtags || [],
+                scheduledAt: config.scheduledAt,
+              },
+            }
+          );
+
+          if (publishError) {
+            throw new Error(publishError.message || 'Platform publish failed');
+          }
+
+          setJobs(prev => prev.map(j =>
+            j.id === job.id
+              ? {
+                  ...j,
+                  status: 'complete',
+                  progress: 100,
+                  outputUrl: publishData?.postUrl || publishData?.url || videoUrl,
+                  completedAt: new Date().toISOString(),
+                }
+              : j
+          ));
+        } else {
+          // Download or non-social: just mark complete with video URL
+          setJobs(prev => prev.map(j =>
+            j.id === job.id
+              ? {
+                  ...j,
+                  status: 'complete',
+                  progress: 100,
+                  outputUrl: videoUrl || undefined,
+                  completedAt: new Date().toISOString(),
+                }
+              : j
+          ));
+        }
+      } catch (err) {
+        setJobs(prev => prev.map(j =>
+          j.id === job.id
+            ? {
+                ...j,
+                status: 'failed',
+                error: err instanceof Error ? err.message : 'Export failed',
+              }
+            : j
+        ));
+      }
     }
 
     setIsExporting(false);
