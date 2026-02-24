@@ -2,17 +2,17 @@
  * FORMAT STUDIO ROUTER
  *
  * Renders format-aware editor interfaces based on selected content formats.
- * Replaces the hardcoded "Generate Video" approach with a routing/dispatch
- * component that shows format-specific generation controls and checklists.
+ * All format metadata (label, description, icon, checklist, editor placeholder)
+ * is pulled from the DB via useCastContentRegistry — no hardcoded FORMAT_REGISTRY.
  *
  * Each format gets its own Card with:
- * - Format icon and label
- * - Editor description (placeholder for actual editor)
- * - Format-specific readiness checklist
+ * - Format icon and label (from DB)
+ * - Editor description / placeholder (from DB)
+ * - Format-specific readiness checklist (from DB)
  * - Generate button with status indicator
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Video,
   Presentation,
@@ -29,31 +29,21 @@ import {
   CheckCircle,
   Circle,
   Loader2,
+  Smile,
+  MonitorSmartphone,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useCastContentRegistry, type ContentFormat } from '@/hooks/useCastContentRegistry';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 type GenerationStatus = 'not_started' | 'generating' | 'complete';
-
-interface ChecklistItem {
-  label: string;
-  done: boolean;
-}
-
-interface FormatConfig {
-  icon: React.ElementType;
-  label: string;
-  description: string;
-  editorPlaceholder: string;
-  checklist: string[];
-}
 
 interface FormatStudioRouterProps {
   selectedFormats: string[];
@@ -62,233 +52,67 @@ interface FormatStudioRouterProps {
 }
 
 // ---------------------------------------------------------------------------
-// Format configuration registry
+// Icon resolver: maps DB icon name strings to Lucide components
+// New icons can be added here when new formats use them, or falls back to
+// FileText for any unrecognized icon name.
 // ---------------------------------------------------------------------------
 
-const FORMAT_REGISTRY: Record<string, FormatConfig> = {
-  video: {
-    icon: Video,
-    label: 'Video',
-    description: 'Video timeline with scene-by-scene editing, transitions, and TTS sync.',
-    editorPlaceholder: 'Video timeline + scene editor will render here. Add scenes, arrange clips, sync voiceover, and preview transitions.',
-    checklist: [
-      'All scenes rendered',
-      'TTS audio synced to scenes',
-      'Transitions applied',
-      'Final preview reviewed',
-    ],
-  },
-  ugc: {
-    icon: Video,
-    label: 'UGC Video',
-    description: 'User-generated content style video with authentic, lo-fi aesthetic.',
-    editorPlaceholder: 'UGC video timeline + scene editor will render here. Arrange clips, add captions, and apply UGC-style effects.',
-    checklist: [
-      'All scenes rendered',
-      'TTS audio synced to scenes',
-      'Captions generated',
-      'UGC style filters applied',
-    ],
-  },
-  presentation: {
-    icon: Presentation,
-    label: 'Presentation',
-    description: 'Slide editor with per-slide video/animation embeds and speaker notes.',
-    editorPlaceholder: 'Slide editor will render here. Design individual slides, embed videos or animations, and add speaker notes.',
-    checklist: [
-      'All slides complete',
-      'Optional videos embedded',
-      'Speaker notes added',
-      'Slide transitions configured',
-    ],
-  },
-  podcast: {
-    icon: Mic,
-    label: 'Podcast',
-    description: 'Audio timeline with multi-track mixing, music beds, and SFX layers.',
-    editorPlaceholder: 'Audio timeline will render here. Arrange voice tracks, add music beds, insert SFX, and fine-tune levels.',
-    checklist: [
-      'Audio tracks mixed',
-      'Intro/outro attached',
-      'Music beds leveled',
-      'Final audio mastered',
-    ],
-  },
-  voice: {
-    icon: Mic,
-    label: 'Voice Content',
-    description: 'Voice-first content with TTS generation and audio post-processing.',
-    editorPlaceholder: 'Voice editor will render here. Generate TTS, adjust pacing, and apply audio enhancements.',
-    checklist: [
-      'TTS generated for all segments',
-      'Pacing and pauses adjusted',
-      'Audio post-processing applied',
-      'Quality review passed',
-    ],
-  },
-  tts: {
-    icon: Mic,
-    label: 'Text-to-Speech',
-    description: 'TTS generation pipeline with voice selection and prosody controls.',
-    editorPlaceholder: 'TTS studio will render here. Select voices, adjust prosody, and generate speech output.',
-    checklist: [
-      'Voice profile selected',
-      'All text segments converted',
-      'Prosody tuned',
-      'Output quality verified',
-    ],
-  },
-  webcast: {
-    icon: Radio,
-    label: 'Webcast',
-    description: 'Combined slides + video overlay with live streaming configuration.',
-    editorPlaceholder: 'Webcast editor will render here. Arrange slides with video overlay, configure live settings, and set up interactive elements.',
-    checklist: [
-      'Slide deck linked',
-      'Video overlay configured',
-      'Live stream settings saved',
-      'Interactive elements tested',
-    ],
-  },
-  website: {
-    icon: Globe,
-    label: 'Website',
-    description: 'Page section builder with responsive layout and media embedding.',
-    editorPlaceholder: 'Page section builder will render here. Drag-and-drop sections, embed media, and preview responsive layouts.',
-    checklist: [
-      'All sections built',
-      'Responsive preview passed',
-      'Media assets embedded',
-      'SEO metadata configured',
-    ],
-  },
-  infographic: {
-    icon: BarChart3,
-    label: 'Infographic',
-    description: 'Visual canvas with motion keyframes and animated data visualizations.',
-    editorPlaceholder: 'Infographic canvas will render here. Place data visualizations, add motion keyframes, and configure animation timings.',
-    checklist: [
-      'Data visualizations placed',
-      'Motion keyframes set',
-      'Animation timing reviewed',
-      'Static fallback exported',
-    ],
-  },
-  training: {
-    icon: BookOpen,
-    label: 'Training Module',
-    description: 'Chapter/module editor with assessments, quizzes, and progress tracking.',
-    editorPlaceholder: 'Training module editor will render here. Create chapters, add assessments, and configure learner progress tracking.',
-    checklist: [
-      'All chapters/modules created',
-      'Assessments configured',
-      'Media assets embedded',
-      'Learning path validated',
-    ],
-  },
-  kids_education: {
-    icon: BookOpen,
-    label: 'Kids Education',
-    description: 'Educational content editor with age-appropriate activities and interactive elements.',
-    editorPlaceholder: 'Kids education editor will render here. Build interactive lessons, add gamification elements, and set difficulty levels.',
-    checklist: [
-      'Lesson modules created',
-      'Interactive elements added',
-      'Age-appropriate review passed',
-      'Gamification configured',
-    ],
-  },
-  meeting_intelligence: {
-    icon: Users,
-    label: 'Meeting Intelligence',
-    description: 'Diagram and flow editor for meeting summaries, action items, and insights.',
-    editorPlaceholder: 'Diagram/flow editor will render here. Visualize meeting flow, highlight decisions, and map action items.',
-    checklist: [
-      'Meeting flow diagrammed',
-      'Key decisions highlighted',
-      'Action items mapped',
-      'Summary document generated',
-    ],
-  },
-  email_campaign: {
-    icon: Mail,
-    label: 'Email Campaign',
-    description: 'Email sequence builder with A/B variants, scheduling, and analytics hooks.',
-    editorPlaceholder: 'Email sequence builder will render here. Design email templates, configure send sequences, and set up A/B variants.',
-    checklist: [
-      'Email templates designed',
-      'Send sequence configured',
-      'A/B variants created',
-      'Preview across clients tested',
-    ],
-  },
-  event_content: {
-    icon: Calendar,
-    label: 'Event Content',
-    description: 'Event highlight reel editor with multi-camera timeline and branding.',
-    editorPlaceholder: 'Event highlight reel editor will render here. Arrange multi-camera footage, add branding overlays, and trim highlights.',
-    checklist: [
-      'Highlight clips selected',
-      'Branding overlays applied',
-      'Timeline arranged',
-      'Final reel reviewed',
-    ],
-  },
-  document: {
-    icon: FileText,
-    label: 'Document',
-    description: 'Rich text document editor with formatting, media embedding, and export.',
-    editorPlaceholder: 'Document editor will render here. Write and format content, embed media, and configure export settings.',
-    checklist: [
-      'Content drafted',
-      'Formatting applied',
-      'Media embedded',
-      'Export format configured',
-    ],
-  },
-  script: {
-    icon: FileText,
-    label: 'Script',
-    description: 'Script/screenplay editor with scene headings, dialogue, and action blocks.',
-    editorPlaceholder: 'Script editor will render here. Write scene headings, dialogue, and action descriptions with industry-standard formatting.',
-    checklist: [
-      'All scenes written',
-      'Dialogue finalized',
-      'Stage directions added',
-      'Script review completed',
-    ],
-  },
+const ICON_MAP: Record<string, React.ElementType> = {
+  Video,
+  Film: Video,
+  Mic,
+  Mic2: Mic,
+  Radio,
+  Globe,
+  BarChart3,
+  BookOpen,
+  Book: BookOpen,
+  Users,
+  Mail,
+  Calendar,
+  FileText,
+  FileCheck: FileText,
+  Presentation,
+  Smile,
+  MonitorSmartphone,
+  // Common aliases
+  Monitor: MonitorSmartphone,
+  Gamepad2: Play,
+  ShoppingCart: Globe,
+  Clapperboard: Video,
+  Wand2: Play,
+  Package: Globe,
+  Layout: Globe,
+  Image: Globe,
+  MousePointer: Globe,
+  Library: BookOpen,
+  PlayCircle: Play,
+  Workflow: Users,
+  GitBranch: Users,
+  Repeat: Mail,
+  Newspaper: Mail,
+  UserPlus: Users,
+  HelpCircle: BookOpen,
+  Music: Mic,
+  Sparkles: Play,
+  ClipboardCheck: FileText,
+  Award: FileText,
+  Target: BarChart3,
+  Drama: Mic,
 };
 
-// Fallback config for unknown format names
-const FALLBACK_FORMAT: FormatConfig = {
-  icon: FileText,
-  label: 'Custom Format',
-  description: 'Generic content editor for this format type.',
-  editorPlaceholder: 'Content editor will render here. Build and configure content for this format.',
-  checklist: [
-    'Content created',
-    'Quality review passed',
-    'Assets embedded',
-    'Ready for export',
-  ],
-};
-
-// ---------------------------------------------------------------------------
-// Helper: resolve a format name to its config
-// ---------------------------------------------------------------------------
-
-function resolveFormatConfig(formatName: string): FormatConfig {
-  const key = formatName.toLowerCase().trim();
-  if (FORMAT_REGISTRY[key]) {
-    return FORMAT_REGISTRY[key];
-  }
-  // Return a fallback with the raw name as label
-  return {
-    ...FALLBACK_FORMAT,
-    label: formatName.charAt(0).toUpperCase() + formatName.slice(1),
-  };
+function resolveIcon(iconName: string | null | undefined): React.ElementType {
+  if (!iconName) return FileText;
+  return ICON_MAP[iconName] || FileText;
 }
+
+// ---------------------------------------------------------------------------
+// Default fallbacks when DB columns are null (for newly created formats
+// that haven't had their UI metadata filled in yet)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_PLACEHOLDER = 'Content editor will render here. Build and configure content for this format.';
+const DEFAULT_CHECKLIST = ['Content created', 'Quality review passed', 'Assets embedded', 'Ready for export'];
 
 // ---------------------------------------------------------------------------
 // Status helpers
@@ -353,33 +177,37 @@ function FormatChecklist({ items, status }: FormatChecklistProps) {
 
 interface FormatCardProps {
   formatName: string;
-  config: FormatConfig;
+  format: ContentFormat;
   status: GenerationStatus;
   onGenerate: () => void;
 }
 
-function FormatCard({ formatName, config, status, onGenerate }: FormatCardProps) {
-  const Icon = config.icon;
+function FormatCard({ formatName, format, status, onGenerate }: FormatCardProps) {
+  const Icon = resolveIcon(format.icon);
+  const checklist = format.checklist?.length ? format.checklist : DEFAULT_CHECKLIST;
+  const placeholder = format.editor_placeholder || DEFAULT_PLACEHOLDER;
 
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-md bg-primary/10">
-              <Icon className="h-5 w-5 text-primary" />
+            <div className={cn('p-2 rounded-md', format.color ? `bg-opacity-10` : 'bg-primary/10')}>
+              <Icon className={cn('h-5 w-5', format.color || 'text-primary')} />
             </div>
-            <CardTitle className="text-lg">{config.label}</CardTitle>
+            <CardTitle className="text-lg">{format.label}</CardTitle>
           </div>
           {statusBadge(status)}
         </div>
-        <CardDescription className="mt-1.5">{config.description}</CardDescription>
+        {format.description && (
+          <CardDescription className="mt-1.5">{format.description}</CardDescription>
+        )}
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col gap-4">
         {/* Editor placeholder */}
         <div className="rounded-md border border-dashed border-muted-foreground/25 bg-muted/30 p-4 text-sm text-muted-foreground min-h-[80px] flex items-center justify-center text-center">
-          {config.editorPlaceholder}
+          {placeholder}
         </div>
 
         {/* Progress bar */}
@@ -396,7 +224,7 @@ function FormatCard({ formatName, config, status, onGenerate }: FormatCardProps)
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Readiness Checklist
           </p>
-          <FormatChecklist items={config.checklist} status={status} />
+          <FormatChecklist items={checklist} status={status} />
         </div>
 
         {/* Generate button */}
@@ -410,17 +238,17 @@ function FormatCard({ formatName, config, status, onGenerate }: FormatCardProps)
             {status === 'generating' ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating {config.label}...
+                Generating {format.label}...
               </>
             ) : status === 'complete' ? (
               <>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Regenerate {config.label}
+                Regenerate {format.label}
               </>
             ) : (
               <>
                 <Play className="h-4 w-4 mr-2" />
-                Generate {config.label}
+                Generate {format.label}
               </>
             )}
           </Button>
@@ -439,8 +267,19 @@ export function FormatStudioRouter({
   projectId,
   onGenerate,
 }: FormatStudioRouterProps) {
+  const contentRegistry = useCastContentRegistry();
+
   // Track per-format generation status locally
   const [statuses, setStatuses] = useState<Record<string, GenerationStatus>>({});
+
+  // Build a name→ContentFormat lookup from DB data
+  const formatsByName = useMemo(() => {
+    const map: Record<string, ContentFormat> = {};
+    for (const fmt of contentRegistry.formats) {
+      map[fmt.name] = fmt;
+    }
+    return map;
+  }, [contentRegistry.formats]);
 
   const handleGenerate = useCallback(
     (formatName: string) => {
@@ -490,14 +329,30 @@ export function FormatStudioRouter({
 
       <div className={cn('grid gap-4', gridCols)}>
         {selectedFormats.map((formatName) => {
-          const config = resolveFormatConfig(formatName);
+          // Look up from DB; fall back to a synthetic entry for unknown names
+          const format: ContentFormat = formatsByName[formatName] ?? {
+            id: formatName,
+            name: formatName,
+            label: formatName.charAt(0).toUpperCase() + formatName.slice(1).replace(/_/g, ' '),
+            icon: 'FileText',
+            color: 'text-primary',
+            description: null,
+            requires_messaging: false,
+            requires_tts: false,
+            requires_video: false,
+            enrichment_config: {},
+            editor_placeholder: DEFAULT_PLACEHOLDER,
+            checklist: DEFAULT_CHECKLIST,
+            sort_order: 99,
+            is_active: true,
+          };
           const status = statuses[formatName] ?? 'not_started';
 
           return (
             <FormatCard
               key={formatName}
               formatName={formatName}
-              config={config}
+              format={format}
               status={status}
               onGenerate={() => handleGenerate(formatName)}
             />

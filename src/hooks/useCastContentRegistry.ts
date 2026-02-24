@@ -33,6 +33,8 @@ export interface ContentFormat {
   requires_tts: boolean;
   requires_video: boolean;
   enrichment_config: Record<string, unknown>;
+  editor_placeholder: string | null;
+  checklist: string[];
   sort_order: number;
   is_active: boolean;
 }
