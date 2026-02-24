@@ -48,7 +48,13 @@ type GenerationStatus = 'not_started' | 'generating' | 'complete';
 interface FormatStudioRouterProps {
   selectedFormats: string[];
   projectId?: string;
-  onGenerate?: (formatName: string) => void;
+  /** Called when user clicks Generate. Returns a Promise — status updates
+   *  when the promise resolves (complete) or rejects (error). */
+  onGenerate?: (formatName: string) => void | Promise<void>;
+  /** External status overrides (e.g., from production pipeline events) */
+  externalStatuses?: Record<string, GenerationStatus>;
+  /** External progress per format (0-100) from production pipeline */
+  externalProgress?: Record<string, number>;
 }
 
 // ---------------------------------------------------------------------------
@@ -179,10 +185,11 @@ interface FormatCardProps {
   formatName: string;
   format: ContentFormat;
   status: GenerationStatus;
+  progress: number;
   onGenerate: () => void;
 }
 
-function FormatCard({ formatName, format, status, onGenerate }: FormatCardProps) {
+function FormatCard({ formatName, format, status, progress, onGenerate }: FormatCardProps) {
   const Icon = resolveIcon(format.icon);
   const checklist = format.checklist?.length ? format.checklist : DEFAULT_CHECKLIST;
   const placeholder = format.editor_placeholder || DEFAULT_PLACEHOLDER;
@@ -210,13 +217,13 @@ function FormatCard({ formatName, format, status, onGenerate }: FormatCardProps)
           {placeholder}
         </div>
 
-        {/* Progress bar */}
+        {/* Progress bar — uses real progress from pipeline, not static mapping */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Progress</span>
-            <span>{statusProgress(status)}%</span>
+            <span>{Math.round(progress)}%</span>
           </div>
-          <Progress value={statusProgress(status)} className="h-2" />
+          <Progress value={progress} className="h-2" />
         </div>
 
         {/* Readiness checklist */}
@@ -266,11 +273,14 @@ export function FormatStudioRouter({
   selectedFormats,
   projectId,
   onGenerate,
+  externalStatuses,
+  externalProgress,
 }: FormatStudioRouterProps) {
   const contentRegistry = useCastContentRegistry();
 
   // Track per-format generation status locally
   const [statuses, setStatuses] = useState<Record<string, GenerationStatus>>({});
+  const [progress, setProgress] = useState<Record<string, number>>({});
 
   // Build a name→ContentFormat lookup from DB data
   const formatsByName = useMemo(() => {
@@ -281,16 +291,32 @@ export function FormatStudioRouter({
     return map;
   }, [contentRegistry.formats]);
 
-  const handleGenerate = useCallback(
-    (formatName: string) => {
-      setStatuses((prev) => ({ ...prev, [formatName]: 'generating' }));
-      onGenerate?.(formatName);
+  // Merge external statuses when provided (from production pipeline)
+  const mergedStatuses = useMemo(() => ({
+    ...statuses,
+    ...(externalStatuses || {}),
+  }), [statuses, externalStatuses]);
 
-      // Simulate generation completing after a delay (placeholder behaviour).
-      // In production this would be driven by actual generation progress events.
-      setTimeout(() => {
+  const mergedProgress = useMemo(() => ({
+    ...progress,
+    ...(externalProgress || {}),
+  }), [progress, externalProgress]);
+
+  const handleGenerate = useCallback(
+    async (formatName: string) => {
+      setStatuses((prev) => ({ ...prev, [formatName]: 'generating' }));
+      setProgress((prev) => ({ ...prev, [formatName]: 0 }));
+
+      try {
+        // Call the real production handler — async, driven by pipeline events
+        await onGenerate?.(formatName);
         setStatuses((prev) => ({ ...prev, [formatName]: 'complete' }));
-      }, 3000);
+        setProgress((prev) => ({ ...prev, [formatName]: 100 }));
+      } catch {
+        // On error, reset to not_started so user can retry
+        setStatuses((prev) => ({ ...prev, [formatName]: 'not_started' }));
+        setProgress((prev) => ({ ...prev, [formatName]: 0 }));
+      }
     },
     [onGenerate],
   );
@@ -346,7 +372,8 @@ export function FormatStudioRouter({
             sort_order: 99,
             is_active: true,
           };
-          const status = statuses[formatName] ?? 'not_started';
+          const status = mergedStatuses[formatName] ?? 'not_started';
+          const formatProgress = mergedProgress[formatName] ?? statusProgress(status);
 
           return (
             <FormatCard
@@ -354,6 +381,7 @@ export function FormatStudioRouter({
               formatName={formatName}
               format={format}
               status={status}
+              progress={formatProgress}
               onGenerate={() => handleGenerate(formatName)}
             />
           );

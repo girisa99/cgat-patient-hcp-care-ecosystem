@@ -116,6 +116,10 @@ import type { SceneProgress, ProductionModeSettings, TimelinePhase } from './pro
 // Import Holiday Awareness
 import { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
 
+// Production pipeline hook
+import { useCastProduction } from '@/hooks/useCastProduction';
+import { buildRequestFromCastSession, assembleEnrichmentContext } from '@/services/production/castProductionBridge';
+
 // Import Content Library component
 import { ContentLibraryGrid } from './ContentLibraryGrid';
 
@@ -370,6 +374,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
 
   // P3: Unified Production Session — bridges script→TTS→video→timeline for all formats
   const productionSession = useProductionSession(videoTimeline);
+
+  // Production pipeline — real generation (replaces console.log stubs)
+  const production = useCastProduction();
 
   const guideDispatch = useGuideStore((s) => s.dispatch);
 
@@ -2711,40 +2718,55 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   selectedLanguage={selectedDialectCodes[0] || 'en-US'}
                 />
 
-                {/* Phase 6E: Production Timeline (B-024) */}
+                {/* Phase 6E: Production Timeline — driven by real pipeline state */}
                 <ProductionTimeline
                   phases={createTimelinePhases(
                     deriveSceneRenderMode(castSession.session.selectedStyles?.[0] || 'smart_storytelling'),
                   )}
-                  currentPhaseId={null}
-                  overallProgress={0}
-                  elapsedMs={0}
-                  estimatedTotalMs={180000}
+                  currentPhaseId={production.state.currentTask || null}
+                  overallProgress={production.state.progress}
+                  elapsedMs={production.state.startedAt ? Date.now() - new Date(production.state.startedAt).getTime() : 0}
+                  estimatedTotalMs={castSession.session.targetDuration * 3000}
                 />
 
-                {/* Phase 6E: Production Controls (B-025) */}
+                {/* Phase 6E: Production Controls — wired to real pipeline */}
                 <ProductionControlPanel
-                  productionState={{
-                    status: 'idle',
-                    job: null,
-                    progress: 0,
-                    currentTask: '',
-                    scenes: [],
-                    enrichment: null,
-                    enrichmentScore: 0,
-                    error: null,
-                    startedAt: null,
-                    completedAt: null,
-                  }}
-                  onStart={() => {
-                    console.log('[Studio] Start production');
+                  productionState={production.state}
+                  onStart={async () => {
+                    const session = castSession.session;
+                    const enrichment = assembleEnrichmentContext(null, session.selectedRegion || 'en');
+                    const request = buildRequestFromCastSession(session, enrichment);
                     toast.info('Starting production pipeline...');
+                    try {
+                      await production.startProduction({
+                        scriptContent: request.scriptContent,
+                        scriptTitle: request.scriptTitle,
+                        inputMode: request.scriptMode,
+                        intent: request.intent,
+                        selectedFormats: request.selectedFormats,
+                        inputLanguage: request.inputLanguage,
+                        outputLanguages: request.outputLanguages,
+                        videoStyles: request.videoStyles,
+                        scenario: request.scenario,
+                        sceneStyle: request.sceneStyle,
+                        quality: request.quality,
+                        avatarGender: request.avatarGender,
+                        includeMusic: request.includeMusic,
+                        includeCaptions: request.includeCaptions,
+                      });
+                      toast.success('Production complete!');
+                      setSubTab('produce', 'review');
+                    } catch (err) {
+                      toast.error('Production failed — check pipeline status');
+                    }
                   }}
                   onCancel={() => {
-                    console.log('[Studio] Cancel production');
+                    production.cancelProduction();
+                    toast.info('Production cancelled');
                   }}
                   onReset={() => {
-                    console.log('[Studio] Reset production');
+                    production.resetProduction();
+                    toast.info('Production reset');
                   }}
                 />
 
