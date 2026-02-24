@@ -1,12 +1,12 @@
 /**
- * GENIE CAST CONSOLIDATED 4-TAB STRUCTURE
+ * GENIE CAST CONSOLIDATED 3-TAB STRUCTURE
  *
- * Consolidates 10+ scattered tabs into unified workflow:
- * - CREATE: Intent, Messaging, Templates, Production Setup (Styles + Assets + Regional)
- * - PRODUCE: Generate, Matrix, Suite (Timeline & Production), Review
- * - MANAGE: Library, Analytics, Flow, Content Repurposing
- * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing
+ * Consolidates scattered tabs into a unified linear workflow:
+ * - CREATE: Discover → Intent (Category/Format) → Configure (Style/Platform/Enrichment) → Templates → Assets
+ * - PRODUCE: Generate (FormatStudioRouter) → Edit (Script/Timeline/Post-Production) → Review (Approve Gate) + Library + Analytics
+ * - PUBLISH: Scheduler, Distribution, SEO, A/B Testing (locked until approval)
  *
+ * All brand/product context comes via Universal Enrichment (not separate messaging step).
  * This is the SINGLE interface for all Genie Cast functionality.
  */
 
