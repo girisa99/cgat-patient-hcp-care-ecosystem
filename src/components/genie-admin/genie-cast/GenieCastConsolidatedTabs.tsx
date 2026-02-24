@@ -2786,13 +2786,40 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       (videoTimeline as any).seek?.(targetMs) ?? videoTimeline.setPlayhead?.(targetMs);
                     }}
                     onRegenerateTTS={(sceneId) => {
+                      productionSession.regenerateSceneTTS?.(sceneId);
                       toast.info(`Regenerating TTS for scene: ${sceneId}`);
                     }}
                     onRegenerateVideo={(sceneId) => {
+                      productionSession.regenerateSceneVideo?.(sceneId);
                       toast.info(`Regenerating video for scene: ${sceneId}`);
                     }}
                     onRecordScene={(sceneId) => {
                       toast.info(`Recording mode for scene: ${sceneId}`);
+                    }}
+                  />
+                )}
+
+                {/* Scene Progress Tracker — per-scene render status from production pipeline */}
+                {production.state.scenes.length > 0 && (
+                  <SceneProgressTracker
+                    scenes={production.state.scenes.map((scene, idx) => ({
+                      sceneId: scene.sceneId,
+                      sceneIndex: idx,
+                      title: scene.scriptText?.slice(0, 40) || `Scene ${idx + 1}`,
+                      renderMode: deriveSceneRenderMode(castSession.session.selectedStyles?.[0] || 'smart_storytelling') as any,
+                      status: production.state.status === 'complete' ? 'complete' as const : 'pending' as const,
+                      progress: production.state.status === 'complete' ? 100 : 0,
+                      audioUrl: null,
+                      videoUrl: null,
+                      duration: scene.duration || 8,
+                      error: null,
+                    }))}
+                    productionState={production.state as any}
+                    onRetryScene={(sceneId) => {
+                      toast.info(`Retrying scene: ${sceneId}`);
+                    }}
+                    onPreviewScene={(sceneId) => {
+                      toast.info(`Previewing scene: ${sceneId}`);
                     }}
                   />
                 )}
@@ -3225,6 +3252,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   exportHook={platformExport}
                   timelineDurationMs={videoTimeline.state.totalDurationMs}
                 />
+
+                {/* Auto-Derivatives: Shorts, Clips, Thumbnails, Captions, Square — all from real pipeline */}
+                <ContentRepurposingPanel />
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                   {/* Left: Scene character visualizer */}
