@@ -12,6 +12,11 @@ export { ScriptTemplateMapper } from './ScriptTemplateMapper';
 export { AuthoringStageIndicator } from './AuthoringStageIndicator';
 export { AVSyncPreview, type SyncStatus, type AVSyncPreviewProps } from './AVSyncPreview';
 export { ApprovalDashboard } from './ApprovalDashboard';
+
+// Unified Editor (Mind ↔ Cast shared)
+export { UnifiedScriptPanel } from './UnifiedScriptPanel';
+export { useUnifiedEditorState } from '@/hooks/useUnifiedEditorState';
+export type { UnifiedEditorHook, EditorMode, SceneDocument } from '@/hooks/useUnifiedEditorState';
  
  // Re-export unified authoring hook for convenience
  export { useUnifiedAuthoring } from '@/hooks/useUnifiedAuthoring';

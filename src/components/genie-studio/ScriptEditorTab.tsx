@@ -61,6 +61,10 @@ import { TTSOptionsPanel } from './script-editor/TTSOptionsPanel';
 import { TranscreationPreview } from './script-editor/TranscreationPreview';
 import { BrandVoiceChecker } from './script-editor/BrandVoiceChecker';
 import { VersionHistoryPanel, type ScriptVersionEntry } from './script-editor/VersionHistoryPanel';
+
+// Unified editor — shared with Cast (Mind ↔ Cast parity)
+import { UnifiedScriptPanel } from '@/components/shared/UnifiedScriptPanel';
+import { useUnifiedEditorState } from '@/hooks/useUnifiedEditorState';
 import type {
   SavedScript,
   ScriptPurpose,
@@ -182,6 +186,25 @@ export function ScriptEditorTab({
   // ──── Version History State ────
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [scriptVersions, setScriptVersions] = useState<ScriptVersionEntry[]>([]);
+
+  // ──── Chapter/Multi-Scene Mode ────
+  // Both Mind and Cast support single-scene AND multi-scene editing.
+  // In Mind: podcast segments, webcast chapters, video scenes, multi-chapter scripts.
+  const [chapterModeEnabled, setChapterModeEnabled] = useState(false);
+
+  // Unified editor hook — shares the same engine as Cast
+  const unifiedEditor = useUnifiedEditorState({
+    productContext: 'mind',
+    mode: chapterModeEnabled ? 'multi-scene' : 'single',
+    initialContent: scriptContent,
+    initialTitle: scriptName || 'Untitled Script',
+    onContentChange: (_sceneId, content) => {
+      // Sync unified editor changes back to Mind's existing state
+      if (!chapterModeEnabled) {
+        setScriptContent(content);
+      }
+    },
+  });
 
   // ──── TTS Hook ────
   const { isGenerating: isTTSGenerating, lastResult: ttsResult, generate: generateTTS, play: playTTS, stop: stopTTS, download: downloadTTS } = useTTSGeneration();
@@ -967,43 +990,112 @@ export function ScriptEditorTab({
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <Label htmlFor="script-content">Script Content</Label>
-                {enhancedContent && (
-                  <div className="flex gap-2">
-                    <Button variant={activeVersion === 'original' ? 'secondary' : 'ghost'} size="sm" onClick={() => setActiveVersion('original')}>Original</Button>
-                    <Button variant={activeVersion === 'enhanced' ? 'secondary' : 'ghost'} size="sm" onClick={() => setActiveVersion('enhanced')}>
-                      <Sparkles className="h-3 w-3 mr-1" />Enhanced
-                    </Button>
+            {/* Chapter/Scene Mode Toggle */}
+            <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 border border-border/50">
+              <Label className="text-sm font-medium whitespace-nowrap">Editing Mode:</Label>
+              <div className="flex items-center gap-0.5 border rounded-md p-0.5">
+                <Button
+                  variant={!chapterModeEnabled ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setChapterModeEnabled(false)}
+                >
+                  Single Script
+                </Button>
+                <Button
+                  variant={chapterModeEnabled ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs px-3"
+                  onClick={() => setChapterModeEnabled(true)}
+                >
+                  Chapters / Scenes
+                </Button>
+              </div>
+              <span className="text-[10px] text-muted-foreground">
+                {chapterModeEnabled
+                  ? 'Multi-scene editing — podcast segments, webcast chapters, video scenes'
+                  : 'Single continuous script — quick editing for simple content'}
+              </span>
+            </div>
+
+            {/* Script Content — Single mode or Chapter mode */}
+            {chapterModeEnabled ? (
+              /* Multi-scene mode — shared panel with Cast */
+              <UnifiedScriptPanel
+                editor={unifiedEditor}
+                showVisualPrompt={scriptType === 'video'}
+                renderActions={(scene) => (
+                  <div className="flex items-center gap-2">
+                    {isTTSEnabled && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1"
+                        onClick={() => {
+                          const textForTTS = scene.activeVersion === 'enhanced' && scene.enhancedContent
+                            ? scene.enhancedContent
+                            : scene.content;
+                          if (!textForTTS.trim()) { toast.error('No content to generate TTS'); return; }
+                          generateTTS({ provider: ttsProvider, voice: ttsVoice, text: textForTTS, scriptMode });
+                          toast.info(`Generating TTS for "${scene.title}"...`);
+                        }}
+                      >
+                        <Volume2 className="h-3 w-3" /> Generate TTS
+                      </Button>
+                    )}
+                    {scene.status !== 'approved' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1 text-green-600"
+                        onClick={() => unifiedEditor.approveScene(scene.id)}
+                      >
+                        Approve
+                      </Button>
+                    )}
                   </div>
                 )}
+              />
+            ) : (
+              /* Single-script mode — existing textarea editor */
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label htmlFor="script-content">Script Content</Label>
+                  {enhancedContent && (
+                    <div className="flex gap-2">
+                      <Button variant={activeVersion === 'original' ? 'secondary' : 'ghost'} size="sm" onClick={() => setActiveVersion('original')}>Original</Button>
+                      <Button variant={activeVersion === 'enhanced' ? 'secondary' : 'ghost'} size="sm" onClick={() => setActiveVersion('enhanced')}>
+                        <Sparkles className="h-3 w-3 mr-1" />Enhanced
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <ScriptModeToolbar
+                  mode={scriptMode}
+                  onInsert={(marker) => {
+                    const textarea = textareaRef.current;
+                    if (textarea) {
+                      const start = textarea.selectionStart;
+                      const end = textarea.selectionEnd;
+                      const text = activeVersion === 'enhanced' && enhancedContent ? enhancedContent : scriptContent;
+                      const newText = text.slice(0, start) + marker + text.slice(end);
+                      if (activeVersion === 'enhanced') setEnhancedContent(newText);
+                      else setScriptContent(newText);
+                      setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + marker.length, start + marker.length); }, 0);
+                    }
+                  }}
+                  disabled={!scriptContent.trim() && !enhancedContent}
+                />
+                <Textarea
+                  ref={textareaRef}
+                  id="script-content"
+                  value={activeVersion === 'enhanced' && enhancedContent ? enhancedContent : scriptContent}
+                  onChange={(e) => { if (activeVersion === 'enhanced') setEnhancedContent(e.target.value); else setScriptContent(e.target.value); }}
+                  placeholder="Start writing your script here..."
+                  className="mt-1 min-h-[300px] font-mono text-sm"
+                />
               </div>
-              <ScriptModeToolbar
-                mode={scriptMode}
-                onInsert={(marker) => {
-                  const textarea = textareaRef.current;
-                  if (textarea) {
-                    const start = textarea.selectionStart;
-                    const end = textarea.selectionEnd;
-                    const text = activeVersion === 'enhanced' && enhancedContent ? enhancedContent : scriptContent;
-                    const newText = text.slice(0, start) + marker + text.slice(end);
-                    if (activeVersion === 'enhanced') setEnhancedContent(newText);
-                    else setScriptContent(newText);
-                    setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + marker.length, start + marker.length); }, 0);
-                  }
-                }}
-                disabled={!scriptContent.trim() && !enhancedContent}
-              />
-              <Textarea
-                ref={textareaRef}
-                id="script-content"
-                value={activeVersion === 'enhanced' && enhancedContent ? enhancedContent : scriptContent}
-                onChange={(e) => { if (activeVersion === 'enhanced') setEnhancedContent(e.target.value); else setScriptContent(e.target.value); }}
-                placeholder="Start writing your script here..."
-                className="mt-1 min-h-[300px] font-mono text-sm"
-              />
-            </div>
+            )}
 
             {/* Bottom Action Bar */}
             <div className="flex flex-wrap gap-2">
