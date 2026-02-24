@@ -372,37 +372,47 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const productionSession = useProductionSession(videoTimeline);
 
   const guideDispatch = useGuideStore((s) => s.dispatch);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
-  const [selectedSubFormatId, setSelectedSubFormatId] = useState<string | null>(null);
-  // Enrichment prompt for AI context injection
-  const [enrichmentPrompt, setEnrichmentPrompt] = useState<string>('');
-  // Resolution / aspect ratio selection
-  const [selectedResolution, setSelectedResolution] = useState<string>('1920x1080');
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('16:9');
-  // Visual styles from cast_visual_styles (DB-driven, multi-select)
-  const [selectedVisualStyleIds, setSelectedVisualStyleIds] = useState<string[]>([]);
-  // Production capabilities selection
-  const [selectedCapabilityIds, setSelectedCapabilityIds] = useState<string[]>([]);
-  // Auto-selected capability IDs (from style rules, user can override)
-  const [autoSelectedCapIds, setAutoSelectedCapIds] = useState<string[]>([]);
-  // Selected characters (tag-based multi-select)
-  const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
-  // Character picker popup state
+
+  // All CREATE config state now lives in castSession (persistent).
+  // Destructure for convenience — these read from session and write via setters.
+  const selectedCategoryId = castSession.session.selectedCategoryId;
+  const setSelectedCategoryId = castSession.setSelectedCategoryId;
+  const selectedFormatId = castSession.session.selectedFormatId;
+  const setSelectedFormatId = castSession.setSelectedFormatId;
+  const selectedSubFormatId = castSession.session.selectedSubFormatId;
+  const setSelectedSubFormatId = castSession.setSelectedSubFormatId;
+  const enrichmentPrompt = castSession.session.enrichmentPrompt;
+  const setEnrichmentPrompt = castSession.setEnrichmentPrompt;
+  const selectedResolution = castSession.session.selectedResolution;
+  const setSelectedResolution = castSession.setSelectedResolution;
+  const selectedAspectRatio = castSession.session.selectedAspectRatio;
+  const setSelectedAspectRatio = castSession.setSelectedAspectRatio;
+  const selectedVisualStyleIds = castSession.session.selectedVisualStyleIds;
+  const setSelectedVisualStyleIds = castSession.setSelectedVisualStyleIds;
+  const selectedCapabilityIds = castSession.session.selectedCapabilityIds;
+  const setSelectedCapabilityIds = castSession.setSelectedCapabilityIds;
+  const autoSelectedCapIds = castSession.session.autoSelectedCapIds;
+  const setAutoSelectedCapIds = castSession.setAutoSelectedCapIds;
+  const selectedCharacterIds = castSession.session.selectedCharacterIds;
+  const setSelectedCharacterIds = castSession.setSelectedCharacterIds;
+  // Character picker popup state (UI-only, no persistence needed)
   const [characterPickerOpen, setCharacterPickerOpen] = useState(false);
-  // Character frame percentage (10-100%)
-  const [characterFramePercent, setCharacterFramePercent] = useState(50);
-  // Target duration for auto scene calculation
-  const [targetDuration, setTargetDuration] = useState<number>(60); // seconds
-  // Asset source type
-  const [selectedAssetSource, setSelectedAssetSource] = useState<string>('generate');
-  // Lip-sync and dubbing toggles
-  const [lipSyncEnabled, setLipSyncEnabled] = useState(true);
-  const [dubbingEnabled, setDubbingEnabled] = useState(true);
-  // Platform + Languages
-  const [primaryPlatform, setPrimaryPlatform] = useState<string>('youtube');
-  const [outputLanguages, setOutputLanguages] = useState<string[]>(['en']);
-  const [dubbingSubtitleLanguages, setDubbingSubtitleLanguages] = useState<string[]>(['en']);
+  const characterFramePercent = castSession.session.characterFramePercent;
+  const setCharacterFramePercent = castSession.setCharacterFramePercent;
+  const targetDuration = castSession.session.targetDuration;
+  const setTargetDuration = castSession.setTargetDuration;
+  const selectedAssetSource = castSession.session.selectedAssetSource;
+  const setSelectedAssetSource = castSession.setSelectedAssetSource;
+  const lipSyncEnabled = castSession.session.lipSyncEnabled;
+  const setLipSyncEnabled = castSession.setLipSyncEnabled;
+  const dubbingEnabled = castSession.session.dubbingEnabled;
+  const setDubbingEnabled = castSession.setDubbingEnabled;
+  const primaryPlatform = castSession.session.primaryPlatform;
+  const setPrimaryPlatform = castSession.setPrimaryPlatform;
+  const outputLanguages = castSession.session.outputLanguages;
+  const setOutputLanguages = castSession.setOutputLanguages;
+  const dubbingSubtitleLanguages = castSession.session.dubbingSubtitleLanguages;
+  const setDubbingSubtitleLanguages = castSession.setDubbingSubtitleLanguages;
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
 
@@ -573,18 +583,23 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   ]);
 
 
-  const [selectedDialectCodes, setSelectedDialectCodes] = useState<string[]>(['en-US']);
-  const [avatarGender, setAvatarGender] = useState<'male' | 'female'>('female');
-  const [productionQuality, setProductionQuality] = useState<'preview' | 'production' | 'cinematic'>('production');
+  // These now read/write from persistent session state
+  const selectedDialectCodes = castSession.session.selectedDialectCodes;
+  const setSelectedDialectCodes = castSession.setSelectedDialectCodes;
+  const avatarGender = castSession.session.avatarGender;
+  const setAvatarGender = castSession.setAvatarGender;
+  const productionQuality = castSession.session.productionQuality;
+  const setProductionQuality = castSession.setProductionQuality;
 
   // Phase 2: AI Routing Intelligence for Studio transparency
   const routing = useAIRoutingIntelligence();
 
-  // Production Setup internal section state
+  // Production Setup internal section state (UI-only, no persistence needed)
   const [productionSection, setProductionSection] = useState<'styles' | 'assets' | 'regional'>('styles');
 
-  // Architecture B: Discovery flow state (Create → Discover sub-tab)
-  const [discoveryChainId, setDiscoveryChainId] = useState<string | null>(null);
+  // Discovery chain from persistent session
+  const discoveryChainId = castSession.session.discoveryChainId;
+  const setDiscoveryChainId = castSession.setDiscoveryChainId;
 
   // Simple/Advanced mode for CREATE tab
   const createMode = useCreateMode();
@@ -628,6 +643,22 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     });
     authoring.setTargetRegions(Array.from(regions) as RegionZone[]);
   }, [authoring]);
+
+  // ============================================
+  // CRITICAL BRIDGE: Initialize production session from template mapping.
+  // When authoring completes template mapping (CREATE), production session
+  // needs to be populated so PRODUCE sub-tabs (teleprompter, timeline, etc.)
+  // have scene data to work with.
+  // ============================================
+  const initFromMappingRef = productionSession.initializeFromMapping;
+  React.useEffect(() => {
+    const mapping = authoring.state.templateMapping;
+    if (mapping && productionSession.session.totalScenes === 0) {
+      const formatName = castSession.session.selectedFormatId || 'video';
+      initFromMappingRef(mapping, formatName);
+      console.log('[GenieCast] Initialized production session from template mapping:', mapping.scenes.length, 'scenes');
+    }
+  }, [authoring.state.templateMapping, productionSession.session.totalScenes, castSession.session.selectedFormatId, initFromMappingRef]);
 
   const currentMainDef = TAB_DEFINITIONS[activeMainTab];
   const currentSubTab = subTabs[activeMainTab];

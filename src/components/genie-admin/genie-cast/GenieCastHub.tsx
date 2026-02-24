@@ -26,6 +26,8 @@ import { CastMobileLayout } from './CastMobileLayout';
 import { CastTabletLayout } from './CastTabletLayout';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useCastProduction } from '@/hooks/useCastProduction';
+import { useGenieCastSession } from '@/hooks/useGenieCastSession';
+import { buildRequestFromCastSession, assembleEnrichmentContext } from '@/services/production/castProductionBridge';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Video, Share2, Film,
@@ -463,6 +465,9 @@ export const GenieCastHub: React.FC = () => {
   const production = useCastProduction();
   const isGenerating = production.isProducing;
 
+  // Persistent session state — single source of truth for all CREATE selections
+  const castSession = useGenieCastSession();
+
   // Persist state changes (styles + language)
   useEffect(() => {
     const state: GenieCastHubState = { selectedVideoStyles, languageCode };
@@ -490,47 +495,50 @@ export const GenieCastHub: React.FC = () => {
   }, []);
 
   const handleGenerate = useCallback(async () => {
-    if (selectedVideoStyles.length === 0) {
-      toast.error('Please select at least one video style');
+    const session = castSession.session;
+
+    // Validate minimum CREATE requirements
+    if (session.selectedVisualStyleIds.length === 0 && selectedVideoStyles.length === 0) {
+      toast.error('Please select at least one visual style');
       return;
     }
 
-    // Collect CREATE flow session data from localStorage
-    let sessionData: Record<string, any> = {};
-    try {
-      const stored = localStorage.getItem('genie-cast-session');
-      if (stored) sessionData = JSON.parse(stored);
-    } catch { /* use defaults */ }
+    // Build enrichment context from brand intelligence
+    const enrichment = assembleEnrichmentContext(null, session.selectedRegion || 'en');
 
-    const scriptContent = sessionData.approvedMessaging?.hook
-      || sessionData.scriptContent
-      || `Generate ${selectedVideoStyles[0]?.replace(/_/g, ' ')} video`;
+    // Build typed production request from persistent session (no more raw localStorage)
+    const request = buildRequestFromCastSession(session, enrichment);
 
-    toast.info(`Starting production (enrichment: ${production.state.enrichmentScore}/100)...`);
+    // Override videoStyles from prop if session has none (backward compat)
+    if (request.videoStyles.length === 0 || (request.videoStyles.length === 1 && request.videoStyles[0] === 'professional')) {
+      request.videoStyles = selectedVideoStyles.length > 0 ? selectedVideoStyles : ['professional'];
+    }
+
+    toast.info(`Starting production (enrichment: ${request.enrichmentScore}/100)...`);
 
     try {
       await production.startProduction({
-        scriptContent,
-        scriptTitle: sessionData.title || 'Untitled Production',
-        inputMode: 'text_to_script',
-        intent: sessionData.selectedIntent || 'marketing',
-        selectedFormats: ['short_video'],
-        inputLanguage: languageCode.split('-')[0] || 'en',
-        outputLanguages: [{ code: languageCode.split('-')[0] || 'en', adaptationLevel: 'moderate' }],
-        videoStyles: selectedVideoStyles,
-        scenario: sessionData.scenario || 'default',
-        sceneStyle: sessionData.sceneStyle || 'cinematic',
-        quality: sessionData.quality || 'production',
-        avatarGender: sessionData.avatarGender || 'neutral',
-        includeMusic: true,
-        includeCaptions: true,
+        scriptContent: request.scriptContent,
+        scriptTitle: request.scriptTitle,
+        inputMode: request.scriptMode,
+        intent: request.intent,
+        selectedFormats: request.selectedFormats,
+        inputLanguage: request.inputLanguage,
+        outputLanguages: request.outputLanguages,
+        videoStyles: request.videoStyles,
+        scenario: request.scenario,
+        sceneStyle: request.sceneStyle,
+        quality: request.quality,
+        avatarGender: request.avatarGender,
+        includeMusic: request.includeMusic,
+        includeCaptions: request.includeCaptions,
       });
 
       dispatch({ type: 'STEP_COMPLETED', stepId: 'generate' });
     } catch {
       toast.error('Failed to start production');
     }
-  }, [selectedVideoStyles, languageCode, dispatch, production]);
+  }, [castSession.session, selectedVideoStyles, dispatch, production]);
 
   const handleModeChange = useCallback((newMode: CastMode) => {
     setMode(newMode);

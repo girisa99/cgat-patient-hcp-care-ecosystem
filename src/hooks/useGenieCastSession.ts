@@ -1,13 +1,17 @@
 /**
  * useGenieCastSession - Persistent Session State for Genie Cast Workflow
- * 
- * Bridges CREATE → PRODUCE by persisting:
+ *
+ * THE SINGLE SOURCE OF TRUTH for all CREATE → PRODUCE → PUBLISH state.
+ * Every user selection in CREATE persists here and flows 1:1 into PRODUCE.
+ *
+ * Bridges:
  * - Selected template (from Assets)
  * - Approved messaging (from Messaging)
- * - Selected styles (from Styles)
+ * - Selected styles, formats, capabilities (from Configure)
  * - Script mapping (from Studio)
+ * - Production artifacts (from PRODUCE)
  * - Approval status per stage
- * 
+ *
  * Uses localStorage for persistence across tab changes and refreshes.
  * Database sync available for multi-device support.
  */
@@ -54,35 +58,68 @@ export interface ApprovalItem {
   data?: any; // Stage-specific data
 }
 
+/** Multi-speaker config for podcast/dialogue formats */
+export interface SpeakerConfig {
+  id: string;
+  name: string;
+  role: 'host' | 'guest' | 'narrator' | 'moderator' | 'character';
+  voiceProvider: string;       // 'azure' | 'elevenlabs' | 'alibaba' | 'openai'
+  voiceId: string;             // provider-specific voice ID
+  voiceFallbackChain: string[];
+  avatarStyle: '3d-pixar' | 'disney-2d' | 'realistic' | 'none';
+  avatarPrompt: string;
+  motionStyle: string;         // 'energetic' | 'measured' | 'calm'
+  colorPalette: string[];
+}
+
+/** Scene-to-chapter grouping config */
+export interface ChapterConfig {
+  id: string;
+  title: string;
+  sceneIds: string[];
+  description?: string;
+}
+
+/** Production artifacts produced by PRODUCE phase */
+export interface ProductionArtifacts {
+  assembledVideoUrl: string | null;
+  sceneVideoUrls: string[];
+  audioUrl: string | null;
+  captionFiles: { lang: string; srtUrl: string }[];
+  thumbnailUrls: string[];
+  exportPresets: string[];
+  speakerTracks: { speakerId: string; audioUrl: string }[];
+}
+
 export interface GenieCastSessionState {
   // Session metadata
   sessionId: string;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Project linking (DB-backed tracking)
   projectId: string | null; // cast_projects.id for token/cost tracking
-  
+
   // Product-first context (unified flow)
   selectedProductId: string | null;
   selectedIntent: string | null; // e.g., 'product-demo', 'hero-banner', 'educational'
   detectedRegion: string; // Auto-detected region from browser
   selectedRegion: string; // User-selected region (may override detection)
-  
+
   // CREATE stage selections
   selectedStyles: string[];
   selectedTemplate: SelectedTemplate | null;
   approvedMessaging: MessagingContent | null;
-  
+
   // PRODUCE stage data
   templateMapping: TemplateMapping | null;
   ttsGenerated: boolean;
   avSyncVerified: boolean;
-  
+
   // Regional config
   targetRegions: RegionZone[];
   selectedDialects: string[];
-  
+
   // Approval queue
   approvalItems: ApprovalItem[];
 
@@ -94,6 +131,53 @@ export interface GenieCastSessionState {
   selectedIndustryCategory: string | null;  // cast_content_categories.id
   selectedFormats: string[];                // cast_content_formats.id[]
   selectedContentTypes: string[];           // cast_content_sub_formats.id[]
+
+  // ============================================
+  // CREATE → PRODUCE: Full configuration state
+  // (Previously orphaned as local useState in GenieCastConsolidatedTabs)
+  // ============================================
+
+  // Content discovery selections
+  selectedCategoryId: string | null;        // cast_content_categories.id
+  selectedFormatId: string | null;          // cast_content_formats.id
+  selectedSubFormatId: string | null;       // cast_content_sub_formats.id
+  discoveryChainId: string | null;          // selected pipeline chain
+
+  // Platform & language targeting
+  primaryPlatform: string;                  // 'youtube' | 'tiktok' | 'instagram' | etc.
+  outputLanguages: string[];                // ['en', 'hi', 'ar', ...]
+  dubbingSubtitleLanguages: string[];       // languages for dubbing/subtitles
+  selectedDialectCodes: string[];           // full dialect codes like 'en-US', 'hi-IN'
+
+  // Visual configuration
+  selectedVisualStyleIds: string[];         // cast_visual_styles.id[] (DB UUIDs)
+  selectedCapabilityIds: string[];          // cast_production_capabilities.id[]
+  autoSelectedCapIds: string[];             // auto-selected from style rules (user can override)
+  selectedCharacterIds: string[];           // cast_style_characters.id[]
+  characterFramePercent: number;            // 10-100
+  avatarGender: 'male' | 'female' | 'neutral';
+
+  // Production settings
+  targetDuration: number;                   // seconds
+  selectedAssetSource: string;              // 'generate' | 'upload' | 'pre-uploaded'
+  lipSyncEnabled: boolean;
+  dubbingEnabled: boolean;
+  selectedResolution: string;               // '1920x1080' | '3840x2160' etc.
+  selectedAspectRatio: string;              // '16:9' | '9:16' | '1:1' | '4:5'
+  productionQuality: 'preview' | 'production' | 'cinematic';
+  enrichmentPrompt: string;                 // user's vision/prompt text
+
+  // Multi-output selection (user picks which outputs per format)
+  selectedOutputPresets: string[];           // output preset IDs to generate
+
+  // Podcast / dialogue format config
+  speakerConfig: SpeakerConfig[] | null;
+
+  // Scene-to-chapter mapping
+  chapterGrouping: ChapterConfig[] | null;
+
+  // PRODUCE artifacts (filled during production)
+  productionArtifacts: ProductionArtifacts | null;
 
   // Production mode settings (Phase 6E — multi-mode: avatar, 3D, animation, cinematic)
   productionSettings?: Record<string, unknown>;
@@ -108,7 +192,7 @@ const createDefaultSession = (): GenieCastSessionState => ({
   updatedAt: new Date(),
   selectedProductId: null,
   selectedIntent: null,
-  detectedRegion: 'en', // Default to English
+  detectedRegion: 'en',
   selectedRegion: 'en',
   selectedStyles: [],
   selectedTemplate: null,
@@ -124,6 +208,33 @@ const createDefaultSession = (): GenieCastSessionState => ({
   selectedIndustryCategory: null,
   selectedFormats: [],
   selectedContentTypes: [],
+  // CREATE → PRODUCE config defaults
+  selectedCategoryId: null,
+  selectedFormatId: null,
+  selectedSubFormatId: null,
+  discoveryChainId: null,
+  primaryPlatform: 'youtube',
+  outputLanguages: ['en'],
+  dubbingSubtitleLanguages: ['en'],
+  selectedDialectCodes: ['en-US'],
+  selectedVisualStyleIds: [],
+  selectedCapabilityIds: [],
+  autoSelectedCapIds: [],
+  selectedCharacterIds: [],
+  characterFramePercent: 50,
+  avatarGender: 'female',
+  targetDuration: 60,
+  selectedAssetSource: 'generate',
+  lipSyncEnabled: true,
+  dubbingEnabled: true,
+  selectedResolution: '1920x1080',
+  selectedAspectRatio: '16:9',
+  productionQuality: 'production',
+  enrichmentPrompt: '',
+  selectedOutputPresets: [],
+  speakerConfig: null,
+  chapterGrouping: null,
+  productionArtifacts: null,
 });
 
 // ============================================
@@ -430,6 +541,116 @@ export function useGenieCastSession() {
   }, []);
 
   // ============================================
+  // CREATE → PRODUCE CONFIG SETTERS
+  // Each setter persists to localStorage automatically via the useEffect.
+  // These replace orphaned useState in GenieCastConsolidatedTabs.
+  // ============================================
+
+  const setSelectedCategoryId = useCallback((id: string | null) => {
+    setSession(prev => ({ ...prev, selectedCategoryId: id, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedFormatId = useCallback((id: string | null) => {
+    setSession(prev => ({ ...prev, selectedFormatId: id, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedSubFormatId = useCallback((id: string | null) => {
+    setSession(prev => ({ ...prev, selectedSubFormatId: id, updatedAt: new Date() }));
+  }, []);
+
+  const setDiscoveryChainId = useCallback((id: string | null) => {
+    setSession(prev => ({ ...prev, discoveryChainId: id, updatedAt: new Date() }));
+  }, []);
+
+  const setPrimaryPlatform = useCallback((platform: string) => {
+    setSession(prev => ({ ...prev, primaryPlatform: platform, updatedAt: new Date() }));
+  }, []);
+
+  const setOutputLanguages = useCallback((langs: string[]) => {
+    setSession(prev => ({ ...prev, outputLanguages: langs, updatedAt: new Date() }));
+  }, []);
+
+  const setDubbingSubtitleLanguages = useCallback((langs: string[]) => {
+    setSession(prev => ({ ...prev, dubbingSubtitleLanguages: langs, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedDialectCodes = useCallback((codes: string[]) => {
+    setSession(prev => ({ ...prev, selectedDialectCodes: codes, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedVisualStyleIds = useCallback((ids: string[]) => {
+    setSession(prev => ({ ...prev, selectedVisualStyleIds: ids, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedCapabilityIds = useCallback((ids: string[]) => {
+    setSession(prev => ({ ...prev, selectedCapabilityIds: ids, updatedAt: new Date() }));
+  }, []);
+
+  const setAutoSelectedCapIds = useCallback((ids: string[]) => {
+    setSession(prev => ({ ...prev, autoSelectedCapIds: ids, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedCharacterIds = useCallback((ids: string[]) => {
+    setSession(prev => ({ ...prev, selectedCharacterIds: ids, updatedAt: new Date() }));
+  }, []);
+
+  const setCharacterFramePercent = useCallback((pct: number) => {
+    setSession(prev => ({ ...prev, characterFramePercent: pct, updatedAt: new Date() }));
+  }, []);
+
+  const setAvatarGender = useCallback((gender: 'male' | 'female' | 'neutral') => {
+    setSession(prev => ({ ...prev, avatarGender: gender, updatedAt: new Date() }));
+  }, []);
+
+  const setTargetDuration = useCallback((seconds: number) => {
+    setSession(prev => ({ ...prev, targetDuration: seconds, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedAssetSource = useCallback((source: string) => {
+    setSession(prev => ({ ...prev, selectedAssetSource: source, updatedAt: new Date() }));
+  }, []);
+
+  const setLipSyncEnabled = useCallback((enabled: boolean) => {
+    setSession(prev => ({ ...prev, lipSyncEnabled: enabled, updatedAt: new Date() }));
+  }, []);
+
+  const setDubbingEnabled = useCallback((enabled: boolean) => {
+    setSession(prev => ({ ...prev, dubbingEnabled: enabled, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedResolution = useCallback((resolution: string) => {
+    setSession(prev => ({ ...prev, selectedResolution: resolution, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedAspectRatio = useCallback((ratio: string) => {
+    setSession(prev => ({ ...prev, selectedAspectRatio: ratio, updatedAt: new Date() }));
+  }, []);
+
+  const setProductionQuality = useCallback((quality: 'preview' | 'production' | 'cinematic') => {
+    setSession(prev => ({ ...prev, productionQuality: quality, updatedAt: new Date() }));
+  }, []);
+
+  const setEnrichmentPrompt = useCallback((prompt: string) => {
+    setSession(prev => ({ ...prev, enrichmentPrompt: prompt, updatedAt: new Date() }));
+  }, []);
+
+  const setSelectedOutputPresets = useCallback((presets: string[]) => {
+    setSession(prev => ({ ...prev, selectedOutputPresets: presets, updatedAt: new Date() }));
+  }, []);
+
+  const setSpeakerConfig = useCallback((config: SpeakerConfig[] | null) => {
+    setSession(prev => ({ ...prev, speakerConfig: config, updatedAt: new Date() }));
+  }, []);
+
+  const setChapterGrouping = useCallback((chapters: ChapterConfig[] | null) => {
+    setSession(prev => ({ ...prev, chapterGrouping: chapters, updatedAt: new Date() }));
+  }, []);
+
+  const setProductionArtifacts = useCallback((artifacts: ProductionArtifacts | null) => {
+    setSession(prev => ({ ...prev, productionArtifacts: artifacts, updatedAt: new Date() }));
+  }, []);
+
+  // ============================================
   // NAVIGATION HELPERS
   // ============================================
 
@@ -509,45 +730,73 @@ export function useGenieCastSession() {
 
   return {
     session,
-    
+
     // Session management
     resetSession,
     updateSession,
-    
+
     // Product & Intent
     selectProduct,
     selectIntent,
     setRegionalContext,
-    
+
     // Template
     selectTemplate,
     clearTemplate,
-    
+
     // Styles
     setSelectedStyles,
-    
+
     // Messaging
     approveMessaging,
     rejectMessaging,
-    
+
     // Template mapping
     approveTemplateMapping,
-    
+
     // TTS
     markTTSGenerated,
-    
+
     // A/V Sync
     markAVSyncVerified,
-    
+
     // Regional
     setRegionalConfig,
-    
+
+    // CREATE → PRODUCE config setters
+    setSelectedCategoryId,
+    setSelectedFormatId,
+    setSelectedSubFormatId,
+    setDiscoveryChainId,
+    setPrimaryPlatform,
+    setOutputLanguages,
+    setDubbingSubtitleLanguages,
+    setSelectedDialectCodes,
+    setSelectedVisualStyleIds,
+    setSelectedCapabilityIds,
+    setAutoSelectedCapIds,
+    setSelectedCharacterIds,
+    setCharacterFramePercent,
+    setAvatarGender,
+    setTargetDuration,
+    setSelectedAssetSource,
+    setLipSyncEnabled,
+    setDubbingEnabled,
+    setSelectedResolution,
+    setSelectedAspectRatio,
+    setProductionQuality,
+    setEnrichmentPrompt,
+    setSelectedOutputPresets,
+    setSpeakerConfig,
+    setChapterGrouping,
+    setProductionArtifacts,
+
     // Navigation
     goToStage,
     getNextIncompleteStage,
     isStageComplete,
     canProceedToStage,
-    
+
     // Approval queue
     getPendingApprovals,
     getApprovedItems,
