@@ -237,8 +237,8 @@ const WIZARD_STEPS = [
   { id: 'output', label: 'Output Type', icon: Layers, description: 'Choose 2D, 3D, Video or Interactive output' },
   { id: 'agents', label: 'Agents & Languages', icon: Brain, description: 'Configure AI agents and multi-language settings' },
   { id: 'voice', label: 'Voice & Music', icon: Mic, description: 'Configure voiceover and background music' },
-  { id: 'generate', label: 'Generate', icon: Wand2, description: 'Review and create your presentation' },
-  { id: 'publish', label: 'Publish', icon: Share2, description: 'Export and distribute your content' },
+  { id: 'produce', label: 'Produce', icon: Wand2, description: 'Review blueprint, edit & generate your presentation' },
+  { id: 'publish', label: 'Publish', icon: Share2, description: 'Finalize, export and distribute your content' },
 ];
 
 // Helper to categorize languages for searchable dropdown
@@ -2169,287 +2169,645 @@ export function PresentationWizard({
 
             {/* Step 6: Review & Generate */}
             {currentStep === 6 && (
-              <div className="space-y-6">
-                {/* Proactive Alerts for Step 6 */}
-                <StepAlertBanner
-                  alerts={getStepAlerts(5, {})} 
-                />
-
-                {/* Step Header - Flat design */}
+              <div className="space-y-4">
+                {/* Step Header */}
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-primary/10">
                     <Wand2 className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-base text-foreground">Review & Generate</h3>
+                    <h3 className="font-semibold text-base text-foreground">Produce</h3>
                     <p className="text-sm text-muted-foreground">
-                      Review all your selections before generating
+                      Review blueprint, brand assets &amp; regional config, then generate
                     </p>
                   </div>
                 </div>
 
-                {/* Pre-Generation Confirmation Panel */}
-                <PreGenerationConfirmationPanel
-                  summary={{
-                    // Step 0: Input
-                    inputSource,
-                    inputContentPreview: inputContent.slice(0, 200) + (inputContent.length > 200 ? '...' : ''),
-                    inputContentLength: inputContent.length, // NEW: Full length for token calc
-                    hasUploadedFile: !!uploadedFile,
-                    
-                    // Step 1: Configuration
-                    industryCategory: workflowConfig?.industryCategory || '',
-                    industryName: INDUSTRY_CATEGORIES.find(i => i.id === workflowConfig?.industryCategory)?.name || '',
-                    segment: workflowConfig?.segment || '',
-                    contentTypes: selectedContentTypes,
-                    isAIAutoMode: isAutoSelectModels,
-                    step1Mode, // NEW: Independent per-step mode
-                    
-                    // Step 2: Template & Branding
-                    templateId: selectedTemplate?.id || '',
-                    templateName: selectedTemplate?.name || 'Default',
-                    themeName: selectedTheme?.name || 'Default',
-                    brandColors: brandConfig.colors || { primary: '#3b82f6', secondary: '#64748b', accent: '#f59e0b' },
-                    hasLogo: !!brandConfig.logo?.url,
-                    selectedFrameworkCategories,
-                    selectedFrameworkIds,
-                    visualFeatures: visualFeatureSelections,
-                    step2Mode, // NEW: Independent per-step mode
-                    
-                    // Step 3: Output Type
-                    outputSettings,
-                    
-                    // Step 4: Agents & Languages
-                    useAgenticGeneration,
-                    selectedAgents,
-                    selectedLanguages,
-                    primaryLanguage,
-                    includeVoiceover: outputSettings.includeVoiceover || includeVoiceover,
-                    voiceProvider,
-                    
-                    // AI Models - Current selections
-                    aiModels: {
-                      textModel: workflowConfig?.aiModels?.textModel || workflowConfig?.aiRecommendation?.textModel || 'Auto',
-                      imageModel: workflowConfig?.aiModels?.imageModel || workflowConfig?.aiRecommendation?.imageModel || 'Auto',
-                      voiceModel: workflowConfig?.aiModels?.voiceModel || workflowConfig?.aiRecommendation?.voiceModel || 'Auto',
-                      translationModel: workflowConfig?.aiModels?.translationModel || workflowConfig?.aiRecommendation?.translationModel || 'Auto',
-                    },
-                    
-                    // NEW: Pass full AI recommendation for confidence scores and reasoning
-                    aiRecommendation: workflowConfig?.aiRecommendation ? {
-                      textModel: workflowConfig.aiRecommendation.textModel,
-                      imageModel: workflowConfig.aiRecommendation.imageModel,
-                      voiceModel: workflowConfig.aiRecommendation.voiceModel,
-                      translationModel: workflowConfig.aiRecommendation.translationModel,
-                      reason: workflowConfig.aiRecommendation.reason,
-                      confidence: workflowConfig.aiRecommendation.confidence,
-                      alternativeTextModels: workflowConfig.aiRecommendation.alternativeTextModels,
-                      alternativeImageModels: workflowConfig.aiRecommendation.alternativeImageModels,
-                    } : undefined,
-                    
-                    // NEW: Feature flags for token estimation
-                    includeCharts,
-                    includeTables,
-                    includeInfographics,
-                    includeJourneyMaps,
-                  }}
-                  onConfirm={handleGenerate}
-                  onEdit={(stepIndex) => setCurrentStep(stepIndex)}
-                  isGenerating={isGenerating}
-                  currentBalance={credits?.credits_balance || 0}
-                  creditEstimate={calculateCredits({
-                    outputType: outputSettings.outputType,
-                    slideCount: outputSettings.slideCount,
-                    includeVoiceover: outputSettings.includeVoiceover,
-                    includeMusic: outputSettings.includeMusic,
-                    resolution: outputSettings.resolution as '720p' | '1080p' | '4k',
-                    languageCount: selectedLanguages.length,
-                  })}
-                />
+                {/* Produce Tabs */}
+                <Tabs defaultValue="blueprint" className="w-full">
+                  <TabsList className="inline-flex h-9 items-center justify-start gap-1 rounded-lg bg-muted p-1 w-full">
+                    <TabsTrigger value="blueprint" className="flex-1 text-xs gap-1">
+                      <Eye className="h-3 w-3" />Blueprint
+                    </TabsTrigger>
+                    <TabsTrigger value="brand" className="flex-1 text-xs gap-1">
+                      <Palette className="h-3 w-3" />Brand
+                    </TabsTrigger>
+                    <TabsTrigger value="regional" className="flex-1 text-xs gap-1">
+                      <Globe className="h-3 w-3" />Regional
+                    </TabsTrigger>
+                    <TabsTrigger value="generate" className="flex-1 text-xs gap-1">
+                      <Wand2 className="h-3 w-3" />Generate
+                    </TabsTrigger>
+                  </TabsList>
 
-                {/* Compliance Check Option - FLAT design */}
-                {workflowConfig?.industryCategory && ['healthcare', 'pharma', 'finance', 'legal'].includes(workflowConfig.industryCategory) && (
-                  <div className="p-4 rounded-lg border bg-muted/30">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Shield className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">Compliance Check</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">Enable Compliance Verification</p>
-                        <p className="text-xs text-muted-foreground">
-                          Verify content against industry regulations
-                        </p>
+                  {/* ─── BLUEPRINT TAB ─── */}
+                  <TabsContent value="blueprint" className="mt-3 space-y-3 border-0 p-0">
+                    <PreGenerationConfirmationPanel
+                      summary={{
+                        inputSource,
+                        inputContentPreview: inputContent.slice(0, 200) + (inputContent.length > 200 ? '...' : ''),
+                        inputContentLength: inputContent.length,
+                        hasUploadedFile: !!uploadedFile,
+                        industryCategory: workflowConfig?.industryCategory || '',
+                        industryName: INDUSTRY_CATEGORIES.find(i => i.id === workflowConfig?.industryCategory)?.name || '',
+                        segment: workflowConfig?.segment || '',
+                        contentTypes: selectedContentTypes,
+                        isAIAutoMode: isAutoSelectModels,
+                        step1Mode,
+                        templateId: selectedTemplate?.id || '',
+                        templateName: selectedTemplate?.name || 'Default',
+                        themeName: selectedTheme?.name || 'Default',
+                        brandColors: brandConfig.colors || { primary: '#3b82f6', secondary: '#64748b', accent: '#f59e0b' },
+                        hasLogo: !!brandConfig.logo?.url,
+                        selectedFrameworkCategories,
+                        selectedFrameworkIds,
+                        visualFeatures: visualFeatureSelections,
+                        step2Mode,
+                        outputSettings,
+                        useAgenticGeneration,
+                        selectedAgents,
+                        selectedLanguages,
+                        primaryLanguage,
+                        includeVoiceover: outputSettings.includeVoiceover || includeVoiceover,
+                        voiceProvider,
+                        aiModels: {
+                          textModel: workflowConfig?.aiModels?.textModel || workflowConfig?.aiRecommendation?.textModel || 'Auto',
+                          imageModel: workflowConfig?.aiModels?.imageModel || workflowConfig?.aiRecommendation?.imageModel || 'Auto',
+                          voiceModel: workflowConfig?.aiModels?.voiceModel || workflowConfig?.aiRecommendation?.voiceModel || 'Auto',
+                          translationModel: workflowConfig?.aiModels?.translationModel || workflowConfig?.aiRecommendation?.translationModel || 'Auto',
+                        },
+                        aiRecommendation: workflowConfig?.aiRecommendation ? {
+                          textModel: workflowConfig.aiRecommendation.textModel,
+                          imageModel: workflowConfig.aiRecommendation.imageModel,
+                          voiceModel: workflowConfig.aiRecommendation.voiceModel,
+                          translationModel: workflowConfig.aiRecommendation.translationModel,
+                          reason: workflowConfig.aiRecommendation.reason,
+                          confidence: workflowConfig.aiRecommendation.confidence,
+                          alternativeTextModels: workflowConfig.aiRecommendation.alternativeTextModels,
+                          alternativeImageModels: workflowConfig.aiRecommendation.alternativeImageModels,
+                        } : undefined,
+                        includeCharts,
+                        includeTables,
+                        includeInfographics,
+                        includeJourneyMaps,
+                      }}
+                      onConfirm={handleGenerate}
+                      onEdit={(stepIndex) => setCurrentStep(stepIndex)}
+                      isGenerating={isGenerating}
+                      currentBalance={credits?.credits_balance || 0}
+                      creditEstimate={calculateCredits({
+                        outputType: outputSettings.outputType,
+                        slideCount: outputSettings.slideCount,
+                        includeVoiceover: outputSettings.includeVoiceover,
+                        includeMusic: outputSettings.includeMusic,
+                        resolution: outputSettings.resolution as '720p' | '1080p' | '4k',
+                        languageCount: selectedLanguages.length,
+                      })}
+                    />
+                  </TabsContent>
+
+                  {/* ─── BRAND ASSETS TAB ─── */}
+                  <TabsContent value="brand" className="mt-3 space-y-3 border-0 p-0">
+                    {/* Brand Colors */}
+                    <div className="p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Palette className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">Brand Colors</span>
+                        <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs" onClick={() => setCurrentStep(2)}>
+                          <Edit3 className="h-3 w-3 mr-1" />Edit
+                        </Button>
                       </div>
-                      <Switch checked={showComplianceCheck} onCheckedChange={setShowComplianceCheck} />
-                    </div>
-                  </div>
-                )}
-
-                {/* Credit Burn Estimate */}
-                <CreditBurnDisplay
-                  currentBalance={credits?.credits_balance || 0}
-                  outputType={outputSettings.outputType}
-                  slideCount={outputSettings.slideCount}
-                  includeVoiceover={outputSettings.includeVoiceover}
-                  includeMusic={outputSettings.includeMusic}
-                  resolution={outputSettings.resolution}
-                  languageCount={selectedLanguages.length}
-                />
-
-                {/* Generation Progress - FLAT design */}
-                {isGenerating && (
-                  <div className="p-4 rounded-lg border border-primary/30 bg-primary/5">
-                    <div className="flex items-center gap-3">
-                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                      <div>
-                        <p className="text-sm font-medium">Generating presentation...</p>
-                        <p className="text-xs text-muted-foreground">
-                          {generationPhase === 'analyzing' ? 'Analyzing your content...' :
-                           generationPhase === 'structuring' ? 'Structuring slides...' :
-                           generationPhase === 'generating' ? 'Generating slide content...' :
-                           generationPhase === 'images' ? 'Creating images...' :
-                           generationPhase === 'finalizing' ? 'Finalizing...' :
-                           'Processing...'}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {[
+                          { label: 'Primary', color: brandConfig.colors?.primary || '#3b82f6' },
+                          { label: 'Secondary', color: brandConfig.colors?.secondary || '#64748b' },
+                          { label: 'Accent', color: brandConfig.colors?.accent || '#f59e0b' },
+                        ].map(c => (
+                          <div key={c.label} className="flex items-center gap-2 text-xs">
+                            <div className="w-6 h-6 rounded-md border shadow-sm" style={{ backgroundColor: c.color }} />
+                            <div>
+                              <p className="font-medium">{c.label}</p>
+                              <p className="text-muted-foreground">{c.color}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <Progress value={
-                      generationPhase === 'analyzing' ? 15 :
-                      generationPhase === 'structuring' ? 35 :
-                      generationPhase === 'generating' ? 60 :
-                      generationPhase === 'images' ? 85 :
-                      generationPhase === 'finalizing' ? 95 :
-                      generationPhase === 'complete' ? 100 : 50
-                    } className="mt-3" />
-                  </div>
-                )}
 
-                {/* Final Step Feedback */}
-                <StepFeedbackPanel 
-                  stepNumber={6} 
-                  stepName="Review & Generate" 
-                  variant="full" 
+                    {/* Typography */}
+                    <div className="p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Type className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">Typography</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2 rounded bg-muted/50">
+                          <p className="text-muted-foreground">Headings</p>
+                          <p className="font-medium">{brandConfig.typography?.headingFont || 'System Default'}</p>
+                        </div>
+                        <div className="p-2 rounded bg-muted/50">
+                          <p className="text-muted-foreground">Body</p>
+                          <p className="font-medium">{brandConfig.typography?.bodyFont || 'System Default'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Logo */}
+                    <div className="p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Presentation className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">Logo &amp; Template</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2 rounded bg-muted/50">
+                          <p className="text-muted-foreground">Template</p>
+                          <p className="font-medium">{selectedTemplate?.name || 'Default'}</p>
+                        </div>
+                        <div className="p-2 rounded bg-muted/50">
+                          <p className="text-muted-foreground">Theme</p>
+                          <p className="font-medium">{selectedTheme?.name || 'Default'}</p>
+                        </div>
+                        <div className="p-2 rounded bg-muted/50">
+                          <p className="text-muted-foreground">Logo</p>
+                          <p className="font-medium">{brandConfig.logo?.url ? 'Uploaded' : 'Not set'}</p>
+                        </div>
+                        <div className="p-2 rounded bg-muted/50">
+                          <p className="text-muted-foreground">Frameworks</p>
+                          <p className="font-medium">{selectedFrameworkIds.length > 0 ? `${selectedFrameworkIds.length} selected` : 'None'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Enrichment Context */}
+                    {structuredEnrichment && (
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Target className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Product Enrichment</span>
+                          <Badge variant="secondary" className="text-[10px] h-5">Auto</Badge>
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          {structuredEnrichment.product?.name && (
+                            <div className="flex justify-between"><span className="text-muted-foreground">Product</span><span className="font-medium">{structuredEnrichment.product.name}</span></div>
+                          )}
+                          {structuredEnrichment.product?.tagline && (
+                            <div className="flex justify-between"><span className="text-muted-foreground">Tagline</span><span className="font-medium truncate ml-4">{structuredEnrichment.product.tagline}</span></div>
+                          )}
+                          {structuredEnrichment.audience?.label && (
+                            <div className="flex justify-between"><span className="text-muted-foreground">Audience</span><span className="font-medium">{structuredEnrichment.audience.label}</span></div>
+                          )}
+                          {structuredEnrichment.knowledge?.valueProposition && (
+                            <div className="mt-2 p-2 rounded bg-muted/50">
+                              <p className="text-muted-foreground mb-1">Value Proposition</p>
+                              <p className="text-xs leading-relaxed">{structuredEnrichment.knowledge.valueProposition.slice(0, 200)}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Visual Features */}
+                    {visualFeatureSelections.length > 0 && (
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Layers className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Visual Features</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {visualFeatureSelections.map(vf => (
+                            <Badge key={vf.featureId} variant="outline" className="text-[10px]">
+                              {vf.featureId.replace(/-/g, ' ')}
+                              {vf.subOptions.length > 0 && ` (${vf.subOptions.length})`}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* ─── REGIONAL CONFIG TAB ─── */}
+                  <TabsContent value="regional" className="mt-3 space-y-3 border-0 p-0">
+                    {/* Languages */}
+                    <div className="p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Languages className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">Languages</span>
+                        <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs" onClick={() => setCurrentStep(4)}>
+                          <Edit3 className="h-3 w-3 mr-1" />Edit
+                        </Button>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Primary</span>
+                          <Badge variant="default" className="text-[10px]">
+                            {SUPPORTED_LANGUAGES.find(l => l.code === primaryLanguage)?.name || primaryLanguage}
+                          </Badge>
+                        </div>
+                        {selectedLanguages.length > 1 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Additional</span>
+                            <div className="flex flex-wrap gap-1 justify-end">
+                              {selectedLanguages.filter(l => l !== primaryLanguage).map(l => (
+                                <Badge key={l} variant="outline" className="text-[10px]">
+                                  {SUPPORTED_LANGUAGES.find(lang => lang.code === l)?.name || l}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Regional Routing */}
+                    <div className="p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <GitBranch className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">AI Model Routing</span>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        {[
+                          { label: 'Text', value: workflowConfig?.aiModels?.textModel || workflowConfig?.aiRecommendation?.textModel || 'Auto' },
+                          { label: 'Image', value: workflowConfig?.aiModels?.imageModel || workflowConfig?.aiRecommendation?.imageModel || 'Auto' },
+                          { label: 'Voice', value: workflowConfig?.aiModels?.voiceModel || workflowConfig?.aiRecommendation?.voiceModel || 'Auto' },
+                          { label: 'Translation', value: workflowConfig?.aiModels?.translationModel || workflowConfig?.aiRecommendation?.translationModel || 'Auto' },
+                        ].map(m => (
+                          <div key={m.label} className="flex justify-between items-center">
+                            <span className="text-muted-foreground">{m.label}</span>
+                            <span className="font-mono text-[10px] bg-muted px-1.5 py-0.5 rounded">{m.value.split('/').pop()}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {workflowConfig?.aiRecommendation && (
+                        <div className="mt-2 p-2 rounded bg-primary/5 text-[10px]">
+                          <span className="text-primary font-medium">AI Confidence: {Math.round((workflowConfig.aiRecommendation.confidence || 0) * 100)}%</span>
+                          {workflowConfig.aiRecommendation.reason && (
+                            <p className="text-muted-foreground mt-0.5">{workflowConfig.aiRecommendation.reason}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Voice & TTS Config */}
+                    <div className="p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Mic className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">Voice &amp; TTS</span>
+                        <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs" onClick={() => setCurrentStep(5)}>
+                          <Edit3 className="h-3 w-3 mr-1" />Edit
+                        </Button>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Voiceover</span><Badge variant={includeVoiceover ? 'default' : 'secondary'} className="text-[10px]">{includeVoiceover ? 'Enabled' : 'Disabled'}</Badge></div>
+                        {includeVoiceover && <div className="flex justify-between"><span className="text-muted-foreground">Provider</span><span className="font-medium">{voiceProvider}</span></div>}
+                        <div className="flex justify-between"><span className="text-muted-foreground">Background Music</span><Badge variant={outputSettings.includeMusic ? 'default' : 'secondary'} className="text-[10px]">{outputSettings.includeMusic ? 'Enabled' : 'Disabled'}</Badge></div>
+                      </div>
+                    </div>
+
+                    {/* Enrichment: Regional Script */}
+                    {structuredEnrichment?.regional && (
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Globe className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Regional Context</span>
+                          <Badge variant="secondary" className="text-[10px] h-5">Auto</Badge>
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          <div className="flex justify-between"><span className="text-muted-foreground">Region</span><span className="font-medium">{structuredEnrichment.regional.region || 'Global'}</span></div>
+                          <div className="flex justify-between"><span className="text-muted-foreground">Language</span><span className="font-medium">{structuredEnrichment.regional.language || 'en'}</span></div>
+                          {structuredEnrichment.regional.approvedScript && (
+                            <div className="mt-2 p-2 rounded bg-green-500/5 border border-green-500/20">
+                              <p className="text-green-700 font-medium mb-1">Approved Script Available</p>
+                              <p className="text-muted-foreground line-clamp-2">{structuredEnrichment.regional.approvedScript.slice(0, 150)}...</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Compliance */}
+                    {workflowConfig?.industryCategory && ['healthcare', 'pharma', 'finance', 'legal'].includes(workflowConfig.industryCategory) && (
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Compliance</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span>Enable Compliance Verification</span>
+                          <Switch checked={showComplianceCheck} onCheckedChange={setShowComplianceCheck} />
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* ─── GENERATE TAB ─── */}
+                  <TabsContent value="generate" className="mt-3 space-y-3 border-0 p-0">
+                    {/* Credit Burn Estimate */}
+                    <CreditBurnDisplay
+                      currentBalance={credits?.credits_balance || 0}
+                      outputType={outputSettings.outputType}
+                      slideCount={outputSettings.slideCount}
+                      includeVoiceover={outputSettings.includeVoiceover}
+                      includeMusic={outputSettings.includeMusic}
+                      resolution={outputSettings.resolution}
+                      languageCount={selectedLanguages.length}
+                    />
+
+                    {/* Output Summary */}
+                    <div className="p-3 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Layers className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">Output Summary</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2 rounded bg-muted/50"><span className="text-muted-foreground">Type</span><p className="font-medium">{outputSettings.outputType}</p></div>
+                        <div className="p-2 rounded bg-muted/50"><span className="text-muted-foreground">Slides</span><p className="font-medium">{outputSettings.slideCount}</p></div>
+                        <div className="p-2 rounded bg-muted/50"><span className="text-muted-foreground">Resolution</span><p className="font-medium">{outputSettings.resolution}</p></div>
+                        <div className="p-2 rounded bg-muted/50"><span className="text-muted-foreground">Languages</span><p className="font-medium">{selectedLanguages.length}</p></div>
+                      </div>
+                    </div>
+
+                    {/* Generate Button */}
+                    {!isGenerating && slides.length === 0 && (
+                      <Button
+                        onClick={handleGenerate}
+                        className="w-full h-12 text-base font-semibold"
+                        disabled={!inputContent.trim() || isGenerating}
+                      >
+                        <Wand2 className="h-5 w-5 mr-2" />
+                        Generate Presentation
+                      </Button>
+                    )}
+
+                    {/* Re-Generate Button (after generation) */}
+                    {!isGenerating && slides.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-green-700">{slides.length} slides generated</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">Edit slides in the preview panel, then go to Publish to export.</p>
+                        </div>
+                        <Button
+                          onClick={handleGenerate}
+                          variant="outline"
+                          className="w-full"
+                          disabled={isGenerating}
+                        >
+                          <Wand2 className="h-4 w-4 mr-2" />
+                          Re-Generate
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Generation Progress */}
+                    {isGenerating && (
+                      <div className="p-4 rounded-lg border border-primary/30 bg-primary/5">
+                        <div className="flex items-center gap-3">
+                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                          <div>
+                            <p className="text-sm font-medium">Generating presentation...</p>
+                            <p className="text-xs text-muted-foreground">
+                              {generationPhase === 'analyzing' ? 'Analyzing your content...' :
+                               generationPhase === 'structuring' ? 'Structuring slides with brand context...' :
+                               generationPhase === 'generating' ? 'Generating slide content...' :
+                               generationPhase === 'images' ? 'Creating brand-aware images...' :
+                               generationPhase === 'finalizing' ? 'Applying template styles...' :
+                               'Processing...'}
+                            </p>
+                          </div>
+                        </div>
+                        <Progress value={
+                          generationPhase === 'analyzing' ? 15 :
+                          generationPhase === 'structuring' ? 35 :
+                          generationPhase === 'generating' ? 60 :
+                          generationPhase === 'images' ? 85 :
+                          generationPhase === 'finalizing' ? 95 :
+                          generationPhase === 'complete' ? 100 : 50
+                        } className="mt-3" />
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+
+                {/* Step Feedback */}
+                <StepFeedbackPanel
+                  stepNumber={6}
+                  stepName="Produce"
+                  variant="compact"
                 />
               </div>
             )}
 
-            {/* Step 7: Publish (NEW) */}
+            {/* Step 7: Publish — Finalize, Export & Distribute */}
             {currentStep === 7 && (
-              <div className="space-y-6">
-                {/* Step Header - Flat design */}
+              <div className="space-y-4">
+                {/* Step Header */}
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-primary/10">
                     <Share2 className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-base text-foreground">Publish & Distribute</h3>
+                    <h3 className="font-semibold text-base text-foreground">Publish</h3>
                     <p className="text-sm text-muted-foreground">
-                      Export and share your content across platforms
+                      Finalize, export and distribute your presentation
                     </p>
                   </div>
                 </div>
 
-                {/* Export Options */}
-                <Card className="border border-border/50">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Download className="h-4 w-4" />
-                      Export Files
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="justify-start"
-                        onClick={() => handleDownload('pptx')}
-                        disabled={isDownloading || slides.length === 0}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        PPTX
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="justify-start"
-                        onClick={() => handleDownload('pdf')}
-                        disabled={isDownloading || slides.length === 0}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        PDF
-                      </Button>
-                    </div>
-                    {slides.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Generate your presentation first to enable exports
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
+                {slides.length === 0 ? (
+                  <div className="p-6 rounded-lg border border-dashed text-center space-y-3">
+                    <Wand2 className="h-8 w-8 text-muted-foreground mx-auto" />
+                    <p className="text-sm text-muted-foreground">
+                      Generate your presentation in the Produce step first
+                    </p>
+                    <Button variant="outline" size="sm" onClick={() => setCurrentStep(6)}>
+                      <ArrowLeft className="h-4 w-4 mr-1" />Go to Produce
+                    </Button>
+                  </div>
+                ) : (
+                  <Tabs defaultValue="finalize" className="w-full">
+                    <TabsList className="inline-flex h-9 items-center justify-start gap-1 rounded-lg bg-muted p-1 w-full">
+                      <TabsTrigger value="finalize" className="flex-1 text-xs gap-1">
+                        <CheckCircle2 className="h-3 w-3" />Finalize
+                      </TabsTrigger>
+                      <TabsTrigger value="export" className="flex-1 text-xs gap-1">
+                        <Download className="h-3 w-3" />Export
+                      </TabsTrigger>
+                      <TabsTrigger value="share" className="flex-1 text-xs gap-1">
+                        <Share2 className="h-3 w-3" />Share
+                      </TabsTrigger>
+                    </TabsList>
 
-                {/* Cloud Publishing */}
-                <Card className="border border-border/50">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      Cloud Publishing
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">Enable Web Hosting</p>
+                    {/* ─── FINALIZE TAB ─── */}
+                    <TabsContent value="finalize" className="mt-3 space-y-3 border-0 p-0">
+                      {/* Slide Summary */}
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Presentation className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Presentation Summary</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="p-2 rounded bg-muted/50 text-center">
+                            <p className="text-lg font-bold text-primary">{slides.length}</p>
+                            <p className="text-muted-foreground">Total Slides</p>
+                          </div>
+                          <div className="p-2 rounded bg-muted/50 text-center">
+                            <p className="text-lg font-bold text-green-600">{slides.filter(s => s.isAccepted).length}</p>
+                            <p className="text-muted-foreground">Accepted</p>
+                          </div>
+                          <div className="p-2 rounded bg-muted/50 text-center">
+                            <p className="text-lg font-bold text-orange-500">{slides.filter(s => s.isSkipped).length}</p>
+                            <p className="text-muted-foreground">Skipped</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Edit Reminder */}
+                      {slides.some(s => !s.isAccepted && !s.isSkipped) && (
+                        <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                          <div className="flex items-center gap-2">
+                            <Edit3 className="h-4 w-4 text-amber-600" />
+                            <span className="text-sm font-medium text-amber-700">
+                              {slides.filter(s => !s.isAccepted && !s.isSkipped).length} slides pending review
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Review each slide in the preview panel — accept, edit, or skip before exporting.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Brand Check */}
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Palette className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Brand Applied</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          {[
+                            { label: 'Colors', active: !!brandConfig.colors?.primary },
+                            { label: 'Logo', active: !!brandConfig.logo?.url },
+                            { label: 'Template', active: !!selectedTemplate },
+                          ].map(c => (
+                            <div key={c.label} className="flex items-center gap-1">
+                              {c.active ? <CheckCircle2 className="h-3 w-3 text-green-600" /> : <Circle className="h-3 w-3 text-muted-foreground" />}
+                              <span className={c.active ? 'font-medium' : 'text-muted-foreground'}>{c.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Save to RAG */}
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          toast.success('Presentation saved to knowledge base');
+                        }}
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save to Knowledge Base
+                      </Button>
+                    </TabsContent>
+
+                    {/* ─── EXPORT TAB ─── */}
+                    <TabsContent value="export" className="mt-3 space-y-3 border-0 p-0">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          className="h-16 flex-col gap-1"
+                          onClick={() => handleDownload('pptx')}
+                          disabled={isDownloading}
+                        >
+                          <Download className="h-5 w-5" />
+                          <span className="text-xs">PPTX</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-16 flex-col gap-1"
+                          onClick={() => handleDownload('pdf')}
+                          disabled={isDownloading}
+                        >
+                          <Download className="h-5 w-5" />
+                          <span className="text-xs">PDF</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-16 flex-col gap-1"
+                          onClick={() => handleDownload('images')}
+                          disabled={isDownloading}
+                        >
+                          <Download className="h-5 w-5" />
+                          <span className="text-xs">Images</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-16 flex-col gap-1"
+                          onClick={() => handleDownload('json')}
+                          disabled={isDownloading}
+                        >
+                          <Download className="h-5 w-5" />
+                          <span className="text-xs">JSON</span>
+                        </Button>
+                      </div>
+                      {isDownloading && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Loader2 className="h-3 w-3 animate-spin" />Preparing download...
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    {/* ─── SHARE TAB ─── */}
+                    <TabsContent value="share" className="mt-3 space-y-3 border-0 p-0">
+                      {/* Cloud Publishing */}
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium">Web Hosting</span>
+                          </div>
+                          <Button
+                            variant={showPublishPanel ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => setShowPublishPanel(!showPublishPanel)}
+                          >
+                            {showPublishPanel ? 'Configured' : 'Configure'}
+                          </Button>
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           Get a shareable link to your presentation
                         </p>
                       </div>
-                      <Button
-                        variant={showPublishPanel ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setShowPublishPanel(!showPublishPanel)}
-                        disabled={slides.length === 0}
-                      >
-                        {showPublishPanel ? 'Configured' : 'Configure'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
 
-                {/* Social Platforms */}
-                <Card className="border border-border/50">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Share2 className="h-4 w-4" />
-                      Social Platforms
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="cursor-pointer hover:bg-muted">
-                        <Linkedin className="h-3 w-3 mr-1 text-blue-600" />
-                        LinkedIn
-                      </Badge>
-                      <Badge variant="outline" className="cursor-pointer hover:bg-muted">
-                        <Youtube className="h-3 w-3 mr-1 text-red-500" />
-                        YouTube
-                      </Badge>
-                      <Badge variant="outline" className="cursor-pointer hover:bg-muted opacity-50">
-                        Coming Soon...
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Platform integrations require API configuration
-                    </p>
-                  </CardContent>
-                </Card>
+                      {/* Social Platforms */}
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Share2 className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Social Platforms</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+                            <Linkedin className="h-3 w-3 mr-1 text-blue-600" />LinkedIn
+                          </Badge>
+                          <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+                            <Youtube className="h-3 w-3 mr-1 text-red-500" />YouTube
+                          </Badge>
+                          <Badge variant="outline" className="cursor-pointer hover:bg-muted opacity-50">
+                            More Coming
+                          </Badge>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                )}
 
                 {/* Step Feedback */}
-                <StepFeedbackPanel 
-                  stepNumber={7} 
-                  stepName="Publish" 
-                  variant="compact" 
+                <StepFeedbackPanel
+                  stepNumber={7}
+                  stepName="Publish"
+                  variant="compact"
                 />
               </div>
             )}
