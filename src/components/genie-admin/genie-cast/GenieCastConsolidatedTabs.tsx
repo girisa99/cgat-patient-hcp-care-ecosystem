@@ -39,10 +39,8 @@ import {
   LayoutTemplate,
   MessageSquare,
   Image,
-  Volume2,
   ChevronDown,
   Check,
-  RefreshCw,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCreateMode } from '@/hooks/useCreateMode';
@@ -63,17 +61,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+// Select components now used in CreateConfigureStep
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -87,39 +76,17 @@ import { CastProjectDropdown } from './CastProjectDropdown';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
 import { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import { DynamicContentSelector } from './DynamicContentSelector';
-import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
 import { RegionalDialectSelector } from '@/components/shared/RegionalDialectSelector';
-import { ScriptTemplateMapper } from '@/components/shared/ScriptTemplateMapper';
-import { SceneScriptAIPanel } from '@/components/shared/SceneScriptAIPanel';
-import { AVSyncPreview } from '@/components/shared/AVSyncPreview';
-import { ApprovalDashboard } from '@/components/shared/ApprovalDashboard';
 import type { StyleIntent, RegionZone } from '@/services/styleIntentResolver';
 
 // Import Phase 2 Routing Transparency
-import { RoutingDecisionCard } from '@/components/ai/RoutingDecisionCard';
 import { useAIRoutingIntelligence } from '@/hooks/useAIRoutingIntelligence';
-
-// Import P2 Live Generation Preview component (uses internal hooks)
-import { LiveGenerationPreview } from './LiveGenerationPreview';
-
-// Import Phase 6E Production UI components (B-021 to B-025)
-import {
-  SceneProgressTracker,
-  ProductionModePanel,
-  ProductionTimeline,
-  ProductionControlPanel,
-  getDefaultProductionSettings,
-  createTimelinePhases,
-  deriveSceneRenderMode,
-} from './production';
-import type { SceneProgress, ProductionModeSettings, TimelinePhase } from './production';
 
 // Import Holiday Awareness
 import { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
 
 // Production pipeline hook
 import { useCastProduction } from '@/hooks/useCastProduction';
-import { buildRequestFromCastSession, assembleEnrichmentContext } from '@/services/production/castProductionBridge';
 
 // Import Content Library component
 import { ContentLibraryGrid } from './ContentLibraryGrid';
@@ -157,19 +124,14 @@ import { WorkflowContextBanner } from './WorkflowContextBanner';
 // StyleDrivenProductionConfig: config now handled in CREATE > Configure step
 import { type ProductionCapability } from '@/services/marketing/aiMessagingGeneratorService';
 // ScriptPreviewPanel: consolidated into SceneScriptAIPanel + ScriptTemplateMapper
-import { TranslationTranscreationToggle } from './TranslationTranscreationToggle';
-import { CharacterPickerPopup, type CharacterOption } from './CharacterPickerPopup';
-import { PortalDropdown } from './create-wizard/PortalDropdown';
-import { StyleCustomizationPanel } from './StyleCustomizationPanel';
 import { CreateSubWizard } from './CreateSubWizard';
 
 // Phase 5: Multi-format production routing
 import { FormatStudioRouter } from './FormatStudioRouter';
-// Phase 7: Regional coverage dashboard
-import { RegionalCoverageMatrix } from './RegionalCoverageMatrix';
+// Phase 7: Regional coverage dashboard — now in ProduceReviewStep
 
 // P1: Universal Video Editing + Distribution
-import { VideoTimelineEditor, ExportDistributionPanel, SceneAwareTeleprompter } from './editing';
+import { ExportDistributionPanel } from './editing';
 import { useVideoTimeline } from '@/hooks/video-editing/useVideoTimeline';
 import { useClipOperations } from '@/hooks/video-editing/useClipOperations';
 import { usePlatformExport } from '@/hooks/video-editing/usePlatformExport';
