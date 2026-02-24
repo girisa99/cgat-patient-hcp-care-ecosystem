@@ -49,59 +49,8 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-// Platform configuration
-const PLATFORMS = [
-  { 
-    id: 'youtube', 
-    name: 'YouTube', 
-    icon: Youtube, 
-    color: 'text-red-500',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    connected: false,
-    description: 'Upload to YouTube channel',
-  },
-  { 
-    id: 'linkedin', 
-    name: 'LinkedIn', 
-    icon: Linkedin, 
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    connected: false,
-    description: 'Share on LinkedIn page',
-  },
-  { 
-    id: 'facebook', 
-    name: 'Facebook', 
-    icon: Facebook, 
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    connected: false,
-    description: 'Post to Facebook page',
-  },
-  { 
-    id: 'tiktok', 
-    name: 'TikTok', 
-    icon: Video, 
-    color: 'text-black',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200',
-    connected: false,
-    description: 'Upload to TikTok',
-  },
-  { 
-    id: 'instagram', 
-    name: 'Instagram', 
-    icon: Video, 
-    color: 'text-pink-500',
-    bgColor: 'bg-pink-50',
-    borderColor: 'border-pink-200',
-    connected: false,
-    description: 'Share on Instagram',
-  },
-];
+// Platform configuration — unified via useSocialPlatforms hook
+import { useSocialPlatforms } from '@/hooks/useSocialPlatforms';
 
 interface VideoItem {
   id: string;
@@ -120,6 +69,7 @@ interface PublishStatus {
 }
 
 export const DistributionPanel: React.FC = () => {
+  const { distributionPlatforms: PLATFORMS } = useSocialPlatforms();
   const [selectedVideo, setSelectedVideo] = useState<string>('');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [customTitle, setCustomTitle] = useState('');

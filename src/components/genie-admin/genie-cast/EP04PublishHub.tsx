@@ -1,14 +1,16 @@
 /**
- * EP04 PUBLISH HUB
- * Full social publishing for Genie Cast videos:
+ * PUBLISH HUB — Session-Aware Multi-Platform Publishing
+ *
+ * Reads title, description, artifacts, and platform preferences from castSession.
+ * Falls back to EP04 demo content when no session context is provided.
+ *
+ * Features:
  * - YouTube (OAuth connected) — main video + Shorts
  * - LinkedIn (OAuth connected) — video post + article
  * - Facebook, TikTok, Instagram, Twitter/X, Threads
  * - Thumbnail pack download (3 variants)
  * - Teaser clips (5 × 30s) per platform
  * - Direct download (MP4 + MP3)
- *
- * LinkedIn + YouTube marked as ✅ OAuth connected per user confirmation.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -51,106 +53,38 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { EP04_SOCIAL_CLIPS, EP04_THUMBNAILS } from '@/config/ep04-production-config';
 import { useStreamingDownload, VIDEO_DOWNLOAD_PRESETS, type DownloadJob } from '@/hooks/video-editing/useStreamingDownload';
+import type { ProductionArtifacts } from '@/hooks/useGenieCastSession';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SESSION PROPS — connects PRODUCE → PUBLISH
+// ──────────────────────────────────────────────────────────────────────────────
+
+export interface PublishHubSessionProps {
+  /** Video title from castSession (overrides default) */
+  sessionTitle?: string;
+  /** Video description from castSession (overrides default) */
+  sessionDescription?: string;
+  /** Primary platform from castSession (pre-selects platform) */
+  primaryPlatform?: string;
+  /** Production artifacts from PRODUCE phase (video URLs, thumbnails, captions) */
+  productionArtifacts?: ProductionArtifacts | null;
+  /** Selected region for regional targeting */
+  selectedRegion?: string;
+  /** Content format name for display */
+  contentFormat?: string;
+  /** Selected visual style names */
+  visualStyles?: string[];
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PLATFORM DEFINITIONS
 // ──────────────────────────────────────────────────────────────────────────────
 
-interface Platform {
-  id: string;
-  name: string;
-  icon: React.ElementType;
-  connected: boolean;
-  tier: 'free' | 'pro' | 'business' | 'enterprise';
-  description: string;
-  supportsVideo: boolean;
-  supportsShorts?: boolean;
-  supportsArticle?: boolean;
-  colorClass: string;
-  badgeClass: string;
-}
+// Platform configuration — unified via useSocialPlatforms hook (replaces 95-line hardcoded array)
+import { useSocialPlatforms, type SocialPlatform } from '@/hooks/useSocialPlatforms';
 
-const PLATFORMS: Platform[] = [
-  {
-    id: 'youtube',
-    name: 'YouTube',
-    icon: Youtube,
-    connected: true,           // ✅ OAuth connected
-    tier: 'pro',
-    description: 'Upload full video + 5 Shorts from teaser clips',
-    supportsVideo: true,
-    supportsShorts: true,
-    colorClass: 'text-red-500',
-    badgeClass: 'bg-red-500/20 text-red-400 border-red-500/40',
-  },
-  {
-    id: 'linkedin',
-    name: 'LinkedIn',
-    icon: Linkedin,
-    connected: true,           // ✅ OAuth connected
-    tier: 'business',
-    description: 'Video post + article + company page share',
-    supportsVideo: true,
-    supportsArticle: true,
-    colorClass: 'text-blue-500',
-    badgeClass: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
-  },
-  {
-    id: 'facebook',
-    name: 'Facebook',
-    icon: Globe,
-    connected: false,
-    tier: 'pro',
-    description: 'Post to Facebook page or group',
-    supportsVideo: true,
-    colorClass: 'text-blue-600',
-    badgeClass: 'bg-blue-600/20 text-blue-400 border-blue-600/40',
-  },
-  {
-    id: 'tiktok',
-    name: 'TikTok',
-    icon: Music2,
-    connected: false,
-    tier: 'pro',
-    description: 'Upload teaser clips as TikTok videos',
-    supportsVideo: true,
-    colorClass: 'text-foreground',
-    badgeClass: 'bg-muted text-foreground border-border',
-  },
-  {
-    id: 'instagram',
-    name: 'Instagram',
-    icon: ImageIcon,
-    connected: false,
-    tier: 'pro',
-    description: 'Share as Reels or carousel post',
-    supportsVideo: true,
-    colorClass: 'text-pink-500',
-    badgeClass: 'bg-pink-500/20 text-pink-400 border-pink-500/40',
-  },
-  {
-    id: 'twitter',
-    name: 'X (Twitter)',
-    icon: Zap,
-    connected: false,
-    tier: 'business',
-    description: 'Tweet teaser clips with thread',
-    supportsVideo: true,
-    colorClass: 'text-foreground',
-    badgeClass: 'bg-muted text-foreground border-border',
-  },
-  {
-    id: 'threads',
-    name: 'Threads',
-    icon: RefreshCw,
-    connected: false,
-    tier: 'business',
-    description: 'Post to Threads with clips',
-    supportsVideo: true,
-    colorClass: 'text-foreground',
-    badgeClass: 'bg-muted text-foreground border-border',
-  },
-];
+// Re-export Platform type for backward compatibility
+type Platform = SocialPlatform;
 
 type PublishStatus = 'idle' | 'pending' | 'uploading' | 'published' | 'failed';
 
@@ -275,7 +209,7 @@ function PlatformCard({ platform, selected, result, onToggle }: PlatformCardProp
 // THUMBNAIL PACK
 // ──────────────────────────────────────────────────────────────────────────────
 
-function ThumbnailPackSection() {
+function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: string[] }) {
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
 
@@ -421,7 +355,7 @@ function TeaserClipsSection() {
               Teaser Clips · 5 × 30s
             </CardTitle>
             <CardDescription className="text-xs">
-              Auto-cut from EP04 · YouTube Shorts / LinkedIn / TikTok ready
+              Auto-cut highlight clips · YouTube Shorts / LinkedIn / TikTok ready
             </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={handleGenerateAll} className="gap-2 text-xs">
@@ -653,15 +587,33 @@ function DownloadSection() {
 // MAIN COMPONENT
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function EP04PublishHub() {
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['youtube', 'linkedin']);
-  const [publishTitle, setPublishTitle] = useState('Two AIs, One Sprint, Zero Standup Meetings | GenieSuite EP04');
-  const [publishDescription, setPublishDescription] = useState(
-    'We ran a 5-day AI development sprint with Claude Code and Lovable. 41 tasks. No standups. Here\'s what we tracked, what broke, and what delivered 5x faster.',
-  );
+export function EP04PublishHub({
+  sessionTitle,
+  sessionDescription,
+  primaryPlatform,
+  productionArtifacts,
+  selectedRegion,
+  contentFormat,
+  visualStyles,
+}: PublishHubSessionProps = {}) {
+  const { platforms: PLATFORMS } = useSocialPlatforms();
+
+  // Session-aware defaults: use castSession data when available, fall back to EP04 demo
+  const defaultTitle = sessionTitle || 'Two AIs, One Sprint, Zero Standup Meetings | GenieSuite EP04';
+  const defaultDescription = sessionDescription || 'We ran a 5-day AI development sprint with Claude Code and Lovable. 41 tasks. No standups. Here\'s what we tracked, what broke, and what delivered 5x faster.';
+  const defaultPlatforms = primaryPlatform ? [primaryPlatform] : ['youtube', 'linkedin'];
+
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(defaultPlatforms);
+  const [publishTitle, setPublishTitle] = useState(defaultTitle);
+  const [publishDescription, setPublishDescription] = useState(defaultDescription);
   const [publishResults, setPublishResults] = useState<Record<string, PublishResult>>({});
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishTab, setPublishTab] = useState('platforms');
+
+  // Derive session context for display
+  const hasSessionContext = !!(sessionTitle || productionArtifacts);
+  const sessionVideoUrl = productionArtifacts?.assembledVideoUrl;
+  const sessionThumbnails = productionArtifacts?.thumbnailUrls || [];
 
   const togglePlatform = useCallback((id: string) => {
     const platform = PLATFORMS.find(p => p.id === id);
@@ -675,7 +627,8 @@ export function EP04PublishHub() {
   }, []);
 
   const copyLink = () => {
-    navigator.clipboard.writeText('https://youtu.be/ep04-demo-link');
+    const url = sessionVideoUrl || 'https://youtu.be/ep04-demo-link';
+    navigator.clipboard.writeText(url);
     toast.success('Link copied to clipboard');
   };
 
@@ -724,8 +677,7 @@ export function EP04PublishHub() {
     }
 
     setIsPublishing(false);
-    const published = selectedPlatforms.filter(id => publishResults[id]?.status === 'published').length;
-    toast.success(`🚀 EP04 is live on ${selectedPlatforms.length} platforms!`);
+    toast.success(`Published to ${selectedPlatforms.length} platform(s)!`);
   };
 
   const connectedCount = PLATFORMS.filter(p => p.connected).length;
@@ -739,14 +691,22 @@ export function EP04PublishHub() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Share2 className="w-5 h-5 text-primary" />
-                <h2 className="font-bold text-lg">EP04 Publish Hub</h2>
+                <h2 className="font-bold text-lg">Publish Hub</h2>
                 <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/40 border">
                   <CheckCircle className="w-3 h-3 mr-1" />
                   {connectedCount} OAuth connected
                 </Badge>
+                {hasSessionContext && (
+                  <Badge variant="outline" className="text-xs text-primary border-primary/40">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Session Linked
+                  </Badge>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground">
-                "Two AIs, One Sprint, Zero Standup Meetings" · Full multi-platform distribution
+              <p className="text-sm text-muted-foreground truncate max-w-lg">
+                {hasSessionContext
+                  ? `${contentFormat || 'Video'} · ${selectedRegion || 'Global'} · Multi-platform distribution`
+                  : '"Two AIs, One Sprint, Zero Standup Meetings" · Full multi-platform distribution'}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={copyLink} className="gap-2 flex-shrink-0">
@@ -932,7 +892,7 @@ export function EP04PublishHub() {
 
         {/* THUMBNAILS TAB */}
         <TabsContent value="thumbnails" className="mt-4">
-          <ThumbnailPackSection />
+          <ThumbnailPackSection sessionThumbnails={sessionThumbnails} />
         </TabsContent>
 
         {/* DOWNLOAD TAB */}

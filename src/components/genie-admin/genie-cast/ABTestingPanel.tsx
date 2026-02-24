@@ -49,6 +49,20 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { dynamicMarketingRegistryService } from '@/services/marketing/dynamicMarketingRegistryService';
 import { MASTER_AI_PROVIDERS } from '@/config/master-ecosystem-registry';
+import type { ProductionArtifacts } from '@/hooks/useGenieCastSession';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SESSION PROPS — connects PRODUCE → PUBLISH A/B testing
+// ──────────────────────────────────────────────────────────────────────────────
+
+export interface ABTestingSessionProps {
+  /** Title of the current session's content (for pre-filling test variants) */
+  sessionTitle?: string;
+  /** Production artifacts from castSession */
+  productionArtifacts?: ProductionArtifacts | null;
+  /** Content intent from CREATE (e.g., 'product-demo', 'educational') */
+  sessionIntent?: string;
+}
 
 // A/B Test Types
 interface ABTestVariant {
@@ -118,7 +132,11 @@ const HOOK_TEMPLATES = [
   'In the next 60 seconds, you\'ll learn {benefit}...',
 ];
 
-export const ABTestingPanel: React.FC = () => {
+export const ABTestingPanel: React.FC<ABTestingSessionProps> = ({
+  sessionTitle,
+  productionArtifacts,
+  sessionIntent,
+} = {}) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'create' | 'active' | 'results'>('create');
   const [testType, setTestType] = useState<'title' | 'thumbnail' | 'cta' | 'hook'>('title');
@@ -130,8 +148,16 @@ export const ABTestingPanel: React.FC = () => {
   // Local state for tests (would be in database in production)
   const [activeTests, setActiveTests] = useState<ABTest[]>([]);
 
-  // Fetch videos
-  const { data: videos, isLoading: videosLoading } = useQuery({
+  // Session-derived video for A/B testing
+  const sessionVideo: VideoForTest | null = (sessionTitle && productionArtifacts?.assembledVideoUrl) ? {
+    id: 'session-current',
+    title: sessionTitle,
+    thumbnail_url: productionArtifacts.thumbnailUrls?.[0] || null,
+    product_name: 'Genie Suite',
+  } : null;
+
+  // Fetch videos from DB
+  const { data: dbVideos, isLoading: videosLoading } = useQuery({
     queryKey: ['ab-test-videos'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -142,7 +168,6 @@ export const ABTestingPanel: React.FC = () => {
         .limit(50);
 
       if (error) throw error;
-      // Map to expected type with fallback product name
       return (data || []).map(v => ({
         id: v.id,
         title: v.title,
@@ -151,6 +176,11 @@ export const ABTestingPanel: React.FC = () => {
       })) as VideoForTest[];
     },
   });
+
+  // Merge session video with DB videos
+  const videos = sessionVideo
+    ? [sessionVideo, ...(dbVideos || []).filter(v => v.title !== sessionVideo.title)]
+    : dbVideos;
 
   // Fetch products for context
   const { data: products } = useQuery({
@@ -444,8 +474,13 @@ export const ABTestingPanel: React.FC = () => {
             <Wand2 className="w-5 h-5 text-primary" />
             A/B Testing
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="flex items-center gap-2">
             Create and track content variations to optimize engagement and conversions
+            {sessionVideo && (
+              <Badge variant="outline" className="text-xs text-primary border-primary/40 ml-2">
+                Session Linked
+              </Badge>
+            )}
           </CardDescription>
         </CardHeader>
       </Card>

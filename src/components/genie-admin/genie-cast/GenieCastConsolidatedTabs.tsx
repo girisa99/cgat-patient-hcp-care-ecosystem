@@ -95,7 +95,6 @@ import { ContentLibraryGrid } from './ContentLibraryGrid';
 import { SmartSchedulerPanel } from './SmartSchedulerPanel';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ContentRepurposingPanel } from './ContentRepurposingPanel';
-import { DistributionPanel } from './DistributionPanel';
 import { EP04PublishHub } from './EP04PublishHub';
 import { SceneCharacterVisualizer } from './SceneCharacterVisualizer';
 import { SEOOptimizerPanel } from './SEOOptimizerPanel';
@@ -1781,7 +1780,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                <SmartSchedulerPanel />
+                <SmartSchedulerPanel
+                  primaryPlatform={castSession.session.primaryPlatform}
+                  sessionTitle={castSession.session.approvedMessaging?.hook || castSession.session.enrichmentPrompt || undefined}
+                  productionArtifacts={castSession.session.productionArtifacts}
+                  selectedRegion={castSession.session.selectedRegion}
+                />
                 <div className="flex justify-end">
                   <Button size="sm" className="gap-1.5" onClick={() => setSubTab('publish', 'distribution')}>
                     Continue to Distribution <ArrowRight className="w-3.5 h-3.5" />
@@ -1815,14 +1819,30 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 />
 
                 {/* Auto-Derivatives: Shorts, Clips, Thumbnails, Captions, Square — all from real pipeline */}
-                <ContentRepurposingPanel />
+                <ContentRepurposingPanel
+                  productionArtifacts={castSession.session.productionArtifacts}
+                  sessionTitle={castSession.session.approvedMessaging?.hook || castSession.session.enrichmentPrompt || undefined}
+                  primaryPlatform={castSession.session.primaryPlatform}
+                  selectedAspectRatio={castSession.session.selectedAspectRatio}
+                />
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                   <div>
                     <SceneCharacterVisualizer autoPlay={false} />
                   </div>
                   <div>
-                    <EP04PublishHub />
+                    <EP04PublishHub
+                      sessionTitle={castSession.session.approvedMessaging?.hook || castSession.session.enrichmentPrompt || undefined}
+                      sessionDescription={castSession.session.approvedMessaging?.valueProposition || undefined}
+                      primaryPlatform={castSession.session.primaryPlatform}
+                      productionArtifacts={castSession.session.productionArtifacts}
+                      selectedRegion={castSession.session.selectedRegion}
+                      contentFormat={contentRegistry.formats.find(f => f.id === castSession.session.selectedFormatId)?.name}
+                      visualStyles={castSession.session.selectedVisualStyleIds?.map(id => {
+                        const style = contentRegistry.visualStyles?.find((s: any) => s.id === id);
+                        return style?.name || id;
+                      })}
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -1863,7 +1883,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     <ArrowLeft className="w-3.5 h-3.5" /> Back to SEO
                   </Button>
                 </div>
-                <ABTestingPanel />
+                <ABTestingPanel
+                  sessionTitle={castSession.session.approvedMessaging?.hook || castSession.session.enrichmentPrompt || undefined}
+                  productionArtifacts={castSession.session.productionArtifacts}
+                  sessionIntent={castSession.session.selectedIntent || undefined}
+                />
               </motion.div>
             )}
           </AnimatePresence>
