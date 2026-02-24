@@ -12,5 +12,7 @@ export { AnimatedMascot, type MascotPose, type MascotCharacter } from './Animate
 export { CreateHeroBanner, type CreatePageId } from './CreateHeroBanner';
 export { CreateConfigureStep } from './CreateConfigureStep';
 export { CreateSessionSummary } from './CreateSessionSummary';
+export { DocumentImportPanel } from './DocumentImportPanel';
+export { type GenerationMode } from './IntentSelector';
 
 export type CreateStep = 'intent' | 'template' | 'script' | 'style' | 'review';

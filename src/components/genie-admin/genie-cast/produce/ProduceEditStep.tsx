@@ -15,9 +15,13 @@
  *   - Scene progress tracker
  *   - A/V sync status & pre-render validation
  *   - Multi-track video timeline editor
+ *   - Music & SFX generation (via useMusicComposerAgent)
+ *   - Auto-caption generation (via useCaptionGeneration)
+ *   - Smart thumbnail generation (via useSmartThumbnails)
+ *   - Audio mixing & enhancement (via useAudioMixer)
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -26,12 +30,42 @@ import {
   Volume2,
   AlertTriangle,
   RefreshCw,
+  Music,
+  Mic2,
+  ImageIcon,
+  MessageSquare,
+  Sliders,
+  Play,
+  Pause,
+  Download,
+  Loader2,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+// Phase 5: Music/SFX generation
+import { useMusicComposerAgent, type MusicStyle, type MusicMood } from '@/hooks/useMusicComposerAgent';
+
+// Phase 5: Auto-caption generation
+import { useCaptionGeneration, type CaptionPlatform, type CaptionTone, type CaptionLength } from '@/hooks/useCaptionGeneration';
+
+// Phase 5: Smart thumbnail generation
+import { useSmartThumbnails } from '@/hooks/useSmartThumbnails';
+
+// Phase 5: Audio mixer & enhancement
+import { useAudioMixer } from '@/hooks/useAudioMixer';
 
 // Shared components
 import { AuthoringStageIndicator } from '@/components/shared/AuthoringStageIndicator';
@@ -232,6 +266,26 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
       toast.info(`Content changed — video for scene "${sceneId}" needs regeneration`);
     },
   });
+
+  // ── Phase 5: Production Tool Hooks ──────────────────────────────────────
+  const musicComposer = useMusicComposerAgent();
+  const captionGen = useCaptionGeneration();
+  const smartThumbnails = useSmartThumbnails();
+  const audioMixer = useAudioMixer();
+
+  // Local UI state for production tool panels
+  const [musicPrompt, setMusicPrompt] = useState('');
+  const [musicStyle, setMusicStyle] = useState<MusicStyle>('corporate');
+  const [musicMood, setMusicMood] = useState<MusicMood>('energetic');
+  const [musicDuration, setMusicDuration] = useState(30);
+  const [sfxPrompt, setSfxPrompt] = useState('');
+  const [sfxDuration, setSfxDuration] = useState(3);
+  const [captionTitle, setCaptionTitle] = useState(castSession.session.selectedTemplate?.name || '');
+  const [captionPlatform, setCaptionPlatform] = useState<CaptionPlatform>('youtube');
+  const [captionTone, setCaptionTone] = useState<CaptionTone>('professional');
+  const [captionLength, setCaptionLength] = useState<CaptionLength>('medium');
+  const [thumbnailTitle, setThumbnailTitle] = useState(castSession.session.selectedTemplate?.name || '');
+  const [productionToolsExpanded, setProductionToolsExpanded] = useState(true);
 
   return (
     <motion.div
@@ -637,6 +691,459 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
           Select a template in CREATE to enable A/V sync and live generation
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* PHASE 5: PRODUCTION TOOLS — Music/SFX, Captions, Thumbnails, Mixer */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <Card>
+        <CardHeader className="pb-2 cursor-pointer" onClick={() => setProductionToolsExpanded(!productionToolsExpanded)}>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Production Tools
+              <Badge variant="secondary" className="text-[10px]">Music · SFX · Captions · Thumbnails · Mixer</Badge>
+            </CardTitle>
+            {productionToolsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </div>
+          <CardDescription className="text-xs">
+            Generate background music, sound effects, captions, thumbnails, and mix audio — all AI-powered
+          </CardDescription>
+        </CardHeader>
+        {productionToolsExpanded && (
+          <CardContent>
+            <Tabs defaultValue="music" className="w-full">
+              <TabsList className="grid w-full grid-cols-5 h-9">
+                <TabsTrigger value="music" className="text-xs gap-1"><Music className="w-3 h-3" /> Music</TabsTrigger>
+                <TabsTrigger value="sfx" className="text-xs gap-1"><Mic2 className="w-3 h-3" /> SFX</TabsTrigger>
+                <TabsTrigger value="captions" className="text-xs gap-1"><MessageSquare className="w-3 h-3" /> Captions</TabsTrigger>
+                <TabsTrigger value="thumbnails" className="text-xs gap-1"><ImageIcon className="w-3 h-3" /> Thumbnails</TabsTrigger>
+                <TabsTrigger value="mixer" className="text-xs gap-1"><Sliders className="w-3 h-3" /> Mixer</TabsTrigger>
+              </TabsList>
+
+              {/* ── Music Generation ── */}
+              <TabsContent value="music" className="space-y-3 mt-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Style</Label>
+                    <Select value={musicStyle} onValueChange={(v) => setMusicStyle(v as MusicStyle)}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(['cinematic', 'corporate', 'upbeat', 'ambient', 'dramatic', 'inspirational', 'electronic', 'acoustic', 'jazz', 'classical', 'lofi', 'epic'] as MusicStyle[]).map(s => (
+                          <SelectItem key={s} value={s} className="text-xs">{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Mood</Label>
+                    <Select value={musicMood} onValueChange={(v) => setMusicMood(v as MusicMood)}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(['happy', 'sad', 'tense', 'relaxing', 'energetic', 'mysterious', 'romantic', 'dark', 'hopeful', 'peaceful'] as MusicMood[]).map(m => (
+                          <SelectItem key={m} value={m} className="text-xs">{m.charAt(0).toUpperCase() + m.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Custom prompt (optional)</Label>
+                  <Textarea
+                    value={musicPrompt}
+                    onChange={(e) => setMusicPrompt(e.target.value)}
+                    placeholder="e.g. Uplifting corporate track with soft piano and strings..."
+                    className="h-16 text-xs resize-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Duration: {musicDuration}s</Label>
+                  <Slider value={[musicDuration]} onValueChange={([v]) => setMusicDuration(v)} min={10} max={120} step={5} />
+                </div>
+
+                {/* Preset buttons */}
+                <div className="flex flex-wrap gap-1.5">
+                  {musicComposer.presets?.slice(0, 4).map((preset: any) => (
+                    <Button
+                      key={preset.id}
+                      variant="outline"
+                      size="sm"
+                      className="text-[10px] h-6"
+                      disabled={musicComposer.isGenerating}
+                      onClick={() => musicComposer.generateFromPreset(preset.id, musicDuration)}
+                    >
+                      {preset.name}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Generate + status */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    className="gap-1.5 flex-1"
+                    disabled={musicComposer.isGenerating}
+                    onClick={() => musicComposer.generateMusic({
+                      type: 'music',
+                      style: musicStyle,
+                      mood: musicMood,
+                      prompt: musicPrompt || undefined,
+                      duration: musicDuration,
+                    })}
+                  >
+                    {musicComposer.isGenerating ? (
+                      <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</>
+                    ) : (
+                      <><Music className="w-3 h-3" /> Generate Music</>
+                    )}
+                  </Button>
+                  {musicComposer.isGenerating && (
+                    <div className="flex-1">
+                      <Progress value={musicComposer.progress || 0} className="h-2" />
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{musicComposer.currentStep || 'Processing...'}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Generated audio list */}
+                {musicComposer.generatedAudio?.length > 0 && (
+                  <div className="space-y-1.5 border-t pt-2">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase">Generated ({musicComposer.generatedAudio.length})</p>
+                    {musicComposer.generatedAudio.slice(-3).map((audio: any) => (
+                      <div key={audio.id} className="flex items-center gap-2 p-2 rounded-md bg-muted/30 text-xs">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => musicComposer.isPlaying ? musicComposer.pauseAudio() : musicComposer.playAudio(audio)}
+                        >
+                          {musicComposer.currentAudio?.id === audio.id && musicComposer.isPlaying
+                            ? <Pause className="w-3 h-3" />
+                            : <Play className="w-3 h-3" />}
+                        </Button>
+                        <span className="flex-1 truncate">{audio.prompt?.slice(0, 40) || audio.style || 'Generated track'}</span>
+                        <Badge variant="outline" className="text-[9px]">{audio.duration}s</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => musicComposer.downloadAudio(audio, `music-${audio.id}.mp3`)}
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ── SFX Generation ── */}
+              <TabsContent value="sfx" className="space-y-3 mt-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Describe the sound effect</Label>
+                  <Textarea
+                    value={sfxPrompt}
+                    onChange={(e) => setSfxPrompt(e.target.value)}
+                    placeholder="e.g. Gentle whoosh transition, notification chime, crowd applause..."
+                    className="h-16 text-xs resize-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Duration: {sfxDuration}s</Label>
+                  <Slider value={[sfxDuration]} onValueChange={([v]) => setSfxDuration(v)} min={0.5} max={22} step={0.5} />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Whoosh transition', 'Click notification', 'Crowd applause', 'Typing keyboard', 'Success chime', 'Door opening'].map(preset => (
+                    <Button
+                      key={preset}
+                      variant="outline"
+                      size="sm"
+                      className="text-[10px] h-6"
+                      disabled={musicComposer.isGenerating}
+                      onClick={() => {
+                        setSfxPrompt(preset);
+                        musicComposer.generateSFX(preset, sfxDuration);
+                      }}
+                    >
+                      {preset}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  size="sm"
+                  className="gap-1.5 w-full"
+                  disabled={musicComposer.isGenerating || !sfxPrompt.trim()}
+                  onClick={() => musicComposer.generateSFX(sfxPrompt, sfxDuration)}
+                >
+                  {musicComposer.isGenerating ? (
+                    <><Loader2 className="w-3 h-3 animate-spin" /> Generating SFX...</>
+                  ) : (
+                    <><Mic2 className="w-3 h-3" /> Generate Sound Effect</>
+                  )}
+                </Button>
+              </TabsContent>
+
+              {/* ── Auto-Captions ── */}
+              <TabsContent value="captions" className="space-y-3 mt-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Content title</Label>
+                  <Textarea
+                    value={captionTitle}
+                    onChange={(e) => setCaptionTitle(e.target.value)}
+                    placeholder="Video/content title for caption generation..."
+                    className="h-12 text-xs resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-[10px]">Platform</Label>
+                    <Select value={captionPlatform} onValueChange={(v) => setCaptionPlatform(v as CaptionPlatform)}>
+                      <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(['youtube', 'tiktok', 'instagram', 'linkedin', 'twitter', 'facebook'] as CaptionPlatform[]).map(p => (
+                          <SelectItem key={p} value={p} className="text-xs">{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px]">Tone</Label>
+                    <Select value={captionTone} onValueChange={(v) => setCaptionTone(v as CaptionTone)}>
+                      <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(['professional', 'casual', 'humorous', 'inspirational', 'educational', 'promotional'] as CaptionTone[]).map(t => (
+                          <SelectItem key={t} value={t} className="text-xs">{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px]">Length</Label>
+                    <Select value={captionLength} onValueChange={(v) => setCaptionLength(v as CaptionLength)}>
+                      <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(['short', 'medium', 'long'] as CaptionLength[]).map(l => (
+                          <SelectItem key={l} value={l} className="text-xs">{l.charAt(0).toUpperCase() + l.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="gap-1.5 w-full"
+                  disabled={captionGen.isGenerating || !captionTitle.trim()}
+                  onClick={() => captionGen.generateCaptions({
+                    title: captionTitle,
+                    description: castSession.session.approvedMessaging?.hook || '',
+                    tone: captionTone,
+                    platform: captionPlatform,
+                    length: captionLength,
+                    includeHashtags: true,
+                    includeEmojis: true,
+                    includeCTA: true,
+                  })}
+                >
+                  {captionGen.isGenerating ? (
+                    <><Loader2 className="w-3 h-3 animate-spin" /> Generating Captions...</>
+                  ) : (
+                    <><MessageSquare className="w-3 h-3" /> Generate Captions</>
+                  )}
+                </Button>
+
+                {/* Generated captions list */}
+                {captionGen.generatedCaptions?.length > 0 && (
+                  <div className="space-y-1.5 border-t pt-2">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase">Variants ({captionGen.generatedCaptions.length})</p>
+                    {captionGen.generatedCaptions.map((cap: any) => (
+                      <div
+                        key={cap.id}
+                        className={cn(
+                          'p-2 rounded-md text-xs cursor-pointer border transition-colors',
+                          captionGen.selectedCaption?.id === cap.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-transparent bg-muted/30 hover:bg-muted/50'
+                        )}
+                        onClick={() => captionGen.selectCaption(cap.id)}
+                      >
+                        <p className="line-clamp-2">{cap.caption}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-[9px]">{cap.platform}</Badge>
+                          <Badge variant="outline" className="text-[9px]">{cap.characterCount} chars</Badge>
+                          {cap.hashtags?.length > 0 && (
+                            <span className="text-[9px] text-muted-foreground">{cap.hashtags.length} hashtags</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ── Smart Thumbnails ── */}
+              <TabsContent value="thumbnails" className="space-y-3 mt-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Content title</Label>
+                  <Textarea
+                    value={thumbnailTitle}
+                    onChange={(e) => setThumbnailTitle(e.target.value)}
+                    placeholder="Title for thumbnail generation..."
+                    className="h-12 text-xs resize-none"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  className="gap-1.5 w-full"
+                  disabled={smartThumbnails.isGenerating || !thumbnailTitle.trim()}
+                  onClick={() => smartThumbnails.generateSmartThumbnails({
+                    title: thumbnailTitle,
+                    description: castSession.session.approvedMessaging?.hook,
+                    targetPlatforms: ['youtube', 'instagram'],
+                    generateVariants: 3,
+                    enableABTest: true,
+                  })}
+                >
+                  {smartThumbnails.isGenerating ? (
+                    <><Loader2 className="w-3 h-3 animate-spin" /> Generating Thumbnails...</>
+                  ) : (
+                    <><ImageIcon className="w-3 h-3" /> Generate Smart Thumbnails</>
+                  )}
+                </Button>
+
+                {/* Generated thumbnails */}
+                {smartThumbnails.variants?.length > 0 && (
+                  <div className="space-y-1.5 border-t pt-2">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase">Variants ({smartThumbnails.variants.length})</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {smartThumbnails.variants.map((variant: any) => (
+                        <div
+                          key={variant.id}
+                          className={cn(
+                            'relative rounded-md border overflow-hidden cursor-pointer transition-all',
+                            smartThumbnails.selectedVariantId === variant.id
+                              ? 'ring-2 ring-primary border-primary'
+                              : 'border-border hover:border-primary/50'
+                          )}
+                          onClick={() => smartThumbnails.selectVariant(variant.id)}
+                        >
+                          <div className="aspect-video bg-muted flex items-center justify-center">
+                            {variant.thumbnailUrl ? (
+                              <img src={variant.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                            ) : (
+                              <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+                            )}
+                          </div>
+                          <div className="p-1.5">
+                            <div className="flex items-center justify-between">
+                              <Badge variant="outline" className="text-[8px]">{variant.features?.emotionalTone || 'professional'}</Badge>
+                              <span className="text-[9px] text-muted-foreground">CTR {Math.round((variant.predictedCTR || 0) * 100)}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ── Audio Mixer ── */}
+              <TabsContent value="mixer" className="space-y-3 mt-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Card className="p-3">
+                    <p className="text-xs font-medium mb-2 flex items-center gap-1.5">
+                      <Volume2 className="w-3.5 h-3.5" /> Normalize Audio
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mb-2">
+                      Broadcast-standard loudness (-16 LUFS)
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs"
+                      disabled={audioMixer.isProcessing}
+                      onClick={() => {
+                        // Uses first generated audio or placeholder
+                        const audioUrl = musicComposer.generatedAudio?.[0]?.audioUrl;
+                        if (!audioUrl) {
+                          toast.info('Generate music or SFX first, then normalize');
+                          return;
+                        }
+                        audioMixer.normalize({ audioUrl, targetLoudness: -16 });
+                      }}
+                    >
+                      {audioMixer.isProcessing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                      Normalize
+                    </Button>
+                  </Card>
+                  <Card className="p-3">
+                    <p className="text-xs font-medium mb-2 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" /> Enhance Audio
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mb-2">
+                      Noise reduction, de-essing, compression
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-xs"
+                      disabled={audioMixer.isProcessing}
+                      onClick={() => {
+                        const audioUrl = musicComposer.generatedAudio?.[0]?.audioUrl;
+                        if (!audioUrl) {
+                          toast.info('Generate music or SFX first, then enhance');
+                          return;
+                        }
+                        audioMixer.enhance({ audioUrl, noiseReduction: true, deEssing: true, compression: true, equalization: 'podcast' });
+                      }}
+                    >
+                      {audioMixer.isProcessing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                      Enhance
+                    </Button>
+                  </Card>
+                </div>
+                <Card className="p-3">
+                  <p className="text-xs font-medium mb-2 flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5" /> Mix Tracks
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mb-2">
+                    Combine voice, music, and SFX with auto-ducking. Generate audio tracks first using the Music and SFX tabs above.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    disabled={audioMixer.isProcessing || !musicComposer.generatedAudio?.length}
+                    onClick={() => {
+                      const tracks = (musicComposer.generatedAudio || []).map((a: any) => ({
+                        url: a.audioUrl,
+                        type: a.type === 'sfx' ? 'sfx' as const : 'music' as const,
+                        volume: a.type === 'sfx' ? 0.8 : 0.4,
+                      }));
+                      if (tracks.length === 0) {
+                        toast.info('Generate some audio first');
+                        return;
+                      }
+                      audioMixer.mix({ tracks, duckingEnabled: true });
+                    }}
+                  >
+                    {audioMixer.isProcessing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                    Mix All Tracks ({musicComposer.generatedAudio?.length || 0} available)
+                  </Button>
+                </Card>
+
+                {/* Last mix result */}
+                {audioMixer.lastResult && (
+                  <div className="p-2 rounded-md bg-green-50/50 dark:bg-green-900/10 border border-green-200/30 text-xs">
+                    <p className="font-medium text-green-700 dark:text-green-400">Mix complete</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Output ready for timeline import
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        )}
+      </Card>
 
       {/* Next: Continue to Review */}
       <div className="flex justify-end mt-4">

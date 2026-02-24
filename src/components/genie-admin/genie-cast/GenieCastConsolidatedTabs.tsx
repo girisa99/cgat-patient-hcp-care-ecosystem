@@ -53,7 +53,7 @@ import { useGenieCastRegions } from '@/hooks/useGenieCastRegions';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { ZONE_PROVIDER_DISPLAY, getZoneFromRegion } from '@/config/regional-routing-registry';
 import { useGuideStore } from '@/stores/guideStore';
-import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, CreateConfigureStep, CreateSessionSummary, type CreateStep } from './create';
+import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, CreateConfigureStep, CreateSessionSummary, DocumentImportPanel, type CreateStep } from './create';
 import { ProduceEditStep, ProduceReviewStep } from './produce';
 import { CreateHeroBanner } from './create/CreateHeroBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -129,6 +129,9 @@ import { CreateSubWizard } from './CreateSubWizard';
 // Phase 5: Multi-format production routing
 import { FormatStudioRouter } from './FormatStudioRouter';
 // Phase 7: Regional coverage dashboard — now in ProduceReviewStep
+
+// Phase 5E: Podcast-to-Video production
+import { PodcastToVideoConverter } from '@/components/production';
 
 // P1: Universal Video Editing + Distribution
 import { ExportDistributionPanel } from './editing';
@@ -1564,6 +1567,15 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
+                {/* Phase 4B: Document Import — source material for generation */}
+                <DocumentImportPanel
+                  compact
+                  onImportComplete={(text, metadata) => {
+                    castSession.updateSession({ importedContent: text, importMetadata: metadata });
+                    toast.success('Source material imported — will be used during generation');
+                  }}
+                />
+
                 {/* Format-Specific Production Router (replaces old Quick Generate) */}
                 <FormatStudioRouter
                   selectedFormats={castSession.session.selectedFormats.length > 0
@@ -1577,6 +1589,18 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     }
                   }}
                 />
+
+                {/* Phase 5E: Podcast-to-Video Converter (shown when podcast format selected) */}
+                {(castSession.session.selectedFormats.includes('audio_podcast') ||
+                  castSession.session.selectedFormats.includes('video_podcast') ||
+                  castSession.session.selectedFormatId?.includes('podcast')) && (
+                  <PodcastToVideoConverter
+                    onConversionComplete={(videoUrl) => {
+                      toast.success('Podcast video ready!');
+                      console.log('[GenieCast] Podcast-to-video complete:', videoUrl);
+                    }}
+                  />
+                )}
 
                 {/* Batch Matrix (expanded inline instead of separate sub-tab) */}
                 <Card>
