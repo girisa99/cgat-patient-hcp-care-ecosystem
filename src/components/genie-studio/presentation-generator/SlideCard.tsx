@@ -48,9 +48,16 @@ export interface SlideConfidence {
   suggestedModel?: string;
 }
 
+export interface BrandColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+}
+
 interface SlideCardProps {
   slide: PresentationSlide;
   confidence?: SlideConfidence;
+  brandColors?: BrandColors;
   onUpdate: (slideId: string, updates: Partial<PresentationSlide>) => void;
   onAccept: (slideId: string) => void;
   onSkip: (slideId: string) => void;
@@ -90,6 +97,7 @@ const slideTypeIcons: Record<string, React.ReactNode> = {
 export function SlideCard({
   slide,
   confidence,
+  brandColors,
   onUpdate,
   onAccept,
   onSkip,
@@ -129,15 +137,31 @@ export function SlideCard({
   const hasOriginal = slide.originalTitle || slide.originalContent;
   const isProcessing = slide.isEnhancing || slide.isRegenerating;
 
+  // Apply brand colors as inline CSS custom properties for preview styling
+  const brandStyle = brandColors ? {
+    '--slide-brand-primary': brandColors.primary,
+    '--slide-brand-secondary': brandColors.secondary,
+    '--slide-brand-accent': brandColors.accent,
+  } as React.CSSProperties : undefined;
+
   return (
-    <Card className={cn(
-      "transition-all duration-200",
-      slide.isAccepted && "border-green-500/50 bg-green-500/5",
-      slide.isSkipped && "border-muted opacity-60",
-      isProcessing && "border-primary/50",
-      className
-    )}>
-      <CardHeader className="p-3 pb-0">
+    <Card
+      className={cn(
+        "transition-all duration-200",
+        slide.isAccepted && "border-green-500/50 bg-green-500/5",
+        slide.isSkipped && "border-muted opacity-60",
+        isProcessing && "border-primary/50",
+        className
+      )}
+      style={brandStyle}
+    >
+      <CardHeader className="p-3 pb-0" style={
+        brandColors && (slide.type === 'title' || slide.type === 'section')
+          ? { borderLeft: `4px solid ${brandColors.primary}`, background: `linear-gradient(135deg, ${brandColors.primary}08, ${brandColors.secondary}05)` }
+          : brandColors
+            ? { borderLeft: `3px solid ${brandColors.primary}30` }
+            : undefined
+      }>
         <div className="flex items-center justify-between gap-2">
           {/* Slide number and type */}
           <div className="flex items-center gap-2 flex-wrap">

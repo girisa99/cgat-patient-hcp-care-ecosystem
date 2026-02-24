@@ -354,7 +354,7 @@ export function PresentationWizard({
   className,
 }: PresentationWizardProps) {
   // Universal enrichment — product knowledge, brand, audience, regional context
-  const { additionalContext: enrichmentContext } = useUniversalEnrichment({ productName: 'Genie Deck' });
+  const { additionalContext: enrichmentContext, enrichmentContext: structuredEnrichment } = useUniversalEnrichment({ productName: 'Genie Deck' });
 
   const {
     session,
@@ -2832,6 +2832,7 @@ export function PresentationWizard({
                   <SlideCard
                     slide={slide}
                     confidence={calculateSlideConfidence(slide, selectedAIModel)}
+                    brandColors={brandConfig?.colors as { primary: string; secondary: string; accent: string } | undefined}
                     onUpdate={(slideId: string, updates: Partial<PresentationSlide>) => handleSlideUpdate(slideId, updates)}
                     onAccept={(slideId: string) => handleSlideAccept(slideId)}
                     onSkip={(slideId: string) => handleSlideSkip(slideId)}

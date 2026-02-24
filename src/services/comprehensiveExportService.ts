@@ -450,13 +450,15 @@ class ComprehensiveExportService {
       // Get font configuration
       const langConfig = LANGUAGE_FONTS[mergedConfig.language || 'en'] || LANGUAGE_FONTS.default;
 
-      // Color scheme
+      // Color scheme — use brand colors from wizard metadata if available
+      const stripHash = (c: string) => c.replace('#', '');
+      const brandColors = wizardMeta?.step2_template?.brandConfig;
       const colors = {
-        primary: '8b5cf6',
-        secondary: '3b82f6',
+        primary: brandColors?.primaryColor ? stripHash(brandColors.primaryColor) : '8b5cf6',
+        secondary: brandColors?.secondaryColor ? stripHash(brandColors.secondaryColor) : '3b82f6',
         dark: '1e293b',
         light: 'f8fafc',
-        accent: '22c55e'
+        accent: brandColors?.accentColor ? stripHash(brandColors.accentColor) : '22c55e'
       };
 
       // Process each slide

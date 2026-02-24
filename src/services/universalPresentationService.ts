@@ -269,6 +269,14 @@ export interface GeneratedSlide {
     segment?: string;
     importance?: 'high' | 'medium' | 'low';
     imagePrompt?: string;
+    // Template/brand metadata injected by applyTemplateStyles
+    templateId?: string;
+    themeId?: string;
+    brandColors?: { primary: string; secondary: string; accent: string };
+    brandTypography?: { headingFont: string; bodyFont: string };
+    brandLogo?: { url: string; position: string; size: string };
+    frameworkIds?: string[];
+    visualFeatures?: string[];
   };
 }
 
@@ -1108,10 +1116,62 @@ Output as JSON with title, topics, sections, and any extracted data.`;
   /**
    * Generate slide structure using AI
    */
+  /**
+   * Build template/branding context string for AI prompts
+   */
+  private buildTemplateContext(request: PresentationRequest): string {
+    const tc = request.templateContext;
+    if (!tc) return '';
+
+    const parts: string[] = [];
+
+    if (tc.selectedTemplateId) {
+      parts.push(`Template: ${tc.selectedTemplateId}`);
+    }
+    if (tc.selectedThemeId) {
+      parts.push(`Theme: ${tc.selectedThemeId}`);
+    }
+    if (tc.brandConfig?.colors) {
+      const c = tc.brandConfig.colors;
+      parts.push(`Brand Colors: primary=${c.primary}, secondary=${c.secondary}, accent=${c.accent}`);
+    }
+    if (tc.brandConfig?.typography) {
+      const t = tc.brandConfig.typography;
+      parts.push(`Typography: headings="${t.headingFont}", body="${t.bodyFont}"`);
+    }
+    if (tc.brandConfig?.logo?.url) {
+      parts.push(`Logo: position=${tc.brandConfig.logo.position}, size=${tc.brandConfig.logo.size}`);
+    }
+    if (tc.selectedFrameworkIds && tc.selectedFrameworkIds.length > 0) {
+      parts.push(`Consulting Frameworks: ${tc.selectedFrameworkIds.join(', ')}`);
+    }
+    if (tc.visualFeatures && tc.visualFeatures.length > 0) {
+      const features = tc.visualFeatures
+        .map(vf => `${vf.featureId}(${vf.subOptions.join(', ')})`)
+        .join('; ');
+      parts.push(`Visual Features: ${features}`);
+    }
+
+    return parts.length > 0 ? parts.join('\n') : '';
+  }
+
   private async generateSlideStructure(content: ExtractedPresentationContent, request: PresentationRequest): Promise<GeneratedSlide[]> {
-    const slideCount = this.getSlideCount(request.length);
-    
-    const systemPrompt = `You are a presentation designer creating a ${request.length} presentation with ${slideCount.min}-${slideCount.max} slides.
+    const slideCount = request.outputConfig?.slideCount
+      ? { min: Math.max(1, request.outputConfig.slideCount - 2), max: request.outputConfig.slideCount + 2 }
+      : this.getSlideCount(request.length);
+
+    // Build template/brand context for the AI prompt
+    const templateCtx = this.buildTemplateContext(request);
+    const brandSection = templateCtx
+      ? `\n\nBrand & Template Guidelines (apply these to every slide):\n${templateCtx}\n- Image prompts MUST reference the brand colors and visual style above.\n- Structure slides to match any specified consulting frameworks.`
+      : '';
+
+    // Build tone instructions
+    const toneSection = request.tones && request.tones.length > 0
+      ? `\nTone: ${request.tones.join(', ')}`
+      : '';
+
+    const systemPrompt = `You are a presentation designer creating a ${request.length} presentation with ${slideCount.min}-${slideCount.max} slides.${brandSection}${toneSection}
 
 Output Format (JSON array of slides):
 [
@@ -1127,7 +1187,7 @@ Output Format (JSON array of slides):
       "journeySteps": [{ "id": 1, "title": "Step", "description": "..." }]
     },
     "speakerNotes": "Notes for presenter",
-    "imagePrompt": "Descriptive prompt for AI image generation",
+    "imagePrompt": "Descriptive prompt for AI image generation — include brand colors and visual style",
     "metadata": {
       "topic": "Topic category",
       "importance": "high|medium|low"
@@ -1143,13 +1203,21 @@ Include:
 - Journey/process slides for workflows
 - Strong conclusion and CTA
 ${request.includeInfographics ? '- Infographic-style slides for data' : ''}
-${request.includeJourneyMaps ? '- Customer/user journey map slides' : ''}`;
+${request.includeJourneyMaps ? '- Customer/user journey map slides' : ''}
+${request.includeCharts ? '- Chart slides for numerical data' : ''}
+${request.includeTables ? '- Comparison/table slides where relevant' : ''}`;
+
+    // Build industry/workflow context
+    const wc = request.workflowContext;
+    const workflowSection = wc
+      ? `\nIndustry: ${wc.industryCategory || 'General'}${wc.segment ? `, Segment: ${wc.segment}` : ''}${wc.contentCategory ? `, Content: ${wc.contentCategory}` : ''}`
+      : '';
 
     try {
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
-          provider: this.AI_PROVIDER,
-          model: this.AI_MODEL,
+          provider: request.workflowContext?.aiModels?.textModel ? 'openrouter' : this.AI_PROVIDER,
+          model: request.workflowContext?.aiModels?.textModel || this.AI_MODEL,
           systemPrompt,
           prompt: `Create a ${request.length} presentation (${slideCount.min}-${slideCount.max} slides) from this content:
 
@@ -1157,7 +1225,7 @@ Title: ${content.title}
 Subtitle: ${content.subtitle || 'N/A'}
 Topics: ${content.topics.join(', ')}
 Target Audience: ${request.targetAudience || 'Professional audience'}
-Output Format: ${request.outputFormat}
+Output Format: ${request.outputFormat}${workflowSection}
 ${request.outputFormat === 'social' ? `Platform: ${request.socialPlatform}` : ''}
 
 Sections:
@@ -1168,15 +1236,16 @@ ${content.statistics?.map(s => `- ${s.value}: ${s.label}`).join('\n') || 'Extrac
 
 ${content.journeySteps?.length ? `Journey Steps:\n${content.journeySteps.map(j => `- ${j.title}: ${j.description}`).join('\n')}` : ''}
 
-Generate a complete slide deck with image prompts for visual slides.`,
+Generate a complete slide deck with brand-aware image prompts for visual slides.`,
           action: 'presentation_structure'
         }
       });
-      
+
       if (error) throw error;
-      
+
       const slides = this.parseSlideStructure(data.content || data);
-      return slides;
+      // Apply template styles to generated slides
+      return this.applyTemplateStyles(slides, request);
     } catch (error) {
       console.error('[PresentationService] Slide structure error:', error);
       return [];
@@ -1184,28 +1253,56 @@ Generate a complete slide deck with image prompts for visual slides.`,
   }
   
   /**
-   * Generate images for slides using Gemini
+   * Apply template styles to AI-generated slides — injects brand metadata
+   * so downstream consumers (preview, export) can render with correct colors/fonts.
+   */
+  private applyTemplateStyles(slides: GeneratedSlide[], request: PresentationRequest): GeneratedSlide[] {
+    const tc = request.templateContext;
+    if (!tc) return slides;
+
+    return slides.map(slide => ({
+      ...slide,
+      metadata: {
+        ...slide.metadata,
+        // Carry brand/template metadata through to preview + export
+        templateId: tc.selectedTemplateId,
+        themeId: tc.selectedThemeId,
+        brandColors: tc.brandConfig?.colors,
+        brandTypography: tc.brandConfig?.typography,
+        brandLogo: tc.brandConfig?.logo,
+        frameworkIds: tc.selectedFrameworkIds,
+        visualFeatures: tc.visualFeatures?.map(vf => vf.featureId),
+      }
+    }));
+  }
+
+  /**
+   * Generate images for slides using configured AI model
    */
   private async generateSlideImages(slides: GeneratedSlide[], request: PresentationRequest): Promise<{ slides: GeneratedSlide[]; imagesGenerated: number }> {
     let imagesGenerated = 0;
     const slidesWithImages: GeneratedSlide[] = [];
-    
+
     // Only generate images for certain slide types
     const imageSlideTypes = ['title', 'section', 'content', 'infographic', 'journey'];
-    
+
+    // Resolve image model from workflow config or fallback to default
+    const imageModel = request.workflowContext?.aiModels?.imageModel || this.IMAGE_MODEL;
+    const imageProvider = request.workflowContext?.aiModels?.imageModel ? 'openrouter' : 'gemini';
+
     for (const slide of slides) {
       if (!imageSlideTypes.includes(slide.type) || !slide.metadata?.imagePrompt) {
         slidesWithImages.push(slide);
         continue;
       }
-      
+
       try {
         const imagePrompt = this.buildImagePrompt(slide, request);
         
         const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
-            provider: 'gemini',
-            model: this.IMAGE_MODEL,
+            provider: imageProvider,
+            model: imageModel,
             prompt: imagePrompt,
             action: 'image_generate',
             modalities: ['image', 'text']
@@ -1242,10 +1339,10 @@ Generate a complete slide deck with image prompts for visual slides.`,
   }
   
   /**
-   * Build optimized image prompt for slide
+   * Build optimized image prompt for slide — uses brand colors, visual features, and enrichment
    */
   private buildImagePrompt(slide: GeneratedSlide, request: PresentationRequest): string {
-    const styleMap = {
+    const styleMap: Record<string, string> = {
       professional: 'clean, corporate, modern, minimal design',
       creative: 'vibrant, artistic, dynamic, colorful',
       minimal: 'simple, clean lines, white space, elegant',
@@ -1253,13 +1350,46 @@ Generate a complete slide deck with image prompts for visual slides.`,
       healthcare: 'medical, clinical, blue and white, trustworthy',
       tech: 'futuristic, digital, neon accents, modern technology'
     };
-    
+
     const style = styleMap[request.imageStyle || 'professional'];
-    
-    return `Create a ${request.outputFormat === 'social' ? 'social media' : 'presentation'} slide image: ${slide.title}. 
-Style: ${style}. 
-${slide.metadata?.imagePrompt || ''}
-16:9 aspect ratio, high resolution, no text overlays, professional quality.`;
+    const parts: string[] = [];
+
+    parts.push(`Create a ${request.outputFormat === 'social' ? 'social media' : 'presentation'} slide image: ${slide.title}.`);
+    parts.push(`Style: ${style}.`);
+
+    // Inject brand colors so images match the presentation palette
+    const bc = request.templateContext?.brandConfig?.colors;
+    if (bc) {
+      parts.push(`Color palette: primary ${bc.primary}, secondary ${bc.secondary}, accent ${bc.accent}. Use these colors for backgrounds, accents, and highlights.`);
+    }
+
+    // Inject visual feature guidance
+    const vf = request.templateContext?.visualFeatures;
+    if (vf && vf.length > 0) {
+      const featureHints = vf
+        .filter(f => f.subOptions.length > 0)
+        .map(f => `${f.featureId}: ${f.subOptions.join(', ')}`)
+        .join('; ');
+      if (featureHints) {
+        parts.push(`Visual features: ${featureHints}.`);
+      }
+    }
+
+    // Inject industry context for more relevant imagery
+    if (request.workflowContext?.industryCategory) {
+      parts.push(`Industry: ${request.workflowContext.industryCategory}.`);
+    }
+
+    // Original AI-generated image prompt from the slide
+    if (slide.metadata?.imagePrompt) {
+      parts.push(slide.metadata.imagePrompt);
+    }
+
+    // Aspect ratio from output config
+    const ar = request.outputConfig?.aspectRatio || '16:9';
+    parts.push(`${ar} aspect ratio, high resolution, no text overlays, professional quality.`);
+
+    return parts.join('\n');
   }
   
   /**
@@ -1321,19 +1451,21 @@ ${slide.metadata?.imagePrompt || ''}
   /**
    * Download presentation as PPTX
    */
-  async downloadAsPPTX(slides: GeneratedSlide[], title: string): Promise<Blob> {
+  async downloadAsPPTX(slides: GeneratedSlide[], title: string, brandConfig?: { colors?: { primary: string; secondary: string; accent: string }; typography?: { headingFont: string; bodyFont: string } }): Promise<Blob> {
     const pptx = new pptxgen();
     pptx.title = title;
     pptx.author = 'Genie AI';
     pptx.subject = 'AI-Generated Presentation';
-    
-    // Color scheme
+
+    // Use brand colors if provided, otherwise fall back to defaults
+    const stripHash = (c: string) => c.replace('#', '');
+    const bc = brandConfig?.colors;
     const colors = {
-      primary: '8b5cf6',
-      secondary: '3b82f6',
+      primary: bc?.primary ? stripHash(bc.primary) : '8b5cf6',
+      secondary: bc?.secondary ? stripHash(bc.secondary) : '3b82f6',
       dark: '1e293b',
       light: 'f8fafc',
-      accent: '22c55e'
+      accent: bc?.accent ? stripHash(bc.accent) : '22c55e'
     };
     
     for (const slide of slides) {
