@@ -3067,6 +3067,84 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Phase 6: Approve for Publish Gate */}
+                <Card className={cn(
+                  "border-2 transition-colors",
+                  castSession.session.completedStages.includes('approval' as AuthoringStage)
+                    ? "border-green-500/50 bg-green-500/5"
+                    : "border-amber-500/50 bg-amber-500/5"
+                )}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      {castSession.session.completedStages.includes('approval' as AuthoringStage) ? (
+                        <Check className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      )}
+                      Publish Approval Gate
+                    </CardTitle>
+                    <CardDescription>
+                      {castSession.session.completedStages.includes('approval' as AuthoringStage)
+                        ? "Content approved for publishing. PUBLISH tab is now unlocked."
+                        : "Review all items above, then approve to unlock the PUBLISH tab."}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {!castSession.session.completedStages.includes('approval' as AuthoringStage) ? (
+                      <div className="space-y-3">
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p>Before approving, verify:</p>
+                          <ul className="list-disc list-inside space-y-0.5 ml-2">
+                            <li>All approval items above are reviewed</li>
+                            <li>Template mapping and scripts are finalized</li>
+                            <li>Regional dialects are configured ({castSession.session.selectedDialects.length} selected)</li>
+                            <li>TTS and AV sync are verified (if applicable)</li>
+                          </ul>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            castSession.updateSession({
+                              currentStage: 'publishing' as AuthoringStage,
+                              completedStages: [
+                                ...castSession.session.completedStages.filter(s => s !== 'approval'),
+                                'approval' as AuthoringStage,
+                              ],
+                            });
+                            toast.success('Content approved for publishing! PUBLISH tab is now unlocked.');
+                            setActiveMainTab('publish');
+                            setSubTab('publish', 'scheduler');
+                          }}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          size="lg"
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          Approve for Publish
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-green-700">
+                          <Check className="w-4 h-4" />
+                          Approved — PUBLISH tab unlocked
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            castSession.updateSession({
+                              currentStage: 'approval' as AuthoringStage,
+                              completedStages: castSession.session.completedStages.filter(s => s !== 'approval'),
+                            });
+                            toast.info('Approval revoked. Review and re-approve when ready.');
+                          }}
+                        >
+                          Revoke Approval
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </motion.div>
             )}
             
@@ -3126,6 +3204,34 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* PUBLISH TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="publish" className="mt-4 space-y-6">
+          {/* Phase 6B: Publish Guard — require approval before publishing */}
+          {!castSession.session.completedStages.includes('approval' as AuthoringStage) ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-16 space-y-4"
+            >
+              <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-amber-500" />
+              </div>
+              <h3 className="text-lg font-semibold">Publishing Locked</h3>
+              <p className="text-sm text-muted-foreground text-center max-w-md">
+                Content must be approved before publishing. Go to <strong>PRODUCE &rarr; Review</strong> and
+                click "Approve for Publish" after reviewing all items.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setActiveMainTab('produce');
+                  setSubTab('produce', 'review');
+                }}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Go to Review
+              </Button>
+            </motion.div>
+          ) : (
+          <>
           {/* Publish hero banner — dogfooding messaging */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -3135,8 +3241,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/50 to-transparent" />
             <div className="relative z-10 h-full flex items-end p-4 md:p-6">
               <div>
-                <h2 className="text-xl font-bold text-foreground">Publish & Scale 🚀</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">14 regions × 40+ sub-regions × 6 platforms · Make it once, scale it everywhere</p>
+                <h2 className="text-xl font-bold text-foreground">Publish & Scale</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">14 regions x 40+ sub-regions x 6 platforms - Make it once, scale it everywhere</p>
               </div>
             </div>
           </motion.div>
@@ -3205,6 +3311,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
           </AnimatePresence>
+          </>
+          )}
         </TabsContent>
 
         {/* LANDING FEATURES NOW IN CREATE → ASSETS */}
