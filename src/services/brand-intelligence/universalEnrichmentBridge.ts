@@ -84,6 +84,24 @@ export interface RegionalCreativeEnrichment {
   recommendedPlatforms: string[];
 }
 
+export interface MarketGapAnalysis {
+  businessName: string;
+  currentLocation: string;
+  analysisDate: string;
+  locations: Array<{
+    location: string;
+    competitorDensity: 'low' | 'medium' | 'high';
+    competitorCount: number;
+    competitorNames: string[];
+    opportunityScore: number;           // 0-100
+    demandSignals: string[];
+    recommendation: 'strong_opportunity' | 'moderate_opportunity' | 'cautious';
+    rationale: string;
+  }>;
+  topRecommendation: MarketGapAnalysis['locations'][0] | null;
+  overallStrategy: string;
+}
+
 export interface UnifiedProductContext {
   product: GenieSuiteProduct;
   brand: {
@@ -703,6 +721,181 @@ export class UniversalEnrichmentBridge {
    */
   getEcosystemKnowledge(): Record<string, ProductKnowledgeContext> {
     return getAllGenieProductsKnowledge();
+  }
+
+  // ─── Franchise & Market Gap Analysis ──────────────────────────────────────
+
+  /**
+   * Analyze market gaps using Google Places data + competitive intelligence.
+   *
+   * For a dhaba owner wanting to expand, this identifies:
+   * - Competitor density per area (how crowded the market is)
+   * - Demand signals from reviews (what customers want but can't find)
+   * - Opportunity zones (areas with high demand + low competition)
+   * - Regional fit (cultural/demographic match for the brand)
+   *
+   * Feeds into: market_gap_analysis use case template in Cast.
+   */
+  async analyzeMarketGap(
+    businessName: string,
+    currentLocation: string,
+    targetLocations: string[],
+    vertical?: string,
+  ): Promise<MarketGapAnalysis> {
+    const results: MarketGapAnalysis['locations'] = [];
+
+    for (const location of targetLocations) {
+      // Fetch Google Places data for the target area
+      const placesData = await this.getGooglePlacesEnrichment(businessName, location, vertical);
+
+      // Count competitors in area
+      const competitorCount = placesData?.competitorInsights?.length || 0;
+      const competitorDensity: 'low' | 'medium' | 'high' =
+        competitorCount <= 1 ? 'low' : competitorCount <= 3 ? 'medium' : 'high';
+
+      // Analyze demand from competitor reviews
+      const competitorNames = placesData?.competitorInsights?.map(c => c.name) || [];
+
+      // Score the opportunity (higher = better)
+      let opportunityScore = 50; // Baseline
+      if (competitorDensity === 'low') opportunityScore += 30;
+      else if (competitorDensity === 'medium') opportunityScore += 10;
+      else opportunityScore -= 10;
+
+      // Boost if our brand has good reviews elsewhere
+      if (placesData?.rating && placesData.rating >= 4.0) opportunityScore += 15;
+      if (placesData?.totalReviews && placesData.totalReviews > 50) opportunityScore += 10;
+
+      results.push({
+        location,
+        competitorDensity,
+        competitorCount,
+        competitorNames,
+        opportunityScore: Math.min(100, Math.max(0, opportunityScore)),
+        demandSignals: this.extractDemandSignals(placesData),
+        recommendation: opportunityScore >= 70 ? 'strong_opportunity' :
+          opportunityScore >= 50 ? 'moderate_opportunity' : 'cautious',
+        rationale: this.buildGapRationale(competitorDensity, opportunityScore, placesData),
+      });
+    }
+
+    // Sort by opportunity score
+    results.sort((a, b) => b.opportunityScore - a.opportunityScore);
+
+    return {
+      businessName,
+      currentLocation,
+      analysisDate: new Date().toISOString(),
+      locations: results,
+      topRecommendation: results[0] || null,
+      overallStrategy: this.buildExpansionStrategy(results),
+    };
+  }
+
+  private extractDemandSignals(placesData: GooglePlacesEnrichment | null): string[] {
+    if (!placesData) return ['Insufficient data — manual research recommended'];
+
+    const signals: string[] = [];
+
+    if (placesData.competitorInsights?.length === 0) {
+      signals.push('No direct competitors found — potential greenfield opportunity');
+    }
+
+    if (placesData.topReviews?.length > 0) {
+      signals.push(`${placesData.topReviews.length} customer reviews available for analysis`);
+    }
+
+    if (placesData.rating && placesData.rating < 3.5) {
+      signals.push('Competitors have low ratings — quality gap you can fill');
+    }
+
+    if (placesData.businessTypes?.length > 0) {
+      signals.push(`Business category: ${placesData.businessTypes.slice(0, 3).join(', ')}`);
+    }
+
+    return signals.length > 0 ? signals : ['Standard market — moderate opportunity'];
+  }
+
+  private buildGapRationale(
+    density: 'low' | 'medium' | 'high',
+    score: number,
+    placesData: GooglePlacesEnrichment | null,
+  ): string {
+    if (density === 'low' && score >= 70) {
+      return 'Low competition with strong brand fit — ideal for early entry. First-mover advantage possible.';
+    }
+    if (density === 'medium' && score >= 50) {
+      return 'Moderate competition but differentiation opportunity exists. Focus on unique value proposition.';
+    }
+    if (density === 'high') {
+      return 'Saturated market — only enter with strong differentiation, pricing advantage, or superior customer experience.';
+    }
+    return 'Market conditions require further analysis. Consider pilot testing or pop-up before permanent commitment.';
+  }
+
+  private buildExpansionStrategy(locations: MarketGapAnalysis['locations']): string {
+    const strong = locations.filter(l => l.recommendation === 'strong_opportunity');
+    const moderate = locations.filter(l => l.recommendation === 'moderate_opportunity');
+
+    if (strong.length > 0) {
+      return `${strong.length} strong opportunity${strong.length > 1 ? 'ies' : 'y'} identified. Recommend starting with ${strong[0].location} (score: ${strong[0].opportunityScore}/100).`;
+    }
+    if (moderate.length > 0) {
+      return `${moderate.length} moderate opportunity${moderate.length > 1 ? 'ies' : 'y'}. Consider pilot testing in ${moderate[0].location} before full commitment.`;
+    }
+    return 'No strong opportunities in analyzed locations. Consider expanding search radius or different target markets.';
+  }
+
+  /**
+   * Build franchise-aware enrichment for multi-location businesses.
+   * Takes the master brand profile + location-specific overrides
+   * and produces content adapted for each location.
+   *
+   * Feeds into: franchise_new_location, franchise_brand_consistency templates.
+   */
+  getFranchiseEnrichment(
+    locationId: string,
+  ): {
+    masterBrand: { name: string; guidelines: string[] };
+    locationOverrides: Record<string, unknown>;
+    regionalCreative: ReturnType<typeof this.getRegionalCreativeEnrichment>;
+    contentDirective: string;
+  } | null {
+    const bus = getIntelligenceBus();
+    const profile = bus.getBrandProfile();
+    if (!profile?.franchise?.isMultiLocation) return null;
+
+    const location = profile.franchise.locations.find(l => l.id === locationId);
+    if (!location) return null;
+
+    const regionalCreative = this.getRegionalCreativeEnrichment(location.regionCode);
+
+    const contentDirective = [
+      `[FRANCHISE CONTENT] Location: ${location.name} (${location.city})`,
+      `Master Brand: ${profile.identity.businessName}`,
+      `Brand Standards (must keep): ${profile.franchise.masterBrandGuidelines.mustKeep.join(', ')}`,
+      `Local Adaptations (allowed): ${profile.franchise.masterBrandGuidelines.canAdapt.join(', ')}`,
+      location.localOverrides?.menuItems
+        ? `Location-Specific Items: ${location.localOverrides.menuItems.join(', ')}`
+        : '',
+      location.localOverrides?.seasonalEvents
+        ? `Local Events: ${location.localOverrides.seasonalEvents.join(', ')}`
+        : '',
+      location.localOverrides?.competitorNames
+        ? `Local Competitors: ${location.localOverrides.competitorNames.join(', ')}`
+        : '',
+      `Regional Style: ${regionalCreative.narrativeStyle?.approach || 'standard'}`,
+    ].filter(Boolean).join('\n');
+
+    return {
+      masterBrand: {
+        name: profile.identity.businessName,
+        guidelines: profile.franchise.masterBrandGuidelines.mustKeep,
+      },
+      locationOverrides: location.localOverrides || {},
+      regionalCreative,
+      contentDirective,
+    };
   }
 }
 

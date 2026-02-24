@@ -362,6 +362,22 @@ export type ProductionUseCase =
   | 'announcement'         // New feature, partnership, milestone
   | 'cultural_showcase'    // Regional/cultural content showcase
   | 'nano_business_promo'  // Simple promo for street vendors, food carts
+  // ─── Franchise & Expansion Use Cases ──────────────────────────────────────
+  | 'franchise_new_location'     // New branch/outlet launch promo
+  | 'franchise_menu_expansion'   // New menu items, recipes, product lines
+  | 'franchise_territory_pitch'  // Territory expansion pitch for investors/franchisees
+  | 'franchise_brand_consistency' // Multi-location brand guidelines video
+  | 'market_gap_analysis'        // Competitive landscape + opportunity identification
+  // ─── Real Estate & Property Use Cases ─────────────────────────────────────
+  | 'realestate_property_showcase'  // Property walkthrough — interior, exterior, 3D model, drone view
+  | 'realestate_layout_flyover'     // Land layout / gated community bird's-eye flyover
+  | 'realestate_green_sustainable'  // Green building, sustainable living, eco-community showcase
+  | 'realestate_container_modular'  // Container homes, modular builds, prefab construction
+  // ─── Industry Vertical Showcase ────────────────────────────────────────────
+  | 'industry_healthcare'           // Hospital, clinic, wellness facility showcase
+  | 'industry_education'            // School, university, e-learning platform showcase
+  | 'industry_hospitality'          // Hotel, resort, restaurant ambiance showcase
+  | 'industry_manufacturing'        // Factory tour, production process, quality showcase
   | 'custom';
 
 // ─── Pipeline Routing ────────────────────────────────────────────────────────
@@ -722,6 +738,329 @@ export const USE_CASE_TEMPLATES: UseCaseTemplate[] = [
     suggestedPipeline: ['script_generation', 'script_transcreation', 'prompt_enrichment', 'character_generate', 'text_to_image', 'image_to_video', 'text_to_speech', 'lip_sync', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
     supportedStyles: ['pixar_3d_regional', 'disney_2d_regional', 'anime_regional', 'cultural_illustration', 'documentary', 'vibrant_street'],
     tierAvailability: ['nano', 'micro', 'small', 'medium', 'large', 'enterprise'],
+  },
+
+  // ─── Franchise & Expansion Templates ──────────────────────────────────────
+
+  {
+    useCase: 'franchise_new_location',
+    name: 'New Location Launch',
+    description: 'Announce and promote a new branch, outlet, or franchise location — builds local buzz with regional cultural adaptation',
+    suggestedInputs: ['text', 'image', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 5, max: 8 },
+    typicalDuration: { min: 30, max: 90 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Brand Story Recap', description: 'Quick brand intro — who we are, what we stand for, our legacy', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'crossfade' },
+      { title: 'Exciting News', description: 'Announce the new location — address, neighborhood, opening date', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'zoom_through' },
+      { title: 'What We Bring', description: 'Highlight signature offerings — best sellers, local specials, what the area was missing', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'slide_left' },
+      { title: 'Local Touch', description: 'Show regional adaptation — local flavors, cultural tie-ins, community involvement', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Grand Opening Offer', description: 'Launch promotion — opening day specials, loyalty signup, first-customer perks', suggestedVisual: 'ai_generated', suggestedDuration: 8, suggestedTransition: 'crossfade' },
+      { title: 'Find Us', description: 'Map, directions, hours, contact — make it easy to visit', suggestedVisual: 'hybrid', suggestedDuration: 7, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['pixar_3d', 'vibrant_street', 'warm_homestyle', 'modern_clean', 'cultural_rich', 'playful_fun'],
+    tierAvailability: ['micro', 'small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'franchise_menu_expansion',
+    name: 'Menu / Product Line Expansion',
+    description: 'Introduce new menu items, recipes, product lines, or seasonal offerings — with visual storytelling and taste appeal',
+    suggestedInputs: ['text', 'image', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 5, max: 10 },
+    typicalDuration: { min: 30, max: 120 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Teaser Hook', description: 'Create anticipation — "Something new is coming..." with mystery reveal', suggestedVisual: 'ai_generated', suggestedDuration: 6, suggestedTransition: 'crossfade' },
+      { title: 'The New Offering', description: 'Grand reveal of new items — close-up visuals, ingredients, preparation process', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'zoom_through' },
+      { title: 'The Story Behind It', description: 'Why we created this — inspiration, chef story, customer demand, seasonal tie-in', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Taste & Experience', description: 'Sensory appeal — flavors, textures, pairings, customer reactions', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'slide_left' },
+      { title: 'Regional Twist', description: 'How this item adapts to local tastes — regional ingredients, cultural celebration tie-in', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Available Now', description: 'Where to get it — locations, pricing, limited-time notice, ordering channels', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['warm_homestyle', 'vibrant_street', 'modern_clean', 'cultural_rich', 'pixar_3d', 'cinematic_dramatic'],
+    tierAvailability: ['nano', 'micro', 'small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'franchise_territory_pitch',
+    name: 'Territory Expansion Pitch',
+    description: 'Pitch for franchise investors, territory partners, or expansion board — with market data, brand strength, and ROI narrative',
+    suggestedInputs: ['text', 'brand_assets', 'data', 'presentation'],
+    suggestedMode: 'plan_first',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 8, max: 15 },
+    typicalDuration: { min: 60, max: 180 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Brand Heritage', description: 'Established brand story — history, values, growth trajectory', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Market Opportunity', description: 'Target territory analysis — demographics, demand signals, gap in market', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Competitive Landscape', description: 'Who else is there, what they lack, our differentiation in this market', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Proven Model', description: 'Existing locations performance — revenue, footfall, customer satisfaction, growth', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Franchise Package', description: 'What the franchisee gets — training, supply chain, marketing support, tech stack', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Regional Adaptation', description: 'How the concept adapts — local menu items, cultural sensitivity, regional partnerships', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Financial Projections', description: 'Investment, break-even, ROI timeline, revenue model', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Next Steps', description: 'How to join — application process, contact, territory availability map', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'character_generate', 'lip_sync', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['corporate_premium', 'cinematic_dramatic', 'pixar_3d', 'modern_clean', 'startup_bold'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'franchise_brand_consistency',
+    name: 'Multi-Location Brand Guidelines',
+    description: 'Training video for franchise operators — brand standards, visual identity, service quality, do\'s and don\'ts across all locations',
+    suggestedInputs: ['text', 'brand_assets', 'image_sequence', 'document'],
+    suggestedMode: 'plan_first',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 8, max: 15 },
+    typicalDuration: { min: 90, max: 300 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Our Brand Promise', description: 'Core values and why consistency matters — the customer expectation', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Visual Identity', description: 'Logo usage, colors, signage, uniforms, packaging — what must stay the same', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Service Standards', description: 'Customer interaction, greeting protocol, response times, quality checks', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Menu / Product Standards', description: 'Recipe consistency, portion sizes, presentation standards, quality sourcing', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Regional Flex Zone', description: 'What CAN be adapted locally — seasonal items, local partnerships, cultural events', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Common Mistakes', description: 'What to avoid — off-brand examples, quality slips, inconsistency red flags', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Quality Checklist', description: 'Daily/weekly brand consistency checklist for location managers', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'slide_left' },
+      { title: 'Support & Resources', description: 'Where to get help — brand portal, marketing kit access, escalation contacts', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'character_generate', 'lip_sync', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['corporate_premium', 'modern_clean', 'pixar_3d', 'infographic_motion', 'flat_design'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'market_gap_analysis',
+    name: 'Market Gap & Opportunity Analysis',
+    description: 'Visual analysis of competitive landscape — identify underserved areas, market opportunities, and expansion directions using real business data',
+    suggestedInputs: ['text', 'data', 'url'],
+    suggestedMode: 'plan_first',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 6, max: 12 },
+    typicalDuration: { min: 60, max: 180 },
+    defaultAssetHandling: 'ai_generate',
+    sceneTemplates: [
+      { title: 'Current Position', description: 'Where you are today — locations, market share, customer base, strengths', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Competitive Landscape', description: 'Map the competition — who, where, what they offer, their weaknesses', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Market Gaps Identified', description: 'Underserved areas, unmet demands, demographic mismatches, opportunity zones', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'zoom_through' },
+      { title: 'Customer Demand Signals', description: 'What customers are asking for — reviews, trends, seasonal patterns, search data', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Expansion Recommendations', description: 'Top 3-5 opportunities ranked by potential — with rationale and risk assessment', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Action Plan', description: 'Next steps — which opportunity to pursue first, timeline, investment needed', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['corporate_premium', 'infographic_motion', 'modern_clean', 'data_driven_viz', 'startup_bold'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  // ─── Real Estate & Property Templates ──────────────────────────────────────
+
+  {
+    useCase: 'realestate_property_showcase',
+    name: 'Property Showcase & Virtual Tour',
+    description: 'Full property walkthrough — room-by-room interior, exterior views, 3D model flythrough, drone aerial shots. For individual homes, apartments, villas, or rental listings.',
+    suggestedInputs: ['image_sequence', 'video', 'screenshot', 'text', 'brand_assets'],
+    suggestedMode: 'plan_first',
+    suggestedQuality: 'cinematic',
+    typicalSceneCount: { min: 8, max: 20 },
+    typicalDuration: { min: 60, max: 300 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Aerial / Street Approach', description: 'Drone view or street-level approach — neighborhood, surroundings, curb appeal', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Exterior & Architecture', description: 'Full exterior — facade, garden, parking, architectural highlights', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'zoom_through' },
+      { title: 'Grand Entrance / Lobby', description: 'First impression — entrance, lobby, foyer, main hallway', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'slide_left' },
+      { title: 'Living Areas', description: 'Living room, dining area, family room — space, light, finishes', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Kitchen & Utility', description: 'Kitchen layout, appliances, counter space, pantry, laundry', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'slide_left' },
+      { title: 'Bedrooms & Bathrooms', description: 'Master suite, guest rooms, bathrooms — closets, fixtures, views', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Special Features', description: 'Balcony, terrace, pool, gym, home office, smart home tech, garden', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: '3D Floor Plan / Model', description: 'Animated 3D floor plan walkthrough showing spatial layout', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'zoom_through' },
+      { title: 'Neighborhood & Amenities', description: 'Schools, hospitals, shopping, transport, parks — proximity highlights', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Pricing & Contact', description: 'Price, EMI options, agent contact, visit scheduling, virtual tour link', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['cinematic_dramatic', 'modern_clean', 'corporate_premium', 'warm_homestyle', 'pixar_3d', 'architectural_viz'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'realestate_layout_flyover',
+    name: 'Land Layout & Community Flyover',
+    description: 'Bird\'s-eye view of land layouts, gated communities, township plans, plot divisions. Shows amenities, green spaces, road networks, and 3D building visualizations.',
+    suggestedInputs: ['image', 'image_sequence', 'data', 'text', 'brand_assets'],
+    suggestedMode: 'plan_first',
+    suggestedQuality: 'cinematic',
+    typicalSceneCount: { min: 6, max: 15 },
+    typicalDuration: { min: 60, max: 240 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Vision Statement', description: 'Developer introduction — vision for the community, brand heritage, track record', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Location & Connectivity', description: 'Map view — city position, highway access, airport distance, metro connectivity', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'zoom_through' },
+      { title: 'Master Plan Flyover', description: 'Animated bird\'s-eye flyover of the entire layout — plots, roads, green zones', suggestedVisual: 'ai_generated', suggestedDuration: 20, suggestedTransition: 'zoom_through' },
+      { title: 'Residential Zones', description: 'Close-up of residential blocks — villa plots, apartment towers, row houses, their 3D renders', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Community Amenities', description: 'Clubhouse, swimming pool, gym, playground, sports courts, jogging track, amphitheater', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Green & Sustainable', description: 'Landscaping, tree-lined avenues, rainwater harvesting, solar panels, green building certifications', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Plot Types & Pricing', description: 'Available plot sizes, configurations, pricing tiers, payment plans', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'slide_left' },
+      { title: 'Book Your Plot', description: 'CTA — booking process, site visit scheduling, agent contact, virtual tour', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'character_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['cinematic_dramatic', 'architectural_viz', 'corporate_premium', 'modern_clean', 'pixar_3d'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'realestate_green_sustainable',
+    name: 'Green & Sustainable Living Showcase',
+    description: 'Eco-friendly homes, green buildings, sustainable communities — showcase environmental features, certifications, and lifestyle benefits. Reduces pollution narrative.',
+    suggestedInputs: ['text', 'image', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 6, max: 12 },
+    typicalDuration: { min: 45, max: 180 },
+    defaultAssetHandling: 'ai_generate',
+    sceneTemplates: [
+      { title: 'The Problem — Urban Pollution', description: 'Show the environmental challenge — air quality, congestion, heat islands, carbon footprint', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'The Vision — Green Living', description: 'Introduce the sustainable alternative — nature-integrated design, clean air, green spaces', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'zoom_through' },
+      { title: 'Sustainable Design', description: 'Green building materials, passive cooling, natural ventilation, cross-ventilation, green roofs', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'slide_left' },
+      { title: 'Energy & Water', description: 'Solar panels, EV charging, rainwater harvesting, water recycling, energy rating certifications', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Community & Biodiversity', description: 'Native planting, urban farming, butterfly gardens, composting, community gardens, wildlife corridors', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Health & Lifestyle', description: 'Walking trails, cycling paths, yoga gardens, organic markets, clean air metrics, health benefits', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Certifications & Impact', description: 'LEED, IGBC, carbon offset numbers, trees planted, water saved — quantified impact', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'slide_left' },
+      { title: 'Join the Movement', description: 'CTA — live green, invest in sustainability, schedule eco-tour', suggestedVisual: 'ai_generated', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['cinematic_dramatic', 'warm_homestyle', 'documentary', 'pixar_3d', 'modern_clean', 'nature_organic'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'realestate_container_modular',
+    name: 'Container & Modular Home Showcase',
+    description: 'Showcase container homes, prefab construction, modular builds, tiny homes, 3D-printed houses — innovative housing solutions with construction process and final walkthrough.',
+    suggestedInputs: ['text', 'image', 'image_sequence', 'video', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 7, max: 12 },
+    typicalDuration: { min: 60, max: 180 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Rethink Housing', description: 'Challenge traditional construction — cost, time, sustainability problems', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'The Innovation', description: 'Introduce the concept — container conversion, modular assembly, 3D printing, or prefab system', suggestedVisual: 'ai_generated', suggestedDuration: 12, suggestedTransition: 'zoom_through' },
+      { title: 'Build Process', description: 'Time-lapse or step-by-step of construction — factory fabrication, transport, assembly on-site', suggestedVisual: 'hybrid', suggestedDuration: 20, suggestedTransition: 'slide_left' },
+      { title: 'Interior Reveal', description: 'Room-by-room interior walkthrough — surprising space, smart design, modern finishes', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Exterior & Landscaping', description: 'Exterior design, cladding options, garden integration, multi-unit configurations', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Cost & Timeline', description: 'Price comparison vs traditional — build time, total cost, ROI, financing options', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'slide_left' },
+      { title: 'Customization Options', description: 'Layouts, sizes, finishes, add-ons — show configurability and personalization', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Get Started', description: 'CTA — order, customize, schedule site visit, download brochure', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['modern_clean', 'cinematic_dramatic', 'startup_bold', 'pixar_3d', 'industrial_modern', 'documentary'],
+    tierAvailability: ['micro', 'small', 'medium', 'large', 'enterprise'],
+  },
+
+  // ─── Industry Vertical Templates ───────────────────────────────────────────
+
+  {
+    useCase: 'industry_healthcare',
+    name: 'Healthcare Facility Showcase',
+    description: 'Hospital, clinic, diagnostic center, or wellness facility tour — departments, equipment, doctors, patient experience, certifications.',
+    suggestedInputs: ['text', 'image', 'image_sequence', 'video', 'brand_assets'],
+    suggestedMode: 'plan_first',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 7, max: 15 },
+    typicalDuration: { min: 60, max: 240 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Our Mission', description: 'Healthcare mission — patient-first philosophy, years of service, community trust', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Facility Tour', description: 'Reception, waiting areas, patient rooms, operating theaters, diagnostic labs', suggestedVisual: 'hybrid', suggestedDuration: 20, suggestedTransition: 'slide_left' },
+      { title: 'Departments & Specializations', description: 'Key departments — cardiology, orthopedics, pediatrics, etc. with equipment highlights', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Medical Team', description: 'Doctor profiles, credentials, patient testimonials, success stories', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Technology & Equipment', description: 'Advanced diagnostics, AI-assisted imaging, robotic surgery, telemedicine capabilities', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'slide_left' },
+      { title: 'Patient Experience', description: 'Appointment booking, insurance processing, comfort amenities, recovery support', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Book Appointment', description: 'CTA — online booking, emergency contact, location map, visiting hours', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'character_generate', 'lip_sync', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['corporate_premium', 'modern_clean', 'warm_homestyle', 'pixar_3d', 'documentary'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'industry_education',
+    name: 'Educational Institution Showcase',
+    description: 'School, university, training center, or e-learning platform tour — campus, programs, faculty, student life, outcomes.',
+    suggestedInputs: ['text', 'image', 'image_sequence', 'video', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 6, max: 12 },
+    typicalDuration: { min: 60, max: 180 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Welcome', description: 'Institution introduction — history, values, accreditations, rankings', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Campus Tour', description: 'Buildings, classrooms, labs, library, auditorium, sports facilities', suggestedVisual: 'hybrid', suggestedDuration: 20, suggestedTransition: 'slide_left' },
+      { title: 'Programs & Curriculum', description: 'Courses offered, unique programs, industry partnerships, research centers', suggestedVisual: 'ai_generated', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Faculty & Mentorship', description: 'Distinguished faculty, student-teacher ratio, mentorship programs', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Student Life', description: 'Clubs, events, hostel, cafeteria, cultural activities, community', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'slide_left' },
+      { title: 'Outcomes & Alumni', description: 'Placement rates, salary statistics, notable alumni, success stories', suggestedVisual: 'ai_generated', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Apply Now', description: 'CTA — admission process, deadlines, financial aid, campus visit scheduling', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['modern_clean', 'warm_homestyle', 'pixar_3d', 'cultural_rich', 'corporate_premium', 'playful_fun'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'industry_hospitality',
+    name: 'Hospitality & Dining Experience',
+    description: 'Hotel, resort, restaurant, or cafe ambiance showcase — rooms, dining, spa, events, cuisine, atmosphere. Multi-sensory storytelling.',
+    suggestedInputs: ['text', 'image', 'image_sequence', 'video', 'brand_assets'],
+    suggestedMode: 'guided',
+    suggestedQuality: 'cinematic',
+    typicalSceneCount: { min: 6, max: 15 },
+    typicalDuration: { min: 45, max: 180 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Arrival Experience', description: 'First impression — entrance, lobby, reception, welcome ambiance', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Rooms & Suites', description: 'Room tour — bed, bathroom, view, amenities, room types and upgrades', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'zoom_through' },
+      { title: 'Dining & Cuisine', description: 'Restaurant, bar, chef, signature dishes, buffet, cooking process', suggestedVisual: 'hybrid', suggestedDuration: 15, suggestedTransition: 'crossfade' },
+      { title: 'Wellness & Recreation', description: 'Pool, spa, gym, yoga, activities, entertainment, kids zone', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'slide_left' },
+      { title: 'Events & Celebrations', description: 'Banquet halls, wedding venues, conference rooms, special event setups', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Guest Experiences', description: 'Reviews, testimonials, Instagram moments, guest stories', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Book Your Stay', description: 'CTA — rates, packages, seasonal offers, reservation link', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['cinematic_dramatic', 'warm_homestyle', 'modern_clean', 'cultural_rich', 'pixar_3d'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
+  },
+
+  {
+    useCase: 'industry_manufacturing',
+    name: 'Factory & Manufacturing Tour',
+    description: 'Production facility showcase — assembly lines, quality control, R&D labs, certifications, capacity, technology. For B2B or investor audiences.',
+    suggestedInputs: ['text', 'image', 'image_sequence', 'video', 'brand_assets'],
+    suggestedMode: 'plan_first',
+    suggestedQuality: 'production',
+    typicalSceneCount: { min: 7, max: 12 },
+    typicalDuration: { min: 60, max: 180 },
+    defaultAssetHandling: 'hybrid',
+    sceneTemplates: [
+      { title: 'Company Heritage', description: 'Brand history, mission, scale, global footprint', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'crossfade' },
+      { title: 'Facility Overview', description: 'Aerial/exterior of plant, size, capacity, location advantages', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'zoom_through' },
+      { title: 'Production Line', description: 'Step-by-step manufacturing process — raw material to finished product', suggestedVisual: 'hybrid', suggestedDuration: 20, suggestedTransition: 'slide_left' },
+      { title: 'Quality Assurance', description: 'Testing labs, QC checkpoints, certifications (ISO, FDA, CE), compliance', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Technology & Innovation', description: 'R&D center, automation, IoT integration, AI quality inspection, patents', suggestedVisual: 'hybrid', suggestedDuration: 12, suggestedTransition: 'crossfade' },
+      { title: 'Team & Safety', description: 'Workforce, training programs, safety protocols, employee welfare', suggestedVisual: 'hybrid', suggestedDuration: 10, suggestedTransition: 'slide_left' },
+      { title: 'Partner With Us', description: 'CTA — OEM/ODM inquiry, minimum order, lead times, contact', suggestedVisual: 'hybrid', suggestedDuration: 8, suggestedTransition: 'fade_black' },
+    ],
+    suggestedPipeline: ['script_generation', 'prompt_enrichment', 'text_to_image', 'image_to_video', 'text_to_speech', 'music_generate', 'scene_composite', 'final_render', 'format_export'],
+    supportedStyles: ['corporate_premium', 'cinematic_dramatic', 'modern_clean', 'industrial_modern', 'documentary'],
+    tierAvailability: ['small', 'medium', 'large', 'enterprise'],
   },
 ];
 

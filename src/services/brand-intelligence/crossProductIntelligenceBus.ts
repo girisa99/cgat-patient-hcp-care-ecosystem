@@ -172,6 +172,7 @@ export interface ArcContext {
 export class IntelligenceBus {
   private brandProfile: BrandIntelligenceProfile | null = null;
   private regionCode: string = 'NAM_US';
+  private activeLocationId: string | null = null;
   private messageLog: BusMessage[] = [];
   private listeners: Map<string, ((msg: BusMessage) => void)[]> = new Map();
 
@@ -213,6 +214,67 @@ export class IntelligenceBus {
 
   getRegionCode(): string {
     return this.regionCode;
+  }
+
+  // ─── Multi-Location / Franchise Support ──────────
+  // For businesses with multiple locations, the bus can switch context
+  // to generate content adapted for each location while preserving master brand.
+
+  setActiveLocation(locationId: string): void {
+    if (!this.brandProfile?.franchise?.isMultiLocation) return;
+
+    const location = this.brandProfile.franchise.locations.find(l => l.id === locationId);
+    if (!location) return;
+
+    this.activeLocationId = locationId;
+
+    // Auto-switch region to match location
+    if (location.regionCode && location.regionCode !== this.regionCode) {
+      this.setRegion(location.regionCode);
+    }
+
+    this.broadcast({
+      id: `bus-${Date.now()}`,
+      type: 'brand_context',
+      source: 'bus',
+      target: 'all',
+      payload: {
+        locationId,
+        locationName: location.name,
+        city: location.city,
+        localOverrides: location.localOverrides || {},
+        masterBrand: this.brandProfile.identity.businessName,
+      },
+      brandProfileId: this.brandProfile.id,
+      regionCode: location.regionCode,
+      timestamp: new Date().toISOString(),
+      priority: 'high',
+    });
+  }
+
+  getActiveLocationId(): string | null {
+    return this.activeLocationId;
+  }
+
+  getActiveLocation(): NonNullable<BrandIntelligenceProfile['franchise']>['locations'][0] | null {
+    if (!this.brandProfile?.franchise || !this.activeLocationId) return null;
+    return this.brandProfile.franchise.locations.find(l => l.id === this.activeLocationId) || null;
+  }
+
+  getAllLocations(): NonNullable<BrandIntelligenceProfile['franchise']>['locations'] {
+    return this.brandProfile?.franchise?.locations || [];
+  }
+
+  isMultiLocation(): boolean {
+    return this.brandProfile?.franchise?.isMultiLocation === true;
+  }
+
+  getFranchiseGuidelines(): NonNullable<BrandIntelligenceProfile['franchise']>['masterBrandGuidelines'] | null {
+    return this.brandProfile?.franchise?.masterBrandGuidelines || null;
+  }
+
+  getExpansionTargets(): NonNullable<BrandIntelligenceProfile['franchise']>['expansionTargets'] {
+    return this.brandProfile?.franchise?.expansionTargets || [];
   }
 
   // ─── Product Context Extraction ─────────────────

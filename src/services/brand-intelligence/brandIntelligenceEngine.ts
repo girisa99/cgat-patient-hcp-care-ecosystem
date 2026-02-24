@@ -246,6 +246,51 @@ export interface BrandIntelligenceProfile {
     };
   };
 
+  // === FRANCHISE & MULTI-LOCATION ===
+  // Optional — populated when business has or wants multiple locations.
+  franchise?: {
+    isMultiLocation: boolean;
+    totalLocations: number;
+    expansionStage: 'single_location' | 'planning_expansion' | 'early_expansion' | 'regional_chain' | 'national_chain' | 'international';
+    locations: Array<{
+      id: string;
+      name: string;                   // "Downtown Branch", "MG Road Outlet"
+      regionCode: string;             // Region for cultural adaptation
+      city: string;
+      address?: string;
+      status: 'planned' | 'building' | 'open' | 'flagship';
+      localOverrides?: {
+        menuItems?: string[];         // Location-specific offerings
+        seasonalEvents?: string[];    // Local festivals/events
+        competitorNames?: string[];   // Local competition
+        languagePreference?: string;  // Local language for content
+        priceAdjustment?: 'higher' | 'same' | 'lower'; // vs brand standard
+      };
+      googlePlacesId?: string;        // For real-time enrichment
+      performance?: {
+        rating?: number;
+        reviewCount?: number;
+        monthlyFootfall?: string;
+        topSellingItems?: string[];
+      };
+    }>;
+    masterBrandGuidelines: {
+      mustKeep: string[];             // Non-negotiable brand elements
+      canAdapt: string[];             // Allowed regional variations
+      neverChange: string[];          // Absolute brand constraints
+    };
+    expansionTargets?: Array<{
+      regionCode: string;
+      city: string;
+      rationale: string;              // Why this location
+      competitorDensity: 'low' | 'medium' | 'high';
+      estimatedDemand: 'low' | 'medium' | 'high';
+      investmentRange?: string;
+      timeline?: string;
+    }>;
+    franchiseModel?: 'company_owned' | 'franchise' | 'mixed' | 'licensing';
+  };
+
   // === TIER-SPECIFIC CONFIGURATION ===
   tierConfig: {
     aiModelTier: 'lite' | 'standard' | 'premium' | 'enterprise';
