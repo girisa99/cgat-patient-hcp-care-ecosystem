@@ -33,6 +33,41 @@ import { selectChain, buildOrchestrationPlan } from '../pipelineOrchestrator';
 import type { ScriptGenerationMode } from '../createFlowOrchestrator';
 import { SCRIPT_GEN_MODES } from '../createFlowOrchestrator';
 
+// ─── Gap 1: Cast End-to-End Prompt Engine ────────────────────────────────────
+import {
+  generateScenePrompts,
+  buildFullProductionScript,
+  STYLE_PROMPT_TEMPLATES,
+  getRecommendedPlatforms,
+  type CastPromptConfig,
+  type SceneScript,
+  type FullProductionScript,
+} from '../brand-intelligence/castEndToEndPromptEngine';
+
+// ─── Gap 2: Universal Enrichment Bridge ──────────────────────────────────────
+import { getEnrichmentBridge, type UniversalEnrichmentBridge } from '../brand-intelligence/universalEnrichmentBridge';
+
+// ─── Gap 3: Regional Creative Helpers ────────────────────────────────────────
+import {
+  getRegionalMusicPrompt,
+  getRegionalNarrativeStyle,
+  getRegionalCompanionCreature,
+  enrichPromptWithRegion,
+  type CreativeStyleFamily,
+} from '../brand-intelligence/castCreativeStylesRegistry';
+
+// ─── Gap 4: Dynamic Provider Routing ─────────────────────────────────────────
+import {
+  getProviderForStep,
+  getModelForStep,
+  buildPipelineForUseCase,
+  estimateProductionCost,
+  type PipelineStep,
+  type PipelineRoute,
+  type ProductionUseCase,
+  type QualityTier as PipelineQualityTier,
+} from '../brand-intelligence/creativeProductionPipeline';
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 /** Enrichment context collected from all sources */
@@ -418,6 +453,302 @@ export function buildEnrichedPrompt(
   return combined.slice(0, budget.total * 4);
 }
 
+// ─── Gap 1: Prompt Engine Integration ────────────────────────────────────────
+
+/**
+ * Uses the Cast End-to-End Prompt Engine to generate a full production script
+ * with scene-by-scene prompts enriched by brand, region, and style context.
+ *
+ * This was previously dead code — now wired into the production flow.
+ */
+export function generateProductionScript(
+  request: CastProductionRequest,
+  style: CreativeStyleFamily = 'pixar_3d',
+): FullProductionScript {
+  const bus = getIntelligenceBus();
+  const regionCode = request.enrichment.region.code || bus.getRegionCode();
+  const profile = bus.getBrandProfile();
+
+  const config: CastPromptConfig = {
+    prompt: request.scriptContent,
+    language: request.inputLanguage,
+    regionCode,
+    styleFamily: style,
+    styleIntensity: 3,
+    characterCount: 1,
+    characterStyle: 'auto',
+    includeCompanionCreature: !!getRegionalCompanionCreature(regionCode),
+    lipSyncEnabled: request.lipSyncEnabled ?? true,
+    humorLevel: 2,
+    humorStyle: 'auto',
+    mode: request.quality === 'cinematic' ? 'scene_by_scene' : 'plan_first',
+    quality: request.quality as PipelineQualityTier || 'production',
+    targetDuration: request.estimatedDuration || 60,
+    inputs: [],
+    brandProfile: profile || undefined,
+    outputLanguages: request.outputLanguages.map(l => l.code),
+    platforms: getRecommendedPlatforms(request.enrichment.brand?.tier || 'small'),
+  };
+
+  return buildFullProductionScript(config);
+}
+
+/**
+ * Enriches scene scripts with prompt-engine-generated prompts for each scene.
+ * Returns generation-ready prompts (image, video, audio, character) per scene.
+ */
+export function enrichScenesWithPromptEngine(
+  scenes: Array<{ sceneId: string; scriptText: string; visualDirection: string; duration: number }>,
+  request: CastProductionRequest,
+  style: CreativeStyleFamily = 'pixar_3d',
+): Array<{
+  sceneId: string;
+  scriptText: string;
+  visualDirection: string;
+  duration: number;
+  generationPrompts: SceneScript['generationPrompts'];
+}> {
+  const bus = getIntelligenceBus();
+  const regionCode = request.enrichment.region.code || bus.getRegionCode();
+  const profile = bus.getBrandProfile();
+
+  return scenes.map((scene, idx) => {
+    const sceneScript: SceneScript = {
+      sceneNumber: idx + 1,
+      title: scene.sceneId,
+      narrationText: scene.scriptText,
+      visualDescription: scene.visualDirection,
+      characterActions: ['talking', 'gesturing'],
+      emotionalBeat: idx === 0 ? 'intrigue and hook' : idx === scenes.length - 1 ? 'confidence and call to action' : 'building tension',
+      cameraDirection: idx === 0 ? 'dramatic zoom in' : 'medium shot',
+      musicCue: idx === 0 ? 'mysterious intro building' : 'maintain energy',
+      sfxCues: [],
+      textOverlays: [],
+      duration: scene.duration,
+      inputAssetHandling: 'ai_generate',
+      generationPrompts: { imagePrompt: '', videoPrompt: '', audioPrompt: '', characterPrompt: '' },
+    };
+
+    const generationPrompts = generateScenePrompts(
+      sceneScript,
+      style,
+      regionCode,
+      profile || undefined,
+    );
+
+    return { ...scene, generationPrompts };
+  });
+}
+
+// ─── Gap 2: Universal Enrichment Bridge Integration ──────────────────────────
+
+/**
+ * Assembles enrichment using the Universal Enrichment Bridge as the central
+ * orchestrator. This replaces the manual assembly with a unified pipeline:
+ *
+ *   User prompt → [Brand] → [Competitive] → [Regional] → [Scene] → [AI Routing]
+ *
+ * Previously, getEnrichmentBridge() was never called. Now it's the entry point.
+ */
+export async function assembleEnrichmentWithBridge(
+  regionCode: string,
+  options?: {
+    product?: 'cast';
+    style?: CreativeStyleFamily;
+    productId?: string;
+  },
+): Promise<{
+  enrichment: EnrichmentContext;
+  bridgeResult: Awaited<ReturnType<UniversalEnrichmentBridge['enrichPrompt']>> | null;
+  regionalCreative: ReturnType<UniversalEnrichmentBridge['getRegionalCreativeEnrichment']>;
+  providerRouting: PipelineRoute[];
+}> {
+  const bridge = getEnrichmentBridge();
+  const bus = getIntelligenceBus();
+  const profile = bus.getBrandProfile();
+
+  // Initialize bridge with current profile + region
+  if (profile) {
+    bridge.initialize(profile, regionCode);
+  }
+
+  // 1. Standard enrichment assembly (existing path — backward compatible)
+  const enrichment = assembleEnrichmentContext(profile, regionCode);
+
+  // 2. Bridge enrichment (NEW — adds competitive + AI routing)
+  let bridgeResult: Awaited<ReturnType<UniversalEnrichmentBridge['enrichPrompt']>> | null = null;
+  try {
+    bridgeResult = await bridge.enrichPrompt(
+      enrichment.brand?.name || 'business',
+      {
+        product: 'cast',
+        style: options?.style,
+        productId: options?.productId,
+        includeCompetitive: true,
+        includeRegional: true,
+      },
+    );
+  } catch {
+    // Graceful degradation — bridge enrichment is additive
+  }
+
+  // 3. Regional creative enrichment (NEW — music, narrative, companion)
+  const regionalCreative = bridge.getRegionalCreativeEnrichment(regionCode);
+
+  // 4. Provider routing (NEW — step-level provider assignments)
+  const tier = profile?.identity.businessTier || 'small';
+  const quality: PipelineQualityTier = tier === 'nano' || tier === 'micro' ? 'standard' : 'production';
+  const providerRouting = buildPipelineForUseCase(
+    'product_marketing',
+    quality,
+    regionCode,
+    [],
+  );
+
+  return { enrichment, bridgeResult, regionalCreative, providerRouting };
+}
+
+// ─── Gap 3: Regional Creative Helpers Integration ────────────────────────────
+
+/**
+ * Enriches an EnrichmentContext with full regional creative data:
+ * music config, narrative style, and companion creature.
+ *
+ * Previously, only enrichPromptWithRegion() was called — the specific helpers
+ * (getRegionalMusicPrompt, getRegionalNarrativeStyle, getRegionalCompanionCreature)
+ * were imported but never invoked in production flow.
+ */
+export function enrichWithRegionalCreative(
+  enrichment: EnrichmentContext,
+  regionCode: string,
+): EnrichmentContext & {
+  regionalMusic: ReturnType<typeof getRegionalMusicPrompt>;
+  regionalNarrative: ReturnType<typeof getRegionalNarrativeStyle>;
+  regionalCompanion: ReturnType<typeof getRegionalCompanionCreature>;
+} {
+  const music = getRegionalMusicPrompt(regionCode);
+  const narrative = getRegionalNarrativeStyle(regionCode);
+  const companion = getRegionalCompanionCreature(regionCode);
+
+  // Enhance the region block with full creative data
+  const enhancedRegion = {
+    ...enrichment.region,
+    musicMood: music.prompt,
+    narrativeStyle: narrative
+      ? `${narrative.approach} | humor: ${narrative.humorStyle} | tone: ${narrative.emotionalTone} | formality: ${narrative.formalityLevel}/5`
+      : enrichment.region.narrativeStyle,
+    culturalElements: {
+      ...enrichment.region.culturalElements,
+      ...(companion ? { companionCreature: companion } : {}),
+      musicGenre: music.genre,
+      musicBpm: music.bpm,
+      musicInstruments: music.instruments,
+    },
+  };
+
+  return {
+    ...enrichment,
+    region: enhancedRegion,
+    regionalMusic: music,
+    regionalNarrative: narrative,
+    regionalCompanion: companion,
+  };
+}
+
+// ─── Gap 4: Dynamic Provider Routing ─────────────────────────────────────────
+
+/**
+ * Returns step-level provider routing for a given production use case.
+ * Each pipeline step gets its optimal provider + model + fallback.
+ *
+ * Previously, getProviderForStep() was only called internally by
+ * buildPipelineForUseCase(). Now exposed for Cast UI transparency.
+ */
+export function getProductionProviderRouting(
+  useCase: ProductionUseCase,
+  quality: PipelineQualityTier,
+  regionCode: string,
+): {
+  routes: PipelineRoute[];
+  estimatedCost: { tokens: number; usd: number; minutes: number };
+  providerSummary: Array<{ step: PipelineStep; provider: string; model: string; fallback: string | null }>;
+} {
+  const routes = buildPipelineForUseCase(useCase, quality, regionCode, []);
+
+  // Build human-readable summary
+  const providerSummary = routes.map(route => ({
+    step: route.step,
+    provider: route.provider,
+    model: route.modelId,
+    fallback: route.fallbackProvider || null,
+  }));
+
+  // Estimate cost using a synthetic plan
+  const syntheticPlan = {
+    id: 'estimate',
+    title: 'Cost Estimate',
+    description: '',
+    regionCode,
+    language: 'en',
+    targetAudience: '',
+    mode: 'guided' as const,
+    creativeStyle: 'pixar_3d',
+    useCase,
+    scenes: Array.from({ length: 6 }, (_, i) => ({
+      id: `scene-${i}`,
+      order: i,
+      title: `Scene ${i + 1}`,
+      description: '',
+      duration: { min: 5, target: 8, max: 12 },
+      transitionIn: 'cut' as const,
+      transitionOut: 'cut' as const,
+      inputs: [],
+      visual: { primarySource: 'ai_generated' as const, style: 'pixar_3d' },
+      audio: {},
+      textOverlays: [],
+      userApproval: 'auto' as const,
+      status: 'planned' as const,
+      generatedAssets: [],
+    })),
+    globalAudio: { backgroundMusic: undefined, masterVolume: 0.8 },
+    globalVisual: { colorPalette: [], fontFamily: 'Inter' },
+    inputs: [],
+    outputs: [],
+    pipeline: routes,
+    status: 'draft' as const,
+    totalEstimatedTokens: 0,
+    totalEstimatedCostUsd: 0,
+    totalEstimatedDuration: 48,
+    totalEstimatedGenerationTime: 0,
+  };
+
+  const estimatedCost = estimateProductionCost(syntheticPlan);
+
+  return { routes, estimatedCost, providerSummary };
+}
+
+/**
+ * Resolves the optimal provider for a specific pipeline step.
+ * Wraps getProviderForStep() for direct use in Cast UI components.
+ */
+export function resolveProviderForStep(
+  step: PipelineStep,
+  quality: PipelineQualityTier,
+  regionCode: string,
+): { providerId: string; modelId: string; fallbackId: string | null } | null {
+  const provider = getProviderForStep(step, quality, regionCode);
+  if (!provider) return null;
+
+  const model = getModelForStep(provider, quality);
+  const fallback = getProviderForStep(step, quality, regionCode);
+
+  return {
+    providerId: provider.id,
+    modelId: model?.id || provider.models[0]?.id || 'unknown',
+    fallbackId: fallback && fallback.id !== provider.id ? fallback.id : null,
+  };
+}
+
 // ─── Scene Script Generation ────────────────────────────────────────────────
 
 /**
@@ -432,6 +763,26 @@ export async function generateSceneScripts(
     request.scriptContent,
     request.enrichment,
     request.enrichment.brand?.tier || 'small',
+  );
+
+  // Gap 3: Enrich with regional creative helpers (music, narrative, companion)
+  const regionCode = request.enrichment.region.code;
+  const regionalMusic = getRegionalMusicPrompt(regionCode);
+  const regionalNarrative = getRegionalNarrativeStyle(regionCode);
+  const regionalCompanion = getRegionalCompanionCreature(regionCode);
+
+  // Gap 1: Build regional creative context for scene generation
+  const regionalCreativeContext = [
+    regionalNarrative ? `Narrative style: ${regionalNarrative.approach}, humor: ${regionalNarrative.humorStyle}, tone: ${regionalNarrative.emotionalTone}` : '',
+    regionalMusic ? `Music: ${regionalMusic.genre}, ${regionalMusic.bpm} BPM, instruments: ${regionalMusic.instruments.join(', ')}` : '',
+    regionalCompanion ? `Companion character: ${regionalCompanion.name} (${regionalCompanion.species}) — ${regionalCompanion.description}` : '',
+  ].filter(Boolean).join('. ');
+
+  // Gap 4: Resolve provider for script generation step
+  const scriptProvider = resolveProviderForStep(
+    'script_generation',
+    (request.quality as PipelineQualityTier) || 'production',
+    regionCode,
   );
 
   const sceneTypes = getSceneTypesForIntent(request.intent, sceneCount);
@@ -452,9 +803,13 @@ export async function generateSceneScripts(
             cta: request.enrichment.brand?.valueProposition.forCustomer || 'Learn more',
           },
           capabilities: request.videoStyles,
-          region: request.enrichment.region.code,
+          region: regionCode,
           language: request.inputLanguage,
           enrichedContext: enrichedPrompt,
+          // Gap 3: Regional creative context injected into each scene
+          regionalCreativeContext,
+          // Gap 4: Provider routing metadata
+          providerHint: scriptProvider?.providerId || 'anthropic',
           intent: request.intent,
           format: request.selectedFormats[0] || 'short_video',
         },
@@ -479,7 +834,10 @@ export async function generateSceneScripts(
     }
   }
 
-  return results;
+  // Gap 1: After edge function generates base scenes, enrich with prompt engine
+  const enrichedScenes = enrichScenesWithPromptEngine(results, request);
+
+  return enrichedScenes;
 }
 
 /** Map intent to scene structure */

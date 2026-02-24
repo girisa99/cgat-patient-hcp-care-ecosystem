@@ -14,14 +14,25 @@ import {
   buildRequestFromSession,
   startCastProduction,
   generateSceneScripts,
+  // Gap 1: Prompt engine wiring
+  generateProductionScript,
+  enrichScenesWithPromptEngine,
+  // Gap 2: Universal Enrichment Bridge wiring
+  assembleEnrichmentWithBridge,
+  // Gap 3: Regional creative helpers
+  enrichWithRegionalCreative,
+  // Gap 4: Dynamic provider routing
+  getProductionProviderRouting,
   type EnrichmentContext,
   type CastProductionRequest,
 } from '@/services/production/castProductionBridge';
 import { pipelineSupervisor } from '@/services/production/pipelineSupervisor';
 import type { ProductionJob, PipelineTask } from '@/services/production/pipelineSupervisor';
 import { getIntelligenceBus } from '@/services/brand-intelligence/crossProductIntelligenceBus';
+import { getEnrichmentBridge } from '@/services/brand-intelligence/universalEnrichmentBridge';
 import type { ContentFormat, ContentIntent } from '@/services/pipelineOrchestrator';
 import type { ScriptGenerationMode } from '@/services/createFlowOrchestrator';
+import type { PipelineRoute } from '@/services/brand-intelligence/creativeProductionPipeline';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -36,6 +47,14 @@ export interface ProductionState {
   error: string | null;
   startedAt: string | null;
   completedAt: string | null;
+  // Gap 2+3+4: New state from wired services
+  providerRouting: PipelineRoute[];
+  regionalCreative: {
+    music: { genre: string; bpm: number; instruments: string[] } | null;
+    narrative: { approach: string; humorStyle: string; emotionalTone: string } | null;
+    companion: { name: string; species: string; description: string } | null;
+  } | null;
+  bridgeEnriched: boolean;
 }
 
 export interface UseCastProductionReturn {
@@ -84,6 +103,9 @@ export function useCastProduction(): UseCastProductionReturn {
     error: null,
     startedAt: null,
     completedAt: null,
+    providerRouting: [],
+    regionalCreative: null,
+    bridgeEnriched: false,
   });
 
   const jobPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -104,13 +126,26 @@ export function useCastProduction(): UseCastProductionReturn {
   const refreshEnrichment = useCallback((regionCode: string) => {
     const bus = getIntelligenceBus();
     const profile = bus.getBrandProfile();
-    const enrichment = assembleEnrichmentContext(profile, regionCode);
+
+    // Gap 3: Enrich with regional creative helpers
+    const baseEnrichment = assembleEnrichmentContext(profile, regionCode);
+    const enrichment = enrichWithRegionalCreative(baseEnrichment, regionCode);
     const score = calculateEnrichmentScore(enrichment);
+
+    // Gap 4: Refresh provider routing
+    let providerRouting: PipelineRoute[] = [];
+    try {
+      const routing = getProductionProviderRouting('product_marketing', 'production', regionCode);
+      providerRouting = routing.routes;
+    } catch {
+      // Non-fatal
+    }
 
     setState(prev => ({
       ...prev,
       enrichment,
       enrichmentScore: score,
+      providerRouting,
     }));
   }, []);
 
@@ -150,15 +185,55 @@ export function useCastProduction(): UseCastProductionReturn {
     const bus = getIntelligenceBus();
     const profile = bus.getBrandProfile();
     const regionCode = bus.getRegionCode();
-    const enrichment = assembleEnrichmentContext(profile, regionCode);
+
+    // Gap 2: Use Universal Enrichment Bridge as central orchestrator
+    let enrichment: EnrichmentContext;
+    let providerRouting: PipelineRoute[] = [];
+    let regionalCreativeState: ProductionState['regionalCreative'] = null;
+    let bridgeEnriched = false;
+
+    try {
+      const bridgeResult = await assembleEnrichmentWithBridge(regionCode);
+      enrichment = bridgeResult.enrichment;
+      providerRouting = bridgeResult.providerRouting;
+      bridgeEnriched = !!bridgeResult.bridgeResult;
+
+      // Gap 3: Extract regional creative data
+      const rc = bridgeResult.regionalCreative;
+      regionalCreativeState = {
+        music: rc.musicConfig ? { genre: rc.musicConfig.genre, bpm: rc.musicConfig.bpm, instruments: rc.musicConfig.instruments } : null,
+        narrative: rc.narrativeStyle ? { approach: rc.narrativeStyle.approach, humorStyle: rc.narrativeStyle.humorStyle, emotionalTone: rc.narrativeStyle.emotionalTone } : null,
+        companion: rc.companionCreature ? { name: rc.companionCreature.name, species: rc.companionCreature.species, description: rc.companionCreature.description } : null,
+      };
+
+      // Gap 3: Enhance enrichment with full regional creative data
+      enrichment = enrichWithRegionalCreative(enrichment, regionCode);
+    } catch {
+      // Fallback to standard enrichment if bridge fails
+      enrichment = assembleEnrichmentContext(profile, regionCode);
+    }
+
     const enrichmentScore = calculateEnrichmentScore(enrichment);
+
+    // Gap 4: Get provider routing for UI transparency
+    if (providerRouting.length === 0) {
+      try {
+        const routing = getProductionProviderRouting('product_marketing', 'production', regionCode);
+        providerRouting = routing.routes;
+      } catch {
+        // Non-fatal
+      }
+    }
 
     setState(prev => ({
       ...prev,
       enrichment,
       enrichmentScore,
+      providerRouting,
+      regionalCreative: regionalCreativeState,
+      bridgeEnriched,
       progress: 10,
-      currentTask: `Enrichment ready (score: ${enrichmentScore}/100)`,
+      currentTask: `Enrichment ready (score: ${enrichmentScore}/100${bridgeEnriched ? ', bridge active' : ''})`,
     }));
 
     // Phase 2: Generate scene scripts
@@ -305,6 +380,9 @@ export function useCastProduction(): UseCastProductionReturn {
       error: null,
       startedAt: null,
       completedAt: null,
+      providerRouting: [],
+      regionalCreative: null,
+      bridgeEnriched: false,
     });
   }, []);
 
