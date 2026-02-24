@@ -108,7 +108,7 @@ export interface CastProductionRequest {
 
   // Language config
   inputLanguage: string;
-  outputLanguages: Array<{ code: string; adaptationLevel: 'light' | 'moderate' | 'deep' }>;
+  outputLanguages: Array<{ code: string; name?: string; adaptationLevel: 'light' | 'moderate' | 'deep' }>;
 
   // Style config
   videoStyles: string[];
@@ -120,11 +120,58 @@ export interface CastProductionRequest {
   enrichmentScore: number;
 
   // Production config
-  quality: 'standard' | 'production' | 'cinematic';
+  quality: 'preview' | 'standard' | 'production' | 'cinematic';
   avatarGender: string;
   includeMusic: boolean;
   includeCaptions: boolean;
   estimatedDuration?: number;
+
+  // ============================================
+  // Extended fields from persistent session (Phase 2)
+  // These flow 1:1 from CREATE selections into PRODUCE.
+  // ============================================
+
+  // Content discovery (what are we creating?)
+  categoryId?: string | null;
+  formatId?: string | null;
+  subFormatId?: string | null;
+  discoveryChainId?: string | null;
+
+  // Platform targeting
+  primaryPlatform?: string;
+  selectedResolution?: string;
+  selectedAspectRatio?: string;
+
+  // Visual configuration (DB-driven)
+  visualStyleIds?: string[];               // cast_visual_styles UUIDs
+  capabilityIds?: string[];                // cast_production_capabilities UUIDs
+  characterIds?: string[];                 // cast_style_characters UUIDs
+  characterFramePercent?: number;
+
+  // Production toggles
+  lipSyncEnabled?: boolean;
+  dubbingEnabled?: boolean;
+  selectedAssetSource?: string;
+  enrichmentPrompt?: string;
+
+  // Multi-output
+  selectedOutputPresets?: string[];
+
+  // Multi-speaker (podcast/dialogue)
+  speakerConfig?: Array<{
+    id: string;
+    name: string;
+    role: string;
+    voiceProvider: string;
+    voiceId: string;
+  }> | null;
+
+  // Scene-chapter mapping
+  chapterGrouping?: Array<{
+    id: string;
+    title: string;
+    sceneIds: string[];
+  }> | null;
 }
 
 /** Token budget by tier (B-003) */
@@ -555,6 +602,109 @@ export function buildRequestFromSession(
     includeMusic: productionConfig.includeMusic,
     includeCaptions: productionConfig.includeCaptions,
     estimatedDuration: 60,
+  };
+}
+
+// ─── Session-Aware Bridge (Phase 2) ──────────────────────────────────────────
+
+/**
+ * Builds a CastProductionRequest directly from the persistent GenieCastSessionState.
+ * This replaces the old approach of reading from raw localStorage.
+ *
+ * Usage: GenieCastHub.handleGenerate() calls this with the typed session object.
+ */
+export function buildRequestFromCastSession(
+  session: {
+    selectedProductId: string | null;
+    selectedIntent: string | null;
+    selectedRegion: string;
+    selectedCategoryId: string | null;
+    selectedFormatId: string | null;
+    selectedSubFormatId: string | null;
+    discoveryChainId: string | null;
+    primaryPlatform: string;
+    outputLanguages: string[];
+    dubbingSubtitleLanguages: string[];
+    selectedVisualStyleIds: string[];
+    selectedCapabilityIds: string[];
+    selectedCharacterIds: string[];
+    characterFramePercent: number;
+    avatarGender: string;
+    targetDuration: number;
+    selectedAssetSource: string;
+    lipSyncEnabled: boolean;
+    dubbingEnabled: boolean;
+    selectedResolution: string;
+    selectedAspectRatio: string;
+    productionQuality: string;
+    enrichmentPrompt: string;
+    selectedOutputPresets: string[];
+    speakerConfig: Array<{ id: string; name: string; role: string; voiceProvider: string; voiceId: string }> | null;
+    chapterGrouping: Array<{ id: string; title: string; sceneIds: string[] }> | null;
+    approvedMessaging: { hook?: string; cta?: string; valueProposition?: string } | null;
+    selectedTemplate: { id: string; name: string; sceneCount: number; estimatedDuration: number; styleIntent: string } | null;
+    templateMapping: { scenes: Array<{ scriptText: string }> } | null;
+  },
+  enrichment: EnrichmentContext,
+): CastProductionRequest {
+  // Derive script content from template mapping scenes or enrichment prompt
+  const scriptContent = session.templateMapping?.scenes
+    ?.map(s => s.scriptText)
+    .filter(Boolean)
+    .join('\n\n')
+    || session.enrichmentPrompt
+    || session.approvedMessaging?.hook
+    || '';
+
+  const scriptTitle = session.selectedTemplate?.name || 'Untitled Production';
+
+  return {
+    scriptContent,
+    scriptTitle,
+    scriptMode: 'text_to_script',
+    intent: (session.selectedIntent as ContentIntent) || 'marketing',
+    selectedFormats: session.selectedFormatId ? [session.selectedFormatId as ContentFormat] : ['short_video' as ContentFormat],
+
+    inputLanguage: session.outputLanguages[0] || 'en',
+    outputLanguages: session.outputLanguages.map(lang => ({
+      code: lang,
+      adaptationLevel: 'moderate' as const,
+    })),
+
+    videoStyles: session.selectedVisualStyleIds.length > 0
+      ? session.selectedVisualStyleIds
+      : ['professional'],
+    scenario: session.enrichmentPrompt || 'product showcase',
+    sceneStyle: session.selectedVisualStyleIds[0] || 'cinematic',
+
+    enrichment,
+    enrichmentScore: calculateEnrichmentScore(enrichment),
+
+    quality: (session.productionQuality as CastProductionRequest['quality']) || 'production',
+    avatarGender: session.avatarGender || 'female',
+    includeMusic: true,
+    includeCaptions: true,
+    estimatedDuration: session.targetDuration || 60,
+
+    // Extended fields — flow 1:1 from CREATE
+    categoryId: session.selectedCategoryId,
+    formatId: session.selectedFormatId,
+    subFormatId: session.selectedSubFormatId,
+    discoveryChainId: session.discoveryChainId,
+    primaryPlatform: session.primaryPlatform,
+    selectedResolution: session.selectedResolution,
+    selectedAspectRatio: session.selectedAspectRatio,
+    visualStyleIds: session.selectedVisualStyleIds,
+    capabilityIds: session.selectedCapabilityIds,
+    characterIds: session.selectedCharacterIds,
+    characterFramePercent: session.characterFramePercent,
+    lipSyncEnabled: session.lipSyncEnabled,
+    dubbingEnabled: session.dubbingEnabled,
+    selectedAssetSource: session.selectedAssetSource,
+    enrichmentPrompt: session.enrichmentPrompt,
+    selectedOutputPresets: session.selectedOutputPresets,
+    speakerConfig: session.speakerConfig,
+    chapterGrouping: session.chapterGrouping,
   };
 }
 
