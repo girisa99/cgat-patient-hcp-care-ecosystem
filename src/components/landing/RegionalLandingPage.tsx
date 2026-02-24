@@ -1618,7 +1618,7 @@ export const RegionalLandingPage: React.FC = () => {
       </section>
 
       {/* Output Format Showcase — Video, Podcast, PPT, Social, etc. */}
-      <OutputFormatShowcase />
+      <OutputFormatShowcase regionSlug={regionSlug} />
 
       {/* Industry Showcases — See It In Action */}
       <IndustryShowcases region={regionSlug} config={mergedConfig} />
