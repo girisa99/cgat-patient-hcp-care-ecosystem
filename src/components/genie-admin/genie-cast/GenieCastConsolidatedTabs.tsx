@@ -56,6 +56,7 @@ import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { ZONE_PROVIDER_DISPLAY, getZoneFromRegion } from '@/config/regional-routing-registry';
 import { useGuideStore } from '@/stores/guideStore';
 import { QuickStartCard, CreateStepProgress, CreateModeToggle, IntentSelector, CreateConfigureStep, CreateSessionSummary, type CreateStep } from './create';
+import { ProduceEditStep, ProduceReviewStep } from './produce';
 import { CreateHeroBanner } from './create/CreateHeroBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -1651,608 +1652,38 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               </motion.div>
             )}
             
+            {/* ── PRODUCE EDIT — Extracted to ProduceEditStep ── */}
             {currentSubTab === 'edit' && (
-              <motion.div
-                key="studio"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                {/* Step 2 of 3: Edit & Post-Production */}
-                <div className="flex items-center justify-between mb-2">
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setSubTab('produce', 'generate')}>
-                    <ArrowLeft className="w-3.5 h-3.5" /> Back to Generate
-                  </Button>
-                  <Button size="sm" className="gap-1.5" onClick={() => setSubTab('produce', 'review')}>
-                    Continue to Review <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-
-                {/* Authoring Stage Progress */}
-                <div className="mb-4">
-                  <AuthoringStageIndicator
-                    currentStage={authoring.state.currentStage}
-                    enabledStages={authoring.state.config.enabledStages}
-                    variant="compact"
-                    onStageClick={(stage) => authoring.goToStage(stage)}
-                    isStageComplete={(stage) => {
-                      const stageIndex = authoring.state.config.enabledStages.indexOf(stage);
-                      const currentIndex = authoring.state.config.enabledStages.indexOf(authoring.state.currentStage);
-                      return stageIndex < currentIndex;
-                    }}
-                    progress={{
-                      current: authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1,
-                      total: authoring.state.config.enabledStages.length,
-                      percentage: ((authoring.state.config.enabledStages.indexOf(authoring.state.currentStage) + 1) / authoring.state.config.enabledStages.length) * 100,
-                    }}
-                  />
-                </div>
-
-                {/* AI Routing Transparency (compact in edit view) */}
-                <RoutingDecisionCard
-                  decision={routing.routingDecision || (() => {
-                    const contextQuery = castSession.session.approvedMessaging?.hook
-                      || castSession.session.selectedTemplate?.name
-                      || 'Generate marketing video content';
-                    try {
-                      return routing.analyzeQuery(contextQuery);
-                    } catch {
-                      return null;
-                    }
-                  })()}
-                  selectedModel={routing.selectedModel}
-                  onModelSelect={routing.selectModel}
-                  onOptimizationSelect={(type) => {
-                    if (type === 'cost') routing.selectCostOptimized();
-                    else if (type === 'quality') routing.selectQualityOptimized();
-                    else routing.selectSpeedOptimized();
-                  }}
-                  taskType="video"
-                  zone={detectTranscreationZone(selectedDialectCodes[0] || 'en-US')}
-                  showFallbackChain={true}
-                  compact={true}
-                />
-
-                {/* AI Scene Script Generator — Suggest → Approve per scene */}
-                <SceneScriptAIPanel
-                  mapping={authoring.state.templateMapping || null}
-                  messaging={castSession.session.approvedMessaging}
-                  capabilities={castSession.session.selectedStyles}
-                  product={selectedProductId || undefined}
-                  region={castSession.session.selectedRegion}
-                  language={castSession.session.selectedDialects?.[0]}
-                  onSceneUpdate={(sceneId, updates) => {
-                    authoring.updateSceneScript(sceneId, updates);
-                  }}
-                />
-
-                {/* Script-to-Template Mapper */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2">
-                      <Film className="w-5 h-5" />
-                      Scene-to-Script Mapping
-                    </CardTitle>
-                    <CardDescription>
-                      Align your scripts to template scenes with duration estimation and variable injection
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {authoring.state.templateMapping ? (
-                    <ScriptTemplateMapper
-                      mapping={authoring.state.templateMapping}
-                      onSceneUpdate={(sceneId, updates) => {
-                        console.log('[Studio] Scene updated:', sceneId, updates);
-                        authoring.updateSceneScript(sceneId, updates);
-                      }}
-                      onApproveAll={() => {
-                        console.log('[Studio] Approve all scenes');
-                        authoring.approveTemplateMapping();
-                        toast.success('All scenes approved');
-                      }}
-                      onGenerateTTS={async (sceneId) => {
-                        console.log('[Studio] TTS Preview requested:', sceneId);
-                        toast.info(`Generating TTS preview...`);
-                        return authoring.generateTTSForScene(sceneId);
-                      }}
-                      isProcessing={authoring.state.isProcessing}
-                    />
-                    ) : (
-                      <div className="flex items-center justify-center h-24 border border-dashed rounded-lg bg-muted/20 text-sm text-muted-foreground">
-                        Select a template in CREATE to populate scene mapping
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Translation vs Transcreation Toggle */}
-                <TranslationTranscreationToggle
-                  sourceText={castSession.session.approvedMessaging?.mediumScript || ''}
-                  sourceLanguage="en"
-                  region={detectTranscreationZone(selectedDialectCodes[0] || '')}
-                  onResult={(result) => {
-                    console.log('[Studio] Translation/Transcreation result:', result.mode, result.targetLanguage);
-                    toast.success(`${result.mode === 'translate' ? 'Translation' : 'Transcreation'} complete: ${result.targetLanguage}`);
-                  }}
-                  compact
-                />
-
-                {/* A/V Sync Preview */}
-                {authoring.state.templateMapping ? (
-                <>
-                <AVSyncPreview
-                  mapping={authoring.state.templateMapping}
-                  onPlayScene={(sceneId) => {
-                    console.log('[Studio] Play scene:', sceneId);
-                    toast.info(`Playing scene preview for ${sceneId}...`);
-                  }}
-                  onSeek={(time) => {
-                    console.log('[Studio] Seek to:', time);
-                  }}
-                  onSyncFix={(sceneId, action) => {
-                    console.log('[Studio] Sync fix:', sceneId, action);
-                    toast.info(`Applying ${action} to fix sync...`);
-                  }}
-                />
-
-                {/* P2: Live Generation Preview */}
-                <LiveGenerationPreview
-                  mapping={authoring.state.templateMapping}
-                  styleIntent="product-hero"
-                  region={selectedDialectCodes[0]?.startsWith('ar-') ? 'mena' : 
-                          ['zh-CN', 'ja-JP', 'ko-KR'].includes(selectedDialectCodes[0] || '') ? 'cjk' : 
-                          ['hi-IN', 'te-IN'].includes(selectedDialectCodes[0] || '') ? 'india' : 'global'}
-                  language={selectedDialectCodes[0] || 'en-US'}
-                  onTTSComplete={(results) => {
-                    console.log('[Studio] TTS generation complete:', results.length, 'scenes');
-                    toast.success(`TTS complete for ${results.length} scenes`);
-                  }}
-                  onVideoComplete={(results) => {
-                    console.log('[Studio] Video preview complete:', results.length, 'thumbnails');
-                    toast.success(`Video previews generated: ${results.length}`);
-                  }}
-                  onAssemblyComplete={(videoUrl) => {
-                    console.log('[Studio] Video assembly complete:', videoUrl);
-                    castSession.goToStage('approval');
-                    toast.success('Full production complete! Ready for review.');
-                    setSubTab('produce', 'review');
-                  }}
-                  showAdvancedControls={true}
-                />
-
-                {/* Phase 6E: Production Mode Panel (B-022 + B-023) */}
-                <ProductionModePanel
-                  selectedStyles={(castSession.session.selectedStyles || []) as any}
-                  settings={(castSession.session.productionSettings || getDefaultProductionSettings()) as any}
-                  onSettingsChange={(updates) => {
-                    const current = castSession.session.productionSettings || getDefaultProductionSettings();
-                    castSession.updateSession({ productionSettings: { ...current, ...updates } });
-                  }}
-                  selectedLanguage={selectedDialectCodes[0] || 'en-US'}
-                />
-
-                {/* Phase 6E: Production Timeline — driven by real pipeline state */}
-                <ProductionTimeline
-                  phases={createTimelinePhases(
-                    deriveSceneRenderMode(castSession.session.selectedStyles?.[0] || 'smart_storytelling'),
-                  )}
-                  currentPhaseId={production.state.currentTask || null}
-                  overallProgress={production.state.progress}
-                  elapsedMs={production.state.startedAt ? Date.now() - new Date(production.state.startedAt).getTime() : 0}
-                  estimatedTotalMs={castSession.session.targetDuration * 3000}
-                />
-
-                {/* Phase 6E: Production Controls — wired to real pipeline */}
-                <ProductionControlPanel
-                  productionState={production.state}
-                  onStart={async () => {
-                    const session = castSession.session;
-                    const enrichment = assembleEnrichmentContext(null, session.selectedRegion || 'en');
-                    const request = buildRequestFromCastSession(session, enrichment);
-                    toast.info('Starting production pipeline...');
-                    try {
-                      await production.startProduction({
-                        scriptContent: request.scriptContent,
-                        scriptTitle: request.scriptTitle,
-                        inputMode: request.scriptMode,
-                        intent: request.intent,
-                        selectedFormats: request.selectedFormats,
-                        inputLanguage: request.inputLanguage,
-                        outputLanguages: request.outputLanguages,
-                        videoStyles: request.videoStyles,
-                        scenario: request.scenario,
-                        sceneStyle: request.sceneStyle,
-                        quality: request.quality,
-                        avatarGender: request.avatarGender,
-                        includeMusic: request.includeMusic,
-                        includeCaptions: request.includeCaptions,
-                      });
-                      toast.success('Production complete!');
-                      setSubTab('produce', 'review');
-                    } catch (err) {
-                      toast.error('Production failed — check pipeline status');
-                    }
-                  }}
-                  onCancel={() => {
-                    production.cancelProduction();
-                    toast.info('Production cancelled');
-                  }}
-                  onReset={() => {
-                    production.resetProduction();
-                    toast.info('Production reset');
-                  }}
-                />
-
-                {/* P3: Scene-Aware Teleprompter — narration + visual script editing */}
-                {productionSession.session.totalScenes > 0 && (
-                  <SceneAwareTeleprompter
-                    productionSession={productionSession}
-                    isPlaying={videoTimeline.state.isPlaying}
-                    onPlay={() => videoTimeline.play()}
-                    onPause={() => videoTimeline.pause()}
-                    onSeekToScene={(sceneIndex) => {
-                      const scenes = productionSession.session.scenes;
-                      let targetMs = 0;
-                      for (let i = 0; i < sceneIndex && i < scenes.length; i++) {
-                        targetMs += scenes[i].actualAudioDurationMs || scenes[i].scriptedDurationMs;
-                      }
-                      (videoTimeline as any).seek?.(targetMs) ?? videoTimeline.setPlayhead?.(targetMs);
-                    }}
-                    onRegenerateTTS={(sceneId) => {
-                      productionSession.regenerateSceneTTS?.(sceneId);
-                      toast.info(`Regenerating TTS for scene: ${sceneId}`);
-                    }}
-                    onRegenerateVideo={(sceneId) => {
-                      productionSession.regenerateSceneVideo?.(sceneId);
-                      toast.info(`Regenerating video for scene: ${sceneId}`);
-                    }}
-                    onRecordScene={(sceneId) => {
-                      toast.info(`Recording mode for scene: ${sceneId}`);
-                    }}
-                  />
-                )}
-
-                {/* Scene Progress Tracker — per-scene render status from production pipeline */}
-                {production.state.scenes.length > 0 && (
-                  <SceneProgressTracker
-                    scenes={production.state.scenes.map((scene, idx) => ({
-                      sceneId: scene.sceneId,
-                      sceneIndex: idx,
-                      title: scene.scriptText?.slice(0, 40) || `Scene ${idx + 1}`,
-                      renderMode: deriveSceneRenderMode(castSession.session.selectedStyles?.[0] || 'smart_storytelling') as any,
-                      status: production.state.status === 'complete' ? 'complete' as const : 'pending' as const,
-                      progress: production.state.status === 'complete' ? 100 : 0,
-                      audioUrl: null,
-                      videoUrl: null,
-                      duration: scene.duration || 8,
-                      error: null,
-                    }))}
-                    productionState={production.state as any}
-                    onRetryScene={(sceneId) => {
-                      toast.info(`Retrying scene: ${sceneId}`);
-                    }}
-                    onPreviewScene={(sceneId) => {
-                      toast.info(`Previewing scene: ${sceneId}`);
-                    }}
-                  />
-                )}
-
-                {/* P2: A/V Sync Status + Pre-Render Validation */}
-                {videoTimeline.stats.totalClips > 0 && (
-                  <Card className={cn(
-                    'border',
-                    avSync.syncReport.overallStatus === 'perfect' && 'border-emerald-400/30 bg-emerald-50/10',
-                    avSync.syncReport.overallStatus === 'acceptable' && 'border-blue-400/30 bg-blue-50/10',
-                    avSync.syncReport.overallStatus === 'needs_attention' && 'border-amber-400/30 bg-amber-50/10',
-                    avSync.syncReport.overallStatus === 'critical' && 'border-red-400/30 bg-red-50/10',
-                  )}>
-                    <CardContent className="py-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Volume2 className="h-4 w-4" />
-                          <span className="text-sm font-medium">A/V Sync</span>
-                          <Badge variant={avSync.syncReport.isReadyForRender ? 'default' : 'destructive'} className="text-[9px]">
-                            {avSync.syncReport.overallStatus.replace('_', ' ')}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-muted-foreground">
-                            {avSync.syncReport.alignedCount}/{avSync.syncReport.totalPairs} aligned
-                          </span>
-                          {avSync.syncReport.mismatchCount > 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-6 text-[10px] gap-1"
-                              onClick={avSync.autoFixAll}
-                            >
-                              <RefreshCw className="h-3 w-3" />
-                              Auto-fix {avSync.syncReport.mismatchCount} mismatch{avSync.syncReport.mismatchCount > 1 ? 'es' : ''}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      {/* Pre-render validation */}
-                      {(() => {
-                        const validation = avSync.validateForRender();
-                        if (validation.errors.length === 0 && validation.warnings.length === 0) return null;
-                        return (
-                          <div className="space-y-1 mt-2">
-                            {validation.errors.map((err, i) => (
-                              <div key={`err-${i}`} className="text-[10px] text-red-500 flex items-center gap-1">
-                                <AlertTriangle className="h-3 w-3 flex-shrink-0" />
-                                {err}
-                              </div>
-                            ))}
-                            {validation.warnings.map((warn, i) => (
-                              <div key={`warn-${i}`} className="text-[10px] text-amber-600 flex items-center gap-1">
-                                <AlertTriangle className="h-3 w-3 flex-shrink-0" />
-                                {warn}
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Universal Multi-Track Timeline Editor */}
-                <VideoTimelineEditor
-                  timeline={videoTimeline}
-                  clipOps={clipOps}
-                  onImportFile={(file) => {
-                    const videoTrack = videoTimeline.state.tracks.find(t => t.type === 'primary_video');
-                    if (!videoTrack) return;
-                    const trackId = file.type.startsWith('audio/')
-                      ? (videoTimeline.state.tracks.find(t => t.type === 'audio_voice')?.id || videoTrack.id)
-                      : videoTrack.id;
-                    videoTimeline.importOfflineClip(
-                      trackId,
-                      file,
-                      videoTimeline.state.totalDurationMs,
-                      file.type.startsWith('image/') ? 5000 : 30000,
-                    );
-                    toast.success(`Imported: ${file.name}`);
-                  }}
-                />
-                </>
-                ) : (
-                  <div className="flex items-center justify-center h-24 border border-dashed rounded-lg bg-muted/20 text-sm text-muted-foreground">
-                    Select a template in CREATE to enable A/V sync and live generation
-                  </div>
-                )}
-
-                {/* Next: Continue to Review */}
-                <div className="flex justify-end mt-4">
-                  <Button
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => setSubTab('produce', 'review')}
-                  >
-                    Continue to Review
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </motion.div>
+              <ProduceEditStep
+                authoring={authoring}
+                routing={routing}
+                castSession={castSession}
+                production={production}
+                productionSession={productionSession}
+                videoTimeline={videoTimeline}
+                avSync={avSync}
+                clipOps={clipOps}
+                selectedDialectCodes={selectedDialectCodes}
+                selectedProductId={selectedProductId}
+                productionQuality={productionQuality}
+                setSubTab={setSubTab}
+                setActiveMainTab={setActiveMainTab}
+                setProductionSection={setProductionSection}
+              />
             )}
+
             
+            {/* ── PRODUCE REVIEW — Extracted to ProduceReviewStep ── */}
             {currentSubTab === 'review' && (
-              <motion.div
-                key="review"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                {/* Step 3 of 3: Review & Approve */}
-                <div className="flex items-center justify-between mb-2">
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setSubTab('produce', 'edit')}>
-                    <ArrowLeft className="w-3.5 h-3.5" /> Back to Edit
-                  </Button>
-                </div>
-
-                {/* Approval Dashboard */}
-                <ApprovalDashboard
-                  session={castSession.session}
-                  onNavigateToStage={handleNavigateToStage}
-                  onResetSession={castSession.resetSession}
-                />
-
-                {/* Session Handoff Summary — full state from CREATE */}
-                <Card className="border-primary/20 bg-primary/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Production State Handoff
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Complete pipeline state from CREATE → PRODUCE
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="p-3 bg-background rounded-lg border text-center">
-                        <div className="text-lg font-bold text-primary">
-                          {castSession.session.completedStages.length}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">Stages Complete</div>
-                      </div>
-                      <div className="p-3 bg-background rounded-lg border text-center">
-                        <div className="text-lg font-bold text-primary">
-                          {castSession.session.approvalItems.filter(i => i.status === 'approved').length}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">Items Approved</div>
-                      </div>
-                      <div className="p-3 bg-background rounded-lg border text-center">
-                        <div className="text-lg font-bold text-primary">
-                          {castSession.session.selectedDialects.length}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">Languages</div>
-                      </div>
-                    </div>
-                    
-                    {castSession.session.selectedTemplate && (
-                      <div className="p-2 bg-muted/50 rounded-md flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-medium">Template: {castSession.session.selectedTemplate.name}</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {castSession.session.selectedTemplate.sceneCount} scenes • Style: {castSession.session.selectedTemplate.styleIntent}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="text-[9px]">Selected</Badge>
-                      </div>
-                    )}
-
-                    {castSession.session.approvedMessaging && (
-                      <div className="p-2 bg-muted/50 rounded-md flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-medium">Messaging: Approved</p>
-                          <p className="text-[10px] text-muted-foreground truncate max-w-[250px]">
-                            Hook: "{castSession.session.approvedMessaging.hook?.substring(0, 60)}..."
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="text-[9px] bg-green-500/10 border-green-500/30 text-green-600">✓</Badge>
-                      </div>
-                    )}
-
-                    {castSession.session.templateMapping && (
-                      <div className="p-2 bg-muted/50 rounded-md flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-medium">Script Mapping</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {castSession.session.templateMapping.scenes.length} scenes • {Math.round(castSession.session.templateMapping.totalDuration / 60)}min
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="text-[9px] bg-green-500/10 border-green-500/30 text-green-600">✓</Badge>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="text-muted-foreground">Regional:</span>
-                      <div className="flex gap-1">
-                        {castSession.session.selectedDialects.map(d => (
-                          <Badge key={d} variant="outline" className="text-[9px]">{d}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Phase 7: Regional Coverage Matrix */}
-                <RegionalCoverageMatrix
-                  targetRegions={castSession.session.targetRegions as string[]}
-                  selectedDialects={castSession.session.selectedDialects}
-                  projectId={castSession.session.projectId || undefined}
-                  compact={false}
-                />
-
-                {/* Quality Check Card */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Eye className="w-5 h-5" />
-                      Quality Check
-                    </CardTitle>
-                    <CardDescription>
-                      AI-powered quality scoring and enhancement suggestions
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {castSession.session.selectedTemplate && (
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-sm font-medium">Selected Template</p>
-                        <p className="text-xs text-muted-foreground">
-                          {castSession.session.selectedTemplate.name} • {castSession.session.selectedTemplate.sceneCount} scenes
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Phase 6: Approve for Publish Gate */}
-                <Card className={cn(
-                  "border-2 transition-colors",
-                  castSession.session.completedStages.includes('approval' as AuthoringStage)
-                    ? "border-green-500/50 bg-green-500/5"
-                    : "border-amber-500/50 bg-amber-500/5"
-                )}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      {castSession.session.completedStages.includes('approval' as AuthoringStage) ? (
-                        <Check className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <AlertTriangle className="w-5 h-5 text-amber-600" />
-                      )}
-                      Publish Approval Gate
-                    </CardTitle>
-                    <CardDescription>
-                      {castSession.session.completedStages.includes('approval' as AuthoringStage)
-                        ? "Content approved for publishing. PUBLISH tab is now unlocked."
-                        : "Review all items above, then approve to unlock the PUBLISH tab."}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {!castSession.session.completedStages.includes('approval' as AuthoringStage) ? (
-                      <div className="space-y-3">
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <p>Before approving, verify:</p>
-                          <ul className="list-disc list-inside space-y-0.5 ml-2">
-                            <li>All approval items above are reviewed</li>
-                            <li>Template mapping and scripts are finalized</li>
-                            <li>Regional dialects are configured ({castSession.session.selectedDialects.length} selected)</li>
-                            <li>TTS and AV sync are verified (if applicable)</li>
-                          </ul>
-                        </div>
-                        <Button
-                          onClick={() => {
-                            castSession.updateSession({
-                              currentStage: 'publishing' as AuthoringStage,
-                              completedStages: [
-                                ...castSession.session.completedStages.filter(s => s !== 'approval'),
-                                'approval' as AuthoringStage,
-                              ],
-                            });
-                            toast.success('Content approved for publishing! PUBLISH tab is now unlocked.');
-                            setActiveMainTab('publish');
-                            setSubTab('publish', 'scheduler');
-                          }}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white"
-                          size="lg"
-                        >
-                          <Check className="w-4 h-4 mr-2" />
-                          Approve for Publish
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm text-green-700">
-                          <Check className="w-4 h-4" />
-                          Approved — PUBLISH tab unlocked
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            castSession.updateSession({
-                              currentStage: 'approval' as AuthoringStage,
-                              completedStages: castSession.session.completedStages.filter(s => s !== 'approval'),
-                            });
-                            toast.info('Approval revoked. Review and re-approve when ready.');
-                          }}
-                        >
-                          Revoke Approval
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
+              <ProduceReviewStep
+                castSession={castSession}
+                authoring={authoring}
+                setSubTab={setSubTab}
+                setActiveMainTab={setActiveMainTab}
+                handleNavigateToStage={handleNavigateToStage}
+              />
             )}
-            
+
             {/* ── LIBRARY (from MANAGE) ── */}
             {currentSubTab === 'library' && (
               <motion.div
@@ -2362,11 +1793,17 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
                 <SmartSchedulerPanel />
+                <div className="flex justify-end">
+                  <Button size="sm" className="gap-1.5" onClick={() => setSubTab('publish', 'distribution')}>
+                    Continue to Distribution <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               </motion.div>
             )}
-            
+
             {currentSubTab === 'distribution' && (
               <motion.div
                 key="distribution"
@@ -2376,6 +1813,15 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
+                <div className="flex items-center justify-between mb-2">
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setSubTab('publish', 'scheduler')}>
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back to Schedule
+                  </Button>
+                  <Button size="sm" className="gap-1.5" onClick={() => setSubTab('publish', 'seo')}>
+                    Continue to SEO <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+
                 {/* P1: Multi-Platform Export & Distribution */}
                 <ExportDistributionPanel
                   exportHook={platformExport}
@@ -2386,18 +1832,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 <ContentRepurposingPanel />
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  {/* Left: Scene character visualizer */}
                   <div>
                     <SceneCharacterVisualizer autoPlay={false} />
                   </div>
-                  {/* Right: EP04 full publish hub */}
                   <div>
                     <EP04PublishHub />
                   </div>
                 </div>
               </motion.div>
             )}
-            
+
             {currentSubTab === 'seo' && (
               <motion.div
                 key="seo"
@@ -2405,11 +1849,20 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
+                <div className="flex items-center justify-between mb-2">
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setSubTab('publish', 'distribution')}>
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back to Distribution
+                  </Button>
+                  <Button size="sm" className="gap-1.5" onClick={() => setSubTab('publish', 'testing')}>
+                    Continue to A/B Testing <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
                 <SEOOptimizerPanel />
               </motion.div>
             )}
-            
+
             {currentSubTab === 'testing' && (
               <motion.div
                 key="testing"
@@ -2417,7 +1870,13 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
+                <div className="flex items-center mb-2">
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setSubTab('publish', 'seo')}>
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back to SEO
+                  </Button>
+                </div>
                 <ABTestingPanel />
               </motion.div>
             )}
