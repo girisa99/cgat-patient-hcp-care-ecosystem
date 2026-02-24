@@ -124,14 +124,14 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
         // 1. Production videos (landing_page_videos as proxy for productions)
         supabase
           .from('landing_page_videos')
-          .select('id, title, status, language, created_at, region_code, video_style')
+          .select('id, title, status, language_code, created_at, region_code, content_type')
           .order('created_at', { ascending: false })
           .limit(500),
 
         // 2. Credit transactions
         supabase
           .from('ai_credit_transactions')
-          .select('id, credits_used, feature_type, created_at, metadata')
+          .select('id, credits_amount, feature_used, created_at, feature_metadata')
           .order('created_at', { ascending: false })
           .limit(1000),
 
@@ -154,16 +154,16 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
         return d >= new Date(filter.dateRange.start) && d <= new Date(filter.dateRange.end);
       };
 
-      const filteredVideos = videos.filter(v => dateFilter(v.created_at));
-      const filteredCredits = credits.filter(c => dateFilter(c.created_at));
+      const filteredVideos = (videos as any[]).filter((v: any) => dateFilter(v.created_at));
+      const filteredCredits = (credits as any[]).filter((c: any) => dateFilter(c.created_at));
 
       // ─── Calculate metrics ──────────────────────────────────────
 
       // Overview
       const totalProductions = filteredVideos.length;
-      const completedProductions = filteredVideos.filter(v => v.status === 'completed' || v.status === 'published').length;
+      const completedProductions = filteredVideos.filter((v: any) => v.status === 'completed' || v.status === 'published').length;
       const successRate = totalProductions > 0 ? Math.round((completedProductions / totalProductions) * 100) : 0;
-      const totalCreditsUsed = filteredCredits.reduce((sum, c) => sum + (c.credits_used || 0), 0);
+      const totalCreditsUsed = filteredCredits.reduce((sum: number, c: any) => sum + (c.credits_amount || 0), 0);
       const estimatedCostUsd = Math.round(totalCreditsUsed * CREDIT_INTERNAL_COST * 100) / 100;
 
       // Get remaining credits (would come from user profile)
@@ -172,15 +172,15 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
       // Productions per day
       const dayMap = new Map<string, { count: number; credits: number }>();
       for (const v of filteredVideos) {
-        const day = v.created_at.split('T')[0];
+        const day = (v as any).created_at.split('T')[0];
         const existing = dayMap.get(day) || { count: 0, credits: 0 };
         existing.count++;
         dayMap.set(day, existing);
       }
       for (const c of filteredCredits) {
-        const day = c.created_at.split('T')[0];
+        const day = (c as any).created_at.split('T')[0];
         const existing = dayMap.get(day) || { count: 0, credits: 0 };
-        existing.credits += c.credits_used || 0;
+        existing.credits += (c as any).credits_amount || 0;
         dayMap.set(day, existing);
       }
       const productionsPerDay = Array.from(dayMap.entries())
@@ -190,7 +190,7 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
       // Format distribution
       const formatMap = new Map<string, number>();
       for (const v of filteredVideos) {
-        const fmt = v.video_style || 'video';
+        const fmt = (v as any).content_type || 'video';
         formatMap.set(fmt, (formatMap.get(fmt) || 0) + 1);
       }
       const formatDistribution = Array.from(formatMap.entries())
@@ -204,11 +204,11 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
       // Provider breakdown (from credit transaction metadata)
       const providerMap = new Map<string, { callCount: number; totalCostUsd: number; totalLatency: number }>();
       for (const c of filteredCredits) {
-        const provider = (c.metadata as any)?.provider || 'unknown';
+        const provider = ((c as any).feature_metadata as any)?.provider || 'unknown';
         const existing = providerMap.get(provider) || { callCount: 0, totalCostUsd: 0, totalLatency: 0 };
         existing.callCount++;
-        existing.totalCostUsd += (c.credits_used || 0) * CREDIT_INTERNAL_COST;
-        existing.totalLatency += (c.metadata as any)?.latencyMs || 0;
+        existing.totalCostUsd += ((c as any).credits_amount || 0) * CREDIT_INTERNAL_COST;
+        existing.totalLatency += ((c as any).feature_metadata as any)?.latencyMs || 0;
         providerMap.set(provider, existing);
       }
       const providerBreakdown = Array.from(providerMap.entries())
@@ -222,17 +222,17 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
 
       // Status funnel
       const statusFunnel = {
-        draft: filteredVideos.filter(v => v.status === 'draft').length,
-        generating: filteredVideos.filter(v => v.status === 'generating' || v.status === 'processing').length,
-        completed: filteredVideos.filter(v => v.status === 'completed').length,
-        published: filteredVideos.filter(v => v.status === 'published').length,
-        failed: filteredVideos.filter(v => v.status === 'failed' || v.status === 'error').length,
+        draft: filteredVideos.filter((v: any) => v.status === 'draft').length,
+        generating: filteredVideos.filter((v: any) => v.status === 'generating' || v.status === 'processing').length,
+        completed: filteredVideos.filter((v: any) => v.status === 'completed').length,
+        published: filteredVideos.filter((v: any) => v.status === 'published').length,
+        failed: filteredVideos.filter((v: any) => v.status === 'failed' || v.status === 'error').length,
       };
 
       // Language coverage
       const langMap = new Map<string, number>();
       for (const v of filteredVideos) {
-        const lang = v.language || 'en';
+        const lang = (v as any).language_code || 'en';
         langMap.set(lang, (langMap.get(lang) || 0) + 1);
       }
       const languageCoverage = Array.from(langMap.entries())
@@ -242,7 +242,7 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
       // Region coverage
       const regionMap = new Map<string, number>();
       for (const v of filteredVideos) {
-        const region = v.region_code || 'global';
+        const region = (v as any).region_code || 'global';
         regionMap.set(region, (regionMap.get(region) || 0) + 1);
       }
       const regionCoverage = Array.from(regionMap.entries())
@@ -252,9 +252,9 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
       // Cost per format
       const formatCostMap = new Map<string, number[]>();
       for (const c of filteredCredits) {
-        const fmt = c.feature_type || 'video';
+        const fmt = (c as any).feature_used || 'video';
         const existing = formatCostMap.get(fmt) || [];
-        existing.push(c.credits_used || 0);
+        existing.push((c as any).credits_amount || 0);
         formatCostMap.set(fmt, existing);
       }
       const costPerFormat = Array.from(formatCostMap.entries()).map(([format, costs]) => ({
@@ -275,11 +275,11 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
 
       // Derivative metrics
       const derivativeMetrics = {
-        shortsGenerated: filteredCredits.filter(c => c.feature_type === 'shorts_generation').length,
-        clipsGenerated: filteredCredits.filter(c => c.feature_type === 'clip_extraction').length,
-        thumbnailsGenerated: filteredCredits.filter(c => c.feature_type === 'thumbnail_generation').length,
-        captionsGenerated: filteredCredits.filter(c => c.feature_type === 'caption_generation').length,
-        collateralsGenerated: filteredCredits.filter(c => c.feature_type === 'collateral_generation').length,
+        shortsGenerated: filteredCredits.filter((c: any) => c.feature_used === 'shorts_generation').length,
+        clipsGenerated: filteredCredits.filter((c: any) => c.feature_used === 'clip_extraction').length,
+        thumbnailsGenerated: filteredCredits.filter((c: any) => c.feature_used === 'thumbnail_generation').length,
+        captionsGenerated: filteredCredits.filter((c: any) => c.feature_used === 'caption_generation').length,
+        collateralsGenerated: filteredCredits.filter((c: any) => c.feature_used === 'collateral_generation').length,
       };
 
       // Platform distribution
@@ -292,7 +292,7 @@ export function useCastAnalytics(filter: CastAnalyticsFilter = { scope: 'all_pro
         .sort((a, b) => b.count - a.count);
 
       // Credit burn rate
-      const uniqueDays = new Set(filteredCredits.map(c => c.created_at.split('T')[0]));
+      const uniqueDays = new Set(filteredCredits.map((c: any) => c.created_at.split('T')[0]));
       const dayCount = Math.max(uniqueDays.size, 1);
       const dailyAvg = Math.round((totalCreditsUsed / dayCount) * 10) / 10;
       const weeklyAvg = Math.round(dailyAvg * 7 * 10) / 10;
