@@ -12,8 +12,18 @@ INSERT INTO public.cast_content_formats (name, label, icon, color, description, 
   ('email_campaign',       'Email / Newsletter',        'Mail',          'text-rose-600',   'Email campaigns and newsletters',                        true,  false, false, 13),
   ('kids_education',       'Kids / Animation',          'Smile',         'text-yellow-500', 'Kids educational and animated content',                  true,  true,  true,  14),
   ('event_content',        'Event / Recap',             'Calendar',      'text-violet-600', 'Event recaps and highlight reels',                       true,  false, true,  15),
-  ('document',             'Whitepaper / Case Study',   'FileText',      'text-gray-600',   'Whitepapers, case studies, and long-form documents',     true,  false, false, 16)
+  ('document',             'Whitepaper / Case Study',   'FileText',      'text-gray-600',   'Whitepapers, case studies, and long-form documents',     true,  false, false, 16),
+  ('live_streaming',       'Live Streaming',            'Radio',         'text-red-500',    'Live streaming for gaming, webcast, presentations',      false, true,  true,  17)
 ON CONFLICT (name) DO NOTHING;
+
+-- Live Streaming: sub-formats (gaming, webcast, live presentation)
+INSERT INTO public.cast_content_sub_formats (format_id, name, label, icon, color, description, compatible_platforms, enrichment_preset, sort_order) VALUES
+  ((SELECT id FROM cast_content_formats WHERE name='live_streaming'), 'gaming_stream',      'Gaming Stream',         'Gamepad2',    'text-purple-500', 'Live gaming stream with overlays and chat',             ARRAY['twitch','youtube','kick'],              '{"tone":"energetic","structure":"continuous","narrative":"interactive"}', 1),
+  ((SELECT id FROM cast_content_formats WHERE name='live_streaming'), 'live_webcast',       'Live Webcast',          'Radio',       'text-blue-500',   'Professional live broadcast with multi-camera',         ARRAY['youtube','linkedin','zoom'],             '{"tone":"professional","structure":"segments","narrative":"moderated"}', 2),
+  ((SELECT id FROM cast_content_formats WHERE name='live_streaming'), 'live_presentation',  'Live Presentation',     'Presentation','text-orange-500', 'Live slide presentation with speaker overlay',          ARRAY['youtube','zoom','teams'],                '{"tone":"authoritative","structure":"slides","narrative":"educational"}', 3),
+  ((SELECT id FROM cast_content_formats WHERE name='live_streaming'), 'live_shopping',      'Live Shopping',         'ShoppingCart','text-pink-500',   'Live commerce with product demos and buy links',        ARRAY['youtube','instagram','tiktok'],          '{"tone":"engaging","structure":"product_showcase","narrative":"sales"}', 4),
+  ((SELECT id FROM cast_content_formats WHERE name='live_streaming'), 'virtual_event',      'Virtual Event',         'Users',       'text-teal-500',   'Multi-speaker virtual conference or event',             ARRAY['youtube','zoom','hopin'],                '{"tone":"professional","structure":"agenda","narrative":"multi_speaker"}', 5)
+ON CONFLICT (format_id, name) DO NOTHING;
 
 -- ============================================================================
 -- 1B. Expand Sub-Formats (~25 new entries for new + existing parent formats)

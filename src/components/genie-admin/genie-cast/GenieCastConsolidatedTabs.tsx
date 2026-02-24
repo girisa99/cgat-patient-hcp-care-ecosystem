@@ -159,6 +159,11 @@ import { PortalDropdown } from './create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from './StyleCustomizationPanel';
 import { CreateSubWizard } from './CreateSubWizard';
 
+// Phase 5: Multi-format production routing
+import { FormatStudioRouter } from './FormatStudioRouter';
+// Phase 7: Regional coverage dashboard
+import { RegionalCoverageMatrix } from './RegionalCoverageMatrix';
+
 // P1: Universal Video Editing + Distribution
 import { VideoTimelineEditor, ExportDistributionPanel, SceneAwareTeleprompter } from './editing';
 import { useVideoTimeline } from '@/hooks/video-editing/useVideoTimeline';
@@ -2458,6 +2463,22 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   </CardContent>
                 </Card>
 
+                {/* Phase 5: Multi-Format Production Router */}
+                <div className="mt-4">
+                  <FormatStudioRouter
+                    selectedFormats={castSession.session.selectedFormats.length > 0
+                      ? castSession.session.selectedFormats
+                      : ['video']}
+                    projectId={castSession.session.projectId || undefined}
+                    onGenerate={(formatName) => {
+                      toast.info(`Generating ${formatName} content...`);
+                      if (formatName === 'video' || formatName === 'ugc') {
+                        onGenerate?.();
+                      }
+                    }}
+                  />
+                </div>
+
                 {/* Style-Driven Production Config */}
                 <Card className="mt-4">
                   <CardHeader className="pb-2">
@@ -3044,6 +3065,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Phase 7: Regional Coverage Matrix */}
+                <RegionalCoverageMatrix
+                  targetRegions={castSession.session.targetRegions as string[]}
+                  selectedDialects={castSession.session.selectedDialects}
+                  projectId={castSession.session.projectId || undefined}
+                  compact={false}
+                />
 
                 {/* Quality Check Card */}
                 <Card>
