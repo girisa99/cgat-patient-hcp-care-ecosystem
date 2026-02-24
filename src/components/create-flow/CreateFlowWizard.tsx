@@ -1,16 +1,21 @@
 /**
  * CreateFlowWizard — 8-step glassmorphism wizard for GenieSpark
  *
- * Wires useCreateFlow to glass-morphism UI with:
- * - Step progress rail (glass badges)
- * - LiquidGlassCard for each step panel
- * - Inline editing, format selection, language I/O
- * - Review + produce summary
+ * NOW FULLY DB-DRIVEN:
+ * - Categories, formats, sub-formats from useCastContentRegistry (Supabase)
+ * - Intents from useContentIntents (Supabase + fallback)
+ * - Visual styles from cast_visual_styles (Supabase)
+ * - Auto-enrichment triggers (Google Places, brand) on mode selection
+ * - Falls back to hardcoded constants if DB is unavailable
+ *
+ * @see src/hooks/useCreateFlowRegistry.ts — DB bridge hook
+ * @see src/hooks/useCreateFlow.ts — session state + orchestration
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useCreateFlow } from '@/hooks/useCreateFlow';
+import { useCreateFlowRegistry } from '@/hooks/useCreateFlowRegistry';
 import {
   GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle,
   GlassPanel, GlassButton, GlassInput, GlassBadge,
@@ -20,12 +25,16 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import {
   ArrowLeft, ArrowRight, Check, FileText, Sparkles, Languages,
   LayoutGrid, Palette, ClipboardCheck, Rocket, Upload, Zap,
-  RotateCcw, RotateCw, Save, Plus, X, ChevronLeft,
+  RotateCcw, RotateCw, Save, Plus, X, ChevronLeft, Loader2,
+  Target, MapPin,
 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import type { CreateFlowStep } from '@/services/createFlowOrchestrator';
+import type { CreateFlowRegistryData } from '@/hooks/useCreateFlowRegistry';
 
 const STEP_ICONS: Record<CreateFlowStep, React.ReactNode> = {
   input: <Upload className="h-4 w-4" />,
@@ -36,6 +45,12 @@ const STEP_ICONS: Record<CreateFlowStep, React.ReactNode> = {
   style: <Palette className="h-4 w-4" />,
   review: <ClipboardCheck className="h-4 w-4" />,
   producing: <Rocket className="h-4 w-4" />,
+};
+
+/** Resolve a Lucide icon name string to a component */
+const getIcon = (iconName: string, className?: string) => {
+  const Icon = (LucideIcons as any)[iconName] || LucideIcons.Zap;
+  return <Icon className={className || 'h-4 w-4'} />;
 };
 
 interface CreateFlowWizardProps {
@@ -50,6 +65,7 @@ export const CreateFlowWizard: React.FC<CreateFlowWizardProps> = ({
   className,
 }) => {
   const flow = useCreateFlow('pro', 'simple');
+  const registry = useCreateFlowRegistry();
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -142,13 +158,13 @@ export const CreateFlowWizard: React.FC<CreateFlowWizardProps> = ({
 
       {/* Step content */}
       <LiquidGlassCard variant="elevated" noHover className="min-h-[400px]">
-        {flow.currentStep === 'input' && <InputStep flow={flow} />}
-        {flow.currentStep === 'enrichment' && <EnrichmentStep flow={flow} />}
+        {flow.currentStep === 'input' && <InputStep flow={flow} registry={registry} />}
+        {flow.currentStep === 'enrichment' && <EnrichmentStep flow={flow} registry={registry} />}
         {flow.currentStep === 'script' && <ScriptStep flow={flow} />}
         {flow.currentStep === 'language' && <LanguageStep flow={flow} />}
-        {flow.currentStep === 'format' && <FormatStep flow={flow} />}
-        {flow.currentStep === 'style' && <StyleStep flow={flow} />}
-        {flow.currentStep === 'review' && <ReviewStep flow={flow} />}
+        {flow.currentStep === 'format' && <FormatStep flow={flow} registry={registry} />}
+        {flow.currentStep === 'style' && <StyleStep flow={flow} registry={registry} />}
+        {flow.currentStep === 'review' && <ReviewStep flow={flow} registry={registry} />}
         {flow.currentStep === 'producing' && <ProducingStep flow={flow} />}
       </LiquidGlassCard>
 
@@ -182,9 +198,40 @@ export const CreateFlowWizard: React.FC<CreateFlowWizardProps> = ({
 /* ─── Step Components ─────────────────────────────────────────────────── */
 
 type FlowProps = { flow: ReturnType<typeof useCreateFlow> };
+type FlowRegistryProps = FlowProps & { registry: CreateFlowRegistryData };
 
-const InputStep: React.FC<FlowProps> = ({ flow }) => {
+/**
+ * InputStep — Choose input mode + provide content
+ * Now triggers auto-enrichment (Google Places, brand) when relevant mode is selected
+ */
+const InputStep: React.FC<FlowRegistryProps> = ({ flow, registry }) => {
   const simpleModes = flow.simpleModes;
+  const prevMode = useRef(flow.inputMode);
+
+  // Auto-trigger enrichment when mode changes to one that supports it
+  useEffect(() => {
+    if (prevMode.current !== flow.inputMode) {
+      prevMode.current = flow.inputMode;
+      // Trigger enrichment for business-related modes
+      if (flow.inputMode === 'google_places_to_script' && flow.session.input.businessName) {
+        registry.triggerAutoEnrichment(
+          flow.inputMode,
+          flow.session.input.businessName,
+          flow.session.input.businessLocation,
+        );
+      }
+    }
+  }, [flow.inputMode, flow.session.input.businessName, flow.session.input.businessLocation, registry]);
+
+  const handleBusinessBlur = () => {
+    if (flow.inputMode === 'google_places_to_script' && flow.session.input.businessName) {
+      registry.triggerAutoEnrichment(
+        flow.inputMode,
+        flow.session.input.businessName,
+        flow.session.input.businessLocation,
+      );
+    }
+  };
 
   return (
     <div className="space-y-5 p-1">
@@ -218,17 +265,42 @@ const InputStep: React.FC<FlowProps> = ({ flow }) => {
       {/* Content input */}
       <div className="space-y-2">
         {flow.inputMode === 'google_places_to_script' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <GlassInput
-              placeholder="Business name..."
-              value={flow.session.input.businessName || ''}
-              onChange={(e) => flow.setBusinessInfo(e.target.value, flow.session.input.businessLocation || '')}
-            />
-            <GlassInput
-              placeholder="Location (city, state)..."
-              value={flow.session.input.businessLocation || ''}
-              onChange={(e) => flow.setBusinessInfo(flow.session.input.businessName || '', e.target.value)}
-            />
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <GlassInput
+                placeholder="Business name..."
+                value={flow.session.input.businessName || ''}
+                onChange={(e) => flow.setBusinessInfo(e.target.value, flow.session.input.businessLocation || '')}
+                onBlur={handleBusinessBlur}
+              />
+              <GlassInput
+                placeholder="Location (city, state)..."
+                value={flow.session.input.businessLocation || ''}
+                onChange={(e) => flow.setBusinessInfo(flow.session.input.businessName || '', e.target.value)}
+                onBlur={handleBusinessBlur}
+              />
+            </div>
+            {/* Enrichment status indicator */}
+            {registry.isEnriching && (
+              <div className="flex items-center gap-2 text-xs text-amber-400">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Fetching Google Places data...
+              </div>
+            )}
+            {registry.googlePlacesResult?.place && (
+              <div className="glass-panel rounded-lg p-3 space-y-1">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-emerald-400" />
+                  <span className="text-xs font-medium text-emerald-400">Google Places data loaded</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {registry.googlePlacesResult.place.name} — {registry.googlePlacesResult.place.rating} stars, {registry.googlePlacesResult.place.totalRatings} reviews
+                </p>
+              </div>
+            )}
+            {registry.enrichmentError && (
+              <p className="text-[10px] text-red-400">{registry.enrichmentError}</p>
+            )}
           </div>
         ) : flow.inputMode === 'text_to_script' || flow.inputMode === 'topic_to_script' ? (
           <Textarea
@@ -249,67 +321,158 @@ const InputStep: React.FC<FlowProps> = ({ flow }) => {
           </div>
         )}
       </div>
+
+      {/* Intent selector — DB-driven */}
+      {registry.intents.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-semibold text-muted-foreground">Content Intent</h4>
+          <div className="flex flex-wrap gap-2">
+            {registry.intents.slice(0, 12).map((intent) => (
+              <button
+                key={intent.id}
+                onClick={() => {
+                  registry.selectIntent(intent.intent_key);
+                  flow.setIntent(intent.intent_key as any);
+                }}
+                className={cn(
+                  'text-[11px] px-3 py-1.5 rounded-full border transition-all',
+                  registry.selectedIntentKey === intent.intent_key
+                    ? 'border-primary/40 bg-primary/[0.08] text-foreground font-medium'
+                    : 'border-white/[0.08] text-muted-foreground hover:border-white/20 hover:text-foreground',
+                )}
+              >
+                {intent.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-const EnrichmentStep: React.FC<FlowProps> = ({ flow }) => (
-  <div className="space-y-5 p-1">
-    <div className="flex items-center justify-between">
-      <div>
-        <h3 className="font-semibold text-lg">AI Enrichment</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Toggle what data feeds the AI. Higher score = richer output.
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">Enrichment Score</span>
-        <GlassBadge className={cn(
-          'text-sm font-bold',
-          flow.enrichmentScore >= 70 ? 'text-emerald-400' :
-          flow.enrichmentScore >= 40 ? 'text-amber-400' : 'text-red-400',
-        )}>
-          {flow.enrichmentScore}%
-        </GlassBadge>
-      </div>
-    </div>
+/**
+ * EnrichmentStep — Review enrichment data
+ * Now shows Google Places result from auto-trigger + all enrichment sections
+ */
+const EnrichmentStep: React.FC<FlowRegistryProps> = ({ flow, registry }) => {
+  // Build enrichment sections from the flow's enrichment visibility
+  const enrichmentSections = React.useMemo(() => {
+    const e = flow.enrichment;
+    const sections: Record<string, Record<string, boolean>> = {};
 
-    <div className="space-y-3">
-      {Object.entries((flow.enrichment as any).sections || {}).map(([section, fields]) => (
-        <GlassCard key={section}>
-          <GlassCardContent className="p-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              {section.replace(/_/g, ' ')}
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {Object.entries(fields as Record<string, boolean>).map(([field, enabled]) => (
-                <button
-                  key={field}
-                  onClick={() => flow.toggleEnrichmentField(section, field)}
-                  className={cn(
-                    'text-[11px] px-2 py-1.5 rounded-md border transition-all text-left',
-                    enabled
-                      ? 'border-primary/30 bg-primary/[0.06] text-foreground'
-                      : 'border-white/[0.06] text-muted-foreground hover:border-white/15',
-                  )}
-                >
-                  {field.replace(/_/g, ' ')}
-                </button>
-              ))}
-            </div>
-          </GlassCardContent>
-        </GlassCard>
-      ))}
-    </div>
+    if (e.googlePlaces?.active) {
+      sections['Google Places'] = e.googlePlaces.enabledFields || {};
+    }
+    if (e.brandIntelligence?.active) {
+      sections['Brand Intelligence'] = e.brandIntelligence.enabledFields || {};
+    }
+    if (e.economyProfile?.active) {
+      sections['Economy Profile'] = e.economyProfile.enabledFields || {};
+    }
+    if (e.competitiveIntel?.active) {
+      sections['Competitive Intel'] = e.competitiveIntel.enabledFields || {};
+    }
+    if (e.regionalContext?.active) {
+      sections['Regional Context'] = e.regionalContext.enabledFields || {};
+    }
+    if (e.productKnowledge?.active) {
+      sections['Product Knowledge'] = e.productKnowledge.enabledFields || {};
+    }
 
-    {flow.promptPreview && (
-      <div className="glass-panel rounded-xl p-3">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Assembled Prompt Preview</p>
-        <p className="text-xs text-foreground/80 whitespace-pre-wrap line-clamp-6">{flow.promptPreview}</p>
+    // If no sections are active, show a minimal default
+    if (Object.keys(sections).length === 0) {
+      sections['Content Enrichment'] = {
+        topic_analysis: true,
+        keyword_extraction: true,
+        audience_targeting: true,
+        tone_detection: true,
+        seo_optimization: true,
+      };
+    }
+
+    return sections;
+  }, [flow.enrichment]);
+
+  return (
+    <div className="space-y-5 p-1">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-lg">AI Enrichment</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Toggle what data feeds the AI. Higher score = richer output.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Enrichment Score</span>
+          <GlassBadge className={cn(
+            'text-sm font-bold',
+            flow.enrichmentScore >= 70 ? 'text-emerald-400' :
+            flow.enrichmentScore >= 40 ? 'text-amber-400' : 'text-red-400',
+          )}>
+            {flow.enrichmentScore}%
+          </GlassBadge>
+        </div>
       </div>
-    )}
-  </div>
-);
+
+      {/* Google Places quick summary (if loaded) */}
+      {registry.googlePlacesResult?.place && (
+        <div className="glass-panel rounded-xl p-3 border-emerald-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin className="h-4 w-4 text-emerald-400" />
+            <span className="text-xs font-semibold text-emerald-400">Google Places Enrichment Active</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+            <span>Business: {registry.googlePlacesResult.place.name}</span>
+            <span>Rating: {registry.googlePlacesResult.place.rating}/5 ({registry.googlePlacesResult.place.totalRatings} reviews)</span>
+            {registry.googlePlacesResult.details?.reviews?.length > 0 && (
+              <span className="col-span-2">Top reviews loaded: {registry.googlePlacesResult.details.reviews.length}</span>
+            )}
+            {registry.googlePlacesResult.competitors?.length > 0 && (
+              <span className="col-span-2">Competitors found: {registry.googlePlacesResult.competitors.length}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Enrichment toggle sections */}
+      <div className="space-y-3">
+        {Object.entries(enrichmentSections).map(([section, fields]) => (
+          <GlassCard key={section}>
+            <GlassCardContent className="p-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                {section}
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {Object.entries(fields).map(([field, enabled]) => (
+                  <button
+                    key={field}
+                    onClick={() => flow.toggleEnrichmentField(section.toLowerCase().replace(/\s+/g, '_'), field)}
+                    className={cn(
+                      'text-[11px] px-2 py-1.5 rounded-md border transition-all text-left',
+                      enabled
+                        ? 'border-primary/30 bg-primary/[0.06] text-foreground'
+                        : 'border-white/[0.06] text-muted-foreground hover:border-white/15',
+                    )}
+                  >
+                    {field.replace(/_/g, ' ')}
+                  </button>
+                ))}
+              </div>
+            </GlassCardContent>
+          </GlassCard>
+        ))}
+      </div>
+
+      {flow.promptPreview && (
+        <div className="glass-panel rounded-xl p-3">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Assembled Prompt Preview</p>
+          <p className="text-xs text-foreground/80 whitespace-pre-wrap line-clamp-6">{flow.promptPreview}</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ScriptStep: React.FC<FlowProps> = ({ flow }) => (
   <div className="space-y-5 p-1">
@@ -440,124 +603,236 @@ const LanguageStep: React.FC<FlowProps> = ({ flow }) => (
   </div>
 );
 
-const FormatStep: React.FC<FlowProps> = ({ flow }) => (
-  <div className="space-y-5 p-1">
-    <div>
-      <h3 className="font-semibold text-lg">Output Formats</h3>
-      <p className="text-sm text-muted-foreground mt-1">
-        Select one or more output formats. Cross-format conversion is automatic.
-      </p>
-    </div>
+/**
+ * FormatStep — NOW DB-DRIVEN
+ * Uses registry.formatsByCategory (from useCastContentRegistry) with fallback to hardcoded
+ */
+const FormatStep: React.FC<FlowRegistryProps> = ({ flow, registry }) => {
+  // Use DB-driven formats if available, otherwise fall back to flow's hardcoded ones
+  const formatsByCategory = registry.formats.length > 0
+    ? registry.formatsByCategory
+    : flow.formatsByCategory;
 
-    <ScrollArea className="max-h-[400px]">
-      <div className="space-y-4">
-        {Object.entries(flow.formatsByCategory).map(([category, formats]) => (
-          <div key={category}>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              {category.replace(/_/g, ' ')}
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {formats.map((fmt) => {
-                const isSelected = flow.selectedFormats.includes(fmt.format);
-                return (
-                  <button
-                    key={fmt.format}
-                    onClick={() => flow.toggleFormat(fmt.format)}
-                    className={cn(
-                      'glass-panel rounded-lg p-2.5 text-left transition-all',
-                      isSelected
-                        ? 'ring-2 ring-primary/30 border-primary/20 bg-primary/[0.06]'
-                        : 'hover:border-white/15',
-                    )}
-                  >
-                    <p className="text-xs font-medium">{fmt.label}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">
-                      {fmt.aspectRatios?.[0] || '16:9'} &middot; {fmt.durationRange?.min || 0}s &middot; {fmt.minTier || 'free'}
-                    </p>
-                    {isSelected && (
-                      <Check className="h-3 w-3 text-primary mt-1" />
-                    )}
-                  </button>
-                );
-              })}
+  return (
+    <div className="space-y-5 p-1">
+      <div>
+        <h3 className="font-semibold text-lg">Output Formats</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Select one or more output formats. Cross-format conversion is automatic.
+        </p>
+      </div>
+
+      {/* Category filter (DB-driven) */}
+      {registry.categories.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => registry.selectCategory(null)}
+            className={cn(
+              'text-[11px] px-3 py-1.5 rounded-full border transition-all',
+              !registry.selectedCategoryId
+                ? 'border-primary/40 bg-primary/[0.08] text-foreground font-medium'
+                : 'border-white/[0.08] text-muted-foreground hover:border-white/20',
+            )}
+          >
+            All
+          </button>
+          {registry.categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => registry.selectCategory(cat.id)}
+              className={cn(
+                'text-[11px] px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5',
+                registry.selectedCategoryId === cat.id
+                  ? 'border-primary/40 bg-primary/[0.08] text-foreground font-medium'
+                  : 'border-white/[0.08] text-muted-foreground hover:border-white/20',
+              )}
+            >
+              {getIcon(cat.icon, 'h-3 w-3')}
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <ScrollArea className="max-h-[400px]">
+        <div className="space-y-4">
+          {Object.entries(formatsByCategory).map(([category, formats]) => (
+            <div key={category}>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                {category.replace(/_/g, ' ')}
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {formats.map((fmt) => {
+                  const isSelected = flow.selectedFormats.includes(fmt.format);
+                  return (
+                    <button
+                      key={fmt.format}
+                      onClick={() => flow.toggleFormat(fmt.format)}
+                      className={cn(
+                        'glass-panel rounded-lg p-2.5 text-left transition-all',
+                        isSelected
+                          ? 'ring-2 ring-primary/30 border-primary/20 bg-primary/[0.06]'
+                          : 'hover:border-white/15',
+                      )}
+                    >
+                      <p className="text-xs font-medium">{fmt.label}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">
+                        {fmt.aspectRatios?.[0] || '16:9'} &middot; {fmt.durationRange?.min || 0}s &middot; {fmt.minTier || 'free'}
+                      </p>
+                      {isSelected && (
+                        <Check className="h-3 w-3 text-primary mt-1" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </ScrollArea>
+          ))}
+        </div>
+      </ScrollArea>
 
-    {flow.selectedFormats.length > 0 && (
-      <div className="glass-panel rounded-xl p-3 flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-muted-foreground">Selected:</span>
-        {flow.selectedFormats.map((f) => (
-          <GlassBadge key={f} className="text-[10px] gap-1">
-            {f.replace(/_/g, ' ')}
-            <button onClick={() => flow.toggleFormat(f)}>
-              <X className="h-2.5 w-2.5" />
-            </button>
-          </GlassBadge>
-        ))}
-      </div>
-    )}
-  </div>
-);
-
-const StyleStep: React.FC<FlowProps> = ({ flow }) => (
-  <div className="space-y-5 p-1">
-    <div>
-      <h3 className="font-semibold text-lg">Style & Scenario</h3>
-      <p className="text-sm text-muted-foreground mt-1">
-        Choose the visual style and content scenario for your output.
-      </p>
+      {flow.selectedFormats.length > 0 && (
+        <div className="glass-panel rounded-xl p-3 flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">Selected:</span>
+          {flow.selectedFormats.map((f) => (
+            <GlassBadge key={f} className="text-[10px] gap-1">
+              {f.replace(/_/g, ' ')}
+              <button onClick={() => flow.toggleFormat(f)}>
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </GlassBadge>
+          ))}
+        </div>
+      )}
     </div>
+  );
+};
 
-    <GlassCard>
-      <GlassCardContent className="p-3 space-y-3">
-        <h4 className="text-xs font-semibold text-muted-foreground">Scene Style</h4>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {['cinematic', 'minimal', 'corporate', 'playful', 'editorial', 'bold'].map((style) => (
-            <button
-              key={style}
-              onClick={() => flow.setSceneStyle(style as any)}
-              className={cn(
-                'glass-panel rounded-lg p-2.5 text-xs capitalize transition-all',
-                flow.sceneStyle === style
-                  ? 'ring-2 ring-primary/30 border-primary/20 bg-primary/[0.06]'
-                  : 'hover:border-white/15',
-              )}
-            >
-              {style}
-            </button>
-          ))}
-        </div>
-      </GlassCardContent>
-    </GlassCard>
+/**
+ * StyleStep — NOW DB-DRIVEN
+ * Visual styles from cast_visual_styles, scenarios from content_intents
+ */
+const StyleStep: React.FC<FlowRegistryProps> = ({ flow, registry }) => {
+  // DB-driven visual styles with hardcoded fallback
+  const styleOptions = registry.parentStyles.length > 0
+    ? registry.parentStyles
+    : null;
 
-    <GlassCard>
-      <GlassCardContent className="p-3 space-y-3">
-        <h4 className="text-xs font-semibold text-muted-foreground">Content Scenario</h4>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {['product_video', 'social_promo', 'tutorial', 'brand_story', 'testimonial_video', 'explainer'].map((sc) => (
-            <button
-              key={sc}
-              onClick={() => flow.setScenario(sc as any)}
-              className={cn(
-                'glass-panel rounded-lg p-2.5 text-xs transition-all text-left',
-                flow.scenario === sc
-                  ? 'ring-2 ring-primary/30 border-primary/20 bg-primary/[0.06]'
-                  : 'hover:border-white/15',
-              )}
-            >
-              {sc.replace(/_/g, ' ')}
-            </button>
-          ))}
-        </div>
-      </GlassCardContent>
-    </GlassCard>
-  </div>
-);
+  // DB-driven content scenarios from intents, with hardcoded fallback
+  const scenarioOptions = registry.intents.length > 0
+    ? registry.intents.filter(i => !i.parent_intent_id).slice(0, 12)
+    : null;
 
-const ReviewStep: React.FC<FlowProps> = ({ flow }) => (
+  return (
+    <div className="space-y-5 p-1">
+      <div>
+        <h3 className="font-semibold text-lg">Style & Scenario</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Choose the visual style and content scenario for your output.
+        </p>
+      </div>
+
+      {/* Scene Style — DB-driven from cast_visual_styles */}
+      <GlassCard>
+        <GlassCardContent className="p-3 space-y-3">
+          <h4 className="text-xs font-semibold text-muted-foreground">Scene Style</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {styleOptions ? (
+              styleOptions.map((style) => (
+                <button
+                  key={style.id}
+                  onClick={() => flow.setSceneStyle(style.name as any)}
+                  className={cn(
+                    'glass-panel rounded-lg p-2.5 text-left transition-all',
+                    flow.sceneStyle === style.name
+                      ? 'ring-2 ring-primary/30 border-primary/20 bg-primary/[0.06]'
+                      : 'hover:border-white/15',
+                  )}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {getIcon(style.icon, 'h-3.5 w-3.5')}
+                    <span className="text-xs font-medium">{style.label}</span>
+                  </div>
+                  {style.description && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{style.description}</p>
+                  )}
+                </button>
+              ))
+            ) : (
+              // Hardcoded fallback
+              ['cinematic', 'minimal', 'corporate', 'playful', 'editorial', 'bold'].map((style) => (
+                <button
+                  key={style}
+                  onClick={() => flow.setSceneStyle(style as any)}
+                  className={cn(
+                    'glass-panel rounded-lg p-2.5 text-xs capitalize transition-all',
+                    flow.sceneStyle === style
+                      ? 'ring-2 ring-primary/30 border-primary/20 bg-primary/[0.06]'
+                      : 'hover:border-white/15',
+                  )}
+                >
+                  {style}
+                </button>
+              ))
+            )}
+          </div>
+        </GlassCardContent>
+      </GlassCard>
+
+      {/* Content Scenario — DB-driven from content_intents */}
+      <GlassCard>
+        <GlassCardContent className="p-3 space-y-3">
+          <h4 className="text-xs font-semibold text-muted-foreground">Content Scenario</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {scenarioOptions ? (
+              scenarioOptions.map((intent) => (
+                <button
+                  key={intent.id}
+                  onClick={() => flow.setScenario(intent.intent_key as any)}
+                  className={cn(
+                    'glass-panel rounded-lg p-2.5 text-left transition-all',
+                    flow.scenario === intent.intent_key
+                      ? 'ring-2 ring-primary/30 border-primary/20 bg-primary/[0.06]'
+                      : 'hover:border-white/15',
+                  )}
+                >
+                  <span className="text-xs font-medium">{intent.label}</span>
+                  {intent.description && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{intent.description}</p>
+                  )}
+                  <Badge variant="secondary" className="text-[8px] mt-1 px-1 py-0">
+                    {intent.category}
+                  </Badge>
+                </button>
+              ))
+            ) : (
+              // Hardcoded fallback
+              ['product_video', 'social_promo', 'tutorial', 'brand_story', 'testimonial_video', 'explainer'].map((sc) => (
+                <button
+                  key={sc}
+                  onClick={() => flow.setScenario(sc as any)}
+                  className={cn(
+                    'glass-panel rounded-lg p-2.5 text-xs transition-all text-left',
+                    flow.scenario === sc
+                      ? 'ring-2 ring-primary/30 border-primary/20 bg-primary/[0.06]'
+                      : 'hover:border-white/15',
+                  )}
+                >
+                  {sc.replace(/_/g, ' ')}
+                </button>
+              ))
+            )}
+          </div>
+        </GlassCardContent>
+      </GlassCard>
+    </div>
+  );
+};
+
+/**
+ * ReviewStep — Shows full config summary including DB-driven selections
+ */
+const ReviewStep: React.FC<FlowRegistryProps> = ({ flow, registry }) => (
   <div className="space-y-5 p-1">
     <div>
       <h3 className="font-semibold text-lg">Review & Produce</h3>
@@ -574,8 +849,23 @@ const ReviewStep: React.FC<FlowProps> = ({ flow }) => (
           {flow.inputContent && (
             <p className="text-xs text-muted-foreground line-clamp-2">{flow.inputContent}</p>
           )}
+          {flow.session.input.businessName && (
+            <p className="text-xs text-muted-foreground">Business: {flow.session.input.businessName}</p>
+          )}
         </GlassCardContent>
       </GlassCard>
+
+      {/* Intent (if selected) */}
+      {registry.selectedIntentKey && (
+        <GlassCard>
+          <GlassCardContent className="p-3 space-y-2">
+            <h4 className="text-xs font-semibold text-muted-foreground">Intent</h4>
+            <p className="text-sm">
+              {registry.intents.find(i => i.intent_key === registry.selectedIntentKey)?.label || registry.selectedIntentKey}
+            </p>
+          </GlassCardContent>
+        </GlassCard>
+      )}
 
       <GlassCard>
         <GlassCardContent className="p-3 space-y-2">
@@ -599,6 +889,20 @@ const ReviewStep: React.FC<FlowProps> = ({ flow }) => (
                 ))
               : <p className="text-xs text-muted-foreground">No formats selected</p>
             }
+          </div>
+        </GlassCardContent>
+      </GlassCard>
+
+      <GlassCard>
+        <GlassCardContent className="p-3 space-y-2">
+          <h4 className="text-xs font-semibold text-muted-foreground">Enrichment</h4>
+          <div className="flex flex-wrap gap-1">
+            {registry.googlePlacesResult && (
+              <GlassBadge className="text-[10px] text-emerald-400">Google Places</GlassBadge>
+            )}
+            {flow.enrichmentScore > 0 && (
+              <GlassBadge className="text-[10px]">Score: {flow.enrichmentScore}%</GlassBadge>
+            )}
           </div>
         </GlassCardContent>
       </GlassCard>
