@@ -495,13 +495,13 @@ Requirements:
   private selectModel(chapterType: string, provider: string): string {
     const modelMap: Record<string, Record<string, string>> = {
       gemini: {
-        avatar: 'gemini-2.0-flash',
-        video: 'gemini-2.0-flash',
-        animation: 'gemini-2.0-flash',
-        '3d': 'gemini-2.0-flash',
-        ppt: 'gemini-2.0-flash',
-        music: 'gemini-2.0-flash',
-        default: 'gemini-2.0-flash'
+        avatar: 'gemini-2.5-flash',
+        video: 'gemini-2.5-flash',
+        animation: 'gemini-2.5-flash',
+        '3d': 'gemini-2.5-flash',
+        ppt: 'gemini-2.5-flash',
+        music: 'gemini-2.5-flash',
+        default: 'gemini-2.5-flash'
       },
       openai: {
         static: 'dall-e-3',
@@ -531,7 +531,7 @@ Requirements:
       }
     };
 
-    return modelMap[provider]?.[chapterType] || modelMap[provider]?.default || 'gemini-2.0-flash';
+    return modelMap[provider]?.[chapterType] || modelMap[provider]?.default || 'gemini-2.5-flash';
   }
 
   /**

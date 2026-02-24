@@ -48,7 +48,7 @@ export interface ImagePreviewResult {
 
 /** Map master registry provider IDs to our ImageProvider type + model */
 const PROVIDER_MODEL_MAP: Record<string, { provider: ImageProvider; model: string }> = {
-  gemini_3_pro:    { provider: 'gemini',         model: 'gemini-2.0-flash' },
+  gemini_3_pro:    { provider: 'gemini',         model: 'gemini-2.5-flash' },
   vertex_imagen3:  { provider: 'vertex_imagen',  model: 'imagen-3.0-generate-001' },
   alibaba_wanx:    { provider: 'alibaba',        model: 'wanx-v1' },
   modelslab_flux:  { provider: 'modelslab',       model: 'flux-schnell' },
@@ -128,7 +128,7 @@ export async function generateStylePreview(request: ImagePreviewRequest): Promis
   // If caller explicitly set a provider, use it directly (bypass routing)
   if (request.provider) {
     return callImageProvider(request, request.provider,
-      PROVIDER_MODEL_MAP[Object.keys(PROVIDER_MODEL_MAP).find(k => PROVIDER_MODEL_MAP[k].provider === request.provider) || '']?.model || 'gemini-2.0-flash',
+      PROVIDER_MODEL_MAP[Object.keys(PROVIDER_MODEL_MAP).find(k => PROVIDER_MODEL_MAP[k].provider === request.provider) || '']?.model || 'gemini-2.5-flash',
       zone, 'primary', startTime);
   }
 

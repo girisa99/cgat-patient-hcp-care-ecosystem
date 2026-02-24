@@ -19,7 +19,7 @@ export interface AIModelCost {
 export const aiModelCosts: AIModelCost[] = [
   {
     provider: 'Google',
-    model: 'Gemini 2.0 Flash',
+    model: 'Gemini 2.5 Flash',
     inputCostPer1MTok: 0.075,
     outputCostPer1MTok: 0.30,
     avgTokensPerScript: 2500,
@@ -29,7 +29,7 @@ export const aiModelCosts: AIModelCost[] = [
   },
   {
     provider: 'Google',
-    model: 'Gemini 2.0 Pro',
+    model: 'Gemini 2.5 Pro',
     inputCostPer1MTok: 1.25,
     outputCostPer1MTok: 5.00,
     avgTokensPerScript: 2500,

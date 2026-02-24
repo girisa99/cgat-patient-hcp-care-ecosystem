@@ -10,7 +10,7 @@ const corsHeaders = {
 const PROVIDERS = {
   gemini: {
     name: "Google Gemini",
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
     getApiKey: () => Deno.env.get("GOOGLE_API_KEY") || Deno.env.get("GEMINI_API_KEY"),
   },
   openai: {

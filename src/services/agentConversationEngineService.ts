@@ -127,7 +127,7 @@ export const ENGINE_TEMPLATES = {
     name: 'Enrollment Conversation Engine',
     engine_type: 'llm' as const,
     provider: 'gemini',
-    model_identifier: 'gemini-2.0-flash',
+    model_identifier: 'gemini-2.5-flash',
     configuration: {
       temperature: 0.7,
       max_tokens: 2000,
@@ -520,7 +520,7 @@ class AgentConversationEngineService {
           status: 'active',
           enabled_features: ['npi_verification', 'credentialing_workflow', 'real_time_validation'],
           model_provider: 'gemini',
-          model_name: 'gemini-2.0-flash',
+          model_name: 'gemini-2.5-flash',
         })
         .select()
         .single();
@@ -586,7 +586,7 @@ class AgentConversationEngineService {
             `screen_mode_${params.screenMode || 'form-specific'}`,
           ],
           model_provider: 'gemini',
-          model_name: 'gemini-2.0-flash',
+          model_name: 'gemini-2.5-flash',
         })
         .select()
         .single();

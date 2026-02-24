@@ -246,7 +246,7 @@ function generateFrameworkMapping(framework: Framework, category: FrameworkCateg
       translation: isRegional ? [{ providers: translationProviders, reason: 'Regional localization' }] : undefined
     },
     recommendedModels: [
-      { type: 'text', modelIds: ['gpt-4o', 'claude-3.5-sonnet', 'gemini-2.0-flash'], reason: `${framework.name} depth`, tier: framework.tier as 1 | 2 | 3 },
+      { type: 'text', modelIds: ['gpt-4o', 'claude-3.5-sonnet', 'gemini-2.5-flash'], reason: `${framework.name} depth`, tier: framework.tier as 1 | 2 | 3 },
       { type: 'image', modelIds: ['flux-pro', 'dall-e-3', 'modelslab-flux'], reason: 'Diagram quality', tier: 2 },
       ...(isRegional ? [{ type: 'translation' as ModelType, modelIds: ['deepl-pro', 'google-translate', 'alibaba-translate'], reason: 'Localization', tier: 1 as const }] : [])
     ],
@@ -421,7 +421,7 @@ function generateOutputMapping(output: ExpandedOutputConfig): ContextToCapabilit
       ...(output.requires3D && { mesh3d: [{ providers: mesh3dProviders, reason: '3D models' }] })
     },
     recommendedModels: [
-      { type: 'text', modelIds: ['gpt-4o', 'claude-3.5-sonnet', 'gemini-2.0-flash'], reason: 'Script quality', tier: output.tier },
+      { type: 'text', modelIds: ['gpt-4o', 'claude-3.5-sonnet', 'gemini-2.5-flash'], reason: 'Script quality', tier: output.tier },
       { type: 'image', modelIds: ['flux-pro', 'dall-e-3', 'modelslab-flux', 'stable-diffusion-xl'], reason: output.description, tier: output.tier },
       ...(output.requiresVideo ? [{ type: 'video' as ModelType, modelIds: ['runway-gen3', 'openai-sora', 'pika-labs', 'alibaba-wan'], reason: 'Video quality', tier: output.tier }] : []),
       ...(output.requiresVoice ? [{ type: 'voice' as ModelType, modelIds: ['elevenlabs', 'openai-tts', 'azure-neural', 'alibaba-qwen3-tts'], reason: 'Voice quality', tier: output.tier }] : []),

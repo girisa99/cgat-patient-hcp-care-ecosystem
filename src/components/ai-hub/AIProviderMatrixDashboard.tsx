@@ -73,7 +73,7 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, Record<string, ProviderScore>> 
   llm: {
     openai: { providerId: 'openai', name: 'OpenAI GPT-4o', confidence: 98, quality: 95, speed: 85, cost: 'high', status: 'configured', features: ['128K context', 'Tool calling', 'Vision'] },
     claude: { providerId: 'claude', name: 'Claude 3.5 Sonnet', confidence: 97, quality: 96, speed: 80, cost: 'high', status: 'configured', features: ['200K context', 'Nuanced writing', 'Vision'] },
-    gemini: { providerId: 'gemini', name: 'Gemini 2.0', confidence: 95, quality: 93, speed: 90, cost: 'medium', status: 'configured', features: ['1M+ context', 'Multimodal', 'Fast'] },
+    gemini: { providerId: 'gemini', name: 'Gemini 2.5', confidence: 95, quality: 93, speed: 90, cost: 'medium', status: 'configured', features: ['1M+ context', 'Multimodal', 'Fast'] },
     deepseek: { providerId: 'deepseek', name: 'DeepSeek-V3', confidence: 92, quality: 90, speed: 85, cost: 'low', status: 'configured', features: ['128K context', 'Code expert', 'CJK'] },
     alibaba: { providerId: 'alibaba', name: 'Qwen 2.5', confidence: 88, quality: 85, speed: 85, cost: 'low', status: 'configured', features: ['128K context', 'CJK native', 'Vision'] },
     azure: { providerId: 'azure', name: 'Azure OpenAI', confidence: 95, quality: 95, speed: 85, cost: 'high', status: 'needs_key', notes: 'Enterprise - requires Azure subscription', features: ['Enterprise SLA', 'Private endpoints'] },

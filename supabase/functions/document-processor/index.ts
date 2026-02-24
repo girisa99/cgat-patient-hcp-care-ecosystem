@@ -372,7 +372,7 @@ async function callUniversalAIVision(
     // Medical imaging, forms, identity → Gemini for vision
     else if (['xray', 'ct_scan', 'mri', 'ecg', 'ultrasound', 'passport', 'drivers_license', 'form'].some(t => docType.includes(t))) {
       provider = 'gemini';
-      model = model || 'gemini-2.0-flash-exp';
+      model = model || 'gemini-2.5-flash';
     }
   }
 
@@ -382,7 +382,7 @@ async function callUniversalAIVision(
       case 'claude': model = 'claude-sonnet-4-5'; break;
       case 'openai': model = 'gpt-4o'; break;
       case 'gemini': 
-      default: model = 'gemini-2.0-flash-exp'; break;
+      default: model = 'gemini-2.5-flash'; break;
     }
   }
 
@@ -403,7 +403,7 @@ async function callUniversalAIVision(
         },
         body: JSON.stringify({
           provider: 'gemini',
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.5-flash',
           prompt: `Analyze this medical image. Extract all visible findings, measurements, anatomical structures, and technical quality observations. Return structured JSON with: image_quality, modality, anatomical_region, visual_findings[], measurements{}, technical_notes[].`,
           action: 'analyze_scene',
           context: { image: imageBase64, analysisDepth: 'detailed' },
@@ -494,7 +494,7 @@ async function callUniversalAIVision(
         return callUniversalAIVision(prompt, imageBase64, mimeType, {
           ...options,
           provider: 'gemini',
-          model: 'gemini-2.0-flash-exp'
+          model: 'gemini-2.5-flash'
         });
       }
       
@@ -5246,7 +5246,7 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
     // Start Gemini Vision analysis
     const medicalPrompt = buildComprehensiveMedicalPrompt(documentType || 'medical-image', analysisType || 'comprehensive', modelType);
     const geminiPromise = fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -5276,7 +5276,7 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
     geminiAnalysis = parsedAnalysis;
     
     // ============= MERGE CNN + VISION AI RESULTS =============
-    const mergedModelsUsed: string[] = ['Gemini 2.0 Flash Vision'];
+    const mergedModelsUsed: string[] = ['Gemini 2.5 Flash Vision'];
     const cnnPredictions: any[] = [];
     const cnnModelsExecuted: any[] = [];
     

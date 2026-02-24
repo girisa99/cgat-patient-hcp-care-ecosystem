@@ -276,7 +276,7 @@ export function useSceneScriptGenerator(options: UseSceneScriptGeneratorOptions)
         suggestedDuration: data.suggestedDuration,
         toneNote: data.toneNote,
         provider: data.provider || 'gemini',
-        model: data.model || 'gemini-2.0-flash',
+        model: data.model || 'gemini-2.5-flash',
         assignedMessaging: assignment,
       };
 

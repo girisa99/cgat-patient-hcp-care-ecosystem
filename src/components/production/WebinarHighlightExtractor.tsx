@@ -140,7 +140,7 @@ Return JSON array:
 
       const response = await generateResponse({
         provider: 'gemini',
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         prompt: analysisPrompt,
         systemPrompt: 'You are an expert webinar analyst. Identify the most engaging and valuable moments from webinar recordings for highlight clips. Always respond with valid JSON only.',
         temperature: 0.7,

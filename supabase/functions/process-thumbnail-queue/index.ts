@@ -549,10 +549,10 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
       console.log(`❌ Imagen 3.0 error: ${imagenResponse.status} - ${errText.substring(0, 100)}`);
     }
 
-    // FALLBACK: Gemini 2.0 Flash (stable fallback)
-    console.log('🔄 Trying Gemini 2.0 Flash (FALLBACK)...');
+    // FALLBACK: Gemini 2.5 Flash (stable fallback)
+    console.log('🔄 Trying Gemini 2.5 Flash (FALLBACK)...');
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -574,7 +574,7 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
       );
       
       if (imagePart?.inlineData?.data) {
-        console.log('✅ Gemini 2.0 Flash image generated (fallback)');
+        console.log('✅ Gemini 2.5 Flash image generated (fallback)');
         return { 
           url: imagePart.inlineData.data,
           provider: 'gemini_2_flash', 
@@ -583,7 +583,7 @@ async function generateWithGemini(prompt: string): Promise<{ url: string | null;
       }
     } else {
       const errorText = await geminiResponse.text();
-      console.log(`❌ Gemini 2.0 Flash error: ${geminiResponse.status} - ${errorText.substring(0, 150)}`);
+      console.log(`❌ Gemini 2.5 Flash error: ${geminiResponse.status} - ${errorText.substring(0, 150)}`);
     }
     
     return { url: null, provider: 'gemini', isBase64: false };
@@ -693,7 +693,7 @@ async function pollAlibabaTask(apiKey: string, taskId: string, providerName: str
 // ============================================
 // PRIMARY: Gemini 3 Pro / Vertex Imagen3 / Banana Nano (via Lovable Gateway)
 // SECONDARY: Alibaba Wanx / ModelsLab FLUX / DeepSeek
-// FALLBACK: Gemini 2.0 / Replicate SDXL / HuggingFace FLUX
+// FALLBACK: Gemini 2.5 / Replicate SDXL / HuggingFace FLUX
 // LAST RESORT: OpenAI DALL-E (expensive, use only if all else fails)
 // ============================================
 const REGIONAL_PRIORITY: Record<string, string[]> = {

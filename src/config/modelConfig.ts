@@ -86,18 +86,18 @@ export const MODEL_REGISTRY: Record<string, ModelInfo> = {
     speed: 'fast',
     context_window: 200000
   },
-  'gemini-2.0-flash': {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
+  'gemini-2.5-flash': {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
     provider: 'gemini',
     category: 'llm',
-    description: 'Stable Gemini model with multimodal capabilities',
+    description: 'Fast Gemini model with multimodal capabilities',
     capabilities: ['text', 'multimodal', 'reasoning', 'analysis'],
     available: true,
     fallbackModels: ['gemini-2.5-pro'],
     pricing: 'medium',
     speed: 'fast',
-    context_window: 100000
+    context_window: 1048576
   },
 
   // === Small Language Models ===
@@ -246,7 +246,7 @@ export const MODEL_REGISTRY: Record<string, ModelInfo> = {
     description: 'Current Gemini Pro model with vision capabilities and multimodal understanding',
     capabilities: ['vision', 'multimodal', 'large-context'],
     available: true,
-    fallbackModels: ['gemini-2.0-flash', 'gpt-4o'],
+    fallbackModels: ['gemini-2.5-flash', 'gpt-4o'],
     pricing: 'high',
     speed: 'medium',
     context_window: 2097152

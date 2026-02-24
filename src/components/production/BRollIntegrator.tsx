@@ -132,7 +132,7 @@ Return JSON array:
 
       const response = await generateResponse({
         provider: 'gemini',
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         prompt: analysisPrompt,
         systemPrompt: 'You are an expert video editor. Analyze video content and suggest B-roll insertion points. Always respond with valid JSON only.',
         temperature: 0.7,

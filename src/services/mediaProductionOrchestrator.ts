@@ -245,7 +245,7 @@ class MediaProductionOrchestrator {
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: config.aiProvider || 'gemini',
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         prompt: `Generate a ${config.outputType} script from this content:
 
 CONTENT:

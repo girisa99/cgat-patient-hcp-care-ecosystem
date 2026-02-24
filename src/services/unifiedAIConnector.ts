@@ -98,12 +98,12 @@ const MODEL_CATEGORIES = {
   llm: {
     openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16'],
     claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514'],
-    gemini: ['gemini-2.0-flash', 'gemini-2.5-pro', 'gemini-2.5-pro'],
+    gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-pro'],
   },
   small: {
     openai: ['gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4o-mini'],
     claude: ['claude-3-5-haiku-20241022'],
-    gemini: ['gemini-2.0-flash'],
+    gemini: ['gemini-2.5-flash'],
   },
   healthcare: {
     specialized: ['biomed-llama-7b', 'clinical-bert', 'pubmed-gpt', 'pharma-t5'],
@@ -158,7 +158,7 @@ class UnifiedAIConnector {
     switch (provider) {
       case 'openai': return 'gpt-4o-mini';
       case 'claude': return 'claude-3-5-haiku-20241022';
-      case 'gemini': return 'gemini-2.0-flash';
+      case 'gemini': return 'gemini-2.5-flash';
       default: return 'gpt-4o-mini';
     }
   }
@@ -390,7 +390,7 @@ User Query: ${request.prompt}`;
       case 'patient_intake':
       case 'enrollment':
         recommendations.push(
-          { provider: 'gemini', model: 'gemini-2.0-flash', reason: 'Fast responses for form guidance' },
+          { provider: 'gemini', model: 'gemini-2.5-flash', reason: 'Fast responses for form guidance' },
           { provider: 'openai', model: 'gpt-4o-mini', reason: 'Cost-effective for high volume' },
         );
         break;
@@ -404,12 +404,12 @@ User Query: ${request.prompt}`;
       case 'order_status':
         recommendations.push(
           { provider: 'openai', model: 'gpt-4o-mini', reason: 'Fast, cost-effective responses' },
-          { provider: 'gemini', model: 'gemini-2.0-flash', reason: 'Low latency tracking queries' },
+          { provider: 'gemini', model: 'gemini-2.5-flash', reason: 'Low latency tracking queries' },
         );
         break;
       default:
         recommendations.push(
-          { provider: 'gemini', model: 'gemini-2.0-flash', reason: 'General purpose, balanced' },
+          { provider: 'gemini', model: 'gemini-2.5-flash', reason: 'General purpose, balanced' },
         );
     }
 

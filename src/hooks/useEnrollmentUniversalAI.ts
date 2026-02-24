@@ -188,8 +188,8 @@ Provide a brief, readable summary in 2-3 sentences.`,
 
   // Get available model categories
   const modelCategories = useMemo(() => ({
-    fast: ['gemini-2.0-flash', 'gpt-4o-mini', 'claude-3-5-haiku-20241022'],
-    balanced: ['gemini-2.0-flash', 'gpt-5-mini-2025-08-07', 'claude-sonnet-4-20250514'],
+    fast: ['gemini-2.5-flash', 'gpt-4o-mini', 'claude-3-5-haiku-20241022'],
+    balanced: ['gemini-2.5-flash', 'gpt-5-mini-2025-08-07', 'claude-sonnet-4-20250514'],
     powerful: ['gemini-2.5-pro', 'gpt-5-2025-08-07', 'claude-opus-4-1-20250805']
   }), []);
 

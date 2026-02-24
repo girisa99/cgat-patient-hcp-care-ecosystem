@@ -227,7 +227,7 @@ class AudioToScriptService {
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: aiProvider,
-          model: aiProvider === 'gemini' ? 'gemini-2.0-flash' : 
+          model: aiProvider === 'gemini' ? 'gemini-2.5-flash' : 
                  aiProvider === 'openai' ? 'gpt-4o-mini' : 'claude-3-5-haiku-20241022',
           prompt: `Enhance this audio transcription for clarity and readability:
 
@@ -271,7 +271,7 @@ Return ONLY the enhanced transcription text, nothing else.`,
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: request.aiProvider || 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           prompt: `Convert this audio transcription into a ${request.outputFormat.replace('_', ' ')}:
 
 TRANSCRIPTION:
@@ -363,7 +363,7 @@ Return ONLY valid JSON in this exact format:
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         action: 'transcription_fallback',
         prompt: `You are analyzing audio content metadata. Based on the audio data signature provided, generate a detailed content analysis that includes:
 1. Likely content type (podcast, lecture, interview, etc.)

@@ -172,7 +172,7 @@ class DocumentToScriptService {
         const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
             provider: 'gemini',
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             prompt: `Analyze and extract structured content from this document URL: ${documentUrl}
             
 Document type: ${documentType || this.detectDocumentType(documentUrl)}
@@ -328,7 +328,7 @@ Return ONLY valid JSON.`,
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           prompt: `Convert this document into a ${request.outputFormat.replace('_', ' ')}:
 
 DOCUMENT TITLE: ${content.title}
@@ -493,7 +493,7 @@ FORMAT: Tutorial Script
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           prompt: `Enhance this script for ${enhancementType}:
 
 CURRENT SCRIPT:

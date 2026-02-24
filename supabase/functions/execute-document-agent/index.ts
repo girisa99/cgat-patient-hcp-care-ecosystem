@@ -30,14 +30,14 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
     provider: 'claude',
     model: 'claude-3-5-haiku-20241022',
     fallbackProvider: 'gemini',
-    fallbackModel: 'gemini-2.0-flash-exp',
+    fallbackModel: 'gemini-2.5-flash',
     systemPrompt: 'You are an expert clinical pharmacist with 20 years of experience. Provide evidence-based clinical assessments.'
   },
   'drug-interaction': {
     provider: 'claude',
     model: 'claude-3-5-haiku-20241022',
     fallbackProvider: 'gemini',
-    fallbackModel: 'gemini-2.0-flash-exp',
+    fallbackModel: 'gemini-2.5-flash',
     systemPrompt: 'You are an expert pharmacist specialized in drug-drug interactions and medication safety.'
   },
   'medication-reconciliation': {
@@ -51,7 +51,7 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
   // Radiology/Imaging agents → Gemini (best for vision, medical imaging)
   'radiology-ai': {
     provider: 'gemini',
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-flash',
     fallbackProvider: 'claude',
     fallbackModel: 'claude-3-5-haiku-20241022',
     systemPrompt: 'You are an experienced radiologist assistant. Provide structured, actionable radiology assessments.'
@@ -72,7 +72,7 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
   },
   'ultrasound-analysis': {
     provider: 'gemini',
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-flash',
     fallbackProvider: 'claude',
     fallbackModel: 'claude-3-5-haiku-20241022',
     systemPrompt: 'You are an ultrasound specialist. Provide structured sonographic assessments.'
@@ -104,7 +104,7 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
   // Default for unknown agents
   'default': {
     provider: 'gemini',
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-flash',
     fallbackProvider: 'claude',
     fallbackModel: 'claude-3-5-haiku-20241022',
     systemPrompt: 'You are a healthcare AI assistant. Provide accurate, evidence-based analysis.'
@@ -116,7 +116,7 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
 const PROVIDER_MODELS: Record<AIProvider, { primary: string; fallback: string }> = {
   'openai': { primary: 'gpt-4o', fallback: 'gpt-4o-mini' }, // Use stable OpenAI models
   'claude': { primary: 'claude-3-5-haiku-20241022', fallback: 'claude-3-5-sonnet-20241022' },
-  'gemini': { primary: 'gemini-2.0-flash-exp', fallback: 'gemini-1.5-flash' }
+  'gemini': { primary: 'gemini-2.5-flash', fallback: 'gemini-1.5-flash' }
 };
 
 function getModelRouting(agentId: string, preferredProvider?: AIProvider): ModelRoutingConfig {
@@ -136,7 +136,7 @@ function getModelRouting(agentId: string, preferredProvider?: AIProvider): Model
         : (preferredProvider === 'claude' ? 'gemini' : 'claude'),
       fallbackModel: baseRouting.fallbackProvider !== preferredProvider
         ? baseRouting.fallbackModel
-        : (preferredProvider === 'claude' ? 'gemini-2.0-flash-exp' : 'claude-3-5-haiku-20241022')
+        : (preferredProvider === 'claude' ? 'gemini-2.5-flash' : 'claude-3-5-haiku-20241022')
     };
   }
   

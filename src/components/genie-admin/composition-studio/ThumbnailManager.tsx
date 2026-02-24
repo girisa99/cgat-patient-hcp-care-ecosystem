@@ -158,7 +158,7 @@ export const ThumbnailManager: React.FC<ThumbnailManagerProps> = ({
         body: {
           action: 'generate',
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           prompt: `Generate 5 compelling, SEO-friendly video titles for this content:
           
 Project: ${projectName}

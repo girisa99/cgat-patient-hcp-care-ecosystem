@@ -72,7 +72,7 @@ export const PROVIDER_COSTS = {
   llm: {
     'claude': { name: 'Claude 3.5', cost: 0.015, unit: '1K tokens', icon: '🧠', model: 'Sonnet' },
     'gpt4o': { name: 'GPT-4o', cost: 0.005, unit: '1K tokens', icon: '💭', model: 'GPT-4o' },
-    'gemini': { name: 'Gemini Pro', cost: 0.00125, unit: '1K tokens', icon: '💎', model: 'Gemini 2.0' },
+    'gemini': { name: 'Gemini Pro', cost: 0.00125, unit: '1K tokens', icon: '💎', model: 'Gemini 2.5' },
     'qwen': { name: 'Qwen-Max', cost: 0.002, unit: '1K tokens', icon: '🔮', model: 'Qwen-Max' },
   },
 } as const;

@@ -181,7 +181,7 @@ export const ABTestingPanel: React.FC = () => {
       const { data: aiResult, error: aiError } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           action: 'generate_variants',
           prompt: `Generate 4 A/B test variants for a ${testType} test.
             

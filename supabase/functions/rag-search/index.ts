@@ -149,7 +149,7 @@ async function semanticRerank(query: string, entries: any[], limit: number): Pro
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash',
         prompt: `You are a semantic search reranking system. Given a query and a list of documents, rank them by relevance.
 
 QUERY: "${query}"
@@ -208,7 +208,7 @@ async function classifyResults(query: string, results: any[]): Promise<any> {
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash',
         prompt: `Classify these search results for the query "${query}":
 
 RESULTS:
@@ -251,7 +251,7 @@ async function summarizeResults(query: string, results: any[]): Promise<string |
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash',
         prompt: `Summarize these search results for the query "${query}" in 2-3 sentences:
 
 ${resultContent}

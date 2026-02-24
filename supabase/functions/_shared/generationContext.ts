@@ -771,7 +771,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     pipeline: 'text-to-video',
     stages: [
       { stage: 1, name: 'Script Generation', inputType: 'text', outputType: 'text', agent: 'script-generator', provider: 'openai', models: ['gpt-4o'] },
-      { stage: 2, name: 'Storyboard Creation', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 2, name: 'Storyboard Creation', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 3, name: 'Video Generation', inputType: 'text', outputType: 'video', agent: 'video-generator', provider: 'runway', models: ['runway-gen3', 'sora', 'veo', 'kling-ai'] },
     ],
     a2aRequired: true,
@@ -912,7 +912,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'image-to-video': {
     pipeline: 'image-to-video',
     stages: [
-      { stage: 1, name: 'Image Analysis', inputType: 'image', outputType: 'text', agent: 'vision-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Image Analysis', inputType: 'image', outputType: 'text', agent: 'vision-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Motion Planning', inputType: 'text', outputType: 'text', agent: 'motion-planner', provider: 'claude', models: ['claude-sonnet-4'] },
       { stage: 3, name: 'Video Animation', inputType: 'image', outputType: 'video', agent: 'video-generator', provider: 'modelslab', models: ['animatediff-v2', 'svd', 'runway-gen3', 'kling-ai'] },
     ],
@@ -943,7 +943,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'image-to-animation': {
     pipeline: 'image-to-animation',
     stages: [
-      { stage: 1, name: 'Character Detection', inputType: 'image', outputType: 'text', agent: 'character-detector', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Character Detection', inputType: 'image', outputType: 'text', agent: 'character-detector', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Rig Generation', inputType: 'image', outputType: 'animation', agent: 'rigging-agent', provider: 'modelslab', models: ['animated-diff', 'sadtalker'] },
     ],
     a2aRequired: true,
@@ -1354,7 +1354,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'video-to-interactive': {
     pipeline: 'video-to-interactive',
     stages: [
-      { stage: 1, name: 'Video Analysis', inputType: 'video', outputType: 'text', agent: 'video-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Video Analysis', inputType: 'video', outputType: 'text', agent: 'video-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Hotspot Design', inputType: 'text', outputType: 'interactive', agent: 'interactive-generator', provider: 'react', models: ['react'] },
     ],
     a2aRequired: true,
@@ -1384,7 +1384,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'video-to-vfx': {
     pipeline: 'video-to-vfx',
     stages: [
-      { stage: 1, name: 'Scene Analysis', inputType: 'video', outputType: 'text', agent: 'scene-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Scene Analysis', inputType: 'video', outputType: 'text', agent: 'scene-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'VFX Overlay', inputType: 'video', outputType: 'vfx', agent: 'vfx-compositor', provider: 'runway', models: ['runway-gen3'] },
     ],
     a2aRequired: true,
@@ -1511,7 +1511,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'scene-to-ar': {
     pipeline: 'scene-to-ar',
     stages: [
-      { stage: 1, name: 'Scene Analysis', inputType: 'scene', outputType: 'text', agent: 'scene-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Scene Analysis', inputType: 'scene', outputType: 'text', agent: 'scene-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'AR Objects', inputType: 'text', outputType: '3d', agent: 'ar-object-generator', provider: 'modelslab', models: ['triposr'] },
       { stage: 3, name: 'AR Composition', inputType: '3d', outputType: 'ar', agent: 'ar-composer', provider: 'modelviewer', models: ['model-viewer'] },
     ],
@@ -1572,7 +1572,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'floor-plan-to-vr': {
     pipeline: 'floor-plan-to-vr',
     stages: [
-      { stage: 1, name: 'Floor Plan Analysis', inputType: 'image', outputType: 'text', agent: 'floor-plan-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Floor Plan Analysis', inputType: 'image', outputType: 'text', agent: 'floor-plan-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: '3D Room Generation', inputType: 'text', outputType: '3d', agent: 'room-generator', provider: 'modelslab', models: ['meshy-ai'] },
       { stage: 3, name: 'VR Walkthrough', inputType: '3d', outputType: 'vr', agent: 'vr-builder', provider: 'aframe', models: ['a-frame'] },
     ],
@@ -1675,7 +1675,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'multi-modal-mashup': {
     pipeline: 'multi-modal-mashup',
     stages: [
-      { stage: 1, name: 'Multi-Input Analysis', inputType: 'document', outputType: 'text', agent: 'multi-modal-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Multi-Input Analysis', inputType: 'document', outputType: 'text', agent: 'multi-modal-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Content Fusion', inputType: 'text', outputType: 'text', agent: 'content-fusion-agent', provider: 'claude', models: ['claude-sonnet-4'] },
       { stage: 3, name: 'Multi-Format Output', inputType: 'text', outputType: 'video', agent: 'multi-format-generator', provider: 'coordinator', models: ['a2a-coordinator'] },
     ],
@@ -1764,7 +1764,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'sfx-scene-audio': {
     pipeline: 'sfx-scene-audio',
     stages: [
-      { stage: 1, name: 'Scene Analysis', inputType: 'video', outputType: 'text', agent: 'scene-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Scene Analysis', inputType: 'video', outputType: 'text', agent: 'scene-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'SFX Matching', inputType: 'text', outputType: 'text', agent: 'sfx-matcher', provider: 'openai', models: ['gpt-4o'] },
       { stage: 3, name: 'SFX Generation', inputType: 'text', outputType: 'sfx', agent: 'sfx-generator', provider: 'elevenlabs', models: ['elevenlabs-sfx'] },
       { stage: 4, name: 'Audio Mix', inputType: 'audio', outputType: 'audio', agent: 'audio-mixer', provider: 'ffmpeg', models: ['ffmpeg'] },
@@ -1781,7 +1781,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'music-score-generation': {
     pipeline: 'music-score-generation',
     stages: [
-      { stage: 1, name: 'Scene Mood Analysis', inputType: 'video', outputType: 'text', agent: 'mood-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Scene Mood Analysis', inputType: 'video', outputType: 'text', agent: 'mood-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Music Composition', inputType: 'text', outputType: 'music', agent: 'music-composer', provider: 'elevenlabs', models: ['elevenlabs-music', 'google-lyria', 'alibaba-funaudio'] },
       { stage: 3, name: 'Audio Sync', inputType: 'music', outputType: 'audio', agent: 'music-sync-agent', provider: 'ffmpeg', models: ['ffmpeg'] },
     ],
@@ -1868,7 +1868,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'brand-to-templates': {
     pipeline: 'brand-to-templates',
     stages: [
-      { stage: 1, name: 'Brand Analysis', inputType: 'document', outputType: 'text', agent: 'brand-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Brand Analysis', inputType: 'document', outputType: 'text', agent: 'brand-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Color/Font Extraction', inputType: 'image', outputType: 'text', agent: 'style-extractor', provider: 'deepseek', models: ['deepseek-vl'] },
       { stage: 3, name: 'Template Generation', inputType: 'text', outputType: 'slides', agent: 'template-generator', provider: 'internal', models: ['template-engine'] },
     ],
@@ -1884,7 +1884,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'presentation-to-video': {
     pipeline: 'presentation-to-video',
     stages: [
-      { stage: 1, name: 'Slide Analysis', inputType: 'document', outputType: 'text', agent: 'slide-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Slide Analysis', inputType: 'document', outputType: 'text', agent: 'slide-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Script Generation', inputType: 'text', outputType: 'text', agent: 'script-generator', provider: 'openai', models: ['gpt-4o'] },
       { stage: 3, name: 'Voiceover', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2'] },
       { stage: 4, name: 'Animation + Sync', inputType: 'slides', outputType: 'video', agent: 'video-composer', provider: 'ffmpeg', models: ['ffmpeg', 'lottie'] },
@@ -1959,7 +1959,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'long-to-short-clips': {
     pipeline: 'long-to-short-clips',
     stages: [
-      { stage: 1, name: 'Highlight Detection', inputType: 'video', outputType: 'text', agent: 'highlight-detector', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Highlight Detection', inputType: 'video', outputType: 'text', agent: 'highlight-detector', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Clip Extraction', inputType: 'video', outputType: 'video', agent: 'clip-extractor', provider: 'ffmpeg', models: ['ffmpeg'] },
       { stage: 3, name: 'Viral Score', inputType: 'video', outputType: 'text', agent: 'viral-scorer', provider: 'openai', models: ['gpt-4o'] },
       { stage: 4, name: 'Caption Overlay', inputType: 'video', outputType: 'video', agent: 'caption-agent', provider: 'ffmpeg', models: ['ffmpeg'] },
@@ -2028,7 +2028,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'webinar-to-clips-deck': {
     pipeline: 'webinar-to-clips-deck',
     stages: [
-      { stage: 1, name: 'Webinar Analysis', inputType: 'video', outputType: 'text', agent: 'webinar-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Webinar Analysis', inputType: 'video', outputType: 'text', agent: 'webinar-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Key Moments', inputType: 'text', outputType: 'video', agent: 'moment-extractor', provider: 'ffmpeg', models: ['ffmpeg'] },
       { stage: 3, name: 'Slide Generation', inputType: 'text', outputType: 'image', agent: 'slide-designer', provider: 'modelslab', models: ['flux-pro'] },
       { stage: 4, name: 'Deck Assembly', inputType: 'image', outputType: 'slides', agent: 'deck-assembler', provider: 'google', models: ['google-slides-api'] },
@@ -2118,7 +2118,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'product-to-demo': {
     pipeline: 'product-to-demo',
     stages: [
-      { stage: 1, name: 'Product Analysis', inputType: 'image', outputType: 'text', agent: 'product-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Product Analysis', inputType: 'image', outputType: 'text', agent: 'product-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Script Generation', inputType: 'text', outputType: 'text', agent: 'demo-scripter', provider: 'openai', models: ['gpt-4o'] },
       { stage: 3, name: 'Visual Enhancement', inputType: 'image', outputType: 'video', agent: 'product-animator', provider: 'modelslab', models: ['animatediff-v2'] },
       { stage: 4, name: 'Voiceover', inputType: 'text', outputType: 'audio', agent: 'voice-generator', provider: 'elevenlabs', models: ['elevenlabs-v2'] },
@@ -2289,7 +2289,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'demo-to-personalized': {
     pipeline: 'demo-to-personalized',
     stages: [
-      { stage: 1, name: 'Demo Analysis', inputType: 'video', outputType: 'text', agent: 'demo-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Demo Analysis', inputType: 'video', outputType: 'text', agent: 'demo-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Personalization Points', inputType: 'text', outputType: 'text', agent: 'personalization-agent', provider: 'openai', models: ['gpt-4o'] },
       { stage: 3, name: 'Custom Intro/Outro', inputType: 'text', outputType: 'video', agent: 'avatar-generator', provider: 'heygen', models: ['heygen'] },
       { stage: 4, name: 'Video Merge', inputType: 'video', outputType: 'video', agent: 'video-merger', provider: 'ffmpeg', models: ['ffmpeg'] },
@@ -2548,7 +2548,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
   'townhall-to-highlights': {
     pipeline: 'townhall-to-highlights',
     stages: [
-      { stage: 1, name: 'Recording Analysis', inputType: 'video', outputType: 'text', agent: 'townhall-analyzer', provider: 'gemini', models: ['gemini-2.0-flash'] },
+      { stage: 1, name: 'Recording Analysis', inputType: 'video', outputType: 'text', agent: 'townhall-analyzer', provider: 'gemini', models: ['gemini-2.5-flash'] },
       { stage: 2, name: 'Key Moments', inputType: 'video', outputType: 'video', agent: 'moment-extractor', provider: 'ffmpeg', models: ['ffmpeg'] },
       { stage: 3, name: 'Q&A Summary', inputType: 'text', outputType: 'text', agent: 'qa-summarizer', provider: 'claude', models: ['claude-sonnet-4'] },
     ],

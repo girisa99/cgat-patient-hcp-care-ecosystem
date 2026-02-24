@@ -30,7 +30,7 @@ export const costPerAction: CostPerAction[] = [
   {
     action: 'Generate 5-min video script',
     provider: 'Google',
-    model: 'Gemini 2.0 Flash',
+    model: 'Gemini 2.5 Flash',
     inputTokens: 1500,
     outputTokens: 2500,
     costPerAction: 0.0009,
@@ -599,7 +599,7 @@ export const proposedPlans: ProposedPlan[] = [
     annualSavingsPercent: 0,
     targetSegments: ['Creator', 'Influencer', 'Traveler', 'Student'],
     products: ['Genie Spark (limited)', 'Genie Mind (basic TTS)'],
-    aiModel: 'Gemini 2.0 Flash',
+    aiModel: 'Gemini 2.5 Flash',
     ttsProvider: 'OpenAI TTS-1 (3 voices)',
     keyFeatures: [
       '10 AI scripts/month',

@@ -110,7 +110,7 @@ export const PerformanceTrackingPanel: React.FC<PerformanceTrackingPanelProps> =
       const { data: aiResult, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           action: 'generate_performance_data',
           prompt: `Generate realistic video performance analytics data for a B2B SaaS company with 5 published videos.
           

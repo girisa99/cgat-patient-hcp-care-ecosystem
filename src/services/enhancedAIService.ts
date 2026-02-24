@@ -293,7 +293,7 @@ export class EnhancedAIService {
         priority: 3,
         available: this.providerHealth.get('gemini') || false,
         lastChecked: this.lastHealthCheck.toISOString(),
-        models: ['gemini-2.5-pro', 'gemini-2.0-flash'],
+        models: ['gemini-2.5-pro', 'gemini-2.5-flash'],
         capabilities: ['text', 'vision', 'multimodal']
       }
     ];

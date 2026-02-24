@@ -288,7 +288,7 @@ async function executeComparisonPipeline(ctx: PipelineExecutionContext): Promise
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         action: 'generate_content',
         prompt: `Create a professional comparison video script comparing ${ctx.inputData.productName} with ${ctx.inputData.competitorName}. 
                  Focus on: ${ctx.inputData.comparisonPoints?.join(', ') || 'features, pricing, ease of use'}.
@@ -324,7 +324,7 @@ async function executeCaseStudyPipeline(ctx: PipelineExecutionContext): Promise<
     const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
       body: {
         provider: 'gemini',
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         action: 'generate_content',
         prompt: `Transform this case study into a compelling video script:
                  Client: ${ctx.inputData.clientName}

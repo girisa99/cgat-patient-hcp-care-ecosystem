@@ -306,7 +306,7 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
           provider: 'gemini',
           prompt,
           systemPrompt: 'You are Ralph Wiggum, a helpful UI/UX reviewer. Respond ONLY with valid JSON.',
-          model: 'gemini-2.0-flash',
+          model: 'gemini-2.5-flash',
           maxTokens: 2000
         }
       });
@@ -353,7 +353,7 @@ Be specific and helpful. Include 2-5 items total. Only include actual potential 
             recommendation: item.recommendation,
             status: 'new',
             ai_confidence: 0.85,
-            ai_model_used: 'gemini-2.0-flash',
+            ai_model_used: 'gemini-2.5-flash',
             raw_ai_response: data,
             page_content_snapshot: { route: currentRoute, overlay: activeOverlay },
             user_flow_snapshot: { timestamp: Date.now() }

@@ -339,7 +339,7 @@ export interface SocialPreview {
 
 class UniversalPresentationService {
   private readonly AI_PROVIDER = 'gemini';
-  private readonly AI_MODEL = 'gemini-2.0-flash';
+  private readonly AI_MODEL = 'gemini-2.5-flash';
   private readonly IMAGE_MODEL = 'google/gemini-2.5-flash-image-preview';
   
   // Model recommendations based on collateral type
