@@ -184,6 +184,9 @@ interface CreateConfigureStepProps {
   productionQuality: string;
   enrichmentPrompt: string;
 
+  // Multi-output presets
+  selectedOutputPresets: string[];
+
   // Session setters
   setPrimaryPlatform: (v: string) => void;
   setOutputLanguages: React.Dispatch<React.SetStateAction<string[]>>;
@@ -201,6 +204,7 @@ interface CreateConfigureStepProps {
   setSelectedAspectRatio: (v: string) => void;
   setProductionQuality: (v: string) => void;
   setEnrichmentPrompt: (v: string) => void;
+  setSelectedOutputPresets: (v: string[]) => void;
 
   // Content registry
   contentRegistry: ReturnType<typeof useCastContentRegistry>;
@@ -260,6 +264,8 @@ export function CreateConfigureStep({
   setSelectedAspectRatio,
   setProductionQuality,
   setEnrichmentPrompt,
+  setSelectedOutputPresets,
+  selectedOutputPresets,
   contentRegistry,
   holidayAwareness,
   onDialectChange,
@@ -701,25 +707,51 @@ export function CreateConfigureStep({
             {contentRegistry.outputPresets.length > 0 ? (
               <>
                 <div className="grid grid-cols-4 gap-2">
-                  {contentRegistry.outputPresets.map(preset => (
-                    <button
-                      key={preset.id}
-                      onClick={() => { setSelectedResolution(`${preset.width}x${preset.height}`); setSelectedAspectRatio(preset.aspect_ratio); }}
-                      className={cn(
-                        "flex flex-col items-center gap-0.5 p-2.5 rounded-lg border text-xs transition-all",
-                        selectedResolution === `${preset.width}x${preset.height}`
-                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
-                          : "border-border hover:border-primary/40 hover:bg-muted/50"
-                      )}
-                    >
-                      <span className="text-sm">{preset.icon}</span>
-                      <span className="font-bold text-xs">{preset.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{preset.width}\u00D7{preset.height}</span>
-                      <span className="text-[9px] text-muted-foreground">{preset.description}</span>
-                      {preset.is_default && <Badge variant="secondary" className="text-[8px] px-1 py-0">Default</Badge>}
-                    </button>
-                  ))}
+                  {contentRegistry.outputPresets.map(preset => {
+                    const isSelected = selectedOutputPresets.includes(preset.id);
+                    const isPrimaryRes = selectedResolution === `${preset.width}x${preset.height}`;
+                    return (
+                      <button
+                        key={preset.id}
+                        onClick={() => {
+                          // Set as primary resolution
+                          setSelectedResolution(`${preset.width}x${preset.height}`);
+                          setSelectedAspectRatio(preset.aspect_ratio);
+                          // Toggle in multi-output presets list
+                          if (isSelected) {
+                            setSelectedOutputPresets(selectedOutputPresets.filter(id => id !== preset.id));
+                          } else {
+                            setSelectedOutputPresets([...selectedOutputPresets, preset.id]);
+                          }
+                        }}
+                        className={cn(
+                          "flex flex-col items-center gap-0.5 p-2.5 rounded-lg border text-xs transition-all relative",
+                          isPrimaryRes
+                            ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
+                            : isSelected
+                              ? "border-primary/50 bg-primary/5 text-primary"
+                              : "border-border hover:border-primary/40 hover:bg-muted/50"
+                        )}
+                      >
+                        {isSelected && (
+                          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center text-[8px]">
+                            <Check className="w-2.5 h-2.5" />
+                          </span>
+                        )}
+                        <span className="text-sm">{preset.icon}</span>
+                        <span className="font-bold text-xs">{preset.label}</span>
+                        <span className="text-[10px] text-muted-foreground">{preset.width}{'\u00D7'}{preset.height}</span>
+                        <span className="text-[9px] text-muted-foreground">{preset.description}</span>
+                        {preset.is_default && <Badge variant="secondary" className="text-[8px] px-1 py-0">Default</Badge>}
+                      </button>
+                    );
+                  })}
                 </div>
+                {selectedOutputPresets.length > 1 && (
+                  <p className="text-[10px] text-primary flex items-center gap-1">
+                    Multi-output: {selectedOutputPresets.length} preset(s) selected — video will be encoded to each format
+                  </p>
+                )}
                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                   <span>Aspect: <span className="font-semibold text-foreground">{selectedAspectRatio}</span></span>
                   <span>&bull;</span>

@@ -324,14 +324,36 @@ async function exportToPresets(
 ): Promise<RenderResult['exports']> {
   const exports: RenderResult['exports'] = [];
 
+  // Resolve full preset configs from DB for proper encoding
+  const { data: presetConfigs } = await supabase
+    .from('cast_output_presets')
+    .select('*')
+    .in('name', presetNames)
+    .eq('is_active', true);
+
+  const presetMap = new Map(
+    (presetConfigs || []).map((p: any) => [p.name, p])
+  );
+
   for (const presetName of presetNames) {
     try {
+      const presetConfig = presetMap.get(presetName);
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           action: 'transcode_video',
           sourceUrl: sourceVideoUrl,
           preset: presetName,
           productionId,
+          // Pass full encoding config from DB
+          width: presetConfig?.width || 1920,
+          height: presetConfig?.height || 1080,
+          codec: presetConfig?.codec || 'h264',
+          fps: presetConfig?.fps || 30,
+          bitrate: presetConfig?.bitrate || '8M',
+          audioCodec: presetConfig?.audio_codec || 'aac',
+          audioBitrate: presetConfig?.audio_bitrate || '192k',
+          maxFileSizeMb: presetConfig?.max_file_size_mb || 500,
+          encodingProfile: presetConfig?.encoding_profile || 'high',
         },
       });
 
@@ -340,8 +362,8 @@ async function exportToPresets(
           presetName,
           videoUrl: data.videoUrl || sourceVideoUrl,
           fileSize: data.fileSize || 0,
-          codec: data.codec || 'h264',
-          resolution: data.resolution || '1920x1080',
+          codec: presetConfig?.codec || data.codec || 'h264',
+          resolution: presetConfig ? `${presetConfig.width}x${presetConfig.height}` : (data.resolution || '1920x1080'),
         });
       }
     } catch {

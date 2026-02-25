@@ -4573,15 +4573,22 @@ export type Database = {
       cast_output_presets: {
         Row: {
           aspect_ratio: string
+          audio_bitrate: string | null
+          audio_codec: string | null
+          bitrate: string | null
           category: string
+          codec: string | null
           created_at: string | null
           description: string | null
+          encoding_profile: string | null
+          fps: number | null
           height: number
           icon: string | null
           id: string
           is_active: boolean | null
           is_default: boolean | null
           label: string
+          max_file_size_mb: number | null
           name: string
           sort_order: number | null
           updated_at: string | null
@@ -4589,15 +4596,22 @@ export type Database = {
         }
         Insert: {
           aspect_ratio: string
+          audio_bitrate?: string | null
+          audio_codec?: string | null
+          bitrate?: string | null
           category?: string
+          codec?: string | null
           created_at?: string | null
           description?: string | null
+          encoding_profile?: string | null
+          fps?: number | null
           height: number
           icon?: string | null
           id?: string
           is_active?: boolean | null
           is_default?: boolean | null
           label: string
+          max_file_size_mb?: number | null
           name: string
           sort_order?: number | null
           updated_at?: string | null
@@ -4605,15 +4619,22 @@ export type Database = {
         }
         Update: {
           aspect_ratio?: string
+          audio_bitrate?: string | null
+          audio_codec?: string | null
+          bitrate?: string | null
           category?: string
+          codec?: string | null
           created_at?: string | null
           description?: string | null
+          encoding_profile?: string | null
+          fps?: number | null
           height?: number
           icon?: string | null
           id?: string
           is_active?: boolean | null
           is_default?: boolean | null
           label?: string
+          max_file_size_mb?: number | null
           name?: string
           sort_order?: number | null
           updated_at?: string | null
@@ -5501,16 +5522,22 @@ export type Database = {
         Row: {
           allows_photorealistic: boolean
           category: string
+          character_frame_percent: number | null
           character_type: string | null
           color: string
           complexity_score: number | null
           created_at: string
+          created_by: string | null
+          custom_prompt: string | null
           default_provider: string | null
           description: string | null
           estimated_size_mb: number | null
           icon: string
           id: string
+          ip_safe: boolean | null
           is_active: boolean
+          is_saved_globally: boolean | null
+          is_user_created: boolean | null
           label: string
           name: string
           parent_style_id: string | null
@@ -5525,20 +5552,28 @@ export type Database = {
           style_variant: string | null
           sub_sort_order: number | null
           updated_at: string
+          uploaded_reference_type: string | null
+          uploaded_reference_url: string | null
         }
         Insert: {
           allows_photorealistic?: boolean
           category?: string
+          character_frame_percent?: number | null
           character_type?: string | null
           color?: string
           complexity_score?: number | null
           created_at?: string
+          created_by?: string | null
+          custom_prompt?: string | null
           default_provider?: string | null
           description?: string | null
           estimated_size_mb?: number | null
           icon?: string
           id?: string
+          ip_safe?: boolean | null
           is_active?: boolean
+          is_saved_globally?: boolean | null
+          is_user_created?: boolean | null
           label: string
           name: string
           parent_style_id?: string | null
@@ -5553,20 +5588,28 @@ export type Database = {
           style_variant?: string | null
           sub_sort_order?: number | null
           updated_at?: string
+          uploaded_reference_type?: string | null
+          uploaded_reference_url?: string | null
         }
         Update: {
           allows_photorealistic?: boolean
           category?: string
+          character_frame_percent?: number | null
           character_type?: string | null
           color?: string
           complexity_score?: number | null
           created_at?: string
+          created_by?: string | null
+          custom_prompt?: string | null
           default_provider?: string | null
           description?: string | null
           estimated_size_mb?: number | null
           icon?: string
           id?: string
+          ip_safe?: boolean | null
           is_active?: boolean
+          is_saved_globally?: boolean | null
+          is_user_created?: boolean | null
           label?: string
           name?: string
           parent_style_id?: string | null
@@ -5581,6 +5624,8 @@ export type Database = {
           style_variant?: string | null
           sub_sort_order?: number | null
           updated_at?: string
+          uploaded_reference_type?: string | null
+          uploaded_reference_url?: string | null
         }
         Relationships: [
           {

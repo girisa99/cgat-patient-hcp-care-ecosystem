@@ -70,21 +70,30 @@ export interface VisualStyle {
   icon: string;
   color: string | null;
   description: string | null;
-  ip_safe: boolean;
+  // Base table columns
+  allows_photorealistic: boolean;
+  requires_face_consent: boolean;
+  sample_prompt: string | null;
+  style_config: Record<string, unknown>;
+  default_provider: string | null;
+  provider_routing: Record<string, unknown>;
+  seasonal_tags: string[] | null;
+  // Phase 6B columns
+  ip_safe: boolean | null;
   sort_order: number;
   is_active: boolean;
   parent_style_id: string | null;
-  sub_sort_order: number;
+  sub_sort_order: number | null;
   character_type: string | null;
   style_variant: string | null;
-  estimated_size_mb: number;
-  complexity_score: number;
-  render_time_estimate: string;
+  estimated_size_mb: number | null;
+  complexity_score: number | null;
+  render_time_estimate: string | null;
   preview_image_url: string | null;
-  character_frame_percent: number;
-  is_user_created: boolean;
+  character_frame_percent: number | null;
+  is_user_created: boolean | null;
   created_by: string | null;
-  is_saved_globally: boolean;
+  is_saved_globally: boolean | null;
   custom_prompt: string | null;
   uploaded_reference_url: string | null;
   uploaded_reference_type: string | null;
@@ -123,6 +132,10 @@ export interface StyleCharacter {
   description: string | null;
   thumbnail_url: string | null;
   costume_variants: { holiday_id: string; costume_url: string; label: string }[];
+  region_code: string;
+  gender: string;
+  age_group: string;
+  ethnicity_tag: string;
   sort_order: number;
   is_active: boolean;
 }
@@ -141,10 +154,52 @@ export interface ProductionCapability {
   id: string;
   name: string;
   label: string;
+  category: string;
   icon: string;
+  color: string;
   description: string | null;
+  default_provider: string | null;
+  provider_routing: Record<string, unknown>;
+  requires_audio: boolean;
+  requires_visual: boolean;
+  requires_avatar: boolean;
+  safety_level: string;
+  requires_consent: boolean;
   sort_order: number;
   is_active: boolean;
+}
+
+export interface CastLanguage {
+  id: string;
+  code: string;
+  name: string;
+  native_name: string;
+  flag: string;
+  region_code: string;
+  subregion_code: string | null;
+  script_direction: 'ltr' | 'rtl';
+  tts_provider_primary: string | null;
+  tts_provider_fallback: string | null;
+  tts_voice_id_male: string | null;
+  tts_voice_id_female: string | null;
+  deepl_supported: boolean;
+  google_translate_supported: boolean;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface CapabilityProviderRoute {
+  id: string;
+  capability_id: string;
+  provider_name: string;
+  provider_type: 'primary' | 'fallback' | 'regional';
+  edge_function: string;
+  region_codes: string[];
+  priority: number;
+  cost_per_unit: number;
+  max_concurrent: number;
+  is_active: boolean;
+  config: Record<string, unknown>;
 }
 
 export interface AssetSourceType {
@@ -176,12 +231,14 @@ export function useCastContentRegistry() {
   const [styleCharacters, setStyleCharacters] = useState<StyleCharacter[]>([]);
   const [styleCapabilityRules, setStyleCapabilityRules] = useState<StyleCapabilityRule[]>([]);
   const [outputPresets, setOutputPresets] = useState<OutputPreset[]>([]);
+  const [languages, setLanguages] = useState<CastLanguage[]>([]);
+  const [capabilityProviderRoutes, setCapabilityProviderRoutes] = useState<CapabilityProviderRoute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [catRes, fmtRes, sfRes, cfRes, vsRes, pcRes, asRes, fcRes, scRes, scrRes, opRes] = await Promise.all([
+      const [catRes, fmtRes, sfRes, cfRes, vsRes, pcRes, asRes, fcRes, scRes, scrRes, opRes, langRes, cprRes] = await Promise.all([
         supabase.from('cast_content_categories').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_content_formats').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_content_sub_formats').select('*').eq('is_active', true).order('sort_order'),
@@ -192,7 +249,9 @@ export function useCastContentRegistry() {
         supabase.from('cast_format_capabilities').select('*').eq('is_active', true),
         supabase.from('cast_style_characters').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_style_capability_rules').select('*'),
-        supabase.from('cast_output_presets' as any).select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('cast_output_presets').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('cast_languages').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('cast_production_capability_provider_map').select('*').eq('is_active', true).order('priority'),
       ]);
 
       if (catRes.error) throw catRes.error;
@@ -211,6 +270,8 @@ export function useCastContentRegistry() {
       setStyleCharacters((scRes.data || []) as unknown as StyleCharacter[]);
       setStyleCapabilityRules((scrRes.data || []) as unknown as StyleCapabilityRule[]);
       setOutputPresets((opRes.data || []) as unknown as OutputPreset[]);
+      setLanguages((langRes.data || []) as unknown as CastLanguage[]);
+      setCapabilityProviderRoutes((cprRes.data || []) as unknown as CapabilityProviderRoute[]);
     } catch (err: any) {
       console.error('[useCastContentRegistry] Failed to fetch:', err);
     } finally {
@@ -355,15 +416,46 @@ export function useCastContentRegistry() {
     return productionCapabilities.filter(pc => linkedCapIds.has(pc.id));
   }, [productionCapabilities, formatCapabilities]);
 
-  /** Get characters available for a given style (including parent) */
-  const getCharactersForStyle = useCallback((styleId: string): StyleCharacter[] => {
+  /** Get characters available for a given style (including parent), optionally filtered by region */
+  const getCharactersForStyle = useCallback((styleId: string, regionCode?: string): StyleCharacter[] => {
     const style = visualStyles.find(s => s.id === styleId);
     if (!style) return [];
     // Get characters for this style AND parent style
     const ids = new Set([styleId]);
     if (style.parent_style_id) ids.add(style.parent_style_id);
-    return styleCharacters.filter(sc => ids.has(sc.style_id)).sort((a, b) => a.sort_order - b.sort_order);
+    let chars = styleCharacters.filter(sc => ids.has(sc.style_id));
+    // Filter by region if specified
+    if (regionCode) {
+      chars = chars.filter(sc => sc.region_code === 'global' || sc.region_code === regionCode);
+    }
+    return chars.sort((a, b) => a.sort_order - b.sort_order);
   }, [styleCharacters, visualStyles]);
+
+  /** Get languages for a given region code */
+  const getLanguagesForRegion = useCallback((regionCode: string): CastLanguage[] => {
+    return languages.filter(l => l.region_code === regionCode);
+  }, [languages]);
+
+  /** Get all languages grouped by region */
+  const getLanguagesByRegion = useCallback((): Record<string, CastLanguage[]> => {
+    return languages.reduce((acc, l) => {
+      if (!acc[l.region_code]) acc[l.region_code] = [];
+      acc[l.region_code].push(l);
+      return acc;
+    }, {} as Record<string, CastLanguage[]>);
+  }, [languages]);
+
+  /** Get the primary provider for a capability, optionally region-specific */
+  const getProviderForCapability = useCallback((capabilityId: string, regionCode?: string): CapabilityProviderRoute | null => {
+    let routes = capabilityProviderRoutes.filter(r => r.capability_id === capabilityId);
+    // Prefer regional match
+    if (regionCode) {
+      const regional = routes.find(r => r.provider_type === 'regional' && r.region_codes.includes(regionCode));
+      if (regional) return regional;
+    }
+    // Fallback to primary
+    return routes.find(r => r.provider_type === 'primary') || routes[0] || null;
+  }, [capabilityProviderRoutes]);
 
   /** Get auto-select capability rules for a given style */
   const getCapabilityRulesForStyle = useCallback((styleId: string): StyleCapabilityRule[] => {
@@ -399,6 +491,8 @@ export function useCastContentRegistry() {
     styleCharacters,
     styleCapabilityRules,
     outputPresets,
+    languages,
+    capabilityProviderRoutes,
     isLoading,
     refresh: fetchAll,
     getFormatsForCategory,
@@ -406,6 +500,9 @@ export function useCastContentRegistry() {
     getCapabilitiesForFormat,
     getCharactersForStyle,
     getCapabilityRulesForStyle,
+    getLanguagesForRegion,
+    getLanguagesByRegion,
+    getProviderForCapability,
     estimateScenes,
     requiresMessaging,
     addCategory,
