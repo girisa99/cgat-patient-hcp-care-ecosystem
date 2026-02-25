@@ -198,7 +198,7 @@ interface GenieCastConsolidatedTabsProps {
   totalScreenshots: number;
   
   // Generation callbacks
-  onGenerate: () => void;
+  onGenerate: (formatName?: string) => void;
   isGenerating: boolean;
   
   // Unified authoring callbacks (optional - for cross-product use)
@@ -1587,9 +1587,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   projectId={castSession.session.projectId || undefined}
                   onGenerate={(formatName) => {
                     toast.info(`Generating ${formatName} content...`);
-                    if (formatName === 'video' || formatName === 'ugc') {
-                      onGenerate?.();
-                    }
+                    onGenerate?.(formatName);
                   }}
                 />
 

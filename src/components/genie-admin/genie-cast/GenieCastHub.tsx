@@ -494,12 +494,25 @@ export const GenieCastHub: React.FC = () => {
     setScreenshotGalleries(galleries);
   }, []);
 
-  const handleGenerate = useCallback(async () => {
+  const handleGenerate = useCallback(async (formatName?: string) => {
     const session = castSession.session;
 
     // Validate minimum CREATE requirements
+    const validationErrors: string[] = [];
+    if (!session.selectedCategoryId && !session.selectedFormatId) {
+      validationErrors.push('Select a content category and format');
+    }
+    if (!session.selectedFormatId) {
+      validationErrors.push('Select a content format');
+    }
     if (session.selectedVisualStyleIds.length === 0 && selectedVideoStyles.length === 0) {
-      toast.error('Please select at least one visual style');
+      validationErrors.push('Select at least one visual style');
+    }
+    if (session.outputLanguages.length === 0) {
+      validationErrors.push('Select at least one output language');
+    }
+    if (validationErrors.length > 0) {
+      validationErrors.forEach(err => toast.error(err));
       return;
     }
 
@@ -514,7 +527,12 @@ export const GenieCastHub: React.FC = () => {
       request.videoStyles = selectedVideoStyles.length > 0 ? selectedVideoStyles : ['professional'];
     }
 
-    toast.info(`Starting production (enrichment: ${request.enrichmentScore}/100)...`);
+    // Use format-specific routing when triggered from FormatStudioRouter
+    const activeFormats = formatName
+      ? [formatName]
+      : request.selectedFormats;
+
+    toast.info(`Starting ${formatName || 'multi-format'} production (enrichment: ${request.enrichmentScore}/100)...`);
 
     try {
       await production.startProduction({
@@ -522,7 +540,7 @@ export const GenieCastHub: React.FC = () => {
         scriptTitle: request.scriptTitle,
         inputMode: request.scriptMode,
         intent: request.intent,
-        selectedFormats: request.selectedFormats,
+        selectedFormats: activeFormats,
         inputLanguage: request.inputLanguage,
         outputLanguages: request.outputLanguages,
         videoStyles: request.videoStyles,
