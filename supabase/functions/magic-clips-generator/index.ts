@@ -461,23 +461,22 @@ async function saveMagicClips(
       duration: c.duration,
     }));
 
-    // Store in a dedicated table or as metadata on the source video
-    // For now, we'll log the result
-    console.log(`📝 Magic clips saved for video ${sourceVideoId}:`, clipsSummary.length);
+    // Store clips as metadata on the source video (JSON column)
+    console.log(`📝 Saving ${clipsSummary.length} magic clips for video ${sourceVideoId}`);
 
-    // In production, save to magic_clips table:
-    // await supabase.from('magic_clips').insert(
-    //   clips.map(c => ({
-    //     source_video_id: sourceVideoId,
-    //     platform: c.platformId,
-    //     clip_url: c.clipUrl,
-    //     thumbnail_url: c.thumbnailUrl,
-    //     duration_seconds: c.duration,
-    //     aspect_ratio: c.aspectRatio,
-    //     status: c.status,
-    //     created_at: new Date().toISOString(),
-    //   }))
-    // );
+    const { error: updateError } = await supabase
+      .from('landing_page_videos')
+      .update({
+        metadata: {
+          magic_clips: clipsSummary,
+          magic_clips_generated_at: new Date().toISOString(),
+        },
+      })
+      .eq('id', sourceVideoId);
+
+    if (updateError) {
+      console.warn(`⚠️ Could not save clips metadata: ${updateError.message}`);
+    }
 
   } catch (err) {
     console.error('Failed to save magic clips:', err);

@@ -12,7 +12,7 @@
  * - Generate button with status indicator
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, Suspense, lazy } from 'react';
 import {
   Video,
   Presentation,
@@ -38,6 +38,14 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useCastContentRegistry, type ContentFormat } from '@/hooks/useCastContentRegistry';
+
+// Lazy-loaded format-specific editors
+const LazyPodcastEditor = lazy(() => import('./PodcastEditorPanel'));
+const LazySlideComposer = lazy(() => import('./SlideComposer'));
+
+// Format name patterns that trigger specialized editors
+const PODCAST_FORMATS = ['podcast', 'audio_podcast', 'interview_podcast', 'panel_discussion', 'dialogue'];
+const PRESENTATION_FORMATS = ['presentation', 'slide_deck', 'pitch_deck', 'webinar', 'keynote'];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -194,6 +202,11 @@ function FormatCard({ formatName, format, status, progress, onGenerate }: Format
   const checklist = format.checklist?.length ? format.checklist : DEFAULT_CHECKLIST;
   const placeholder = format.editor_placeholder || DEFAULT_PLACEHOLDER;
 
+  // Determine if this format has a specialized editor
+  const isPodcast = PODCAST_FORMATS.some(p => formatName.toLowerCase().includes(p));
+  const isPresentation = PRESENTATION_FORMATS.some(p => formatName.toLowerCase().includes(p));
+  const hasSpecializedEditor = isPodcast || isPresentation;
+
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-3">
@@ -212,10 +225,17 @@ function FormatCard({ formatName, format, status, progress, onGenerate }: Format
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col gap-4">
-        {/* Editor placeholder */}
-        <div className="rounded-md border border-dashed border-muted-foreground/25 bg-muted/30 p-4 text-sm text-muted-foreground min-h-[80px] flex items-center justify-center text-center">
-          {placeholder}
-        </div>
+        {/* Format-specific editor or generic placeholder */}
+        {hasSpecializedEditor ? (
+          <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}>
+            {isPodcast && <LazyPodcastEditor topic={format.label} />}
+            {isPresentation && <LazySlideComposer deckTitle={format.label} />}
+          </Suspense>
+        ) : (
+          <div className="rounded-md border border-dashed border-muted-foreground/25 bg-muted/30 p-4 text-sm text-muted-foreground min-h-[80px] flex items-center justify-center text-center">
+            {placeholder}
+          </div>
+        )}
 
         {/* Progress bar — uses real progress from pipeline, not static mapping */}
         <div className="space-y-1">

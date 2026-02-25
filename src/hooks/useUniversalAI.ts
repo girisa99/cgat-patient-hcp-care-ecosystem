@@ -123,6 +123,8 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
       case 'openai': return 'gpt-4o-mini';
       case 'claude': return 'claude-3-5-haiku-20241022';
       case 'gemini': return 'gemini-2.5-flash';
+      case 'alibaba': return 'qwen-turbo';
+      case 'deepseek': return 'deepseek-chat';
       case 'stability': return 'stable-diffusion-xl';
       case 'huggingface': return 'flux-schnell';
       default: return 'gpt-4o-mini';

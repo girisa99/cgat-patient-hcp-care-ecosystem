@@ -739,7 +739,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
             <Map className="w-3 h-3" /> Supported Regions
           </h3>
-          <span className="text-[10px] text-muted-foreground/40 hidden sm:inline">16 regions | 56+ zones | 75+ languages</span>
+          <span className="text-[10px] text-muted-foreground/40 hidden sm:inline">16 regions | 62 subregions | 85+ languages</span>
         </div>
         <RegionZonesBar currentRegion={regionCode} />
       </div>

@@ -178,7 +178,53 @@ export const ContentRepurposingPanel: React.FC<ContentRepurposingSessionProps> =
     );
   };
 
-  // Start repurposing job
+  // Map pipeline IDs to edge function + params
+  const PIPELINE_EDGE_MAP: Record<string, {
+    edgeFn: string;
+    buildPayload: (videoUrl: string) => Record<string, unknown>;
+  }> = {
+    'video-shorts': {
+      edgeFn: 'shorts-generator',
+      buildPayload: (videoUrl) => ({
+        action: 'generate',
+        sourceVideoUrl: videoUrl,
+        platform: 'all',
+        options: { maxClips: 3, minDuration: 15, maxDuration: 60, aspectRatio: '9:16' as const, includeSubtitles: true, subtitleStyle: 'bold', addHooks: true, addCTA: true },
+      }),
+    },
+    'video-clips': {
+      edgeFn: 'magic-clips-generator',
+      buildPayload: (videoUrl) => ({
+        sourceVideoUrl: videoUrl,
+        platforms: ['youtube_shorts', 'linkedin', 'twitter'],
+        mode: 'auto',
+        addCaptions: true,
+        language: 'en',
+      }),
+    },
+    'video-thumbnails': {
+      edgeFn: 'auto-thumbnail-generator',
+      buildPayload: (videoUrl) => ({ videoUrl, count: 4, style: 'engagement' }),
+    },
+    'video-captioning': {
+      edgeFn: 'ai-caption-generator',
+      buildPayload: (videoUrl) => ({ videoUrl, language: 'en', format: 'srt' }),
+    },
+    'video-square': {
+      edgeFn: 'ai-universal-processor',
+      buildPayload: (videoUrl) => ({
+        action: 'transcode_video',
+        videoUrl,
+        preset: 'square',
+        width: 1080,
+        height: 1080,
+        codec: 'h264',
+        fps: 30,
+      }),
+    },
+  };
+
+  // Start repurposing job — calls real edge functions
   const startRepurposing = async () => {
     if (!selectedVideo || selectedPipelines.length === 0) {
       toast.error('Please select a video and at least one pipeline');
@@ -186,7 +232,10 @@ export const ContentRepurposingPanel: React.FC<ContentRepurposingSessionProps> =
     }
 
     const video = sourceVideos.find(v => v.id === selectedVideo);
-    if (!video) return;
+    if (!video?.video_url) {
+      toast.error('Selected video has no URL');
+      return;
+    }
 
     // Create jobs for each selected pipeline
     const newJobs: RepurposeJob[] = selectedPipelines.map(pipelineId => ({
@@ -201,36 +250,61 @@ export const ContentRepurposingPanel: React.FC<ContentRepurposingSessionProps> =
     setJobs(prev => [...newJobs, ...prev]);
     toast.success(`Started ${newJobs.length} repurposing job(s)`);
 
-    // Simulate processing (in production, this would call edge functions)
+    // Fire real edge function calls in parallel
     for (const job of newJobs) {
-      simulateJobProgress(job.id);
+      processJobViaEdgeFunction(job.id, job.pipelineId, video.video_url!);
     }
 
     // Reset selection
     setSelectedPipelines([]);
   };
 
-  // Simulate job progress (demo)
-  const simulateJobProgress = (jobId: string) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 20;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setJobs(prev => prev.map(j => 
-          j.id === jobId 
-            ? { ...j, status: 'completed', progress: 100, outputUrl: 'https://example.com/output.mp4' }
-            : j
-        ));
-      } else {
-        setJobs(prev => prev.map(j => 
-          j.id === jobId 
-            ? { ...j, status: 'processing', progress }
-            : j
-        ));
-      }
-    }, 1000);
+  // Call the real edge function for a repurposing pipeline
+  const processJobViaEdgeFunction = async (jobId: string, pipelineId: string, videoUrl: string) => {
+    const mapping = PIPELINE_EDGE_MAP[pipelineId];
+    if (!mapping) {
+      setJobs(prev => prev.map(j =>
+        j.id === jobId ? { ...j, status: 'failed', progress: 0 } : j
+      ));
+      toast.error(`Unknown pipeline: ${pipelineId}`);
+      return;
+    }
+
+    // Mark as processing
+    setJobs(prev => prev.map(j =>
+      j.id === jobId ? { ...j, status: 'processing', progress: 20 } : j
+    ));
+
+    try {
+      const { data, error } = await supabase.functions.invoke(mapping.edgeFn, {
+        body: mapping.buildPayload(videoUrl),
+      });
+
+      if (error) throw error;
+
+      // Extract output URL from response (different shapes per edge fn)
+      const outputUrl = data?.clips?.[0]?.clipUrl
+        || data?.generatedClips?.[0]?.outputUrl
+        || data?.thumbnails?.[0]?.url
+        || data?.captionUrl
+        || data?.outputUrl
+        || data?.url
+        || null;
+
+      setJobs(prev => prev.map(j =>
+        j.id === jobId
+          ? { ...j, status: 'completed', progress: 100, outputUrl: outputUrl || undefined }
+          : j
+      ));
+
+      toast.success(`${pipelineId.replace('video-', '').replace('-', ' ')} completed`);
+    } catch (err) {
+      console.error(`Pipeline ${pipelineId} failed:`, err);
+      setJobs(prev => prev.map(j =>
+        j.id === jobId ? { ...j, status: 'failed', progress: 0 } : j
+      ));
+      toast.error(`${pipelineId} failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
   };
 
   return (

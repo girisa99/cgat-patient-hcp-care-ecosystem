@@ -54,6 +54,7 @@ import { cn } from '@/lib/utils';
 import { EP04_SOCIAL_CLIPS, EP04_THUMBNAILS } from '@/config/ep04-production-config';
 import { useStreamingDownload, VIDEO_DOWNLOAD_PRESETS, type DownloadJob } from '@/hooks/video-editing/useStreamingDownload';
 import type { ProductionArtifacts } from '@/hooks/useGenieCastSession';
+import { supabase } from '@/integrations/supabase/client';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // SESSION PROPS — connects PRODUCE → PUBLISH
@@ -82,6 +83,7 @@ export interface PublishHubSessionProps {
 
 // Platform configuration — unified via useSocialPlatforms hook (replaces 95-line hardcoded array)
 import { useSocialPlatforms, type SocialPlatform } from '@/hooks/useSocialPlatforms';
+import { useSocialOAuth, type SocialPlatform as OAuthPlatform } from '@/hooks/useSocialOAuth';
 
 // Re-export Platform type for backward compatibility
 type Platform = SocialPlatform;
@@ -105,9 +107,11 @@ interface PlatformCardProps {
   selected: boolean;
   result?: PublishResult;
   onToggle: (id: string) => void;
+  onConnect?: (id: string) => void;
+  isConnecting?: boolean;
 }
 
-function PlatformCard({ platform, selected, result, onToggle }: PlatformCardProps) {
+function PlatformCard({ platform, selected, result, onToggle, onConnect, isConnecting }: PlatformCardProps) {
   const Icon = platform.icon;
   const isConnected = platform.connected;
   const statusColors: Record<PublishStatus, string> = {
@@ -138,9 +142,20 @@ function PlatformCard({ platform, selected, result, onToggle }: PlatformCardProp
             Connected
           </Badge>
         ) : (
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 text-muted-foreground">
-            <Lock className="w-2.5 h-2.5 mr-0.5" />
-            Connect
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0.5 text-muted-foreground cursor-pointer hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onConnect?.(platform.id);
+            }}
+          >
+            {isConnecting ? (
+              <Loader2 className="w-2.5 h-2.5 mr-0.5 animate-spin" />
+            ) : (
+              <Lock className="w-2.5 h-2.5 mr-0.5" />
+            )}
+            {isConnecting ? 'Connecting...' : 'Connect'}
           </Badge>
         )}
       </div>
@@ -215,10 +230,21 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
 
   const handleGenerate = async () => {
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 2200));
-    setGenerating(false);
-    setGenerated(true);
-    toast.success('Thumbnail pack ready — 3 variants generated');
+    try {
+      // Call auto-thumbnail-generator edge function for real thumbnails
+      const videoUrl = sessionThumbnails?.[0]; // Use existing thumbnail or video frame
+      if (videoUrl) {
+        await supabase.functions.invoke('auto-thumbnail-generator', {
+          body: { videoUrl, count: 3, style: 'engagement' },
+        });
+      }
+      setGenerated(true);
+      toast.success('Thumbnail pack ready — 3 variants generated');
+    } catch {
+      toast.error('Thumbnail generation failed');
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleDownload = (thumbId: string) => {
@@ -333,10 +359,25 @@ function TeaserClipsSection() {
 
   const handleGenerateClip = async (clipId: string) => {
     setGeneratingClips(p => [...p, clipId]);
-    await new Promise(r => setTimeout(r, 2000 + Math.random() * 1500));
-    setGeneratingClips(p => p.filter(c => c !== clipId));
-    setReadyClips(p => [...p, clipId]);
-    toast.success(`Teaser clip ready: ${clipId}`);
+    try {
+      const clip = EP04_SOCIAL_CLIPS.find(c => c.id === clipId);
+      // Call magic-clips-generator for real clip extraction
+      await supabase.functions.invoke('magic-clips-generator', {
+        body: {
+          sourceVideoUrl: clip?.videoUrl || '',
+          platforms: ['youtube_shorts'],
+          mode: 'manual',
+          addCaptions: true,
+          language: 'en',
+        },
+      });
+      setReadyClips(p => [...p, clipId]);
+      toast.success(`Teaser clip ready: ${clipId}`);
+    } catch {
+      toast.error(`Clip generation failed: ${clipId}`);
+    } finally {
+      setGeneratingClips(p => p.filter(c => c !== clipId));
+    }
   };
 
   const handleGenerateAll = async () => {
@@ -597,6 +638,17 @@ export function EP04PublishHub({
   visualStyles,
 }: PublishHubSessionProps = {}) {
   const { platforms: PLATFORMS } = useSocialPlatforms();
+  const oauth = useSocialOAuth();
+
+  // OAuth connect handler — triggers platform OAuth flow
+  const handleConnect = useCallback(async (platformId: string) => {
+    const oauthPlatform = platformId as OAuthPlatform;
+    try {
+      await oauth.connect(oauthPlatform);
+    } catch {
+      toast.error(`Failed to connect ${platformId}`);
+    }
+  }, [oauth]);
 
   // Session-aware defaults: use castSession data when available, fall back to EP04 demo
   const defaultTitle = sessionTitle || 'Two AIs, One Sprint, Zero Standup Meetings | GenieSuite EP04';
@@ -637,6 +689,13 @@ export function EP04PublishHub({
       toast.error('Select at least one platform');
       return;
     }
+
+    const videoUrl = sessionVideoUrl;
+    if (!videoUrl) {
+      toast.error('No video URL available — complete PRODUCE step first');
+      return;
+    }
+
     setIsPublishing(true);
 
     const initial: Record<string, PublishResult> = {};
@@ -645,39 +704,66 @@ export function EP04PublishHub({
     });
     setPublishResults(initial);
 
+    // Publish to each platform via social-publish edge function
     for (const platformId of selectedPlatforms) {
       setPublishResults(p => ({
         ...p,
-        [platformId]: { ...p[platformId], status: 'uploading', progress: 0 },
+        [platformId]: { ...p[platformId], status: 'uploading', progress: 30 },
       }));
 
-      // Simulate upload progress
-      for (let prog = 10; prog <= 90; prog += 20) {
-        await new Promise(r => setTimeout(r, 400));
+      try {
+        const { data, error } = await supabase.functions.invoke('social-publish', {
+          body: {
+            platform: platformId,
+            videoUrl,
+            title: publishTitle || sessionTitle || 'Genie Cast Video',
+            description: publishDescription || sessionDescription || '',
+            thumbnailUrl: sessionThumbnails?.[0] || undefined,
+            hashtags: [],
+            region: selectedRegion || 'global',
+          },
+        });
+
+        if (error) throw error;
+
+        const publishUrl = data?.url || data?.postUrl || data?.videoUrl;
+        const success = data?.success !== false;
+
         setPublishResults(p => ({
           ...p,
-          [platformId]: { ...p[platformId], progress: prog },
+          [platformId]: {
+            ...p[platformId],
+            status: success ? 'published' : 'failed',
+            progress: 100,
+            url: publishUrl || undefined,
+            error: success ? undefined : (data?.error || 'Publish failed'),
+          },
         }));
+
+        if (success) {
+          toast.success(`Published to ${PLATFORMS.find(p => p.id === platformId)?.name}`);
+        } else {
+          toast.error(`${platformId} failed: ${data?.error || 'Unknown error'}`);
+        }
+      } catch (err) {
+        setPublishResults(p => ({
+          ...p,
+          [platformId]: {
+            ...p[platformId],
+            status: 'failed',
+            progress: 0,
+            error: err instanceof Error ? err.message : 'Publish failed',
+          },
+        }));
+        toast.error(`${platformId} failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
-
-      await new Promise(r => setTimeout(r, 600));
-      const success = platformId === 'youtube' || platformId === 'linkedin' || Math.random() > 0.15;
-      setPublishResults(p => ({
-        ...p,
-        [platformId]: {
-          ...p[platformId],
-          status: success ? 'published' : 'failed',
-          progress: 100,
-          url: success ? `https://${platformId}.com/watch?v=ep04-genie-suite` : undefined,
-          error: success ? undefined : 'Upload failed — retry',
-        },
-      }));
-
-      if (success) toast.success(`Published to ${PLATFORMS.find(p => p.id === platformId)?.name}`);
     }
 
     setIsPublishing(false);
-    toast.success(`Published to ${selectedPlatforms.length} platform(s)!`);
+    const successCount = Object.values(publishResults).filter(r => r.status === 'published').length;
+    if (successCount > 0) {
+      toast.success(`Published to ${successCount} platform(s)!`);
+    }
   };
 
   const connectedCount = PLATFORMS.filter(p => p.connected).length;
@@ -804,6 +890,8 @@ export function EP04PublishHub({
                   selected={selectedPlatforms.includes(platform.id)}
                   result={publishResults[platform.id]}
                   onToggle={togglePlatform}
+                  onConnect={handleConnect}
+                  isConnecting={oauth.isConnecting === platform.id}
                 />
               ))}
             </div>

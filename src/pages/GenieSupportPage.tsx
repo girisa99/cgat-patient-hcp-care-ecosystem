@@ -7,7 +7,7 @@
  */
 import React, { useState } from 'react';
 import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
-import { AskGenieChat } from '@/components/genie-support/AskGenieChat';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 import SupportTicketCreator from '@/components/genie-support/SupportTicketCreator';
 import { useGenieStudioAuth } from '@/hooks/useGenieStudioAuth';
 import { useGenieStudioNavigation } from '@/hooks/useGenieStudioNavigation';
@@ -126,9 +126,11 @@ const GenieSupportPage: React.FC = () => {
             </TabsList>
             
             <TabsContent value="chat">
-              <AskGenieChat 
-                onEscalate={() => setActiveTab('ticket')}
-                className="w-full"
+              <AskGenie
+                product="support"
+                position="inline"
+                isOpen={true}
+                className="w-full min-h-[500px]"
               />
             </TabsContent>
             
@@ -138,8 +140,13 @@ const GenieSupportPage: React.FC = () => {
           </Tabs>
         ) : (
           <div className="space-y-6">
-            {/* Ask Genie Chat for all users */}
-            <AskGenieChat className="w-full" />
+            {/* Ask Genie AI for all users */}
+            <AskGenie
+              product="support"
+              position="inline"
+              isOpen={true}
+              className="w-full min-h-[500px]"
+            />
             
             {/* Upgrade prompt for ticket access */}
             <Card className="border-dashed">

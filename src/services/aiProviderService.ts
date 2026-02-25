@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Universal AI provider types - supports all integrated AI services
-export type UniversalAIProviderType = 'openai' | 'claude' | 'gemini' | 'stability' | 'huggingface';
+// Includes zone-routed LLM providers (alibaba for CJK, deepseek for reasoning)
+export type UniversalAIProviderType = 'openai' | 'claude' | 'gemini' | 'alibaba' | 'deepseek' | 'stability' | 'huggingface';
 
 export interface AIProvider {
   id: UniversalAIProviderType;

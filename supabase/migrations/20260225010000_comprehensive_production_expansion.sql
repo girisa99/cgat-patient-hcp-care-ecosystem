@@ -2,7 +2,7 @@
 -- COMPREHENSIVE PRODUCTION EXPANSION — Phase 7
 --
 -- This migration expands the ENTIRE cast production infrastructure:
---   1. Languages: 37 → 85+ covering all 16 regions and 60+ subregions
+--   1. Languages: 37 → 85+ covering all 16 regions and 62 subregions
 --   2. Content Categories: 24 → 40+ industries
 --   3. Characters: Expand for all style groups × all regions
 --   4. Production Capabilities: Unified provider routing table
@@ -44,7 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_cast_languages_code ON public.cast_languages(code
 ALTER TABLE public.cast_languages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can read cast_languages" ON public.cast_languages FOR SELECT USING (true);
 
--- Seed 85+ languages across all 16 regions and 60+ subregions
+-- Seed 85+ languages across all 16 regions and 62 subregions
 INSERT INTO public.cast_languages (code, name, native_name, flag, region_code, subregion_code, script_direction, tts_provider_primary, tts_provider_fallback, deepl_supported, sort_order) VALUES
   -- NAM (North America) — 3 languages
   ('en-US', 'English (US)', 'English', '🇺🇸', 'NAM', 'NAM_US', 'ltr', 'elevenlabs', 'azure', true, 1),

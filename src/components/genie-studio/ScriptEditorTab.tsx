@@ -131,80 +131,83 @@ export function ScriptEditorTab({
   const [isNewScript, setIsNewScript] = useState(true);
   const [isUploadingScript, setIsUploadingScript] = useState(false);
 
-  // ──── Enhanced Content State ────
-  const [originalContent, setOriginalContent] = useState<string | null>(null);
-  const [enhancedContent, setEnhancedContent] = useState<string | null>(null);
-  const [cleanTTSContent, setCleanTTSContent] = useState<string | null>(null);
-  const [activeVersion, setActiveVersion] = useState<'original' | 'enhanced'>('original');
-
-  // ──── Analysis State ────
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  // ──── UI-Only State (not duplicated in unified editor) ────
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [analysisSteps, setAnalysisSteps] = useState<Array<{ step: string; status: 'pending' | 'running' | 'complete'; detail?: string }>>([]);
   const [showProgressiveAnalysis, setShowProgressiveAnalysis] = useState(false);
-
-  // ──── Enhancement State ────
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [enhancementChanges, setEnhancementChanges] = useState<EnhancementChange[]>([]);
   const [showEnhancementReview, setShowEnhancementReview] = useState(false);
   const [reviewProgress, setReviewProgress] = useState(0);
   const [enhancementMarkers, setEnhancementMarkers] = useState<EnhancementMarkers | null>(null);
   const [engagementScore, setEngagementScore] = useState<EngagementScore | null>(null);
-
-  // ──── Enhancement Dialog State ────
   const [showEnhancementDialog, setShowEnhancementDialog] = useState(false);
   const [customEnhancementInstructions, setCustomEnhancementInstructions] = useState('');
-  const [enhancementFocus, setEnhancementFocus] = useState<EnhancementFocus>('balanced');
-
-  // ──── Inline Edit State ────
   const [editingChangeId, setEditingChangeId] = useState<string | null>(null);
   const [editedEnhancedText, setEditedEnhancedText] = useState('');
-
-  // ──── Draft State ────
   const [hasDraft, setHasDraft] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [lastDraftSave, setLastDraftSave] = useState<Date | null>(null);
-
-  // ──── TTS State ────
   const [showTTSOptions, setShowTTSOptions] = useState(false);
-  const [ttsProvider, setTtsProvider] = useState<'openai' | 'elevenlabs' | 'google'>('elevenlabs');
-  const [ttsVoice, setTtsVoice] = useState('');
   const [selectedTTSScriptId, setSelectedTTSScriptId] = useState<string | null>(null);
   const [selectedVoicePreset, setSelectedVoicePreset] = useState<VoicePreset | null>(null);
   const [customVoiceSettings, setCustomVoiceSettings] = useState<{ stability: number; similarityBoost: number; style: number; speed: number } | undefined>(undefined);
-
-  // ──── AI Provider State ────
-  const [aiProvider, setAiProvider] = useState<AIProvider>('gemini');
-
-  // ──── Transcreation State ────
   const [showTranscreation, setShowTranscreation] = useState(false);
-
-  // ──── Brand Voice State ────
   const [showBrandVoice, setShowBrandVoice] = useState(false);
-
-  // ──── Version History State ────
   const [showVersionHistory, setShowVersionHistory] = useState(false);
-  const [scriptVersions, setScriptVersions] = useState<ScriptVersionEntry[]>([]);
 
   // ──── Chapter/Multi-Scene Mode ────
-  // Both Mind and Cast support single-scene AND multi-scene editing.
-  // In Mind: podcast segments, webcast chapters, video scenes, multi-chapter scripts.
   const [chapterModeEnabled, setChapterModeEnabled] = useState(false);
 
-  // Unified editor hook — shares the same engine as Cast
+  // ══════════════════════════════════════════
+  // UNIFIED EDITOR — Single source of truth for content, enhancement, analysis, TTS, AI config
+  // Replaces ~15 individual useState calls with shared Mind ↔ Cast hook
+  // ══════════════════════════════════════════
   const unifiedEditor = useUnifiedEditorState({
     productContext: 'mind',
     mode: chapterModeEnabled ? 'multi-scene' : 'single',
     initialContent: scriptContent,
     initialTitle: scriptName || 'Untitled Script',
     onContentChange: (_sceneId, content) => {
-      // Sync unified editor changes back to Mind's existing state
       if (!chapterModeEnabled) {
         setScriptContent(content);
       }
     },
   });
+
+  // ── Derived aliases from unified editor (backward-compatible with existing handlers) ──
+  const sceneId = unifiedEditor.activeSceneId;
+  const originalContent = unifiedEditor.activeScene?.originalContent ?? null;
+  const enhancedContent = unifiedEditor.activeScene?.enhancedContent ?? null;
+  const cleanTTSContent = unifiedEditor.activeScene?.cleanContent ?? null;
+  const activeVersion: 'original' | 'enhanced' = unifiedEditor.activeScene?.activeVersion === 'enhanced' ? 'enhanced' : 'original';
+  const isEnhancing = unifiedEditor.isEnhancing;
+  const isAnalyzing = unifiedEditor.isAnalyzing;
+  const analysisResult = unifiedEditor.activeScene?.analysisResult ?? null;
+  const enhancementChanges = unifiedEditor.activeScene?.enhancementChanges ?? [];
+  const enhancementFocus = unifiedEditor.enhancementFocus;
+  const aiProvider = unifiedEditor.aiProvider;
+  const ttsProvider = (unifiedEditor.ttsConfig.provider || 'elevenlabs') as 'openai' | 'elevenlabs' | 'google';
+  const ttsVoice = unifiedEditor.ttsConfig.voiceId || '';
+  const scriptVersions = unifiedEditor.versionHistory.map((entry, i) => ({
+    id: entry.id,
+    versionNumber: i + 1,
+    content: entry.content,
+    versionType: entry.source === 'ai_enhance' ? 'enhanced' as const : entry.source === 'transcreation' ? 'transcreation' as const : 'manual_edit' as const,
+    changeSummary: entry.label || '',
+    createdAt: entry.timestamp.getTime(),
+    wordCount: entry.content.trim().split(/\s+/).length,
+  }));
+
+  // ── Direct unified-editor helpers (no wrapper indirection) ──
+  // All handlers below call unifiedEditor methods directly.
+  // These thin aliases exist ONLY for JSX callback props that need a stable reference shape.
+  const onAiProviderChange = useCallback((p: string) => unifiedEditor.setAIProvider(p as AIProvider), [unifiedEditor]);
+  const onEnhancementFocusChange = useCallback((f: EnhancementFocus) => unifiedEditor.setEnhancementFocus(f), [unifiedEditor]);
+  const onTtsProviderChange = useCallback((p: 'openai' | 'elevenlabs' | 'google') => {
+    unifiedEditor.setTTSConfig({ ...unifiedEditor.ttsConfig, provider: p });
+  }, [unifiedEditor]);
+  const onTtsVoiceChange = useCallback((v: string) => {
+    unifiedEditor.setTTSConfig({ ...unifiedEditor.ttsConfig, voiceId: v });
+  }, [unifiedEditor]);
 
   // ──── TTS Hook ────
   const { isGenerating: isTTSGenerating, lastResult: ttsResult, generate: generateTTS, play: playTTS, stop: stopTTS, download: downloadTTS } = useTTSGeneration();
@@ -229,14 +232,12 @@ export function ScriptEditorTab({
       setScriptContent(script.content);
       setScriptType(script.type);
       setIsNewScript(false);
-      setOriginalContent(script.content);
-      if (script.enhancedContent) {
-        setEnhancedContent(script.enhancedContent);
-        setCleanTTSContent(script.cleanContent || null);
-      } else {
-        setEnhancedContent(null);
-        setCleanTTSContent(null);
-      }
+      unifiedEditor.updateScene(sceneId, {
+        originalContent: script.content,
+        enhancedContent: script.enhancedContent || null,
+        cleanContent: script.cleanContent || null,
+        activeVersion: script.enhancedContent ? 'enhanced' : 'original',
+      });
       if (script.draftStatus === 'in_progress' && script.draftContent) {
         setHasDraft(true);
         toast.info('Draft found! You can continue reviewing from where you left off.');
@@ -245,10 +246,9 @@ export function ScriptEditorTab({
       }
       setShowAnalysis(false);
       setShowEnhancementReview(false);
-      setActiveVersion(script.enhancedContent ? 'enhanced' : 'original');
       toast.success(`Loaded "${script.name}"`);
     }
-  }, [savedScripts]);
+  }, [savedScripts, sceneId, unifiedEditor]);
 
   // Auto-select script when initialScriptId changes
   useEffect(() => {
@@ -262,15 +262,17 @@ export function ScriptEditorTab({
     setScriptName('');
     setScriptContent('');
     setIsNewScript(true);
-    setOriginalContent(null);
-    setEnhancedContent(null);
-    setCleanTTSContent(null);
-    setActiveVersion('original');
+    unifiedEditor.updateScene(sceneId, {
+      originalContent: null,
+      enhancedContent: null,
+      cleanContent: null,
+      activeVersion: 'original',
+      analysisResult: undefined,
+      enhancementChanges: [],
+    });
     setShowAnalysis(false);
     setShowEnhancementReview(false);
     setHasDraft(false);
-    setAnalysisResult(null);
-    setEnhancementChanges([]);
   };
 
   const handleScriptFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -292,11 +294,13 @@ export function ScriptEditorTab({
       const fileName = file.name.replace(/\.(txt|md)$/i, '');
       setScriptName(fileName);
       setScriptContent(content);
-      setOriginalContent(content);
       setIsNewScript(true);
       setSelectedScriptId(null);
-      setEnhancedContent(null);
-      setCleanTTSContent(null);
+      unifiedEditor.updateScene(sceneId, {
+        originalContent: content,
+        enhancedContent: null,
+        cleanContent: null,
+      });
       toast.success(`Loaded "${fileName}" - ${content.split(/\s+/).filter(w => w).length} words`);
     } catch (error) {
       console.error('Error reading script file:', error);
@@ -309,9 +313,10 @@ export function ScriptEditorTab({
 
   // Set default TTS voice based on provider
   useEffect(() => {
-    if (ttsProvider === 'openai') setTtsVoice(OPENAI_VOICES[0]?.value || 'alloy');
-    else if (ttsProvider === 'google') setTtsVoice(GOOGLE_VOICES[0]?.value || 'en-US-Neural2-D');
-    else setTtsVoice(ELEVENLABS_VOICES[0]?.value || 'aria');
+    const voiceId = ttsProvider === 'openai' ? (OPENAI_VOICES[0]?.value || 'alloy')
+      : ttsProvider === 'google' ? (GOOGLE_VOICES[0]?.value || 'en-US-Neural2-D')
+      : (ELEVENLABS_VOICES[0]?.value || 'aria');
+    unifiedEditor.setTTSConfig({ ...unifiedEditor.ttsConfig, voiceId });
   }, [ttsProvider]);
 
   // Update voice preset when script mode changes
@@ -320,8 +325,11 @@ export function ScriptEditorTab({
     if (modeConfig) {
       const defaultVoice = modeConfig.tts.defaultVoice;
       setSelectedVoicePreset(defaultVoice);
-      setTtsVoice(defaultVoice.voiceName.toLowerCase());
-      setTtsProvider(defaultVoice.provider);
+      unifiedEditor.setTTSConfig({
+        ...unifiedEditor.ttsConfig,
+        voiceId: defaultVoice.voiceName.toLowerCase(),
+        provider: defaultVoice.provider,
+      });
       setCustomVoiceSettings({
         stability: defaultVoice.stability,
         similarityBoost: defaultVoice.similarityBoost,
@@ -339,7 +347,7 @@ export function ScriptEditorTab({
   // Analyze Script
   const handleAnalyze = async () => {
     if (!scriptContent.trim()) { toast.error('Please enter script content first'); return; }
-    setIsAnalyzing(true);
+    unifiedEditor.setIsAnalyzing(true);
     setShowProgressiveAnalysis(true);
     setAnalysisSteps(ANALYSIS_STEPS.map(s => ({ step: s.id, status: 'pending' as const })));
     const localRecommendations: AnalysisRecommendation[] = [];
@@ -402,15 +410,15 @@ export function ScriptEditorTab({
           }
           const engagementInfo = aiData.overallAssessment?.engagementScore ? `, engagement: ${aiData.overallAssessment.engagementScore}/10` : '';
           updateStep('ai', 'complete', `Found ${localRecommendations.length} suggestions${engagementInfo}`);
-          setAnalysisResult({ stats: currentStats, recommendations: localRecommendations, pauseOpportunities: aiData.pauseOpportunities || [], sectionBreaks: aiData.sectionBreaks || [], overallAssessment: aiData.overallAssessment || null, engagementAnalysis: aiData.engagementAnalysis || null });
+          unifiedEditor.setAnalysisResult(sceneId, { stats: currentStats, recommendations: localRecommendations, pauseOpportunities: aiData.pauseOpportunities || [], sectionBreaks: aiData.sectionBreaks || [], overallAssessment: aiData.overallAssessment || null, engagementAnalysis: aiData.engagementAnalysis || null });
         } else {
           updateStep('ai', 'complete', `✓ ${providerNames[aiProvider]} analysis complete`);
-          setAnalysisResult({ stats: currentStats, recommendations: localRecommendations });
+          unifiedEditor.setAnalysisResult(sceneId, { stats: currentStats, recommendations: localRecommendations });
         }
       } catch (err) {
         clearTimeout(aiTimeoutId);
         updateStep('ai', 'complete', '✓ Using local analysis');
-        setAnalysisResult({ stats: currentStats, recommendations: localRecommendations });
+        unifiedEditor.setAnalysisResult(sceneId, { stats: currentStats, recommendations: localRecommendations });
       }
       setShowAnalysis(true);
       toast.success(`Analysis complete! Found ${localRecommendations.length} recommendations.`);
@@ -418,7 +426,7 @@ export function ScriptEditorTab({
       console.error('Analysis error:', err);
       toast.error('Analysis failed. Please try again.');
     } finally {
-      setIsAnalyzing(false);
+      unifiedEditor.setIsAnalyzing(false);
       setTimeout(() => setShowProgressiveAnalysis(false), 1500);
     }
   };
@@ -431,7 +439,7 @@ export function ScriptEditorTab({
   const handleEnhance = async (useCustomInstructions = false) => {
     if (!scriptContent.trim()) { toast.error('Please enter script content first'); return; }
     setShowEnhancementDialog(false);
-    setIsEnhancing(true);
+    unifiedEditor.setIsEnhancing(true);
     const providerNames = { gemini: 'Gemini', openai: 'OpenAI', claude: 'Claude' };
     try {
       const enhancementBody: any = { scriptContent, mode: 'enhance', provider: aiProvider, ...(enrichmentContext ? { enrichmentContext } : {}) };
@@ -439,7 +447,7 @@ export function ScriptEditorTab({
         enhancementBody.focus = enhancementFocus;
         if (customEnhancementInstructions.trim()) enhancementBody.customInstructions = customEnhancementInstructions.trim();
       }
-      const enhanceTimeoutId = setTimeout(() => { setIsEnhancing(false); toast.error('Enhancement took too long.'); }, 45000);
+      const enhanceTimeoutId = setTimeout(() => { unifiedEditor.setIsEnhancing(false); toast.error('Enhancement took too long.'); }, 45000);
       const { data, error } = await supabase.functions.invoke('enhance-script', { body: enhancementBody });
       clearTimeout(enhanceTimeoutId);
       if (error) throw error;
@@ -449,10 +457,12 @@ export function ScriptEditorTab({
         const changes = (data.data.changes || []).map((change: any, i: number) => ({ ...change, id: `change-${i}`, accepted: null }));
         const markers = data.data.markers || { pausesAdded: 0, sectionBreaksAdded: 0, sentencesRewritten: 0, engagementHooksAdded: 0, conversationalChanges: 0 };
         const engScore = data.data.engagementScore || null;
-        setOriginalContent(scriptContent);
-        setEnhancedContent(enhanced);
-        setCleanTTSContent(clean);
-        setEnhancementChanges(changes);
+        unifiedEditor.updateScene(sceneId, {
+          originalContent: scriptContent,
+          enhancedContent: enhanced,
+          cleanContent: clean,
+          enhancementChanges: changes,
+        });
         setEnhancementMarkers(markers);
         setEngagementScore(engScore);
         setShowEnhancementReview(true);
@@ -464,27 +474,35 @@ export function ScriptEditorTab({
       console.error('Enhancement error:', err);
       toast.error(`${providerNames[aiProvider]} enhancement failed.`);
     } finally {
-      setIsEnhancing(false);
+      unifiedEditor.setIsEnhancing(false);
     }
   };
 
   // Enhancement review handlers
   const handleAcceptChange = (changeId: string) => {
-    setEnhancementChanges(prev => prev.map(c => c.id === changeId ? { ...c, accepted: true } : c));
+    unifiedEditor.updateScene(sceneId, {
+      enhancementChanges: enhancementChanges.map(c => c.id === changeId ? { ...c, accepted: true } : c),
+    });
   };
 
   const handleSkipChange = (changeId: string) => {
-    setEnhancementChanges(prev => prev.map(c => c.id === changeId ? { ...c, accepted: false } : c));
+    unifiedEditor.updateScene(sceneId, {
+      enhancementChanges: enhancementChanges.map(c => c.id === changeId ? { ...c, accepted: false } : c),
+    });
   };
 
   const handleAcceptAll = () => {
-    setEnhancementChanges(prev => prev.map(c => ({ ...c, accepted: true })));
+    unifiedEditor.updateScene(sceneId, {
+      enhancementChanges: enhancementChanges.map(c => ({ ...c, accepted: true })),
+    });
     setReviewProgress(100);
     toast.success('All changes accepted!');
   };
 
   const handleSkipAll = () => {
-    setEnhancementChanges(prev => prev.map(c => c.accepted === null ? { ...c, accepted: false } : c));
+    unifiedEditor.updateScene(sceneId, {
+      enhancementChanges: enhancementChanges.map(c => c.accepted === null ? { ...c, accepted: false } : c),
+    });
     setReviewProgress(100);
     toast.info('Remaining changes skipped');
   };
@@ -501,7 +519,7 @@ export function ScriptEditorTab({
     const acceptedChanges = enhancementChanges.filter(c => c.accepted === true);
     if (acceptedChanges.length > 0 && enhancedContent) {
       setScriptContent(enhancedContent);
-      setActiveVersion('enhanced');
+      unifiedEditor.updateScene(sceneId, { activeVersion: 'enhanced' });
       toast.success(`Applied ${acceptedChanges.length} enhancements!`);
     } else {
       toast.info('No changes applied. Using original script.');
@@ -534,8 +552,10 @@ export function ScriptEditorTab({
   const handleResumeDraft = () => {
     const script = savedScripts.find(s => s.id === selectedScriptId);
     if (script?.draftContent && script.draftChanges) {
-      setEnhancedContent(script.draftContent);
-      setEnhancementChanges(script.draftChanges);
+      unifiedEditor.updateScene(sceneId, {
+        enhancedContent: script.draftContent,
+        enhancementChanges: script.draftChanges,
+      });
       setShowEnhancementReview(true);
       toast.success('Resumed from draft!');
     }
@@ -563,7 +583,11 @@ export function ScriptEditorTab({
   };
 
   const handleRevertToOriginal = () => {
-    if (originalContent) { setScriptContent(originalContent); setActiveVersion('original'); toast.info('Reverted to original script'); }
+    if (originalContent) {
+      setScriptContent(originalContent);
+      unifiedEditor.revertToOriginal(sceneId);
+      toast.info('Reverted to original script');
+    }
   };
 
   // TTS handlers
@@ -592,15 +616,12 @@ export function ScriptEditorTab({
     if (script) {
       setScriptContent(script.content);
       setScriptName(script.name);
-      setOriginalContent(script.content);
-      if (script.enhancedContent) {
-        setEnhancedContent(script.enhancedContent);
-        setCleanTTSContent(script.cleanContent || null);
-        setActiveVersion('enhanced');
-      } else {
-        setEnhancedContent(null);
-        setActiveVersion('original');
-      }
+      unifiedEditor.updateScene(sceneId, {
+        originalContent: script.content,
+        enhancedContent: script.enhancedContent || null,
+        cleanContent: script.enhancedContent ? (script.cleanContent || null) : null,
+        activeVersion: script.enhancedContent ? 'enhanced' : 'original',
+      });
     }
   };
 
@@ -612,12 +633,22 @@ export function ScriptEditorTab({
   };
 
   const handleUpdateRecommendation = (recId: string, accepted: boolean) => {
-    setAnalysisResult(prev => prev ? { ...prev, recommendations: prev.recommendations.map(r => r.id === recId ? { ...r, accepted } : r) } : null);
+    if (analysisResult) {
+      unifiedEditor.setAnalysisResult(sceneId, {
+        ...analysisResult,
+        recommendations: analysisResult.recommendations.map(r => r.id === recId ? { ...r, accepted } : r),
+      });
+    }
     if (accepted) toast.info('Edit mode: Make changes in the script editor');
   };
 
   const handleNoteAll = () => {
-    setAnalysisResult(prev => prev ? { ...prev, recommendations: prev.recommendations.map(r => ({ ...r, accepted: true })) } : null);
+    if (analysisResult) {
+      unifiedEditor.setAnalysisResult(sceneId, {
+        ...analysisResult,
+        recommendations: analysisResult.recommendations.map(r => ({ ...r, accepted: true })),
+      });
+    }
   };
 
   // Enhancement inline edit handlers
@@ -643,27 +674,27 @@ export function ScriptEditorTab({
     if (newContent !== scriptContent) { setScriptContent(newContent); toast.success('Applied fix to script'); }
   };
 
-  // Version history handlers
+  // Version history handlers — routes through unified editor
   const addVersionEntry = useCallback((content: string, type: ScriptVersionEntry['versionType'], summary: string) => {
-    const newVersion: ScriptVersionEntry = {
-      id: crypto.randomUUID(),
-      versionNumber: scriptVersions.length + 1,
-      content,
-      versionType: type,
-      changeSummary: summary,
-      createdAt: Date.now(),
-      wordCount: content.trim().split(/\s+/).length,
+    // Map ScriptVersionEntry versionType → VersionHistoryEntry source
+    const sourceMap: Record<ScriptVersionEntry['versionType'], 'manual' | 'ai_enhance' | 'ai_analysis' | 'transcreation' | 'import'> = {
+      original: 'manual',
+      manual_edit: 'manual',
+      enhanced: 'ai_enhance',
+      transcreation: 'transcreation',
     };
-    setScriptVersions(prev => [...prev, newVersion]);
-  }, [scriptVersions.length]);
+    unifiedEditor.addVersionHistoryEntry(sceneId, sourceMap[type] || 'manual', summary);
+  }, [sceneId, unifiedEditor]);
 
   const handleRestoreVersion = useCallback((version: ScriptVersionEntry) => {
     setScriptContent(version.content);
-    if (version.enhancedContent) setEnhancedContent(version.enhancedContent);
-    setActiveVersion('original');
+    unifiedEditor.updateScene(sceneId, {
+      activeVersion: 'original',
+      ...(version.enhancedContent ? { enhancedContent: version.enhancedContent } : {}),
+    });
     addVersionEntry(version.content, 'manual_edit', `Restored from v${version.versionNumber}`);
     toast.success(`Restored to version ${version.versionNumber}`);
-  }, [addVersionEntry]);
+  }, [addVersionEntry, sceneId, unifiedEditor]);
 
   // Track version on save
   const handleSaveScriptWithVersion = () => {
@@ -800,7 +831,7 @@ export function ScriptEditorTab({
           {/* AI Provider Selector */}
           <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-gradient-to-r from-purple-500/5 to-blue-500/5 border border-border/50">
             <Label className="text-sm font-medium whitespace-nowrap">AI Provider:</Label>
-            <Select value={aiProvider} onValueChange={(v) => setAiProvider(v as AIProvider)}>
+            <Select value={aiProvider} onValueChange={onAiProviderChange}>
               <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="gemini"><div className="flex items-center gap-2"><div className="h-4 w-4 rounded bg-gradient-to-br from-blue-500 to-green-500" /><span>Google Gemini</span></div></SelectItem>
@@ -843,9 +874,9 @@ export function ScriptEditorTab({
               isOpen={showTTSOptions}
               onOpenChange={setShowTTSOptions}
               ttsProvider={ttsProvider}
-              onProviderChange={setTtsProvider}
+              onProviderChange={onTtsProviderChange}
               ttsVoice={ttsVoice}
-              onVoiceChange={setTtsVoice}
+              onVoiceChange={onTtsVoiceChange}
               isTTSGenerating={isTTSGenerating}
               currentContent={currentContent}
               onGenerateTTS={handleGenerateTTS}
@@ -859,7 +890,7 @@ export function ScriptEditorTab({
               onTTSScriptSelect={handleTTSScriptSelect}
               enhancedContent={enhancedContent}
               activeVersion={activeVersion}
-              onVersionChange={setActiveVersion}
+              onVersionChange={(v: 'original' | 'enhanced') => unifiedEditor.updateScene(sceneId, { activeVersion: v })}
               originalStats={originalStats}
               enhancedStats={enhancedStats}
               stats={stats}
@@ -1063,8 +1094,8 @@ export function ScriptEditorTab({
                   <Label htmlFor="script-content">Script Content</Label>
                   {enhancedContent && (
                     <div className="flex gap-2">
-                      <Button variant={activeVersion === 'original' ? 'secondary' : 'ghost'} size="sm" onClick={() => setActiveVersion('original')}>Original</Button>
-                      <Button variant={activeVersion === 'enhanced' ? 'secondary' : 'ghost'} size="sm" onClick={() => setActiveVersion('enhanced')}>
+                      <Button variant={activeVersion === 'original' ? 'secondary' : 'ghost'} size="sm" onClick={() => unifiedEditor.updateScene(sceneId, { activeVersion: 'original' })}>Original</Button>
+                      <Button variant={activeVersion === 'enhanced' ? 'secondary' : 'ghost'} size="sm" onClick={() => unifiedEditor.updateScene(sceneId, { activeVersion: 'enhanced' })}>
                         <Sparkles className="h-3 w-3 mr-1" />Enhanced
                       </Button>
                     </div>
@@ -1079,7 +1110,7 @@ export function ScriptEditorTab({
                       const end = textarea.selectionEnd;
                       const text = activeVersion === 'enhanced' && enhancedContent ? enhancedContent : scriptContent;
                       const newText = text.slice(0, start) + marker + text.slice(end);
-                      if (activeVersion === 'enhanced') setEnhancedContent(newText);
+                      if (activeVersion === 'enhanced') unifiedEditor.updateScene(sceneId, { enhancedContent: newText });
                       else setScriptContent(newText);
                       setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + marker.length, start + marker.length); }, 0);
                     }
@@ -1090,7 +1121,7 @@ export function ScriptEditorTab({
                   ref={textareaRef}
                   id="script-content"
                   value={activeVersion === 'enhanced' && enhancedContent ? enhancedContent : scriptContent}
-                  onChange={(e) => { if (activeVersion === 'enhanced') setEnhancedContent(e.target.value); else setScriptContent(e.target.value); }}
+                  onChange={(e) => { if (activeVersion === 'enhanced') unifiedEditor.updateScene(sceneId, { enhancedContent: e.target.value }); else setScriptContent(e.target.value); }}
                   placeholder="Start writing your script here..."
                   className="mt-1 min-h-[300px] font-mono text-sm"
                 />
@@ -1164,10 +1195,10 @@ export function ScriptEditorTab({
         open={showEnhancementDialog}
         onOpenChange={setShowEnhancementDialog}
         enhancementFocus={enhancementFocus}
-        onFocusChange={setEnhancementFocus}
+        onFocusChange={onEnhancementFocusChange}
         customInstructions={customEnhancementInstructions}
         onCustomInstructionsChange={setCustomEnhancementInstructions}
-        onQuickEnhance={() => { setCustomEnhancementInstructions(''); setEnhancementFocus('balanced'); handleEnhance(false); }}
+        onQuickEnhance={() => { setCustomEnhancementInstructions(''); unifiedEditor.setEnhancementFocus('balanced'); handleEnhance(false); }}
         onEnhanceWithSettings={() => handleEnhance(true)}
         isEnhancing={isEnhancing}
       />

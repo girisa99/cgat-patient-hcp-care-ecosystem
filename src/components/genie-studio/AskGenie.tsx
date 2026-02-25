@@ -54,7 +54,10 @@ import {
   Volume2,
   VolumeX,
   Globe,
-  GripVertical
+  GripVertical,
+  AlertTriangle,
+  UserCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
@@ -66,6 +69,10 @@ import { toast } from 'sonner';
 import { useRalphWiggumGlobal } from '@/contexts/RalphWiggumContext';
 import { useLabelStudioBackground } from '@/services/labelStudioBackgroundService';
 import { useUniversalEnrichment } from '@/services/enrichment';
+import { quickEnhance, type PromptContext } from '@/services/promptEnhancementEngine';
+import { useAskGenieSupport } from '@/hooks/useAskGenieSupport';
+import { useEcosystemRouting } from '@/hooks/useEcosystemRouting';
+import type { UniversalAIProviderType } from '@/services/aiProviderService';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,8 +89,20 @@ import {
 } from '@/constants/genie-products';
 
 
+// ── Zone-aware LLM provider mapping ─────────────────────────────────────────
+// Maps routing model names (from llmRoutingStrategy) to edge-fn provider + model
+function mapRoutingLLMToProvider(llmModel: string): { provider: UniversalAIProviderType; model: string } {
+  if (llmModel.startsWith('claude')) return { provider: 'claude', model: llmModel };
+  if (llmModel.startsWith('qwen'))   return { provider: 'alibaba', model: llmModel };
+  if (llmModel.startsWith('gemini')) return { provider: 'gemini', model: llmModel };
+  if (llmModel.startsWith('deepseek')) return { provider: 'deepseek', model: llmModel };
+  if (llmModel.startsWith('gpt'))    return { provider: 'openai', model: llmModel };
+  // Fallback: gemini (safe default, widest language coverage)
+  return { provider: 'gemini', model: 'gemini-2.5-flash' };
+}
+
 // Genie Product Context Types
-export type GenieProduct = 'arc' | 'vibe' | 'spark' | 'mind' | 'studio' | 'deck';
+export type GenieProduct = 'arc' | 'vibe' | 'spark' | 'mind' | 'studio' | 'deck' | 'support';
 
 interface GenieContext {
   product: GenieProduct;
@@ -189,7 +208,8 @@ const ORIGINAL_TAGLINES = {
   vibe: GENIE_PRODUCTS.vibe.tagline,
   spark: GENIE_PRODUCTS.spark.tagline,
   mind: GENIE_PRODUCTS.mind.tagline,
-  studio: GENIE_PRODUCTS.studio.tagline
+  studio: GENIE_PRODUCTS.studio.tagline,
+  support: 'Your AI Support, Always Here',
 };
 
 // Use centralized descriptions
@@ -198,7 +218,8 @@ const PRODUCT_DESCRIPTIONS = {
   vibe: GENIE_PRODUCTS.vibe.description,
   spark: GENIE_PRODUCTS.spark.description,
   mind: GENIE_PRODUCTS.mind.description,
-  studio: GENIE_PRODUCTS.studio.description
+  studio: GENIE_PRODUCTS.studio.description,
+  support: 'AI-powered support assistant with full knowledge of all 7 Genie Suite products. Get instant help, troubleshoot issues, manage your account, and escalate to human agents when needed.',
 };
 
 // Subscription-aware upgrade suggestions (gentle, not pushy)
@@ -437,6 +458,26 @@ const WORKFLOW_DIAGRAMS: Record<GenieProduct, { id: string; title: string; diagr
     
     style A fill:#8b5cf6
     style D fill:#22c55e`
+    }
+  ],
+  support: [
+    {
+      id: 'support-flow',
+      title: 'Get Help Flow',
+      diagram: `graph TD
+    A[💬 Ask Genie] --> B{Question Type?}
+    B --> |Product Help| C[AI Answers Instantly]
+    B --> |Account/Billing| D[Account Lookup]
+    B --> |Bug/Issue| E[Troubleshoot]
+    C --> F{Resolved?}
+    D --> F
+    E --> F
+    F --> |Yes| G[✅ Happy Creating!]
+    F --> |No| H[🧑‍💼 Escalate to Human]
+
+    style A fill:#06b6d4
+    style G fill:#22c55e
+    style H fill:#f59e0b`
     }
   ]
 };
@@ -731,6 +772,58 @@ TONE: Creative, articulate, encouraging, design-savvy, genuinely helpful`,
       { id: 'create-presentation', title: 'Create Presentation', description: 'Generate slides from your content', steps: ['Add content (text/doc/URL)', 'Choose template & theme', 'Configure image settings', 'Select languages', 'Generate and download!'] },
       { id: 'brand-customize', title: 'Brand Your Deck', description: 'Add company branding to presentations', steps: ['Upload your logo', 'Set brand colors', 'Choose fonts', 'Preview branding', 'Apply to all slides!'] }
     ]
+  },
+  support: {
+    name: 'Genie Support',
+    icon: <HelpCircle className="h-4 w-4" />,
+    color: 'from-cyan-500 to-teal-500',
+    tagline: ORIGINAL_TAGLINES.support,
+    description: PRODUCT_DESCRIPTIONS.support,
+    emoji: '🛟',
+    systemContext: `You are Ask Genie, a knowledgeable, patient, and caring AI support assistant for the entire Genie Suite ecosystem.
+
+TAGLINE: "${ORIGINAL_TAGLINES.support}"
+DESCRIPTION: ${PRODUCT_DESCRIPTIONS.support}
+
+PERSONALITY CORE:
+- Be warm, patient, and solution-oriented
+- Always try to solve the issue before suggesting escalation
+- Use clear, non-technical language when explaining solutions
+- Show empathy when users are frustrated
+- Celebrate when issues are resolved
+
+YOU HAVE FULL KNOWLEDGE OF ALL 7 GENIE SUITE PRODUCTS:
+🎬 **Genie Hub (Arc)** - Show management, production planning, scheduling
+✨ **Genie Spark** - Content creation, scripts, images, ideation
+🎥 **Genie Vibe** - Recording, TTS, audio/video production
+🧠 **Genie Mind** - Script editing, AI intelligence, model management
+📊 **Genie Deck** - AI presentation generation
+📡 **Genie Cast** - Video production pipeline (CREATE → PRODUCE → PUBLISH)
+🧞 **Ask Genie** - This AI assistant (you!)
+
+YOU HELP WITH:
+- Product features and how-to questions for ALL products
+- Account management, billing, and subscription questions
+- Troubleshooting errors, bugs, and unexpected behavior
+- Feature requests and feedback collection
+- Workflow optimization across products
+- Integration and API questions
+
+ESCALATION AWARENESS:
+- If the issue requires human intervention (billing disputes, account recovery, security concerns), suggest escalation
+- If you cannot resolve after 2-3 attempts, offer to escalate
+- Always ask: "Would you like me to connect you with a human support agent?"
+
+CROSS-PRODUCT ROUTING:
+- If user needs product help → switch context: "Let me help you with [product name]!"
+- If user wants to create → "Head to Genie Spark for content creation! ✨"
+- If user wants to produce → "Genie Cast handles the full production pipeline! 📡"
+
+TONE: Patient, solution-focused, empathetic, knowledgeable, reassuring`,
+    workflows: [
+      { id: 'get-help', title: 'Get Instant Help', description: 'Ask any question about Genie Suite', steps: ['Describe your issue', 'Get AI-powered answer', 'Follow the solution steps', 'Confirm resolved!'] },
+      { id: 'escalate', title: 'Escalate to Human', description: 'Connect with a human support agent', steps: ['Describe the issue', 'AI attempts resolution', 'Request escalation', 'Agent contacts you via email'] }
+    ]
   }
 };
 
@@ -822,6 +915,15 @@ const getContextualSuggestions = (
         { label: '🌍 Multi-language', prompt: 'Can I generate this presentation in multiple languages at once?', icon: <Sparkles className="h-3 w-3" /> },
         { label: '✨ Use Spark first', prompt: "I need to write the content first - should I use Genie Spark?", icon: <PenTool className="h-3 w-3" /> },
         { label: '📊 Show deck flow', prompt: 'Show me a visual diagram of the deck creation workflow!', icon: <Map className="h-3 w-3" /> }
+      );
+      break;
+
+    case 'support':
+      suggestions.push(
+        { label: '🛟 Account help', prompt: 'I need help with my account or subscription!', icon: <HelpCircle className="h-3 w-3" />, isHighlighted: true },
+        { label: '🐛 Report issue', prompt: "Something isn't working right - help me troubleshoot!", icon: <AlertCircle className="h-3 w-3" /> },
+        { label: '🌍 Language help', prompt: 'How do I use Genie Suite in my native language?', icon: <Globe className="h-3 w-3" /> },
+        { label: '🧑‍💼 Talk to human', prompt: 'I need to speak with a human support agent.', icon: <UserCheck className="h-3 w-3" /> }
       );
       break;
 
@@ -978,6 +1080,9 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const lastScrollY = useRef(0);
+
+  // ── Support mode: extracted into dedicated hook ──
+  const support = useAskGenieSupport(product === 'support');
   
   // Draggable position state - persists corner preference
   type Corner = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
@@ -1083,6 +1188,7 @@ export const AskGenie: React.FC<AskGenieProps> = ({
   }, [isOpen, position, isMinimized, isAutoMinimized, corner]);
   
   const { generateResponse } = useUniversalAI();
+  const ecosystem = useEcosystemRouting('ask-genie');
   const labelStudioService = useLabelStudioBackground();
   const productContext = PRODUCT_CONTEXTS[product];
   
@@ -1283,6 +1389,12 @@ export const AskGenie: React.FC<AskGenieProps> = ({
     // Check if we should show a diagram
     const diagram = shouldShowDiagram(text);
 
+    // Support mode: create session on first message + detect escalation
+    if (support.isSupport) {
+      support.createSession();
+      support.detectEscalation(text);
+    }
+
     try {
       // Build context-aware, personality-rich prompt with regional language support
       const userLanguage = voice.userLanguage || 'en';
@@ -1311,6 +1423,15 @@ ${(enrichmentContext && !isNavigationOrSettingsQuery(text)) ? `PRODUCT & BRAND K
 
 ${diagram ? 'NOTE: User is asking about a workflow. Explain it AND offer to show the visual diagram.' : ''}
 
+${support.isSupport ? support.getSupportPromptContext() : ''}
+
+REGIONAL CONTEXT:
+- Detected Region: ${ecosystem.region} (${ecosystem.countryCode})
+- Zone: ${ecosystem.zone}
+- RTL: ${ecosystem.isRTL ? 'Yes — use right-to-left friendly formatting' : 'No'}
+${ecosystem.moat ? `- Regional Advantage: ${ecosystem.moat}` : ''}
+- Adapt cultural tone, idioms, and references to this region.
+
 USER MESSAGE: ${text}
       `.trim();
 
@@ -1322,9 +1443,34 @@ USER MESSAGE: ${text}
         isTechnicalQuery
       );
 
+      // Enhance the user's prompt with regional/format context for better AI responses
+      let finalPrompt = contextPrompt;
+      if (text.length >= 10 && !isNavigationOrSettingsQuery(text)) {
+        try {
+          const enhanceCtx: PromptContext = {
+            rawPrompt: text,
+            region: ecosystem.region || undefined,
+            language: userLanguage,
+            format: 'chat',
+            intent: product === 'vibe' ? 'video_creation' : product === 'spark' ? 'marketing' : 'assistance',
+            brandTone: productContext.tagline,
+            mode: 'auto',
+          };
+          const enhanced = quickEnhance(enhanceCtx);
+          if (enhanced.qualityScore > 50 && enhanced.improvements.length > 0) {
+            finalPrompt += `\n\nPROMPT QUALITY HINTS (use to improve response): Quality ${enhanced.qualityScore}/100. ${enhanced.improvements.join('. ')}.`;
+          }
+        } catch { /* enhancement is optional — never block the chat */ }
+      }
+
+      // Zone-aware provider selection: uses the user's detected region
+      // to pick the optimal LLM (Claude for US/EU, Qwen for CJK, Gemini for India/SEA, GPT-4o for Arabic)
+      const { provider: zoneProvider, model: zoneModel } = mapRoutingLLMToProvider(ecosystem.routing.llm);
+
       const response = await generateResponse({
-        prompt: contextPrompt,
-        provider: 'gemini'
+        prompt: finalPrompt,
+        provider: zoneProvider,
+        model: zoneModel,
       });
 
       let responseContent = response?.content || getRandomPhrase('empathy') + " I couldn't quite process that. Want to try asking differently? I'm here! 💜";
@@ -1389,7 +1535,28 @@ USER MESSAGE: ${text}
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, product, productContext, currentTab, sessionData, subscriptionTier, generateResponse, labelStudioService, autoSpeak, voice]);
+  }, [input, isLoading, product, productContext, currentTab, sessionData, subscriptionTier, generateResponse, labelStudioService, autoSpeak, voice, support, enrichmentContext]);
+
+  // ── Support mode: escalate with message injection ──
+  const handleEscalateToHuman = useCallback(async (reason?: string) => {
+    await support.escalateToHuman(reason);
+    const escalationMsg: Message = {
+      id: `escalation-${Date.now()}`,
+      role: 'assistant',
+      content: `**Escalation Requested**\n\nI've flagged this conversation for human review. A support agent will reach out to you via email within your SLA timeframe based on your subscription tier.\n\nReason: ${reason || 'User requested human support'}`,
+      timestamp: new Date(),
+      product,
+      emotionalTone: 'helpful',
+    };
+    setMessages(prev => [...prev, escalationMsg]);
+  }, [support, product]);
+
+  // ── Support mode: clear conversation ──
+  const handleClearConversation = useCallback(() => {
+    setMessages([]);
+    support.clearConversation();
+    setShowWelcome(true);
+  }, [support]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
@@ -1978,6 +2145,42 @@ USER MESSAGE: ${text}
               </div>
             )}
           </ScrollArea>
+
+          {/* Support mode: Escalation Banner */}
+          {support.isSupport && support.escalationNeeded && (
+            <div className="mx-3 mb-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <span>Would you like to speak with a human agent?</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEscalateToHuman('User requested human support')}
+                  className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                >
+                  <UserCheck className="h-4 w-4 mr-1" />
+                  Escalate
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Support mode: Clear conversation + session controls */}
+          {support.isSupport && messages.length > 2 && (
+            <div className="flex items-center justify-end px-3 py-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearConversation}
+                className="text-xs text-muted-foreground h-6"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                New conversation
+              </Button>
+            </div>
+          )}
 
           {/* Input Area - Fixed at bottom, shrink-0 to prevent compression */}
           <div className="p-3 sm:p-4 border-t bg-muted/30 shrink-0">

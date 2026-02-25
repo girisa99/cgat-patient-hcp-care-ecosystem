@@ -4,7 +4,7 @@
 **Goal**: Every selection in CREATE flows 1:1 into PRODUCE, every format generates multiple output types in PRODUCE, PUBLISH distributes real artifacts as long-form + short-form + teasers + multi-language derivatives across 30+ platforms, tier gating enforces limits at every step, and the subscription module is cost-aware with breakeven visibility.
 
 **Codebase Reality Check (from research):**
-- 4 routing zones (Claude/Alibaba/Gemini/Fallback), 16 parent regions, 56+ sub-regions, 18+ AI providers
+- 4 routing zones (Claude/Alibaba/Gemini/Fallback), 16 parent regions, 62 subregions, 18+ AI providers
 - 6 OCR providers active (Gemini, Azure Form Recognizer, DeepSeek, OpenAI/GPT-4o, Claude, Alibaba Qwen-VL)
 - Video: Alibaba Wan 2.6 (PRIMARY), Sora 2 (SECONDARY), Vertex Veo 3 (FALLBACK) — no SOAR2 framework exists
 - 30+ platform definitions in `usePlatformExport`, `shorts-generator` + `magic-clips-generator` edge functions exist
@@ -201,7 +201,7 @@ handleGenerate(formatName) →
 
 ### 4B. Zone-Routed LLM — Complete Provider Matrix
 
-**Existing architecture (4 zones, 16 parent regions, 56+ sub-regions):**
+**Existing architecture (4 zones, 16 parent regions, 62 subregions):**
 
 | Zone | Primary LLM | Fallback Chain |
 |------|-------------|----------------|

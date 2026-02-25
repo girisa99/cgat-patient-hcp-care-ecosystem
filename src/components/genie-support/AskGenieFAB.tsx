@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { AskGenieChat } from './AskGenieChat';
+import { AskGenie } from '@/components/genie-studio/AskGenie';
 
 interface AskGenieFABProps {
   className?: string;
@@ -346,10 +346,11 @@ export const AskGenieFAB: React.FC<AskGenieFABProps> = ({ className }) => {
             {/* Chat Content - only when not minimized */}
             {!shouldMinimize && (
               <div className="flex-1 overflow-hidden">
-                <AskGenieChat 
-                  className="h-full max-h-[400px]" 
-                  compact
-                  onEscalate={handleGoToSupport}
+                <AskGenie
+                  product="support"
+                  position="inline"
+                  isOpen={true}
+                  className="h-full max-h-[400px] border-0 shadow-none"
                 />
               </div>
             )}

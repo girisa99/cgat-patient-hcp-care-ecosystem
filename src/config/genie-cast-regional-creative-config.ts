@@ -9,7 +9,7 @@
  * - Cultural symbols & metaphors
  * 
  * Used by: prompt enrichment across Genie Cast, Vibe, Deck, Spark
- * Aligned 1:1 with regionHierarchy.ts (16 parent regions, 60+ zones)
+ * Aligned 1:1 with regionHierarchy.ts (16 parent regions, 62 subregions)
  */
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────

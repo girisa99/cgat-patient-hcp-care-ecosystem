@@ -180,18 +180,55 @@ async function generateShorts(request: ShortsGeneratorRequest, apiKey: string): 
 }> {
   const startTime = Date.now();
   const analysis = await analyzeForShorts(request, apiKey);
-  
+
   const maxClips = request.options?.maxClips || 3;
   const topClips = analysis.suggestedClips.slice(0, maxClips);
 
-  const generatedClips = topClips.map((clip, index) => {
-    const platforms = request.platform === 'all' 
-      ? ['youtube_shorts', 'tiktok', 'instagram_reels']
-      : [request.platform];
-    
+  const platforms = request.platform === 'all'
+    ? ['youtube_shorts', 'tiktok', 'instagram_reels']
+    : [request.platform];
+
+  // Call magic-clips-generator for real video output
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  let clipResults: Record<string, string> = {};
+  try {
+    const magicClipsResponse = await fetch(`${supabaseUrl}/functions/v1/magic-clips-generator`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sourceVideoUrl: request.sourceVideoUrl,
+        platforms,
+        mode: 'highlights',
+        highlightTimestamps: topClips.map(c => ({ start: c.startTime, end: c.endTime })),
+        addCaptions: request.options?.includeSubtitles ?? false,
+        language: 'en',
+      }),
+    });
+
+    if (magicClipsResponse.ok) {
+      const magicData = await magicClipsResponse.json();
+      // Map platform → clip URL from magic-clips results
+      for (const clip of (magicData.clips || [])) {
+        if (clip.clipUrl) {
+          clipResults[clip.platformId] = clip.clipUrl;
+        }
+      }
+    } else {
+      console.warn('⚠️ magic-clips-generator returned non-OK, using pending status');
+    }
+  } catch (err) {
+    console.warn('⚠️ magic-clips-generator call failed, clips will be marked pending:', err);
+  }
+
+  const generatedClips = topClips.map((clip) => {
     return platforms.map(platform => ({
       id: `short_${clip.id}_${platform}`,
-      outputUrl: `https://storage.example.com/shorts/${clip.id}_${platform}.mp4`,
+      outputUrl: clipResults[platform] || '', // Real URL from magic-clips or empty if pending
       platform,
       duration: clip.duration,
       aspectRatio: request.options?.aspectRatio || '9:16',
@@ -200,14 +237,14 @@ async function generateShorts(request: ShortsGeneratorRequest, apiKey: string): 
         title: clip.suggestedCaption.split('#')[0].trim(),
         description: clip.transcript,
         hashtags: extractHashtags(clip.suggestedCaption, platform),
-        suggestedPostTime: getSuggestedPostTime(platform)
-      }
+        suggestedPostTime: getSuggestedPostTime(platform),
+      },
     }));
   }).flat();
 
   return {
     generatedClips,
-    processingTime: Date.now() - startTime
+    processingTime: Date.now() - startTime,
   };
 }
 

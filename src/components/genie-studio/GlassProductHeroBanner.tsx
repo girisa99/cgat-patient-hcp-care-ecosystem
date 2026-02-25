@@ -5,7 +5,7 @@
  * - Real glassmorphism: backdrop-blur-xl, frosted overlays, inner shine, glow orbs
  * - AI-generated or gradient+SVG fallback thumbnails (always shows something beautiful)
  * - Region/subregion-aware: adapts colors, patterns, cultural tone per user's zone
- * - Works for all 16 regions, 56+ zones, 75+ languages
+ * - Works for all 16 regions, 62 subregions, 85+ languages
  * - Uses LOCKED routing stack via routingEnforcementGateway
  * - RTL support for MENA/Hebrew regions
  * - Supabase-persisted region selection (same region flows Create → Produce → Publish)

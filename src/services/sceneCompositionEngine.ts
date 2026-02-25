@@ -538,6 +538,186 @@ function inferStyleFromVisual(visual: ChapterVisual): SceneStyle {
   }
 }
 
+// ─── Scene Intelligence: Auto-Chapter Grouping ─────────────────────────────
+
+/** Topic similarity keywords for grouping adjacent scenes into chapters */
+const TOPIC_CLUSTERS: Record<string, string[]> = {
+  intro: ['intro', 'welcome', 'overview', 'opener', 'hook', 'teaser'],
+  problem: ['problem', 'challenge', 'pain', 'issue', 'struggle', 'gap'],
+  solution: ['solution', 'answer', 'approach', 'method', 'strategy', 'how'],
+  product: ['product', 'feature', 'demo', 'walkthrough', 'showcase', 'app'],
+  data: ['data', 'metric', 'stat', 'number', 'chart', 'graph', 'roi', 'result'],
+  team: ['team', 'founder', 'people', 'about us', 'who we are', 'leadership'],
+  testimonial: ['testimonial', 'review', 'case study', 'success', 'story', 'quote'],
+  pricing: ['pricing', 'plan', 'tier', 'cost', 'subscription', 'free'],
+  cta: ['cta', 'call to action', 'next step', 'sign up', 'subscribe', 'contact'],
+  outro: ['outro', 'closing', 'summary', 'recap', 'conclusion', 'thank'],
+};
+
+export interface ChapterGroup {
+  id: string;
+  title: string;
+  topic: string;
+  sceneIds: string[];
+  startIndex: number;
+  endIndex: number;
+  totalDuration: number;
+}
+
+/**
+ * Auto-group contiguous scenes into chapters based on title/script topic similarity.
+ * Uses keyword clustering — adjacent scenes sharing a topic cluster form a chapter.
+ */
+export function autoGroupChapters(scenes: CompositionScene[]): ChapterGroup[] {
+  if (scenes.length === 0) return [];
+
+  const sorted = [...scenes].sort((a, b) => a.order - b.order);
+
+  // Assign topic to each scene
+  const sceneTopic = sorted.map(scene => {
+    const text = `${scene.title} ${scene.voiceover?.text || ''}`.toLowerCase();
+    let bestTopic = 'general';
+    let bestScore = 0;
+    for (const [topic, keywords] of Object.entries(TOPIC_CLUSTERS)) {
+      const score = keywords.reduce((sum, kw) => sum + (text.includes(kw) ? 1 : 0), 0);
+      if (score > bestScore) { bestScore = score; bestTopic = topic; }
+    }
+    return bestTopic;
+  });
+
+  // Group adjacent scenes with the same topic
+  const chapters: ChapterGroup[] = [];
+  let currentTopic = sceneTopic[0];
+  let startIdx = 0;
+
+  for (let i = 1; i <= sorted.length; i++) {
+    const topicChanged = i === sorted.length || sceneTopic[i] !== currentTopic;
+    if (topicChanged) {
+      const groupScenes = sorted.slice(startIdx, i);
+      const topicLabel = currentTopic.charAt(0).toUpperCase() + currentTopic.slice(1);
+      chapters.push({
+        id: crypto.randomUUID(),
+        title: groupScenes.length === 1 ? groupScenes[0].title : `${topicLabel} (${groupScenes.length} scenes)`,
+        topic: currentTopic,
+        sceneIds: groupScenes.map(s => s.id),
+        startIndex: startIdx,
+        endIndex: i - 1,
+        totalDuration: groupScenes.reduce((sum, s) => sum + s.duration, 0),
+      });
+      if (i < sorted.length) {
+        currentTopic = sceneTopic[i];
+        startIdx = i;
+      }
+    }
+  }
+
+  return chapters;
+}
+
+// ─── Scene Intelligence: Auto-Split Script to Scenes ────────────────────────
+
+/** Detect scene boundaries in raw text and split into CompositionScene[] */
+export function autoSplitToScenes(
+  rawScript: string,
+  options?: {
+    maxSceneDuration?: number;    // seconds per scene (default 30)
+    wordsPerSecond?: number;      // narration speed (default 2.5 words/sec)
+    preserveSpeakerChanges?: boolean; // split on "Speaker:" patterns
+  },
+): CompositionScene[] {
+  const maxDur = options?.maxSceneDuration ?? 30;
+  const wps = options?.wordsPerSecond ?? 2.5;
+  const preserveSpeakers = options?.preserveSpeakerChanges ?? true;
+
+  if (!rawScript.trim()) return [];
+
+  // Split raw text into logical blocks
+  const blocks: { text: string; speaker?: string }[] = [];
+
+  // 1. Try markdown headings (## Section / ### Sub)
+  const headingSplit = rawScript.split(/\n(?=#{1,3}\s)/);
+  if (headingSplit.length > 1) {
+    for (const block of headingSplit) {
+      const titleMatch = block.match(/^(#{1,3})\s+(.+)\n?([\s\S]*)/);
+      if (titleMatch) {
+        blocks.push({ text: titleMatch[3].trim(), speaker: titleMatch[2].trim() });
+      } else if (block.trim()) {
+        blocks.push({ text: block.trim() });
+      }
+    }
+  }
+  // 2. Try speaker labels (e.g. "Host:", "Dr. Smith:", "[NARRATOR]")
+  else if (preserveSpeakers && /^[\[]*[A-Z][A-Za-z .]+[\]]*:/m.test(rawScript)) {
+    const speakerSplit = rawScript.split(/\n(?=[\[]*[A-Z][A-Za-z .]+[\]]*:)/);
+    for (const block of speakerSplit) {
+      const speakerMatch = block.match(/^[\[]*([A-Z][A-Za-z .]+)[\]]*:\s*([\s\S]*)/);
+      if (speakerMatch) {
+        blocks.push({ text: speakerMatch[2].trim(), speaker: speakerMatch[1].trim() });
+      } else if (block.trim()) {
+        blocks.push({ text: block.trim() });
+      }
+    }
+  }
+  // 3. Try double-newline paragraphs
+  else {
+    const paragraphs = rawScript.split(/\n\s*\n/).filter(p => p.trim());
+    for (const p of paragraphs) {
+      blocks.push({ text: p.trim() });
+    }
+  }
+
+  // Convert blocks to scenes, splitting long blocks if they exceed maxDur
+  const scenes: CompositionScene[] = [];
+  let order = 0;
+
+  for (const block of blocks) {
+    const wordCount = block.text.split(/\s+/).length;
+    const estimatedDuration = Math.ceil(wordCount / wps);
+
+    if (estimatedDuration <= maxDur) {
+      scenes.push(createScene({
+        order: order++,
+        title: block.speaker || `Scene ${order}`,
+        duration: Math.max(5, estimatedDuration),
+        voiceover: { type: 'tts', text: block.text, language: 'en' },
+      }));
+    } else {
+      // Split long block into multiple scenes by sentence boundaries
+      const sentences = block.text.match(/[^.!?]+[.!?]+/g) || [block.text];
+      let chunk = '';
+      let chunkWords = 0;
+      let partNum = 1;
+
+      for (const sentence of sentences) {
+        const sentWords = sentence.trim().split(/\s+/).length;
+        if (chunkWords + sentWords > maxDur * wps && chunk) {
+          scenes.push(createScene({
+            order: order++,
+            title: block.speaker ? `${block.speaker} (${partNum})` : `Scene ${order}`,
+            duration: Math.max(5, Math.ceil(chunkWords / wps)),
+            voiceover: { type: 'tts', text: chunk.trim(), language: 'en' },
+          }));
+          chunk = '';
+          chunkWords = 0;
+          partNum++;
+        }
+        chunk += sentence;
+        chunkWords += sentWords;
+      }
+      if (chunk.trim()) {
+        scenes.push(createScene({
+          order: order++,
+          title: block.speaker ? `${block.speaker} (${partNum})` : `Scene ${order}`,
+          duration: Math.max(5, Math.ceil(chunkWords / wps)),
+          voiceover: { type: 'tts', text: chunk.trim(), language: 'en' },
+        }));
+      }
+    }
+  }
+
+  return scenes;
+}
+
 // ─── Project Utilities ───────────────────────────────────────────────────────
 
 /** Calculate total project duration */

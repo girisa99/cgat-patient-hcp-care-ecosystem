@@ -1,6 +1,7 @@
 /**
  * SMART SCHEDULER PANEL
  * Calendar-based content scheduling with smart suggestions + manual override
+ * Persists to scheduled_posts table (DB-backed, survives page refresh)
  * Integrated with landing_page_videos for completed content
  */
 
@@ -12,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -31,18 +31,13 @@ import {
 import {
   Calendar as CalendarIcon,
   Clock,
-  Video,
-  Globe,
-  Youtube,
-  Linkedin,
-  Facebook,
   Sparkles,
   CheckCircle,
-  AlertCircle,
   Plus,
   Loader2,
+  Trash2,
 } from 'lucide-react';
-import { format, addDays, startOfWeek, isToday, isSameDay, parseISO } from 'date-fns';
+import { format, addDays, isToday, isSameDay } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -53,7 +48,7 @@ interface ScheduledItem {
   scheduledDate: Date;
   scheduledTime: string;
   platforms: string[];
-  status: 'scheduled' | 'published' | 'failed';
+  status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed' | 'cancelled';
   suggestedBy: 'ai' | 'manual';
 }
 
@@ -82,6 +77,37 @@ interface VideoItem {
   generation_status: string;
   video_url?: string;
   thumbnail_url?: string;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// DB row → ScheduledItem mapper
+// ──────────────────────────────────────────────────────────────────────────────
+
+interface ScheduledPostRow {
+  id: string;
+  content_id: string | null;
+  platform: string;
+  scheduled_time: string;
+  timezone: string | null;
+  status: string | null;
+  content_data: Record<string, unknown>;
+  media_urls: string[] | null;
+  hashtags: string[] | null;
+}
+
+function rowToItem(row: ScheduledPostRow): ScheduledItem {
+  const data = row.content_data || {};
+  const scheduledDate = new Date(row.scheduled_time);
+  return {
+    id: row.id,
+    videoId: (data.video_id as string) || row.content_id || '',
+    videoTitle: (data.video_title as string) || 'Untitled',
+    scheduledDate,
+    scheduledTime: format(scheduledDate, 'HH:mm'),
+    platforms: (data.platforms as string[]) || [row.platform],
+    status: (row.status as ScheduledItem['status']) || 'scheduled',
+    suggestedBy: (data.suggested_by as 'ai' | 'manual') || 'manual',
+  };
 }
 
 export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
@@ -129,11 +155,75 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
     ? [sessionVideo, ...dbVideos.filter(v => v.video_url !== sessionVideo.video_url)]
     : dbVideos;
 
-  // Local state for scheduled items (would be DB-backed in production)
-  const [scheduledItems, setScheduledItems] = useState<ScheduledItem[]>(() => {
-    // Generate some AI-suggested schedules
-    const suggestions: ScheduledItem[] = [];
-    return suggestions;
+  // ── DB-backed scheduled items ───────────────────────────────────────────────
+
+  const { data: scheduledItems = [], isLoading: scheduledLoading } = useQuery({
+    queryKey: ['scheduled-posts'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('scheduled_posts')
+        .select('id, content_id, platform, scheduled_time, timezone, status, content_data, media_urls, hashtags')
+        .eq('user_id', user.id)
+        .in('status', ['draft', 'scheduled', 'publishing', 'published'])
+        .order('scheduled_time', { ascending: true })
+        .limit(100);
+      if (error) throw error;
+      return (data || []).map((row: ScheduledPostRow) => rowToItem(row));
+    },
+  });
+
+  // INSERT mutation
+  const insertMutation = useMutation({
+    mutationFn: async (item: { videoId: string; videoTitle: string; videoUrl?: string; platforms: string[]; scheduledDate: Date; scheduledTime: string; suggestedBy: 'ai' | 'manual' }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const [hours, minutes] = item.scheduledTime.split(':').map(Number);
+      const scheduledAt = new Date(item.scheduledDate);
+      scheduledAt.setHours(hours, minutes, 0, 0);
+
+      // Insert one row per platform (DB schema has single platform per row)
+      const rows = item.platforms.map(platform => ({
+        user_id: user.id,
+        content_id: item.videoId !== 'session-current' ? item.videoId : null,
+        platform,
+        scheduled_time: scheduledAt.toISOString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        status: 'scheduled' as const,
+        content_data: {
+          video_id: item.videoId,
+          video_title: item.videoTitle,
+          video_url: item.videoUrl || null,
+          platforms: item.platforms,
+          suggested_by: item.suggestedBy,
+          region: selectedRegion || null,
+        },
+        media_urls: item.videoUrl ? [item.videoUrl] : [],
+      }));
+
+      const { error } = await supabase.from('scheduled_posts').insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scheduled-posts'] });
+    },
+  });
+
+  // DELETE mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('scheduled_posts')
+        .update({ status: 'cancelled' })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scheduled-posts'] });
+      toast.success('Schedule cancelled');
+    },
   });
 
   // Get items for selected date
@@ -145,7 +235,7 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
   const generateAISuggestions = (video: VideoItem): ScheduledItem[] => {
     const suggestions: ScheduledItem[] = [];
     const now = new Date();
-    
+
     // Suggest optimal times for different platforms
     PLATFORMS.slice(0, 3).forEach((platform, idx) => {
       const optimalTime = getOptimalTimes(platform.id)[0] || '12:00';
@@ -160,35 +250,49 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
         suggestedBy: 'ai',
       });
     });
-    
+
     return suggestions;
   };
 
   // Handle scheduling a video
-  const handleScheduleVideo = () => {
+  const handleScheduleVideo = async () => {
     if (!selectedVideoForSchedule) return;
-    
-    const newItem: ScheduledItem = {
-      id: `manual-${Date.now()}`,
-      videoId: selectedVideoForSchedule.id,
-      videoTitle: selectedVideoForSchedule.title,
-      scheduledDate: selectedDate,
-      scheduledTime: selectedTime,
-      platforms: selectedPlatforms,
-      status: 'scheduled',
-      suggestedBy: 'manual',
-    };
-    
-    setScheduledItems(prev => [...prev, newItem]);
-    setIsScheduleDialogOpen(false);
-    setSelectedVideoForSchedule(null);
-    toast.success('Video scheduled successfully!');
+
+    try {
+      await insertMutation.mutateAsync({
+        videoId: selectedVideoForSchedule.id,
+        videoTitle: selectedVideoForSchedule.title,
+        videoUrl: selectedVideoForSchedule.video_url,
+        platforms: selectedPlatforms,
+        scheduledDate: selectedDate,
+        scheduledTime: selectedTime,
+        suggestedBy: 'manual',
+      });
+      setIsScheduleDialogOpen(false);
+      setSelectedVideoForSchedule(null);
+      toast.success('Video scheduled successfully!');
+    } catch {
+      toast.error('Failed to schedule — try again');
+    }
   };
 
-  // Accept AI suggestion
-  const handleAcceptSuggestion = (suggestion: ScheduledItem) => {
-    setScheduledItems(prev => [...prev, { ...suggestion, id: `accepted-${Date.now()}` }]);
-    toast.success('AI suggestion accepted!');
+  // Accept AI suggestion (persists to DB)
+  const handleAcceptSuggestion = async (suggestion: ScheduledItem) => {
+    const video = availableVideos.find(v => v.id === suggestion.videoId);
+    try {
+      await insertMutation.mutateAsync({
+        videoId: suggestion.videoId,
+        videoTitle: suggestion.videoTitle,
+        videoUrl: video?.video_url,
+        platforms: suggestion.platforms,
+        scheduledDate: suggestion.scheduledDate,
+        scheduledTime: suggestion.scheduledTime,
+        suggestedBy: 'ai',
+      });
+      toast.success('AI suggestion accepted!');
+    } catch {
+      toast.error('Failed to save suggestion');
+    }
   };
 
   // Get dates with scheduled items for calendar highlighting
@@ -214,9 +318,10 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
                     Session Linked
                   </Badge>
                 )}
+                {scheduledLoading && <Loader2 className="w-3 h-3 animate-spin ml-2" />}
               </CardDescription>
             </div>
-            <Button 
+            <Button
               onClick={() => setIsScheduleDialogOpen(true)}
               disabled={availableVideos.length === 0}
             >
@@ -246,7 +351,7 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
                 hasItems: { fontWeight: 'bold', backgroundColor: 'hsl(var(--primary) / 0.1)' },
               }}
             />
-            
+
             {/* Quick stats */}
             <div className="mt-4 grid grid-cols-2 gap-2">
               <div className="p-3 bg-muted/50 rounded-lg text-center">
@@ -275,9 +380,9 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
                 <div className="text-center py-12 text-muted-foreground">
                   <CalendarIcon className="w-12 h-12 mx-auto mb-4 opacity-30" />
                   <p>No content scheduled for this date</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="mt-4"
                     onClick={() => setIsScheduleDialogOpen(true)}
                     disabled={availableVideos.length === 0}
@@ -292,8 +397,8 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
                       key={item.id}
                       className={cn(
                         "p-4 rounded-lg border",
-                        item.suggestedBy === 'ai' 
-                          ? 'border-primary/30 bg-primary/5' 
+                        item.suggestedBy === 'ai'
+                          ? 'border-primary/30 bg-primary/5'
                           : 'border-border'
                       )}
                     >
@@ -309,6 +414,9 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
                                 AI Suggested
                               </Badge>
                             )}
+                            <Badge variant="secondary" className="text-xs capitalize">
+                              {item.status}
+                            </Badge>
                           </div>
                           <h4 className="font-medium mt-2">{item.videoTitle}</h4>
                           <div className="flex items-center gap-2 mt-2">
@@ -317,9 +425,9 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
                               if (!platform) return null;
                               const Icon = platform.icon;
                               return (
-                                <Badge 
+                                <Badge
                                   key={platformId}
-                                  variant="secondary" 
+                                  variant="secondary"
                                   className="text-xs"
                                 >
                                   <Icon className="w-3 h-3 mr-1" />
@@ -331,10 +439,15 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           {item.status === 'scheduled' && (
-                            <Badge variant="outline" className="text-blue-600">
-                              <Clock className="w-3 h-3 mr-1" />
-                              Scheduled
-                            </Badge>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={() => deleteMutation.mutate(item.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           )}
                           {item.status === 'published' && (
                             <Badge className="bg-green-500">
@@ -375,20 +488,21 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
                       <h4 className="font-medium text-sm truncate">{video.title}</h4>
                       <div className="mt-3 space-y-2">
                         {suggestions.slice(0, 2).map((suggestion) => (
-                          <div 
+                          <div
                             key={suggestion.id}
                             className="flex items-center justify-between text-xs"
                           >
                             <span className="text-muted-foreground">
                               {format(suggestion.scheduledDate, 'MMM d')} @ {suggestion.scheduledTime}
                             </span>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="ghost"
                               className="h-6 text-xs"
                               onClick={() => handleAcceptSuggestion(suggestion)}
+                              disabled={insertMutation.isPending}
                             >
-                              Accept
+                              {insertMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Accept'}
                             </Button>
                           </div>
                         ))}
@@ -411,7 +525,7 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
               Choose a video, platforms, and time to schedule
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {/* Video Selection */}
             <div className="space-y-2">
@@ -449,8 +563,8 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
                       variant={isSelected ? "default" : "outline"}
                       size="sm"
                       onClick={() => {
-                        setSelectedPlatforms(prev => 
-                          isSelected 
+                        setSelectedPlatforms(prev =>
+                          isSelected
                             ? prev.filter(p => p !== platform.id)
                             : [...prev, platform.id]
                         );
@@ -486,10 +600,11 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
             <Button variant="outline" onClick={() => setIsScheduleDialogOpen(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleScheduleVideo}
-              disabled={!selectedVideoForSchedule || selectedPlatforms.length === 0}
+              disabled={!selectedVideoForSchedule || selectedPlatforms.length === 0 || insertMutation.isPending}
             >
+              {insertMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Schedule
             </Button>
           </DialogFooter>

@@ -28,6 +28,8 @@ import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useCastProduction } from '@/hooks/useCastProduction';
 import { useGenieCastSession } from '@/hooks/useGenieCastSession';
 import { buildRequestFromCastSession, assembleEnrichmentContext } from '@/services/production/castProductionBridge';
+import { useTierGatedAction } from '@/hooks/useTierGatedAction';
+import { quickEnhance, enhancePrompt, type PromptContext } from '@/services/promptEnhancementEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Video, Share2, Film,
@@ -468,6 +470,9 @@ export const GenieCastHub: React.FC = () => {
   // Persistent session state — single source of truth for all CREATE selections
   const castSession = useGenieCastSession();
 
+  // Credit + tier gate for generation
+  const tierGate = useTierGatedAction('avatar', 'free', 'video_generation');
+
   // Persist state changes (styles + language)
   useEffect(() => {
     const state: GenieCastHubState = { selectedVideoStyles, languageCode };
@@ -527,14 +532,48 @@ export const GenieCastHub: React.FC = () => {
       request.videoStyles = selectedVideoStyles.length > 0 ? selectedVideoStyles : ['professional'];
     }
 
+    // ── Auto-enhance prompt before production ──────────────────────────────
+    // Uses region/subregion routing + format/style context to improve the script
+    if (request.scriptContent && request.scriptContent.length > 10) {
+      const promptCtx: PromptContext = {
+        rawPrompt: request.scriptContent,
+        region: session.selectedRegion || 'NAM_US',
+        language: request.inputLanguage || 'en',
+        format: formatName || request.selectedFormats?.[0] || 'video',
+        visualStyle: request.videoStyles?.[0],
+        intent: request.intent,
+        mode: 'auto',
+      };
+
+      // Quick local enhancement (instant, no AI call)
+      const quick = quickEnhance(promptCtx);
+      if (quick.qualityScore > 60) {
+        toast.info(`Prompt enhanced (quality: ${quick.qualityScore}/100) — ${quick.improvements[0] || 'improved'}`, { duration: 3000 });
+        request.scriptContent = quick.enhanced;
+      }
+
+      // Full AI enhancement runs in background — updates production if it completes in time
+      enhancePrompt(promptCtx).then(result => {
+        if (result.primary.qualityScore > quick.qualityScore) {
+          toast.success(`AI prompt enhancement applied (${result.primary.qualityScore}/100)`, { duration: 3000 });
+        }
+      }).catch(() => { /* non-blocking — quick enhance already applied */ });
+    }
+
     // Use format-specific routing when triggered from FormatStudioRouter
     const activeFormats = formatName
       ? [formatName]
       : request.selectedFormats;
 
-    toast.info(`Starting ${formatName || 'multi-format'} production (enrichment: ${request.enrichmentScore}/100)...`);
+    // Show credit cost before proceeding
+    if (tierGate.creditCost > 0) {
+      toast.info(`Starting ${formatName || 'multi-format'} production (${tierGate.creditCost} credits, enrichment: ${request.enrichmentScore}/100)...`);
+    } else {
+      toast.info(`Starting ${formatName || 'multi-format'} production (enrichment: ${request.enrichmentScore}/100)...`);
+    }
 
-    try {
+    // Credit + tier gate wraps the actual production call
+    const success = await tierGate.execute(async () => {
       await production.startProduction({
         scriptContent: request.scriptContent,
         scriptTitle: request.scriptTitle,
@@ -551,12 +590,12 @@ export const GenieCastHub: React.FC = () => {
         includeMusic: request.includeMusic,
         includeCaptions: request.includeCaptions,
       });
+    });
 
+    if (success) {
       dispatch({ type: 'STEP_COMPLETED', stepId: 'generate' });
-    } catch {
-      toast.error('Failed to start production');
     }
-  }, [castSession.session, selectedVideoStyles, dispatch, production]);
+  }, [castSession.session, selectedVideoStyles, dispatch, production, tierGate]);
 
   const handleModeChange = useCallback((newMode: CastMode) => {
     setMode(newMode);
