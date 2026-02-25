@@ -5,6 +5,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+/**
+ * Safe JSON-path based data transformation.
+ * Supports simple field mapping expressed as JSON: {"outputKey": "inputKey"} or {"outputKey": "nested.path"}
+ * NEVER uses new Function() or eval() — prevents code injection.
+ */
+function applyJsonTransform(data: any, transformSpec: string): any {
+  try {
+    const mapping = JSON.parse(transformSpec)
+    if (typeof mapping !== 'object' || mapping === null) return data
+
+    const result: Record<string, any> = {}
+    for (const [outKey, inPath] of Object.entries(mapping)) {
+      if (typeof inPath === 'string') {
+        // Resolve dotted path safely
+        const val = inPath.split('.').reduce((obj, key) => obj?.[key], data)
+        result[outKey] = val
+      }
+    }
+    return result
+  } catch {
+    // If transformSpec is not valid JSON, return data unchanged
+    return data
+  }
+}
+
 interface McpApiConfig {
   endpoints: Record<string, {
     url: string
@@ -168,8 +193,8 @@ async function callExternalApi(endpoint: string, data: any, params: any, config:
     let transformedData = data
     if (endpointConfig.transform?.request) {
       try {
-        const transformFn = new Function('data', endpointConfig.transform.request)
-        transformedData = transformFn(data)
+        // Apply JSON-path based transformations instead of arbitrary code execution
+        transformedData = applyJsonTransform(data, endpointConfig.transform.request)
       } catch (e) {
         console.warn('Request transformation failed:', e)
       }
@@ -195,8 +220,7 @@ async function callExternalApi(endpoint: string, data: any, params: any, config:
     // Apply response transformation if configured
     if (endpointConfig.transform?.response) {
       try {
-        const transformFn = new Function('data', endpointConfig.transform.response)
-        result = transformFn(result)
+        result = applyJsonTransform(result, endpointConfig.transform.response)
       } catch (e) {
         console.warn('Response transformation failed:', e)
       }

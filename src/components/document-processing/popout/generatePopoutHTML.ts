@@ -122,13 +122,17 @@ export function generatePopoutHTML(config: PopoutConfig): string {
     var syncAudioSource = null;
     var syncAnimationFrame = null;
     
-    // Shared showStatus function
+    // Shared showStatus function — uses textContent to prevent XSS
     function showStatus(message, type) {
       var container = document.getElementById('statusContainer');
       if (container) {
-        container.innerHTML = '<div class="status-message ' + type + '">' + message + '</div>';
+        container.textContent = '';
+        var div = document.createElement('div');
+        div.className = 'status-message ' + type;
+        div.textContent = message;
+        container.appendChild(div);
         if (type === 'success') {
-          setTimeout(function() { container.innerHTML = ''; }, 5000);
+          setTimeout(function() { container.textContent = ''; }, 5000);
         }
       }
       debugLog('[Status] ' + type + ': ' + message);

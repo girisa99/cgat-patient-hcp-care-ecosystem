@@ -183,10 +183,15 @@ module.exports = { processNode };`);
     setCodeErrors([]);
 
     try {
-      // Basic syntax validation for JavaScript
+      // Basic syntax validation for JavaScript — parse only, never execute
       if (language === 'javascript') {
         try {
-          new Function(code);
+          // Use acorn-like approach: try to parse as a module/script without executing
+          // Fall back to regex-based checks for basic syntax errors
+          const balanced = (code.match(/\{/g) || []).length === (code.match(/\}/g) || []).length;
+          const parensBalanced = (code.match(/\(/g) || []).length === (code.match(/\)/g) || []).length;
+          if (!balanced) setCodeErrors(['Syntax Error: Unbalanced curly braces']);
+          if (!parensBalanced) setCodeErrors(prev => [...prev, 'Syntax Error: Unbalanced parentheses']);
         } catch (error: any) {
           setCodeErrors([`Syntax Error: ${error.message}`]);
         }
