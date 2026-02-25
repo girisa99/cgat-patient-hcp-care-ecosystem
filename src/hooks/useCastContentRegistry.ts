@@ -70,21 +70,30 @@ export interface VisualStyle {
   icon: string;
   color: string | null;
   description: string | null;
-  ip_safe: boolean;
+  // Base table columns
+  allows_photorealistic: boolean;
+  requires_face_consent: boolean;
+  sample_prompt: string | null;
+  style_config: Record<string, unknown>;
+  default_provider: string | null;
+  provider_routing: Record<string, unknown>;
+  seasonal_tags: string[] | null;
+  // Phase 6B columns
+  ip_safe: boolean | null;
   sort_order: number;
   is_active: boolean;
   parent_style_id: string | null;
-  sub_sort_order: number;
+  sub_sort_order: number | null;
   character_type: string | null;
   style_variant: string | null;
-  estimated_size_mb: number;
-  complexity_score: number;
-  render_time_estimate: string;
+  estimated_size_mb: number | null;
+  complexity_score: number | null;
+  render_time_estimate: string | null;
   preview_image_url: string | null;
-  character_frame_percent: number;
-  is_user_created: boolean;
+  character_frame_percent: number | null;
+  is_user_created: boolean | null;
   created_by: string | null;
-  is_saved_globally: boolean;
+  is_saved_globally: boolean | null;
   custom_prompt: string | null;
   uploaded_reference_url: string | null;
   uploaded_reference_type: string | null;
@@ -141,8 +150,17 @@ export interface ProductionCapability {
   id: string;
   name: string;
   label: string;
+  category: string;
   icon: string;
+  color: string;
   description: string | null;
+  default_provider: string | null;
+  provider_routing: Record<string, unknown>;
+  requires_audio: boolean;
+  requires_visual: boolean;
+  requires_avatar: boolean;
+  safety_level: string;
+  requires_consent: boolean;
   sort_order: number;
   is_active: boolean;
 }
@@ -192,7 +210,7 @@ export function useCastContentRegistry() {
         supabase.from('cast_format_capabilities').select('*').eq('is_active', true),
         supabase.from('cast_style_characters').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_style_capability_rules').select('*'),
-        supabase.from('cast_output_presets' as any).select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('cast_output_presets').select('*').eq('is_active', true).order('sort_order'),
       ]);
 
       if (catRes.error) throw catRes.error;
