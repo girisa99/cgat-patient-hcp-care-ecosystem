@@ -38,6 +38,22 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import type { ProductionArtifacts } from '@/hooks/useGenieCastSession';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SESSION PROPS — connects PRODUCE → PUBLISH repurposing
+// ──────────────────────────────────────────────────────────────────────────────
+
+export interface ContentRepurposingSessionProps {
+  /** Production artifacts from castSession (assembled video, scene videos, etc.) */
+  productionArtifacts?: ProductionArtifacts | null;
+  /** Title of the current session's content */
+  sessionTitle?: string;
+  /** Primary platform for format optimization hints */
+  primaryPlatform?: string;
+  /** Selected aspect ratio from CREATE */
+  selectedAspectRatio?: string;
+}
 
 // Repurposing pipelines (activating dormant pipelines from registry)
 const REPURPOSE_PIPELINES = [
@@ -106,14 +122,28 @@ interface RepurposeJob {
   createdAt: Date;
 }
 
-export const ContentRepurposingPanel: React.FC = () => {
+export const ContentRepurposingPanel: React.FC<ContentRepurposingSessionProps> = ({
+  productionArtifacts,
+  sessionTitle,
+  primaryPlatform,
+  selectedAspectRatio,
+} = {}) => {
   const [selectedVideo, setSelectedVideo] = useState<string>('');
   const [selectedPipelines, setSelectedPipelines] = useState<string[]>([]);
   const [jobs, setJobs] = useState<RepurposeJob[]>([]);
   const queryClient = useQueryClient();
 
-  // Fetch source videos
-  const { data: sourceVideos = [], isLoading } = useQuery({
+  // Session-derived video source (from PRODUCE phase)
+  const sessionVideoSource: VideoSource | null = productionArtifacts?.assembledVideoUrl ? {
+    id: 'session-current',
+    title: sessionTitle || 'Current Session Video',
+    video_url: productionArtifacts.assembledVideoUrl,
+    thumbnail_url: productionArtifacts.thumbnailUrls?.[0] || null,
+    duration_seconds: null,
+  } : null;
+
+  // Fetch source videos from DB (fallback / additional options)
+  const { data: dbVideos = [], isLoading } = useQuery({
     queryKey: ['repurpose-source-videos'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -126,6 +156,18 @@ export const ContentRepurposingPanel: React.FC = () => {
       return data as VideoSource[];
     },
   });
+
+  // Merge session video with DB videos (session first, no duplicates)
+  const sourceVideos = sessionVideoSource
+    ? [sessionVideoSource, ...dbVideos.filter(v => v.video_url !== sessionVideoSource.video_url)]
+    : dbVideos;
+
+  // Auto-select session video if available and nothing selected yet
+  React.useEffect(() => {
+    if (sessionVideoSource && !selectedVideo) {
+      setSelectedVideo(sessionVideoSource.id);
+    }
+  }, [sessionVideoSource?.id]);
 
   // Toggle pipeline selection
   const togglePipeline = (pipelineId: string) => {
@@ -206,9 +248,16 @@ export const ContentRepurposingPanel: React.FC = () => {
                 Transform your videos into shorts, clips, and platform-optimized formats
               </CardDescription>
             </div>
-            <Badge className="bg-primary/10 text-primary">
-              {REPURPOSE_PIPELINES.length} Pipelines Active
-            </Badge>
+            <div className="flex items-center gap-2">
+              {sessionVideoSource && (
+                <Badge variant="outline" className="text-xs text-primary border-primary/40">
+                  Session Linked
+                </Badge>
+              )}
+              <Badge className="bg-primary/10 text-primary">
+                {REPURPOSE_PIPELINES.length} Pipelines Active
+              </Badge>
+            </div>
           </div>
         </CardHeader>
       </Card>

@@ -57,6 +57,25 @@ interface ScheduledItem {
   suggestedBy: 'ai' | 'manual';
 }
 
+// Platform configuration — unified via useSocialPlatforms hook
+import { useSocialPlatforms } from '@/hooks/useSocialPlatforms';
+import type { ProductionArtifacts } from '@/hooks/useGenieCastSession';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SESSION PROPS — connects PRODUCE → PUBLISH scheduling
+// ──────────────────────────────────────────────────────────────────────────────
+
+export interface SmartSchedulerSessionProps {
+  /** Primary platform from castSession (pre-selects in scheduler) */
+  primaryPlatform?: string;
+  /** Title of current session's content */
+  sessionTitle?: string;
+  /** Production artifacts from castSession */
+  productionArtifacts?: ProductionArtifacts | null;
+  /** Selected region for timezone-aware scheduling */
+  selectedRegion?: string;
+}
+
 interface VideoItem {
   id: string;
   title: string;
@@ -65,34 +84,33 @@ interface VideoItem {
   thumbnail_url?: string;
 }
 
-// Platform configuration
-const PLATFORMS = [
-  { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'bg-red-500' },
-  { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'bg-blue-600' },
-  { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'bg-blue-500' },
-  { id: 'tiktok', name: 'TikTok', icon: Video, color: 'bg-black' },
-  { id: 'instagram', name: 'Instagram', icon: Video, color: 'bg-gradient-to-tr from-purple-500 to-pink-500' },
-];
-
-// Optimal posting times by platform (simplified)
-const OPTIMAL_TIMES: Record<string, string[]> = {
-  youtube: ['09:00', '12:00', '17:00'],
-  linkedin: ['08:00', '10:00', '12:00'],
-  facebook: ['13:00', '16:00', '20:00'],
-  tiktok: ['11:00', '19:00', '21:00'],
-  instagram: ['11:00', '14:00', '19:00'],
-};
-
-export const SmartSchedulerPanel: React.FC = () => {
+export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
+  primaryPlatform,
+  sessionTitle,
+  productionArtifacts,
+  selectedRegion,
+} = {}) => {
+  const { schedulerPlatforms: PLATFORMS, getOptimalTimes } = useSocialPlatforms();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [selectedVideoForSchedule, setSelectedVideoForSchedule] = useState<VideoItem | null>(null);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['youtube']);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
+    primaryPlatform ? [primaryPlatform] : ['youtube']
+  );
   const [selectedTime, setSelectedTime] = useState('12:00');
   const queryClient = useQueryClient();
 
-  // Fetch completed videos available for scheduling
-  const { data: availableVideos = [], isLoading: videosLoading } = useQuery({
+  // Session-derived video (from PRODUCE phase)
+  const sessionVideo: VideoItem | null = (sessionTitle && productionArtifacts?.assembledVideoUrl) ? {
+    id: 'session-current',
+    title: sessionTitle,
+    generation_status: 'completed',
+    video_url: productionArtifacts.assembledVideoUrl,
+    thumbnail_url: productionArtifacts.thumbnailUrls?.[0],
+  } : null;
+
+  // Fetch completed videos from DB
+  const { data: dbVideos = [], isLoading: videosLoading } = useQuery({
     queryKey: ['scheduler-available-videos'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -105,6 +123,11 @@ export const SmartSchedulerPanel: React.FC = () => {
       return data as VideoItem[];
     },
   });
+
+  // Merge session video with DB videos
+  const availableVideos = sessionVideo
+    ? [sessionVideo, ...dbVideos.filter(v => v.video_url !== sessionVideo.video_url)]
+    : dbVideos;
 
   // Local state for scheduled items (would be DB-backed in production)
   const [scheduledItems, setScheduledItems] = useState<ScheduledItem[]>(() => {
@@ -125,7 +148,7 @@ export const SmartSchedulerPanel: React.FC = () => {
     
     // Suggest optimal times for different platforms
     PLATFORMS.slice(0, 3).forEach((platform, idx) => {
-      const optimalTime = OPTIMAL_TIMES[platform.id]?.[0] || '12:00';
+      const optimalTime = getOptimalTimes(platform.id)[0] || '12:00';
       suggestions.push({
         id: `suggestion-${video.id}-${platform.id}`,
         videoId: video.id,
@@ -184,8 +207,13 @@ export const SmartSchedulerPanel: React.FC = () => {
                 <CalendarIcon className="w-5 h-5" />
                 Smart Content Scheduler
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="flex items-center gap-2">
                 AI-powered scheduling with optimal posting times
+                {sessionVideo && (
+                  <Badge variant="outline" className="text-xs text-primary border-primary/40 ml-2">
+                    Session Linked
+                  </Badge>
+                )}
               </CardDescription>
             </div>
             <Button 
