@@ -540,7 +540,7 @@ export const GenieCastHub: React.FC = () => {
         scriptTitle: request.scriptTitle,
         inputMode: request.scriptMode,
         intent: request.intent,
-        selectedFormats: activeFormats,
+        selectedFormats: activeFormats as any,
         inputLanguage: request.inputLanguage,
         outputLanguages: request.outputLanguages,
         videoStyles: request.videoStyles,
