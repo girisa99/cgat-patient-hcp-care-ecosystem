@@ -30,11 +30,11 @@ export class MasterAuthValidation {
       };
     }
 
-    // Check password length
-    if (signupData.password.length < 6) {
+    // Check password length — enforce minimum 10 characters for security
+    if (signupData.password.length < 10) {
       return {
         isValid: false,
-        message: "Password must be at least 6 characters"
+        message: "Password must be at least 10 characters"
       };
     }
 
@@ -158,14 +158,16 @@ export class MasterAuthValidation {
    * Sanitize user input
    */
   static sanitizeInput(input: string): string {
-    return input.trim().replace(/[<>]/g, '');
+    return input
+      .trim()
+      .replace(/[<>"'`;&|$(){}[\]\\]/g, '');
   }
 
   /**
    * Check if password meets security requirements
    */
   static meetsSecurityRequirements(password: string): ValidationResult {
-    if (password.length < 6) {
+    if (password.length < 10) {
       return {
         isValid: false,
         message: "Password must be at least 6 characters long"

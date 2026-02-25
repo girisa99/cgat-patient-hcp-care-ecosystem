@@ -15,8 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useMasterAuth } from "@/hooks/useMasterAuth";
 
 export const QuickHealthcareLogin: React.FC = () => {
-  const [email, setEmail] = useState('healthcare.provider@test.com');
-  const [password, setPassword] = useState('Healthcare123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [authStatus, setAuthStatus] = useState<string>('');
 const { toast } = useToast();
