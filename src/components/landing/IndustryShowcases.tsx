@@ -42,57 +42,41 @@ const FEATURED_INDUSTRIES = [
   {
     id: 'healthcare', name: 'Healthcare', icon: Heart,
     pipelines: ['Patient Education Decks', 'HCP Training Videos', 'Multilingual Patient Guides'],
-    stats: { time: '4 min', languages: 22, savings: '85%' },
-    regions: ['NAM', 'India', 'Europe'],
-    positioning: 'Transcreated patient education in 22+ languages with compliance-ready pipelines',
+    positioning: 'Transcreated patient education with compliance-ready pipelines',
   },
   {
     id: 'education', name: 'EdTech', icon: GraduationCap,
     pipelines: ['Course Videos', 'Interactive Modules', 'Avatar Instructors'],
-    stats: { time: '6 min', languages: 35, savings: '90%' },
-    regions: ['India', 'Africa', 'LATAM'],
-    positioning: 'Vernacular course creation in 35+ languages — from Hindi to Swahili',
+    positioning: 'Vernacular course creation — from Hindi to Swahili',
   },
   {
     id: 'finance', name: 'Finance', icon: Wallet,
     pipelines: ['Pitch Decks', 'Compliance Training', 'Market Reports'],
-    stats: { time: '5 min', languages: 15, savings: '75%' },
-    regions: ['MENA', 'Europe', 'NAM'],
     positioning: 'Investor decks and compliance reporting transcreated across regional dialects',
   },
   {
     id: 'government', name: 'Govt', icon: Landmark,
     pipelines: ['PSA Videos', 'Policy Explainers', 'Citizen Engagement'],
-    stats: { time: '3 min', languages: 40, savings: '80%' },
-    regions: ['MENA', 'India', 'Africa'],
-    positioning: 'Public service content transcreated in 40+ local dialects and languages',
+    positioning: 'Public service content transcreated in local dialects and languages',
   },
   {
     id: 'tourism', name: 'Travel', icon: Plane,
     pipelines: ['Promo Videos', 'Virtual Tours', 'Multilingual Guides'],
-    stats: { time: '4 min', languages: 25, savings: '70%' },
-    regions: ['Caribbean', 'APAC', 'MENA'],
     positioning: 'Destination content transcreated for traveler languages and cultural context',
   },
   {
     id: 'retail', name: 'Retail', icon: ShoppingBag,
     pipelines: ['Product Videos', 'Social Ads', 'Influencer Demos'],
-    stats: { time: '2 min', languages: 20, savings: '85%' },
-    regions: ['APAC', 'NAM', 'Europe'],
     positioning: 'Localized product content with region-specific social formats',
   },
   {
     id: 'manufacturing', name: 'Manufacturing', icon: Factory,
     pipelines: ['Safety Training', 'Multilingual SOPs', 'Equipment Guides'],
-    stats: { time: '5 min', languages: 18, savings: '75%' },
-    regions: ['Europe', 'APAC', 'India'],
     positioning: 'Equipment training transcreated into worker languages with compliance',
   },
   {
     id: 'realestate', name: 'Real Estate', icon: Building2,
     pipelines: ['Virtual Tours', 'Listing Videos', 'Investor Presentations'],
-    stats: { time: '3 min', languages: 12, savings: '80%' },
-    regions: ['MENA', 'APAC', 'NAM'],
     positioning: 'Property showcases with AI presenters, transcreated for investor dialects',
   },
 ];
@@ -490,25 +474,11 @@ export const IndustryShowcases: React.FC<IndustryShowcasesProps> = ({ region, co
                   </div>
                 </div>
 
-                {/* Quick stats */}
-                <div className="flex items-center gap-5 sm:gap-6">
-                  {[
-                    { value: selectedIndustry.stats.time, label: 'Avg Gen', color: 'text-primary' },
-                    { value: selectedIndustry.stats.languages, label: 'Languages', color: 'text-accent' },
-                    { value: selectedIndustry.stats.savings, label: 'Savings', color: 'text-primary' },
-                  ].map((s) => (
-                    <div key={s.label} className="text-center">
-                      <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Regions */}
+                {/* Pipelines */}
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedIndustry.regions.map(r => (
-                    <Badge key={r} variant="outline" className="text-[10px] gap-1 border-border/60">
-                      <Globe className="w-2.5 h-2.5" />{r}
+                  {selectedIndustry.pipelines.map(p => (
+                    <Badge key={p} variant="outline" className="text-[10px] gap-1 border-border/60">
+                      <Layers className="w-2.5 h-2.5" />{p}
                     </Badge>
                   ))}
                 </div>
