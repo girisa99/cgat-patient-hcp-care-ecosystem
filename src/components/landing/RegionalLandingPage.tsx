@@ -34,6 +34,7 @@ import { RegionalPricingSection } from '@/components/landing/RegionalPricingSect
 import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
 import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
+import { RegionalChallengesSection } from '@/components/landing/RegionalChallengesSection';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 import { SubRegionDialectPicker } from '@/components/landing/SubRegionDialectPicker';
@@ -1583,6 +1584,9 @@ export const RegionalLandingPage: React.FC = () => {
           onSubRegionChange={setSelectedDialect}
         />
       </div>
+
+      {/* Industry Challenges — Region-specific pain points */}
+      <RegionalChallengesSection regionSlug={regionSlug} isRTL={mergedConfig.hero.isRTL} />
 
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
       <section id="products" className="py-24 relative">
