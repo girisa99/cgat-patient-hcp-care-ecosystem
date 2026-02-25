@@ -178,6 +178,8 @@ export interface PipelineStep {
   creditMultiplier: number;
   /** Provider routing zone preference */
   zonePreference?: 'western' | 'cjk' | 'mena' | 'sea' | 'auto';
+  /** Optional configuration for the step */
+  config?: Record<string, any>;
 }
 
 export interface PipelineChain {
@@ -1123,8 +1125,8 @@ const ATOMIC_STEPS: Record<string, PipelineStep> = {
 
   // ─── Standalone Asset Generation ─────────────────────────────────────────
 
-  image_generate: {
-    id: 'image_generate',
+  standalone_image_generate: {
+    id: 'standalone_image_generate',
     name: 'AI Image Generation',
     description: 'Generate standalone images: product shots, illustrations, backgrounds, icons',
     edgeFunction: 'ai-universal-processor',

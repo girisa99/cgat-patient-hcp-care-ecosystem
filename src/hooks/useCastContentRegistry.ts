@@ -250,8 +250,8 @@ export function useCastContentRegistry() {
         supabase.from('cast_style_characters').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('cast_style_capability_rules').select('*'),
         supabase.from('cast_output_presets').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('cast_languages').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('cast_production_capability_provider_map').select('*').eq('is_active', true).order('priority'),
+        (supabase.from as any)('cast_languages').select('*').eq('is_active', true).order('sort_order'),
+        (supabase.from as any)('cast_production_capability_provider_map').select('*').eq('is_active', true).order('priority'),
       ]);
 
       if (catRes.error) throw catRes.error;

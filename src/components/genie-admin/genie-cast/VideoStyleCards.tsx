@@ -103,7 +103,7 @@ export const VideoStyleCards: React.FC<VideoStyleCardsProps> = ({
   industryFilter,
   className,
 }) => {
-  const { visualStyles, loading } = useCastContentRegistry();
+  const { visualStyles, isLoading: loading } = useCastContentRegistry();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showAllCategories, setShowAllCategories] = useState(false);
 
