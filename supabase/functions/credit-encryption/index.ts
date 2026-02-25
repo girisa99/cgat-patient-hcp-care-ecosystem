@@ -12,87 +12,72 @@ interface EncryptionRequest {
   creditApplicationId?: string
 }
 
-// Simple encryption using built-in crypto API
-// In production, use proper encryption service like AWS KMS, HashiCorp Vault, etc.
-async function encryptData(data: string): Promise<string> {
+/**
+ * Derive a stable AES-256-GCM key from a server-side secret using PBKDF2.
+ *
+ * IMPORTANT: Set ENCRYPTION_SECRET in Supabase Edge Function secrets.
+ * The key is NEVER sent to the client or stored alongside ciphertext.
+ */
+async function getDerivedKey(): Promise<CryptoKey> {
+  const secret = Deno.env.get('ENCRYPTION_SECRET')
+  if (!secret) {
+    throw new Error('ENCRYPTION_SECRET environment variable is not configured')
+  }
+
   const encoder = new TextEncoder()
-  const dataBuffer = encoder.encode(data)
-  
-  // Generate a random key for encryption
-  const key = await crypto.subtle.generateKey(
-    {
-      name: 'AES-GCM',
-      length: 256,
-    },
-    true,
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  )
+
+  // Use a fixed salt for domain separation (not secret, just prevents rainbow tables)
+  const salt = encoder.encode('genie-suite-credit-encryption-v1')
+
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
     ['encrypt', 'decrypt']
   )
-  
-  // Generate a random IV
+}
+
+async function encryptData(data: string): Promise<string> {
+  const key = await getDerivedKey()
+  const encoder = new TextEncoder()
   const iv = crypto.getRandomValues(new Uint8Array(12))
-  
-  // Encrypt the data
+
   const encryptedBuffer = await crypto.subtle.encrypt(
-    {
-      name: 'AES-GCM',
-      iv: iv,
-    },
+    { name: 'AES-GCM', iv },
     key,
-    dataBuffer
+    encoder.encode(data)
   )
-  
-  // Export the key for storage
-  const exportedKey = await crypto.subtle.exportKey('raw', key)
-  
-  // Combine key, IV, and encrypted data
-  const combined = new Uint8Array(exportedKey.byteLength + iv.length + encryptedBuffer.byteLength)
-  combined.set(new Uint8Array(exportedKey), 0)
-  combined.set(iv, exportedKey.byteLength)
-  combined.set(new Uint8Array(encryptedBuffer), exportedKey.byteLength + iv.length)
-  
-  // Return as base64 string
+
+  // Store only IV + ciphertext (key is derived from the server secret, never stored here)
+  const combined = new Uint8Array(iv.length + encryptedBuffer.byteLength)
+  combined.set(iv, 0)
+  combined.set(new Uint8Array(encryptedBuffer), iv.length)
+
   return btoa(String.fromCharCode(...combined))
 }
 
 async function decryptData(encryptedData: string): Promise<string> {
-  try {
-    // Decode from base64
-    const combined = new Uint8Array(atob(encryptedData).split('').map(char => char.charCodeAt(0)))
-    
-    // Extract key, IV, and encrypted data
-    const keyData = combined.slice(0, 32) // 256 bits = 32 bytes
-    const iv = combined.slice(32, 44) // 12 bytes for GCM
-    const encryptedBuffer = combined.slice(44)
-    
-    // Import the key
-    const key = await crypto.subtle.importKey(
-      'raw',
-      keyData,
-      {
-        name: 'AES-GCM',
-        length: 256,
-      },
-      false,
-      ['decrypt']
-    )
-    
-    // Decrypt the data
-    const decryptedBuffer = await crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: iv,
-      },
-      key,
-      encryptedBuffer
-    )
-    
-    // Return as string
-    const decoder = new TextDecoder()
-    return decoder.decode(decryptedBuffer)
-  } catch (error) {
-    console.error('Decryption error:', error)
-    throw new Error('Failed to decrypt data')
-  }
+  const key = await getDerivedKey()
+  const combined = new Uint8Array(atob(encryptedData).split('').map(c => c.charCodeAt(0)))
+
+  const iv = combined.slice(0, 12)       // 12 bytes for AES-GCM
+  const ciphertext = combined.slice(12)
+
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    ciphertext
+  )
+
+  return new TextDecoder().decode(decryptedBuffer)
 }
 
 serve(async (req) => {
@@ -104,8 +89,11 @@ serve(async (req) => {
   try {
     // Verify authentication
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // Initialize Supabase client
@@ -116,19 +104,29 @@ serve(async (req) => {
     // Verify the JWT token
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
+
     if (authError || !user) {
-      throw new Error('Invalid authentication')
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const requestData: EncryptionRequest = await req.json()
     const { action, data, creditApplicationId } = requestData
 
+    if (!data || typeof data !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid data parameter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     let result: string
 
     if (action === 'encrypt') {
       result = await encryptData(data)
-      
+
       // Log encryption activity for audit
       if (creditApplicationId) {
         await supabase.rpc('log_credit_application_audit', {
@@ -142,7 +140,7 @@ serve(async (req) => {
       }
     } else if (action === 'decrypt') {
       result = await decryptData(data)
-      
+
       // Log decryption activity for audit
       if (creditApplicationId) {
         await supabase.rpc('log_credit_application_audit', {
@@ -155,33 +153,23 @@ serve(async (req) => {
         })
       }
     } else {
-      throw new Error('Invalid action. Must be "encrypt" or "decrypt"')
+      return new Response(
+        JSON.stringify({ error: 'Invalid action. Must be "encrypt" or "decrypt"' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        result,
-        timestamp: new Date().toISOString()
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      JSON.stringify({ success: true, result }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('Credit encryption error:', error)
-    
+    console.error('Credit encryption error:', error instanceof Error ? error.message : String(error))
+
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
+      JSON.stringify({ error: 'Encryption operation failed' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

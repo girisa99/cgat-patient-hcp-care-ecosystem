@@ -4,6 +4,7 @@
  * SVG, infographics, Excel files, and AI generation with streamlined layout
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -225,8 +226,8 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
     return (
       <div 
         className="prose prose-sm max-w-none my-4 medical-content"
-        dangerouslySetInnerHTML={{ 
-          __html: htmlContent.replace(
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(htmlContent.replace(
             /<h([1-6])/g, 
             '<h$1 style="color: #1e40af; margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 600;"'
           ).replace(
@@ -250,7 +251,7 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
           ).replace(
             /<td>/g,
             '<td style="padding: 0.75rem; border: 1px solid #e5e7eb; color: #374151;">'
-          )
+          ), { ADD_ATTR: ['style'] })
         }}
       />
     );
