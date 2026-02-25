@@ -385,6 +385,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const setOutputLanguages = castSession.setOutputLanguages;
   const dubbingSubtitleLanguages = castSession.session.dubbingSubtitleLanguages;
   const setDubbingSubtitleLanguages = castSession.setDubbingSubtitleLanguages;
+  const selectedOutputPresets = castSession.session.selectedOutputPresets;
+  const setSelectedOutputPresets = castSession.setSelectedOutputPresets;
   // Regional detection for auto-region context
   const regionalDetection = useRegionalDetection();
 
@@ -1184,6 +1186,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 setSelectedAspectRatio={setSelectedAspectRatio}
                 setProductionQuality={setProductionQuality}
                 setEnrichmentPrompt={setEnrichmentPrompt}
+                selectedOutputPresets={selectedOutputPresets}
+                setSelectedOutputPresets={setSelectedOutputPresets}
                 contentRegistry={contentRegistry}
                 holidayAwareness={holidayAwareness}
                 onDialectChange={handleDialectChange}

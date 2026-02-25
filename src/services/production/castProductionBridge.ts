@@ -23,7 +23,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import type { ProductionInput, ProductionJob, PipelineTask } from './pipelineSupervisor';
+import type { ProductionInput, ProductionJob, PipelineTask, OutputPresetConfig } from './pipelineSupervisor';
 import { pipelineSupervisor } from './pipelineSupervisor';
 import type { BrandIntelligenceProfile, BusinessTier, AudiencePersona } from '../brand-intelligence/brandIntelligenceEngine';
 import { BUSINESS_TIER_CONFIG } from '../brand-intelligence/brandIntelligenceEngine';
@@ -509,7 +509,10 @@ function getSceneTypesForIntent(intent: ContentIntent, count: number): string[] 
  * Builds a full ProductionInput from CREATE flow session data.
  * This is the main bridge between CREATE and PRODUCE.
  */
-export function buildProductionInput(request: CastProductionRequest): ProductionInput {
+export function buildProductionInput(
+  request: CastProductionRequest,
+  resolvedPresets?: OutputPresetConfig[],
+): ProductionInput {
   const enrichedScript = buildEnrichedPrompt(
     request.scriptContent,
     request.enrichment,
@@ -534,7 +537,41 @@ export function buildProductionInput(request: CastProductionRequest): Production
     videoStyle: request.videoStyles[0] || 'professional',
     videoDuration: request.estimatedDuration || 60,
     qualityThreshold: request.quality === 'cinematic' ? 90 : request.quality === 'production' ? 75 : 60,
+    // Wire output presets into pipeline
+    outputPresets: resolvedPresets,
+    capabilityIds: request.capabilityIds,
   };
+}
+
+/**
+ * Resolves output preset IDs from the session into full OutputPresetConfig objects.
+ * Fetches preset details from Supabase cast_output_presets table.
+ */
+export async function resolveOutputPresets(presetIds: string[]): Promise<OutputPresetConfig[]> {
+  if (!presetIds || presetIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('cast_output_presets')
+    .select('*')
+    .in('id', presetIds)
+    .eq('is_active', true);
+
+  if (error || !data) return [];
+
+  return data.map((p: any) => ({
+    presetId: p.id,
+    name: p.name,
+    width: p.width,
+    height: p.height,
+    codec: p.codec || 'h264',
+    fps: p.fps || 30,
+    bitrate: p.bitrate || '8M',
+    audioCodec: p.audio_codec || 'aac',
+    audioBitrate: p.audio_bitrate || '192k',
+    maxFileSizeMb: p.max_file_size_mb || 500,
+    encodingProfile: p.encoding_profile || 'high',
+    aspectRatio: p.aspect_ratio || '16:9',
+  }));
 }
 
 /**
@@ -548,7 +585,9 @@ export async function startCastProduction(
     onProgress?: (progress: number) => void;
   },
 ): Promise<ProductionJob> {
-  const input = buildProductionInput(request);
+  // Resolve output presets from DB before building pipeline input
+  const resolvedPresets = await resolveOutputPresets(request.selectedOutputPresets || []);
+  const input = buildProductionInput(request, resolvedPresets);
 
   // Attach callbacks
   if (callbacks?.onTaskUpdate) input.onTaskUpdate = callbacks.onTaskUpdate;
@@ -710,4 +749,4 @@ export function buildRequestFromCastSession(
 
 // Re-export for convenience
 export { pipelineSupervisor } from './pipelineSupervisor';
-export type { ProductionJob, PipelineTask, ProductionInput } from './pipelineSupervisor';
+export type { ProductionJob, PipelineTask, ProductionInput, OutputPresetConfig } from './pipelineSupervisor';

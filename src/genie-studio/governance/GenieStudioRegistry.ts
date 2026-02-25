@@ -61,7 +61,7 @@ export const GENIE_EDGE_FUNCTIONS = {
     'openai-tts',
     'huggingface-speech',
     'text-to-speech',
-    'voice-clone-processor',
+    'elevenlabs-voice-clone',  // Uses ElevenLabs Voice Lab API for voice cloning
     'voice-to-text',
   ],
   

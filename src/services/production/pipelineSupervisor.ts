@@ -58,6 +58,21 @@ export interface ProductionJob {
   error: string | null;
 }
 
+export interface OutputPresetConfig {
+  presetId: string;
+  name: string;
+  width: number;
+  height: number;
+  codec: string;
+  fps: number;
+  bitrate: string;
+  audioCodec: string;
+  audioBitrate: string;
+  maxFileSizeMb: number;
+  encodingProfile: string;
+  aspectRatio: string;
+}
+
 export interface ProductionInput {
   scriptContent: string;
   scriptId?: string;
@@ -81,6 +96,12 @@ export interface ProductionInput {
   // Quality
   qualityThreshold?: number;
   maxQualityIterations?: number;
+
+  // Output presets — encoding specs for final export
+  outputPresets?: OutputPresetConfig[];
+
+  // Capability IDs — production capabilities to activate
+  capabilityIds?: string[];
 
   // Callbacks
   onTaskUpdate?: (task: PipelineTask) => void;
@@ -158,10 +179,37 @@ export const pipelineSupervisor = {
       tasks.push(videoTask);
     }
 
-    // Task 4: Quality check (depends on all generation tasks)
+    // Task 4: Per-preset encoding (depends on video generation)
     const generationTaskIds = tasks.map((t) => t.id);
+    if (input.outputPresets && input.outputPresets.length > 0) {
+      for (const preset of input.outputPresets) {
+        const encodeTask = createTask(
+          `encoder-${preset.name}`,
+          'ai-universal-processor',
+          generationTaskIds,
+          {
+            action: 'transcode_video',
+            preset: preset.name,
+            width: preset.width,
+            height: preset.height,
+            codec: preset.codec,
+            fps: preset.fps,
+            bitrate: preset.bitrate,
+            audioCodec: preset.audioCodec,
+            audioBitrate: preset.audioBitrate,
+            maxFileSizeMb: preset.maxFileSizeMb,
+            encodingProfile: preset.encodingProfile,
+            aspectRatio: preset.aspectRatio,
+          }
+        );
+        tasks.push(encodeTask);
+      }
+    }
+
+    // Task 5: Quality check (depends on all generation + encoding tasks)
+    const allTaskIds = tasks.map((t) => t.id);
     const qualityTask = createTask('quality-checker', 'ai-quality-assessment',
-      generationTaskIds,
+      allTaskIds,
       {
         action: 'quick_check',
         contentType: 'paragraph',
