@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
-import { corsHeaders } from '../_shared/cors.ts'
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 interface CreatePatientRequest {
   email: string
@@ -10,92 +10,99 @@ interface CreatePatientRequest {
 }
 
 Deno.serve(async (req) => {
-  console.log('=== Edge function called ===')
-  console.log('Method:', req.method)
-  console.log('Headers:', Object.fromEntries(req.headers.entries()))
-  
+  const cors = getCorsHeaders(req);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS request')
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: cors })
   }
 
   try {
-    console.log('=== Starting main logic ===')
-    
-    // Parse the request
-    let requestBody
-    try {
-      requestBody = await req.json()
-      console.log('Request body parsed successfully:', JSON.stringify(requestBody))
-    } catch (parseError) {
-      console.error('Failed to parse request body:', parseError)
+    // --- AUTH CHECK: Require authenticated user with appropriate role ---
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'Invalid JSON in request body' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-    
-    const { email, password, first_name, last_name, facility_id }: CreatePatientRequest = requestBody
-
-    // Validate required fields
-    if (!email || !first_name || !last_name) {
-      console.log('Validation failed - missing required fields')
-      console.log('Missing email:', !email)
-      console.log('Missing first_name:', !first_name) 
-      console.log('Missing last_name:', !last_name)
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: email, first_name, last_name' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('=== Validation passed ===')
-
-    // Check environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    
-    console.log('Environment check:')
-    console.log('- URL exists:', !!supabaseUrl)
-    console.log('- Service key exists:', !!serviceRoleKey)
-    console.log('- URL value:', supabaseUrl)
-    
-    if (!supabaseUrl || !serviceRoleKey) {
-      console.error('Missing environment variables')
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
+
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
       return new Response(
-        JSON.stringify({ error: 'Server configuration error - missing environment variables' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('=== Creating Supabase admin client ===')
-    const supabaseAdmin = createClient(
-      supabaseUrl,
-      serviceRoleKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
+    // Verify the caller's identity using their JWT
+    const token = authHeader.replace('Bearer ', '')
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    })
+    const { data: { user: caller }, error: callerError } = await anonClient.auth.getUser(token)
 
-    console.log('=== Starting user creation ===')
-    
-    // Step 1: Create the user with admin privileges
+    if (callerError || !caller) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Verify caller has permission to create patients (admin, caseManager, onboardingTeam)
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    })
+
+    const { data: callerRoles } = await supabaseAdmin.rpc('get_user_roles', {
+      check_user_id: caller.id
+    })
+    const roleNames = callerRoles?.map((r: any) => r.role_name) || []
+    const allowedRoles = ['superAdmin', 'caseManager', 'onboardingTeam', 'healthcareProvider']
+    const hasPermission = roleNames.some((r: string) => allowedRoles.includes(r))
+
+    if (!hasPermission) {
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions to create patients' }),
+        { status: 403, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // --- PARSE & VALIDATE INPUT ---
+    let requestBody: CreatePatientRequest
+    try {
+      requestBody = await req.json()
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const { email, password, first_name, last_name, facility_id } = requestBody
+
+    if (!email || !first_name || !last_name) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: email, first_name, last_name' }),
+        { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Require an explicit password — never use a default
+    if (!password || password.length < 8) {
+      return new Response(
+        JSON.stringify({ error: 'A password of at least 8 characters is required' }),
+        { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // --- CREATE USER ---
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password: password || 'TempPassword123!',
+      password,
       email_confirm: true,
       user_metadata: {
         firstName: first_name,
@@ -103,36 +110,17 @@ Deno.serve(async (req) => {
       }
     })
 
-    if (authError) {
-      console.error('Auth user creation error:', authError)
+    if (authError || !authData.user) {
       return new Response(
-        JSON.stringify({ error: `Failed to create user: ${authError.message}` }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ error: `Failed to create user: ${authError?.message || 'Unknown error'}` }),
+        { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
 
-    if (!authData.user) {
-      console.error('No user data returned from auth creation')
-      return new Response(
-        JSON.stringify({ error: 'Failed to create user - no user data returned' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    console.log('Auth user created successfully:', authData.user.id)
-
-    console.log('=== Waiting for user to be fully committed ===')
-    // Wait a moment to ensure the user is fully committed to the auth.users table
+    // Wait for user record to propagate
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    console.log('=== Calling database function ===')
-    // Step 2: Create profile and assign patient role using the database function
+    // Create profile and assign patient role
     const { data: profileData, error: profileError } = await supabaseAdmin.rpc('create_patient_profile_and_role', {
       p_user_id: authData.user.id,
       p_first_name: first_name,
@@ -141,67 +129,38 @@ Deno.serve(async (req) => {
       p_facility_id: facility_id || null
     })
 
-    console.log('Database function result:', { profileData, profileError })
-
     if (profileError) {
-      console.error('Profile creation error:', profileError)
-      
       // Clean up the auth user if profile creation fails
-      console.log('Cleaning up auth user due to profile error...')
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-      
       return new Response(
         JSON.stringify({ error: `Failed to create profile: ${profileError.message}` }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
 
     if (profileData && typeof profileData === 'object' && 'error' in profileData) {
-      console.error('Profile creation returned error:', profileData.error)
-      // Clean up the auth user if profile creation fails
-      console.log('Cleaning up auth user due to profile data error...')
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-      
       return new Response(
-        JSON.stringify({ error: profileData.error }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ error: (profileData as any).error }),
+        { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('=== Success! ===')
-    console.log('Patient profile and role created successfully')
-
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         user_id: authData.user.id,
         message: 'Patient created successfully'
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('=== Unexpected error ===')
-    console.error('Error type:', typeof error)
-    console.error('Error message:', error instanceof Error ? error.message : String(error))
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
-    console.error('Full error:', error)
-    
+    console.error('create-patient error:', error instanceof Error ? error.message : String(error))
+
     return new Response(
-      JSON.stringify({ error: 'Internal server error: ' + (error instanceof Error ? error.message : String(error)) }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }
 })

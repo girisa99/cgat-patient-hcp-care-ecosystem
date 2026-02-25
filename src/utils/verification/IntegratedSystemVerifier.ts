@@ -147,7 +147,11 @@ export class IntegratedSystemVerifier {
         .select('*')
         .limit(5);
 
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      // NOTE: auth.admin.listUsers() requires service_role key and must NOT be used
+      // in frontend code. Use an edge function for admin operations.
+      // Skipping admin check — this belongs in server-side verification only.
+      const authUsers = null;
+      const authError = null as any;
 
       if (profilesError && authError) {
         return {

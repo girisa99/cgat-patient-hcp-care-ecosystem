@@ -170,6 +170,48 @@ async function executeTavilySearch(input: any): Promise<any> {
   };
 }
 
+/**
+ * Safe arithmetic evaluator — tokenise + recursive-descent parser.
+ * Only supports numbers and +, -, *, /, parentheses. No code execution.
+ */
+function safeEvalArithmetic(expr: string): number {
+  const tokens = expr.match(/(\d+\.?\d*|[+\-*/()])/g) || [];
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const consume = () => tokens[pos++];
+
+  function parseExpr(): number {
+    let left = parseTerm();
+    while (peek() === '+' || peek() === '-') {
+      const op = consume();
+      const right = parseTerm();
+      left = op === '+' ? left + right : left - right;
+    }
+    return left;
+  }
+  function parseTerm(): number {
+    let left = parseFactor();
+    while (peek() === '*' || peek() === '/') {
+      const op = consume();
+      const right = parseFactor();
+      left = op === '*' ? left * right : left / right;
+    }
+    return left;
+  }
+  function parseFactor(): number {
+    if (peek() === '(') {
+      consume(); // (
+      const val = parseExpr();
+      consume(); // )
+      return val;
+    }
+    const num = parseFloat(consume());
+    if (isNaN(num)) throw new Error('Invalid number in expression');
+    return num;
+  }
+  return parseExpr();
+}
+
 async function executeCalculator(input: any): Promise<any> {
   console.log('Executing calculator with input:', input);
   
@@ -180,11 +222,9 @@ async function executeCalculator(input: any): Promise<any> {
       throw new Error('No expression provided');
     }
     
-    // Simple calculator - only basic operations for security
+    // Safe calculator — parse and evaluate arithmetic without code execution
     const sanitized = expression.replace(/[^0-9+\-*/.() ]/g, '');
-    
-    // Use Function constructor instead of eval for basic safety
-    const result = new Function(`"use strict"; return (${sanitized})`)();
+    const result = safeEvalArithmetic(sanitized);
     
     return {
       expression: sanitized,

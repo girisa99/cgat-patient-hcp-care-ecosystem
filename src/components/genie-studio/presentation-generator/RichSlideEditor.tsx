@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -302,7 +303,7 @@ export function RichSlideEditor({
             ref={editorRef}
             contentEditable
             className="min-h-[120px] p-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: editedContent }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editedContent) }}
             onInput={(e) => setEditedContent((e.target as HTMLDivElement).innerHTML)}
           />
         ) : (
@@ -313,7 +314,7 @@ export function RichSlideEditor({
                 <span 
                   className="flex-1 cursor-text"
                   onClick={() => setIsEditing(true)}
-                  dangerouslySetInnerHTML={{ __html: bullet.text }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bullet.text) }}
                 />
               </div>
             ))}

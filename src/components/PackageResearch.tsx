@@ -33,7 +33,10 @@ Can you help me find the correct package names that exist on npm? Please provide
         heading.textContent = 'AI Package Research Results:';
         
         const content = document.createElement('div');
-        content.innerHTML = `<pre style="white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px;">${response.content}</pre>`;
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px;';
+        pre.textContent = response.content;
+        content.appendChild(pre);
         
         container.appendChild(heading);
         container.appendChild(content);
@@ -43,7 +46,10 @@ Can you help me find the correct package names that exist on npm? Please provide
       console.error('Error researching packages:', error);
       const container = document.getElementById('research-results');
       if (container) {
-        container.innerHTML = `<div style="color: red;">Error: ${error.message || 'Failed to research packages'}</div>`;
+        const errorDiv = document.createElement('div');
+        errorDiv.style.color = 'red';
+        errorDiv.textContent = `Error: ${error.message || 'Failed to research packages'}`;
+        container.replaceChildren(errorDiv);
       }
     }
   };

@@ -1233,12 +1233,12 @@ export function RecordingStudio({
       );
 
       const response = await fetch(
-        `https://ithspbabhmdntioslfqe.supabase.co/functions/v1/voice-to-text`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-to-text`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0aHNwYmFiaG1kbnRpb3NsZnFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY5MjU5OTMsImV4cCI6MjA2MjUwMTk5M30.yUZZHsz2wIHboVuWWfqXeAH5oHRxzJIz20NWSUmHPhw`,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({ audio: base64Audio }),
         }
