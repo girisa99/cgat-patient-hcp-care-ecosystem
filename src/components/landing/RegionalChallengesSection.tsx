@@ -1,118 +1,143 @@
 /**
- * Regional Challenges Section
+ * Industry Challenges Section
  * 
- * Auto-rolling glassmorphic marquee showing 4-5 region-specific
- * industry challenges. Data sourced from regional_content_cache
- * with content_type='challenges'.
+ * Shows content-industry challenges that Genie Suite's 7 products solve.
+ * Auto-rolling glassmorphic marquee, region-aware scroll direction.
  */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  ShieldAlert, Database, Zap, DollarSign, Video,
-  Globe, Languages, Monitor, Users, FileText,
-  MessageSquare, Stethoscope, Building2, Wifi, Smartphone,
-  Lock, Type, Scale, Heart, AppWindow,
+import {
+  Video, Clock, Languages, TrendingUp, Layers,
+  BarChart3, Mic, Globe, Megaphone, Sparkles,
+  Presentation, Brain, Repeat, Users, Zap,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
 import type { RegionSlug } from '@/config/regionalLandingConfig';
 
-interface ChallengeCard {
-  content_key: string;
-  english_source: string;
-  transcreated_content: string;
-  cultural_tone: string;
+interface ChallengeCardData {
+  key: string;
+  icon: React.ElementType;
+  title: string;
+  problem: string;
+  growth: string;
+  solver: string; // Which Genie product solves it
+  gradient: string;
 }
 
-// Map content_key → icon
-const CHALLENGE_ICONS: Record<string, React.ElementType> = {
-  hipaa_compliance: ShieldAlert,
-  emr_integration: Database,
-  content_velocity: Zap,
-  cost_pressure: DollarSign,
-  telehealth_scale: Video,
-  gdpr_compliance: Lock,
-  language_fragmentation: Languages,
-  digital_transformation: Monitor,
-  talent_shortage: Users,
-  reimbursement_complexity: FileText,
-  arabization_gap: MessageSquare,
-  telemedicine_growth: Stethoscope,
-  vision_2030: Building2,
-  workforce_diversity: Users,
-  data_localization: Lock,
-  language_diversity: Languages,
-  rural_access: Wifi,
-  ayushman_bharat: Building2,
-  cost_sensitivity: DollarSign,
-  doctor_ratio: Heart,
-  multilingual_markets: Globe,
-  mobile_first: Smartphone,
-  regulatory_patchwork: Scale,
-  traditional_medicine: Stethoscope,
-  island_connectivity: Wifi,
-  quality_standards: ShieldAlert,
-  character_systems: Type,
-  data_sovereignty: Lock,
-  aging_population: Heart,
-  platform_ecosystem: AppWindow,
-};
-
-// Map content_key → short title
-const CHALLENGE_TITLES: Record<string, string> = {
-  hipaa_compliance: 'HIPAA & Compliance',
-  emr_integration: 'EMR Data Silos',
-  content_velocity: 'Content at Speed',
-  cost_pressure: 'Cost Pressure',
-  telehealth_scale: 'Telehealth Scale',
-  gdpr_compliance: 'GDPR Complexity',
-  language_fragmentation: '24-Language Gap',
-  digital_transformation: 'Digital Lag',
-  talent_shortage: 'Talent Shortage',
-  reimbursement_complexity: 'Payer Complexity',
-  arabization_gap: 'Arabic NLP Gap',
-  telemedicine_growth: 'Telemedicine Boom',
-  vision_2030: 'Vision 2030',
-  workforce_diversity: 'Diverse Workforce',
-  data_localization: 'Data Residency',
-  language_diversity: '22 Languages',
-  rural_access: 'Rural Access',
-  ayushman_bharat: 'Ayushman Bharat',
-  cost_sensitivity: 'Price Sensitivity',
-  doctor_ratio: 'Doctor Shortage',
-  multilingual_markets: '1,000+ Languages',
-  mobile_first: 'Mobile-First',
-  regulatory_patchwork: 'Regulatory Patchwork',
-  traditional_medicine: 'Traditional Medicine',
-  island_connectivity: 'Island Connectivity',
-  quality_standards: 'Quality Standards',
-  character_systems: 'CJK Typography',
-  data_sovereignty: 'Data Sovereignty',
-  aging_population: 'Aging Population',
-  platform_ecosystem: 'Platform Ecosystem',
-};
-
-const SLUG_TO_REGION: Record<string, string> = {
-  nam: 'nam',
-  europe: 'eu',
-  mena: 'mena',
-  india: 'india',
-  'south-asia': 'india',
-  sea: 'sea',
-  cjk: 'cjk',
-  africa: 'africa',
-  latam: 'latam',
-  caribbean: 'caribbean',
-};
-
-// Fallback challenges for zones without DB data
-const FALLBACK_CHALLENGES: ChallengeCard[] = [
-  { content_key: 'content_velocity', english_source: 'Content teams struggle to produce compliant, multilingual content at the speed modern audiences demand.', transcreated_content: 'Content teams struggle to produce compliant, multilingual content at the speed modern audiences demand.', cultural_tone: 'professional' },
-  { content_key: 'cost_pressure', english_source: 'Rising costs force organizations to do more with less — AI tools must prove ROI within weeks.', transcreated_content: 'Rising costs force organizations to do more with less — AI tools must prove ROI within weeks.', cultural_tone: 'professional' },
-  { content_key: 'language_fragmentation', english_source: 'Global markets demand culturally adapted content — not just translated, but truly localized.', transcreated_content: 'Global markets demand culturally adapted content — not just translated, but truly localized.', cultural_tone: 'professional' },
-  { content_key: 'digital_transformation', english_source: 'Legacy systems and fragmented workflows slow digital adoption across industries.', transcreated_content: 'Legacy systems and fragmented workflows slow digital adoption across industries.', cultural_tone: 'professional' },
-  { content_key: 'talent_shortage', english_source: 'Finding creators who understand both technical accuracy and cultural nuance remains a global challenge.', transcreated_content: 'Finding creators who understand both technical accuracy and cultural nuance remains a global challenge.', cultural_tone: 'professional' },
+/**
+ * Content-industry challenges mapped to Genie Suite products:
+ * Spark, Mind, Vibe, Cast, Deck, Hub, Guide
+ */
+const CHALLENGE_CARDS: ChallengeCardData[] = [
+  {
+    key: 'video_production_cost',
+    icon: Video,
+    title: 'Video Production at Scale',
+    problem: 'A single brand video costs $5K–$50K and takes 4–8 weeks. Scaling to 10 markets multiplies cost 10×.',
+    growth: 'Video content demand growing 91% YoY — teams can\'t keep up with traditional production.',
+    solver: 'Genie Cast',
+    gradient: 'from-sky-500/80 to-cyan-600/80',
+  },
+  {
+    key: 'content_velocity',
+    icon: Clock,
+    title: 'Speed-to-Market Gap',
+    problem: 'Competitors publish 10× faster. By the time your content is approved, the trend has passed.',
+    growth: 'Content lifecycle shrunk from 30 days to 72 hours — real-time production is the new baseline.',
+    solver: 'Genie Spark',
+    gradient: 'from-amber-500/80 to-orange-600/80',
+  },
+  {
+    key: 'transcreation_not_translation',
+    icon: Languages,
+    title: 'Lost in Translation',
+    problem: 'Direct translation destroys brand voice. Cultural nuance, humor, and idioms vanish — costing 40% engagement.',
+    growth: '76% of consumers prefer buying in their own language — but only 6% of content is truly transcreated.',
+    solver: 'Genie Vibe',
+    gradient: 'from-violet-500/80 to-purple-600/80',
+  },
+  {
+    key: 'multi_format_fragmentation',
+    icon: Layers,
+    title: '16-Format Fragmentation',
+    problem: 'Teams use 8+ tools for video, podcast, PPT, social, email. Each has its own workflow, login, and billing.',
+    growth: 'Average enterprise uses 12.3 content tools — integration tax eats 35% of creative bandwidth.',
+    solver: 'Genie Hub',
+    gradient: 'from-emerald-500/80 to-teal-600/80',
+  },
+  {
+    key: 'podcast_explosion',
+    icon: Mic,
+    title: 'Audio-First Demand',
+    problem: 'Podcasts and audio content drive 2× engagement but require expensive studios, editors, and hosts.',
+    growth: 'Podcast ad revenue projected to hit $4B by 2026 — but production barriers lock out 80% of brands.',
+    solver: 'Genie Cast',
+    gradient: 'from-fuchsia-500/80 to-pink-600/80',
+  },
+  {
+    key: 'data_driven_content',
+    icon: BarChart3,
+    title: 'Content Without Intelligence',
+    problem: 'Most content is created on gut feeling. No competitive analysis, no market data, no audience signals.',
+    growth: 'Data-driven content performs 3× better — but only 12% of teams have integrated analytics into creation.',
+    solver: 'Genie Mind',
+    gradient: 'from-blue-500/80 to-indigo-600/80',
+  },
+  {
+    key: 'presentation_fatigue',
+    icon: Presentation,
+    title: 'Death by PowerPoint',
+    problem: 'Teams spend 8+ hours per deck. Investor pitches, sales decks, onboarding — all manual, all outdated.',
+    growth: '30M presentations created daily — AI-assisted decks close deals 2.4× faster.',
+    solver: 'Genie Deck',
+    gradient: 'from-rose-500/80 to-red-600/80',
+  },
+  {
+    key: 'regional_content_gap',
+    icon: Globe,
+    title: 'Regional Content Desert',
+    problem: 'Brands create for US/EU, then "localize" as afterthought. 85% of global audience gets second-class content.',
+    growth: 'Emerging markets growing 3× faster than mature — but receive only 15% of content investment.',
+    solver: 'Genie Vibe',
+    gradient: 'from-teal-500/80 to-emerald-600/80',
+  },
+  {
+    key: 'creator_economy_gap',
+    icon: Users,
+    title: 'Creator Bottleneck',
+    problem: 'Finding creators who understand brand voice, compliance, AND cultural nuance is nearly impossible at scale.',
+    growth: 'Creator economy hit $250B — but enterprise-grade AI creators are replacing freelancer dependency.',
+    solver: 'Genie Guide',
+    gradient: 'from-orange-500/80 to-amber-600/80',
+  },
+  {
+    key: 'repurpose_waste',
+    icon: Repeat,
+    title: 'Content Repurposing Waste',
+    problem: '90% of content is used once. A webinar could become 15 assets — but manual repurposing kills ROI.',
+    growth: 'Repurposed content generates 3× the leads at 1/10th the cost — automation is the missing link.',
+    solver: 'Genie Cast',
+    gradient: 'from-lime-500/80 to-green-600/80',
+  },
+  {
+    key: 'ai_adoption_fear',
+    icon: Brain,
+    title: 'AI Trust Deficit',
+    problem: 'Enterprises want AI but fear hallucination, brand inconsistency, and compliance violations.',
+    growth: '82% of CMOs plan AI content adoption by 2026 — but 67% cite quality control as the #1 blocker.',
+    solver: 'Genie Mind',
+    gradient: 'from-indigo-500/80 to-blue-600/80',
+  },
+  {
+    key: 'campaign_fragmentation',
+    icon: Megaphone,
+    title: 'Campaign Silos',
+    problem: 'Marketing, sales, and product teams create content independently — zero reuse, zero consistency.',
+    growth: 'Unified content platforms reduce production costs by 60% and improve brand consistency by 4×.',
+    solver: 'Genie Hub',
+    gradient: 'from-pink-500/80 to-rose-600/80',
+  },
 ];
 
 interface Props {
@@ -121,39 +146,15 @@ interface Props {
 }
 
 export const RegionalChallengesSection: React.FC<Props> = ({ regionSlug, isRTL = false }) => {
-  const [challenges, setChallenges] = useState<ChallengeCard[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const fetchChallenges = async () => {
-      const regionKey = SLUG_TO_REGION[regionSlug] || 'nam';
-      const { data, error } = await supabase
-        .from('regional_content_cache')
-        .select('content_key, english_source, transcreated_content, cultural_tone')
-        .eq('region_slug', regionKey)
-        .eq('content_type', 'challenges')
-        .eq('status', 'approved')
-        .order('content_key');
-
-      if (!error && data && data.length > 0) {
-        setChallenges(data);
-      } else {
-        setChallenges(FALLBACK_CHALLENGES);
-      }
-      setIsLoading(false);
-    };
-
-    fetchChallenges();
-  }, [regionSlug]);
 
   // Auto-scroll marquee
   useEffect(() => {
-    if (!scrollRef.current || challenges.length === 0) return;
+    if (!scrollRef.current) return;
     const container = scrollRef.current;
     let animationId: number;
     let scrollPos = 0;
-    const speed = isRTL ? -0.5 : 0.5; // RTL scrolls right-to-left
+    const speed = isRTL ? -0.5 : 0.5;
 
     const animate = () => {
       scrollPos += speed;
@@ -165,7 +166,6 @@ export const RegionalChallengesSection: React.FC<Props> = ({ regionSlug, isRTL =
 
     animationId = requestAnimationFrame(animate);
 
-    // Pause on hover
     const pause = () => cancelAnimationFrame(animationId);
     const resume = () => { animationId = requestAnimationFrame(animate); };
     container.addEventListener('mouseenter', pause);
@@ -176,28 +176,25 @@ export const RegionalChallengesSection: React.FC<Props> = ({ regionSlug, isRTL =
       container.removeEventListener('mouseenter', pause);
       container.removeEventListener('mouseleave', resume);
     };
-  }, [challenges, isRTL]);
+  }, [isRTL]);
 
-  if (isLoading) return null;
-
-  // Duplicate cards for infinite scroll illusion
-  const displayCards = [...challenges, ...challenges];
+  const displayCards = [...CHALLENGE_CARDS, ...CHALLENGE_CARDS];
 
   return (
-    <section className="py-16 relative overflow-hidden">
-      {/* Subtle gradient background */}
+    <section className="py-20 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-destructive/5 to-background" />
 
-      <div className="relative max-w-7xl mx-auto px-4 mb-8">
+      <div className="relative max-w-7xl mx-auto px-4 mb-10">
         <div className="text-center">
           <Badge variant="outline" className="mb-4 text-sm px-4 py-1 border-destructive/30 text-destructive">
-            Industry Challenges
+            Content Industry · $400B+ Market
           </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold mb-2 text-foreground">
+          <h2 className="text-3xl md:text-5xl font-bold mb-3 text-foreground">
             The Problems We Solve
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Every region faces unique content challenges. Here's what keeps your industry up at night.
+            The content industry is exploding — but production workflows are stuck in 2015. 
+            Here's what Genie Suite eliminates.
           </p>
         </div>
       </div>
@@ -205,41 +202,50 @@ export const RegionalChallengesSection: React.FC<Props> = ({ regionSlug, isRTL =
       {/* Auto-scrolling marquee */}
       <div
         ref={scrollRef}
-        className="relative flex gap-6 overflow-x-hidden px-4 py-4"
+        className="relative flex gap-5 overflow-x-hidden px-4 py-4"
         style={{ scrollBehavior: 'auto' }}
       >
         {displayCards.map((card, idx) => {
-          const Icon = CHALLENGE_ICONS[card.content_key] || Zap;
-          const title = CHALLENGE_TITLES[card.content_key] || card.content_key.replace(/_/g, ' ');
-
+          const Icon = card.icon;
           return (
             <motion.div
-              key={`${card.content_key}-${idx}`}
-              className="flex-shrink-0 w-[320px] md:w-[380px]"
+              key={`${card.key}-${idx}`}
+              className="flex-shrink-0 w-[320px] md:w-[360px]"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: (idx % challenges.length) * 0.1 }}
+              transition={{ delay: (idx % CHALLENGE_CARDS.length) * 0.05 }}
             >
-              <div className="h-full rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-destructive/30 group">
+              <div className="h-full rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group">
                 {/* Icon + Title */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/20 transition-colors">
-                    <Icon className="w-5 h-5 text-destructive" />
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform`}>
+                    <Icon className="w-5 h-5 text-white/90" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-semibold text-foreground text-lg capitalize">
-                    {title}
-                  </h3>
+                  <div>
+                    <h3 className="font-bold text-foreground text-base leading-tight">
+                      {card.title}
+                    </h3>
+                  </div>
                 </div>
 
-                {/* Description */}
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {card.transcreated_content || card.english_source}
+                {/* Problem */}
+                <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+                  {card.problem}
                 </p>
 
-                {/* Cultural tone tag */}
-                <div className="mt-4 pt-3 border-t border-border/30">
-                  <span className="text-xs text-muted-foreground/60 italic">
-                    {card.cultural_tone}
+                {/* Growth stat */}
+                <div className="flex items-start gap-2 mb-4 p-2.5 rounded-lg bg-primary/5 border border-primary/10">
+                  <TrendingUp className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-primary font-medium leading-relaxed">
+                    {card.growth}
+                  </p>
+                </div>
+
+                {/* Solver tag */}
+                <div className="pt-3 border-t border-border/30 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-semibold text-primary">
+                    Solved by {card.solver}
                   </span>
                 </div>
               </div>
@@ -247,6 +253,10 @@ export const RegionalChallengesSection: React.FC<Props> = ({ regionSlug, isRTL =
           );
         })}
       </div>
+
+      {/* Fade edges */}
+      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background to-transparent z-10" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background to-transparent z-10" />
     </section>
   );
 };
