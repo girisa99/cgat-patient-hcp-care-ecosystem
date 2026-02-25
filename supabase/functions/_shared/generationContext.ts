@@ -721,7 +721,50 @@ export type TransformationPipeline =
   
   // ============ SPECIALIZED ============
   | 'avatar-video-dubbing' | 'lip-sync-multilingual' | 'vfx-composite'
-  | 'sfx-scene-audio' | 'music-score-generation' | 'spatial-audio-3d';
+  | 'sfx-scene-audio' | 'music-score-generation' | 'spatial-audio-3d'
+
+  // ============ PRESENTATION PIPELINES ============
+  | 'idea-to-presentation' | 'document-to-presentation' | 'data-to-presentation'
+  | 'brand-to-templates' | 'presentation-to-video'
+
+  // ============ VIDEO PRODUCTION ============
+  | 'script-to-talking-head' | 'text-to-full-video' | 'clone-to-personalized'
+
+  // ============ CONTENT REPURPOSING ============
+  | 'long-to-short-clips' | 'video-to-blog' | 'podcast-to-video' | 'blog-to-video'
+  | 'webinar-to-clips-deck'
+
+  // ============ TRAINING & L&D ============
+  | 'course-to-interactive' | 'sop-to-training' | 'compliance-to-certification'
+  | 'onboarding-to-personalized'
+
+  // ============ MARKETING & ADVERTISING ============
+  | 'product-to-demo' | 'brief-to-ad-creative' | 'brand-to-ugc-ads'
+  | 'landing-page-to-video' | 'testimonial-to-video'
+
+  // ============ SOCIAL MEDIA ============
+  | 'calendar-to-posts' | 'video-to-platform-optimized' | 'trend-to-viral-content'
+  | 'audio-to-music-video'
+
+  // ============ SALES ENABLEMENT ============
+  | 'proposal-to-video-pitch' | 'demo-to-personalized' | 'crm-to-outreach-videos'
+  | 'battlecard-to-presentation'
+
+  // ============ CUSTOMER EDUCATION ============
+  | 'docs-to-help-videos' | 'faq-to-video-library' | 'onboarding-to-welcome-flow'
+  | 'release-notes-to-update-video'
+
+  // ============ LOCALIZATION ============
+  | 'video-to-multilanguage' | 'presentation-to-localized' | 'avatar-to-regional'
+
+  // ============ DATA & ANALYTICS ============
+  | 'data-to-dashboard-video' | 'report-to-executive-summary' | 'survey-to-insights-video'
+
+  // ============ INTERNAL COMMS ============
+  | 'announcement-to-video' | 'policy-to-training-video' | 'townhall-to-highlights'
+
+  // ============ LIVE & REAL-TIME ============
+  | 'avatar-to-live-stream' | 'webinar-to-interactive' | 'meeting-to-summary';
 
 export interface TransformationPipelineConfig {
   pipeline: TransformationPipeline;
@@ -742,7 +785,7 @@ export interface TransformationPipelineConfig {
 export interface TransformationStage {
   stage: number;
   name: string;
-  inputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'document' | 'voice' | 'panorama' | 'scene';
+  inputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'document' | 'voice' | 'panorama' | 'scene' | 'animation' | 'ar' | 'vr' | 'vfx' | 'music';
   outputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'animation' | 'interactive' | 'vr' | 'ar' | 'vfx' | 'sfx' | 'music';
   agent: string;
   provider: string;

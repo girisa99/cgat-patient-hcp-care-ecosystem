@@ -1162,7 +1162,7 @@ export function CreateConfigureStep({
                 key={tag}
                 variant="outline"
                 className="text-[10px] cursor-pointer hover:bg-primary/10 transition-colors"
-                onClick={() => setEnrichmentPrompt(prev => prev ? `${prev}. ${tag}` : tag)}
+                onClick={() => setEnrichmentPrompt(enrichmentPrompt ? `${enrichmentPrompt}. ${tag}` : tag)}
               >
                 <Sparkles className="w-2.5 h-2.5 mr-1" />
                 {tag}

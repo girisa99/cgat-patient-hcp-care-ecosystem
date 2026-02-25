@@ -7,6 +7,8 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
+import { OutputFormatShowcase } from '@/components/landing/OutputFormatShowcase';
+import { SocialConnectSection } from '@/components/landing/SocialConnectSection';
 import { useParams, Navigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
@@ -32,6 +34,7 @@ import { RegionalPricingSection } from '@/components/landing/RegionalPricingSect
 import { ProfessionalAvatarShowcase } from '@/components/landing/video/ProfessionalAvatarShowcase';
 import { ProductDetailShowcase } from '@/components/landing/ProductDetailShowcase';
 import { DogfoodingProof } from '@/components/landing/DogfoodingProof';
+import { RegionalChallengesSection } from '@/components/landing/RegionalChallengesSection';
 import { IndustryShowcases } from '@/components/landing/IndustryShowcases';
 import { RegionSwitcherNav } from '@/components/landing/RegionSwitcherNav';
 import { SubRegionDialectPicker } from '@/components/landing/SubRegionDialectPicker';
@@ -162,6 +165,7 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
       <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
       <meta name="robots" content="index, follow" />
       <meta name="author" content="Genie Suite" />
+      <meta name="theme-color" content="#6366f1" />
       {/* Open Graph */}
       <meta property="og:title" content={config.seo.title} />
       <meta property="og:description" content={config.seo.description} />
@@ -189,7 +193,7 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
         />
       ))}
       <link rel="alternate" hrefLang="x-default" href={`${baseUrl}/genie-landing`} />
-      {/* JSON-LD Structured Data */}
+      {/* JSON-LD: SoftwareApplication */}
       <script type="application/ld+json">
         {JSON.stringify({
           '@context': 'https://schema.org',
@@ -212,6 +216,31 @@ const RegionalSEOHead: React.FC<{ config: RegionalConfig; currentSlug: string }>
             ratingCount: '1200',
           },
           availableLanguage: config.languageShowcase.languages.map(l => l.name),
+        })}
+      </script>
+      {/* JSON-LD: BreadcrumbList */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: baseUrl },
+            { '@type': 'ListItem', position: 2, name: 'Genie Landing', item: `${baseUrl}/genie-landing` },
+            { '@type': 'ListItem', position: 3, name: config.hero.regionName, item: pageUrl },
+          ],
+        })}
+      </script>
+      {/* JSON-LD: FAQPage */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            { '@type': 'Question', name: 'What is Genie Suite?', acceptedAnswer: { '@type': 'Answer', text: 'Genie Suite is an AI-powered content production platform that creates video, podcasts, presentations, and more from a single prompt, transcreated for 140+ languages across 17 global regions.' } },
+            { '@type': 'Question', name: 'How is transcreation different from translation?', acceptedAnswer: { '@type': 'Answer', text: 'Translation converts words literally. Transcreation adapts meaning, tone, idioms, and cultural context so content feels native to each market — resulting in 3x higher engagement.' } },
+            { '@type': 'Question', name: 'How many AI providers does Genie Suite use?', acceptedAnswer: { '@type': 'Answer', text: 'Genie Suite orchestrates 19 AI providers including Gemini, GPT-4o, Claude, Vertex Veo, ElevenLabs, Azure Neural TTS, and more across 206 production pipelines.' } },
+            { '@type': 'Question', name: 'Is there a free plan?', acceptedAnswer: { '@type': 'Answer', text: 'Yes! Start with 50 free credits — no credit card required. Create videos, podcasts, and presentations immediately.' } },
+          ],
         })}
       </script>
     </Helmet>
@@ -256,17 +285,17 @@ const PROVIDER_SHOWCASE = [
 ];
 
 const ProviderRibbon: React.FC = () => (
-  <div className="relative overflow-hidden py-3">
+  <div className="relative overflow-hidden py-4">
     <motion.div
-      className="flex gap-4 whitespace-nowrap"
+      className="flex gap-5 whitespace-nowrap"
       animate={{ x: ['0%', '-50%'] }}
       transition={{ duration: 35, repeat: Infinity, ease: 'linear' }}
     >
       {[...PROVIDER_SHOWCASE, ...PROVIDER_SHOWCASE].map((p, i) => (
-        <div key={`${p.label}-${i}`} className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border border-white/15">
-          <img src={p.logo} alt={p.label} className="w-5 h-5 rounded-sm object-contain" />
-          <span className="text-xs font-bold text-white/90">{p.label}</span>
-          <span className="text-[10px] text-white/40 font-medium">{p.capability}</span>
+        <div key={`${p.label}-${i}`} className="inline-flex items-center gap-3 px-5 py-3 rounded-full bg-black/50 backdrop-blur-md border border-white/15 hover:border-white/30 hover:shadow-lg hover:shadow-white/5 transition-all">
+          <img src={p.logo} alt={`${p.label} AI provider logo`} className="w-10 h-10 rounded-md object-contain" />
+          <span className="text-sm font-bold text-white/90">{p.label}</span>
+          <span className="text-xs text-white/50 font-medium">{p.capability}</span>
         </div>
       ))}
     </motion.div>
@@ -329,13 +358,17 @@ const FloatingTemplateCards: React.FC<{ visible: boolean }> = ({ visible }) => {
 // ============================================
 // PIPELINE VISUAL — Cinematic production flow
 // ============================================
+import { Shield } from 'lucide-react';
+
 const PIPELINE_STEPS = [
   { icon: Wand2, label: 'Ideation', provider: 'Gemini 3', color: 'from-violet-500 to-purple-600' },
   { icon: FileText, label: 'Script', provider: 'GPT-4o', color: 'from-emerald-500 to-teal-600' },
   { icon: Mic, label: 'Voice', provider: 'Azure TTS', color: 'from-blue-500 to-indigo-600' },
   { icon: Video, label: 'Video', provider: 'Vertex Veo', color: 'from-sky-500 to-cyan-600' },
   { icon: Box, label: '3D/Avatar', provider: 'Meshy + Wan', color: 'from-amber-500 to-orange-600' },
-  { icon: Globe, label: 'Distribute', provider: '140+ Lang', color: 'from-rose-500 to-pink-600' },
+  { icon: Languages, label: 'Translation', provider: '140+ Lang', color: 'from-teal-500 to-emerald-600' },
+  { icon: Shield, label: 'Review', provider: 'AI QA', color: 'from-slate-500 to-zinc-600' },
+  { icon: Globe, label: 'Distribute', provider: 'Multi-CDN', color: 'from-rose-500 to-pink-600' },
 ];
 
 const CinematicPipeline: React.FC = () => (
@@ -641,7 +674,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       badge: `${hero.flag} ${productContext ? `Genie ${productContext.charAt(0).toUpperCase() + productContext.slice(1)} for ${hero.regionName}` : config.differentiators.heroBadge}`,
       headline: [hero.englishHeadline.split('—')[0]?.trim() + ' — ', hero.regionName],
       subtitle: hero.englishSubheadline,
-      description: `${LANDING_METRICS.aiProviders} AI providers · ${LANDING_METRICS.pipelines} pipelines · ${LANDING_METRICS.languages} languages · ${LANDING_METRICS.industries} industries. The world's only all-in-one AI content production suite — from idea to published, region-ready media.`,
+      description: `Agencies charge $50K+ and take months. AI tools give you robot-sounding content. Genie Suite does both — quality AND speed. ${LANDING_METRICS.aiProviders} AI providers · ${LANDING_METRICS.pipelines} pipelines · ${LANDING_METRICS.languages} languages · ${LANDING_METRICS.industries} industries.`,
       type: 'platform' as const,
     },
     {
@@ -649,7 +682,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       badge: `${hero.flag} Mind to Media — ${hero.regionName}`,
       headline: ['One Prompt. ', `${hero.regionName}-Ready Content.`],
       subtitle: 'Minutes, Not Months. Zero Agencies.',
-      description: `Script, voice, avatar, 3D, video, translation — all generated from a single prompt, culturally tuned for ${hero.regionName} and its sub-regions. ${LANDING_METRICS.pipelines} pipelines. No plugins. No exports. No waiting.`,
+      description: `Your competitors are already producing 10x more content. Every day without automation is market share lost. Script, voice, avatar, 3D, video, translation — all generated from a single prompt, culturally tuned for ${hero.regionName}. ${LANDING_METRICS.pipelines} pipelines. No plugins. No exports. No waiting.`,
       type: 'pipeline' as const,
     },
     {
@@ -657,7 +690,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       badge: `${hero.flag} ${LANDING_METRICS.languages} Languages · ${LANDING_METRICS.dialects} Dialects · ${LANDING_METRICS.regions} Regions`,
       headline: ['Your Language. ', 'Your Market.'],
       subtitle: hero.nativeHeadline,
-      description: `Not translation — transcreation. We adapt tone, idioms, humor, and cultural context so ${hero.regionName} audiences feel you were built for them. ${LANDING_METRICS.arabicDialects} Arabic dialects. ${LANDING_METRICS.indianLanguages} Indian languages. RTL-native. Zone-routed AI.`,
+      description: `68% of consumers won't buy if content isn't in their language. Translation isn't enough — transcreation is the difference. ${LANDING_METRICS.arabicDialects} Arabic dialects. ${LANDING_METRICS.indianLanguages} Indian languages. RTL-native. Zone-routed AI.`,
       type: 'stats' as const,
     },
     {
@@ -665,7 +698,7 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
       badge: `${hero.flag} AI Transcreation Engine`,
       headline: ['Meaning, ', 'Not Just Words.'],
       subtitle: `Cultural Intelligence at Scale for ${hero.regionName}.`,
-      description: `Translation converts words. Transcreation converts intent, emotion, and cultural context — powered by ${LANDING_METRICS.aiProviders} zone-routed AI models. Same video, ${LANDING_METRICS.languages} culturally authentic versions.`,
+      description: `Brands using transcreation see 3x higher engagement vs translation-only campaigns. Powered by ${LANDING_METRICS.aiProviders} zone-routed AI models. Same video, ${LANDING_METRICS.languages} culturally authentic versions.`,
       type: 'comparison' as const,
     },
   ];
@@ -1105,8 +1138,8 @@ const HeroCarousel: React.FC<{ config: RegionalConfig; productContext?: string |
 // CONSISTENT METRICS — Single source of truth
 // ============================================
 const LANDING_METRICS = {
-  regions: 16,
-  subRegions: 56,
+  regions: 17,
+  subRegions: 62,
   languages: '140+',
   dialects: '50+',
   aiProviders: 19,
@@ -1114,6 +1147,9 @@ const LANDING_METRICS = {
   industries: '50+',
   arabicDialects: 7,
   indianLanguages: 22,
+  formats: 16,
+  blueprints: 441,
+  chains: 35,
 } as const;
 
 // ============================================
@@ -1398,7 +1434,9 @@ const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => {
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-6">
           <a href="#products" className="text-muted-foreground hover:text-foreground transition">Products</a>
+          <a href="#formats" className="text-muted-foreground hover:text-foreground transition">Formats</a>
           <a href="#pricing" className="text-muted-foreground hover:text-foreground transition">Pricing</a>
+          <a href="#community" className="text-muted-foreground hover:text-foreground transition">Community</a>
           <Link to="/explore">
             <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
               Explore
@@ -1433,7 +1471,9 @@ const RegionalNavbar: React.FC<{ config: RegionalConfig }> = ({ config }) => {
           >
             <div className="flex flex-col gap-2 p-4">
               <a href="#products" onClick={() => setMobileOpen(false)} className="text-foreground font-medium py-2">Products</a>
+              <a href="#formats" onClick={() => setMobileOpen(false)} className="text-foreground font-medium py-2">Formats</a>
               <a href="#pricing" onClick={() => setMobileOpen(false)} className="text-foreground font-medium py-2">Pricing</a>
+              <a href="#community" onClick={() => setMobileOpen(false)} className="text-foreground font-medium py-2">Community</a>
               <Link to="/explore" onClick={() => setMobileOpen(false)} className="text-foreground font-medium py-2">Explore</Link>
               <Link to="/genie-studio-auth" onClick={() => setMobileOpen(false)}>
                 <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mt-2">
@@ -1545,6 +1585,9 @@ export const RegionalLandingPage: React.FC = () => {
         />
       </div>
 
+      {/* Industry Challenges — Region-specific pain points */}
+      <RegionalChallengesSection regionSlug={regionSlug} isRTL={mergedConfig.hero.isRTL} />
+
       {/* Product Ecosystem — 7 Products, 206 Pipelines + Why Genie */}
       <section id="products" className="py-24 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
@@ -1578,6 +1621,9 @@ export const RegionalLandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Output Format Showcase — Video, Podcast, PPT, Social, etc. */}
+      <OutputFormatShowcase regionSlug={regionSlug} />
+
       {/* Industry Showcases — See It In Action */}
       <IndustryShowcases region={regionSlug} config={mergedConfig} />
 
@@ -1588,6 +1634,9 @@ export const RegionalLandingPage: React.FC = () => {
 
       {/* Dogfooding Proof */}
       <DogfoodingProof />
+
+      {/* Social Connectivity + Newsletter Subscribe */}
+      <SocialConnectSection />
       
       <RegionalCTAFooter config={mergedConfig} />
     </main>

@@ -354,7 +354,7 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
       {/* AI Scene Script Generator — Suggest -> Approve per scene */}
       <SceneScriptAIPanel
         mapping={authoring.state.templateMapping || null}
-        messaging={castSession.session.approvedMessaging}
+        messaging={castSession.session.approvedMessaging as any}
         capabilities={castSession.session.selectedStyles}
         product={selectedProductId || undefined}
         region={castSession.session.selectedRegion}
@@ -513,11 +513,11 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
 
       {/* Phase 6E: Production Controls — wired to real pipeline */}
       <ProductionControlPanel
-        productionState={production.state}
+        productionState={production.state as any}
         onStart={async () => {
           const session = castSession.session;
           const enrichment = assembleEnrichmentContext(null, session.selectedRegion || 'en');
-          const request = buildRequestFromCastSession(session, enrichment);
+          const request = buildRequestFromCastSession(session as any, enrichment);
           toast.info('Starting production pipeline...');
           try {
             await production.startProduction({
@@ -555,7 +555,7 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
       {/* P3: Scene-Aware Teleprompter — narration + visual script editing */}
       {productionSession.session.totalScenes > 0 && (
         <SceneAwareTeleprompter
-          productionSession={productionSession}
+          productionSession={productionSession as any}
           isPlaying={videoTimeline.state.isPlaying}
           onPlay={() => videoTimeline.play()}
           onPause={() => videoTimeline.pause()}
@@ -584,18 +584,22 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
       {/* Scene Progress Tracker — per-scene render status from production pipeline */}
       {production.state.scenes.length > 0 && (
         <SceneProgressTracker
-          scenes={production.state.scenes.map((scene, idx) => ({
+          scenes={production.state.scenes.map((scene: any, idx: number) => ({
             sceneId: scene.sceneId,
             sceneIndex: idx,
+            sceneNumber: idx + 1,
             title: scene.scriptText?.slice(0, 40) || `Scene ${idx + 1}`,
             renderMode: deriveSceneRenderMode(castSession.session.selectedStyles?.[0] || 'smart_storytelling') as any,
             status: production.state.status === 'complete' ? 'complete' as const : 'pending' as const,
+            phase: 'queued' as any,
             progress: production.state.status === 'complete' ? 100 : 0,
             audioUrl: null,
             videoUrl: null,
             duration: scene.duration || 8,
             error: null,
-          }))}
+            provider: null,
+            retryCount: 0,
+          })) as any}
           productionState={production.state as any}
           onRetryScene={(sceneId) => {
             toast.info(`Retrying scene: ${sceneId}`);
@@ -668,7 +672,7 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
 
       {/* Universal Multi-Track Timeline Editor */}
       <VideoTimelineEditor
-        timeline={videoTimeline}
+        timeline={videoTimeline as any}
         clipOps={clipOps}
         onImportFile={(file) => {
           const videoTrack = videoTimeline.state.tracks.find(t => t.type === 'primary_video');
@@ -762,7 +766,7 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
 
                 {/* Preset buttons */}
                 <div className="flex flex-wrap gap-1.5">
-                  {musicComposer.presets?.slice(0, 4).map((preset: any) => (
+                  {(musicComposer as any).presets?.slice(0, 4).map((preset: any) => (
                     <Button
                       key={preset.id}
                       variant="outline"
@@ -1019,7 +1023,7 @@ export const ProduceEditStep: React.FC<ProduceEditStepProps> = ({
                           key={variant.id}
                           className={cn(
                             'relative rounded-md border overflow-hidden cursor-pointer transition-all',
-                            smartThumbnails.selectedVariantId === variant.id
+                            (smartThumbnails as any).selectedVariantId === variant.id
                               ? 'ring-2 ring-primary border-primary'
                               : 'border-border hover:border-primary/50'
                           )}

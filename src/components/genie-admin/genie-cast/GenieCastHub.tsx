@@ -528,7 +528,7 @@ export const GenieCastHub: React.FC = () => {
         videoStyles: request.videoStyles,
         scenario: request.scenario,
         sceneStyle: request.sceneStyle,
-        quality: request.quality,
+        quality: request.quality as any,
         avatarGender: request.avatarGender,
         includeMusic: request.includeMusic,
         includeCaptions: request.includeCaptions,

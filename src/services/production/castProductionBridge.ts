@@ -701,7 +701,7 @@ export function buildRequestFromCastSession(
     scriptContent,
     scriptTitle,
     scriptMode: 'text_to_script',
-    intent: (session.selectedIntent as ContentIntent) || 'marketing',
+    intent: (session.selectedIntent as ContentIntent) || ('promo' as ContentIntent),
     selectedFormats: session.selectedFormatId ? [session.selectedFormatId as ContentFormat] : ['short_video' as ContentFormat],
 
     inputLanguage: session.outputLanguages[0] || 'en',
