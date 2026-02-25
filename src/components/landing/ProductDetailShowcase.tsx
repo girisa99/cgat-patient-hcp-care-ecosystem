@@ -506,17 +506,6 @@ export const ProductDetailShowcase: React.FC<ProductDetailShowcaseProps> = ({
                     </div>
                   </div>
 
-                  {/* ─── SECTION 5: Regional ─── */}
-                  <div className="px-6 md:px-8 py-5 border-t border-border/40 overflow-hidden">
-                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
-                      <Globe className="h-4 w-4 text-primary" />
-                      How {productData.name} Works Across Regions
-                      <Badge variant="outline" className="text-[10px] ml-1 border-primary/30 text-primary">
-                        Transcreation — Not Translation
-                      </Badge>
-                    </h4>
-                    <RegionalMarquee regions={extendedData.regionalHighlights} productId={productData.id} />
-                  </div>
 
                   {/* ─── SECTION 6: CTA Bar ─── */}
                   <div className="px-6 md:px-8 py-4 bg-muted/20 border-t border-border/40 flex items-center justify-between flex-wrap gap-3">
