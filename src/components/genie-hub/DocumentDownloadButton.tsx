@@ -2,7 +2,7 @@
  * Document Download Button Component
  * 
  * Provides quick access to download ecosystem documentation.
- * Used in Production Hub, Command Center, and Governance panels.
+ * Used in Genie Hub, Command Center, and Governance panels.
  */
 
 import React, { useState } from 'react';

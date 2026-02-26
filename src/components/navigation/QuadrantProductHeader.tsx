@@ -31,6 +31,8 @@ import genieSparkLogo from '@/assets/logos/genie-spark-combined.png';
 import genieMindLogo from '@/assets/logos/genie-mind-combined.png';
 import genieDeckLogo from '@/assets/logos/genie-deck-combined.png';
 import genieVibeLogo from '@/assets/logos/genie-vibe-combined.png';
+import genieHubLogo from '@/assets/logos/genie-arc-combined.png';
+import genieCastLogo from '@/assets/logos/genie-cast-logo.png';
 
 // Product branding registry - single source of truth
 export const PRODUCT_BRANDING: Record<string, ProductBranding> = {
@@ -73,6 +75,26 @@ export const PRODUCT_BRANDING: Record<string, ProductBranding> = {
     gradientTo: 'to-purple-500',
     badgeColor: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
     quadrant: 'produce',
+  },
+  cast: {
+    id: 'cast',
+    name: 'Genie Cast',
+    tagline: 'Make It. Show It. Scale It.',
+    logo: genieCastLogo,
+    gradientFrom: 'from-blue-600',
+    gradientTo: 'to-cyan-600',
+    badgeColor: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    quadrant: 'publish',
+  },
+  hub: {
+    id: 'hub',
+    name: 'Genie Hub',
+    tagline: 'Manage. Schedule. Scale.',
+    logo: genieHubLogo,
+    gradientFrom: 'from-teal-500',
+    gradientTo: 'to-cyan-500',
+    badgeColor: 'bg-teal-500/10 text-teal-600 border-teal-500/20',
+    quadrant: 'manage',
   },
 };
 

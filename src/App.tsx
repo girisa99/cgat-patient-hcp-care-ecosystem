@@ -115,6 +115,7 @@ const AppContent = () => {
     location.startsWith('/genie-deck') ||
     location.startsWith('/genie-arc') ||
     location.startsWith('/genie-admin') ||
+    location.startsWith('/genie-hub') ||
     location.startsWith('/genie-landing') ||
     location.startsWith('/genie-cast') ||
     location.startsWith('/subscription') ||
@@ -239,8 +240,10 @@ const AppContent = () => {
               <Route path="/genie-support" element={<GenieSupportPage />} />
               <Route path="/support" element={<GenieSupportPage />} />
               
-              {/* Genie Admin - internal users only (self-protected) */}
-              <Route path="/genie-admin" element={<GenieAdminPage />} />
+              {/* Genie Hub - unified production hub (self-protected) */}
+              <Route path="/genie-hub" element={<GenieAdminPage />} />
+              {/* Backward compat: /genie-admin → /genie-hub */}
+              <Route path="/genie-admin" element={<Navigate to="/genie-hub" replace />} />
               <Route path="/internal/users" element={<GenieAdminPage />} />
               {/* PERMANENT FIX: Genie Cast is now a standalone page, not a tab */}
               <Route path="/genie-cast" element={<GenieCastPage />} />
@@ -391,7 +394,7 @@ const AppContent = () => {
                   } />
                   {/* Genie Hub - Redirect to Production Hub with calendar tab (schedule flow merged) */}
                   <Route path="/genie-arc" element={
-                    <Navigate to="/genie-admin?tab=calendar" replace />
+                    <Navigate to="/genie-hub?tab=calendar" replace />
                   } />
                   <Route path="/genie-mind" element={
                     <GenieStudioProtectedRoute>
@@ -414,15 +417,15 @@ const AppContent = () => {
                       </Suspense>
                     </GenieStudioProtectedRoute>
                   } />
-                  {/* Redirect all production routes to consolidated /genie-admin */}
+                  {/* Redirect all production routes to consolidated /genie-hub */}
                   <Route path="/genie-studio/productions" element={
-                    <Navigate to="/genie-admin?tab=library" replace />
+                    <Navigate to="/genie-hub?tab=library" replace />
                   } />
                   <Route path="/production-hub" element={
-                    <Navigate to="/genie-admin?tab=kanban" replace />
+                    <Navigate to="/genie-hub?tab=kanban" replace />
                   } />
                   <Route path="/arc/*" element={
-                    <Navigate to="/genie-admin?tab=calendar" replace />
+                    <Navigate to="/genie-hub?tab=calendar" replace />
                   } />
                   <Route path="/marketing-materials" element={
                     <GenieStudioProtectedRoute>

@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { useProductAssetInventory, type ProductCoverage } from '@/hooks/useProductAssetInventory';
-import { PRODUCT_SCREENS } from '@/components/genie-admin/MultiScreenshotGallery';
+import { PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
 
 interface AssetInventoryTrackerProps {
   onCaptureProduct?: (productId: string) => void;

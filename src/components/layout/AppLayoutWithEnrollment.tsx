@@ -30,6 +30,7 @@ const GENIE_STUDIO_ROUTES = [
   '/genie-vibe',
   '/genie-deck',
   '/genie-cast',
+  '/genie-hub',
   '/genie-admin',
   '/genie-support',
   '/genie-landing',

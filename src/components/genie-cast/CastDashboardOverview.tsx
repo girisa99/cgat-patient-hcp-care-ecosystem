@@ -27,12 +27,13 @@ import {
   Video, FolderOpen, LayoutTemplate, Palette, BarChart3,
   Settings, Sparkles, TrendingUp, Globe, Zap,
   Play, ArrowRight, Layers, Film,
-  Activity, ChevronRight, Star,
+  Activity, ChevronRight, Star, HelpCircle, Info,
   Clapperboard, Wand2, Send, MonitorPlay, FileVideo, Image,
   Cpu, Languages, Map, Radar, Boxes, ChevronLeft,
   FileText, Mic, Presentation, Share2, Youtube, Linkedin,
   Instagram, Music, Headphones, PenTool, Plus,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -213,6 +214,12 @@ const HeroCarousel: React.FC<{
 };
 
 // ── Workflow Step Card ───────────────────────────────────────────────────────
+const WORKFLOW_TOOLTIPS: Record<number, string> = {
+  1: 'CREATE: Write scripts, choose scenes, set style, select regions & languages. This is where your content journey begins.',
+  2: 'PRODUCE: AI generates videos, presentations, podcasts using GPU rendering. Universal Enrichment powers every asset.',
+  3: 'PUBLISH: Distribute to YouTube, LinkedIn, TikTok, Instagram. Schedule, analyze, and A/B test across all 16 regions.',
+};
+
 const WorkflowStepCard: React.FC<{
   step: number;
   icon: React.ReactNode;
@@ -230,7 +237,12 @@ const WorkflowStepCard: React.FC<{
     <div className="relative w-full aspect-[16/9] overflow-hidden">
       <img src={thumbnailSrc} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
       <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-card/30 to-transparent" />
-      <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-bold text-white uppercase tracking-widest">Step {step}</div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-bold text-white uppercase tracking-widest cursor-help">Step {step}</div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-[220px] text-xs">{WORKFLOW_TOOLTIPS[step] || `Step ${step} of the Cast pipeline`}</TooltipContent>
+      </Tooltip>
     </div>
     <div className="relative z-10 p-3 md:p-4">
       <div className="flex items-center gap-2 mb-1.5">
@@ -246,6 +258,14 @@ const WorkflowStepCard: React.FC<{
     </div>
   </button>
 );
+
+// ── Stat Card tooltips ──────────────────────────────────────────────────────
+const STAT_TOOLTIPS: Record<string, string> = {
+  Videos: 'Total videos generated across all regions and languages. Click to view projects.',
+  Projects: 'Active Cast projects. Each project can contain multiple scenes, styles, and output formats.',
+  Templates: 'Reusable blueprints for quick content creation. Organized by category.',
+  Languages: 'Unique languages used in your content. Cast supports 85+ languages across 16 regions.',
+};
 
 // ── Stat Card with background image ─────────────────────────────────────────
 const StatCard: React.FC<{
@@ -276,7 +296,12 @@ const StatCard: React.FC<{
     <div className="relative z-10 p-3 md:p-4">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{label}</p>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider cursor-help flex items-center gap-1">{label} <Info className="w-2.5 h-2.5 opacity-40" /></p>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[200px] text-xs">{STAT_TOOLTIPS[label] || `${label} metric`}</TooltipContent>
+          </Tooltip>
           <p className="text-xl md:text-2xl font-bold text-foreground mt-1">{value}</p>
           {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
@@ -614,6 +639,10 @@ const ContentPipelineSection: React.FC<{
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
             <Layers className="w-3 h-3" /> Content Pipeline
+            <Tooltip>
+              <TooltipTrigger asChild><HelpCircle className="w-3 h-3 opacity-40 cursor-help" /></TooltipTrigger>
+              <TooltipContent side="right" className="max-w-[240px] text-xs">Track content through 3 stages: Created (scripted & configured), Produced (AI-generated & rendered), Published (distributed to platforms). Each piece moves through the full pipeline.</TooltipContent>
+            </Tooltip>
           </h3>
           <div className="flex items-center gap-2">
             {PIPELINE_STAGES.map(s => (
@@ -721,6 +750,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
   const totalCategories = registry.categories?.length || 0;
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className={cn('space-y-4 md:space-y-6 p-3 md:p-5', className)}>
 
       {/* ── 3-Banner Hero Carousel ─────────────────────────────────────── */}
@@ -738,6 +768,10 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
         <div className="flex items-center justify-between px-1 mb-2">
           <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
             <Map className="w-3 h-3" /> Supported Regions
+            <Tooltip>
+              <TooltipTrigger asChild><HelpCircle className="w-3 h-3 opacity-40 cursor-help" /></TooltipTrigger>
+              <TooltipContent side="right" className="max-w-[260px] text-xs">Cast supports 16 parent regions (NAM, EU, MENA, India, CJK, SEA, Africa, LATAM, and more), 62 cultural subregions, and 85+ languages. Content is automatically adapted with regional tone, cultural context, and localized voiceover.</TooltipContent>
+            </Tooltip>
           </h3>
           <span className="text-[10px] text-muted-foreground/40 hidden sm:inline">16 regions | 62 subregions | 85+ languages</span>
         </div>
@@ -768,6 +802,10 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
       <div>
         <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
           <Radar className="w-3 h-3" /> Your Workflow
+          <Tooltip>
+            <TooltipTrigger asChild><HelpCircle className="w-3 h-3 opacity-40 cursor-help" /></TooltipTrigger>
+            <TooltipContent side="right" className="max-w-[240px] text-xs">The 3-step Cast pipeline: CREATE your content (scripts, scenes, styles) → PRODUCE with AI (GPU rendering, TTS, captions) → PUBLISH everywhere (schedule, distribute, analyze).</TooltipContent>
+          </Tooltip>
         </h3>
         <WorkflowAutoScroll onStartCreate={onStartCreate} />
       </div>
@@ -874,6 +912,10 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           <div className="relative z-10 p-3">
             <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
               <Cpu className="w-3 h-3" /> AI Engine
+              <Tooltip>
+                <TooltipTrigger asChild><HelpCircle className="w-3 h-3 opacity-40 cursor-help" /></TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[240px] text-xs">19+ AI providers across 4 zones: Claude Zone, Alibaba Zone, Gemini Zone, and Fallback Zone (GPT-4o). Auto-routed by region and language for optimal quality.</TooltipContent>
+              </Tooltip>
             </h4>
             <div className="grid grid-cols-2 gap-1.5">
               {[
@@ -904,6 +946,10 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           <div className="relative z-10 p-3">
             <h4 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
               <Activity className="w-3 h-3" /> Activity Feed
+              <Tooltip>
+                <TooltipTrigger asChild><HelpCircle className="w-3 h-3 opacity-40 cursor-help" /></TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] text-xs">Real-time feed of your recent video generations, completions, and production activity.</TooltipContent>
+              </Tooltip>
             </h4>
             {videoStats?.recentVideos && videoStats.recentVideos.length > 0 ? (
               <ScrollArea className="h-[160px]">
@@ -987,6 +1033,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 

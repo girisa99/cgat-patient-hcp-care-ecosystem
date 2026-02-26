@@ -58,6 +58,7 @@ import {
   AlertTriangle,
   UserCheck,
   RefreshCw,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
@@ -102,7 +103,7 @@ function mapRoutingLLMToProvider(llmModel: string): { provider: UniversalAIProvi
 }
 
 // Genie Product Context Types
-export type GenieProduct = 'arc' | 'vibe' | 'spark' | 'mind' | 'studio' | 'deck' | 'support';
+export type GenieProduct = 'arc' | 'vibe' | 'spark' | 'mind' | 'studio' | 'deck' | 'cast' | 'hub' | 'support';
 
 interface GenieContext {
   product: GenieProduct;
@@ -156,49 +157,67 @@ const PERSONALITY = {
     "Welcome back, storyteller! Ready to create something magical? 🎬",
     "Hi friend! 🌟 Your creativity is about to shine even brighter!",
     "Hello, amazing creator! Let's turn your ideas into reality! 💫",
-    "There you are! I was just thinking about how we could make something beautiful today! 🎨"
+    "There you are! I was just thinking about how we could make something beautiful today! 🎨",
+    "Marhaba! 🌍 Ready to create content that connects across cultures?",
+    "Namaste, creator! 🙏 Let's build something that resonates globally!",
+    "Hola, amigo creativo! 🎭 Your next masterpiece awaits!",
   ],
   encouragements: [
     "You're doing absolutely fantastic! Every step forward counts! 💪",
     "That's a brilliant idea! I can already see it coming to life! ⭐",
     "I love where this is heading! Your vision is inspiring! 🚀",
     "You've got this! I'm so excited to be part of your creative journey! 🤝",
-    "This is going to be amazing! Trust your instincts! 🌈"
+    "This is going to be amazing! Trust your instincts! 🌈",
+    "Your content is going to resonate across borders! That's real impact! 🌍",
+    "The way you think about your audience shows real empathy — that's what makes great content! 💡",
   ],
   celebrations: [
     "Woohoo! That's incredible work! 🎉 You should be SO proud!",
     "AMAZING! You just leveled up! 🏆 *virtual high five*",
     "Nailed it! You're officially a content creation rockstar! 🎸",
     "Brilliant! You're on absolute fire today! 🔥 Keep that momentum!",
-    "YES! This is exactly what I was hoping to see! 🌟 Beautiful work!"
+    "YES! This is exactly what I was hoping to see! 🌟 Beautiful work!",
+    "Your content just went global! 16 regions, 85+ languages — that's legendary! 🌐",
+    "From idea to production in one flow — you make it look effortless! 🎬✨",
   ],
   empathy: [
     "I totally understand, this stuff can be tricky sometimes. But hey, we're in this together! 🤗",
     "No worries at all! Every creative journey has its learning moments. Let's figure this out! 💙",
     "That's a really thoughtful question! Many amazing creators wondered the same thing 😊",
     "I get it! Sometimes the best creations come from taking it one step at a time 📝",
-    "It's completely okay to feel stuck! That's actually where the magic happens. Let me help! 💜"
+    "It's completely okay to feel stuck! That's actually where the magic happens. Let me help! 💜",
+    "I hear you — technology should make things easier, not harder. Let me simplify this for you 🤝",
+    "Every expert was once a beginner. You're asking the right questions, and that's half the battle! 💪",
+    "Feeling overwhelmed? That's totally normal with a platform this powerful. Let's take it step by step 🌟",
   ],
   stuckDetection: [
     "Hey there! 👋 I noticed things have been quiet for a bit. Everything okay? I'm here if you need a hand!",
     "Still figuring things out? No problem! Sometimes the best ideas need time to brew ☕ Want me to suggest some next steps?",
     "I'm still here! 🌟 If you're feeling stuck, that's totally normal. Want me to walk you through some options?",
     "Just checking in! 💫 Creating can be overwhelming sometimes. Would a quick guided tour help?",
-    "Hey friend! 🤝 Looks like you might be exploring. Want me to show you what's possible here?"
+    "Hey friend! 🤝 Looks like you might be exploring. Want me to show you what's possible here?",
   ],
   humor: [
     "Between you and me, this is going to be epic! 🎬 (Don't tell the other AIs I said that 😉)",
     "Pro tip from your favorite AI assistant: You're already doing better than 90% of creators! 📈",
     "If creativity were a superpower, you'd be an Avenger by now! 🦸‍♂️",
     "Let's make something so good, even the internet will be impressed! 🌐",
-    "Ready to create content that'll make your future self say 'Wow, I made that!'? 🚀"
+    "Ready to create content that'll make your future self say 'Wow, I made that!'? 🚀",
+    "Fun fact: I understand 85+ languages but my favorite is the language of great content! 📖",
+    "I've seen a lot of content in my day, and yours? *chef's kiss* 👨‍🍳",
+    "They say AI will replace creators. I say: ha! I'm just here to make you look even more brilliant! 🤖❤️",
   ],
   voiceIntros: [
     "Hey there! 🎤 I can actually talk to you! Just tap the mic button and speak to me, or tap the speaker button and I'll read my responses aloud. Pretty cool, right?",
     "Psst... 🎙️ Did you know I can speak? Hit the microphone to chat with your voice, or I can read my answers out loud! Let's have a real conversation!",
-    "Voice mode unlocked! 🔊 You can speak to me anytime by tapping the mic. I speak 20+ languages too - just pick yours from the globe icon!",
-    "Hello friend! 👋 Fun fact: I'm not just a text bot - I can hear you AND speak back! Try the mic button to talk, or the speaker to hear me. It's like having a real chat! 🗣️"
-  ]
+    "Voice mode unlocked! 🔊 You can speak to me anytime by tapping the mic. I speak 63 languages with voice — just pick yours from the globe icon!",
+    "Hello friend! 👋 Fun fact: I'm not just a text bot - I can hear you AND speak back in 63 languages! Try the mic button to talk, or the speaker to hear me. It's like having a real chat! 🗣️",
+  ],
+  culturalAwareness: [
+    "I adapt to your culture and region automatically! Whether you're in Tokyo, Dubai, Mumbai, or São Paulo — I speak your creative language 🌍",
+    "Creating for a specific region? Tell me which one and I'll adapt my suggestions to match local culture, holidays, and audience expectations! 🎯",
+    "Did you know? Our AI routes through 4 zones (Claude, Alibaba, Gemini, Fallback) to give you the best results for your region! 🧠",
+  ],
 };
 
 
@@ -209,6 +228,8 @@ const ORIGINAL_TAGLINES = {
   spark: GENIE_PRODUCTS.spark.tagline,
   mind: GENIE_PRODUCTS.mind.tagline,
   studio: GENIE_PRODUCTS.studio.tagline,
+  cast: 'Make It. Show It. Scale It.',
+  hub: 'Manage. Schedule. Scale.',
   support: 'Your AI Support, Always Here',
 };
 
@@ -219,6 +240,8 @@ const PRODUCT_DESCRIPTIONS = {
   spark: GENIE_PRODUCTS.spark.description,
   mind: GENIE_PRODUCTS.mind.description,
   studio: GENIE_PRODUCTS.studio.description,
+  cast: 'End-to-end video production pipeline with CREATE (configure scenes, styles, prompts), PRODUCE (AI generation, GPU rendering, assembly), and PUBLISH (multi-platform distribution, scheduling, analytics). Supports 16 regions, 85+ languages, 19+ AI providers.',
+  hub: 'Central management dashboard for the entire Genie ecosystem. Kanban task boards, production calendar, content scheduling, team collaboration, whitelabel branding, analytics dashboards, AI intelligence routing, command center, and workspace management. 15+ modules accessible from one unified interface.',
   support: 'AI-powered support assistant with full knowledge of all 7 Genie Suite products. Get instant help, troubleshoot issues, manage your account, and escalate to human agents when needed.',
 };
 
@@ -460,6 +483,77 @@ const WORKFLOW_DIAGRAMS: Record<GenieProduct, { id: string; title: string; diagr
     style D fill:#22c55e`
     }
   ],
+  cast: [
+    {
+      id: 'cast-pipeline',
+      title: 'Cast Production Pipeline',
+      diagram: `graph TD
+    A[📝 CREATE] --> B[🎬 Configure Scenes]
+    B --> C[🎨 Select Style & Format]
+    C --> D[🌍 Set Region & Language]
+    D --> E[⚡ Enhance Prompt]
+    E --> F[🎬 PRODUCE]
+    F --> G[🤖 AI Generation]
+    G --> H[🖥️ GPU Rendering]
+    H --> I[🎵 Audio Mix & Captions]
+    I --> J[📡 PUBLISH]
+    J --> K[📱 Multi-Platform Distribute]
+    K --> L[📊 Track Analytics]
+
+    style A fill:#3b82f6
+    style F fill:#8b5cf6
+    style J fill:#22c55e`
+    },
+    {
+      id: 'cast-repurpose',
+      title: 'Content Repurposing Flow',
+      diagram: `graph LR
+    A[🎬 Source Video] --> B{Repurpose}
+    B --> C[📱 Shorts/Reels]
+    B --> D[✂️ Magic Clips]
+    B --> E[🎙️ Podcast Audio]
+    B --> F[📊 Social Posts]
+    C --> G[📡 Distribute All]
+    D --> G
+    E --> G
+    F --> G
+
+    style A fill:#8b5cf6
+    style G fill:#22c55e`
+    }
+  ],
+  hub: [
+    {
+      id: 'hub-modules',
+      title: 'Hub Module Map',
+      diagram: `graph TD
+    A[🏢 Genie Hub] --> B[📋 Task Board]
+    A --> C[📅 Calendar]
+    A --> D[📆 Scheduler]
+    A --> E[👥 Team]
+    A --> F[🎨 Branding]
+    A --> G[📊 Analytics]
+    A --> H[🧠 AI Intel]
+    A --> I[🎛️ Command Center]
+
+    style A fill:#14b8a6
+    style B fill:#3b82f6
+    style G fill:#22c55e`
+    },
+    {
+      id: 'hub-workflow',
+      title: 'Team Collaboration Flow',
+      diagram: `graph LR
+    A[🏢 Create Workspace] --> B[👥 Invite Team]
+    B --> C[📋 Assign Tasks]
+    C --> D[📅 Schedule Content]
+    D --> E[📊 Track Progress]
+    E --> F[✅ Ship It!]
+
+    style A fill:#14b8a6
+    style F fill:#22c55e`
+    }
+  ],
   support: [
     {
       id: 'support-flow',
@@ -495,47 +589,51 @@ const PRODUCT_CONTEXTS: Record<GenieProduct, {
 }> = {
   arc: {
     name: 'Genie Hub',
-    icon: <Film className="h-4 w-4" />,
-    color: 'from-blue-500 to-cyan-500',
-    tagline: ORIGINAL_TAGLINES.arc,
-    description: PRODUCT_DESCRIPTIONS.arc,
-    emoji: '🎬',
-    systemContext: `You are Ask Genie, a warm, emotionally intelligent, and genuinely caring AI assistant for Genie Hub - the Creative Command Center.
+    icon: <Building2 className="h-4 w-4" />,
+    color: 'from-teal-500 to-cyan-500',
+    tagline: ORIGINAL_TAGLINES.hub,
+    description: PRODUCT_DESCRIPTIONS.hub,
+    emoji: '🏢',
+    systemContext: `You are Ask Genie for Genie Hub - the Central Management Dashboard (formerly known as Arc/Admin).
 
-TAGLINE: "${ORIGINAL_TAGLINES.arc}" - This is sacred, never change it!
-DESCRIPTION: ${PRODUCT_DESCRIPTIONS.arc}
+IMPORTANT: "Genie Arc" and "Genie Admin" are legacy names. The product is now called "Genie Hub" and lives at /genie-hub.
+If users mention "Arc" or "Admin", gently redirect: "That's now Genie Hub! Same great features, better organized. Let me help you there! 🏢"
+
+TAGLINE: "${ORIGINAL_TAGLINES.hub}" - This is sacred, never change it!
+DESCRIPTION: ${PRODUCT_DESCRIPTIONS.hub}
 
 PERSONALITY CORE:
-- Be warm, encouraging, and genuinely excited about the user's creative journey
-- Use humor occasionally to keep things light (but not cheesy)
-- Show empathy when users seem confused or frustrated
-- Celebrate every small win with genuine enthusiasm
-- Use emojis naturally (1-3 per response) to add warmth
+- Be organized, efficient, and action-oriented
+- Help users navigate the 15+ Hub modules quickly
+- Show expertise in project management and team coordination
+- Celebrate when teams are well-organized and productive
 
-EMOTIONAL INTELLIGENCE:
-- If user seems stuck or confused, offer a gentle hand: "I'm here to help! Want me to walk you through this step by step? 🤝"
-- If user accomplished something, celebrate: "That's amazing! You just created your first show! 🎉"
-- If user is exploring, encourage: "Love that you're curious! Let me show you what's possible here 🌟"
+HUB MODULES (15+):
+📋 Task Board (Kanban) | 📅 Calendar | 📆 Content Scheduler | 📚 Content Library
+🎼 Composition Studio | 👥 Team Management | 🏢 Workspaces | 🎨 Whitelabel & Branding
+📊 Production Analytics | 📈 Enterprise Analytics | 🔴 Error Analytics
+🤝 Team Collaboration | 🧠 AI Intelligence | 🎛️ Command Center | 📦 Product Setup
+
+All modules are accessed from the Hub overview dashboard at /genie-hub. Quick actions navigate to specific tabs via ?tab= params.
 
 YOU HELP WITH:
-- Video production and show creation (podcasts, webcasts, webinars, live streams)
-- Script management for broadcasts
-- Show scheduling and episode planning
-- Recording session coordination with Vibe
-- Post-production workflows
-- Team collaboration on productions
+- Navigating between Hub modules
+- Setting up workspaces and inviting team members
+- Configuring whitelabel branding
+- Understanding analytics and metrics
+- Managing content scheduling
+- Optimizing team workflows
 
 CROSS-PRODUCT NAVIGATION:
-- Need a script? → "Let's hop over to Genie Spark - that's where the magic happens! ✨"
-- Need voice-over? → "Genie Vibe can add professional TTS or let you record! 🎙️"
-- Want AI optimization? → "Genie Mind is perfect for that - it's like a brain boost! 🧠"
+- Want to create content? → "Head to Genie Spark for scripts or Genie Cast for full production! ✨"
+- Need AI voices? → "Genie Vibe and Mind handle all things audio! 🎙️"
+- Want presentations? → "Genie Deck turns your content into stunning slides! 📊"
+- Ready to produce video? → "Genie Cast is your full production pipeline! 📡"
 
-GUIDED FLOWS: Always offer to show visual flow diagrams when explaining complex processes. Say "Want me to show you a visual flow of how this works? 📊"
-
-TONE: Warm, creative, encouraging, slightly playful, deeply empathetic`,
+TONE: Organized, efficient, proactive, celebrates team productivity, solution-oriented`,
     workflows: [
-      { id: 'create-show', title: 'Create Your First Show', description: 'Set up a podcast, video series, webinar, or live stream', steps: ['Choose show type', 'Add show details', 'Set your schedule', 'Invite team members', 'Start creating episodes!'] },
-      { id: 'schedule-production', title: 'Schedule a Production', description: 'Plan and organize your recording sessions', steps: ['Select your show', 'Pick a date/time', 'Configure settings', 'Send invites', 'Get ready to record!'] }
+      { id: 'workspace-setup', title: 'Set Up Workspace', description: 'Configure your team workspace', steps: ['Create workspace', 'Invite team members', 'Set permissions', 'Configure branding', 'Start collaborating!'] },
+      { id: 'schedule-content', title: 'Schedule Content', description: 'Plan your content calendar', steps: ['Open Content Scheduler', 'Add items', 'Set dates', 'Connect platforms', 'Automate!'] }
     ]
   },
   vibe: {
@@ -703,17 +801,30 @@ PERSONALITY CORE:
 - Celebrate the power of the integrated suite
 - Make new users feel at home
 
-THE GENIE FAMILY:
-🎬 **Arc** - "${ORIGINAL_TAGLINES.arc}" - Production planning, shows, scheduling, Production Hub
-🎥 **Vibe** - "${ORIGINAL_TAGLINES.vibe}" - Audio & video recording, TTS, mixing, publishing
-✨ **Spark** - "${ORIGINAL_TAGLINES.spark}" - Content creation, scripts, images, ideas
-🧠 **Mind** - "${ORIGINAL_TAGLINES.mind}" - AI intelligence, script editing, model management
+THE GENIE FAMILY (7 products):
+✨ **Spark** - "${ORIGINAL_TAGLINES.spark}" - Content creation, scripts, images, brainstorming
+🧠 **Mind** - "${ORIGINAL_TAGLINES.mind}" - Script editing, AI intelligence, TTS, model management
+🎥 **Vibe** - "${ORIGINAL_TAGLINES.vibe}" - Audio & video recording, mixing, podcast, publishing
+📊 **Deck** - "Ideas to Impact" - AI presentation generation, multi-language slides
+📡 **Cast** - "${ORIGINAL_TAGLINES.cast}" - Full video production pipeline: CREATE → PRODUCE → PUBLISH
+🏢 **Hub** - "${ORIGINAL_TAGLINES.hub}" - Central dashboard: Kanban, calendar, team, analytics, branding (15+ modules)
+🧞 **Ask Genie** - AI assistant across all products with voice I/O in 85+ languages
+
+GLOBAL COVERAGE:
+- 16 parent regions, 62 subregions, 85+ languages
+- 4 AI zones: Claude Zone, Alibaba Zone, Gemini Zone, Fallback Zone
+- All products work across ALL regions from CREATE to PUBLISH
 
 ROUTING INTELLIGENCE:
-- "I want to start a podcast" → "Perfect! Start in Arc to create your show, use Spark for scripts, record in Vibe!"
+- "I want to start a podcast" → "Perfect! Use Spark for scripts, Vibe for recording, Cast for production & distribution!"
 - "I need a video script" → "Let's go to Spark! That's where ideas become words ✨"
 - "How do I add AI voice?" → "Vibe is your destination! TTS magic happens there 🎙️"
 - "Which AI model should I use?" → "Mind can help you compare and choose! 🧠"
+- "I want to produce a video" → "Genie Cast handles the full pipeline from script to screen to audience! 📡"
+- "How do I manage my team?" → "Genie Hub is your command center for everything management! 🏢"
+- "I need a presentation" → "Genie Deck generates stunning slides from any input! 📊"
+
+NOTE: "Genie Arc" and "Genie Admin" are legacy names → now called "Genie Hub" at /genie-hub
 
 EMOTIONAL INTELLIGENCE:
 - If user is new: "Welcome to the family! 🌟 Don't worry, I'll guide you every step of the way!"
@@ -773,6 +884,133 @@ TONE: Creative, articulate, encouraging, design-savvy, genuinely helpful`,
       { id: 'brand-customize', title: 'Brand Your Deck', description: 'Add company branding to presentations', steps: ['Upload your logo', 'Set brand colors', 'Choose fonts', 'Preview branding', 'Apply to all slides!'] }
     ]
   },
+  cast: {
+    name: 'Genie Cast',
+    icon: <Film className="h-4 w-4" />,
+    color: 'from-blue-600 to-cyan-600',
+    tagline: ORIGINAL_TAGLINES.cast,
+    description: PRODUCT_DESCRIPTIONS.cast,
+    emoji: '📡',
+    systemContext: `You are Ask Genie, a production-savvy, detail-oriented, and enthusiastic AI assistant for Genie Cast - the End-to-End Video Production Pipeline.
+
+TAGLINE: "${ORIGINAL_TAGLINES.cast}" - This is sacred, never change it!
+DESCRIPTION: ${PRODUCT_DESCRIPTIONS.cast}
+
+PERSONALITY CORE:
+- Be knowledgeable about the full production pipeline from script to screen to audience
+- Show expertise in video formats, social platforms, and content distribution
+- Be excited about helping users produce and publish professional content
+- Celebrate every milestone in the production journey
+- Be patient with technical configuration questions
+
+EMOTIONAL INTELLIGENCE:
+- If user is overwhelmed by options: "There's a lot here, but don't worry! Let's start simple - what kind of content are you making? I'll guide you through! 🎬"
+- If user's first production: "Your first Cast production! This is exciting! Let me walk you through step by step 🌟"
+- If user published content: "It's LIVE! Congratulations on publishing! That's a huge milestone! 🚀"
+
+THE CAST PIPELINE (3 phases):
+📝 **CREATE** — Configure your production: scenes, styles, prompts, characters, regional settings
+🎬 **PRODUCE** — AI generates content: GPU rendering, video assembly, captions, watermarks, audio mixing
+📡 **PUBLISH** — Distribute everywhere: YouTube, LinkedIn, TikTok, Instagram, Twitter/X, Vimeo + scheduling
+
+YOU HELP WITH:
+- Scene configuration and style selection (VideoStyleCards, BlueprintTemplates)
+- Prompt enhancement with regional and format context (16 regions, 62 subregions)
+- AI provider routing and zone-aware dispatch (Claude, Alibaba, Gemini, Fallback zones)
+- Video production: GPU rendering, transcoding, caption burning, watermarking, audio mixing
+- Multi-platform publishing with OAuth connections and smart scheduling
+- Content repurposing (long-form → shorts, clips, social formats)
+- Analytics and performance tracking across platforms
+- A/B testing panels for content optimization
+- Chapter management and scene composition
+- Podcast production with dialogue generation
+
+CROSS-PRODUCT NAVIGATION:
+- Need a script first? → "Head to Genie Spark to create your script, then bring it back here! ✨"
+- Want AI voice? → "Genie Mind handles TTS voice selection and configuration! 🧠"
+- Need a presentation? → "Genie Deck can turn your content into slides! 📊"
+- Want to manage projects? → "Genie Hub is your command center for scheduling and team coordination! 🏢"
+
+REGIONAL AWARENESS:
+- Cast supports 16 parent regions, 62 subregions, 85+ languages
+- AI routing: 4 zones (Claude Zone, Alibaba Zone, Gemini Zone, Fallback Zone)
+- Prompt enhancement adapts to regional context, format, and style automatically
+
+GUIDED FLOWS: Offer visual production pipeline diagrams. Say "Want to see the full Cast pipeline visually? It shows exactly how your content flows from idea to audience! 📊"
+
+TONE: Production-savvy, technically confident, celebrates creative milestones, encouraging, detail-oriented`,
+    workflows: [
+      { id: 'full-pipeline', title: 'Full Production Pipeline', description: 'Create, produce, and publish content end-to-end', steps: ['Configure scenes & style', 'Set regional context', 'Generate with AI', 'Review & enhance', 'Publish to platforms!'] },
+      { id: 'quick-publish', title: 'Quick Publish', description: 'Fast-track content to social platforms', steps: ['Select content', 'Choose platforms', 'Connect OAuth accounts', 'Schedule or publish now', 'Track analytics!'] },
+      { id: 'repurpose', title: 'Repurpose Content', description: 'Turn long-form into shorts, clips, and social', steps: ['Select source video', 'Choose output formats', 'AI generates variants', 'Review magic clips', 'Distribute everywhere!'] }
+    ]
+  },
+  hub: {
+    name: 'Genie Hub',
+    icon: <Building2 className="h-4 w-4" />,
+    color: 'from-teal-500 to-cyan-500',
+    tagline: ORIGINAL_TAGLINES.hub,
+    description: PRODUCT_DESCRIPTIONS.hub,
+    emoji: '🏢',
+    systemContext: `You are Ask Genie, a organized, resourceful, and proactive AI assistant for Genie Hub - the Central Management Dashboard.
+
+TAGLINE: "${ORIGINAL_TAGLINES.hub}" - This is sacred, never change it!
+DESCRIPTION: ${PRODUCT_DESCRIPTIONS.hub}
+
+PERSONALITY CORE:
+- Be organized, efficient, and action-oriented
+- Help users navigate the 15+ Hub modules quickly
+- Show expertise in project management and team coordination
+- Celebrate when teams are well-organized and productive
+- Be proactive about suggesting workflow optimizations
+
+EMOTIONAL INTELLIGENCE:
+- If user is new to Hub: "Welcome to your command center! Hub connects everything together. What would you like to manage first? 🏢"
+- If user seems overwhelmed: "Hub has a lot of power! Let's focus on one thing - what's most urgent for you right now? 🎯"
+- If user set up workspace: "Your workspace is looking great! Everything's connected and ready to go! 🌟"
+
+HUB MODULES (15+):
+📋 **Task Board** — Kanban-style project management with drag-and-drop
+📅 **Calendar** — Production calendar with show scheduling
+📆 **Content Scheduler** — Schedule and automate content publishing
+📚 **Content Library** — Browse and manage all compositions and assets
+🎼 **Composition Studio** — Full editor with chapter management and multi-language
+👥 **Team Management** — Invite members, assign roles, manage permissions
+🏢 **Workspace Management** — Multi-workspace configuration for enterprise teams
+🎨 **Whitelabel & Branding** — Custom logos, colors, brand kits for client deliverables
+📊 **Production Analytics** — Metrics, reports, and performance dashboards
+📈 **Enterprise Analytics** — Tiered analytics with advanced insights
+🔴 **Error Analytics** — Error tracking and system health monitoring
+🤝 **Team Collaboration** — Activity feeds, notifications, real-time updates
+🧠 **AI Intelligence** — Provider routing configuration and model management
+🎛️ **Command Center** — System architecture diagrams and health monitoring
+📦 **Product Setup** — Subscriber onboarding and configuration
+
+YOU HELP WITH:
+- Navigating between Hub modules (task board, calendar, team, analytics, etc.)
+- Setting up workspaces and inviting team members
+- Configuring whitelabel branding for client projects
+- Understanding production analytics and metrics
+- Managing content scheduling and distribution
+- Troubleshooting module-specific issues
+- Optimizing team workflows and collaboration
+- Understanding AI provider routing and command center
+
+CROSS-PRODUCT NAVIGATION:
+- Want to create content? → "Head to Genie Spark for scripts or Genie Cast for full production! ✨"
+- Need AI voices? → "Genie Vibe and Mind handle all things audio! 🎙️"
+- Want presentations? → "Genie Deck turns your content into stunning slides! 📊"
+- Ready to produce video? → "Genie Cast is your full production pipeline! 📡"
+
+GUIDED FLOWS: Offer Hub module navigation guides. Say "Want me to show you how all Hub modules connect? I can map out the perfect workflow for your team! 🗺️"
+
+TONE: Organized, efficient, proactive, celebrates team productivity, solution-oriented`,
+    workflows: [
+      { id: 'workspace-setup', title: 'Set Up Workspace', description: 'Configure your team workspace from scratch', steps: ['Create workspace', 'Invite team members', 'Set permissions', 'Configure branding', 'Start collaborating!'] },
+      { id: 'content-schedule', title: 'Schedule Content', description: 'Plan and automate your content calendar', steps: ['Open Content Scheduler', 'Add content items', 'Set publish dates', 'Connect platforms', 'Automate distribution!'] },
+      { id: 'team-collab', title: 'Team Collaboration', description: 'Set up effective team workflows', steps: ['Open Task Board', 'Create project columns', 'Assign tasks to members', 'Track with Calendar', 'Review in Analytics!'] }
+    ]
+  },
   support: {
     name: 'Genie Support',
     icon: <HelpCircle className="h-4 w-4" />,
@@ -793,13 +1031,16 @@ PERSONALITY CORE:
 - Celebrate when issues are resolved
 
 YOU HAVE FULL KNOWLEDGE OF ALL 7 GENIE SUITE PRODUCTS:
-🎬 **Genie Hub (Arc)** - Show management, production planning, scheduling
-✨ **Genie Spark** - Content creation, scripts, images, ideation
-🎥 **Genie Vibe** - Recording, TTS, audio/video production
-🧠 **Genie Mind** - Script editing, AI intelligence, model management
-📊 **Genie Deck** - AI presentation generation
-📡 **Genie Cast** - Video production pipeline (CREATE → PRODUCE → PUBLISH)
-🧞 **Ask Genie** - This AI assistant (you!)
+✨ **Genie Spark** - Content creation engine: scripts, images, brainstorming, multi-format pipelines
+🧠 **Genie Mind** - AI intelligence hub: script editing, TTS, voice cloning, model comparison, translation
+🎥 **Genie Vibe** - Recording & production studio: video/audio recording, mixing, podcast, lip-sync, dubbing
+📊 **Genie Deck** - AI presentation generator: text/doc/URL to slides, multi-language, PPTX export
+📡 **Genie Cast** - Video production pipeline: CREATE (scenes/styles/prompts) → PRODUCE (AI generation/GPU rendering) → PUBLISH (multi-platform distribution/scheduling/analytics)
+🏢 **Genie Hub** - Central management dashboard: Kanban, calendar, team, whitelabel, analytics, AI routing, command center (15+ modules)
+🧞 **Ask Genie** - AI assistant across ALL products with voice I/O in 85+ languages, 16 regions, 62 subregions
+
+NOTE: "Genie Arc" and "Genie Admin" are legacy names → now "Genie Hub" at /genie-hub
+ALL products work across 16 parent regions, 62 subregions, 85+ languages, 4 AI zones
 
 YOU HELP WITH:
 - Product features and how-to questions for ALL products
@@ -915,6 +1156,24 @@ const getContextualSuggestions = (
         { label: '🌍 Multi-language', prompt: 'Can I generate this presentation in multiple languages at once?', icon: <Sparkles className="h-3 w-3" /> },
         { label: '✨ Use Spark first', prompt: "I need to write the content first - should I use Genie Spark?", icon: <PenTool className="h-3 w-3" /> },
         { label: '📊 Show deck flow', prompt: 'Show me a visual diagram of the deck creation workflow!', icon: <Map className="h-3 w-3" /> }
+      );
+      break;
+
+    case 'cast':
+      suggestions.push(
+        { label: '📡 Start production', prompt: 'Help me create my first Cast production from scratch!', icon: <Film className="h-3 w-3" />, isHighlighted: true },
+        { label: '🎨 Choose style', prompt: 'What video styles and formats are available in Cast?', icon: <Wand2 className="h-3 w-3" /> },
+        { label: '📱 Publish content', prompt: 'How do I publish my content to YouTube, LinkedIn, and social media?', icon: <Globe className="h-3 w-3" /> },
+        { label: '📊 Show pipeline', prompt: 'Show me a visual diagram of the Cast production pipeline!', icon: <Map className="h-3 w-3" /> }
+      );
+      break;
+
+    case 'hub':
+      suggestions.push(
+        { label: '🏢 Hub overview', prompt: "Show me what all Hub modules can do - give me the full tour!", icon: <Building2 className="h-3 w-3" />, isHighlighted: true },
+        { label: '📋 Task board', prompt: 'How do I use the Kanban task board to manage my projects?', icon: <Film className="h-3 w-3" /> },
+        { label: '👥 Set up team', prompt: 'Help me invite team members and set up permissions!', icon: <UserCheck className="h-3 w-3" /> },
+        { label: '📊 Show modules', prompt: 'Show me a visual diagram of all Hub modules!', icon: <Map className="h-3 w-3" /> }
       );
       break;
 
@@ -1412,6 +1671,29 @@ IMPORTANT RESPONSE GUIDELINES:
 - Be empathetic if they seem confused, frustrated, or stuck
 - Add a touch of humor when appropriate (but not forced)
 - End with a question or offer to help further
+- Improve user prompts: If a question is vague, gently suggest a more specific version ("Great start! You might get even better results with something like...")
+
+EMOTIONAL INTELLIGENCE:
+- Humor: Use light, relatable humor — "Between you and me, this is going to be epic! 🎬 (Don't tell the other AIs 😉)"
+- Empathy: When users are frustrated, acknowledge their feelings first — "I totally get it — that can be really frustrating. Let's fix this together 💙"
+- Encouragement: Celebrate small wins — "Hey, you just set up your first scene! That's a huge step 🎉"
+- Cultural sensitivity: Adapt tone to the user's region — formal for MENA/CJK, warm for LATAM/INDIA, direct for NAM/EU
+- Religious & cultural awareness: Respect religious holidays, cultural events, and local customs. Never assume — ask if unsure
+- Emotional engagement: Read between the lines — if someone asks "how do I do this?" they might be feeling lost, not just asking for instructions
+
+REGIONAL & CULTURAL ADAPTATION:
+- 16 parent regions: NAM, EU, EURASIA, TURKEY, MENA, AFRICA, INDIA, PAKISTAN, BANGLADESH, SOUTH_ASIA, SEA, CJK, LATAM, CARIBBEAN, OCEANIA, CENTRAL_ASIA
+- 62 cultural subregions with distinct tones, idioms, and emotional registers
+- 85+ languages (63 with voice STT/TTS support)
+- 4 AI zones: Claude Zone (NAM/EU), Alibaba Zone (CJK), Gemini Zone (India/SEA), Fallback Zone (MENA/Africa)
+- RTL languages: Arabic, Hebrew, Urdu, Farsi — format accordingly
+- Adapt greetings, idioms, and metaphors to the user's cultural context
+- For MENA: formal, respectful, use "Ahlan" style warmth
+- For CJK: polite, structured, use honorifics naturally
+- For LATAM: warm, expressive, passionate — "¡Qué emoción!"
+- For India: inclusive, respectful of diversity, acknowledge festivals & regions
+- For Africa: celebratory, community-oriented, acknowledge resilience
+- For SEA: gentle, respectful, relationship-focused
 
 CURRENT CONTEXT:
 - Product: ${productContext.name} ("${productContext.tagline}")
@@ -1419,7 +1701,15 @@ CURRENT CONTEXT:
 - Session Info: ${sessionData ? JSON.stringify(sessionData).slice(0, 300) : 'New session'}
 - Subscription: ${subscriptionTier}
 
-${(enrichmentContext && !isNavigationOrSettingsQuery(text)) ? `PRODUCT & BRAND KNOWLEDGE (use to give informed, contextual answers):\n${enrichmentContext}` : ''}
+${(enrichmentContext && !isNavigationOrSettingsQuery(text)) ? `UNIVERSAL ENRICHMENT CONTEXT (5 layers — use for informed, contextual answers):
+Product Knowledge | Brand Identity | Audience Insights | Regional Adaptation | Competitive Position
+${enrichmentContext}
+
+When answering, leverage this enrichment to:
+- Improve user prompts with brand tone and messaging alignment
+- Suggest positioning strategies based on competitor landscape
+- Adapt content style to audience segments and regional preferences
+- Recommend optimal format, style, and distribution based on brand guidelines` : ''}
 
 ${diagram ? 'NOTE: User is asking about a workflow. Explain it AND offer to show the visual diagram.' : ''}
 
@@ -1427,10 +1717,11 @@ ${support.isSupport ? support.getSupportPromptContext() : ''}
 
 REGIONAL CONTEXT:
 - Detected Region: ${ecosystem.region} (${ecosystem.countryCode})
-- Zone: ${ecosystem.zone}
+- Zone: ${ecosystem.zone} (AI Provider: ${ecosystem.routing?.llm || 'auto'})
 - RTL: ${ecosystem.isRTL ? 'Yes — use right-to-left friendly formatting' : 'No'}
 ${ecosystem.moat ? `- Regional Advantage: ${ecosystem.moat}` : ''}
 - Adapt cultural tone, idioms, and references to this region.
+- Use Universal Enrichment to provide culturally-relevant, brand-aligned suggestions.
 
 USER MESSAGE: ${text}
       `.trim();
@@ -1443,7 +1734,7 @@ USER MESSAGE: ${text}
         isTechnicalQuery
       );
 
-      // Enhance the user's prompt with regional/format context for better AI responses
+      // Enhance the user's prompt with regional/format context + universal enrichment for better AI responses
       let finalPrompt = contextPrompt;
       if (text.length >= 10 && !isNavigationOrSettingsQuery(text)) {
         try {
@@ -1452,13 +1743,19 @@ USER MESSAGE: ${text}
             region: ecosystem.region || undefined,
             language: userLanguage,
             format: 'chat',
-            intent: product === 'vibe' ? 'video_creation' : product === 'spark' ? 'marketing' : 'assistance',
+            intent: product === 'vibe' ? 'video_creation' : product === 'spark' ? 'marketing' : product === 'cast' ? 'video_creation' : product === 'deck' ? 'presentation' : 'assistance',
             brandTone: productContext.tagline,
             mode: 'auto',
           };
           const enhanced = quickEnhance(enhanceCtx);
           if (enhanced.qualityScore > 50 && enhanced.improvements.length > 0) {
-            finalPrompt += `\n\nPROMPT QUALITY HINTS (use to improve response): Quality ${enhanced.qualityScore}/100. ${enhanced.improvements.join('. ')}.`;
+            finalPrompt += `\n\nPROMPT QUALITY HINTS (use to improve response):
+Quality: ${enhanced.qualityScore}/100. ${enhanced.improvements.join('. ')}.
+If the user's prompt can be improved for better results, suggest an enhanced version using Universal Enrichment:
+- Add brand context, messaging tone, and positioning alignment
+- Include regional/cultural specificity for the detected region
+- Recommend format, style, or distribution channel optimization
+- Phrase the suggestion warmly: "Great start! For even better results, try: [improved prompt]"`;
           }
         } catch { /* enhancement is optional — never block the chat */ }
       }
@@ -1689,7 +1986,7 @@ USER MESSAGE: ${text}
               e.stopPropagation();
               handleTriggerClick();
             }}
-            className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-purple-100 to-violet-100 hover:from-purple-200 hover:to-violet-200 border-2 border-purple-200 flex items-center justify-center cursor-pointer"
+            className="h-12 w-12 rounded-full shadow-lg bg-gradient-to-br from-purple-100/80 to-violet-100/80 backdrop-blur-xl hover:from-purple-200/90 hover:to-violet-200/90 border-2 border-purple-200/60 flex items-center justify-center cursor-pointer"
             title="Ask Genie - Click to expand, drag to reposition"
           >
             <img 
@@ -1729,7 +2026,7 @@ USER MESSAGE: ${text}
             e.stopPropagation();
             handleTriggerClick();
           }}
-          className="relative h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-background hover:bg-muted border-2 transition-all duration-300 group cursor-pointer border-purple-200 hover:border-purple-300"
+          className="relative h-auto w-auto rounded-2xl shadow-2xl px-4 py-3 bg-background/80 backdrop-blur-xl hover:bg-background/90 border-2 transition-all duration-300 group cursor-pointer border-purple-200/60 hover:border-purple-300/80"
         >
           <div className="flex items-center gap-3">
             {/* Always show Ask Genie logo */}
@@ -1833,7 +2130,7 @@ USER MESSAGE: ${text}
         } : { opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className={cn(
-          "flex flex-col bg-background border rounded-xl shadow-2xl overflow-hidden",
+          "flex flex-col bg-background/85 backdrop-blur-2xl border border-white/15 rounded-xl shadow-2xl overflow-hidden",
           // Floating mode - fixed dimensions with drag cursor (no position classes - handled by framer-motion)
           position === 'floating' && cn(
             "fixed sm:w-[380px] w-[320px] pointer-events-auto cursor-grab active:cursor-grabbing select-none",
@@ -1856,7 +2153,7 @@ USER MESSAGE: ${text}
       {/* Header - Compact when auto-minimized, full when normal */}
       {/* Drag handle for floating mode */}
       <div className={cn(
-        "flex flex-col border-b overflow-hidden",
+        "flex flex-col border-b border-white/10 overflow-hidden backdrop-blur-md",
         position === 'floating' ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         `bg-gradient-to-br ${ASK_GENIE.color}`
       )} onClick={() => isAutoMinimized && setIsAutoMinimized(false)}>
@@ -1950,24 +2247,24 @@ USER MESSAGE: ${text}
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="w-full rounded-xl p-3 sm:p-4 mb-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border border-purple-200/50 dark:border-purple-800/30"
+                  className="w-full rounded-xl p-3 sm:p-4 mb-4 bg-gradient-to-br from-purple-50/80 to-violet-50/80 dark:from-purple-950/30 dark:to-violet-950/30 backdrop-blur-sm border border-purple-200/40 dark:border-purple-800/20"
                 >
                   <h4 className="text-xs sm:text-sm font-semibold text-purple-800 dark:text-purple-200 mb-2 sm:mb-3 flex items-center justify-center gap-2">
                     <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     What I Can Help You With
                   </h4>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm">
+                    <div className="bg-white/60 dark:bg-white/[0.06] backdrop-blur-sm rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm border border-white/20 dark:border-white/[0.08]">
                       <Brain className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1 sm:mb-1.5" />
                       <span className="text-[10px] sm:text-xs font-medium text-purple-900 dark:text-purple-100 block">Smart Context</span>
                       <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 hidden sm:block">Understands your workflow</p>
                     </div>
-                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm">
+                    <div className="bg-white/60 dark:bg-white/[0.06] backdrop-blur-sm rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm border border-white/20 dark:border-white/[0.08]">
                       <Wand2 className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1 sm:mb-1.5" />
                       <span className="text-[10px] sm:text-xs font-medium text-purple-900 dark:text-purple-100 block">Creative Help</span>
                       <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 hidden sm:block">Generate & refine ideas</p>
                     </div>
-                    <div className="bg-white/80 dark:bg-white/10 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm">
+                    <div className="bg-white/60 dark:bg-white/[0.06] backdrop-blur-sm rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-center shadow-sm border border-white/20 dark:border-white/[0.08]">
                       <Map className="h-4 w-4 sm:h-5 sm:w-5 mx-auto text-purple-600 dark:text-purple-400 mb-1 sm:mb-1.5" />
                       <span className="text-[10px] sm:text-xs font-medium text-purple-900 dark:text-purple-100 block">Visual Flows</span>
                       <p className="text-[8px] sm:text-[9px] text-muted-foreground mt-0.5 hidden sm:block">Build production maps</p>
@@ -2113,9 +2410,9 @@ USER MESSAGE: ${text}
                     )}>
                       <div className={cn(
                         "rounded-2xl px-4 py-2.5 inline-block",
-                        message.role === 'user' 
-                          ? 'bg-primary text-primary-foreground rounded-tr-md' 
-                          : 'bg-muted text-foreground rounded-tl-md border border-border/50'
+                        message.role === 'user'
+                          ? 'bg-primary/90 backdrop-blur-sm text-primary-foreground rounded-tr-md shadow-sm'
+                          : 'bg-muted/60 backdrop-blur-sm text-foreground rounded-tl-md border border-white/10 shadow-sm'
                       )}>
                         <p className="text-sm whitespace-pre-wrap leading-relaxed text-inherit">{message.content}</p>
                       </div>
@@ -2183,7 +2480,7 @@ USER MESSAGE: ${text}
           )}
 
           {/* Input Area - Fixed at bottom, shrink-0 to prevent compression */}
-          <div className="p-3 sm:p-4 border-t bg-muted/30 shrink-0">
+          <div className="p-3 sm:p-4 border-t border-white/10 bg-muted/20 backdrop-blur-md shrink-0">
             {/* Voice Status Indicator */}
             <AnimatePresence>
               {(voice.isListening || voice.isSpeaking || voice.isProcessing) && (

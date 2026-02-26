@@ -561,11 +561,11 @@ export function useStudioEcosystem() {
   }, [navigate]);
 
   /**
-   * Send to Production Hub for review/scheduling
+   * Send to Genie Hub for review/scheduling
    * Also saves to landing_page_videos for Content Library visibility
    */
   const sendToProductionHub = useCallback(async (project: StudioProject) => {
-    console.log('[StudioEcosystem] Sending to Production Hub and saving to database');
+    console.log('[StudioEcosystem] Sending to Genie Hub and saving to database');
     
     try {
       // Save each chapter to landing_page_videos for Content Library

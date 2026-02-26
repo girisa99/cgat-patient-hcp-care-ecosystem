@@ -6,7 +6,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { GENIE_PRODUCTS, PRODUCT_SCREENS } from '@/components/genie-admin/MultiScreenshotGallery';
+import { GENIE_PRODUCTS, PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
 
 export interface AssetInventoryItem {
   id: string;

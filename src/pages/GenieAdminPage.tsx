@@ -1,10 +1,10 @@
 /**
- * GENIE ADMIN PAGE - UNIFIED PRODUCTION HUB
- * Consolidated admin page with:
- * - Production Hub (Kanban, Calendar, Library, Create, Scheduler)
- * - Arc features merged (Appointments, Schedule flow)
+ * GENIE HUB PAGE - UNIFIED GENIE HUB
+ * Consolidated hub page with:
+ * - Genie Hub (Kanban, Calendar, Library, Create, Scheduler)
+ * - Hub features merged (Appointments, Schedule flow)
  * - User Management (internal users only)
- * 
+ *
  * Uses GenieStudioLayout for subscription-based access
  */
 import React, { Suspense, lazy, Component } from 'react';
@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { QuadrantProductHeader } from '@/components/navigation/QuadrantProductHeader';
 
 // Error boundary to catch lazy-load failures and show a useful message
 class ModuleErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -28,7 +29,7 @@ class ModuleErrorBoundary extends Component<{ children: ReactNode }, { error: Er
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 p-8">
           <AlertTriangle className="w-12 h-12 text-destructive" />
-          <h2 className="text-lg font-semibold">Failed to Load Production Hub</h2>
+          <h2 className="text-lg font-semibold">Failed to Load Genie Hub</h2>
           <p className="text-sm text-muted-foreground text-center max-w-md">
             {this.state.error.message}
           </p>
@@ -45,7 +46,7 @@ class ModuleErrorBoundary extends Component<{ children: ReactNode }, { error: Er
 
 // Lazy load with retry — handles transient network/module resolution failures
 const importWithRetry = (retries = 3, delay = 1000): Promise<{ default: React.ComponentType<any> }> =>
-  import('@/components/genie-admin/ProductionHubAdmin')
+  import('@/components/genie-hub/ProductionHubAdmin')
     .then(m => ({ default: m.ProductionHubAdmin }))
     .catch((err) => {
       if (retries <= 0) throw err;
@@ -59,13 +60,14 @@ const ProductionHubAdmin = lazy(() => importWithRetry());
 const LoadingFallback = () => (
   <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
     <Loader2 className="w-10 h-10 animate-spin text-primary" />
-    <p className="text-muted-foreground">Loading Production Hub...</p>
+    <p className="text-muted-foreground">Loading Genie Hub...</p>
   </div>
 );
 
 const GenieAdminPage: React.FC = () => {
   return (
     <GenieStudioLayout variant="sidebar">
+      <QuadrantProductHeader productId="hub" />
       <ModuleErrorBoundary>
         <Suspense fallback={<LoadingFallback />}>
           <ProductionHubAdmin />

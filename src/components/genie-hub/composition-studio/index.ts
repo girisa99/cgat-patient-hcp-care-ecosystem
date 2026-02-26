@@ -1,5 +1,13 @@
 /**
  * COMPOSITION STUDIO BARREL EXPORT
+ *
+ * @deprecated Composition Studio is superseded by Genie Cast's content creation pipeline.
+ * Unique features to migrate into Cast in future PRs:
+ *   - SceneRecommendationEngine → Cast's scene editor
+ *   - ScriptEnhanceEditor → Cast's ScriptEditorTab
+ *   - ScheduledContentManager → Cast's EP04PublishHub
+ *   - MultiLanguageAudioPlayer → Cast's produce step
+ * types.ts remains shared — used by Cast + services.
  */
 
 // Primary Studio - Simplified V3 with Ecosystem Integration

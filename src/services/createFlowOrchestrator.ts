@@ -24,7 +24,7 @@
 import type { ContentFormat, ContentIntent, InputType, PipelineChain, PipelineStep, OrchestrationPlan } from './pipelineOrchestrator';
 import type { TranscreationContext } from './regionalTranscreationService';
 import type { GooglePlacesEnrichment } from '@/hooks/useUniversalEnrichment';
-import type { ContentScenario, CrossFormatConversionType, SceneStyle, CompositionElementType } from '@/components/genie-admin/composition-studio/types';
+import type { ContentScenario, CrossFormatConversionType, SceneStyle, CompositionElementType } from '@/components/genie-hub/composition-studio/types';
 
 // ─── Script Generation Modes (12+ via ai-universal-processor) ────────────────
 

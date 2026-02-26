@@ -61,9 +61,9 @@ export const GENIE_PRODUCTS = [
   { id: 'arc', name: 'Genie Hub', route: '/genie-arc', color: '#EC4899', description: 'Scheduling' },
   { id: 'studio', name: 'Genie Suite', route: '/genie-studio', color: '#9333EA', description: 'Full dashboard' },
   { id: 'ask-genie', name: 'Ask Genie', route: '/genie-support', color: '#06B6D4', description: 'AI assistant' },
-  { id: 'cast', name: 'Genie Cast', route: '/genie-admin?tab=landing-videos', color: '#EF4444', description: 'Video studio' },
+  { id: 'cast', name: 'Genie Cast', route: '/genie-cast', color: '#EF4444', description: 'Video studio' },
   // EP04 Sprint Tracker — 19 screens mapped to production plan scene list
-  { id: 'sprint-tracker', name: 'Sprint Tracker (EP04)', route: '/genie-admin?tab=sprint-tracker', color: '#7C3AED', description: 'EP04 video screenshots' },
+  { id: 'sprint-tracker', name: 'Sprint Tracker (EP04)', route: '/genie-hub?tab=sprint-tracker', color: '#7C3AED', description: 'EP04 video screenshots' },
 ];
 
 // Screen sections for each product - what to capture for video generation

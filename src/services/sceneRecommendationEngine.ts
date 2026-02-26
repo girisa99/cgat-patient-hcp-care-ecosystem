@@ -26,7 +26,7 @@
  * - Content Quality Agent (quality scoring)
  *
  * @see src/services/sceneCompositionEngine.ts — scene operations
- * @see src/components/genie-admin/composition-studio/types.ts — types
+ * @see src/components/genie-hub/composition-studio/types.ts — types
  */
 
 import type {
@@ -48,7 +48,7 @@ import type {
   CrossFormatConversionType,
   LanguageQualityCheck,
   CitationConfig,
-} from '@/components/genie-admin/composition-studio/types';
+} from '@/components/genie-hub/composition-studio/types';
 
 // ─── Recommendation Generator ────────────────────────────────────────────────
 

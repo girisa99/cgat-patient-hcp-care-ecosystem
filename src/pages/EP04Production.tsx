@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EP04_SCRIPT_CONTENT, type ScriptLine } from '@/config/ep04-script-content';
 import { EP04_VOICES } from '@/config/ep04-production-config';
-import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-admin/MultiScreenshotGallery';
+import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
 import { cn } from '@/lib/utils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';

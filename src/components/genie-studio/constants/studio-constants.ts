@@ -118,7 +118,7 @@ export const FEATURES: FeatureCard[] = [
     stats: { label: 'Access', value: 'Admin' },
     tab: 'admin',
     isExternal: true,
-    route: '/genie-admin',
+    route: '/genie-hub',
     internalOnly: true,
   }
 ];

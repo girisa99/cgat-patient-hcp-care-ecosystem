@@ -33,7 +33,7 @@ import {
   styleRequires3D,
 } from '@/config/video-style-pipeline-mapping';
 import type { VideoStyleType } from './VideoStyleCards';
-import { REGIONAL_AVATARS } from '../FullProductionModeConfig';
+import { REGIONAL_AVATARS } from '@/components/genie-hub/FullProductionModeConfig';
 
 interface StyleDrivenConfigProps {
   selectedStyles: VideoStyleType[];

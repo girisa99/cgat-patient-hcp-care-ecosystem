@@ -615,7 +615,7 @@ const WorkflowFlowDiagram: React.FC<{ template: TemplateDefinition }> = ({ templ
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <ArrowRight className="w-4 h-4 text-primary" />
-            Content Flow: Production Hub → Landing Page
+            Content Flow: Genie Hub → Landing Page
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -693,14 +693,14 @@ const WorkflowFlowDiagram: React.FC<{ template: TemplateDefinition }> = ({ templ
             <p className="font-medium text-foreground">How it works:</p>
             {sectionInfo?.userInteractive ? (
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li>Admin generates content in Production Hub using this template</li>
+                <li>Admin generates content in Genie Hub using this template</li>
                 <li>Content is published to the landing page section</li>
                 <li>Users on landing page can enter prompts to explore (preview only)</li>
                 <li>User-entered prompts do NOT save - admin controls published content</li>
               </ul>
             ) : (
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li>Admin generates content in Production Hub using this template</li>
+                <li>Admin generates content in Genie Hub using this template</li>
                 <li>Content is published to the landing page section</li>
                 <li>Users view the published content (no interaction)</li>
               </ul>

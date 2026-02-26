@@ -11,7 +11,7 @@
  * Pipeline Orchestrator (automated chains)
  *
  * @see src/services/sceneCompositionEngine.ts — pure functions
- * @see src/components/genie-admin/composition-studio/types.ts — types
+ * @see src/components/genie-hub/composition-studio/types.ts — types
  */
 
 import { useState, useCallback, useRef, useMemo } from 'react';
@@ -31,7 +31,7 @@ import type {
   ContentVerification,
   SceneDataVisualization,
   SceneEditState,
-} from '@/components/genie-admin/composition-studio/types';
+} from '@/components/genie-hub/composition-studio/types';
 import {
   createScene,
   insertScene,

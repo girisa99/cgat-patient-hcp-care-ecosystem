@@ -67,8 +67,8 @@ import { PRODUCTION_CONTEXT_TONES, type ProductionCapability } from '@/services/
 import { useCastCapabilities } from '@/hooks/useCastRegistry';
 import { audienceRelevanceService } from '@/services/audienceRelevanceService';
 import { ThumbsUp, ThumbsDown, Film } from 'lucide-react';
-import { VirtualizedMessagingMatrix } from './genie-cast/VirtualizedMessagingMatrix';
-import { MessagingDataTable, type MessagingEntry, type MessagingStatus } from './genie-cast/MessagingDataTable';
+import { VirtualizedMessagingMatrix } from '@/components/genie-cast/VirtualizedMessagingMatrix';
+import { MessagingDataTable, type MessagingEntry, type MessagingStatus } from '@/components/genie-cast/MessagingDataTable';
 import { toast } from 'sonner';
 
 interface MessagingGeneratorPanelProps {

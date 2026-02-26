@@ -3,7 +3,7 @@
  * Tiered analytics view for subscribers
  * - Business: Basic metrics
  * - Enterprise: Full analytics
- * Internal admins should use /genie-admin?tab=enterprise-analytics
+ * Internal admins should use /genie-hub?tab=enterprise-analytics
  */
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -78,7 +78,7 @@ export const GenieAnalyticsPage: React.FC = () => {
     return (
       <GenieStudioLayout variant="topbar">
         <div className="space-y-4">
-          <Link to="/genie-admin">
+          <Link to="/genie-hub">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Admin

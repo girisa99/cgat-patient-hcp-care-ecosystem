@@ -188,7 +188,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   // PLAN - Task management, scheduling, and meetings
   {
     title: "Task Board",
-    url: "/genie-admin?tab=kanban",
+    url: "/genie-hub?tab=kanban",
     icon: KanbanSquare,
     description: "Organize production tasks with drag-and-drop kanban boards",
     minTier: 'starter',
@@ -197,7 +197,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
   {
     title: "Schedule",
-    url: "/genie-admin?tab=calendar",
+    url: "/genie-hub?tab=calendar",
     icon: CalendarDays,
     description: "View and manage your production timeline calendar",
     minTier: 'starter',
@@ -206,7 +206,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
   {
     title: "Meetings",
-    url: "/genie-admin?tab=appointments",
+    url: "/genie-hub?tab=appointments",
     icon: CalendarCheck,
     description: "Book and manage team meetings and client calls",
     minTier: 'starter',
@@ -215,7 +215,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
   {
     title: "Sprint Tracker",
-    url: "/genie-admin?tab=sprint-tracker",
+    url: "/genie-hub?tab=sprint-tracker",
     icon: Target,
     description: "Track dual-developer sprint progress, daily tasks, and standups",
     minTier: 'free',
@@ -241,7 +241,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   // ANALYZE - Performance metrics and business intelligence (Internal Only)
   {
     title: "Metrics",
-    url: "/genie-admin?tab=analytics",
+    url: "/genie-hub?tab=analytics",
     icon: BarChart3,
     description: "Track production KPIs, engagement, and content performance",
     minTier: 'free',
@@ -251,7 +251,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
   {
     title: "Business",
-    url: "/genie-admin?tab=enterprise-analytics",
+    url: "/genie-hub?tab=enterprise-analytics",
     icon: Globe,
     description: "Enterprise-level ROI, revenue, and growth analytics",
     minTier: 'free',
@@ -261,7 +261,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
   {
     title: "Health",
-    url: "/genie-admin?tab=error-analytics",
+    url: "/genie-hub?tab=error-analytics",
     icon: AlertTriangle,
     description: "Monitor system health, errors, and service diagnostics",
     minTier: 'free',
@@ -272,7 +272,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   // ADMIN - Team, workspace, and branding configuration (Internal + Tiered)
   {
     title: "Workspaces",
-    url: "/genie-admin?tab=workspaces",
+    url: "/genie-hub?tab=workspaces",
     icon: Layout,
     description: "Create and manage isolated project workspaces",
     minTier: 'pro',
@@ -282,7 +282,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
   {
     title: "Team",
-    url: "/genie-admin?tab=team",
+    url: "/genie-hub?tab=team",
     icon: Users,
     description: "Invite members, assign roles, and manage permissions",
     minTier: 'pro',
@@ -292,7 +292,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
   {
     title: "Branding",
-    url: "/genie-admin?tab=whitelabel",
+    url: "/genie-hub?tab=whitelabel",
     icon: Palette,
     description: "Customize logos, colors, and white-label settings",
     minTier: 'business',
@@ -302,7 +302,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
   {
     title: "Activity",
-    url: "/genie-admin?tab=collaboration",
+    url: "/genie-hub?tab=collaboration",
     icon: MessageSquare,
     description: "View team activity feed and collaboration history",
     minTier: 'enterprise',
@@ -313,7 +313,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   // AI - AI routing and system governance (Internal Only)
   {
     title: "Routing",
-    url: "/genie-admin?tab=ai-intelligence",
+    url: "/genie-hub?tab=ai-intelligence",
     icon: Brain,
     description: "Configure AI model routing, comparison, and intent analysis",
     minTier: 'pro',
@@ -323,7 +323,7 @@ export const genieStudioNavItems: GenieNavItem[] = [
   },
   {
     title: "Command",
-    url: "/genie-admin?tab=command-center",
+    url: "/genie-hub?tab=command-center",
     icon: Command,
     description: "System governance, roadmaps, and operational oversight",
     minTier: 'enterprise',

@@ -25,7 +25,7 @@
  * - Regional Transcreation Service (cultural adaptation)
  * - Google Places Enrichment (real business data)
  *
- * @see src/components/genie-admin/composition-studio/types.ts — type definitions
+ * @see src/components/genie-hub/composition-studio/types.ts — type definitions
  * @see src/services/pipelineOrchestrator.ts — combination chains
  * @see src/hooks/useAudioMixer.ts — audio processing
  * @see src/services/video-assembly/VideoAssemblyService.ts — video assembly
@@ -55,7 +55,7 @@ import type {
   LanguageQualityCheck,
   CitationConfig,
   SceneEditState,
-} from '@/components/genie-admin/composition-studio/types';
+} from '@/components/genie-hub/composition-studio/types';
 
 // ─── Scene Operations ────────────────────────────────────────────────────────
 

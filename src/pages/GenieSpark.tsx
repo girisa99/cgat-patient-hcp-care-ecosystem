@@ -114,7 +114,7 @@ const GenieSpark: React.FC = () => {
         return;
       }
       // Use the real DB id for deep-linking
-      navigate(`/genie-admin?tab=library&linkScript=${saved.id}`);
+      navigate(`/genie-hub?tab=library&linkScript=${saved.id}`);
       toast.success('Script ready for Production Hub! Create a show to link it.');
     } catch (err) {
       console.error('Failed to send to Production Hub:', err);

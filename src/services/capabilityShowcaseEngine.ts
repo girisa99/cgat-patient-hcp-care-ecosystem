@@ -14,14 +14,14 @@
  *
  * @see src/machines/guideHandoffMachine.ts — handoff motions (crossfade, tag_team, split_morph)
  * @see src/stores/guideStore.ts — Ori/Arc guide dock
- * @see src/components/genie-admin/genie-cast/SceneCharacterVisualizer.tsx — Atlas/Nova/Host
+ * @see src/components/genie-cast/SceneCharacterVisualizer.tsx — Atlas/Nova/Host
  * @see src/services/createFlowOrchestrator.ts — CREATE flow pipeline
  */
 
 import type { ContentFormat, ContentIntent } from './pipelineOrchestrator';
 import type { ScriptGenerationMode, OutputFormatConfig } from './createFlowOrchestrator';
 import { SCRIPT_GEN_MODES, OUTPUT_FORMAT_CONFIGS } from './createFlowOrchestrator';
-import type { ContentScenario } from '@/components/genie-admin/composition-studio/types';
+import type { ContentScenario } from '@/components/genie-hub/composition-studio/types';
 
 // ─── Character References ────────────────────────────────────────────────────
 

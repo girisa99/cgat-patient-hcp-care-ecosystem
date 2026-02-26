@@ -62,7 +62,7 @@ import {
   getFormatsByCategory,
   getAvailableConversions,
 } from '@/services/createFlowOrchestrator';
-import type { ContentScenario, SceneStyle, CompositionElementType, CrossFormatConversionType } from '@/components/genie-admin/composition-studio/types';
+import type { ContentScenario, SceneStyle, CompositionElementType, CrossFormatConversionType } from '@/components/genie-hub/composition-studio/types';
 
 // ─── Auto-Save Debounce ──────────────────────────────────────────────────────
 

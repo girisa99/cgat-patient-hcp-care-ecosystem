@@ -20,14 +20,43 @@ const ESCALATION_KEYWORDS = /\b(human|agent|person|escalate|talk to someone|real
 // ── Support Knowledge Base (ported from ask-genie-support edge function) ───
 
 const SUPPORT_KNOWLEDGE_BASE = `
-PRODUCT KNOWLEDGE BASE (use to answer product questions):
-- Genie Spark: AI content creation engine — scripts, images, brainstorming, multi-format pipelines
-- Genie Mind: AI intelligence hub — script editing, enhancement, AI model comparison, TTS config
-- Genie Vibe: Recording & production studio — video/audio recording, TTS voice generation, mixing
-- Genie Hub (Arc): Creative command center — show management, scheduling, episode planning, team collab
-- Genie Deck: AI presentation generator — text/doc/URL to slides, multi-language, PPTX export
-- Genie Cast: Video production pipeline — CREATE (configure) → PRODUCE (generate) → PUBLISH (distribute)
-- Ask Genie: AI assistant (you!) — context-aware help across all products, voice I/O, 85+ languages
+PRODUCT KNOWLEDGE BASE (7 core products — use to answer ALL product questions):
+
+1. Genie Spark — AI content creation engine
+   Scripts, images, brainstorming, multi-format pipelines, content repurposing
+   Route: /genie-spark
+
+2. Genie Mind — AI intelligence hub
+   Script editing & enhancement, TTS voice config, voice cloning, AI model comparison, translation
+   Route: /genie-mind
+
+3. Genie Vibe — Recording & production studio
+   Video/audio recording, TTS voice generation, mixing, podcast, lip-sync, dubbing, avatar
+   Route: /genie-vibe
+
+4. Genie Deck — AI presentation generator
+   Text/doc/URL to slides, multi-language parallel generation, PPTX export, brand customization
+   Route: /genie-deck
+
+5. Genie Cast — End-to-end video production pipeline
+   CREATE (scenes, styles, prompts, regions) → PRODUCE (AI generation, GPU rendering, assembly) → PUBLISH (multi-platform distribution, scheduling, analytics)
+   Supports: 16 regions, 62 subregions, 85+ languages, 19+ AI providers, 4 AI zones
+   Route: /genie-cast
+
+6. Genie Hub — Central management dashboard (formerly "Arc" / "Admin")
+   15+ modules: Kanban task board, production calendar, content scheduler, content library, composition studio, team management, workspace management, whitelabel branding, production analytics, enterprise analytics, error analytics, team collaboration, AI intelligence, command center, product setup
+   NOTE: "Genie Arc" and "Genie Admin" are LEGACY names → now "Genie Hub"
+   Route: /genie-hub
+
+7. Ask Genie — AI assistant across ALL products
+   Context-aware help, voice I/O (STT + TTS) in 85+ languages, 16 regions, workflow diagrams
+   Available inside every product via the chat panel
+
+GLOBAL COVERAGE:
+- 16 parent regions: NAM, EU, EURASIA, TURKEY, MENA, AFRICA, INDIA, PAKISTAN, BANGLADESH, SOUTH_ASIA, SEA, CJK, LATAM, CARIBBEAN, OCEANIA, CENTRAL_ASIA
+- 62 subregions with cultural adaptation
+- 85+ languages (63 with voice STT/TTS support)
+- 4 AI zones: Claude Zone, Alibaba Zone, Gemini Zone, Fallback Zone (GPT-4o)
 
 SUBSCRIPTION TIERS:
 - Free ($0/mo): 3 products, 50 credits/mo, 720p, 2 languages, community support
@@ -43,6 +72,8 @@ COMMON ISSUES & SOLUTIONS:
 - Export failures: Check file size limits for your tier, ensure content is fully generated before export
 - Performance issues: Try refreshing, clear cache, check internet connection, reduce video quality if needed
 - Bug reports: Note the exact steps to reproduce, include browser/OS info, check if issue persists in incognito
+- Cast production stuck: Check AI provider status, verify region/language settings, try regenerating the scene
+- Hub module not loading: Refresh page, check subscription tier access, clear local storage cache
 `.trim();
 
 // ── Hook ────────────────────────────────────────────────────────────────────

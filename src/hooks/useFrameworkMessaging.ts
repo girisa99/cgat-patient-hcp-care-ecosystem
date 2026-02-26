@@ -18,7 +18,7 @@ import {
   PRODUCT_MESSAGING,
   PROVIDER_CHAR_LIMITS,
 } from '@/services/marketing/frameworkMessagingEngine';
-import type { PoweredByData } from '@/components/genie-admin/genie-cast/PoweredByEndCard';
+import type { PoweredByData } from '@/components/genie-cast/PoweredByEndCard';
 
 interface UseFrameworkMessagingReturn {
   // State

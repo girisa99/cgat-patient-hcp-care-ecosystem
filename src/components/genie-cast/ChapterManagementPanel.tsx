@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import type { CompositionScene } from '@/components/genie-admin/composition-studio/types';
+import type { CompositionScene } from '@/components/genie-hub/composition-studio/types';
 import { autoGroupChapters, type ChapterGroup } from '@/services/sceneCompositionEngine';
 
 interface ChapterManagementPanelProps {

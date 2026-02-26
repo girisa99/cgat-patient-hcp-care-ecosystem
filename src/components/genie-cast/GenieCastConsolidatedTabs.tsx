@@ -111,10 +111,10 @@ import { GenieCastOverview } from './GenieCastOverview';
 import { VideoStyleCards, type VideoStyleType } from './VideoStyleCards';
 import { CreateContextSelector } from './CreateContextSelector';
 import { AIProviderShowcase } from './AIProviderShowcase';
-import { MultiScreenshotGallery, type ProductGallery } from '../MultiScreenshotGallery';
-import { VideoGenerationMatrix } from '../VideoGenerationMatrix';
+import { MultiScreenshotGallery, type ProductGallery } from '@/components/genie-hub/MultiScreenshotGallery';
+import { VideoGenerationMatrix } from '@/components/genie-hub/VideoGenerationMatrix';
 // MessagingGeneratorPanel removed — enrichment handles brand/product context
-import { ProductChangeAlertPanel } from '../ProductChangeAlertPanel';
+import { ProductChangeAlertPanel } from '@/components/genie-hub/ProductChangeAlertPanel';
 // GenieCastFlowDiagram: available via admin panel, not embedded in PRODUCE flow
 import { GenieCastHubMockup } from './mockups';
 import { BrandAssetsPanel } from './BrandAssetsPanel';
@@ -940,7 +940,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => window.location.href = '/genie-admin?tab=subscriber-admin'}
+          onClick={() => window.location.href = '/genie-hub?tab=subscriber-admin'}
           className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
         >
           <Settings2 className="w-4 h-4" />

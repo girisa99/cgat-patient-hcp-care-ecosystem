@@ -10,7 +10,8 @@ import React from 'react';
 import { GenieStudioLayout } from '@/components/layout/GenieStudioLayout';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { GenieCastHub } from '@/components/genie-admin/genie-cast/GenieCastHub';
+import { GenieCastHub } from '@/components/genie-cast/GenieCastHub';
+import { QuadrantProductHeader } from '@/components/navigation/QuadrantProductHeader';
 
 // Error boundary for catching render errors
 class GenieCastErrorBoundary extends React.Component<
@@ -47,6 +48,7 @@ class GenieCastErrorBoundary extends React.Component<
 const GenieCastPage: React.FC = () => {
   return (
     <GenieStudioLayout variant="sidebar" requireAuth={true}>
+      <QuadrantProductHeader productId="cast" />
       <GenieCastErrorBoundary>
         <div className="p-2 sm:p-4 h-full min-h-[calc(100vh-4rem)]">
           <GenieCastHub />

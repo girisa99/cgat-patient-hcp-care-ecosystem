@@ -147,7 +147,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
 
   // Full-width routes: Genie Cast page OR sprint-tracker tab — no sidebar
   const isGenieCastRoute = location.pathname === '/genie-cast';
-  const isSprintTrackerTab = location.pathname === '/genie-admin' && 
+  const isSprintTrackerTab = (location.pathname === '/genie-hub' || location.pathname === '/genie-admin') &&
     new URLSearchParams(location.search).get('tab') === 'sprint-tracker';
   const isFullWidthRoute = isGenieCastRoute || isSprintTrackerTab;
 

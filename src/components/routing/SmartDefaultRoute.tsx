@@ -4,7 +4,7 @@
  * Prevents losing state on refresh within app sections
  * 
  * IMPORTANT: This component checks BOTH healthcare roles AND Genie Suite user status
- * to properly route internal Genie Suite users to /genie-admin
+ * to properly route internal Genie Suite users to /genie-hub
  */
 
 import React, { useEffect, useState } from 'react';
@@ -23,6 +23,7 @@ const PERSISTENT_ROUTE_PREFIXES = [
   '/genie-arc',
   '/genie-guided',
   '/genie-cast',
+  '/genie-hub',
   '/genie-admin',
   '/admin',
   '/agents'

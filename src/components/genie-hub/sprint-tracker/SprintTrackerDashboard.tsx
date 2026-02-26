@@ -397,11 +397,11 @@ export const SprintTrackerDashboard: React.FC = () => {
         {/* Footer */}
         <div className="border-t px-2 py-2 shrink-0 space-y-0.5">
           <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground"
-            onClick={() => navigate('/genie-admin?tab=genie-cast')}>
+            onClick={() => navigate('/genie-cast')}>
             <Video className="w-3.5 h-3.5" />Genie Cast
           </Button>
           <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground"
-            onClick={() => navigate('/genie-admin')}>
+            onClick={() => navigate('/genie-hub')}>
             <ArrowLeft className="w-3.5 h-3.5" />Exit Sprint View
           </Button>
           <Separator className="my-1" />

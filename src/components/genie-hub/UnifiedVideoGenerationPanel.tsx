@@ -63,11 +63,11 @@ import { MessagingGeneratorPanel } from './MessagingGeneratorPanel';
 import { FeatureVideoGenerator } from './FeatureVideoGenerator';
 import { GenieCastFlowDiagram } from './GenieCastFlowDiagram';
 import { uploadBrandLogosToStorage } from '@/services/marketing/brandAssetUploadService';
-import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, GenieCastConsolidatedTabs, type VideoStyleType } from './genie-cast';
-import { StyleDrivenProductionConfig, deriveProductionRequirements } from './genie-cast/StyleDrivenProductionConfig';
+import { GenieCastOverview, VideoStyleCards, AIProviderShowcase, GenieCastConsolidatedTabs, type VideoStyleType } from '@/components/genie-cast';
+import { StyleDrivenProductionConfig, deriveProductionRequirements } from '@/components/genie-cast/StyleDrivenProductionConfig';
 import { getStylePipelineConfig, styleRequiresAvatar, styleRequires3D } from '@/config/video-style-pipeline-mapping';
 import { useVideoStatusPolling } from '@/hooks/useVideoStatusPolling';
-import { GenieCastHubMockup } from './genie-cast/mockups';
+import { GenieCastHubMockup } from '@/components/genie-cast/mockups';
 
 // Feature flag for new consolidated 4-tab structure
 const USE_CONSOLIDATED_TABS = true;

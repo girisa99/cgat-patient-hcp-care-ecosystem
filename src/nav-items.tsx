@@ -29,7 +29,7 @@ import {
 
 /**
  * CONSOLIDATED NAV ITEMS
- * Duplicates removed - Production Hub/Arc merged into /genie-admin
+ * Duplicates removed - Production Hub/Arc merged into /genie-hub
  */
 export const navItems = [
   // === MAIN SECTION ===
@@ -44,8 +44,8 @@ export const navItems = [
     icon: Sparkles,
   },
   {
-    title: "Production Hub",
-    url: "/genie-admin",
+    title: "Genie Hub",
+    url: "/genie-hub",
     icon: Factory,
     description: "Unified production management - Kanban, Calendar, Scheduling",
   },

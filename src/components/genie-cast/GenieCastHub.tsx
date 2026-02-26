@@ -13,7 +13,7 @@ import React, { useState, useCallback, useEffect, useRef, useMemo, Suspense, laz
 import arcAvatar from '@/assets/characters/arc-avatar.png';
 import oriAvatar from '@/assets/characters/ori-avatar.png';
 import type { VideoStyleType } from './VideoStyleCards';
-import type { ProductGallery } from '../MultiScreenshotGallery';
+import type { ProductGallery } from '@/components/genie-hub/MultiScreenshotGallery';
 import { toast } from 'sonner';
 import { GenieCastConsolidatedTabs, type ConsolidatedTab } from './GenieCastConsolidatedTabs';
 import { CastRegionSelector } from './CastRegionSelector';
@@ -34,13 +34,14 @@ import { useLSCastIntegration } from '@/hooks/useLSCastIntegration';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Video, Share2, Film,
-  Users, Zap, X, PanelRight,
+  Users, Zap, X, PanelRight, HelpCircle,
   FolderOpen, LayoutTemplate, Package, Palette, BarChart3, Settings, Image,
   Loader2, ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Lazy-loaded navigation view components
 const LazyContentLibraryGrid = lazy(() => import('./ContentLibraryGrid'));
@@ -51,7 +52,7 @@ const LazyBlueprintTemplatesGrid = lazy(() =>
 const LazyAnalyticsDashboard = lazy(() =>
   import('./AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard }))
 );
-const LazyWorkspaceManagement = lazy(() => import('@/components/genie-admin/WorkspaceManagement'));
+const LazyWorkspaceManagement = lazy(() => import('@/components/genie-hub/WorkspaceManagement'));
 const LazyIntegrationsSettings = lazy(() => import('@/components/settings/IntegrationsSettingsPage'));
 const LazyCastDashboard = lazy(() => import('./CastDashboardOverview'));
 
@@ -71,21 +72,21 @@ const MODE_TO_TAB: Record<CastMode, ConsolidatedTab> = {
   create: 'create', produce: 'produce', publish: 'publish',
 };
 
-const MODES: { id: CastMode; label: string; icon: React.ElementType }[] = [
-  { id: 'create', label: 'Create', icon: Sparkles },
-  { id: 'produce', label: 'Produce', icon: Video },
-  { id: 'publish', label: 'Publish', icon: Share2 },
+const MODES: { id: CastMode; label: string; icon: React.ElementType; tooltip: string }[] = [
+  { id: 'create', label: 'Create', icon: Sparkles, tooltip: 'Write scripts, configure scenes, choose styles, select regions & languages' },
+  { id: 'produce', label: 'Produce', icon: Video, tooltip: 'AI generation, GPU rendering, TTS voiceover, captions, assembly' },
+  { id: 'publish', label: 'Publish', icon: Share2, tooltip: 'Distribute to platforms, schedule posts, A/B test, track analytics' },
 ];
 
 type NavView = 'workspace' | 'projects' | 'templates' | 'assets' | 'brand-kit' | 'analytics' | 'settings';
 
-const SECONDARY_NAV: { id: NavView; label: string; icon: React.ElementType }[] = [
-  { id: 'projects', label: 'Projects', icon: FolderOpen },
-  { id: 'templates', label: 'Templates', icon: LayoutTemplate },
-  { id: 'assets', label: 'Assets', icon: Package },
-  { id: 'brand-kit', label: 'Brand Kit', icon: Palette },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: Settings },
+const SECONDARY_NAV: { id: NavView; label: string; icon: React.ElementType; tooltip: string }[] = [
+  { id: 'projects', label: 'Projects', icon: FolderOpen, tooltip: 'Manage your video projects — create, edit, and track production status' },
+  { id: 'templates', label: 'Templates', icon: LayoutTemplate, tooltip: 'Browse and use reusable content blueprints organized by category' },
+  { id: 'assets', label: 'Assets', icon: Package, tooltip: 'Your media library — images, videos, audio, and brand assets' },
+  { id: 'brand-kit', label: 'Brand Kit', icon: Palette, tooltip: 'Configure brand colors, fonts, logos, and visual identity' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, tooltip: 'Performance metrics, engagement data, and content insights' },
+  { id: 'settings', label: 'Settings', icon: Settings, tooltip: 'Integrations, preferences, API keys, and account settings' },
 ];
 
 // ── Top Navigation Bar ───────────────────────────────────────────────────────
@@ -110,72 +111,96 @@ const TopNav: React.FC<{
       <div className="w-px h-5 bg-border/20" />
 
       {/* Workflow Mode Switcher */}
+      <TooltipProvider delayDuration={300}>
       <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/30 border border-border/10">
         {MODES.map(m => {
           const active = activeMode === m.id;
           const Icon = m.icon;
           return (
-            <button
-              key={m.id}
-              onClick={() => { onModeChange(m.id); }}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                active
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <Icon className={cn('w-3.5 h-3.5', active && 'text-primary')} />
-              {m.label}
-            </button>
+            <Tooltip key={m.id}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => { onModeChange(m.id); }}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                    active
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Icon className={cn('w-3.5 h-3.5', active && 'text-primary')} />
+                  {m.label}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[220px] text-xs">{m.tooltip}</TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
+      </TooltipProvider>
 
       {/* Divider */}
       <div className="w-px h-5 bg-border/20" />
 
       {/* Secondary Nav — scrollable on smaller screens */}
+      <TooltipProvider delayDuration={300}>
       <div className="flex-1 flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
-        <button
-          onClick={() => onViewChange('workspace')}
-          className={cn(
-            'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap',
-            activeView === 'workspace'
-              ? 'text-primary bg-primary/5'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/20',
-          )}
-        >
-          Workspace
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => onViewChange('workspace')}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap',
+                activeView === 'workspace'
+                  ? 'text-primary bg-primary/5'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/20',
+              )}
+            >
+              Workspace
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">Your Cast dashboard — overview, stats, and quick actions</TooltipContent>
+        </Tooltip>
         {SECONDARY_NAV.map(item => (
-          <button
-            key={item.id}
-            onClick={() => onViewChange(item.id)}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap',
-              activeView === item.id
-                ? 'text-primary bg-primary/5'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/20',
-            )}
-          >
-            <item.icon className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">{item.label}</span>
-          </button>
+          <Tooltip key={item.id}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onViewChange(item.id)}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap',
+                  activeView === item.id
+                    ? 'text-primary bg-primary/5'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/20',
+                )}
+              >
+                <item.icon className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">{item.label}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-[200px] text-xs">{item.tooltip}</TooltipContent>
+          </Tooltip>
         ))}
       </div>
+      </TooltipProvider>
 
       {/* AI Devs toggle */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onToggleDrawer}
-        className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <Users className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">AI Devs</span>
-        <Badge className="h-4 px-1 text-[8px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0">2</Badge>
-      </Button>
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleDrawer}
+              className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">AI Devs</span>
+              <Badge className="h-4 px-1 text-[8px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-0">2</Badge>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">View AI developer agents, production timeline, and project info</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   </div>
 );
