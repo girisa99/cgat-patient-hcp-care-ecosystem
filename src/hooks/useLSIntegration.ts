@@ -659,3 +659,6 @@ export {
   useLSArchIntegration as useArchLS,
   useLSDocumentProcessingIntegration as useDocumentProcessingLS,
 };
+
+// Cast integration lives in its own file due to pipeline complexity
+export { useLSCastIntegration, useCastLS } from './useLSCastIntegration';

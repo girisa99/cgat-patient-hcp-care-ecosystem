@@ -83,6 +83,7 @@ export interface PublishHubSessionProps {
 
 // Platform configuration — unified via useSocialPlatforms hook (replaces 95-line hardcoded array)
 import { useSocialPlatforms, type SocialPlatform } from '@/hooks/useSocialPlatforms';
+import { useLSCastIntegration } from '@/hooks/useLSCastIntegration';
 import { useSocialOAuth, type SocialPlatform as OAuthPlatform } from '@/hooks/useSocialOAuth';
 
 // Re-export Platform type for backward compatibility
@@ -639,6 +640,7 @@ export function EP04PublishHub({
 }: PublishHubSessionProps = {}) {
   const { platforms: PLATFORMS } = useSocialPlatforms();
   const oauth = useSocialOAuth();
+  const lsCast = useLSCastIntegration();
 
   // OAuth connect handler — triggers platform OAuth flow
   const handleConnect = useCallback(async (platformId: string) => {
@@ -673,10 +675,12 @@ export function EP04PublishHub({
       toast.info(`Connect your ${platform?.name} account to enable publishing`);
       return;
     }
-    setSelectedPlatforms(p =>
-      p.includes(id) ? p.filter(x => x !== id) : [...p, id]
-    );
-  }, []);
+    setSelectedPlatforms(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      lsCast.capturePlatformSelection(next, PLATFORMS.length);
+      return next;
+    });
+  }, [PLATFORMS, lsCast]);
 
   const copyLink = () => {
     const url = sessionVideoUrl || 'https://youtu.be/ep04-demo-link';
@@ -740,6 +744,14 @@ export function EP04PublishHub({
           },
         }));
 
+        // Capture publish result for LS training
+        lsCast.capturePublishAction({
+          platform: platformId,
+          success,
+          publishType: 'immediate',
+          errorMessage: success ? undefined : (data?.error || 'Publish failed'),
+        });
+
         if (success) {
           toast.success(`Published to ${PLATFORMS.find(p => p.id === platformId)?.name}`);
         } else {
@@ -755,6 +767,12 @@ export function EP04PublishHub({
             error: err instanceof Error ? err.message : 'Publish failed',
           },
         }));
+        lsCast.capturePublishAction({
+          platform: platformId,
+          success: false,
+          publishType: 'immediate',
+          errorMessage: err instanceof Error ? err.message : 'Publish failed',
+        });
         toast.error(`${platformId} failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
     }

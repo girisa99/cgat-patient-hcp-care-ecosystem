@@ -132,6 +132,9 @@ import { FormatStudioRouter } from './FormatStudioRouter';
 // Phase 5E: Podcast-to-Video production
 import { PodcastToVideoConverter } from '@/components/production';
 
+// Label Studio training data capture
+import { useLSCastIntegration } from '@/hooks/useLSCastIntegration';
+
 // P1: Universal Video Editing + Distribution
 import { ExportDistributionPanel } from './editing';
 import { useVideoTimeline } from '@/hooks/video-editing/useVideoTimeline';
@@ -402,6 +405,9 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   // Content Pool - unified data layer for all tabs
   const { pool, isLoading: isPoolLoading } = useContentPool();
 
+  // Label Studio training data capture for Cast pipeline
+  const lsCast = useLSCastIntegration();
+
   // Product context for loading associated assets
   const productContext = useProductContext(castSession.session.selectedProductId);
 
@@ -592,8 +598,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   }, [authoring, castSession]);
 
   const setSubTab = useCallback((mainTab: ConsolidatedTab, subTab: string) => {
-    setSubTabs(prev => ({ ...prev, [mainTab]: subTab }));
-  }, []);
+    setSubTabs(prev => {
+      const prevSubTab = prev[mainTab];
+      if (prevSubTab !== subTab) {
+        lsCast.captureModeChange(mainTab, mainTab, prevSubTab, subTab);
+      }
+      return { ...prev, [mainTab]: subTab };
+    });
+  }, [lsCast]);
 
   // Unified navigation for WorkflowContextBanner
   const handleBannerNavigate = useCallback((mainTab: string, subTab: string) => {
@@ -1057,6 +1069,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 selectedFormatId={selectedFormatId}
                 selectedSubFormatId={selectedSubFormatId}
                 onCategorySelect={(cat) => {
+                  lsCast.captureCategorySelection(cat.id, cat.name, selectedCategoryId || undefined);
                   setSelectedCategoryId(cat.id);
                   setSelectedFormatId(null);
                   setSelectedSubFormatId(null);
@@ -1073,6 +1086,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   }
                 }}
                 onFormatSelect={(fmt) => {
+                  lsCast.captureFormatSelection(fmt.id, fmt.name, selectedCategoryId || '', undefined);
                   setSelectedFormatId(fmt.id);
                   setSelectedSubFormatId(null);
                   setActiveContentType(fmt.name);
@@ -1090,6 +1104,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   // If sub-formats exist, stay on step — user picks sub-format next
                 }}
                 onSubFormatSelect={(sf) => {
+                  lsCast.captureFormatSelection(selectedFormatId || '', sf.name || sf.id, selectedCategoryId || '', sf.id);
                   setSelectedSubFormatId(sf.id);
                   // Persist to DB
                   if (castSession.session.projectId) {

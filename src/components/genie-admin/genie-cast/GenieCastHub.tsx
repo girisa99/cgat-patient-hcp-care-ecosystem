@@ -30,6 +30,7 @@ import { useGenieCastSession } from '@/hooks/useGenieCastSession';
 import { buildRequestFromCastSession, assembleEnrichmentContext } from '@/services/production/castProductionBridge';
 import { useTierGatedAction } from '@/hooks/useTierGatedAction';
 import { quickEnhance, enhancePrompt, type PromptContext } from '@/services/promptEnhancementEngine';
+import { useLSCastIntegration } from '@/hooks/useLSCastIntegration';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Video, Share2, Film,
@@ -473,6 +474,9 @@ export const GenieCastHub: React.FC = () => {
   // Credit + tier gate for generation
   const tierGate = useTierGatedAction('avatar', 'free', 'video_generation');
 
+  // Label Studio training data capture for Cast pipeline
+  const lsCast = useLSCastIntegration();
+
   // Persist state changes (styles + language)
   useEffect(() => {
     const state: GenieCastHubState = { selectedVideoStyles, languageCode };
@@ -565,6 +569,16 @@ export const GenieCastHub: React.FC = () => {
       ? [formatName]
       : request.selectedFormats;
 
+    // Capture generation start for Label Studio training
+    lsCast.captureGenerationStart({
+      formatName: formatName || activeFormats?.[0],
+      provider: routing.provider?.id || 'openai',
+      region: session.selectedRegion || undefined,
+      videoStyles: request.videoStyles,
+      scriptLength: request.scriptContent?.length,
+      creditCost: tierGate.creditCost,
+    });
+
     // Show credit cost before proceeding
     if (tierGate.creditCost > 0) {
       toast.info(`Starting ${formatName || 'multi-format'} production (${tierGate.creditCost} credits, enrichment: ${request.enrichmentScore}/100)...`);
@@ -592,17 +606,26 @@ export const GenieCastHub: React.FC = () => {
       });
     });
 
+    // Capture generation result for LS training
+    lsCast.captureGenerationComplete({
+      formatName: formatName || activeFormats?.[0],
+      provider: routing.provider?.id || 'openai',
+      duration: 0, // placeholder — real timing tracked by production hook
+      success: !!success,
+    });
+
     if (success) {
       dispatch({ type: 'STEP_COMPLETED', stepId: 'generate' });
     }
-  }, [castSession.session, selectedVideoStyles, dispatch, production, tierGate]);
+  }, [castSession.session, selectedVideoStyles, dispatch, production, tierGate, lsCast, routing.provider]);
 
   const handleModeChange = useCallback((newMode: CastMode) => {
+    lsCast.captureModeChange(mode, newMode);
     setMode(newMode);
     dispatch({ type: 'SWITCH_MODE', mode: newMode });
     setActiveView('workspace');
     setShowDashboard(false); // Hide dashboard — go straight to Create/Produce/Publish workspace
-  }, [setMode, dispatch]);
+  }, [setMode, dispatch, mode, lsCast]);
 
   const activeTab = MODE_TO_TAB[mode];
 

@@ -31,17 +31,25 @@ export type LSTrainingType =
   | 'transition_quality'
   | 'music_sync'
   // Content Intelligence
-  | 'content_tagging' 
+  | 'content_tagging'
   | 'competitive_analysis'
   | 'thumbnail_quality'
   // AI Assistance
   | 'genie_response_quality'
-  | 'suggestion_relevance';
+  | 'suggestion_relevance'
+  // Cast Pipeline
+  | 'cast_format_selection'
+  | 'cast_style_selection'
+  | 'cast_generation'
+  | 'cast_scene_edit'
+  | 'cast_review_approval'
+  | 'cast_publish'
+  | 'cast_pipeline_performance';
 
 export interface LSTrainingData {
   id: string;
   type: LSTrainingType;
-  source: 'spark' | 'script' | 'tts' | 'vibe' | 'mobile' | 'production' | 'ask_genie' | 'arch';
+  source: 'spark' | 'script' | 'tts' | 'vibe' | 'mobile' | 'production' | 'ask_genie' | 'arch' | 'cast';
   platform: 'desktop' | 'mobile' | 'tablet';
   data: Record<string, any>;
   metadata?: Record<string, any>;

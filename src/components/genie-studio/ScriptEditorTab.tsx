@@ -41,14 +41,11 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { InlineTrainAIFeedback } from './InlineTrainAIFeedback';
 import { useTTSGeneration, OPENAI_VOICES, ELEVENLABS_VOICES, GOOGLE_VOICES } from '@/components/document-processing/RecordingStudio/hooks/useTTSGeneration';
 import { ScriptModeToolbar } from './ScriptModeToolbar';
-import { VoiceSelector } from './VoiceSelector';
-import { RecordingLayoutPreview } from './RecordingLayoutPreview';
 import { SavedScriptCard } from './SavedScriptCard';
 import { SCRIPT_MODES, type ScriptMode } from '@/types/projects';
-import { SCRIPT_MODE_CONFIGS, getVoiceSettingsForMode, type VoicePreset } from '@/config/scriptModePresets';
+import { SCRIPT_MODE_CONFIGS, type VoicePreset } from '@/config/scriptModePresets';
 
 // Module imports from refactored script-editor/
 import { calculateStats, ANALYSIS_STEPS } from './script-editor/utils';
@@ -68,13 +65,10 @@ import { useUnifiedEditorState } from '@/hooks/useUnifiedEditorState';
 import type {
   SavedScript,
   ScriptPurpose,
-  ScriptStats,
   AnalysisRecommendation,
-  EnhancementChange,
   EnhancementMarkers,
   EngagementScore,
   ShowInfo,
-  AnalysisResult,
   AIProvider,
   EnhancementFocus,
 } from './script-editor/types';
@@ -127,7 +121,7 @@ export function ScriptEditorTab({
   const [scriptContent, setScriptContent] = useState('');
   const [scriptType, setScriptType] = useState<'video' | 'audio'>('video');
   const [scriptMode, setScriptMode] = useState<ScriptMode>('video');
-  const [scriptPurpose, setScriptPurpose] = useState<ScriptPurpose>('video');
+  const [, /* scriptPurpose */ ] = useState<ScriptPurpose>('video');
   const [isNewScript, setIsNewScript] = useState(true);
   const [isUploadingScript, setIsUploadingScript] = useState(false);
 
@@ -145,7 +139,7 @@ export function ScriptEditorTab({
   const [editedEnhancedText, setEditedEnhancedText] = useState('');
   const [hasDraft, setHasDraft] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [lastDraftSave, setLastDraftSave] = useState<Date | null>(null);
+  const [, setLastDraftSave] = useState<Date | null>(null);
   const [showTTSOptions, setShowTTSOptions] = useState(false);
   const [selectedTTSScriptId, setSelectedTTSScriptId] = useState<string | null>(null);
   const [selectedVoicePreset, setSelectedVoicePreset] = useState<VoicePreset | null>(null);
@@ -187,15 +181,25 @@ export function ScriptEditorTab({
   const aiProvider = unifiedEditor.aiProvider;
   const ttsProvider = (unifiedEditor.ttsConfig.provider || 'elevenlabs') as 'openai' | 'elevenlabs' | 'google';
   const ttsVoice = unifiedEditor.ttsConfig.voiceId || '';
-  const scriptVersions = unifiedEditor.versionHistory.map((entry, i) => ({
-    id: entry.id,
-    versionNumber: i + 1,
-    content: entry.content,
-    versionType: entry.source === 'ai_enhance' ? 'enhanced' as const : entry.source === 'transcreation' ? 'transcreation' as const : 'manual_edit' as const,
-    changeSummary: entry.label || '',
-    createdAt: entry.timestamp.getTime(),
-    wordCount: entry.content.trim().split(/\s+/).length,
-  }));
+
+  // Map unified editor version history to ScriptVersionEntry format
+  const scriptVersions: ScriptVersionEntry[] = (unifiedEditor.versionHistory ?? []).map(
+    (entry, i): ScriptVersionEntry => {
+      const versionType: ScriptVersionEntry['versionType'] =
+        entry.source === 'ai_enhance' ? 'enhanced'
+        : entry.source === 'transcreation' ? 'transcreation'
+        : 'manual_edit';
+      return {
+        id: entry.id,
+        versionNumber: i + 1,
+        content: entry.content,
+        versionType,
+        changeSummary: entry.label || '',
+        createdAt: entry.timestamp.getTime(),
+        wordCount: entry.content.trim().split(/\s+/).length,
+      };
+    }
+  );
 
   // ── Direct unified-editor helpers (no wrapper indirection) ──
   // All handlers below call unifiedEditor methods directly.
@@ -210,7 +214,7 @@ export function ScriptEditorTab({
   }, [unifiedEditor]);
 
   // ──── TTS Hook ────
-  const { isGenerating: isTTSGenerating, lastResult: ttsResult, generate: generateTTS, play: playTTS, stop: stopTTS, download: downloadTTS } = useTTSGeneration();
+  const { isGenerating: isTTSGenerating, lastResult: ttsResult, generate: generateTTS, play: playTTS, download: downloadTTS } = useTTSGeneration();
 
   // ──── Computed Values ────
   const currentContent = activeVersion === 'enhanced' && enhancedContent ? enhancedContent : scriptContent;
@@ -675,7 +679,7 @@ export function ScriptEditorTab({
   };
 
   // Version history handlers — routes through unified editor
-  const addVersionEntry = useCallback((content: string, type: ScriptVersionEntry['versionType'], summary: string) => {
+  const addVersionEntry = useCallback((_content: string, type: ScriptVersionEntry['versionType'], summary: string) => {
     // Map ScriptVersionEntry versionType → VersionHistoryEntry source
     const sourceMap: Record<ScriptVersionEntry['versionType'], 'manual' | 'ai_enhance' | 'ai_analysis' | 'transcreation' | 'import'> = {
       original: 'manual',
