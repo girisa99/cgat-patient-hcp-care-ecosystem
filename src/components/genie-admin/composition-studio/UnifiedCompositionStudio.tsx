@@ -42,6 +42,7 @@ import {
 } from '@/services/contentGenerationService';
 import type { OutputFormat } from '@/config/content-generation-pipeline';
 
+import { useGenieStudioNavigation } from '@/hooks/useGenieStudioNavigation';
 import { ChapterEditor } from './ChapterEditor';
 import { LanguageSelectorPanel } from './LanguageSelectorPanel';
 import { PreviewPanel } from './PreviewPanel';
@@ -191,6 +192,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
   compositionId,
   onOpenLibrary,
 }) => {
+  const { userTier } = useGenieStudioNavigation();
   const [currentStep, setCurrentStep] = useState<WizardStep>('setup');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
@@ -415,7 +417,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
                     ((chapter.visual?.type === 'custom' ? 'video' : chapter.visual?.type) || 'video') as any,
         duration: chapter.duration || 30,
         scriptContent: options.newScript || chapter.voiceover?.text || '',
-        userTier: 'creator'
+        userTier
       };
 
       setRegenerationProgress(50);
@@ -571,7 +573,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
         visualType: ((chapter.visual?.type === 'custom' ? 'video' : chapter.visual?.type) || 'video') as any,
         duration: chapter.duration || 30,
         scriptContent: chapter.visual?.prompt || chapter.voiceover?.text || '',
-        userTier: 'creator' // TODO: Get from user context
+        userTier // TODO: Get from user context
       };
 
       const result = await generateChapterService(request, (progress) => {
@@ -1108,7 +1110,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
               <ElementCategoryTabs
                 elements={categoryElements}
                 onElementsChange={setCategoryElements}
-                currentTier="pro"
+                currentTier={userTier}
               />
             )}
 

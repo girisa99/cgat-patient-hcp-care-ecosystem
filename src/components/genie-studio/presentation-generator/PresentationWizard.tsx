@@ -15,6 +15,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SocialPublisher } from '@/components/publish/SocialPublisher';
 import { supabase } from '@/integrations/supabase/client';
 import { useUniversalEnrichment } from '@/services/enrichment';
+import { useGenieStudioNavigation } from '@/hooks/useGenieStudioNavigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -355,6 +356,7 @@ export function PresentationWizard({
 }: PresentationWizardProps) {
   // Universal enrichment — product knowledge, brand, audience, regional context
   const { additionalContext: enrichmentContext, enrichmentContext: structuredEnrichment } = useUniversalEnrichment({ productName: 'Genie Deck' });
+  const { userTier } = useGenieStudioNavigation();
 
   const {
     session,
@@ -633,8 +635,8 @@ export function PresentationWizard({
   const [creditsUsedThisSession, setCreditsUsedThisSession] = useState(0);
   const [isDeductingCredits, setIsDeductingCredits] = useState(false);
   
-  const refreshCapsHook = useRefreshCaps({ 
-    userTier: 'professional', // TODO: Get from user profile
+  const refreshCapsHook = useRefreshCaps({
+    userTier,
     onCapReached: (capType) => {
       toast.warning(`${capType} refresh limit reached. Upgrade for more.`);
     }
