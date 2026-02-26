@@ -1,11 +1,16 @@
 /**
  * A2A Coordinator Service Hook
- * Calls the ai-a2a-coordinator edge function for orchestration
+ * Calls the ai-a2a-coordinator edge function for orchestration.
+ * Also exposes the Agentic Content Orchestrator agent card for A2A discovery
+ * and provides a direct invoke path via the REST wrapper.
  */
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { AGENTIC_ORCHESTRATOR_AGENT_CARD, handleOrchestrateRequest } from '@/services/publishing/agenticA2ARegistration';
+import type { OrchestrateRequest, OrchestrateResponse } from '@/services/publishing/agenticA2ARegistration';
+import type { AgentCard } from '@/hooks/useA2AProtocol';
 
 export type GlobalTierLevel = 1 | 2 | 3;
 
@@ -190,16 +195,51 @@ export function useA2ACoordinatorService() {
     }
   }, []);
 
+  /**
+   * Get the Agentic Content Orchestrator agent card for A2A discovery.
+   * Returns the static card describing the 8-agent pipeline's capabilities,
+   * skills, and endpoints — per Google A2A spec.
+   */
+  const getAgenticOrchestratorCard = useCallback((): AgentCard => {
+    return AGENTIC_ORCHESTRATOR_AGENT_CARD;
+  }, []);
+
+  /**
+   * Invoke the Agentic Content Orchestrator directly via REST wrapper.
+   * Stateless — each call is independent. Supports actions:
+   * 'orchestrate-batch', 'execute-production', 'transcreate'.
+   */
+  const invokeAgenticOrchestrator = useCallback(async (
+    request: OrchestrateRequest,
+  ): Promise<OrchestrateResponse> => {
+    try {
+      const response = await handleOrchestrateRequest(request);
+      if (!response.success) {
+        toast.error(`Orchestrator: ${response.error}`);
+      }
+      return response;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`Orchestrator invoke failed: ${msg}`);
+      return { success: false, error: msg };
+    }
+  }, []);
+
   return {
     // State
     isValidating,
     isOrchestrating,
     orchestrationPlan,
-    
+
     // Actions
     checkStatus,
     validateContext,
     getRoutingPlan,
     orchestrate,
+
+    // Agentic Content Orchestrator (A2A)
+    agenticOrchestratorCard: AGENTIC_ORCHESTRATOR_AGENT_CARD,
+    getAgenticOrchestratorCard,
+    invokeAgenticOrchestrator,
   };
 }

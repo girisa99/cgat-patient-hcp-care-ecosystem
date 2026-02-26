@@ -12,11 +12,11 @@
  * Spark stays focused: Guide (default) → Pipeline → Templates → Images.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QuadrantLayout, QuadrantProductHeader } from '@/components/navigation';
 import { GlassTabs, GlassTabsList, GlassTabsTrigger, GlassTabsContent } from '@/components/ui/glass-primitives';
-import { Sparkles, LayoutTemplate, Image, Wand2 } from 'lucide-react';
+import { Sparkles, LayoutTemplate, Image, Wand2, Share2 } from 'lucide-react';
 import { SmartContentPipeline } from '@/components/genie-studio/SmartContentPipeline';
 import { useGenieScripts, type GenieScript } from '@/components/genie-studio/useGenieScripts';
 import { toast } from 'sonner';
@@ -25,6 +25,8 @@ import { ImageScriptAssembler } from '@/components/shared';
 import { QuickTemplateSelector } from '@/components/templates';
 import { SparkGuidedWizard } from '@/components/genie-spark/SparkGuidedWizard';
 import { productionEpisodesService } from '@/services/production/productionEpisodesService';
+import { UnifiedPublishPanel } from '@/components/publishing';
+import { packScriptContent } from '@/services/publishing/contentPackager';
 
 const GenieSpark: React.FC = () => {
   const navigate = useNavigate();
@@ -161,6 +163,10 @@ const GenieSpark: React.FC = () => {
               <Image className="h-4 w-4" />
               Images
             </GlassTabsTrigger>
+            <GlassTabsTrigger value="publish" className="gap-2">
+              <Share2 className="h-4 w-4" />
+              Publish
+            </GlassTabsTrigger>
           </GlassTabsList>
 
             {/* Guided Wizard Tab */}
@@ -241,6 +247,18 @@ const GenieSpark: React.FC = () => {
                 }}
               />
           </GlassTabsContent>
+
+            {/* Publish Tab */}
+            <GlassTabsContent value="publish" className="mt-0">
+              <UnifiedPublishPanel
+                sourceProduct="spark"
+                content={packScriptContent({
+                  id: `spark_${Date.now()}`,
+                  title: 'Spark Content',
+                  body: '',
+                }, 'spark')}
+              />
+            </GlassTabsContent>
         </GlassTabs>
       </div>
       {/* AskGenie removed - now centralized in QuadrantLayout */}

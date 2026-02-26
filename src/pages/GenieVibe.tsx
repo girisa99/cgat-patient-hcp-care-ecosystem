@@ -51,6 +51,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { InlineTrainAIFeedback } from '@/components/genie-studio/InlineTrainAIFeedback';
 import { useUniversalEnrichment } from '@/services/enrichment';
+import { UnifiedPublishPanel } from '@/components/publishing';
+import { packVibeContent } from '@/services/publishing/contentPackager';
 import { useGenieScripts } from '@/components/genie-studio/useGenieScripts';
 import { useGenieMediaLibrary } from '@/components/genie-studio/useGenieMediaLibrary';
 import { useIsMobileOrTablet } from '@/hooks/use-mobile';
@@ -880,6 +882,18 @@ const GenieVibe: React.FC = () => {
                 totalDuration={totalDuration}
                 projectName="My Genie Vibe Project"
                 onExport={handlePublish}
+              />
+
+              {/* Unified multi-platform publishing */}
+              <UnifiedPublishPanel
+                sourceProduct="vibe"
+                content={packVibeContent({
+                  id: `vibe_${Date.now()}`,
+                  videoUrl: '',
+                  title: 'My Genie Vibe Project',
+                  description: '',
+                })}
+                compact
               />
             </TabsContent>
           </Tabs>

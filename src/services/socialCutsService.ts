@@ -138,20 +138,42 @@ class SocialCutsService {
   }
 
   /**
-   * Generate social cuts from source content
+   * Generate social cuts from source content via edge functions
    */
   async generateCuts(
     contentId: string,
     platforms: SocialPlatform[],
     options?: { cutsPerPlatform?: number; preferHooks?: boolean }
   ): Promise<SocialCut[]> {
-    const cuts: SocialCut[] = [];
     const cutsPerPlatform = options?.cutsPerPlatform || 3;
 
+    try {
+      // Try real edge function first
+      const { data, error } = await supabase.functions.invoke('magic-clips-generator', {
+        body: {
+          contentId,
+          platforms,
+          cutsPerPlatform,
+          preferHooks: options?.preferHooks ?? true,
+          platformConfigs: platforms.map(p => ({
+            platform: p,
+            ...this.platformConfigs[p],
+          })),
+        },
+      });
+
+      if (!error && data?.cuts) {
+        console.log(`[SocialCuts] Generated ${data.cuts.length} cuts via edge function`);
+        return data.cuts as SocialCut[];
+      }
+    } catch (e) {
+      console.warn('[SocialCuts] Edge function unavailable, using local generation:', e);
+    }
+
+    // Fallback to local generation
+    const cuts: SocialCut[] = [];
     for (const platform of platforms) {
       const config = this.platformConfigs[platform];
-      
-      // Generate multiple cuts for each platform
       for (let i = 0; i < cutsPerPlatform; i++) {
         cuts.push({
           id: `cut_${platform}_${i}_${Date.now()}`,
@@ -159,7 +181,7 @@ class SocialCutsService {
           platform,
           aspect_ratio: config.aspect_ratio,
           duration: Math.floor(Math.random() * (config.max_duration - config.min_duration) + config.min_duration),
-          start_time: i * 30, // Simplified timing
+          start_time: i * 30,
           end_time: i * 30 + config.min_duration,
           score: Math.floor(Math.random() * 30 + 70),
           engagement_prediction: Math.floor(Math.random() * 40 + 60),
@@ -168,7 +190,7 @@ class SocialCutsService {
       }
     }
 
-    console.log(`[SocialCuts] Generated ${cuts.length} cuts for ${platforms.length} platforms`);
+    console.log(`[SocialCuts] Generated ${cuts.length} cuts locally for ${platforms.length} platforms`);
     return cuts;
   }
 

@@ -1164,7 +1164,7 @@ const getContextualSuggestions = (
         { label: '📡 Start production', prompt: 'Help me create my first Cast production from scratch!', icon: <Film className="h-3 w-3" />, isHighlighted: true },
         { label: '🎨 Choose style', prompt: 'What video styles and formats are available in Cast?', icon: <Wand2 className="h-3 w-3" /> },
         { label: '📱 Publish content', prompt: 'How do I publish my content to YouTube, LinkedIn, and social media?', icon: <Globe className="h-3 w-3" /> },
-        { label: '📊 Show pipeline', prompt: 'Show me a visual diagram of the Cast production pipeline!', icon: <Map className="h-3 w-3" /> }
+        { label: '📢 Auto-publish', prompt: 'Show me the auto-publish creative content engine — generate diverse marketing clips, social cards, and segments across healthcare, travel, education, pet industry and more!', icon: <Sparkles className="h-3 w-3" /> }
       );
       break;
 
@@ -1173,7 +1173,7 @@ const getContextualSuggestions = (
         { label: '🏢 Hub overview', prompt: "Show me what all Hub modules can do - give me the full tour!", icon: <Building2 className="h-3 w-3" />, isHighlighted: true },
         { label: '📋 Task board', prompt: 'How do I use the Kanban task board to manage my projects?', icon: <Film className="h-3 w-3" /> },
         { label: '👥 Set up team', prompt: 'Help me invite team members and set up permissions!', icon: <UserCheck className="h-3 w-3" /> },
-        { label: '📊 Show modules', prompt: 'Show me a visual diagram of all Hub modules!', icon: <Map className="h-3 w-3" /> }
+        { label: '📢 Auto-publish', prompt: 'Open the auto-publish content marketing engine — generate creative clips and social content across all industry segments!', icon: <Sparkles className="h-3 w-3" /> }
       );
       break;
 

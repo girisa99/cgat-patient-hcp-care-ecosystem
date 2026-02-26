@@ -24,8 +24,11 @@ import {
   Zap,
   Files,
   Layers,
-  Loader2
+  Loader2,
+  Share2,
 } from 'lucide-react';
+import { UnifiedPublishPanel } from '@/components/publishing';
+import { packScriptContent } from '@/services/publishing/contentPackager';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { ScriptEditorTab } from '@/components/genie-studio/ScriptEditorTab';
@@ -133,6 +136,10 @@ const GenieMind: React.FC = () => {
             <TabsTrigger value="library" className="gap-2">
               <Library className="h-4 w-4" />
               Media Library
+            </TabsTrigger>
+            <TabsTrigger value="publish" className="gap-2">
+              <Share2 className="h-4 w-4" />
+              Publish
             </TabsTrigger>
           </TabsList>
 
@@ -424,6 +431,18 @@ const GenieMind: React.FC = () => {
                   )}
                 </TabsContent>
               </Tabs>
+            </TabsContent>
+
+            {/* Publish Tab */}
+            <TabsContent value="publish" className="mt-0">
+              <UnifiedPublishPanel
+                sourceProduct="mind"
+                content={packScriptContent({
+                  id: `mind_${Date.now()}`,
+                  title: 'Mind Content',
+                  body: '',
+                }, 'mind')}
+              />
             </TabsContent>
           </Tabs>
         </div>

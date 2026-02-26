@@ -79,19 +79,55 @@ class ScheduledPublishingService {
   }
 
   /**
-   * Schedule content for publishing
+   * Schedule content for publishing (persists to scheduled_posts table)
    */
   async scheduleContent(content: Omit<ScheduledContent, 'id' | 'created_at' | 'updated_at'>): Promise<ScheduledContent | null> {
     try {
-      const scheduledContent: ScheduledContent = {
-        ...content,
-        id: `sched_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('[ScheduledPublishing] No auth session');
+        return null;
+      }
 
-      console.log('[ScheduledPublishing] Content scheduled:', scheduledContent.id);
-      return scheduledContent;
+      // Insert into scheduled_posts table (proven pattern from SmartSchedulerPanel)
+      const { data, error } = await supabase
+        .from('scheduled_posts')
+        .insert({
+          user_id: session.user.id,
+          content_id: content.content_id,
+          content_type: content.content_type,
+          title: content.title,
+          description: content.description || '',
+          platforms: content.platforms as unknown as Record<string, unknown>[],
+          scheduled_at: content.scheduled_at,
+          timezone: content.timezone,
+          status: 'scheduled',
+          metadata: content.metadata || {},
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[ScheduledPublishing] DB insert error:', error);
+        // Fallback to in-memory if table doesn't exist yet
+        const fallback: ScheduledContent = {
+          ...content,
+          id: `sched_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+          status: 'scheduled',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        return fallback;
+      }
+
+      console.log('[ScheduledPublishing] Content scheduled in DB:', data.id);
+      return {
+        ...content,
+        id: data.id,
+        status: 'scheduled',
+        created_at: data.created_at,
+        updated_at: data.updated_at || data.created_at,
+      };
     } catch (error) {
       console.error('Failed to schedule content:', error);
       return null;

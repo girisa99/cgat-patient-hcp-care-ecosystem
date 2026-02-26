@@ -12,17 +12,21 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   BookOpen, ChevronDown, ChevronRight, Clock, Edit3, Merge,
-  Scissors, GripVertical, Sparkles, Layers, Check, X,
+  Scissors, GripVertical, Sparkles, Layers, Check, X, Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { CompositionScene } from '@/components/genie-hub/composition-studio/types';
-import { autoGroupChapters, type ChapterGroup } from '@/services/sceneCompositionEngine';
+import { autoGroupChapters, splitScene, mergeScenes, type ChapterGroup } from '@/services/sceneCompositionEngine';
+import { addSceneToBlueprint, type ProductionBlueprint, type ScriptSection } from '@/services/publishing/agenticProductionBridge';
 
 interface ChapterManagementPanelProps {
   scenes: CompositionScene[];
   onScenesChange?: (scenes: CompositionScene[]) => void;
   onChapterSelect?: (chapterGroup: ChapterGroup) => void;
+  /** Optional production blueprint — enables "Add Scene" via agentic production bridge */
+  blueprint?: ProductionBlueprint;
+  onBlueprintChange?: (blueprint: ProductionBlueprint) => void;
   className?: string;
 }
 
@@ -36,6 +40,8 @@ export const ChapterManagementPanel: React.FC<ChapterManagementPanelProps> = ({
   scenes,
   onScenesChange,
   onChapterSelect,
+  blueprint,
+  onBlueprintChange,
   className,
 }) => {
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
@@ -71,11 +77,38 @@ export const ChapterManagementPanel: React.FC<ChapterManagementPanelProps> = ({
 
   const mergeWithNext = (chapterIndex: number) => {
     if (chapterIndex >= chapters.length - 1) return;
+    const currentChapter = chapters[chapterIndex];
+    const nextChapter = chapters[chapterIndex + 1];
+    // Merge last scene of current chapter with first scene of next chapter
+    const lastSceneId = currentChapter.sceneIds[currentChapter.sceneIds.length - 1];
+    const firstNextSceneId = nextChapter.sceneIds[0];
+    if (!lastSceneId || !firstNextSceneId) return;
+    const updated = mergeScenes(scenes, lastSceneId, firstNextSceneId);
+    onScenesChange?.(updated);
     toast.success('Chapters merged');
   };
 
   const splitChapter = (chapterId: string, splitAfterSceneId: string) => {
+    const scene = scenes.find(s => s.id === splitAfterSceneId);
+    if (!scene) return;
+    // Split at midpoint of the scene
+    const splitAt = Math.floor(scene.duration / 2);
+    if (splitAt <= 0) return;
+    const updated = splitScene(scenes, splitAfterSceneId, splitAt);
+    onScenesChange?.(updated);
     toast.success('Chapter split');
+  };
+
+  const handleAddScene = (afterSceneId: string | null, section: ScriptSection = 'custom') => {
+    if (!blueprint || !onBlueprintChange) return;
+    const updated = addSceneToBlueprint(blueprint, afterSceneId, {
+      narrationText: 'New scene narration — edit to customize.',
+      section,
+      label: section === 'custom' ? 'New Scene' : section,
+      voiceSource: 'ai_tts',
+    });
+    onBlueprintChange(updated);
+    toast.success('Scene added to blueprint');
   };
 
   if (scenes.length === 0) {
@@ -175,6 +208,17 @@ export const ChapterManagementPanel: React.FC<ChapterManagementPanelProps> = ({
                       {idx < chapters.length - 1 && (
                         <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => mergeWithNext(idx)} title="Merge with next">
                           <Merge className="w-3 h-3" />
+                        </Button>
+                      )}
+                      {blueprint && onBlueprintChange && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5"
+                          onClick={() => handleAddScene(chapter.sceneIds[chapter.sceneIds.length - 1] ?? null)}
+                          title="Add scene after this chapter"
+                        >
+                          <Plus className="w-3 h-3" />
                         </Button>
                       )}
                     </div>

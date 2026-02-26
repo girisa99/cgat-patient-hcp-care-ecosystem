@@ -315,6 +315,22 @@ function ClipBlock({
   onSelect: (e: React.MouseEvent) => void;
   onDoubleClick: () => void;
 }) {
+  // Touch support: convert touch events to mouse-compatible events
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
+    // Synthesize a mouse event for selection
+    const touch = e.touches[0];
+    const syntheticEvent = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      shiftKey: false,
+      metaKey: false,
+      ctrlKey: false,
+      preventDefault: () => {},
+      stopPropagation: () => {},
+    } as unknown as React.MouseEvent;
+    onSelect(syntheticEvent);
+  }, [onSelect]);
   const effectiveDuration = clip.durationMs - clip.trimStartMs - clip.trimEndMs;
   const widthPx = Math.max(MIN_CLIP_WIDTH, (effectiveDuration / 1000) * 40 * zoomLevel);
   const leftPx = (clip.startMs / 1000) * 40 * zoomLevel;
@@ -338,9 +354,11 @@ function ClipBlock({
         left: leftPx,
         width: widthPx,
         height: TRACK_HEIGHT - 10,
+        touchAction: 'none', // Prevent scroll interference on touch drag
       }}
       onClick={onSelect}
       onDoubleClick={onDoubleClick}
+      onTouchStart={handleTouchStart}
       title={`${clip.label} (${(effectiveDuration / 1000).toFixed(1)}s) — ${clip.status}`}
     >
       {/* Clip content */}
@@ -544,13 +562,33 @@ export function VideoTimelineEditor({
     }
   }, [state.clips, timeline]);
 
-  // Handle click on timeline background to set playhead
+  // Handle click on timeline background to set playhead (mouse + touch)
   const handleTimelineClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const timeMs = (x / (40 * state.zoomLevel)) * 1000;
     timeline.setPlayhead(Math.max(0, timeMs));
   }, [state.zoomLevel, timeline]);
+
+  // Touch: tap on timeline background to set playhead
+  const handleTimelineTouch = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const timeMs = (x / (40 * state.zoomLevel)) * 1000;
+    timeline.setPlayhead(Math.max(0, timeMs));
+  }, [state.zoomLevel, timeline]);
+
+  // Touch: scrub playhead by dragging on timeline
+  const handleTimelineTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const timeMs = (x / (40 * state.zoomLevel)) * 1000;
+    timeline.setPlayhead(Math.max(0, Math.min(timeMs, state.totalDurationMs)));
+  }, [state.zoomLevel, state.totalDurationMs, timeline]);
 
   // Default file import handler
   const handleImport = useCallback((file: File) => {
@@ -676,7 +714,10 @@ export function VideoTimelineEditor({
                 {/* Clip area */}
                 <div
                   className="relative flex-1 border-b bg-muted/5 hover:bg-muted/10 transition-colors"
+                  style={{ touchAction: 'none' }}
                   onClick={handleTimelineClick}
+                  onTouchStart={handleTimelineTouch}
+                  onTouchMove={handleTimelineTouchMove}
                 >
                   {track.clips.map(clipId => {
                     const clip = state.clips[clipId];

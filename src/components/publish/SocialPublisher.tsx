@@ -49,12 +49,13 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { 
+import {
   INDUSTRY_SEGMENTS,
   type GenieProduct,
   type CompanyPage,
   type IndustrySegment,
 } from '@/services/unifiedEcosystemPublishingService';
+import { useSocialPlatforms } from '@/hooks/useSocialPlatforms';
 
 // TikTok icon component (not in Lucide)
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -131,94 +132,24 @@ export const SocialPublisher: React.FC<SocialPublisherProps> = ({
   showCompanyPages = true,
   showWebhooks = true,
 }) => {
-  // Platform states
-  const [platforms, setPlatforms] = useState<SocialPlatform[]>([
-    { 
-      id: 'youtube', 
-      name: 'YouTube', 
-      icon: Youtube, 
-      type: 'oauth',
-      connected: false, 
-      color: 'text-red-500',
-      description: 'Upload directly to your channel'
-    },
-    { 
-      id: 'linkedin', 
-      name: 'LinkedIn', 
-      icon: Linkedin, 
-      type: 'oauth',
-      connected: false, 
-      color: 'text-blue-600',
-      description: 'Share to your professional network',
-      supportsCompanyPages: true
-    },
-    { 
-      id: 'twitter', 
-      name: 'X (Twitter)', 
-      icon: Twitter, 
-      type: 'oauth',
-      connected: false, 
-      color: 'text-foreground',
-      description: 'Tweet your video'
-    },
-    { 
-      id: 'facebook', 
-      name: 'Facebook', 
-      icon: FacebookIcon, 
-      type: 'oauth',
-      connected: false, 
-      color: 'text-blue-500',
-      description: 'Share to your page or timeline',
-      supportsCompanyPages: true
-    },
-    { 
-      id: 'bluesky', 
-      name: 'Bluesky', 
-      icon: BlueskyIcon, 
-      type: 'oauth',
-      connected: false, 
-      color: 'text-sky-500',
-      description: 'Post to Bluesky'
-    },
-    { 
-      id: 'threads', 
-      name: 'Threads', 
-      icon: ThreadsIcon, 
-      type: 'oauth',
-      connected: false, 
-      color: 'text-foreground',
-      description: 'Share to Threads'
-    },
-    { 
-      id: 'pinterest', 
-      name: 'Pinterest', 
-      icon: PinterestIcon, 
-      type: 'oauth',
-      connected: false, 
-      color: 'text-red-600',
-      description: 'Pin to your boards'
-    },
-    { 
-      id: 'instagram', 
-      name: 'Instagram', 
-      icon: Instagram, 
-      type: 'oauth',
-      connected: false, 
-      color: 'text-pink-500',
-      description: 'Post to Instagram Business',
-      supportsCompanyPages: true
-    },
-    { 
-      id: 'tiktok', 
-      name: 'TikTok', 
-      icon: TikTokIcon, 
-      type: 'oauth',
-      connected: false, 
-      color: 'text-foreground',
-      description: 'Upload to TikTok Business',
-      supportsCompanyPages: true
-    },
-  ]);
+  // Platform states — sourced from canonical useSocialPlatforms hook
+  const { platforms: hookPlatforms } = useSocialPlatforms();
+  const [platforms, setPlatforms] = useState<SocialPlatform[]>([]);
+
+  // Initialize platforms from the hook (single source of truth)
+  useEffect(() => {
+    const mapped: SocialPlatform[] = hookPlatforms.map(hp => ({
+      id: hp.id,
+      name: hp.name,
+      icon: hp.icon as React.ComponentType<{ className?: string }>,
+      type: 'oauth' as const,
+      connected: hp.connected,
+      color: hp.colorClass,
+      description: hp.description,
+      supportsCompanyPages: hp.id === 'linkedin' || hp.id === 'facebook' || hp.id === 'instagram' || hp.id === 'tiktok',
+    }));
+    setPlatforms(mapped);
+  }, [hookPlatforms]);
 
   // Content states
   const [title, setTitle] = useState(defaultTitle);

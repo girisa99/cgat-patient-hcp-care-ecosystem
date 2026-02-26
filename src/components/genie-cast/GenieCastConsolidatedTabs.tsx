@@ -137,6 +137,10 @@ import { useLSCastIntegration } from '@/hooks/useLSCastIntegration';
 
 // P1: Universal Video Editing + Distribution
 import { ExportDistributionPanel } from './editing';
+
+// Unified Publishing System (shared across all products)
+import { UnifiedPublishPanel } from '@/components/publishing';
+import { packCastContent } from '@/services/publishing/contentPackager';
 import { useVideoTimeline } from '@/hooks/video-editing/useVideoTimeline';
 import { useClipOperations } from '@/hooks/video-editing/useClipOperations';
 import { usePlatformExport } from '@/hooks/video-editing/usePlatformExport';
@@ -1842,6 +1846,27 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   sessionTitle={castSession.session.approvedMessaging?.hook || castSession.session.enrichmentPrompt || undefined}
                   primaryPlatform={castSession.session.primaryPlatform}
                   selectedAspectRatio={castSession.session.selectedAspectRatio}
+                />
+
+                {/* Unified Publishing System — 12+ platforms, per-platform captions, regional support */}
+                <UnifiedPublishPanel
+                  sourceProduct="cast"
+                  content={packCastContent(
+                    {
+                      videoUrl: castSession.session.productionArtifacts?.finalVideoUrl,
+                      audioUrl: castSession.session.productionArtifacts?.audioUrl,
+                      thumbnailUrl: castSession.session.productionArtifacts?.thumbnailUrl,
+                      title: castSession.session.approvedMessaging?.hook || castSession.session.enrichmentPrompt || 'Untitled',
+                      description: castSession.session.approvedMessaging?.valueProposition,
+                    },
+                    {
+                      id: castSession.session.id || `cast_${Date.now()}`,
+                      selectedRegion: castSession.session.selectedRegion,
+                      language: castSession.session.selectedLanguage,
+                    },
+                  )}
+                  region={castSession.session.selectedRegion}
+                  language={castSession.session.selectedLanguage}
                 />
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

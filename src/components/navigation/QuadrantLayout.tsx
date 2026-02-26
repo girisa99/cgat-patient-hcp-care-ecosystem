@@ -172,17 +172,30 @@ export const QuadrantLayout: React.FC<QuadrantLayoutProps> = ({
   // Don't show Ask Genie on support page
   const showAskGenie = !location.pathname.includes('/genie-support');
 
+  // Auto-detect product from pathname for context-aware AskGenie
+  const detectedProduct = React.useMemo(() => {
+    const path = location.pathname;
+    if (path.includes('/genie-cast')) return 'cast' as const;
+    if (path.includes('/genie-spark')) return 'spark' as const;
+    if (path.includes('/genie-mind')) return 'mind' as const;
+    if (path.includes('/genie-vibe')) return 'vibe' as const;
+    if (path.includes('/genie-deck')) return 'deck' as const;
+    if (path.includes('/genie-hub') || path.includes('/genie-admin')) return 'hub' as const;
+    if (path.includes('/genie-support')) return 'support' as const;
+    return 'studio' as const;
+  }, [location.pathname]);
+
   return (
     <div className="min-h-screen bg-background">
       {showNav && <QuadrantHeader showDebugTools={showDebugTools} />}
-      
+
       <main className={cn('container py-6', className)}>
         <Suspense fallback={<LoadingFallback />}>
           {children}
         </Suspense>
       </main>
 
-      {showAskGenie && <AskGenie position="floating" />}
+      {showAskGenie && <AskGenie product={detectedProduct} position="floating" />}
       <UserErrorReporting position="bottom-left" />
       <DebugPanel />
     </div>

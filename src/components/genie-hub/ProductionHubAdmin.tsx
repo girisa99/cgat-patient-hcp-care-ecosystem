@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Video, Users, CalendarDays, Sparkles, Loader2, Download, Film, LayoutGrid, Calendar, UserCog, BarChart3, Palette, ArrowRight, Zap, Brain, Presentation, Building2, Command, Activity, BookOpen, Layers, Settings, Globe, Shield, HelpCircle, Info } from 'lucide-react';
+import { Video, Users, CalendarDays, Sparkles, Loader2, Download, Film, LayoutGrid, Calendar, UserCog, BarChart3, Palette, ArrowRight, Zap, Brain, Presentation, Building2, Command, Activity, BookOpen, Layers, Settings, Globe, Shield, HelpCircle, Info, Share2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import genieCastLogo from '@/assets/logos/genie-arc-combined.png';
 import { DocumentDownloadButton } from './DocumentDownloadButton';
@@ -27,6 +27,8 @@ import { TeamActivityFeed } from '@/components/collaboration/TeamActivityFeed';
 import { NotificationsPanel } from '@/components/collaboration/NotificationsPanel';
 import { toast } from 'sonner';
 import { useShows } from '@/hooks/useShows';
+import { UnifiedPublishPanel, AutoPublishReviewPanel } from '@/components/publishing';
+import { packHubContent } from '@/services/publishing/contentPackager';
 
 import type { EventCategory } from '@/types/shows';
 import { cn } from '@/lib/utils';
@@ -40,12 +42,13 @@ const VerticalKanban = lazy(() => import('@/components/production/VerticalKanban
 const ProductionCalendar = lazy(() => import('@/components/production/ProductionCalendar').then(m => ({ default: m.ProductionCalendar })));
 const AppointmentScheduler = lazy(() => import('@/components/arc/AppointmentScheduler').catch(() => ({ default: () => <div className="p-8 text-center text-muted-foreground">Appointments module loading...</div> })));
 const SprintTrackerDashboard = lazy(() => import('./SprintTrackerDashboard'));
+const AgenticPipelinePanel = lazy(() => import('@/components/publishing/AgenticPipelinePanel').then(m => ({ default: m.AgenticPipelinePanel })));
 
 interface ProductionHubAdminProps {
   className?: string;
 }
 
-type AdminTab = 'overview' | 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'sprint-tracker' | 'product-setup' | 'subscriber-admin';
+type AdminTab = 'overview' | 'kanban' | 'calendar' | 'appointments' | 'library' | 'composition' | 'scheduler' | 'analytics' | 'enterprise-analytics' | 'error-analytics' | 'collaboration' | 'workspaces' | 'team' | 'whitelabel' | 'ai-intelligence' | 'command-center' | 'sprint-tracker' | 'product-setup' | 'subscriber-admin' | 'publish' | 'agentic';
 
 export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ className }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -491,6 +494,31 @@ export const ProductionHubAdmin: React.FC<ProductionHubAdminProps> = ({ classNam
           {/* Subscriber Admin - Full Admin Hub from Cast */}
           {activeTab === 'subscriber-admin' && (
             <SubscriberAdminDashboard userTier="professional" />
+          )}
+
+          {/* Publish Tab — UnifiedPublishPanel + AutoPublishReviewPanel */}
+          {activeTab === 'publish' && (
+            <div className="space-y-6">
+              <UnifiedPublishPanel
+                sourceProduct="hub"
+                content={packHubContent(
+                  `hub_${Date.now()}`,
+                  '',
+                  'Hub Content',
+                  '',
+                )}
+                showDerivatives
+                showScheduler
+              />
+              <AutoPublishReviewPanel />
+            </div>
+          )}
+
+          {/* Agentic AI Pipeline — content orchestration + production bridge */}
+          {activeTab === 'agentic' && (
+            <Suspense fallback={<TabLoading />}>
+              <AgenticPipelinePanel />
+            </Suspense>
           )}
 
         </div>

@@ -6,7 +6,7 @@
  * Uses the full AskGenie component (not the simplified FAB) for rich support features
  */
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GenieStudioNavigation } from '@/components/navigation/GenieStudioNavigation';
 import { AskGenie } from '@/components/genie-studio/AskGenie';
@@ -108,6 +108,19 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
   const showFAB = !location.pathname.includes('/genie-support');
   const showContentLoading = isLoading && requireAuth;
 
+  // Auto-detect product from pathname for context-aware AskGenie
+  const detectedProduct = useMemo(() => {
+    const path = location.pathname;
+    if (path.includes('/genie-cast')) return 'cast' as const;
+    if (path.includes('/genie-spark')) return 'spark' as const;
+    if (path.includes('/genie-mind')) return 'mind' as const;
+    if (path.includes('/genie-vibe')) return 'vibe' as const;
+    if (path.includes('/genie-deck')) return 'deck' as const;
+    if (path.includes('/genie-hub') || path.includes('/genie-admin')) return 'hub' as const;
+    if (path.includes('/genie-support')) return 'support' as const;
+    return 'studio' as const;
+  }, [location.pathname]);
+
   // Content to render in main area - shows loading during auth, upgrade prompt, or actual children
   const mainContent = showContentLoading ? (
     <LoadingFallback />
@@ -126,7 +139,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
         <Suspense fallback={<LoadingFallback />}>
           {mainContent}
         </Suspense>
-        {showFAB && <AskGenie position="floating" />}
+        {showFAB && <AskGenie product={detectedProduct} position="floating" />}
       </div>
     );
   }
@@ -140,7 +153,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
             {mainContent}
           </Suspense>
         </main>
-        {showFAB && <AskGenie position="floating" />}
+        {showFAB && <AskGenie product={detectedProduct} position="floating" />}
       </div>
     );
   }
@@ -163,7 +176,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
             {mainContent}
           </Suspense>
         </main>
-        {showFAB && !isSprintTrackerTab && <AskGenie position="floating" />}
+        {showFAB && !isSprintTrackerTab && <AskGenie product={detectedProduct} position="floating" />}
       </div>
     );
   }
@@ -186,7 +199,7 @@ export const GenieStudioLayout: React.FC<GenieStudioLayoutProps> = ({
           </Suspense>
         </div>
       </main>
-      {showFAB && <AskGenie position="floating" />}
+      {showFAB && <AskGenie product={detectedProduct} position="floating" />}
     </div>
   );
 };

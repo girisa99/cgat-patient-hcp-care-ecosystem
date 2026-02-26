@@ -328,6 +328,12 @@ class UnifiedEcosystemPublishingService {
       case 'n8n':
         return this.publishViaWebhook(request, target, content);
       
+      case 'instagram':
+      case 'tiktok':
+      case 'threads':
+      case 'pinterest':
+        return this.publishToGenericSocial(request, target, content);
+
       default:
         return {
           contentId: request.contentId,
@@ -336,6 +342,90 @@ class UnifiedEcosystemPublishingService {
           error: `Platform ${target.platform} not yet implemented`
         };
     }
+  }
+
+  /**
+   * Schedule content for later publishing
+   */
+  async schedulePublish(request: PublishingRequest, scheduledAt: string): Promise<PublishingResult[]> {
+    console.log('[UnifiedPublishing] Scheduling publish for:', scheduledAt);
+
+    // Import scheduled publishing service dynamically to avoid circular deps
+    const { scheduledPublishingService } = await import('./scheduledPublishingService');
+
+    const scheduled = await scheduledPublishingService.scheduleContent({
+      content_id: request.contentId,
+      content_type: request.contentType as 'video' | 'image' | 'audio' | 'text' | 'mixed',
+      title: request.title,
+      description: request.description,
+      platforms: request.targets.map(t => ({
+        platform: t.platform as any,
+        enabled: t.enabled,
+        custom_caption: t.customCaption,
+        custom_title: t.customTitle,
+        hashtags: t.hashtags,
+        visibility: t.visibility,
+      })),
+      scheduled_at: scheduledAt,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      status: 'scheduled',
+      created_by: 'current_user',
+    });
+
+    if (!scheduled) {
+      return request.targets.map(t => ({
+        contentId: request.contentId,
+        platform: t.platform,
+        success: false,
+        error: 'Failed to schedule',
+      }));
+    }
+
+    return request.targets.map(t => ({
+      contentId: request.contentId,
+      platform: t.platform,
+      success: true,
+      postId: scheduled.id,
+      publishedAt: scheduledAt,
+    }));
+  }
+
+  /**
+   * Generic handler for platforms without dedicated handlers (Pinterest, Spotify, Reddit, etc.)
+   */
+  private async publishToGenericSocial(
+    request: PublishingRequest,
+    target: PublishingTarget,
+    content: { title: string; description: string; hashtags: string[] }
+  ): Promise<PublishingResult> {
+    console.log(`[UnifiedPublishing] Publishing to ${target.platform} via social-publish`);
+
+    const { data, error } = await supabase.functions.invoke('social-publish', {
+      body: {
+        platform: target.platform,
+        content: {
+          title: content.title,
+          text: content.description,
+          mediaUrl: request.contentUrl,
+          thumbnailUrl: request.thumbnailUrl,
+          contentType: request.contentType,
+          tags: content.hashtags.map(h => h.replace('#', '')),
+          visibility: target.visibility || 'public',
+        },
+        industryContext: request.industryContext,
+      },
+    });
+
+    if (error) throw error;
+
+    return {
+      contentId: request.contentId,
+      platform: target.platform,
+      success: true,
+      postId: data?.postId,
+      postUrl: data?.postUrl,
+      publishedAt: new Date().toISOString(),
+    };
   }
 
   /**
