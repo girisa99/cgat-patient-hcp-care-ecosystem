@@ -130,8 +130,8 @@ const QuadrantHeader: React.FC<{ showDebugTools: boolean }> = ({ showDebugTools 
 /**
  * Main Quadrant Layout Component
  */
-export const QuadrantLayout: React.FC<QuadrantLayoutProps> = ({ 
-  children, 
+export const QuadrantLayout: React.FC<QuadrantLayoutProps> = ({
+  children,
   showNav = true,
   requireAuth = true,
   className,
@@ -143,14 +143,36 @@ export const QuadrantLayout: React.FC<QuadrantLayoutProps> = ({
   // Redirect to auth if not authenticated
   useEffect(() => {
     if (!isLoading && requireAuth && !isAuthenticated) {
-      navigate('/genie-studio-auth', { 
+      navigate('/genie-studio-auth', {
         state: { from: location.pathname },
         replace: true,
       });
     }
   }, [isAuthenticated, isLoading, requireAuth, navigate, location.pathname]);
 
-  // Show loading
+  // Check if user has debug access
+  const showDebugTools = genieUser?.is_internal ||
+    genieUser?.current_subscription_tier === 'enterprise' ||
+    genieUser?.current_subscription_tier === 'business';
+
+  // Don't show Ask Genie on support page
+  const showAskGenie = !location.pathname.includes('/genie-support');
+
+  // Auto-detect product from pathname for context-aware AskGenie
+  // IMPORTANT: All hooks must be called before any early returns
+  const detectedProduct = React.useMemo(() => {
+    const path = location.pathname;
+    if (path.includes('/genie-cast')) return 'cast' as const;
+    if (path.includes('/genie-spark')) return 'spark' as const;
+    if (path.includes('/genie-mind')) return 'mind' as const;
+    if (path.includes('/genie-vibe')) return 'vibe' as const;
+    if (path.includes('/genie-deck')) return 'deck' as const;
+    if (path.includes('/genie-hub') || path.includes('/genie-admin')) return 'hub' as const;
+    if (path.includes('/genie-support')) return 'support' as const;
+    return 'studio' as const;
+  }, [location.pathname]);
+
+  // Show loading — early returns AFTER all hooks
   if (isLoading && requireAuth) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -163,27 +185,6 @@ export const QuadrantLayout: React.FC<QuadrantLayoutProps> = ({
   if (requireAuth && !isAuthenticated) {
     return null;
   }
-
-  // Check if user has debug access
-  const showDebugTools = genieUser?.is_internal || 
-    genieUser?.current_subscription_tier === 'enterprise' ||
-    genieUser?.current_subscription_tier === 'business';
-
-  // Don't show Ask Genie on support page
-  const showAskGenie = !location.pathname.includes('/genie-support');
-
-  // Auto-detect product from pathname for context-aware AskGenie
-  const detectedProduct = React.useMemo(() => {
-    const path = location.pathname;
-    if (path.includes('/genie-cast')) return 'cast' as const;
-    if (path.includes('/genie-spark')) return 'spark' as const;
-    if (path.includes('/genie-mind')) return 'mind' as const;
-    if (path.includes('/genie-vibe')) return 'vibe' as const;
-    if (path.includes('/genie-deck')) return 'deck' as const;
-    if (path.includes('/genie-hub') || path.includes('/genie-admin')) return 'hub' as const;
-    if (path.includes('/genie-support')) return 'support' as const;
-    return 'studio' as const;
-  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-background">
