@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ const STAGE_COLORS: Record<string, string> = {
 };
 
 export const CastProjectsList: React.FC = () => {
+  const navigate = useNavigate();
   const { data: projects, isLoading } = useQuery({
     queryKey: ['cast-projects-list'],
     queryFn: async () => {
@@ -81,6 +83,7 @@ export const CastProjectsList: React.FC = () => {
       {projects.map((project) => (
         <Card
           key={project.id}
+          onClick={() => navigate(`/ep04-production?projectId=${project.id}`)}
           className="group hover:shadow-md transition-all cursor-pointer border-border/30 hover:border-primary/20"
         >
           <CardContent className="p-4 space-y-3">

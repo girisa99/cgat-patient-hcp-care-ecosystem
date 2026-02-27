@@ -328,8 +328,58 @@ const VISUAL_STYLE_CONFIG: Record<string, { label: string; icon: string; color: 
 export default function EP04Production() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const projectId = searchParams.get('projectId');
+  const urlProjectId = searchParams.get('projectId');
+  const [autoProjectId, setAutoProjectId] = useState<string | null>(null);
+  const projectId = urlProjectId || autoProjectId;
   const { saveProjectContent, loadProjectContent, updateLineTTS, trackGenerationJob, completeGenerationJob, fetchTokenBreakdown, tokenBreakdown, isSaving, isLoading: isLoadingContent } = useCastProjectPersistence();
+
+  // ─── Auto-create cast_projects row if none exists ──────────────────
+  useEffect(() => {
+    if (urlProjectId || autoProjectId) return;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const db = supabase as any;
+
+      // Check if EP04 project already exists for this user
+      const { data: existing } = await db
+        .from('cast_projects')
+        .select('id')
+        .eq('user_id', user.id)
+        .ilike('title', '%EP04%')
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        setAutoProjectId(existing.id);
+        return;
+      }
+
+      // Create new EP04 project row
+      const { data: created, error } = await db
+        .from('cast_projects')
+        .insert({
+          user_id: user.id,
+          title: 'EP04 — Sprint Documentary',
+          description: 'GenieSuite Sprint Documentary — 12 scenes, 5 voices, ~27 min',
+          status: 'scripted',
+          production_stage: 'producing',
+          style_intent: 'documentary',
+          quality: 'production',
+          target_regions: ['global'],
+          selected_dialects: ['en-US'],
+        })
+        .select('id')
+        .single();
+
+      if (!error && created) {
+        setAutoProjectId(created.id);
+        console.log('[EP04] Auto-created project:', created.id);
+      } else {
+        console.error('[EP04] Failed to create project row:', error);
+      }
+    })();
+  }, [urlProjectId, autoProjectId]);
 
   // ─── DB-driven data (with fallback to config imports) ──────────────
   const dbProject = useCastProjectData(projectId);
