@@ -25,6 +25,7 @@ import { useIsMobile, useDeviceType } from '@/hooks/use-mobile';
 import { CastMobileLayout } from './CastMobileLayout';
 import { CastTabletLayout } from './CastTabletLayout';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { useCastProduction } from '@/hooks/useCastProduction';
 import { useGenieCastSession } from '@/hooks/useGenieCastSession';
 import { buildRequestFromCastSession, assembleEnrichmentContext } from '@/services/production/castProductionBridge';
@@ -517,6 +518,38 @@ export const GenieCastHub: React.FC = () => {
   useEffect(() => {
     production.refreshEnrichment(languageCode);
   }, [languageCode, production.refreshEnrichment]);
+
+  // Auto-create EP04 project row if none exists (so CastProjectsList shows it)
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const db = supabase as any;
+      const { data: existing } = await db
+        .from('cast_projects')
+        .select('id')
+        .eq('user_id', user.id)
+        .ilike('title', '%EP04%')
+        .limit(1)
+        .maybeSingle();
+      if (existing?.id) return; // already exists
+      const { error } = await db
+        .from('cast_projects')
+        .insert({
+          user_id: user.id,
+          title: 'EP04 — Sprint Documentary',
+          description: 'GenieSuite Sprint Documentary — 12 scenes, 5 voices, ~27 min',
+          status: 'scripted',
+          production_stage: 'producing',
+          style_intent: 'documentary',
+          quality: 'production',
+          target_regions: ['global'],
+          selected_dialects: ['en-US'],
+        });
+      if (error) console.error('[GenieCastHub] Failed to auto-create EP04 project:', error);
+      else console.log('[GenieCastHub] Auto-created EP04 project row');
+    })();
+  }, []);
 
   const handleStylesChange = useCallback((styles: VideoStyleType[]) => {
     if (!isMounted.current) return;

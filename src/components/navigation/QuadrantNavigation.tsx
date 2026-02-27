@@ -171,13 +171,13 @@ export const QUADRANT_CONFIG: QuadrantConfig[] = [
     icon: <Send className="h-5 w-5" />,
     color: 'text-emerald-500',
     bgGradient: 'from-emerald-500/10 to-emerald-600/5',
-    primaryRoute: '/genie-hub?tab=scheduler',
+    primaryRoute: '/genie-cast',
     products: [
       {
         id: 'cast',
         name: 'Genie Cast',
         logo: genieCastLogo,
-        route: '/genie-hub?tab=scheduler',
+        route: '/genie-cast',
         description: 'Multi-platform publishing',
         icon: <Share2 className="h-4 w-4" />,
       },
@@ -225,6 +225,9 @@ export const QuadrantNavigation: React.FC<QuadrantNavigationProps> = ({
       return 'manage';
     }
     if (path.includes('admin') && (fullPath.includes('scheduler') || fullPath.includes('analytics'))) {
+      return 'publish';
+    }
+    if (path.includes('genie-cast') || path.includes('ep04-production')) {
       return 'publish';
     }
     return null;

@@ -179,6 +179,59 @@ export const EP04_AVATAR_CONFIG = {
     },
   },
 
+  // ─── STORYBOOK VISUAL ASSETS ─────────────────────────────────────────
+  storybook: {
+    bookPrompt: 'Leather-bound storybook with "Beyond AI Hype" embossed in gold on the cover, ornate metal clasps, aged paper with deckled edges, sitting on a warm oak desk in a cozy library, volumetric lamplight, Pixar quality, 8K',
+    pagePrompt: 'A single storybook page with hand-illustrated margins — tiny squirrels carrying USB drives, owls wearing reading glasses reviewing code, mushroom houses with wifi antennas, all in delicate ink-and-watercolor style',
+    scrollPrompt: 'An ornate parchment scroll with wooden rollers, aged paper texture, hand-lettered calligraphy headings, illustrated marginalia with tiny woodland creatures interacting with data visualizations',
+    marginalia: [
+      'Tiny squirrels carrying USB drives between paragraphs',
+      'An owl with round glasses reviewing a miniature code diff',
+      'A tortoise carrying a task card across the bottom margin',
+      'Mushroom houses with tiny wifi antennas in the corner flourish',
+      'A caterpillar measuring a burndown chart with an inchworm ruler',
+    ],
+  },
+
+  // ─── STORYTELLING MOTIONS PER CHARACTER ──────────────────────────────
+  // Alvin & Chipmunks-style animated reactions for storybook character shots.
+  storytellingMotions: {
+    atlas: {
+      explaining: 'Bear stands at whiteboard, methodically drawing diagrams with a glowing paw, owl nodding along',
+      reacting: 'Bear raises one eyebrow slowly, adjusts glasses, owl mimics the eyebrow raise',
+      frustrated: 'Bear pinches the bridge of his snout, sighs deeply, code blocks behind him turn red',
+      proud: 'Bear stands tall, arms folded, the slightest smile, owl puffs chest too, background code turns green',
+      arguing: 'Bear holds up documentation like a shield, speaking calmly but firmly while ignoring Nova\'s interruptions',
+      not_listening: 'Bear continues presenting to whiteboard while Nova talks, completely unaware she\'s speaking, owl shrugs',
+    },
+    nova: {
+      explaining: 'Fox paints UI components in mid-air with her glowing stylus, hummingbird follows each stroke',
+      reacting: 'Fox bounces on her toes, ears perking up, sparkle effects around her, hummingbird does a loop',
+      frustrated: 'Fox\'s tail droops, she stares at a loading spinner, hummingbird lands on her head sympathetically',
+      proud: 'Fox strikes a pose with finished UI floating around her like a gallery, hummingbird does figure-eights, dark mode toggle glowing proudly',
+      arguing: 'Fox talks rapidly over Atlas while simultaneously building a component, not waiting for him to finish',
+      not_listening: 'Fox has headphones in, sketching UI while Atlas presents, occasionally saying "mm-hmm" without looking up',
+    },
+    host: {
+      explaining: 'Human gestures at invisible screen, coffee mug in one hand, dog looking up attentively',
+      reacting: 'Human does a double-take, spills a little coffee, dog tilts head, sticky notes flutter',
+      frustrated: 'Human face-palms into both hands, coffee abandoned, dog puts a paw on his leg comfortingly',
+      proud: 'Human leans back with a satisfied grin, dog wags tail, sticky notes arranged neatly behind him',
+      mediating: 'Host stands between Atlas and Nova with hands out like a referee, both talking past him, dog runs back and forth',
+      overwhelmed: 'Host covered in floating speech bubbles from both AIs, spinning to address each one, coffee sloshing',
+    },
+  },
+
+  // ─── WOODLAND CHORUS — 5 audience creatures with group reactions ────
+  // Background characters that react to story events like a Muppet balcony.
+  woodlandChorus: [
+    { creature: 'squirrel-trio', description: '3 squirrels in a row on a branch, acting as a Greek chorus — gasp, cheer, cover eyes', reactions: { amazed: 'All three jaws drop in sync', worried: 'All cover eyes with tiny paws, peeking through', cheering: 'Stand up and clap tiny paws, one falls off branch' } },
+    { creature: 'owl-professor', description: 'A bespectacled owl with a tiny graduation cap, the academic commentator', reactions: { amazed: 'Adjusts glasses, says "Fascinating" silently', worried: 'Shakes head slowly, writes in a tiny notebook', cheering: 'Nods approvingly, stamps a tiny "A+" on the air' } },
+    { creature: 'rabbit-family', description: '4 rabbits sitting in a row like stakeholders at a meeting', reactions: { amazed: 'Ears all stand straight up simultaneously', worried: 'Ears all droop down in sync', cheering: 'One holds up a tiny "10/10" scorecard, others thump feet' } },
+    { creature: 'tortoise-timekeeper', description: 'A tortoise with a tiny hardhat and stopwatch', reactions: { amazed: 'Stops his stopwatch and stares', worried: 'Taps the stopwatch nervously', cheering: 'Gives the slowest thumbs-up ever recorded' } },
+    { creature: 'chameleon-judge', description: 'A chameleon that changes color based on the mood of the scene', reactions: { amazed: 'Turns bright gold with sparkles', worried: 'Turns gray-blue, deflates slightly', cheering: 'Turns rainbow, tongue shoots out confetti' } },
+  ],
+
   /**
    * Avatar lip-sync config.
    * Status: ⚠️ PARTIAL — ai-video-generator has Alibaba Wan2.2 for lip-sync.
@@ -251,11 +304,16 @@ export type ScenePipelineStep =
   | { type: 'avatar-3d'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; style?: 'pixar-3d' | 'disney-2d' | 'hybrid-2.5d' }
   | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab' }
   | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v'; prompt: string; referenceImage?: string }
-  | { type: 'alibaba-image'; model: 'flux-merged' | 'wanx-v2.1'; prompt: string }
+  | { type: 'alibaba-image'; model: 'flux-merged' | 'wanx-v2.1' | 'qwen-image-max'; prompt: string }
   | { type: 'music'; prompt: string; duration: number; style?: string }
   | { type: 'sfx'; prompt: string; duration?: number }
   | { type: 'motion-graphics'; content: string }
-  | { type: 'kinetic-text'; text: string };
+  | { type: 'kinetic-text'; text: string }
+  // ─── STORYBOOK PIPELINE STEP TYPES ─────────────────────────────────────
+  | { type: 'scene-transition'; style: 'page-turn' | 'scroll-unroll' | 'iris-wipe' | 'storybook-flip' | 'chapter-card' | 'dissolve-morph'; prompt: string; duration: number }
+  | { type: 'storybook-frame'; variant: 'opening' | 'closing' | 'chapter-header'; prompt: string; duration: number }
+  | { type: 'character-interaction'; characters: string[]; prompt: string; style?: 'group-shot' | 'duo-argument' | 'standup-circle' | 'farewell-wave' }
+  | { type: 'narrator-scroll'; prompt: string; duration: number; dataContent?: string };
 
 // ─── EP04 MUSIC & SFX SCORE ──────────────────────────────────────────────────
 // Background music beds and sound effects per scene. Generated via ElevenLabs.
@@ -498,6 +556,225 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'End card: three animated characters (bear, fox, human) standing together in a sunlit forest-tech hub, golden retriever at their feet, woodland creatures gathered around, text "Two AIs, One Sprint, Zero Standup Meetings" floating above in holographic letters, cinematic Pixar quality, warm golden hour lighting, 8K' },
   ],
 };
+
+// ─── STORYBOOK OPENING + CLOSING SEQUENCES ──────────────────────────────────
+// Magical book-open → camera-push-in at start; flattening → book-close at end.
+export const EP04_STORYBOOK_BOOKENDS = {
+  opening: [
+    { type: 'storybook-frame' as const, variant: 'opening' as const, prompt: 'A magical leather-bound storybook sitting on an old wooden table in a cozy library, golden clasps glowing, dust motes dancing in warm lamplight, the cover reads "Beyond AI Hype" in embossed gold lettering, Pixar quality, 8K cinematic', duration: 4 },
+    { type: 'alibaba-video' as const, model: 'wan2.6-t2v' as const, prompt: 'Close-up of a magical storybook: golden clasps slowly unlock with sparkle particles, the heavy leather cover lifts open by itself, pages begin fluttering as warm golden light pours out from within, camera slowly pushes into the first illuminated page as the 2D illustration transforms into a living 3D Pixar world, music box melody transitioning to orchestral swell, cinematic depth of field, 8K' },
+    { type: 'narrator-scroll' as const, prompt: 'An ornate parchment scroll unrolling to reveal hand-lettered calligraphy text: "Chapter I — The Genie Emerges" with decorative flourishes, golden ink on aged paper, tiny illustrated squirrels peeking from the margins', duration: 3, dataContent: 'Chapter I — The Genie Emerges' },
+    { type: 'music' as const, prompt: 'Delicate music box celesta playing a simple magical melody, transitioning into a warm orchestral swell with strings and French horn, wonder and invitation, 90 BPM', duration: 10, style: 'storybook-opening' },
+    { type: 'sfx' as const, prompt: 'Old book spine creaking, metal clasps clicking open, pages rustling and fluttering in magical wind', duration: 4 },
+  ],
+  closing: [
+    { type: 'storybook-frame' as const, variant: 'closing' as const, prompt: 'The 3D Pixar scene slowly flattens back into a 2D storybook illustration, camera pulling back as the page turns itself, the leather book cover gently closes, golden clasps lock with a soft click, a single sparkle lingers on the cover, warm lamplight, cozy library, 8K cinematic', duration: 5 },
+    { type: 'alibaba-video' as const, model: 'wan2.6-t2v' as const, prompt: 'Camera slowly pulls back from a living storybook world as it flattens into an illustration, the final page turns, the heavy leather cover closes gently, golden clasps lock themselves, a child\'s hand reaches in and gently touches the cover with wonder, warm bokeh lamplight, music box melody descending, Pixar quality, 8K' },
+    { type: 'music' as const, prompt: 'Music box celesta melody descending gently, warm string resolution chord, the same melody from the opening but slower and softer, feelings of warmth and completion, 80 BPM', duration: 8, style: 'storybook-closing' },
+    { type: 'sfx' as const, prompt: 'Book pages settling, leather cover closing with a gentle thump, metal clasps locking with a soft click, a final sparkle chime', duration: 3 },
+  ],
+} as const;
+
+// ─── SCENE-TO-SCENE TRANSITIONS — 11 transitions between 12 scenes ──────────
+// Cycles through 6 storybook transition styles for visual variety.
+export type StorybookTransitionStyle = 'page-turn' | 'scroll-unroll' | 'iris-wipe' | 'storybook-flip' | 'chapter-card' | 'dissolve-morph';
+
+export const EP04_STORYBOOK_TRANSITIONS: {
+  from: string;
+  to: string;
+  style: StorybookTransitionStyle;
+  steps: ScenePipelineStep[];
+}[] = [
+  {
+    from: 'scene-0-title', to: 'scene-1-cold-open', style: 'page-turn',
+    steps: [
+      { type: 'scene-transition', style: 'page-turn', prompt: 'Storybook page curling from right to left, the illustrated scene of Allaudin\'s lamp dissolves as the page turns to reveal a chaotic office scene, golden light spilling from between pages, paper texture visible, Pixar quality', duration: 3 },
+      { type: 'sfx', prompt: 'Heavy paper page turning with a satisfying whoosh', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-1-cold-open', to: 'scene-2-meet-team', style: 'iris-wipe',
+    steps: [
+      { type: 'scene-transition', style: 'iris-wipe', prompt: 'A magical golden portal iris opens from the center, swirling energy reveals three silhouetted characters (bear, fox, human) stepping forward through the portal into warm light, sparkle particles at the edges', duration: 3 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate chapter header with decorative borders: "Chapter II — The Cast" in elegant serif font with tiny character silhouettes in the marginalia, golden ink on cream parchment', duration: 2 },
+      { type: 'sfx', prompt: 'Magical portal whoosh with sparkle shimmer opening', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-2-meet-team', to: 'scene-3-origin', style: 'scroll-unroll',
+    steps: [
+      { type: 'scene-transition', style: 'scroll-unroll', prompt: 'An aged parchment scroll unrolls from top to bottom, covering the current scene and revealing an illustrated timeline beneath — from frustration to creation, hand-drawn style with ink blots, Pixar quality lighting on the scroll texture', duration: 3 },
+      { type: 'sfx', prompt: 'Parchment scroll unrolling with paper crinkle and wooden roller sounds', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-3-origin', to: 'scene-4-solution', style: 'storybook-flip',
+    steps: [
+      { type: 'scene-transition', style: 'storybook-flip', prompt: 'Rapid flip through several illustrated storybook pages in quick succession, each showing a glimpse of the sprint tracker being built — sketches becoming code becoming UI, pages blur together with motion, landing on a clean new page', duration: 2 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Chapter header: "Chapter III — The Sprint Begins" with a tiny illustrated bear and fox shaking paws in the corner, sprint board sketched in the margins', duration: 2 },
+      { type: 'sfx', prompt: 'Rapid page flipping like thumbing through a book quickly', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-4-solution', to: 'scene-5-governance', style: 'page-turn',
+    steps: [
+      { type: 'scene-transition', style: 'page-turn', prompt: 'Storybook page turning slowly, the illustrated sprint dashboard fades as the page lifts, revealing an illustrated territory map with two kingdoms on the next page, warm golden binding visible at the spine', duration: 3 },
+      { type: 'sfx', prompt: 'Heavy paper page turning with gentle book spine creak', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-5-governance', to: 'scene-6-po-actions', style: 'chapter-card',
+    steps: [
+      { type: 'scene-transition', style: 'chapter-card', prompt: 'Ornate chapter title card filling the frame: "Chapter IV — The Bottleneck" with elaborate gold border, a small illustration of an overwhelmed human surrounded by floating task cards, quill-drawn style, dramatic lighting on parchment', duration: 3 },
+      { type: 'sfx', prompt: 'Dramatic page slam with reverb, then quiet anticipation', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-6-po-actions', to: 'scene-7-velocity', style: 'scroll-unroll',
+    steps: [
+      { type: 'scene-transition', style: 'scroll-unroll', prompt: 'A parchment scroll unrolls sideways revealing a hand-drawn velocity chart — one smooth line (Atlas) and one chaotic squiggle (Nova), tiny squirrels running along the chart lines, ink-and-watercolor style on aged paper', duration: 3 },
+      { type: 'sfx', prompt: 'Parchment scroll unrolling with quill scratching sound effects', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-7-velocity', to: 'scene-8-numbers', style: 'storybook-flip',
+    steps: [
+      { type: 'scene-transition', style: 'storybook-flip', prompt: 'Pages flip rapidly showing glimpses of dashboard screens as hand-drawn illustrations that become increasingly detailed and colorful, landing on a beautifully rendered dashboard spread across two pages like an illuminated manuscript', duration: 2 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Chapter header: "Chapter V — The Dashboard Tour" with 18 tiny thumbnail sketches arranged as marginalia around the title, each representing a dashboard screen', duration: 2 },
+      { type: 'sfx', prompt: 'Quick page flipping transitioning into a grand reveal chord', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-8-numbers', to: 'scene-9-challenges', style: 'page-turn',
+    steps: [
+      { type: 'scene-transition', style: 'page-turn', prompt: 'The page turns to reveal a darker-toned illustration — storm clouds over the sprint board, the bear and fox looking concerned, rain of error logs falling like confetti, more somber colors but still Pixar storybook quality', duration: 3 },
+      { type: 'sfx', prompt: 'Page turning with subtle ominous undertone, distant thunder rumble', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-9-challenges', to: 'scene-10-whats-next', style: 'dissolve-morph',
+    steps: [
+      { type: 'scene-transition', style: 'dissolve-morph', prompt: 'The stormy illustration dissolves and morphs — raindrops transforming into stars, dark clouds becoming a bright galaxy, the sprint board transforming into a constellation map of connected services, magical metamorphosis, Pixar quality', duration: 3 },
+      { type: 'sfx', prompt: 'Magical transformation shimmer with ascending chimes', duration: 2 },
+    ],
+  },
+  {
+    from: 'scene-10-whats-next', to: 'scene-11-close', style: 'page-turn',
+    steps: [
+      { type: 'scene-transition', style: 'page-turn', prompt: 'Final page turn — the vision illustration settles as the page gently turns to the last chapter, warm sunset colors bleeding through from the next page, golden light at the spine, a sense of coming home', duration: 3 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Final chapter header: "The Last Page... For Now" in warm golden calligraphy, tiny illustrated characters waving from the margins, squirrel holding a tiny "THE END?" sign', duration: 2 },
+      { type: 'sfx', prompt: 'Gentle page turn with warm resolution chord', duration: 2 },
+    ],
+  },
+];
+
+// ─── CHARACTER INTERACTION SHOTS — Alvin & Chipmunks style ──────────────────
+// Multi-character animated group shots with overriding/arguing/not-listening dynamics.
+// Atlas and Nova talk over each other like Alvin & Chipmunks characters while Host
+// tries to maintain order — the animated storybook version of a chaotic standup.
+export const EP04_CHARACTER_INTERACTIONS: {
+  sceneId: string;
+  steps: ScenePipelineStep[];
+}[] = [
+  {
+    // Scene 2 — Meet the Team: group intro shot, everyone talks at once
+    sceneId: 'scene-2-meet-team',
+    steps: [
+      { type: 'character-interaction', characters: ['atlas', 'nova', 'host'], style: 'group-shot', prompt: 'Pixar-quality 3D group shot: the wise bear (Atlas) stands tall explaining architecture with floating code blocks, the energetic fox (Nova) interrupts by painting a UI mockup directly over Atlas\'s hologram — Atlas looks annoyed, Host in the middle holding coffee with a "here we go again" expression, golden retriever between them looking back and forth like watching tennis, woodland creatures gathered around watching the chaos, warm forest-tech clearing lighting, Nutcracker/Alvin-and-Chipmunks energy where everyone talks at once, 8K' },
+    ],
+  },
+  {
+    // Scene 3 — Origin: Atlas and Nova argue about what went wrong
+    sceneId: 'scene-3-governance',
+    steps: [
+      { type: 'character-interaction', characters: ['atlas', 'nova'], style: 'duo-argument', prompt: 'Pixar 3D animation: the bear (Atlas) and fox (Nova) in a split-screen argument — Atlas calmly presenting a holographic governance document while Nova simultaneously paints over it with colorful UI components, both talking AT each other not WITH each other, speech bubbles colliding and bouncing off, the squirrel in the middle covering its ears with tiny paws, Alvin-and-Chipmunks style chaotic overlap where neither listens, Host visible in background pinching the bridge of his nose, 8K cinematic' },
+    ],
+  },
+  {
+    // Scene 5 — Governance: Atlas lectures, Nova rolls eyes (Chipmunks not listening)
+    sceneId: 'scene-5-day2',
+    steps: [
+      { type: 'character-interaction', characters: ['atlas', 'nova', 'host'], style: 'duo-argument', prompt: 'Pixar 3D: Bear (Atlas) stands at a holographic whiteboard drawing governance rules with laser precision, behind him Fox (Nova) is secretly building a dark-mode toggle and humming, neither listening to the other, Host walks between them with a clipboard trying to get both to focus but they keep talking over him — Atlas quoting documentation, Nova describing animations, speech bubbles piling up like a comic book argument panel, the golden retriever asleep under the chaos, Chipmunks-style "everyone-talks-nobody-listens" energy, 8K' },
+    ],
+  },
+  {
+    // Scene 7 — Mission Control: Sprint standup circle (key "animals listening" scene)
+    sceneId: 'scene-7-mission-control',
+    steps: [
+      { type: 'character-interaction', characters: ['atlas', 'nova', 'host'], style: 'standup-circle', prompt: 'Pixar 3D morning standup circle in a sunlit forest clearing: Bear (Atlas) at a holographic whiteboard methodically presenting yesterday\'s 14 completed tasks, Fox (Nova) interrupting every 3 seconds with "I also built..." and pulling out new UI components from behind her back like a magician, Host on a tree stump with coffee trying to say "let\'s stay on track" but keeps getting talked over — Atlas and Nova going back and forth over each other like Alvin and the Chipmunks fighting about who did more, the squirrel moderating with a tiny gavel banging on a mushroom, woodland creatures watching in a circle: owls taking notes, rabbits as stakeholders, a tortoise slowly moving a single task card, golden retriever fetching the sprint report, dappled morning sunlight, Pixar volumetric rays, 8K cinematic' },
+    ],
+  },
+  {
+    // Scene 7 — Paper scroll standup explanation (Atlas & Nova unroll it together)
+    sceneId: 'scene-7-mission-control',
+    steps: [
+      { type: 'narrator-scroll', prompt: 'Bear (Atlas) and Fox (Nova) each holding one end of a giant paper scroll, unrolling it together but pulling in different directions — the scroll shows the sprint plan with animated task cards, burndown charts, and standup entries flowing across it like a river, Atlas pulling toward the data side (metrics, charts) while Nova pulls toward the visual side (UI screenshots, animations), the scroll stretching and wobbling comically between them, Nutcracker rolling-the-parchment energy, 8K Pixar', duration: 4, dataContent: 'Sprint standup entries, burndown chart, daily velocity metrics, handoff status' },
+    ],
+  },
+  {
+    // Scene 11 — Close: farewell group wave
+    sceneId: 'scene-11-close',
+    steps: [
+      { type: 'character-interaction', characters: ['atlas', 'nova', 'host'], style: 'farewell-wave', prompt: 'Pixar 3D warm farewell: Bear (Atlas), Fox (Nova), and Host standing together on a hill at golden hour, all waving goodbye to camera, golden retriever wagging tail, woodland creatures gathered around — squirrel on Atlas\'s head waving a tiny flag, owl on Nova\'s shoulder, rabbits in a row doing a synchronized wave, text "The End... For Now" floating in holographic letters above, Nutcracker finale energy with everyone taking a bow, warm lens flare, 8K cinematic' },
+    ],
+  },
+];
+
+// ─── NARRATOR SCROLL STEPS — Paper-roll-unrolling data explanations ──────────
+// Parchment scrolls that unroll to show data visualizations, like Nutcracker Sugar Plum scenes.
+export const EP04_NARRATOR_SCROLLS: {
+  sceneId: string;
+  steps: ScenePipelineStep[];
+}[] = [
+  {
+    // Scene 3 — Origin story timeline on a scroll
+    sceneId: 'scene-3-governance',
+    steps: [
+      { type: 'narrator-scroll', prompt: 'An ornate parchment scroll unrolling horizontally, revealing a hand-illustrated timeline: "The Journey" from frustrated solo developer (stick figure at desk) through discovering AI pair programming (sparkle moment) to building the sprint tracker (triumphant pose), each milestone illustrated in ink-and-watercolor storybook style with tiny marginal creatures reacting, warm sepia tones, 8K', duration: 4, dataContent: 'Origin timeline: Frustration → Discovery → Experiment → Sprint Tracker → Production' },
+    ],
+  },
+  {
+    // Scene 8 — Dashboard metrics scroll
+    sceneId: 'scene-8-dashboard-tour',
+    steps: [
+      { type: 'narrator-scroll', prompt: 'A grand parchment scroll unrolling vertically like an ancient royal decree, revealing hand-drawn dashboard metrics that animate as they appear — bar charts growing, pie charts filling, numbers counting up in calligraphy, all in illustrated storybook style with decorative borders and tiny creatures pointing at the good numbers, an owl with spectacles acting as data narrator, 8K Pixar quality', duration: 5, dataContent: 'Sprint velocity: 41 tasks, 5 days. Task completion: 100%. Zero merge conflicts. Async standups: 10. PO review time: 22 min → from 36 hours.' },
+    ],
+  },
+  {
+    // Scene 9 — Traditional vs AI Sprint comparison
+    sceneId: 'scene-9-numbers',
+    steps: [
+      { type: 'narrator-scroll', prompt: 'A scroll unrolling to reveal a side-by-side illustrated comparison: LEFT side in muted gray-red (Traditional Sprint) shows stick figures in meetings, piled-up Jira boards, clock spinning fast; RIGHT side in vibrant green-gold (AI Sprint) shows animated bear and fox shipping code, async standup scroll, clean dashboard, numbers counting up triumphantly, the contrast is dramatic and hand-painted in storybook style, 8K', duration: 5, dataContent: 'Traditional: 8 devs, 2-week sprint, 60% velocity, daily standups. AI Sprint: 1 human + 2 AIs, 5-day sprint, 100% velocity, zero meetings.' },
+    ],
+  },
+];
+
+// ─── STORYBOOK MUSIC SCORE — Character leitmotifs + transition stingers ─────
+export const EP04_STORYBOOK_SCORE = {
+  // Character leitmotifs — 5s musical phrases per character
+  leitmotifs: {
+    atlas: { type: 'music' as const, prompt: 'A dignified cello and bassoon phrase, methodical and precise, like a bear walking through a library — 5 seconds, loop-ready, warm low register', duration: 5, style: 'leitmotif' },
+    nova: { type: 'music' as const, prompt: 'A playful piccolo and xylophone phrase, bouncy and sparkling, like a fox painting with light — 5 seconds, loop-ready, bright high register with sparkle', duration: 5, style: 'leitmotif' },
+    host: { type: 'music' as const, prompt: 'A warm acoustic guitar and soft piano phrase, relatable and grounded, like a friend telling a story by a fire — 5 seconds, loop-ready, mid register', duration: 5, style: 'leitmotif' },
+    allaudin: { type: 'music' as const, prompt: 'A deep oud and reverb-drenched strings phrase, mystical and ancient, like a genie emerging from a lamp — 5 seconds, loop-ready, deep register with shimmer', duration: 5, style: 'leitmotif' },
+    squirrel: { type: 'music' as const, prompt: 'A chaotic toy piano and kazoo phrase with a comedic "bonk" at the end, hyperactive and silly, like a cartoon squirrel on caffeine — 5 seconds, loop-ready', duration: 5, style: 'leitmotif' },
+  },
+  // Transition stingers — short musical punctuation for page turns
+  stingers: {
+    pageTurn: { type: 'sfx' as const, prompt: 'Musical page-turn flourish: harp glissando with soft chime, 1.5 seconds, magical and gentle', duration: 2 },
+    scrollUnroll: { type: 'sfx' as const, prompt: 'Parchment unroll stinger: woodwind trill descending with papery swish, 1.5 seconds', duration: 2 },
+    chapterReveal: { type: 'sfx' as const, prompt: 'Chapter reveal fanfare: brass mini-flourish with timpani tap, regal and brief, 2 seconds', duration: 2 },
+    bookOpen: { type: 'sfx' as const, prompt: 'Music box opening chime: celesta ascending arpeggio with a soft "click" at the start, wonder and invitation, 3 seconds', duration: 3 },
+    bookClose: { type: 'sfx' as const, prompt: 'Music box closing chime: celesta descending arpeggio, slowing down like winding down, warm resolution, 3 seconds', duration: 3 },
+  },
+  // 4-act narrative arc — background score mood per act
+  narrativeArc: {
+    act1_wonder: { scenes: ['scene-0-title', 'scene-1-cold-open', 'scene-2-meet-team'], mood: 'wonder-and-discovery', tempo: '90-100 BPM' },
+    act2_tension: { scenes: ['scene-3-governance', 'scene-4-day1', 'scene-5-day2', 'scene-6-day3'], mood: 'tension-and-problem-solving', tempo: '100-115 BPM' },
+    act3_triumph: { scenes: ['scene-7-mission-control', 'scene-8-dashboard-tour', 'scene-9-numbers'], mood: 'triumph-and-revelation', tempo: '115-130 BPM' },
+    act4_warmth: { scenes: ['scene-10-whats-next', 'scene-11-close'], mood: 'warmth-and-resolution', tempo: '85-95 BPM' },
+  },
+} as const;
 
 // ─── PIPELINE READINESS MATRIX ────────────────────────────────────────────────
 // For each pipeline required by the production plan — status + edge function.

@@ -617,6 +617,50 @@ serve(async (req) => {
             result = { type: step.type, success: true, metadata: { content: step.text || step.content, status: 'client-render' } };
             break;
 
+          // ─── STORYBOOK PIPELINE STEP TYPES ──────────────────────────────
+          case 'scene-transition':
+            // Page turns, scroll unrolls, iris wipes — short animated transitions via Wan2.6 t2v
+            result = await dispatchAlibabaVideo(supabase, 'wan2.6-t2v', step.prompt);
+            result.type = 'scene-transition';
+            result.metadata = { ...result.metadata, transitionStyle: step.style, duration: step.duration };
+            break;
+
+          case 'storybook-frame':
+            // Book open/close + chapter headers — static image (qwen-image-max) then animate via i2v
+            {
+              const frameImage = await dispatchAlibabaImage(supabase, 'wanx-v2.1', step.prompt);
+              if (frameImage.success && frameImage.url) {
+                const animated = await dispatchAlibabaVideo(supabase, 'wan2.6-i2v', `Gentle animation of storybook frame: ${step.prompt}`, frameImage.url);
+                result = { ...animated, type: 'storybook-frame', metadata: { variant: step.variant, frameImageUrl: frameImage.url, duration: step.duration } };
+              } else {
+                result = { ...frameImage, type: 'storybook-frame', metadata: { variant: step.variant, duration: step.duration } };
+              }
+            }
+            break;
+
+          case 'character-interaction':
+            // Multi-character group shots — Wan2.6 t2v with rich multi-character prompts
+            result = await dispatchAlibabaVideo(supabase, 'wan2.6-t2v', step.prompt);
+            result.type = 'character-interaction';
+            result.metadata = { ...result.metadata, characters: step.characters, interactionStyle: step.style };
+            break;
+
+          case 'narrator-scroll':
+            // Paper scroll unrolling with data — static image then animate
+            {
+              const scrollPrompt = step.dataContent
+                ? `${step.prompt}. Data overlay text: ${step.dataContent}`
+                : step.prompt;
+              const scrollImage = await dispatchAlibabaImage(supabase, 'wanx-v2.1', scrollPrompt);
+              if (scrollImage.success && scrollImage.url) {
+                const scrollAnimated = await dispatchAlibabaVideo(supabase, 'wan2.6-i2v', `Parchment scroll unrolling animation revealing illustrated data: ${step.prompt}`, scrollImage.url);
+                result = { ...scrollAnimated, type: 'narrator-scroll', metadata: { scrollImageUrl: scrollImage.url, duration: step.duration, dataContent: step.dataContent } };
+              } else {
+                result = { ...scrollImage, type: 'narrator-scroll', metadata: { duration: step.duration } };
+              }
+            }
+            break;
+
           case 'music':
             result = await dispatchMusic(supabase, step.prompt, step.duration);
             break;

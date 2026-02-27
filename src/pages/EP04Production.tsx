@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { EP04_SCRIPT_CONTENT, type ScriptLine } from '@/config/ep04-script-content';
-import { EP04_VOICES } from '@/config/ep04-production-config';
+import { EP04_SCRIPT_CONTENT, EP04_NARRATOR_BRIDGES, type ScriptLine } from '@/config/ep04-script-content';
+import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS } from '@/config/ep04-production-config';
 import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
 import { cn } from '@/lib/utils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -252,6 +252,46 @@ const SCENE_TITLES: Record<string, string> = {
   'scene-9-challenges': 'Scene 9 — Honest Challenges',
   'scene-10-whats-next': 'Scene 10 — What\'s Next',
   'scene-11-close': 'Scene 11 — Close & CTA',
+};
+
+// ─── STORYBOOK CHAPTER MAPPING — chapter number per scene ─────────────────
+const SCENE_CHAPTERS: Record<string, { chapter: string; subtitle: string }> = {
+  'scene-0-title': { chapter: 'Chapter I', subtitle: 'The Genie Emerges' },
+  'scene-1-problem': { chapter: 'Chapter I', subtitle: 'The Problem' },
+  'scene-2-introductions': { chapter: 'Chapter II', subtitle: 'The Cast' },
+  'scene-3-origin': { chapter: 'Chapter II', subtitle: 'Origins' },
+  'scene-4-solution': { chapter: 'Chapter III', subtitle: 'The Sprint Begins' },
+  'scene-5-governance': { chapter: 'Chapter III', subtitle: 'Governance' },
+  'scene-6-po-actions': { chapter: 'Chapter IV', subtitle: 'The Bottleneck' },
+  'scene-7-velocity': { chapter: 'Chapter IV', subtitle: 'Velocity' },
+  'scene-8-numbers': { chapter: 'Chapter V', subtitle: 'The Dashboard Tour' },
+  'scene-9-challenges': { chapter: 'Chapter V', subtitle: 'Storms' },
+  'scene-10-whats-next': { chapter: 'Chapter VI', subtitle: 'Stars' },
+  'scene-11-close': { chapter: 'The Last Page', subtitle: 'For Now' },
+};
+
+// ─── TRANSITION TYPE BADGES — which storybook transition precedes this scene ─
+const SCENE_TRANSITION_TYPES: Record<string, string> = {};
+EP04_STORYBOOK_TRANSITIONS.forEach(t => {
+  SCENE_TRANSITION_TYPES[t.to] = t.style;
+});
+
+const TRANSITION_LABELS: Record<string, string> = {
+  'page-turn': 'Page Turn',
+  'scroll-unroll': 'Scroll Unroll',
+  'iris-wipe': 'Iris Wipe',
+  'storybook-flip': 'Storybook Flip',
+  'chapter-card': 'Chapter Card',
+  'dissolve-morph': 'Dissolve Morph',
+};
+
+const TRANSITION_COLORS: Record<string, string> = {
+  'page-turn': 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+  'scroll-unroll': 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+  'iris-wipe': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  'storybook-flip': 'bg-pink-500/20 text-pink-300 border-pink-500/30',
+  'chapter-card': 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+  'dissolve-morph': 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
 };
 
 const SCENE_STYLES: Record<string, string> = {
@@ -959,6 +999,12 @@ export default function EP04Production() {
                         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
                         <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
                           <div>
+                            {/* Storybook chapter header */}
+                            {SCENE_CHAPTERS[sceneId] && (
+                              <p className="text-[10px] font-semibold text-amber-400/80 uppercase tracking-[0.3em] mb-0.5 drop-shadow-lg">
+                                {SCENE_CHAPTERS[sceneId].chapter} — {SCENE_CHAPTERS[sceneId].subtitle}
+                              </p>
+                            )}
                             <h2 className="text-lg font-bold text-foreground drop-shadow-lg">
                               {SCENE_TITLES[sceneId] || sceneId.replace(/-/g, ' ')}
                             </h2>
@@ -966,6 +1012,12 @@ export default function EP04Production() {
                               <p className="text-xs text-muted-foreground">
                                 {keys.length} line{keys.length !== 1 ? 's' : ''} · Art Style: {SCENE_STYLES[sceneId] || 'Mixed'}
                               </p>
+                              {/* Storybook transition type badge */}
+                              {SCENE_TRANSITION_TYPES[sceneId] && (
+                                <Badge variant="outline" className={cn('text-[10px]', TRANSITION_COLORS[SCENE_TRANSITION_TYPES[sceneId]] || '')}>
+                                  {TRANSITION_LABELS[SCENE_TRANSITION_TYPES[sceneId]] || SCENE_TRANSITION_TYPES[sceneId]}
+                                </Badge>
+                              )}
                               {styleConfig && (
                                 <Badge variant="outline" className={cn('text-xs', styleConfig.color)}>
                                   {styleConfig.icon} {styleConfig.label}

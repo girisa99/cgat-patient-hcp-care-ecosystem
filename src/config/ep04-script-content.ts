@@ -1444,6 +1444,135 @@ I'm Sai Dasika. This has been The Genie AI Podcast — Episode 2, with Allaudin.
   },
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// STORYBOOK NARRATOR BRIDGES — 11 Allaudin transition lines
+// Short, magical narration connecting each scene transition.
+// Spoken over the storybook page-turn/scroll-unroll animations.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const EP04_NARRATOR_BRIDGES: Record<string, ScriptLine> = {
+  'bridge-0-to-1': {
+    text: `And so our tale begins, dear listener. A story of ambition, code, and a very tired human with a very large coffee mug. Turn the page...`,
+    voice: 'allaudin',
+    scene: 'transition-0-to-1',
+    duration_est: 7,
+    direction: 'Warm, inviting, storybook narrator. Like the opening of a Nutcracker narration — the voice of a wise storyteller settling in. Magical reverb.',
+    lipsync: true,
+    sfx: ['page_turn_magical'],
+    motion: 'narrator-gestures-page-turn',
+  },
+  'bridge-1-to-2': {
+    text: `Now let us meet the heroes. A bear who codes. A fox who creates. And a human who drinks far too much coffee. Hahaha...`,
+    voice: 'allaudin',
+    scene: 'transition-1-to-2',
+    duration_est: 7,
+    direction: 'Playful introduction, like a ringmaster introducing circus acts. The laugh is genuine, grandfatherly. Portal iris opens during this line.',
+    lipsync: true,
+    sfx: ['magical_portal_iris', 'character_intro_chime'],
+    motion: 'narrator-grand-gesture-introducing',
+  },
+  'bridge-2-to-3': {
+    text: `But where did it all start? Let us turn back the pages... to a time of frustration, of meetings that never end, and Jira boards no one updates.`,
+    voice: 'allaudin',
+    scene: 'transition-2-to-3',
+    duration_est: 8,
+    direction: 'Reflective, slightly dramatic. The scroll unrolls during this line. "Jira boards no one updates" delivered with knowing amusement.',
+    lipsync: true,
+    sfx: ['scroll_unroll_parchment'],
+    motion: 'narrator-reflective-looking-back',
+  },
+  'bridge-3-to-4': {
+    text: `The first dawn of the sprint brought great ambition. Forty-one tasks. Five days. Two AIs who never sleep. And one human who probably should.`,
+    voice: 'allaudin',
+    scene: 'transition-3-to-4',
+    duration_est: 7,
+    direction: 'Rising energy, adventure beginning. Pages flip rapidly during this line. "Who probably should" is delivered with affectionate concern.',
+    lipsync: true,
+    sfx: ['rapid_page_flip', 'dawn_orchestral_swell'],
+    motion: 'narrator-rising-energy-gesture',
+  },
+  'bridge-4-to-5': {
+    text: `With great power comes great... governance. Rules were needed. Boundaries drawn. And a squirrel — well, the squirrel had opinions about boundaries.`,
+    voice: 'allaudin',
+    scene: 'transition-4-to-5',
+    duration_est: 7,
+    direction: 'Wise then amused. The pause after "great..." builds expectation. "The squirrel had opinions" breaks the tension. Page turns gently.',
+    lipsync: true,
+    sfx: ['page_turn_gentle', 'squirrel_chittering_distant'],
+    motion: 'narrator-wise-pause-then-amused',
+  },
+  'bridge-5-to-6': {
+    text: `Ah, but every story has its moment of crisis. When the one who leads... becomes the one who is led. The bottleneck chapter, dear listener. Hold your coffee tight.`,
+    voice: 'allaudin',
+    scene: 'transition-5-to-6',
+    duration_est: 8,
+    direction: 'Dramatic shift, preparing the audience for the emotional moment. "Hold your coffee tight" is a warm warning. Chapter card appears dramatically.',
+    lipsync: true,
+    sfx: ['dramatic_chapter_slam', 'tension_building_strings'],
+    motion: 'narrator-dramatic-warning',
+  },
+  'bridge-6-to-7': {
+    text: `And then came the velocity. One bear, steady as stone. One fox, fast as lightning. And a chart that looked like... well, you shall see for yourself.`,
+    voice: 'allaudin',
+    scene: 'transition-6-to-7',
+    duration_est: 7,
+    direction: 'Building anticipation with humor. "Steady as stone" and "fast as lightning" are delivered with contrasting energy. The scroll unrolls.',
+    lipsync: true,
+    sfx: ['scroll_unroll_velocity'],
+    motion: 'narrator-contrasting-gestures',
+  },
+  'bridge-7-to-8': {
+    text: `Numbers, dear listener. The receipts. The proof that magic can be measured, if you build the right dashboard. Observe...`,
+    voice: 'allaudin',
+    scene: 'transition-7-to-8',
+    duration_est: 6,
+    direction: 'Showman energy, pulling back the curtain. "Observe" is delivered with a grand sweeping gesture. Pages flip to the dashboard spread.',
+    lipsync: true,
+    sfx: ['page_flip_to_spread', 'reveal_chime'],
+    motion: 'narrator-grand-reveal-gesture',
+  },
+  'bridge-8-to-9': {
+    text: `But no story worth telling is without its storms. The pages darken here, dear listener. For even genies must face the truth.`,
+    voice: 'allaudin',
+    scene: 'transition-8-to-9',
+    duration_est: 7,
+    direction: 'Sobering, preparing for vulnerability. Voice drops lower. The page turn reveals darker illustrations. "Even genies" is self-referential wisdom.',
+    lipsync: true,
+    sfx: ['page_turn_ominous', 'distant_thunder'],
+    motion: 'narrator-somber-head-bow',
+  },
+  'bridge-9-to-10': {
+    text: `Yet from every storm, a clearing. From every challenge, a constellation. Watch now as the storm dissolves into stars...`,
+    voice: 'allaudin',
+    scene: 'transition-9-to-10',
+    duration_est: 6,
+    direction: 'Hopeful, transformative. The dissolve-morph transition happens during this line — storm becoming stars. Voice rises with wonder.',
+    lipsync: true,
+    sfx: ['magical_transformation_ascend', 'stars_appearing_chime'],
+    motion: 'narrator-hopeful-rising-gesture',
+  },
+  'bridge-10-to-11': {
+    text: `And so the storybook closes. But the story never truly ends. For every sprint ends with a beginning. And every page turn leads to... the next adventure. Hahaha...`,
+    voice: 'allaudin',
+    scene: 'transition-10-to-11',
+    duration_est: 9,
+    direction: 'Warm resolution, full circle. The final page turn during this line. The laugh is the same as the opening — closing the circle. Voice is deeper, warmer, satisfied.',
+    lipsync: true,
+    sfx: ['final_page_turn', 'music_box_winding_down', 'warm_sparkle_settle'],
+    motion: 'narrator-warm-closing-gesture',
+  },
+};
+
+// ─── HELPER: Get all narrator bridge lines ────────────────────────────────────
+export function getNarratorBridgeLines(): ScriptLine[] {
+  return Object.values(EP04_NARRATOR_BRIDGES);
+}
+
+// ─── HELPER: Get total narrator bridge duration ───────────────────────────────
+export function getNarratorBridgeDuration(): number {
+  return getNarratorBridgeLines().reduce((sum, line) => sum + line.duration_est, 0);
+}
+
 // ─── HELPER: Get all script lines for a scene ────────────────────────────────
 export function getSceneScriptLines(sceneId: string): ScriptLine[] {
   return Object.values(EP04_SCRIPT_CONTENT).filter(line => line.scene === sceneId);

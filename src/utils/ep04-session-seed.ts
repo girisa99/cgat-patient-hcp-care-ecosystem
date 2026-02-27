@@ -10,8 +10,8 @@
 
 import type { GenieCastSessionState, SelectedTemplate } from '@/hooks/useGenieCastSession';
 import type { MessagingContent, TemplateMapping, SceneScript } from '@/hooks/useUnifiedAuthoring';
-import { EP04_SCRIPT_CONTENT, type ScriptLine } from '@/config/ep04-script-content';
-import { EP04_SCENE_PIPELINES, EP04_VOICES, EP04_AVATAR_CONFIG, EP04_MUSIC_SCORE, SCRIPT_TO_PIPELINE_MAP } from '@/config/ep04-production-config';
+import { EP04_SCRIPT_CONTENT, EP04_NARRATOR_BRIDGES, type ScriptLine } from '@/config/ep04-script-content';
+import { EP04_SCENE_PIPELINES, EP04_VOICES, EP04_AVATAR_CONFIG, EP04_MUSIC_SCORE, SCRIPT_TO_PIPELINE_MAP, EP04_STORYBOOK_BOOKENDS, EP04_STORYBOOK_TRANSITIONS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, EP04_STORYBOOK_SCORE } from '@/config/ep04-production-config';
 import { batchResolveScreenAssets, type ResolvedScreenAsset } from '@/services/screenAssetResolver';
 import type { PersistedScene, PersistedScriptLine, PersistedCharacter } from '@/hooks/useCastProjectPersistence';
 import type { VoiceConfig } from '@/hooks/useCastProjectData';
@@ -36,6 +36,23 @@ const SCENE_LABELS: Record<string, string> = {
   'scene-9-challenges': 'Honest Challenges — What Broke',
   'scene-10-whats-next': 'MCP Vision & What\'s Next',
   'scene-11-close': 'CTA + Goodbye',
+};
+
+// Storybook scene labels — opening, transitions, closing
+const STORYBOOK_SCENE_LABELS: Record<string, string> = {
+  'storybook-opening': 'Storybook Opening — Book Opens',
+  'transition-0-to-1': 'Page Turn — Title to Cold Open',
+  'transition-1-to-2': 'Iris Wipe — to Meet the Team',
+  'transition-2-to-3': 'Scroll Unroll — to Origin Story',
+  'transition-3-to-4': 'Storybook Flip — to Sprint Begins',
+  'transition-4-to-5': 'Page Turn — to Governance',
+  'transition-5-to-6': 'Chapter Card — The Bottleneck',
+  'transition-6-to-7': 'Scroll Unroll — to Velocity',
+  'transition-7-to-8': 'Storybook Flip — to Dashboard Tour',
+  'transition-8-to-9': 'Page Turn — to Challenges',
+  'transition-9-to-10': 'Dissolve Morph — Storm to Stars',
+  'transition-10-to-11': 'Page Turn — to Closing',
+  'storybook-closing': 'Storybook Closing — Book Closes',
 };
 
 // Pipeline labels (keyed by pipeline scene IDs for backward compat)
@@ -354,9 +371,20 @@ export function getEP04Stats() {
   Object.values(EP04_SCRIPT_CONTENT).forEach(line => {
     if (line.voice in voiceCounts) voiceCounts[line.voice as keyof typeof voiceCounts]++;
   });
+  // Count narrator bridge lines
+  Object.values(EP04_NARRATOR_BRIDGES).forEach(line => {
+    if (line.voice in voiceCounts) voiceCounts[line.voice as keyof typeof voiceCounts]++;
+  });
 
   const pipelineTypes = new Set<string>();
   Object.values(EP04_SCENE_PIPELINES).flat().forEach(step => pipelineTypes.add(step.type));
+
+  // Count storybook elements
+  const narratorBridgeCount = Object.keys(EP04_NARRATOR_BRIDGES).length;
+  const transitionCount = EP04_STORYBOOK_TRANSITIONS.length;
+  const characterInteractionCount = EP04_CHARACTER_INTERACTIONS.length;
+  const narratorScrollCount = EP04_NARRATOR_SCROLLS.length;
+  const narratorBridgeDuration = Object.values(EP04_NARRATOR_BRIDGES).reduce((sum, l) => sum + l.duration_est, 0);
 
   return {
     scenes: SCENE_IDS.length,
@@ -368,6 +396,18 @@ export function getEP04Stats() {
     pipelineSteps: getEP04PipelineStepCount(),
     pipelineTypes: Array.from(pipelineTypes),
     musicScenes: Object.keys(EP04_MUSIC_SCORE).length,
+    // Storybook stats
+    storybook: {
+      narratorBridges: narratorBridgeCount,
+      transitions: transitionCount,
+      characterInteractions: characterInteractionCount,
+      narratorScrolls: narratorScrollCount,
+      bookends: 2, // opening + closing
+      narratorBridgeDuration,
+      leitmotifs: Object.keys(EP04_STORYBOOK_SCORE.leitmotifs).length,
+      transitionStingers: Object.keys(EP04_STORYBOOK_SCORE.stingers).length,
+      woodlandChorusCreatures: EP04_AVATAR_CONFIG.woodlandChorus.length,
+    },
   };
 }
 
