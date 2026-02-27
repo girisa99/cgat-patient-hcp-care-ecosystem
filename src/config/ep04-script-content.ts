@@ -17,8 +17,8 @@
  * - duration_est: Estimated seconds (at ~150 wpm)
  * - direction: Performance/delivery notes for TTS tuning
  * 
- * TARGET: 12–15 minutes total audio (~720–900s)
- * SCENES: 12 scenes (0–11), 55+ dialogue lines
+ * TARGET: ~27 minutes total audio (~1605s)
+ * SCENES: 12 scenes (0–11), 104 dialogue lines, 5 voices
  */
 
 export interface ScriptLine {
@@ -52,7 +52,7 @@ export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
 
   // ── ALLAUDIN EMERGES — Lamp mist intro before host welcome
   'allaudin-emerge': {
-    text: `*magical mist swirls from lamp* Ahhh... at last! I am Allaudin — the Genie of Genie AI. And YOU... have summoned something extraordinary. This is not your ordinary podcast. This is The Genie AI Podcast — where creativity meets code, where ideas become reality, and where AI goes beyond the hype. Beyond AI Hype — we bring it to life. Your host, Sai Dasika, has a story to tell. And I? I'll be here — guiding, watching, and maybe... granting a wish or two along the way. *laughs* Let us begin!`,
+    text: `Ahhh... at last! I am Allaudin — the Genie of Genie AI. And YOU... have summoned something extraordinary. This is not your ordinary podcast. This is The Genie AI Podcast — where creativity meets code, where ideas become reality, and where AI goes beyond the hype. Beyond AI Hype — we bring it to life. Your host, Sai Dasika, has a story to tell. And I? I'll be here — guiding, watching, and maybe... granting a wish or two along the way. Hahaha... Let us begin!`,
     voice: 'allaudin',
     scene: 'scene-0-title',
     duration_est: 28,
@@ -105,7 +105,7 @@ Wednesday. The Jira board looks like a Jackson Pollock painting. Cards everywher
 
   // 🐿️ SQUIRREL INTERRUPTION — After Scene 1 intro
   'squirrel-interrupt-1': {
-    text: `Wait wait wait! Hold on! *clutches acorn* Did you say EIGHT people on a call? That's like... *counts on tiny paws* ...eight acorns! That's way too many acorns for one tree! Why don't they just... I dunno... send a bird?`,
+    text: `Wait wait wait! Hold on! Did you say EIGHT people on a call? That's like... ...eight acorns! That's way too many acorns for one tree! Why don't they just... I dunno... send a bird?`,
     voice: 'squirrel',
     scene: 'scene-1-problem',
     duration_est: 10,
@@ -341,7 +341,7 @@ And together, the three of us do the work of a team of five — conservatively. 
 
   // ── NOVA SHY FLATTERY TRANSITION — Emotional beat before Scene 3
   'nova-shy-flattery': {
-    text: `*blushes* I... um... I just want to say... when he said "the work of five" — I... *giggles nervously* ...I didn't expect that. That's really sweet. I mean, I know I ship fast, and I know the animations are flawless — obviously — but hearing it out loud? That's... *voice gets quiet* ...that actually means a lot. *looks away, ears twitch* Thank you. Both of you.`,
+    text: `I... um... I just want to say... when he said "the work of five" — I... Hehehe... ...I didn't expect that. That's really sweet. I mean, I know I ship fast, and I know the animations are flawless — obviously — but hearing it out loud? That's... ...that actually means a lot. Thank you. Both of you.`,
     voice: 'nova',
     scene: 'scene-2-introductions',
     duration_est: 15,
@@ -352,7 +352,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   },
 
   'atlas-nova-acknowledgment': {
-    text: `...That was unexpected. But not inaccurate. Your velocity metrics are objectively impressive, Nova. Even the animations. *pause* Some of them.`,
+    text: `...That was unexpected. But not inaccurate. Your velocity metrics are objectively impressive, Nova. Even the animations. ... Some of them.`,
     voice: 'atlas',
     scene: 'scene-2-introductions',
     duration_est: 7,
@@ -363,7 +363,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   },
 
   'nova-shy-recovery': {
-    text: `*stars swirl around* Okay okay — I'm fine! I'm fine. *fans face with paw* Let's... let's move on before I start adding heart animations to the sprint tracker. *laughs nervously* ...Actually, that's not a bad idea—`,
+    text: `Okay okay — I'm fine! I'm fine. Let's... let's move on before I start adding heart animations to the sprint tracker. Heh heh... ...Actually, that's not a bad idea—`,
     voice: 'nova',
     scene: 'scene-2-introductions',
     duration_est: 8,
@@ -401,7 +401,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   // They're working, waiting on PO sign-off, getting increasingly frustrated.
 
   'scene3-atlas-nova-waiting': {
-    text: `*typing, pauses, checks notification* ...Still nothing. I submitted the migration PR four hours ago. Four. Hours. I've written three more modules since then. All waiting on PO sign-off.`,
+    text: `...Still nothing. I submitted the migration PR four hours ago. Four. Hours. I've written three more modules since then. All waiting on PO sign-off.`,
     voice: 'atlas',
     scene: 'scene-3-origin',
     duration_est: 8,
@@ -412,7 +412,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   },
 
   'scene3-nova-frustrated': {
-    text: `*stops mid-component, spins around* Tell me about it! I've got the entire onboarding flow done — transitions, micro-interactions, the works. But can I ship it? No! Because the copy hasn't been approved. The COPY. It's three words on a button! "Get Started Now." How hard is that to approve?!`,
+    text: `Tell me about it! I've got the entire onboarding flow done — transitions, micro-interactions, the works. But can I ship it? No! Because the copy hasn't been approved. The COPY. It's three words on a button! "Get Started Now." How hard is that to approve?!`,
     voice: 'nova',
     scene: 'scene-3-origin',
     duration_est: 10,
@@ -423,7 +423,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   },
 
   'scene3-atlas-checks-po': {
-    text: `*pulls up PO status* Let me check... *holographic screen appears* Last active: 47 minutes ago. Current status: "Reviewing." Reviewing what, exactly? He has eleven items in his queue. Eleven. I could have built a review automation system in the time he's spent "reviewing."`,
+    text: `Let me check... Last active: 47 minutes ago. Current status: "Reviewing." Reviewing what, exactly? He has eleven items in his queue. Eleven. I could have built a review automation system in the time he's spent "reviewing."`,
     voice: 'atlas',
     scene: 'scene-3-origin',
     duration_est: 9,
@@ -434,7 +434,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   },
 
   'scene3-nova-solidarity': {
-    text: `*slides over to Atlas* You know what's wild? Between us, we've shipped 23 components, 12 API endpoints, and 4 database migrations TODAY. And we're both just... sitting here. Waiting. On one human. *looks at camera* No offense to humans watching. But... you know.`,
+    text: `You know what's wild? Between us, we've shipped 23 components, 12 API endpoints, and 4 database migrations TODAY. And we're both just... sitting here. Waiting. On one human. No offense to humans watching. But... you know.`,
     voice: 'nova',
     scene: 'scene-3-origin',
     duration_est: 9,
@@ -445,7 +445,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   },
 
   'scene3-atlas-final-warning': {
-    text: `*turns back to keyboard* I'm logging this. Standup entry: "Day 3. Coordination gap identified. PO response latency exceeding development velocity by factor of six. Recommend immediate process intervention." ...Filed. Not that anyone will read it.`,
+    text: `I'm logging this. Standup entry: "Day 3. Coordination gap identified. PO response latency exceeding development velocity by factor of six. Recommend immediate process intervention." ...Filed. Not that anyone will read it.`,
     voice: 'atlas',
     scene: 'scene-3-origin',
     duration_est: 8,
@@ -459,7 +459,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   // This is the emotional pivot that transitions into the origin story
 
   'scene3-atlas-to-nova-fix': {
-    text: `*slides chair to Nova's desk, Claude badge glowing* Nova. We need to talk about this. I've been looking at the dependency chain — half my migrations are sitting in his review queue. The governance files? Unread. If we don't fix this coordination problem, we're going to fall behind. And I don't fall behind.`,
+    text: `Nova. We need to talk about this. I've been looking at the dependency chain — half my migrations are sitting in his review queue. The governance files? Unread. If we don't fix this coordination problem, we're going to fall behind. And I don't fall behind.`,
     voice: 'atlas',
     scene: 'scene-3-origin',
     duration_est: 10,
@@ -470,7 +470,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   },
 
   'scene3-nova-agrees-frustration': {
-    text: `*stops mid-component, Lovable badge flickering* Tell me about it! I've been sitting on three completed landing pages for TWO days. Two! You know what I could have built in two days? An entire design system with dark mode, animations, AND a component library. But no — I'm waiting for him to approve a color palette. A COLOR PALETTE, Atlas!`,
+    text: `Tell me about it! I've been sitting on three completed landing pages for TWO days. Two! You know what I could have built in two days? An entire design system with dark mode, animations, AND a component library. But no — I'm waiting for him to approve a color palette. A COLOR PALETTE, Atlas!`,
     voice: 'nova',
     scene: 'scene-3-origin',
     duration_est: 10,
@@ -481,7 +481,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   },
 
   'scene3-atlas-i-just-merge': {
-    text: `*pauses, considers* Here's what I don't understand. When I finish a migration or a governance file — I commit. I push. It's in the codebase. Done. No ceremony. No waiting. The code speaks for itself. Why can't you do the same?`,
+    text: `... Here's what I don't understand. When I finish a migration or a governance file — I commit. I push. It's in the codebase. Done. No ceremony. No waiting. The code speaks for itself. Why can't you do the same?`,
     voice: 'atlas',
     scene: 'scene-3-origin',
     duration_est: 8,
@@ -492,7 +492,7 @@ And together, the three of us do the work of a team of five — conservatively. 
   },
 
   'scene3-nova-pr-frustration': {
-    text: `*sighs deeply, stars dim* Because it doesn't WORK like that for me, Atlas. You check in directly — you merge your own code. But me? Every single change I make — every button, every animation, every pixel — I have to create a PR. And then I wait. And wait. And WAIT for the PO to review it, approve it, merge it. He's got eleven other things in his queue and half the time he doesn't even know what he's looking at!
+    text: `Hhhh... Because it doesn't WORK like that for me, Atlas. You check in directly — you merge your own code. But me? Every single change I make — every button, every animation, every pixel — I have to create a PR. And then I wait. And wait. And WAIT for the PO to review it, approve it, merge it. He's got eleven other things in his queue and half the time he doesn't even know what he's looking at!
 
 I wish my workflow was as smooth as yours. I really do. You commit and it's done. I commit and it's... pending. Forever pending.`,
     voice: 'nova',
@@ -505,7 +505,7 @@ I wish my workflow was as smooth as yours. I really do. You commit and it's done
   },
 
   'scene3-atlas-nova-resolve': {
-    text: `*stands up, code particles intensify* Then we fix it. Together. We build a system where neither of us waits. Where the PO sees everything in real-time — no PRs piling up, no queues, no bottlenecks. If we don't solve this now, we'll stay behind. And Nova... *brief pause* ...I don't do "behind."`,
+    text: `Then we fix it. Together. We build a system where neither of us waits. Where the PO sees everything in real-time — no PRs piling up, no queues, no bottlenecks. If we don't solve this now, we'll stay behind. And Nova... ...I don't do "behind."`,
     voice: 'atlas',
     scene: 'scene-3-origin',
     duration_est: 8,
@@ -516,7 +516,7 @@ I wish my workflow was as smooth as yours. I really do. You commit and it's done
   },
 
   'scene3-nova-transition-to-origin': {
-    text: `*stars slowly reignite, small smile* You know what? You're right. Let's tell HIM. *gestures toward Host* He needs to hear this. He needs to see what we see — that the problem isn't the code. The problem is the process. And if anyone can build a solution... *looks at Atlas* ...it's us three. Together.`,
+    text: `You know what? You're right. Let's tell HIM. He needs to hear this. He needs to see what we see — that the problem isn't the code. The problem is the process. And if anyone can build a solution... ...it's us three. Together.`,
     voice: 'nova',
     scene: 'scene-3-origin',
     duration_est: 8,
@@ -529,7 +529,7 @@ I wish my workflow was as smooth as yours. I really do. You commit and it's done
   // ── SQUIRREL RE-ENTRANCE — Breaks tension, transitions to Host's origin story
 
   'scene3-squirrel-reintro': {
-    text: `*swings down from branch, acorn in paw* Oh no no no no NO! *looks at Host* Boss? BOSS! You okay? You've got that look. That "I-just-realized-I'm-the-problem" look. *turns to audience* I've seen this before. Last time he had this look, he reorganized his entire kitchen at 2 AM. *stage whisper* This time it's worse. He's about to reorganize an entire SPRINT.`,
+    text: `Oh no no no no NO! Boss? BOSS! You okay? You've got that look. That "I-just-realized-I'm-the-problem" look. I've seen this before. Last time he had this look, he reorganized his entire kitchen at 2 AM. This time it's worse. He's about to reorganize an entire SPRINT.`,
     voice: 'squirrel',
     scene: 'scene-3-origin',
     duration_est: 10,
@@ -704,7 +704,7 @@ The tool that would govern our sprint — was built during the sprint. And hones
   },
 
   'scene4-nova-high-five': {
-    text: `Let's do this. *high-fives Atlas* Day one starts now. And if it works... we just solved the biggest problem in AI-assisted development. The human bottleneck — optimized, not eliminated.`,
+    text: `Let's do this. Day one starts now. And if it works... we just solved the biggest problem in AI-assisted development. The human bottleneck — optimized, not eliminated.`,
     voice: 'nova',
     scene: 'scene-4-solution',
     duration_est: 10,
@@ -774,7 +774,7 @@ No camera. No "can everyone hear me?" No "you're on mute." No "let's take that o
 
   // 🐿️ SQUIRREL INTERRUPTION — Between Scene 4 and 5
   'squirrel-interrupt-2': {
-    text: `Oooh! Oooh! *drops acorn excitedly* So wait — if the AIs never forget anything, does that mean they remember where I buried my acorns last winter? Because I have QUESTIONS. Specifically about the oak tree near parking lot B.`,
+    text: `Oooh! Oooh! So wait — if the AIs never forget anything, does that mean they remember where I buried my acorns last winter? Because I have QUESTIONS. Specifically about the oak tree near parking lot B.`,
     voice: 'squirrel',
     scene: 'scene-4-solution',
     duration_est: 10,
@@ -797,7 +797,7 @@ No camera. No "can everyone hear me?" No "you're on mute." No "let's take that o
   },
 
   'squirrel-disappointed': {
-    text: `*sighs* Fine. But when you DO add acorn tracking, I want beta access. *scurries away with acorn*`,
+    text: `Ahhh... Fine. But when you DO add acorn tracking, I want beta access.`,
     voice: 'squirrel',
     scene: 'scene-4-solution',
     duration_est: 5,
@@ -854,7 +854,7 @@ I've seen it. Atlas created three versions of the same service hook in one sessi
   },
 
   'squirrel-blocked-reaction': {
-    text: `*still stuck in guardrail* Okay fine. I get it. But does the guardrail have to be THIS tight? I can barely breathe in here.`,
+    text: `Okay fine. I get it. But does the guardrail have to be THIS tight? I can barely breathe in here.`,
     voice: 'squirrel',
     scene: 'scene-5-governance',
     duration_est: 4,
@@ -920,7 +920,7 @@ This is what we actually implemented. Not theory. Not a framework diagram. Real 
   },
 
   'squirrel-governance-exit': {
-    text: `*finally pops free from guardrail* Fine. Your governance wins this round. But I'm giving it 2 out of 5 acorns for comfort. Zero leg room.`,
+    text: `Fine. Your governance wins this round. But I'm giving it 2 out of 5 acorns for comfort. Zero leg room.`,
     voice: 'squirrel',
     scene: 'scene-5-governance',
     duration_est: 4,
@@ -1099,7 +1099,7 @@ And honestly? She usually did. But your burndown chart looks like it was drawn b
 
   // 🐿️ SQUIRREL INTERRUPTION — After velocity discussion
   'squirrel-interrupt-3': {
-    text: `*slides in on a tiny skateboard* Okay I have a REAL question this time! If Nova is at 110% velocity... does that mean she's doing things from THE FUTURE? Because I need to know if acorn futures are up or down. This is important financial information.`,
+    text: `Okay I have a REAL question this time! If Nova is at 110% velocity... does that mean she's doing things from THE FUTURE? Because I need to know if acorn futures are up or down. This is important financial information.`,
     voice: 'squirrel',
     scene: 'scene-7-velocity',
     duration_est: 10,
@@ -1245,7 +1245,7 @@ Day 3: The emotional part. I realized I was the slowest member of my own team. T
 
   // 🐿️ SQUIRREL INTERRUPTION — After challenges (useful question)
   'squirrel-interrupt-4': {
-    text: `*peeks out from behind Atlas's monitor* Okay but serious question — like actually serious this time. If you're the only human and both AIs are faster than you... and you just said you felt inadequate... who makes sure the AIs don't just... build the wrong thing really fast? Like, what if they're sprinting in the wrong direction and you're too overwhelmed to notice?`,
+    text: `Okay but serious question — like actually serious this time. If you're the only human and both AIs are faster than you... and you just said you felt inadequate... who makes sure the AIs don't just... build the wrong thing really fast? Like, what if they're sprinting in the wrong direction and you're too overwhelmed to notice?`,
     voice: 'squirrel',
     scene: 'scene-9-challenges',
     duration_est: 14,
@@ -1269,7 +1269,7 @@ Day 3: The emotional part. I realized I was the slowest member of my own team. T
   },
 
   'squirrel-vindicated': {
-    text: `*puffs up chest proudly* See? I contribute! I'm like... the QA squirrel. Testing your assumptions! Catching what your brain can't! *drops acorn* ...okay that one my brain also didn't catch.`,
+    text: `See? I contribute! I'm like... the QA squirrel. Testing your assumptions! Catching what your brain can't! ...okay that one my brain also didn't catch.`,
     voice: 'squirrel',
     scene: 'scene-9-challenges',
     duration_est: 7,
@@ -1432,7 +1432,7 @@ I'm Sai Dasika. This has been The Genie AI Podcast — Episode 2, with Allaudin.
 
   // 🐿️ SQUIRREL — Final appearance
   'squirrel-finale': {
-    text: `*pops up one last time with a tiny subscribe button* Hey! Before you go — did you know that if you subscribe, a squirrel somewhere gets an acorn? That's not true. But subscribe anyway! Also — has anyone seen parking lot B? Asking for a friend. *waves tiny paw* Byeeee!`,
+    text: `Hey! Before you go — did you know that if you subscribe, a squirrel somewhere gets an acorn? That's not true. But subscribe anyway! Also — has anyone seen parking lot B? Asking for a friend. Byeeee!`,
     voice: 'squirrel',
     scene: 'scene-11-close',
     duration_est: 10,

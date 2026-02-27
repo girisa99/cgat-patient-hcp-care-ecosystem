@@ -26,14 +26,102 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ─── EP04 VOICE ROUTING (mirrors ep04-production-config.ts) ─────────────────
-const VOICE_ROUTING: Record<string, { provider: string; voiceId: string; fallbackProvider: string; fallbackVoice: string; stability?: number; similarityBoost?: number; speed?: number; rate?: string; pitch?: string }> = {
+// ─── EP04 VOICE ROUTING — hardcoded fallback (mirrors ep04-production-config.ts)
+const VOICE_ROUTING_FALLBACK: Record<string, { provider: string; voiceId: string; fallbackProvider: string; fallbackVoice: string; stability?: number; similarityBoost?: number; speed?: number; rate?: string; pitch?: string }> = {
   host:     { provider: 'elevenlabs', voiceId: 'nPczCjzI2devNBz1zQrb', fallbackProvider: 'alibaba', fallbackVoice: 'longanyang', stability: 0.5, similarityBoost: 0.75, speed: 1.0 },
   atlas:    { provider: 'azure',      voiceId: 'en-US-GuyNeural',      fallbackProvider: 'alibaba', fallbackVoice: 'longcheng', rate: '-5%', pitch: '-2%' },
   nova:     { provider: 'elevenlabs', voiceId: 'pFZP5JQG7iQjIQuC4Bku', fallbackProvider: 'alibaba', fallbackVoice: 'longhua', stability: 0.35, similarityBoost: 0.65, speed: 1.1 },
   allaudin: { provider: 'elevenlabs', voiceId: 'JBFqnCBsd6RMkjVDRZzb', fallbackProvider: 'alibaba', fallbackVoice: 'longshu', stability: 0.6, similarityBoost: 0.8, speed: 0.9 },
   squirrel: { provider: 'elevenlabs', voiceId: 'iP95p4xoKVk53GoZ742B', fallbackProvider: 'alibaba', fallbackVoice: 'longpaopao_v3', stability: 0.2, similarityBoost: 0.5, speed: 1.3 },
 };
+
+// Mutable routing map — populated from DB when project_id is provided, else uses fallback
+let VOICE_ROUTING = { ...VOICE_ROUTING_FALLBACK };
+
+/**
+ * Load voice routing from cast_project_characters DB table.
+ * Falls back to hardcoded map if no project_id or no DB data.
+ */
+async function loadVoiceRoutingFromDB(
+  supabase: ReturnType<typeof createClient>,
+  projectId?: string,
+): Promise<void> {
+  if (!projectId) {
+    VOICE_ROUTING = { ...VOICE_ROUTING_FALLBACK };
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('cast_project_characters')
+      .select('character_key, voice_provider, voice_id, voice_config')
+      .eq('project_id', projectId);
+
+    if (error || !data?.length) {
+      console.log('  ℹ️ No DB voice routing found — using hardcoded fallback');
+      VOICE_ROUTING = { ...VOICE_ROUTING_FALLBACK };
+      return;
+    }
+
+    const dbRouting: typeof VOICE_ROUTING = {};
+    for (const char of data) {
+      const vc = (char.voice_config || {}) as Record<string, any>;
+      const fallback = vc.fallback || {};
+      dbRouting[char.character_key] = {
+        provider: vc.provider || char.voice_provider || 'elevenlabs',
+        voiceId: vc.voiceId || char.voice_id || '',
+        fallbackProvider: fallback.provider || 'alibaba',
+        fallbackVoice: fallback.voiceId || '',
+        stability: vc.stability,
+        similarityBoost: vc.similarityBoost,
+        speed: vc.speed,
+        rate: vc.rate,
+        pitch: vc.pitch,
+      };
+    }
+    VOICE_ROUTING = dbRouting;
+    console.log(`  ✅ Loaded ${data.length} voice routings from DB for project ${projectId}`);
+  } catch (err) {
+    console.warn('  ⚠️ DB voice routing query failed — using fallback:', err);
+    VOICE_ROUTING = { ...VOICE_ROUTING_FALLBACK };
+  }
+}
+
+/**
+ * Load scene pipeline configs from cast_project_scenes DB table.
+ * Returns a pipeline map keyed by scene_key, or null if no DB data.
+ */
+async function loadScenePipelinesFromDB(
+  supabase: ReturnType<typeof createClient>,
+  projectId?: string,
+): Promise<Record<string, any[]> | null> {
+  if (!projectId) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('cast_project_scenes')
+      .select('scene_key, scene_config')
+      .eq('project_id', projectId)
+      .order('scene_index', { ascending: true });
+
+    if (error || !data?.length) return null;
+
+    const pipelines: Record<string, any[]> = {};
+    for (const scene of data) {
+      const sc = (scene.scene_config || {}) as Record<string, any>;
+      const pipelineSteps = sc.pipeline?.steps;
+      if (Array.isArray(pipelineSteps)) {
+        // Use the sceneIdMapping.pipelineSceneId if available, else scene_key
+        const pipelineKey = sc.sceneIdMapping?.pipelineSceneId || scene.scene_key;
+        pipelines[pipelineKey] = pipelineSteps;
+      }
+    }
+    return Object.keys(pipelines).length > 0 ? pipelines : null;
+  } catch (err) {
+    console.warn('  ⚠️ DB scene pipeline query failed:', err);
+    return null;
+  }
+}
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 interface SceneStepResult {
@@ -433,18 +521,26 @@ serve(async (req) => {
       scenePipelines,   // Full EP04_SCENE_PIPELINES object
       musicScore,       // Full EP04_MUSIC_SCORE object
       dryRun = false,   // If true, log steps without executing
+      project_id,       // Optional: load voice routing + pipelines from DB
     } = await req.json();
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (!scenePipelines || !scriptContent) {
-      throw new Error('scenePipelines and scriptContent are required');
+    // Load voice routing from DB if project_id is provided
+    await loadVoiceRoutingFromDB(supabase, project_id);
+
+    // Load scene pipelines from DB (override frontend-passed pipelines if available)
+    const dbPipelines = await loadScenePipelinesFromDB(supabase, project_id);
+    const effectivePipelines = dbPipelines || scenePipelines;
+
+    if (!effectivePipelines || !scriptContent) {
+      throw new Error('scenePipelines (or project_id for DB lookup) and scriptContent are required');
     }
 
-    const sceneIds = scenes === 'all' 
-      ? Object.keys(scenePipelines) 
+    const sceneIds = scenes === 'all'
+      ? Object.keys(effectivePipelines)
       : (scenes as string[]);
 
     console.log(`🎬 EP04 Scene Orchestrator — Processing ${sceneIds.length} scenes${dryRun ? ' (DRY RUN)' : ''}`);
@@ -464,7 +560,7 @@ serve(async (req) => {
         break;
       }
 
-      const steps = scenePipelines[sceneId];
+      const steps = effectivePipelines[sceneId];
       if (!steps) {
         errors.push(`Scene not found: ${sceneId}`);
         continue;

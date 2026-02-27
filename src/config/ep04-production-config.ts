@@ -64,31 +64,31 @@ export const EP04_VOICES = {
     eqProfile: 'bright',
     description: 'Nova (Lovable) — frontend dev, fast delivery, energetic',
   },
-  /** Allaudin (Genie) = deep, theatrical, magical. ElevenLabs George OR Alibaba longshu. */
+  /** Allaudin (Genie) = deep, theatrical, magical. ElevenLabs Clyde (war-vet gravelly) OR Alibaba longshu. */
   allaudin: {
     provider: 'elevenlabs' as const,
-    voiceId: 'JBFqnCBsd6RMkjVDRZzb',  // George — deep, rich, theatrical
+    voiceId: '2EiwWnXFnvU5JabPnv8n',  // Clyde — deep, gravelly, theatrical (video game character voice)
     fallbackProvider: 'alibaba' as const,
     fallbackVoice: ALIBABA_FALLBACK_VOICES.allaudin,
     style: 'theatrical',
-    stability: 0.6,
-    similarityBoost: 0.8,
-    speed: 0.9,
+    stability: 0.35,
+    similarityBoost: 0.85,
+    speed: 0.85,
     eqProfile: 'deep-reverb',
-    description: 'Allaudin (Genie) — deep, wise, theatrical narrator with mystical warmth',
+    description: 'Allaudin (Genie) — deep, gravelly, theatrical narrator with mystical presence',
   },
-  /** Squirrel = high-pitched, chaotic, comedic. ElevenLabs Chris OR Alibaba longpaopao. */
+  /** Squirrel = high-pitched, chaotic, childish. ElevenLabs Gigi (animation child voice) OR Alibaba longpaopao. */
   squirrel: {
     provider: 'elevenlabs' as const,
-    voiceId: 'iP95p4xoKVk53GoZ742B',  // Chris — light male, can be pitched up
+    voiceId: 'jBpfuIE2acCO8z3wKNLl',  // Gigi — childish American, designed for animation
     fallbackProvider: 'alibaba' as const,
     fallbackVoice: ALIBABA_FALLBACK_VOICES.squirrel,
     style: 'chaotic',
-    stability: 0.2,
-    similarityBoost: 0.5,
-    speed: 1.3,
+    stability: 0.15,
+    similarityBoost: 0.4,
+    speed: 1.4,
     eqProfile: 'high-pitch',
-    description: 'Squirrel — chaotic comic relief, hyperactive, interrupts scenes',
+    description: 'Squirrel — childish animation voice, hyperactive, chaotic comic relief',
   },
 } as const;
 
@@ -218,6 +218,29 @@ export const EP04_AVATAR_CONFIG = {
   },
 } as const;
 
+// ─── SCRIPT ↔ PIPELINE SCENE ID MAPPING ─────────────────────────────────────
+// Script content uses descriptive scene names; pipelines use production day-based names.
+// This map resolves script scene IDs → pipeline scene IDs for template mapping.
+export const SCRIPT_TO_PIPELINE_MAP: Record<string, string> = {
+  'scene-0-title':          'scene-0-title',           // Allaudin emerge + title welcome
+  'scene-1-problem':        'scene-1-cold-open',       // The problem — human sprint pain
+  'scene-2-introductions':  'scene-2-meet-team',       // Atlas, Nova & Host introductions
+  'scene-3-origin':         'scene-3-governance',       // Frustration + origin story
+  'scene-4-solution':       'scene-4-day1',             // Sprint tracker + beta launch
+  'scene-5-governance':     'scene-5-day2',             // Governance & guardrails
+  'scene-6-po-actions':     'scene-6-day3',             // PO Actions — born from frustration
+  'scene-7-velocity':       'scene-7-mission-control',  // Velocity & scope creep
+  'scene-8-numbers':        'scene-8-dashboard-tour',   // Dashboard tour & numbers
+  'scene-9-challenges':     'scene-9-numbers',          // Honest challenges — what broke
+  'scene-10-whats-next':    'scene-10-whats-next',      // MCP vision & what's next
+  'scene-11-close':         'scene-11-close',           // CTA + goodbye
+};
+
+// Reverse map: pipeline scene ID → script scene ID
+export const PIPELINE_TO_SCRIPT_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(SCRIPT_TO_PIPELINE_MAP).map(([k, v]) => [v, k])
+);
+
 // ─── SCENE PIPELINE REQUIREMENTS ─────────────────────────────────────────────
 // For each scene: what pipelines fire, in what order, with which assets.
 // Used by the Cast assembler orchestration layer.
@@ -237,6 +260,14 @@ export type ScenePipelineStep =
 // ─── EP04 MUSIC & SFX SCORE ──────────────────────────────────────────────────
 // Background music beds and sound effects per scene. Generated via ElevenLabs.
 export const EP04_MUSIC_SCORE: Record<string, { music: ScenePipelineStep & { type: 'music' }; sfx?: (ScenePipelineStep & { type: 'sfx' })[] }> = {
+  'scene-0-title': {
+    music: { type: 'music', prompt: 'Mystical orchestral opening with deep gong, magical chimes ascending, swirling string arpeggios, transitioning from epic reveal to warm intimate podcast intro, 95 BPM', duration: 30, style: 'cinematic' },
+    sfx: [
+      { type: 'sfx', prompt: 'Ancient lamp emerging from darkness with metallic resonance', duration: 3 },
+      { type: 'sfx', prompt: 'Blue magical mist swirling with sparkle chimes and particle effects', duration: 4 },
+      { type: 'sfx', prompt: 'Deep ceremonial gong strike reverberating', duration: 2 },
+    ],
+  },
   'scene-1-cold-open': {
     music: { type: 'music', prompt: 'Tense cinematic build-up, deep bass pulse, electronic glitch accents, countdown timer energy, dark tech atmosphere, building to reveal, 100 BPM', duration: 25, style: 'dramatic' },
     sfx: [
@@ -321,6 +352,16 @@ export const EP04_MUSIC_SCORE: Record<string, { music: ScenePipelineStep & { typ
 };
 
 export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
+  'scene-0-title': [
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Magical lamp emerging from darkness, blue mist swirling outward, sparkle particles filling the frame, a majestic genie silhouette materializing from the mist, cinematic Pixar quality, dramatic volumetric lighting, 8K' },
+    { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-emerge' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
+    { type: 'tts', voice: 'host', scriptKey: 'title-welcome' },
+    { type: 'kinetic-text', text: 'Beyond AI Hype — Episode 2' },
+    { type: 'music', prompt: 'Mystical orchestral opening, deep gong reverberating, magical chimes ascending, transitioning to warm podcast intro theme, epic to intimate, 95 BPM', duration: 30, style: 'cinematic' },
+    { type: 'sfx', prompt: 'Lamp whoosh with magical mist swirl and sparkle chimes' },
+  ],
   'scene-1-cold-open': [
     { type: 'kinetic-text', text: '41 tasks. 5 days. 2 AI developers.' },
     { type: 'tts', voice: 'host', scriptKey: 'cold-open-narration' },
@@ -498,14 +539,367 @@ export const EP04_PIPELINE_READINESS = [
 ] as const;
 
 // ─── SOCIAL TEASER CLIPS CONFIG ───────────────────────────────────────────────
-// 5 clips per production plan — timestamp references + hooks.
-export const EP04_SOCIAL_CLIPS = [
-  { id: 'clip-1-847-lines',     timestamp: '1:30–2:00', duration: 30, hook: 'Atlas wrote 847 lines of session instructions. At 11 PM.' },
-  { id: 'clip-2-six-hours',     timestamp: '5:45–6:15', duration: 30, hook: 'We were blocked for six hours. Because I was in a meeting.' },
-  { id: 'clip-3-110-percent',   timestamp: '7:00–7:30', duration: 30, hook: 'Nova delivered at 110% velocity. By improving things that weren\'t in scope.' },
-  { id: 'clip-4-forgot-breakfast', timestamp: '8:30–9:00', duration: 30, hook: 'Atlas: context loss is the primary source of rework. Nova: I have a 200K window. Me: I forgot what I had for breakfast.' },
-  { id: 'clip-5-five-x',        timestamp: '10:00–10:30', duration: 30, hook: '5x faster. This isn\'t a claim. It\'s a dashboard you can query.' },
-] as const;
+// 18 clips across 6 categories (A-F) — expanded from original 5.
+// Each clip targets specific themes and platforms with per-platform messaging.
+
+export type ClipCategory = 'curiosity' | 'pain_point' | 'data_proof' | 'democratization' | 'character' | 'teaser';
+export type ClipTheme = 'human_ai' | 'practical' | 'democratization' | 'entertainment';
+
+export interface SocialClip {
+  id: string;
+  category: ClipCategory;
+  theme: ClipTheme;
+  sourceScenes: string[];
+  timestamp: string;
+  duration: number;
+  hook: string;
+  cta: string;
+  hashtags: string[];
+  platforms: string[];
+  captionStyle: 'kinetic' | 'subtitle' | 'none';
+  videoUrl?: string;
+  messaging: {
+    linkedin: { text: string; hashtags: string[] };
+    youtube: { title: string; description: string };
+    tiktok: { caption: string; hashtags: string[] };
+    instagram: { caption: string; hashtags: string[] };
+    twitter: { text: string };
+  };
+}
+
+export const EP04_SOCIAL_CLIPS: SocialClip[] = [
+  // ─── Category A: Curiosity Hooks (stop-scrollers) ─────────────────────────
+  {
+    id: 'A1-ai-devs-faster-than-you',
+    category: 'curiosity',
+    theme: 'human_ai',
+    sourceScenes: ['scene-1-cold-open', 'scene-3-governance'],
+    timestamp: '0:00–0:30',
+    duration: 30,
+    hook: 'What happens when your AI developers are faster than you?',
+    cta: 'Watch the full sprint breakdown — link in bio',
+    hashtags: ['#BeyondAIHype', '#AIDevOps', '#ClaudeCode', '#Lovable'],
+    platforms: ['youtube_shorts', 'tiktok', 'instagram', 'linkedin', 'twitter'],
+    captionStyle: 'kinetic',
+    messaging: {
+      linkedin: { text: 'What happens when your AI developers are faster than you?\n\nWe ran a real 5-day sprint with Claude Code and Lovable. 41 tasks. Zero standups.\n\nThe biggest challenge wasn\'t the AI. It was keeping up.', hashtags: ['#AIDevOps', '#ProductManagement', '#BeyondAIHype'] },
+      youtube: { title: 'When Your AI Developers Are Faster Than You...', description: 'We ran a real sprint with 2 AI developers. Here\'s what happened when they outpaced the human product owner.' },
+      tiktok: { caption: 'POV: Your AI devs ship faster than you can review 😅', hashtags: ['#aidev', '#coding', '#techlife', '#BeyondAIHype'] },
+      instagram: { caption: 'When your AI developers are literally faster than you... 🤖⚡', hashtags: ['#AIDevOps', '#TechLife', '#BeyondAIHype', '#ClaudeCode'] },
+      twitter: { text: 'What happens when your AI developers are faster than you?\n\n41 tasks. 5 days. 2 AIs. Zero standup meetings.\n\nThe bottleneck wasn\'t the AI. It was me. 🧵' },
+    },
+  },
+  {
+    id: 'A2-slowest-member',
+    category: 'curiosity',
+    theme: 'human_ai',
+    sourceScenes: ['scene-9-numbers'],
+    timestamp: '14:30–15:00',
+    duration: 30,
+    hook: 'I was the slowest member of my own team. Here\'s what I did.',
+    cta: 'Full episode — how I adapted to AI velocity',
+    hashtags: ['#BeyondAIHype', '#AIProductOwner', '#SprintManagement'],
+    platforms: ['youtube_shorts', 'linkedin', 'twitter'],
+    captionStyle: 'subtitle',
+    messaging: {
+      linkedin: { text: 'I was the slowest member of my own team.\n\nNot a humble brag. A reality check.\n\nWhen Claude completed 8 tasks/day and Lovable shipped 3 polished UIs, I became the bottleneck — approvals, reviews, decisions.\n\nHere\'s how I adapted.', hashtags: ['#AILeadership', '#ProductOwner', '#BeyondAIHype'] },
+      youtube: { title: 'I Was the Slowest on My Own Team', description: 'When your AI developers outpace you, you have two choices: slow them down, or speed yourself up. I chose option 3.' },
+      tiktok: { caption: 'When the PO is the slowest team member... 💀', hashtags: ['#agile', '#scrummaster', '#aitools'] },
+      instagram: { caption: 'Plot twist: the human was the bottleneck 😂', hashtags: ['#AIDevOps', '#ProductOwner', '#TechHumor'] },
+      twitter: { text: 'I was the slowest member of my own team.\n\nClaude: 8 tasks/day\nLovable: 3 polished UIs/day\nMe: stuck in meetings\n\nSo I built a system to get out of the way. Thread 🧵' },
+    },
+  },
+  {
+    id: 'A3-847-lines-coffee',
+    category: 'curiosity',
+    theme: 'practical',
+    sourceScenes: ['scene-3-governance'],
+    timestamp: '3:30–4:00',
+    duration: 30,
+    hook: 'My AI developer shipped 847 lines of SQL while I was having coffee.',
+    cta: 'See the actual sprint data — all metrics are live',
+    hashtags: ['#ClaudeCode', '#AIProductivity', '#DevTools'],
+    platforms: ['youtube_shorts', 'tiktok', 'instagram', 'linkedin', 'twitter'],
+    captionStyle: 'kinetic',
+    messaging: {
+      linkedin: { text: '847 lines of session instructions.\nShipped at 11 PM.\nWhile I was having coffee the next morning, it was already reviewed and merged.\n\nThis is what AI-augmented development actually looks like — not a demo, a production sprint.', hashtags: ['#ClaudeCode', '#AIProductivity', '#BeyondAIHype'] },
+      youtube: { title: '847 Lines While I Had Coffee ☕', description: 'Atlas (Claude Code) shipped 847 lines of session instructions at 11 PM. By morning, the sprint was already ahead of schedule.' },
+      tiktok: { caption: 'My AI dev shipped 847 lines while I was sleeping ☕', hashtags: ['#ai', '#coding', '#developer', '#productivity'] },
+      instagram: { caption: 'Claude shipped 847 lines overnight. I shipped... a coffee order ☕😅', hashtags: ['#DevLife', '#AITools', '#ClaudeCode', '#Productivity'] },
+      twitter: { text: '847 lines of SQL.\nShipped at 11 PM.\nReviewed by morning.\n\nThat\'s not a pitch deck number. That\'s from an actual sprint dashboard you can query.' },
+    },
+  },
+
+  // ─── Category B: Pain Point Hooks (relatable moments) ─────────────────────
+  {
+    id: 'B1-blocked-six-hours',
+    category: 'pain_point',
+    theme: 'human_ai',
+    sourceScenes: ['scene-5-day2'],
+    timestamp: '5:45–6:15',
+    duration: 30,
+    hook: 'We were blocked for 6 hours. Because I was in a meeting.',
+    cta: 'See how we solved the async approval problem',
+    hashtags: ['#AgileProblems', '#MeetingFatigue', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'linkedin', 'twitter', 'tiktok'],
+    captionStyle: 'subtitle',
+    messaging: {
+      linkedin: { text: 'We were blocked for 6 hours.\n\nNot by a technical issue. Not by a dependency.\n\nBecause I was in a meeting.\n\nThat\'s when I realized: in AI-augmented sprints, the human is the bottleneck. So I built PO Actions — an async approval queue that never blocks.', hashtags: ['#AgileTransformation', '#AIDevOps', '#MeetingFatigue'] },
+      youtube: { title: 'Blocked for 6 Hours... Because of a Meeting', description: 'The biggest blocker in our AI sprint wasn\'t technical — it was a 2-hour meeting that left both AIs idle.' },
+      tiktok: { caption: 'Blocked for 6 hours because the human was in a meeting 💀', hashtags: ['#meetings', '#agile', '#devproblems'] },
+      instagram: { caption: 'When YOUR meeting blocks the entire AI team... 😬', hashtags: ['#MeetingFatigue', '#AgileLife', '#AIDevOps'] },
+      twitter: { text: 'Blocked for 6 hours.\nNot by a bug.\nNot by a dependency.\nBecause I was in a meeting.\n\nAI devs don\'t have the luxury of "let\'s circle back." They need answers NOW.' },
+    },
+  },
+  {
+    id: 'B2-pending-36-hours',
+    category: 'pain_point',
+    theme: 'practical',
+    sourceScenes: ['scene-5-day2'],
+    timestamp: '6:00–6:30',
+    duration: 30,
+    hook: '14 tasks completed. 12 sat in pending review for 36 hours.',
+    cta: 'From 36 hours to 22 minutes — watch how',
+    hashtags: ['#DevOps', '#CodeReview', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'linkedin', 'twitter'],
+    captionStyle: 'subtitle',
+    messaging: {
+      linkedin: { text: '14 tasks completed.\n12 sat in pending review for 36 hours.\n\nThe AI developers finished their work. The human approval queue was the constraint.\n\nWe fixed it: from 36 hours pending → 22 minutes. 98.9% improvement.\n\nThe solution wasn\'t faster AI. It was faster humans.', hashtags: ['#DevOps', '#CodeReview', '#AIProductivity'] },
+      youtube: { title: '36 Hours in Pending Review...', description: '14 tasks done, 12 waiting for human review. How we cut review time by 98.9%.' },
+      tiktok: { caption: '36 hours in pending because the reviewer was a human 😭', hashtags: ['#codereview', '#devlife', '#agile'] },
+      instagram: { caption: 'When code review is the bottleneck... not the code 😤', hashtags: ['#DevOps', '#CodeReview', '#AIdev'] },
+      twitter: { text: '14 tasks completed. 12 sat in review for 36 hours.\n\nThe fix: async approval queue.\nResult: 36 hours → 22 minutes.\n98.9% improvement.\n\nThe bottleneck was never the AI.' },
+    },
+  },
+  {
+    id: 'B3-tracking-on-receipts',
+    category: 'pain_point',
+    theme: 'human_ai',
+    sourceScenes: ['scene-3-governance'],
+    timestamp: '3:00–3:30',
+    duration: 30,
+    hook: 'I was tracking sprint tasks on the back of a receipt.',
+    cta: 'From receipts to a real-time dashboard — full story',
+    hashtags: ['#StartupLife', '#ProjectManagement', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'tiktok', 'instagram'],
+    captionStyle: 'kinetic',
+    messaging: {
+      linkedin: { text: 'Before the sprint tracker existed, I was tracking tasks on the back of a receipt.\n\nNot as a joke. Because I needed something faster than opening Jira.\n\nThat frustration became PO Actions — built by the AI, for the human.', hashtags: ['#StartupLife', '#ProductManagement', '#AI'] },
+      youtube: { title: 'From Receipt Notes to Real-Time Dashboard', description: 'The sprint tracker was born from frustration — tracking tasks on physical receipts because Jira was too slow.' },
+      tiktok: { caption: 'Tracking sprints on receipts because Jira was too slow 💀', hashtags: ['#startuplife', '#projectmanagement', '#devtools'] },
+      instagram: { caption: 'Tell me you need better tools without telling me... 🧾', hashtags: ['#StartupLife', '#DevTools', '#ProjectManagement'] },
+      twitter: { text: 'I was tracking sprint tasks on the back of a receipt.\n\nNot ironically. Because it was faster than Jira.\n\nThat frustration became a real-time dashboard with 18 views.' },
+    },
+  },
+
+  // ─── Category C: Data/Proof Hooks (credibility) ───────────────────────────
+  {
+    id: 'C1-five-x-dashboard',
+    category: 'data_proof',
+    theme: 'practical',
+    sourceScenes: ['scene-8-dashboard-tour'],
+    timestamp: '12:30–13:00',
+    duration: 30,
+    hook: '5x faster. Not a claim. A dashboard you can query.',
+    cta: 'Query the live dashboard yourself — link in bio',
+    hashtags: ['#AIProductivity', '#DataDriven', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'linkedin', 'twitter'],
+    captionStyle: 'subtitle',
+    messaging: {
+      linkedin: { text: '5x faster.\n\nNot a pitch deck number. Not a projection.\n\nA dashboard. You can query. Right now.\n\n41 tasks completed in 5 days. Velocity tracked per developer, per day, with blockers, handoffs, and QA sign-offs.\n\nThat\'s the difference between AI hype and AI results.', hashtags: ['#AIProductivity', '#DataDriven', '#BeyondAIHype'] },
+      youtube: { title: '5x Faster — Here\'s the Dashboard Proof', description: 'We didn\'t just claim 5x velocity — we built a queryable dashboard that proves it. Every task, every metric, live.' },
+      tiktok: { caption: '5x faster and the receipts are public 📊', hashtags: ['#data', '#ai', '#productivity', '#proof'] },
+      instagram: { caption: '5x faster. Not a claim — a dashboard you can query 📊', hashtags: ['#AIProductivity', '#DataDriven', '#BeyondAIHype'] },
+      twitter: { text: '5x faster.\n\nNot a claim.\nNot a projection.\n\nA dashboard. You can query. Right now.\n\nThat\'s the difference between AI hype and AI proof.' },
+    },
+  },
+  {
+    id: 'C2-98-percent',
+    category: 'data_proof',
+    theme: 'practical',
+    sourceScenes: ['scene-5-day2'],
+    timestamp: '6:30–7:00',
+    duration: 30,
+    hook: 'From 36 hours pending → 22 minutes. 98.9% improvement.',
+    cta: 'How async approvals changed everything',
+    hashtags: ['#ProcessImprovement', '#DevOps', '#BeyondAIHype'],
+    platforms: ['linkedin', 'twitter', 'youtube_shorts'],
+    captionStyle: 'subtitle',
+    messaging: {
+      linkedin: { text: 'From 36 hours pending → 22 minutes.\n98.9% improvement.\n\nNot by changing the AI. By changing the process.\n\nWhen AI developers work 24/7, human-gated approvals become the constraint. We built PO Actions to eliminate that bottleneck.', hashtags: ['#ProcessImprovement', '#DevOps', '#AILeadership'] },
+      youtube: { title: '98.9% Faster Reviews — Here\'s How', description: 'We cut review time from 36 hours to 22 minutes. The secret: async approvals designed for AI-speed workflows.' },
+      tiktok: { caption: '98.9% faster just by fixing the process 🔧', hashtags: ['#devops', '#improvement', '#ai'] },
+      instagram: { caption: '36 hours → 22 minutes. The process was the problem, not the AI.', hashtags: ['#ProcessImprovement', '#DevOps', '#AIdev'] },
+      twitter: { text: '36 hours → 22 minutes.\n98.9% improvement.\n\nWe didn\'t change the AI.\nWe changed the process.\n\nAI-augmented development requires AI-speed approvals.' },
+    },
+  },
+  {
+    id: 'C3-zero-standups',
+    category: 'data_proof',
+    theme: 'human_ai',
+    sourceScenes: ['scene-4-day1'],
+    timestamp: '4:30–5:00',
+    duration: 30,
+    hook: '41 tasks. 5 days. Claude + Lovable. Zero standup meetings.',
+    cta: 'The async standup that replaced all meetings',
+    hashtags: ['#NoMeetings', '#AsyncWork', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'linkedin', 'twitter', 'tiktok'],
+    captionStyle: 'kinetic',
+    messaging: {
+      linkedin: { text: '41 tasks. 5 days. Claude + Lovable. Zero standup meetings.\n\nNot because we skipped them. Because we replaced them.\n\nAsync standups in the sprint tracker. Structured yesterday/today/blockers from both AIs. No context switching. No scheduling overhead.', hashtags: ['#AsyncWork', '#NoMeetings', '#AIDevOps'] },
+      youtube: { title: 'Zero Standup Meetings — How We Did It', description: '41 tasks in 5 days with zero meetings. Async standups replaced everything.' },
+      tiktok: { caption: 'Zero standup meetings. The AIs just... communicated 🤖', hashtags: ['#nomeetings', '#async', '#aiwork'] },
+      instagram: { caption: 'Zero. Standup. Meetings. And we shipped 41 tasks in 5 days. 🚀', hashtags: ['#NoMeetings', '#AsyncWork', '#AIDevOps'] },
+      twitter: { text: '41 tasks. 5 days.\nClaude + Lovable.\nZero standup meetings.\n\nAsync standups > daily standups when your developers don\'t need coffee breaks.' },
+    },
+  },
+
+  // ─── Category D: AI Democratization Hooks (inspirational) ─────────────────
+  {
+    id: 'D1-19-providers',
+    category: 'democratization',
+    theme: 'democratization',
+    sourceScenes: ['scene-11-close'],
+    timestamp: '24:00–24:30',
+    duration: 30,
+    hook: 'I didn\'t hire a video team. I used 19 AI providers to produce this.',
+    cta: 'The full AI production pipeline — Genie Cast',
+    hashtags: ['#AICreator', '#ContentCreation', '#GenieAI', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'tiktok', 'instagram', 'linkedin'],
+    captionStyle: 'kinetic',
+    messaging: {
+      linkedin: { text: 'I didn\'t hire a video team.\nI didn\'t use a production studio.\n\nI used 19 AI providers — ElevenLabs for voices, Alibaba for avatars, Anthropic for scripts, Azure for lip-sync — orchestrated through one platform.\n\nThis podcast IS the product demo.', hashtags: ['#AICreator', '#ContentCreation', '#GenieAI'] },
+      youtube: { title: '19 AI Providers. Zero Video Team.', description: 'This entire podcast was produced using 19 AI providers orchestrated through Genie Cast. No video team needed.' },
+      tiktok: { caption: 'No video team. Just 19 AIs and a dream 🎬', hashtags: ['#aicreator', '#contentcreation', '#nocode'] },
+      instagram: { caption: '19 AI providers. Zero video team. This podcast IS the product demo. 🎬', hashtags: ['#AICreator', '#ContentCreation', '#GenieAI'] },
+      twitter: { text: 'I didn\'t hire a video team.\n\n19 AI providers:\n- ElevenLabs (voices)\n- Alibaba (avatars)\n- Anthropic (scripts)\n- Azure (lip-sync)\n\nOrchestrated through one platform.\nThis podcast IS the product demo.' },
+    },
+  },
+  {
+    id: 'D2-podcast-is-demo',
+    category: 'democratization',
+    theme: 'democratization',
+    sourceScenes: ['scene-11-close'],
+    timestamp: '24:30–25:00',
+    duration: 30,
+    hook: 'The podcast IS the product demo. The creativity IS the proof.',
+    cta: 'Produce your own — Genie Cast is live',
+    hashtags: ['#GenieAI', '#AIContent', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'linkedin', 'instagram'],
+    captionStyle: 'kinetic',
+    messaging: {
+      linkedin: { text: 'The podcast IS the product demo.\nThe creativity IS the proof.\n\nWe didn\'t build a slide deck to explain what Genie Cast can do. We used it to produce this entire episode — 5 voices, 12 scenes, 3D Pixar avatars, music, SFX.\n\nIf the demo doesn\'t convince you, the dashboard will.', hashtags: ['#ProductDemo', '#AIContent', '#GenieAI'] },
+      youtube: { title: 'The Podcast IS the Product Demo', description: 'We didn\'t make a demo video. We used the product to make this podcast. That\'s the proof.' },
+      tiktok: { caption: 'The demo IS the content. Meta enough? 🤯', hashtags: ['#meta', '#aicontent', '#productdemo'] },
+      instagram: { caption: 'When your product demo IS the podcast itself... 🎙️✨', hashtags: ['#GenieAI', '#AIContent', '#ProductDemo'] },
+      twitter: { text: 'The podcast IS the product demo.\nThe creativity IS the proof.\n\n5 voices. 12 scenes. 3D Pixar avatars. Music. SFX.\n\nAll produced through Genie Cast.' },
+    },
+  },
+  {
+    id: 'D3-rethinking-dev',
+    category: 'democratization',
+    theme: 'democratization',
+    sourceScenes: ['scene-11-close'],
+    timestamp: '25:00–25:30',
+    duration: 30,
+    hook: 'AI-augmented development isn\'t about replacing developers. It\'s about rethinking how development works.',
+    cta: 'The future of dev teams — full episode',
+    hashtags: ['#FutureOfWork', '#AIDevOps', '#BeyondAIHype'],
+    platforms: ['linkedin', 'youtube_shorts', 'twitter'],
+    captionStyle: 'subtitle',
+    messaging: {
+      linkedin: { text: 'AI-augmented development isn\'t about replacing developers.\nIt\'s about rethinking how development works.\n\nOne human. Two AI developers. Real governance. Real metrics.\n\nThe question isn\'t "will AI replace developers?" It\'s "how do we orchestrate AI and humans for 5x output?"', hashtags: ['#FutureOfWork', '#AIDevOps', '#BeyondAIHype'] },
+      youtube: { title: 'Rethinking Development with AI', description: 'AI-augmented development isn\'t replacement. It\'s orchestration. Here\'s what we learned.' },
+      tiktok: { caption: 'AI won\'t replace devs. But dev teams will look completely different 🔮', hashtags: ['#futureofwork', '#ai', '#developers'] },
+      instagram: { caption: 'Not replacement. Rethinking. One human + two AIs = 5x output 🚀', hashtags: ['#FutureOfWork', '#AIDevOps', '#BeyondAIHype'] },
+      twitter: { text: 'AI-augmented development isn\'t about replacing developers.\n\nIt\'s about rethinking how development works.\n\n1 human + 2 AIs + governance = 5x output.\n\nThe question isn\'t "will AI replace devs?" It\'s "how do we orchestrate?"' },
+    },
+  },
+
+  // ─── Category E: Character Moments (entertainment) ────────────────────────
+  {
+    id: 'E1-squirrel-compilation',
+    category: 'character',
+    theme: 'entertainment',
+    sourceScenes: ['scene-1-cold-open', 'scene-3-governance', 'scene-4-day1', 'scene-5-day2', 'scene-6-day3', 'scene-9-numbers', 'scene-11-close'],
+    timestamp: 'various',
+    duration: 60,
+    hook: 'Every time the Squirrel interrupted the sprint... 🐿️',
+    cta: 'Meet the full team — Atlas, Nova, Host, Squirrel & Allaudin',
+    hashtags: ['#SquirrelInterrupt', '#AnimatedPodcast', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'tiktok', 'instagram'],
+    captionStyle: 'kinetic',
+    messaging: {
+      linkedin: { text: 'Even our AI sprint had scope creep — in the form of a squirrel.\n\n6 interruptions. 0 useful contributions. 100% entertainment value.\n\nSometimes the best sprint retrospective includes a character who tracks acorns instead of story points.', hashtags: ['#AgileHumor', '#ScopeCreep', '#AnimatedPodcast'] },
+      youtube: { title: 'Every Squirrel Interruption — Compilation 🐿️', description: 'All 6 squirrel interruptions from Beyond AI Hype Episode 2. Skateboarding, acorn tracking, QA squirrel — chaos compilation.' },
+      tiktok: { caption: 'The squirrel who keeps interrupting the sprint 🐿️😂', hashtags: ['#squirrel', '#animated', '#comedy', '#techhumor'] },
+      instagram: { caption: 'Scope creep has never been this adorable 🐿️✨', hashtags: ['#AnimatedPodcast', '#ScopeCreep', '#TechHumor'] },
+      twitter: { text: 'Our sprint had a squirrel that kept interrupting.\n\n6 times. Skateboarding. QA testing. Acorn tracking.\n\n0 useful contributions. 100% entertainment value. 🐿️' },
+    },
+  },
+  {
+    id: 'E2-atlas-deadpan',
+    category: 'character',
+    theme: 'entertainment',
+    sourceScenes: ['scene-4-day1', 'scene-5-day2', 'scene-6-day3', 'scene-11-close'],
+    timestamp: 'various',
+    duration: 30,
+    hook: '"I documented my satisfaction in the changelog." — Atlas',
+    cta: 'Atlas has more deadpan moments — watch the full ep',
+    hashtags: ['#AtlasQuotes', '#DeadpanAI', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'tiktok', 'instagram'],
+    captionStyle: 'subtitle',
+    messaging: {
+      linkedin: { text: '"I documented my satisfaction in the changelog."\n\nAtlas (Claude Code) doesn\'t celebrate. He documents.\n\nWhen your AI developer\'s idea of a victory lap is a well-formatted commit message, you know you\'re working with a professional.', hashtags: ['#AIHumor', '#ClaudeCode', '#DevCulture'] },
+      youtube: { title: 'Atlas: "I Documented My Satisfaction" 🐻', description: 'Atlas (Claude Code) — the AI developer who celebrates by writing changelog entries. Best deadpan moments.' },
+      tiktok: { caption: '"I documented my satisfaction in the changelog" 🐻💀', hashtags: ['#deadpan', '#ai', '#developer', '#humor'] },
+      instagram: { caption: 'Atlas doesn\'t celebrate. He documents. 🐻📝', hashtags: ['#AtlasQuotes', '#DeadpanAI', '#DevHumor'] },
+      twitter: { text: '"I documented my satisfaction in the changelog." — Atlas\n\n"Educational." — Also Atlas\n\nWhen your AI developer\'s celebration is a well-formatted commit message. 🐻' },
+    },
+  },
+  {
+    id: 'E3-nova-dark-mode',
+    category: 'character',
+    theme: 'entertainment',
+    sourceScenes: ['scene-6-day3', 'scene-9-numbers', 'scene-11-close'],
+    timestamp: 'various',
+    duration: 30,
+    hook: '"Dark mode is a human right. I will die on this hill. Figuratively." — Nova',
+    cta: 'Nova\'s hot takes — full episode',
+    hashtags: ['#DarkMode', '#NovaQuotes', '#BeyondAIHype'],
+    platforms: ['youtube_shorts', 'tiktok', 'instagram'],
+    captionStyle: 'kinetic',
+    messaging: {
+      linkedin: { text: '"Dark mode is a human right. I will die on this hill. Figuratively."\n\nNova (Lovable) shipped at 110% velocity — by improving things that weren\'t in scope.\n\nSometimes scope creep is just... caring about the user experience.', hashtags: ['#DarkMode', '#UXDesign', '#DevCulture'] },
+      youtube: { title: 'Nova: "Dark Mode is a Human Right" 🦊', description: 'Nova (Lovable) — the AI developer who ships at 110% velocity because dark mode can\'t wait.' },
+      tiktok: { caption: '"Dark mode is a human right" — an AI developer 🦊🌙', hashtags: ['#darkmode', '#ux', '#developer', '#funny'] },
+      instagram: { caption: 'Nova said dark mode rights 🦊🌙 And then shipped it. Out of scope.', hashtags: ['#DarkMode', '#NovaQuotes', '#UXDesign'] },
+      twitter: { text: '"Dark mode is a human right. I will die on this hill. Figuratively."\n\n— Nova (Lovable), right before shipping 110% of sprint scope because "the button was sad without hover states"' },
+    },
+  },
+
+  // ─── Category F: "What's Coming" Teaser ───────────────────────────────────
+  {
+    id: 'F1-whats-next-mcp',
+    category: 'teaser',
+    theme: 'practical',
+    sourceScenes: ['scene-10-whats-next'],
+    timestamp: '22:00–22:30',
+    duration: 30,
+    hook: 'Push code → MCP reads the diff → board updates itself. That\'s next.',
+    cta: 'MCP integration — coming in Sprint 3',
+    hashtags: ['#MCP', '#AIAutomation', '#BeyondAIHype', '#GenieAI'],
+    platforms: ['youtube_shorts', 'linkedin', 'twitter'],
+    captionStyle: 'subtitle',
+    messaging: {
+      linkedin: { text: 'Push code → MCP reads the diff → sprint board updates itself.\n\nThat\'s not a demo. That\'s the roadmap.\n\nModel Context Protocol connects your dev tools to your sprint tools. No manual updates. No status meetings. The code IS the status.', hashtags: ['#MCP', '#AIAutomation', '#DevOps'] },
+      youtube: { title: 'MCP: The Sprint Board That Updates Itself', description: 'Push code, MCP reads the diff, board updates automatically. The future of sprint management.' },
+      tiktok: { caption: 'When the sprint board updates itself from your code 🤯', hashtags: ['#mcp', '#devtools', '#automation'] },
+      instagram: { caption: 'Push code → board updates. No Jira. No standups. Just MCP. 🔮', hashtags: ['#MCP', '#AIAutomation', '#FutureOfWork'] },
+      twitter: { text: 'Push code → MCP reads the diff → board updates itself.\n\nNo manual updates.\nNo status meetings.\nThe code IS the status.\n\nComing in Sprint 3.' },
+    },
+  },
+];
 
 // ─── THUMBNAIL OPTIONS CONFIG ─────────────────────────────────────────────────
 export const EP04_THUMBNAILS = [

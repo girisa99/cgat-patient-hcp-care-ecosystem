@@ -26,6 +26,7 @@ import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-h
 import { cn } from '@/lib/utils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
+import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
 
 // Character avatar imports — upgraded to Pixar 3D portraits for visual consistency with scene backgrounds
@@ -63,15 +64,14 @@ interface GeneratedAudio {
 type LineStatus = 'idle' | 'generating' | 'done' | 'error';
 
 // ─── Voice config mapping ────────────────────────────────────────────────────
+// Falls back to hardcoded EP04_VOICES when DB data not available.
 
-function getVoiceConfig(voice: 'host' | 'atlas' | 'nova' | 'squirrel' | 'allaudin') {
-  // Squirrel uses Nova's voice config with higher pitch; Allaudin uses a deep ElevenLabs voice
-  const voiceKey = voice === 'squirrel' ? 'nova' : voice === 'allaudin' ? 'host' : voice;
-  const v = EP04_VOICES[voiceKey];
+function getVoiceConfigFromStatic(voice: keyof typeof EP04_VOICES) {
+  const v = EP04_VOICES[voice];
   return {
     provider: v.provider as string,
-    voiceId: voice === 'allaudin' ? 'onwK4e9ZLuTAKqWW03F9' : v.voiceId, // Daniel voice for Allaudin — deep, resonant
-    stability: 'stability' in v ? (voice === 'allaudin' ? 0.6 : v.stability) : undefined,
+    voiceId: v.voiceId,
+    stability: 'stability' in v ? v.stability : undefined,
     similarityBoost: 'similarityBoost' in v ? v.similarityBoost : undefined,
     rate: 'rate' in v ? v.rate : undefined,
     pitch: 'pitch' in v ? v.pitch : undefined,
@@ -87,11 +87,11 @@ const VOICE_COLORS: Record<string, string> = {
 };
 
 const VOICE_LABELS: Record<string, string> = {
-  host: 'Sai Dasika — Host & Product Owner',
-  atlas: 'Atlas (Claude)',
-  nova: 'Nova (Lovable)',
-  squirrel: '🐿️ Squirrel — The Distractor',
-  allaudin: '🧞 Allaudin — The Genie',
+  host: 'Host (Brian) — Sai Dasika, Product Owner',
+  atlas: 'Atlas (Azure Guy) — Claude Code',
+  nova: 'Nova (Lily) — Lovable',
+  squirrel: '🐿️ Squirrel (Gigi) — The Distractor',
+  allaudin: '🧞 Allaudin (Clyde) — The Genie',
 };
 
 const CHARACTER_AVATARS: Record<string, string> = {
@@ -329,8 +329,58 @@ export default function EP04Production() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get('projectId');
-  const scriptKeys = Object.keys(EP04_SCRIPT_CONTENT);
   const { saveProjectContent, loadProjectContent, updateLineTTS, trackGenerationJob, completeGenerationJob, fetchTokenBreakdown, tokenBreakdown, isSaving, isLoading: isLoadingContent } = useCastProjectPersistence();
+
+  // ─── DB-driven data (with fallback to config imports) ──────────────
+  const dbProject = useCastProjectData(projectId);
+
+  // Build script content map from DB data when seeded, else fall back to config
+  const scriptContentForUI = React.useMemo<Record<string, ScriptLine>>(() => {
+    if (!dbProject.isSeeded || dbProject.scriptLines.length === 0) {
+      return EP04_SCRIPT_CONTENT;
+    }
+    const map: Record<string, ScriptLine> = {};
+    for (const line of dbProject.scriptLines) {
+      // Reverse-resolve scene_key from scene UUID
+      const scene = dbProject.scenes.find(s => s.id === line.scene_id);
+      const sceneKey = scene?.scene_key || line.scene_id;
+      const lc = (line.line_config || {}) as Record<string, unknown>;
+      map[line.line_key] = {
+        text: line.dialogue,
+        voice: line.character_id as ScriptLine['voice'],
+        scene: sceneKey,
+        duration_est: line.duration_hint ? parseInt(line.duration_hint) || 10 : 10,
+        direction: line.direction || '',
+        isInterruption: lc.isInterruption as boolean || false,
+        lipsync: lc.lipsync as boolean || false,
+        sfx: line.sfx_tags || undefined,
+        motion: line.motion || undefined,
+        links: lc.links as ScriptLine['links'] || undefined,
+        visual_ref: line.visual_tags?.[0] || undefined,
+      };
+    }
+    return map;
+  }, [dbProject.isSeeded, dbProject.scriptLines, dbProject.scenes]);
+
+  // Voice config lookup: DB first, then static config
+  const getVoiceConfig = React.useCallback((voice: string) => {
+    if (dbProject.isSeeded) {
+      const dbVoice = dbProject.voiceConfigFor(voice);
+      if (dbVoice) {
+        return {
+          provider: dbVoice.provider,
+          voiceId: dbVoice.voiceId,
+          stability: dbVoice.stability,
+          similarityBoost: dbVoice.similarityBoost,
+          rate: dbVoice.rate,
+          pitch: dbVoice.pitch,
+        };
+      }
+    }
+    return getVoiceConfigFromStatic(voice as keyof typeof EP04_VOICES);
+  }, [dbProject.isSeeded, dbProject.voiceConfigFor]);
+
+  const scriptKeys = Object.keys(scriptContentForUI);
 
   // State
   const [audioMap, setAudioMap] = useState<Record<string, GeneratedAudio>>({});
@@ -374,6 +424,18 @@ export default function EP04Production() {
       setContentLoaded(true);
     })();
   }, [projectId, contentLoaded, loadProjectContent]);
+
+  // ─── Auto-seed DB if projectId present but no DB data ──────────────────
+
+  useEffect(() => {
+    if (!projectId || dbProject.isLoading || dbProject.isSeeded) return;
+    // DB load completed but no data found — auto-seed from config
+    console.log('[EP04] No DB data found — auto-seeding from config files...');
+    dbProject.seedFromConfig().then(ok => {
+      if (ok) toast.success('Project seeded from config — DB is now source of truth');
+      else console.warn('[EP04] Auto-seed failed — using config file fallback');
+    });
+  }, [projectId, dbProject.isLoading, dbProject.isSeeded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Load token breakdown on mount ──────────────────────────────────────
 
@@ -428,7 +490,7 @@ export default function EP04Production() {
   // ─── Generate TTS for a single line ──────────────────────────────────────
 
   const generateLine = useCallback(async (key: string): Promise<boolean> => {
-    const line = EP04_SCRIPT_CONTENT[key];
+    const line = scriptContentForUI[key];
     if (!line) return false;
 
     setStatusMap(prev => ({ ...prev, [key]: 'generating' }));
@@ -580,7 +642,7 @@ export default function EP04Production() {
     }
 
     // Build scenes
-    const sceneEntries = Array.from(new Set(scriptKeys.map(k => EP04_SCRIPT_CONTENT[k].scene)));
+    const sceneEntries = Array.from(new Set(scriptKeys.map(k => scriptContentForUI[k].scene)));
     const scenesPayload = sceneEntries.map((sceneKey, idx) => ({
       project_id: projectId,
       scene_key: sceneKey,
@@ -593,7 +655,7 @@ export default function EP04Production() {
     }));
 
     // Build characters
-    const charKeys = new Set(scriptKeys.map(k => EP04_SCRIPT_CONTENT[k].voice));
+    const charKeys = new Set(scriptKeys.map(k => scriptContentForUI[k].voice));
     const charsPayload = Array.from(charKeys).map(ck => ({
       project_id: projectId,
       character_key: ck,
@@ -606,7 +668,7 @@ export default function EP04Production() {
 
     // Build script lines (scene_id will be resolved by the hook using scene_key)
     const linesPayload = scriptKeys.map((key, idx) => {
-      const line = EP04_SCRIPT_CONTENT[key];
+      const line = scriptContentForUI[key];
       const audio = audioMap[key];
       return {
         project_id: projectId,
@@ -642,14 +704,14 @@ export default function EP04Production() {
   // ─── Stats ───────────────────────────────────────────────────────────────
 
   const doneCount = scriptKeys.filter(k => statusMap[k] === 'done').length;
-  const totalDuration = scriptKeys.reduce((sum, k) => sum + EP04_SCRIPT_CONTENT[k].duration_est, 0);
+  const totalDuration = scriptKeys.reduce((sum, k) => sum + scriptContentForUI[k].duration_est, 0);
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
   // Group by scene
   const scenes = new Map<string, { keys: string[]; lines: ScriptLine[] }>();
   for (const key of scriptKeys) {
-    const line = EP04_SCRIPT_CONTENT[key];
+    const line = scriptContentForUI[key];
     if (!scenes.has(line.scene)) {
       scenes.set(line.scene, { keys: [], lines: [] });
     }

@@ -11,14 +11,34 @@
 import type { GenieCastSessionState, SelectedTemplate } from '@/hooks/useGenieCastSession';
 import type { MessagingContent, TemplateMapping, SceneScript } from '@/hooks/useUnifiedAuthoring';
 import { EP04_SCRIPT_CONTENT, type ScriptLine } from '@/config/ep04-script-content';
-import { EP04_SCENE_PIPELINES, EP04_VOICES, EP04_AVATAR_CONFIG, EP04_MUSIC_SCORE } from '@/config/ep04-production-config';
+import { EP04_SCENE_PIPELINES, EP04_VOICES, EP04_AVATAR_CONFIG, EP04_MUSIC_SCORE, SCRIPT_TO_PIPELINE_MAP } from '@/config/ep04-production-config';
 import { batchResolveScreenAssets, type ResolvedScreenAsset } from '@/services/screenAssetResolver';
 
 // ─── SCENE METADATA ────────────────────────────────────────────────────────────
-// Derive scene list from EP04_SCENE_PIPELINES keys (source of truth)
-const SCENE_IDS = Object.keys(EP04_SCENE_PIPELINES);
+// Derive scene list from script content (unique scene IDs, preserving order)
+const SCENE_IDS = [...new Set(Object.values(EP04_SCRIPT_CONTENT).map(line => line.scene))];
+// Pipeline scene IDs (for assembler lookups)
+const PIPELINE_SCENE_IDS = Object.keys(EP04_SCENE_PIPELINES);
 
+// Labels keyed by SCRIPT scene IDs (source of truth from ep04-script-content.ts)
 const SCENE_LABELS: Record<string, string> = {
+  'scene-0-title': 'Title + Allaudin Emerge',
+  'scene-1-problem': 'The Problem — Human Sprint Pain',
+  'scene-2-introductions': 'Meet the Team — Atlas, Nova & Host',
+  'scene-3-origin': 'Frustration + Origin Story',
+  'scene-4-solution': 'Sprint Tracker + Beta Launch',
+  'scene-5-governance': 'Governance & Guardrails',
+  'scene-6-po-actions': 'PO Actions — Born from Frustration',
+  'scene-7-velocity': 'Velocity & Scope Creep',
+  'scene-8-numbers': 'Dashboard Tour & Numbers',
+  'scene-9-challenges': 'Honest Challenges — What Broke',
+  'scene-10-whats-next': 'MCP Vision & What\'s Next',
+  'scene-11-close': 'CTA + Goodbye',
+};
+
+// Pipeline labels (keyed by pipeline scene IDs for backward compat)
+const PIPELINE_SCENE_LABELS: Record<string, string> = {
+  'scene-0-title': 'Title + Allaudin Emerge',
   'scene-1-cold-open': 'Cold Open — The Hook',
   'scene-2-meet-team': 'Meet the Team — Atlas, Nova & Host',
   'scene-3-governance': 'Governance — Territory Rules',
@@ -95,23 +115,33 @@ function buildEP04Messaging(): MessagingContent {
   return {
     id: 'ep04-messaging',
     productId: 'genie-cast',
-    hook: '41 tasks. 5 days. 2 AI developers. Zero standup meetings. This is what happened.',
-    valueProposition: 'One developer managing two AIs does the work of five — not in theory, in production, with governance and receipts.',
+    hook: '41 tasks. 5 days. Claude + Lovable. Zero standup meetings. This is what actually happened.',
+    valueProposition: 'One developer managing two AI developers — Claude Code for backend architecture, Lovable for frontend UI — does the work of five. Not in theory. In production. With governance, receipts, and a dashboard you can query.',
     painPoints: [
-      'Traditional sprints are slow and bottlenecked by human meetings',
-      'Context switching kills developer velocity',
-      'AI tools are overhyped but underdelivered in practice',
+      // Theme 1: Human-AI Collaboration
+      'Managing AI developers is harder than managing humans — they never stop, never context-switch, and wait on YOU',
+      'The human becomes the bottleneck: 36 hours in pending review because the PO was in meetings',
+      // Theme 2: Beyond AI Hype → Practical Results
+      'AI productivity claims lack receipts — "5x faster" means nothing without a queryable dashboard',
+      'Traditional sprints are slow and bottlenecked by meetings that AI developers don\'t need',
+      // Theme 3: AI Democratization
+      'Solo creators can\'t afford production teams — 19 AI providers replace an entire studio',
+      'AI tools are overhyped individually but transformative when orchestrated together',
     ],
     benefits: [
-      '5x traditional sprint velocity',
-      'Zero standup meetings — fully async',
-      'Real governance with territory rules',
-      'Measurable results via live dashboard',
+      '5x traditional sprint velocity — measured, not claimed',
+      'Zero standup meetings — fully async structured standups from Claude + Lovable',
+      'Real governance with CLAUDE.md territory rules — no merge conflicts in 41 tasks',
+      'Measurable results via live dashboard — every metric queryable',
+      '19 AI providers orchestrated through one platform (Genie Cast)',
+      'One human + two AIs = production-grade output across code, UI, and content',
     ],
     differentiators: [
-      'Two AIs with distinct roles — backend (Atlas/Claude) and frontend (Nova/Lovable)',
-      'Human PO acts as orchestra conductor, not coder',
-      'Sprint tracker dashboard proves claims with real data',
+      'Named AI developers: Claude Code (backend/architecture) + Lovable (frontend/UI) — not generic "AI tools"',
+      'Human PO acts as orchestra conductor — async approvals, not meetings',
+      'Sprint tracker dashboard proves every claim with real data and receipts',
+      'The podcast IS the product demo — 5 voices, 12 scenes, Pixar avatars, all produced by the same AI pipeline',
+      'AI democratization in practice — solo creator produces broadcast-quality content via 19 providers',
     ],
     cta: ctaLine?.text?.substring(0, 120) || 'Explore the sprint tracker dashboard yourself — all metrics are live and queryable.',
     shortScript: hookLine?.text?.substring(0, 200) || '',
@@ -140,12 +170,15 @@ function buildEP04TemplateMapping(): TemplateMapping {
   const allEntries = Object.entries(EP04_SCRIPT_CONTENT);
   const scenes: SceneScript[] = allEntries.map(([key, line], index) => {
     const voiceConfig = resolveVoiceConfig(line.voice);
-    const sceneLabel = SCENE_LABELS[line.scene] || line.scene;
+    const sceneLabel = SCENE_LABELS[line.scene] || PIPELINE_SCENE_LABELS[line.scene] || line.scene;
     const characterLabel = line.voice.charAt(0).toUpperCase() + line.voice.slice(1);
+
+    // Resolve script scene ID → pipeline scene ID via mapping
+    const pipelineSceneId = SCRIPT_TO_PIPELINE_MAP[line.scene] || line.scene;
 
     // Attach visual pipeline steps from the parent scene (only on first line of each scene)
     const isFirstLineOfScene = !allEntries.slice(0, index).some(([, l]) => l.scene === line.scene);
-    const scenePipeline = EP04_SCENE_PIPELINES[line.scene];
+    const scenePipeline = EP04_SCENE_PIPELINES[pipelineSceneId];
     // Filter out TTS steps (handled separately) — keep only visual/audio production steps
     const visualSteps = scenePipeline
       ? scenePipeline.filter(step => step.type !== 'tts').map(step => step as Record<string, unknown>)
@@ -153,7 +186,7 @@ function buildEP04TemplateMapping(): TemplateMapping {
 
     return {
       sceneId: key, // unique per line (e.g. 'title-welcome', 'atlas-intro-1')
-      sceneKey: line.scene, // groups lines by parent scene
+      sceneKey: pipelineSceneId, // groups lines by pipeline scene ID for assembler lookup
       title: `${sceneLabel} — ${characterLabel}`,
       orderIndex: index,
       scriptText: line.text,
@@ -333,5 +366,138 @@ export function getEP04Stats() {
     pipelineSteps: getEP04PipelineStepCount(),
     pipelineTypes: Array.from(pipelineTypes),
     musicScenes: Object.keys(EP04_MUSIC_SCORE).length,
+  };
+}
+
+// ─── DB-DRIVEN SESSION SEED ──────────────────────────────────────────────────
+// Builds a session seed from DB-loaded project data instead of config imports.
+// Falls back to the config-based path if DB data is incomplete.
+
+import type { PersistedScene, PersistedScriptLine, PersistedCharacter } from '@/hooks/useCastProjectPersistence';
+import type { VoiceConfig } from '@/hooks/useCastProjectData';
+
+export interface DBProjectData {
+  scenes: PersistedScene[];
+  scriptLines: PersistedScriptLine[];
+  characters: PersistedCharacter[];
+  voiceConfigFor: (key: string) => VoiceConfig | null;
+}
+
+/**
+ * Creates a GenieCastSessionState from DB-loaded project data.
+ * Falls back to config-based seed if DB data is insufficient.
+ */
+export function createEP04SessionSeedFromDB(
+  projectData: DBProjectData,
+): Partial<GenieCastSessionState> {
+  if (!projectData.scenes.length || !projectData.scriptLines.length) {
+    // Fallback to config-based seed
+    return createEP04SessionSeed();
+  }
+
+  // Build template mapping from DB data
+  const dbScenes: SceneScript[] = projectData.scriptLines.map((line, index) => {
+    const scene = projectData.scenes.find(s => s.id === line.scene_id);
+    const sceneKey = scene?.scene_key || line.scene_id;
+    const sceneConfig = scene?.scene_config as Record<string, unknown> | null;
+    const pipelineSceneId = (sceneConfig?.sceneIdMapping as Record<string, string>)?.pipelineSceneId || sceneKey;
+    const characterLabel = line.character_id.charAt(0).toUpperCase() + line.character_id.slice(1);
+    const sceneLabel = scene?.title || sceneKey;
+
+    // Get voice config from DB
+    const voiceConfig = projectData.voiceConfigFor(line.character_id);
+    const provider = voiceConfig?.provider || 'elevenlabs';
+    const voiceId = voiceConfig?.voiceId || '';
+    const speed = voiceConfig?.speed || 1.0;
+
+    // Pipeline steps from scene_config.pipeline (only on first line of scene)
+    const isFirstLine = !projectData.scriptLines.slice(0, index).some(l => l.scene_id === line.scene_id);
+    const pipelineSteps = (sceneConfig?.pipeline as { steps?: unknown[] })?.steps;
+    const visualSteps = isFirstLine && pipelineSteps?.length
+      ? (pipelineSteps as Record<string, unknown>[]).filter(s => (s as { type?: string }).type !== 'tts')
+      : undefined;
+
+    return {
+      sceneId: line.line_key,
+      sceneKey: pipelineSceneId,
+      title: `${sceneLabel} — ${characterLabel}`,
+      orderIndex: index,
+      scriptText: line.dialogue,
+      sourceType: 'custom' as const,
+      durationSeconds: line.duration_hint ? parseInt(line.duration_hint) || 10 : 10,
+      minDuration: Math.max(3, (line.duration_hint ? parseInt(line.duration_hint) || 10 : 10) - 5),
+      maxDuration: (line.duration_hint ? parseInt(line.duration_hint) || 10 : 10) + 10,
+      ttsConfig: {
+        provider,
+        voiceId,
+        speed,
+        pitch: 0,
+      },
+      characterVoice: line.character_id,
+      ...(visualSteps?.length ? { visualPipeline: visualSteps } : {}),
+      approvalStatus: 'approved' as const,
+    };
+  });
+
+  const totalDuration = dbScenes.reduce((sum, s) => sum + s.durationSeconds, 0);
+
+  const dbTemplateMapping: TemplateMapping = {
+    templateId: 'cafcd78a-7957-4021-ba8f-c20daba331b2',
+    templateName: 'EP04 — Beyond AI Hype',
+    scenes: dbScenes,
+    totalDuration,
+    styleIntent: 'product-hero',
+    resolvedProviders: {
+      image: 'alibaba-wanx',
+      video: 'alibaba-wan2.6',
+      tts: 'elevenlabs+azure',
+      llm: 'anthropic',
+    },
+  };
+
+  return {
+    selectedProductId: null,
+    selectedIntent: 'video',
+    detectedRegion: 'en',
+    selectedRegion: 'en',
+    selectedStyles: ['cinematic', 'pixar-3d', 'disney-2d'],
+    selectedTemplate: buildEP04Template(),
+    approvedMessaging: buildEP04Messaging(),
+    templateMapping: dbTemplateMapping,
+    ttsGenerated: false,
+    avSyncVerified: false,
+    targetRegions: ['global'],
+    selectedDialects: ['en-US'],
+    approvalItems: [
+      {
+        id: 'ep04-beyond-ai-hype',
+        stage: 'template_selection',
+        title: 'Beyond AI Hype — Episode 4',
+        description: `${projectData.scenes.length} scenes • ${Math.floor(totalDuration / 60)}:${String(totalDuration % 60).padStart(2, '0')}`,
+        status: 'approved',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'ep04-messaging',
+        stage: 'messaging_generation',
+        title: 'EP04 Marketing Messaging',
+        description: `${projectData.scriptLines.length} lines — approved`,
+        status: 'approved',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'ep04-script-mapping',
+        stage: 'template_mapping',
+        title: 'EP04 Script Mapping (DB)',
+        description: `${projectData.scriptLines.length} lines across ${projectData.scenes.length} scenes — from DB`,
+        status: 'approved',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ],
+    currentStage: 'tts_generation',
+    completedStages: ['template_selection', 'messaging_generation', 'script_composition', 'template_mapping'],
   };
 }

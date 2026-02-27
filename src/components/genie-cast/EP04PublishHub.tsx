@@ -51,10 +51,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { EP04_SOCIAL_CLIPS, EP04_THUMBNAILS } from '@/config/ep04-production-config';
+import { EP04_SOCIAL_CLIPS, EP04_THUMBNAILS, type SocialClip, type ClipCategory } from '@/config/ep04-production-config';
 import { useStreamingDownload, VIDEO_DOWNLOAD_PRESETS, type DownloadJob } from '@/hooks/video-editing/useStreamingDownload';
 import type { ProductionArtifacts } from '@/hooks/useGenieCastSession';
 import { supabase } from '@/integrations/supabase/client';
+import { useCastProjectData, type SocialClipData } from '@/hooks/useCastProjectData';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // SESSION PROPS — connects PRODUCE → PUBLISH
@@ -349,10 +350,43 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
 // TEASER CLIPS SECTION
 // ──────────────────────────────────────────────────────────────────────────────
 
-function TeaserClipsSection() {
+const CATEGORY_LABELS: Record<ClipCategory, { label: string; emoji: string; description: string }> = {
+  curiosity: { label: 'Curiosity Hooks', emoji: '🎣', description: 'Stop-scrollers for all platforms' },
+  pain_point: { label: 'Pain Points', emoji: '😤', description: 'Relatable moments that drive engagement' },
+  data_proof: { label: 'Data & Proof', emoji: '📊', description: 'Credibility clips for LinkedIn & YouTube' },
+  democratization: { label: 'AI Democratization', emoji: '🌍', description: 'Inspirational — Reels, TikTok, Shorts' },
+  character: { label: 'Character Moments', emoji: '🎭', description: 'Entertainment — character highlights' },
+  teaser: { label: 'What\'s Next', emoji: '🔮', description: 'Teaser for upcoming features' },
+};
+
+const CATEGORY_ORDER: ClipCategory[] = ['curiosity', 'pain_point', 'data_proof', 'democratization', 'character', 'teaser'];
+
+function TeaserClipsSection({ dbClips }: { dbClips?: SocialClipData[] }) {
+  // Use DB-sourced clips when available, otherwise fall back to config
+  const effectiveClips: SocialClip[] = React.useMemo(() => {
+    if (dbClips && dbClips.length > 0) {
+      return dbClips.map(dc => ({
+        id: dc.clipId,
+        category: dc.category as ClipCategory,
+        theme: dc.theme,
+        sourceScenes: [], // Not needed for rendering
+        timestamp: dc.timestamp,
+        duration: dc.duration,
+        hook: dc.hook,
+        cta: dc.cta,
+        hashtags: dc.hashtags,
+        platforms: dc.platforms,
+        captionStyle: dc.captionStyle as SocialClip['captionStyle'],
+        messaging: dc.messaging as SocialClip['messaging'],
+      }));
+    }
+    return EP04_SOCIAL_CLIPS;
+  }, [dbClips]);
+
   const [selectedClips, setSelectedClips] = useState<string[]>([]);
   const [generatingClips, setGeneratingClips] = useState<string[]>([]);
   const [readyClips, setReadyClips] = useState<string[]>([]);
+  const [expandedClip, setExpandedClip] = useState<string | null>(null);
 
   const toggleClip = (id: string) => {
     setSelectedClips(p => p.includes(id) ? p.filter(c => c !== id) : [...p, id]);
@@ -361,19 +395,19 @@ function TeaserClipsSection() {
   const handleGenerateClip = async (clipId: string) => {
     setGeneratingClips(p => [...p, clipId]);
     try {
-      const clip = EP04_SOCIAL_CLIPS.find(c => c.id === clipId);
-      // Call magic-clips-generator for real clip extraction
+      const clip = effectiveClips.find(c => c.id === clipId);
       await supabase.functions.invoke('magic-clips-generator', {
         body: {
           sourceVideoUrl: clip?.videoUrl || '',
-          platforms: ['youtube_shorts'],
+          platforms: clip?.platforms || ['youtube_shorts', 'linkedin', 'tiktok', 'instagram', 'twitter'],
           mode: 'manual',
           addCaptions: true,
+          captionStyle: clip?.captionStyle || 'subtitle',
           language: 'en',
         },
       });
       setReadyClips(p => [...p, clipId]);
-      toast.success(`Teaser clip ready: ${clipId}`);
+      toast.success(`Clip ready: ${clipId}`);
     } catch {
       toast.error(`Clip generation failed: ${clipId}`);
     } finally {
@@ -382,10 +416,17 @@ function TeaserClipsSection() {
   };
 
   const handleGenerateAll = async () => {
-    for (const clip of EP04_SOCIAL_CLIPS) {
+    for (const clip of effectiveClips) {
       await handleGenerateClip(clip.id);
     }
   };
+
+  // Group clips by category
+  const clipsByCategory = CATEGORY_ORDER.map(cat => ({
+    category: cat,
+    ...CATEGORY_LABELS[cat],
+    clips: effectiveClips.filter(c => c.category === cat),
+  })).filter(g => g.clips.length > 0);
 
   return (
     <Card>
@@ -394,87 +435,137 @@ function TeaserClipsSection() {
           <div>
             <CardTitle className="text-sm flex items-center gap-2">
               <Scissors className="w-4 h-4 text-primary" />
-              Teaser Clips · 5 × 30s
+              Social Clips · {effectiveClips.length} clips · 6 categories
             </CardTitle>
             <CardDescription className="text-xs">
-              Auto-cut highlight clips · YouTube Shorts / LinkedIn / TikTok ready
+              Multi-platform clips — YouTube Shorts, TikTok, Instagram Reels, LinkedIn, Twitter/X
             </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={handleGenerateAll} className="gap-2 text-xs">
             <Sparkles className="w-3.5 h-3.5" />
-            Generate All
+            Generate All ({effectiveClips.length})
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {EP04_SOCIAL_CLIPS.map((clip, i) => {
-            const isGenerating = generatingClips.includes(clip.id);
-            const isReady = readyClips.includes(clip.id);
-            const isSelected = selectedClips.includes(clip.id);
-
-            return (
-              <div
-                key={clip.id}
-                className={cn(
-                  'flex items-start gap-3 p-3 rounded-lg border transition-all',
-                  isSelected ? 'border-primary/50 bg-primary/5' : 'border-border/40 bg-muted/10',
-                )}
-              >
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => toggleClip(clip.id)}
-                  className="mt-0.5"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                      Clip {i + 1}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">{clip.timestamp}</span>
-                    <span className="text-xs text-muted-foreground">{clip.duration}s</span>
-                  </div>
-                  <p className="text-xs leading-relaxed text-foreground/90 italic">
-                    "{clip.hook}"
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1.5 flex-shrink-0">
-                  {isReady ? (
-                    <>
-                      <Badge className="text-[10px] bg-emerald-500/20 text-emerald-400 border-emerald-500/40 border px-2 py-0.5">
-                        <CheckCircle className="w-2.5 h-2.5 mr-1" />
-                        Ready
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-6 text-[10px] px-2"
-                        onClick={() => toast.info(`Downloading ${clip.id}…`)}
-                      >
-                        <Download className="w-3 h-3 mr-1" />
-                        MP4
-                      </Button>
-                    </>
-                  ) : isGenerating ? (
-                    <Badge variant="outline" className="text-[10px] text-primary border-primary/40 animate-pulse px-2 py-0.5">
-                      <Loader2 className="w-2.5 h-2.5 mr-1 animate-spin" />
-                      Cutting…
-                    </Badge>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => handleGenerateClip(clip.id)}
-                    >
-                      <Scissors className="w-3 h-3" />
-                      Cut
-                    </Button>
-                  )}
-                </div>
+        <div className="space-y-6">
+          {clipsByCategory.map(({ category, label, emoji, description, clips }) => (
+            <div key={category}>
+              {/* Category header */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm">{emoji}</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{label}</span>
+                <span className="text-[10px] text-muted-foreground">— {description}</span>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-auto">{clips.length} clips</Badge>
               </div>
-            );
-          })}
+
+              <div className="space-y-2">
+                {clips.map((clip) => {
+                  const isGenerating = generatingClips.includes(clip.id);
+                  const isReady = readyClips.includes(clip.id);
+                  const isSelected = selectedClips.includes(clip.id);
+                  const isExpanded = expandedClip === clip.id;
+
+                  return (
+                    <div key={clip.id}>
+                      <div
+                        className={cn(
+                          'flex items-start gap-3 p-3 rounded-lg border transition-all',
+                          isSelected ? 'border-primary/50 bg-primary/5' : 'border-border/40 bg-muted/10',
+                        )}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleClip(clip.id)}
+                          className="mt-0.5"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              {clip.id.split('-')[0]}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">{clip.duration}s</span>
+                            {clip.platforms.map(p => (
+                              <Badge key={p} variant="outline" className="text-[9px] px-1 py-0 text-muted-foreground">
+                                {p.replace('youtube_shorts', 'YT').replace('linkedin', 'LI').replace('tiktok', 'TT').replace('instagram', 'IG').replace('twitter', 'X')}
+                              </Badge>
+                            ))}
+                          </div>
+                          <p className="text-xs leading-relaxed text-foreground/90 italic">
+                            "{clip.hook}"
+                          </p>
+                          {/* Per-platform messaging preview toggle */}
+                          <button
+                            onClick={() => setExpandedClip(isExpanded ? null : clip.id)}
+                            className="text-[10px] text-primary hover:underline mt-1"
+                          >
+                            {isExpanded ? 'Hide messaging' : 'Show per-platform messaging'}
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-1.5 flex-shrink-0">
+                          {isReady ? (
+                            <>
+                              <Badge className="text-[10px] bg-emerald-500/20 text-emerald-400 border-emerald-500/40 border px-2 py-0.5">
+                                <CheckCircle className="w-2.5 h-2.5 mr-1" />
+                                Ready
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-[10px] px-2"
+                                onClick={() => toast.info(`Downloading ${clip.id}…`)}
+                              >
+                                <Download className="w-3 h-3 mr-1" />
+                                MP4
+                              </Button>
+                            </>
+                          ) : isGenerating ? (
+                            <Badge variant="outline" className="text-[10px] text-primary border-primary/40 animate-pulse px-2 py-0.5">
+                              <Loader2 className="w-2.5 h-2.5 mr-1 animate-spin" />
+                              Cutting…
+                            </Badge>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs gap-1"
+                              onClick={() => handleGenerateClip(clip.id)}
+                            >
+                              <Scissors className="w-3 h-3" />
+                              Cut
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Per-platform messaging preview */}
+                      {isExpanded && (
+                        <div className="ml-9 mt-1 mb-2 p-3 rounded-lg border border-border/30 bg-muted/5 space-y-2">
+                          {Object.entries(clip.messaging).map(([platform, msg]) => (
+                            <div key={platform} className="space-y-0.5">
+                              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {platform}
+                              </div>
+                              <p className="text-[11px] text-foreground/80 whitespace-pre-line leading-relaxed">
+                                {'text' in msg ? msg.text : 'caption' in msg ? msg.caption : 'title' in msg ? `${msg.title}\n${msg.description}` : ''}
+                              </p>
+                              {'hashtags' in msg && (msg as { hashtags?: string[] }).hashtags && (
+                                <div className="flex gap-1 flex-wrap">
+                                  {((msg as { hashtags: string[] }).hashtags).map(h => (
+                                    <span key={h} className="text-[9px] text-primary/70">{h}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         {readyClips.length > 0 && (
@@ -492,10 +583,10 @@ function TeaserClipsSection() {
               size="sm"
               variant="outline"
               className="gap-2 text-xs"
-              onClick={() => toast.info('Publishing selected clips to YouTube Shorts & LinkedIn…')}
+              onClick={() => toast.info('Publishing selected clips to all target platforms…')}
             >
               <Send className="w-3.5 h-3.5" />
-              Publish to YT + LI
+              Publish Selected
             </Button>
           </div>
         )}
@@ -641,6 +732,11 @@ export function EP04PublishHub({
   const { platforms: PLATFORMS } = useSocialPlatforms();
   const oauth = useSocialOAuth();
   const lsCast = useLSCastIntegration();
+
+  // ─── DB-driven social clips ────────────────────────────────────────
+  const [searchParams] = React.useState(() => new URLSearchParams(window.location.search));
+  const projectId = searchParams.get('projectId');
+  const dbProject = useCastProjectData(projectId);
 
   // OAuth connect handler — triggers platform OAuth flow
   const handleConnect = useCallback(async (platformId: string) => {
@@ -993,7 +1089,7 @@ export function EP04PublishHub({
 
         {/* CLIPS TAB */}
         <TabsContent value="clips" className="mt-4">
-          <TeaserClipsSection />
+          <TeaserClipsSection dbClips={dbProject.isSeeded ? dbProject.socialClips : undefined} />
         </TabsContent>
 
         {/* THUMBNAILS TAB */}
