@@ -13,6 +13,8 @@ import type { MessagingContent, TemplateMapping, SceneScript } from '@/hooks/use
 import { EP04_SCRIPT_CONTENT, type ScriptLine } from '@/config/ep04-script-content';
 import { EP04_SCENE_PIPELINES, EP04_VOICES, EP04_AVATAR_CONFIG, EP04_MUSIC_SCORE, SCRIPT_TO_PIPELINE_MAP } from '@/config/ep04-production-config';
 import { batchResolveScreenAssets, type ResolvedScreenAsset } from '@/services/screenAssetResolver';
+import type { PersistedScene, PersistedScriptLine, PersistedCharacter } from '@/hooks/useCastProjectPersistence';
+import type { VoiceConfig } from '@/hooks/useCastProjectData';
 
 // ─── SCENE METADATA ────────────────────────────────────────────────────────────
 // Derive scene list from script content (unique scene IDs, preserving order)
@@ -372,9 +374,6 @@ export function getEP04Stats() {
 // ─── DB-DRIVEN SESSION SEED ──────────────────────────────────────────────────
 // Builds a session seed from DB-loaded project data instead of config imports.
 // Falls back to the config-based path if DB data is incomplete.
-
-import type { PersistedScene, PersistedScriptLine, PersistedCharacter } from '@/hooks/useCastProjectPersistence';
-import type { VoiceConfig } from '@/hooks/useCastProjectData';
 
 export interface DBProjectData {
   scenes: PersistedScene[];
