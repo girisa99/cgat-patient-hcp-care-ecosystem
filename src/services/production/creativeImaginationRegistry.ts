@@ -2071,7 +2071,11 @@ interface RegionalAdaptationLayer {
 }
 
 const REGIONAL_ADAPTATION_LAYERS: Record<string, RegionalAdaptationLayer> = {
-  // ── 16 Parent Regions ──
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 16 PARENT REGIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
   NAM:          { visualOverlay: 'American suburban setting, autumn maple trees, baseball caps and sneakers', instrumentOverlay: ['country guitar', 'blues harmonica', 'jazz trumpet'], characterOverlay: 'casual American clothing, diverse cast', environmentOverlay: 'Main Street, yellow school bus, white picket fence, fire hydrant', narrativeOverlay: 'direct storytelling, underdog journey, dream-chasing' },
   EU:           { visualOverlay: 'European cobblestone streets, café culture, Renaissance architecture', instrumentOverlay: ['accordion', 'classical violin', 'church organ'], characterOverlay: 'elegant European fashion, scarves, berets', environmentOverlay: 'Parisian boulevards, Tuscan hills, Alpine meadows, Gothic cathedrals', narrativeOverlay: 'layered literary narrative, philosophical undertones' },
   EURASIA:      { visualOverlay: 'Slavic ornamental patterns, birch forests, onion domes', instrumentOverlay: ['balalaika', 'domra', 'bayan accordion'], characterOverlay: 'fur-lined coats, Slavic embroidery, matryoshka motifs', environmentOverlay: 'birch forests, dachas, snow-covered villages, Red Square silhouette', narrativeOverlay: 'deeply emotional, literary depth, melancholic beauty' },
@@ -2079,7 +2083,7 @@ const REGIONAL_ADAPTATION_LAYERS: Record<string, RegionalAdaptationLayer> = {
   MENA:         { visualOverlay: 'Islamic geometric patterns, desert landscapes, calligraphic art', instrumentOverlay: ['oud', 'qanun', 'ney', 'darbuka', 'riq'], characterOverlay: 'traditional Arab/Persian attire, geometric accessories, henna patterns', environmentOverlay: 'desert oasis, arabesque courtyard, souk marketplace, minaret silhouette', narrativeOverlay: 'parable wisdom, Sufi poetic depth, One Thousand and One Nights layering' },
   AFRICA:       { visualOverlay: 'kente/ankara textile patterns, Adinkra symbols, baobab trees', instrumentOverlay: ['djembe', 'kora', 'talking drums', 'mbira', 'balafon'], characterOverlay: 'vibrant African prints, headwraps, beaded accessories, ceremonial regalia', environmentOverlay: 'savanna sunset, village gathering, marketplace, Congo rainforest', narrativeOverlay: 'call-and-response communal, Anansi trickster tales, proverb-led wisdom' },
   INDIA:        { visualOverlay: 'Madhubani/rangoli patterns, marigold garlands, diya lamps', instrumentOverlay: ['sitar', 'tabla', 'bansuri', 'shehnai', 'harmonium'], characterOverlay: 'saris, kurtas, bindis, bangles, Mughal jewelry', environmentOverlay: 'Rajasthani palace, Kerala backwaters, temple gopuram, monsoon rain, holi colors', narrativeOverlay: 'layered family saga, Bollywood emotional peaks, festival joy' },
-  PAKISTAN:     { visualOverlay: 'truck art patterns, ajrak prints, Mughal miniature borders', instrumentOverlay: ['rabab', 'dhol', 'sitar', 'chimta', 'harmonium'], characterOverlay: 'shalwar kameez, phulkari embroidery, jingle truck mirror work', environmentOverlay: 'Karakoram Highway, Lahore Fort, Swat Valley, truck art panels', narrativeOverlay: 'Sufi mysticism, ghazal poetic depth, hospitality warmth' },
+  PAKISTAN:      { visualOverlay: 'truck art patterns, ajrak prints, Mughal miniature borders', instrumentOverlay: ['rabab', 'dhol', 'sitar', 'chimta', 'harmonium'], characterOverlay: 'shalwar kameez, phulkari embroidery, jingle truck mirror work', environmentOverlay: 'Karakoram Highway, Lahore Fort, Swat Valley, truck art panels', narrativeOverlay: 'Sufi mysticism, ghazal poetic depth, hospitality warmth' },
   BANGLADESH:   { visualOverlay: 'jamdani weave patterns, rickshaw art, river delta landscapes', instrumentOverlay: ['ektara', 'dotara', 'dhol', 'flute', 'harmonium'], characterOverlay: 'muslin saris, Nakshi Kantha embroidery, river-culture accessories', environmentOverlay: 'Ganges delta, mangrove Sundarbans, Dhaka rickshaw streets, monsoon rivers', narrativeOverlay: 'Baul spiritual wandering, river journey metaphor, resilience through floods' },
   SOUTH_ASIA:   { visualOverlay: 'Himalayan prayer flags, Buddhist mandala, terraced rice paddies', instrumentOverlay: ['singing bowls', 'madal', 'sarangi', 'damaru', 'bansuri'], characterOverlay: 'Himalayan wool garments, prayer beads, Buddhist ornaments', environmentOverlay: 'Himalayan peaks, prayer flag bridges, monastery courtyards, terraced hills', narrativeOverlay: 'Buddhist parable wisdom, mountain pilgrimage journey, mindful contemplation' },
   SEA:          { visualOverlay: 'batik patterns, lotus flowers, golden temple spires, tropical lush', instrumentOverlay: ['gamelan', 'khene', 'angklung', 'suling', 'ranat'], characterOverlay: 'batik sarong, temple dance costumes, flower garlands, silk fabrics', environmentOverlay: 'temple complexes, floating markets, rice paddies, tropical jungle, coral reefs', narrativeOverlay: 'wayang epic storytelling, nature harmony, spirit world connection' },
@@ -2088,6 +2092,103 @@ const REGIONAL_ADAPTATION_LAYERS: Record<string, RegionalAdaptationLayer> = {
   CARIBBEAN:    { visualOverlay: 'tropical pastels, steel pan reflections, carnival feather headdresses', instrumentOverlay: ['steel pan', 'congas', 'timbales', 'reggae guitar', 'trumpet'], characterOverlay: 'carnival costumes, island casual, calypso performer attire', environmentOverlay: 'turquoise waters, palm-lined beaches, colonial fort, carnival parade, rum distillery', narrativeOverlay: 'calypso social commentary, limbo storytelling, island rhythm' },
   OCEANIA:      { visualOverlay: 'dot painting ochres, tapa cloth, Maori koru spirals, coral reef blues', instrumentOverlay: ['didgeridoo', 'ukulele', 'log drums', 'conch shell', 'pahu drum'], characterOverlay: 'tapa cloth wraps, Maori ta moko patterns, shell accessories', environmentOverlay: 'Great Barrier Reef, outback red earth, volcanic islands, rainforest canopy', narrativeOverlay: 'Dreamtime songline, Pacific wayfinding, ancestor spirit connection' },
   CENTRAL_ASIA: { visualOverlay: 'suzani embroidery, Silk Road caravan, yurt felt patterns', instrumentOverlay: ['dombra', 'komuz', 'dotar', 'rubab', 'throat singing'], characterOverlay: 'chapan coats, telpak hats, suzani-embroidered vests', environmentOverlay: 'steppe grasslands, Registan square, yurt encampment, Silk Road oasis, eagle hunting', narrativeOverlay: 'nomadic journey epic, Silk Road merchant tales, eagle hunter valor' },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 62 SUBREGIONS — granular cultural detail within each parent
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ── NAM (2) ──
+  NAM_US:       { visualOverlay: 'American urban skylines, suburb cul-de-sacs, Route 66, national parks', instrumentOverlay: ['blues guitar', 'jazz trumpet', 'country fiddle'], characterOverlay: 'baseball caps, denim, sneaker culture, diverse American cast', environmentOverlay: 'NYC skyline, California coast, Midwest cornfields, Southern porches', narrativeOverlay: 'American Dream underdog, startup hustle, direct benefit-focused' },
+  NAM_CA:       { visualOverlay: 'Canadian maple forests, aurora borealis, urban multicultural mosaics', instrumentOverlay: ['fiddle', 'acoustic guitar', 'Indigenous drum'], characterOverlay: 'plaid flannel, winter parkas, multicultural fusion clothing', environmentOverlay: 'Rocky Mountains, Toronto skyline, Quebec old town, prairie wheat fields', narrativeOverlay: 'inclusive multicultural, polite-but-strong, nature-connected storytelling' },
+
+  // ── EU (6) ──
+  EU_DACH:      { visualOverlay: 'Bauhaus precision, Alpine chalets, Black Forest cuckoo clocks', instrumentOverlay: ['zither', 'alpine horn', 'classical piano'], characterOverlay: 'engineered fashion, Lederhosen/Dirndl traditional, precise tailoring', environmentOverlay: 'Swiss Alps, Bavarian village, Viennese concert hall, Berlin gallery', narrativeOverlay: 'engineering precision, trust through quality, structured logical progression' },
+  EU_FRANCE:    { visualOverlay: 'Art Nouveau ironwork, lavender fields, patisserie windows', instrumentOverlay: ['accordion', 'violin', 'chanson vocals'], characterOverlay: 'Parisian chic, striped marinière, silk scarves, effortless elegance', environmentOverlay: 'Eiffel Tower, Provence countryside, Côte d\'Azur, Montmartre cobblestones', narrativeOverlay: 'philosophical depth, romantic sensibility, refined intellectual discourse' },
+  EU_IBERIA:    { visualOverlay: 'Moorish tile azulejo, flamenco movement, sun-drenched plazas', instrumentOverlay: ['flamenco guitar', 'cajón', 'castanets'], characterOverlay: 'flamenco ruffles, matador embroidery, Portuguese fisherman knits', environmentOverlay: 'Alhambra arches, Lisbon tram streets, Barcelona Gaudí, Andalusian courtyards', narrativeOverlay: 'passionate storytelling, duende emotional depth, family-community warmth' },
+  EU_NORDIC:    { visualOverlay: 'Scandinavian minimalism, fjord landscapes, Dala horse motifs, aurora glow', instrumentOverlay: ['Hardanger fiddle', 'nyckelharpa', 'kantele'], characterOverlay: 'hygge knitwear, functional Nordic design, natural fiber clothing', environmentOverlay: 'fjords, northern lights, red wooden cabins, midnight sun, archipelago', narrativeOverlay: 'understated elegance, design-thinking, lagom balanced, nature reverence' },
+  EU_BENELUX:   { visualOverlay: 'Dutch windmills, tulip fields, Art Deco Brussels, canal houses', instrumentOverlay: ['carillon bells', 'barrel organ', 'classical strings'], characterOverlay: 'practical cycling fashion, Delft blue accents, diamond-district sparkle', environmentOverlay: 'Amsterdam canals, Bruges medieval, Luxembourg castles, tulip fields', narrativeOverlay: 'direct pragmatic, no-nonsense value, trading crossroads heritage' },
+  EU_ITALY:     { visualOverlay: 'Renaissance fresco, Venetian masks, Tuscan cypress rows, marble David', instrumentOverlay: ['mandolin', 'opera vocals', 'violin'], characterOverlay: 'Italian couture, Venetian glass jewelry, leather artisan accessories', environmentOverlay: 'Roman Colosseum, Venice canals, Tuscan vineyards, Amalfi coast, Florentine piazza', narrativeOverlay: 'bella vita passion, artisan craftsmanship storytelling, dramatic operatic emotion' },
+
+  // ── MENA (7) ──
+  MENA_GULF:    { visualOverlay: 'futuristic towers, desert dunes meeting skyline, pearl diving heritage', instrumentOverlay: ['oud', 'riq', 'Arabian percussion'], characterOverlay: 'kandura/dishdasha elegance, abaya haute couture, gold souq jewelry', environmentOverlay: 'Burj Khalifa, desert safari dunes, pearl-diving dhow, futuristic metro', narrativeOverlay: 'aspirational luxury, vision-of-the-future, pearl-to-skyscraper transformation' },
+  MENA_LEVANT:  { visualOverlay: 'Roman ruins, cedar trees, Mediterranean mosaics, souk spice palettes', instrumentOverlay: ['buzuq', 'ney', 'kanun', 'derbake'], characterOverlay: 'Mediterranean-chic, embroidered tatreez, silver filigree jewelry', environmentOverlay: 'Beirut corniche, Petra rose city, Damascus old souk, olive groves, cedar mountains', narrativeOverlay: 'cosmopolitan creative resilience, Phoenician trader wit, poetic nostalgia' },
+  MENA_EGYPT:   { visualOverlay: 'pharaonic hieroglyphs, Nile feluccas, Khan el-Khalili lanterns', instrumentOverlay: ['oud', 'tabla', 'rebab', 'mizmar'], characterOverlay: 'galabeya traditional, modern Cairo chic, Eye of Horus accessories', environmentOverlay: 'Pyramids of Giza, Nile river, Cairo skyline, Luxor temples, Alexandria library', narrativeOverlay: 'Egyptian humor and wit, Umm el-Dunya (mother of the world) pride, relatable warmth' },
+  MENA_MAGHREB: { visualOverlay: 'zellige tilework, Marrakech riads, Berber geometric patterns, Sahara dunes', instrumentOverlay: ['guembri', 'bendir', 'oud', 'Gnawa clapping'], characterOverlay: 'djellaba, Berber silver jewelry, embroidered babouche slippers', environmentOverlay: 'Marrakech medina, Atlas Mountains, Sahara camel caravans, Chefchaouen blue city', narrativeOverlay: 'Maghreb multicultural pride, Gnawa spiritual depth, crossroads-of-civilizations' },
+  MENA_IRAQ:    { visualOverlay: 'Mesopotamian ziggurats, Babylonian lion gates, Tigris-Euphrates delta', instrumentOverlay: ['joza', 'santour', 'tabla', 'zurna'], characterOverlay: 'Kurdish embroidered vest, abaya with gold trim, Babylonian-inspired accessories', environmentOverlay: 'Mesopotamian marshlands, Erbil citadel, Baghdad riverside, ancient Babylon ruins', narrativeOverlay: 'cradle-of-civilization heritage, Mesopotamian epic storytelling, renewal from history' },
+  MENA_YEMEN:   { visualOverlay: 'Sana\'a gingerbread tower houses, Socotra dragon blood trees, terraced wadis', instrumentOverlay: ['mizmar', 'tabla', 'oud'], characterOverlay: 'Yemeni turban and jambiya dagger, embroidered futa, silver Bedouin jewelry', environmentOverlay: 'Sana\'a old city, Socotra alien landscapes, Hadhramaut mud skyscrapers, coffee terraces', narrativeOverlay: 'ancient Arabian poetry tradition, dignified connection, mountain resilience' },
+  MENA_ISRAEL:  { visualOverlay: 'Bauhaus Tel Aviv, Jerusalem stone, startup whiteboards, Dead Sea blues', instrumentOverlay: ['oud', 'darbuka', 'clarinet', 'electronic synth'], characterOverlay: 'startup casual, kibbutz functional, Jerusalem modest, Tel Aviv beach-chic', environmentOverlay: 'Tel Aviv beach skyline, Jerusalem old city, Negev desert, Dead Sea, startup offices', narrativeOverlay: 'bold innovation chutzpah, ancient-meets-future, startup-nation problem-solving' },
+
+  // ── INDIA (5) ──
+  INDIA_NORTH:  { visualOverlay: 'Mughal arches, Holi color powder, wheat fields, Ganges ghats', instrumentOverlay: ['sitar', 'tabla', 'shehnai', 'dholak'], characterOverlay: 'Bollywood glamour saris, kurta-churidar, Rajasthani mirror work, gold jhumka earrings', environmentOverlay: 'Taj Mahal, Rajasthani desert forts, Delhi Red Fort, Varanasi ghats, mustard fields', narrativeOverlay: 'Bollywood dramatic family saga, Holi festival joy, warm hospitality' },
+  INDIA_SOUTH:  { visualOverlay: 'Dravidian temple gopurams, banana leaf meals, classical Bharatanatyam poses', instrumentOverlay: ['veena', 'mridangam', 'nadaswaram', 'ghatam'], characterOverlay: 'silk Kanchipuram saris, jasmine flower garlands, temple gold jewelry, mundu-veshti', environmentOverlay: 'Meenakshi temple, Kerala backwaters, Hampi ruins, Mysore palace, coffee plantations', narrativeOverlay: 'classical precision, tech-heritage balance, temple devotion meets silicon city' },
+  INDIA_EAST:   { visualOverlay: 'Durga Puja pandals, rice paddy reflections, Darjeeling tea gardens', instrumentOverlay: ['esraj', 'tabla', 'dhak drum', 'flute'], characterOverlay: 'Bengali cotton saris with red border, Assamese mekhela, intellectual bhadralok style', environmentOverlay: 'Howrah Bridge, Sundarbans mangroves, Darjeeling hills, Konark sun temple, tea estates', narrativeOverlay: 'intellectual artistic depth, Tagore poetic sensibility, Durga Puja community spirit' },
+  INDIA_WEST:   { visualOverlay: 'Gujarati Rann of Kutch white desert, Ganesh Chaturthi processions, Bollywood studios', instrumentOverlay: ['harmonium', 'dholak', 'tabla', 'dandiya sticks'], characterOverlay: 'Gujarati chaniya choli, Maharashtrian nauvari sari, Parsi border embroidery', environmentOverlay: 'Gateway of India, Gir lion sanctuary, Rann of Kutch, Ajanta Ellora caves, Goa beaches', narrativeOverlay: 'entrepreneurial vibrant, Garba festival energy, business-community storytelling' },
+  INDIA_PAN:    { visualOverlay: 'tricolor motifs, unity-in-diversity cultural mosaic, Incredible India tourism', instrumentOverlay: ['sitar', 'tabla', 'bansuri', 'harmonium', 'dholak'], characterOverlay: 'pan-Indian fusion fashion, khadi handloom, tricolor accessories', environmentOverlay: 'India Gate, diverse landscape montage, festival collage, unity celebrations', narrativeOverlay: 'unity-in-diversity pride, national aspiration, inclusive all-India storytelling' },
+
+  // ── AFRICA (5) ──
+  AFRICA_EAST:  { visualOverlay: 'Maasai beadwork, Kilimanjaro silhouette, savanna acacia, M-Pesa mobile culture', instrumentOverlay: ['nyatiti', 'kayamba', 'drums', 'Swahili vocals'], characterOverlay: 'Maasai shuka wraps, Kikoi fabrics, beaded necklaces, mobile-first youth style', environmentOverlay: 'Serengeti plains, Zanzibar stone town, Nairobi skyline, Great Rift Valley, tea highlands', narrativeOverlay: 'mobile-first hustle, safari wonder, Ubuntu communal storytelling, tech-leapfrog' },
+  AFRICA_WEST:  { visualOverlay: 'Nollywood vibrant, Yoruba Gele headwrap, Ashanti gold weights, Sahel indigo', instrumentOverlay: ['djembe', 'kora', 'talking drums', 'shekere'], characterOverlay: 'ankara print agbada, kente wrapped, Gele headties, coral bead jewelry', environmentOverlay: 'Lagos skyline, Sahel desert edge, tropical coast, market squares, Niger River', narrativeOverlay: 'Nollywood dramatic, proverb-led, Anansi trickster wisdom, market-hustle energy' },
+  AFRICA_SOUTH: { visualOverlay: 'Table Mountain, Ndebele geometric house painting, rainbow nation palette', instrumentOverlay: ['marimba', 'uhadi bow', 'concertina', 'mbira', 'isicathamiya vocals'], characterOverlay: 'Madiba shirt, Ndebele beadwork, Shweshwe fabric, Zulu shield motifs', environmentOverlay: 'Cape Town Table Mountain, Kruger safari, Soweto murals, Drakensberg peaks, vineyards', narrativeOverlay: 'rainbow-nation unity, resilience-innovation, Ubuntu philosophy, post-apartheid hope' },
+  AFRICA_NORTH: { visualOverlay: 'pharaonic-Berber hybrid patterns, Mediterranean coast, Saharan crossroads', instrumentOverlay: ['oud', 'bendir', 'guembri', 'mizmar'], characterOverlay: 'djellaba-kaftan blend, Berber tattoo motifs, Mediterranean-North African fusion', environmentOverlay: 'Sahara edge, Mediterranean coast, ancient ruins, medina old cities, Atlas passes', narrativeOverlay: 'crossroads-of-civilizations, Mediterranean-Saharan bridge, heritage-modernity fusion' },
+  AFRICA_FRANCO:{ visualOverlay: 'Francophone elegance meets West African vibrancy, boubou grandeur', instrumentOverlay: ['balafon', 'kora', 'tama', 'French chanson elements'], characterOverlay: 'grand boubou, sapeur Congolese dandyism, pagne/wrapper elegance', environmentOverlay: 'Dakar Monument, Abidjan plateau, Kinshasa music scene, francophone colonial architecture', narrativeOverlay: 'Franco-African sophistication, Négritude literary depth, music-culture fusion' },
+
+  // ── SEA (5) ──
+  SEA_MALAY:    { visualOverlay: 'batik mega mendung clouds, Islamic crescent moons, tropical orchids, wayang kulit', instrumentOverlay: ['gamelan', 'angklung', 'sape', 'kompang'], characterOverlay: 'batik sarong kebaya, baju kurung, songkok, tudung, bunga rampai garlands', environmentOverlay: 'Borobudur temple, Petronas Towers, Bali rice terraces, floating mosques, rainforest', narrativeOverlay: 'halal-economy pride, gotong-royong communal, nature-spirit harmony' },
+  SEA_THAI:     { visualOverlay: 'golden temple spires, Thai Lanna lanterns, elephant motifs, lotus ponds', instrumentOverlay: ['ranat ek', 'khim', 'saw duang', 'klong thap'], characterOverlay: 'Thai silk, temple dancer crown (chada), flower garlands, gold accessories', environmentOverlay: 'Grand Palace Bangkok, Chiang Mai temples, floating markets, Thai beach sunsets', narrativeOverlay: 'sabai-sabai gentle harmony, Thai smile warmth, Buddhist middle-path balance' },
+  SEA_VIET:     { visualOverlay: 'ao dai silk, conical non la hats, lotus flowers, dragon boat prows', instrumentOverlay: ['dan bau', 'dan tranh', 'trong com', 'sao truc flute'], characterOverlay: 'ao dai traditional, non la conical hat, lacquer accessories, lotus motifs', environmentOverlay: 'Ha Long Bay, Hoi An lanterns, Mekong Delta, Hanoi Old Quarter, Saigon skyline', narrativeOverlay: 'dynamic-rising ambition, bamboo resilience (bending not breaking), family devotion' },
+  SEA_PHIL:     { visualOverlay: 'jeepney art, terno butterfly sleeves, coral reef colors, fiesta banners', instrumentOverlay: ['kulintang', 'rondalla guitars', 'bamboo percussion', 'karaoke vocals'], characterOverlay: 'terno gown, barong tagalog, festival costumes, pearl accessories', environmentOverlay: 'Chocolate Hills, Manila Bay, rice terraces Banaue, Sinulog festival, island beaches', narrativeOverlay: 'bayanihan communal spirit, fiesta joyful, resilient-cheerful, Taglish casual warmth' },
+  SEA_PAN:      { visualOverlay: 'Marina Bay skyline, merlion, multicultural mosaic, garden city orchids', instrumentOverlay: ['erhu', 'tabla', 'gamelan', 'pop synth'], characterOverlay: 'modern multicultural fashion, Peranakan beadwork accents, practical tropical smart', environmentOverlay: 'Gardens by the Bay, Orchard Road, hawker centres, Marina Bay Sands, multicultural districts', narrativeOverlay: 'kiasu excellence, efficiency-innovation, multicultural meritocracy, garden-city precision' },
+
+  // ── CJK (4) ──
+  CJK_CN:       { visualOverlay: 'guochao modern Chinese, dragon cloud patterns, red lanterns, ink wash mountains', instrumentOverlay: ['guqin', 'pipa', 'erhu', 'dizi', 'gong'], characterOverlay: 'modern hanfu fusion, qipao elements, jade accessories, red-gold palette', environmentOverlay: 'Great Wall, Shanghai Bund, Guilin karst peaks, Forbidden City, Li River mist', narrativeOverlay: 'guochao national pride, 5000-year heritage meets tech future, collective aspiration' },
+  CJK_JP:       { visualOverlay: 'sakura cherry blossoms, torii gates, minimalist wabi-sabi, ukiyo-e waves', instrumentOverlay: ['shamisen', 'shakuhachi', 'koto', 'taiko'], characterOverlay: 'kimono elegance, minimalist modern Japanese, cherry blossom accessories', environmentOverlay: 'Mt. Fuji, Kyoto temples, Tokyo neon, zen gardens, bamboo forests, hot springs', narrativeOverlay: 'omotenashi precision, mono no aware (pathos of things), seasonal mindfulness' },
+  CJK_KR:       { visualOverlay: 'Hallyu K-pop neon, hanbok curves, celadon green, palace roof lines', instrumentOverlay: ['gayageum', 'janggu', 'daegeum', 'K-pop beats'], characterOverlay: 'K-fashion trendy, modern hanbok fusion, skincare glow aesthetic', environmentOverlay: 'Seoul skyline, Gyeongbokgung palace, Bukchon hanok village, Jeju volcanic island', narrativeOverlay: 'Hallyu cool innovation, K-drama emotional intensity, ppalli-ppalli fast pacing' },
+  CJK_TW:       { visualOverlay: 'night market lanterns, bubble tea warmth, temple incense coils, Pacific coast', instrumentOverlay: ['erhu', 'pipa', 'electronic indie', 'mountain flute'], characterOverlay: 'creative artisan casual, aboriginal textile patterns, night market vendor warmth', environmentOverlay: 'Taipei 101, Jiufen old street, Taroko Gorge, night markets, Sun Moon Lake', narrativeOverlay: 'artisan creative warmth, night-market communal, indie-creative quality-focus' },
+
+  // ── LATAM (5) ──
+  LATAM_MX:     { visualOverlay: 'Día de los Muertos calaveras, Aztec sun stone, papel picado, agave fields', instrumentOverlay: ['mariachi trumpet', 'guitarrón', 'vihuela', 'marimba'], characterOverlay: 'charro suit, huipil embroidery, calavera face paint, sombrero', environmentOverlay: 'Chichén Itzá, Mexico City murals, Oaxaca markets, Cenote caves, Frida\'s blue house', narrativeOverlay: 'Mexican calidez warmth, Día de los Muertos ancestor love, magical realism depth' },
+  LATAM_BR:     { visualOverlay: 'carnival samba feathers, Copacabana mosaic, Amazon emerald, capoeira arcs', instrumentOverlay: ['berimbau', 'surdo drum', 'cavaquinho', 'pandeiro'], characterOverlay: 'carnival fantasia, Havaianas casual, Bahian turban, capoeira whites', environmentOverlay: 'Christ the Redeemer, Amazon rainforest, Copacabana beach, Salvador Pelourinho, Iguazu Falls', narrativeOverlay: 'jeitinho brasileiro creative problem-solving, samba rhythm joy, tropical abundance' },
+  LATAM_CONE:   { visualOverlay: 'Buenos Aires tango shadows, gaucho pampa, Patagonian glaciers, mate gourds', instrumentOverlay: ['bandoneón', 'guitar', 'charango', 'bombo'], characterOverlay: 'tango attire, gaucho bombachas, wine-country casual, porteño intellectual style', environmentOverlay: 'Buenos Aires obelisk, Patagonia glaciers, Mendoza vineyards, Uruguayan beaches, tango milongas', narrativeOverlay: 'porteño intellectual passion, tango melancholy beauty, gaucho independence' },
+  LATAM_ANDES:  { visualOverlay: 'Inca stonework, llama herds, woven aguayo textiles, volcanic peaks', instrumentOverlay: ['charango', 'quena', 'zampoña pan pipes', 'bombo'], characterOverlay: 'aguayo woven poncho, chullo knit hat, emerald jewelry, alpaca wool', environmentOverlay: 'Machu Picchu, Lake Titicaca, Colombian coffee hills, Quito colonial, Galápagos', narrativeOverlay: 'andean authenticity, Pachamama earth reverence, heritage-progress bridge' },
+  LATAM_CARIB:  { visualOverlay: 'tropical carnival, cumbia dance, Caribbean coast palms, champeta colors', instrumentOverlay: ['cumbia accordion', 'gaita', 'tambora', 'maracas'], characterOverlay: 'pollera colorada, carnival headdresses, tropical-bright casual, guayabera', environmentOverlay: 'Cartagena walled city, Caribbean coast, Venezuelan tepuis, tropical ports', narrativeOverlay: 'tropical celebration energy, cumbia rhythm storytelling, Caribbean coast joy' },
+
+  // ── CARIBBEAN (2) ──
+  CARIBBEAN_EN: { visualOverlay: 'reggae red-gold-green, jerk smoke, blue mountains, rum barrel patina', instrumentOverlay: ['steel pan', 'reggae bass', 'ska horn', 'dub effects'], characterOverlay: 'Rasta tam, island casual, carnival costume, cricket whites', environmentOverlay: 'Jamaican Blue Mountains, Trinidad Carnival, Barbados beaches, Kingston streets', narrativeOverlay: 'irie confidence, reggae resistance poetry, island-time wisdom, cricket banter' },
+  CARIBBEAN_FR: { visualOverlay: 'Créole gingerbread houses, madras cloth, tropical French patisserie', instrumentOverlay: ['ka drum', 'tibwa sticks', 'accordion', 'zouk bass'], characterOverlay: 'madras headwrap, Créole dress, French-Caribbean fusion fashion', environmentOverlay: 'Martinique volcanic peaks, Guadeloupe butterfly island, Haiti Citadelle, Créole markets', narrativeOverlay: 'Créole fusion artistic resilience, French-Caribbean literary depth, carnival spirit' },
+
+  // ── OCEANIA (2) ──
+  OCEANIA_AU:   { visualOverlay: 'Aboriginal dot art ochres, outback red earth, surf culture, eucalyptus', instrumentOverlay: ['didgeridoo', 'clapsticks', 'bullroarer', 'bush guitar'], characterOverlay: 'Akubra hat, surf casual, Indigenous body paint, bushwalker gear', environmentOverlay: 'Uluru, Great Barrier Reef, Sydney Opera House, outback red desert, eucalyptus bush', narrativeOverlay: 'no-worries mateship, Dreamtime ancient wisdom, bush-dry humor, fair-go equality' },
+  OCEANIA_NZ:   { visualOverlay: 'Maori koru spirals, silver fern, hobbit-green hills, volcanic geothermal', instrumentOverlay: ['taonga puoro (bone flute)', 'poi rhythm', 'guitar', 'ukulele'], characterOverlay: 'Maori tā moko tattoo patterns, greenstone pounamu jewelry, merino wool', environmentOverlay: 'Milford Sound fjord, Rotorua geysers, hobbit-shire green hills, kiwi bush, volcanic peaks', narrativeOverlay: 'kiwi inclusive aroha (love), Maori mana-enhancing, sustainability-first, humble pride' },
+
+  // ── TURKEY (2) ──
+  TURKEY_ISTANBUL: { visualOverlay: 'Hagia Sophia domes, Bosphorus strait, tulip tiles, Ottoman calligraphy', instrumentOverlay: ['kanun', 'ney', 'kemençe', 'darbuka'], characterOverlay: 'cosmopolitan Istanbul fashion, Ottoman-inspired accessories, tulip motifs', environmentOverlay: 'Bosphorus bridge sunset, Grand Bazaar, Blue Mosque, Galata Tower, ferry boats', narrativeOverlay: 'cosmopolitan bridge city, Ottoman grandeur meets modern ambition, creative energy' },
+  TURKEY_ANATOLIA: { visualOverlay: 'Cappadocia fairy chimneys, whirling dervish, kilim weavings, pomegranate', instrumentOverlay: ['bağlama saz', 'zurna', 'davul', 'kemane'], characterOverlay: 'Anatolian village clothing, kilim-patterned accessories, pomegranate symbols', environmentOverlay: 'Cappadocia balloon sunrise, Ephesus ruins, Pamukkale terraces, wheat fields, cave houses', narrativeOverlay: 'heartland authenticity, Mevlana whirling wisdom, Anatolian roots-to-modern bridge' },
+
+  // ── PAKISTAN (4) ──
+  PK_PUNJAB:    { visualOverlay: 'truck art panels, Badshahi Mosque, bhangra movement, mustard fields', instrumentOverlay: ['dhol', 'tumbi', 'chimta', 'algoza twin flutes'], characterOverlay: 'colorful Punjabi shalwar kameez, phulkari dupattas, jutti shoes, turban', environmentOverlay: 'Lahore walled city, Badshahi Mosque, canal gardens, wheat-mustard fields, truck highways', narrativeOverlay: 'josh (passion) energy, bhangra celebration, family-feast warmth, truck-art highway' },
+  PK_SINDH:     { visualOverlay: 'ajrak block prints, Sufi shrine domes, Indus River boats, Mohenjo-daro ruins', instrumentOverlay: ['alghoza', 'dholak', 'yaktaro', 'boreendo flute'], characterOverlay: 'Sindhi ajrak shawl, embroidered cap (topi), mirror-work dress, Sufi green accents', environmentOverlay: 'Mohenjo-daro ruins, Shah Jahan Mosque, Indus River, Keenjhar Lake, Sufi shrines', narrativeOverlay: 'Sufi mystical depth, Indus Valley ancient pride, poetic introspection' },
+  PK_KPK:       { visualOverlay: 'Pashtun mountain valleys, tribal geometric embroidery, walnut wood carvings', instrumentOverlay: ['rabab', 'mangey', 'surnai', 'dohol'], characterOverlay: 'Pashtun turban (lungee), waistcoat (waskat), tribal silver jewelry, chappal sandals', environmentOverlay: 'Swat Valley, Khyber Pass, Hindu Kush peaks, Peshawar old city, tribal fort towers', narrativeOverlay: 'Pashtunwali code of honor, mountain courage, hospitality-above-all, frontier epic' },
+  PK_URDU:      { visualOverlay: 'Mughal miniature borders, nastaliq calligraphy, Urdu ghazal script flourishes', instrumentOverlay: ['sitar', 'tabla', 'harmonium', 'sarangi'], characterOverlay: 'refined sherwani, elegant sari, Mughal-era jewelry, nastaliq script accessories', environmentOverlay: 'Islamabad Faisal Mosque, Mughal gardens, literary mushaira gatherings, tea houses', narrativeOverlay: 'ghazal poetic refinement, adab (etiquette) elegance, mushaira literary tradition' },
+
+  // ── BANGLADESH (2) ──
+  BD_DHAKA:     { visualOverlay: 'rickshaw art kaleidoscope, jamdani weave shimmer, Dhaka street energy', instrumentOverlay: ['dotara', 'dhol', 'flute', 'harmonium'], characterOverlay: 'jamdani sari, lungi casual, rickshaw-art color palette clothing', environmentOverlay: 'Dhaka old town, Buriganga river, Ahsan Manzil pink palace, garment district, rickshaw streets', narrativeOverlay: 'modern urban dynamism, youth tech aspiration, rickshaw-art colorful energy' },
+  BD_CHITTAGONG:{ visualOverlay: 'hill tracts tribal patterns, ship-breaking yards, tea gardens, Bay of Bengal', instrumentOverlay: ['bamboo instruments', 'tribal drums', 'flute', 'marma harp'], characterOverlay: 'Chakma tribal weave, hill tracts traditional dress, tea garden worker attire', environmentOverlay: 'Cox\'s Bazar beach, Chittagong Hill Tracts, tea gardens, ship-breaking coast, tribal villages', narrativeOverlay: 'hill-and-sea duality, tribal heritage, port-city resilience, natural beauty' },
+
+  // ── EASTERN EUROPE / EURASIA subregions (3) ──
+  EE_UKRAINE:   { visualOverlay: 'vyshyvanka embroidery, sunflower fields, pysanka Easter eggs, Carpathian peaks', instrumentOverlay: ['bandura', 'sopilka', 'tsymbaly', 'trembita horn'], characterOverlay: 'vyshyvanka embroidered shirt, vinok flower crown, Cossack sharovary trousers', environmentOverlay: 'Kyiv golden domes, Carpathian Mountains, sunflower fields, Lviv coffee houses, wheat steppe', narrativeOverlay: 'resilient tech innovation, sunflower strength, Cossack independence spirit' },
+  EE_BALKANS:   { visualOverlay: 'Ottoman bridge arches, Byzantine church frescoes, Adriatic coast, brass band energy', instrumentOverlay: ['tambura', 'gusle', 'accordion', 'brass band trumpet'], characterOverlay: 'folk embroidered vest, Balkan šajkača cap, Mediterranean-mountain crossover fashion', environmentOverlay: 'Mostar bridge, Dubrovnik walls, Belgrade fortress, Balkan village, Adriatic islands', narrativeOverlay: 'passionate bridge-of-cultures, Sevdalinka emotional depth, brass-band celebration' },
+  EE_CAUCASUS:  { visualOverlay: 'khachkar stone crosses, Caucasus mountain eagles, winemaking qvevri', instrumentOverlay: ['duduk', 'panduri', 'zurna', 'dholi drum'], characterOverlay: 'Georgian chokha coat, Armenian embroidery, Caucasus papakha hat, silver belt', environmentOverlay: 'Caucasus peaks, Georgian cave city, Armenian monastery, Baku flame towers, wine valleys', narrativeOverlay: 'ancient-modern pride, Caucasus hospitality feast (supra), eagle-mountain valor' },
+
+  // ── CENTRAL ASIA (3) ──
+  CA_KZ:        { visualOverlay: 'steppe eagle golden, yurt felt patterns, Bayterek tower, nomadic horseback', instrumentOverlay: ['dombra', 'kobyz', 'sybyzgy flute'], characterOverlay: 'Kazakh chapan coat, telpak fox-fur hat, golden eagle hunter gloves, felt boots', environmentOverlay: 'Kazakh steppe, Nur-Sultan Bayterek, Charyn Canyon, Altai mountains, eagle hunting', narrativeOverlay: 'steppe-scale ambition, eagle hunter valor, nomadic-to-modern transformation' },
+  CA_UZ:        { visualOverlay: 'Registan square turquoise domes, suzani embroidery, Silk Road tiles', instrumentOverlay: ['dotar', 'chang', 'nay', 'qo\'shno\'y'], characterOverlay: 'uzbek chapan robe, tubeteyka cap, atlas silk ikat, suzani embroidery', environmentOverlay: 'Samarkand Registan, Bukhara old city, Silk Road caravansaries, cotton fields, blue domes', narrativeOverlay: 'Silk Road heritage revival, suzani craft patience, Tamerlane grandeur, trade-route crossroads' },
+  CA_AZ:        { visualOverlay: 'Flame Towers, carpet patterns, pomegranate motifs, Caspian coast', instrumentOverlay: ['tar', 'kamancha', 'nagara drum', 'balaban'], characterOverlay: 'Azerbaijani kelaghayi silk scarf, carpet-pattern accessories, modern Baku fashion', environmentOverlay: 'Baku Flame Towers, old city (İçərişəhər), mud volcanoes, Caspian coast, fire temple', narrativeOverlay: 'Land of Fire innovation, mugham musical depth, Caspian crossroads energy' },
+
+  // ── SOUTH ASIA (4) ──
+  SA_NEPAL:     { visualOverlay: 'Himalayan prayer flags, Durbar Square pagodas, Sherpa mountain trails', instrumentOverlay: ['madal', 'sarangi', 'bansuri', 'damphu'], characterOverlay: 'topi cap, dhaka fabric, Sherpa jacket, Newari festival dress, prayer beads', environmentOverlay: 'Everest base camp, Kathmandu Durbar Square, Chitwan jungle, Annapurna range, prayer wheels', narrativeOverlay: 'Himalayan humble determination, Sherpa mountain wisdom, community-growth spirit' },
+  SA_SRILANKA:  { visualOverlay: 'Sigiriya lion rock, Kandyan dance, sapphire blue, lotus Buddhist art', instrumentOverlay: ['rabana drum', 'horanewa', 'flute', 'geta beraya'], characterOverlay: 'Kandyan sari draping, batik sarong, moonstone jewelry, Sri Lankan sapphires', environmentOverlay: 'Sigiriya rock fortress, Galle Fort, tea hill country, whale coast, Adam\'s Peak pilgrimage', narrativeOverlay: 'island serendipity, Buddhist mindful renewal, pearl-of-Indian-Ocean pride' },
+  SA_BHUTAN:    { visualOverlay: 'dzong fortress architecture, GNH happiness motifs, thunder dragon, prayer wheels', instrumentOverlay: ['dramyin lute', 'lingm flute', 'yangchen dulcimer'], characterOverlay: 'gho robe (men), kira dress (women), kabney ceremonial scarf, Buddhist ornaments', environmentOverlay: 'Tiger\'s Nest monastery, dzong fortresses, Himalayan valleys, prayer flag bridges, archery fields', narrativeOverlay: 'Gross National Happiness mindfulness, thunder dragon courage, balance-over-excess wisdom' },
+  SA_MALDIVES:  { visualOverlay: 'overwater bungalows, bioluminescent beaches, whale sharks, coral atolls', instrumentOverlay: ['bodu beru drums', 'bulbul tarang', 'onugandu'], characterOverlay: 'island casual, dhivehi traditional libaas, shell and coral jewelry', environmentOverlay: 'overwater villas, bioluminescent plankton beach, coral atoll aerial, whale shark dive, Friday mosque', narrativeOverlay: 'paradise luxury sustainability, ocean-first mindset, intimate island storytelling' },
 };
 
 /**
@@ -2118,12 +2219,13 @@ export function adaptPresetToRegion(presetId: string, regionCode: string): Adapt
   const preset = IMAGINATION_PRESETS[presetId];
   if (!preset) return undefined;
 
-  // Parse parent region from code (e.g., 'INDIA_MH' → 'INDIA', 'NAM_US' → 'NAM')
+  // Parse parent region from code (e.g., 'INDIA_NORTH' → 'INDIA', 'NAM_US' → 'NAM')
   const parentRegion = regionCode.includes('_')
     ? regionCode.split('_')[0]
     : regionCode;
 
-  const layer = REGIONAL_ADAPTATION_LAYERS[parentRegion];
+  // Try exact subregion match first (e.g., 'INDIA_NORTH'), then fall back to parent (e.g., 'INDIA')
+  const layer = REGIONAL_ADAPTATION_LAYERS[regionCode] ?? REGIONAL_ADAPTATION_LAYERS[parentRegion];
   if (!layer) {
     // No regional adaptation available — return preset as-is
     return {
@@ -2209,8 +2311,9 @@ export function getRegionalPresetGallery(regionCode: string): AdaptedPresetData[
 export function recommendPresetsForRegion(regionCode: string, limit = 5): ImaginationPreset[] {
   const parentRegion = regionCode.includes('_') ? regionCode.split('_')[0] : regionCode;
 
-  // Tag → region affinity mapping
+  // Tag → region affinity mapping (parent + subregion level)
   const regionTagAffinity: Record<string, string[]> = {
+    // ── 16 Parent Regions ──
     NAM:          ['toys', 'pixel', 'superhero', 'retro', 'family'],
     EU:           ['celtic', 'stained-glass', 'watercolor', 'mosaic', 'elegant'],
     EURASIA:      ['celtic', 'folk', 'rosemaling', 'mosaic', 'dramatic'],
@@ -2227,9 +2330,72 @@ export function recommendPresetsForRegion(regionCode: string, limit = 5): Imagin
     CARIBBEAN:    ['graffiti', 'tropical', 'vibrant', 'urban', 'musical'],
     OCEANIA:      ['aboriginal', 'dreamtime', 'ocean', 'dot-painting', 'nature'],
     CENTRAL_ASIA: ['miniature', 'folk', 'heritage', 'craft', 'nomadic'],
+    // ── Subregion specializations ──
+    NAM_US:       ['superhero', 'pixel', 'retro', 'action', 'family'],
+    NAM_CA:       ['watercolor', 'nature', 'folk', 'family', 'craft'],
+    EU_DACH:      ['blueprint', 'technical', 'precise', 'engineering', 'elegant'],
+    EU_FRANCE:    ['watercolor', 'elegant', 'oil-painting', 'art', 'romantic'],
+    EU_IBERIA:    ['mosaic', 'folk', 'passionate', 'festival', 'cultural'],
+    EU_NORDIC:    ['rosemaling', 'folk', 'hygge', 'nature', 'craft'],
+    EU_BENELUX:   ['watercolor', 'paper', 'craft', 'elegant', 'modern'],
+    EU_ITALY:     ['mosaic', 'oil-painting', 'art', 'elegant', 'renaissance'],
+    MENA_GULF:    ['arabesque', 'geometric', 'sacred', 'ornate', 'gold'],
+    MENA_LEVANT:  ['mosaic', 'arabesque', 'calligraphy', 'heritage', 'creative'],
+    MENA_EGYPT:   ['mosaic', 'sacred', 'ancient', 'heritage', 'monumental'],
+    MENA_MAGHREB: ['arabesque', 'tile', 'folk', 'vibrant', 'craft'],
+    MENA_IRAQ:    ['arabesque', 'ancient', 'heritage', 'sacred', 'monumental'],
+    MENA_YEMEN:   ['folk', 'heritage', 'traditional', 'craft', 'ancient'],
+    MENA_ISRAEL:  ['blueprint', 'modern', 'pixel', 'action', 'urban'],
+    INDIA_NORTH:  ['bollywood', 'madhubani', 'festival', 'dramatic', 'musical'],
+    INDIA_SOUTH:  ['rangoli', 'folk', 'heritage', 'sacred', 'cultural'],
+    INDIA_EAST:   ['watercolor', 'folk', 'nature', 'cultural', 'artistic'],
+    INDIA_WEST:   ['rangoli', 'festival', 'vibrant', 'folk', 'community'],
+    INDIA_PAN:    ['bollywood', 'madhubani', 'rangoli', 'festival', 'india'],
+    AFRICA_EAST:  ['folk', 'nature', 'cultural', 'community', 'heritage'],
+    AFRICA_WEST:  ['kente', 'folk', 'proverb', 'cultural', 'vibrant'],
+    AFRICA_SOUTH: ['graffiti', 'folk', 'community', 'heritage', 'nature'],
+    AFRICA_NORTH: ['arabesque', 'mosaic', 'heritage', 'cultural', 'folk'],
+    AFRICA_FRANCO:['folk', 'elegant', 'cultural', 'heritage', 'artistic'],
+    SEA_MALAY:    ['batik', 'shadow-puppet', 'tropical', 'craft', 'heritage'],
+    SEA_THAI:     ['folk', 'sacred', 'tropical', 'heritage', 'nature'],
+    SEA_VIET:     ['watercolor', 'folk', 'nature', 'craft', 'heritage'],
+    SEA_PHIL:     ['folk', 'festival', 'tropical', 'community', 'vibrant'],
+    SEA_PAN:      ['modern', 'urban', 'pixel', 'blueprint', 'elegant'],
+    CJK_CN:       ['ink-wash', 'calligraphy', 'zen', 'heritage', 'ancient'],
+    CJK_JP:       ['ukiyo-e', 'anime', 'zen', 'cherry-blossom', 'contemplative'],
+    CJK_KR:       ['anime', 'neon', 'urban', 'musical', 'dramatic'],
+    CJK_TW:       ['watercolor', 'folk', 'nature', 'craft', 'creative'],
+    LATAM_MX:     ['folk', 'festival', 'cultural', 'vibrant', 'heritage'],
+    LATAM_BR:     ['graffiti', 'festival', 'vibrant', 'musical', 'tropical'],
+    LATAM_CONE:   ['oil-painting', 'elegant', 'dramatic', 'artistic', 'heritage'],
+    LATAM_ANDES:  ['folk', 'heritage', 'nature', 'cultural', 'craft'],
+    LATAM_CARIB:  ['tropical', 'vibrant', 'festival', 'musical', 'community'],
+    CARIBBEAN_EN: ['graffiti', 'tropical', 'musical', 'vibrant', 'urban'],
+    CARIBBEAN_FR: ['elegant', 'folk', 'artistic', 'tropical', 'heritage'],
+    OCEANIA_AU:   ['aboriginal', 'dot-painting', 'dreamtime', 'ochre', 'nature'],
+    OCEANIA_NZ:   ['ocean', 'nature', 'folk', 'heritage', 'contemplative'],
+    TURKEY_ISTANBUL: ['mosaic', 'arabesque', 'urban', 'elegant', 'cosmopolitan'],
+    TURKEY_ANATOLIA: ['folk', 'heritage', 'craft', 'traditional', 'nature'],
+    PK_PUNJAB:    ['truck-art', 'vibrant', 'festival', 'folk', 'musical'],
+    PK_SINDH:     ['folk', 'heritage', 'contemplative', 'sacred', 'craft'],
+    PK_KPK:       ['folk', 'heritage', 'nature', 'ancient', 'craft'],
+    PK_URDU:      ['miniature', 'calligraphy', 'elegant', 'heritage', 'ornate'],
+    BD_DHAKA:     ['folk', 'vibrant', 'urban', 'heritage', 'craft'],
+    BD_CHITTAGONG:['nature', 'folk', 'heritage', 'craft', 'ocean'],
+    EE_UKRAINE:   ['folk', 'heritage', 'nature', 'craft', 'dramatic'],
+    EE_BALKANS:   ['folk', 'mosaic', 'heritage', 'dramatic', 'community'],
+    EE_CAUCASUS:  ['folk', 'heritage', 'ancient', 'craft', 'nature'],
+    CA_KZ:        ['folk', 'heritage', 'nature', 'craft', 'nomadic'],
+    CA_UZ:        ['miniature', 'heritage', 'craft', 'ornate', 'silk'],
+    CA_AZ:        ['folk', 'heritage', 'craft', 'nature', 'mosaic'],
+    SA_NEPAL:     ['folk', 'sacred', 'nature', 'heritage', 'contemplative'],
+    SA_SRILANKA:  ['folk', 'ocean', 'heritage', 'nature', 'sacred'],
+    SA_BHUTAN:    ['folk', 'sacred', 'contemplative', 'heritage', 'nature'],
+    SA_MALDIVES:  ['ocean', 'nature', 'tropical', 'contemplative', 'heritage'],
   };
 
-  const affinityTags = regionTagAffinity[parentRegion] ?? [];
+  // Try subregion-specific tags first, then parent region
+  const affinityTags = regionTagAffinity[regionCode] ?? regionTagAffinity[parentRegion] ?? [];
 
   // Score each preset by how many affinity tags it matches
   const scored = Object.values(IMAGINATION_PRESETS).map(preset => {
