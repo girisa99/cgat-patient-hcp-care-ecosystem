@@ -68,6 +68,13 @@ import { PreviewPopout } from './PreviewPopout';
 import { PortalDropdown } from '../create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from '../StyleCustomizationPanel';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
+import {
+  IMAGINATION_PRESETS,
+  getPresetCategories,
+  recommendPresetsForRegion,
+  type ImaginationPreset,
+  type ImaginationCategory,
+} from '@/services/production/creativeImaginationRegistry';
 import type { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import type { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
 
@@ -183,6 +190,8 @@ interface CreateConfigureStepProps {
   selectedAspectRatio: string;
   productionQuality: string;
   enrichmentPrompt: string;
+  imaginationPreset: string | null;
+  selectedRegion: string;
 
   // Multi-output presets
   selectedOutputPresets: string[];
@@ -204,6 +213,7 @@ interface CreateConfigureStepProps {
   setSelectedAspectRatio: (v: string) => void;
   setProductionQuality: (v: string) => void;
   setEnrichmentPrompt: (v: string) => void;
+  setImaginationPreset: (v: string | null) => void;
   setSelectedOutputPresets: (v: string[]) => void;
 
   // Content registry
@@ -248,6 +258,8 @@ export function CreateConfigureStep({
   selectedAspectRatio,
   productionQuality,
   enrichmentPrompt,
+  imaginationPreset,
+  selectedRegion,
   setPrimaryPlatform,
   setOutputLanguages,
   setDubbingSubtitleLanguages,
@@ -264,6 +276,7 @@ export function CreateConfigureStep({
   setSelectedAspectRatio,
   setProductionQuality,
   setEnrichmentPrompt,
+  setImaginationPreset,
   setSelectedOutputPresets,
   selectedOutputPresets,
   contentRegistry,
@@ -1138,36 +1151,169 @@ export function CreateConfigureStep({
       </ConfigSection>
 
       {/* ================================================================ */}
-      {/* STEP 6: Universal Enrichment Prompt                              */}
+      {/* STEP 6: Universal Enrichment Prompt + Imagination Preset          */}
       {/* ================================================================ */}
       <ConfigSection
         step={6}
-        title="Universal Enrichment Prompt"
-        description="Describe your vision in any language. AI generates scenes/templates scoped by ALL above selections."
-        tooltip="This is your creative brief to the AI. Be as specific as possible: describe tone, audience, key messages, call-to-action. The AI combines this with your style, platform, and language selections to generate optimized content."
+        title="Creative Vision & Enrichment"
+        description="Pick a visual world preset and describe your vision. AI generates full production configs scoped by ALL above selections."
+        tooltip="Choose an imagination preset to set the visual DNA (style, music, characters, narrative), then write your creative brief. The enrichment engine combines preset + prompt + region + style to build the complete production pipeline."
         icon={<Wand2 className="w-4 h-4 text-primary" />}
         isComplete={isEnrichmentComplete}
         defaultOpen={false}
       >
-        <div className="space-y-3">
-          <textarea
-            className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
-            placeholder="e.g. Create a cinematic product demo for our AI platform. Focus on enterprise decision-makers. Tone: professional yet innovative. Highlight ROI metrics and competitive advantages..."
-            value={enrichmentPrompt}
-            onChange={(e) => setEnrichmentPrompt(e.target.value)}
-          />
-          <div className="flex gap-2 flex-wrap">
-            {['Patient Services', 'ROI Focus', 'Brand Story', 'Product Demo', 'Competitive Edge', 'Thought Leadership'].map(tag => (
-              <Badge
-                key={tag}
-                variant="outline"
-                className="text-[10px] cursor-pointer hover:bg-primary/10 transition-colors"
-                onClick={() => setEnrichmentPrompt(enrichmentPrompt ? `${enrichmentPrompt}. ${tag}` : tag)}
-              >
-                <Sparkles className="w-2.5 h-2.5 mr-1" />
-                {tag}
-              </Badge>
-            ))}
+        <div className="space-y-4">
+          {/* ── Imagination Preset Picker ── */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-primary" />
+              Creative Imagination Preset
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[250px] text-xs">
+                    Each preset captures a complete visual world DNA: render style, lighting, music genre, character proportions, narrative pacing, and AI prompt modifiers. Region-recommended presets are highlighted.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </Label>
+
+            {/* Region-recommended presets */}
+            {(() => {
+              const recommended = recommendPresetsForRegion(selectedRegion || 'NAM_US', 4);
+              if (recommended.length === 0) return null;
+              return (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Recommended for your region</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {recommended.map(preset => (
+                      <button
+                        key={preset.id}
+                        onClick={() => setImaginationPreset(imaginationPreset === preset.id ? null : preset.id)}
+                        className={cn(
+                          'p-2.5 rounded-lg border text-left transition-all hover:shadow-md',
+                          imaginationPreset === preset.id
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                            : 'border-border/30 bg-card/40 hover:border-border/60',
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div
+                            className="w-4 h-4 rounded-full shrink-0"
+                            style={{ background: `linear-gradient(135deg, ${preset.visual.colorPalette[0] || '#6366f1'}, ${preset.visual.colorPalette[1] || '#a855f7'})` }}
+                          />
+                          <span className="text-[10px] font-bold text-foreground truncate">{preset.name}</span>
+                        </div>
+                        <p className="text-[9px] text-muted-foreground line-clamp-2">{preset.tagline}</p>
+                        <Badge variant="secondary" className="text-[8px] mt-1 bg-amber-500/10 text-amber-600 border-0">
+                          Recommended
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* All presets by category */}
+            <div className="space-y-1.5">
+              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">All presets by category</p>
+              <div className="space-y-2">
+                {getPresetCategories().map(({ category, presets: presetIds }) => (
+                  <Collapsible key={category}>
+                    <CollapsibleTrigger asChild>
+                      <button className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-md hover:bg-muted/30 transition-colors">
+                        <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-[11px] font-medium capitalize">{category.replace(/_/g, ' ')}</span>
+                        <Badge variant="outline" className="text-[8px] h-4 ml-auto">{presetIds.length}</Badge>
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 pl-5 pt-1">
+                        {presetIds.map(pid => {
+                          const preset = IMAGINATION_PRESETS[pid];
+                          if (!preset) return null;
+                          return (
+                            <button
+                              key={pid}
+                              onClick={() => setImaginationPreset(imaginationPreset === pid ? null : pid)}
+                              className={cn(
+                                'p-2 rounded-md border text-left transition-all',
+                                imaginationPreset === pid
+                                  ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                  : 'border-border/20 hover:border-border/40',
+                              )}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <div
+                                  className="w-3 h-3 rounded-full shrink-0"
+                                  style={{ background: `linear-gradient(135deg, ${preset.visual.colorPalette[0] || '#6366f1'}, ${preset.visual.colorPalette[1] || '#a855f7'})` }}
+                                />
+                                <span className="text-[10px] font-medium truncate">{preset.name}</span>
+                              </div>
+                              <p className="text-[8px] text-muted-foreground mt-0.5 line-clamp-1">{preset.tagline}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              </div>
+            </div>
+
+            {/* Selected preset summary */}
+            {imaginationPreset && IMAGINATION_PRESETS[imaginationPreset] && (() => {
+              const p = IMAGINATION_PRESETS[imaginationPreset];
+              return (
+                <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-foreground">{p.name}</span>
+                    <button onClick={() => setImaginationPreset(null)} className="text-[10px] text-muted-foreground hover:text-foreground">Clear</button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{p.description}</p>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="outline" className="text-[8px]">{p.visual.renderStyle}</Badge>
+                    <Badge variant="outline" className="text-[8px]">{p.music.genre}</Badge>
+                    <Badge variant="outline" className="text-[8px]">{p.narrative.pacing} pacing</Badge>
+                    <Badge variant="outline" className="text-[8px]">{p.character.motionStyle}</Badge>
+                  </div>
+                  <div className="flex gap-1 mt-1">
+                    {p.visual.colorPalette.slice(0, 6).map((c, i) => (
+                      <div key={i} className="w-4 h-4 rounded-full border border-border/30" style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          <Separator className="my-2" />
+
+          {/* ── Enrichment Prompt ── */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">Your Creative Brief</Label>
+            <textarea
+              className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+              placeholder="e.g. Create a cinematic product demo for our AI platform. Focus on enterprise decision-makers. Tone: professional yet innovative. Highlight ROI metrics and competitive advantages..."
+              value={enrichmentPrompt}
+              onChange={(e) => setEnrichmentPrompt(e.target.value)}
+            />
+            <div className="flex gap-2 flex-wrap">
+              {['Patient Services', 'ROI Focus', 'Brand Story', 'Product Demo', 'Competitive Edge', 'Thought Leadership'].map(tag => (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="text-[10px] cursor-pointer hover:bg-primary/10 transition-colors"
+                  onClick={() => setEnrichmentPrompt(enrichmentPrompt ? `${enrichmentPrompt}. ${tag}` : tag)}
+                >
+                  <Sparkles className="w-2.5 h-2.5 mr-1" />
+                  {tag}
+                </Badge>
+              ))}
+            </div>
           </div>
         </div>
       </ConfigSection>

@@ -362,6 +362,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const setSelectedSubFormatId = castSession.setSelectedSubFormatId;
   const enrichmentPrompt = castSession.session.enrichmentPrompt;
   const setEnrichmentPrompt = castSession.setEnrichmentPrompt;
+  const imaginationPreset = castSession.session.imaginationPreset;
+  const setImaginationPreset = castSession.setImaginationPreset;
   const selectedResolution = castSession.session.selectedResolution;
   const setSelectedResolution = castSession.setSelectedResolution;
   const selectedAspectRatio = castSession.session.selectedAspectRatio;
@@ -1189,6 +1191,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 selectedAspectRatio={selectedAspectRatio}
                 productionQuality={productionQuality}
                 enrichmentPrompt={enrichmentPrompt}
+                imaginationPreset={imaginationPreset}
+                selectedRegion={castSession.session.selectedRegion}
                 setPrimaryPlatform={setPrimaryPlatform}
                 setOutputLanguages={setOutputLanguages}
                 setDubbingSubtitleLanguages={setDubbingSubtitleLanguages}
@@ -1205,6 +1209,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 setSelectedAspectRatio={setSelectedAspectRatio}
                 setProductionQuality={setProductionQuality}
                 setEnrichmentPrompt={setEnrichmentPrompt}
+                setImaginationPreset={setImaginationPreset}
                 selectedOutputPresets={selectedOutputPresets}
                 setSelectedOutputPresets={setSelectedOutputPresets}
                 contentRegistry={contentRegistry}

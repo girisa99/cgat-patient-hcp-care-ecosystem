@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { AuthoringStage, MessagingContent, TemplateMapping, ApprovalStatus } from '@/hooks/useUnifiedAuthoring';
 import type { StyleIntent, RegionZone } from '@/services/styleIntentResolver';
+import type { SceneEnrichmentOutput } from '@/services/production/sceneEnrichmentEngine';
 
 // ============================================
 // TYPES
@@ -166,6 +167,8 @@ export interface GenieCastSessionState {
   selectedAspectRatio: string;              // '16:9' | '9:16' | '1:1' | '4:5'
   productionQuality: 'preview' | 'production' | 'cinematic';
   enrichmentPrompt: string;                 // user's vision/prompt text
+  imaginationPreset: string | null;          // Creative Imagination Registry preset ID
+  sceneEnrichmentOutput: SceneEnrichmentOutput | null;  // Full enrichment result from enrichScenes()
 
   // Multi-output selection (user picks which outputs per format)
   selectedOutputPresets: string[];           // output preset IDs to generate
@@ -231,6 +234,8 @@ const createDefaultSession = (): GenieCastSessionState => ({
   selectedAspectRatio: '16:9',
   productionQuality: 'production',
   enrichmentPrompt: '',
+  imaginationPreset: null,
+  sceneEnrichmentOutput: null,
   selectedOutputPresets: [],
   speakerConfig: null,
   chapterGrouping: null,
@@ -634,6 +639,14 @@ export function useGenieCastSession() {
     setSession(prev => ({ ...prev, enrichmentPrompt: prompt, updatedAt: new Date() }));
   }, []);
 
+  const setImaginationPreset = useCallback((preset: string | null) => {
+    setSession(prev => ({ ...prev, imaginationPreset: preset, updatedAt: new Date() }));
+  }, []);
+
+  const setSceneEnrichmentOutput = useCallback((output: SceneEnrichmentOutput | null) => {
+    setSession(prev => ({ ...prev, sceneEnrichmentOutput: output, updatedAt: new Date() }));
+  }, []);
+
   const setSelectedOutputPresets = useCallback((presets: string[]) => {
     setSession(prev => ({ ...prev, selectedOutputPresets: presets, updatedAt: new Date() }));
   }, []);
@@ -786,6 +799,8 @@ export function useGenieCastSession() {
     setSelectedAspectRatio,
     setProductionQuality,
     setEnrichmentPrompt,
+    setImaginationPreset,
+    setSceneEnrichmentOutput,
     setSelectedOutputPresets,
     setSpeakerConfig,
     setChapterGrouping,

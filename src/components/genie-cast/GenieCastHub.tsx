@@ -32,6 +32,9 @@ import { buildRequestFromCastSession, assembleEnrichmentContext } from '@/servic
 import { useTierGatedAction } from '@/hooks/useTierGatedAction';
 import { quickEnhance, enhancePrompt, type PromptContext } from '@/services/promptEnhancementEngine';
 import { useLSCastIntegration } from '@/hooks/useLSCastIntegration';
+import { useCastSceneEnrichment } from '@/hooks/useCastSceneEnrichment';
+import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
+import type { SceneEnrichmentInput } from '@/services/production/sceneEnrichmentEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Video, Share2, Film,
@@ -503,6 +506,12 @@ export const GenieCastHub: React.FC = () => {
   // Label Studio training data capture for Cast pipeline
   const lsCast = useLSCastIntegration();
 
+  // Scene enrichment — builds full production pipeline configs (pipelines, music, voices, avatars)
+  const sceneEnrichment = useCastSceneEnrichment();
+
+  // Project persistence — for seeding enrichment output to DB
+  const projectPersistence = useCastProjectPersistence();
+
   // Persist state changes (styles + language)
   useEffect(() => {
     const state: GenieCastHubState = { selectedVideoStyles, languageCode };
@@ -622,6 +631,39 @@ export const GenieCastHub: React.FC = () => {
       }).catch(() => { /* non-blocking — quick enhance already applied */ });
     }
 
+    // ── Scene Enrichment — build full production pipeline configs ──────────
+    // Calls enrichScenes() to auto-generate: scenePipelines, musicScore,
+    // transitions, voiceConfig, avatarConfig — the SAME shapes EP04 uses.
+    // Then persists to DB so the PRODUCE pipeline reads from DB identically.
+    try {
+      const enrichmentInput: SceneEnrichmentInput = {
+        title: request.scriptTitle || 'Untitled',
+        content: { type: 'raw_text', text: request.scriptContent || '' },
+        styleFamily: (request.videoStyles?.[0] as any) || 'pixar_3d',
+        regionCode: session.selectedRegion || 'NAM_US',
+        language: request.inputLanguage || 'en',
+        targetDuration: session.targetDuration,
+        quality: (request.quality as any) || 'production',
+        storybookMode: true,
+        imaginationPreset: session.imaginationPreset || undefined,
+        outputFormat: 'long_form_video',
+        targetPlatforms: [session.primaryPlatform],
+        enrichmentContext: enrichment,
+      };
+
+      const enrichmentOutput = sceneEnrichment.enrich(enrichmentInput);
+      castSession.setSceneEnrichmentOutput(enrichmentOutput);
+
+      // Persist enrichment to DB — seeds scene configs from enrichment output
+      if (session.projectId) {
+        await projectPersistence.seedEnrichmentToDB(session.projectId, enrichmentOutput);
+        toast.success(`Enrichment seeded: ${Object.keys(enrichmentOutput.scenePipelines).length} scenes configured`);
+      }
+    } catch (enrichErr) {
+      console.warn('[GenieCastHub] Scene enrichment failed (non-blocking):', enrichErr);
+      // Non-blocking — production continues even without enrichment
+    }
+
     // Use format-specific routing when triggered from FormatStudioRouter
     const activeFormats = formatName
       ? [formatName]
@@ -675,7 +717,7 @@ export const GenieCastHub: React.FC = () => {
     if (success) {
       dispatch({ type: 'STEP_COMPLETED', stepId: 'generate' });
     }
-  }, [castSession.session, selectedVideoStyles, dispatch, production, tierGate, lsCast, routing.provider]);
+  }, [castSession.session, selectedVideoStyles, dispatch, production, tierGate, lsCast, routing.provider, sceneEnrichment, projectPersistence, castSession]);
 
   const handleModeChange = useCallback((newMode: CastMode) => {
     lsCast.captureModeChange(mode, newMode);

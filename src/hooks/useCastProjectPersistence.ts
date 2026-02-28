@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { productionCostAccumulator, type ProjectCostSummary } from '@/services/productionCostAccumulator';
 import type { CastJobType } from '@/types/castProjects';
+import type { SceneEnrichmentOutput } from '@/services/production/sceneEnrichmentEngine';
 
 // ── Types matching DB schema — no hardcoding ────────────────────────────────
 
@@ -383,6 +384,203 @@ export function useCastProjectPersistence() {
     }
   }, []);
 
+  // ──────────────────────────────────────────────────────────────────────
+  // SEED ENRICHMENT TO DB — persist enrichScenes() output to project tables
+  // Called after enrichment runs in CREATE flow, seeds the SAME DB shape
+  // that EP04 uses (via seedFromConfig), so the PRODUCE pipeline works
+  // identically for both static-seeded and enrichment-seeded projects.
+  // ──────────────────────────────────────────────────────────────────────
+
+  const seedEnrichmentToDB = useCallback(async (
+    projectId: string,
+    output: SceneEnrichmentOutput,
+  ): Promise<boolean> => {
+    try {
+      // 1. Upsert scene configs from scenePipelines + musicScore
+      const sceneEntries = Object.entries(output.scenePipelines);
+      if (sceneEntries.length > 0) {
+        const sceneRows = sceneEntries.map(([sceneKey, pipeline], idx) => {
+          const music = output.musicScore[sceneKey];
+          const transition = output.transitions?.find(t => t.from === sceneKey);
+          return {
+            project_id: projectId,
+            scene_key: sceneKey,
+            title: sceneKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+            scene_index: idx,
+            scene_config: {
+              pipeline,
+              music: music?.music || null,
+              sfx: music?.sfx || [],
+              transition: transition || null,
+            },
+          };
+        });
+
+        const { error: sceneErr } = await db
+          .from('cast_project_scenes')
+          .upsert(sceneRows, { onConflict: 'project_id,scene_key' });
+        if (sceneErr) throw sceneErr;
+      }
+
+      // 2. Upsert character voice + avatar configs from enrichment output
+      const voiceEntries = Object.entries(output.voiceConfig || {});
+      if (voiceEntries.length > 0) {
+        const charRows = voiceEntries.map(([charKey, voice]) => ({
+          project_id: projectId,
+          character_key: charKey,
+          display_name: charKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          voice_provider: voice.provider,
+          voice_id: voice.voiceId,
+          voice_config: voice,
+          avatar_config: output.avatarConfig?.[charKey] || null,
+        }));
+
+        const { error: charErr } = await db
+          .from('cast_project_characters')
+          .upsert(charRows, { onConflict: 'project_id,character_key' });
+        if (charErr) throw charErr;
+      }
+
+      // 3. Update project metadata with enrichment summary
+      const { error: projErr } = await db
+        .from('cast_projects')
+        .update({
+          production_stage: 'enriched',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', projectId);
+      if (projErr) console.warn('[Persistence] Project update warning:', projErr);
+
+      console.log(`[Persistence] Seeded enrichment → ${sceneEntries.length} scenes, ${voiceEntries.length} characters`);
+      return true;
+    } catch (err: any) {
+      console.error('[Persistence] Seed enrichment error:', err);
+      toast.error(`Failed to seed enrichment: ${err.message}`);
+      return false;
+    }
+  }, []);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // UPDATE SCENE ARTIFACTS — store per-scene video/image/avatar/lipsync URLs
+  // Called during Phase 3 (Visual Production) as each asset completes
+  // ──────────────────────────────────────────────────────────────────────
+
+  const updateSceneArtifacts = useCallback(async (
+    projectId: string,
+    sceneKey: string,
+    artifacts: {
+      videoUrls?: Record<string, string>;
+      imageUrls?: Record<string, string>;
+      avatarUrls?: Record<string, string>;
+      lipsyncUrls?: Record<string, string>;
+    },
+  ): Promise<boolean> => {
+    try {
+      // Fetch current scene_config to merge (not overwrite)
+      const { data: scene, error: fetchErr } = await db
+        .from('cast_project_scenes')
+        .select('scene_config')
+        .eq('project_id', projectId)
+        .eq('scene_key', sceneKey)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      const existingConfig = (scene?.scene_config || {}) as Record<string, unknown>;
+      const updatedConfig = {
+        ...existingConfig,
+        artifacts: {
+          ...((existingConfig.artifacts as Record<string, unknown>) || {}),
+          ...artifacts,
+        },
+      };
+
+      const { error } = await db
+        .from('cast_project_scenes')
+        .update({ scene_config: updatedConfig })
+        .eq('project_id', projectId)
+        .eq('scene_key', sceneKey);
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      console.error('[Persistence] Scene artifacts update error:', err);
+      return false;
+    }
+  }, []);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // UPDATE SCENE MUSIC — store per-scene music + SFX URLs
+  // Called during Phase 4 (Music & SFX) as each track completes
+  // ──────────────────────────────────────────────────────────────────────
+
+  const updateSceneMusic = useCallback(async (
+    projectId: string,
+    sceneKey: string,
+    musicUrl: string | null,
+    sfxUrls: string[],
+  ): Promise<boolean> => {
+    try {
+      const { data: scene, error: fetchErr } = await db
+        .from('cast_project_scenes')
+        .select('scene_config')
+        .eq('project_id', projectId)
+        .eq('scene_key', sceneKey)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      const existingConfig = (scene?.scene_config || {}) as Record<string, unknown>;
+      const updatedConfig = {
+        ...existingConfig,
+        generatedMusic: { url: musicUrl, sfxUrls, generatedAt: new Date().toISOString() },
+      };
+
+      const { error } = await db
+        .from('cast_project_scenes')
+        .update({ scene_config: updatedConfig })
+        .eq('project_id', projectId)
+        .eq('scene_key', sceneKey);
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      console.error('[Persistence] Scene music update error:', err);
+      return false;
+    }
+  }, []);
+
+  // ──────────────────────────────────────────────────────────────────────
+  // UPDATE FINAL ASSEMBLY — store the final cinematic MP4 URL on the project
+  // Called during Phase 5 when assembly completes
+  // ──────────────────────────────────────────────────────────────────────
+
+  const updateFinalAssembly = useCallback(async (
+    projectId: string,
+    finalVideoUrl: string,
+    metadata?: {
+      totalDuration?: number;
+      sceneCount?: number;
+      resolution?: string;
+      fileSize?: number;
+    },
+  ): Promise<boolean> => {
+    try {
+      const { error } = await db
+        .from('cast_projects')
+        .update({
+          final_video_url: finalVideoUrl,
+          production_stage: 'complete',
+          production_metadata: metadata || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', projectId);
+      if (error) throw error;
+      toast.success('Final assembly saved to project');
+      return true;
+    } catch (err: any) {
+      console.error('[Persistence] Final assembly update error:', err);
+      toast.error(`Failed to save final assembly: ${err.message}`);
+      return false;
+    }
+  }, []);
+
   return {
     // State
     isSaving,
@@ -395,6 +593,14 @@ export function useCastProjectPersistence() {
     autoSave,
     updateLineTTS,
     hasPersistedContent,
+
+    // Enrichment → DB seeding (Part A)
+    seedEnrichmentToDB,
+
+    // Production artifact persistence (Part B)
+    updateSceneArtifacts,
+    updateSceneMusic,
+    updateFinalAssembly,
 
     // Token / cost tracking
     fetchTokenBreakdown,

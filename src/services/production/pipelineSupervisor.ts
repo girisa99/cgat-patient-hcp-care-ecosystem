@@ -386,4 +386,180 @@ export const pipelineSupervisor = {
       });
     return true;
   },
+
+  /**
+   * Build a full project plan from DB-driven data — scene-aware DAG.
+   *
+   * Reads scene configs (pipeline steps, music, SFX) and voice configs from
+   * the project data object (useCastProjectData). TTS is already approved,
+   * so audio URLs are attached as task outputs.
+   *
+   * DAG structure:
+   *   Per scene:
+   *     avatar-3d ──┐
+   *     tts (done) ─┼──→ avatar-lipsync ──→ scene-assemble
+   *     video ──────┘
+   *     music ──────────────────────────────→ scene-assemble
+   *
+   *   Cross-scene:
+   *     all scene-assembles → transitions → bookends → final-assemble → one MP4
+   */
+  buildProjectPlan(
+    projectData: {
+      scenes: Array<{ scene_key: string; scene_config?: Record<string, unknown> }>;
+      voiceConfigFor: (key: string) => Record<string, unknown> | null;
+      scriptLinesByScene: Record<string, Array<{ line_key: string; character_id: string; tts_audio_url?: string | null }>>;
+    },
+    approvedTTS: Record<string, string>, // lineKey → audioUrl
+  ): PipelineTask[] {
+    const tasks: PipelineTask[] = [];
+    const sceneAssembleIds: string[] = [];
+
+    for (const scene of projectData.scenes) {
+      const sceneKey = scene.scene_key;
+      const config = (scene.scene_config || {}) as Record<string, unknown>;
+      const pipeline = (config.pipeline || []) as Array<{ type: string; prompt?: string; model?: string; provider?: string; dependsOn?: string[] }>;
+      const musicConfig = config.music as Record<string, unknown> | undefined;
+      const sfxList = (config.sfx || []) as Array<{ prompt: string; duration?: number }>;
+
+      const sceneTaskIds: string[] = [];
+
+      // ── Per-pipeline-step tasks ──
+      for (let i = 0; i < pipeline.length; i++) {
+        const step = pipeline[i];
+        const stepType = step.type || 'image';
+
+        let edgeFunction = 'ai-universal-processor';
+        let action = 'image_generation';
+
+        if (stepType === 'alibaba-video' || stepType === 'video') {
+          action = 'generate_video';
+        } else if (stepType === 'alibaba-image' || stepType === 'image') {
+          action = 'image_generation';
+        } else if (stepType === 'avatar-3d') {
+          edgeFunction = 'ai-video-generator';
+          action = 'avatar';
+        } else if (stepType === 'avatar-lipsync') {
+          action = 'lipsync';
+        } else if (stepType === 'screen-capture' || stepType === 'ai-screen-enhance') {
+          action = 'image_generation';
+        } else if (stepType === 'kinetic-text' || stepType === 'motion-graphics') {
+          action = 'image_generation';
+        }
+
+        // Resolve dependencies within this scene
+        const stepDeps = (step.dependsOn || [])
+          .map(dep => tasks.find(t => t.agentName === `${sceneKey}/${dep}`)?.id)
+          .filter(Boolean) as string[];
+
+        const task = createTask(
+          `${sceneKey}/${stepType}-${i}`,
+          edgeFunction,
+          stepDeps,
+          {
+            action,
+            prompt: step.prompt || `Generate ${stepType} for ${sceneKey}`,
+            model: step.model,
+            provider: step.provider,
+            sceneKey,
+            stepIndex: i,
+          },
+        );
+        tasks.push(task);
+        sceneTaskIds.push(task.id);
+      }
+
+      // ── Music task for this scene ──
+      if (musicConfig) {
+        const musicTask = createTask(
+          `${sceneKey}/music`,
+          'multi-provider-music',
+          [],
+          {
+            prompt: (musicConfig as any).prompt || `Background music for ${sceneKey}`,
+            duration: (musicConfig as any).duration || 30,
+            instrumental: true,
+            mood: (musicConfig as any).mood,
+            style: (musicConfig as any).style,
+          },
+        );
+        tasks.push(musicTask);
+        sceneTaskIds.push(musicTask.id);
+      }
+
+      // ── SFX tasks for this scene ──
+      for (let s = 0; s < sfxList.length; s++) {
+        const sfx = sfxList[s];
+        const sfxTask = createTask(
+          `${sceneKey}/sfx-${s}`,
+          'ai-universal-processor',
+          [],
+          {
+            action: 'generate_sfx',
+            prompt: sfx.prompt,
+            duration: sfx.duration || 3,
+          },
+        );
+        tasks.push(sfxTask);
+        sceneTaskIds.push(sfxTask.id);
+      }
+
+      // ── Scene assembly — depends on all scene tasks ──
+      const assembleTask = createTask(
+        `${sceneKey}/assemble`,
+        'ai-universal-processor',
+        sceneTaskIds,
+        {
+          action: 'assemble_video',
+          sceneKey,
+          ttsAudioUrls: Object.entries(approvedTTS)
+            .filter(([k]) => {
+              const lines = projectData.scriptLinesByScene[sceneKey] || [];
+              return lines.some(l => l.line_key === k);
+            })
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {}),
+        },
+      );
+      tasks.push(assembleTask);
+      sceneAssembleIds.push(assembleTask.id);
+    }
+
+    // ── Transition rendering — depends on all scene assemblies ──
+    const transitionTask = createTask(
+      'transitions/render',
+      'ai-universal-processor',
+      sceneAssembleIds,
+      { action: 'generate_video', type: 'transitions' },
+    );
+    tasks.push(transitionTask);
+
+    // ── Bookend rendering ──
+    const bookendTask = createTask(
+      'bookends/render',
+      'ai-universal-processor',
+      sceneAssembleIds,
+      { action: 'generate_video', type: 'bookends' },
+    );
+    tasks.push(bookendTask);
+
+    // ── Audio mixing — depends on all scene assemblies ──
+    const mixTask = createTask(
+      'audio/mix',
+      'ai-universal-processor',
+      sceneAssembleIds,
+      { action: 'mix_audio' },
+    );
+    tasks.push(mixTask);
+
+    // ── Final assembly — depends on transitions + bookends + mix ──
+    const finalTask = createTask(
+      'final/assemble',
+      'ai-universal-processor',
+      [transitionTask.id, bookendTask.id, mixTask.id],
+      { action: 'assemble_video', type: 'final' },
+    );
+    tasks.push(finalTask);
+
+    return tasks;
+  },
 };
