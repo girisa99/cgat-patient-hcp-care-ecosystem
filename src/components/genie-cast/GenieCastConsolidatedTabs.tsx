@@ -848,15 +848,44 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               const seed = createEP04SessionSeed();
               let projectId: string | null = null;
               try {
-                const { createCastProject } = await import('@/services/productionCostAccumulator');
-                projectId = await createCastProject({
-                  title: 'EP04 — Genie Reel Episode 2',
-                  description: 'AI-powered cinematic product demo',
-                  estimatedTokens: 850000,
-                  productContext: 'genie-reel-ep04',
-                  quality: 'cinematic',
-                  metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
-                });
+                // Check if EP04 project already exists before creating
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  const db = supabase as any;
+                  const { data: existing } = await db
+                    .from('cast_projects')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .eq('style_intent', 'ep04-sprint-documentary')
+                    .limit(1)
+                    .maybeSingle();
+                  if (existing?.id) {
+                    projectId = existing.id;
+                  } else {
+                    // Fallback: check by title for legacy rows
+                    const { data: legacy } = await db
+                      .from('cast_projects')
+                      .select('id')
+                      .eq('user_id', user.id)
+                      .ilike('title', '%EP04%')
+                      .limit(1)
+                      .maybeSingle();
+                    if (legacy?.id) {
+                      projectId = legacy.id;
+                      await db.from('cast_projects').update({ style_intent: 'ep04-sprint-documentary' }).eq('id', legacy.id);
+                    } else {
+                      const { createCastProject } = await import('@/services/productionCostAccumulator');
+                      projectId = await createCastProject({
+                        title: 'EP04 — Genie Reel Episode 2',
+                        description: 'AI-powered cinematic product demo',
+                        estimatedTokens: 850000,
+                        productContext: 'genie-reel-ep04',
+                        quality: 'cinematic',
+                        metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
+                      });
+                    }
+                  }
+                }
               } catch (projErr) {
                 console.warn('EP04: Could not create project tracker, continuing without:', projErr);
               }
