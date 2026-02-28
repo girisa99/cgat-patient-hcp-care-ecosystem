@@ -31,8 +31,10 @@ import {
   Clapperboard, Wand2, Send, MonitorPlay, FileVideo, Image,
   Cpu, Languages, Map, Radar, Boxes, ChevronLeft,
   FileText, Mic, Presentation, Share2, Youtube, Linkedin,
-  Instagram, Music, Headphones, PenTool, Plus,
+  Instagram, Music, Headphones, PenTool, Plus, Heart,
+  Folder,
 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -61,7 +63,8 @@ type NavView = 'workspace' | 'projects' | 'templates' | 'assets' | 'brand-kit' |
 
 interface CastDashboardOverviewProps {
   onNavigate: (view: NavView) => void;
-  onStartCreate: () => void;
+  /** Called when user clicks "Start Create". Optional categoryId/formatId pre-selects that item. */
+  onStartCreate: (categoryId?: string, formatId?: string) => void;
   className?: string;
 }
 
@@ -808,6 +811,81 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
           </Tooltip>
         </h3>
         <WorkflowAutoScroll onStartCreate={onStartCreate} />
+      </div>
+
+      {/* ── Content Categories — browse all verticals ──────────────── */}
+      <div>
+        <div className="flex items-center justify-between px-1 mb-3">
+          <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+            <Boxes className="w-3 h-3" /> Content Categories
+            <Tooltip>
+              <TooltipTrigger asChild><HelpCircle className="w-3 h-3 opacity-40 cursor-help" /></TooltipTrigger>
+              <TooltipContent side="right" className="max-w-[260px] text-xs">Browse all content verticals — from Healthcare and Education to Celebrations and Media. Click any category to jump directly into the Create wizard with it pre-selected.</TooltipContent>
+            </Tooltip>
+          </h3>
+          <span className="text-[10px] text-muted-foreground/40 hidden sm:inline">{totalCategories} categories | {totalFormats} formats</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          {(registry.categories || []).map((cat) => {
+            const IconComp = (cat.icon && (LucideIcons as any)[cat.icon]) || Folder;
+            const formatCount = registry.getFormatsForCategory(cat.id)?.length || 0;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => onStartCreate(cat.id)}
+                className="group flex items-start gap-2.5 p-3 rounded-xl glass-card border border-white/[0.06] hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
+              >
+                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', cat.color ? 'bg-opacity-15' : 'bg-primary/15')}>
+                  <IconComp className={cn('w-4 h-4', cat.color || 'text-primary')} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">{cat.label}</p>
+                  {cat.description && (
+                    <p className="text-[9px] text-muted-foreground/60 line-clamp-2 mt-0.5">{cat.description}</p>
+                  )}
+                  <p className="text-[9px] text-muted-foreground/40 mt-1">{formatCount} format{formatCount !== 1 ? 's' : ''}</p>
+                </div>
+                <ChevronRight className="w-3 h-3 text-muted-foreground/30 group-hover:text-primary/60 transition-colors shrink-0 mt-1" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Content Formats — output types available ──────────────── */}
+      <div>
+        <div className="flex items-center justify-between px-1 mb-3">
+          <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-1.5">
+            <Layers className="w-3 h-3" /> Content Formats
+            <Tooltip>
+              <TooltipTrigger asChild><HelpCircle className="w-3 h-3 opacity-40 cursor-help" /></TooltipTrigger>
+              <TooltipContent side="right" className="max-w-[260px] text-xs">Available output formats — Video, Podcast, Presentation, Webcast, Celebration formats, and more. Each format has specialized editors and production pipelines.</TooltipContent>
+            </Tooltip>
+          </h3>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none md:grid md:grid-cols-4 lg:grid-cols-6 md:overflow-visible md:pb-0">
+          {(registry.formats || []).map((fmt) => {
+            const FmtIcon = (fmt.icon && (LucideIcons as any)[fmt.icon]) || FileText;
+            return (
+              <button
+                key={fmt.id}
+                onClick={() => onStartCreate(undefined, fmt.id)}
+                className="group min-w-[140px] md:min-w-0 flex items-center gap-2 p-2.5 rounded-xl glass-card border border-white/[0.06] hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
+              >
+                <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center shrink-0', fmt.color ? 'bg-opacity-15' : 'bg-primary/10')}>
+                  <FmtIcon className={cn('w-3.5 h-3.5', fmt.color || 'text-primary')} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-medium text-foreground truncate group-hover:text-primary transition-colors">{fmt.label}</p>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    {fmt.requires_tts && <span className="text-[8px] px-1 py-0.5 rounded bg-blue-500/10 text-blue-400">TTS</span>}
+                    {fmt.requires_video && <span className="text-[8px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400">Video</span>}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── KPI Stats — horizontal scroll on mobile, 4-col on desktop ── */}

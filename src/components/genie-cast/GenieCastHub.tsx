@@ -844,7 +844,16 @@ export const GenieCastHub: React.FC = () => {
               <Suspense fallback={<NavViewFallback />}>
                 <LazyCastDashboard
                   onNavigate={handleViewChange}
-                  onStartCreate={() => { setShowDashboard(false); handleModeChange('create'); }}
+                  onStartCreate={(categoryId?: string, formatId?: string) => {
+                    if (categoryId) {
+                      castSession.setSelectedCategoryId(categoryId);
+                    }
+                    if (formatId) {
+                      castSession.setSelectedFormatId(formatId);
+                    }
+                    setShowDashboard(false);
+                    handleModeChange('create');
+                  }}
                 />
               </Suspense>
             </div>

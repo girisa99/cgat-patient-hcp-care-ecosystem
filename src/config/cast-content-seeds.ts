@@ -4,10 +4,14 @@
  * Code-defined seed categories and formats that are ALWAYS available,
  * even before DB rows exist. DB entries with the same `name` take precedence.
  *
- * To add a new vertical (sports, travel, inaugurations, etc.):
+ * This file seeds ALL core categories (8 DB-equivalent + celebrations)
+ * and ALL core formats (8 DB-equivalent + 14 celebration-specific).
+ *
+ * To add a new vertical:
  *   1. Add a seed category entry below
  *   2. Add seed format entries below
- *   3. That's it — FormatStudioRouter pattern-matches format names automatically
+ *   3. Add category↔format links
+ *   4. That's it — FormatStudioRouter pattern-matches format names automatically
  *
  * When the DB row is eventually created (via admin panel or migration),
  * the DB version supersedes the seed. Seeds are fallbacks, not overrides.
@@ -16,8 +20,98 @@
 import type { ContentCategory, ContentFormat, CategoryFormatLink } from '@/hooks/useCastContentRegistry';
 
 // ─── SEED CATEGORIES ────────────────────────────────────────────────────────
+// Mirrors the 8 DB-seeded categories + Celebrations vertical.
+// DB entries with matching `name` override these at runtime.
 
 export const SEED_CATEGORIES: ContentCategory[] = [
+  {
+    id: 'seed-media',
+    name: 'media',
+    label: 'Media & Entertainment',
+    icon: 'Film',
+    color: 'text-blue-600',
+    description: 'General media production — videos, films, trailers, and entertainment content',
+    sort_order: 1,
+    is_active: true,
+    metadata: { seed: true },
+  },
+  {
+    id: 'seed-healthcare',
+    name: 'healthcare',
+    label: 'Healthcare',
+    icon: 'HeartPulse',
+    color: 'text-red-600',
+    description: 'Healthcare industry content — patient education, HCP training, clinical summaries',
+    sort_order: 2,
+    is_active: true,
+    metadata: { seed: true },
+  },
+  {
+    id: 'seed-education',
+    name: 'education',
+    label: 'Education',
+    icon: 'GraduationCap',
+    color: 'text-green-600',
+    description: 'Educational and training content — courses, tutorials, e-learning modules',
+    sort_order: 3,
+    is_active: true,
+    metadata: { seed: true },
+  },
+  {
+    id: 'seed-government',
+    name: 'government',
+    label: 'Government',
+    icon: 'Landmark',
+    color: 'text-slate-600',
+    description: 'Government and public sector — policy announcements, civic engagement, PSAs',
+    sort_order: 4,
+    is_active: true,
+    metadata: { seed: true },
+  },
+  {
+    id: 'seed-oil-gas',
+    name: 'oil_gas',
+    label: 'Oil & Gas',
+    icon: 'Fuel',
+    color: 'text-amber-600',
+    description: 'Energy sector content — safety training, ESG reports, operational updates',
+    sort_order: 5,
+    is_active: true,
+    metadata: { seed: true },
+  },
+  {
+    id: 'seed-travel',
+    name: 'travel',
+    label: 'Travel & Hospitality',
+    icon: 'Plane',
+    color: 'text-cyan-600',
+    description: 'Travel and tourism content — destination showcases, hotel tours, cultural guides',
+    sort_order: 6,
+    is_active: true,
+    metadata: { seed: true },
+  },
+  {
+    id: 'seed-commercial',
+    name: 'commercial',
+    label: 'Commercial & Marketing',
+    icon: 'Megaphone',
+    color: 'text-purple-600',
+    description: 'Commercial and brand content — ads, product demos, brand stories, campaigns',
+    sort_order: 7,
+    is_active: true,
+    metadata: { seed: true },
+  },
+  {
+    id: 'seed-technology',
+    name: 'technology',
+    label: 'Technology',
+    icon: 'Cpu',
+    color: 'text-indigo-600',
+    description: 'Tech industry content — product walkthroughs, architecture diagrams, demos',
+    sort_order: 8,
+    is_active: true,
+    metadata: { seed: true },
+  },
   {
     id: 'seed-celebrations',
     name: 'celebrations',
@@ -25,14 +119,49 @@ export const SEED_CATEGORIES: ContentCategory[] = [
     icon: 'Heart',
     color: 'text-pink-600',
     description: 'Weddings, festivals, religious ceremonies, life milestones, corporate events, sports, inaugurations & more',
-    sort_order: 90,
+    sort_order: 9,
     is_active: true,
     metadata: { seed: true, vertical: 'celebrations' },
   },
 ];
 
-// ─── HELPER ─────────────────────────────────────────────────────────────────
+// ─── HELPERS ────────────────────────────────────────────────────────────────
 
+/** Generic format seed builder */
+function coreFormat(
+  idSuffix: string,
+  name: string,
+  label: string,
+  icon: string,
+  color: string,
+  description: string,
+  opts: {
+    messaging?: boolean;
+    tts?: boolean;
+    video?: boolean;
+    sortOrder: number;
+    checklist?: string[];
+  },
+): ContentFormat {
+  return {
+    id: `seed-core-${idSuffix}`,
+    name,
+    label,
+    icon,
+    color,
+    description,
+    requires_messaging: opts.messaging ?? false,
+    requires_tts: opts.tts ?? false,
+    requires_video: opts.video ?? false,
+    enrichment_config: {},
+    editor_placeholder: null,
+    checklist: opts.checklist || ['Content created', 'Quality review passed', 'Assets embedded', 'Ready for export'],
+    sort_order: opts.sortOrder,
+    is_active: true,
+  };
+}
+
+/** Celebration format seed builder */
 function celebrationFormat(
   idSuffix: string,
   name: string,
@@ -61,9 +190,38 @@ function celebrationFormat(
   };
 }
 
+// ─── SEED FORMATS — CORE (8 DB-equivalent) ─────────────────────────────────
+
+const CORE_FORMATS: ContentFormat[] = [
+  coreFormat('podcast', 'podcast', 'Podcast', 'Mic', 'text-orange-600',
+    'Audio podcast episodes — interviews, panel discussions, narrated stories',
+    { tts: true, sortOrder: 1, checklist: ['Script finalized', 'Speaker roles assigned', 'Audio generated', 'Intro/outro added', 'Ready for export'] }),
+  coreFormat('webcast', 'webcast', 'Webcast', 'Radio', 'text-red-600',
+    'Live or recorded webcasts — product launches, town halls, virtual events',
+    { messaging: true, tts: true, video: true, sortOrder: 2, checklist: ['Agenda set', 'Speakers configured', 'Visual assets ready', 'Stream/recording configured', 'Ready for broadcast'] }),
+  coreFormat('video', 'video', 'Video', 'Video', 'text-blue-600',
+    'Video content — shorts, long-form, cinematic, educational, promotional',
+    { messaging: true, tts: true, video: true, sortOrder: 3, checklist: ['Script written', 'Visual style chosen', 'Scenes configured', 'Audio/music set', 'Ready for production'] }),
+  coreFormat('presentation', 'presentation', 'Presentation / PPT', 'Presentation', 'text-teal-600',
+    'Slide decks — pitch decks, investor presentations, training materials, keynotes',
+    { messaging: true, sortOrder: 4, checklist: ['Outline created', 'Slides designed', 'Speaker notes added', 'Data visualizations embedded', 'Ready for export'] }),
+  coreFormat('script', 'script', 'Script / Narration', 'FileText', 'text-slate-600',
+    'Written scripts — video narration, voiceover scripts, dialogue drafts',
+    { sortOrder: 5, checklist: ['Draft written', 'Tone reviewed', 'Speaker roles assigned', 'Ready for production'] }),
+  coreFormat('tts', 'tts', 'Text-to-Speech', 'Volume2', 'text-green-600',
+    'AI-generated speech — voiceovers, narration, multilingual audio',
+    { tts: true, sortOrder: 6, checklist: ['Text finalized', 'Voice selected', 'Language/accent set', 'Audio generated', 'Quality reviewed'] }),
+  coreFormat('voice', 'voice', 'Voice / Voiceover', 'AudioLines', 'text-violet-600',
+    'Professional voiceover — character voices, dubbing, multilingual narration',
+    { tts: true, sortOrder: 7, checklist: ['Script ready', 'Voice talent selected', 'Recording configured', 'Post-processing set', 'Ready for export'] }),
+  coreFormat('ugc', 'ugc', 'User Generated Content', 'Users', 'text-amber-600',
+    'UGC-style content — testimonials, reviews, social proof, community stories',
+    { video: true, sortOrder: 8, checklist: ['Source content identified', 'Curation complete', 'Brand compliance checked', 'Edit/remix configured', 'Ready for export'] }),
+];
+
 // ─── SEED FORMATS — ALL 14 CELEBRATION OUTPUT FORMATS ───────────────────────
 
-export const SEED_FORMATS: ContentFormat[] = [
+const CELEBRATION_FORMATS: ContentFormat[] = [
   // ── Video Formats ──────────────────────────────────────────────────────
   celebrationFormat(
     'invitation-video', 'celebration_invitation_video', 'Invitation Video',
@@ -153,16 +311,38 @@ export const SEED_FORMATS: ContentFormat[] = [
   ),
 ];
 
-// ─── SEED CATEGORY ↔ FORMAT LINKS ──────────────────────────────────────────
+// ─── COMBINED SEED FORMATS ──────────────────────────────────────────────────
 
-export const SEED_CATEGORY_FORMAT_LINKS: CategoryFormatLink[] = SEED_FORMATS.map(fmt => ({
-  id: `seed-link-${fmt.id}`,
-  category_id: 'seed-celebrations',
-  format_id: fmt.id,
-  enrichment_overrides: {},
-  blueprint_template_id: null,
-  is_active: true,
-}));
+export const SEED_FORMATS: ContentFormat[] = [...CORE_FORMATS, ...CELEBRATION_FORMATS];
+
+// ─── SEED CATEGORY ↔ FORMAT LINKS ──────────────────────────────────────────
+// Core formats are linked to ALL categories (available everywhere).
+// Celebration-specific formats are linked only to the celebrations category.
+
+const CORE_FORMAT_IDS = new Set(CORE_FORMATS.map(f => f.id));
+
+export const SEED_CATEGORY_FORMAT_LINKS: CategoryFormatLink[] = [
+  // Every category gets access to core formats (video, podcast, presentation, etc.)
+  ...SEED_CATEGORIES.flatMap(cat =>
+    CORE_FORMATS.map(fmt => ({
+      id: `seed-link-${cat.id}-${fmt.id}`,
+      category_id: cat.id,
+      format_id: fmt.id,
+      enrichment_overrides: {},
+      blueprint_template_id: null,
+      is_active: true,
+    })),
+  ),
+  // Celebration-specific formats linked only to celebrations category
+  ...CELEBRATION_FORMATS.map(fmt => ({
+    id: `seed-link-celebrations-${fmt.id}`,
+    category_id: 'seed-celebrations',
+    format_id: fmt.id,
+    enrichment_overrides: {},
+    blueprint_template_id: null,
+    is_active: true,
+  })),
+];
 
 // ─── MERGE HELPER ───────────────────────────────────────────────────────────
 

@@ -116,13 +116,28 @@ export type ContentFormat =
   | 'business_flow'      // Business process flow diagram from discussion
   | 'webcast_replay'     // Polished webcast replay with chapters + demo highlights
   | 'live_recording_processed' // Processed live recording with edit/rewind/chapters
-  // ─── Celebrations & Events ──────────────────────────────────────────────
+  // ─── Celebrations & Events (generic) ────────────────────────────────────
   | 'celebration_invitation'   // Wedding/event invitation video
   | 'celebration_ceremony'     // Ceremony recap or preview video
   | 'celebration_podcast'      // Couples story or event podcast
   | 'celebration_slideshow'    // Photo montage / slideshow video
   | 'celebration_card'         // Animated digital invitation card
-  | 'celebration_tribute';     // Memorial or tribute video
+  | 'celebration_tribute'      // Memorial or tribute video
+  // ─── Celebrations & Events (specific seed format names) ────────────────
+  | 'celebration_invitation_video'
+  | 'celebration_save_the_date'
+  | 'celebration_ceremony_recap_video'
+  | 'celebration_photo_montage_video'
+  | 'celebration_social_clip'
+  | 'celebration_thank_you_video'
+  | 'celebration_highlight_reel'
+  | 'celebration_announcement_video'
+  | 'celebration_tribute_video'
+  | 'celebration_webcast_live'
+  | 'celebration_digital_invitation'
+  | 'celebration_couples_podcast'
+  | 'celebration_ceremony_program_pptx'
+  | 'celebration_print_invitation_pdf';
 
 export type ContentIntent =
   | 'promo'              // Business promotion
@@ -2788,7 +2803,13 @@ export const PIPELINE_CHAINS: Record<string, PipelineChain> = {
     id: 'celebration_multi',
     name: 'Celebration-to-Multi-Format',
     description: 'Ceremony type + region + personalization → cultural enrichment → scene template → script → TTS → video/image → music → assembly → multi-format output',
-    outputFormats: ['celebration_invitation', 'celebration_ceremony', 'celebration_podcast', 'celebration_slideshow', 'celebration_card', 'celebration_tribute'],
+    outputFormats: [
+      'celebration_invitation', 'celebration_ceremony', 'celebration_podcast', 'celebration_slideshow', 'celebration_card', 'celebration_tribute',
+      'celebration_invitation_video', 'celebration_save_the_date', 'celebration_ceremony_recap_video', 'celebration_photo_montage_video',
+      'celebration_social_clip', 'celebration_thank_you_video', 'celebration_highlight_reel', 'celebration_announcement_video',
+      'celebration_tribute_video', 'celebration_webcast_live', 'celebration_digital_invitation', 'celebration_couples_podcast',
+      'celebration_ceremony_program_pptx', 'celebration_print_invitation_pdf',
+    ],
     steps: [
       ATOMIC_STEPS.brand_profile,
       ATOMIC_STEPS.script_generate,           // Ceremony script from template + cultural context
@@ -2890,13 +2911,28 @@ const FORMAT_CHAIN_MAP: Partial<Record<ContentFormat, string>> = {
   newsletter: 'blog_to_multimedia',
   blog_post: 'blog_to_multimedia',
 
-  // Celebrations & Events
+  // Celebrations & Events (generic)
   celebration_invitation: 'celebration_multi',
   celebration_ceremony: 'celebration_multi',
   celebration_podcast: 'celebration_multi',
   celebration_slideshow: 'celebration_multi',
   celebration_card: 'celebration_multi',
   celebration_tribute: 'celebration_multi',
+  // Celebrations & Events (specific seed format names)
+  celebration_invitation_video: 'celebration_multi',
+  celebration_save_the_date: 'celebration_multi',
+  celebration_ceremony_recap_video: 'celebration_multi',
+  celebration_photo_montage_video: 'celebration_multi',
+  celebration_social_clip: 'celebration_multi',
+  celebration_thank_you_video: 'celebration_multi',
+  celebration_highlight_reel: 'celebration_multi',
+  celebration_announcement_video: 'celebration_multi',
+  celebration_tribute_video: 'celebration_multi',
+  celebration_webcast_live: 'celebration_multi',
+  celebration_digital_invitation: 'celebration_multi',
+  celebration_couples_podcast: 'celebration_multi',
+  celebration_ceremony_program_pptx: 'celebration_multi',
+  celebration_print_invitation_pdf: 'celebration_multi',
 };
 
 const INTENT_CHAIN_MAP: Partial<Record<ContentIntent, string>> = {
