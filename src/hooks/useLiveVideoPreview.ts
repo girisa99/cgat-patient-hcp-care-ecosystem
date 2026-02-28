@@ -54,6 +54,7 @@ export interface VideoAssemblyConfig {
   format: 'mp4' | 'webm';
   includeAudio: boolean;
   transitions: 'none' | 'fade' | 'slide' | 'zoom';
+  language?: string;
 }
 
 export interface UseLiveVideoPreviewOptions {
@@ -419,6 +420,7 @@ export function useLiveVideoPreview(options: UseLiveVideoPreviewOptions = {}): U
       format: config.format || 'mp4',
       includeAudio: config.includeAudio !== false,
       transitions: config.transitions || 'fade',
+      language: config.language,
     };
 
     updateProgress({
@@ -451,7 +453,7 @@ export function useLiveVideoPreview(options: UseLiveVideoPreviewOptions = {}): U
           format: assemblyConfig.format,
           includeAudio: assemblyConfig.includeAudio,
           templateId: mapping.templateId,
-          language: 'en', // TODO: Get from config
+          language: assemblyConfig.language || 'en',
         },
       });
 

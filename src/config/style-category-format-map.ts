@@ -13,9 +13,15 @@
  *   gaming, lifestyle, social, motion, healthcare, ecommerce, storytelling,
  *   immersive, character, illustration
  *
- * Content categories come from cast-content-seeds.ts:
+ * Content categories come from cast-content-seeds.ts (38 total):
  *   media, healthcare, education, government, oil_gas, travel, commercial,
- *   technology, celebrations
+ *   technology, celebrations, finance, fintech, real_estate, automotive,
+ *   entertainment, retail_ecommerce, sports_fitness, hospitality_hotels,
+ *   pharma_biotech, fashion_apparel, beauty_cosmetics, agriculture,
+ *   energy_renewables, construction, gaming_esports, music_arts,
+ *   cybersecurity, ai_ml, aerospace_defense, legal, nonprofit, logistics,
+ *   telecom, insurance, wellness_spa, food_beverage, mining_metals,
+ *   environmental, pet_care
  *
  * Content formats come from cast-content-seeds.ts:
  *   podcast, webcast, video, presentation, script, tts, voice, ugc,
@@ -34,19 +40,29 @@ const STYLE_TO_CATEGORIES: Record<string, string[] | '*'> = {
   motion:        '*',
   social:        '*',
 
-  // Industry-specific styles
-  media:         ['media', 'commercial'],
-  healthcare:    ['healthcare'],
-  education:     ['education'],
-  gaming:        ['media', 'technology'],
-  lifestyle:     ['travel', 'commercial', 'media'],
-  ecommerce:     ['commercial'],
-  demo:          ['technology', 'commercial', 'education'],
-  presentation:  ['education', 'healthcare', 'government', 'oil_gas', 'technology', 'commercial'],
-  framework:     ['government', 'technology', 'commercial', 'education'],
-  seasonal:      ['celebrations', 'commercial', 'media'],
-  storytelling:  ['media', 'education', 'celebrations'],
-  immersive:     ['technology', 'media', 'travel'],
+  // Industry-specific styles (covering all 38 content categories)
+  media:         ['media', 'commercial', 'entertainment', 'music_arts', 'sports_fitness'],
+  healthcare:    ['healthcare', 'pharma_biotech', 'wellness_spa'],
+  education:     ['education', 'ai_ml', 'cybersecurity'],
+  gaming:        ['media', 'technology', 'gaming_esports', 'entertainment'],
+  lifestyle:     ['travel', 'commercial', 'media', 'hospitality_hotels', 'wellness_spa',
+                  'food_beverage', 'beauty_cosmetics', 'fashion_apparel', 'pet_care'],
+  ecommerce:     ['commercial', 'retail_ecommerce', 'food_beverage', 'beauty_cosmetics',
+                  'fashion_apparel', 'pet_care'],
+  demo:          ['technology', 'commercial', 'education', 'fintech', 'ai_ml', 'telecom',
+                  'cybersecurity', 'automotive', 'logistics'],
+  presentation:  ['education', 'healthcare', 'government', 'oil_gas', 'technology', 'commercial',
+                  'finance', 'fintech', 'insurance', 'legal', 'pharma_biotech', 'aerospace_defense',
+                  'energy_renewables', 'mining_metals', 'logistics', 'telecom', 'construction',
+                  'environmental', 'nonprofit', 'agriculture'],
+  framework:     ['government', 'technology', 'commercial', 'education', 'finance', 'fintech',
+                  'insurance', 'legal', 'cybersecurity', 'ai_ml', 'aerospace_defense',
+                  'energy_renewables', 'logistics', 'telecom'],
+  seasonal:      ['celebrations', 'commercial', 'media', 'retail_ecommerce', 'food_beverage'],
+  storytelling:  ['media', 'education', 'celebrations', 'nonprofit', 'entertainment',
+                  'music_arts', 'environmental'],
+  immersive:     ['technology', 'media', 'travel', 'real_estate', 'automotive', 'hospitality_hotels',
+                  'aerospace_defense', 'gaming_esports', 'construction', 'mining_metals'],
 };
 
 // ─── STYLE → CONTENT FORMAT MAPPING ────────────────────────────────────────
@@ -60,18 +76,18 @@ const STYLE_TO_FORMATS: Record<string, string[] | '*'> = {
   illustration:  '*',
 
   // Format-specific styles
-  presentation:  ['presentation'],
-  framework:     ['presentation', 'video'],
+  presentation:  ['presentation', 'script'],
+  framework:     ['presentation', 'video', 'script'],
   media:         ['podcast', 'webcast', 'video'],
-  demo:          ['video', 'webcast'],
+  demo:          ['video', 'webcast', 'presentation'],
   social:        ['video', 'ugc'],
   motion:        ['video'],
-  education:     ['video', 'presentation', 'webcast'],
-  gaming:        ['video'],
-  lifestyle:     ['video', 'ugc'],
-  healthcare:    ['video', 'presentation'],
+  education:     ['video', 'presentation', 'webcast', 'podcast'],
+  gaming:        ['video', 'ugc'],
+  lifestyle:     ['video', 'ugc', 'podcast'],
+  healthcare:    ['video', 'presentation', 'webcast'],
   ecommerce:     ['video', 'ugc'],
-  storytelling:  ['video', 'script'],
+  storytelling:  ['video', 'script', 'podcast'],
   immersive:     ['video'],
   seasonal:      ['video', 'ugc',
     // All celebration video formats
