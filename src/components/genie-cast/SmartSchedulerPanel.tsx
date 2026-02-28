@@ -63,6 +63,8 @@ import type { ProductionArtifacts } from '@/hooks/useGenieCastSession';
 export interface SmartSchedulerSessionProps {
   /** Primary platform from castSession (pre-selects in scheduler) */
   primaryPlatform?: string;
+  /** Multi-select target platforms from castSession */
+  targetPlatformIds?: string[];
   /** Title of current session's content */
   sessionTitle?: string;
   /** Production artifacts from castSession */
@@ -112,6 +114,7 @@ function rowToItem(row: ScheduledPostRow): ScheduledItem {
 
 export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
   primaryPlatform,
+  targetPlatformIds,
   sessionTitle,
   productionArtifacts,
   selectedRegion,
@@ -121,7 +124,7 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [selectedVideoForSchedule, setSelectedVideoForSchedule] = useState<VideoItem | null>(null);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
-    primaryPlatform ? [primaryPlatform] : ['youtube']
+    targetPlatformIds?.length ? targetPlatformIds : primaryPlatform ? [primaryPlatform] : ['youtube']
   );
   const [selectedTime, setSelectedTime] = useState('12:00');
   const queryClient = useQueryClient();

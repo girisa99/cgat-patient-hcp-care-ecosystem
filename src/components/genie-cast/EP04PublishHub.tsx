@@ -68,6 +68,8 @@ export interface PublishHubSessionProps {
   sessionDescription?: string;
   /** Primary platform from castSession (pre-selects platform) */
   primaryPlatform?: string;
+  /** Multi-select target platforms from castSession */
+  targetPlatformIds?: string[];
   /** Production artifacts from PRODUCE phase (video URLs, thumbnails, captions) */
   productionArtifacts?: ProductionArtifacts | null;
   /** Selected region for regional targeting */
@@ -724,6 +726,7 @@ export function EP04PublishHub({
   sessionTitle,
   sessionDescription,
   primaryPlatform,
+  targetPlatformIds,
   productionArtifacts,
   selectedRegion,
   contentFormat,
@@ -751,7 +754,7 @@ export function EP04PublishHub({
   // Session-aware defaults: use castSession data when available, fall back to EP04 demo
   const defaultTitle = sessionTitle || 'Two AIs, One Sprint, Zero Standup Meetings | GenieSuite EP04';
   const defaultDescription = sessionDescription || 'We ran a 5-day AI development sprint with Claude Code and Lovable. 41 tasks. No standups. Here\'s what we tracked, what broke, and what delivered 5x faster.';
-  const defaultPlatforms = primaryPlatform ? [primaryPlatform] : ['youtube', 'linkedin'];
+  const defaultPlatforms = targetPlatformIds?.length ? targetPlatformIds : primaryPlatform ? [primaryPlatform] : ['youtube', 'linkedin'];
 
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(defaultPlatforms);
   const [publishTitle, setPublishTitle] = useState(defaultTitle);

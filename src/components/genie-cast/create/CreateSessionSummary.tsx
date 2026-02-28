@@ -60,12 +60,17 @@ export function CreateSessionSummary({
     },
     {
       icon: Globe,
-      label: 'Platform',
-      value: session.primaryPlatform?.replace(/_/g, ' ') || null,
+      label: 'Platforms',
+      value: (session.targetPlatformIds?.length
+        ? session.targetPlatformIds.map(p => p.replace(/_/g, ' ')).join(', ')
+        : session.primaryPlatform?.replace(/_/g, ' ')) || null,
       step: 'configure',
-      badges: session.outputLanguages.length > 1
-        ? [`${session.outputLanguages.length} languages`]
-        : session.outputLanguages,
+      badges: [
+        ...(session.targetPlatformIds?.length > 1 ? [`${session.targetPlatformIds.length} platforms`] : []),
+        ...(session.outputLanguages.length > 1
+          ? [`${session.outputLanguages.length} languages`]
+          : session.outputLanguages),
+      ],
     },
     {
       icon: Palette,

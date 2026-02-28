@@ -34,6 +34,7 @@ interface PreviewPopoutProps {
   productionQuality: string;
   enrichmentPrompt: string;
   primaryPlatform: string;
+  targetPlatformIds?: string[];
   lipSyncEnabled: boolean;
   dubbingEnabled: boolean;
   // Registry
@@ -55,6 +56,7 @@ export function PreviewPopout({
   productionQuality,
   enrichmentPrompt,
   primaryPlatform,
+  targetPlatformIds,
   lipSyncEnabled,
   dubbingEnabled,
   contentRegistry,
@@ -254,8 +256,16 @@ export function PreviewPopout({
                     <p className="text-[10px] text-muted-foreground">Quality</p>
                   </div>
                   <div className="p-3 rounded-lg border bg-muted/20 text-center">
-                    <p className="text-lg font-bold capitalize">{primaryPlatform.replace(/_/g, ' ')}</p>
-                    <p className="text-[10px] text-muted-foreground">Platform</p>
+                    <p className="text-lg font-bold capitalize">
+                      {(targetPlatformIds?.length ? targetPlatformIds : [primaryPlatform])
+                        .slice(0, 3)
+                        .map(p => p.replace(/_/g, ' '))
+                        .join(', ')}
+                      {(targetPlatformIds?.length || 0) > 3 ? ` +${targetPlatformIds!.length - 3}` : ''}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {(targetPlatformIds?.length || 1) > 1 ? `${targetPlatformIds?.length} Platforms` : 'Platform'}
+                    </p>
                   </div>
                 </div>
               </div>

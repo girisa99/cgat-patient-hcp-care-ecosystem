@@ -145,7 +145,8 @@ export interface GenieCastSessionState {
   discoveryChainId: string | null;          // selected pipeline chain
 
   // Platform & language targeting
-  primaryPlatform: string;                  // 'youtube' | 'tiktok' | 'instagram' | etc.
+  primaryPlatform: string;                  // derived: targetPlatformIds[0] (backward compat)
+  targetPlatformIds: string[];              // multi-select: ['youtube', 'tiktok', 'instagram', ...]
   outputLanguages: string[];                // ['en', 'hi', 'ar', ...]
   dubbingSubtitleLanguages: string[];       // languages for dubbing/subtitles
   selectedDialectCodes: string[];           // full dialect codes like 'en-US', 'hi-IN'
@@ -217,6 +218,7 @@ const createDefaultSession = (): GenieCastSessionState => ({
   selectedSubFormatId: null,
   discoveryChainId: null,
   primaryPlatform: 'youtube',
+  targetPlatformIds: ['youtube'],
   outputLanguages: ['en'],
   dubbingSubtitleLanguages: ['en'],
   selectedDialectCodes: ['en-US'],
@@ -568,7 +570,16 @@ export function useGenieCastSession() {
   }, []);
 
   const setPrimaryPlatform = useCallback((platform: string) => {
-    setSession(prev => ({ ...prev, primaryPlatform: platform, updatedAt: new Date() }));
+    setSession(prev => ({ ...prev, primaryPlatform: platform, targetPlatformIds: [platform], updatedAt: new Date() }));
+  }, []);
+
+  const setTargetPlatformIds = useCallback((ids: string[]) => {
+    setSession(prev => ({
+      ...prev,
+      targetPlatformIds: ids,
+      primaryPlatform: ids[0] || prev.primaryPlatform,
+      updatedAt: new Date(),
+    }));
   }, []);
 
   const setOutputLanguages = useCallback((langs: string[]) => {
@@ -782,6 +793,7 @@ export function useGenieCastSession() {
     setSelectedSubFormatId,
     setDiscoveryChainId,
     setPrimaryPlatform,
+    setTargetPlatformIds,
     setOutputLanguages,
     setDubbingSubtitleLanguages,
     setSelectedDialectCodes,

@@ -175,6 +175,7 @@ interface CreateConfigureStepProps {
   selectedFormatId: string | null;
   selectedSubFormatId: string | null;
   primaryPlatform: string;
+  targetPlatformIds: string[];
   selectedDialectCodes: string[];
   outputLanguages: string[];
   dubbingSubtitleLanguages: string[];
@@ -199,6 +200,7 @@ interface CreateConfigureStepProps {
 
   // Session setters
   setPrimaryPlatform: (v: string) => void;
+  setTargetPlatformIds: (v: string[]) => void;
   setOutputLanguages: React.Dispatch<React.SetStateAction<string[]>>;
   setDubbingSubtitleLanguages: React.Dispatch<React.SetStateAction<string[]>>;
   setSelectedVisualStyleIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -243,6 +245,7 @@ export function CreateConfigureStep({
   selectedFormatId,
   selectedSubFormatId,
   primaryPlatform,
+  targetPlatformIds,
   selectedDialectCodes,
   outputLanguages,
   dubbingSubtitleLanguages,
@@ -262,6 +265,7 @@ export function CreateConfigureStep({
   imaginationPreset,
   selectedRegion,
   setPrimaryPlatform,
+  setTargetPlatformIds,
   setOutputLanguages,
   setDubbingSubtitleLanguages,
   setSelectedVisualStyleIds,
@@ -290,7 +294,7 @@ export function CreateConfigureStep({
   const [showPreview, setShowPreview] = useState(false);
 
   // Completion checks
-  const isPlatformComplete = !!primaryPlatform;
+  const isPlatformComplete = targetPlatformIds.length > 0;
   const isStyleComplete = selectedVisualStyleIds.length > 0;
   const isEnrichmentComplete = !!enrichmentPrompt;
 
@@ -343,6 +347,7 @@ export function CreateConfigureStep({
         productionQuality={productionQuality}
         enrichmentPrompt={enrichmentPrompt}
         primaryPlatform={primaryPlatform}
+        targetPlatformIds={targetPlatformIds}
         lipSyncEnabled={lipSyncEnabled}
         dubbingEnabled={dubbingEnabled}
         contentRegistry={contentRegistry}
@@ -362,27 +367,28 @@ export function CreateConfigureStep({
       >
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Primary Platform</Label>
-              <Select value={primaryPlatform} onValueChange={setPrimaryPlatform}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {getPlatformCategories().map(cat => (
-                    <SelectGroup key={cat}>
-                      <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                        {cat === 'social' ? 'Social' : cat === 'web' ? 'Web & Marketing' : cat === 'messaging' ? 'Messaging' : cat === 'broadcast' ? 'Broadcast' : 'Presentation'}
-                      </SelectLabel>
-                      {getPlatformsByCategory(cat).map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.label}
-                          {p.maxDurationSeconds ? ` (≤${p.maxDurationSeconds}s)` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PortalDropdown
+                label="Target Platforms"
+                icon={<Globe className="w-3.5 h-3.5" />}
+                placeholder="Select platforms..."
+                options={getPlatformCategories().flatMap(cat =>
+                  getPlatformsByCategory(cat).map(p => ({
+                    value: p.id,
+                    label: p.label,
+                    description: (cat === 'social' ? 'Social' : cat === 'web' ? 'Web' : cat === 'messaging' ? 'Messaging' : cat === 'broadcast' ? 'Broadcast' : 'Presentation')
+                      + (p.maxDurationSeconds ? ` · ≤${p.maxDurationSeconds}s` : '')
+                      + (p.aspectRatios?.length ? ` · ${p.aspectRatios[0]}` : ''),
+                  }))
+                )}
+                selected={targetPlatformIds}
+                onToggle={(id) => {
+                  const next = targetPlatformIds.includes(id)
+                    ? targetPlatformIds.filter(p => p !== id)
+                    : [...targetPlatformIds, id];
+                  setTargetPlatformIds(next.length > 0 ? next : ['youtube']);
+                }}
+                multi
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Input Language <span className="text-muted-foreground">(Transcreation: DeepL)</span></Label>

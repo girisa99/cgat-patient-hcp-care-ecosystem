@@ -390,6 +390,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
   const setDubbingEnabled = castSession.setDubbingEnabled;
   const primaryPlatform = castSession.session.primaryPlatform;
   const setPrimaryPlatform = castSession.setPrimaryPlatform;
+  const targetPlatformIds = castSession.session.targetPlatformIds;
+  const setTargetPlatformIds = castSession.setTargetPlatformIds;
   const outputLanguages = castSession.session.outputLanguages;
   const setOutputLanguages = castSession.setOutputLanguages;
   const dubbingSubtitleLanguages = castSession.session.dubbingSubtitleLanguages;
@@ -1204,6 +1206,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 selectedFormatId={selectedFormatId}
                 selectedSubFormatId={selectedSubFormatId}
                 primaryPlatform={primaryPlatform}
+                targetPlatformIds={targetPlatformIds}
                 selectedDialectCodes={selectedDialectCodes}
                 outputLanguages={outputLanguages}
                 dubbingSubtitleLanguages={dubbingSubtitleLanguages}
@@ -1223,6 +1226,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 imaginationPreset={imaginationPreset}
                 selectedRegion={castSession.session.selectedRegion}
                 setPrimaryPlatform={setPrimaryPlatform}
+                setTargetPlatformIds={setTargetPlatformIds}
                 setOutputLanguages={setOutputLanguages}
                 setDubbingSubtitleLanguages={setDubbingSubtitleLanguages}
                 setSelectedVisualStyleIds={setSelectedVisualStyleIds}
@@ -1838,6 +1842,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
               >
                 <SmartSchedulerPanel
                   primaryPlatform={castSession.session.primaryPlatform}
+                  targetPlatformIds={castSession.session.targetPlatformIds}
                   sessionTitle={castSession.session.approvedMessaging?.hook || castSession.session.enrichmentPrompt || undefined}
                   productionArtifacts={castSession.session.productionArtifacts}
                   selectedRegion={castSession.session.selectedRegion}
@@ -1912,6 +1917,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                       sessionTitle={castSession.session.approvedMessaging?.hook || castSession.session.enrichmentPrompt || undefined}
                       sessionDescription={castSession.session.approvedMessaging?.valueProposition || undefined}
                       primaryPlatform={castSession.session.primaryPlatform}
+                      targetPlatformIds={castSession.session.targetPlatformIds}
                       productionArtifacts={castSession.session.productionArtifacts}
                       selectedRegion={castSession.session.selectedRegion}
                       contentFormat={contentRegistry.formats.find(f => f.id === castSession.session.selectedFormatId)?.name}

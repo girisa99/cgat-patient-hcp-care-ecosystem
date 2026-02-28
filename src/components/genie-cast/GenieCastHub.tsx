@@ -617,7 +617,7 @@ export const GenieCastHub: React.FC = () => {
         storybookMode: true,
         imaginationPreset: session.imaginationPreset || undefined,
         outputFormat: 'long_form_video',
-        targetPlatforms: [session.primaryPlatform],
+        targetPlatforms: session.targetPlatformIds?.length > 0 ? session.targetPlatformIds : [session.primaryPlatform],
         enrichmentContext: enrichment,
       };
 
