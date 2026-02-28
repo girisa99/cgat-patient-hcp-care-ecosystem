@@ -528,37 +528,7 @@ export const GenieCastHub: React.FC = () => {
     production.refreshEnrichment(languageCode);
   }, [languageCode, production.refreshEnrichment]);
 
-  // Auto-create EP04 project row if none exists (so CastProjectsList shows it)
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const db = supabase as any;
-      const { data: existing } = await db
-        .from('cast_projects')
-        .select('id')
-        .eq('user_id', user.id)
-        .ilike('title', '%EP04%')
-        .limit(1)
-        .maybeSingle();
-      if (existing?.id) return; // already exists
-      const { error } = await db
-        .from('cast_projects')
-        .insert({
-          user_id: user.id,
-          title: 'EP04 — Sprint Documentary',
-          description: 'GenieSuite Sprint Documentary — 12 scenes, 5 voices, ~27 min',
-          status: 'scripted',
-          production_stage: 'producing',
-          style_intent: 'documentary',
-          quality: 'production',
-          target_regions: ['global'],
-          selected_dialects: ['en-US'],
-        });
-      if (error) console.error('[GenieCastHub] Failed to auto-create EP04 project:', error);
-      else console.log('[GenieCastHub] Auto-created EP04 project row');
-    })();
-  }, []);
+  // EP04 project auto-creation is handled by EP04Production.tsx — removed from here to prevent duplicates
 
   const handleStylesChange = useCallback((styles: VideoStyleType[]) => {
     if (!isMounted.current) return;

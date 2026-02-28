@@ -380,19 +380,24 @@ export default function EP04Production() {
   } = useCastProjectPersistence();
 
   // ─── Auto-create cast_projects row if none exists ──────────────────
+  // Uses exact style_intent match to prevent duplicates (not fuzzy title match)
+  const autoCreateAttempted = React.useRef(false);
   useEffect(() => {
     if (urlProjectId || autoProjectId) return;
+    if (autoCreateAttempted.current) return; // guard against React strict-mode double-fire
+    autoCreateAttempted.current = true;
+
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const db = supabase as any;
 
-      // Check if EP04 project already exists for this user
+      // Check if EP04 project already exists using exact style_intent match
       const { data: existing } = await db
         .from('cast_projects')
         .select('id')
         .eq('user_id', user.id)
-        .ilike('title', '%EP04%')
+        .eq('style_intent', 'ep04-sprint-documentary')
         .limit(1)
         .maybeSingle();
 
@@ -401,7 +406,25 @@ export default function EP04Production() {
         return;
       }
 
-      // Create new EP04 project row
+      // Also check by title as fallback (for rows created before this fix)
+      const { data: legacyExisting } = await db
+        .from('cast_projects')
+        .select('id')
+        .eq('user_id', user.id)
+        .ilike('title', '%EP04%')
+        .limit(1)
+        .maybeSingle();
+
+      if (legacyExisting?.id) {
+        // Update legacy row with the stable style_intent so future lookups use exact match
+        await db.from('cast_projects')
+          .update({ style_intent: 'ep04-sprint-documentary' })
+          .eq('id', legacyExisting.id);
+        setAutoProjectId(legacyExisting.id);
+        return;
+      }
+
+      // Create new EP04 project row with stable style_intent
       const { data: created, error } = await db
         .from('cast_projects')
         .insert({
@@ -410,7 +433,7 @@ export default function EP04Production() {
           description: 'GenieSuite Sprint Documentary — 12 scenes, 5 voices, ~27 min',
           status: 'scripted',
           production_stage: 'producing',
-          style_intent: 'documentary',
+          style_intent: 'ep04-sprint-documentary',
           quality: 'production',
           target_regions: ['global'],
           selected_dialects: ['en-US'],
