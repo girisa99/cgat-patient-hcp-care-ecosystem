@@ -68,6 +68,7 @@ import { PreviewPopout } from './PreviewPopout';
 import { PortalDropdown } from '../create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from '../StyleCustomizationPanel';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
+import { TARGET_PLATFORMS, getPlatformsByCategory, getPlatformCategories } from '@/config/target-platforms-registry';
 import {
   IMAGINATION_PRESETS,
   getPresetCategories,
@@ -367,18 +368,19 @@ export function CreateConfigureStep({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="youtube">YouTube</SelectItem>
-                  <SelectItem value="tiktok">TikTok</SelectItem>
-                  <SelectItem value="instagram_reels">Instagram Reels</SelectItem>
-                  <SelectItem value="linkedin">LinkedIn</SelectItem>
-                  <SelectItem value="facebook">Facebook</SelectItem>
-                  <SelectItem value="twitter">X (Twitter)</SelectItem>
-                  <SelectItem value="landing_page">Landing Page</SelectItem>
-                  <SelectItem value="product_page">Product Page</SelectItem>
-                  <SelectItem value="ott_ctv">OTT / CTV</SelectItem>
-                  <SelectItem value="webinar">Webinar</SelectItem>
-                  <SelectItem value="digital_signage">Digital Signage</SelectItem>
-                  <SelectItem value="presentation_slides">Presentation</SelectItem>
+                  {getPlatformCategories().map(cat => (
+                    <SelectGroup key={cat}>
+                      <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {cat === 'social' ? 'Social' : cat === 'web' ? 'Web & Marketing' : cat === 'messaging' ? 'Messaging' : cat === 'broadcast' ? 'Broadcast' : 'Presentation'}
+                      </SelectLabel>
+                      {getPlatformsByCategory(cat).map(p => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.label}
+                          {p.maxDurationSeconds ? ` (≤${p.maxDurationSeconds}s)` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
