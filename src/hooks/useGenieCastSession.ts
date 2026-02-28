@@ -582,32 +582,53 @@ export function useGenieCastSession() {
     }));
   }, []);
 
-  const setOutputLanguages = useCallback((langs: string[]) => {
-    setSession(prev => ({ ...prev, outputLanguages: langs, updatedAt: new Date() }));
+  const setOutputLanguages = useCallback((langsOrFn: string[] | ((prev: string[]) => string[])) => {
+    setSession(prev => {
+      const next = typeof langsOrFn === 'function' ? langsOrFn(prev.outputLanguages) : langsOrFn;
+      return { ...prev, outputLanguages: next, updatedAt: new Date() };
+    });
   }, []);
 
-  const setDubbingSubtitleLanguages = useCallback((langs: string[]) => {
-    setSession(prev => ({ ...prev, dubbingSubtitleLanguages: langs, updatedAt: new Date() }));
+  const setDubbingSubtitleLanguages = useCallback((langsOrFn: string[] | ((prev: string[]) => string[])) => {
+    setSession(prev => {
+      const next = typeof langsOrFn === 'function' ? langsOrFn(prev.dubbingSubtitleLanguages) : langsOrFn;
+      return { ...prev, dubbingSubtitleLanguages: next, updatedAt: new Date() };
+    });
   }, []);
 
-  const setSelectedDialectCodes = useCallback((codes: string[]) => {
-    setSession(prev => ({ ...prev, selectedDialectCodes: codes, updatedAt: new Date() }));
+  const setSelectedDialectCodes = useCallback((codesOrFn: string[] | ((prev: string[]) => string[])) => {
+    setSession(prev => {
+      const next = typeof codesOrFn === 'function' ? codesOrFn(prev.selectedDialectCodes) : codesOrFn;
+      return { ...prev, selectedDialectCodes: next, updatedAt: new Date() };
+    });
   }, []);
 
-  const setSelectedVisualStyleIds = useCallback((ids: string[]) => {
-    setSession(prev => ({ ...prev, selectedVisualStyleIds: ids, updatedAt: new Date() }));
+  const setSelectedVisualStyleIds = useCallback((idsOrFn: string[] | ((prev: string[]) => string[])) => {
+    setSession(prev => {
+      const next = typeof idsOrFn === 'function' ? idsOrFn(prev.selectedVisualStyleIds) : idsOrFn;
+      return { ...prev, selectedVisualStyleIds: next, updatedAt: new Date() };
+    });
   }, []);
 
-  const setSelectedCapabilityIds = useCallback((ids: string[]) => {
-    setSession(prev => ({ ...prev, selectedCapabilityIds: ids, updatedAt: new Date() }));
+  const setSelectedCapabilityIds = useCallback((idsOrFn: string[] | ((prev: string[]) => string[])) => {
+    setSession(prev => {
+      const next = typeof idsOrFn === 'function' ? idsOrFn(prev.selectedCapabilityIds) : idsOrFn;
+      return { ...prev, selectedCapabilityIds: next, updatedAt: new Date() };
+    });
   }, []);
 
-  const setAutoSelectedCapIds = useCallback((ids: string[]) => {
-    setSession(prev => ({ ...prev, autoSelectedCapIds: ids, updatedAt: new Date() }));
+  const setAutoSelectedCapIds = useCallback((idsOrFn: string[] | ((prev: string[]) => string[])) => {
+    setSession(prev => {
+      const next = typeof idsOrFn === 'function' ? idsOrFn(prev.autoSelectedCapIds) : idsOrFn;
+      return { ...prev, autoSelectedCapIds: next, updatedAt: new Date() };
+    });
   }, []);
 
-  const setSelectedCharacterIds = useCallback((ids: string[]) => {
-    setSession(prev => ({ ...prev, selectedCharacterIds: ids, updatedAt: new Date() }));
+  const setSelectedCharacterIds = useCallback((idsOrFn: string[] | ((prev: string[]) => string[])) => {
+    setSession(prev => {
+      const next = typeof idsOrFn === 'function' ? idsOrFn(prev.selectedCharacterIds) : idsOrFn;
+      return { ...prev, selectedCharacterIds: next, updatedAt: new Date() };
+    });
   }, []);
 
   const setCharacterFramePercent = useCallback((pct: number) => {
