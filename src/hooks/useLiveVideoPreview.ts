@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { styleIntentResolver, type StyleIntent, type RegionZone } from '@/services/styleIntentResolver';
 import type { SceneScript, TemplateMapping } from './useUnifiedAuthoring';
 import type { TTSAudioResult } from './useLiveTTSPreview';
+import type { ScenePipelineStep } from '@/config/ep04-production-config';
 
 // ============================================
 // TYPES
@@ -63,6 +64,14 @@ export interface UseLiveVideoPreviewOptions {
   onProgress?: (progress: VideoGenerationProgress) => void;
 }
 
+/** Result from polling an async job */
+export interface AsyncJobStatus {
+  taskId: string;
+  status: 'processing' | 'completed' | 'failed';
+  outputUrl?: string;
+  error?: string;
+}
+
 export interface UseLiveVideoPreviewReturn {
   // Generation
   generateThumbnailForScene: (scene: SceneScript) => Promise<VideoGenerationResult | null>;
@@ -70,24 +79,29 @@ export interface UseLiveVideoPreviewReturn {
   generateAllThumbnails: (scenes: SceneScript[]) => Promise<VideoGenerationResult[]>;
   generateAllPreviews: (scenes: SceneScript[], audioResults?: TTSAudioResult[]) => Promise<VideoGenerationResult[]>;
   cancelGeneration: () => void;
-  
+
+  // Pipeline step dispatch (called by orchestrator)
+  generateVideoSteps: (sceneId: string, steps: ScenePipelineStep[]) => Promise<VideoGenerationResult[]>;
+  generateLipsyncSteps: (sceneId: string, steps: ScenePipelineStep[], audioUrl?: string) => Promise<VideoGenerationResult[]>;
+  pollAsyncJob: (taskId: string, provider: string) => Promise<AsyncJobStatus>;
+
   // Assembly
   assembleVideo: (
     mapping: TemplateMapping,
     audioResults: TTSAudioResult[],
     config?: Partial<VideoAssemblyConfig>
   ) => Promise<string | null>;
-  
+
   // Progress
   progress: VideoGenerationProgress;
   isGenerating: boolean;
   isAssembling: boolean;
-  
+
   // Cache
   videoCache: Map<string, VideoGenerationResult>;
   getCachedVideo: (sceneId: string) => VideoGenerationResult | undefined;
   clearCache: () => void;
-  
+
   // Provider info
   getResolvedProviders: () => { video: string; image: string };
 }
@@ -469,6 +483,127 @@ export function useLiveVideoPreview(options: UseLiveVideoPreviewOptions = {}): U
   }, [videoCache, updateProgress, onAssemblyComplete]);
 
   // ============================================
+  // PIPELINE STEP DISPATCH (called by orchestrator)
+  // ============================================
+
+  const generateVideoSteps = useCallback(async (
+    sceneId: string,
+    steps: ScenePipelineStep[],
+  ): Promise<VideoGenerationResult[]> => {
+    const videoSteps = steps.filter(s => s.type === 'alibaba-video');
+    const results: VideoGenerationResult[] = [];
+
+    for (const step of videoSteps) {
+      if (step.type !== 'alibaba-video') continue;
+      try {
+        const { data, error } = await supabase.functions.invoke('alibaba-video-generator', {
+          body: {
+            model: step.model,
+            prompt: step.prompt,
+            referenceImage: step.referenceImage,
+          },
+        });
+        if (error) throw error;
+
+        const result: VideoGenerationResult = {
+          sceneId,
+          animatedPreviewUrl: data?.videoUrl || data?.url,
+          provider: 'alibaba',
+          durationSeconds: 10,
+          resolution: '1280x720',
+          status: data?.taskId ? 'processing' : 'complete',
+        };
+        setVideoCache(prev => new Map(prev).set(`video_${sceneId}_${results.length}`, result));
+        results.push(result);
+      } catch (err: any) {
+        results.push({
+          sceneId,
+          provider: 'alibaba',
+          durationSeconds: 0,
+          resolution: '1280x720',
+          status: 'failed',
+          error: err.message,
+        });
+      }
+    }
+    return results;
+  }, []);
+
+  const generateLipsyncSteps = useCallback(async (
+    sceneId: string,
+    steps: ScenePipelineStep[],
+    audioUrl?: string,
+  ): Promise<VideoGenerationResult[]> => {
+    const lipsyncSteps = steps.filter(s => s.type === 'avatar-lipsync');
+    const results: VideoGenerationResult[] = [];
+
+    for (const step of lipsyncSteps) {
+      if (step.type !== 'avatar-lipsync') continue;
+      try {
+        const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+          body: {
+            type: 'avatar',
+            character: step.character,
+            provider: step.provider,
+            audioUrl,
+          },
+        });
+        if (error) throw error;
+
+        const result: VideoGenerationResult = {
+          sceneId,
+          animatedPreviewUrl: data?.videoUrl || data?.url,
+          provider: step.provider,
+          durationSeconds: 10,
+          resolution: '1280x720',
+          status: data?.taskId ? 'processing' : 'complete',
+        };
+        setVideoCache(prev => new Map(prev).set(`lipsync_${sceneId}_${results.length}`, result));
+        results.push(result);
+      } catch (err: any) {
+        results.push({
+          sceneId,
+          provider: step.provider,
+          durationSeconds: 0,
+          resolution: '1280x720',
+          status: 'failed',
+          error: err.message,
+        });
+      }
+    }
+    return results;
+  }, []);
+
+  const pollAsyncJob = useCallback(async (
+    taskId: string,
+    provider: string,
+  ): Promise<AsyncJobStatus> => {
+    try {
+      const edgeFn = provider.includes('alibaba') || provider.includes('wan')
+        ? 'alibaba-video-generator'
+        : 'ai-video-generator';
+
+      const { data, error } = await supabase.functions.invoke(edgeFn, {
+        body: { action: 'check-status', taskId },
+      });
+      if (error) throw error;
+
+      return {
+        taskId,
+        status: data?.status === 'completed' || data?.status === 'success'
+          ? 'completed'
+          : data?.status === 'failed'
+            ? 'failed'
+            : 'processing',
+        outputUrl: data?.videoUrl || data?.url,
+        error: data?.error,
+      };
+    } catch (err: any) {
+      return { taskId, status: 'failed', error: err.message };
+    }
+  }, []);
+
+  // ============================================
   // CACHE FUNCTIONS
   // ============================================
 
@@ -487,20 +622,25 @@ export function useLiveVideoPreview(options: UseLiveVideoPreviewOptions = {}): U
     generateAllThumbnails,
     generateAllPreviews,
     cancelGeneration,
-    
+
+    // Pipeline step dispatch (called by orchestrator)
+    generateVideoSteps,
+    generateLipsyncSteps,
+    pollAsyncJob,
+
     // Assembly
     assembleVideo,
-    
+
     // Progress
     progress,
     isGenerating: progress.status === 'generating',
     isAssembling: progress.status === 'assembling',
-    
+
     // Cache
     videoCache,
     getCachedVideo,
     clearCache,
-    
+
     // Provider info
     getResolvedProviders,
   };

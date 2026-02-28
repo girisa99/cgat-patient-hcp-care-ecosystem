@@ -54,6 +54,7 @@ export type EnhancementMode =
   | 'character_roleplay'  // Avatar, character-driven, dialogue
   | 'avatar_presenter'    // Professional avatar presentation scripts
   | 'combination'         // Multi-modal: avatar + video + story
+  | 'ceremonial'          // Celebrations/ceremonies — merges cultural override data (colors, symbols, attire, setting)
   | 'auto';               // Auto-detect best mode from context
 
 export interface EnhancedPrompt {
@@ -890,10 +891,15 @@ function detectBestMode(context: PromptContext): EnhancementMode {
   const format = (context.format || '').toLowerCase();
 
   // Format-driven detection
+  if (format.includes('celebration') || format.includes('ceremony') || format.includes('invitation') || format.includes('wedding')) return 'ceremonial';
   if (format.includes('podcast') || format.includes('dialogue') || format.includes('interview')) return 'character_roleplay';
   if (format.includes('presentation') || format.includes('slide') || format.includes('deck')) return 'creative_writing';
   if (format.includes('avatar') || format.includes('presenter')) return 'avatar_presenter';
   if (format.includes('short') || format.includes('reel') || format.includes('tiktok')) return 'video_generation';
+
+  // Ceremony content detection
+  if (prompt.includes('wedding') || prompt.includes('ceremony') || prompt.includes('invitation') ||
+      prompt.includes('celebration') || prompt.includes('festival') || prompt.includes('blessing')) return 'ceremonial';
 
   // Content-driven detection
   if (prompt.includes('brainstorm') || prompt.includes('ideas') || prompt.includes('concept')) return 'brainstorming';
@@ -1016,6 +1022,16 @@ function getModeGuidelines(mode: EnhancementMode): string {
 - Create transitions between avatar and B-roll segments
 - Include both spoken narration and visual-only moments
 - Balance information density with visual breathing room`;
+    case 'ceremonial':
+      return `- Honor cultural traditions and ceremonial significance
+- Include cultural symbols, colors, and attire specific to the region
+- Use appropriate greeting and blessing phrases in the local language
+- Describe ceremonial settings with authentic decorations and lighting
+- Reference ritual phases and their spiritual/cultural meaning
+- Include culturally-appropriate music (instruments, genre, mood)
+- Be sensitive to religious and cultural protocols
+- Weave location-specific visual elements (city landmarks, architecture)
+- Balance sacred reverence with celebratory joy`;
     default:
       return '- Improve clarity, engagement, and production quality';
   }

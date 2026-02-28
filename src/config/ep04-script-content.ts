@@ -18,7 +18,7 @@
  * - direction: Performance/delivery notes for TTS tuning
  * 
  * TARGET: ~27 minutes total audio (~1605s)
- * SCENES: 12 scenes (0–11), 104 dialogue lines, 5 voices
+ * SCENES: 12 scenes (0–11), 109 dialogue lines, 5 voices
  */
 
 export interface ScriptLine {
@@ -687,6 +687,40 @@ The tool that would govern our sprint — was built during the sprint. And hones
     motion: 'draw-connection-lines-between-holograms',
   },
 
+  // ── PAPER ROLL / SCRIBBLING STANDUP INTERACTION ──
+  'scene4-nova-paper-roll-demo': {
+    text: `Okay wait — let me show you something. Watch this.`,
+    voice: 'nova',
+    scene: 'scene-4-solution',
+    duration_est: 8,
+    direction: 'Nova dramatically produces a large paper scroll from nowhere — Pixar magic. She unrolls it across the holographic war table, and it physically covers the holograms. She grabs a quill and starts scribbling furiously — drawing a simplified sprint board with task columns: "TODO | DOING | DONE". She draws tiny Atlas bears in the DONE column and Nova foxes in DOING. Stars and sparkles trail her quill strokes. Atlas watches, intrigued.',
+    lipsync: true,
+    sfx: ['scroll_unroll_thwack', 'quill_scratching_fast', 'ink_splash_playful', 'star_sticker_sparkle'],
+    motion: 'nova-unroll-scroll-scribble-sprint-board-quill-flourish',
+  },
+
+  'scene4-atlas-paper-annotation': {
+    text: `Not bad. But your swimlanes are uneven. May I?`,
+    voice: 'atlas',
+    scene: 'scene-4-solution',
+    duration_est: 10,
+    direction: 'Atlas gently takes the quill from Nova. Where Nova scribbled freely, Atlas draws with mechanical precision — ruler appears from his sleeve (Pixar humor), lines are perfectly straight. He writes tiny commit hashes (abc123, def456) next to each task and draws clean arrows connecting his commits to Nova\'s PR numbers. The contrast is the comedy — chaos meets order on the same scroll. Nova watches with arms crossed, half-annoyed, half-impressed.',
+    lipsync: true,
+    sfx: ['ruler_materialize', 'quill_scratching_precise', 'arrow_draw_swoosh', 'nova-hmph-reaction'],
+    motion: 'atlas-take-quill-precise-annotations-ruler-from-sleeve',
+  },
+
+  'scene4-nova-atlas-scroll-present': {
+    text: `See? That's our standup. Right there. On paper. No meeting, no camera, no "you're on mute." Just... this.`,
+    voice: 'nova',
+    scene: 'scene-4-solution',
+    duration_est: 8,
+    direction: 'They both grab an end of the scroll and hold it up to camera — like two kids showing their art project. Nova\'s side is colorful, messy, alive with illustrations. Atlas\'s side is clean, annotated, precise. Where they overlap in the middle, it merges into something beautiful — the sprint tracker visualized as a hand-drawn masterpiece. Camera pushes in on the scroll. God rays hit it. It\'s ridiculous and perfect.',
+    lipsync: true,
+    sfx: ['scroll_lift_flourish', 'proud_reveal_chord', 'god_ray_whoosh'],
+    motion: 'both-hold-scroll-up-proud-camera-push-in-god-rays',
+  },
+
   'scene4-nova-beta-idea': {
     text: `This could actually work. But let's not over-engineer it. Let's start with a beta — run it for a few sprints. Track what improves, what breaks. Day one through three, just see what changes.`,
     voice: 'nova',
@@ -1046,6 +1080,18 @@ Atlas runs at roughly 85% velocity. Solid. Professional. Predictable. Every comm
     motion: 'proud-stand-tall-arms-folded',
   },
 
+  // ── PAPER ROLL / BURNDOWN SCROLL — Atlas's pristine version ──
+  'scene7-atlas-burndown-scroll': {
+    text: `Allow me to demonstrate.`,
+    voice: 'atlas',
+    scene: 'scene-7-velocity',
+    duration_est: 7,
+    direction: 'Atlas produces a tightly rolled scroll and unrolls it with a single precise motion. The scroll is pristine white parchment. His burndown line is drawn with architectural precision — a perfect 45-degree descent. Each data point has a tiny label (Day 1: 12 tasks, Day 2: 9 tasks, Day 3: 5 tasks). Margins are ruled. There\'s even a legend box in the corner. It\'s obsessively neat. Atlas presents it like a museum curator showing a Vermeer.',
+    lipsync: true,
+    sfx: ['scroll_unroll_crisp', 'precision_pen_stroke', 'data_point_tap'],
+    motion: 'atlas-unroll-pristine-scroll-burndown-museum-curator-pose',
+  },
+
   'velocity-nova': {
     text: `Nova runs at 110%.`,
     voice: 'host',
@@ -1077,6 +1123,18 @@ Atlas runs at roughly 85% velocity. Solid. Professional. Predictable. Every comm
     lipsync: true,
     sfx: ['sparkle_wink', 'sly_sting'],
     motion: 'smug-hair-flip-sparkle',
+  },
+
+  // ── PAPER ROLL / BURNDOWN SCROLL — Nova's chaotic version ──
+  'scene7-nova-burndown-scroll-chaos': {
+    text: `Oh, you want to see MY chart? Hold on...`,
+    voice: 'nova',
+    scene: 'scene-7-velocity',
+    duration_est: 9,
+    direction: 'Nova rummages in her bag and yanks out a scroll that\'s clearly been through things — crumpled, paint-splattered, covered in stickers. She unrolls it and it\'s ENORMOUS — extends off-table, across the floor. Her burndown line is a wild zigzag that actually goes UP at points (scope creep). Sticky notes are everywhere. Margin doodles of UI mockups. A crossed-out "dark mode" item is circled back with an arrow saying "ADDED BACK." A tiny "110%" badge is stuck on the endpoint. Atlas stares at it, then slowly reaches for his ruler as if to straighten it. Nova slaps his paw away.',
+    lipsync: true,
+    sfx: ['crumple_paper_yank', 'scroll_unroll_endless', 'sticky_notes_flutter', 'paw_slap', 'atlas-dismayed-grunt'],
+    motion: 'nova-yank-crumpled-scroll-enormous-unroll-zigzag-chart-slap-atlas-paw',
   },
 
   'velocity-scope-creep': {

@@ -462,6 +462,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-refactored-nav' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: fox character unrolls a large paper scroll across a holographic war table, grabs a quill pen and scribbles a sprint board with colorful task columns and sticky notes, bear character takes the quill and adds precise annotations with a ruler, both hold the scroll up to camera proudly — warm lighting, god rays, cinematic quality' },
     { type: 'tts', voice: 'host', scriptKey: 'host-not-in-scope' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-works-better' },
     { type: 'kinetic-text', text: 'Setting acceptance criteria isn\'t optional. It\'s survival.' },
@@ -508,6 +509,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-forgot-breakfast' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: bear character unrolls a pristine white scroll showing a perfectly straight burndown chart line, then fox character yanks out a crumpled paint-splattered enormous scroll that extends off the table, her chart line zigzags wildly with sticky notes and doodles everywhere, bear reaches for his ruler and fox slaps his paw away — comedic timing, warm studio lighting' },
   ],
   'scene-8-dashboard-tour': [
     { type: 'tts', voice: 'host', scriptKey: 'tour-narration' },

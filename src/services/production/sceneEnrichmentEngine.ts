@@ -59,6 +59,11 @@ export const SCENE_TYPES = [
   'transition_bridge',
   'comic_relief',
   'testimonial',
+  // Celebration scene types
+  'ceremony_ritual',
+  'invitation_card',
+  'photo_montage',
+  'blessing_close',
 ] as const;
 
 export type SceneType = (typeof SCENE_TYPES)[number];
@@ -359,6 +364,11 @@ const SCENE_TYPE_APPROACH_DEFAULTS: Record<SceneType, ProductionApproach> = {
   transition_bridge:   'motion_graphics',
   comic_relief:        'avatar_driven',
   testimonial:         'documentary',
+  // Celebration scene types
+  ceremony_ritual:     'cultural_art',
+  invitation_card:     'kinetic_typography',
+  photo_montage:       'photo_collage',
+  blessing_close:      'animation_cinematic',
 };
 
 /** Style family preferences — some styles work better with certain approaches */
@@ -643,6 +653,11 @@ const CLASSIFICATION_KEYWORDS: Record<SceneType, string[]> = {
   transition_bridge:   ['meanwhile', 'moving on', 'next up', 'let\'s shift', 'transition', 'now let\'s'],
   comic_relief:        ['funny', 'joke', 'humor', 'laugh', 'silly', 'chaos', 'squirrel', 'blooper'],
   testimonial:         ['testimonial', 'review', 'customer', 'said', 'feedback', 'quote', 'experience', 'case study'],
+  // Celebration scene types
+  ceremony_ritual:     ['ceremony', 'ritual', 'sacred', 'wedding', 'vows', 'blessing', 'pheras', 'nikah', 'mass', 'puja', 'baptism'],
+  invitation_card:     ['invitation', 'invite', 'rsvp', 'save the date', 'event details', 'venue', 'date', 'card'],
+  photo_montage:       ['photos', 'memories', 'montage', 'slideshow', 'album', 'gallery', 'pictures', 'snapshots'],
+  blessing_close:      ['blessing', 'farewell', 'thank you', 'gratitude', 'wishes', 'peace', 'amen', 'shalom', 'namaste'],
 };
 
 /**

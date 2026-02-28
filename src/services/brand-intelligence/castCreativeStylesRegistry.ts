@@ -276,7 +276,7 @@ export const CREATIVE_STYLES: CreativeStyleProfile[] = [
       qualityModifiers: 'masterpiece, best quality, 8k render, ray tracing, global illumination, subsurface scattering',
       negativePrompt: 'realistic, photographic, uncanny valley, low poly, flat shading, anime style',
       provider: 'meshy',
-      modelPreference: 'meshy-4',
+      modelPreference: 'meshy-6', // meshy-4 sunset 2026-03-20 → migrated (see provider-version-registry.ts)
     },
     regionalVariants: {
       'INDIA_NORTH': {

@@ -42,10 +42,12 @@ import { useCastContentRegistry, type ContentFormat } from '@/hooks/useCastConte
 // Lazy-loaded format-specific editors
 const LazyPodcastEditor = lazy(() => import('./PodcastEditorPanel'));
 const LazySlideComposer = lazy(() => import('./SlideComposer'));
+const LazyCelebrationCreator = lazy(() => import('./celebrations/CelebrationCreator').then(m => ({ default: m.CelebrationCreator })));
 
 // Format name patterns that trigger specialized editors
 const PODCAST_FORMATS = ['podcast', 'audio_podcast', 'interview_podcast', 'panel_discussion', 'dialogue'];
 const PRESENTATION_FORMATS = ['presentation', 'slide_deck', 'pitch_deck', 'webinar', 'keynote'];
+const CELEBRATION_FORMATS = ['celebration', 'ceremony', 'invitation', 'wedding', 'festival', 'inauguration'];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -113,6 +115,12 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Award: FileText,
   Target: BarChart3,
   Drama: Mic,
+  PartyPopper: Play,
+  Heart: Play,
+  Cake: Play,
+  Gift: Play,
+  Star: Play,
+  Trophy: Play,
 };
 
 function resolveIcon(iconName: string | null | undefined): React.ElementType {
@@ -205,7 +213,8 @@ function FormatCard({ formatName, format, status, progress, onGenerate }: Format
   // Determine if this format has a specialized editor
   const isPodcast = PODCAST_FORMATS.some(p => formatName.toLowerCase().includes(p));
   const isPresentation = PRESENTATION_FORMATS.some(p => formatName.toLowerCase().includes(p));
-  const hasSpecializedEditor = isPodcast || isPresentation;
+  const isCelebration = CELEBRATION_FORMATS.some(p => formatName.toLowerCase().includes(p));
+  const hasSpecializedEditor = isPodcast || isPresentation || isCelebration;
 
   return (
     <Card className="flex flex-col">
@@ -230,6 +239,7 @@ function FormatCard({ formatName, format, status, progress, onGenerate }: Format
           <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}>
             {isPodcast && <LazyPodcastEditor topic={format.label} />}
             {isPresentation && <LazySlideComposer deckTitle={format.label} />}
+            {isCelebration && <LazyCelebrationCreator />}
           </Suspense>
         ) : (
           <div className="rounded-md border border-dashed border-muted-foreground/25 bg-muted/30 p-4 text-sm text-muted-foreground min-h-[80px] flex items-center justify-center text-center">

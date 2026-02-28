@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { productionCostAccumulator, type ProjectCostSummary } from '@/services/productionCostAccumulator';
 import type { CastJobType } from '@/types/castProjects';
 import type { SceneEnrichmentOutput } from '@/services/production/sceneEnrichmentEngine';
+import type { OrchestrationCheckpoint, StepResult } from './useCastProductionOrchestrator';
 
 // ── Types matching DB schema — no hardcoding ────────────────────────────────
 
@@ -581,6 +582,83 @@ export function useCastProjectPersistence() {
     }
   }, []);
 
+  // ──────────────────────────────────────────────────────────────────────
+  // ORCHESTRATION CHECKPOINT — save/load full pipeline state
+  // ──────────────────────────────────────────────────────────────────────
+
+  const saveOrchestrationCheckpoint = useCallback(async (
+    projectId: string,
+    checkpoint: OrchestrationCheckpoint,
+  ): Promise<boolean> => {
+    try {
+      const { error } = await db
+        .from('cast_projects')
+        .update({
+          production_metadata: { orchestrationCheckpoint: checkpoint },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', projectId);
+      if (error) throw error;
+      console.log('[Persistence] Orchestration checkpoint saved');
+      return true;
+    } catch (err: any) {
+      console.error('[Persistence] Checkpoint save error:', err);
+      return false;
+    }
+  }, []);
+
+  const loadOrchestrationCheckpoint = useCallback(async (
+    projectId: string,
+  ): Promise<OrchestrationCheckpoint | null> => {
+    try {
+      const { data, error } = await db
+        .from('cast_projects')
+        .select('production_metadata')
+        .eq('id', projectId)
+        .single();
+      if (error) throw error;
+      const checkpoint = data?.production_metadata?.orchestrationCheckpoint as OrchestrationCheckpoint | undefined;
+      if (!checkpoint || checkpoint.version !== 1) return null;
+      return checkpoint;
+    } catch (err: any) {
+      console.error('[Persistence] Checkpoint load error:', err);
+      return null;
+    }
+  }, []);
+
+  const updateStepResult = useCallback(async (
+    projectId: string,
+    sceneKey: string,
+    stepIndex: number,
+    result: StepResult,
+  ): Promise<boolean> => {
+    try {
+      // Fetch current scene_config, merge step result into artifacts
+      const { data: scene, error: fetchErr } = await db
+        .from('cast_project_scenes')
+        .select('scene_config')
+        .eq('project_id', projectId)
+        .eq('scene_key', sceneKey)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      const existingConfig = (scene?.scene_config || {}) as Record<string, unknown>;
+      const stepResults = ((existingConfig.stepResults || {}) as Record<string, StepResult>);
+      stepResults[`step_${stepIndex}`] = result;
+
+      const { error } = await db
+        .from('cast_project_scenes')
+        .update({ scene_config: { ...existingConfig, stepResults } })
+        .eq('project_id', projectId)
+        .eq('scene_key', sceneKey);
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      console.error('[Persistence] Step result update error:', err);
+      return false;
+    }
+  }, []);
+
   return {
     // State
     isSaving,
@@ -601,6 +679,11 @@ export function useCastProjectPersistence() {
     updateSceneArtifacts,
     updateSceneMusic,
     updateFinalAssembly,
+
+    // Orchestration checkpoint persistence (Part C)
+    saveOrchestrationCheckpoint,
+    loadOrchestrationCheckpoint,
+    updateStepResult,
 
     // Token / cost tracking
     fetchTokenBreakdown,

@@ -353,7 +353,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     qualityScore: 94,
     speedScore: 70,
     strengths: ['High-fidelity 3D', 'PBR textures', 'Auto-rigging', 'USDZ/GLTF export', 'Text-to-3D', 'Image-to-3D'],
-    models: ['meshy-4', 'meshy-text-to-3d', 'meshy-image-to-3d', 'meshy-text-to-texture'],
+    models: ['meshy-6', 'meshy-text-to-3d', 'meshy-image-to-3d', 'meshy-text-to-texture'], // meshy-4 sunset 2026-03-20 → migrated to meshy-6 (see provider-version-registry.ts)
     wiredToGenieCast: true,
   },
   {

@@ -131,7 +131,7 @@ const PROVIDER_MODEL_MAP: Record<string, { provider: string; model: string }> = 
   elevenlabs:      { provider: 'elevenlabs', model: 'eleven-multilingual-v2' },
   // Avatar
   alibaba_wan22:   { provider: 'alibaba',   model: 'wan-2.2-s2v' },
-  meshy_3d:        { provider: 'meshy',     model: 'meshy-4' },
+  meshy_3d:        { provider: 'meshy',     model: 'meshy-6' }, // meshy-4 sunset 2026-03-20
 };
 
 Object.freeze(PROVIDER_MODEL_MAP);

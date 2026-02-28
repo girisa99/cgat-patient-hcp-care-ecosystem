@@ -458,7 +458,7 @@ export const PIPELINE_PROVIDERS: PipelineProviderConfig[] = [
     name: 'Meshy',
     capabilities: ['text_to_image', 'image_to_3d', '3d_model_generate', '3d_scene_render', '3d_animate'],
     models: [
-      { id: 'meshy-4', name: 'Meshy 4', tier: 'production', costPerToken: 0.02, avgGenerationTime: 30,
+      { id: 'meshy-6', name: 'Meshy 6', tier: 'production', costPerToken: 0.02, avgGenerationTime: 30,
         maxResolution: { width: 2048, height: 2048 }, supportedStyles: ['3d_realistic', '3d_cartoon', '3d_anime'] },
     ],
     regionAvailability: ['*'],
@@ -563,7 +563,7 @@ export const PIPELINE_PROVIDERS: PipelineProviderConfig[] = [
     name: 'Meshy 3D',
     capabilities: ['3d_model_generate', '3d_scene_render', '3d_animate', 'image_to_3d'],
     models: [
-      { id: 'meshy-4-3d', name: 'Meshy 4 3D', tier: 'production', costPerToken: 0.05, avgGenerationTime: 60 },
+      { id: 'meshy-6-3d', name: 'Meshy 6 3D', tier: 'production', costPerToken: 0.05, avgGenerationTime: 60 },
     ],
     regionAvailability: ['*'],
     fallbackPriority: 1,

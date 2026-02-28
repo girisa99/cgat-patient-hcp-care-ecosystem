@@ -103,7 +103,8 @@ export type SceneCategory =
   | 'data'            // Data-driven visualizations
   | 'interactive'     // Quizzes, polls, prompts
   | 'transition'      // Interludes, musical breaks
-  | 'branding';       // Title cards, CTAs, outros
+  | 'branding'        // Title cards, CTAs, outros
+  | 'celebration';    // Ceremonies, invitations, blessings
 
 // ─── CORE SCENE TYPES (18) ────────────────────────────────────────────────────
 
@@ -548,6 +549,107 @@ export const CORE_SCENE_TYPES: Record<string, SceneTypeDefinition> = {
     icon: '📢',
     tags: ['cta', 'outro', 'closing', 'call-to-action', 'links'],
   },
+
+  // ── CELEBRATION ─────────────────────────────────────────────────────────
+
+  'ceremony-ritual': {
+    id: 'ceremony-ritual',
+    name: 'Ceremony Ritual',
+    description: 'Sacred or significant ceremony moment — ritual phase with cultural symbols, music, and narration.',
+    category: 'celebration',
+    steps: [
+      { type: 'image', required: true, order: 1, description: 'Cultural ceremony scene image' },
+      { type: 'video', required: true, order: 2, description: 'Ceremony ritual video clip' },
+      { type: 'tts', required: true, order: 3, description: 'Ritual narration or blessing' },
+      { type: 'music', required: true, order: 4, description: 'Ceremonial music' },
+      { type: 'kinetic-text', required: false, order: 5, description: 'Ritual phase text overlay' },
+    ],
+    allowedProducts: ['cast'],
+    defaultLayout: 'fullscreen',
+    defaultTransitionIn: 'dissolve',
+    defaultTransitionOut: 'dissolve',
+    durationRange: { min: 10, max: 60 },
+    minSpeakers: 0,
+    maxSpeakers: 2,
+    defaultTone: 'sacred',
+    source: 'core',
+    icon: '🕯️',
+    tags: ['ceremony', 'ritual', 'sacred', 'wedding', 'religious', 'celebration', 'cultural'],
+  },
+
+  'invitation-card': {
+    id: 'invitation-card',
+    name: 'Invitation Card',
+    description: 'Animated invitation card with event details, cultural motifs, and kinetic typography.',
+    category: 'celebration',
+    steps: [
+      { type: 'image', required: true, order: 1, description: 'Invitation background with cultural motifs' },
+      { type: 'kinetic-text', required: true, order: 2, description: 'Event details text animation' },
+      { type: 'motion-graphics', required: true, order: 3, description: 'Decorative motion elements' },
+      { type: 'music', required: true, order: 4, description: 'Elegant background music' },
+      { type: 'links-overlay', required: false, order: 5, description: 'RSVP link overlay' },
+    ],
+    allowedProducts: ['cast'],
+    defaultLayout: 'fullscreen',
+    defaultTransitionIn: 'fade',
+    defaultTransitionOut: 'fade',
+    durationRange: { min: 8, max: 30 },
+    minSpeakers: 0,
+    maxSpeakers: 0,
+    defaultTone: 'elegant',
+    source: 'core',
+    icon: '💌',
+    tags: ['invitation', 'card', 'event-details', 'rsvp', 'celebration', 'digital'],
+  },
+
+  'photo-montage': {
+    id: 'photo-montage',
+    name: 'Photo Montage',
+    description: 'Photo slideshow with elegant transitions, music, optional narration, and text overlays.',
+    category: 'celebration',
+    steps: [
+      { type: 'image', required: true, order: 1, description: 'Photo slideshow images' },
+      { type: 'transition', required: true, order: 2, description: 'Elegant photo transitions' },
+      { type: 'music', required: true, order: 3, description: 'Background music' },
+      { type: 'tts', required: false, order: 4, description: 'Optional narration over photos' },
+      { type: 'kinetic-text', required: false, order: 5, description: 'Caption overlays' },
+    ],
+    allowedProducts: ['cast'],
+    defaultLayout: 'fullscreen',
+    defaultTransitionIn: 'dissolve',
+    defaultTransitionOut: 'dissolve',
+    durationRange: { min: 15, max: 120 },
+    minSpeakers: 0,
+    maxSpeakers: 1,
+    defaultTone: 'nostalgic',
+    source: 'core',
+    icon: '📸',
+    tags: ['photo', 'montage', 'slideshow', 'memories', 'celebration'],
+  },
+
+  'blessing-close': {
+    id: 'blessing-close',
+    name: 'Blessing / Close',
+    description: 'Cultural blessing or closing message with calligraphy, music, and warm fade-out.',
+    category: 'celebration',
+    steps: [
+      { type: 'image', required: true, order: 1, description: 'Blessing background with cultural art' },
+      { type: 'tts', required: true, order: 2, description: 'Spoken blessing or closing message' },
+      { type: 'music', required: true, order: 3, description: 'Gentle closing music' },
+      { type: 'kinetic-text', required: true, order: 4, description: 'Blessing text in calligraphy style' },
+    ],
+    allowedProducts: ['cast'],
+    defaultLayout: 'fullscreen',
+    defaultTransitionIn: 'dissolve',
+    defaultTransitionOut: 'fade',
+    durationRange: { min: 5, max: 30 },
+    minSpeakers: 0,
+    maxSpeakers: 1,
+    defaultTone: 'sacred',
+    source: 'core',
+    icon: '🙏',
+    tags: ['blessing', 'close', 'farewell', 'cultural', 'ceremony', 'celebration'],
+  },
 };
 
 // ─── REGISTRY API ─────────────────────────────────────────────────────────────
@@ -603,7 +705,7 @@ export function getAllSceneTypeIds(): string[] {
 
 /** Get all categories with their scene types */
 export function getSceneTypesByCategories(): Record<SceneCategory, SceneTypeDefinition[]> {
-  const categories: SceneCategory[] = ['narrative', 'demonstration', 'data', 'interactive', 'transition', 'branding'];
+  const categories: SceneCategory[] = ['narrative', 'demonstration', 'data', 'interactive', 'transition', 'branding', 'celebration'];
   const result: Record<string, SceneTypeDefinition[]> = {};
   for (const cat of categories) {
     result[cat] = getSceneTypesByCategory(cat);

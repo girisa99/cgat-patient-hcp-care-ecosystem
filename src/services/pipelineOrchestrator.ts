@@ -115,7 +115,14 @@ export type ContentFormat =
   | 'architecture_diagram'  // Technical architecture flow diagram from discussion
   | 'business_flow'      // Business process flow diagram from discussion
   | 'webcast_replay'     // Polished webcast replay with chapters + demo highlights
-  | 'live_recording_processed'; // Processed live recording with edit/rewind/chapters
+  | 'live_recording_processed' // Processed live recording with edit/rewind/chapters
+  // ─── Celebrations & Events ──────────────────────────────────────────────
+  | 'celebration_invitation'   // Wedding/event invitation video
+  | 'celebration_ceremony'     // Ceremony recap or preview video
+  | 'celebration_podcast'      // Couples story or event podcast
+  | 'celebration_slideshow'    // Photo montage / slideshow video
+  | 'celebration_card'         // Animated digital invitation card
+  | 'celebration_tribute';     // Memorial or tribute video
 
 export type ContentIntent =
   | 'promo'              // Business promotion
@@ -142,7 +149,8 @@ export type ContentIntent =
   | 'meeting'           // Meeting recording → MoM, tasks, diagrams
   | 'podcast_create'    // Create podcast from topic/upload/recording
   | 'live_session'      // Live webcast / product demo
-  | 'product_walkthrough'; // Product walkthrough / demo recording
+  | 'product_walkthrough' // Product walkthrough / demo recording
+  | 'celebration';        // Celebration / ceremony / event production
 
 export type InputType =
   | 'text'               // Raw text / description
@@ -2773,6 +2781,35 @@ export const PIPELINE_CHAINS: Record<string, PipelineChain> = {
     estimatedDuration: 90,
     minTier: 'starter',
     products: ['spark', 'deck'],
+  },
+
+  // ─── C43: Celebration-to-Multi-Format ─────────────────────────────────
+  celebration_multi: {
+    id: 'celebration_multi',
+    name: 'Celebration-to-Multi-Format',
+    description: 'Ceremony type + region + personalization → cultural enrichment → scene template → script → TTS → video/image → music → assembly → multi-format output',
+    outputFormats: ['celebration_invitation', 'celebration_ceremony', 'celebration_podcast', 'celebration_slideshow', 'celebration_card', 'celebration_tribute'],
+    steps: [
+      ATOMIC_STEPS.brand_profile,
+      ATOMIC_STEPS.script_generate,           // Ceremony script from template + cultural context
+      ATOMIC_STEPS.script_enhance,            // Enhance with cultural nuances
+      ATOMIC_STEPS.transcreation,             // Multi-language versions
+      ATOMIC_STEPS.tts_generate,              // Narration / blessings / invitations
+      ATOMIC_STEPS.image_generate,            // Cultural ceremony art, invitation cards
+      ATOMIC_STEPS.video_generate,            // Ceremony montage, couple videos
+      ATOMIC_STEPS.music_generate,            // Ceremonial music (shehnai, oud, organ, etc.)
+      ATOMIC_STEPS.sfx_generate,              // Bells, fireworks, applause
+      ATOMIC_STEPS.caption_generate,
+      ATOMIC_STEPS.json2video_assemble,       // Final video assembly
+      ATOMIC_STEPS.shorts_extract,            // Social clips
+      ATOMIC_STEPS.thumbnail_generate,
+      ATOMIC_STEPS.session_checkpoint,
+      ATOMIC_STEPS.quality_check,
+      ATOMIC_STEPS.social_publish,
+    ],
+    estimatedDuration: 300,
+    minTier: 'creator',
+    products: ['cast'],
   },
 };
 
