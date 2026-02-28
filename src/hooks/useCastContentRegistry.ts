@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { SEED_CATEGORIES, SEED_FORMATS, SEED_CATEGORY_FORMAT_LINKS, mergeWithSeeds } from '@/config/cast-content-seeds';
 
 export interface ContentCategory {
   id: string;
@@ -259,10 +260,11 @@ export function useCastContentRegistry() {
       if (sfRes.error) throw sfRes.error;
       if (cfRes.error) throw cfRes.error;
 
-      setCategories((catRes.data || []) as unknown as ContentCategory[]);
-      setFormats((fmtRes.data || []) as unknown as ContentFormat[]);
+      // Merge DB data with code-defined seeds — DB entries with same name take precedence
+      setCategories(mergeWithSeeds((catRes.data || []) as unknown as ContentCategory[], SEED_CATEGORIES));
+      setFormats(mergeWithSeeds((fmtRes.data || []) as unknown as ContentFormat[], SEED_FORMATS));
       setSubFormats((sfRes.data || []) as unknown as ContentSubFormat[]);
-      setCategoryFormats((cfRes.data || []) as unknown as CategoryFormatLink[]);
+      setCategoryFormats([...((cfRes.data || []) as unknown as CategoryFormatLink[]), ...SEED_CATEGORY_FORMAT_LINKS]);
       setVisualStyles((vsRes.data || []) as unknown as VisualStyle[]);
       setProductionCapabilities((pcRes.data || []) as unknown as ProductionCapability[]);
       setAssetSourceTypes((asRes.data || []) as unknown as AssetSourceType[]);

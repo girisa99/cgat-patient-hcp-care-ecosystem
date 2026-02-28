@@ -890,8 +890,10 @@ function detectBestMode(context: PromptContext): EnhancementMode {
   const prompt = context.rawPrompt.toLowerCase();
   const format = (context.format || '').toLowerCase();
 
-  // Format-driven detection
-  if (format.includes('celebration') || format.includes('ceremony') || format.includes('invitation') || format.includes('wedding')) return 'ceremonial';
+  // Format-driven detection — celebrations (must be before podcast/presentation since some celebrations include those)
+  if (format.includes('celebration') || format.includes('ceremony') || format.includes('invitation') || format.includes('wedding') ||
+      format.includes('tribute') || format.includes('memorial') || format.includes('blessing') || format.includes('inauguration') ||
+      format.includes('festival') || format.includes('montage') || format.includes('thank_you') || format.includes('save_the_date')) return 'ceremonial';
   if (format.includes('podcast') || format.includes('dialogue') || format.includes('interview')) return 'character_roleplay';
   if (format.includes('presentation') || format.includes('slide') || format.includes('deck')) return 'creative_writing';
   if (format.includes('avatar') || format.includes('presenter')) return 'avatar_presenter';
@@ -899,7 +901,10 @@ function detectBestMode(context: PromptContext): EnhancementMode {
 
   // Ceremony content detection
   if (prompt.includes('wedding') || prompt.includes('ceremony') || prompt.includes('invitation') ||
-      prompt.includes('celebration') || prompt.includes('festival') || prompt.includes('blessing')) return 'ceremonial';
+      prompt.includes('celebration') || prompt.includes('festival') || prompt.includes('blessing') ||
+      prompt.includes('inauguration') || prompt.includes('memorial') || prompt.includes('tribute') ||
+      prompt.includes('baptism') || prompt.includes('diwali') || prompt.includes('eid') ||
+      prompt.includes('hanukkah') || prompt.includes('christmas') || prompt.includes('anniversary')) return 'ceremonial';
 
   // Content-driven detection
   if (prompt.includes('brainstorm') || prompt.includes('ideas') || prompt.includes('concept')) return 'brainstorming';

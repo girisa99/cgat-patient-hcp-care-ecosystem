@@ -47,7 +47,12 @@ const LazyCelebrationCreator = lazy(() => import('./celebrations/CelebrationCrea
 // Format name patterns that trigger specialized editors
 const PODCAST_FORMATS = ['podcast', 'audio_podcast', 'interview_podcast', 'panel_discussion', 'dialogue'];
 const PRESENTATION_FORMATS = ['presentation', 'slide_deck', 'pitch_deck', 'webinar', 'keynote'];
-const CELEBRATION_FORMATS = ['celebration', 'ceremony', 'invitation', 'wedding', 'festival', 'inauguration'];
+const CELEBRATION_FORMATS = [
+  'celebration', 'ceremony', 'invitation', 'wedding', 'festival', 'inauguration',
+  'save_the_date', 'photo_montage', 'thank_you', 'highlight_reel', 'tribute',
+  'announcement', 'webcast_live', 'print_invitation', 'couples_podcast',
+  'memorial', 'sports', 'blessing',
+];
 
 // ---------------------------------------------------------------------------
 // Types

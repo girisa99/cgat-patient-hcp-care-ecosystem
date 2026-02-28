@@ -2889,6 +2889,14 @@ const FORMAT_CHAIN_MAP: Partial<Record<ContentFormat, string>> = {
   social_carousel: 'blog_to_multimedia',
   newsletter: 'blog_to_multimedia',
   blog_post: 'blog_to_multimedia',
+
+  // Celebrations & Events
+  celebration_invitation: 'celebration_multi',
+  celebration_ceremony: 'celebration_multi',
+  celebration_podcast: 'celebration_multi',
+  celebration_slideshow: 'celebration_multi',
+  celebration_card: 'celebration_multi',
+  celebration_tribute: 'celebration_multi',
 };
 
 const INTENT_CHAIN_MAP: Partial<Record<ContentIntent, string>> = {
@@ -2908,6 +2916,7 @@ const INTENT_CHAIN_MAP: Partial<Record<ContentIntent, string>> = {
   podcast_create: 'podcast_from_scratch',
   live_session: 'live_to_everything',
   product_walkthrough: 'webcast_product_demo',
+  celebration: 'celebration_multi',
 };
 
 /**
