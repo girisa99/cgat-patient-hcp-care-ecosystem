@@ -156,6 +156,12 @@ But nobody ever said: what if the system itself was the problem?`,
     lipsync: true,
     sfx: ['subtle_data_chime', 'citation_whoosh'],
     motion: 'direct-to-camera-authoritative',
+    links: [
+      { label: '📎 Gloria Mark — Interruption Recovery (UC Irvine)', url: 'https://www.ics.uci.edu/~gmark/CHI2008.pdf', type: 'research' },
+      { label: '📎 Microsoft Research — Developer Productivity', url: 'https://www.microsoft.com/en-us/research/group/software-analysis-and-intelligence/', type: 'research' },
+      { label: '📎 DORA 2024 State of DevOps Report', url: 'https://dora.dev/research/', type: 'research' },
+      { label: '📎 McKinsey — AI Developer Productivity', url: 'https://www.mckinsey.com/capabilities/mckinsey-digital/our-insights/unleashing-developer-productivity-with-generative-ai', type: 'research' },
+    ],
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
