@@ -69,6 +69,7 @@ import { PortalDropdown } from '../create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from '../StyleCustomizationPanel';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { TARGET_PLATFORMS, getPlatformsByCategory, getPlatformCategories } from '@/config/target-platforms-registry';
+import { partitionStylesByMatch } from '@/config/style-category-format-map';
 import {
   IMAGINATION_PRESETS,
   getPresetCategories,
@@ -605,54 +606,71 @@ export function CreateConfigureStep({
           <div className="space-y-3">
             <Label className="text-xs font-medium">Generation Style</Label>
             <div className="grid grid-cols-2 gap-3">
-              {/* Parent Style Dropdown -- with sub-count hints */}
-              <PortalDropdown
-                label="Style"
-                icon={<span className="text-sm">{'\uD83C\uDFA8'}</span>}
-                placeholder="Select styles..."
-                options={contentRegistry.visualStyles
-                  .filter(s => !s.parent_style_id)
-                  .sort((a, b) => {
-                    if (a.category !== b.category) return a.category.localeCompare(b.category);
-                    return a.sort_order - b.sort_order;
-                  })
-                  .map(s => {
-                    const subCount = contentRegistry.visualStyles.filter(sub => sub.parent_style_id === s.id).length;
-                    const catLabel = s.category ? s.category.charAt(0).toUpperCase() + s.category.slice(1) : '';
-                    return {
-                      value: s.id,
-                      label: s.label + (subCount > 0 ? ` (${subCount})` : ''),
-                      icon: s.icon === 'Film' ? '\uD83C\uDFAC' : s.icon === 'Palette' ? '\uD83C\uDFA8' : s.icon === 'Camera' ? '\uD83D\uDCF7' : s.icon === 'Star' ? '\u2B50' : s.icon === 'Box' ? '\uD83D\uDCE6' : '\uD83C\uDFAD',
-                      description: catLabel + (subCount > 0 ? ` \u2022 ${subCount} sub-styles` : ' \u2022 no sub-styles'),
-                    };
-                  })}
-                selected={selectedVisualStyleIds.filter(id => {
-                  const style = contentRegistry.visualStyles.find(s => s.id === id);
-                  return style && !style.parent_style_id;
-                })}
-                onToggle={(id) => {
-                  setSelectedVisualStyleIds(prev => {
-                    const isRemoving = prev.includes(id);
-                    if (isRemoving) {
-                      // Remove parent + its sub-styles
-                      const subIds = contentRegistry.visualStyles.filter(s => s.parent_style_id === id).map(s => s.id);
-                      return prev.filter(p => p !== id && !subIds.includes(p));
-                    } else {
-                      return [...prev, id];
-                    }
-                  });
-                  // Auto-select capabilities
-                  const rules = contentRegistry.getCapabilityRulesForStyle(id);
-                  const autoIds = rules.filter(r => r.auto_select).map(r => r.capability_id);
-                  if (autoIds.length > 0) {
-                    setAutoSelectedCapIds(p => Array.from(new Set([...p, ...autoIds])));
-                    setSelectedCapabilityIds(p => Array.from(new Set([...p, ...autoIds])));
-                    const lipSyncCap = contentRegistry.productionCapabilities.find(c => c.name === 'lip_sync');
-                    if (lipSyncCap && autoIds.includes(lipSyncCap.id)) setLipSyncEnabled(true);
-                  }
-                }}
-                multi
-              />
+              {/* Parent Style Dropdown -- filtered & ranked by category+format match */}
+              {(() => {
+                const contentCatName = contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name || null;
+                const contentFmtName = contentRegistry.formats.find(f => f.id === selectedFormatId)?.name || null;
+                const parentStyles = contentRegistry.visualStyles.filter(s => !s.parent_style_id);
+                const { recommended, compatible, other } = partitionStylesByMatch(parentStyles, contentCatName, contentFmtName);
+
+                const iconMap = (icon: string | undefined) =>
+                  icon === 'Film' ? '\uD83C\uDFAC' : icon === 'Palette' ? '\uD83C\uDFA8' : icon === 'Camera' ? '\uD83D\uDCF7' : icon === 'Star' ? '\u2B50' : icon === 'Box' ? '\uD83D\uDCE6' : '\uD83C\uDFAD';
+
+                const sortFn = (a: typeof parentStyles[0], b: typeof parentStyles[0]) => {
+                  if (a.category !== b.category) return a.category.localeCompare(b.category);
+                  return a.sort_order - b.sort_order;
+                };
+
+                const mapStyle = (s: typeof parentStyles[0], tag: string) => {
+                  const subCount = contentRegistry.visualStyles.filter(sub => sub.parent_style_id === s.id).length;
+                  const catLabel = s.category ? s.category.charAt(0).toUpperCase() + s.category.slice(1) : '';
+                  return {
+                    value: s.id,
+                    label: s.label + (subCount > 0 ? ` (${subCount})` : ''),
+                    icon: iconMap(s.icon),
+                    description: `${tag} \u2022 ${catLabel}${subCount > 0 ? ` \u2022 ${subCount} sub-styles` : ''}`,
+                  };
+                };
+
+                const options = [
+                  ...recommended.sort(sortFn).map(s => mapStyle(s, '\u2B50 Best Match')),
+                  ...compatible.sort(sortFn).map(s => mapStyle(s, '\u2705 Compatible')),
+                  ...other.sort(sortFn).map(s => mapStyle(s, 'More')),
+                ];
+
+                return (
+                  <PortalDropdown
+                    label="Style"
+                    icon={<span className="text-sm">{'\uD83C\uDFA8'}</span>}
+                    placeholder="Select styles..."
+                    options={options}
+                    selected={selectedVisualStyleIds.filter(id => {
+                      const style = contentRegistry.visualStyles.find(s => s.id === id);
+                      return style && !style.parent_style_id;
+                    })}
+                    onToggle={(id) => {
+                      setSelectedVisualStyleIds(prev => {
+                        const isRemoving = prev.includes(id);
+                        if (isRemoving) {
+                          const subIds = contentRegistry.visualStyles.filter(s => s.parent_style_id === id).map(s => s.id);
+                          return prev.filter(p => p !== id && !subIds.includes(p));
+                        } else {
+                          return [...prev, id];
+                        }
+                      });
+                      const rules = contentRegistry.getCapabilityRulesForStyle(id);
+                      const autoIds = rules.filter(r => r.auto_select).map(r => r.capability_id);
+                      if (autoIds.length > 0) {
+                        setAutoSelectedCapIds(p => Array.from(new Set([...p, ...autoIds])));
+                        setSelectedCapabilityIds(p => Array.from(new Set([...p, ...autoIds])));
+                        const lipSyncCap = contentRegistry.productionCapabilities.find(c => c.name === 'lip_sync');
+                        if (lipSyncCap && autoIds.includes(lipSyncCap.id)) setLipSyncEnabled(true);
+                      }
+                    }}
+                    multi
+                  />
+                );
+              })()}
 
               {/* Sub-Style Dropdown -- shows sub-styles of all selected parents */}
               {(() => {
