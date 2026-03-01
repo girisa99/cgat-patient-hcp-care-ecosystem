@@ -33,16 +33,63 @@
 /** Which content categories each style category is recommended for.
  *  '*' = universal — recommended for ALL content categories. */
 const STYLE_TO_CATEGORIES: Record<string, string[] | '*'> = {
-  // Universal styles — work with any content category
+  // ── Universal styles — work with any content category ─────────────
   artistic:      '*',
   character:     '*',
   illustration:  '*',
   motion:        '*',
   social:        '*',
 
-  // Industry-specific styles (covering all 38 content categories)
-  media:         ['media', 'commercial', 'celebrations', 'entertainment', 'music_arts', 'sports_fitness'],
+  // ── Styles from master-ecosystem-registry.ts ──────────────────────
+  // storytelling (6 styles: smart_storytelling, hook_videos, micro_drama, etc.)
+  storytelling:  ['media', 'education', 'celebrations', 'nonprofit', 'entertainment',
+                  'music_arts', 'environmental'],
+  // avatar (7 styles: photorealistic, 3d_pixar, 2d_animated, talking_photos, etc.)
+  avatar:        ['celebrations', 'education', 'healthcare', 'commercial', 'media',
+                  'entertainment', 'technology', 'hospitality_hotels'],
+  // animation (6 styles: anime, image_to_life, explainer_3d, motion_graphics, etc.)
+  animation:     ['celebrations', 'education', 'entertainment', 'technology', 'media',
+                  'gaming_esports', 'music_arts', 'retail_ecommerce'],
+  // interactive (5 styles: educational, quiz, cta_videos, shoppable_video, etc.)
+  interactive:   ['education', 'technology', 'celebrations', 'retail_ecommerce',
+                  'gaming_esports', 'commercial'],
+  // marketing (8 styles)
+  marketing:     ['commercial', 'celebrations', 'retail_ecommerce', 'food_beverage',
+                  'beauty_cosmetics', 'fashion_apparel', 'media', 'hospitality_hotels'],
+  // enterprise (4 styles)
+  enterprise:    ['commercial', 'government', 'finance', 'technology', 'insurance',
+                  'legal', 'oil_gas', 'aerospace_defense'],
+  // entertainment (4 styles)
+  entertainment: ['entertainment', 'celebrations', 'media', 'music_arts',
+                  'gaming_esports', 'sports_fitness'],
+  // healthcare (3 styles)
   healthcare:    ['healthcare', 'pharma_biotech', 'wellness_spa'],
+  // presentation (8 styles)
+  presentation:  ['education', 'healthcare', 'government', 'oil_gas', 'technology', 'commercial',
+                  'finance', 'fintech', 'insurance', 'legal', 'pharma_biotech', 'aerospace_defense',
+                  'energy_renewables', 'mining_metals', 'logistics', 'telecom', 'construction',
+                  'environmental', 'nonprofit', 'agriculture'],
+  // infographic (7 styles)
+  infographic:   ['education', 'healthcare', 'technology', 'finance', 'government',
+                  'media', 'nonprofit', 'environmental'],
+  // data_visualization (5 styles)
+  data_visualization: ['technology', 'finance', 'healthcare', 'government', 'ai_ml',
+                       'energy_renewables', 'logistics'],
+
+  // ── Styles from extended-video-styles.ts ──────────────────────────
+  // animated (7 styles)
+  animated:      ['celebrations', 'education', 'entertainment', 'media', 'technology',
+                  'gaming_esports', 'music_arts'],
+  // educational (6 styles)
+  educational:   ['education', 'healthcare', 'technology', 'ai_ml', 'nonprofit'],
+  // cyber (5 styles)
+  cyber:         ['technology', 'cybersecurity', 'ai_ml', 'fintech', 'gaming_esports'],
+  // photorealistic (4 styles)
+  photorealistic: ['commercial', 'celebrations', 'real_estate', 'travel', 'automotive',
+                   'hospitality_hotels', 'fashion_apparel', 'food_beverage'],
+
+  // ── Legacy category aliases (kept for backward compat with DB styles) ──
+  media:         ['media', 'commercial', 'celebrations', 'entertainment', 'music_arts', 'sports_fitness'],
   education:     ['education', 'ai_ml', 'cybersecurity'],
   gaming:        ['media', 'technology', 'gaming_esports', 'entertainment'],
   lifestyle:     ['travel', 'commercial', 'media', 'celebrations', 'hospitality_hotels', 'wellness_spa',
@@ -51,16 +98,10 @@ const STYLE_TO_CATEGORIES: Record<string, string[] | '*'> = {
                   'fashion_apparel', 'pet_care'],
   demo:          ['technology', 'commercial', 'education', 'fintech', 'ai_ml', 'telecom',
                   'cybersecurity', 'automotive', 'logistics'],
-  presentation:  ['education', 'healthcare', 'government', 'oil_gas', 'technology', 'commercial',
-                  'finance', 'fintech', 'insurance', 'legal', 'pharma_biotech', 'aerospace_defense',
-                  'energy_renewables', 'mining_metals', 'logistics', 'telecom', 'construction',
-                  'environmental', 'nonprofit', 'agriculture'],
   framework:     ['government', 'technology', 'commercial', 'education', 'finance', 'fintech',
                   'insurance', 'legal', 'cybersecurity', 'ai_ml', 'aerospace_defense',
                   'energy_renewables', 'logistics', 'telecom'],
   seasonal:      ['celebrations', 'commercial', 'media', 'retail_ecommerce', 'food_beverage'],
-  storytelling:  ['media', 'education', 'celebrations', 'nonprofit', 'entertainment',
-                  'music_arts', 'environmental'],
   immersive:     ['technology', 'media', 'travel', 'celebrations', 'real_estate', 'automotive', 'hospitality_hotels',
                   'aerospace_defense', 'gaming_esports', 'construction', 'mining_metals'],
 };
@@ -69,35 +110,53 @@ const STYLE_TO_CATEGORIES: Record<string, string[] | '*'> = {
 
 /** Which content formats each style category is recommended for.
  *  '*' = universal — recommended for ALL formats. */
+/** Celebration-specific format names used across multiple style categories. */
+const CELEBRATION_FORMATS = [
+  'celebration_invitation_video', 'celebration_save_the_date',
+  'celebration_ceremony_recap_video', 'celebration_photo_montage_video',
+  'celebration_social_clip', 'celebration_thank_you_video',
+  'celebration_highlight_reel', 'celebration_announcement_video',
+  'celebration_tribute_video', 'celebration_webcast_live',
+  'celebration_digital_invitation',
+];
+
 const STYLE_TO_FORMATS: Record<string, string[] | '*'> = {
-  // Universal styles — work with any format
+  // ── Universal styles — work with any format ───────────────────────
   artistic:      '*',
   character:     '*',
   illustration:  '*',
 
-  // Format-specific styles
+  // ── Styles from master-ecosystem-registry.ts ──────────────────────
+  storytelling:  ['video', 'script', 'podcast', ...CELEBRATION_FORMATS],
+  avatar:        ['video', 'webcast', 'presentation', ...CELEBRATION_FORMATS],
+  animation:     ['video', 'ugc', ...CELEBRATION_FORMATS],
+  interactive:   ['video', 'webcast', 'presentation'],
+  marketing:     ['video', 'ugc', ...CELEBRATION_FORMATS],
+  enterprise:    ['video', 'presentation', 'webcast'],
+  entertainment: ['video', 'ugc', 'podcast', ...CELEBRATION_FORMATS],
+  healthcare:    ['video', 'presentation', 'webcast'],
   presentation:  ['presentation', 'script'],
+  infographic:   ['video', 'presentation'],
+  data_visualization: ['video', 'presentation'],
+
+  // ── Styles from extended-video-styles.ts ──────────────────────────
+  animated:      ['video', 'ugc', ...CELEBRATION_FORMATS],
+  educational:   ['video', 'presentation', 'webcast', 'podcast'],
+  cyber:         ['video', 'presentation'],
+  photorealistic: ['video', 'ugc', ...CELEBRATION_FORMATS],
+
+  // ── Legacy category aliases ───────────────────────────────────────
   framework:     ['presentation', 'video', 'script'],
   media:         ['podcast', 'webcast', 'video'],
   demo:          ['video', 'webcast', 'presentation'],
-  social:        ['video', 'ugc'],
-  motion:        ['video'],
+  social:        ['video', 'ugc', ...CELEBRATION_FORMATS],
+  motion:        ['video', ...CELEBRATION_FORMATS],
   education:     ['video', 'presentation', 'webcast', 'podcast'],
   gaming:        ['video', 'ugc'],
-  lifestyle:     ['video', 'ugc', 'podcast'],
-  healthcare:    ['video', 'presentation', 'webcast'],
+  lifestyle:     ['video', 'ugc', 'podcast', ...CELEBRATION_FORMATS],
   ecommerce:     ['video', 'ugc'],
-  storytelling:  ['video', 'script', 'podcast'],
-  immersive:     ['video'],
-  seasonal:      ['video', 'ugc',
-    // All celebration video formats
-    'celebration_invitation_video', 'celebration_save_the_date',
-    'celebration_ceremony_recap_video', 'celebration_photo_montage_video',
-    'celebration_social_clip', 'celebration_thank_you_video',
-    'celebration_highlight_reel', 'celebration_announcement_video',
-    'celebration_tribute_video', 'celebration_webcast_live',
-    'celebration_digital_invitation',
-  ],
+  immersive:     ['video', ...CELEBRATION_FORMATS],
+  seasonal:      ['video', 'ugc', ...CELEBRATION_FORMATS],
 };
 
 // ─── CEREMONY → STYLE CATEGORY MAPPING ───────────────────────────────────
@@ -105,15 +164,19 @@ const STYLE_TO_FORMATS: Record<string, string[] | '*'> = {
 // that produce the best visual results for that type of celebration.
 
 export const CEREMONY_TO_STYLE_CATEGORIES: Record<string, string[]> = {
-  wedding:           ['artistic', 'illustration', 'lifestyle', 'immersive', 'storytelling', 'seasonal'],
-  pre_post_wedding:  ['artistic', 'lifestyle', 'social', 'motion'],
-  religious:         ['artistic', 'illustration', 'storytelling'],
-  life_milestone:    ['character', 'social', 'motion', 'illustration'],
-  festival:          ['seasonal', 'motion', 'social', 'media'],
-  corporate_event:   ['presentation', 'framework', 'demo'],
-  sports:            ['media', 'motion', 'social', 'gaming'],
-  inauguration:      ['presentation', 'framework', 'immersive'],
-  memorial:          ['storytelling', 'artistic', 'illustration'],
+  wedding:           ['artistic', 'illustration', 'storytelling', 'avatar', 'animation', 'animated',
+                      'photorealistic', 'entertainment', 'marketing'],
+  pre_post_wedding:  ['artistic', 'social', 'motion', 'animation', 'animated', 'photorealistic',
+                      'marketing'],
+  religious:         ['artistic', 'illustration', 'storytelling', 'avatar', 'animated'],
+  life_milestone:    ['character', 'social', 'motion', 'illustration', 'animation', 'animated',
+                      'avatar', 'entertainment', 'marketing'],
+  festival:          ['motion', 'social', 'animation', 'animated', 'entertainment',
+                      'marketing', 'character'],
+  corporate_event:   ['presentation', 'enterprise', 'avatar', 'infographic', 'marketing'],
+  sports:            ['motion', 'social', 'entertainment', 'animation', 'character'],
+  inauguration:      ['presentation', 'enterprise', 'avatar', 'storytelling'],
+  memorial:          ['storytelling', 'artistic', 'illustration', 'avatar', 'animated'],
 };
 
 /**
@@ -122,7 +185,7 @@ export const CEREMONY_TO_STYLE_CATEGORIES: Record<string, string[]> = {
  */
 export function getStyleCategoriesForCeremony(ceremonyCategory: string | null): string[] {
   if (!ceremonyCategory) return [];
-  return CEREMONY_TO_STYLE_CATEGORIES[ceremonyCategory] ?? ['artistic', 'illustration', 'seasonal', 'storytelling'];
+  return CEREMONY_TO_STYLE_CATEGORIES[ceremonyCategory] ?? ['artistic', 'illustration', 'storytelling', 'animation', 'animated', 'avatar', 'entertainment'];
 }
 
 // ─── HELPER FUNCTIONS ──────────────────────────────────────────────────────

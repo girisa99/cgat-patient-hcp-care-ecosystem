@@ -23,7 +23,27 @@ import { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import { CelebrationUploadPanel } from './CelebrationUploadPanel';
 import { getSceneCount, getTargetDuration } from '@/config/celebrations/ceremony-scene-templates';
 import { partitionStylesByMatch, getStyleCategoriesForCeremony } from '@/config/style-category-format-map';
+import { ALL_STYLES } from '@/config/unified-style-registry';
 import type { CeremonyCategory } from '@/config/celebrations/ceremony-type-registry';
+
+/**
+ * Fallback styles derived from the code-based unified registry (93 styles).
+ * Used when the DB-based `cast_visual_styles` table is empty or unavailable.
+ * Maps UnifiedVideoStyle → minimal shape needed for partitioning + rendering.
+ */
+const FALLBACK_STYLES = ALL_STYLES
+  .filter(s => s.castCompatible)
+  .map(s => ({
+    id: s.id,
+    label: s.title,
+    description: s.description,
+    category: s.category,
+    icon: s.icon,
+    sort_order: 0,
+    sub_sort_order: 0,
+    parent_style_id: null as string | null,
+    is_active: true,
+  }));
 
 interface CelebrationCreatorProps {
   projectId?: string;
@@ -79,10 +99,12 @@ export function CelebrationCreator({ projectId, onGenerate }: CelebrationCreator
   const [selectedSubStyleId, setSelectedSubStyleId] = useState<string | null>(null);
   const searchResults = searchQuery.length > 1 ? searchCeremonies(searchQuery) : [];
 
-  // DB-driven styles: partition into Best Match / Compatible / More
+  // DB-driven styles with code-based fallback: partition into Best Match / Compatible / More
   // based on 'celebrations' category + selected format + ceremony-specific boost
   const stylePartition = useMemo(() => {
-    const parentStyles = contentRegistry.visualStyles.filter(s => !s.parent_style_id);
+    const dbParentStyles = contentRegistry.visualStyles.filter(s => !s.parent_style_id);
+    // Use DB styles if available, otherwise fall back to the 93-style unified registry
+    const parentStyles = dbParentStyles.length > 0 ? dbParentStyles : FALLBACK_STYLES;
     if (parentStyles.length === 0) return { recommended: [], compatible: [], other: [] };
 
     // Base partition against 'celebrations' + selected format
@@ -116,13 +138,16 @@ export function CelebrationCreator({ projectId, onGenerate }: CelebrationCreator
     };
   }, [contentRegistry.visualStyles, selection.format, selection.category]);
 
-  // Sub-styles for the selected parent style
+  // Sub-styles for the selected parent style (only available from DB, not fallback)
   const subStyles = useMemo(() => {
     if (!selection.visualStyle) return [];
     return contentRegistry.visualStyles
       .filter(s => s.parent_style_id === selection.visualStyle)
-      .sort((a, b) => a.sub_sort_order - b.sub_sort_order);
+      .sort((a, b) => (a.sub_sort_order ?? 0) - (b.sub_sort_order ?? 0));
   }, [contentRegistry.visualStyles, selection.visualStyle]);
+
+  // Whether we're using the code-based fallback (no DB styles loaded)
+  const usingFallbackStyles = contentRegistry.visualStyles.filter(s => !s.parent_style_id).length === 0;
 
   const handleGenerate = () => {
     const result = generateProduction();
@@ -405,8 +430,8 @@ export function CelebrationCreator({ projectId, onGenerate }: CelebrationCreator
             <CardTitle className="text-lg">Visual Style</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* DB-driven styles partitioned by ceremony relevance */}
-            {contentRegistry.visualStyles.length > 0 ? (
+            {/* Styles partitioned by ceremony relevance (DB-driven with code fallback) */}
+            {(stylePartition.recommended.length > 0 || stylePartition.compatible.length > 0 || stylePartition.other.length > 0) ? (
               <div className="space-y-3">
                 {stylePartition.recommended.length > 0 && (
                   <div>

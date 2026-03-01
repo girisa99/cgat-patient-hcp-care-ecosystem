@@ -70,6 +70,7 @@ import { StyleCustomizationPanel } from '../StyleCustomizationPanel';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { TARGET_PLATFORMS, getPlatformsByCategory, getPlatformCategories } from '@/config/target-platforms-registry';
 import { partitionStylesByMatch } from '@/config/style-category-format-map';
+import { ALL_STYLES } from '@/config/unified-style-registry';
 import {
   IMAGINATION_PRESETS,
   getPresetCategories,
@@ -79,6 +80,24 @@ import {
 } from '@/services/production/creativeImaginationRegistry';
 import type { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import type { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
+
+/**
+ * Fallback styles from the code-based unified registry (93 styles).
+ * Used when the DB-based `cast_visual_styles` table is empty or unavailable.
+ */
+const FALLBACK_VISUAL_STYLES = ALL_STYLES
+  .filter(s => s.castCompatible)
+  .map(s => ({
+    id: s.id,
+    label: s.title,
+    description: s.description,
+    category: s.category,
+    icon: s.icon,
+    sort_order: 0,
+    sub_sort_order: 0,
+    parent_style_id: null as string | null,
+    is_active: true,
+  }));
 
 /**
  * Collapsible section wrapper with tooltip, step indicator, and completion state.
@@ -649,7 +668,8 @@ export function CreateConfigureStep({
               {(() => {
                 const contentCatName = contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name || null;
                 const contentFmtName = contentRegistry.formats.find(f => f.id === selectedFormatId)?.name || null;
-                const parentStyles = contentRegistry.visualStyles.filter(s => !s.parent_style_id);
+                const dbParentStyles = contentRegistry.visualStyles.filter(s => !s.parent_style_id);
+                const parentStyles = dbParentStyles.length > 0 ? dbParentStyles : FALLBACK_VISUAL_STYLES;
                 const { recommended, compatible, other } = partitionStylesByMatch(parentStyles, contentCatName, contentFmtName);
 
                 const iconMap = (icon: string | undefined) =>
@@ -684,7 +704,9 @@ export function CreateConfigureStep({
                     placeholder="Select styles..."
                     options={options}
                     selected={selectedVisualStyleIds.filter(id => {
-                      const style = contentRegistry.visualStyles.find(s => s.id === id);
+                      const style = (contentRegistry.visualStyles.length > 0
+                        ? contentRegistry.visualStyles
+                        : FALLBACK_VISUAL_STYLES).find(s => s.id === id);
                       return style && !style.parent_style_id;
                     })}
                     onToggle={(id) => {
@@ -713,10 +735,15 @@ export function CreateConfigureStep({
 
               {/* Sub-Style Dropdown -- shows sub-styles of all selected parents */}
               {(() => {
+                // Check both DB styles and fallback styles to identify selected parents
+                const allKnownStyles = contentRegistry.visualStyles.length > 0
+                  ? contentRegistry.visualStyles
+                  : FALLBACK_VISUAL_STYLES;
                 const selectedParentIds = selectedVisualStyleIds.filter(id => {
-                  const style = contentRegistry.visualStyles.find(s => s.id === id);
+                  const style = allKnownStyles.find(s => s.id === id);
                   return style && !style.parent_style_id;
                 });
+                // Substyles are only available from DB — fallback styles are all parent-level
                 const availableSubStyles = contentRegistry.visualStyles
                   .filter(s => s.parent_style_id && selectedParentIds.includes(s.parent_style_id))
                   .sort((a, b) => a.sub_sort_order - b.sub_sort_order);
@@ -734,7 +761,9 @@ export function CreateConfigureStep({
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2 text-sm"><span className="text-sm">{'\uD83C\uDFAD'}</span>Sub-Style</Label>
                     <div className="flex items-center justify-center h-10 border rounded-md bg-muted/30 text-xs text-muted-foreground">
-                      No sub-styles for selected style(s)
+                      {contentRegistry.visualStyles.length === 0
+                        ? 'Sub-styles available when style database is populated'
+                        : 'No sub-styles for selected style(s)'}
                     </div>
                   </div>
                 );
@@ -779,13 +808,25 @@ export function CreateConfigureStep({
             )}
           </div>
 
-          {/* 5a-ii: Output Resolution / Pixel Size -- DB-driven */}
+          {/* 5a-ii: Output Resolution / Pixel Size -- DB-driven with fallback */}
           <div className="space-y-2">
             <Label className="text-xs font-medium">{'\uD83D\uDCD0'} Output Resolution</Label>
-            {contentRegistry.outputPresets.length > 0 ? (
+            {(() => {
+              const FALLBACK_OUTPUT_PRESETS = [
+                { id: 'fb-720p',  label: '720p HD',       width: 1280, height: 720,  aspect_ratio: '16:9', description: 'Fast preview', icon: '\uD83D\uDCF1', is_default: false },
+                { id: 'fb-1080p', label: '1080p Full HD', width: 1920, height: 1080, aspect_ratio: '16:9', description: 'Production standard', icon: '\uD83D\uDCBB', is_default: true },
+                { id: 'fb-1080v', label: '1080p Vertical', width: 1080, height: 1920, aspect_ratio: '9:16', description: 'TikTok / Reels / Shorts', icon: '\uD83D\uDCF1', is_default: false },
+                { id: 'fb-1080s', label: '1080p Square', width: 1080, height: 1080, aspect_ratio: '1:1', description: 'Instagram / Feed', icon: '\u2B1C', is_default: false },
+                { id: 'fb-4k',    label: '4K Ultra HD',  width: 3840, height: 2160, aspect_ratio: '16:9', description: 'Cinematic quality', icon: '\uD83C\uDFAC', is_default: false },
+                { id: 'fb-4-5',   label: '1080 Portrait', width: 1080, height: 1350, aspect_ratio: '4:5', description: 'Instagram portrait', icon: '\uD83D\uDDBC\uFE0F', is_default: false },
+              ];
+              const presets = contentRegistry.outputPresets.length > 0
+                ? contentRegistry.outputPresets
+                : FALLBACK_OUTPUT_PRESETS;
+              return presets.length > 0 ? (
               <>
                 <div className="grid grid-cols-4 gap-2">
-                  {contentRegistry.outputPresets.map(preset => {
+                  {presets.map(preset => {
                     const isSelected = selectedOutputPresets.includes(preset.id);
                     const isPrimaryRes = selectedResolution === `${preset.width}x${preset.height}`;
                     return (
@@ -841,13 +882,17 @@ export function CreateConfigureStep({
               <div className="flex items-center justify-center h-16 border rounded-md bg-muted/30 text-xs text-muted-foreground">
                 Loading resolution presets...
               </div>
-            )}
+            );
+            })()}
           </div>
 
           {/* 5a-ii-b: Style Preview -- show AI-generated preview for selected styles */}
           {selectedVisualStyleIds.length > 0 && (() => {
+            const allStyles = contentRegistry.visualStyles.length > 0
+              ? contentRegistry.visualStyles
+              : FALLBACK_VISUAL_STYLES;
             const selectedStyles = selectedVisualStyleIds
-              .map(id => contentRegistry.visualStyles.find(s => s.id === id))
+              .map(id => allStyles.find(s => s.id === id))
               .filter((s): s is NonNullable<typeof s> => !!s);
             const withPreview = selectedStyles.filter(s => s.preview_image_url);
             if (withPreview.length === 0 && selectedStyles.length > 0) return (
@@ -879,9 +924,13 @@ export function CreateConfigureStep({
           {/* 5a-iii: Style Customization -- B-007: Always visible (no pre-select gate) */}
           <StyleCustomizationPanel
             selectedStyles={selectedVisualStyleIds
-              .map(id => contentRegistry.visualStyles.find(s => s.id === id))
+              .map(id => (contentRegistry.visualStyles.length > 0
+                ? contentRegistry.visualStyles
+                : FALLBACK_VISUAL_STYLES).find(s => s.id === id))
               .filter((s): s is NonNullable<typeof s> => !!s)}
-            allStyles={contentRegistry.visualStyles}
+            allStyles={contentRegistry.visualStyles.length > 0
+              ? contentRegistry.visualStyles
+              : FALLBACK_VISUAL_STYLES}
             characterFramePercent={characterFramePercent}
             onCharacterFrameChange={setCharacterFramePercent}
             onStyleCreated={contentRegistry.refresh}
@@ -1189,9 +1238,12 @@ export function CreateConfigureStep({
                     })()
                   ) : (
                     <>
-                      <SelectItem value="3840x2160">4K (3840\u00D72160)</SelectItem>
-                      <SelectItem value="1920x1080">Full HD (1920\u00D71080)</SelectItem>
-                      <SelectItem value="1280x720">HD (1280\u00D7720)</SelectItem>
+                      <SelectItem value="3840x2160">4K (3840{'\u00D7'}2160)</SelectItem>
+                      <SelectItem value="1920x1080">Full HD (1920{'\u00D7'}1080)</SelectItem>
+                      <SelectItem value="1280x720">HD (1280{'\u00D7'}720)</SelectItem>
+                      <SelectItem value="1080x1920">Vertical HD (1080{'\u00D7'}1920)</SelectItem>
+                      <SelectItem value="1080x1080">Square (1080{'\u00D7'}1080)</SelectItem>
+                      <SelectItem value="1080x1350">Portrait 4:5 (1080{'\u00D7'}1350)</SelectItem>
                     </>
                   )}
                 </SelectContent>
