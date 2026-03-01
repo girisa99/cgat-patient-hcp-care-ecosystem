@@ -67,6 +67,7 @@ import { CreateHeroBanner } from './CreateHeroBanner';
 import { PreviewPopout } from './PreviewPopout';
 import { PortalDropdown } from '../create-wizard/PortalDropdown';
 import { StyleCustomizationPanel } from '../StyleCustomizationPanel';
+import { PromptEnhancer } from '../PromptEnhancer';
 import { REGION_HIERARCHY } from '@/config/regionHierarchy';
 import { TARGET_PLATFORMS, getPlatformsByCategory, getPlatformCategories } from '@/config/target-platforms-registry';
 import { partitionStylesByMatch } from '@/config/style-category-format-map';
@@ -1410,7 +1411,7 @@ export function CreateConfigureStep({
 
           <Separator className="my-2" />
 
-          {/* ── Enrichment Prompt ── */}
+          {/* ── Enrichment Prompt + AI Enhancement ── */}
           <div className="space-y-2">
             <Label className="text-xs font-medium">Your Creative Brief</Label>
             <textarea
@@ -1432,6 +1433,16 @@ export function CreateConfigureStep({
                 </Badge>
               ))}
             </div>
+
+            {/* AI Prompt Enhancement — real-time quality scoring + full AI enhance */}
+            <PromptEnhancer
+              rawPrompt={enrichmentPrompt}
+              onAccept={(enhanced) => setEnrichmentPrompt(enhanced)}
+              region={selectedRegion}
+              format={contentRegistry.formats.find(f => f.id === selectedFormatId)?.name}
+              visualStyle={selectedVisualStyleIds[0]}
+              className="mt-2"
+            />
           </div>
         </div>
       </ConfigSection>

@@ -145,14 +145,10 @@ export function useCelebrationUploadRedesign() {
         .from('celebrations')
         .getPublicUrl(fileName);
 
-      // Call AI extraction via vision model
-      const { data: extractionResult, error: extractError } = await supabase.functions.invoke(
-        'ai-universal-processor',
-        {
-          body: {
-            action: 'vision-extract',
-            imageUrl: urlData.publicUrl,
-            prompt: `Analyze this invitation/event card image and extract ALL information as JSON:
+      // Determine extraction strategy based on file type
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+      const extractionPrompt = `Analyze this invitation/event card and extract ALL information as JSON:
 {
   "names": { "bride": "", "groom": "", "host": "", "guest_of_honor": "" },
   "eventDate": "",
@@ -168,13 +164,47 @@ export function useCelebrationUploadRedesign() {
   "originalColors": ["hex colors used in the design"],
   "originalStyle": "traditional | modern | minimalist | ornate",
   "confidence": 0.0-1.0,
-  "rawText": "all text found on the card",
+  "rawText": "all text found on the card/document",
   "isMultiLanguage": true/false
 }
-Extract every detail visible. If a field is not found, leave it empty. Detect the primary language from the text.`,
+Extract every detail visible. If a field is not found, leave it empty. Detect the primary language from the text.`;
+
+      let extractionResult: any;
+      let extractError: any;
+
+      if (isPdf) {
+        // PDF path: use document-processor for text extraction, then AI for structured parsing
+        const docResult = await supabase.functions.invoke('document-processor', {
+          body: { fileUrl: urlData.publicUrl, mimeType: 'application/pdf' },
+        });
+
+        if (docResult.error) throw new Error(`PDF processing failed: ${docResult.error.message}`);
+
+        const pdfText = docResult.data?.text || docResult.data?.content || docResult.data?.extractedContent || '';
+        if (!pdfText) throw new Error('Could not extract text from PDF');
+
+        // Parse extracted text with AI
+        const parseResult = await supabase.functions.invoke('ai-universal-processor', {
+          body: {
+            action: 'generate_content',
+            provider: 'gemini',
+            prompt: `${extractionPrompt}\n\nHere is the extracted text from the invitation PDF:\n\n${pdfText}`,
           },
-        }
-      );
+        });
+        extractionResult = parseResult.data;
+        extractError = parseResult.error;
+      } else {
+        // Image path: use vision model directly
+        const result = await supabase.functions.invoke('ai-universal-processor', {
+          body: {
+            action: 'vision-extract',
+            imageUrl: urlData.publicUrl,
+            prompt: extractionPrompt,
+          },
+        });
+        extractionResult = result.data;
+        extractError = result.error;
+      }
 
       if (extractError) throw new Error(`Extraction failed: ${extractError.message}`);
 

@@ -101,20 +101,25 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
     setIsGeneratingPreview(true);
     setPreviewTargetStyleId(targetStyleId || null);
     try {
+      const styleLabel = targetStyleId
+        ? allStyles.find(s => s.id === targetStyleId)?.label
+        : 'custom style';
+      const fullPrompt = `Style preview for "${styleLabel}": ${aiPrompt}. Create a visually representative sample image that showcases this visual style. The image should be IP-safe, non-photorealistic, and demonstrate the aesthetic clearly.`;
+
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: 'gemini',
-          action: 'generate_style_preview',
-          prompt: aiPrompt,
-          style_context: targetStyleId 
-            ? allStyles.find(s => s.id === targetStyleId)?.label 
-            : 'custom style',
-          ip_safe: true, // Always IP-safe
+          action: 'image_generation',
+          imageGeneration: true,
+          prompt: fullPrompt,
+          style: styleLabel,
+          aspectRatio: '16:9',
+          ip_safe: true,
         },
       });
       if (error) throw error;
-      
-      const imageUrl = data?.image_url || data?.preview_url;
+
+      const imageUrl = data?.image_url || data?.imageUrl || data?.url || data?.preview_url;
       if (imageUrl) {
         setGeneratedPreviewUrl(imageUrl);
         toast.success('Preview generated! Review it below.');
