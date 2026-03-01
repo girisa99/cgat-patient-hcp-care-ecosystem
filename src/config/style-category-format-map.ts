@@ -41,11 +41,11 @@ const STYLE_TO_CATEGORIES: Record<string, string[] | '*'> = {
   social:        '*',
 
   // Industry-specific styles (covering all 38 content categories)
-  media:         ['media', 'commercial', 'entertainment', 'music_arts', 'sports_fitness'],
+  media:         ['media', 'commercial', 'celebrations', 'entertainment', 'music_arts', 'sports_fitness'],
   healthcare:    ['healthcare', 'pharma_biotech', 'wellness_spa'],
   education:     ['education', 'ai_ml', 'cybersecurity'],
   gaming:        ['media', 'technology', 'gaming_esports', 'entertainment'],
-  lifestyle:     ['travel', 'commercial', 'media', 'hospitality_hotels', 'wellness_spa',
+  lifestyle:     ['travel', 'commercial', 'media', 'celebrations', 'hospitality_hotels', 'wellness_spa',
                   'food_beverage', 'beauty_cosmetics', 'fashion_apparel', 'pet_care'],
   ecommerce:     ['commercial', 'retail_ecommerce', 'food_beverage', 'beauty_cosmetics',
                   'fashion_apparel', 'pet_care'],
@@ -61,7 +61,7 @@ const STYLE_TO_CATEGORIES: Record<string, string[] | '*'> = {
   seasonal:      ['celebrations', 'commercial', 'media', 'retail_ecommerce', 'food_beverage'],
   storytelling:  ['media', 'education', 'celebrations', 'nonprofit', 'entertainment',
                   'music_arts', 'environmental'],
-  immersive:     ['technology', 'media', 'travel', 'real_estate', 'automotive', 'hospitality_hotels',
+  immersive:     ['technology', 'media', 'travel', 'celebrations', 'real_estate', 'automotive', 'hospitality_hotels',
                   'aerospace_defense', 'gaming_esports', 'construction', 'mining_metals'],
 };
 
@@ -99,6 +99,31 @@ const STYLE_TO_FORMATS: Record<string, string[] | '*'> = {
     'celebration_digital_invitation',
   ],
 };
+
+// ─── CEREMONY → STYLE CATEGORY MAPPING ───────────────────────────────────
+// Maps ceremony categories (from ceremony-type-registry) to style categories
+// that produce the best visual results for that type of celebration.
+
+export const CEREMONY_TO_STYLE_CATEGORIES: Record<string, string[]> = {
+  wedding:           ['artistic', 'illustration', 'lifestyle', 'immersive', 'storytelling', 'seasonal'],
+  pre_post_wedding:  ['artistic', 'lifestyle', 'social', 'motion'],
+  religious:         ['artistic', 'illustration', 'storytelling'],
+  life_milestone:    ['character', 'social', 'motion', 'illustration'],
+  festival:          ['seasonal', 'motion', 'social', 'media'],
+  corporate_event:   ['presentation', 'framework', 'demo'],
+  sports:            ['media', 'motion', 'social', 'gaming'],
+  inauguration:      ['presentation', 'framework', 'immersive'],
+  memorial:          ['storytelling', 'artistic', 'illustration'],
+};
+
+/**
+ * Get recommended style categories for a given ceremony category.
+ * Falls back to a broad set if the ceremony category is not mapped.
+ */
+export function getStyleCategoriesForCeremony(ceremonyCategory: string | null): string[] {
+  if (!ceremonyCategory) return [];
+  return CEREMONY_TO_STYLE_CATEGORIES[ceremonyCategory] ?? ['artistic', 'illustration', 'seasonal', 'storytelling'];
+}
 
 // ─── HELPER FUNCTIONS ──────────────────────────────────────────────────────
 

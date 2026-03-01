@@ -15,14 +15,19 @@
 // Each character uses a distinct provider + voice to be distinguishable on audio.
 // ElevenLabs voice IDs from: https://elevenlabs.io/voice-library
 // Alibaba CosyVoice fallbacks: https://www.alibabacloud.com/help/en/model-studio/cosyvoice-voice-list
+import { getActiveModel } from './provider-version-registry';
 
-// Alibaba CosyVoice fallback voices (WebSocket API, cosyvoice-v3-flash model)
+// Alibaba CosyVoice fallback voices (WebSocket API)
+// Model versions sourced from provider-version-registry.ts
+const COSYVOICE_FLASH = getActiveModel('alibaba', 'tts') ?? 'cosyvoice-v3-flash';
+const COSYVOICE_PLUS  = getActiveModel('alibaba', 'tts-premium') ?? 'cosyvoice-v3-plus';
+
 export const ALIBABA_FALLBACK_VOICES = {
-  host:     { model: 'cosyvoice-v3-flash', voice: 'longanyang',     lang: 'en', description: 'Sunny young man — warm podcast host fallback' },
-  atlas:    { model: 'cosyvoice-v3-flash', voice: 'longcheng',      lang: 'en', description: 'Professional male — measured engineer fallback' },
-  nova:     { model: 'cosyvoice-v3-flash', voice: 'longhua',        lang: 'en', description: 'Bright female — energetic dev fallback' },
-  allaudin: { model: 'cosyvoice-v3-plus',  voice: 'longshu',        lang: 'en', description: 'Deep male — theatrical narrator fallback' },
-  squirrel: { model: 'cosyvoice-v3-flash', voice: 'longpaopao_v3',  lang: 'en', description: 'Bubble voice child — chaotic squirrel fallback' },
+  host:     { model: COSYVOICE_FLASH, voice: 'longanyang',     lang: 'en', description: 'Sunny young man — warm podcast host fallback' },
+  atlas:    { model: COSYVOICE_FLASH, voice: 'longcheng',      lang: 'en', description: 'Professional male — measured engineer fallback' },
+  nova:     { model: COSYVOICE_FLASH, voice: 'longhua',        lang: 'en', description: 'Bright female — energetic dev fallback' },
+  allaudin: { model: COSYVOICE_PLUS,  voice: 'longshu',        lang: 'en', description: 'Deep male — theatrical narrator fallback' },
+  squirrel: { model: COSYVOICE_FLASH, voice: 'longpaopao_v3',  lang: 'en', description: 'Bubble voice child — chaotic squirrel fallback' },
 } as const;
 
 export const EP04_VOICES = {

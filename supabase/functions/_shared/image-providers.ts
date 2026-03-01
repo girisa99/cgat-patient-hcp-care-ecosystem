@@ -9,6 +9,7 @@
  */
 
 import { type ImageProvider, resolveImageProviderOrder, getDefaultImageModel } from './style-intent-routing.ts';
+import { ACTIVE_MODELS } from './model-versions.ts';
 
 // ============================================================================
 // API KEY ACCESSORS
@@ -147,7 +148,7 @@ async function generateWithProvider(
 async function generateWithGemini(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.gemini();
   if (!apiKey) throw new Error('Gemini key missing');
-  const model = options.model || 'gemini-2.5-flash-preview-image-generation';
+  const model = options.model || ACTIVE_MODELS.image.gemini;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {
@@ -183,7 +184,7 @@ async function generateWithVertexImagen(prompt: string, options: ImageGenOptions
   const sa = JSON.parse(saJson);
   const token = await getVertexAccessToken(sa);
   const projectId = sa.project_id;
-  const model = options.model || 'imagen-3.0-generate-002';
+  const model = options.model || ACTIVE_MODELS.image.vertexImagen;
   const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${model}:predict`;
 
   const [w, h] = (options.size || '1024x1024').split('x').map(Number);
@@ -249,7 +250,7 @@ async function getVertexAccessToken(sa: any): Promise<string> {
 async function generateWithOpenAI(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.openai();
   if (!apiKey) throw new Error('OpenAI key missing');
-  const model = options.model || 'gpt-image-1';
+  const model = options.model || ACTIVE_MODELS.image.openai;
 
   const body: any = { model, prompt, n: 1, size: options.size || '1024x1024' };
   if (model === 'gpt-image-1') {
@@ -282,7 +283,7 @@ async function generateWithOpenAI(prompt: string, options: ImageGenOptions): Pro
 async function generateWithAlibaba(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.alibabaSG() || keys.alibabaVA();
   if (!apiKey) throw new Error('Alibaba key missing');
-  const model = options.model || 'wan2.6-t2i';
+  const model = options.model || ACTIVE_MODELS.image.alibaba;
   const endpoint = 'https://dashscope-intl.aliyuncs.com';
 
   const sizeMap: Record<string, string> = {
@@ -347,7 +348,7 @@ async function generateWithModelsLab(prompt: string, options: ImageGenOptions): 
   const apiKey = keys.modelslab();
   if (!apiKey) throw new Error('ModelsLab key missing');
   const [width, height] = (options.size || '1024x1024').split('x').map(Number);
-  const model = options.model || 'flux';
+  const model = options.model || ACTIVE_MODELS.image.flux;
 
   const response = await fetch('https://modelslab.com/api/v6/images/text2img', {
     method: 'POST',
@@ -444,7 +445,7 @@ async function generateWithHuggingFace(prompt: string, options: ImageGenOptions)
 async function generateWithReplicate(prompt: string, options: ImageGenOptions): Promise<string> {
   const token = keys.replicate();
   if (!token) throw new Error('Replicate key missing');
-  const model = options.model || 'black-forest-labs/flux-schnell';
+  const model = options.model || ACTIVE_MODELS.image.replicateFlux;
 
   const versionMap: Record<string, string> = {
     'black-forest-labs/flux-schnell': 'f2ab8a5bfe79f02f0789a146cf5e73d2a4ff2684a98c2b303d1e382c43c8735f',

@@ -185,6 +185,26 @@ export interface GenieCastSessionState {
 
   // Production mode settings (Phase 6E — multi-mode: avatar, 3D, animation, cinematic)
   productionSettings?: Record<string, unknown>;
+
+  // ============================================
+  // CONTENT CONSENT TRACKING
+  // Global consent for AI generation, photo/likeness, watermark acknowledgment.
+  // Ensures consent is captured regardless of whether user is in
+  // celebrations flow or generic Cast flow.
+  // ============================================
+  contentConsents: {
+    /** Terms modal acceptance */
+    aiGenerationAccepted: boolean;
+    /** Photo/likeness consent for AI-generated content using uploaded photos */
+    photoLikenessConsent: {
+      granted: boolean;
+      grantedAt?: string;
+      purpose: string;
+      photos: Record<string, { role: string; consentGranted: boolean; grantedAt?: string }>;
+    };
+    /** Free-tier users acknowledge watermark on output */
+    watermarkAcknowledged: boolean;
+  };
 }
 
 const STORAGE_KEY = 'genie-cast-session';
@@ -242,6 +262,15 @@ const createDefaultSession = (): GenieCastSessionState => ({
   speakerConfig: null,
   chapterGrouping: null,
   productionArtifacts: null,
+  contentConsents: {
+    aiGenerationAccepted: false,
+    photoLikenessConsent: {
+      granted: false,
+      purpose: 'AI-generated video/image content',
+      photos: {},
+    },
+    watermarkAcknowledged: false,
+  },
 });
 
 // ============================================
@@ -696,6 +725,65 @@ export function useGenieCastSession() {
   }, []);
 
   // ============================================
+  // CONTENT CONSENT SETTERS
+  // ============================================
+
+  const setAIGenerationAccepted = useCallback((accepted: boolean) => {
+    setSession(prev => ({
+      ...prev,
+      contentConsents: { ...prev.contentConsents, aiGenerationAccepted: accepted },
+      updatedAt: new Date(),
+    }));
+  }, []);
+
+  const grantPhotoLikenessConsent = useCallback((photoId: string, role: string) => {
+    setSession(prev => ({
+      ...prev,
+      contentConsents: {
+        ...prev.contentConsents,
+        photoLikenessConsent: {
+          ...prev.contentConsents.photoLikenessConsent,
+          granted: true,
+          grantedAt: new Date().toISOString(),
+          photos: {
+            ...prev.contentConsents.photoLikenessConsent.photos,
+            [photoId]: { role, consentGranted: true, grantedAt: new Date().toISOString() },
+          },
+        },
+      },
+      updatedAt: new Date(),
+    }));
+  }, []);
+
+  const revokePhotoLikenessConsent = useCallback((photoId: string) => {
+    setSession(prev => {
+      const photos = { ...prev.contentConsents.photoLikenessConsent.photos };
+      delete photos[photoId];
+      const anyGranted = Object.values(photos).some(p => p.consentGranted);
+      return {
+        ...prev,
+        contentConsents: {
+          ...prev.contentConsents,
+          photoLikenessConsent: {
+            ...prev.contentConsents.photoLikenessConsent,
+            granted: anyGranted,
+            photos,
+          },
+        },
+        updatedAt: new Date(),
+      };
+    });
+  }, []);
+
+  const setWatermarkAcknowledged = useCallback((acknowledged: boolean) => {
+    setSession(prev => ({
+      ...prev,
+      contentConsents: { ...prev.contentConsents, watermarkAcknowledged: acknowledged },
+      updatedAt: new Date(),
+    }));
+  }, []);
+
+  // ============================================
   // NAVIGATION HELPERS
   // ============================================
 
@@ -838,6 +926,12 @@ export function useGenieCastSession() {
     setSpeakerConfig,
     setChapterGrouping,
     setProductionArtifacts,
+
+    // Content consent
+    setAIGenerationAccepted,
+    grantPhotoLikenessConsent,
+    revokePhotoLikenessConsent,
+    setWatermarkAcknowledged,
 
     // Navigation
     goToStage,

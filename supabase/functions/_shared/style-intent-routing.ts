@@ -1,6 +1,8 @@
+import { ACTIVE_MODELS } from './model-versions.ts';
+
 /**
  * STYLE-INTENT → PROVIDER ROUTING
- * 
+ *
  * Single source of truth for mapping style intents to provider chains.
  * Shared by: ai-image-generator, ai-universal-processor, and any future
  * edge functions that need image/video/avatar routing.
@@ -309,15 +311,15 @@ export function resolveVideoProviderOrder(
  */
 export function getDefaultImageModel(provider: ImageProvider): string {
   switch (provider) {
-    case 'gemini': return 'gemini-2.5-flash-preview-image-generation';
-    case 'vertex-imagen': return 'imagen-3.0-generate-002';
-    case 'openai': return 'gpt-image-1';
-    case 'alibaba': return 'wan2.6-t2i';
-    case 'modelslab': return 'flux';
-    case 'huggingface': return 'black-forest-labs/FLUX.1-schnell';
-    case 'replicate': return 'black-forest-labs/flux-schnell';
+    case 'gemini': return ACTIVE_MODELS.image.gemini;
+    case 'vertex-imagen': return ACTIVE_MODELS.image.vertexImagen;
+    case 'openai': return ACTIVE_MODELS.image.openai;
+    case 'alibaba': return ACTIVE_MODELS.image.alibaba;
+    case 'modelslab': return ACTIVE_MODELS.image.flux;
+    case 'huggingface': return ACTIVE_MODELS.image.fluxSchnell;
+    case 'replicate': return ACTIVE_MODELS.image.replicateFlux;
     case 'deepseek': return 'deepseek-image';
-    default: return 'gemini-2.5-flash-preview-image-generation';
+    default: return ACTIVE_MODELS.image.gemini;
   }
 }
 

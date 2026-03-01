@@ -241,6 +241,29 @@ interface CreateConfigureStepProps {
   ) => React.ReactNode;
 }
 
+// ─── PLATFORM → RESOLUTION AUTO-DERIVATION ───────────────────────────────
+// When user selects platforms, auto-set resolution + aspect ratio defaults
+// unless user has manually overridden.
+
+const PLATFORM_RESOLUTION_DEFAULTS: Record<string, { aspectRatio: string; resolution: string }> = {
+  youtube:              { aspectRatio: '16:9', resolution: '1920x1080' },
+  youtube_shorts:       { aspectRatio: '9:16', resolution: '1080x1920' },
+  tiktok:               { aspectRatio: '9:16', resolution: '1080x1920' },
+  instagram_reels:      { aspectRatio: '9:16', resolution: '1080x1920' },
+  instagram_post:       { aspectRatio: '1:1',  resolution: '1080x1080' },
+  linkedin:             { aspectRatio: '16:9', resolution: '1920x1080' },
+  facebook:             { aspectRatio: '16:9', resolution: '1920x1080' },
+  twitter:              { aspectRatio: '16:9', resolution: '1280x720' },
+  whatsapp_status:      { aspectRatio: '9:16', resolution: '1080x1920' },
+  sms_mms:              { aspectRatio: '1:1',  resolution: '720x720' },
+  landing_page:         { aspectRatio: '16:9', resolution: '1920x1080' },
+  website_embed:        { aspectRatio: '16:9', resolution: '1920x1080' },
+  webinar:              { aspectRatio: '16:9', resolution: '1920x1080' },
+  digital_signage:      { aspectRatio: '16:9', resolution: '3840x2160' },
+  ott_ctv:              { aspectRatio: '16:9', resolution: '3840x2160' },
+  presentation_slides:  { aspectRatio: '16:9', resolution: '1920x1080' },
+};
+
 export function CreateConfigureStep({
   selectedCategoryId,
   selectedFormatId,
@@ -293,6 +316,27 @@ export function CreateConfigureStep({
   renderRegionHierarchySelector,
 }: CreateConfigureStepProps) {
   const [showPreview, setShowPreview] = useState(false);
+  // Track whether resolution was auto-set (vs. manually overridden by user)
+  const [resolutionManuallySet, setResolutionManuallySet] = useState(false);
+
+  // Auto-derive resolution from primary platform selection
+  const handlePlatformToggle = (id: string) => {
+    const next = targetPlatformIds.includes(id)
+      ? targetPlatformIds.filter(p => p !== id)
+      : [...targetPlatformIds, id];
+    const finalPlatforms = next.length > 0 ? next : ['youtube'];
+    setTargetPlatformIds(finalPlatforms);
+
+    // Auto-set resolution from the first (primary) platform if user hasn't overridden
+    if (!resolutionManuallySet) {
+      const primaryId = finalPlatforms[0];
+      const defaults = PLATFORM_RESOLUTION_DEFAULTS[primaryId];
+      if (defaults) {
+        setSelectedResolution(defaults.resolution);
+        setSelectedAspectRatio(defaults.aspectRatio);
+      }
+    }
+  };
 
   // Completion checks
   const isPlatformComplete = targetPlatformIds.length > 0;
@@ -382,12 +426,7 @@ export function CreateConfigureStep({
                   }))
                 )}
                 selected={targetPlatformIds}
-                onToggle={(id) => {
-                  const next = targetPlatformIds.includes(id)
-                    ? targetPlatformIds.filter(p => p !== id)
-                    : [...targetPlatformIds, id];
-                  setTargetPlatformIds(next.length > 0 ? next : ['youtube']);
-                }}
+                onToggle={handlePlatformToggle}
                 multi
               />
             </div>
@@ -753,9 +792,10 @@ export function CreateConfigureStep({
                       <button
                         key={preset.id}
                         onClick={() => {
-                          // Set as primary resolution
+                          // Set as primary resolution (manual override)
                           setSelectedResolution(`${preset.width}x${preset.height}`);
                           setSelectedAspectRatio(preset.aspect_ratio);
+                          setResolutionManuallySet(true);
                           // Toggle in multi-output presets list
                           if (isSelected) {
                             setSelectedOutputPresets(selectedOutputPresets.filter(id => id !== preset.id));

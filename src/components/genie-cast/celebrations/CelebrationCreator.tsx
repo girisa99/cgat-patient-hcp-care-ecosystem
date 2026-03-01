@@ -9,7 +9,7 @@
  * Step 6: Review & Generate (full preview + generate button)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,23 +19,16 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, ArrowRight, Sparkles, Upload, Search } from 'lucide-react';
 import { useCelebrationProduction } from '@/hooks/useCelebrationProduction';
+import { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import { CelebrationUploadPanel } from './CelebrationUploadPanel';
 import { getSceneCount, getTargetDuration } from '@/config/celebrations/ceremony-scene-templates';
+import { partitionStylesByMatch, getStyleCategoriesForCeremony } from '@/config/style-category-format-map';
 import type { CeremonyCategory } from '@/config/celebrations/ceremony-type-registry';
 
 interface CelebrationCreatorProps {
   projectId?: string;
   onGenerate?: (result: ReturnType<ReturnType<typeof useCelebrationProduction>['generateProduction']>) => void;
 }
-
-const VISUAL_STYLES = [
-  { id: 'cinematic', name: 'Cinematic 4K', description: 'Film-quality, dramatic lighting' },
-  { id: 'pixar_3d', name: 'Pixar 3D', description: 'Animated 3D characters, vibrant' },
-  { id: 'watercolor', name: 'Watercolor', description: 'Soft, painterly art style' },
-  { id: 'cultural_art', name: 'Cultural Art', description: 'Traditional regional art style' },
-  { id: 'anime', name: 'Anime', description: 'Japanese animation style' },
-  { id: 'minimalist', name: 'Minimalist', description: 'Clean, modern, elegant' },
-];
 
 const REGION_OPTIONS = [
   { code: 'NAM', name: 'North America' },
@@ -79,9 +72,57 @@ export function CelebrationCreator({ projectId, onGenerate }: CelebrationCreator
     isGenerating,
   } = useCelebrationProduction();
 
+  const contentRegistry = useCastContentRegistry();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showUpload, setShowUpload] = useState(false);
+  const [selectedSubStyleId, setSelectedSubStyleId] = useState<string | null>(null);
   const searchResults = searchQuery.length > 1 ? searchCeremonies(searchQuery) : [];
+
+  // DB-driven styles: partition into Best Match / Compatible / More
+  // based on 'celebrations' category + selected format + ceremony-specific boost
+  const stylePartition = useMemo(() => {
+    const parentStyles = contentRegistry.visualStyles.filter(s => !s.parent_style_id);
+    if (parentStyles.length === 0) return { recommended: [], compatible: [], other: [] };
+
+    // Base partition against 'celebrations' + selected format
+    const formatName = selection.format ?? null;
+    const { recommended, compatible, other } = partitionStylesByMatch(
+      parentStyles, 'celebrations', formatName
+    );
+
+    // Ceremony-specific boost: styles whose category matches the ceremony's preferred categories
+    const ceremonyStyleCats = getStyleCategoriesForCeremony(selection.category ?? null);
+    if (ceremonyStyleCats.length === 0) return { recommended, compatible, other };
+
+    // Move styles from compatible/other → recommended if their category is ceremony-preferred
+    const boosted: typeof parentStyles = [];
+    const remainingCompatible: typeof parentStyles = [];
+    const remainingOther: typeof parentStyles = [];
+
+    for (const s of compatible) {
+      if (ceremonyStyleCats.includes(s.category)) boosted.push(s);
+      else remainingCompatible.push(s);
+    }
+    for (const s of other) {
+      if (ceremonyStyleCats.includes(s.category)) boosted.push(s);
+      else remainingOther.push(s);
+    }
+
+    return {
+      recommended: [...recommended, ...boosted],
+      compatible: remainingCompatible,
+      other: remainingOther,
+    };
+  }, [contentRegistry.visualStyles, selection.format, selection.category]);
+
+  // Sub-styles for the selected parent style
+  const subStyles = useMemo(() => {
+    if (!selection.visualStyle) return [];
+    return contentRegistry.visualStyles
+      .filter(s => s.parent_style_id === selection.visualStyle)
+      .sort((a, b) => a.sub_sort_order - b.sub_sort_order);
+  }, [contentRegistry.visualStyles, selection.visualStyle]);
 
   const handleGenerate = () => {
     const result = generateProduction();
@@ -364,20 +405,94 @@ export function CelebrationCreator({ projectId, onGenerate }: CelebrationCreator
             <CardTitle className="text-lg">Visual Style</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {VISUAL_STYLES.map(style => (
-                <button
-                  key={style.id}
-                  onClick={() => setVisualStyle(style.id)}
-                  className={`p-3 rounded-lg border text-left transition-colors hover:bg-accent ${
-                    selection.visualStyle === style.id ? 'border-primary bg-primary/5' : 'border-border'
-                  }`}
-                >
-                  <p className="text-sm font-medium">{style.name}</p>
-                  <p className="text-xs text-muted-foreground">{style.description}</p>
-                </button>
-              ))}
-            </div>
+            {/* DB-driven styles partitioned by ceremony relevance */}
+            {contentRegistry.visualStyles.length > 0 ? (
+              <div className="space-y-3">
+                {stylePartition.recommended.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-primary font-medium mb-2 block">Best Match</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {stylePartition.recommended.map(style => (
+                        <button
+                          key={style.id}
+                          onClick={() => { setVisualStyle(style.id); setSelectedSubStyleId(null); }}
+                          className={`p-3 rounded-lg border text-left transition-colors hover:bg-accent ${
+                            selection.visualStyle === style.id ? 'border-primary bg-primary/5' : 'border-border'
+                          }`}
+                        >
+                          <p className="text-sm font-medium">{style.label}</p>
+                          <p className="text-xs text-muted-foreground">{style.description || style.category}</p>
+                          <Badge variant="outline" className="text-[9px] mt-1">{style.category}</Badge>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {stylePartition.compatible.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground font-medium mb-2 block">Compatible</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {stylePartition.compatible.map(style => (
+                        <button
+                          key={style.id}
+                          onClick={() => { setVisualStyle(style.id); setSelectedSubStyleId(null); }}
+                          className={`p-3 rounded-lg border text-left transition-colors hover:bg-accent ${
+                            selection.visualStyle === style.id ? 'border-primary bg-primary/5' : 'border-border'
+                          }`}
+                        >
+                          <p className="text-sm font-medium">{style.label}</p>
+                          <p className="text-xs text-muted-foreground">{style.description || style.category}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {stylePartition.other.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground font-medium mb-2 block">More Styles</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {stylePartition.other.map(style => (
+                        <button
+                          key={style.id}
+                          onClick={() => { setVisualStyle(style.id); setSelectedSubStyleId(null); }}
+                          className={`p-3 rounded-lg border text-left transition-colors hover:bg-accent ${
+                            selection.visualStyle === style.id ? 'border-primary bg-primary/5' : 'border-border'
+                          }`}
+                        >
+                          <p className="text-sm font-medium">{style.label}</p>
+                          <p className="text-xs text-muted-foreground">{style.description || style.category}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-style selection when a parent is chosen */}
+                {subStyles.length > 0 && (
+                  <div className="pt-2 border-t">
+                    <Label className="text-xs font-medium mb-2 block">Sub-Styles</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {subStyles.map(sub => (
+                        <button
+                          key={sub.id}
+                          onClick={() => setSelectedSubStyleId(sub.id)}
+                          className={`p-2 rounded-lg border text-left transition-colors hover:bg-accent text-xs ${
+                            selectedSubStyleId === sub.id ? 'border-primary bg-primary/5' : 'border-border'
+                          }`}
+                        >
+                          <p className="font-medium">{sub.label}</p>
+                          {sub.description && <p className="text-muted-foreground mt-0.5">{sub.description}</p>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-20 border border-dashed rounded-lg text-xs text-muted-foreground">
+                Loading styles...
+              </div>
+            )}
 
             {/* Upload toggle */}
             {selectedCeremony?.supportsUploadRedesign && (

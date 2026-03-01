@@ -8,6 +8,7 @@
  */
 
 import { type VideoProvider, resolveVideoProviderOrder } from './style-intent-routing.ts';
+import { ACTIVE_MODELS } from './model-versions.ts';
 
 // ============================================================================
 // API KEY ACCESSORS
@@ -132,7 +133,7 @@ async function generateWithAlibabaWan(prompt: string, options: VideoGenOptions):
     '16:9': '1280*720', '9:16': '720*1280', '1:1': '960*960',
   };
   const size = sizeMap[options.aspectRatio || '16:9'] || '1280*720';
-  const model = options.model || 'wan2.6-t2v';
+  const model = options.model || ACTIVE_MODELS.video.alibabaT2V;
   const endpoint = 'https://dashscope-intl.aliyuncs.com';
 
   const response = await fetch(`${endpoint}/api/v1/services/aigc/video-generation/video-synthesis`, {

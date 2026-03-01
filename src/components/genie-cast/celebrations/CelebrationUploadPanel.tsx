@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, X, Image, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, X, Image, Loader2, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
 import { useCelebrationUploadRedesign } from '@/hooks/useCelebrationUploadRedesign';
 
 interface CelebrationUploadPanelProps {
@@ -20,8 +20,61 @@ interface CelebrationUploadPanelProps {
 }
 
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
+const ACCEPTED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.pdf'];
+const MAX_FILE_SIZE_MB = 20;
+const MAX_PHOTO_SIZE_MB = 10;
 const PHOTO_ROLES = ['bride', 'groom', 'couple', 'venue'] as const;
 const CONSENT_TEXT = 'I grant permission to use this photo for AI-generated video/image content in my celebration project';
+
+const DANGEROUS_EXTENSIONS = [
+  '.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs',
+  '.js', '.jar', '.wsf', '.wsh', '.ps1', '.msi', '.reg',
+];
+const SUSPICIOUS_PATTERNS = [
+  /\.\w+\.\w+$/, // Double extensions like file.pdf.exe
+  /[<>:"|?*]/,   // Invalid filename characters
+];
+
+/** Validate file before processing — mirrors SecureFileUpload patterns */
+function validateUploadFile(
+  file: File,
+  allowedTypes: string[],
+  allowedExtensions: string[],
+  maxSizeMB: number,
+): { valid: boolean; error?: string } {
+  // Extension check
+  const ext = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '');
+  if (DANGEROUS_EXTENSIONS.includes(ext)) {
+    return { valid: false, error: `Dangerous file type: ${ext}` };
+  }
+  if (!allowedExtensions.includes(ext)) {
+    return { valid: false, error: `Unsupported file type: ${ext}. Use ${allowedExtensions.join(', ')}` };
+  }
+
+  // MIME type check
+  if (file.type && !allowedTypes.includes(file.type)) {
+    return { valid: false, error: `Invalid file type: ${file.type}` };
+  }
+
+  // Size check
+  if (file.size > maxSizeMB * 1024 * 1024) {
+    return { valid: false, error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB (max ${maxSizeMB}MB)` };
+  }
+
+  // Suspicious patterns
+  for (const pattern of SUSPICIOUS_PATTERNS) {
+    if (pattern.test(file.name)) {
+      return { valid: false, error: `Suspicious filename pattern: ${file.name}` };
+    }
+  }
+
+  // Null byte / path traversal
+  if (file.name.includes('\0') || file.name.includes('../') || file.name.includes('..\\')) {
+    return { valid: false, error: 'Invalid filename detected' };
+  }
+
+  return { valid: true };
+}
 
 export function CelebrationUploadPanel({ onRedesignReady }: CelebrationUploadPanelProps) {
   const {
@@ -41,6 +94,7 @@ export function CelebrationUploadPanel({ onRedesignReady }: CelebrationUploadPan
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [dragActive, setDragActive] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // ── Upload handlers ──────────────────────────────────────────────────
 
@@ -55,19 +109,38 @@ export function CelebrationUploadPanel({ onRedesignReady }: CelebrationUploadPan
     e.preventDefault();
     setDragActive(false);
     const file = e.dataTransfer.files[0];
-    if (file && ACCEPTED_TYPES.includes(file.type)) {
-      uploadInvitation(file);
+    if (!file) return;
+    const check = validateUploadFile(file, ACCEPTED_TYPES, ACCEPTED_EXTENSIONS, MAX_FILE_SIZE_MB);
+    if (!check.valid) {
+      setValidationError(check.error ?? 'Invalid file');
+      return;
     }
+    setValidationError(null);
+    uploadInvitation(file);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) uploadInvitation(file);
+    if (!file) return;
+    const check = validateUploadFile(file, ACCEPTED_TYPES, ACCEPTED_EXTENSIONS, MAX_FILE_SIZE_MB);
+    if (!check.valid) {
+      setValidationError(check.error ?? 'Invalid file');
+      return;
+    }
+    setValidationError(null);
+    uploadInvitation(file);
   };
 
   const handlePhotoUpload = (role: typeof PHOTO_ROLES[number], e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) uploadPhoto(role, file);
+    if (!file) return;
+    const check = validateUploadFile(file, ['image/png', 'image/jpeg', 'image/webp'], ['.png', '.jpg', '.jpeg', '.webp'], MAX_PHOTO_SIZE_MB);
+    if (!check.valid) {
+      setValidationError(check.error ?? 'Invalid photo');
+      return;
+    }
+    setValidationError(null);
+    uploadPhoto(role, file);
   };
 
   const handleBuildRequest = () => {
@@ -94,7 +167,17 @@ export function CelebrationUploadPanel({ onRedesignReady }: CelebrationUploadPan
         >
           <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-3" />
           <p className="text-sm font-medium">Drop your invitation here or click to browse</p>
-          <p className="text-xs text-muted-foreground mt-1">Supports PNG, JPG, WebP, PDF</p>
+          <p className="text-xs text-muted-foreground mt-1">Supports PNG, JPG, WebP, PDF (max {MAX_FILE_SIZE_MB}MB)</p>
+          <div className="flex items-center gap-1 mt-2 text-[10px] text-muted-foreground">
+            <Shield className="w-3 h-3" />
+            <span>Files are security-validated before processing</span>
+          </div>
+          {validationError && (
+            <div className="mt-2 p-2 rounded bg-destructive/10 text-destructive text-xs flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              {validationError}
+            </div>
+          )}
           <input
             ref={fileInputRef}
             type="file"
