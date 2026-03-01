@@ -117,6 +117,14 @@
      tts: string;
      llm: string;
    };
+   /** Enrichment context from Configure step — consumed by PRODUCE dynamically */
+   enrichmentContext?: {
+     enrichmentPrompt: string;
+     imaginationPresetId: string | null;
+     visualStyleIds: string[];
+     capabilityIds: string[];
+     productionQuality: string;
+   };
  }
  
  export interface AuthoringState {

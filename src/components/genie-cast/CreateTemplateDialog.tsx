@@ -60,6 +60,14 @@ export interface CreateTemplateInitialContext {
   audience?: string;
   platform?: string;
   goal?: string;
+  /** Full CREATE context passthrough */
+  categoryName?: string;
+  formatName?: string;
+  visualStyleIds?: string[];
+  capabilityIds?: string[];
+  platformIds?: string[];
+  enrichmentPrompt?: string;
+  regionCode?: string;
 }
 
 interface CreateTemplateDialogProps {
@@ -238,7 +246,7 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
     }));
   }, [formData.regions.join(',')]);
 
-  // Pre-fill from context
+  // Pre-fill from context (supports both intent-based and full CREATE context passthrough)
   useEffect(() => {
     if (open && initialContext) {
       const productToCategoryMap: Record<string, string> = {
@@ -250,16 +258,29 @@ export function CreateTemplateDialog({ onCreated, templateToClone, externalOpen,
       const category = productToCategoryMap[initialContext.product || ''] || formData.category;
       const promptParts = [
         initialContext.product && `for ${initialContext.product} industry`,
+        initialContext.categoryName && `in ${initialContext.categoryName}`,
+        initialContext.formatName && `as ${initialContext.formatName}`,
         initialContext.audience && `targeting ${initialContext.audience.replace(/_/g, ' ')}`,
         initialContext.platform && `optimized for ${initialContext.platform}`,
         initialContext.goal && `focused on: ${initialContext.goal}`,
       ].filter(Boolean);
-      const aiPrompt = promptParts.length > 0 ? `Create a video template ${promptParts.join(', ')}` : '';
-      setFormData(prev => ({
-        ...prev, category, aiPrompt,
-        name: initialContext.goal ? `${(initialContext.goal as string).split(' — ')[0]} Template` : prev.name,
-        description: initialContext.goal ? `Custom template ${promptParts.join(', ')}` : prev.description,
-      }));
+      const aiPrompt = initialContext.enrichmentPrompt
+        || (promptParts.length > 0 ? `Create a video template ${promptParts.join(', ')}` : '');
+      const updates: Partial<typeof formData> = {
+        category,
+        aiPrompt,
+        name: initialContext.goal ? `${(initialContext.goal as string).split(' — ')[0]} Template` : undefined,
+        description: initialContext.goal ? `Custom template ${promptParts.join(', ')}` : undefined,
+      };
+      // Full CREATE context passthrough — pre-fill styles, capabilities, platforms
+      if (initialContext.visualStyleIds?.length) updates.videoStyles = initialContext.visualStyleIds;
+      if (initialContext.capabilityIds?.length) updates.capabilities = initialContext.capabilityIds;
+      if (initialContext.platformIds?.length) updates.platforms = initialContext.platformIds;
+      if (initialContext.enrichmentPrompt) {
+        updates.aiPrompt = initialContext.enrichmentPrompt;
+        if (!initialContext.goal) updates.description = initialContext.enrichmentPrompt;
+      }
+      setFormData(prev => ({ ...prev, ...Object.fromEntries(Object.entries(updates).filter(([_, v]) => v !== undefined)) }));
       setCurrentStep(0);
     }
   }, [open, initialContext]);

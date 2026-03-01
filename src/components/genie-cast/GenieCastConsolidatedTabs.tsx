@@ -477,6 +477,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
             .replace(/\{\{benefits\}\}/g, (messaging.benefits || []).join('. '))
             .replace(/\{\{pain_points\}\}/g, (messaging.painPoints || []).join('. '));
         }
+        // Enrichment injection: when no messaging AND no template script, use enrichment brief
+        const enrichment = castSession.session.enrichmentPrompt;
+        if (!messaging && enrichment && !scriptText) {
+          scriptText = enrichment;
+        }
         return {
           sceneId: scene.id,
           sceneKey: scene.scene_key,
@@ -508,6 +513,13 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           tts: resolved.ttsProvider,
           llm: resolved.llmProvider,
         },
+        enrichmentContext: {
+          enrichmentPrompt: castSession.session.enrichmentPrompt || '',
+          imaginationPresetId: castSession.session.imaginationPreset,
+          visualStyleIds: castSession.session.selectedVisualStyleIds,
+          capabilityIds: castSession.session.selectedCapabilityIds,
+          productionQuality: castSession.session.productionQuality,
+        },
       };
 
       setTemplateMappingRef(mapping);
@@ -519,6 +531,11 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
     authoring.state.templateMapping,
     castSession.session.approvedMessaging,
     castSession.session.selectedRegion,
+    castSession.session.enrichmentPrompt,
+    castSession.session.imaginationPreset,
+    castSession.session.selectedVisualStyleIds,
+    castSession.session.selectedCapabilityIds,
+    castSession.session.productionQuality,
     setTemplateMappingRef,
   ]);
 
@@ -1344,7 +1361,35 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   </Card>
                 )}
 
-                <BlueprintTemplatesGrid 
+                {/* Context Summary Banner — shows what the template grid is matching against */}
+                {!castSession.session.selectedTemplate && (selectedCategoryId || selectedFormatId) && (
+                  <div className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-lg border">
+                    <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                    <div className="flex flex-wrap gap-1.5 items-center text-xs">
+                      <span className="text-muted-foreground">Matching templates for:</span>
+                      {selectedCategoryId && contentRegistry.categories.find(c => c.id === selectedCategoryId) && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          {contentRegistry.categories.find(c => c.id === selectedCategoryId)!.label}
+                        </Badge>
+                      )}
+                      {selectedFormatId && contentRegistry.formats.find(f => f.id === selectedFormatId) && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          {contentRegistry.formats.find(f => f.id === selectedFormatId)!.label}
+                        </Badge>
+                      )}
+                      {enrichmentPrompt && (
+                        <Badge variant="outline" className="text-[10px] max-w-[200px] truncate">
+                          {enrichmentPrompt.slice(0, 40)}{enrichmentPrompt.length > 40 ? '...' : ''}
+                        </Badge>
+                      )}
+                      {imaginationPreset && (
+                        <Badge variant="outline" className="text-[10px]">Preset: {imaginationPreset}</Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <BlueprintTemplatesGrid
                   onSelectBlueprint={async (blueprint) => {
                     console.log('[GenieCast] Template selected:', blueprint.name);
 
@@ -1384,11 +1429,21 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     // Stay on templates — user confirms with "Continue to Assets"
                   }}
                   selectedBlueprintId={castSession.session.selectedTemplate?.id}
-                  simpleMode={createMode.isSimple}
                   intentFilter={castSession.session.selectedIntent}
                   categoryFilter={selectedCategoryId ? contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name || null : null}
                   formatFilter={selectedFormatId ? contentRegistry.formats.find(f => f.id === selectedFormatId)?.name || null : null}
                   selectedVideoStyles={selectedVideoStyles}
+                  createContext={{
+                    goal: castSession.session.selectedIntent || undefined,
+                    product: selectedCategoryId ? contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name : undefined,
+                    categoryName: selectedCategoryId ? contentRegistry.categories.find(c => c.id === selectedCategoryId)?.label : undefined,
+                    formatName: selectedFormatId ? contentRegistry.formats.find(f => f.id === selectedFormatId)?.label : undefined,
+                    visualStyleIds: castSession.session.selectedVisualStyleIds,
+                    capabilityIds: castSession.session.selectedCapabilityIds,
+                    platformIds: castSession.session.targetPlatformIds,
+                    enrichmentPrompt: castSession.session.enrichmentPrompt || undefined,
+                    regionCode: castSession.session.selectedRegion || undefined,
+                  }}
                 />
               </motion.div>
             )}

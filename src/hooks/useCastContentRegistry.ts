@@ -269,7 +269,12 @@ export function useCastContentRegistry() {
       setFormats(mergedFmts);
 
       // Merge sub-format seeds with DB data (resolve format_name → format_id)
-      const dbSubFormats = (sfRes.data || []) as unknown as ContentSubFormat[];
+      // Map DB column `enrichment_preset` → code field `enrichment_overrides` (DB uses different name)
+      const dbSubFormats = ((sfRes.data || []) as any[]).map((sf: any) => ({
+        ...sf,
+        enrichment_overrides: sf.enrichment_preset || sf.enrichment_overrides || {},
+        category_id: sf.category_id || null,
+      })) as ContentSubFormat[];
       const dbSubNames = new Set(dbSubFormats.map(sf => sf.name));
       const seedSubFormats: ContentSubFormat[] = SEED_SUB_FORMATS
         .filter(ss => !dbSubNames.has(ss.name))

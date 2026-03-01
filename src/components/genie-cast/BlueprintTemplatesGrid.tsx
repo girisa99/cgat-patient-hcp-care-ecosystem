@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,8 +43,8 @@ interface BlueprintTemplatesGridProps {
   intentFilter?: string | null;
   categoryFilter?: string | null;
   formatFilter?: string | null;
-  simpleMode?: boolean;
   selectedVideoStyles?: any[];
+  createContext?: import('./CreateTemplateDialog').CreateTemplateInitialContext | null;
 }
 
 const CATEGORY_PLACEHOLDER_THUMBNAILS: Record<string, string> = {
@@ -70,6 +71,7 @@ export function BlueprintTemplatesGrid({
   categoryFilter,
   formatFilter,
   selectedVideoStyles,
+  createContext,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
   const { blueprints, isLoading, refetch, deleteBlueprint, isDeleting } = useVideoBlueprints();
@@ -119,13 +121,18 @@ export function BlueprintTemplatesGrid({
       return blueprints.slice(0, 12);
     }
 
-    // Sort templates with matching styles to the top
+    // Sort templates with matching styles to the top (weighted: style_intent > industry_tags > aesthetic_keywords)
     if (selectedVideoStyles && selectedVideoStyles.length > 0) {
       const styleNames = new Set(selectedVideoStyles.map((s: any) => (s.name || s.label || '').toLowerCase()));
       return [...source].sort((a, b) => {
-        const aMatch = a.industry_tags?.some(t => styleNames.has(t.toLowerCase())) ? 1 : 0;
-        const bMatch = b.industry_tags?.some(t => styleNames.has(t.toLowerCase())) ? 1 : 0;
-        return bMatch - aMatch;
+        const scoreMatch = (bp: VideoBlueprint) => {
+          let score = 0;
+          if (bp.industry_tags?.some(t => styleNames.has(t.toLowerCase()))) score += 2;
+          if (bp.style_intent && styleNames.has(bp.style_intent.toLowerCase())) score += 3;
+          if ((bp as any).aesthetic_keywords?.some((k: string) => styleNames.has(k.toLowerCase()))) score += 1;
+          return score;
+        };
+        return scoreMatch(b) - scoreMatch(a);
       });
     }
 
@@ -424,12 +431,12 @@ export function BlueprintTemplatesGrid({
         />
       )}
 
-      <CreateTemplateDialog 
+      <CreateTemplateDialog
         onCreated={handleTemplateCreated}
-        initialContext={selectedIntentData ? {
+        initialContext={createContext || (selectedIntentData ? {
           goal: `${selectedIntentData.label} — ${selectedIntentData.description}`,
           product: selectedIntentData.category,
-        } : intentFilter ? { goal: intentFilter } : undefined}
+        } : intentFilter ? { goal: intentFilter } : undefined)}
         externalOpen={showCreateDialog}
         onExternalOpenChange={setShowCreateDialog}
       />
@@ -448,5 +455,3 @@ export function BlueprintTemplatesGrid({
     </div>
   );
 }
-
-import { Checkbox } from '@/components/ui/checkbox';
