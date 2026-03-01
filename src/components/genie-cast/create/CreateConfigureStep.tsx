@@ -1,11 +1,12 @@
 /**
  * CREATE CONFIGURE STEP — Redesigned for Intuitive UX
  *
- * Steps 4-7 of the CREATE workflow:
- * - Step 4: Platform & Languages (primary platform, input language, script transcreation, dubbing/subtitle)
- * - Step 5: Visual & Asset Configuration (styles, resolution, characters, duration, capabilities, asset source, lip-sync, dubbing)
- * - Step 6: Universal Enrichment Prompt
- * - Step 7: Production & Safety Pipeline (info only)
+ * Configure step of the CREATE workflow:
+ * - 1. Platform & Languages (primary platform, input language, script transcreation, dubbing/subtitle)
+ * - 2. Visual & Asset Configuration (styles, resolution, characters, duration, capabilities, asset source, lip-sync, dubbing)
+ * - 3. Resolution & Quality
+ * - 4. Creative Vision & Enrichment
+ * - 5. Production & Safety Pipeline (info only)
  *
  * UX Improvements:
  * - Tooltips on every section explaining what it does
@@ -81,6 +82,24 @@ import {
 } from '@/services/production/creativeImaginationRegistry';
 import type { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import type { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
+
+/** Per-category enrichment prompt tags — dynamically shown based on selected category */
+const ENRICHMENT_TAG_MAP: Record<string, string[]> = {
+  healthcare: ['Patient Education', 'HCP Training', 'Clinical Evidence', 'Drug MOA', 'Compliance', 'Patient Journey'],
+  education: ['Curriculum Aligned', 'Student Engagement', 'Assessment Ready', 'E-Learning', 'Micro-Learning', 'Interactive'],
+  technology: ['Product Demo', 'Developer Docs', 'Architecture Overview', 'Release Notes', 'API Walkthrough', 'Tech Deep-Dive'],
+  finance: ['ROI Focus', 'Compliance Safe', 'Market Analysis', 'Investor Ready', 'Risk Awareness', 'Regulatory Update'],
+  retail: ['Brand Story', 'Product Showcase', 'Customer Testimonial', 'Flash Sale', 'Seasonal Campaign', 'Competitive Edge'],
+  entertainment: ['Trailer Style', 'Behind the Scenes', 'Fan Engagement', 'Premiere Event', 'Artist Spotlight', 'Cultural Impact'],
+  government: ['Public Service', 'Policy Explainer', 'Civic Engagement', 'Transparency Report', 'Town Hall', 'Accessibility'],
+  manufacturing: ['Safety Training', 'Process Optimization', 'Quality Control', 'ESG Reporting', 'Operational Update', 'Supply Chain'],
+  travel: ['Destination Showcase', 'Cultural Guide', 'Hotel Tour', 'Travel Vlog', 'Itinerary Builder', 'Local Experience'],
+  celebrations: ['Cultural Ceremony', 'Family Story', 'Regional Traditions', 'Invitation Style', 'Blessing & Prayer', 'Life Milestone'],
+  agriculture: ['Farm-to-Table', 'Crop Report', 'AgriTech Demo', 'Sustainability', 'Seasonal Update', 'Soil & Climate'],
+  real_estate: ['Virtual Tour', 'Property Listing', 'Market Analysis', 'Agent Branding', 'Investment Case', 'Neighborhood Guide'],
+  pharma_biotech: ['Drug MOA', 'Clinical Trial', 'HCP Detailing', 'Patient Safety', 'Regulatory Filing', 'Biotech Innovation'],
+  _default: ['Brand Story', 'Product Demo', 'ROI Focus', 'Thought Leadership', 'Competitive Edge', 'Customer Testimonial'],
+};
 
 /**
  * Fallback styles from the code-based unified registry (93 styles).
@@ -419,10 +438,10 @@ export function CreateConfigureStep({
       />
 
       {/* ================================================================ */}
-      {/* STEP 4: Platform + Languages                                     */}
+      {/* Platform + Languages                                              */}
       {/* ================================================================ */}
       <ConfigSection
-        step={4}
+        step={1}
         title="Platform & Languages"
         description="Select your primary platform and output languages for regional distribution."
         tooltip="Choose where your content will be published (YouTube, TikTok, etc.) and which languages to generate. The platform choice auto-optimizes aspect ratio and duration. Languages enable AI transcreation for each region."
@@ -558,10 +577,10 @@ export function CreateConfigureStep({
       </ConfigSection>
 
       {/* ================================================================ */}
-      {/* STEP 5: Visual & Asset Configuration                             */}
+      {/* Visual & Asset Configuration                                     */}
       {/* ================================================================ */}
       <ConfigSection
-        step={5}
+        step={2}
         title="Visual & Asset Configuration"
         description="Generation style, capabilities, asset source, lip-sync & dubbing settings."
         tooltip="Define the look and feel of your content. Pick visual styles (cinematic, minimal, etc.), choose AI capabilities (avatar, lip-sync, 3D), set resolution, and configure how assets are sourced. Each style auto-selects recommended capabilities."
@@ -1184,10 +1203,10 @@ export function CreateConfigureStep({
       </ConfigSection>
 
       {/* ================================================================ */}
-      {/* Resolution & Quality (extends Step 5)                            */}
+      {/* Resolution & Quality                                             */}
       {/* ================================================================ */}
       <ConfigSection
-        step={5}
+        step={3}
         title="Resolution & Quality"
         description="Output resolution, aspect ratio, and production quality settings."
         tooltip="Set the pixel resolution and aspect ratio for your output. Higher resolution takes longer to render. Quality presets control encoding: Preview is fast/low-size, Production is balanced, Cinematic is highest fidelity."
@@ -1270,10 +1289,10 @@ export function CreateConfigureStep({
       </ConfigSection>
 
       {/* ================================================================ */}
-      {/* STEP 6: Universal Enrichment Prompt + Imagination Preset          */}
+      {/* Creative Vision & Enrichment                                     */}
       {/* ================================================================ */}
       <ConfigSection
-        step={6}
+        step={4}
         title="Creative Vision & Enrichment"
         description="Pick a visual world preset and describe your vision. AI generates full production configs scoped by ALL above selections."
         tooltip="Choose an imagination preset to set the visual DNA (style, music, characters, narrative), then write your creative brief. The enrichment engine combines preset + prompt + region + style to build the complete production pipeline."
@@ -1421,7 +1440,7 @@ export function CreateConfigureStep({
               onChange={(e) => setEnrichmentPrompt(e.target.value)}
             />
             <div className="flex gap-2 flex-wrap">
-              {['Patient Services', 'ROI Focus', 'Brand Story', 'Product Demo', 'Competitive Edge', 'Thought Leadership'].map(tag => (
+              {(ENRICHMENT_TAG_MAP[contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name || ''] || ENRICHMENT_TAG_MAP._default).map(tag => (
                 <Badge
                   key={tag}
                   variant="outline"
@@ -1448,10 +1467,10 @@ export function CreateConfigureStep({
       </ConfigSection>
 
       {/* ================================================================ */}
-      {/* STEP 7 Preview: Safety Pipeline (info only)                      */}
+      {/* Production & Safety Pipeline (info only)                         */}
       {/* ================================================================ */}
       <ConfigSection
-        step={7}
+        step={5}
         title="Production & Safety Pipeline"
         description="Automated safety checks run during production."
         tooltip="These safety checks run automatically when your content is produced. They detect faces, enforce style guidelines (no deepfakes), add provenance watermarks (C2PA), and handle legal consent workflows. No action needed from you."

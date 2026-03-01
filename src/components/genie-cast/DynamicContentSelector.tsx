@@ -32,7 +32,7 @@ interface DynamicContentSelectorProps {
   formats: ContentFormat[];
   subFormats?: ContentSubFormat[];
   getFormatsForCategory: (categoryId: string) => ContentFormat[];
-  getSubFormatsForFormat?: (formatId: string) => ContentSubFormat[];
+  getSubFormatsForFormat?: (formatId: string, categoryId?: string) => ContentSubFormat[];
   selectedCategoryId: string | null;
   selectedFormatId: string | null;
   selectedSubFormatId?: string | null;
@@ -83,8 +83,8 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
 
   const availableSubFormats = useMemo(() => {
     if (!selectedFormatId || !getSubFormatsForFormat) return [];
-    return getSubFormatsForFormat(selectedFormatId);
-  }, [selectedFormatId, getSubFormatsForFormat]);
+    return getSubFormatsForFormat(selectedFormatId, selectedCategoryId || undefined);
+  }, [selectedFormatId, selectedCategoryId, getSubFormatsForFormat]);
 
   const selectedCategory = categories.find(c => c.id === selectedCategoryId);
   const selectedFormat = availableFormats.find(f => f.id === selectedFormatId);

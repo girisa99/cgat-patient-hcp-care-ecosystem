@@ -24,9 +24,17 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { quickEnhance } from '@/services/promptEnhancementEngine';
 import type { VisualStyle } from '@/hooks/useCastContentRegistry';
 
 interface StyleCustomizationPanelProps {
@@ -43,6 +51,7 @@ const UPLOAD_ACCEPT = {
   'image/*': ['.png', '.jpg', '.jpeg', '.webp'],
   'image/svg+xml': ['.svg'],
   'video/*': ['.mp4', '.webm', '.mov'],
+  'application/pdf': ['.pdf'],
   'application/octet-stream': ['.psd', '.ai'],
 };
 
@@ -50,6 +59,7 @@ const FILE_TYPE_ICONS: Record<string, React.ReactNode> = {
   image: <FileImage className="w-4 h-4" />,
   video: <Video className="w-4 h-4" />,
   svg: <FileCode className="w-4 h-4" />,
+  pdf: <File className="w-4 h-4" />,
   psd: <File className="w-4 h-4" />,
 };
 
@@ -67,6 +77,7 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [generatedPreviewUrl, setGeneratedPreviewUrl] = useState<string | null>(null);
   const [previewTargetStyleId, setPreviewTargetStyleId] = useState<string | null>(null);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
 
   // Upload state
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
@@ -92,6 +103,26 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // ═══ ENHANCE PROMPT (local, instant) ═══
+  const handleEnhancePrompt = useCallback(() => {
+    if (!aiPrompt.trim()) return;
+    try {
+      const enhanced = quickEnhance({
+        rawPrompt: aiPrompt,
+        format: 'style_preview' as any,
+        mode: 'auto',
+      });
+      if (enhanced.enhancedPrompt && enhanced.enhancedPrompt !== aiPrompt) {
+        setAiPrompt(enhanced.enhancedPrompt);
+        toast.success('Prompt enhanced');
+      } else {
+        toast.info('Prompt is already well-crafted');
+      }
+    } catch {
+      toast.info('Enhancement unavailable — using original prompt');
+    }
+  }, [aiPrompt]);
+
   // ═══ AI GENERATE PREVIEW ═══
   const handleGeneratePreview = useCallback(async (targetStyleId?: string) => {
     if (!aiPrompt.trim()) {
@@ -104,7 +135,17 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
       const styleLabel = targetStyleId
         ? allStyles.find(s => s.id === targetStyleId)?.label
         : 'custom style';
-      const fullPrompt = `Style preview for "${styleLabel}": ${aiPrompt}. Create a visually representative sample image that showcases this visual style. The image should be IP-safe, non-photorealistic, and demonstrate the aesthetic clearly.`;
+      // Enhance prompt before sending to image generation
+      let enhancedText = aiPrompt;
+      try {
+        const enhanced = quickEnhance({
+          rawPrompt: aiPrompt,
+          format: 'style_preview' as any,
+          mode: 'auto',
+        });
+        if (enhanced.enhancedPrompt) enhancedText = enhanced.enhancedPrompt;
+      } catch { /* use original if enhancement fails */ }
+      const fullPrompt = `Style preview for "${styleLabel}": ${enhancedText}. Create a visually representative sample image that showcases this visual style. The image should be IP-safe, non-photorealistic, and demonstrate the aesthetic clearly.`;
 
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
@@ -122,11 +163,11 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
       const imageUrl = data?.image_url || data?.imageUrl || data?.url || data?.preview_url;
       if (imageUrl) {
         setGeneratedPreviewUrl(imageUrl);
-        toast.success('Preview generated! Review it below.');
+        setShowPreviewDialog(true); // Auto-open popup
+        toast.success('Preview generated!');
         onPreviewGenerated?.(targetStyleId || '', imageUrl);
       } else {
         toast.info('AI preview generation queued — image will appear when ready');
-        // Fallback: set a placeholder
         setGeneratedPreviewUrl(null);
       }
     } catch (err: any) {
@@ -163,6 +204,7 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
     let fileType = 'image';
     if (['mp4', 'webm', 'mov'].includes(ext)) fileType = 'video';
     else if (ext === 'svg') fileType = 'svg';
+    else if (ext === 'pdf') fileType = 'pdf';
     else if (['psd', 'ai'].includes(ext)) fileType = 'psd';
 
     setIsUploading(true);
@@ -293,6 +335,15 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
               />
               <div className="flex items-center gap-2 flex-wrap">
                 <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1.5"
+                  onClick={handleEnhancePrompt}
+                  disabled={!aiPrompt.trim()}
+                >
+                  <Wand2 className="w-3 h-3" /> Enhance
+                </Button>
+                <Button
                   variant="default"
                   size="sm"
                   className="text-xs gap-1.5"
@@ -311,23 +362,24 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
                 </Button>
                 <span className="text-[10px] text-muted-foreground">IP-safe • No trademarks • Cultural-aware</span>
               </div>
-              {/* Generated preview */}
+              {/* Generated preview thumbnail — click to open full popup */}
               {generatedPreviewUrl && (
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-lg border overflow-hidden bg-muted/20"
+                  className="rounded-lg border overflow-hidden bg-muted/20 cursor-pointer"
+                  onClick={() => setShowPreviewDialog(true)}
                 >
                   <img src={generatedPreviewUrl} alt="AI Generated Preview" className="w-full h-32 object-cover" />
                   <div className="p-2 flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground">AI-generated preview</span>
+                    <span className="text-[10px] text-muted-foreground">Click to enlarge</span>
                     <div className="flex gap-1.5">
                       {selectedStyles.length > 0 && (
                         <Button
                           variant="outline"
                           size="sm"
                           className="text-[10px] h-6 gap-1"
-                          onClick={() => handleSavePreviewToStyle(selectedStyles[0].id)}
+                          onClick={(e) => { e.stopPropagation(); handleSavePreviewToStyle(selectedStyles[0].id); }}
                         >
                           <Save className="w-3 h-3" /> Save to {selectedStyles[0].label}
                         </Button>
@@ -336,7 +388,7 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
                         variant="ghost"
                         size="sm"
                         className="text-[10px] h-6"
-                        onClick={() => setGeneratedPreviewUrl(null)}
+                        onClick={(e) => { e.stopPropagation(); setGeneratedPreviewUrl(null); }}
                       >
                         <X className="w-3 h-3" />
                       </Button>
@@ -344,6 +396,64 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
                   </div>
                 </motion.div>
               )}
+
+              {/* Full-size preview popup dialog */}
+              <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm flex items-center gap-2">
+                      <Wand2 className="w-4 h-4 text-primary" />
+                      AI Style Preview
+                    </DialogTitle>
+                    <DialogDescription className="text-xs">
+                      {aiPrompt || 'Generated style preview'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  {generatedPreviewUrl && (
+                    <div className="space-y-3">
+                      <img
+                        src={generatedPreviewUrl}
+                        alt="AI Generated Style Preview"
+                        className="w-full rounded-lg border"
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">IP-safe AI-generated preview</span>
+                        <div className="flex gap-2">
+                          {selectedStyles.length > 0 && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="text-xs gap-1.5"
+                              onClick={() => {
+                                handleSavePreviewToStyle(selectedStyles[0].id);
+                                setShowPreviewDialog(false);
+                              }}
+                            >
+                              <Save className="w-3.5 h-3.5" /> Save to {selectedStyles[0].label}
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs gap-1.5"
+                            onClick={() => handleGeneratePreview(previewTargetStyleId || selectedStyles[0]?.id)}
+                          >
+                            <Sparkles className="w-3.5 h-3.5" /> Regenerate
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => { setGeneratedPreviewUrl(null); setShowPreviewDialog(false); }}
+                          >
+                            Discard
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
             </motion.div>
           )}
         </AnimatePresence>
@@ -373,6 +483,7 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
                   { type: 'image', label: 'PNG/JPG/WEBP', icon: '🖼️' },
                   { type: 'svg', label: 'SVG/Vector', icon: '📐' },
                   { type: 'video', label: 'MP4/WEBM', icon: '🎬' },
+                  { type: 'pdf', label: 'PDF', icon: '📄' },
                   { type: 'psd', label: 'PSD/AI', icon: '🎨' },
                 ].map(ft => (
                   <Badge key={ft.type} variant="outline" className="text-[9px] px-1.5">
@@ -387,7 +498,7 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
                 <input
                   type="file"
                   className="hidden"
-                  accept=".png,.jpg,.jpeg,.webp,.svg,.mp4,.webm,.mov,.psd,.ai"
+                  accept=".png,.jpg,.jpeg,.webp,.svg,.mp4,.webm,.mov,.pdf,.psd,.ai"
                   onChange={handleFileUpload}
                   disabled={isUploading}
                 />

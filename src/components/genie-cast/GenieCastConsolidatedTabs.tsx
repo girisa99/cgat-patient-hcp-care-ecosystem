@@ -1057,6 +1057,16 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
         {/* CREATE TAB CONTENT */}
         {/* ═══════════════════════════════════════════════════════════════ */}
         <TabsContent value="create" className="mt-4 space-y-4">
+          {/* ── Breadcrumb Progress Bar ── */}
+          <CreateStepProgress
+            currentStep={(subTabs.create || 'intent') as any}
+            completedSteps={[
+              ...(castSession.session.selectedIntent || castSession.session.selectedTemplate ? ['discover', 'intent'] as any[] : []),
+              ...(castSession.session.selectedIntent && selectedFormatId ? ['configure'] as any[] : []),
+            ]}
+            onStepClick={(step) => setSubTab('create', step as any)}
+            className="px-1 mb-2"
+          />
           <CreateSubWizard
             activeSubTab={subTabs.create}
             onSubTabChange={(sub) => setSubTab('create', sub)}
@@ -1131,12 +1141,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   if (castSession.session.projectId) {
                     castProjects.updateProject(castSession.session.projectId, { format_id: fmt.id, sub_format_id: null } as any).catch(() => {});
                   }
-                  // Check if sub-formats exist for this format — if not, advance
-                  const subs = contentRegistry.getSubFormatsForFormat(fmt.id);
+                  // Check if sub-formats exist for this format+category — if not, advance
+                  const subs = contentRegistry.getSubFormatsForFormat(fmt.id, selectedCategoryId || undefined);
                   if (subs.length === 0) {
-                    const needsMessaging = contentRegistry.requiresMessaging(fmt.id, selectedCategoryId || undefined);
                     castSession.selectIntent(fmt.name as any);
                     setSubTab('create', 'configure');
+                    toast.success(`${fmt.label} selected — configuring style & platforms`);
                   }
                   // If sub-formats exist, stay on step — user picks sub-format next
                 }}
@@ -1147,10 +1157,10 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   if (castSession.session.projectId) {
                     castProjects.updateProject(castSession.session.projectId, { sub_format_id: sf.id } as any).catch(() => {});
                   }
-                  // After sub-format selection, advance to templates
-                  const needsMessaging = contentRegistry.requiresMessaging(selectedFormatId || '', selectedCategoryId || undefined);
+                  // After sub-format selection, advance to configure
                   castSession.selectIntent((sf.name || selectedFormatId) as any);
                   setSubTab('create', 'configure');
+                  toast.success(`${sf.label} selected — configuring style & platforms`);
                 }}
                 onAddCategory={contentRegistry.addCategory}
                 onAddFormat={contentRegistry.addFormat}
@@ -1186,7 +1196,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 className="h-auto p-0 text-xs text-primary"
                 onClick={() => {
                   castSession.selectIntent(null as any);
-                  castSession.resetSession();
+                  // Do NOT call resetSession() — preserve styles, platforms, enrichment
                   setSelectedCategoryId(null);
                   setSelectedFormatId(null);
                   setSelectedSubFormatId(null);
@@ -1249,7 +1259,12 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                 holidayAwareness={holidayAwareness}
                 onDialectChange={handleDialectChange}
                 onBackToIntent={() => {
+                  // MUST clear selectedIntent so DynamicContentSelector renders
                   castSession.selectIntent(null as any);
+                  setSelectedCategoryId(null);
+                  setSelectedFormatId(null);
+                  setSelectedSubFormatId(null);
+                  // Do NOT call resetSession() — preserve styles, platforms, enrichment
                   setSubTab('create', 'intent');
                 }}
                 onContinueToTemplates={() => setSubTab('create', 'templates')}
@@ -1372,6 +1387,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   simpleMode={createMode.isSimple}
                   intentFilter={castSession.session.selectedIntent}
                   categoryFilter={selectedCategoryId ? contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name || null : null}
+                  formatFilter={selectedFormatId ? contentRegistry.formats.find(f => f.id === selectedFormatId)?.name || null : null}
                   selectedVideoStyles={selectedVideoStyles}
                 />
               </motion.div>

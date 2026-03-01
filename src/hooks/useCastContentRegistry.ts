@@ -9,7 +9,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { SEED_CATEGORIES, SEED_FORMATS, SEED_CATEGORY_FORMAT_LINKS, mergeWithSeeds } from '@/config/cast-content-seeds';
+import { SEED_CATEGORIES, SEED_FORMATS, SEED_SUB_FORMATS, mergeWithSeeds, generateSeedLinks } from '@/config/cast-content-seeds';
+import type { SeedSubFormat } from '@/config/cast-content-seeds';
 
 export interface ContentCategory {
   id: string;
@@ -52,6 +53,7 @@ export interface ContentSubFormat {
   enrichment_overrides: Record<string, unknown>;
   sort_order: number;
   is_active: boolean;
+  category_id?: string | null; // When set, sub-format is category-specific; null = universal
 }
 
 export interface CategoryFormatLink {
@@ -261,10 +263,43 @@ export function useCastContentRegistry() {
       if (cfRes.error) throw cfRes.error;
 
       // Merge DB data with code-defined seeds — DB entries with same name take precedence
-      setCategories(mergeWithSeeds((catRes.data || []) as unknown as ContentCategory[], SEED_CATEGORIES));
-      setFormats(mergeWithSeeds((fmtRes.data || []) as unknown as ContentFormat[], SEED_FORMATS));
-      setSubFormats((sfRes.data || []) as unknown as ContentSubFormat[]);
-      setCategoryFormats([...((cfRes.data || []) as unknown as CategoryFormatLink[]), ...SEED_CATEGORY_FORMAT_LINKS]);
+      const mergedCats = mergeWithSeeds((catRes.data || []) as unknown as ContentCategory[], SEED_CATEGORIES);
+      const mergedFmts = mergeWithSeeds((fmtRes.data || []) as unknown as ContentFormat[], SEED_FORMATS);
+      setCategories(mergedCats);
+      setFormats(mergedFmts);
+
+      // Merge sub-format seeds with DB data (resolve format_name → format_id)
+      const dbSubFormats = (sfRes.data || []) as unknown as ContentSubFormat[];
+      const dbSubNames = new Set(dbSubFormats.map(sf => sf.name));
+      const seedSubFormats: ContentSubFormat[] = SEED_SUB_FORMATS
+        .filter(ss => !dbSubNames.has(ss.name))
+        .map((ss, i) => {
+          const parentFormat = mergedFmts.find(f => f.name === ss.format_name);
+          return {
+            id: `seed-sf-${ss.name}`,
+            format_id: parentFormat?.id || '',
+            name: ss.name,
+            label: ss.label,
+            icon: ss.icon || 'FileText',
+            color: ss.color || 'text-primary',
+            description: ss.description || null,
+            blueprint_template_id: null,
+            enrichment_overrides: {},
+            sort_order: 900 + i,
+            is_active: true,
+            category_id: null, // Universal — available to all categories
+          };
+        })
+        .filter(sf => sf.format_id); // Drop if parent format not found
+      setSubFormats([...dbSubFormats, ...seedSubFormats]);
+
+      // Generate category-format links using actual merged IDs (solves seed-ID vs DB-UUID mismatch)
+      const dbLinks = (cfRes.data || []) as unknown as CategoryFormatLink[];
+      const dynamicSeedLinks = generateSeedLinks(mergedCats, mergedFmts);
+      // Deduplicate: DB links take precedence over seed links for the same cat+fmt pair
+      const dbLinkKeys = new Set(dbLinks.map(l => `${l.category_id}::${l.format_id}`));
+      const uniqueSeedLinks = dynamicSeedLinks.filter(l => !dbLinkKeys.has(`${l.category_id}::${l.format_id}`));
+      setCategoryFormats([...dbLinks, ...uniqueSeedLinks]);
       setVisualStyles((vsRes.data || []) as unknown as VisualStyle[]);
       setProductionCapabilities((pcRes.data || []) as unknown as ProductionCapability[]);
       setAssetSourceTypes((asRes.data || []) as unknown as AssetSourceType[]);
@@ -291,9 +326,13 @@ export function useCastContentRegistry() {
     return formats.filter(f => linkedFormatIds.has(f.id));
   }, [formats, categoryFormats]);
 
-  /** Get sub-formats for a given format */
-  const getSubFormatsForFormat = useCallback((formatId: string): ContentSubFormat[] => {
-    return subFormats.filter(sf => sf.format_id === formatId);
+  /** Get sub-formats for a given format, optionally filtered by category.
+   *  When categoryId is provided, returns category-specific + universal (null category_id) sub-formats. */
+  const getSubFormatsForFormat = useCallback((formatId: string, categoryId?: string): ContentSubFormat[] => {
+    const formatSubs = subFormats.filter(sf => sf.format_id === formatId);
+    if (!categoryId) return formatSubs;
+    // Show: category-specific sub-formats + universal ones (null category_id)
+    return formatSubs.filter(sf => !sf.category_id || sf.category_id === categoryId);
   }, [subFormats]);
 
   /** Check if a format requires a separate messaging/positioning step */
@@ -325,6 +364,23 @@ export function useCastContentRegistry() {
         .single();
 
       if (error) throw error;
+
+      // Auto-create category-format links for all core formats
+      const coreFormatNames = new Set([
+        'podcast', 'webcast', 'video', 'presentation', 'script', 'tts', 'voice', 'ugc',
+        'training', 'infographic', 'live_streaming',
+      ]);
+      const coreFormats = formats.filter(f => coreFormatNames.has(f.name));
+      if (coreFormats.length > 0 && newCat) {
+        const links = coreFormats.map(f => ({
+          category_id: (newCat as any).id,
+          format_id: f.id,
+          enrichment_overrides: {},
+          is_active: true,
+        }));
+        await supabase.from('cast_category_formats').insert(links).throwOnError();
+      }
+
       toast.success(`Category "${data.label}" added`);
       await fetchAll();
       return newCat;
@@ -333,7 +389,7 @@ export function useCastContentRegistry() {
       toast.error('Failed to add category');
       return null;
     }
-  }, [categories.length, fetchAll]);
+  }, [categories.length, formats, fetchAll]);
 
   /** Add a new format dynamically */
   const addFormat = useCallback(async (data: {

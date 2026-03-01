@@ -88,6 +88,27 @@ const STYLE_TO_CATEGORIES: Record<string, string[] | '*'> = {
   photorealistic: ['commercial', 'celebrations', 'real_estate', 'travel', 'automotive',
                    'hospitality_hotels', 'fashion_apparel', 'food_beverage'],
 
+  // ── Previously orphaned categories (master-ecosystem-registry) ──────
+  // 3d_vr_ar — immersive 3D/VR/AR styles
+  '3d_vr_ar':    ['technology', 'real_estate', 'automotive', 'construction', 'aerospace_defense',
+                  'gaming_esports', 'education', 'celebrations'],
+  // audio — audio-focused production styles
+  audio:         ['media', 'education', 'entertainment', 'music_arts', 'celebrations'],
+  // document — document/report generation styles
+  document:      ['education', 'healthcare', 'government', 'finance', 'legal', 'insurance'],
+  // image — static image/graphic styles
+  image:         '*',
+  // localization — translation/localization styles
+  localization:  ['media', 'commercial', 'education', 'healthcare', 'government', 'technology'],
+  // repurposing — content repurposing styles
+  repurposing:   ['media', 'commercial', 'education', 'entertainment', 'marketing'],
+  // text_based — text-heavy content styles
+  text_based:    ['education', 'healthcare', 'government', 'finance', 'legal', 'nonprofit'],
+  // training_ld — learning & development styles
+  training_ld:   ['education', 'healthcare', 'technology', 'government', 'commercial'],
+  // video — general video production category
+  video:         '*',
+
   // ── Legacy category aliases (kept for backward compat with DB styles) ──
   media:         ['media', 'commercial', 'celebrations', 'entertainment', 'music_arts', 'sports_fitness'],
   education:     ['education', 'ai_ml', 'cybersecurity'],
@@ -144,6 +165,17 @@ const STYLE_TO_FORMATS: Record<string, string[] | '*'> = {
   educational:   ['video', 'presentation', 'webcast', 'podcast'],
   cyber:         ['video', 'presentation'],
   photorealistic: ['video', 'ugc', ...CELEBRATION_FORMATS],
+
+  // ── Previously orphaned categories (format mappings) ─────────────
+  '3d_vr_ar':    ['video', 'presentation', ...CELEBRATION_FORMATS],
+  audio:         ['podcast', 'voice', 'tts', ...CELEBRATION_FORMATS],
+  document:      ['script', 'presentation'],
+  image:         '*',
+  localization:  '*',
+  repurposing:   ['video', 'podcast', 'ugc', ...CELEBRATION_FORMATS],
+  text_based:    ['script', 'presentation'],
+  training_ld:   ['video', 'presentation', 'webcast'],
+  video:         '*',
 
   // ── Legacy category aliases ───────────────────────────────────────
   framework:     ['presentation', 'video', 'script'],

@@ -24,17 +24,7 @@ import type { ContentCategory, ContentFormat, CategoryFormatLink } from '@/hooks
 // DB entries with matching `name` override these at runtime.
 
 export const SEED_CATEGORIES: ContentCategory[] = [
-  {
-    id: 'seed-media',
-    name: 'media',
-    label: 'Media & Entertainment',
-    icon: 'Film',
-    color: 'text-blue-600',
-    description: 'General media production — videos, films, trailers, and entertainment content',
-    sort_order: 1,
-    is_active: true,
-    metadata: { seed: true },
-  },
+  // NOTE: 'media' seed REMOVED — DB renamed to 'entertainment', seed-entertainment exists below
   {
     id: 'seed-healthcare',
     name: 'healthcare',
@@ -70,11 +60,11 @@ export const SEED_CATEGORIES: ContentCategory[] = [
   },
   {
     id: 'seed-oil-gas',
-    name: 'oil_gas',
-    label: 'Oil & Gas',
-    icon: 'Fuel',
+    name: 'manufacturing',
+    label: 'Manufacturing',
+    icon: 'Factory',
     color: 'text-amber-600',
-    description: 'Energy sector content — safety training, ESG reports, operational updates',
+    description: 'Manufacturing operations — process videos, safety training, quality control content',
     sort_order: 5,
     is_active: true,
     metadata: { seed: true },
@@ -92,11 +82,11 @@ export const SEED_CATEGORIES: ContentCategory[] = [
   },
   {
     id: 'seed-commercial',
-    name: 'commercial',
-    label: 'Commercial & Marketing',
+    name: 'retail',
+    label: 'Retail & Marketing',
     icon: 'Megaphone',
     color: 'text-purple-600',
-    description: 'Commercial and brand content — ads, product demos, brand stories, campaigns',
+    description: 'Retail and brand content — ads, product demos, brand stories, campaigns',
     sort_order: 7,
     is_active: true,
     metadata: { seed: true },
@@ -135,17 +125,7 @@ export const SEED_CATEGORIES: ContentCategory[] = [
     is_active: true,
     metadata: { seed: true },
   },
-  {
-    id: 'seed-fintech',
-    name: 'fintech',
-    label: 'Fintech & Digital Payments',
-    icon: 'Wallet',
-    color: 'text-violet-600',
-    description: 'Digital payments, crypto, neobanking, lending platforms, regtech explainers',
-    sort_order: 11,
-    is_active: true,
-    metadata: { seed: true },
-  },
+  // NOTE: 'fintech' seed REMOVED — deleted from DB intentionally, finance covers this space
   {
     id: 'seed-real-estate',
     name: 'real_estate',
@@ -537,6 +517,16 @@ const CORE_FORMATS: ContentFormat[] = [
   coreFormat('ugc', 'ugc', 'User Generated Content', 'Users', 'text-amber-600',
     'UGC-style content — testimonials, reviews, social proof, community stories',
     { video: true, sortOrder: 8, checklist: ['Source content identified', 'Curation complete', 'Brand compliance checked', 'Edit/remix configured', 'Ready for export'] }),
+  // ── 3 MISSING FORMAT DEFINITIONS (referenced in sub-format migrations but never created) ──
+  coreFormat('training', 'training', 'Training / E-Learning', 'GraduationCap', 'text-emerald-600',
+    'Training modules — onboarding, compliance, skill development, e-learning courses',
+    { messaging: true, tts: true, video: true, sortOrder: 9, checklist: ['Learning objectives defined', 'Content structured', 'Quiz/assessment added', 'Media embedded', 'Ready for LMS'] }),
+  coreFormat('infographic', 'infographic', 'Infographic', 'BarChart3', 'text-cyan-600',
+    'Data visualizations — infographics, charts, data stories, visual reports',
+    { sortOrder: 10, checklist: ['Data sourced', 'Layout designed', 'Visuals created', 'Copy finalized', 'Ready for export'] }),
+  coreFormat('live_streaming', 'live_streaming', 'Live Streaming', 'Radio', 'text-red-600',
+    'Live broadcast — product launches, Q&A sessions, virtual events, panel discussions',
+    { messaging: true, tts: true, video: true, sortOrder: 11, checklist: ['Stream configured', 'Speakers confirmed', 'Overlays ready', 'Chat moderation set', 'Ready to go live'] }),
 ];
 
 // ─── SEED FORMATS — ALL 14 CELEBRATION OUTPUT FORMATS ───────────────────────
@@ -664,6 +654,68 @@ export const SEED_CATEGORY_FORMAT_LINKS: CategoryFormatLink[] = [
   })),
 ];
 
+// ─── SEED SUB-FORMATS — Universal (category_id: null → available to ALL categories) ──
+
+export interface SeedSubFormat {
+  name: string;
+  label: string;
+  format_name: string; // matches ContentFormat.name — resolved to format_id at runtime
+  icon?: string;
+  color?: string;
+  description?: string;
+}
+
+export const SEED_SUB_FORMATS: SeedSubFormat[] = [
+  // ── Universal VIDEO sub-formats (no category — available to all) ──
+  { name: 'explainer_video', label: 'Explainer Video', format_name: 'video', icon: 'Lightbulb', color: 'text-yellow-500' },
+  { name: 'brand_story', label: 'Brand Story', format_name: 'video', icon: 'BookOpen', color: 'text-purple-500' },
+  { name: 'product_showcase', label: 'Product Showcase', format_name: 'video', icon: 'Package', color: 'text-blue-500' },
+  { name: 'testimonial', label: 'Testimonial', format_name: 'video', icon: 'Quote', color: 'text-green-500' },
+  { name: 'tutorial_video', label: 'Tutorial', format_name: 'video', icon: 'PlayCircle', color: 'text-indigo-500' },
+  { name: 'promo_ad', label: 'Promo / Ad', format_name: 'video', icon: 'Megaphone', color: 'text-orange-500' },
+  { name: 'case_study_video', label: 'Case Study', format_name: 'video', icon: 'FileSearch', color: 'text-teal-500' },
+  { name: 'event_recap', label: 'Event Recap', format_name: 'video', icon: 'Calendar', color: 'text-rose-500' },
+  // ── Universal PODCAST sub-formats ──
+  { name: 'interview_podcast', label: 'Interview', format_name: 'podcast', icon: 'Mic', color: 'text-orange-600' },
+  { name: 'panel_discussion', label: 'Panel Discussion', format_name: 'podcast', icon: 'Users', color: 'text-blue-600' },
+  { name: 'narrated_story', label: 'Narrated Story', format_name: 'podcast', icon: 'BookOpen', color: 'text-purple-600' },
+  // ── Universal PRESENTATION sub-formats ──
+  { name: 'pitch_deck', label: 'Pitch Deck', format_name: 'presentation', icon: 'Presentation', color: 'text-teal-500' },
+  { name: 'training_deck', label: 'Training Deck', format_name: 'presentation', icon: 'GraduationCap', color: 'text-green-500' },
+  { name: 'keynote_pres', label: 'Keynote', format_name: 'presentation', icon: 'Star', color: 'text-amber-500' },
+  { name: 'report_summary', label: 'Report / Summary', format_name: 'presentation', icon: 'FileText', color: 'text-slate-500' },
+  // ── Universal WEBCAST sub-formats (currently ZERO in DB) ──
+  { name: 'product_launch_webcast', label: 'Product Launch', format_name: 'webcast', icon: 'Rocket', color: 'text-red-500' },
+  { name: 'town_hall', label: 'Town Hall', format_name: 'webcast', icon: 'Landmark', color: 'text-blue-700' },
+  { name: 'panel_webcast', label: 'Panel Discussion', format_name: 'webcast', icon: 'Users', color: 'text-indigo-600' },
+  // ── Universal SCRIPT sub-formats (currently ZERO in DB) ──
+  { name: 'narration_script', label: 'Video Narration', format_name: 'script', icon: 'FileText', color: 'text-slate-600' },
+  { name: 'dialogue_script', label: 'Dialogue Script', format_name: 'script', icon: 'MessageSquare', color: 'text-blue-600' },
+  { name: 'voiceover_script', label: 'Voiceover Script', format_name: 'script', icon: 'Volume2', color: 'text-green-600' },
+  // ── Universal UGC sub-formats (currently ZERO in DB) ──
+  { name: 'review_ugc', label: 'Customer Review', format_name: 'ugc', icon: 'Star', color: 'text-amber-500' },
+  { name: 'unboxing_ugc', label: 'Unboxing', format_name: 'ugc', icon: 'Package', color: 'text-orange-500' },
+  { name: 'reaction_ugc', label: 'Reaction Video', format_name: 'ugc', icon: 'Smile', color: 'text-pink-500' },
+  // ── Universal TTS sub-formats (currently ZERO in DB) ──
+  { name: 'audiobook_tts', label: 'Audiobook Chapter', format_name: 'tts', icon: 'BookOpen', color: 'text-green-600' },
+  { name: 'announcement_tts', label: 'Announcement', format_name: 'tts', icon: 'Bell', color: 'text-blue-600' },
+  // ── Universal VOICE sub-formats (currently ZERO in DB) ──
+  { name: 'commercial_vo', label: 'Commercial Voiceover', format_name: 'voice', icon: 'AudioLines', color: 'text-violet-600' },
+  { name: 'documentary_vo', label: 'Documentary Narration', format_name: 'voice', icon: 'Film', color: 'text-amber-600' },
+  // ── Universal TRAINING sub-formats ──
+  { name: 'onboarding_module', label: 'Onboarding Module', format_name: 'training', icon: 'UserPlus', color: 'text-emerald-500' },
+  { name: 'compliance_training', label: 'Compliance Training', format_name: 'training', icon: 'Shield', color: 'text-red-500' },
+  { name: 'skill_development', label: 'Skill Development', format_name: 'training', icon: 'TrendingUp', color: 'text-blue-500' },
+  // ── Universal INFOGRAPHIC sub-formats ──
+  { name: 'data_infographic', label: 'Data Visualization', format_name: 'infographic', icon: 'BarChart3', color: 'text-cyan-500' },
+  { name: 'process_infographic', label: 'Process Flow', format_name: 'infographic', icon: 'GitBranch', color: 'text-teal-500' },
+  { name: 'comparison_infographic', label: 'Comparison Chart', format_name: 'infographic', icon: 'Columns', color: 'text-purple-500' },
+  // ── Universal LIVE STREAMING sub-formats ──
+  { name: 'qa_livestream', label: 'Q&A Session', format_name: 'live_streaming', icon: 'HelpCircle', color: 'text-blue-500' },
+  { name: 'product_demo_live', label: 'Product Demo', format_name: 'live_streaming', icon: 'Monitor', color: 'text-green-500' },
+  { name: 'event_broadcast', label: 'Event Broadcast', format_name: 'live_streaming', icon: 'Radio', color: 'text-red-500' },
+];
+
 // ─── MERGE HELPER ───────────────────────────────────────────────────────────
 
 /**
@@ -680,4 +732,54 @@ export function mergeWithSeeds<T extends { name: string }>(
   const dbNames = new Set(dbEntries.map(e => e.name));
   const newSeeds = seeds.filter(s => !dbNames.has(s.name));
   return [...dbEntries, ...newSeeds];
+}
+
+/**
+ * Generate category-format links using actual merged IDs (DB UUID or seed ID).
+ * Solves the problem where seed links use `seed-*` IDs but DB entries have UUIDs.
+ * Core formats link to ALL categories; celebration formats link only to celebrations.
+ */
+export function generateSeedLinks(
+  mergedCategories: ContentCategory[],
+  mergedFormats: ContentFormat[],
+): CategoryFormatLink[] {
+  const coreFormatNames = new Set([
+    'podcast', 'webcast', 'video', 'presentation', 'script', 'tts', 'voice', 'ugc',
+    'training', 'infographic', 'live_streaming',
+  ]);
+  const coreFormats = mergedFormats.filter(f => coreFormatNames.has(f.name));
+  const celebrationFormats = mergedFormats.filter(f => f.name.startsWith('celebration_'));
+  const celebrationsCat = mergedCategories.find(c => c.name === 'celebrations');
+
+  const links: CategoryFormatLink[] = [];
+
+  // Every category gets core formats
+  for (const cat of mergedCategories) {
+    for (const fmt of coreFormats) {
+      links.push({
+        id: `seed-link-${cat.id}-${fmt.id}`,
+        category_id: cat.id,
+        format_id: fmt.id,
+        enrichment_overrides: {},
+        blueprint_template_id: null,
+        is_active: true,
+      });
+    }
+  }
+
+  // Celebration-specific formats linked only to celebrations category
+  if (celebrationsCat) {
+    for (const fmt of celebrationFormats) {
+      links.push({
+        id: `seed-link-celebrations-${fmt.id}`,
+        category_id: celebrationsCat.id,
+        format_id: fmt.id,
+        enrichment_overrides: {},
+        blueprint_template_id: null,
+        is_active: true,
+      });
+    }
+  }
+
+  return links;
 }

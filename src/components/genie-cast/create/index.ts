@@ -15,4 +15,4 @@ export { CreateSessionSummary } from './CreateSessionSummary';
 export { DocumentImportPanel } from './DocumentImportPanel';
 export { type GenerationMode } from './IntentSelector';
 
-export type CreateStep = 'intent' | 'template' | 'script' | 'style' | 'review';
+export type CreateStep = 'discover' | 'intent' | 'configure' | 'templates' | 'assets';

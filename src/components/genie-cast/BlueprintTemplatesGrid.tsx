@@ -41,6 +41,7 @@ interface BlueprintTemplatesGridProps {
   selectedBlueprintId?: string;
   intentFilter?: string | null;
   categoryFilter?: string | null;
+  formatFilter?: string | null;
   simpleMode?: boolean;
   selectedVideoStyles?: any[];
 }
@@ -67,6 +68,7 @@ export function BlueprintTemplatesGrid({
   selectedBlueprintId,
   intentFilter,
   categoryFilter,
+  formatFilter,
   selectedVideoStyles,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
@@ -86,26 +88,49 @@ export function BlueprintTemplatesGrid({
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
 
-  // Filter by category first, then apply intent scoring
+  // Filter by category + format, then apply intent scoring + style-based sorting
   const recommendedTemplates = useMemo(() => {
-    // Browse All shows ALL blueprints (ignores category filter)
+    // Browse All shows ALL blueprints (ignores category/format filter)
     if (showBrowseAll) return blueprints;
 
     // Apply category filter if provided
-    const categoryFiltered = categoryFilter
+    let filtered = categoryFilter
       ? blueprints.filter(bp => bp.category.toLowerCase() === categoryFilter.toLowerCase())
       : blueprints;
 
-    const source = intentFilter 
-      ? getIntentRecommendations(categoryFiltered, intentFilter, 8) 
-      : categoryFiltered.slice(0, 12);
-    
-    // If category filter yielded no results, fall back to all blueprints
-    if (source.length === 0 && categoryFilter) {
+    // Apply format filter if provided (match against template tags or name)
+    if (formatFilter && filtered.length > 0) {
+      const fmtLower = formatFilter.toLowerCase();
+      const formatFiltered = filtered.filter(bp =>
+        bp.industry_tags?.some(tag => tag.toLowerCase().includes(fmtLower)) ||
+        bp.name.toLowerCase().includes(fmtLower) ||
+        bp.description?.toLowerCase().includes(fmtLower)
+      );
+      if (formatFiltered.length > 0) filtered = formatFiltered;
+      // If format filter yields nothing, keep category-filtered results
+    }
+
+    const source = intentFilter
+      ? getIntentRecommendations(filtered, intentFilter, 8)
+      : filtered.slice(0, 12);
+
+    // If filters yielded no results, fall back to all blueprints
+    if (source.length === 0 && (categoryFilter || formatFilter)) {
       return blueprints.slice(0, 12);
     }
+
+    // Sort templates with matching styles to the top
+    if (selectedVideoStyles && selectedVideoStyles.length > 0) {
+      const styleNames = new Set(selectedVideoStyles.map((s: any) => (s.name || s.label || '').toLowerCase()));
+      return [...source].sort((a, b) => {
+        const aMatch = a.industry_tags?.some(t => styleNames.has(t.toLowerCase())) ? 1 : 0;
+        const bMatch = b.industry_tags?.some(t => styleNames.has(t.toLowerCase())) ? 1 : 0;
+        return bMatch - aMatch;
+      });
+    }
+
     return source;
-  }, [blueprints, intentFilter, categoryFilter, showBrowseAll]);
+  }, [blueprints, intentFilter, categoryFilter, formatFilter, selectedVideoStyles, showBrowseAll]);
 
   // Filter by search query — searches across ALL blueprints when Browse All is active
   const filteredTemplates = useMemo(() => {
