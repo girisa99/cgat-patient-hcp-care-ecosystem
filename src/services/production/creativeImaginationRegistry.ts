@@ -2411,3 +2411,49 @@ export function recommendPresetsForRegion(regionCode: string, limit = 5): Imagin
     .slice(0, limit)
     .map(s => s.preset);
 }
+
+/**
+ * Recommend imagination presets factoring in region + category + format.
+ * Category affinity re-ranks region-based results so presets matching
+ * the user's content domain (healthcare, education, etc.) float to top.
+ */
+export function recommendPresetsForContext(
+  regionCode: string,
+  categoryName?: string,
+  _formatName?: string,
+  limit: number = 4,
+): ImaginationPreset[] {
+  // Get region-based recommendations (wider pool to re-rank from)
+  const regionRecs = recommendPresetsForRegion(regionCode, limit * 2);
+
+  if (!categoryName) return regionRecs.slice(0, limit);
+
+  // Category → preset IDs that work well for that domain
+  const CATEGORY_PRESET_AFFINITIES: Record<string, string[]> = {
+    healthcare:     ['clinical-precision', 'documentary', 'clean-modern', 'pixel-wonder'],
+    education:      ['pixel-wonder', 'puppet-educational', 'storybook-adventure', 'crayon-world'],
+    technology:     ['neon-tech-noir', 'pixel-wonder', 'blueprint-technical', 'vaporwave-aesthetic'],
+    entertainment:  ['cinematic-blockbuster', 'neon-tech-noir', 'retro-vhs', 'anime-cel'],
+    celebrations:   ['golden-glow-festival', 'rangoli-festival', 'ukiyo-e-woodblock', 'kente-celebration'],
+    finance:        ['blueprint-technical', 'clean-modern', 'documentary', 'corporate-authority'],
+    travel:         ['watercolor-dreamscape', 'golden-hour-landscape', 'underwater-adventure', 'aerial-epic'],
+    retail:         ['pop-commercial', 'neon-tech-noir', 'retro-vhs', 'social-native'],
+    government:     ['documentary', 'blueprint-technical', 'clean-modern', 'patriotic-civic'],
+    manufacturing:  ['blueprint-technical', 'documentary', 'industrial-grit', 'aerial-epic'],
+    agriculture:    ['watercolor-dreamscape', 'golden-hour-landscape', 'documentary', 'earthy-natural'],
+    real_estate:    ['golden-hour-landscape', 'blueprint-technical', 'aerial-epic', 'clean-modern'],
+    pharma_biotech: ['clinical-precision', 'documentary', 'blueprint-technical', 'clean-modern'],
+  };
+
+  const affinities = CATEGORY_PRESET_AFFINITIES[categoryName] || [];
+  const affinitySet = new Set(affinities);
+
+  // Sort: category-matching first, then region-matching
+  return regionRecs
+    .sort((a, b) => {
+      const aMatch = affinitySet.has(a.id) ? 1 : 0;
+      const bMatch = affinitySet.has(b.id) ? 1 : 0;
+      return bMatch - aMatch;
+    })
+    .slice(0, limit);
+}

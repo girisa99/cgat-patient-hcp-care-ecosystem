@@ -3,21 +3,21 @@
  *
  * Configure step of the CREATE workflow:
  * - 1. Platform & Languages (primary platform, input language, script transcreation, dubbing/subtitle)
- * - 2. Visual & Asset Configuration (styles, resolution, characters, duration, capabilities, asset source, lip-sync, dubbing)
- * - 3. Resolution & Quality
- * - 4. Creative Vision & Enrichment
- * - 5. Production & Safety Pipeline (info only)
+ * - 2. Visual & Asset Configuration (styles, resolution/quality, characters, duration, capabilities, asset source, lip-sync, dubbing)
+ * - 3. Creative Vision & Enrichment (auto-brief, imagination presets, AI prompt enhancer)
  *
  * UX Improvements:
+ * - Smart auto-population: creative brief + imagination preset auto-generated from selections
  * - Tooltips on every section explaining what it does
  * - Collapsible sections for progressive disclosure (not overwhelming)
  * - Preview popout button for real-time configuration preview
  * - Cleaner visual hierarchy with step numbers and completion indicators
+ * - Context summary banner shows what the auto-brief was built from
  *
  * Extracted from GenieCastConsolidatedTabs.tsx for maintainability.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -25,15 +25,12 @@ import {
   Sparkles,
   Globe,
   Palette,
-  Settings2,
   Wand2,
-  AlertTriangle,
   Check,
   ChevronDown,
   ChevronUp,
   HelpCircle,
   Eye,
-  ZoomIn,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -76,9 +73,8 @@ import { ALL_STYLES } from '@/config/unified-style-registry';
 import {
   IMAGINATION_PRESETS,
   getPresetCategories,
-  recommendPresetsForRegion,
+  recommendPresetsForContext,
   type ImaginationPreset,
-  type ImaginationCategory,
 } from '@/services/production/creativeImaginationRegistry';
 import type { useCastContentRegistry } from '@/hooks/useCastContentRegistry';
 import type { useHolidayAwareness } from '@/hooks/useHolidayAwareness';
@@ -357,6 +353,65 @@ export function CreateConfigureStep({
   const [showPreview, setShowPreview] = useState(false);
   // Track whether resolution was auto-set (vs. manually overridden by user)
   const [resolutionManuallySet, setResolutionManuallySet] = useState(false);
+  // Guard: auto-brief fires once, doesn't overwrite user edits
+  const [autoBriefApplied, setAutoBriefApplied] = useState(false);
+
+  // ── Auto-populate enrichment brief from selections (once) ──
+  useEffect(() => {
+    if (enrichmentPrompt || autoBriefApplied) return; // Don't overwrite user text
+    if (!selectedCategoryId || !selectedFormatId) return; // Need at least these
+
+    const cat = contentRegistry.categories.find(c => c.id === selectedCategoryId);
+    const fmt = contentRegistry.formats.find(f => f.id === selectedFormatId);
+    const sf = selectedSubFormatId
+      ? contentRegistry.subFormats.find(s => s.id === selectedSubFormatId)
+      : undefined;
+    const styles = selectedVisualStyleIds
+      .map(id =>
+        contentRegistry.visualStyles.find(s => s.id === id) ||
+        FALLBACK_VISUAL_STYLES.find(s => s.id === id)
+      )
+      .filter(Boolean) as { label: string; category: string }[];
+    const catName = cat?.name || '';
+    const tags = ENRICHMENT_TAG_MAP[catName] || ENRICHMENT_TAG_MAP._default;
+
+    // Build the draft brief
+    const parts: string[] = [];
+    if (fmt && cat) {
+      parts.push(`Create a ${fmt.label.toLowerCase()} for the ${cat.label.toLowerCase()} industry`);
+    } else if (fmt) {
+      parts.push(`Create a ${fmt.label.toLowerCase()}`);
+    }
+    if (sf) parts.push(`in ${sf.label.toLowerCase()} format`);
+    if (targetPlatformIds.length > 0) {
+      const top3 = targetPlatformIds.slice(0, 3).join(', ');
+      parts.push(`optimized for ${top3}`);
+    }
+    if (styles.length > 0) {
+      const styleNames = styles.slice(0, 2).map(s => s.label).join(' + ');
+      parts.push(`using ${styleNames} visual style`);
+    }
+    let brief = parts.join(', ') + '.';
+    if (tags.length > 0) {
+      brief += ` Focus on: ${tags.slice(0, 3).join(', ')}.`;
+    }
+
+    if (brief.length > 20) {
+      setEnrichmentPrompt(brief);
+      setAutoBriefApplied(true);
+    }
+  }, [selectedCategoryId, selectedFormatId, selectedSubFormatId, selectedVisualStyleIds, targetPlatformIds]);
+
+  // ── Auto-select top imagination preset by category + region (once) ──
+  useEffect(() => {
+    if (imaginationPreset) return; // Already selected
+    if (!selectedCategoryId) return;
+    const catName = contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name;
+    const recs = recommendPresetsForContext(selectedRegion || 'NAM_US', catName, undefined, 1);
+    if (recs.length > 0) {
+      setImaginationPreset(recs[0].id);
+    }
+  }, [selectedCategoryId, selectedRegion]);
 
   // Auto-derive resolution from primary platform selection
   const handlePlatformToggle = (id: string) => {
@@ -906,6 +961,80 @@ export function CreateConfigureStep({
             })()}
           </div>
 
+          {/* Manual override: Aspect Ratio + Resolution dropdowns + Quality Preset */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Aspect Ratio</Label>
+              <Select value={selectedAspectRatio} onValueChange={(v) => { setSelectedAspectRatio(v); setResolutionManuallySet(true); }}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="16:9">16:9 (Landscape)</SelectItem>
+                  <SelectItem value="9:16">9:16 (Portrait / Reels)</SelectItem>
+                  <SelectItem value="1:1">1:1 (Square)</SelectItem>
+                  <SelectItem value="4:3">4:3 (Standard)</SelectItem>
+                  <SelectItem value="21:9">21:9 (Cinematic)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Resolution</Label>
+              <Select value={selectedResolution} onValueChange={(v) => { setSelectedResolution(v); setResolutionManuallySet(true); }}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {contentRegistry.outputPresets.length > 0 ? (
+                    (() => {
+                      const grouped = contentRegistry.outputPresets.reduce((acc, p) => {
+                        const cat = p.category || 'general';
+                        if (!acc[cat]) acc[cat] = [];
+                        acc[cat].push(p);
+                        return acc;
+                      }, {} as Record<string, typeof contentRegistry.outputPresets>);
+                      return Object.entries(grouped).map(([cat, presets]) => (
+                        <SelectGroup key={cat}>
+                          <SelectLabel className="text-[10px] uppercase">{cat}</SelectLabel>
+                          {presets.map(p => (
+                            <SelectItem key={p.id} value={`${p.width}x${p.height}`}>
+                              {p.icon} {p.label} ({p.width}{'\u00D7'}{p.height})
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ));
+                    })()
+                  ) : (
+                    <>
+                      <SelectItem value="3840x2160">4K (3840{'\u00D7'}2160)</SelectItem>
+                      <SelectItem value="1920x1080">Full HD (1920{'\u00D7'}1080)</SelectItem>
+                      <SelectItem value="1280x720">HD (1280{'\u00D7'}720)</SelectItem>
+                      <SelectItem value="1080x1920">Vertical HD (1080{'\u00D7'}1920)</SelectItem>
+                      <SelectItem value="1080x1080">Square (1080{'\u00D7'}1080)</SelectItem>
+                      <SelectItem value="1080x1350">Portrait 4:5 (1080{'\u00D7'}1350)</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Quality Preset</Label>
+              <div className="flex gap-1">
+                {(['preview', 'production', 'cinematic'] as const).map(q => (
+                  <Button
+                    key={q}
+                    variant={productionQuality === q ? 'default' : 'outline'}
+                    size="sm"
+                    className="text-[10px] capitalize flex-1 h-8"
+                    onClick={() => setProductionQuality(q)}
+                  >
+                    {q}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* 5a-ii-b: Style Preview -- show AI-generated preview for selected styles */}
           {selectedVisualStyleIds.length > 0 && (() => {
             const allStyles = contentRegistry.visualStyles.length > 0
@@ -1203,104 +1332,44 @@ export function CreateConfigureStep({
       </ConfigSection>
 
       {/* ================================================================ */}
-      {/* Resolution & Quality                                             */}
-      {/* ================================================================ */}
-      <ConfigSection
-        step={3}
-        title="Resolution & Quality"
-        description="Output resolution, aspect ratio, and production quality settings."
-        tooltip="Set the pixel resolution and aspect ratio for your output. Higher resolution takes longer to render. Quality presets control encoding: Preview is fast/low-size, Production is balanced, Cinematic is highest fidelity."
-        icon={<Settings2 className="w-4 h-4 text-primary" />}
-        isComplete={!!selectedResolution}
-        defaultOpen={false}
-      >
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Aspect Ratio</Label>
-              <Select value={selectedAspectRatio} onValueChange={setSelectedAspectRatio}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="16:9">16:9 (Landscape)</SelectItem>
-                  <SelectItem value="9:16">9:16 (Portrait / Reels)</SelectItem>
-                  <SelectItem value="1:1">1:1 (Square)</SelectItem>
-                  <SelectItem value="4:3">4:3 (Standard)</SelectItem>
-                  <SelectItem value="21:9">21:9 (Cinematic)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Resolution</Label>
-              <Select value={selectedResolution} onValueChange={setSelectedResolution}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {contentRegistry.outputPresets.length > 0 ? (
-                    (() => {
-                      const grouped = contentRegistry.outputPresets.reduce((acc, p) => {
-                        const cat = p.category || 'general';
-                        if (!acc[cat]) acc[cat] = [];
-                        acc[cat].push(p);
-                        return acc;
-                      }, {} as Record<string, typeof contentRegistry.outputPresets>);
-                      return Object.entries(grouped).map(([cat, presets]) => (
-                        <SelectGroup key={cat}>
-                          <SelectLabel className="text-[10px] uppercase">{cat}</SelectLabel>
-                          {presets.map(p => (
-                            <SelectItem key={p.id} value={`${p.width}x${p.height}`}>
-                              {p.icon} {p.label} ({p.width}\u00D7{p.height})
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      ));
-                    })()
-                  ) : (
-                    <>
-                      <SelectItem value="3840x2160">4K (3840{'\u00D7'}2160)</SelectItem>
-                      <SelectItem value="1920x1080">Full HD (1920{'\u00D7'}1080)</SelectItem>
-                      <SelectItem value="1280x720">HD (1280{'\u00D7'}720)</SelectItem>
-                      <SelectItem value="1080x1920">Vertical HD (1080{'\u00D7'}1920)</SelectItem>
-                      <SelectItem value="1080x1080">Square (1080{'\u00D7'}1080)</SelectItem>
-                      <SelectItem value="1080x1350">Portrait 4:5 (1080{'\u00D7'}1350)</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="mt-3 space-y-1.5">
-            <Label className="text-xs">Quality Preset</Label>
-            <div className="flex gap-2">
-              {(['preview', 'production', 'cinematic'] as const).map(q => (
-                <Button
-                  key={q}
-                  variant={productionQuality === q ? 'default' : 'outline'}
-                  size="sm"
-                  className="text-xs capitalize flex-1"
-                  onClick={() => setProductionQuality(q)}
-                >
-                  {q}
-                </Button>
-              ))}
-            </div>
-          </div>
-      </ConfigSection>
-
-      {/* ================================================================ */}
       {/* Creative Vision & Enrichment                                     */}
       {/* ================================================================ */}
       <ConfigSection
-        step={4}
+        step={3}
         title="Creative Vision & Enrichment"
-        description="Pick a visual world preset and describe your vision. AI generates full production configs scoped by ALL above selections."
-        tooltip="Choose an imagination preset to set the visual DNA (style, music, characters, narrative), then write your creative brief. The enrichment engine combines preset + prompt + region + style to build the complete production pipeline."
+        description="Auto-generated brief + visual world preset scoped by your selections above. Edit freely."
+        tooltip="Choose an imagination preset to set the visual DNA (style, music, characters, narrative), then refine your creative brief. The enrichment engine combines preset + prompt + region + style to build the complete production pipeline. The brief auto-populates from your category, format, and style selections."
         icon={<Wand2 className="w-4 h-4 text-primary" />}
         isComplete={isEnrichmentComplete}
         defaultOpen={false}
       >
         <div className="space-y-4">
+          {/* ── Context Summary Banner ── */}
+          {(selectedCategoryId || selectedFormatId) && (
+            <div className="p-2.5 rounded-lg border border-primary/10 bg-primary/[0.02] space-y-1.5">
+              <div className="flex flex-wrap gap-1.5 text-[10px]">
+                {selectedCategoryId && (() => {
+                  const cat = contentRegistry.categories.find(c => c.id === selectedCategoryId);
+                  return cat ? <Badge variant="secondary">{cat.label}</Badge> : null;
+                })()}
+                {selectedFormatId && (() => {
+                  const fmt = contentRegistry.formats.find(f => f.id === selectedFormatId);
+                  return fmt ? <Badge variant="secondary">{fmt.label}</Badge> : null;
+                })()}
+                {selectedSubFormatId && (() => {
+                  const sf = contentRegistry.subFormats.find(s => s.id === selectedSubFormatId);
+                  return sf ? <Badge variant="secondary">{sf.label}</Badge> : null;
+                })()}
+                {targetPlatformIds.length > 0 && <Badge variant="secondary">{targetPlatformIds.length} platform{targetPlatformIds.length > 1 ? 's' : ''}</Badge>}
+                {selectedVisualStyleIds.length > 0 && <Badge variant="secondary">{selectedVisualStyleIds.length} style{selectedVisualStyleIds.length > 1 ? 's' : ''}</Badge>}
+                {targetDuration > 0 && <Badge variant="secondary">{targetDuration}s</Badge>}
+              </div>
+              <p className="text-[10px] text-muted-foreground italic">
+                Auto-generated brief from your selections above. Edit freely — AI will enhance when you click "Enhance".
+              </p>
+            </div>
+          )}
+
           {/* ── Imagination Preset Picker ── */}
           <div className="space-y-2">
             <Label className="text-xs font-medium flex items-center gap-1.5">
@@ -1318,13 +1387,16 @@ export function CreateConfigureStep({
               </TooltipProvider>
             </Label>
 
-            {/* Region-recommended presets */}
+            {/* Category + region recommended presets */}
             {(() => {
-              const recommended = recommendPresetsForRegion(selectedRegion || 'NAM_US', 4);
+              const catName = contentRegistry.categories.find(c => c.id === selectedCategoryId)?.name;
+              const recommended = recommendPresetsForContext(selectedRegion || 'NAM_US', catName, undefined, 4);
               if (recommended.length === 0) return null;
               return (
                 <div className="space-y-1.5">
-                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Recommended for your region</p>
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                    {catName ? `Recommended for ${catName} + your region` : 'Recommended for your region'}
+                  </p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {recommended.map(preset => (
                       <button
@@ -1464,34 +1536,6 @@ export function CreateConfigureStep({
             />
           </div>
         </div>
-      </ConfigSection>
-
-      {/* ================================================================ */}
-      {/* Production & Safety Pipeline (info only)                         */}
-      {/* ================================================================ */}
-      <ConfigSection
-        step={5}
-        title="Production & Safety Pipeline"
-        description="Automated safety checks run during production."
-        tooltip="These safety checks run automatically when your content is produced. They detect faces, enforce style guidelines (no deepfakes), add provenance watermarks (C2PA), and handle legal consent workflows. No action needed from you."
-        icon={<AlertTriangle className="w-4 h-4 text-amber-500" />}
-        isComplete={true}
-        defaultOpen={false}
-      >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {[
-              { icon: '\uD83D\uDD0D', label: 'Upload Scan', desc: 'Face & trademark detection' },
-              { icon: '\uD83C\uDFA8', label: 'Style Enforcement', desc: 'No photorealistic deepfakes' },
-              { icon: '\uD83D\uDCA7', label: 'Watermark + C2PA', desc: 'Provenance metadata' },
-              { icon: '\uD83D\uDCCB', label: 'Legal Consent', desc: 'Face consent workflow' },
-            ].map(item => (
-              <div key={item.label} className="p-2 rounded-lg bg-muted/50 text-center space-y-1">
-                <span className="text-lg">{item.icon}</span>
-                <p className="text-[10px] font-medium">{item.label}</p>
-                <p className="text-[9px] text-muted-foreground">{item.desc}</p>
-              </div>
-            ))}
-          </div>
       </ConfigSection>
 
       {/* Continue to Templates */}
