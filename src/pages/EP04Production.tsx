@@ -1463,10 +1463,28 @@ function EP04ProductionInner() {
       provider: step.provider || undefined,
       style: step.style || undefined,
     };
-    // Widescreen aspect ratio for kinetic-text thumbnails
+    // Avatar-3d: route to Alibaba wan2.6-t2i via pixar-3d style intent for rich Pixar portraits
+    if (stepType === 'avatar-3d') {
+      body.style_intent = 'pixar-3d';
+      body.provider = 'alibaba';
+      body.model = 'wan2.6-t2i';
+      body.size = '1024x1024';
+      body.quality = 'high';
+    }
+    // Kinetic-text: route to Alibaba wan2.6-t2i via cinematic style for movie-poster quality
     if (stepType === 'kinetic-text') {
       body.aspectRatio = '16:9';
-      body.style_intent = 'ep04-sprint-documentary';
+      body.style_intent = 'cinematic';
+      body.provider = 'alibaba';
+      body.model = 'wan2.6-t2i';
+      body.size = '1280x720';
+    }
+    // Motion-graphics: also route to Alibaba for rich visuals
+    if (stepType === 'motion-graphics') {
+      body.style_intent = 'cinematic';
+      body.provider = 'alibaba';
+      body.model = 'wan2.6-t2i';
+      body.size = '1280x720';
     }
     // Pass type + model for alibaba-video through ai-video-generator
     if (stepType === 'alibaba-video' || stepType === 'video') {

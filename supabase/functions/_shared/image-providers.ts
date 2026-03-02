@@ -290,7 +290,10 @@ async function generateWithAlibaba(prompt: string, options: ImageGenOptions): Pr
     '16:9': '1280*720', '9:16': '720*1280', '1:1': '1024*1024',
   };
   const ar = options.aspectRatio || '16:9';
-  const size = sizeMap[ar] || '1280*720';
+  // Accept explicit size (convert 'x' to '*' for DashScope format) or derive from aspect ratio
+  const size = options.size
+    ? options.size.replace('x', '*')
+    : (sizeMap[ar] || '1280*720');
 
   const isWan26 = model.includes('wan2.6');
   const apiPath = isWan26
