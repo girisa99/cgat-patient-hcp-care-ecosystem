@@ -1040,6 +1040,44 @@ async function generateWithAlibabaWAN(
     const errorText = await response.text();
     console.error(`Alibaba WAN API error (${response.status}):`, errorText);
     console.error(`Request: model=${resolvedModel}, endpoint=${endpoint}`);
+
+    // Auto-fallback: if wan2.6-t2v fails (quota/billing), retry with wan2.1-t2v-turbo
+    const isQuotaError = errorText.includes('AllocationQuota') || errorText.includes('Throttling') || errorText.includes('quota');
+    if (isQuotaError && resolvedModel === 'wan2.6-t2v' && !isI2V) {
+      console.log('⚠️ wan2.6-t2v quota exhausted — falling back to wan2.1-t2v-turbo');
+      const fallbackBody = {
+        model: 'wan2.1-t2v-turbo',
+        input: requestBody.input,
+        parameters: { size: '1280*720', prompt_extend: true }, // no duration — turbo doesn't support it
+      };
+      const fallbackResp = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable',
+        },
+        body: JSON.stringify(fallbackBody),
+      });
+      if (fallbackResp.ok) {
+        const fallbackData = await fallbackResp.json();
+        if (fallbackData.output?.task_id) {
+          try {
+            return await pollAlibabaTask(fallbackData.output.task_id, apiKey, baseUrl);
+          } catch {
+            return {
+              videoUrl: '',
+              provider: 'alibaba',
+              model: 'wan2.1-t2v-turbo',
+              taskId: fallbackData.output.task_id,
+              asyncGeneration: true,
+            };
+          }
+        }
+        return { videoUrl: fallbackData.output?.video_url || '', provider: 'alibaba', model: 'wan2.1-t2v-turbo' };
+      }
+    }
+
     throw new Error(`Alibaba WAN API error ${response.status}: ${errorText.slice(0, 200)}`);
   }
 
