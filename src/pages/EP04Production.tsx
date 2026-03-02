@@ -538,12 +538,34 @@ function EP04ProductionInner() {
 
   // Build full script: 109 dialogue lines + 11 narrator bridges = 120 total
   // DB data takes precedence for lines it has; static config fills any gaps.
+
+  // Map transition scene keys → their parent scene key so bridges fold into scenes
+  const TRANSITION_TO_SCENE: Record<string, string> = {
+    'transition-0-to-1': 'scene-0-title',
+    'transition-1-to-2': 'scene-1-problem',
+    'transition-2-to-3': 'scene-2-introductions',
+    'transition-3-to-4': 'scene-3-origin',
+    'transition-4-to-5': 'scene-4-solution',
+    'transition-5-to-6': 'scene-5-governance',
+    'transition-6-to-7': 'scene-6-po-actions',
+    'transition-7-to-8': 'scene-7-velocity',
+    'transition-8-to-9': 'scene-8-numbers',
+    'transition-9-to-10': 'scene-9-challenges',
+    'transition-10-to-11': 'scene-10-whats-next',
+  };
+
+  const remapScene = (sceneKey: string) => TRANSITION_TO_SCENE[sceneKey] || sceneKey;
+
   const scriptContentForUI = React.useMemo<Record<string, ScriptLine>>(() => {
     // Start with the complete static script (dialogue + narrator bridges)
-    const fullStaticScript: Record<string, ScriptLine> = {
-      ...EP04_SCRIPT_CONTENT,
-      ...EP04_NARRATOR_BRIDGES,
-    };
+    // Remap transition scenes to their parent so bridges render within scenes
+    const fullStaticScript: Record<string, ScriptLine> = {};
+    for (const [key, line] of Object.entries(EP04_SCRIPT_CONTENT)) {
+      fullStaticScript[key] = { ...line, scene: remapScene(line.scene) };
+    }
+    for (const [key, line] of Object.entries(EP04_NARRATOR_BRIDGES)) {
+      fullStaticScript[key] = { ...line, scene: remapScene(line.scene) };
+    }
 
     if (!dbProject.isSeeded || dbProject.scriptLines.length === 0) {
       return fullStaticScript;
@@ -553,7 +575,8 @@ function EP04ProductionInner() {
     const map: Record<string, ScriptLine> = {};
     for (const line of dbProject.scriptLines) {
       const scene = dbProject.scenes.find(s => s.id === line.scene_id);
-      const sceneKey = scene?.scene_key || line.scene_id;
+      const rawSceneKey = scene?.scene_key || line.scene_id;
+      const sceneKey = remapScene(rawSceneKey);
       const lc = (line.line_config || {}) as Record<string, unknown>;
       map[line.line_key] = {
         text: line.dialogue,
@@ -1563,11 +1586,17 @@ function EP04ProductionInner() {
                     )}>
                       {/* AI Background — always present */}
                       <div className="relative h-40">
+                        {SCENE_BACKGROUNDS[sceneId] ? (
                         <img
                           src={SCENE_BACKGROUNDS[sceneId]}
                           alt={SCENE_TITLES[sceneId] || sceneId}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
+                        ) : (
+                        <div className="w-full h-full bg-gradient-to-r from-indigo-900/40 via-purple-900/30 to-violet-900/40 flex items-center justify-center">
+                          <Film className="w-8 h-8 text-muted-foreground/50" />
+                        </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
                         <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
                           <div>
