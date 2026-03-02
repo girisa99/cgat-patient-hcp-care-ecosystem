@@ -17,15 +17,19 @@ import {
   Play, Pause, Square, Volume2, VolumeX, Loader2,
   CheckCircle2, AlertCircle, Mic, SkipForward, ArrowLeft,
   Camera, Monitor, Image as ImageIcon, ExternalLink,
-  Film, Music, Clapperboard, Download, Eye, Layers
+  Film, Music, Clapperboard, Download, Eye, Layers,
+  Share2, Scissors
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EP04_SCRIPT_CONTENT, EP04_NARRATOR_BRIDGES, type ScriptLine } from '@/config/ep04-script-content';
 import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP } from '@/config/ep04-production-config';
 import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { EP04PublishHub } from '@/components/genie-cast/EP04PublishHub';
+import { ContentRepurposingPanel } from '@/components/genie-cast/ContentRepurposingPanel';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
 import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
@@ -2444,6 +2448,75 @@ function EP04ProductionInner() {
                               {status?.visual === 'generating' ? 'Producing...' : pipelineSteps.length === 0 ? 'No Pipeline' : 'Start Scene'}
                             </Button>
                           )}
+
+                          {/* ── Categorized asset preview for completed scenes ── */}
+                          {status?.visual === 'done' && (() => {
+                            const categories = [
+                              { label: 'Videos', icon: Film, entries: Object.entries(status.videoUrls || {}).filter(([, u]) => u), isVideo: true },
+                              { label: 'Images', icon: ImageIcon, entries: Object.entries(status.imageUrls || {}).filter(([, u]) => u), isVideo: false },
+                              { label: 'Avatars', icon: Camera, entries: Object.entries(status.avatarUrls || {}).filter(([, u]) => u), isVideo: false },
+                              { label: 'Lipsync', icon: Mic, entries: Object.entries(status.lipsyncUrls || {}).filter(([, u]) => u), isVideo: true },
+                            ].filter(c => c.entries.length > 0);
+                            const totalAssets = categories.reduce((s, c) => s + c.entries.length, 0);
+                            if (totalAssets === 0) return null;
+                            return (
+                              <div className="mt-2 space-y-2">
+                                <p className="text-[9px] text-muted-foreground font-medium">{totalAssets} assets generated:</p>
+                                {categories.map(cat => {
+                                  const CatIcon = cat.icon;
+                                  return (
+                                    <div key={cat.label} className="space-y-1">
+                                      <div className="flex items-center gap-1">
+                                        <CatIcon className="h-2.5 w-2.5 text-muted-foreground" />
+                                        <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">{cat.label}</span>
+                                        <Badge variant="outline" className="text-[7px] h-3 px-1">{cat.entries.length}</Badge>
+                                      </div>
+                                      <div className="grid grid-cols-3 gap-1.5">
+                                        {cat.entries.map(([key, url]) => (
+                                          <div key={key} className="relative group">
+                                            {cat.isVideo ? (
+                                              <video
+                                                src={url}
+                                                className="w-full h-24 object-cover rounded border border-border/30 bg-black"
+                                                controls
+                                                muted
+                                                preload="metadata"
+                                              />
+                                            ) : (
+                                              <img
+                                                src={url}
+                                                alt={key}
+                                                className="w-full h-24 object-cover rounded border border-border/30 bg-black"
+                                                loading="lazy"
+                                              />
+                                            )}
+                                            <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1 py-0.5 rounded-b">
+                                              <span className="text-[7px] text-white/80 truncate block">{key}</span>
+                                            </div>
+                                            <a
+                                              href={url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                              <ExternalLink className="h-3 w-3 text-white drop-shadow-md" />
+                                            </a>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                {/* Music audio player if scene has music */}
+                                {status.musicUrl && (
+                                  <div className="flex items-center gap-2 p-1.5 rounded bg-muted/30 border border-border/20">
+                                    <Music className="h-3 w-3 text-violet-400 flex-shrink-0" />
+                                    <audio src={status.musicUrl} controls className="h-6 w-full [&::-webkit-media-controls-panel]:h-6" preload="metadata" />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       );
                     })}
@@ -2642,6 +2715,228 @@ function EP04ProductionInner() {
                       </div>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </div>
+            );
+          })()}
+
+          {/* ═══════════════════════════════════════════════════════════════════ */}
+          {/* PHASE 6: PRODUCTION GALLERY & PUBLISH                             */}
+          {/* ═══════════════════════════════════════════════════════════════════ */}
+          {(() => {
+            // Unlocked when any scene has generated assets OR Phase 5 is complete
+            const hasAnyAssets = Object.values(sceneProduction).some(s =>
+              Object.values(s.videoUrls || {}).some(u => u) ||
+              Object.values(s.imageUrls || {}).some(u => u) ||
+              Object.values(s.avatarUrls || {}).some(u => u) ||
+              Object.values(s.lipsyncUrls || {}).some(u => u)
+            );
+            const phase6Unlocked = hasAnyAssets || productionPhase === 'complete';
+            if (!phase6Unlocked) return null;
+
+            // Gather all scene keys that have assets
+            const sceneKeys = Array.from(scenes.keys());
+            const scenesWithAssets = sceneKeys.filter(sk => {
+              const s = sceneProduction[sk];
+              if (!s) return false;
+              return Object.values(s.videoUrls || {}).some(u => u) ||
+                Object.values(s.imageUrls || {}).some(u => u) ||
+                Object.values(s.avatarUrls || {}).some(u => u) ||
+                Object.values(s.lipsyncUrls || {}).some(u => u);
+            });
+
+            return (
+            <div className="mt-6">
+              <Card className="border ring-2 ring-violet-500/30 bg-violet-500/[0.02]">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold bg-violet-500/10 text-violet-400">
+                        6
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold">Phase 6: Gallery & Publish</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Browse all assets, publish to platforms, and repurpose content
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs bg-violet-500/10 text-violet-400 border-violet-500/30">
+                      {scenesWithAssets.length} scenes • {finalVideoUrl ? 'Movie ready' : 'Assets available'}
+                    </Badge>
+                  </div>
+
+                  <Tabs defaultValue="gallery" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 mb-4">
+                      <TabsTrigger value="gallery" className="text-xs gap-1.5">
+                        <Eye className="h-3.5 w-3.5" />
+                        Gallery
+                      </TabsTrigger>
+                      <TabsTrigger value="publish" className="text-xs gap-1.5">
+                        <Share2 className="h-3.5 w-3.5" />
+                        Social & Publish
+                      </TabsTrigger>
+                      <TabsTrigger value="repurpose" className="text-xs gap-1.5">
+                        <Scissors className="h-3.5 w-3.5" />
+                        Repurpose
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* ── Tab 1: Gallery ── */}
+                    <TabsContent value="gallery" className="space-y-4">
+                      {/* Final assembled movie */}
+                      {finalVideoUrl && (
+                        <Card className="border-green-500/30 bg-green-500/[0.02]">
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <Clapperboard className="h-4 w-4 text-green-500" />
+                              <h4 className="text-sm font-bold text-green-600">Final Movie</h4>
+                            </div>
+                            <div className="rounded-xl overflow-hidden border border-green-500/30">
+                              <video
+                                src={finalVideoUrl}
+                                controls
+                                className="w-full"
+                                poster={SCENE_BACKGROUNDS['scene-0-title']}
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" asChild>
+                                <a href={finalVideoUrl} download="EP04-Sprint-Documentary.mp4">
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Download MP4
+                                </a>
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => window.open(finalVideoUrl, '_blank')}>
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                Open in New Tab
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Per-scene asset sections */}
+                      {scenesWithAssets.map(sceneKey => {
+                        const s = sceneProduction[sceneKey];
+                        if (!s) return null;
+                        const allEntries = [
+                          ...Object.entries(s.videoUrls || {}).filter(([, u]) => u).map(([k, u]) => ({ key: k, url: u, isVideo: true })),
+                          ...Object.entries(s.imageUrls || {}).filter(([, u]) => u).map(([k, u]) => ({ key: k, url: u, isVideo: false })),
+                          ...Object.entries(s.avatarUrls || {}).filter(([, u]) => u).map(([k, u]) => ({ key: k, url: u, isVideo: false })),
+                          ...Object.entries(s.lipsyncUrls || {}).filter(([, u]) => u).map(([k, u]) => ({ key: k, url: u, isVideo: true })),
+                        ];
+                        return (
+                          <Card key={sceneKey} className="border-border/50">
+                            <CardContent className="p-4 space-y-3">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={SCENE_BACKGROUNDS[sceneKey]}
+                                  alt={sceneKey}
+                                  className="h-10 w-16 object-cover rounded border border-border/30"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-sm font-semibold truncate">{SCENE_TITLES[sceneKey] || sceneKey}</h4>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-[9px]">{allEntries.length} assets</Badge>
+                                    {s.assembledClipUrl && <Badge variant="outline" className="text-[9px] bg-green-500/10 text-green-600 border-green-500/30">Assembled</Badge>}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Assembled scene clip */}
+                              {s.assembledClipUrl && (
+                                <div className="rounded-lg overflow-hidden border border-green-500/20">
+                                  <video src={s.assembledClipUrl} controls className="w-full" preload="metadata" />
+                                </div>
+                              )}
+
+                              {/* Asset grid */}
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {allEntries.map(({ key, url, isVideo }) => (
+                                  <div key={key} className="relative group">
+                                    {isVideo ? (
+                                      <video
+                                        src={url}
+                                        className="w-full h-28 object-cover rounded border border-border/30 bg-black"
+                                        controls
+                                        muted
+                                        preload="metadata"
+                                      />
+                                    ) : (
+                                      <img
+                                        src={url}
+                                        alt={key}
+                                        className="w-full h-28 object-cover rounded border border-border/30 bg-black"
+                                        loading="lazy"
+                                      />
+                                    )}
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-0.5 rounded-b">
+                                      <span className="text-[8px] text-white/80 truncate block">{key}</span>
+                                    </div>
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded p-0.5"
+                                    >
+                                      <ExternalLink className="h-3 w-3 text-white" />
+                                    </a>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Music audio player */}
+                              {s.musicUrl && (
+                                <div className="flex items-center gap-2 p-2 rounded bg-muted/30 border border-border/20">
+                                  <Music className="h-3.5 w-3.5 text-violet-400 flex-shrink-0" />
+                                  <span className="text-[9px] text-muted-foreground font-medium">Music</span>
+                                  <audio src={s.musicUrl} controls className="h-7 flex-1" preload="metadata" />
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </TabsContent>
+
+                    {/* ── Tab 2: Social & Publish ── */}
+                    <TabsContent value="publish">
+                      <EP04PublishHub
+                        sessionTitle="EP04 — Sprint Documentary"
+                        productionArtifacts={finalVideoUrl ? {
+                          assembledVideoUrl: finalVideoUrl,
+                          sceneVideoUrls: sceneKeys
+                            .map(sk => sceneProduction[sk]?.assembledClipUrl)
+                            .filter((url): url is string => !!url),
+                          audioUrl: null,
+                          captionFiles: [],
+                          thumbnailUrls: [],
+                          exportPresets: [],
+                          speakerTracks: [],
+                        } : undefined}
+                      />
+                    </TabsContent>
+
+                    {/* ── Tab 3: Repurpose ── */}
+                    <TabsContent value="repurpose">
+                      <ContentRepurposingPanel
+                        sessionTitle="EP04 — Sprint Documentary"
+                        productionArtifacts={finalVideoUrl ? {
+                          assembledVideoUrl: finalVideoUrl,
+                          sceneVideoUrls: sceneKeys
+                            .map(sk => sceneProduction[sk]?.assembledClipUrl)
+                            .filter((url): url is string => !!url),
+                          audioUrl: null,
+                          captionFiles: [],
+                          thumbnailUrls: [],
+                          exportPresets: [],
+                          speakerTracks: [],
+                        } : undefined}
+                      />
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
             </div>
