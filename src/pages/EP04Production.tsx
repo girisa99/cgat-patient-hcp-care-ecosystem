@@ -650,29 +650,27 @@ function EP04ProductionInner() {
   const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null);
 
   // ─── Load persisted TTS audio + production phase on mount ───────────────
-  // Fetches TTS data DIRECTLY by project_id (not via scene_id) to avoid
-  // issues with deleted transition scenes or stale scene references.
+  // Strategy: Try cast_project_script_lines first. If empty (auto-seed wiped TTS),
+  // fall back to cast_generation_jobs which preserves output_url for every completed job.
 
   useEffect(() => {
     if (!projectId || contentLoaded) return;
     (async () => {
       const db = supabase as any;
+      const restoredAudio: Record<string, GeneratedAudio> = {};
+      const restoredStatus: Record<string, LineStatus> = {};
 
-      // 1. Restore TTS audio directly from cast_project_script_lines by project_id
-      //    This bypasses loadProjectContent's scene_id filter entirely.
+      // ── Source 1: cast_project_script_lines (primary) ──────────────
       try {
-        const { data: ttsLines, error: ttsErr } = await db
+        const { data: ttsLines } = await db
           .from('cast_project_script_lines')
           .select('line_key, tts_audio_url, tts_provider, tts_voice_id, tts_status')
           .eq('project_id', projectId)
           .eq('tts_status', 'generated')
           .not('tts_audio_url', 'is', null);
 
-        if (!ttsErr && ttsLines && ttsLines.length > 0) {
-          const restoredAudio: Record<string, GeneratedAudio> = {};
-          const restoredStatus: Record<string, LineStatus> = {};
+        if (ttsLines) {
           for (const line of ttsLines) {
-            // Deduplicate by line_key — last wins (harmless)
             restoredAudio[line.line_key] = {
               audioUrl: line.tts_audio_url,
               provider: line.tts_provider || 'unknown',
@@ -680,19 +678,68 @@ function EP04ProductionInner() {
             };
             restoredStatus[line.line_key] = 'done';
           }
-          setAudioMap(restoredAudio);
-          setStatusMap(restoredStatus);
-          // Count only lines that exist in our static 120-line config
-          const staticKeys = new Set(Object.keys(scriptContentForUI));
-          const matchCount = Object.keys(restoredAudio).filter(k => staticKeys.has(k)).length;
-          toast.success(`Restored ${matchCount} saved voiceovers`);
-          console.log(`[EP04] Restored ${Object.keys(restoredAudio).length} TTS lines (${matchCount} match static config)`);
         }
       } catch (err) {
-        console.error('[EP04] TTS restoration error:', err);
+        console.warn('[EP04] Script lines TTS query failed:', err);
       }
 
-      // 2. Restore production phase from DB production_stage
+      // ── Source 2: cast_generation_jobs (fallback — recovers wiped TTS) ──
+      // If auto-seed overwrote script_lines with null TTS, generation_jobs
+      // still has the output_url from the original generation.
+      try {
+        const { data: jobs } = await db
+          .from('cast_generation_jobs')
+          .select('line_key, output_url, provider')
+          .eq('project_id', projectId)
+          .eq('job_type', 'tts')
+          .eq('status', 'completed')
+          .not('output_url', 'is', null)
+          .not('line_key', 'is', null);
+
+        if (jobs) {
+          for (const job of jobs) {
+            // Only fill gaps — don't overwrite lines already restored from source 1
+            if (!restoredAudio[job.line_key]) {
+              restoredAudio[job.line_key] = {
+                audioUrl: job.output_url,
+                provider: job.provider || 'unknown',
+                voice: 'unknown',
+              };
+              restoredStatus[job.line_key] = 'done';
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[EP04] Generation jobs TTS query failed:', err);
+      }
+
+      // Apply restored TTS
+      if (Object.keys(restoredAudio).length > 0) {
+        setAudioMap(restoredAudio);
+        setStatusMap(restoredStatus);
+        const staticKeys = new Set(Object.keys(scriptContentForUI));
+        const matchCount = Object.keys(restoredAudio).filter(k => staticKeys.has(k)).length;
+        toast.success(`Restored ${matchCount} saved voiceovers`);
+        console.log(`[EP04] TTS restored: ${matchCount} match static config, ${Object.keys(restoredAudio).length} total from DB`);
+
+        // ── Re-persist recovered TTS back to script_lines (repair wiped data) ──
+        for (const [lineKey, audio] of Object.entries(restoredAudio)) {
+          if (staticKeys.has(lineKey)) {
+            db.from('cast_project_script_lines')
+              .update({
+                tts_audio_url: audio.audioUrl,
+                tts_provider: audio.provider,
+                tts_status: 'generated',
+              })
+              .eq('project_id', projectId)
+              .eq('line_key', lineKey)
+              .then(() => {}) // fire-and-forget repair
+              .catch(() => {});
+          }
+        }
+      }
+
+      // ── Restore production phase from DB ───────────────────────────
       try {
         const { data: proj } = await db
           .from('cast_projects')
@@ -709,27 +756,8 @@ function EP04ProductionInner() {
         } else if (stage === 'complete' || stage === 'published') {
           setProductionPhase('complete');
         }
-        // 'producing' or 'scripted' → stay at 'tts' phase
       } catch (e) {
         console.warn('[EP04] Could not restore production_stage:', e);
-      }
-
-      // 3. Clean up orphaned transition scenes (non-destructive for script lines)
-      //    Only delete scene rows — script lines may have TTS data we need to keep.
-      try {
-        const { data: scenes } = await db
-          .from('cast_project_scenes')
-          .select('id, scene_key')
-          .eq('project_id', projectId)
-          .like('scene_key', 'transition-%');
-        if (scenes && scenes.length > 0) {
-          console.log(`[EP04] Cleaning up ${scenes.length} orphaned transition scene rows`);
-          await db.from('cast_project_scenes')
-            .delete()
-            .in('id', scenes.map((s: any) => s.id));
-        }
-      } catch (e) {
-        console.warn('[EP04] Transition cleanup error (non-critical):', e);
       }
 
       setContentLoaded(true);
@@ -737,10 +765,13 @@ function EP04ProductionInner() {
   }, [projectId, contentLoaded, scriptContentForUI]);
 
   // ─── Auto-seed DB if projectId present but no DB data ──────────────────
+  // GUARDED: only runs ONCE per page load to prevent re-seeding (which wipes TTS data).
+  const seedAttemptedRef = useRef(false);
 
   useEffect(() => {
     if (!projectId || dbProject.isLoading || dbProject.isSeeded) return;
-    // DB load completed but no data found — auto-seed from config
+    if (seedAttemptedRef.current) return; // prevent repeated seed attempts
+    seedAttemptedRef.current = true;
     console.log('[EP04] No DB data found — auto-seeding from config files...');
     dbProject.seedFromConfig().then(ok => {
       if (ok) toast.success('Project seeded from config — DB is now source of truth');
