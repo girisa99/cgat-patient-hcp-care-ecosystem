@@ -79,6 +79,41 @@ serve(async (req) => {
       });
     }
 
+    // Handle poll_task — client-side polling for async WAN video generation
+    if (body.action === 'poll_task' && body.taskId) {
+      const intlKey = Deno.env.get('ALIBABA_API_KEY');
+      const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+      const apiKey = intlKey || chinaKey;
+      if (!apiKey) {
+        return new Response(JSON.stringify({ error: 'No Alibaba API key' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const pollBase = (chinaKey && !intlKey)
+        ? 'https://dashscope.aliyuncs.com/api/v1'
+        : 'https://dashscope-intl.aliyuncs.com/api/v1';
+      try {
+        const resp = await fetch(`${pollBase}/tasks/${body.taskId}`, {
+          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        });
+        const data = await resp.json();
+        const status = data.output?.task_status || 'UNKNOWN';
+        if (status === 'SUCCEEDED') {
+          const videoUrl = data.output?.video_url || data.output?.results?.[0]?.url;
+          return new Response(JSON.stringify({ success: true, videoUrl, status }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ success: false, status, message: data.output?.message }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, status: 'ERROR', message: String(e) }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Handle avatar/lip-sync generation
     if (type === 'avatar' || type === 'lipsync') {
       console.log(`🎭 Generating ${type} with ${provider !== 'auto' ? provider : 'auto-selected'} provider`);
@@ -174,20 +209,21 @@ serve(async (req) => {
 
     const processingTime = Date.now() - startTime;
     
-    // Ensure we always have a videoUrl - use placeholder if async processing
-    const finalVideoUrl = result.videoUrl || 
-      `https://placehold.co/1920x1080/1e293b/ffffff/mp4?text=${encodeURIComponent(prompt.slice(0, 30))}`;
-    
-    // Log the result for debugging
-    console.log(`✅ Video generation complete: ${result.provider}/${result.model}, videoUrl: ${finalVideoUrl?.substring(0, 80)}`);
+    // If video is still generating async, don't use a placeholder — return task info
+    const isAsync = result.asyncGeneration === true || !result.videoUrl;
+    const finalVideoUrl = result.videoUrl || null;
 
-    return new Response(JSON.stringify({ 
+    // Log the result for debugging
+    console.log(`✅ Video generation ${isAsync ? 'submitted (async)' : 'complete'}: ${result.provider}/${result.model}, videoUrl: ${finalVideoUrl?.substring(0, 80) || '(pending)'}`);
+
+    return new Response(JSON.stringify({
       success: true,
       videoUrl: finalVideoUrl,
-      thumbnailUrl: result.thumbnailUrl || `https://placehold.co/1920x1080/1e293b/ffffff?text=${encodeURIComponent(prompt.slice(0, 40))}`,
+      thumbnailUrl: result.thumbnailUrl || null,
+      taskId: result.taskId || null,
       processingTime,
       contentModerated: true,
-      asyncGeneration: !result.videoUrl, // Flag if using placeholder
+      asyncGeneration: isAsync,
       disclaimer: 'This is AI-generated video content. Please verify before use.',
       metadata: {
         prompt,
@@ -220,6 +256,8 @@ interface VideoResult {
   thumbnailUrl?: string;
   provider: string;
   model: string;
+  taskId?: string;          // For async generation (WAN models) — client can poll later
+  asyncGeneration?: boolean; // True when video is still generating
   visemeData?: VisemeData[];
 }
 
@@ -990,23 +1028,38 @@ async function generateWithAlibabaWAN(
 
   const data = await response.json();
 
-  // Handle async processing
+  // Handle async processing — WAN models are async (1-5 min generation time).
+  // Edge functions have ~60s timeout, so poll briefly then return task_id for client-side polling.
   if (data.output?.task_id) {
-    return await pollAlibabaTask(data.output.task_id, apiKey);
+    try {
+      return await pollAlibabaTask(data.output.task_id, apiKey, baseUrl);
+    } catch (pollErr) {
+      // Polling timed out within edge function limits — return task_id for client
+      console.log(`⏳ WAN generation still in progress, returning task_id for deferred retrieval`);
+      return {
+        videoUrl: '', // Will be resolved by client polling
+        provider: 'alibaba',
+        model: resolvedModel,
+        taskId: data.output.task_id,
+        asyncGeneration: true,
+      };
+    }
   }
 
   return {
     videoUrl: data.output?.video_url || data.output?.results?.[0]?.url,
     provider: 'alibaba',
-    model: 'wan-2.2-animate',
+    model: resolvedModel,
   };
 }
 
 async function pollAlibabaTask(taskId: string, apiKey: string, baseUrl?: string): Promise<VideoResult> {
-  const maxAttempts = 60;
+  // Poll within edge function runtime. If timeout was extended in Supabase dashboard, increase this.
+  // Default: 12 attempts × 5s = 60s. For extended timeouts, increase maxAttempts.
+  const maxAttempts = 24; // 24 × 5s = 120s — covers most WAN generations
   let attempts = 0;
-  // Auto-detect endpoint: China key uses China endpoint, otherwise international
-  const pollBaseUrl = baseUrl || (Deno.env.get('ALIBABA_CHINA_API_KEY') 
+  // Use the same baseUrl as the submission request to ensure endpoint consistency
+  const pollBaseUrl = baseUrl || (Deno.env.get('ALIBABA_CHINA_API_KEY') && !Deno.env.get('ALIBABA_API_KEY')
     ? 'https://dashscope.aliyuncs.com/api/v1'
     : 'https://dashscope-intl.aliyuncs.com/api/v1');
 

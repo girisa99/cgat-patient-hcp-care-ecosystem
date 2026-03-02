@@ -23,7 +23,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EP04_SCRIPT_CONTENT, EP04_NARRATOR_BRIDGES, type ScriptLine } from '@/config/ep04-script-content';
-import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP } from '@/config/ep04-production-config';
+import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP, EP04_AVATAR_CONFIG } from '@/config/ep04-production-config';
 import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -512,7 +512,6 @@ function EP04ProductionInner() {
             title: 'EP04 — Sprint Documentary',
             description: 'GenieSuite Sprint Documentary — 12 scenes, 5 voices, ~27 min',
             status: 'scripted',
-            production_stage: 'producing',
             style_intent: 'ep04-sprint-documentary',
             quality: 'production',
             target_regions: ['global'],
@@ -760,28 +759,8 @@ function EP04ProductionInner() {
         }
       }
 
-      // ── Restore production phase from DB ───────────────────────────
-      try {
-        const { data: proj } = await db
-          .from('cast_projects')
-          .select('production_stage')
-          .eq('id', projectId)
-          .maybeSingle();
-        const stage = proj?.production_stage;
-        if (stage === 'visual_production' || stage === 'tts_approved') {
-          setProductionPhase('tts_approved');
-        } else if (stage === 'visual_done' || stage === 'music_production') {
-          setProductionPhase('music');
-        } else if (stage === 'assembly') {
-          setProductionPhase('assembly');
-        } else if (stage === 'complete' || stage === 'published') {
-          setProductionPhase('complete');
-        }
-      } catch (e) {
-        console.warn('[EP04] Could not restore production_stage:', e);
-      }
-
       // ── Restore visual/music/assembly artifacts ──
+      // (production phase is inferred from restored artifacts below instead of a DB column)
       // Source 1: scene_config.artifacts (from updateSceneArtifacts)
       // Source 2 (fallback): cast_generation_jobs output_url (always saved on generation)
       const restored: Record<string, SceneProductionStatus> = {};
@@ -907,6 +886,8 @@ function EP04ProductionInner() {
   useEffect(() => {
     if (!projectId || dbProject.isLoading || dbProject.isSeeded) return;
     if (seedAttemptedRef.current) return; // prevent repeated seed attempts
+    // Wait for restoration to finish before deciding to seed — otherwise we race with artifact restore
+    if (!contentLoaded) return;
     // Don't re-seed if we already restored visual artifacts — the upsert wipes scene_config.artifacts
     if (Object.values(sceneProduction).some(s => s.visual === 'done')) {
       console.log('[EP04] Skipping auto-seed — visual artifacts already restored from DB');
@@ -919,7 +900,7 @@ function EP04ProductionInner() {
       if (ok) toast.success('Project seeded from config — DB is now source of truth');
       else console.warn('[EP04] Auto-seed failed — using config file fallback');
     });
-  }, [projectId, dbProject.isLoading, dbProject.isSeeded, sceneProduction]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId, dbProject.isLoading, dbProject.isSeeded, sceneProduction, contentLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Load token breakdown on mount ──────────────────────────────────────
 
@@ -1244,11 +1225,11 @@ function EP04ProductionInner() {
       toast.info(`Proceeding with ${doneCount}/${scriptKeys.length} lines (${missingAudio.length} optional lines skipped)`);
     }
 
-    // Update project production_stage in DB
+    // Update project status in DB
     if (projectId) {
       const db = supabase as any;
       await db.from('cast_projects').update({
-        production_stage: 'visual_production',
+        status: 'visual_production',
         updated_at: new Date().toISOString(),
       }).eq('id', projectId);
     }
@@ -1261,6 +1242,33 @@ function EP04ProductionInner() {
 
   // ─── Step types to skip in visual production (already done in Phase 2 / Phase 4) ──
   const SKIP_IN_VISUAL = new Set(['tts', 'music', 'sfx', 'scene-transition', 'storybook-frame']);
+
+  // ─── Client-side polling for async WAN video tasks ───────────────────────
+  const pollVideoTaskResult = useCallback(async (taskId: string): Promise<string | null> => {
+    // Poll DashScope task status via the edge function's poll endpoint
+    // We re-invoke ai-video-generator with action=poll_task
+    const maxPolls = 36; // 36 × 10s = 6 min max
+    for (let i = 0; i < maxPolls; i++) {
+      await new Promise(r => setTimeout(r, 10000)); // 10s between polls
+      try {
+        const { data } = await supabase.functions.invoke('ai-video-generator', {
+          body: { action: 'poll_task', taskId },
+        });
+        if (data?.videoUrl && !data.videoUrl.includes('placehold.co')) {
+          return data.videoUrl;
+        }
+        if (data?.status === 'FAILED') {
+          console.warn(`[EP04] Video task ${taskId} failed:`, data?.message);
+          return null;
+        }
+        console.log(`[EP04] Video task ${taskId} poll ${i + 1}/${maxPolls}: ${data?.status || 'pending'}`);
+      } catch (e) {
+        console.warn(`[EP04] Poll error for task ${taskId}:`, e);
+      }
+    }
+    console.warn(`[EP04] Video task ${taskId} timed out after ${maxPolls} polls`);
+    return null;
+  }, []);
 
   // Helper: process a single visual step and return the result URL (or null)
   const processVisualStep = useCallback(async (
@@ -1413,15 +1421,25 @@ function EP04ProductionInner() {
       edgeFn = 'ai-video-generator';
       action = 'generate_video';
     } else if (stepType === 'avatar-3d') {
-      edgeFn = 'ai-video-generator';
-      action = 'avatar';
+      // Avatar-3d generates a STATIC character portrait image, not a video animation.
+      // The rich pixar/disney prompt is built below from EP04_AVATAR_CONFIG.
+      edgeFn = 'ai-universal-processor';
+      action = 'image_generation';
     } else if (stepType === 'kinetic-text' || stepType === 'motion-graphics') {
       action = 'image_generation';
     }
 
-    // Build a rich prompt that includes step-specific fields (text, content, etc.)
+    // Build a rich prompt that includes step-specific fields (text, content, character config, etc.)
     let richPrompt = prompt;
-    if (stepType === 'kinetic-text' && step.text) {
+    if (stepType === 'avatar-3d' && step.character) {
+      const charKey = step.character as keyof typeof EP04_AVATAR_CONFIG['characters'];
+      const charCfg = EP04_AVATAR_CONFIG.characters[charKey];
+      if (charCfg) {
+        const styleKey = (step.style || 'pixar-3d') as string;
+        const basePrompt = styleKey.includes('disney') ? charCfg.disneyPrompt : charCfg.pixarPrompt;
+        richPrompt = basePrompt || `Generate a ${styleKey} 3D avatar of ${charCfg.name} (${charCfg.role}), Pixar quality, cinematic lighting, 8K`;
+      }
+    } else if (stepType === 'kinetic-text' && step.text) {
       richPrompt = `Create a cinematic kinetic typography image for: "${step.text}". Style: bold animated text on a dark cinematic background with dramatic lighting, Pixar quality, motion blur effects. Scene context: ${SCENE_TITLES[sceneKey] || sceneKey}`;
     } else if (stepType === 'motion-graphics' && step.content) {
       richPrompt = `Create a motion graphics visualization for: "${step.content}". Style: professional data visualization, infographic style, dark theme with vibrant accent colors. Scene context: ${SCENE_TITLES[sceneKey] || sceneKey}`;
@@ -1445,11 +1463,6 @@ function EP04ProductionInner() {
       provider: step.provider || undefined,
       style: step.style || undefined,
     };
-    // Pass character for avatar-3d
-    if (stepType === 'avatar-3d') {
-      body.type = 'avatar';
-      body.character = step.character || 'host';
-    }
     // Pass type + model for alibaba-video through ai-video-generator
     if (stepType === 'alibaba-video' || stepType === 'video') {
       body.type = 'video';
@@ -1466,15 +1479,28 @@ function EP04ProductionInner() {
       return;
     }
 
-    const url = data?.url || data?.videoUrl || data?.imageUrl || null;
+    let url = data?.url || data?.videoUrl || data?.imageUrl || null;
     // Skip placeholder URLs (placehold.co) — these mean the real generation failed
     const isPlaceholder = url && (url.includes('placehold.co') || url.includes('placeholder'));
     const isAsync = data?.asyncGeneration === true;
-    if (isPlaceholder || isAsync) {
+    const taskId2 = data?.taskId;
+
+    // If video is still generating async, poll for completion (WAN models take 1-5 min)
+    if (isAsync && taskId2 && !url) {
+      toast.info(`${stepLabel} "${stepType}": video generating... polling for result`);
+      url = await pollVideoTaskResult(taskId2);
+      if (url) {
+        console.log(`[EP04 Visual] ${stepLabel} async poll resolved:`, url.substring(0, 80));
+      }
+    }
+
+    if (isPlaceholder) {
       toast.warning(`${stepLabel} "${stepType}": generation returned placeholder — provider may be unavailable`);
-      console.warn(`[EP04 Visual] ${stepLabel} got placeholder URL:`, url, 'asyncGeneration:', data?.asyncGeneration);
+      console.warn(`[EP04 Visual] ${stepLabel} got placeholder URL:`, url);
     } else if (url) {
       results[`${stepType}-${sceneKey}-${Date.now()}`] = url;
+    } else if (isAsync) {
+      toast.warning(`${stepLabel} "${stepType}": still generating — check back later`);
     }
     if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, isPlaceholder ? null : url);
   }, [projectId, screenshotUrls, trackGenerationJob, completeGenerationJob]);
