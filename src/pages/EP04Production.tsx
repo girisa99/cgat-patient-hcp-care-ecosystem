@@ -713,6 +713,14 @@ function EP04ProductionInner() {
         console.warn('[EP04] Generation jobs TTS query failed:', err);
       }
 
+      // Auto-mark visual-only lines (empty text) as done — they don't need TTS
+      for (const [key, line] of Object.entries(scriptContentForUI)) {
+        if (!line.text || line.text.trim().length === 0) {
+          restoredAudio[key] = { audioUrl: '', provider: 'none', voice: 'visual-only' };
+          restoredStatus[key] = 'done';
+        }
+      }
+
       // Apply restored TTS
       if (Object.keys(restoredAudio).length > 0) {
         setAudioMap(restoredAudio);
@@ -838,6 +846,14 @@ function EP04ProductionInner() {
         toast.error(`TTS: Line "${key}" not found in script config`);
         console.error(`[EP04 TTS] Key not in scriptContentForUI: "${key}". Available keys sample:`, Object.keys(scriptContentForUI).slice(0, 5));
         return false;
+      }
+
+      // Skip TTS for visual-only lines (empty text = cinematic staging/beats)
+      if (!line.text || line.text.trim().length === 0) {
+        console.log(`[EP04 TTS] Skipping "${key}" — visual-only line (no dialogue)`);
+        setStatusMap(prev => ({ ...prev, [key]: 'done' }));
+        setAudioMap(prev => ({ ...prev, [key]: { audioUrl: '', provider: 'none', voice: 'visual-only' } }));
+        return true;
       }
 
       console.log(`[EP04 TTS] Generating: "${key}" voice=${line.voice} scene=${line.scene} text=${line.text.slice(0, 40)}...`);
