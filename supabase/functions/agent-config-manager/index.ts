@@ -272,8 +272,8 @@ serve(async (req) => {
                 message: response.ok ? 'NPPES API connection successful' : 'NPPES API unavailable',
                 details: { status: response.status, resultCount: data.result_count || 0 }
               };
-            } catch (e) {
-              testResult = { success: false, message: `Connection failed: ${e.message}`, details: {} };
+            } catch (e: unknown) {
+              testResult = { success: false, message: `Connection failed: ${e instanceof Error ? e.message : String(e)}`, details: {} };
             }
             break;
 
@@ -288,8 +288,8 @@ serve(async (req) => {
                 message: response.ok ? 'OpenFDA API connection successful' : 'OpenFDA API unavailable',
                 details: { status: response.status }
               };
-            } catch (e) {
-              testResult = { success: false, message: `Connection failed: ${e.message}`, details: {} };
+            } catch (e: unknown) {
+              testResult = { success: false, message: `Connection failed: ${e instanceof Error ? e.message : String(e)}`, details: {} };
             }
             break;
 
@@ -305,8 +305,8 @@ serve(async (req) => {
                 message: response.ok ? 'RxNav API connection successful' : 'RxNav API unavailable',
                 details: { version: data.version || 'unknown' }
               };
-            } catch (e) {
-              testResult = { success: false, message: `Connection failed: ${e.message}`, details: {} };
+            } catch (e: unknown) {
+              testResult = { success: false, message: `Connection failed: ${e instanceof Error ? e.message : String(e)}`, details: {} };
             }
             break;
 
@@ -332,10 +332,10 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('[agent-config-manager] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

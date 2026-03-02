@@ -41,7 +41,7 @@ const keys = {
 // PROVIDER AVAILABILITY
 // ============================================================================
 
-export function isImageProviderAvailable(provider: ImageProvider): boolean {
+export function isImageProviderAvailable(provider: string): boolean {
   switch (provider) {
     case 'gemini': return !!keys.gemini();
     case 'vertex-imagen': return !!keys.vertexSA();

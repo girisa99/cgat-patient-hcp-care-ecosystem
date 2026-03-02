@@ -36,7 +36,7 @@ const videoKeys = {
 // PROVIDER AVAILABILITY
 // ============================================================================
 
-export function isVideoProviderAvailable(provider: VideoProvider): boolean {
+export function isVideoProviderAvailable(provider: string): boolean {
   switch (provider) {
     case 'alibaba-wan': return !!videoKeys.alibaba();
     case 'vertex-veo': return !!videoKeys.vertexSA();
