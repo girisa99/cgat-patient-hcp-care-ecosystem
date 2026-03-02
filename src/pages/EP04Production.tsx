@@ -1453,6 +1453,7 @@ function EP04ProductionInner() {
     // Pass type + model for alibaba-video through ai-video-generator
     if (stepType === 'alibaba-video' || stepType === 'video') {
       body.type = 'video';
+      body.provider = step.provider || 'alibaba';
       body.model = step.model || 'wan2.6-t2v';
       body.duration = step.duration || 4;
     }
@@ -1466,8 +1467,16 @@ function EP04ProductionInner() {
     }
 
     const url = data?.url || data?.videoUrl || data?.imageUrl || null;
-    if (url) results[`${stepType}-${sceneKey}-${Date.now()}`] = url;
-    if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+    // Skip placeholder URLs (placehold.co) — these mean the real generation failed
+    const isPlaceholder = url && (url.includes('placehold.co') || url.includes('placeholder'));
+    const isAsync = data?.asyncGeneration === true;
+    if (isPlaceholder || isAsync) {
+      toast.warning(`${stepLabel} "${stepType}": generation returned placeholder — provider may be unavailable`);
+      console.warn(`[EP04 Visual] ${stepLabel} got placeholder URL:`, url, 'asyncGeneration:', data?.asyncGeneration);
+    } else if (url) {
+      results[`${stepType}-${sceneKey}-${Date.now()}`] = url;
+    }
+    if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, isPlaceholder ? null : url);
   }, [projectId, screenshotUrls, trackGenerationJob, completeGenerationJob]);
 
   const startSceneVisualProduction = useCallback(async (sceneKey: string) => {
