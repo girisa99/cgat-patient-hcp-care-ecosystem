@@ -898,11 +898,13 @@ function EP04ProductionInner() {
       }
       return true;
     } catch (err: any) {
+      const errMsg = err?.message || err?.toString() || 'Unknown error';
       console.error(`[EP04 TTS] Failed: ${key}`, err);
+      toast.error(`TTS failed for "${key}": ${errMsg}`);
       setStatusMap(prev => ({ ...prev, [key]: 'error' }));
       return false;
     }
-  }, [projectId, trackGenerationJob, completeGenerationJob, updateLineTTS]);
+  }, [projectId, scriptContentForUI, getVoiceConfig, trackGenerationJob, completeGenerationJob, updateLineTTS]);
 
   // ─── Batch generate all ──────────────────────────────────────────────────
 
@@ -922,7 +924,13 @@ function EP04ProductionInner() {
     }
 
     setBatchProgress(null);
-    toast.success(`Generated ${success}/${keys.length} voiceovers`);
+    if (success === keys.length) {
+      toast.success(`Generated all ${success} voiceovers`);
+    } else if (success > 0) {
+      toast.warning(`Generated ${success}/${keys.length} — ${keys.length - success} failed (check console for details)`);
+    } else {
+      toast.error(`All ${keys.length} TTS generations failed — check browser console for error details`);
+    }
   }, [scriptKeys, statusMap, generateLine]);
 
   const cancelBatch = useCallback(() => {
