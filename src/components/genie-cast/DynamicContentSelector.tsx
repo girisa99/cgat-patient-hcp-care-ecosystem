@@ -4,7 +4,7 @@
  * Connected to universal enrichment via format config.
  */
 import React, { useState, useMemo } from 'react';
-import { Plus, ChevronRight, Sparkles, HelpCircle } from 'lucide-react';
+import { Plus, ChevronRight, Sparkles, HelpCircle, ArrowRight, Check } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +43,7 @@ interface DynamicContentSelectorProps {
   onAddFormat: (data: { name: string; label: string; description?: string }) => Promise<any>;
   onAddSubFormat?: (data: { format_id: string; name: string; label: string; description?: string }) => Promise<any>;
   onCategoryHover?: (category: ContentCategory | null) => void;
+  onContinue?: () => void;
   isLoading?: boolean;
 }
 
@@ -68,6 +69,7 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
   onAddFormat,
   onAddSubFormat,
   onCategoryHover,
+  onContinue,
   isLoading,
 }) => {
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -338,26 +340,46 @@ export const DynamicContentSelector: React.FC<DynamicContentSelectorProps> = ({
         </div>
       )}
 
-      {/* Summary */}
+      {/* Summary + Continue CTA */}
       {selectedCategoryId && selectedFormatId && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-          <Sparkles className="w-4 h-4 text-primary shrink-0" />
-          <span className="text-xs">
-            <strong>{selectedCategory?.label}</strong>
-            <ChevronRight className="w-3 h-3 inline mx-1" />
-            <strong>{selectedFormat?.label}</strong>
-            {selectedSubFormatId && (
-              <>
-                <ChevronRight className="w-3 h-3 inline mx-1" />
-                <strong>{availableSubFormats.find(sf => sf.id === selectedSubFormatId)?.label}</strong>
-              </>
-            )}
-            {' — '}
-            {showSubFormatStep && !selectedSubFormatId 
-              ? 'Select a sub-format to continue'
-              : 'Universal Enrichment will determine messaging, positioning & blueprint requirements'
-            }
-          </span>
+        <div className="space-y-3">
+          {/* Selection summary */}
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <Sparkles className="w-4 h-4 text-primary shrink-0" />
+            <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 font-medium">
+                <Check className="w-3 h-3" /> {selectedCategory?.label}
+              </span>
+              <ChevronRight className="w-3 h-3 text-muted-foreground" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 font-medium">
+                <Check className="w-3 h-3" /> {selectedFormat?.label}
+              </span>
+              {selectedSubFormatId && (
+                <>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 font-medium">
+                    <Check className="w-3 h-3" /> {availableSubFormats.find(sf => sf.id === selectedSubFormatId)?.label}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Continue button — only show when selection is complete */}
+          {showSubFormatStep && !selectedSubFormatId ? (
+            <p className="text-xs text-muted-foreground text-center">
+              Select a content type above to continue
+            </p>
+          ) : onContinue ? (
+            <Button
+              size="lg"
+              className="w-full gap-2 font-semibold"
+              onClick={onContinue}
+            >
+              Continue to Style & Config
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          ) : null}
         </div>
       )}
 

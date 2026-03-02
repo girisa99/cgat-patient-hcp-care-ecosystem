@@ -1,7 +1,7 @@
 /**
  * Blueprint Templates Grid
- * Displays templates with intent-driven recommendations, comparison, and creation
- * Features: hybrid intent scoring, "Create Custom" always visible, search filtering
+ * "Create Custom" hero card at top + flow-aligned starters as "Starting Points"
+ * Features: hero CTA, search filtering, comparison, preview, style-based sorting
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -48,12 +48,16 @@ interface BlueprintTemplatesGridProps {
 }
 
 const CATEGORY_PLACEHOLDER_THUMBNAILS: Record<string, string> = {
-  marketing: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop',
-  educational: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=640&h=360&fit=crop',
-  storytelling: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=640&h=360&fit=crop',
+  healthcare: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=640&h=360&fit=crop',
+  retail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop',
+  education: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=640&h=360&fit=crop',
+  technology: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=640&h=360&fit=crop',
+  finance: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=640&h=360&fit=crop',
+  travel: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=640&h=360&fit=crop',
+  celebrations: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=640&h=360&fit=crop',
+  entertainment: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=640&h=360&fit=crop',
   corporate: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=640&h=360&fit=crop',
-  animation: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=640&h=360&fit=crop',
-  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=640&h=360&fit=crop',
+  marketing: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop',
 };
 
 const EP04_BLUEPRINT_ID = 'cafcd78a-7957-4021-ba8f-c20daba331b2';
@@ -74,7 +78,7 @@ export function BlueprintTemplatesGrid({
   createContext,
 }: BlueprintTemplatesGridProps) {
   const { toast } = useToast();
-  const { blueprints, isLoading, refetch, deleteBlueprint, isDeleting } = useVideoBlueprints();
+  const { blueprints, flowAlignedTemplates, isLoading, refetch, deleteBlueprint, isDeleting } = useVideoBlueprints();
   const { intents } = useContentIntents();
 
   // Resolve full intent data for richer context passing
@@ -86,45 +90,41 @@ export function BlueprintTemplatesGrid({
   const [searchQuery, setSearchQuery] = useState('');
   const [previewBlueprint, setPreviewBlueprint] = useState<VideoBlueprint | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showBrowseAll, setShowBrowseAll] = useState(false);
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
 
-  // Filter by category + format, then apply intent scoring + style-based sorting
-  const recommendedTemplates = useMemo(() => {
-    // Browse All shows ALL blueprints (ignores category/format filter)
-    if (showBrowseAll) return blueprints;
+  // Filter flow-aligned starters by category + format, then apply style-based sorting
+  const starterTemplates = useMemo(() => {
+    let filtered = flowAlignedTemplates;
 
-    // Apply category filter if provided
-    let filtered = categoryFilter
-      ? blueprints.filter(bp => bp.category.toLowerCase() === categoryFilter.toLowerCase())
-      : blueprints;
+    // Apply category filter
+    if (categoryFilter) {
+      const catFiltered = filtered.filter(
+        bp => bp.category.toLowerCase() === categoryFilter.toLowerCase()
+      );
+      if (catFiltered.length > 0) filtered = catFiltered;
+    }
 
-    // Apply format filter if provided (match against template tags or name)
+    // Apply format filter (match against tags or name)
     if (formatFilter && filtered.length > 0) {
       const fmtLower = formatFilter.toLowerCase();
-      const formatFiltered = filtered.filter(bp =>
+      const fmtFiltered = filtered.filter(bp =>
         bp.industry_tags?.some(tag => tag.toLowerCase().includes(fmtLower)) ||
         bp.name.toLowerCase().includes(fmtLower) ||
         bp.description?.toLowerCase().includes(fmtLower)
       );
-      if (formatFiltered.length > 0) filtered = formatFiltered;
-      // If format filter yields nothing, keep category-filtered results
+      if (fmtFiltered.length > 0) filtered = fmtFiltered;
     }
 
-    const source = intentFilter
-      ? getIntentRecommendations(filtered, intentFilter, 8)
-      : filtered.slice(0, 12);
-
-    // If filters yielded no results, fall back to all blueprints
-    if (source.length === 0 && (categoryFilter || formatFilter)) {
-      return blueprints.slice(0, 12);
+    // Apply intent scoring if intent filter is provided
+    if (intentFilter) {
+      filtered = getIntentRecommendations(filtered, intentFilter, 9);
     }
 
-    // Sort templates with matching styles to the top (weighted: style_intent > industry_tags > aesthetic_keywords)
+    // Sort by matching styles (weighted: style_intent > industry_tags > aesthetic_keywords)
     if (selectedVideoStyles && selectedVideoStyles.length > 0) {
       const styleNames = new Set(selectedVideoStyles.map((s: any) => (s.name || s.label || '').toLowerCase()));
-      return [...source].sort((a, b) => {
+      return [...filtered].sort((a, b) => {
         const scoreMatch = (bp: VideoBlueprint) => {
           let score = 0;
           if (bp.industry_tags?.some(t => styleNames.has(t.toLowerCase()))) score += 2;
@@ -136,27 +136,23 @@ export function BlueprintTemplatesGrid({
       });
     }
 
-    return source;
-  }, [blueprints, intentFilter, categoryFilter, formatFilter, selectedVideoStyles, showBrowseAll]);
+    return filtered;
+  }, [flowAlignedTemplates, categoryFilter, formatFilter, intentFilter, selectedVideoStyles]);
 
-  // Filter by search query — searches across ALL blueprints when Browse All is active
-  const filteredTemplates = useMemo(() => {
-    if (!searchQuery) return recommendedTemplates;
+  // Search across starters
+  const filteredStarters = useMemo(() => {
+    if (!searchQuery) return starterTemplates;
     const query = searchQuery.toLowerCase().trim();
-    // When searching, always search ALL blueprints (not just recommended subset)
-    const searchPool = showBrowseAll ? blueprints : recommendedTemplates;
-    const results = searchPool.filter(bp =>
+    return starterTemplates.filter(bp =>
       bp.name.toLowerCase().includes(query) ||
       bp.description?.toLowerCase().includes(query) ||
       bp.category.toLowerCase().includes(query) ||
       bp.industry_tags?.some(tag => tag.toLowerCase().includes(query))
     );
-    console.log(`[TemplateSearch] query="${query}" pool=${searchPool.length} results=${results.length}`);
-    return results;
-  }, [recommendedTemplates, searchQuery, showBrowseAll, blueprints]);
+  }, [starterTemplates, searchQuery]);
 
   const handleSelectTemplate = useCallback((blueprint: VideoBlueprint, overrides?: { targetPlatforms?: string[] }) => {
-    const enriched = overrides?.targetPlatforms 
+    const enriched = overrides?.targetPlatforms
       ? { ...blueprint, target_platform: overrides.targetPlatforms }
       : blueprint;
     onSelectBlueprint?.(enriched);
@@ -167,9 +163,8 @@ export function BlueprintTemplatesGrid({
   const handleTemplateCreated = useCallback(async () => {
     setShowCreateDialog(false);
     const { data: updated } = await refetch();
-    // Auto-select the most recently created template
     if (updated && updated.length > 0) {
-      const sorted = [...updated].sort((a, b) => 
+      const sorted = [...updated].sort((a, b) =>
         new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
       );
       const newest = sorted[0];
@@ -193,204 +188,221 @@ export function BlueprintTemplatesGrid({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
-        ))}
+      <div className="space-y-4">
+        <div className="h-40 bg-muted animate-pulse rounded-lg" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
       </div>
     );
   }
 
+  // Context badges for the hero card
+  const contextBadges: { label: string; value: string }[] = [];
+  if (categoryFilter) contextBadges.push({ label: 'Category', value: categoryFilter });
+  if (formatFilter) contextBadges.push({ label: 'Format', value: formatFilter });
+  if (intentFilter) contextBadges.push({ label: 'Intent', value: intentFilter });
+  if (selectedVideoStyles && selectedVideoStyles.length > 0) {
+    contextBadges.push({
+      label: 'Styles',
+      value: selectedVideoStyles.map((s: any) => s.name || s.label).join(', '),
+    });
+  }
+
   return (
-    <div className="space-y-4">
-      {/* Header with Intent Context */}
-      {intentFilter && !showBrowseAll && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-primary/10 rounded-lg border border-primary/20">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium">
-            Showing top {filteredTemplates.length} templates matched to your intent
-          </span>
-          <span className="text-xs text-muted-foreground ml-1">
-            (scored by category, style, keywords & duration fit)
-          </span>
-        </div>
-      )}
-
-      {/* Browse All Banner */}
-      {showBrowseAll && (
-        <div className="flex items-center justify-between px-4 py-3 bg-muted rounded-lg border">
-          <span className="text-sm font-medium">
-            Browsing all {filteredTemplates.length} templates
-          </span>
-          <Button variant="ghost" size="sm" onClick={() => setShowBrowseAll(false)}>
-            ← Back to Recommendations
-          </Button>
-        </div>
-      )}
-
-      {/* Action Bar: Search + Create Custom + Browse All */}
-      <div className="flex gap-2 items-center">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search templates..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {/* Create Custom Template - Always Visible */}
-        <Button
-          onClick={() => setShowCreateDialog(true)}
-          variant="default"
-          size="sm"
-          className="gap-2 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Create Custom
-        </Button>
-
-        {/* Browse All - When filtered by intent or category & not already browsing */}
-        {(intentFilter || categoryFilter) && !showBrowseAll && (
+    <div className="space-y-6">
+      {/* ── Hero Card: Create Custom Template ── */}
+      <Card className="relative overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
+        <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
+          <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+            <Plus className="w-8 h-8 text-primary" />
+          </div>
+          <div className="flex-1 text-center md:text-left space-y-2">
+            <h2 className="text-xl font-bold">Create Custom Template</h2>
+            <p className="text-sm text-muted-foreground">
+              Build a template tailored to your exact needs. Your CREATE flow context
+              (category, format, enrichment) will be pre-filled automatically.
+            </p>
+            {contextBadges.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
+                {contextBadges.map((badge) => (
+                  <Badge key={badge.label} variant="secondary" className="text-xs">
+                    {badge.label}: {badge.value}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
           <Button
-            onClick={() => setShowBrowseAll(true)}
-            variant="secondary"
-            size="sm"
+            onClick={() => setShowCreateDialog(true)}
+            size="lg"
             className="gap-2 shrink-0"
           >
-            Browse All ({blueprints.length})
-            <ArrowRight className="w-4 h-4" />
+            <Plus className="w-5 h-5" />
+            Create Custom
           </Button>
-        )}
+        </CardContent>
+      </Card>
+
+      {/* ── Search Bar ── */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search starting point templates..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
-      {/* Templates Grid */}
-      {filteredTemplates.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {filteredTemplates.map((blueprint) => {
-            const isSelected = selectedBlueprintId === blueprint.id;
-            return (
-              <Card
-                key={blueprint.id}
-                className={`group cursor-pointer hover:shadow-lg transition-all overflow-hidden ${
-                  isSelected ? 'ring-2 ring-primary' : ''
-                }`}
-                onClick={() => handleSelectTemplate(blueprint)}
-              >
-                {/* Thumbnail */}
-                <div className="relative h-40 bg-muted overflow-hidden">
-                  <img
-                    src={getEffectiveThumbnail(blueprint)}
-                    alt={blueprint.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <Checkbox
-                    checked={selectedForComparison.includes(blueprint.id)}
-                    onCheckedChange={() => toggleComparison(blueprint.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute top-2 right-2"
-                  />
-                </div>
-
-                <CardContent className="p-3 space-y-2">
-                  <div>
-                    <h3 className="font-semibold text-sm line-clamp-1">{blueprint.name}</h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {blueprint.description || 'No description'}
-                    </p>
-                  </div>
-
-                  <div className="flex gap-1 flex-wrap">
-                    <Badge variant="secondary" className="text-xs">
-                      {blueprint.category}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {blueprint.estimated_duration_seconds >= 60 
-                        ? `${Math.round(blueprint.estimated_duration_seconds / 60)}m` 
-                        : `${blueprint.estimated_duration_seconds}s`}
-                    </Badge>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPreviewBlueprint(blueprint);
-                      }}
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectTemplate(blueprint);
-                      }}
-                    >
-                      Use This
-                    </Button>
-                    {!blueprint.is_system_default && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-                            disabled={isDeleting}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "{blueprint.name}"? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => deleteBlueprint(blueprint.id)}
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+      {/* ── Starting Points Section ── */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Starting Points
+          </h3>
+          {categoryFilter && (
+            <Badge variant="outline" className="text-xs">
+              {categoryFilter}
+            </Badge>
+          )}
         </div>
-      ) : (
-        <div className="text-center py-12 space-y-4">
-          <div className="text-muted-foreground">
-            <p className="text-lg font-medium mb-1">No templates found</p>
-            <p className="text-sm">Try a different search or create a custom template</p>
+
+        {filteredStarters.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredStarters.map((blueprint) => {
+              const isSelected = selectedBlueprintId === blueprint.id;
+              return (
+                <Card
+                  key={blueprint.id}
+                  className={`group cursor-pointer hover:shadow-lg transition-all overflow-hidden ${
+                    isSelected ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => handleSelectTemplate(blueprint)}
+                >
+                  {/* Thumbnail */}
+                  <div className="relative h-36 bg-muted overflow-hidden">
+                    <img
+                      src={getEffectiveThumbnail(blueprint)!}
+                      alt={blueprint.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <Checkbox
+                      checked={selectedForComparison.includes(blueprint.id)}
+                      onCheckedChange={() => toggleComparison(blueprint.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute top-2 right-2"
+                    />
+                  </div>
+
+                  <CardContent className="p-3 space-y-2">
+                    <div>
+                      <h3 className="font-semibold text-sm line-clamp-1">{blueprint.name}</h3>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {blueprint.description || 'No description'}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-1 flex-wrap">
+                      <Badge variant="secondary" className="text-xs">
+                        {blueprint.category}
+                      </Badge>
+                      {blueprint.style_intent && (
+                        <Badge variant="outline" className="text-xs">
+                          {blueprint.style_intent}
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs">
+                        {blueprint.estimated_duration_seconds >= 60
+                          ? `${Math.round(blueprint.estimated_duration_seconds / 60)}m`
+                          : `${blueprint.estimated_duration_seconds}s`}
+                      </Badge>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewBlueprint(blueprint);
+                        }}
+                      >
+                        Preview
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTemplate(blueprint);
+                        }}
+                      >
+                        Use This
+                      </Button>
+                      {!blueprint.is_system_default && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                              disabled={isDeleting}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{blueprint.name}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => deleteBlueprint(blueprint.id)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-          <div className="flex gap-3 justify-center">
-            <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+        ) : (
+          <div className="text-center py-8 space-y-2">
+            <p className="text-muted-foreground text-sm">
+              {searchQuery
+                ? `No starter templates matching "${searchQuery}".`
+                : categoryFilter
+                  ? `No starter templates for "${categoryFilter}". Create one above.`
+                  : 'No starter templates available. Create one above.'}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCreateDialog(true)}
+              className="gap-2"
+            >
               <Plus className="w-4 h-4" />
               Create Custom Template
             </Button>
-            {(intentFilter || categoryFilter) && !showBrowseAll && (
-              <Button variant="outline" onClick={() => setShowBrowseAll(true)}>
-                Browse All Templates ({blueprints.length})
-              </Button>
-            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Comparison Bar */}
       {selectedForComparison.length > 0 && (

@@ -251,6 +251,29 @@ export const useVideoBlueprints = () => {
     },
   });
 
+  // Migrate to flow-aligned starters (replaces legacy + industry templates with 9 minimal starters)
+  const migrateToFlowAlignedMutation = useMutation({
+    mutationFn: async () => {
+      const { migrateToFlowAligned } = await import('@/services/flowAlignedTemplateSeed');
+      return migrateToFlowAligned();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['video-blueprints'] });
+      toast({
+        title: 'Flow-Aligned Migration Complete',
+        description: `Soft-deleted ${result.softDeleted} legacy, inserted ${result.inserted} starters (${result.skipped} skipped). EP04: ${result.ep04Protected ? 'protected' : 'missing'}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Flow-Aligned Migration Failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  // Filter: flow-aligned starters (new pipeline-compatible templates)
+  const flowAlignedTemplates = (blueprintsQuery.data || []).filter(
+    bp => (bp.industry_tags || []).includes('flow_aligned_starter')
+  );
+
   // Filter: industry templates only
   const industryTemplates = (blueprintsQuery.data || []).filter(
     bp => (bp.industry_tags || []).includes('industry_template')
@@ -324,6 +347,7 @@ export const useVideoBlueprints = () => {
 
   return {
     blueprints: blueprintsQuery.data || [],
+    flowAlignedTemplates,
     industryTemplates,
     legacyBlueprints,
     blueprintsByCategory,
@@ -337,6 +361,8 @@ export const useVideoBlueprints = () => {
     isSeeding: seedBlueprintsMutation.isPending,
     migrateToIndustry: migrateToIndustryMutation.mutate,
     isMigrating: migrateToIndustryMutation.isPending,
+    migrateToFlowAligned: migrateToFlowAlignedMutation.mutate,
+    isMigratingFlowAligned: migrateToFlowAlignedMutation.isPending,
     assignBlueprint: assignBlueprintMutation.mutate,
     isAssigning: assignBlueprintMutation.isPending,
     trackUsage: trackUsageMutation.mutate,

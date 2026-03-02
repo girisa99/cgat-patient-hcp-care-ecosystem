@@ -304,7 +304,11 @@ export function useCastContentRegistry() {
       // Deduplicate: DB links take precedence over seed links for the same cat+fmt pair
       const dbLinkKeys = new Set(dbLinks.map(l => `${l.category_id}::${l.format_id}`));
       const uniqueSeedLinks = dynamicSeedLinks.filter(l => !dbLinkKeys.has(`${l.category_id}::${l.format_id}`));
-      setCategoryFormats([...dbLinks, ...uniqueSeedLinks]);
+      const mergedLinks = [...dbLinks, ...uniqueSeedLinks];
+      setCategoryFormats(mergedLinks);
+
+      console.log(`[CastRegistry] Loaded: ${mergedCats.length} categories, ${mergedFmts.length} formats, ${[...dbSubFormats, ...seedSubFormats].length} sub-formats, ${mergedLinks.length} links`);
+
       setVisualStyles((vsRes.data || []) as unknown as VisualStyle[]);
       setProductionCapabilities((pcRes.data || []) as unknown as ProductionCapability[]);
       setAssetSourceTypes((asRes.data || []) as unknown as AssetSourceType[]);

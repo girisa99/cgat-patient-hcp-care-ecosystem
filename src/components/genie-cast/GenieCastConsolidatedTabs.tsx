@@ -1158,14 +1158,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   if (castSession.session.projectId) {
                     castProjects.updateProject(castSession.session.projectId, { format_id: fmt.id, sub_format_id: null } as any).catch(() => {});
                   }
-                  // Check if sub-formats exist for this format+category — if not, advance
-                  const subs = contentRegistry.getSubFormatsForFormat(fmt.id, selectedCategoryId || undefined);
-                  if (subs.length === 0) {
-                    castSession.selectIntent(fmt.name as any);
-                    setSubTab('create', 'configure');
-                    toast.success(`${fmt.label} selected — configuring style & platforms`);
-                  }
-                  // If sub-formats exist, stay on step — user picks sub-format next
+                  // NO auto-advance — user clicks "Continue" in DynamicContentSelector
                 }}
                 onSubFormatSelect={(sf) => {
                   lsCast.captureFormatSelection(selectedFormatId || '', sf.name || sf.id, selectedCategoryId || '', sf.id);
@@ -1174,10 +1167,15 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   if (castSession.session.projectId) {
                     castProjects.updateProject(castSession.session.projectId, { sub_format_id: sf.id } as any).catch(() => {});
                   }
-                  // After sub-format selection, advance to configure
-                  castSession.selectIntent((sf.name || selectedFormatId) as any);
+                  // NO auto-advance — user clicks "Continue" in DynamicContentSelector
+                }}
+                onContinue={() => {
+                  const fmt = contentRegistry.formats.find(f => f.id === selectedFormatId);
+                  const sf = selectedSubFormatId ? contentRegistry.subFormats.find(s => s.id === selectedSubFormatId) : null;
+                  const intentName = sf?.name || fmt?.name || 'video';
+                  castSession.selectIntent(intentName as any);
                   setSubTab('create', 'configure');
-                  toast.success(`${sf.label} selected — configuring style & platforms`);
+                  toast.success(`${sf?.label || fmt?.label || 'Content'} selected — configuring style & platforms`);
                 }}
                 onAddCategory={contentRegistry.addCategory}
                 onAddFormat={contentRegistry.addFormat}

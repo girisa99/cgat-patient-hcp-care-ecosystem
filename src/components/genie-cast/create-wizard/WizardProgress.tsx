@@ -1,6 +1,6 @@
 /**
- * WizardProgress — 7-step horizontal progress indicator
- * Shows completion state per step with clickable navigation.
+ * WizardProgress — 4-step horizontal progress indicator
+ * Aligned with CREATE flow: Describe → Category & Style → Platforms & Regions → Review
  */
 
 import React from 'react';
@@ -15,11 +15,8 @@ export interface WizardStep {
 
 export const WIZARD_STEPS: WizardStep[] = [
   { id: 'describe', label: 'Describe', icon: '✨' },
-  { id: 'category', label: 'Category', icon: '📂' },
-  { id: 'styles', label: 'Styles', icon: '🎬' },
-  { id: 'capabilities', label: 'AI Capabilities', icon: '⚡' },
-  { id: 'platforms', label: 'Platforms', icon: '🌐' },
-  { id: 'regions', label: 'Regions', icon: '🗺️' },
+  { id: 'category-style', label: 'Category & Style', icon: '🎬' },
+  { id: 'platforms-regions', label: 'Platforms & Regions', icon: '🌐' },
   { id: 'review', label: 'Review', icon: '✅' },
 ];
 
@@ -47,7 +44,7 @@ export const WizardProgress: React.FC<WizardProgressProps> = ({
           <React.Fragment key={step.id}>
             {idx > 0 && (
               <div className={cn(
-                "w-4 h-0.5 flex-shrink-0 rounded-full transition-colors",
+                "w-6 h-0.5 flex-shrink-0 rounded-full transition-colors",
                 isComplete || idx <= currentStep ? "bg-primary/50" : "bg-muted"
               )} />
             )}
@@ -55,7 +52,7 @@ export const WizardProgress: React.FC<WizardProgressProps> = ({
               onClick={() => isClickable && onStepClick(idx)}
               disabled={!isClickable}
               className={cn(
-                "flex items-center gap-1 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all flex-shrink-0",
+                "flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all flex-shrink-0",
                 "border",
                 isCurrent && "border-primary bg-primary/10 text-primary shadow-sm",
                 !isCurrent && isComplete && "border-primary/30 bg-primary/5 text-primary/80 hover:bg-primary/10",
@@ -71,7 +68,7 @@ export const WizardProgress: React.FC<WizardProgressProps> = ({
               ) : (
                 <span>{step.icon}</span>
               )}
-              <span className="hidden sm:inline">{step.label}</span>
+              <span>{step.label}</span>
             </button>
           </React.Fragment>
         );
