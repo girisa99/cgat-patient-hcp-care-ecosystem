@@ -781,6 +781,50 @@ function EP04ProductionInner() {
         console.warn('[EP04] Could not restore production_stage:', e);
       }
 
+      // ── Restore visual/music/assembly artifacts from cast_project_scenes ──
+      try {
+        const { data: dbScenes } = await db
+          .from('cast_project_scenes')
+          .select('scene_key, scene_config')
+          .eq('project_id', projectId);
+
+        if (dbScenes && dbScenes.length > 0) {
+          const restored: Record<string, SceneProductionStatus> = {};
+          let restoredCount = 0;
+          for (const row of dbScenes) {
+            const cfg = (row.scene_config || {}) as Record<string, any>;
+            const artifacts = cfg.artifacts as Record<string, Record<string, string>> | undefined;
+            if (!artifacts) continue;
+            const hasAnyUrl =
+              Object.values(artifacts.videoUrls || {}).some(u => u) ||
+              Object.values(artifacts.imageUrls || {}).some(u => u) ||
+              Object.values(artifacts.avatarUrls || {}).some(u => u) ||
+              Object.values(artifacts.lipsyncUrls || {}).some(u => u);
+            if (!hasAnyUrl) continue;
+            restored[row.scene_key] = {
+              visual: 'done',
+              music: artifacts.musicUrl || cfg.musicUrl ? 'done' : 'idle',
+              sfx: 'idle',
+              assembled: cfg.assembledClipUrl ? 'done' : 'idle',
+              videoUrls: artifacts.videoUrls || {},
+              imageUrls: artifacts.imageUrls || {},
+              avatarUrls: artifacts.avatarUrls || {},
+              lipsyncUrls: artifacts.lipsyncUrls || {},
+              musicUrl: cfg.musicUrl || null,
+              sfxUrls: cfg.sfxUrls || [],
+              assembledClipUrl: cfg.assembledClipUrl || null,
+            };
+            restoredCount++;
+          }
+          if (restoredCount > 0) {
+            setSceneProduction(prev => ({ ...prev, ...restored }));
+            console.log(`[EP04] Restored visual artifacts for ${restoredCount} scenes from DB`);
+          }
+        }
+      } catch (e) {
+        console.warn('[EP04] Could not restore scene artifacts:', e);
+      }
+
       setContentLoaded(true);
     })();
   }, [projectId, contentLoaded, scriptContentForUI]);
