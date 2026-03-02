@@ -1161,7 +1161,9 @@ function EP04ProductionInner() {
       return;
     }
 
-    // ── ai-screen-enhance: pass sourceImage from pre-loaded screenshots ──
+    // ── ai-screen-enhance: route through ai-video-generator with referenceImage ──
+    // ai-universal-processor has no image-to-image support; ai-video-generator
+    // accepts referenceImage and passes it to Alibaba WAN i2v for enhancement.
     if (stepType === 'ai-screen-enhance') {
       const screenIds = (step.screenIds as string[]) || [];
       const enhanceMode = (step.enhanceMode as string) || 'highlight';
@@ -1175,20 +1177,21 @@ function EP04ProductionInner() {
         let jobId: string | null = null;
         if (projectId) {
           jobId = await trackGenerationJob({
-            projectId, jobType: 'image', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+            projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 500,
           });
         }
 
-        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        const { data, error } = await supabase.functions.invoke('ai-video-generator', {
           body: {
-            action: 'image_generation',
+            type: 'video',
             prompt: `${enhanceMode} mode: ${scriptContext}. Focus: ${focusAreas.join(', ') || 'auto'}`,
-            sourceImage: sourceUrl,
-            enhanceMode,
+            referenceImage: sourceUrl,
+            model: 'wan2.6-i2v',
+            duration: 3,
           },
         });
         if (error) { toast.error(`${stepLabel} enhance "${sid}" failed: ${error.message}`); continue; }
-        const url = data?.url || data?.imageUrl;
+        const url = data?.url || data?.videoUrl || data?.imageUrl;
         if (url) results[`ai-screen-enhance-${sid}`] = url;
         if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       }
