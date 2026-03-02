@@ -781,16 +781,19 @@ function EP04ProductionInner() {
         console.warn('[EP04] Could not restore production_stage:', e);
       }
 
-      // ── Restore visual/music/assembly artifacts from cast_project_scenes ──
+      // ── Restore visual/music/assembly artifacts ──
+      // Source 1: scene_config.artifacts (from updateSceneArtifacts)
+      // Source 2 (fallback): cast_generation_jobs output_url (always saved on generation)
+      const restored: Record<string, SceneProductionStatus> = {};
+
+      // Source 1: cast_project_scenes.scene_config.artifacts
       try {
         const { data: dbScenes } = await db
           .from('cast_project_scenes')
           .select('scene_key, scene_config')
           .eq('project_id', projectId);
 
-        if (dbScenes && dbScenes.length > 0) {
-          const restored: Record<string, SceneProductionStatus> = {};
-          let restoredCount = 0;
+        if (dbScenes) {
           for (const row of dbScenes) {
             const cfg = (row.scene_config || {}) as Record<string, any>;
             const artifacts = cfg.artifacts as Record<string, Record<string, string>> | undefined;
@@ -803,7 +806,7 @@ function EP04ProductionInner() {
             if (!hasAnyUrl) continue;
             restored[row.scene_key] = {
               visual: 'done',
-              music: artifacts.musicUrl || cfg.musicUrl ? 'done' : 'idle',
+              music: cfg.musicUrl ? 'done' : 'idle',
               sfx: 'idle',
               assembled: cfg.assembledClipUrl ? 'done' : 'idle',
               videoUrls: artifacts.videoUrls || {},
@@ -814,19 +817,54 @@ function EP04ProductionInner() {
               sfxUrls: cfg.sfxUrls || [],
               assembledClipUrl: cfg.assembledClipUrl || null,
             };
-            restoredCount++;
-          }
-          if (restoredCount > 0) {
-            setSceneProduction(prev => ({ ...prev, ...restored }));
-            // If we have visual artifacts but productionPhase is still 'tts',
-            // advance it so Phase 3 is visible and scenes show assets (not "Start Scene")
-            setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
-            console.log(`[EP04] Restored visual artifacts for ${restoredCount} scenes from DB`);
-            toast.success(`Restored ${restoredCount} scene(s) with visual assets`);
           }
         }
       } catch (e) {
-        console.warn('[EP04] Could not restore scene artifacts:', e);
+        console.warn('[EP04] scene_config artifacts restore failed:', e);
+      }
+
+      // Source 2 (fallback): cast_generation_jobs — recovers assets even if scene_config wasn't updated
+      try {
+        const { data: visualJobs } = await db
+          .from('cast_generation_jobs')
+          .select('scene_key, job_type, output_url')
+          .eq('project_id', projectId)
+          .eq('status', 'completed')
+          .not('output_url', 'is', null)
+          .not('scene_key', 'is', null)
+          .in('job_type', ['video', 'image', 'avatar', 'lipsync']);
+
+        if (visualJobs) {
+          for (const job of visualJobs) {
+            const sk = job.scene_key;
+            if (!sk || !job.output_url) continue;
+            // Only fill gaps — don't overwrite Source 1 data
+            if (!restored[sk]) {
+              restored[sk] = {
+                visual: 'done', music: 'idle', sfx: 'idle', assembled: 'idle',
+                videoUrls: {}, imageUrls: {}, avatarUrls: {}, lipsyncUrls: {},
+                musicUrl: null, sfxUrls: [], assembledClipUrl: null,
+              };
+            }
+            const jt = job.job_type;
+            const urlKey = `${jt}-${sk}-restored-${Date.now()}`;
+            if (jt === 'video') restored[sk].videoUrls[urlKey] = job.output_url;
+            else if (jt === 'image') restored[sk].imageUrls[urlKey] = job.output_url;
+            else if (jt === 'avatar') restored[sk].avatarUrls[urlKey] = job.output_url;
+            else if (jt === 'lipsync') restored[sk].lipsyncUrls[urlKey] = job.output_url;
+          }
+        }
+      } catch (e) {
+        console.warn('[EP04] generation_jobs visual restore failed:', e);
+      }
+
+      const restoredCount = Object.keys(restored).filter(sk => restored[sk].visual === 'done').length;
+      if (restoredCount > 0) {
+        setSceneProduction(prev => ({ ...prev, ...restored }));
+        // Advance phase so Phase 3 is visible — scenes show assets not "Start Scene"
+        setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
+        console.log(`[EP04] Restored visual artifacts for ${restoredCount} scenes from DB`);
+        toast.success(`Restored ${restoredCount} scene(s) with visual assets`);
       }
 
       setContentLoaded(true);
