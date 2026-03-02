@@ -976,13 +976,14 @@ async function generateWithAlibabaWAN(
   const endpoint = `${baseUrl}/services/aigc/video-generation/generation`;
 
   // Use the passed model parameter — don't hardcode wan-2.2
-  // International endpoint supports: wan2.1-t2v-turbo, wan2.6-t2v, wan-2.2
-  // Map common aliases to DashScope model IDs
+  // DashScope International endpoint models: wan2.1-t2v-turbo, wan-2.2
+  // Map pipeline aliases to DashScope model IDs
   const MODEL_MAP: Record<string, string> = {
-    'wan2.6-t2v': 'wan2.1-t2v-turbo',  // wan2.6 maps to latest turbo on intl
+    'wan2.6-t2v': 'wan2.1-t2v-turbo',
     'wan2.6-i2v': 'wan2.1-i2v-turbo',
     'wan-2.2-animate': 'wan-2.2',
     'wan-2.2': 'wan-2.2',
+    'wan2.1-t2v': 'wan2.1-t2v-turbo',
   };
   const resolvedModel = MODEL_MAP[model] || model || (useChina ? 'wan-2.2' : 'wan2.1-t2v-turbo');
 
@@ -996,8 +997,7 @@ async function generateWithAlibabaWAN(
     },
     parameters: {
       duration: Math.min(duration, 10), // WAN max 10 seconds
-      resolution: '720p',
-      fps: 24,
+      size: '1280*720',                 // DashScope standard size format
     }
   };
 
@@ -1022,8 +1022,9 @@ async function generateWithAlibabaWAN(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Alibaba WAN API error:', errorText);
-    throw new Error(`Alibaba WAN API error: ${response.status}`);
+    console.error(`Alibaba WAN API error (${response.status}):`, errorText);
+    console.error(`Request: model=${resolvedModel}, endpoint=${endpoint}`);
+    throw new Error(`Alibaba WAN API error ${response.status}: ${errorText.slice(0, 200)}`);
   }
 
   const data = await response.json();

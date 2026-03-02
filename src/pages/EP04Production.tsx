@@ -1440,9 +1440,9 @@ function EP04ProductionInner() {
         richPrompt = basePrompt || `Generate a ${styleKey} 3D avatar of ${charCfg.name} (${charCfg.role}), Pixar quality, cinematic lighting, 8K`;
       }
     } else if (stepType === 'kinetic-text' && step.text) {
-      richPrompt = `Create a cinematic kinetic typography image for: "${step.text}". Style: bold animated text on a dark cinematic background with dramatic lighting, Pixar quality, motion blur effects. Scene context: ${SCENE_TITLES[sceneKey] || sceneKey}`;
+      richPrompt = `Movie poster thumbnail with the title text "${step.text}" in large, bold, 3D metallic letters with lightning and energy effects. The text must be perfectly spelled and fully visible. Background: deep dark blue-to-black cinematic gradient with volumetric light rays, lens flares, and particle effects. Style: Hollywood blockbuster movie poster, ultra-cinematic, dramatic lighting, 8K quality. The text "${step.text}" is the hero element — large, centered, and impossible to miss.`;
     } else if (stepType === 'motion-graphics' && step.content) {
-      richPrompt = `Create a motion graphics visualization for: "${step.content}". Style: professional data visualization, infographic style, dark theme with vibrant accent colors. Scene context: ${SCENE_TITLES[sceneKey] || sceneKey}`;
+      richPrompt = `Cinematic motion graphics visualization for: "${step.content}". Style: professional data visualization with glowing neon elements, holographic UI overlays, dark tech background with blue/purple accent lighting, floating 3D data panels, cinematic depth of field, movie-quality VFX, 8K.`;
     }
 
     let jobId: string | null = null;
@@ -1463,6 +1463,11 @@ function EP04ProductionInner() {
       provider: step.provider || undefined,
       style: step.style || undefined,
     };
+    // Widescreen aspect ratio for kinetic-text thumbnails
+    if (stepType === 'kinetic-text') {
+      body.aspectRatio = '16:9';
+      body.style_intent = 'ep04-sprint-documentary';
+    }
     // Pass type + model for alibaba-video through ai-video-generator
     if (stepType === 'alibaba-video' || stepType === 'video') {
       body.type = 'video';
