@@ -1421,15 +1421,38 @@ function EP04ProductionInner() {
       edgeFn = 'ai-video-generator';
       action = 'generate_video';
     } else if (stepType === 'avatar-3d') {
-      // Avatar-3d generates a STATIC character portrait image, not a video animation.
-      // The rich pixar/disney prompt is built below from EP04_AVATAR_CONFIG.
+      edgeFn = 'ai-universal-processor';
+      action = 'image_generation';
+    } else if (stepType === 'alibaba-image') {
+      // Route through same image generation as avatar-3d (wan2.6-t2i)
       edgeFn = 'ai-universal-processor';
       action = 'image_generation';
     } else if (stepType === 'kinetic-text' || stepType === 'motion-graphics') {
       action = 'image_generation';
     }
 
-    // Build a rich prompt that includes step-specific fields (text, content, character config, etc.)
+    // ── Scene context enrichment: pull rich direction/sfx cues from script content ──
+    // EP04_SCRIPT_CONTENT has detailed direction fields per line — these describe
+    // camera angles, character staging, backgrounds, particle effects, color values, etc.
+    // We aggregate them per scene for contextual prompt enrichment.
+    const sceneScriptLines = scenes.get(sceneKey)?.keys || [];
+    const sceneDirections: string[] = [];
+    for (const lk of sceneScriptLines) {
+      const lineData = scriptContentForUI[lk];
+      if (lineData?.direction) sceneDirections.push(lineData.direction as string);
+    }
+    const sceneContext = sceneDirections.length > 0
+      ? sceneDirections.slice(0, 3).join(' | ').substring(0, 400)
+      : '';
+
+    // ── Motion-graphics content tag → rich description mapping ──
+    const MOTION_GRAPHICS_DESCRIPTIONS: Record<string, string> = {
+      'sprint-dashboard-montage': 'Animated sprint management dashboard with Kanban boards, burndown charts, velocity metrics, task cards flying into columns, progress bars filling up, developer avatars appearing on task assignments. Shows the entire sprint lifecycle from planning to completion in a dynamic data-driven montage',
+      'velocity-chart-animation': 'Animated velocity comparison chart with bars growing dynamically, sparkline trends, developer performance metrics side by side, green upward arrows and completion badges',
+      'territory-map-visualization': 'Animated file ownership territory map showing two color-coded zones (blue for Atlas/Claude, green for Nova/Lovable) with clear boundary lines, task icons distributing across zones, merge conflict warnings at borders',
+    };
+
+    // Build a rich prompt that includes step-specific fields + scene context enrichment
     let richPrompt = prompt;
     if (stepType === 'avatar-3d' && step.character) {
       const charKey = step.character as keyof typeof EP04_AVATAR_CONFIG['characters'];
@@ -1442,7 +1465,17 @@ function EP04ProductionInner() {
     } else if (stepType === 'kinetic-text' && step.text) {
       richPrompt = `Movie poster thumbnail with the title text "${step.text}" in large, bold, 3D metallic letters with lightning and energy effects. The text must be perfectly spelled and fully visible. Background: deep dark blue-to-black cinematic gradient with volumetric light rays, lens flares, and particle effects. Style: Hollywood blockbuster movie poster, ultra-cinematic, dramatic lighting, 8K quality. The text "${step.text}" is the hero element — large, centered, and impossible to miss.`;
     } else if (stepType === 'motion-graphics' && step.content) {
-      richPrompt = `Cinematic motion graphics visualization for: "${step.content}". Style: professional data visualization with glowing neon elements, holographic UI overlays, dark tech background with blue/purple accent lighting, floating 3D data panels, cinematic depth of field, movie-quality VFX, 8K.`;
+      const contentTag = step.content as string;
+      const enrichedContent = MOTION_GRAPHICS_DESCRIPTIONS[contentTag] || contentTag;
+      richPrompt = `Cinematic motion graphics visualization: ${enrichedContent}. Scene context: ${sceneContext || 'Sprint management documentary'}. Style: professional data visualization with glowing neon elements, holographic UI overlays, dark tech background with blue/purple accent lighting, floating 3D data panels, cinematic depth of field, movie-quality VFX, 8K.`;
+    } else if (stepType === 'alibaba-image') {
+      // Enrich alibaba-image prompts with scene context
+      richPrompt = sceneContext
+        ? `${prompt}. Scene context: ${sceneContext}. Pixar-quality 3D rendering, cinematic lighting, 8K detail.`
+        : `${prompt}. Pixar-quality 3D rendering, cinematic lighting, 8K detail.`;
+    } else if ((stepType === 'alibaba-video' || stepType === 'video') && sceneContext) {
+      // Enrich video prompts with scene narrative context
+      richPrompt = `${prompt}. Narrative context: ${sceneContext.substring(0, 200)}`;
     }
 
     let jobId: string | null = null;
@@ -1486,12 +1519,43 @@ function EP04ProductionInner() {
       body.model = 'wan2.6-t2i';
       body.size = '1280x720';
     }
+    // alibaba-image: route to Alibaba wan2.6-t2i (replaces deprecated wanx-v2.1)
+    if (stepType === 'alibaba-image') {
+      body.style_intent = 'cinematic';
+      body.provider = 'alibaba';
+      body.model = 'wan2.6-t2i';
+      body.size = '1280x720';
+    }
     // Pass type + model for alibaba-video through ai-video-generator
     if (stepType === 'alibaba-video' || stepType === 'video') {
       body.type = 'video';
       body.provider = step.provider || 'alibaba';
       body.model = step.model || 'wan2.6-t2v';
       body.duration = step.duration || 4;
+      // ── CRITICAL: resolve referenceImage for i2v steps ──
+      // Pipeline configs use tag names (e.g., 'velocity-metrics-screenshot') which
+      // must be resolved from screenshotUrls. Without this, i2v gets no image.
+      const refImage = step.referenceImage as string | undefined;
+      if (refImage) {
+        // Check if it's a URL (starts with http) or a tag to resolve from screenshots
+        if (refImage.startsWith('http')) {
+          body.referenceImage = refImage;
+        } else {
+          // Try to find a matching screenshot URL — check exact match, then partial
+          const resolvedUrl = screenshotUrls[refImage]
+            || Object.entries(screenshotUrls).find(([k]) => refImage.includes(k) || k.includes(refImage))?.[1]
+            || Object.values(results).find(url => url && typeof url === 'string' && url.startsWith('http'));
+          if (resolvedUrl) {
+            body.referenceImage = resolvedUrl;
+            console.log(`[EP04 Visual] Resolved i2v referenceImage "${refImage}" → ${resolvedUrl.substring(0, 80)}`);
+          } else {
+            // Fallback: no reference image available, switch to t2v instead
+            console.warn(`[EP04 Visual] No screenshot for i2v ref "${refImage}" — falling back to t2v`);
+            body.model = 'wan2.6-t2v';
+            delete body.referenceImage;
+          }
+        }
+      }
     }
 
     console.log(`[EP04 Visual] ${stepLabel} → ${edgeFn} body:`, JSON.stringify(body).slice(0, 300));
@@ -1526,7 +1590,7 @@ function EP04ProductionInner() {
       toast.warning(`${stepLabel} "${stepType}": still generating — check back later`);
     }
     if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, isPlaceholder ? null : url);
-  }, [projectId, screenshotUrls, trackGenerationJob, completeGenerationJob]);
+  }, [projectId, screenshotUrls, scenes, scriptContentForUI, trackGenerationJob, completeGenerationJob]);
 
   const startSceneVisualProduction = useCallback(async (sceneKey: string) => {
     setSceneProduction(prev => ({
