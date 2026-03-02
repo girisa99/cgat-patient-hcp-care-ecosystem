@@ -856,7 +856,7 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           isLoading={isPoolLoading}
         />
 
-        {/* EP04 loader */}
+        {/* EP04 loader — navigates directly to production page */}
         <Button
           variant="outline"
           size="sm"
@@ -864,10 +864,8 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           onClick={async () => {
             try {
               toast.info('Loading EP04 project...');
-              const seed = createEP04SessionSeed();
               let projectId: string | null = null;
               try {
-                // Check if EP04 project already exists before creating
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
                   const db = supabase as any;
@@ -881,7 +879,6 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                   if (existing?.id) {
                     projectId = existing.id;
                   } else {
-                    // Fallback: check by title for legacy rows
                     const { data: legacy } = await db
                       .from('cast_projects')
                       .select('id')
@@ -892,63 +889,18 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
                     if (legacy?.id) {
                       projectId = legacy.id;
                       await db.from('cast_projects').update({ style_intent: 'ep04-sprint-documentary' }).eq('id', legacy.id);
-                    } else {
-                      const { createCastProject } = await import('@/services/productionCostAccumulator');
-                      projectId = await createCastProject({
-                        title: 'EP04 — Genie Reel Episode 2',
-                        description: 'AI-powered cinematic product demo',
-                        estimatedTokens: 850000,
-                        productContext: 'genie-reel-ep04',
-                        quality: 'cinematic',
-                        metadata: { episodeId: 'ep04', scenes: Object.keys(seed.templateMapping?.scenes || {}).length },
-                      });
                     }
                   }
+                } else {
+                  toast.error('Not authenticated — please sign in first');
+                  return;
                 }
               } catch (projErr) {
-                console.warn('EP04: Could not create project tracker, continuing without:', projErr);
+                console.warn('EP04: Could not look up project, navigating without projectId:', projErr);
               }
-              castSession.updateSession({ ...seed, projectId: projectId || undefined });
-              const stats = getEP04Stats();
-              toast.success(`EP04 loaded: ${stats.scenes} scenes, ${stats.scriptLines} lines, ${stats.formattedDuration}`);
-              if (projectId) toast.success('Project created — token tracking active');
-              const techCategory = contentRegistry.categories.find(c => c.name === 'technology');
-              if (techCategory) setSelectedCategoryId(techCategory.id);
-              const videoFormat = contentRegistry.formats.find(f => f.name === 'video');
-              if (videoFormat) {
-                setSelectedFormatId(videoFormat.id);
-                setActiveContentType(videoFormat.name);
-              }
-              setPrimaryPlatform('youtube');
-              setOutputLanguages(['en']);
-              setSelectedDialectCodes(['en-US']);
-              const cinematicStyle = contentRegistry.visualStyles.find(s => s.name === 'cinematic');
-              if (cinematicStyle) setSelectedVisualStyleIds([cinematicStyle.id]);
-              const ep04Caps = ['avatar_talking_head', 'lip_sync', 'scene_voiceover', 'screen_recording', 'text_to_video'];
-              const matchedCapIds = contentRegistry.productionCapabilities
-                .filter(c => ep04Caps.includes(c.name))
-                .map(c => c.id);
-              if (matchedCapIds.length > 0) setSelectedCapabilityIds(matchedCapIds);
-              setSelectedAssetSource('screen_capture');
-              setLipSyncEnabled(true);
-              setDubbingEnabled(false);
-              setSelectedResolution('1920x1080');
-              setSelectedAspectRatio('16:9');
-              setProductionQuality('cinematic');
-              if (seed.templateMapping) {
-                try {
-                  const { mapping, stats: screenStats } = await enrichWithScreenAssets(seed.templateMapping);
-                  castSession.updateSession({ templateMapping: mapping });
-                  if (screenStats.found > 0) toast.success(`${screenStats.found}/${screenStats.total} screenshots resolved`);
-                  if (screenStats.missing.length > 0) toast.info(`${screenStats.missing.length} screenshots pending capture`, { description: screenStats.missing.slice(0, 3).join(', ') + (screenStats.missing.length > 3 ? '...' : '') });
-                } catch (enrichErr) {
-                  console.warn('EP04: Screen asset enrichment failed, using raw template:', enrichErr);
-                }
-              }
-              // Navigate to configure after loading — use selectIntent to mark session as having a selection
-              castSession.selectIntent('video' as any);
-              setActiveMainTab('create');
-              setSubTab('create', 'configure');
+              // Navigate directly to EP04 production page
+              const url = projectId ? `/ep04-production?projectId=${projectId}` : '/ep04-production';
+              window.location.href = url;
             } catch (err: any) {
               console.error('EP04 load error:', err);
               toast.error(`Failed to load EP04: ${err.message || 'Unknown error'}`);
@@ -965,6 +917,14 @@ export const GenieCastConsolidatedTabs: React.FC<GenieCastConsolidatedTabsProps>
           isLoading={castProjects.isLoading}
           selectedProjectId={castSession.session.projectId}
           onProjectSelect={async (project) => {
+            // EP04 special handling — navigate directly to production page
+            const isEP04 = (project as any).style_intent === 'ep04-sprint-documentary'
+              || project.title?.toLowerCase().includes('ep04');
+            if (isEP04) {
+              toast.info('Opening EP04 Production...');
+              window.location.href = `/ep04-production?projectId=${project.id}`;
+              return;
+            }
             const restored = await castProjects.restoreToSession(project.id);
             if (restored) {
               const intentValue = restored.selectedIntent || (project as any).content_type || 'video';

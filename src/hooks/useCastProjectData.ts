@@ -149,7 +149,10 @@ export function useCastProjectData(projectId: string | null): CastProjectData {
       ]);
 
       const config: SeedConfig = {
-        scriptContent: scriptModule.EP04_SCRIPT_CONTENT,
+        scriptContent: {
+          ...scriptModule.EP04_SCRIPT_CONTENT,
+          ...(scriptModule.EP04_NARRATOR_BRIDGES || {}),
+        },
         voices: configModule.EP04_VOICES as unknown as Record<string, VoiceConfigInput>,
         scenePipelines: configModule.EP04_SCENE_PIPELINES,
         musicScore: configModule.EP04_MUSIC_SCORE as Record<string, { music: unknown; sfx?: unknown[] }>,

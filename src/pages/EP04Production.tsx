@@ -371,6 +371,8 @@ export default function EP04Production() {
   const [searchParams] = useSearchParams();
   const urlProjectId = searchParams.get('projectId');
   const [autoProjectId, setAutoProjectId] = useState<string | null>(null);
+  const [projectLoadError, setProjectLoadError] = useState<string | null>(null);
+  const [projectLoading, setProjectLoading] = useState(!urlProjectId);
   const projectId = urlProjectId || autoProjectId;
   const {
     saveProjectContent, loadProjectContent, updateLineTTS,
@@ -386,66 +388,83 @@ export default function EP04Production() {
     if (urlProjectId || autoProjectId) return;
     if (autoCreateAttempted.current) return; // guard against React strict-mode double-fire
     autoCreateAttempted.current = true;
+    setProjectLoading(true);
+    setProjectLoadError(null);
 
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('[EP04] Auth failed — no user session:', authError);
+        setProjectLoadError(authError?.message || 'Not authenticated — please sign in and refresh');
+        setProjectLoading(false);
+        return;
+      }
       const db = supabase as any;
 
-      // Check if EP04 project already exists using exact style_intent match
-      const { data: existing } = await db
-        .from('cast_projects')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('style_intent', 'ep04-sprint-documentary')
-        .limit(1)
-        .maybeSingle();
+      try {
+        // Check if EP04 project already exists using exact style_intent match
+        const { data: existing } = await db
+          .from('cast_projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('style_intent', 'ep04-sprint-documentary')
+          .limit(1)
+          .maybeSingle();
 
-      if (existing?.id) {
-        setAutoProjectId(existing.id);
-        return;
-      }
+        if (existing?.id) {
+          setAutoProjectId(existing.id);
+          setProjectLoading(false);
+          return;
+        }
 
-      // Also check by title as fallback (for rows created before this fix)
-      const { data: legacyExisting } = await db
-        .from('cast_projects')
-        .select('id')
-        .eq('user_id', user.id)
-        .ilike('title', '%EP04%')
-        .limit(1)
-        .maybeSingle();
+        // Also check by title as fallback (for rows created before this fix)
+        const { data: legacyExisting } = await db
+          .from('cast_projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .ilike('title', '%EP04%')
+          .limit(1)
+          .maybeSingle();
 
-      if (legacyExisting?.id) {
-        // Update legacy row with the stable style_intent so future lookups use exact match
-        await db.from('cast_projects')
-          .update({ style_intent: 'ep04-sprint-documentary' })
-          .eq('id', legacyExisting.id);
-        setAutoProjectId(legacyExisting.id);
-        return;
-      }
+        if (legacyExisting?.id) {
+          // Update legacy row with the stable style_intent so future lookups use exact match
+          await db.from('cast_projects')
+            .update({ style_intent: 'ep04-sprint-documentary' })
+            .eq('id', legacyExisting.id);
+          setAutoProjectId(legacyExisting.id);
+          setProjectLoading(false);
+          return;
+        }
 
-      // Create new EP04 project row with stable style_intent
-      const { data: created, error } = await db
-        .from('cast_projects')
-        .insert({
-          user_id: user.id,
-          title: 'EP04 — Sprint Documentary',
-          description: 'GenieSuite Sprint Documentary — 12 scenes, 5 voices, ~27 min',
-          status: 'scripted',
-          production_stage: 'producing',
-          style_intent: 'ep04-sprint-documentary',
-          quality: 'production',
-          target_regions: ['global'],
-          selected_dialects: ['en-US'],
-        })
-        .select('id')
-        .single();
+        // Create new EP04 project row with stable style_intent
+        const { data: created, error } = await db
+          .from('cast_projects')
+          .insert({
+            user_id: user.id,
+            title: 'EP04 — Sprint Documentary',
+            description: 'GenieSuite Sprint Documentary — 12 scenes, 5 voices, ~27 min',
+            status: 'scripted',
+            production_stage: 'producing',
+            style_intent: 'ep04-sprint-documentary',
+            quality: 'production',
+            target_regions: ['global'],
+            selected_dialects: ['en-US'],
+          })
+          .select('id')
+          .single();
 
-      if (!error && created) {
-        setAutoProjectId(created.id);
-        console.log('[EP04] Auto-created project:', created.id);
-      } else {
-        console.error('[EP04] Failed to create project row:', error);
+        if (!error && created) {
+          setAutoProjectId(created.id);
+          console.log('[EP04] Auto-created project:', created.id);
+        } else {
+          console.error('[EP04] Failed to create project row:', error);
+          setProjectLoadError(error?.message || 'Failed to create project — check database');
+        }
+      } catch (err: any) {
+        console.error('[EP04] Project lookup/create error:', err);
+        setProjectLoadError(err.message || 'Failed to load project');
+      } finally {
+        setProjectLoading(false);
       }
     })();
   }, [urlProjectId, autoProjectId]);
@@ -1224,6 +1243,48 @@ export default function EP04Production() {
   }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration]);
 
   // ─── Render ──────────────────────────────────────────────────────────────
+
+  // Show loading/error state while project is being resolved
+  if (projectLoading || (!projectId && !projectLoadError)) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <Card className="p-8 text-center max-w-md">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <h2 className="text-lg font-semibold mb-2">Loading EP04 Project...</h2>
+          <p className="text-sm text-muted-foreground">Looking up project in database</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (projectLoadError) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <Card className="p-8 text-center max-w-md">
+          <AlertCircle className="h-8 w-8 mx-auto mb-4 text-destructive" />
+          <h2 className="text-lg font-semibold mb-2">Project Load Failed</h2>
+          <p className="text-sm text-muted-foreground mb-4">{projectLoadError}</p>
+          <div className="flex gap-2 justify-center">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> Go Back
+            </Button>
+            <Button onClick={() => {
+              autoCreateAttempted.current = false;
+              setProjectLoadError(null);
+              setProjectLoading(true);
+              // Re-trigger the effect by resetting the ref guard
+              setTimeout(() => {
+                autoCreateAttempted.current = false;
+                setAutoProjectId(null);
+              }, 0);
+            }}>
+              Retry
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
