@@ -456,7 +456,7 @@ export function BlueprintTemplatesGrid({
       {showComparison && selectedForComparison.length >= 2 && (
         <TemplateComparisonView
           isOpen={true}
-          blueprints={blueprints.filter(b => selectedForComparison.includes(b.id))}
+          blueprints={[...blueprints, ...flowAlignedTemplates].filter((b, i, arr) => arr.findIndex(x => x.id === b.id) === i && selectedForComparison.includes(b.id))}
           onClose={() => {
             setShowComparison(false);
             setSelectedForComparison([]);
