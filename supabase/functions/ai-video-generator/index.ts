@@ -1,11 +1,78 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { 
-  GenerationContext, 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {
+  GenerationContext,
   computeA2ARequirements,
   VISUAL_FEATURE_A2A_ROUTING,
   GlobalTierLevel
 } from "../_shared/generationContext.ts";
+
+// ── Supabase client for re-uploading generated videos to our storage ──
+// Alibaba OSS CDN domains (oss-accelerate.aliyuncs.com) often fail DNS resolution
+// from user browsers, so we re-upload to Supabase Storage for reliable delivery.
+function getSupabaseAdmin() {
+  const url = Deno.env.get('SUPABASE_URL');
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
+
+/**
+ * Re-upload a video from an external URL to Supabase Storage.
+ * Returns the Supabase public URL, or the original URL if upload fails.
+ */
+async function reuploadToStorage(externalUrl: string, prefix: string = 'video'): Promise<string> {
+  if (!externalUrl || externalUrl.includes('placehold.co')) return externalUrl;
+  // Only re-upload Alibaba OSS URLs that cause DNS issues
+  if (!externalUrl.includes('aliyuncs.com') && !externalUrl.includes('dashscope')) return externalUrl;
+
+  try {
+    const sb = getSupabaseAdmin();
+    if (!sb) {
+      console.warn('⚠️ No Supabase admin client — returning original URL');
+      return externalUrl;
+    }
+
+    // Download the video from Alibaba CDN (edge function CAN resolve it, user browser can't)
+    const resp = await fetch(externalUrl);
+    if (!resp.ok) {
+      console.warn(`⚠️ Failed to download from Alibaba CDN: ${resp.status}`);
+      return externalUrl;
+    }
+
+    const blob = await resp.blob();
+    const ext = externalUrl.includes('.mp4') ? 'mp4' : 'mp4';
+    const fileName = `cast-production/${prefix}-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await sb.storage
+      .from('cast-assets')
+      .upload(fileName, blob, {
+        contentType: 'video/mp4',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.warn(`⚠️ Upload to Supabase Storage failed: ${uploadError.message}`);
+      return externalUrl;
+    }
+
+    // Use signed URL (7 days) since bucket is private — public read policy exists but signed is more reliable
+    const { data: signedData, error: signedError } = await sb.storage
+      .from('cast-assets')
+      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
+    if (signedError || !signedData?.signedUrl) {
+      console.warn(`⚠️ Signed URL failed: ${signedError?.message} — trying public URL`);
+      const { data: { publicUrl } } = sb.storage.from('cast-assets').getPublicUrl(fileName);
+      return publicUrl;
+    }
+    console.log(`✅ Re-uploaded video to Supabase Storage: ${signedData.signedUrl.substring(0, 80)}`);
+    return signedData.signedUrl;
+  } catch (err) {
+    console.warn(`⚠️ Re-upload failed: ${err}`);
+    return externalUrl;
+  }
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -99,7 +166,9 @@ serve(async (req) => {
         const data = await resp.json();
         const status = data.output?.task_status || 'UNKNOWN';
         if (status === 'SUCCEEDED') {
-          const videoUrl = data.output?.video_url || data.output?.results?.[0]?.url;
+          const rawVideoUrl = data.output?.video_url || data.output?.results?.[0]?.url;
+          // Re-upload to Supabase Storage — Alibaba OSS URLs fail DNS in user browsers
+          const videoUrl = rawVideoUrl ? await reuploadToStorage(rawVideoUrl, `wan-poll-${body.taskId}`) : rawVideoUrl;
           return new Response(JSON.stringify({ success: true, videoUrl, status }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -1101,8 +1170,10 @@ async function generateWithAlibabaWAN(
     }
   }
 
+  const rawVideoUrl = data.output?.video_url || data.output?.results?.[0]?.url;
+  const stableVideoUrl = rawVideoUrl ? await reuploadToStorage(rawVideoUrl, `wan-direct`) : rawVideoUrl;
   return {
-    videoUrl: data.output?.video_url || data.output?.results?.[0]?.url,
+    videoUrl: stableVideoUrl,
     provider: 'alibaba',
     model: resolvedModel,
   };
@@ -1136,8 +1207,11 @@ async function pollAlibabaTask(taskId: string, apiKey: string, baseUrl?: string)
     console.log(`⏳ Alibaba WAN status (attempt ${attempts}):`, data.output?.task_status);
 
     if (data.output?.task_status === 'SUCCEEDED') {
+      const rawUrl = data.output?.video_url || data.output?.results?.[0]?.url;
+      // Re-upload to Supabase Storage — Alibaba OSS CDN often fails DNS from browsers
+      const stableUrl = rawUrl ? await reuploadToStorage(rawUrl, `wan-${taskId}`) : rawUrl;
       return {
-        videoUrl: data.output?.video_url || data.output?.results?.[0]?.url,
+        videoUrl: stableUrl,
         provider: 'alibaba',
         model: 'wan-video',
       };
