@@ -766,6 +766,45 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
         ttsProvider={regional.ttsProvider || 'Azure Neural'}
       />
 
+      {/* ── EP04 Quick Access — navigate directly to production page ───── */}
+      {(() => {
+        const ep04Project = (projects.projects || []).find(
+          (p: any) => p.style_intent === 'ep04-sprint-documentary' || (p.title && p.title.toLowerCase().includes('ep04'))
+        );
+        return (
+          <button
+            onClick={() => {
+              const url = ep04Project ? `/ep04-production?projectId=${ep04Project.id}` : '/ep04-production';
+              window.location.href = url;
+            }}
+            className="w-full group relative rounded-2xl overflow-hidden border border-amber-500/20 glass-card hover:border-amber-500/40 hover:shadow-lg transition-all text-left"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-orange-500/5 to-purple-500/5" />
+            <div className="relative z-10 p-4 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center backdrop-blur-md shrink-0">
+                <Film className="w-6 h-6 text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground">EP04 — Sprint Documentary</p>
+                <p className="text-xs text-muted-foreground">
+                  {ep04Project
+                    ? `Production stage: ${(ep04Project as any).production_stage?.replace(/_/g, ' ') || 'producing'} · 12 scenes · 5 voices · ~27 min`
+                    : '12 scenes · 5 voices · ~27 min · Click to open production'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {ep04Project && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                    <Zap className="w-3 h-3" /> {(ep04Project as any).status || 'active'}
+                  </span>
+                )}
+                <ChevronRight className="w-5 h-5 text-muted-foreground/40 group-hover:text-amber-400 transition-colors" />
+              </div>
+            </div>
+          </button>
+        );
+      })()}
+
       {/* ── Region Zones — horizontal scroll on mobile ─────────────────── */}
       <div>
         <div className="flex items-center justify-between px-1 mb-2">

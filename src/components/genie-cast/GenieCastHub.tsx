@@ -47,18 +47,28 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+// Retry wrapper for dynamic imports — handles Vercel chunk cache misses
+function retryImport<T>(importFn: () => Promise<T>, retries = 2): Promise<T> {
+  return importFn().catch((err) => {
+    if (retries > 0) {
+      return new Promise<T>(resolve => setTimeout(() => resolve(retryImport(importFn, retries - 1)), 1000));
+    }
+    throw err;
+  });
+}
+
 // Lazy-loaded navigation view components
-const LazyContentLibraryGrid = lazy(() => import('./ContentLibraryGrid'));
-const LazyCastProjectsList = lazy(() => import('./CastProjectsList'));
+const LazyContentLibraryGrid = lazy(() => retryImport(() => import('./ContentLibraryGrid')));
+const LazyCastProjectsList = lazy(() => retryImport(() => import('./CastProjectsList')));
 const LazyBlueprintTemplatesGrid = lazy(() =>
-  import('./BlueprintTemplatesGrid').then(m => ({ default: m.BlueprintTemplatesGrid as React.ComponentType<Record<string, never>> }))
+  retryImport(() => import('./BlueprintTemplatesGrid')).then(m => ({ default: m.BlueprintTemplatesGrid as React.ComponentType<Record<string, never>> }))
 );
 const LazyAnalyticsDashboard = lazy(() =>
-  import('./AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard }))
+  retryImport(() => import('./AnalyticsDashboard')).then(m => ({ default: m.AnalyticsDashboard }))
 );
-const LazyWorkspaceManagement = lazy(() => import('@/components/genie-hub/WorkspaceManagement'));
-const LazyIntegrationsSettings = lazy(() => import('@/components/settings/IntegrationsSettingsPage'));
-const LazyCastDashboard = lazy(() => import('./CastDashboardOverview'));
+const LazyWorkspaceManagement = lazy(() => retryImport(() => import('@/components/genie-hub/WorkspaceManagement')));
+const LazyIntegrationsSettings = lazy(() => retryImport(() => import('@/components/settings/IntegrationsSettingsPage')));
+const LazyCastDashboard = lazy(() => retryImport(() => import('./CastDashboardOverview')));
 
 const STORAGE_KEY = 'genie_cast_hub_state';
 

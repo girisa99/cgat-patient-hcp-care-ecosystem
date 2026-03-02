@@ -935,7 +935,8 @@ export default function EP04Production() {
 
     try {
       // Read pipeline steps from DB
-      const pipelineSteps = dbProject.scenePipelineFor(sceneKey) || [];
+      const rawPipeline = dbProject.scenePipelineFor(sceneKey);
+      const pipelineSteps = (Array.isArray(rawPipeline) ? rawPipeline : (rawPipeline?.steps || [])) as Array<Record<string, unknown>>;
       const results: Record<string, string> = {};
 
       for (let i = 0; i < pipelineSteps.length; i++) {
@@ -1940,7 +1941,8 @@ export default function EP04Production() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {Array.from(scenes.keys()).map(sceneKey => {
                       const status = sceneProduction[sceneKey];
-                      const pipeline = dbProject.scenePipelineFor(sceneKey) || [];
+                      const rawPipeline = dbProject.scenePipelineFor(sceneKey);
+                      const pipelineSteps = Array.isArray(rawPipeline) ? rawPipeline : (rawPipeline?.steps || []) as Array<Record<string, unknown>>;
                       return (
                         <div key={sceneKey} className={cn(
                           'p-3 rounded-lg border transition-all',
@@ -1956,12 +1958,12 @@ export default function EP04Production() {
                             {status?.visual === 'error' && <AlertCircle className="h-3 w-3 text-red-500" />}
                           </div>
                           <div className="flex flex-wrap gap-1 mb-2">
-                            {(pipeline as Array<Record<string, unknown>>).map((step, i) => (
+                            {pipelineSteps.map((step, i) => (
                               <Badge key={i} variant="outline" className="text-[8px]">
                                 {(step.type as string) || 'image'}
                               </Badge>
                             ))}
-                            {pipeline.length === 0 && (
+                            {pipelineSteps.length === 0 && (
                               <span className="text-[9px] text-muted-foreground">No pipeline configured</span>
                             )}
                           </div>
