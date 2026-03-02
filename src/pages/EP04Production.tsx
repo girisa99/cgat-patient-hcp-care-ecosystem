@@ -824,6 +824,7 @@ function EP04ProductionInner() {
       }
 
       // Source 2 (fallback): cast_generation_jobs — recovers assets even if scene_config wasn't updated
+      // Only use fallback for scenes NOT already restored from Source 1
       try {
         const { data: visualJobs } = await db
           .from('cast_generation_jobs')
@@ -832,13 +833,16 @@ function EP04ProductionInner() {
           .eq('status', 'completed')
           .not('output_url', 'is', null)
           .not('scene_key', 'is', null)
-          .in('job_type', ['video', 'image', 'avatar', 'lipsync']);
+          .neq('job_type', 'tts')
+          .order('created_at', { ascending: true });
 
         if (visualJobs) {
+          let idx = 0;
           for (const job of visualJobs) {
             const sk = job.scene_key;
             if (!sk || !job.output_url) continue;
-            // Only fill gaps — don't overwrite Source 1 data
+            // Skip scenes already fully restored from Source 1
+            if (restored[sk] && Object.keys(restored[sk].videoUrls).length + Object.keys(restored[sk].imageUrls).length > 0) continue;
             if (!restored[sk]) {
               restored[sk] = {
                 visual: 'done', music: 'idle', sfx: 'idle', assembled: 'idle',
@@ -846,12 +850,19 @@ function EP04ProductionInner() {
                 musicUrl: null, sfxUrls: [], assembledClipUrl: null,
               };
             }
+            idx++;
             const jt = job.job_type;
-            const urlKey = `${jt}-${sk}-restored-${Date.now()}`;
-            if (jt === 'video') restored[sk].videoUrls[urlKey] = job.output_url;
-            else if (jt === 'image') restored[sk].imageUrls[urlKey] = job.output_url;
-            else if (jt === 'avatar') restored[sk].avatarUrls[urlKey] = job.output_url;
-            else if (jt === 'lipsync') restored[sk].lipsyncUrls[urlKey] = job.output_url;
+            // Detect content type from URL extension when job_type is generic
+            const url = job.output_url as string;
+            const isImageUrl = /\.(png|jpg|jpeg|webp|gif)(\?|$)/i.test(url);
+            const urlKey = `${jt}-${sk}-${idx}`;
+            if (jt === 'avatar' || jt === 'lipsync') {
+              restored[sk].avatarUrls[urlKey] = url;
+            } else if (jt === 'image' || isImageUrl) {
+              restored[sk].imageUrls[urlKey] = url;
+            } else {
+              restored[sk].videoUrls[urlKey] = url;
+            }
           }
         }
       } catch (e) {
@@ -865,6 +876,16 @@ function EP04ProductionInner() {
         setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
         console.log(`[EP04] Restored visual artifacts for ${restoredCount} scenes from DB`);
         toast.success(`Restored ${restoredCount} scene(s) with visual assets`);
+
+        // Re-persist restored artifacts back to scene_config so Source 1 works next time
+        for (const [sk, status] of Object.entries(restored)) {
+          updateSceneArtifacts(projectId, sk, {
+            videoUrls: status.videoUrls,
+            imageUrls: status.imageUrls,
+            avatarUrls: status.avatarUrls,
+            lipsyncUrls: status.lipsyncUrls,
+          }).catch(() => {}); // fire-and-forget repair
+        }
       }
 
       setContentLoaded(true);
@@ -873,18 +894,26 @@ function EP04ProductionInner() {
 
   // ─── Auto-seed DB if projectId present but no DB data ──────────────────
   // GUARDED: only runs ONCE per page load to prevent re-seeding (which wipes TTS data).
+  // ALSO GUARDED: skip if sceneProduction already has restored assets — re-seeding
+  // upserts scene_config and wipes artifacts that were saved by updateSceneArtifacts.
   const seedAttemptedRef = useRef(false);
 
   useEffect(() => {
     if (!projectId || dbProject.isLoading || dbProject.isSeeded) return;
     if (seedAttemptedRef.current) return; // prevent repeated seed attempts
+    // Don't re-seed if we already restored visual artifacts — the upsert wipes scene_config.artifacts
+    if (Object.values(sceneProduction).some(s => s.visual === 'done')) {
+      console.log('[EP04] Skipping auto-seed — visual artifacts already restored from DB');
+      seedAttemptedRef.current = true;
+      return;
+    }
     seedAttemptedRef.current = true;
     console.log('[EP04] No DB data found — auto-seeding from config files...');
     dbProject.seedFromConfig().then(ok => {
       if (ok) toast.success('Project seeded from config — DB is now source of truth');
       else console.warn('[EP04] Auto-seed failed — using config file fallback');
     });
-  }, [projectId, dbProject.isLoading, dbProject.isSeeded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId, dbProject.isLoading, dbProject.isSeeded, sceneProduction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Load token breakdown on mount ──────────────────────────────────────
 
