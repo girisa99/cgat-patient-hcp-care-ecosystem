@@ -108,9 +108,9 @@ const AppContent = () => {
   
   // Check if this is a Genie Suite route or public landing route
   // These routes bypass the healthcare role-loading gate
-  const isGenieStudioRoute = location.startsWith('/genie-studio') || 
-    location.startsWith('/genie-spark') || 
-    location.startsWith('/genie-mind') || 
+  const isGenieStudioRoute = location.startsWith('/genie-studio') ||
+    location.startsWith('/genie-spark') ||
+    location.startsWith('/genie-mind') ||
     location.startsWith('/genie-vibe') ||
     location.startsWith('/genie-deck') ||
     location.startsWith('/genie-arc') ||
@@ -118,6 +118,7 @@ const AppContent = () => {
     location.startsWith('/genie-hub') ||
     location.startsWith('/genie-landing') ||
     location.startsWith('/genie-cast') ||
+    location.startsWith('/ep04-production') ||
     location.startsWith('/subscription') ||
     location.startsWith('/marketing-materials') ||
     location.startsWith('/explore') ||
@@ -248,8 +249,13 @@ const AppContent = () => {
               {/* PERMANENT FIX: Genie Cast is now a standalone page, not a tab */}
               <Route path="/genie-cast" element={<GenieCastPage />} />
               
-              {/* EP04 TTS Production */}
+              {/* EP04 TTS Production — accessible via /ep04-production or /genie-cast/ep04-production */}
               <Route path="/ep04-production" element={
+                <Suspense fallback={<PageLoading message="Loading EP04 Production..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/EP04Production')))}
+                </Suspense>
+              } />
+              <Route path="/genie-cast/ep04-production" element={
                 <Suspense fallback={<PageLoading message="Loading EP04 Production..." />}>
                   {React.createElement(React.lazy(() => import('@/pages/EP04Production')))}
                 </Suspense>
