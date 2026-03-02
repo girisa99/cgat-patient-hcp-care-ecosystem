@@ -6,6 +6,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getFlowAlignedBlueprints } from '@/services/flowAlignedTemplateSeed';
 
 export interface BlueprintScene {
   id: string;
@@ -232,47 +233,18 @@ export const useVideoBlueprints = () => {
     }
   });
 
-  // Migrate to industry templates
-  const migrateToIndustryMutation = useMutation({
-    mutationFn: async () => {
-      const { migrateToIndustryTemplates } = await import('@/services/industryTemplateSeed');
-      return migrateToIndustryTemplates();
-    },
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['video-blueprints'] });
-      queryClient.invalidateQueries({ queryKey: ['industry-templates'] });
-      toast({
-        title: 'Migration Complete',
-        description: `Soft-deleted ${result.softDeleted} legacy, inserted ${result.inserted} industry templates. EP04 protected: ${result.ep04Protected ? 'Yes' : 'No'}`,
-      });
-    },
-    onError: (error: any) => {
-      toast({ title: 'Migration Failed', description: error.message, variant: 'destructive' });
-    },
-  });
-
-  // Migrate to flow-aligned starters (replaces legacy + industry templates with 9 minimal starters)
-  const migrateToFlowAlignedMutation = useMutation({
-    mutationFn: async () => {
-      const { migrateToFlowAligned } = await import('@/services/flowAlignedTemplateSeed');
-      return migrateToFlowAligned();
-    },
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['video-blueprints'] });
-      toast({
-        title: 'Flow-Aligned Migration Complete',
-        description: `Soft-deleted ${result.softDeleted} legacy, inserted ${result.inserted} starters (${result.skipped} skipped). EP04: ${result.ep04Protected ? 'protected' : 'missing'}`,
-      });
-    },
-    onError: (error: any) => {
-      toast({ title: 'Flow-Aligned Migration Failed', description: error.message, variant: 'destructive' });
-    },
-  });
-
-  // Filter: flow-aligned starters (new pipeline-compatible templates)
-  const flowAlignedTemplates = (blueprintsQuery.data || []).filter(
+  // Flow-aligned starters — client-side data, always available (no migration needed).
+  // Also include any DB templates tagged as flow_aligned_starter (user-created clones).
+  const dbFlowAligned = (blueprintsQuery.data || []).filter(
     bp => (bp.industry_tags || []).includes('flow_aligned_starter')
   );
+  const clientStarters = getFlowAlignedBlueprints();
+  // Merge: DB templates take precedence (by category match), client starters fill gaps
+  const dbCategories = new Set(dbFlowAligned.map(bp => bp.category));
+  const flowAlignedTemplates = [
+    ...dbFlowAligned,
+    ...clientStarters.filter(s => !dbCategories.has(s.category)),
+  ];
 
   // Filter: industry templates only
   const industryTemplates = (blueprintsQuery.data || []).filter(
@@ -359,10 +331,6 @@ export const useVideoBlueprints = () => {
     useBlueprintWithScenes,
     seedBlueprints: seedBlueprintsMutation.mutate,
     isSeeding: seedBlueprintsMutation.isPending,
-    migrateToIndustry: migrateToIndustryMutation.mutate,
-    isMigrating: migrateToIndustryMutation.isPending,
-    migrateToFlowAligned: migrateToFlowAlignedMutation.mutate,
-    isMigratingFlowAligned: migrateToFlowAlignedMutation.isPending,
     assignBlueprint: assignBlueprintMutation.mutate,
     isAssigning: assignBlueprintMutation.isPending,
     trackUsage: trackUsageMutation.mutate,

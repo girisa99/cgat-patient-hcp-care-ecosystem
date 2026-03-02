@@ -1,21 +1,20 @@
 /**
- * Flow-Aligned Template Seed Service
+ * Flow-Aligned Template Starters — Client-Side Data
  *
- * Seeds 9 minimal starter templates that align with the CREATE flow pipeline:
+ * 9 starter templates aligned with the CREATE flow pipeline:
  * Category → Format → Configure → Templates → PRODUCE
  *
  * Each template uses enrichment-compatible placeholders instead of legacy
  * messaging variables ({{hook}}, {{cta}}), so they integrate directly with
  * the enrichment assembly and scene prompt generation.
  *
- * Run via admin panel or browser console: migrateToFlowAligned()
+ * These are static client-side data — no DB migration needed.
+ * They appear as "Starting Points" in BlueprintTemplatesGrid.
+ * Custom user templates go to the DB via CreateTemplateDialog.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import type { VideoBlueprint, BlueprintScene } from '@/hooks/useVideoBlueprints';
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
-
-const EP04_BLUEPRINT_ID = 'cafcd78a-7957-4021-ba8f-c20daba331b2';
 const FLOW_ALIGNED_TAG = 'flow_aligned_starter';
 
 // ─── Template + Scene Definitions ──────────────────────────────────────────────
@@ -534,167 +533,76 @@ export const FLOW_ALIGNED_STARTERS: StarterTemplate[] = [
   },
 ];
 
-// ─── Migration Function ────────────────────────────────────────────────────────
+// ─── Client-Side Converter ──────────────────────────────────────────────────────
 
 /**
- * Full migration: soft-delete all legacy/industry templates, seed 9 flow-aligned starters.
+ * Convert FLOW_ALIGNED_STARTERS into VideoBlueprint[] for direct client-side use.
+ * Each starter gets a deterministic ID (starter-<category>) so they are stable
+ * across renders and can be distinguished from DB-created templates.
  *
- * Steps:
- * 1. Protect EP04 blueprint (podcast production — never touch)
- * 2. Soft-delete ALL other active blueprints (is_active = false)
- * 3. Check for existing flow-aligned starters (idempotent — skip if already seeded)
- * 4. Insert 9 new templates + their scenes
- *
- * Idempotent: safe to run multiple times.
+ * No DB migration needed — these show up instantly in BlueprintTemplatesGrid.
  */
-export async function migrateToFlowAligned(): Promise<{
-  softDeleted: number;
-  inserted: number;
-  skipped: number;
-  errors: string[];
-  ep04Protected: boolean;
-}> {
-  const errors: string[] = [];
+let _cachedBlueprints: VideoBlueprint[] | null = null;
 
-  // ── Step 1: Soft-delete ALL active blueprints except EP04 and existing flow-aligned starters ──
-  console.log('[FlowAlignedMigration] Step 1: Soft-deleting non-EP04, non-flow-aligned blueprints...');
+export function getFlowAlignedBlueprints(): VideoBlueprint[] {
+  if (_cachedBlueprints) return _cachedBlueprints;
 
-  const { data: activeBlueprints, error: fetchError } = await supabase
-    .from('video_blueprints')
-    .select('id, name, industry_tags')
-    .eq('is_active', true);
+  const now = new Date().toISOString();
 
-  if (fetchError) {
-    errors.push(`Fetch active blueprints: ${fetchError.message}`);
-    return { softDeleted: 0, inserted: 0, skipped: 0, errors, ep04Protected: false };
-  }
+  _cachedBlueprints = FLOW_ALIGNED_STARTERS.map((starter): VideoBlueprint => {
+    const stableId = `starter-${starter.category}`;
 
-  // Soft-delete everything except EP04 and already-seeded flow_aligned_starters
-  const toSoftDelete = (activeBlueprints || []).filter((bp: any) => {
-    if (bp.id === EP04_BLUEPRINT_ID) return false;
-    const tags: string[] = bp.industry_tags || [];
-    if (tags.includes(FLOW_ALIGNED_TAG)) return false;
-    return true;
+    const scenes: BlueprintScene[] = starter.scenes.map((scene, idx) => ({
+      id: `${stableId}-scene-${idx}`,
+      blueprint_id: stableId,
+      scene_key: scene.scene_key,
+      title: scene.title,
+      description: scene.description,
+      order_index: idx,
+      scene_type: scene.scene_type,
+      script_template: scene.script_template,
+      script_variables: scene.script_variables,
+      duration_seconds: scene.duration_seconds,
+      min_duration_seconds: Math.max(5, scene.duration_seconds - 10),
+      max_duration_seconds: scene.duration_seconds + 15,
+      visual_config: {},
+      audio_config: {},
+      transition_config: { type: 'crossfade', duration: 0.5 },
+      is_optional: false,
+      is_repeatable: false,
+      created_at: now,
+      updated_at: now,
+    }));
+
+    return {
+      id: stableId,
+      name: starter.name,
+      description: starter.description,
+      category: starter.category,
+      thumbnail_url: null,
+      preview_video_url: null,
+      estimated_duration_seconds: starter.estimated_duration_seconds,
+      target_platform: ['youtube', 'social', 'web'],
+      industry_tags: [FLOW_ALIGNED_TAG, starter.category],
+      default_settings: {
+        source: 'flow_aligned_seed',
+        style_intent: starter.style_intent,
+      },
+      style_preset: {},
+      is_system_default: true,
+      created_by: null,
+      is_active: true,
+      is_public: true,
+      usage_count: 0,
+      created_at: now,
+      updated_at: now,
+      scenes,
+      style_intent: starter.style_intent,
+      target_regions: ['global'],
+      tone_modifier: starter.style_intent === 'festive' ? 'celebratory' : 'professional',
+      aesthetic_keywords: [starter.style_intent, starter.category],
+    };
   });
 
-  let softDeleted = 0;
-  if (toSoftDelete.length > 0) {
-    const ids = toSoftDelete.map((bp: any) => bp.id);
-    for (let i = 0; i < ids.length; i += 50) {
-      const chunk = ids.slice(i, i + 50);
-      const { error: delError } = await supabase
-        .from('video_blueprints')
-        .update({ is_active: false })
-        .in('id', chunk);
-
-      if (delError) {
-        errors.push(`Soft-delete batch ${i}: ${delError.message}`);
-      } else {
-        softDeleted += chunk.length;
-      }
-    }
-  }
-
-  // Verify EP04 is still active
-  const { data: ep04Check } = await supabase
-    .from('video_blueprints')
-    .select('id, is_active')
-    .eq('id', EP04_BLUEPRINT_ID)
-    .single();
-
-  const ep04Protected = ep04Check?.is_active === true;
-  console.log(`[FlowAlignedMigration] Soft-deleted ${softDeleted} blueprints, EP04 protected: ${ep04Protected}`);
-
-  // ── Step 2: Check for existing flow-aligned starters (idempotency) ──
-  const { data: existingStarters } = await supabase
-    .from('video_blueprints')
-    .select('name')
-    .contains('industry_tags', [FLOW_ALIGNED_TAG])
-    .eq('is_active', true);
-
-  const existingNames = new Set((existingStarters || []).map((s: any) => s.name));
-
-  // ── Step 3: Insert new flow-aligned templates + scenes ──
-  let inserted = 0;
-  let skipped = 0;
-
-  for (const starter of FLOW_ALIGNED_STARTERS) {
-    try {
-      // Skip if already seeded
-      if (existingNames.has(starter.name)) {
-        skipped++;
-        continue;
-      }
-
-      // Insert blueprint
-      const { data: blueprint, error: bpError } = await supabase
-        .from('video_blueprints')
-        .insert({
-          name: starter.name,
-          description: starter.description,
-          category: starter.category,
-          estimated_duration_seconds: starter.estimated_duration_seconds,
-          target_platform: ['youtube', 'social', 'web'],
-          industry_tags: [FLOW_ALIGNED_TAG, starter.category],
-          default_settings: {
-            source: 'flow_aligned_seed',
-            style_intent: starter.style_intent,
-          },
-          style_preset: {},
-          is_system_default: true,
-          is_active: true,
-          is_public: true,
-          usage_count: 0,
-          style_intent: starter.style_intent,
-          target_regions: ['global'],
-          tone_modifier: starter.style_intent === 'festive' ? 'celebratory' : 'professional',
-          aesthetic_keywords: [starter.style_intent, starter.category],
-        })
-        .select('id')
-        .single();
-
-      if (bpError) {
-        errors.push(`${starter.name}: ${bpError.message}`);
-        continue;
-      }
-
-      // Insert scenes
-      if (blueprint?.id && starter.scenes.length > 0) {
-        const scenes = starter.scenes.map((scene, idx) => ({
-          blueprint_id: blueprint.id,
-          scene_key: scene.scene_key,
-          title: scene.title,
-          description: scene.description,
-          order_index: idx,
-          scene_type: scene.scene_type,
-          script_template: scene.script_template,
-          script_variables: scene.script_variables,
-          duration_seconds: scene.duration_seconds,
-          min_duration_seconds: Math.max(5, scene.duration_seconds - 10),
-          max_duration_seconds: scene.duration_seconds + 15,
-          visual_config: {},
-          audio_config: {},
-          transition_config: { type: 'crossfade', duration: 0.5 },
-          is_optional: false,
-          is_repeatable: false,
-        }));
-
-        const { error: scenesError } = await supabase
-          .from('blueprint_scenes')
-          .insert(scenes);
-
-        if (scenesError) {
-          errors.push(`${starter.name} scenes: ${scenesError.message}`);
-          continue;
-        }
-      }
-
-      inserted++;
-    } catch (err: any) {
-      errors.push(`${starter.name}: ${err.message}`);
-    }
-  }
-
-  console.log(`[FlowAlignedMigration] Done: ${inserted} inserted, ${skipped} skipped, ${errors.length} errors`);
-  return { softDeleted, inserted, skipped, errors, ep04Protected };
+  return _cachedBlueprints;
 }
