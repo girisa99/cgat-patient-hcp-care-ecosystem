@@ -824,7 +824,13 @@ function EP04ProductionInner() {
       }
 
       // Source 2 (fallback): cast_generation_jobs — recovers assets even if scene_config wasn't updated
-      // Only use fallback for scenes NOT already restored from Source 1
+      // Track which scenes were fully restored from Source 1 so we don't mix sources
+      const source1Scenes = new Set(
+        Object.entries(restored)
+          .filter(([, s]) => Object.keys(s.videoUrls).length + Object.keys(s.imageUrls).length + Object.keys(s.avatarUrls).length > 0)
+          .map(([k]) => k)
+      );
+
       try {
         const { data: visualJobs } = await db
           .from('cast_generation_jobs')
@@ -841,8 +847,8 @@ function EP04ProductionInner() {
           for (const job of visualJobs) {
             const sk = job.scene_key;
             if (!sk || !job.output_url) continue;
-            // Skip scenes already fully restored from Source 1
-            if (restored[sk] && Object.keys(restored[sk].videoUrls).length + Object.keys(restored[sk].imageUrls).length > 0) continue;
+            // Only skip scenes that Source 1 already fully restored (from scene_config.artifacts)
+            if (source1Scenes.has(sk)) continue;
             if (!restored[sk]) {
               restored[sk] = {
                 visual: 'done', music: 'idle', sfx: 'idle', assembled: 'idle',
