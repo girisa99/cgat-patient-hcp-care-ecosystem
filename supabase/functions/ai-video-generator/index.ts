@@ -973,32 +973,29 @@ async function generateWithAlibabaWAN(
     ? 'https://dashscope.aliyuncs.com/api/v1'
     : 'https://dashscope-intl.aliyuncs.com/api/v1';
 
-  // Correct endpoint paths from official DashScope docs:
-  //   Text-to-video: /services/aigc/video-generation/video-synthesis
-  //   Image-to-video: /services/aigc/image2video/video-synthesis
+  // Both text-to-video and image-to-video (wan2.6/wan2.2 series) use the same endpoint:
+  //   /services/aigc/video-generation/video-synthesis
+  // The model param + presence of image_url in input determines t2v vs i2v behavior.
   const isI2V = !!referenceImage;
-  const endpointPath = isI2V
-    ? '/services/aigc/image2video/video-synthesis'
-    : '/services/aigc/video-generation/video-synthesis';
-  const endpoint = `${baseUrl}${endpointPath}`;
+  const endpoint = `${baseUrl}/services/aigc/video-generation/video-synthesis`;
 
   // DashScope model names (from official API docs):
   //   Text-to-video: wan2.6-t2v, wan2.5-t2v-preview, wan2.2-t2v-plus, wan2.1-t2v-turbo, wan2.1-t2v-plus
   //   Image-to-video: wan2.2-kf2v-flash, wan2.1-kf2v-plus
   //   Lip-sync:       wan2.2-s2v
   const MODEL_MAP: Record<string, string> = {
-    // Text-to-video aliases
-    'wan2.6-t2v': 'wan2.1-t2v-turbo',     // wan2.6 free tier exhausted — fallback to turbo
+    // Text-to-video (official DashScope model names)
+    'wan2.6-t2v': 'wan2.6-t2v',           // Latest — pay-as-you-go
     'wan2.1-t2v': 'wan2.1-t2v-turbo',
-    'wan-2.2': 'wan2.2-t2v-plus',          // Map old name to new
+    'wan-2.2': 'wan2.2-t2v-plus',         // Map old name to new
     'wan-2.2-animate': 'wan2.2-t2v-plus',
-    // Image-to-video aliases
-    'wan2.6-i2v': 'wan2.2-kf2v-flash',    // Best i2v model on intl
-    'wan2.1-i2v': 'wan2.1-kf2v-plus',
+    // Image-to-video (official DashScope model names)
+    'wan2.6-i2v': 'wan2.6-i2v',           // Latest i2v — has free quota
+    'wan2.1-i2v': 'wan2.1-i2v-turbo',
   };
   const resolvedModel = MODEL_MAP[model] || model || 'wan2.1-t2v-turbo';
 
-  console.log(`🎥 Alibaba WAN: model=${resolvedModel}, endpoint=${useChina ? 'China' : 'International'}, path=${endpointPath}`);
+  console.log(`🎥 Alibaba WAN: model=${resolvedModel}, endpoint=${useChina ? 'China' : 'International'}, i2v=${isI2V}`);
 
   // Models that support custom duration (others use fixed duration)
   const DURATION_SUPPORTED = new Set(['wan2.6-t2v', 'wan2.6-t2v-us', 'wan2.5-t2v-preview', 'wan2.2-t2v-plus']);
@@ -1021,9 +1018,12 @@ async function generateWithAlibabaWAN(
     parameters: params,
   };
 
-  // Image-to-video mode
+  // Image-to-video mode — DashScope uses img_url (not image_url)
   if (referenceImage) {
-    (requestBody.input as Record<string, unknown>).image_url = referenceImage;
+    (requestBody.input as Record<string, unknown>).img_url = referenceImage;
+    // i2v uses 'resolution' param (e.g. "720P") instead of 'size'
+    (requestBody.parameters as Record<string, unknown>).resolution = '720P';
+    delete (requestBody.parameters as Record<string, unknown>).size;
   }
 
   const response = await fetch(endpoint, {
