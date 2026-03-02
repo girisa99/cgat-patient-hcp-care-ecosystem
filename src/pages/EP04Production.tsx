@@ -653,7 +653,7 @@ function EP04ProductionInner() {
   const [assemblyProgress, setAssemblyProgress] = useState<string | null>(null);
   const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null);
 
-  // ─── Load persisted content on mount (if projectId present) ────────────
+  // ─── Load persisted content + restore production phase on mount ─────────
 
   useEffect(() => {
     if (!projectId || contentLoaded) return;
@@ -681,6 +681,30 @@ function EP04ProductionInner() {
         setStatusMap(restoredStatus);
         toast.success(`Restored ${Object.keys(restoredAudio).length} saved voiceovers`);
       }
+
+      // Restore production phase from DB production_stage
+      try {
+        const db = supabase as any;
+        const { data: proj } = await db
+          .from('cast_projects')
+          .select('production_stage')
+          .eq('id', projectId)
+          .maybeSingle();
+        const stage = proj?.production_stage;
+        if (stage === 'visual_production' || stage === 'tts_approved') {
+          setProductionPhase('tts_approved');
+        } else if (stage === 'visual_done' || stage === 'music_production') {
+          setProductionPhase('music');
+        } else if (stage === 'assembly') {
+          setProductionPhase('assembly');
+        } else if (stage === 'complete' || stage === 'published') {
+          setProductionPhase('complete');
+        }
+        // 'producing' or 'scripted' → stay at 'tts' phase
+      } catch (e) {
+        console.warn('[EP04] Could not restore production_stage:', e);
+      }
+
       setContentLoaded(true);
     })();
   }, [projectId, contentLoaded, loadProjectContent]);
@@ -967,13 +991,19 @@ function EP04ProductionInner() {
   const totalDuration = scriptKeys.reduce((sum, k) => sum + scriptContentForUI[k].duration_est, 0);
 
   // ─── Phase 2: Approve All TTS ───────────────────────────────────────────
+  // Allow approval when >= 90% lines have audio (some narrator bridges are optional)
+
+  const ttsApprovalThreshold = Math.floor(scriptKeys.length * 0.9);
 
   const approveTTS = useCallback(async () => {
-    // Validate all lines have audio
     const missingAudio = scriptKeys.filter(k => !audioMap[k]);
-    if (missingAudio.length > 0) {
-      toast.error(`${missingAudio.length} lines missing audio — generate all TTS first`);
+    if (missingAudio.length > scriptKeys.length * 0.1) {
+      toast.error(`${missingAudio.length} lines still missing — need at least ${ttsApprovalThreshold} of ${scriptKeys.length}`);
       return;
+    }
+
+    if (missingAudio.length > 0) {
+      toast.info(`Proceeding with ${doneCount}/${scriptKeys.length} lines (${missingAudio.length} optional lines skipped)`);
     }
 
     // Update project production_stage in DB
@@ -986,8 +1016,8 @@ function EP04ProductionInner() {
     }
 
     setProductionPhase('tts_approved');
-    toast.success('All TTS approved — ready for visual production');
-  }, [scriptKeys, audioMap, projectId]);
+    toast.success('TTS approved — ready for visual production');
+  }, [scriptKeys, audioMap, projectId, doneCount, ttsApprovalThreshold]);
 
   // ─── Phase 3: Visual Production (per scene) ───────────────────────────
 
@@ -1884,7 +1914,7 @@ function EP04ProductionInner() {
           <div className="mt-8">
             <Card className={cn(
               'border transition-all',
-              productionPhase === 'tts' && doneCount === scriptKeys.length && 'ring-2 ring-primary/30',
+              productionPhase === 'tts' && doneCount >= ttsApprovalThreshold && 'ring-2 ring-primary/30',
               productionPhase !== 'tts' && 'border-green-500/30 bg-green-500/[0.02]',
             )}>
               <CardContent className="p-6">
@@ -1899,27 +1929,29 @@ function EP04ProductionInner() {
                     <div>
                       <h3 className="text-lg font-bold">Phase 2: TTS Approval</h3>
                       <p className="text-sm text-muted-foreground">
-                        Validate all {scriptKeys.length} lines have audio, then lock and proceed
+                        {doneCount >= ttsApprovalThreshold
+                          ? `${doneCount}/${scriptKeys.length} lines ready — approve to proceed`
+                          : `Need at least ${ttsApprovalThreshold}/${scriptKeys.length} lines (currently ${doneCount})`}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={doneCount === scriptKeys.length ? 'default' : 'secondary'} className="text-xs">
+                    <Badge variant={doneCount >= ttsApprovalThreshold ? 'default' : 'secondary'} className="text-xs">
                       {doneCount}/{scriptKeys.length} generated
                     </Badge>
                     {productionPhase === 'tts' && (
                       <Button
                         size="sm"
                         onClick={approveTTS}
-                        disabled={doneCount < scriptKeys.length}
+                        disabled={doneCount < ttsApprovalThreshold}
                       >
                         <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Approve All TTS
+                        Approve TTS ({doneCount >= scriptKeys.length ? 'All' : `${doneCount}/${scriptKeys.length}`})
                       </Button>
                     )}
                     {productionPhase !== 'tts' && (
                       <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
-                        Approved
+                        Approved ({doneCount}/{scriptKeys.length})
                       </Badge>
                     )}
                   </div>
