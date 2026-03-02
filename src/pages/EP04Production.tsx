@@ -22,7 +22,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EP04_SCRIPT_CONTENT, EP04_NARRATOR_BRIDGES, type ScriptLine } from '@/config/ep04-script-content';
-import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS } from '@/config/ep04-production-config';
+import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP } from '@/config/ep04-production-config';
 import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
 import { cn } from '@/lib/utils';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -604,6 +604,15 @@ function EP04ProductionInner() {
     return map;
   }, [scriptKeys, scriptContentForUI]);
 
+  // ─── Change 8: Pipeline verification — which scenes have pipeline data ──
+  const scenesWithPipeline = React.useMemo(() => {
+    return Array.from(scenes.keys()).filter(k => {
+      const p = dbProject.scenePipelineFor(k);
+      const steps = Array.isArray(p) ? p : (p?.steps || []);
+      return steps.length > 0;
+    });
+  }, [scenes, dbProject]);
+
   // ─── Stats (computed from state — placed early for callback access) ────
   // These are referenced by production phase callbacks and the render below.
 
@@ -1125,6 +1134,192 @@ function EP04ProductionInner() {
 
   // ─── Phase 3: Visual Production (per scene) ───────────────────────────
 
+  // ─── Step types to skip in visual production (already done in Phase 2 / Phase 4) ──
+  const SKIP_IN_VISUAL = new Set(['tts', 'music', 'sfx', 'scene-transition', 'storybook-frame']);
+
+  // Helper: process a single visual step and return the result URL (or null)
+  const processVisualStep = useCallback(async (
+    step: Record<string, unknown>,
+    sceneKey: string,
+    results: Record<string, string>,
+    lastTTSByCharacter: Record<string, string>,
+    stepLabel: string,
+  ): Promise<void> => {
+    const stepType = (step.type as string) || 'image';
+    const prompt = (step.prompt as string) || `Generate ${stepType} for ${sceneKey}`;
+
+    // ── screen-capture: use pre-loaded screenshot URLs (no edge call) ──
+    if (stepType === 'screen-capture') {
+      const screenIds = (step.screenIds as string[]) || [];
+      for (const sid of screenIds) {
+        if (screenshotUrls[sid]) {
+          results[`screen-capture-${sid}`] = screenshotUrls[sid];
+        } else {
+          toast.warning(`Screenshot "${sid}" not captured yet — skipping`);
+        }
+      }
+      return;
+    }
+
+    // ── ai-screen-enhance: pass sourceImage from pre-loaded screenshots ──
+    if (stepType === 'ai-screen-enhance') {
+      const screenIds = (step.screenIds as string[]) || [];
+      const enhanceMode = (step.enhanceMode as string) || 'highlight';
+      const scriptContext = (step.scriptContext as string) || '';
+      const focusAreas = (step.focusAreas as string[]) || [];
+
+      for (const sid of screenIds) {
+        const sourceUrl = screenshotUrls[sid];
+        if (!sourceUrl) { toast.warning(`Screenshot "${sid}" not captured — skipping enhance`); continue; }
+
+        let jobId: string | null = null;
+        if (projectId) {
+          jobId = await trackGenerationJob({
+            projectId, jobType: 'image', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+          });
+        }
+
+        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+          body: {
+            action: 'image_generation',
+            prompt: `${enhanceMode} mode: ${scriptContext}. Focus: ${focusAreas.join(', ') || 'auto'}`,
+            sourceImage: sourceUrl,
+            enhanceMode,
+          },
+        });
+        if (error) { toast.error(`${stepLabel} enhance "${sid}" failed: ${error.message}`); continue; }
+        const url = data?.url || data?.imageUrl;
+        if (url) results[`ai-screen-enhance-${sid}`] = url;
+        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      }
+      return;
+    }
+
+    // ── avatar-lipsync: CRITICAL — pass TTS audioUrl for lip sync ──
+    if (stepType === 'avatar-lipsync') {
+      const character = (step.character as string) || 'host';
+      const ttsAudioUrl = lastTTSByCharacter[character] || null;
+
+      if (!ttsAudioUrl) {
+        toast.warning(`No TTS audio for "${character}" lipsync — skipping`);
+        return;
+      }
+
+      let jobId: string | null = null;
+      if (projectId) {
+        jobId = await trackGenerationJob({
+          projectId, jobType: 'avatar', sceneKey, provider: (step.provider as string) || 'alibaba-wan2.2', estimatedTokens: 500,
+        });
+      }
+
+      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+        body: {
+          type: 'avatar',
+          character,
+          provider: step.provider || 'alibaba-wan2.2',
+          lipsync: true,
+          audioUrl: ttsAudioUrl,
+        },
+      });
+      if (error) { toast.error(`${stepLabel} lipsync "${character}" failed: ${error.message}`); return; }
+      const url = data?.url || data?.videoUrl;
+      if (url) results[`avatar-lipsync-${character}`] = url;
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      return;
+    }
+
+    // ── character-interaction: group shot / duo argument / standup ──
+    if (stepType === 'character-interaction') {
+      let jobId: string | null = null;
+      if (projectId) {
+        jobId = await trackGenerationJob({
+          projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+        });
+      }
+
+      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+        body: {
+          type: 'scene',
+          action: 'generate_video',
+          prompt,
+          style: step.style || 'group-shot',
+          characters: step.characters || [],
+        },
+      });
+      if (error) { toast.error(`${stepLabel} character-interaction failed: ${error.message}`); return; }
+      const url = data?.url || data?.videoUrl;
+      if (url) results[`character-interaction-${sceneKey}-${Date.now()}`] = url;
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      return;
+    }
+
+    // ── narrator-scroll: parchment data reveal animation ──
+    if (stepType === 'narrator-scroll') {
+      let jobId: string | null = null;
+      if (projectId) {
+        jobId = await trackGenerationJob({
+          projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+        });
+      }
+
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          action: 'generate_video',
+          prompt,
+          duration: step.duration || 4,
+        },
+      });
+      if (error) { toast.error(`${stepLabel} narrator-scroll failed: ${error.message}`); return; }
+      const url = data?.url || data?.videoUrl;
+      if (url) results[`narrator-scroll-${sceneKey}-${Date.now()}`] = url;
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      return;
+    }
+
+    // ── Standard step routing: avatar-3d, alibaba-video, alibaba-image, kinetic-text, motion-graphics ──
+    let action = 'image_generation';
+    let edgeFn = 'ai-universal-processor';
+
+    if (stepType === 'alibaba-video' || stepType === 'video') action = 'generate_video';
+    else if (stepType === 'avatar-3d') { edgeFn = 'ai-video-generator'; action = 'avatar'; }
+    else if (stepType === 'kinetic-text' || stepType === 'motion-graphics') action = 'image_generation';
+
+    let jobId: string | null = null;
+    if (projectId) {
+      jobId = await trackGenerationJob({
+        projectId,
+        jobType: stepType.includes('video') ? 'video' : stepType.includes('avatar') ? 'avatar' : 'image',
+        sceneKey,
+        provider: (step.provider as string) || 'alibaba',
+        estimatedTokens: 500,
+      });
+    }
+
+    const body: Record<string, unknown> = {
+      action,
+      prompt,
+      model: step.model || undefined,
+      provider: step.provider || undefined,
+      style: step.style || undefined,
+    };
+    // Pass character for avatar-3d
+    if (stepType === 'avatar-3d') {
+      body.type = 'avatar';
+      body.character = step.character || 'host';
+    }
+
+    const { data, error } = await supabase.functions.invoke(edgeFn, { body });
+
+    if (error) {
+      toast.error(`${stepLabel} "${stepType}" failed: ${error.message}`);
+      return;
+    }
+
+    const url = data?.url || data?.videoUrl || data?.imageUrl || null;
+    if (url) results[`${stepType}-${sceneKey}-${Date.now()}`] = url;
+    if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+  }, [projectId, screenshotUrls, trackGenerationJob, completeGenerationJob]);
+
   const startSceneVisualProduction = useCallback(async (sceneKey: string) => {
     setSceneProduction(prev => ({
       ...prev,
@@ -1137,61 +1332,88 @@ function EP04ProductionInner() {
       const pipelineSteps = (Array.isArray(rawPipeline) ? rawPipeline : (rawPipeline?.steps || [])) as Array<Record<string, unknown>>;
       const results: Record<string, string> = {};
 
+      // Verify pipeline data exists
+      if (pipelineSteps.length === 0) {
+        toast.warning(`No pipeline configured for ${sceneKey} — skipping`);
+        setSceneProduction(prev => ({
+          ...prev,
+          [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), visual: 'done' },
+        }));
+        return;
+      }
+
+      // ── Change 1: Track TTS audio per character for lipsync correlation ──
+      // Pre-populate from audioMap (Phase 2 TTS already completed) so lipsync
+      // works regardless of step ordering within the pipeline.
+      const lastTTSByCharacter: Record<string, string> = {};
+      const sceneLineKeys = scenes.get(sceneKey)?.keys || [];
+      for (const lk of sceneLineKeys) {
+        const lineData = scriptContentForUI[lk];
+        const audio = audioMap[lk];
+        if (lineData && audio?.audioUrl && audio.audioUrl.length > 0) {
+          lastTTSByCharacter[lineData.voice] = audio.audioUrl;
+        }
+      }
+
+      // Count visual steps for progress tracking
+      const visualSteps = pipelineSteps.filter(s => !SKIP_IN_VISUAL.has((s.type as string) || 'image'));
+      let visualStepNum = 0;
+      const totalVisualSteps = visualSteps.length;
+
       for (let i = 0; i < pipelineSteps.length; i++) {
+        if (abortRef.current) break;
         const step = pipelineSteps[i] as Record<string, unknown>;
         const stepType = (step.type as string) || 'image';
-        const prompt = (step.prompt as string) || `Generate ${stepType} for ${sceneKey}`;
 
-        let action = 'image_generation';
-        let edgeFn = 'ai-universal-processor';
-
-        if (stepType === 'alibaba-video' || stepType === 'video') action = 'generate_video';
-        else if (stepType === 'avatar-3d') { edgeFn = 'ai-video-generator'; action = 'avatar'; }
-        else if (stepType === 'avatar-lipsync') action = 'lipsync';
-        else if (stepType === 'kinetic-text' || stepType === 'motion-graphics') action = 'image_generation';
-
-        // Track generation job
-        let jobId: string | null = null;
-        if (projectId) {
-          jobId = await trackGenerationJob({
-            projectId,
-            jobType: stepType.includes('video') ? 'video' : stepType.includes('avatar') ? 'avatar' : 'image',
-            sceneKey,
-            provider: (step.provider as string) || 'alibaba',
-            estimatedTokens: 500,
-          });
-        }
-
-        const { data, error } = await supabase.functions.invoke(edgeFn, {
-          body: {
-            action,
-            prompt,
-            model: step.model || undefined,
-            provider: step.provider || undefined,
-            style: step.style || undefined,
-          },
-        });
-
-        if (error) {
-          console.error(`[EP04 Visual] Step ${stepType} failed for ${sceneKey}:`, error);
+        // ── Change 1: Track TTS audio for lipsync (don't regenerate) ──
+        if (stepType === 'tts') {
+          const scriptKey = step.scriptKey as string;
+          const voice = step.voice as string;
+          if (scriptKey && audioMap[scriptKey]?.audioUrl) {
+            lastTTSByCharacter[voice] = audioMap[scriptKey].audioUrl;
+          }
           continue;
         }
 
-        const url = data?.url || data?.videoUrl || data?.imageUrl || null;
-        if (url) {
-          results[`${stepType}-${i}`] = url;
-        }
+        // Skip non-visual step types
+        if (SKIP_IN_VISUAL.has(stepType)) continue;
 
-        if (jobId && projectId) {
-          await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
-        }
+        // ── Change 7: Per-step progress toast ──
+        visualStepNum++;
+        const stepLabel = `${sceneKey}: ${stepType}`;
+        toast.info(`${stepLabel} (step ${visualStepNum}/${totalVisualSteps})...`);
+
+        await processVisualStep(step, sceneKey, results, lastTTSByCharacter, stepLabel);
+
+        // ── Change 7: Rate limiting between steps (1s) ──
+        if (i < pipelineSteps.length - 1) await new Promise(r => setTimeout(r, 1000));
+      }
+
+      // ── Change 6: Process Character Interactions for this scene ──
+      // CI/NS use pipeline scene IDs (e.g. 'scene-5-day2') while our scenes Map
+      // uses script scene IDs (e.g. 'scene-5-governance'). Map via SCRIPT_TO_PIPELINE_MAP.
+      const pipelineSceneId = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
+      const extraInteractions = EP04_CHARACTER_INTERACTIONS.filter(ci => ci.sceneId === sceneKey || ci.sceneId === pipelineSceneId);
+      const extraScrolls = EP04_NARRATOR_SCROLLS.filter(ns => ns.sceneId === sceneKey || ns.sceneId === pipelineSceneId);
+      const extraSteps = [
+        ...extraInteractions.flatMap(ci => ci.steps),
+        ...extraScrolls.flatMap(ns => ns.steps),
+      ] as Array<Record<string, unknown>>;
+
+      for (let j = 0; j < extraSteps.length; j++) {
+        if (abortRef.current) break;
+        const extraStep = extraSteps[j];
+        const extraType = (extraStep.type as string) || 'unknown';
+        toast.info(`${sceneKey}: ${extraType} (extra ${j + 1}/${extraSteps.length})...`);
+        await processVisualStep(extraStep, sceneKey, results, lastTTSByCharacter, `${sceneKey}: ${extraType}`);
+        await new Promise(r => setTimeout(r, 1000)); // rate limit
       }
 
       // Persist visual artifacts to DB
       if (projectId) {
         await updateSceneArtifacts(projectId, sceneKey, {
-          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video'))),
-          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion'))),
+          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll'))),
+          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance'))),
           avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d'))),
           lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync'))),
         });
@@ -1202,23 +1424,27 @@ function EP04ProductionInner() {
         [sceneKey]: {
           ...(prev[sceneKey] || defaultSceneStatus()),
           visual: 'done',
-          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video'))),
-          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => !k.includes('video'))),
+          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('lipsync'))),
+          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => !k.includes('video') && !k.includes('lipsync') && !k.includes('character-interaction') && !k.includes('narrator-scroll'))),
+          avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d'))),
+          lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync'))),
         },
       }));
 
-      toast.success(`Visual production complete for ${sceneKey}`);
+      const totalResults = Object.keys(results).length;
+      toast.success(`Visual production complete for ${sceneKey} (${totalResults} assets)`);
     } catch (err: any) {
       console.error(`[EP04 Visual] Scene ${sceneKey} failed:`, err);
       setSceneProduction(prev => ({
         ...prev,
         [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), visual: 'error' },
       }));
-      toast.error(`Visual production failed for ${sceneKey}`);
+      toast.error(`Visual production failed for ${sceneKey}: ${err.message}`);
     }
-  }, [dbProject, projectId, trackGenerationJob, completeGenerationJob, updateSceneArtifacts]);
+  }, [dbProject, projectId, audioMap, screenshotUrls, scenes, scriptContentForUI, processVisualStep, trackGenerationJob, completeGenerationJob, updateSceneArtifacts]);
 
   const startAllVisualProduction = useCallback(async () => {
+    abortRef.current = false;
     const sceneKeys = Array.from(scenes.keys());
     setProductionPhase('visual');
     setVisualProgress({ current: 0, total: sceneKeys.length });
@@ -1227,10 +1453,16 @@ function EP04ProductionInner() {
       if (abortRef.current) break;
       setVisualProgress({ current: i + 1, total: sceneKeys.length });
       await startSceneVisualProduction(sceneKeys[i]);
+      // ── Change 7: Rate limiting between scenes (2s) ──
+      if (i < sceneKeys.length - 1) await new Promise(r => setTimeout(r, 2000));
     }
 
     setVisualProgress(null);
-    toast.success('All visual production complete');
+    if (!abortRef.current) {
+      toast.success('All visual production complete');
+    } else {
+      toast.warning('Visual production cancelled');
+    }
   }, [scenes, startSceneVisualProduction]);
 
   // ─── Phase 4: Music & SFX (per scene) ─────────────────────────────────
@@ -2117,6 +2349,16 @@ function EP04ProductionInner() {
                             ? 'Generate video, avatar, lipsync assets per scene pipeline'
                             : 'Approve TTS to unlock visual production'}
                         </p>
+                        {phase3Unlocked && !phase3Done && (
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className={cn('text-[10px] font-medium', scenesWithPipeline.length >= 12 ? 'text-green-500' : 'text-amber-500')}>
+                              {scenesWithPipeline.length}/{scenes.size} pipelines ready
+                            </span>
+                            <span className={cn('text-[10px] font-medium', Object.keys(screenshotUrls).length >= 15 ? 'text-green-500' : 'text-amber-500')}>
+                              {Object.keys(screenshotUrls).length}/19 screenshots loaded
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -2130,7 +2372,11 @@ function EP04ProductionInner() {
                         </>
                       )}
                       {phase3Unlocked && !phase3Done && !visualProgress && (
-                        <Button size="sm" onClick={startAllVisualProduction}>
+                        <Button
+                          size="sm"
+                          onClick={startAllVisualProduction}
+                          disabled={scenesWithPipeline.length === 0}
+                        >
                           <Film className="h-3 w-3 mr-1" />
                           Produce All Visuals
                         </Button>
@@ -2149,6 +2395,11 @@ function EP04ProductionInner() {
                       const status = sceneProduction[sceneKey];
                       const rawPipeline = dbProject.scenePipelineFor(sceneKey);
                       const pipelineSteps = Array.isArray(rawPipeline) ? rawPipeline : (rawPipeline?.steps || []) as Array<Record<string, unknown>>;
+                      const visualOnlySteps = pipelineSteps.filter(s => !SKIP_IN_VISUAL.has((s.type as string) || 'image'));
+                      const pipelineId = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
+                      const extraInteractions = EP04_CHARACTER_INTERACTIONS.filter(ci => ci.sceneId === sceneKey || ci.sceneId === pipelineId);
+                      const extraScrolls = EP04_NARRATOR_SCROLLS.filter(ns => ns.sceneId === sceneKey || ns.sceneId === pipelineId);
+                      const extraCount = extraInteractions.reduce((n, ci) => n + ci.steps.length, 0) + extraScrolls.reduce((n, ns) => n + ns.steps.length, 0);
                       return (
                         <div key={sceneKey} className={cn(
                           'p-3 rounded-lg border transition-all',
@@ -2159,16 +2410,24 @@ function EP04ProductionInner() {
                         )}>
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold truncate">{SCENE_TITLES[sceneKey] || sceneKey}</span>
-                            {status?.visual === 'done' && <CheckCircle2 className="h-3 w-3 text-green-500" />}
-                            {status?.visual === 'generating' && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
-                            {status?.visual === 'error' && <AlertCircle className="h-3 w-3 text-red-500" />}
+                            <div className="flex items-center gap-1">
+                              <span className="text-[9px] text-muted-foreground">{visualOnlySteps.length}{extraCount > 0 ? `+${extraCount}` : ''}</span>
+                              {status?.visual === 'done' && <CheckCircle2 className="h-3 w-3 text-green-500" />}
+                              {status?.visual === 'generating' && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                              {status?.visual === 'error' && <AlertCircle className="h-3 w-3 text-red-500" />}
+                            </div>
                           </div>
                           <div className="flex flex-wrap gap-1 mb-2">
-                            {pipelineSteps.map((step, i) => (
+                            {visualOnlySteps.map((step, i) => (
                               <Badge key={i} variant="outline" className="text-[8px]">
                                 {(step.type as string) || 'image'}
                               </Badge>
                             ))}
+                            {extraCount > 0 && (
+                              <Badge variant="outline" className="text-[8px] bg-violet-500/10 text-violet-400 border-violet-500/30">
+                                +{extraCount} extra
+                              </Badge>
+                            )}
                             {pipelineSteps.length === 0 && (
                               <span className="text-[9px] text-muted-foreground">No pipeline configured</span>
                             )}
@@ -2177,9 +2436,9 @@ function EP04ProductionInner() {
                             <Button
                               size="sm" variant="outline" className="w-full h-7 text-[10px]"
                               onClick={() => startSceneVisualProduction(sceneKey)}
-                              disabled={status?.visual === 'generating'}
+                              disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                             >
-                              {status?.visual === 'generating' ? 'Producing...' : 'Start Scene'}
+                              {status?.visual === 'generating' ? 'Producing...' : pipelineSteps.length === 0 ? 'No Pipeline' : 'Start Scene'}
                             </Button>
                           )}
                         </div>
