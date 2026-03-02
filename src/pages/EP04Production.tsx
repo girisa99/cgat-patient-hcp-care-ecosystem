@@ -2569,6 +2569,24 @@ function EP04ProductionInner() {
                               {status?.visual === 'generating' ? 'Producing...' : pipelineSteps.length === 0 ? 'No Pipeline' : 'Start Scene'}
                             </Button>
                           )}
+                          {/* Regenerate button for completed/errored scenes */}
+                          {phase3Unlocked && (status?.visual === 'done' || status?.visual === 'error') && (
+                            <Button
+                              size="sm" variant="outline" className="w-full h-7 text-[10px] mt-1 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                              onClick={() => {
+                                // Reset scene status so startSceneVisualProduction can re-run
+                                setSceneProduction(prev => ({
+                                  ...prev,
+                                  [sceneKey]: { ...defaultSceneStatus() },
+                                }));
+                                startSceneVisualProduction(sceneKey);
+                              }}
+                              disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                            >
+                              <Film className="h-3 w-3 mr-1" />
+                              Regenerate Scene
+                            </Button>
+                          )}
 
                           {/* ── Categorized asset preview for completed scenes ── */}
                           {status?.visual === 'done' && (() => {
