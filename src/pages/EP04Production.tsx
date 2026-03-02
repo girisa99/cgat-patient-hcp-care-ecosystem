@@ -818,7 +818,11 @@ function EP04ProductionInner() {
           }
           if (restoredCount > 0) {
             setSceneProduction(prev => ({ ...prev, ...restored }));
+            // If we have visual artifacts but productionPhase is still 'tts',
+            // advance it so Phase 3 is visible and scenes show assets (not "Start Scene")
+            setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
             console.log(`[EP04] Restored visual artifacts for ${restoredCount} scenes from DB`);
+            toast.success(`Restored ${restoredCount} scene(s) with visual assets`);
           }
         }
       } catch (e) {
