@@ -2635,7 +2635,21 @@ function EP04ProductionInner() {
                           {phase3Unlocked && (status?.visual === 'done' || status?.visual === 'error') && (
                             <Button
                               size="sm" variant="outline" className="w-full h-7 text-[10px] mt-1 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
-                              onClick={() => {
+                              onClick={async () => {
+                                // Clear old assets from DB before regenerating
+                                if (projectId) {
+                                  const db = supabase as any;
+                                  // Delete old generation jobs for this scene (non-TTS)
+                                  await db.from('cast_generation_jobs')
+                                    .delete()
+                                    .eq('project_id', projectId)
+                                    .eq('scene_key', sceneKey)
+                                    .neq('job_type', 'tts');
+                                  // Clear artifacts in scene_config
+                                  await updateSceneArtifacts(projectId, sceneKey, {
+                                    videoUrls: {}, imageUrls: {}, avatarUrls: {}, lipsyncUrls: {},
+                                  });
+                                }
                                 // Reset scene status so startSceneVisualProduction can re-run
                                 setSceneProduction(prev => ({
                                   ...prev,

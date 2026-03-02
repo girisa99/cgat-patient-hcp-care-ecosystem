@@ -532,7 +532,7 @@ function selectModel(provider: string, requestedModel: string): string {
     'sora2api': 'sora-1.0-turbo',
     'openai': 'sora-1.0-turbo',
     'modelslab': 'animatediff',
-    'alibaba': 'wan-2.2-animate',
+    'alibaba': 'wan2.1-t2v-turbo',
     'replicate': 'minimax/video-01',
     'gemini': 'veo-002',
   };
@@ -920,7 +920,7 @@ async function generateWithFallbackChain(
   const providers = [
     { name: 'openai', fn: () => generateWithOpenAI(prompt, 'sora-1.0-turbo', duration, aspectRatio) },
     { name: 'modelslab', fn: () => generateWithModelsLab(prompt, 'animatediff', duration, referenceImage) },
-    { name: 'alibaba', fn: () => generateWithAlibabaWAN(prompt, 'wan-2.2-animate', duration, referenceImage) },
+    { name: 'alibaba', fn: () => generateWithAlibabaWAN(prompt, 'wan2.1-t2v-turbo', duration, referenceImage) },
     { name: 'gemini', fn: () => generateWithGemini(prompt, duration, aspectRatio) },
     { name: 'replicate', fn: () => generateWithReplicate(prompt, 'minimax/video-01') },
   ];
@@ -958,36 +958,59 @@ async function generateWithAlibabaWAN(
   duration: number, 
   referenceImage?: string
 ): Promise<VideoResult> {
-  // Try both API keys - China (Beijing) preferred for video models, International (Virginia) as fallback
+  // Prefer international (Singapore) endpoint. Only use China if ONLY the China key exists.
   const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
   const intlKey = Deno.env.get('ALIBABA_API_KEY');
-  const apiKey = chinaKey || intlKey;
-  
-  if (!apiKey) {
+
+  if (!chinaKey && !intlKey) {
     throw new Error('Neither ALIBABA_CHINA_API_KEY nor ALIBABA_API_KEY is configured');
   }
 
-  // Route to correct endpoint based on which key is available
-  // International endpoint for Singapore/global users, China for Beijing region
-  const useChina = !!chinaKey && !intlKey; // Prefer international if both keys exist
+  // CRITICAL: apiKey must match the endpoint. Don't send China key to international endpoint.
+  const useChina = !!chinaKey && !intlKey;
+  const apiKey = useChina ? chinaKey! : intlKey!;
   const baseUrl = useChina
     ? 'https://dashscope.aliyuncs.com/api/v1'
     : 'https://dashscope-intl.aliyuncs.com/api/v1';
-  const endpoint = `${baseUrl}/services/aigc/video-generation/generation`;
 
-  // Use the passed model parameter — don't hardcode wan-2.2
-  // DashScope International endpoint models: wan2.1-t2v-turbo, wan-2.2
-  // Map pipeline aliases to DashScope model IDs
+  // Correct endpoint paths from official DashScope docs:
+  //   Text-to-video: /services/aigc/video-generation/video-synthesis
+  //   Image-to-video: /services/aigc/image2video/video-synthesis
+  const isI2V = !!referenceImage;
+  const endpointPath = isI2V
+    ? '/services/aigc/image2video/video-synthesis'
+    : '/services/aigc/video-generation/video-synthesis';
+  const endpoint = `${baseUrl}${endpointPath}`;
+
+  // DashScope model names (from official API docs):
+  //   Text-to-video: wan2.6-t2v, wan2.5-t2v-preview, wan2.2-t2v-plus, wan2.1-t2v-turbo, wan2.1-t2v-plus
+  //   Image-to-video: wan2.2-kf2v-flash, wan2.1-kf2v-plus
+  //   Lip-sync:       wan2.2-s2v
   const MODEL_MAP: Record<string, string> = {
-    'wan2.6-t2v': 'wan2.1-t2v-turbo',
-    'wan2.6-i2v': 'wan2.1-i2v-turbo',
-    'wan-2.2-animate': 'wan-2.2',
-    'wan-2.2': 'wan-2.2',
+    // Text-to-video aliases
+    'wan2.6-t2v': 'wan2.1-t2v-turbo',     // wan2.6 free tier exhausted — fallback to turbo
     'wan2.1-t2v': 'wan2.1-t2v-turbo',
+    'wan-2.2': 'wan2.2-t2v-plus',          // Map old name to new
+    'wan-2.2-animate': 'wan2.2-t2v-plus',
+    // Image-to-video aliases
+    'wan2.6-i2v': 'wan2.2-kf2v-flash',    // Best i2v model on intl
+    'wan2.1-i2v': 'wan2.1-kf2v-plus',
   };
-  const resolvedModel = MODEL_MAP[model] || model || (useChina ? 'wan-2.2' : 'wan2.1-t2v-turbo');
+  const resolvedModel = MODEL_MAP[model] || model || 'wan2.1-t2v-turbo';
 
-  console.log(`🎥 Generating video with Alibaba WAN, model: ${resolvedModel}, endpoint: ${useChina ? 'China (Beijing)' : 'International (Singapore/Virginia)'}`);
+  console.log(`🎥 Alibaba WAN: model=${resolvedModel}, endpoint=${useChina ? 'China' : 'International'}, path=${endpointPath}`);
+
+  // Models that support custom duration (others use fixed duration)
+  const DURATION_SUPPORTED = new Set(['wan2.6-t2v', 'wan2.6-t2v-us', 'wan2.5-t2v-preview', 'wan2.2-t2v-plus']);
+
+  const params: Record<string, unknown> = {
+    size: '1280*720',
+    prompt_extend: true,  // Let DashScope enhance the prompt
+  };
+  // Only add duration for models and modes that support it
+  if (!isI2V && DURATION_SUPPORTED.has(resolvedModel)) {
+    params.duration = Math.min(duration, 10);
+  }
 
   const requestBody: Record<string, unknown> = {
     model: resolvedModel,
@@ -995,19 +1018,12 @@ async function generateWithAlibabaWAN(
       prompt: `${prompt}. High quality, smooth character animation, safe for all audiences.`,
       negative_prompt: 'blurry, distorted, low quality, nsfw',
     },
-    parameters: {
-      duration: Math.min(duration, 10), // WAN max 10 seconds
-      size: '1280*720',                 // DashScope standard size format
-    }
+    parameters: params,
   };
 
-  // Image-to-video mode for avatar animation
+  // Image-to-video mode
   if (referenceImage) {
-    requestBody.input = {
-      ...requestBody.input as Record<string, unknown>,
-      image_url: referenceImage,
-      mode: 'animate', // Character animation mode
-    };
+    (requestBody.input as Record<string, unknown>).image_url = referenceImage;
   }
 
   const response = await fetch(endpoint, {
@@ -1085,7 +1101,7 @@ async function pollAlibabaTask(taskId: string, apiKey: string, baseUrl?: string)
       return {
         videoUrl: data.output?.video_url || data.output?.results?.[0]?.url,
         provider: 'alibaba',
-        model: 'wan-2.2-animate',
+        model: 'wan-video',
       };
     } else if (data.output?.task_status === 'FAILED') {
       throw new Error(data.output?.message || 'Alibaba WAN video generation failed');
@@ -1140,17 +1156,18 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
   provider: string;
   model: string;
 }> {
-  // Use CHINA API key for avatar/video models (Beijing region)
-  // Fall back to international key if China key not available
+  // Prefer international endpoint (Singapore). China only if ONLY China key exists.
   const chinaApiKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
   const intlApiKey = Deno.env.get('ALIBABA_API_KEY');
-  const apiKey = chinaApiKey || intlApiKey;
-  
-  if (!apiKey) throw new Error('ALIBABA_API_KEY or ALIBABA_CHINA_API_KEY is not configured');
+  if (!chinaApiKey && !intlApiKey) throw new Error('ALIBABA_API_KEY or ALIBABA_CHINA_API_KEY is not configured');
 
-  const modelName = fullBody ? 'omniavatar' : 'wan-2.2';
-  console.log(`🎭 Generating avatar with Alibaba ${fullBody ? 'OmniAvatar (full-body)' : 'WAN 2.2 Animate'}`);
-  console.log(`   Using ${chinaApiKey ? 'China (Beijing)' : 'International'} API endpoint`);
+  const useChina = !!chinaApiKey && !intlApiKey;
+  const apiKey = useChina ? chinaApiKey! : intlApiKey!;
+
+  // DashScope lip-sync model: wan2.2-s2v (works on both endpoints)
+  const modelName = fullBody ? 'omniavatar' : 'wan2.2-s2v';
+  console.log(`🎭 Generating avatar with Alibaba ${fullBody ? 'OmniAvatar' : 'WAN 2.2 S2V'}`);
+  console.log(`   Using ${useChina ? 'China (Beijing)' : 'International (Singapore)'} API endpoint`);
 
   // Step 1: Generate audio with Azure TTS as primary (more reliable), Alibaba Qwen3-TTS as fallback
   let audioUrl = request.audioUrl;
@@ -1175,31 +1192,22 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
     }
   }
 
-  // Step 2: Try ModelsLab first (more reliable) if no China key
-  if (!chinaApiKey) {
-    console.log('   No China API key, using ModelsLab for avatar');
-    return await generateAvatarWithModelsLab(request);
-  }
-
-  // Step 3: Animate the source image with lip-sync
-  const endpoint = fullBody 
-    ? 'https://dashscope.aliyuncs.com/api/v1/services/aigc/omniavatar/generation'
-    : 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/generation';
+  // Step 2: Animate the source image with lip-sync via DashScope
+  const baseUrl = useChina
+    ? 'https://dashscope.aliyuncs.com/api/v1'
+    : 'https://dashscope-intl.aliyuncs.com/api/v1';
+  const endpoint = fullBody
+    ? `${baseUrl}/services/aigc/omniavatar/generation`
+    : `${baseUrl}/services/aigc/image2video/video-synthesis`;
   
   const requestBody = {
     model: modelName,
     input: {
       image_url: request.sourceImage,
       audio_url: audioUrl,
-      mode: fullBody 
-        ? 'full_body_animation' 
-        : (request.type === 'lipsync' ? 'lip_sync' : 'talking_head'),
     },
     parameters: {
-      resolution: fullBody ? '1080p' : '720p',
-      preserve_expression: true,
-      smooth_motion: true,
-      ...(fullBody && { body_motion: 'natural', gesture_sync: true }),
+      size: fullBody ? '1920*1080' : '1280*720',
     }
   };
 
@@ -1207,7 +1215,7 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${chinaApiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'X-DashScope-Async': 'enable',
       },
@@ -1231,7 +1239,7 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
       videoUrl: data.output?.video_url,
       audioUrl,
       provider: 'alibaba',
-      model: 'wan-2.2-animate',
+      model: 'wan-video',
     };
   } catch (err) {
     console.warn('⚠️ Alibaba Avatar failed, falling back to ModelsLab:', err);
