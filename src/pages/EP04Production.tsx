@@ -832,27 +832,38 @@ function EP04ProductionInner() {
   // ─── Generate TTS for a single line ──────────────────────────────────────
 
   const generateLine = useCallback(async (key: string): Promise<boolean> => {
-    const line = scriptContentForUI[key];
-    if (!line) return false;
-
-    setStatusMap(prev => ({ ...prev, [key]: 'generating' }));
-    const voiceConfig = getVoiceConfig(line.voice);
-
-    // Track generation job for per-step cost breakdown
-    let jobId: string | null = null;
-    if (projectId) {
-      const estimatedTokens = Math.ceil(line.text.length / 4); // rough char→token estimate
-      jobId = await trackGenerationJob({
-        projectId,
-        jobType: 'tts',
-        sceneKey: line.scene,
-        lineKey: key,
-        provider: voiceConfig.provider,
-        estimatedTokens,
-      });
-    }
-
     try {
+      const line = scriptContentForUI[key];
+      if (!line) {
+        toast.error(`TTS: Line "${key}" not found in script config`);
+        console.error(`[EP04 TTS] Key not in scriptContentForUI: "${key}". Available keys sample:`, Object.keys(scriptContentForUI).slice(0, 5));
+        return false;
+      }
+
+      console.log(`[EP04 TTS] Generating: "${key}" voice=${line.voice} scene=${line.scene} text=${line.text.slice(0, 40)}...`);
+      setStatusMap(prev => ({ ...prev, [key]: 'generating' }));
+
+      const voiceConfig = getVoiceConfig(line.voice);
+      if (!voiceConfig?.voiceId) {
+        toast.error(`TTS: No voice config for "${line.voice}" (line: ${key})`);
+        setStatusMap(prev => ({ ...prev, [key]: 'error' }));
+        return false;
+      }
+
+      // Track generation job for per-step cost breakdown
+      let jobId: string | null = null;
+      if (projectId) {
+        const estimatedTokens = Math.ceil(line.text.length / 4);
+        jobId = await trackGenerationJob({
+          projectId,
+          jobType: 'tts',
+          sceneKey: line.scene,
+          lineKey: key,
+          provider: voiceConfig.provider,
+          estimatedTokens,
+        });
+      }
+
       const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
         body: {
           text: line.text,
@@ -870,8 +881,19 @@ function EP04ProductionInner() {
         },
       });
 
-      if (error) throw error;
-      if (!data?.audioContent && !data?.audioUrl) throw new Error('No audio returned');
+      if (error) {
+        toast.error(`TTS edge function error for "${key}": ${error.message || JSON.stringify(error)}`);
+        console.error(`[EP04 TTS] Edge function error:`, error);
+        setStatusMap(prev => ({ ...prev, [key]: 'error' }));
+        return false;
+      }
+
+      if (!data?.audioContent && !data?.audioUrl) {
+        toast.error(`TTS: No audio returned for "${key}" — provider: ${voiceConfig.provider}, voice: ${voiceConfig.voiceId}`);
+        console.error(`[EP04 TTS] No audio in response:`, data);
+        setStatusMap(prev => ({ ...prev, [key]: 'error' }));
+        return false;
+      }
 
       const audioUrl = data.audioUrl || `data:audio/mpeg;base64,${data.audioContent}`;
       const resolvedProvider = data.provider || voiceConfig.provider;
@@ -899,7 +921,7 @@ function EP04ProductionInner() {
       return true;
     } catch (err: any) {
       const errMsg = err?.message || err?.toString() || 'Unknown error';
-      console.error(`[EP04 TTS] Failed: ${key}`, err);
+      console.error(`[EP04 TTS] Uncaught error for "${key}":`, err);
       toast.error(`TTS failed for "${key}": ${errMsg}`);
       setStatusMap(prev => ({ ...prev, [key]: 'error' }));
       return false;
