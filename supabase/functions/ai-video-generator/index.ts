@@ -930,17 +930,28 @@ async function generateWithAlibabaWAN(
   }
 
   // Route to correct endpoint based on which key is available
-  // China endpoint for WAN 2.2 (Beijing region models), International for WAN 2.6+
-  const useChina = !!chinaKey;
-  const baseUrl = useChina 
+  // International endpoint for Singapore/global users, China for Beijing region
+  const useChina = !!chinaKey && !intlKey; // Prefer international if both keys exist
+  const baseUrl = useChina
     ? 'https://dashscope.aliyuncs.com/api/v1'
     : 'https://dashscope-intl.aliyuncs.com/api/v1';
   const endpoint = `${baseUrl}/services/aigc/video-generation/generation`;
 
-  console.log(`🎥 Generating video with Alibaba WAN, endpoint: ${useChina ? 'China (Beijing)' : 'International (Virginia)'}`);
+  // Use the passed model parameter — don't hardcode wan-2.2
+  // International endpoint supports: wan2.1-t2v-turbo, wan2.6-t2v, wan-2.2
+  // Map common aliases to DashScope model IDs
+  const MODEL_MAP: Record<string, string> = {
+    'wan2.6-t2v': 'wan2.1-t2v-turbo',  // wan2.6 maps to latest turbo on intl
+    'wan2.6-i2v': 'wan2.1-i2v-turbo',
+    'wan-2.2-animate': 'wan-2.2',
+    'wan-2.2': 'wan-2.2',
+  };
+  const resolvedModel = MODEL_MAP[model] || model || (useChina ? 'wan-2.2' : 'wan2.1-t2v-turbo');
+
+  console.log(`🎥 Generating video with Alibaba WAN, model: ${resolvedModel}, endpoint: ${useChina ? 'China (Beijing)' : 'International (Singapore/Virginia)'}`);
 
   const requestBody: Record<string, unknown> = {
-    model: 'wan-2.2',
+    model: resolvedModel,
     input: {
       prompt: `${prompt}. High quality, smooth character animation, safe for all audiences.`,
       negative_prompt: 'blurry, distorted, low quality, nsfw',
