@@ -557,8 +557,9 @@ function EP04ProductionInner() {
   const remapScene = (sceneKey: string) => TRANSITION_TO_SCENE[sceneKey] || sceneKey;
 
   const scriptContentForUI = React.useMemo<Record<string, ScriptLine>>(() => {
-    // Start with the complete static script (dialogue + narrator bridges)
-    // Remap transition scenes to their parent so bridges render within scenes
+    // AUTHORITATIVE line list — always from static config (109 dialogue + 11 bridges = 120).
+    // DB data is ONLY used for TTS audio restoration (handled by loadProjectContent effect).
+    // This prevents duplicate lines from DB seeding issues (transition-scene double-entries).
     const fullStaticScript: Record<string, ScriptLine> = {};
     for (const [key, line] of Object.entries(EP04_SCRIPT_CONTENT)) {
       fullStaticScript[key] = { ...line, scene: remapScene(line.scene) };
@@ -566,36 +567,8 @@ function EP04ProductionInner() {
     for (const [key, line] of Object.entries(EP04_NARRATOR_BRIDGES)) {
       fullStaticScript[key] = { ...line, scene: remapScene(line.scene) };
     }
-
-    if (!dbProject.isSeeded || dbProject.scriptLines.length === 0) {
-      return fullStaticScript;
-    }
-
-    // Build map from DB lines
-    const map: Record<string, ScriptLine> = {};
-    for (const line of dbProject.scriptLines) {
-      const scene = dbProject.scenes.find(s => s.id === line.scene_id);
-      const rawSceneKey = scene?.scene_key || line.scene_id;
-      const sceneKey = remapScene(rawSceneKey);
-      const lc = (line.line_config || {}) as Record<string, unknown>;
-      map[line.line_key] = {
-        text: line.dialogue,
-        voice: line.character_id as ScriptLine['voice'],
-        scene: sceneKey,
-        duration_est: line.duration_hint ? parseInt(line.duration_hint) || 10 : 10,
-        direction: line.direction || '',
-        isInterruption: lc.isInterruption as boolean || false,
-        lipsync: lc.lipsync as boolean || false,
-        sfx: line.sfx_tags || undefined,
-        motion: line.motion || undefined,
-        links: lc.links as ScriptLine['links'] || undefined,
-        visual_ref: line.visual_tags?.[0] || undefined,
-      };
-    }
-
-    // Merge: DB lines win, static fills gaps (ensures all 120 lines present)
-    return { ...fullStaticScript, ...map };
-  }, [dbProject.isSeeded, dbProject.scriptLines, dbProject.scenes]);
+    return fullStaticScript;
+  }, []);
 
   // Voice config lookup: DB first, then static config
   const getVoiceConfig = React.useCallback((voice: string) => {
@@ -686,11 +659,38 @@ function EP04ProductionInner() {
         setContentLoaded(true);
         return;
       }
-      // Restore TTS audio from persisted lines
+
+      // ── One-time DB cleanup: remove orphaned transition-scene rows ──
+      // Prior seeds created 11 extra scenes with keys like "transition-0-to-1".
+      // These cause duplicate script lines when loadProjectContent fetches by scene_id.
+      const transitionScenes = content.scenes.filter(s =>
+        s.scene_key.startsWith('transition-')
+      );
+      if (transitionScenes.length > 0) {
+        console.log(`[EP04] Cleaning up ${transitionScenes.length} orphaned transition scenes...`);
+        const db = supabase as any;
+        const transitionIds = transitionScenes.map(s => s.id);
+        // Delete script lines pointing to transition scenes (they are duplicates)
+        await db.from('cast_project_script_lines')
+          .delete()
+          .in('scene_id', transitionIds);
+        // Delete the transition scene rows themselves
+        await db.from('cast_project_scenes')
+          .delete()
+          .in('id', transitionIds);
+        console.log('[EP04] Transition scene cleanup complete');
+      }
+
+      // Restore TTS audio from persisted lines (deduplicated by line_key)
       const restoredAudio: Record<string, GeneratedAudio> = {};
       const restoredStatus: Record<string, LineStatus> = {};
+      // Only restore lines whose keys exist in our authoritative static config
+      const staticKeys = new Set([
+        ...Object.keys(EP04_SCRIPT_CONTENT),
+        ...Object.keys(EP04_NARRATOR_BRIDGES),
+      ]);
       for (const line of content.scriptLines) {
-        if (line.tts_audio_url && line.tts_status === 'generated') {
+        if (line.tts_audio_url && line.tts_status === 'generated' && staticKeys.has(line.line_key)) {
           restoredAudio[line.line_key] = {
             audioUrl: line.tts_audio_url,
             provider: line.tts_provider || 'unknown',
