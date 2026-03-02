@@ -1547,7 +1547,7 @@ function EP04ProductionInner() {
                 Beyond AI Hype · Host: Sai Dasika · with Allaudin · {doneCount}/{scriptKeys.length} lines · ~{Math.round(totalDuration / 60)}min
                 {tokenBreakdown && tokenBreakdown.total.actual > 0 && (
                   <span className="ml-2 text-primary">
-                    · {tokenBreakdown.tts.jobCount} TTS jobs · {tokenBreakdown.total.actual.toLocaleString()} tokens · ${tokenBreakdown.total.costUsd.toFixed(4)}
+                    · {tokenBreakdown.total.actual.toLocaleString()} tokens · ${tokenBreakdown.total.costUsd.toFixed(4)}
                   </span>
                 )}
               </p>
