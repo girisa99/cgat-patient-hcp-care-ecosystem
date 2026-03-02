@@ -366,7 +366,71 @@ const VISUAL_STYLE_CONFIG: Record<string, { label: string; icon: string; color: 
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
+// ─── Error Boundary for EP04 ──────────────────────────────────────────────
+class EP04ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[EP04] Render crash:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <div className="p-8 text-center max-w-lg border rounded-xl bg-card">
+            <h2 className="text-xl font-bold mb-3 text-destructive">EP04 Render Error</h2>
+            <p className="text-sm text-muted-foreground mb-2">{this.state.error?.message || 'Unknown error'}</p>
+            <p className="text-xs text-muted-foreground mb-4 font-mono break-all">{this.state.error?.stack?.split('\n').slice(0, 3).join('\n')}</p>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={() => { this.setState({ hasError: false, error: null }); }}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => {
+                  // Clear service worker cache and hard reload
+                  if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(regs => {
+                      regs.forEach(r => r.unregister());
+                    });
+                    caches.keys().then(names => {
+                      names.forEach(name => caches.delete(name));
+                    });
+                  }
+                  window.location.reload();
+                }}
+                className="px-4 py-2 bg-muted text-foreground rounded-lg text-sm font-medium"
+              >
+                Clear Cache & Reload
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function EP04Production() {
+  return (
+    <EP04ErrorBoundary>
+      <EP04ProductionInner />
+    </EP04ErrorBoundary>
+  );
+}
+
+function EP04ProductionInner() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const urlProjectId = searchParams.get('projectId');
@@ -1458,7 +1522,7 @@ export default function EP04Production() {
                 const hasScreenshots = sceneScreenshots.length > 0;
                 const primaryEntry = sceneScreenshots[0];
                 const styleConfig = primaryEntry ? VISUAL_STYLE_CONFIG[primaryEntry.visualStyle] : null;
-                const availableScreens = primaryEntry?.screenIds.filter(sid => screenshotUrls[sid]) || [];
+                const availableScreens = (primaryEntry?.screenIds || []).filter(sid => screenshotUrls[sid]);
                 const showOriginal = styleConfig?.showOriginal && availableScreens.length > 0;
 
                 return (
@@ -1566,7 +1630,7 @@ export default function EP04Production() {
                             </span>
                           </div>
                           <div className="flex gap-1 mt-1.5 flex-wrap">
-                            {primaryEntry?.screens.map(s => (
+                            {(primaryEntry?.screens || []).map(s => (
                               <Badge key={s.id} variant="outline" className="text-xs border-amber-500/30 text-amber-400/80">
                                 {s.name}
                               </Badge>
@@ -1720,7 +1784,7 @@ export default function EP04Production() {
                                     "{ctx.label}"
                                   </span>
                                   {/* SFX indicators */}
-                                  {line.sfx && line.sfx.length > 0 && (
+                                  {Array.isArray(line.sfx) && line.sfx.length > 0 && (
                                     <span className="flex items-center gap-1 ml-1">
                                       {line.sfx.slice(0, 3).map((sfx, si) => (
                                         <span
@@ -1751,7 +1815,7 @@ export default function EP04Production() {
                                   👄 Lip-Sync
                                 </Badge>
                               )}
-                              {!isPlaying && line.sfx && line.sfx.length > 0 && (
+                              {!isPlaying && Array.isArray(line.sfx) && line.sfx.length > 0 && (
                                 <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
                                   🔊 SFX ×{line.sfx.length}
                                 </Badge>
@@ -1777,7 +1841,7 @@ export default function EP04Production() {
                               {line.text}
                             </p>
                             {/* Clickable CTA Links */}
-                            {line.links && line.links.length > 0 && (
+                            {Array.isArray(line.links) && line.links.length > 0 && (
                               <div className="flex flex-wrap gap-2 mt-3">
                                 {line.links.map((link) => (
                                   <a
