@@ -716,7 +716,7 @@ export type TransformationPipeline =
   
   // ============ COMPLEX MULTI-MODAL ============
   | 'auto-record-to-avatar' | 'auto-record-to-3d' | 'auto-record-to-interactive'
-  | 'auto-record-to-video' | 'auto-record-to-vr'
+  | 'auto-record-to-video' | 'auto-record-to-vr' | 'auto-record-to-animation'
   | 'multi-modal-mashup' | 'full-production-suite'
   
   // ============ SPECIALIZED ============
@@ -785,8 +785,8 @@ export interface TransformationPipelineConfig {
 export interface TransformationStage {
   stage: number;
   name: string;
-  inputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'document' | 'voice' | 'panorama' | 'scene' | 'animation' | 'ar' | 'vr' | 'vfx' | 'music';
-  outputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'animation' | 'interactive' | 'vr' | 'ar' | 'vfx' | 'sfx' | 'music';
+  inputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'document' | 'voice' | 'panorama' | 'scene' | 'animation' | 'ar' | 'vr' | 'vfx' | 'music' | 'slides' | 'url';
+  outputType: 'text' | 'image' | 'audio' | 'video' | '3d' | 'animation' | 'interactive' | 'vr' | 'ar' | 'vfx' | 'sfx' | 'music' | 'slides' | 'stream';
   agent: string;
   provider: string;
   models: string[];

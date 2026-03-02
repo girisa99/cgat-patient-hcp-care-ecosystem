@@ -79,6 +79,10 @@ interface AIRequest {
     inputData?: any;
     nodes?: any[];
     edges?: any[];
+    contentType?: string;
+    pipelines?: string[];
+    language?: string;
+    [key: string]: any;
   };
   // NEW: Full Generation Context from 8-step wizard
   generationContext?: GenerationContext;
