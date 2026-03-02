@@ -1408,9 +1408,24 @@ function EP04ProductionInner() {
     let action = 'image_generation';
     let edgeFn = 'ai-universal-processor';
 
-    if (stepType === 'alibaba-video' || stepType === 'video') action = 'generate_video';
-    else if (stepType === 'avatar-3d') { edgeFn = 'ai-video-generator'; action = 'avatar'; }
-    else if (stepType === 'kinetic-text' || stepType === 'motion-graphics') action = 'image_generation';
+    // Route video types through ai-video-generator (alibaba WAN models)
+    if (stepType === 'alibaba-video' || stepType === 'video') {
+      edgeFn = 'ai-video-generator';
+      action = 'generate_video';
+    } else if (stepType === 'avatar-3d') {
+      edgeFn = 'ai-video-generator';
+      action = 'avatar';
+    } else if (stepType === 'kinetic-text' || stepType === 'motion-graphics') {
+      action = 'image_generation';
+    }
+
+    // Build a rich prompt that includes step-specific fields (text, content, etc.)
+    let richPrompt = prompt;
+    if (stepType === 'kinetic-text' && step.text) {
+      richPrompt = `Create a cinematic kinetic typography image for: "${step.text}". Style: bold animated text on a dark cinematic background with dramatic lighting, Pixar quality, motion blur effects. Scene context: ${SCENE_TITLES[sceneKey] || sceneKey}`;
+    } else if (stepType === 'motion-graphics' && step.content) {
+      richPrompt = `Create a motion graphics visualization for: "${step.content}". Style: professional data visualization, infographic style, dark theme with vibrant accent colors. Scene context: ${SCENE_TITLES[sceneKey] || sceneKey}`;
+    }
 
     let jobId: string | null = null;
     if (projectId) {
@@ -1425,7 +1440,7 @@ function EP04ProductionInner() {
 
     const body: Record<string, unknown> = {
       action,
-      prompt,
+      prompt: richPrompt,
       model: step.model || undefined,
       provider: step.provider || undefined,
       style: step.style || undefined,
@@ -1435,7 +1450,14 @@ function EP04ProductionInner() {
       body.type = 'avatar';
       body.character = step.character || 'host';
     }
+    // Pass type + model for alibaba-video through ai-video-generator
+    if (stepType === 'alibaba-video' || stepType === 'video') {
+      body.type = 'video';
+      body.model = step.model || 'wan2.6-t2v';
+      body.duration = step.duration || 4;
+    }
 
+    console.log(`[EP04 Visual] ${stepLabel} → ${edgeFn} body:`, JSON.stringify(body).slice(0, 300));
     const { data, error } = await supabase.functions.invoke(edgeFn, { body });
 
     if (error) {
