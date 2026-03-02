@@ -1412,7 +1412,33 @@ function EP04ProductionInner() {
       return;
     }
 
-    // ── Standard step routing: avatar-3d, alibaba-video, alibaba-image, kinetic-text, motion-graphics ──
+    // ── avatar-3d: USE EXISTING pre-made character assets — no AI generation needed ──
+    if (stepType === 'avatar-3d') {
+      const character = (step.character as string) || 'host';
+      const existingAvatar = CHARACTER_AVATARS[character];
+      if (existingAvatar) {
+        results[`avatar-3d-${character}-${sceneKey}`] = existingAvatar;
+        console.log(`[EP04 Visual] ${stepLabel}: using pre-made avatar for "${character}"`);
+        return;
+      }
+      // Fallback: if somehow no pre-made avatar, generate via AI (shouldn't happen)
+      console.warn(`[EP04 Visual] No pre-made avatar for "${character}" — generating via AI`);
+    }
+
+    // ── kinetic-text: USE EXISTING scene background thumbnails where available ──
+    // Scene backgrounds already have cinematic title art — no need to generate poor text-to-image
+    if (stepType === 'kinetic-text') {
+      const sceneBg = SCENE_BACKGROUNDS[sceneKey];
+      if (sceneBg) {
+        results[`kinetic-text-${sceneKey}-${Date.now()}`] = sceneBg;
+        console.log(`[EP04 Visual] ${stepLabel}: using pre-made scene background as title card`);
+        return;
+      }
+      // Fallback: generate via AI only if no scene background exists
+      console.warn(`[EP04 Visual] No pre-made background for "${sceneKey}" — generating kinetic text via AI`);
+    }
+
+    // ── Standard step routing for steps that DO need AI generation ──
     let action = 'image_generation';
     let edgeFn = 'ai-universal-processor';
 
@@ -1420,14 +1446,10 @@ function EP04ProductionInner() {
     if (stepType === 'alibaba-video' || stepType === 'video') {
       edgeFn = 'ai-video-generator';
       action = 'generate_video';
-    } else if (stepType === 'avatar-3d') {
-      edgeFn = 'ai-universal-processor';
-      action = 'image_generation';
     } else if (stepType === 'alibaba-image') {
-      // Route through same image generation as avatar-3d (wan2.6-t2i)
       edgeFn = 'ai-universal-processor';
       action = 'image_generation';
-    } else if (stepType === 'kinetic-text' || stepType === 'motion-graphics') {
+    } else if (stepType === 'motion-graphics') {
       action = 'image_generation';
     }
 
@@ -1452,19 +1474,10 @@ function EP04ProductionInner() {
       'territory-map-visualization': 'Animated file ownership territory map showing two color-coded zones (blue for Atlas/Claude, green for Nova/Lovable) with clear boundary lines, task icons distributing across zones, merge conflict warnings at borders',
     };
 
-    // Build a rich prompt that includes step-specific fields + scene context enrichment
+    // Build rich prompts for steps that actually need AI generation
+    // (avatar-3d and kinetic-text early-return above using pre-made assets)
     let richPrompt = prompt;
-    if (stepType === 'avatar-3d' && step.character) {
-      const charKey = step.character as keyof typeof EP04_AVATAR_CONFIG['characters'];
-      const charCfg = EP04_AVATAR_CONFIG.characters[charKey];
-      if (charCfg) {
-        const styleKey = (step.style || 'pixar-3d') as string;
-        const basePrompt = styleKey.includes('disney') ? charCfg.disneyPrompt : charCfg.pixarPrompt;
-        richPrompt = basePrompt || `Generate a ${styleKey} 3D avatar of ${charCfg.name} (${charCfg.role}), Pixar quality, cinematic lighting, 8K`;
-      }
-    } else if (stepType === 'kinetic-text' && step.text) {
-      richPrompt = `Movie poster thumbnail with the title text "${step.text}" in large, bold, 3D metallic letters with lightning and energy effects. The text must be perfectly spelled and fully visible. Background: deep dark blue-to-black cinematic gradient with volumetric light rays, lens flares, and particle effects. Style: Hollywood blockbuster movie poster, ultra-cinematic, dramatic lighting, 8K quality. The text "${step.text}" is the hero element — large, centered, and impossible to miss.`;
-    } else if (stepType === 'motion-graphics' && step.content) {
+    if (stepType === 'motion-graphics' && step.content) {
       const contentTag = step.content as string;
       const enrichedContent = MOTION_GRAPHICS_DESCRIPTIONS[contentTag] || contentTag;
       richPrompt = `Cinematic motion graphics visualization: ${enrichedContent}. Scene context: ${sceneContext || 'Sprint management documentary'}. Style: professional data visualization with glowing neon elements, holographic UI overlays, dark tech background with blue/purple accent lighting, floating 3D data panels, cinematic depth of field, movie-quality VFX, 8K.`;
@@ -1496,23 +1509,7 @@ function EP04ProductionInner() {
       provider: step.provider || undefined,
       style: step.style || undefined,
     };
-    // Avatar-3d: route to Alibaba wan2.6-t2i via pixar-3d style intent for rich Pixar portraits
-    if (stepType === 'avatar-3d') {
-      body.style_intent = 'pixar-3d';
-      body.provider = 'alibaba';
-      body.model = 'wan2.6-t2i';
-      body.size = '1024x1024';
-      body.quality = 'high';
-    }
-    // Kinetic-text: route to Alibaba wan2.6-t2i via cinematic style for movie-poster quality
-    if (stepType === 'kinetic-text') {
-      body.aspectRatio = '16:9';
-      body.style_intent = 'cinematic';
-      body.provider = 'alibaba';
-      body.model = 'wan2.6-t2i';
-      body.size = '1280x720';
-    }
-    // Motion-graphics: also route to Alibaba for rich visuals
+    // Motion-graphics: route to Alibaba wan2.6-t2i for rich cinematic visuals
     if (stepType === 'motion-graphics') {
       body.style_intent = 'cinematic';
       body.provider = 'alibaba';
@@ -1541,10 +1538,11 @@ function EP04ProductionInner() {
         if (refImage.startsWith('http')) {
           body.referenceImage = refImage;
         } else {
-          // Try to find a matching screenshot URL — check exact match, then partial
+          // Try to find a matching image: screenshots → already-generated results → scene backgrounds
           const resolvedUrl = screenshotUrls[refImage]
             || Object.entries(screenshotUrls).find(([k]) => refImage.includes(k) || k.includes(refImage))?.[1]
-            || Object.values(results).find(url => url && typeof url === 'string' && url.startsWith('http'));
+            || Object.values(results).find(url => url && typeof url === 'string' && url.startsWith('http'))
+            || SCENE_BACKGROUNDS[sceneKey];
           if (resolvedUrl) {
             body.referenceImage = resolvedUrl;
             console.log(`[EP04 Visual] Resolved i2v referenceImage "${refImage}" → ${resolvedUrl.substring(0, 80)}`);
