@@ -100,7 +100,7 @@ const VOICE_LABELS: Record<string, string> = {
 };
 
 const CHARACTER_AVATARS: Record<string, string> = {
-  host: hostAvatar,
+  // host removed — forces AI regeneration with updated human PO prompt (was showing only the dog)
   atlas: atlasAvatar,
   nova: novaAvatar,
   squirrel: squirrelAvatar,
@@ -854,6 +854,32 @@ function EP04ProductionInner() {
         console.warn('[EP04] generation_jobs visual restore failed:', e);
       }
 
+      // Filter out broken Alibaba OSS CDN URLs that cause ERR_NAME_NOT_RESOLVED
+      // These URLs use oss-accelerate.aliyuncs.com which doesn't resolve from many networks
+      const filterBrokenUrls = (urls: Record<string, string>): Record<string, string> => {
+        const clean: Record<string, string> = {};
+        for (const [k, v] of Object.entries(urls)) {
+          if (v && !v.includes('oss-accelerate.aliyuncs.com') && !v.includes('dashscope') && !v.includes('placehold.co')) {
+            clean[k] = v;
+          } else if (v) {
+            console.warn(`[EP04] Skipping broken CDN URL for ${k}: ${v.substring(0, 60)}...`);
+          }
+        }
+        return clean;
+      };
+      for (const sk of Object.keys(restored)) {
+        restored[sk].videoUrls = filterBrokenUrls(restored[sk].videoUrls);
+        restored[sk].imageUrls = filterBrokenUrls(restored[sk].imageUrls);
+        restored[sk].avatarUrls = filterBrokenUrls(restored[sk].avatarUrls);
+        restored[sk].lipsyncUrls = filterBrokenUrls(restored[sk].lipsyncUrls);
+        // If all URLs were broken, reset scene to idle so it can be regenerated
+        const totalUrls = Object.keys(restored[sk].videoUrls).length + Object.keys(restored[sk].imageUrls).length
+          + Object.keys(restored[sk].avatarUrls).length + Object.keys(restored[sk].lipsyncUrls).length;
+        if (totalUrls === 0) {
+          restored[sk].visual = 'idle';
+        }
+      }
+
       const restoredCount = Object.keys(restored).filter(sk => restored[sk].visual === 'done').length;
       if (restoredCount > 0) {
         setSceneProduction(prev => ({ ...prev, ...restored }));
@@ -1412,7 +1438,7 @@ function EP04ProductionInner() {
       return;
     }
 
-    // ── avatar-3d: USE EXISTING pre-made character assets — no AI generation needed ──
+    // ── avatar-3d: Use pre-made assets OR generate from character config prompt ──
     if (stepType === 'avatar-3d') {
       const character = (step.character as string) || 'host';
       const existingAvatar = CHARACTER_AVATARS[character];
@@ -1421,8 +1447,29 @@ function EP04ProductionInner() {
         console.log(`[EP04 Visual] ${stepLabel}: using pre-made avatar for "${character}"`);
         return;
       }
-      // Fallback: if somehow no pre-made avatar, generate via AI (shouldn't happen)
-      console.warn(`[EP04 Visual] No pre-made avatar for "${character}" — generating via AI`);
+      // No pre-made avatar — generate via AI using the character's pixarPrompt from config
+      const charConfig = EP04_AVATAR_CONFIG.characters[character as keyof typeof EP04_AVATAR_CONFIG.characters];
+      if (charConfig) {
+        const avatarStyle = (step.style as string) || 'pixar-3d';
+        const avatarPrompt = avatarStyle.includes('disney') ? charConfig.disneyPrompt : charConfig.pixarPrompt;
+        console.log(`[EP04 Visual] ${stepLabel}: generating avatar for "${character}" via AI`);
+        let jobId: string | null = null;
+        if (projectId) {
+          jobId = await trackGenerationJob({ projectId, jobType: 'avatar', sceneKey, provider: 'alibaba', estimatedTokens: 500 });
+        }
+        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+          body: { action: 'image_generation', prompt: avatarPrompt, provider: 'alibaba', model: 'wan2.6-t2i', size: '1024x1024', style_intent: 'cinematic' },
+        });
+        if (error) { toast.error(`${stepLabel} avatar generation failed: ${error.message}`); return; }
+        const url = data?.url || data?.imageUrl || data?.result?.url;
+        if (url) {
+          results[`avatar-3d-${character}-${sceneKey}`] = url;
+          console.log(`[EP04 Visual] ${stepLabel}: AI-generated avatar for "${character}": ${url.substring(0, 60)}...`);
+        }
+        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+        return;
+      }
+      console.warn(`[EP04 Visual] No pre-made avatar or config for "${character}" — falling through to generic generation`);
     }
 
     // ── kinetic-text: USE EXISTING scene background thumbnails where available ──

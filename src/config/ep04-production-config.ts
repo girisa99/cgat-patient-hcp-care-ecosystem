@@ -172,14 +172,32 @@ export const EP04_AVATAR_CONFIG = {
       props: ['half-empty coffee mug', 'sticky notes', 'checklist papers', 'a loyal dog companion'],
       motionStyle: 'direct',            // Direct to camera, self-deprecating shrug, dog tilts head
       audioProfile: EP04_VOICES.host,
-      // --- PIXAR-STYLE PROMPT: A relatable human PO with animal listeners ---
-      pixarPrompt: 'Pixar-style 3D animated character: a warm, slightly disheveled HUMAN product owner in earth-tone business casual (rolled sleeves, loosened tie), perpetually holding a half-empty oversized coffee mug with "PO Life" written on it, expressive Pixar-proportioned face with big tired-but-passionate eyes, surrounded by a cloud of floating sticky notes and checklist papers, a loyal scruffy GOLDEN RETRIEVER sitting beside him wearing a tiny "Scrum Master" badge looking up adoringly, in a cozy home office with dual monitors showing sprint dashboards, warm lamplight, subtle Pixar subsurface skin shading, stylized proportions with slightly large head and expressive hands, photorealistic hair with Pixar stylization, 8K cinematic render',
-      // --- DISNEY-STYLE PROMPT: Painted warm narrator ---
-      disneyPrompt: 'Disney 2D animation style character: a warm-hearted human narrator in a cozy earth-tone cardigan, hand-painted with visible brushstrokes, kind expressive eyes with slight bags underneath (too many sprints), holding an enormous steaming coffee mug, surrounded by hand-drawn sticky notes that flutter like butterflies, a loyal golden retriever drawn in classic Disney style sitting at his feet with a tiny scrum board collar, painterly home office background with soft watercolor lighting, classic Disney warmth and charm with modern tech elements painted in',
+      // --- PIXAR-STYLE PROMPT: A relatable human PO (MUST show the human, not just the dog) ---
+      pixarPrompt: 'Pixar-style 3D animated character portrait: CLOSE-UP of a warm HUMAN MAN with messy brown hair, slight stubble, big tired-but-passionate brown eyes, wearing an earth-tone button-up shirt with rolled sleeves and a loosened tie, holding a half-empty oversized coffee mug, friendly approachable face with Pixar-proportioned features (slightly large head, expressive eyebrows), his loyal golden retriever visible at his side looking up adoringly, warm cozy home office background with soft lamplight, subtle Pixar subsurface skin shading, the HUMAN is the main subject filling 70% of frame, 8K cinematic portrait render',
+      // --- DISNEY-STYLE PROMPT: Painted warm narrator (HUMAN is main subject) ---
+      disneyPrompt: 'Disney 2D animation style character portrait: CLOSE-UP of a warm-hearted HUMAN MAN narrator with kind expressive eyes and slight bags underneath (too many sprints), messy brown hair, wearing a cozy earth-tone cardigan, hand-painted with visible brushstrokes, holding an enormous steaming coffee mug, his loyal golden retriever drawn in classic Disney style sitting at his feet, the HUMAN MAN fills most of the frame as the main subject, painterly home office background with soft watercolor lighting, classic Disney warmth and charm',
       sceneCompanions: [
         'The golden retriever fetching a rolled-up sprint report like a newspaper, tail wagging proudly',
         'A cat sleeping on the keyboard who accidentally closes a Jira ticket by stepping on Enter',
         'A parrot on a perch repeating standup phrases: "No blockers! No blockers!" in a tiny voice',
+      ],
+    },
+    allaudin: {
+      name: 'Allaudin',
+      role: 'The Genie (Narrator)',
+      style: '3d-pixar',
+      palette: ['#7C3AED', '#F59E0B'],  // Deep purple + gold
+      props: ['magical lamp', 'swirling blue mist', 'golden sparkle particles'],
+      motionStyle: 'theatrical',         // Grand gestures, emerges from lamp, mist swirls
+      audioProfile: EP04_VOICES.allaudin,
+      // --- PIXAR-STYLE PROMPT: A friendly whimsical genie (NOT muscular, NOT He-Man) ---
+      pixarPrompt: 'Pixar-style 3D animated character portrait: a small friendly GENIE with blue-purple skin, a wrapped purple turban with a golden gem, neat pointed black goatee, large warm brown eyes, pointy ears, a mischievous but kind smile, lean and whimsical build (NOT muscular), wearing golden wrist cuffs and a jeweled necklace, emerging from golden magical mist, deep purple and gold color palette, warm magical glow behind him, Pixar subsurface scattering on skin, stylized proportions, 8K cinematic portrait render',
+      // --- DISNEY-STYLE PROMPT: Painted magical narrator ---
+      disneyPrompt: 'Disney 2D animation style character portrait: a charming small blue-skinned genie with a purple turban and golden gem, pointed goatee, big expressive warm eyes, friendly mischievous grin, lean whimsical build, golden accessories, emerging from painted magical mist and sparkles, hand-painted watercolor style with visible brushstrokes, deep purple and gold palette, classic Disney warmth and magic',
+      sceneCompanions: [
+        'Tiny magical sparkle sprites that orbit around Allaudin like fireflies, each a different color',
+        'A miniature golden lamp that floats beside him, occasionally puffing out small clouds of blue mist',
+        'Constellation patterns that form in the air when Allaudin gestures, showing sprint data as star maps',
       ],
     },
   },
@@ -416,7 +434,7 @@ export const EP04_MUSIC_SCORE: Record<string, { music: ScenePipelineStep & { typ
 
 export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-0-title': [
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Magical lamp emerging from darkness, blue mist swirling outward, sparkle particles filling the frame, a majestic genie silhouette materializing from the mist, cinematic Pixar quality, dramatic volumetric lighting, 8K' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A golden magical lamp on a dark surface, blue-purple mist swirling out from the spout, sparkle particles filling the frame, a small friendly blue-skinned genie with a purple turban and pointed goatee materializing from the mist with a warm smile, Pixar 3D animation style like Disney Genie but original, whimsical not muscular, cinematic volumetric lighting, 8K' },
     { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-emerge' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
@@ -427,9 +445,10 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   ],
   'scene-1-cold-open': [
     { type: 'kinetic-text', text: '41 tasks. 5 days. 2 AI developers.' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A warm human product owner at his home office desk looking stressed but determined, sticky notes everywhere, dual monitors showing sprint dashboards with task cards, his loyal golden retriever sitting beside him looking up adoringly, cozy warm lamplight, coffee mug steaming, Pixar 3D animation quality, cinematic depth of field, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'cold-open-narration' },
-    { type: 'screen-capture', screenIds: ['po-mission-control'], multiCapture: false },
-    { type: 'motion-graphics', content: 'sprint-dashboard-montage' },
   ],
   'scene-2-meet-team': [
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
