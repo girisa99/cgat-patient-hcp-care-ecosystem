@@ -1368,13 +1368,42 @@ function EP04ProductionInner() {
         return;
       }
 
-      // Find the avatar source image for this character (from current results or pre-made)
+      // Find the avatar source image — MUST be a full public URL accessible by external services
+      // Priority: Supabase-hosted AI avatar > pre-made (uploaded to Supabase) > skip
+      // DashScope CDN URLs (aliyuncs.com/dashscope) are NOT accessible externally
+      // Pre-made local assets (/assets/...) are relative paths — not accessible by Replicate/Alibaba
       const avatarFromResults = Object.entries(results).find(([k]) => k.includes('avatar-3d') && k.includes(character))?.[1];
       const avatarPreMade = CHARACTER_AVATARS[character];
-      const sourceImage = avatarFromResults || avatarPreMade;
+      const isBadCdn = (u: string) => u.includes('aliyuncs.com') || u.includes('dashscope');
+      const isRelative = (u: string) => !u.startsWith('http');
+
+      let sourceImage: string | null = null;
+      if (avatarFromResults && !isBadCdn(avatarFromResults) && !isRelative(avatarFromResults)) {
+        sourceImage = avatarFromResults; // AI-generated avatar on Supabase — best option
+      } else {
+        // Pre-made avatar is a local asset — upload to Supabase Storage for external access
+        const preMadeUrl = avatarPreMade;
+        if (preMadeUrl) {
+          try {
+            const fullUrl = preMadeUrl.startsWith('http') ? preMadeUrl : `${window.location.origin}${preMadeUrl}`;
+            const imgResp = await fetch(fullUrl);
+            const blob = await imgResp.blob();
+            const storagePath = `cast-avatars/premade/${character}-avatar.png`;
+            await supabase.storage.from('cast-assets').upload(storagePath, blob, { upsert: true, contentType: 'image/png' });
+            const { data: pubData } = supabase.storage.from('cast-assets').getPublicUrl(storagePath);
+            sourceImage = pubData.publicUrl;
+            console.log(`[EP04 Visual] ${stepLabel}: uploaded pre-made avatar for "${character}" → ${sourceImage.substring(0, 60)}...`);
+          } catch (uploadErr) {
+            console.warn(`[EP04 Visual] ${stepLabel}: failed to upload pre-made avatar for "${character}":`, uploadErr);
+          }
+        }
+      }
       if (!sourceImage) {
-        toast.warning(`No avatar image for "${character}" lipsync — skipping`);
+        toast.warning(`No accessible avatar image for "${character}" lipsync — skipping`);
         return;
+      }
+      if (avatarFromResults && (isBadCdn(avatarFromResults) || isRelative(avatarFromResults))) {
+        console.warn(`[EP04 Visual] ${stepLabel}: original avatar "${character}" not externally accessible — using uploaded pre-made`);
       }
       console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" — audio: ${ttsAudioUrl.substring(0, 50)}..., avatar: ${sourceImage.substring(0, 50)}...`);
 
