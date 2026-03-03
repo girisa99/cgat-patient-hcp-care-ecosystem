@@ -552,15 +552,10 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'mission-control-narration' },
     // SHOWCASE: Storybook chapter frame — marks the "Act 3: Triumph" turning point
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider page: "Act III — Mission Control" in golden calligraphy, surrounded by illustrated mission control panels, radar dishes, and data streams, warm parchment background with ink flourishes, Pixar-quality illustration', duration: 4 },
-    { type: 'screen-capture', screenIds: ['po-mission-control'], multiCapture: false },
-    { type: 'ai-screen-enhance', screenIds: ['po-mission-control'], scriptContext: 'PO Mission Control — the async standup replacement. Shows real-time status of both AI developers without meetings. Key: no context-switching cost.', enhanceMode: 'stylize', focusAreas: ['developer-status-cards', 'async-standup-feed', 'blocker-alerts'] },
+    // Batch all 4 mission-control screens in one capture (was 4 separate captures + 4 separate enhances = 8 calls → now 2)
+    { type: 'screen-capture', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], multiCapture: true },
+    { type: 'ai-screen-enhance', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], scriptContext: 'Mission Control suite — PO dashboard with real-time developer status and async standup feed; structured standup entries (yesterday/today/blockers); QA sign-off with automated quality gates and approval badges; EOD handoff with context transfer and next-session priorities. The 4 screens together show the full async management toolkit that replaced daily standup meetings.', enhanceMode: 'stylize', focusAreas: ['developer-status-cards', 'async-standup-feed', 'blocker-alerts', 'standup-structure', 'quality-gates', 'approval-badges', 'handoff-summary', 'dependency-flags'] },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup with people talking over each other, RIGHT side shows calm AI-powered async standup with organized data flowing smoothly, cinematic quality' },
-    { type: 'screen-capture', screenIds: ['standup-entries'], multiCapture: false },
-    { type: 'ai-screen-enhance', screenIds: ['standup-entries'], scriptContext: 'Async standup entries — structured yesterday/today/blockers format from both AIs. Clean, no meeting needed. Highlight the structured format.', enhanceMode: 'highlight', focusAreas: ['standup-structure', 'blocker-flags', 'handoff-notes'] },
-    { type: 'screen-capture', screenIds: ['qa-signoff'], multiCapture: false },
-    { type: 'ai-screen-enhance', screenIds: ['qa-signoff'], scriptContext: 'QA sign-off dashboard — automated quality gates, test results, approval status per task.', enhanceMode: 'highlight', focusAreas: ['quality-gates', 'approval-badges', 'test-results'] },
-    { type: 'screen-capture', screenIds: ['eod-handoff'], multiCapture: false },
-    { type: 'ai-screen-enhance', screenIds: ['eod-handoff'], scriptContext: 'End-of-day handoff — context transfer between developers for next session continuity.', enhanceMode: 'highlight', focusAreas: ['handoff-summary', 'next-session-priorities', 'dependency-flags'] },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-context-loss' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-window' },
     { type: 'tts', voice: 'host', scriptKey: 'host-forgot-breakfast' },
@@ -596,12 +591,13 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'whats-next-narration' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Animated world map with language zones lighting up one by one — Arabic, Hindi, Mandarin, Spanish — each zone pulses with a unique color, camera slowly rotating around a 3D globe, cinematic sci-fi feel' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-language-foundational' },
-    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
+    // Lipsync removed — atlas voiceover plays over animated world map + MCP visuals (conceptual scene, not character scene)
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'MCP network diagram coming alive: central hub pulsing with energy, connection lines extending to Jira, GitHub, Slack nodes, data packets flowing as glowing orbs, dark tech background with blue-violet nebula, 3D space visualization' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Velocity prediction chart animating forward in time, trend line curving upward with confidence intervals fading in, futuristic holographic display style' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-data-quality' },
-    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-atlas-said' },
+    // SHOWCASE: Kinetic text — forward-looking vision statement caps the "what's next" scene
+    { type: 'kinetic-text', text: '85 LANGUAGES. 16 REGIONS. 4 AI ZONES. ONE UNIFIED PIPELINE.' },
   ],
   'scene-11-close': [
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
