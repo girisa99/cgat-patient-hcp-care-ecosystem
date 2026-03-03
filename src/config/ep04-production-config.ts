@@ -496,12 +496,12 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'governance-narration' },
     { type: 'screen-capture', screenIds: ['sprint-charter', 'governance-guide'], multiCapture: true },
     { type: 'ai-screen-enhance', screenIds: ['sprint-charter', 'governance-guide'], scriptContext: 'Sprint charter defining territory rules — Claude owns backend, Lovable owns frontend. Governance guide with file ownership boundaries.', enhanceMode: 'highlight', focusAreas: ['territory-map', 'file-ownership-rules', 'merge-conflict-policy'] },
+    // SHOWCASE: Scene transitions — cinematic iris-wipe between governance segments
+    { type: 'scene-transition', style: 'iris-wipe', prompt: 'Golden iris wipe revealing a divided miniature city — blue crystal zone and green garden zone separated by a shimmering boundary wall, storybook illustration transitioning to 3D', duration: 3 },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Cinematic aerial fly-through of a divided miniature city: blue crystal towers on left, green garden towers on right, golden bridge connecting them, Pixar-quality 3D, dramatic sunset lighting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-merge-conflict' },
-    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-governance-not-overkill' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-read-relevant-sections' },
-    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'alibaba-image', model: 'wanx-v2.1', prompt: 'Infographic showing sprint territory map with two color-coded zones (blue Atlas, green Nova), clear boundary lines, task distribution icons, clean professional design' },
   ],
   'scene-4-day1': [
@@ -511,9 +511,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'screen-capture', screenIds: ['findings-qa'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['findings-qa'], scriptContext: 'QA findings from Day 1 — scope creep detected, acceptance criteria discussion. Highlight the finding severity and action items.', enhanceMode: 'highlight', focusAreas: ['finding-severity', 'action-items', 'scope-flags'] },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
-    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-refactored-nav' },
-    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
+    // SHOWCASE: Character interactions — Atlas & Nova argue over scope without lipsync
+    { type: 'character-interaction', characters: ['atlas', 'nova'], prompt: 'Bear (Atlas) and fox (Nova) face each other across a holographic sprint board, bear points methodically at task cards while fox waves her arms expressively, split-screen showing their contrasting work styles, Pixar-quality character acting', style: 'duo-argument' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: fox character unrolls a large paper scroll across a holographic war table, grabs a quill pen and scribbles a sprint board with colorful task columns and sticky notes, bear character takes the quill and adds precise annotations with a ruler, both hold the scroll up to camera proudly — warm lighting, god rays, cinematic quality' },
     { type: 'tts', voice: 'host', scriptKey: 'host-not-in-scope' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-works-better' },
@@ -521,20 +521,18 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // Squirrel interruptions (10s + 5s) — drops in asking about acorns
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-2' },
-    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-interrupt-2' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-disappointed' },
-    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-disappointed' },
   ],
   'scene-5-day2': [
     { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
     { type: 'screen-capture', screenIds: ['day-2-view'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['day-2-view'], scriptContext: 'Day 2 — Nova blocked for 6 hours waiting on PO approval. Velocity dip visible. The frozen task and blocker status are the key story points.', enhanceMode: 'highlight', focusAreas: ['blocked-tasks', 'velocity-dip', 'blocker-status-red'] },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A frozen task card encased in ice slowly cracking and thawing as a small fox character taps it impatiently, Pixar-quality animation, dramatic lighting' },
+    // SHOWCASE: Sound effects — ice cracking pairs perfectly with frozen-task blocker narrative
+    { type: 'sfx', prompt: 'Dramatic ice cracking and shattering, crystalline fragments tinkling, followed by a whoosh of cold air releasing — tense to relieved transition', duration: 4 },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-blocked-six-hours' },
-    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-in-a-meeting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-human-meetings' },
-    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions dashboard built to prevent future blockers — async approval queue, priority flags, response time tracking.', enhanceMode: 'stylize', focusAreas: ['approval-queue', 'priority-flags', 'response-times'] },
     { type: 'tts', voice: 'host', scriptKey: 'host-po-actions-built' },
@@ -543,15 +541,17 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'day3-velocity-mismatch' },
     { type: 'screen-capture', screenIds: ['day-3-view', 'velocity-metrics'], multiCapture: true },
     { type: 'ai-screen-enhance', screenIds: ['day-3-view', 'velocity-metrics'], scriptContext: 'Day 3 velocity mismatch — Claude completing 8 tasks/day vs Lovable at 3. Velocity chart shows diverging lines. The gap is the story.', enhanceMode: 'highlight', focusAreas: ['velocity-comparison-chart', 'task-completion-rates', 'developer-velocity-gap'] },
+    // SHOWCASE: Narrator scroll — data-driven reveal of velocity numbers (perfect for stats-heavy scene)
+    { type: 'narrator-scroll', prompt: 'Ornate parchment scroll unrolling to reveal hand-lettered velocity statistics: "Atlas: 8 tasks/day — Nova: 3 tasks/day — Gap: 2.7x" with decorative data visualization flourishes, golden ink on aged paper, tiny chart sparklines in the margins', duration: 5, dataContent: 'Atlas: 8 tasks/day | Nova: 3 tasks/day | The velocity gap tells the real story' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-scope-now' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
-    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
-    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Velocity chart bars growing dynamically with sparkle effects, camera slowly zooming out to reveal full sprint dashboard, smooth cinematic motion', referenceImage: 'velocity-metrics-screenshot' },
   ],
   'scene-7-mission-control': [
     { type: 'tts', voice: 'host', scriptKey: 'mission-control-narration' },
+    // SHOWCASE: Storybook chapter frame — marks the "Act 3: Triumph" turning point
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider page: "Act III — Mission Control" in golden calligraphy, surrounded by illustrated mission control panels, radar dishes, and data streams, warm parchment background with ink flourishes, Pixar-quality illustration', duration: 4 },
     { type: 'screen-capture', screenIds: ['po-mission-control'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['po-mission-control'], scriptContext: 'PO Mission Control — the async standup replacement. Shows real-time status of both AI developers without meetings. Key: no context-switching cost.', enhanceMode: 'stylize', focusAreas: ['developer-status-cards', 'async-standup-feed', 'blocker-alerts'] },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup with people talking over each other, RIGHT side shows calm AI-powered async standup with organized data flowing smoothly, cinematic quality' },
@@ -562,16 +562,12 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'screen-capture', screenIds: ['eod-handoff'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['eod-handoff'], scriptContext: 'End-of-day handoff — context transfer between developers for next session continuity.', enhanceMode: 'highlight', focusAreas: ['handoff-summary', 'next-session-priorities', 'dependency-flags'] },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-context-loss' },
-    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-window' },
-    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'host-forgot-breakfast' },
-    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: bear character unrolls a pristine white scroll showing a perfectly straight burndown chart line, then fox character yanks out a crumpled paint-splattered enormous scroll that extends off the table, her chart line zigzags wildly with sticky notes and doodles everywhere, bear reaches for his ruler and fox slaps his paw away — comedic timing, warm studio lighting' },
   ],
   'scene-8-dashboard-tour': [
     { type: 'tts', voice: 'host', scriptKey: 'tour-narration' },
-    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
     {
       type: 'screen-capture',
       screenIds: [
@@ -582,14 +578,17 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
       ],
       multiCapture: true,
     },
+    // SHOWCASE: Scroll-unroll transition — 18 screenshots unroll like a parchment scroll (perfect for rapid tour)
+    { type: 'scene-transition', style: 'scroll-unroll', prompt: 'Ancient parchment scroll unrolling horizontally to reveal a montage of 18 dashboard screenshots arranged like panels in an illuminated manuscript, each panel glowing as the scroll passes over it, golden light and ink flourishes', duration: 4 },
     // Animate each screenshot with subtle pan/zoom via Alibaba i2v
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Ken Burns style slow zoom and pan across a software dashboard screenshot, subtle particle effects, professional product demo feel', referenceImage: 'auto-captured-screenshots' },
   ],
   'scene-9-numbers': [
     { type: 'tts', voice: 'host', scriptKey: 'numbers-narration' },
-    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
     { type: 'alibaba-image', model: 'wanx-v2.1', prompt: '3D comparison infographic table: Traditional Sprint (left, red) vs AI Sprint (right, green), showing metrics — velocity 5x, blockers 0, async standups, clean modern design with depth and shadows' },
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Animated infographic with numbers counting up dynamically, bars growing, green checkmarks appearing, professional motion graphics style', referenceImage: 'comparison-infographic' },
+    // SHOWCASE: Motion graphics — animated stat counters for the big number reveal
+    { type: 'motion-graphics', content: '41 TASKS | 5 DAYS | 5x VELOCITY | 0 BLOCKERS | 0 STANDUP MEETINGS — numbers count up with particle burst on each stat, green checkmarks animate in sequence, final golden badge pulses: "Sprint Complete"' },
     { type: 'screen-capture', screenIds: ['velocity-metrics'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['velocity-metrics'], scriptContext: 'Final velocity metrics — 41 tasks completed, 5x traditional speed, zero blockers at sprint end. The big number reveal moment.', enhanceMode: 'redraw', focusAreas: ['total-velocity-number', 'completion-percentage', 'zero-blockers-badge'] },
   ],
@@ -612,7 +611,14 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
     { type: 'tts', voice: 'host', scriptKey: 'close-takeaway' },
+    // SHOWCASE: Character group farewell — all characters together for emotional close
+    { type: 'character-interaction', characters: ['host', 'atlas', 'nova', 'squirrel'], prompt: 'All four characters gathered in a warm sunlit forest-tech clearing — human PO, bear Atlas, fox Nova, and squirrel perched on bear\'s shoulder. Group portrait moment: they look at camera with pride, golden retriever sits at their feet, woodland creatures peek from bushes. Warm golden hour lighting, Pixar quality', style: 'farewell-wave' },
     { type: 'screen-capture', screenIds: ['day-5-view'], multiCapture: false },
+    // SHOWCASE: "Powered by" provider montage — highlights the AI stack that built this episode
+    { type: 'storybook-frame', variant: 'closing', prompt: 'Elegant "Powered By" credits page in storybook style — provider logos arranged in a constellation pattern: ElevenLabs (voice), Azure Neural (voice), Alibaba Wan2.6 (video), Alibaba Wan2.2 (lipsync), Alibaba Wanx (images), Alibaba FLUX (images), Meshy (3D), Alibaba CosyVoice (fallback TTS), ModelsLab (motion), JSON2Video (assembly) — each logo connected by golden thread lines forming a production pipeline flowchart, warm parchment background, calligraphy header "10 AI Providers — 1 Unified Pipeline", 8K quality', duration: 6 },
+    { type: 'kinetic-text', text: '10 AI PROVIDERS. 1 UNIFIED PIPELINE. EVERY FRAME AI-GENERATED.' },
+    { type: 'narrator-scroll', prompt: 'Final scroll revealing the complete AI provider stack used to produce this episode: "Voice: ElevenLabs + Azure Neural + Alibaba CosyVoice | Video: Alibaba Wan2.6 T2V/I2V | Lipsync: Alibaba Wan2.2 S2V | Images: Alibaba Wanx + FLUX Merged | 3D: Meshy | Motion: ModelsLab AnimateDiff | Assembly: JSON2Video | Orchestration: GenieCast" — golden ink on aged paper, each provider name illuminates as the scroll passes', duration: 8, dataContent: 'Voice: ElevenLabs + Azure Neural + CosyVoice | Video: Wan2.6 | Lipsync: Wan2.2 | Images: Wanx + FLUX | 3D: Meshy | Motion: ModelsLab | Assembly: JSON2Video | Orchestration: GenieCast' },
+    { type: 'sfx', prompt: 'Orchestral crescendo resolving into a warm music box chime, the sound of a book page turning, and a final magical sparkle', duration: 5 },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'End card: three animated characters (bear, fox, human) standing together in a sunlit forest-tech hub, golden retriever at their feet, woodland creatures gathered around, text "Two AIs, One Sprint, Zero Standup Meetings" floating above in holographic letters, cinematic Pixar quality, warm golden hour lighting, 8K' },
   ],
 };
