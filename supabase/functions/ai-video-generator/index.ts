@@ -222,6 +222,89 @@ serve(async (req) => {
       }
     }
 
+    // Handle repair_urls — fix broken public URLs by regenerating signed URLs
+    if (body.action === 'repair_urls' && body.projectId) {
+      try {
+        const sb = getSupabaseAdmin();
+        if (!sb) throw new Error('No admin client');
+
+        // Get all scenes for this project
+        const { data: scenes, error: scErr } = await sb.from('cast_project_scenes')
+          .select('scene_key, scene_config')
+          .eq('project_id', body.projectId);
+        if (scErr) throw scErr;
+
+        let fixedCount = 0;
+        const fixedScenes: Record<string, any> = {};
+
+        for (const scene of (scenes || [])) {
+          const artifacts = (scene.scene_config as any)?.artifacts;
+          if (!artifacts) continue;
+
+          let changed = false;
+          const buckets = ['videoUrls', 'imageUrls', 'avatarUrls', 'lipsyncUrls'];
+          for (const bucket of buckets) {
+            const urls = artifacts[bucket] as Record<string, string> | undefined;
+            if (!urls) continue;
+            for (const [key, url] of Object.entries(urls)) {
+              if (!url) continue;
+              // Fix broken public URLs → regenerate signed URL
+              if (url.includes('/object/public/cast-assets/')) {
+                const filePath = url.split('/object/public/cast-assets/')[1];
+                if (filePath) {
+                  const { data: signed, error: signErr } = await sb.storage
+                    .from('cast-assets')
+                    .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+                  if (!signErr && signed?.signedUrl) {
+                    urls[key] = signed.signedUrl;
+                    fixedCount++;
+                    changed = true;
+                    console.log(`🔧 Fixed: ${scene.scene_key}/${bucket}/${key}`);
+                  }
+                }
+              }
+              // Also fix expired/broken signed URLs — verify and regenerate
+              else if (url.includes('/object/sign/cast-assets/')) {
+                const filePath = url.split('/object/sign/cast-assets/')[1]?.split('?')[0];
+                if (filePath) {
+                  // Check if file still exists
+                  const { data: signed, error: signErr } = await sb.storage
+                    .from('cast-assets')
+                    .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+                  if (!signErr && signed?.signedUrl) {
+                    urls[key] = signed.signedUrl;
+                    fixedCount++;
+                    changed = true;
+                  }
+                }
+              }
+            }
+          }
+
+          if (changed) {
+            // Update scene_config with fixed URLs
+            const updatedConfig = { ...(scene.scene_config as any), artifacts };
+            await sb.from('cast_project_scenes')
+              .update({ scene_config: updatedConfig })
+              .eq('project_id', body.projectId)
+              .eq('scene_key', scene.scene_key);
+            fixedScenes[scene.scene_key] = artifacts;
+          }
+        }
+
+        console.log(`🔧 Repair complete: ${fixedCount} URLs fixed across ${Object.keys(fixedScenes).length} scenes`);
+        return new Response(JSON.stringify({
+          success: true,
+          fixedCount,
+          fixedScenes,
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Handle avatar/lip-sync generation
     if (type === 'avatar' || type === 'lipsync') {
       console.log(`🎭 Generating ${type} with ${provider !== 'auto' ? provider : 'auto-selected'} provider`);

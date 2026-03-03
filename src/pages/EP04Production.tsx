@@ -2902,6 +2902,23 @@ function EP04ProductionInner() {
                             <Mic className="h-3 w-3 mr-1" />
                             Regen All Lipsync
                           </Button>
+                          <Button
+                            size="sm" variant="outline"
+                            className="border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
+                            onClick={async () => {
+                              if (!projectId) { toast.error('No project ID'); return; }
+                              toast.info('Repairing storage URLs...');
+                              const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+                                body: { action: 'repair_urls', projectId },
+                              });
+                              if (error) { toast.error(`Repair failed: ${error.message}`); return; }
+                              toast.success(`Repaired ${data?.fixedCount || 0} URLs — refreshing...`);
+                              // Reload to pick up fixed URLs
+                              setTimeout(() => window.location.reload(), 1500);
+                            }}
+                          >
+                            Repair URLs
+                          </Button>
                         </div>
                       )}
                       {phase3Done && !visualProgress && (
