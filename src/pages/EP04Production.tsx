@@ -1700,6 +1700,31 @@ function EP04ProductionInner() {
         }
       }
 
+      // ── Smart regeneration: skip steps that already have a generated asset ──
+      const existingScene = sceneProduction[sceneKey];
+      const existingVideoUrls = existingScene?.videoUrls || {};
+      const existingImageUrls = existingScene?.imageUrls || {};
+      const existingAvatarUrls = existingScene?.avatarUrls || {};
+      const existingLipsyncUrls = existingScene?.lipsyncUrls || {};
+
+      const hasExistingAsset = (sType: string, sKey: string, character?: string): boolean => {
+        if (sType === 'alibaba-video' || sType === 'video') {
+          return Object.keys(existingVideoUrls).some(k => k.includes('video') && k.includes(sKey));
+        }
+        if (sType === 'kinetic-text' || sType === 'motion-graphics' || sType === 'screen-capture') {
+          return Object.keys(existingImageUrls).some(k => k.includes(sType.split('-')[0]) && k.includes(sKey));
+        }
+        if (sType === 'avatar-3d' && character) {
+          // Only skip if the existing avatar is NOT the pre-made fallback (i.e., it's an AI-generated URL)
+          const existingUrl = Object.entries(existingAvatarUrls).find(([k]) => k.includes(character))?.[1];
+          return !!existingUrl && existingUrl.startsWith('http') && !existingUrl.includes('/assets/');
+        }
+        if (sType === 'avatar-lipsync' && character) {
+          return Object.keys(existingLipsyncUrls).some(k => k.includes(character));
+        }
+        return false;
+      };
+
       // Count visual steps for progress tracking
       const visualSteps = pipelineSteps.filter(s => !SKIP_IN_VISUAL.has((s.type as string) || 'image'));
       let visualStepNum = 0;
@@ -1722,6 +1747,26 @@ function EP04ProductionInner() {
 
         // Skip non-visual step types
         if (SKIP_IN_VISUAL.has(stepType)) continue;
+
+        // ── Skip steps that already have a generated asset ──
+        const stepCharacter = step.character as string | undefined;
+        if (hasExistingAsset(stepType, sceneKey, stepCharacter)) {
+          const existKey = stepCharacter ? `${stepType}(${stepCharacter})` : stepType;
+          console.log(`[EP04 Visual] ${sceneKey}: skipping ${existKey} — already generated`);
+          // Carry forward existing results so they're preserved in the final output
+          if (stepType === 'alibaba-video' || stepType === 'video') {
+            Object.assign(results, existingVideoUrls);
+          } else if (stepType === 'avatar-3d' && stepCharacter) {
+            const entry = Object.entries(existingAvatarUrls).find(([k]) => k.includes(stepCharacter));
+            if (entry) results[entry[0]] = entry[1];
+          } else if (stepType === 'avatar-lipsync' && stepCharacter) {
+            const entry = Object.entries(existingLipsyncUrls).find(([k]) => k.includes(stepCharacter));
+            if (entry) results[entry[0]] = entry[1];
+          } else {
+            Object.assign(results, existingImageUrls);
+          }
+          continue;
+        }
 
         // ── Change 7: Per-step progress toast ──
         visualStepNum++;
