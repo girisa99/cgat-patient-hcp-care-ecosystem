@@ -169,13 +169,13 @@ export const EP04_AVATAR_CONFIG = {
       role: 'Product Owner (Human)',
       style: '3d-pixar',
       palette: ['#D97706', '#92400E'],  // Warm earth tones
-      props: ['half-empty coffee mug', 'sticky notes', 'checklist papers', 'a loyal dog companion'],
+      props: ['coffee mug with "The GenieAI Podcast"', 'sticky notes', 'checklist papers', 'a loyal dog companion'],
       motionStyle: 'direct',            // Direct to camera, self-deprecating shrug, dog tilts head
       audioProfile: EP04_VOICES.host,
       // --- PIXAR-STYLE PROMPT: A relatable human PO (MUST show the human, not just the dog) ---
-      pixarPrompt: 'Pixar-style 3D animated character portrait: CLOSE-UP of a warm HUMAN MAN with messy brown hair, slight stubble, big tired-but-passionate brown eyes, wearing an earth-tone button-up shirt with rolled sleeves and a loosened tie, holding a half-empty oversized coffee mug, friendly approachable face with Pixar-proportioned features (slightly large head, expressive eyebrows), his loyal golden retriever visible at his side looking up adoringly, warm cozy home office background with soft lamplight, subtle Pixar subsurface skin shading, the HUMAN is the main subject filling 70% of frame, 8K cinematic portrait render',
+      pixarPrompt: 'Pixar-style 3D animated character portrait: CLOSE-UP of a warm HUMAN MAN with messy brown hair, slight stubble, big tired-but-passionate brown eyes, wearing an earth-tone button-up shirt with rolled sleeves and a loosened tie, holding a half-empty oversized coffee mug with "The GenieAI Podcast" text printed on it, friendly approachable face with Pixar-proportioned features (slightly large head, expressive eyebrows), his loyal golden retriever visible at his side looking up adoringly, warm cozy home office background with soft lamplight, dual monitors behind him showing Claude AI logo (blue/terracotta) on left screen and Lovable logo (pink/magenta) on right screen, subtle Pixar subsurface skin shading, the HUMAN is the main subject filling 70% of frame, 8K cinematic portrait render',
       // --- DISNEY-STYLE PROMPT: Painted warm narrator (HUMAN is main subject) ---
-      disneyPrompt: 'Disney 2D animation style character portrait: CLOSE-UP of a warm-hearted HUMAN MAN narrator with kind expressive eyes and slight bags underneath (too many sprints), messy brown hair, wearing a cozy earth-tone cardigan, hand-painted with visible brushstrokes, holding an enormous steaming coffee mug, his loyal golden retriever drawn in classic Disney style sitting at his feet, the HUMAN MAN fills most of the frame as the main subject, painterly home office background with soft watercolor lighting, classic Disney warmth and charm',
+      disneyPrompt: 'Disney 2D animation style character portrait: CLOSE-UP of a warm-hearted HUMAN MAN narrator with kind expressive eyes and slight bags underneath (too many sprints), messy brown hair, wearing a cozy earth-tone cardigan, hand-painted with visible brushstrokes, holding an enormous steaming coffee mug with "The GenieAI Podcast" text, his loyal golden retriever drawn in classic Disney style sitting at his feet, the HUMAN MAN fills most of the frame as the main subject, painterly home office background with soft watercolor lighting, dual monitors showing Claude AI and Lovable logos glowing softly, classic Disney warmth and charm',
       sceneCompanions: [
         'The golden retriever fetching a rolled-up sprint report like a newspaper, tail wagging proudly',
         'A cat sleeping on the keyboard who accidentally closes a Jira ticket by stepping on Enter',
@@ -439,7 +439,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-emerge' },
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'allaudin-emerge' },
-    // Segment 2: Host welcome (60s)
+    // Segment 2: Claude + Lovable title card → Host welcome (60s)
+    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Split-screen podcast thumbnail: LEFT side deep blue with Claude AI logo (terracotta C icon, white text "Claude"), RIGHT side vibrant magenta-green with Lovable logo (pink heart icon, white text "Lovable"), center divider has golden sparkle particles, bottom banner reads "Beyond AI Hype — The GenieAI Podcast", clean modern design, 16:9 aspect ratio, 4K' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'tts', voice: 'host', scriptKey: 'title-welcome' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome' },
@@ -455,7 +456,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'kinetic-text', text: '41 tasks. 5 days. 2 AI developers.' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A warm human product owner at his home office desk looking stressed but determined, sticky notes everywhere, dual monitors showing sprint dashboards with task cards, his loyal golden retriever sitting beside him looking up adoringly, cozy warm lamplight, coffee mug steaming, Pixar 3D animation quality, cinematic depth of field, 8K' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A warm human product owner at his home office desk looking stressed but determined, sticky notes everywhere, dual monitors showing Claude AI logo on left screen and Lovable logo on right screen with sprint dashboards, his loyal golden retriever sitting beside him looking up adoringly, cozy warm lamplight, coffee mug with "The GenieAI Podcast" text steaming on desk, Pixar 3D animation quality, cinematic depth of field, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'cold-open-narration' },
   ],
   'scene-2-meet-team': [
