@@ -614,7 +614,10 @@ function EP04ProductionInner() {
   // ─── Change 8: Pipeline verification — which scenes have pipeline data ──
   const scenesWithPipeline = React.useMemo(() => {
     return Array.from(scenes.keys()).filter(k => {
-      const p = dbProject.scenePipelineFor(k);
+      // Config file is source of truth (always available), DB is fallback
+      const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[k] || k;
+      const configPipeline = EP04_SCENE_PIPELINES[pipelineSceneKey as keyof typeof EP04_SCENE_PIPELINES];
+      const p = configPipeline || dbProject.scenePipelineFor(k);
       const steps = Array.isArray(p) ? p : (p?.steps || []);
       return steps.length > 0;
     });
@@ -2968,10 +2971,11 @@ function EP04ProductionInner() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {Array.from(scenes.keys()).map(sceneKey => {
                       const status = sceneProduction[sceneKey];
-                      const rawPipeline = dbProject.scenePipelineFor(sceneKey);
+                      const pipelineId = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
+                      const configPipeline = EP04_SCENE_PIPELINES[pipelineId as keyof typeof EP04_SCENE_PIPELINES];
+                      const rawPipeline = configPipeline || dbProject.scenePipelineFor(sceneKey);
                       const pipelineSteps = Array.isArray(rawPipeline) ? rawPipeline : (rawPipeline?.steps || []) as Array<Record<string, unknown>>;
                       const visualOnlySteps = pipelineSteps.filter(s => !SKIP_IN_VISUAL.has((s.type as string) || 'image'));
-                      const pipelineId = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
                       const extraInteractions = EP04_CHARACTER_INTERACTIONS.filter(ci => ci.sceneId === sceneKey || ci.sceneId === pipelineId);
                       const extraScrolls = EP04_NARRATOR_SCROLLS.filter(ns => ns.sceneId === sceneKey || ns.sceneId === pipelineId);
                       const extraCount = extraInteractions.reduce((n, ci) => n + ci.steps.length, 0) + extraScrolls.reduce((n, ns) => n + ns.steps.length, 0);
