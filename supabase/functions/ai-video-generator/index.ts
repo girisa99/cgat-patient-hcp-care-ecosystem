@@ -24,8 +24,12 @@ function getSupabaseAdmin() {
  */
 async function reuploadToStorage(externalUrl: string, prefix: string = 'video'): Promise<string> {
   if (!externalUrl || externalUrl.includes('placehold.co')) return externalUrl;
-  // Only re-upload Alibaba OSS URLs that cause DNS issues
-  if (!externalUrl.includes('aliyuncs.com') && !externalUrl.includes('dashscope')) return externalUrl;
+  // Skip if already on Supabase Storage
+  if (externalUrl.includes('supabase.co')) return externalUrl;
+  // Re-upload external provider URLs (Alibaba CDN, Replicate delivery, etc.) to Supabase Storage
+  // These URLs may expire or have DNS issues from user browsers
+  const needsReupload = externalUrl.includes('aliyuncs.com') || externalUrl.includes('dashscope') || externalUrl.includes('replicate.delivery') || externalUrl.includes('pbxt.replicate');
+  if (!needsReupload) return externalUrl;
 
   try {
     const sb = getSupabaseAdmin();
@@ -1460,17 +1464,11 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
   console.log(`   sourceImage: ${request.sourceImage.substring(0, 80)}`);
   console.log(`   audioUrl: ${request.audioUrl.substring(0, 80)}`);
 
-  // Try official models in order: bytedance/omni-human → veed/fabric-1.0
+  // Only use bytedance/omni-human — veed/fabric-1.0 removed (2.5x more expensive: $10 vs $4, 3x slower)
   // omni-human: single image + audio → full animated video (supports long audio)
-  // fabric-1.0: image + audio → talking head, up to 60s, 480p/720p
-  // Note: cjwbw/sadtalker removed (404 — model no longer exists on Replicate)
   const models = [
     {
       name: 'bytedance/omni-human',
-      input: { image: request.sourceImage, audio: request.audioUrl },
-    },
-    {
-      name: 'veed/fabric-1.0',
       input: { image: request.sourceImage, audio: request.audioUrl },
     },
   ];

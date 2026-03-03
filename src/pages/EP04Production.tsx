@@ -1404,14 +1404,14 @@ function EP04ProductionInner() {
       let url = data?.url || data?.videoUrl;
 
       // If edge function returned a Replicate prediction ID (model still processing),
-      // poll from client side until the lipsync video is ready (up to 120s)
+      // poll from client side until the lipsync video is ready (up to 10 min)
       if (!url && data?.replicatePredictionId) {
         console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" processing on Replicate (${data.model}) — polling...`);
-        toast.info(`${stepLabel}: lipsync rendering on Replicate — this may take 60-90s...`);
+        toast.info(`${stepLabel}: lipsync rendering on Replicate — this may take 2-10 min...`);
         const predId = data.replicatePredictionId;
-        const maxPolls = 24; // 24 × 5s = 120s max
+        const maxPolls = 60; // 60 × 10s = 600s (10 min) max
         for (let p = 0; p < maxPolls; p++) {
-          await new Promise(r => setTimeout(r, 5000));
+          await new Promise(r => setTimeout(r, 10000));
           const { data: pollData } = await supabase.functions.invoke('ai-video-generator', {
             body: { action: 'poll_replicate', predictionId: predId },
           });
@@ -1709,7 +1709,7 @@ function EP04ProductionInner() {
     if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, isPlaceholder ? null : url);
   }, [projectId, screenshotUrls, scenes, scriptContentForUI, trackGenerationJob, completeGenerationJob]);
 
-  const startSceneVisualProduction = useCallback(async (sceneKey: string) => {
+  const startSceneVisualProduction = useCallback(async (sceneKey: string, onlyTypes?: Set<string>) => {
     setSceneProduction(prev => ({
       ...prev,
       [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), visual: 'generating' },
@@ -1746,16 +1746,22 @@ function EP04ProductionInner() {
         return;
       }
 
-      // ── Change 1: Track TTS audio per character for lipsync correlation ──
-      // Pre-populate from audioMap (Phase 2 TTS already completed) so lipsync
-      // works regardless of step ordering within the pipeline.
+      // ── Track TTS audio per character for lipsync correlation ──
+      // Use FIRST (shortest) TTS line per character — shorter audio means:
+      // 1. Alibaba (free) can handle it (20s limit)
+      // 2. Replicate renders faster and cheaper if needed
+      // 3. Lipsync only needs a representative clip, not the full monologue
       const lastTTSByCharacter: Record<string, string> = {};
       const sceneLineKeys = scenes.get(sceneKey)?.keys || [];
       for (const lk of sceneLineKeys) {
         const lineData = scriptContentForUI[lk];
         const audio = audioMap[lk];
         if (lineData && audio?.audioUrl && audio.audioUrl.length > 0) {
-          lastTTSByCharacter[lineData.voice] = audio.audioUrl;
+          // First-wins: keep the first (typically shortest) TTS line per character
+          if (!lastTTSByCharacter[lineData.voice]) {
+            lastTTSByCharacter[lineData.voice] = audio.audioUrl;
+            console.log(`[EP04 Visual] ${sceneKey}: TTS for "${lineData.voice}" → ${audio.audioUrl.substring(0, 60)}...`);
+          }
         }
       }
 
@@ -1784,21 +1790,40 @@ function EP04ProductionInner() {
         return false;
       };
 
-      // Count visual steps for progress tracking
-      const visualSteps = pipelineSteps.filter(s => !SKIP_IN_VISUAL.has((s.type as string) || 'image'));
+      // Count visual steps for progress tracking (respect onlyTypes filter)
+      const visualSteps = pipelineSteps.filter(s => {
+        const t = (s.type as string) || 'image';
+        if (SKIP_IN_VISUAL.has(t)) return false;
+        if (onlyTypes && !onlyTypes.has(t)) return false;
+        return true;
+      });
       let visualStepNum = 0;
       const totalVisualSteps = visualSteps.length;
+
+      if (totalVisualSteps === 0 && onlyTypes) {
+        console.log(`[EP04 Visual] ${sceneKey}: no ${[...onlyTypes].join(',')} steps in pipeline — skipping`);
+        setSceneProduction(prev => ({
+          ...prev,
+          [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), visual: 'done' },
+        }));
+        return;
+      }
+
+      // Carry forward ALL existing assets into results so they're preserved in the final save
+      Object.assign(results, existingVideoUrls, existingImageUrls);
+      for (const [k, v] of Object.entries(existingAvatarUrls)) { if (v) results[k] = v; }
+      for (const [k, v] of Object.entries(existingLipsyncUrls)) { if (v) results[k] = v; }
 
       for (let i = 0; i < pipelineSteps.length; i++) {
         if (abortRef.current) break;
         const step = pipelineSteps[i] as Record<string, unknown>;
         const stepType = (step.type as string) || 'image';
 
-        // ── Change 1: Track TTS audio for lipsync (don't regenerate) ──
+        // ── Track TTS audio for lipsync (first-wins, don't regenerate) ──
         if (stepType === 'tts') {
           const scriptKey = step.scriptKey as string;
           const voice = step.voice as string;
-          if (scriptKey && audioMap[scriptKey]?.audioUrl) {
+          if (scriptKey && audioMap[scriptKey]?.audioUrl && !lastTTSByCharacter[voice]) {
             lastTTSByCharacter[voice] = audioMap[scriptKey].audioUrl;
           }
           continue;
@@ -1807,27 +1832,18 @@ function EP04ProductionInner() {
         // Skip non-visual step types
         if (SKIP_IN_VISUAL.has(stepType)) continue;
 
+        // ── onlyTypes filter: skip step types not in the filter ──
+        if (onlyTypes && !onlyTypes.has(stepType)) continue;
+
         // ── Skip steps that already have a generated asset ──
         const stepCharacter = step.character as string | undefined;
         if (hasExistingAsset(stepType, sceneKey, stepCharacter)) {
           const existKey = stepCharacter ? `${stepType}(${stepCharacter})` : stepType;
           console.log(`[EP04 Visual] ${sceneKey}: skipping ${existKey} — already generated`);
-          // Carry forward existing results so they're preserved in the final output
-          if (stepType === 'alibaba-video' || stepType === 'video') {
-            Object.assign(results, existingVideoUrls);
-          } else if (stepType === 'avatar-3d' && stepCharacter) {
-            const entry = Object.entries(existingAvatarUrls).find(([k]) => k.includes(stepCharacter));
-            if (entry) results[entry[0]] = entry[1];
-          } else if (stepType === 'avatar-lipsync' && stepCharacter) {
-            const entry = Object.entries(existingLipsyncUrls).find(([k]) => k.includes(stepCharacter));
-            if (entry) results[entry[0]] = entry[1];
-          } else {
-            Object.assign(results, existingImageUrls);
-          }
-          continue;
+          continue; // existing assets already carried forward above
         }
 
-        // ── Change 7: Per-step progress toast ──
+        // ── Per-step progress toast ──
         visualStepNum++;
         const stepLabel = `${sceneKey}: ${stepType}`;
         toast.info(`${stepLabel} (step ${visualStepNum}/${totalVisualSteps})...`);
@@ -1911,6 +1927,38 @@ function EP04ProductionInner() {
       toast.success('All visual production complete');
     } else {
       toast.warning('Visual production cancelled');
+    }
+  }, [scenes, startSceneVisualProduction]);
+
+  // ── Lipsync-only production across all scenes ──
+  const startAllLipsyncProduction = useCallback(async () => {
+    abortRef.current = false;
+    const sceneKeys = Array.from(scenes.keys());
+    setProductionPhase('visual');
+    setVisualProgress({ current: 0, total: sceneKeys.length });
+    const lipsyncFilter = new Set(['avatar-lipsync']);
+
+    // Clear only lipsync data for all scenes so those steps regenerate
+    setSceneProduction(prev => {
+      const next = { ...prev };
+      for (const sk of sceneKeys) {
+        next[sk] = { ...(next[sk] || defaultSceneStatus()), lipsyncUrls: {} };
+      }
+      return next;
+    });
+
+    for (let i = 0; i < sceneKeys.length; i++) {
+      if (abortRef.current) break;
+      setVisualProgress({ current: i + 1, total: sceneKeys.length });
+      await startSceneVisualProduction(sceneKeys[i], lipsyncFilter);
+      if (i < sceneKeys.length - 1) await new Promise(r => setTimeout(r, 2000));
+    }
+
+    setVisualProgress(null);
+    if (!abortRef.current) {
+      toast.success('All lipsync production complete');
+    } else {
+      toast.warning('Lipsync production cancelled');
     }
   }, [scenes, startSceneVisualProduction]);
 
@@ -2820,17 +2868,30 @@ function EP04ProductionInner() {
                           <span className="text-xs text-muted-foreground">{visualProgress.current}/{visualProgress.total}</span>
                         </>
                       )}
-                      {phase3Unlocked && !phase3Done && !visualProgress && (
-                        <Button
-                          size="sm"
-                          onClick={startAllVisualProduction}
-                          disabled={scenesWithPipeline.length === 0}
-                        >
-                          <Film className="h-3 w-3 mr-1" />
-                          Produce All Visuals
-                        </Button>
+                      {phase3Unlocked && !visualProgress && (
+                        <div className="flex gap-2">
+                          {!phase3Done && (
+                            <Button
+                              size="sm"
+                              onClick={startAllVisualProduction}
+                              disabled={scenesWithPipeline.length === 0}
+                            >
+                              <Film className="h-3 w-3 mr-1" />
+                              Produce All Visuals
+                            </Button>
+                          )}
+                          <Button
+                            size="sm" variant="outline"
+                            className="border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
+                            onClick={startAllLipsyncProduction}
+                            disabled={scenesWithPipeline.length === 0}
+                          >
+                            <Mic className="h-3 w-3 mr-1" />
+                            Regen All Lipsync
+                          </Button>
+                        </div>
                       )}
-                      {phase3Done && (
+                      {phase3Done && !visualProgress && (
                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
                           Complete
                         </Badge>
@@ -2890,37 +2951,42 @@ function EP04ProductionInner() {
                               {status?.visual === 'generating' ? 'Producing...' : pipelineSteps.length === 0 ? 'No Pipeline' : 'Start Scene'}
                             </Button>
                           )}
-                          {/* Regenerate button for completed/errored scenes */}
+                          {/* Regenerate buttons for completed/errored scenes */}
                           {phase3Unlocked && (status?.visual === 'done' || status?.visual === 'error') && (
-                            <Button
-                              size="sm" variant="outline" className="w-full h-7 text-[10px] mt-1 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
-                              onClick={async () => {
-                                // Clear old assets from DB before regenerating
-                                if (projectId) {
-                                  const db = supabase as any;
-                                  // Delete old generation jobs for this scene (non-TTS)
-                                  await db.from('cast_generation_jobs')
-                                    .delete()
-                                    .eq('project_id', projectId)
-                                    .eq('scene_key', sceneKey)
-                                    .neq('job_type', 'tts');
-                                  // Clear artifacts in scene_config
-                                  await updateSceneArtifacts(projectId, sceneKey, {
-                                    videoUrls: {}, imageUrls: {}, avatarUrls: {}, lipsyncUrls: {},
-                                  });
-                                }
-                                // Reset scene status so startSceneVisualProduction can re-run
-                                setSceneProduction(prev => ({
-                                  ...prev,
-                                  [sceneKey]: { ...defaultSceneStatus() },
-                                }));
-                                startSceneVisualProduction(sceneKey);
-                              }}
-                              disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
-                            >
-                              <Film className="h-3 w-3 mr-1" />
-                              Regenerate Scene
-                            </Button>
+                            <div className="flex gap-1 mt-1">
+                              {/* Regenerate Missing Only — preserves existing, only generates what's missing */}
+                              <Button
+                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                                onClick={() => {
+                                  // Don't clear existing data — smart skip will preserve what's already generated
+                                  setSceneProduction(prev => ({
+                                    ...prev,
+                                    [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), visual: 'idle' },
+                                  }));
+                                  startSceneVisualProduction(sceneKey);
+                                }}
+                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                              >
+                                <Film className="h-3 w-3 mr-1" />
+                                Regen Missing
+                              </Button>
+                              {/* Regenerate Lipsync Only — only re-runs avatar-lipsync steps */}
+                              <Button
+                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
+                                onClick={() => {
+                                  // Clear only lipsync data so those steps regenerate
+                                  setSceneProduction(prev => ({
+                                    ...prev,
+                                    [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), visual: 'idle', lipsyncUrls: {} },
+                                  }));
+                                  startSceneVisualProduction(sceneKey, new Set(['avatar-lipsync']));
+                                }}
+                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                              >
+                                <Mic className="h-3 w-3 mr-1" />
+                                Regen Lipsync
+                              </Button>
+                            </div>
                           )}
 
                           {/* ── Categorized asset preview for completed scenes ── */}
