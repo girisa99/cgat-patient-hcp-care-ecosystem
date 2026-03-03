@@ -1431,7 +1431,7 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
   const models = [
     {
       name: 'bytedance/omni-human',
-      input: { source_image: request.sourceImage, driven_audio: request.audioUrl },
+      input: { image: request.sourceImage, audio: request.audioUrl },
     },
     {
       name: 'veed/fabric-1.0',
@@ -1445,7 +1445,7 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
       const createResponse = await fetch(`https://api.replicate.com/v1/models/${model.name}/predictions`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Token ${apiKey}`,
           'Content-Type': 'application/json',
           'Prefer': 'wait=30',
         },
@@ -1477,7 +1477,7 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
         await new Promise(resolve => setTimeout(resolve, 5000));
         attempts++;
         const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-          headers: { 'Authorization': `Bearer ${apiKey}` },
+          headers: { 'Authorization': `Token ${apiKey}` },
         });
         const status = await statusResponse.json();
         console.log(`⏳ ${model.name} status (${attempts}/${maxAttempts}): ${status.status}`);
