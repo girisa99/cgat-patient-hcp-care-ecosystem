@@ -1816,23 +1816,32 @@ function EP04ProductionInner() {
       const existingLipsyncUrls = existingScene?.lipsyncUrls || {};
 
       const hasExistingAsset = (sType: string, sKey: string, character?: string, scriptKey?: string): boolean => {
+        // Only trust permanent Supabase URLs — external CDN URLs expire
+        const isPermanent = (url: string) => url && url.includes('supabase.co/storage');
         if (sType === 'alibaba-video' || sType === 'video') {
-          return Object.keys(existingVideoUrls).some(k => k.includes('video') && k.includes(sKey));
+          return Object.entries(existingVideoUrls).some(([k, url]) => k.includes('video') && k.includes(sKey) && isPermanent(url));
         }
         if (sType === 'kinetic-text' || sType === 'motion-graphics' || sType === 'screen-capture') {
-          return Object.keys(existingImageUrls).some(k => k.includes(sType.split('-')[0]) && k.includes(sKey));
+          return Object.entries(existingImageUrls).some(([k, url]) => k.includes(sType.split('-')[0]) && k.includes(sKey) && isPermanent(url));
         }
         if (sType === 'avatar-3d' && character) {
-          // Only skip if the existing avatar is NOT the pre-made fallback (i.e., it's an AI-generated URL)
+          // Only skip if the existing avatar is a PERMANENT Supabase URL.
+          // External CDN URLs (DashScope oss-*.aliyuncs.com, replicate.delivery, etc.) expire
+          // and should always be regenerated so we get a fresh permanent URL.
           const existingUrl = Object.entries(existingAvatarUrls).find(([k]) => k.includes(character))?.[1];
-          return !!existingUrl && existingUrl.startsWith('http') && !existingUrl.includes('/assets/');
+          return !!existingUrl && existingUrl.includes('supabase.co/storage');
         }
         if (sType === 'avatar-lipsync' && character) {
           // Per-scriptKey check: avatar-lipsync-allaudin-bridge-0-to-1 is different from avatar-lipsync-allaudin-allaudin-emerge
+          // Only trust permanent Supabase URLs — expired CDN URLs should regenerate
+          const checkUrl = (k: string) => {
+            const url = existingLipsyncUrls[k];
+            return url && url.includes('supabase.co/storage');
+          };
           if (scriptKey) {
-            return Object.keys(existingLipsyncUrls).some(k => k.includes(character) && k.includes(scriptKey));
+            return Object.keys(existingLipsyncUrls).some(k => k.includes(character) && k.includes(scriptKey) && checkUrl(k));
           }
-          return Object.keys(existingLipsyncUrls).some(k => k.includes(character));
+          return Object.keys(existingLipsyncUrls).some(k => k.includes(character) && checkUrl(k));
         }
         return false;
       };
