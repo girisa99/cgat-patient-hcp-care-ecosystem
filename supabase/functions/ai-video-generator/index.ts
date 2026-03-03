@@ -61,17 +61,11 @@ async function reuploadToStorage(externalUrl: string, prefix: string = 'video'):
       return externalUrl;
     }
 
-    // Use signed URL (7 days) since bucket is private — public read policy exists but signed is more reliable
-    const { data: signedData, error: signedError } = await sb.storage
-      .from('cast-assets')
-      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
-    if (signedError || !signedData?.signedUrl) {
-      console.warn(`⚠️ Signed URL failed: ${signedError?.message} — trying public URL`);
-      const { data: { publicUrl } } = sb.storage.from('cast-assets').getPublicUrl(fileName);
-      return publicUrl;
-    }
-    console.log(`✅ Re-uploaded video to Supabase Storage: ${signedData.signedUrl.substring(0, 80)}`);
-    return signedData.signedUrl;
+    // Use public URL — signed URLs cause ERR_CACHE_OPERATION_NOT_SUPPORTED in browsers
+    // due to long token query strings. Public URLs are simpler and cache-friendly.
+    const { data: { publicUrl } } = sb.storage.from('cast-assets').getPublicUrl(fileName);
+    console.log(`✅ Re-uploaded to Supabase Storage: ${publicUrl.substring(0, 80)}`);
+    return publicUrl;
   } catch (err) {
     console.warn(`⚠️ Re-upload failed: ${err}`);
     return externalUrl;
@@ -1464,12 +1458,42 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
   console.log(`   sourceImage: ${request.sourceImage.substring(0, 80)}`);
   console.log(`   audioUrl: ${request.audioUrl.substring(0, 80)}`);
 
+  // Re-upload sourceImage if it's on DashScope CDN (Replicate can't access Alibaba CDN)
+  let accessibleImage = request.sourceImage;
+  const isBadCdn = accessibleImage.includes('aliyuncs.com') || accessibleImage.includes('dashscope');
+  if (isBadCdn) {
+    console.log('🔄 sourceImage is DashScope CDN — re-uploading to Supabase for Replicate access');
+    try {
+      const sb = getSupabaseAdmin();
+      if (sb) {
+        const imgResp = await fetch(accessibleImage);
+        if (imgResp.ok) {
+          const blob = await imgResp.blob();
+          const ext = accessibleImage.includes('.png') ? 'png' : 'jpg';
+          const fileName = `cast-avatars/lipsync-source-${Date.now()}.${ext}`;
+          const { error: upErr } = await sb.storage.from('cast-assets').upload(fileName, blob, {
+            contentType: `image/${ext}`, upsert: true,
+          });
+          if (!upErr) {
+            const { data: { publicUrl } } = sb.storage.from('cast-assets').getPublicUrl(fileName);
+            accessibleImage = publicUrl;
+            console.log(`✅ Re-uploaded avatar to Supabase: ${accessibleImage.substring(0, 80)}`);
+          } else {
+            console.warn(`⚠️ Avatar re-upload failed: ${upErr.message}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not re-upload avatar:', e);
+    }
+  }
+
   // Only use bytedance/omni-human — veed/fabric-1.0 removed (2.5x more expensive: $10 vs $4, 3x slower)
   // omni-human: single image + audio → full animated video (supports long audio)
   const models = [
     {
       name: 'bytedance/omni-human',
-      input: { image: request.sourceImage, audio: request.audioUrl },
+      input: { image: accessibleImage, audio: request.audioUrl },
     },
   ];
 
