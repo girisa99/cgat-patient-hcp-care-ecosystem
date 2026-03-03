@@ -312,26 +312,38 @@ serve(async (req) => {
     if (action === 'image_generation') {
       const { style_intent: imgStyleIntent, region: imgRegion } = requestBody as any;
       console.log(`[UniversalAI] Image generation via shared module - Style: ${imgStyleIntent || style || 'default'}, Provider: ${provider || 'auto'}`);
-      
-      const imageResult = await generateImageWithRouting(
-        prompt,
-        imgStyleIntent || style || undefined,
-        provider || undefined,
-        { model, aspectRatio, style, size: aspectRatio ? undefined : '1024x1024' }
-      );
-      
-      return new Response(JSON.stringify({
-        content: imageResult.imageUrl,
-        imageUrl: imageResult.imageUrl,
-        isImage: true,
-        images: [{ image_url: { url: imageResult.imageUrl } }],
-        provider: imageResult.provider,
-        model: imageResult.model,
-        providerChain: imageResult.providerChain,
-        timestamp: new Date().toISOString(),
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+
+      try {
+        const imageResult = await generateImageWithRouting(
+          prompt,
+          imgStyleIntent || style || undefined,
+          provider || undefined,
+          { model, aspectRatio, style, size: aspectRatio ? undefined : '1024x1024' }
+        );
+
+        return new Response(JSON.stringify({
+          content: imageResult.imageUrl,
+          imageUrl: imageResult.imageUrl,
+          isImage: true,
+          images: [{ image_url: { url: imageResult.imageUrl } }],
+          provider: imageResult.provider,
+          model: imageResult.model,
+          providerChain: imageResult.providerChain,
+          timestamp: new Date().toISOString(),
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (imgErr) {
+        console.error(`[UniversalAI] Image generation failed:`, imgErr);
+        return new Response(JSON.stringify({
+          error: `Image generation failed: ${imgErr instanceof Error ? imgErr.message : String(imgErr)}`,
+          provider: provider || 'auto',
+          timestamp: new Date().toISOString(),
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     // ============================================

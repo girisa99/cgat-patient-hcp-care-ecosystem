@@ -1453,25 +1453,41 @@ function EP04ProductionInner() {
         return;
       }
       // Generate via AI using the character's pixarPrompt from config
+      // Uses Alibaba wan2.6-t2i (rich cinematic quality) with error handling + pre-made fallback
       const charConfig = EP04_AVATAR_CONFIG.characters[character as keyof typeof EP04_AVATAR_CONFIG.characters];
       if (charConfig) {
         const avatarStyle = (step.style as string) || 'pixar-3d';
         const avatarPrompt = avatarStyle.includes('disney') ? charConfig.disneyPrompt : charConfig.pixarPrompt;
-        console.log(`[EP04 Visual] ${stepLabel}: generating avatar for "${character}" via AI`);
+        console.log(`[EP04 Visual] ${stepLabel}: generating avatar for "${character}" via Alibaba wan2.6-t2i`);
         let jobId: string | null = null;
         if (projectId) {
           jobId = await trackGenerationJob({ projectId, jobType: 'avatar', sceneKey, provider: 'alibaba', estimatedTokens: 500 });
         }
-        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
-          body: { action: 'image_generation', prompt: avatarPrompt, provider: 'alibaba', model: 'wan2.6-t2i', size: '1024x1024', style_intent: 'cinematic' },
-        });
-        if (error) { toast.error(`${stepLabel} avatar generation failed: ${error.message}`); return; }
-        const url = data?.url || data?.imageUrl || data?.result?.url;
-        if (url) {
-          results[`avatar-3d-${character}-${sceneKey}`] = url;
-          console.log(`[EP04 Visual] ${stepLabel}: AI-generated avatar for "${character}": ${url.substring(0, 60)}...`);
+        try {
+          const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+            body: { action: 'image_generation', prompt: avatarPrompt, provider: 'alibaba', model: 'wan2.6-t2i', size: '1024x1024', style_intent: 'cinematic' },
+          });
+          if (error) throw new Error(error.message || 'Alibaba image generation failed');
+          const url = data?.url || data?.imageUrl || data?.result?.url;
+          if (url) {
+            results[`avatar-3d-${character}-${sceneKey}`] = url;
+            console.log(`[EP04 Visual] ${stepLabel}: Alibaba avatar for "${character}": ${url.substring(0, 60)}...`);
+          } else {
+            throw new Error('No image URL in response');
+          }
+          if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(`[EP04 Visual] ${stepLabel}: avatar generation failed for "${character}": ${msg}`);
+          // Fallback: use pre-made avatar if available
+          if (existingAvatar) {
+            results[`avatar-3d-${character}-${sceneKey}`] = existingAvatar;
+            toast.warning(`Avatar "${character}" AI failed — using pre-made fallback`);
+            console.log(`[EP04 Visual] ${stepLabel}: falling back to pre-made avatar for "${character}"`);
+          } else {
+            toast.error(`Avatar "${character}" failed: ${msg}`);
+          }
         }
-        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
         return;
       }
       console.warn(`[EP04 Visual] No pre-made avatar or config for "${character}" — falling through to generic generation`);

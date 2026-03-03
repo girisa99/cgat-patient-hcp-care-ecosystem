@@ -325,8 +325,8 @@ async function generateWithAlibaba(prompt: string, options: ImageGenOptions): Pr
   const taskId = data.output?.task_id;
   if (!taskId) throw new Error('Alibaba: no task_id');
 
-  // Poll for result (max 90s)
-  for (let i = 0; i < 45; i++) {
+  // Poll for result (max 50s — fits within Supabase 60s edge function timeout)
+  for (let i = 0; i < 25; i++) {
     await new Promise(r => setTimeout(r, 2000));
     const statusRes = await fetch(`${endpoint}/api/v1/tasks/${taskId}`, {
       headers: { 'Authorization': `Bearer ${apiKey}` },
