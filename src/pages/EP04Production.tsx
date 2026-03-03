@@ -1455,7 +1455,7 @@ function EP04ProductionInner() {
         for (let p = 0; p < maxPolls; p++) {
           await new Promise(r => setTimeout(r, 10000));
           const { data: pollData } = await supabase.functions.invoke('ai-video-generator', {
-            body: { action: 'poll_task', taskId },
+            body: { action: 'poll_task', taskId, isLipsync: true },
           });
           console.log(`[EP04 Visual] ${stepLabel}: alibaba lipsync poll ${p + 1}/${maxPolls} — ${pollData?.status} videoUrl=${pollData?.videoUrl ? 'YES' : 'none'}`);
           if (pollData?.status === 'SUCCEEDED') {

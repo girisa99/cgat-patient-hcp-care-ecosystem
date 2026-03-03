@@ -149,20 +149,25 @@ serve(async (req) => {
     if (body.action === 'poll_task' && body.taskId) {
       const intlKey = Deno.env.get('ALIBABA_API_KEY');
       const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
-      const apiKey = chinaKey || intlKey; // Prefer China key — avatar/lipsync tasks use China endpoint
-      if (!apiKey) {
+      if (!chinaKey && !intlKey) {
         return new Response(JSON.stringify({ error: 'No Alibaba API key' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      // Avatar/lipsync tasks (wan2.2-s2v) are submitted to China endpoint — poll same endpoint
-      // Use China when China key available (matches submission endpoint in generateAvatarWithAlibaba)
-      const pollBase = chinaKey
+      // CRITICAL: Poll must use the SAME endpoint+key that SUBMITTED the task.
+      // Video t2v/i2v tasks → submitted to International (when intlKey exists)
+      // Lipsync wan2.2-s2v tasks → submitted to China endpoint
+      // If we poll the wrong endpoint, DashScope returns UNKNOWN for every poll.
+      const isLipsyncTask = body.isLipsync === true;
+      const useChina = isLipsyncTask ? !!chinaKey : (!!chinaKey && !intlKey);
+      const pollApiKey = useChina ? chinaKey! : intlKey!;
+      const pollBase = useChina
         ? 'https://dashscope.aliyuncs.com/api/v1'
         : 'https://dashscope-intl.aliyuncs.com/api/v1';
+      console.log(`[poll_task] endpoint=${useChina ? 'China' : 'Intl'}, isLipsync=${isLipsyncTask}, taskId=${body.taskId}`);
       try {
         const resp = await fetch(`${pollBase}/tasks/${body.taskId}`, {
-          headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${pollApiKey}`, 'Content-Type': 'application/json' },
         });
         const data = await resp.json();
         const status = data.output?.task_status || 'UNKNOWN';
