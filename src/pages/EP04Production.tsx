@@ -3043,30 +3043,30 @@ function EP04ProductionInner() {
                           {/* Regenerate buttons for completed/errored scenes */}
                           {phase3Unlocked && (status?.visual === 'done' || status?.visual === 'error') && (
                             <div className="flex gap-1 mt-1">
-                              {/* Regenerate Missing Only — preserves existing, only generates what's missing */}
+                              {/* Regen All — clears ALL state and regenerates everything with latest prompts */}
                               <Button
                                 size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
                                 onClick={() => {
-                                  // Don't clear existing data — smart skip will preserve what's already generated
+                                  // Clear ALL URL data so smart-skip has nothing to skip — full fresh regeneration
                                   setSceneProduction(prev => ({
                                     ...prev,
-                                    [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), visual: 'idle' },
+                                    [sceneKey]: { ...defaultSceneStatus(), visual: 'idle' },
                                   }));
                                   startSceneVisualProduction(sceneKey);
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >
                                 <Film className="h-3 w-3 mr-1" />
-                                Regen Missing
+                                Regen All
                               </Button>
-                              {/* Regenerate Lipsync Only — only re-runs avatar-lipsync steps */}
+                              {/* Regenerate Lipsync Only — clears lipsync URLs, re-runs avatar-lipsync steps */}
                               <Button
                                 size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
                                 onClick={() => {
-                                  // Clear only lipsync data so those steps regenerate
+                                  // Clear lipsync + avatar data so lipsync steps regenerate with fresh avatars
                                   setSceneProduction(prev => ({
                                     ...prev,
-                                    [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), visual: 'idle', lipsyncUrls: {} },
+                                    [sceneKey]: { ...defaultSceneStatus(), visual: 'idle' },
                                   }));
                                   startSceneVisualProduction(sceneKey, new Set(['avatar-lipsync']));
                                 }}
