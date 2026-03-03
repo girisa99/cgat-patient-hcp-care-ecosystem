@@ -806,14 +806,9 @@ function EP04ProductionInner() {
         console.warn('[EP04] scene_config artifacts restore failed:', e);
       }
 
-      // Source 2 (fallback): cast_generation_jobs — recovers assets even if scene_config wasn't updated
-      // Track which scenes were fully restored from Source 1 so we don't mix sources
-      const source1Scenes = new Set(
-        Object.entries(restored)
-          .filter(([, s]) => Object.keys(s.videoUrls).length + Object.keys(s.imageUrls).length + Object.keys(s.avatarUrls).length > 0)
-          .map(([k]) => k)
-      );
-
+      // Source 2: cast_generation_jobs — MERGE into Source 1 to fill gaps
+      // Source 1 may have video/image URLs but be missing avatars (e.g. DashScope URLs were wiped)
+      // Source 2 always has the original output_url from generation — never wiped
       try {
         const { data: visualJobs } = await db
           .from('cast_generation_jobs')
@@ -830,8 +825,6 @@ function EP04ProductionInner() {
           for (const job of visualJobs) {
             const sk = job.scene_key;
             if (!sk || !job.output_url) continue;
-            // Only skip scenes that Source 1 already fully restored (from scene_config.artifacts)
-            if (source1Scenes.has(sk)) continue;
             if (!restored[sk]) {
               restored[sk] = {
                 visual: 'done', music: 'idle', sfx: 'idle', assembled: 'idle',
@@ -841,16 +834,22 @@ function EP04ProductionInner() {
             }
             idx++;
             const jt = job.job_type;
-            // Detect content type from URL extension when job_type is generic
             const url = job.output_url as string;
             const isImageUrl = /\.(png|jpg|jpeg|webp|gif)(\?|$)/i.test(url);
             const urlKey = `${jt}-${sk}-${idx}`;
+            // Merge: only add if the URL type bucket is empty (don't duplicate Source 1 data)
             if (jt === 'avatar' || jt === 'lipsync') {
-              restored[sk].avatarUrls[urlKey] = url;
+              if (Object.keys(restored[sk].avatarUrls).length === 0) {
+                restored[sk].avatarUrls[urlKey] = url;
+              }
             } else if (jt === 'image' || isImageUrl) {
-              restored[sk].imageUrls[urlKey] = url;
+              if (Object.keys(restored[sk].imageUrls).length === 0) {
+                restored[sk].imageUrls[urlKey] = url;
+              }
             } else {
-              restored[sk].videoUrls[urlKey] = url;
+              if (Object.keys(restored[sk].videoUrls).length === 0) {
+                restored[sk].videoUrls[urlKey] = url;
+              }
             }
           }
         }
