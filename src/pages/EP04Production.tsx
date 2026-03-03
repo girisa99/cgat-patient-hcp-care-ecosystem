@@ -1400,10 +1400,38 @@ function EP04ProductionInner() {
         toast.error(`${stepLabel} lipsync "${character}" failed: ${error.message}`);
         return;
       }
-      const url = data?.url || data?.videoUrl;
+
+      let url = data?.url || data?.videoUrl;
+
+      // If edge function returned a Replicate prediction ID (model still processing),
+      // poll from client side until the lipsync video is ready (up to 120s)
+      if (!url && data?.replicatePredictionId) {
+        console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" processing on Replicate (${data.model}) — polling...`);
+        toast.info(`${stepLabel}: lipsync rendering on Replicate — this may take 60-90s...`);
+        const predId = data.replicatePredictionId;
+        const maxPolls = 24; // 24 × 5s = 120s max
+        for (let p = 0; p < maxPolls; p++) {
+          await new Promise(r => setTimeout(r, 5000));
+          const { data: pollData } = await supabase.functions.invoke('ai-video-generator', {
+            body: { action: 'poll_replicate', predictionId: predId },
+          });
+          console.log(`[EP04 Visual] ${stepLabel}: lipsync poll ${p + 1}/${maxPolls} — ${pollData?.status}`);
+          if (pollData?.status === 'succeeded' && pollData?.videoUrl) {
+            url = pollData.videoUrl;
+            console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" done via polling: ${url.substring(0, 60)}...`);
+            break;
+          }
+          if (pollData?.status === 'failed') {
+            console.warn(`[EP04 Visual] ${stepLabel}: lipsync "${character}" failed on Replicate:`, pollData?.error);
+            toast.error(`Lipsync "${character}" failed: ${pollData?.error}`);
+            break;
+          }
+        }
+      }
+
       if (url) {
         results[`avatar-lipsync-${character}`] = url;
-        console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" done: ${url.substring(0, 60)}...`);
+        console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" saved: ${url.substring(0, 60)}...`);
       } else {
         console.warn(`[EP04 Visual] ${stepLabel}: lipsync "${character}" returned no URL`, data);
       }

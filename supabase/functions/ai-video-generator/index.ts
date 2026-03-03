@@ -183,6 +183,42 @@ serve(async (req) => {
       }
     }
 
+    // Handle poll_replicate — client-side polling for async Replicate predictions
+    if (body.action === 'poll_replicate' && body.predictionId) {
+      const repKey = Deno.env.get('REPLICATE_API_TOKEN');
+      if (!repKey) {
+        return new Response(JSON.stringify({ error: 'No Replicate API key' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      try {
+        const resp = await fetch(`https://api.replicate.com/v1/predictions/${body.predictionId}`, {
+          headers: { 'Authorization': `Token ${repKey}` },
+        });
+        const data = await resp.json();
+        console.log(`⏳ Replicate poll ${body.predictionId}: ${data.status}`);
+        if (data.status === 'succeeded') {
+          const rawUrl = typeof data.output === 'string' ? data.output : data.output?.[0] || data.output?.video;
+          const videoUrl = rawUrl ? await reuploadToStorage(rawUrl, 'lipsync-rep-poll') : rawUrl;
+          return new Response(JSON.stringify({ success: true, videoUrl, status: 'succeeded', provider: 'replicate' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (data.status === 'failed') {
+          return new Response(JSON.stringify({ success: false, status: 'failed', error: data.error }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ success: false, status: data.status }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, status: 'ERROR', message: String(e) }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Handle avatar/lip-sync generation
     if (type === 'avatar' || type === 'lipsync') {
       console.log(`🎭 Generating ${type} with ${provider !== 'auto' ? provider : 'auto-selected'} provider`);
@@ -1447,7 +1483,6 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
         headers: {
           'Authorization': `Token ${apiKey}`,
           'Content-Type': 'application/json',
-          'Prefer': 'wait=30',
         },
         body: JSON.stringify({ input: model.input }),
       });
@@ -1461,7 +1496,7 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
       const prediction = await createResponse.json();
       console.log(`📋 ${model.name} prediction: ${prediction.id}, status: ${prediction.status}`);
 
-      // If Prefer: wait=30 returned a completed prediction, use it directly
+      // If completed immediately, use it
       if (prediction.status === 'succeeded') {
         const rawUrl = typeof prediction.output === 'string' ? prediction.output : prediction.output?.[0] || prediction.output?.video;
         const videoUrl = rawUrl ? await reuploadToStorage(rawUrl, 'lipsync-rep') : rawUrl;
@@ -1470,17 +1505,17 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
         }
       }
 
-      // Poll for completion (8 × 5s = 40s)
-      const maxAttempts = 8;
+      // Quick poll (3 × 5s = 15s) — if still processing, return prediction ID for client-side polling
+      const quickPolls = 3;
       let attempts = 0;
-      while (attempts < maxAttempts) {
+      while (attempts < quickPolls) {
         await new Promise(resolve => setTimeout(resolve, 5000));
         attempts++;
         const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
           headers: { 'Authorization': `Token ${apiKey}` },
         });
         const status = await statusResponse.json();
-        console.log(`⏳ ${model.name} status (${attempts}/${maxAttempts}): ${status.status}`);
+        console.log(`⏳ ${model.name} status (${attempts}/${quickPolls}): ${status.status}`);
 
         if (status.status === 'succeeded') {
           const rawUrl = typeof status.output === 'string' ? status.output : status.output?.[0] || status.output?.video;
@@ -1494,6 +1529,18 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
           break; // Try next model
         }
       }
+
+      // Still processing after quick polls — return prediction ID for client-side polling
+      // This avoids edge function timeout (60s) for models that take 60-120s
+      console.log(`⏳ ${model.name} still processing — returning prediction ID for client polling`);
+      return {
+        videoUrl: '', // Client will fill this via polling
+        audioUrl: request.audioUrl,
+        provider: 'replicate',
+        model: model.name,
+        replicatePredictionId: prediction.id,
+        status: 'processing',
+      } as any; // Extended return with prediction ID
     } catch (err) {
       console.warn(`   ${model.name} error: ${err}`);
       continue; // Try next model
