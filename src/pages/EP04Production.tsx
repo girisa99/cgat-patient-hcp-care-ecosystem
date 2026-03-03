@@ -1444,7 +1444,33 @@ function EP04ProductionInner() {
 
       let url = data?.url || data?.videoUrl;
 
-      // If edge function returned a Replicate prediction ID (model still processing),
+      // If edge function returned an Alibaba task ID (async lipsync on DashScope),
+      // poll from client side until the lipsync video is ready (up to 5 min)
+      if (!url && data?.alibabaTaskId) {
+        console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" processing on Alibaba (${data.model}) — polling...`);
+        toast.info(`${stepLabel}: lipsync rendering on Alibaba — polling (free, no cost)...`);
+        const taskId = data.alibabaTaskId;
+        const maxPolls = 30; // 30 × 10s = 300s (5 min) max
+        for (let p = 0; p < maxPolls; p++) {
+          await new Promise(r => setTimeout(r, 10000));
+          const { data: pollData } = await supabase.functions.invoke('ai-video-generator', {
+            body: { action: 'poll_task', taskId },
+          });
+          console.log(`[EP04 Visual] ${stepLabel}: alibaba lipsync poll ${p + 1}/${maxPolls} — ${pollData?.status}`);
+          if (pollData?.status === 'SUCCEEDED' && pollData?.videoUrl) {
+            url = pollData.videoUrl;
+            console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" done via Alibaba: ${url.substring(0, 60)}...`);
+            break;
+          }
+          if (pollData?.status === 'FAILED') {
+            console.warn(`[EP04 Visual] ${stepLabel}: lipsync "${character}" failed on Alibaba:`, pollData?.message);
+            toast.error(`Lipsync "${character}" failed on Alibaba: ${pollData?.message}`);
+            break;
+          }
+        }
+      }
+
+      // If edge function returned a Replicate prediction ID (Alibaba fallback),
       // poll from client side until the lipsync video is ready (up to 10 min)
       if (!url && data?.replicatePredictionId) {
         console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" processing on Replicate (${data.model}) — polling...`);

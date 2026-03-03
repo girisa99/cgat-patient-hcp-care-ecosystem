@@ -149,13 +149,15 @@ serve(async (req) => {
     if (body.action === 'poll_task' && body.taskId) {
       const intlKey = Deno.env.get('ALIBABA_API_KEY');
       const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
-      const apiKey = intlKey || chinaKey;
+      const apiKey = chinaKey || intlKey; // Prefer China key — avatar/lipsync tasks use China endpoint
       if (!apiKey) {
         return new Response(JSON.stringify({ error: 'No Alibaba API key' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const pollBase = (chinaKey && !intlKey)
+      // Avatar/lipsync tasks (wan2.2-s2v) are submitted to China endpoint — poll same endpoint
+      // Use China when China key available (matches submission endpoint in generateAvatarWithAlibaba)
+      const pollBase = chinaKey
         ? 'https://dashscope.aliyuncs.com/api/v1'
         : 'https://dashscope-intl.aliyuncs.com/api/v1';
       try {
@@ -1425,6 +1427,7 @@ interface AvatarRequestWithRouting extends AvatarRequest {
 
 async function generateAvatarOrLipSync(request: AvatarRequestWithRouting): Promise<{
   videoUrl: string;
+  alibabaTaskId?: string;
   audioUrl?: string;
   visemeData?: VisemeData[];
   provider: string;
@@ -1586,9 +1589,17 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
     console.log('🎭 Alibaba Avatar API response keys:', Object.keys(data.output || {}));
 
     if (data.output?.task_id) {
-      // Poll with shorter timeout (8 × 5s = 40s) to fit within edge function 60s limit
-      const result = await pollAlibabaTask(data.output.task_id, apiKey, baseUrl, 8);
-      return { ...result, audioUrl };
+      // Return task_id to frontend for client-side polling (no timeout issues).
+      // Frontend will poll via action: 'poll_task' with unlimited time.
+      // This avoids the 40s edge function timeout that forced Replicate fallback ($4/run).
+      console.log(`🎭 Alibaba avatar task submitted: ${data.output.task_id} — returning for client-side polling`);
+      return {
+        videoUrl: '',
+        alibabaTaskId: data.output.task_id,
+        audioUrl,
+        provider: 'alibaba',
+        model: modelName,
+      };
     }
 
     // Direct synchronous response — re-upload to Supabase Storage
