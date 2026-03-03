@@ -494,6 +494,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   ],
   'scene-3-governance': [
     { type: 'tts', voice: 'host', scriptKey: 'governance-narration' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'screen-capture', screenIds: ['sprint-charter', 'governance-guide'], multiCapture: true },
     { type: 'ai-screen-enhance', screenIds: ['sprint-charter', 'governance-guide'], scriptContext: 'Sprint charter defining territory rules — Claude owns backend, Lovable owns frontend. Governance guide with file ownership boundaries.', enhanceMode: 'highlight', focusAreas: ['territory-map', 'file-ownership-rules', 'merge-conflict-policy'] },
     // SHOWCASE: Scene transitions — cinematic iris-wipe between governance segments
@@ -506,6 +509,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   ],
   'scene-4-day1': [
     { type: 'tts', voice: 'host', scriptKey: 'day1-narration' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'screen-capture', screenIds: ['day-1-view'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['day-1-view'], scriptContext: 'Day 1 sprint view — 12 tasks started, Atlas diagnoses 847-line session instructions, Nova refactors navigation. Focus on task cards and status columns.', enhanceMode: 'stylize', focusAreas: ['task-cards', 'status-columns', 'developer-assignments'] },
     { type: 'screen-capture', screenIds: ['findings-qa'], multiCapture: false },
@@ -525,6 +530,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   ],
   'scene-5-day2': [
     { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'screen-capture', screenIds: ['day-2-view'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['day-2-view'], scriptContext: 'Day 2 — Nova blocked for 6 hours waiting on PO approval. Velocity dip visible. The frozen task and blocker status are the key story points.', enhanceMode: 'highlight', focusAreas: ['blocked-tasks', 'velocity-dip', 'blocker-status-red'] },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A frozen task card encased in ice slowly cracking and thawing as a small fox character taps it impatiently, Pixar-quality animation, dramatic lighting' },
@@ -539,6 +547,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   ],
   'scene-6-day3': [
     { type: 'tts', voice: 'host', scriptKey: 'day3-velocity-mismatch' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'screen-capture', screenIds: ['day-3-view', 'velocity-metrics'], multiCapture: true },
     { type: 'ai-screen-enhance', screenIds: ['day-3-view', 'velocity-metrics'], scriptContext: 'Day 3 velocity mismatch — Claude completing 8 tasks/day vs Lovable at 3. Velocity chart shows diverging lines. The gap is the story.', enhanceMode: 'highlight', focusAreas: ['velocity-comparison-chart', 'task-completion-rates', 'developer-velocity-gap'] },
     // SHOWCASE: Narrator scroll — data-driven reveal of velocity numbers (perfect for stats-heavy scene)
@@ -550,6 +559,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   ],
   'scene-7-mission-control': [
     { type: 'tts', voice: 'host', scriptKey: 'mission-control-narration' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     // SHOWCASE: Storybook chapter frame — marks the "Act 3: Triumph" turning point
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider page: "Act III — Mission Control" in golden calligraphy, surrounded by illustrated mission control panels, radar dishes, and data streams, warm parchment background with ink flourishes, Pixar-quality illustration', duration: 4 },
     // Batch all 4 mission-control screens in one capture (was 4 separate captures + 4 separate enhances = 8 calls → now 2)
@@ -563,6 +575,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   ],
   'scene-8-dashboard-tour': [
     { type: 'tts', voice: 'host', scriptKey: 'tour-narration' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     {
       type: 'screen-capture',
       screenIds: [
@@ -580,6 +593,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   ],
   'scene-9-numbers': [
     { type: 'tts', voice: 'host', scriptKey: 'numbers-narration' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'alibaba-image', model: 'wanx-v2.1', prompt: '3D comparison infographic table: Traditional Sprint (left, red) vs AI Sprint (right, green), showing metrics — velocity 5x, blockers 0, async standups, clean modern design with depth and shadows' },
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Animated infographic with numbers counting up dynamically, bars growing, green checkmarks appearing, professional motion graphics style', referenceImage: 'comparison-infographic' },
     // SHOWCASE: Motion graphics — animated stat counters for the big number reveal
@@ -589,6 +603,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   ],
   'scene-10-whats-next': [
     { type: 'tts', voice: 'host', scriptKey: 'whats-next-narration' },
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Animated world map with language zones lighting up one by one — Arabic, Hindi, Mandarin, Spanish — each zone pulses with a unique color, camera slowly rotating around a 3D globe, cinematic sci-fi feel' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-language-foundational' },
     // Lipsync removed — atlas voiceover plays over animated world map + MCP visuals (conceptual scene, not character scene)

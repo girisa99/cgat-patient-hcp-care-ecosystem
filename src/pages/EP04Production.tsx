@@ -1293,7 +1293,8 @@ function EP04ProductionInner() {
   // ─── Phase 3: Visual Production (per scene) ───────────────────────────
 
   // ─── Step types to skip in visual production (already done in Phase 2 / Phase 4) ──
-  const SKIP_IN_VISUAL = new Set(['tts', 'music', 'sfx', 'scene-transition', 'storybook-frame']);
+  // scene-transition and storybook-frame are visual assets (videos/images) — do NOT skip them
+  const SKIP_IN_VISUAL = new Set(['tts', 'music', 'sfx']);
 
   // ─── Client-side polling for async WAN video tasks ───────────────────────
   const pollVideoTaskResult = useCallback(async (taskId: string): Promise<string | null> => {
@@ -1559,6 +1560,62 @@ function EP04ProductionInner() {
       if (error) { toast.error(`${stepLabel} narrator-scroll failed: ${error.message}`); return; }
       const url = data?.url || data?.videoUrl;
       if (url) results[`narrator-scroll-${sceneKey}-${Date.now()}`] = url;
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      return;
+    }
+
+    // ── scene-transition: short animated clip via Wan2.6 t2v (iris-wipe, scroll-unroll, page-turn) ──
+    if (stepType === 'scene-transition') {
+      let jobId: string | null = null;
+      if (projectId) {
+        jobId = await trackGenerationJob({
+          projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+        });
+      }
+
+      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+        body: {
+          type: 'video',
+          prompt,
+          model: 'wan2.6-t2v',
+          duration: step.duration || 3,
+          provider: 'alibaba',
+        },
+      });
+      if (error) { toast.error(`${stepLabel} scene-transition failed: ${error.message}`); return; }
+      let url = data?.url || data?.videoUrl;
+      // Poll for async result if needed
+      if (!url && data?.asyncGeneration && data?.taskId) {
+        toast.info(`${stepLabel}: scene-transition generating... polling for result`);
+        url = await pollVideoTaskResult(data.taskId);
+      }
+      if (url) results[`scene-transition-${sceneKey}-${Date.now()}`] = url;
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      return;
+    }
+
+    // ── storybook-frame: static illustration (image generation for chapter headers, powered-by pages) ──
+    if (stepType === 'storybook-frame') {
+      let jobId: string | null = null;
+      if (projectId) {
+        jobId = await trackGenerationJob({
+          projectId, jobType: 'image', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+        });
+      }
+
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          action: 'image_generation',
+          prompt,
+          provider: 'alibaba',
+          model: 'wan2.6-t2i',
+          style_intent: 'cinematic',
+          size: '1280x720',
+        },
+      });
+      if (error) { toast.error(`${stepLabel} storybook-frame failed: ${error.message}`); return; }
+      const url = data?.url || data?.imageUrl;
+      if (url) results[`storybook-frame-${sceneKey}-${Date.now()}`] = url;
       if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       return;
     }
@@ -1855,10 +1912,10 @@ function EP04ProductionInner() {
       const hasExistingAsset = (sType: string, sKey: string, character?: string, scriptKey?: string): boolean => {
         // Only trust permanent Supabase URLs — external CDN URLs expire
         const isPermanent = (url: string) => url && url.includes('supabase.co/storage');
-        if (sType === 'alibaba-video' || sType === 'video') {
-          return Object.entries(existingVideoUrls).some(([k, url]) => k.includes('video') && k.includes(sKey) && isPermanent(url));
+        if (sType === 'alibaba-video' || sType === 'video' || sType === 'scene-transition') {
+          return Object.entries(existingVideoUrls).some(([k, url]) => (k.includes('video') || k.includes('scene-transition')) && k.includes(sKey) && isPermanent(url));
         }
-        if (sType === 'kinetic-text' || sType === 'motion-graphics' || sType === 'screen-capture') {
+        if (sType === 'kinetic-text' || sType === 'motion-graphics' || sType === 'screen-capture' || sType === 'storybook-frame') {
           return Object.entries(existingImageUrls).some(([k, url]) => k.includes(sType.split('-')[0]) && k.includes(sKey) && isPermanent(url));
         }
         if (sType === 'avatar-3d' && character) {
@@ -1971,8 +2028,8 @@ function EP04ProductionInner() {
       // Persist visual artifacts to DB
       if (projectId) {
         await updateSceneArtifacts(projectId, sceneKey, {
-          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll'))),
-          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance'))),
+          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition'))),
+          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame'))),
           avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d'))),
           lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync'))),
         });
@@ -1983,8 +2040,8 @@ function EP04ProductionInner() {
         [sceneKey]: {
           ...(prev[sceneKey] || defaultSceneStatus()),
           visual: 'done',
-          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('lipsync'))),
-          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => !k.includes('video') && !k.includes('lipsync') && !k.includes('character-interaction') && !k.includes('narrator-scroll'))),
+          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition') || k.includes('lipsync'))),
+          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => !k.includes('video') && !k.includes('lipsync') && !k.includes('character-interaction') && !k.includes('narrator-scroll') && !k.includes('scene-transition'))),
           avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d'))),
           lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync'))),
         },
