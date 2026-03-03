@@ -2903,6 +2903,7 @@ function EP04ProductionInner() {
                         </div>
                       )}
                       {phase3Unlocked && (
+                        <>
                         <Button
                           size="sm" variant="outline"
                           className="border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
@@ -2923,6 +2924,21 @@ function EP04ProductionInner() {
                         >
                           Repair URLs
                         </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          className="border-green-500/30 text-green-600 hover:bg-green-500/10"
+                          onClick={async () => {
+                            toast.info('Making cast-assets bucket public...');
+                            const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+                              body: { action: 'make_bucket_public' },
+                            });
+                            if (error) { toast.error(`Failed: ${error.message}`); return; }
+                            toast.success('cast-assets bucket is now PUBLIC — URLs will never expire!');
+                          }}
+                        >
+                          Make Storage Public
+                        </Button>
+                        </>
                       )}
                     </div>
                   </div>

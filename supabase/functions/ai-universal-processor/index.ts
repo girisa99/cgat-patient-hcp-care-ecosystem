@@ -51,7 +51,8 @@ async function mirrorImageToStorage(imageUrl: string, userId: string): Promise<s
       console.warn(`[UniversalAI] Storage upload failed: ${uploadResp.status}`);
       return imageUrl;
     }
-    // Return public URL
+    // Return public URL — cast-assets bucket must be set to public for permanent access
+    // Public URLs never expire (signed URLs expire after 7 days, breaking assembly)
     const publicUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${storagePath}`;
     console.log(`[UniversalAI] Mirrored image to Storage: ${publicUrl.substring(0, 80)}...`);
     return publicUrl;

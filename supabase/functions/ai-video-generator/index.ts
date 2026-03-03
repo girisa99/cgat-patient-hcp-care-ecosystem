@@ -61,16 +61,12 @@ async function reuploadToStorage(externalUrl: string, prefix: string = 'video'):
       return externalUrl;
     }
 
-    // Use signed URL (7 days) — bucket is private so public URLs return 400
-    const { data: signedData, error: signErr } = await sb.storage
-      .from('cast-assets')
-      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
-    if (signErr || !signedData?.signedUrl) {
-      console.warn(`⚠️ Signed URL failed: ${signErr?.message} — returning original`);
-      return externalUrl;
-    }
-    console.log(`✅ Re-uploaded to Supabase Storage: ${signedData.signedUrl.substring(0, 80)}`);
-    return signedData.signedUrl;
+    // Return public URL — bucket should be set to public via make_bucket_public action
+    // Public URLs never expire (unlike signed URLs which expire after 7 days)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${fileName}`;
+    console.log(`✅ Re-uploaded to Supabase Storage: ${publicUrl.substring(0, 80)}`);
+    return publicUrl;
   } catch (err) {
     console.warn(`⚠️ Re-upload failed: ${err}`);
     return externalUrl;
@@ -255,38 +251,38 @@ serve(async (req) => {
               if (!url) continue;
               diagnostics.push(`${scene.scene_key}/${bucket}/${key}: ${url.substring(0, 80)}...`);
 
-              // Fix broken public URLs → regenerate signed URL
-              if (url.includes('/object/public/cast-assets/')) {
-                const filePath = url.split('/object/public/cast-assets/')[1];
+              const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+
+              // Convert signed URLs → public URLs (bucket is now public, public URLs never expire)
+              if (url.includes('/object/sign/cast-assets/')) {
+                const filePath = url.split('/object/sign/cast-assets/')[1]?.split('?')[0];
                 if (filePath) {
-                  const { data: signed, error: signErr } = await sb.storage
-                    .from('cast-assets')
-                    .createSignedUrl(filePath, 60 * 60 * 24 * 7);
-                  if (!signErr && signed?.signedUrl) {
-                    urls[key] = signed.signedUrl;
+                  // Verify file exists
+                  const { data: fileList } = await sb.storage.from('cast-assets').list(
+                    filePath.includes('/') ? filePath.substring(0, filePath.lastIndexOf('/')) : '',
+                    { search: filePath.includes('/') ? filePath.substring(filePath.lastIndexOf('/') + 1) : filePath }
+                  );
+                  if (fileList && fileList.length > 0) {
+                    urls[key] = `${supabaseUrl}/storage/v1/object/public/cast-assets/${filePath}`;
                     fixedCount++;
                     changed = true;
-                    console.log(`🔧 Fixed public→signed: ${scene.scene_key}/${bucket}/${key}`);
+                    console.log(`🔧 signed→public: ${scene.scene_key}/${bucket}/${key}`);
                   } else {
-                    console.log(`❌ File not found in storage: ${filePath}`);
                     diagnostics.push(`  → FILE MISSING: ${filePath}`);
                   }
                 }
               }
-              // Also fix expired/broken signed URLs — verify and regenerate
-              else if (url.includes('/object/sign/cast-assets/')) {
-                const filePath = url.split('/object/sign/cast-assets/')[1]?.split('?')[0];
+              // Public URLs should work if bucket is public — just verify file exists
+              else if (url.includes('/object/public/cast-assets/')) {
+                const filePath = url.split('/object/public/cast-assets/')[1];
                 if (filePath) {
-                  const { data: signed, error: signErr } = await sb.storage
-                    .from('cast-assets')
-                    .createSignedUrl(filePath, 60 * 60 * 24 * 7);
-                  if (!signErr && signed?.signedUrl) {
-                    urls[key] = signed.signedUrl;
-                    fixedCount++;
-                    changed = true;
-                    console.log(`🔧 Refreshed signed URL: ${scene.scene_key}/${bucket}/${key}`);
-                  } else {
-                    diagnostics.push(`  → FILE MISSING: ${filePath}`);
+                  try {
+                    const check = await fetch(url, { method: 'HEAD' });
+                    if (!check.ok) {
+                      diagnostics.push(`  → PUBLIC URL BROKEN (${check.status}): ${filePath}`);
+                    }
+                  } catch {
+                    diagnostics.push(`  → PUBLIC URL UNREACHABLE: ${filePath}`);
                   }
                 }
               }
@@ -325,22 +321,17 @@ serve(async (req) => {
           .eq('status', 'completed')
           .not('output_url', 'is', null);
 
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         for (const job of (jobs || [])) {
           const url = job.output_url as string;
           if (!url) continue;
-          let filePath: string | null = null;
-          if (url.includes('/object/public/cast-assets/')) {
-            filePath = url.split('/object/public/cast-assets/')[1];
-          } else if (url.includes('/object/sign/cast-assets/')) {
-            filePath = url.split('/object/sign/cast-assets/')[1]?.split('?')[0] || null;
-          }
-          if (filePath) {
-            const { data: signed, error: signErr } = await sb.storage
-              .from('cast-assets')
-              .createSignedUrl(filePath, 60 * 60 * 24 * 7);
-            if (!signErr && signed?.signedUrl && signed.signedUrl !== url) {
+          // Convert signed URLs → public URLs
+          if (url.includes('/object/sign/cast-assets/')) {
+            const filePath = url.split('/object/sign/cast-assets/')[1]?.split('?')[0] || null;
+            if (filePath) {
+              const publicUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${filePath}`;
               await sb.from('cast_generation_jobs')
-                .update({ output_url: signed.signedUrl })
+                .update({ output_url: publicUrl })
                 .eq('id', job.id);
               jobsFixed++;
             }
@@ -357,6 +348,24 @@ serve(async (req) => {
           expiredExternal,
           diagnostics,
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Make cast-assets bucket public (one-time setup)
+    if (body.action === 'make_bucket_public') {
+      try {
+        const sb = getSupabaseAdmin();
+        if (!sb) throw new Error('No admin client');
+        const { data, error } = await sb.storage.updateBucket('cast-assets', { public: true });
+        if (error) throw error;
+        console.log('✅ cast-assets bucket is now PUBLIC');
+        return new Response(JSON.stringify({ success: true, message: 'cast-assets bucket is now public' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       } catch (e: any) {
         return new Response(JSON.stringify({ error: e.message }), {
           status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -1451,11 +1460,9 @@ async function generateAvatarOrLipSync(request: AvatarRequestWithRouting): Promi
                 contentType: 'audio/mpeg', upsert: true,
               });
               if (!trimUpErr) {
-                const { data: trimSigned, error: trimSignErr } = await sb.storage.from('cast-assets').createSignedUrl(trimName, 3600);
-                if (!trimSignErr && trimSigned?.signedUrl) {
-                  request.audioUrl = trimSigned.signedUrl;
-                  console.log(`✅ Trimmed audio uploaded: ${trimSigned.signedUrl.substring(0, 80)}`);
-                }
+                const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+                request.audioUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${trimName}`;
+                console.log(`✅ Trimmed audio uploaded: ${request.audioUrl.substring(0, 80)}`);
               } else {
                 console.warn(`⚠️ Trimmed audio upload failed: ${trimUpErr.message}`);
               }
@@ -1637,14 +1644,11 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
       const fileName = `cast-avatars/lipsync-source-${Date.now()}.${ext}`;
       const { error: upErr } = await sb.storage.from('cast-assets').upload(fileName, blob, { contentType: ct, upsert: true });
       if (upErr) { console.warn(`⚠️ Avatar upload failed: ${upErr.message}`); return null; }
-      // Use signed URL — bucket is private so public URLs return 400
-      const { data: signedData, error: signErr } = await sb.storage.from('cast-assets').createSignedUrl(fileName, 3600); // 1 hour
-      if (signErr || !signedData?.signedUrl) {
-        console.warn(`⚠️ Signed URL failed: ${signErr?.message}`);
-        return null;
-      }
-      console.log(`✅ Re-uploaded avatar to Supabase (signed): ${signedData.signedUrl.substring(0, 80)}`);
-      return signedData.signedUrl;
+      // Return public URL — bucket is public for permanent access
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${fileName}`;
+      console.log(`✅ Re-uploaded avatar to Supabase: ${publicUrl.substring(0, 80)}`);
+      return publicUrl;
     } catch (e) { console.warn('⚠️ Avatar re-upload error:', e); return null; }
   };
 
