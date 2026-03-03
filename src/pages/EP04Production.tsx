@@ -23,7 +23,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EP04_SCRIPT_CONTENT, EP04_NARRATOR_BRIDGES, type ScriptLine } from '@/config/ep04-script-content';
-import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP, EP04_AVATAR_CONFIG } from '@/config/ep04-production-config';
+import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP, EP04_AVATAR_CONFIG, EP04_SCENE_PIPELINES } from '@/config/ep04-production-config';
 import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -1693,10 +1693,25 @@ function EP04ProductionInner() {
     }));
 
     try {
-      // Read pipeline steps from DB
-      const rawPipeline = dbProject.scenePipelineFor(sceneKey);
+      // Read pipeline steps — prefer config file (always up-to-date), fall back to DB
+      const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
+      const configPipeline = EP04_SCENE_PIPELINES[pipelineSceneKey as keyof typeof EP04_SCENE_PIPELINES];
+      const rawPipeline = configPipeline || dbProject.scenePipelineFor(sceneKey);
       const pipelineSteps = (Array.isArray(rawPipeline) ? rawPipeline : (rawPipeline?.steps || [])) as Array<Record<string, unknown>>;
       const results: Record<string, string> = {};
+
+      if (configPipeline) {
+        console.log(`[EP04 Visual] ${sceneKey}: using config file pipeline (${pipelineSceneKey}, ${pipelineSteps.length} steps)`);
+        // Sync config pipeline to DB so scenePipelineFor stays current (fire-and-forget)
+        if (projectId) {
+          supabase.from('cast_project_scenes').select('scene_config').eq('project_id', projectId).eq('scene_key', sceneKey).single()
+            .then(({ data: row }) => {
+              const existing = (row?.scene_config || {}) as Record<string, unknown>;
+              return supabase.from('cast_project_scenes').update({ scene_config: { ...existing, pipeline: configPipeline } })
+                .eq('project_id', projectId).eq('scene_key', sceneKey);
+            }).catch(() => {}); // fire-and-forget
+        }
+      }
 
       // Verify pipeline data exists
       if (pipelineSteps.length === 0) {
