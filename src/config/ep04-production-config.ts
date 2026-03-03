@@ -200,6 +200,21 @@ export const EP04_AVATAR_CONFIG = {
         'Constellation patterns that form in the air when Allaudin gestures, showing sprint data as star maps',
       ],
     },
+    squirrel: {
+      name: 'Squirrel',
+      role: 'Comic Relief (Chaos Agent)',
+      style: '3d-pixar',
+      palette: ['#D97706', '#F59E0B'],  // Golden brown / amber
+      props: ['oversized acorn', 'tiny paws', 'bushy tail', 'expressive wide eyes'],
+      motionStyle: 'hyperactive',       // Scurries, drops in from above, tail twitching, chaotic energy
+      audioProfile: EP04_VOICES.squirrel,
+      pixarPrompt: 'Pixar-style 3D animated character portrait: CLOSE-UP of a tiny hyperactive SQUIRREL with golden-brown fur, enormous expressive eyes filled with chaotic energy, bushy tail twitching nervously, clutching an oversized acorn to its chest with tiny paws, wearing a comically small headset microphone, Scrat-from-Ice-Age energy but original design, sitting on a tree branch that doubles as a desk with tiny sticky notes, Pixar subsurface scattering on fur, warm forest lighting with bokeh, adorable but manic expression, 8K cinematic portrait render',
+      disneyPrompt: 'Disney 2D animation style character portrait: a tiny chaotic squirrel with golden fur and enormous expressive eyes, hand-painted with visible brushstrokes, clutching an oversized acorn, bushy tail curling behind, wearing a tiny headset, perched on a branch with miniature sticky notes, classic Disney charm with manic Scrat energy, warm watercolor lighting',
+      sceneCompanions: [
+        'A pile of acorns arranged to look like a task board with tiny labels',
+        'A miniature megaphone for dramatic interruptions',
+      ],
+    },
   },
 
   // ─── STORYBOOK VISUAL ASSETS ─────────────────────────────────────────
@@ -458,6 +473,10 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A warm human product owner at his home office desk looking stressed but determined, sticky notes everywhere, dual monitors showing Claude AI logo on left screen and Lovable logo on right screen with sprint dashboards, his loyal golden retriever sitting beside him looking up adoringly, cozy warm lamplight, coffee mug with "The GenieAI Podcast" text steaming on desk, Pixar 3D animation quality, cinematic depth of field, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'cold-open-narration' },
+    // Squirrel interruption (10s) — bursts in after host intro
+    { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-1' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-interrupt-1' },
   ],
   'scene-2-meet-team': [
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
@@ -499,6 +518,12 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'host-not-in-scope' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-works-better' },
     { type: 'kinetic-text', text: 'Setting acceptance criteria isn\'t optional. It\'s survival.' },
+    // Squirrel interruptions (10s + 5s) — drops in asking about acorns
+    { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-2' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-interrupt-2' },
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-disappointed' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-disappointed' },
   ],
   'scene-5-day2': [
     { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
