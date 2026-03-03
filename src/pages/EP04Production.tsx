@@ -1464,10 +1464,17 @@ function EP04ProductionInner() {
           jobId = await trackGenerationJob({ projectId, jobType: 'avatar', sceneKey, provider: 'alibaba', estimatedTokens: 500 });
         }
         try {
+          // Wait 3s to avoid DashScope rate limiting if a video request just ran
+          await new Promise(r => setTimeout(r, 3000));
           const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
-            body: { action: 'image_generation', prompt: avatarPrompt, provider: 'alibaba', model: 'wan2.6-t2i', size: '1024x1024', style_intent: 'cinematic' },
+            body: { action: 'image_generation', prompt: avatarPrompt, provider: 'alibaba', model: 'wan2.6-t2i', aspectRatio: '1:1', style_intent: 'cinematic' },
           });
-          if (error) throw new Error(error.message || 'Alibaba image generation failed');
+          if (error) {
+            // Try to extract detailed error from response body
+            const detail = data?.error || error.message || 'Unknown error';
+            console.error(`[EP04 Visual] ${stepLabel}: edge function error detail:`, detail, data);
+            throw new Error(detail);
+          }
           const url = data?.url || data?.imageUrl || data?.result?.url;
           if (url) {
             results[`avatar-3d-${character}-${sceneKey}`] = url;

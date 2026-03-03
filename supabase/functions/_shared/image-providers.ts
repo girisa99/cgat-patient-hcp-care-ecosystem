@@ -319,7 +319,11 @@ async function generateWithAlibaba(prompt: string, options: ImageGenOptions): Pr
     body: JSON.stringify(body),
   });
 
-  if (!response.ok) throw new Error(`Alibaba Error: ${response.status} - ${await response.text()}`);
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`[Alibaba-Image] Submit failed ${response.status}: ${errText}`);
+    throw new Error(`Alibaba Error: ${response.status} - ${errText}`);
+  }
 
   const data = await response.json();
   const taskId = data.output?.task_id;
