@@ -1179,10 +1179,11 @@ async function generateWithAlibabaWAN(
   };
 }
 
-async function pollAlibabaTask(taskId: string, apiKey: string, baseUrl?: string): Promise<VideoResult> {
+async function pollAlibabaTask(taskId: string, apiKey: string, baseUrl?: string, maxAttemptsOverride?: number): Promise<VideoResult> {
   // Poll within edge function runtime. If timeout was extended in Supabase dashboard, increase this.
-  // Default: 12 attempts × 5s = 60s. For extended timeouts, increase maxAttempts.
-  const maxAttempts = 24; // 24 × 5s = 120s — covers most WAN generations
+  // Default: 10 attempts × 5s = 50s (fits within 60s free-plan edge function timeout).
+  // Video generation callers can pass higher maxAttempts if on pro plan.
+  const maxAttempts = maxAttemptsOverride ?? 10;
   let attempts = 0;
   // Use the same baseUrl as the submission request to ensure endpoint consistency
   const pollBaseUrl = baseUrl || (Deno.env.get('ALIBABA_CHINA_API_KEY') && !Deno.env.get('ALIBABA_API_KEY')
@@ -1254,8 +1255,7 @@ async function generateAvatarOrLipSync(request: AvatarRequestWithRouting): Promi
     case 'azure':
       return await generateLipSyncWithAzure(request);
     case 'replicate':
-      // Fallback provider from routing
-      return await generateAvatarWithModelsLab(request);
+      return await generateLipSyncWithReplicate(request);
     default:
       throw new Error(`Unsupported avatar provider: ${avatarProvider}`);
   }
@@ -1268,18 +1268,20 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
   provider: string;
   model: string;
 }> {
-  // Prefer international endpoint (Singapore). China only if ONLY China key exists.
+  // wan2.2-s2v (lip-sync) ONLY exists on the China endpoint.
+  // OmniAvatar also requires China. Always prefer China key for avatar generation.
   const chinaApiKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
   const intlApiKey = Deno.env.get('ALIBABA_API_KEY');
   if (!chinaApiKey && !intlApiKey) throw new Error('ALIBABA_API_KEY or ALIBABA_CHINA_API_KEY is not configured');
 
-  const useChina = !!chinaApiKey && !intlApiKey;
-  const apiKey = useChina ? chinaApiKey! : intlApiKey!;
+  // Force China endpoint for lip-sync models (wan2.2-s2v, omniavatar)
+  const useChina = !!chinaApiKey; // Always use China if available
+  const apiKey = chinaApiKey || intlApiKey!;
 
-  // DashScope lip-sync model: wan2.2-s2v (works on both endpoints)
   const modelName = fullBody ? 'omniavatar' : 'wan2.2-s2v';
   console.log(`🎭 Generating avatar with Alibaba ${fullBody ? 'OmniAvatar' : 'WAN 2.2 S2V'}`);
   console.log(`   Using ${useChina ? 'China (Beijing)' : 'International (Singapore)'} API endpoint`);
+  console.log(`   Model: ${modelName}, API key: ${apiKey?.substring(0, 8)}...`);
 
   // Step 1: Generate audio with Azure TTS as primary (more reliable), Alibaba Qwen3-TTS as fallback
   let audioUrl = request.audioUrl;
@@ -1324,13 +1326,20 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
   };
 
   try {
+    // wan2.2-s2v is China-only and REQUIRES async mode (submit → poll).
+    // The 403 "async not supported" was from the INTERNATIONAL API key.
+    // China API key supports async. Use async header on China endpoint.
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    };
+    if (useChina) {
+      headers['X-DashScope-Async'] = 'enable';
+    }
+    console.log(`🎭 Submitting to ${endpoint} (async: ${useChina})`);
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'X-DashScope-Async': 'enable',
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 
@@ -1341,22 +1350,133 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
     }
 
     const data = await response.json();
-    
+    console.log('🎭 Alibaba Avatar API response keys:', Object.keys(data.output || {}));
+
     if (data.output?.task_id) {
-      const result = await pollAlibabaTask(data.output.task_id, chinaApiKey);
+      // Poll with shorter timeout (8 × 5s = 40s) to fit within edge function 60s limit
+      const result = await pollAlibabaTask(data.output.task_id, apiKey, baseUrl, 8);
       return { ...result, audioUrl };
     }
 
+    // Direct synchronous response — re-upload to Supabase Storage
+    const rawVideoUrl = data.output?.video_url;
+    const videoUrl = rawVideoUrl ? await reuploadToStorage(rawVideoUrl, 'lipsync') : rawVideoUrl;
+
     return {
-      videoUrl: data.output?.video_url,
+      videoUrl,
       audioUrl,
       provider: 'alibaba',
       model: 'wan-video',
     };
   } catch (err) {
-    console.warn('⚠️ Alibaba Avatar failed, falling back to ModelsLab:', err);
-    return await generateAvatarWithModelsLab(request);
+    console.warn('⚠️ Alibaba Avatar failed, trying Replicate SadTalker:', err);
+    // Fallback chain: Alibaba → Replicate SadTalker → ModelsLab
+    try {
+      return await generateLipSyncWithReplicate(request);
+    } catch (repErr) {
+      console.warn('⚠️ Replicate SadTalker failed, falling back to ModelsLab:', repErr);
+      return await generateAvatarWithModelsLab(request);
+    }
   }
+}
+
+// Replicate SadTalker — audio-driven talking head (reliable lipsync fallback)
+async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
+  videoUrl: string;
+  audioUrl?: string;
+  provider: string;
+  model: string;
+}> {
+  const apiKey = Deno.env.get('REPLICATE_API_TOKEN');
+  if (!apiKey) throw new Error('REPLICATE_API_TOKEN is not configured');
+  if (!request.sourceImage) throw new Error('sourceImage is required for lipsync');
+  if (!request.audioUrl) throw new Error('audioUrl is required for lipsync');
+
+  console.log('🎭 Generating lipsync with Replicate');
+  console.log(`   sourceImage: ${request.sourceImage.substring(0, 80)}`);
+  console.log(`   audioUrl: ${request.audioUrl.substring(0, 80)}`);
+
+  // Try official models in order: bytedance/omni-human → veed/fabric-1.0 → cjwbw/sadtalker
+  // omni-human: single image + audio → full animated video (supports long audio)
+  // fabric-1.0: image + audio → talking head, up to 60s
+  // sadtalker: image + audio → talking head (community, older but reliable)
+  const models = [
+    {
+      name: 'bytedance/omni-human',
+      input: { source_image: request.sourceImage, driven_audio: request.audioUrl },
+    },
+    {
+      name: 'veed/fabric-1.0',
+      input: { image: request.sourceImage, audio: request.audioUrl },
+    },
+    {
+      name: 'cjwbw/sadtalker',
+      input: { source_image: request.sourceImage, driven_audio: request.audioUrl, enhancer: 'gfpgan', preprocess: 'crop', still: true },
+    },
+  ];
+
+  for (const model of models) {
+    try {
+      console.log(`   Trying Replicate model: ${model.name}`);
+      const createResponse = await fetch(`https://api.replicate.com/v1/models/${model.name}/predictions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'wait=30',
+        },
+        body: JSON.stringify({ input: model.input }),
+      });
+
+      if (!createResponse.ok) {
+        const errText = await createResponse.text();
+        console.warn(`   ${model.name} failed (${createResponse.status}): ${errText.substring(0, 150)}`);
+        continue; // Try next model
+      }
+
+      const prediction = await createResponse.json();
+      console.log(`📋 ${model.name} prediction: ${prediction.id}, status: ${prediction.status}`);
+
+      // If Prefer: wait=30 returned a completed prediction, use it directly
+      if (prediction.status === 'succeeded') {
+        const rawUrl = typeof prediction.output === 'string' ? prediction.output : prediction.output?.[0] || prediction.output?.video;
+        const videoUrl = rawUrl ? await reuploadToStorage(rawUrl, 'lipsync-rep') : rawUrl;
+        if (videoUrl) {
+          return { videoUrl, audioUrl: request.audioUrl, provider: 'replicate', model: model.name };
+        }
+      }
+
+      // Poll for completion (8 × 5s = 40s)
+      const maxAttempts = 8;
+      let attempts = 0;
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        attempts++;
+        const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+        });
+        const status = await statusResponse.json();
+        console.log(`⏳ ${model.name} status (${attempts}/${maxAttempts}): ${status.status}`);
+
+        if (status.status === 'succeeded') {
+          const rawUrl = typeof status.output === 'string' ? status.output : status.output?.[0] || status.output?.video;
+          const videoUrl = rawUrl ? await reuploadToStorage(rawUrl, 'lipsync-rep') : rawUrl;
+          if (videoUrl) {
+            return { videoUrl, audioUrl: request.audioUrl, provider: 'replicate', model: model.name };
+          }
+          break;
+        } else if (status.status === 'failed') {
+          console.warn(`   ${model.name} failed: ${status.error}`);
+          break; // Try next model
+        }
+      }
+    } catch (err) {
+      console.warn(`   ${model.name} error: ${err}`);
+      continue; // Try next model
+    }
+  }
+
+  throw new Error('All Replicate lipsync models failed');
 }
 
 // Azure Neural TTS for reliable audio generation
@@ -1466,23 +1586,32 @@ async function generateAvatarWithModelsLab(request: AvatarRequest): Promise<{
   if (!apiKey) throw new Error('MODELSLAB_API_KEY is not configured');
 
   console.log('🎭 Generating avatar with ModelsLab');
+  console.log(`   sourceImage: ${request.sourceImage?.substring(0, 80) || 'NONE'}`);
+  console.log(`   audioUrl: ${request.audioUrl?.substring(0, 80) || 'NONE'}`);
+  console.log(`   script: ${request.script ? request.script.substring(0, 50) + '...' : 'NONE'}`);
 
-  // ModelsLab voice clone + animation endpoint
-  const endpoint = request.type === 'lipsync' 
-    ? 'https://modelslab.com/api/v6/video/lipsync'
-    : 'https://modelslab.com/api/v6/video/talking_avatar';
+  // ModelsLab lipsync endpoint (talking_avatar changed to GET-only, use lipsync for all)
+  const endpoint = 'https://modelslab.com/api/v6/video/lipsync';
 
   const requestBody: Record<string, unknown> = {
     key: apiKey,
     init_image: request.sourceImage,
-    text: request.script,
-    voice_id: request.voiceId || 'default',
     language: request.language || 'en-US',
   };
 
+  // Only send text if it's actually provided (ModelsLab rejects undefined text)
+  if (request.script) {
+    requestBody.text = request.script;
+    requestBody.voice_id = request.voiceId || 'default';
+  }
+
+  // Pre-recorded audio takes priority over TTS text
   if (request.audioUrl) {
     requestBody.audio_url = request.audioUrl;
   }
+
+  console.log(`   ModelsLab endpoint: ${endpoint}`);
+  console.log(`   ModelsLab body keys: ${Object.keys(requestBody).join(', ')}`);
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -1491,22 +1620,29 @@ async function generateAvatarWithModelsLab(request: AvatarRequest): Promise<{
   });
 
   if (!response.ok) {
-    throw new Error(`ModelsLab Avatar API error: ${response.status}`);
+    const errText = await response.text();
+    console.warn(`ModelsLab Avatar API error (${response.status}):`, errText);
+    throw new Error(`ModelsLab Avatar API error: ${response.status} - ${errText.substring(0, 200)}`);
   }
 
   const data = await response.json();
+  console.log('🎭 ModelsLab response:', JSON.stringify(data).substring(0, 500));
 
   if (data.status === 'processing' && data.fetch_result) {
+    console.log(`   ModelsLab processing — polling: ${data.fetch_result}`);
     const result = await pollModelsLabResult(data.fetch_result, apiKey);
+    const videoUrl = result.videoUrl ? await reuploadToStorage(result.videoUrl, 'lipsync-ml') : result.videoUrl;
     return {
-      videoUrl: result.videoUrl,
+      videoUrl,
       provider: 'modelslab',
       model: 'talking-avatar',
     };
   }
 
+  const rawUrl = data.output?.[0] || data.output;
+  const videoUrl = rawUrl ? await reuploadToStorage(rawUrl, 'lipsync-ml') : rawUrl;
   return {
-    videoUrl: data.output?.[0] || data.output,
+    videoUrl,
     audioUrl: data.audio_url,
     provider: 'modelslab',
     model: 'talking-avatar',
