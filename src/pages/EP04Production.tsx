@@ -1456,11 +1456,16 @@ function EP04ProductionInner() {
           const { data: pollData } = await supabase.functions.invoke('ai-video-generator', {
             body: { action: 'poll_task', taskId },
           });
-          console.log(`[EP04 Visual] ${stepLabel}: alibaba lipsync poll ${p + 1}/${maxPolls} — ${pollData?.status}`);
-          if (pollData?.status === 'SUCCEEDED' && pollData?.videoUrl) {
-            url = pollData.videoUrl;
-            console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" done via Alibaba: ${url.substring(0, 60)}...`);
-            break;
+          console.log(`[EP04 Visual] ${stepLabel}: alibaba lipsync poll ${p + 1}/${maxPolls} — ${pollData?.status} videoUrl=${pollData?.videoUrl ? 'YES' : 'none'}`);
+          if (pollData?.status === 'SUCCEEDED') {
+            if (pollData?.videoUrl) {
+              url = pollData.videoUrl;
+              console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" done via Alibaba: ${url.substring(0, 60)}...`);
+            } else {
+              console.warn(`[EP04 Visual] ${stepLabel}: lipsync "${character}" SUCCEEDED but no videoUrl in response:`, JSON.stringify(pollData));
+              toast.error(`Lipsync "${character}" succeeded but video URL extraction failed — check edge function logs`);
+            }
+            break; // Always break on SUCCEEDED — don't keep polling
           }
           if (pollData?.status === 'FAILED') {
             console.warn(`[EP04 Visual] ${stepLabel}: lipsync "${character}" failed on Alibaba:`, pollData?.message);
