@@ -1509,7 +1509,9 @@ function EP04ProductionInner() {
       } else {
         console.warn(`[EP04 Visual] ${stepLabel}: lipsync "${character}" returned no URL`, data);
       }
-      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      // Pass actual provider for accurate cost calc (alibaba=free vs replicate=$4/run)
+      const actualProvider = data?.provider || (data?.replicatePredictionId ? 'replicate' : 'alibaba');
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url, actualProvider);
       return;
     }
 
@@ -3016,6 +3018,19 @@ function EP04ProductionInner() {
                           }}
                         >
                           Make Storage Public
+                        </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          className="border-cyan-500/30 text-cyan-600 hover:bg-cyan-500/10"
+                          onClick={async () => {
+                            // Capture all 19 sprint tracker screenshots via popup window
+                            const sprintUrl = `${window.location.origin}/genie-hub?tab=sprint-tracker&autoCapture=true`;
+                            toast.info('Opening sprint tracker for auto-capture (19 screens)...');
+                            window.open(sprintUrl, 'sprint-capture', 'width=1920,height=1080');
+                          }}
+                        >
+                          <Camera className="h-3 w-3 mr-1" />
+                          Capture Sprint Screenshots
                         </Button>
                         </>
                       )}

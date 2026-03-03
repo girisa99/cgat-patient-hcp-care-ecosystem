@@ -6,8 +6,8 @@
  * Default landing: PO Mission Control (single-screen health summary)
  */
 
-import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -230,6 +230,99 @@ export const SprintTrackerDashboard: React.FC = () => {
       });
     }
   }, []);
+
+  // ── Auto-capture: triggered by ?autoCapture=true query param ──────────────
+  const [searchParams] = useSearchParams();
+  const [isAutoCapturing, setIsAutoCapturing] = useState(false);
+  const [captureProgress, setCaptureProgress] = useState<string | null>(null);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const autoCaptureStarted = useRef(false);
+
+  useEffect(() => {
+    if (searchParams.get('autoCapture') !== 'true') return;
+    if (autoCaptureStarted.current) return;
+    autoCaptureStarted.current = true;
+
+    // All views to capture (matches PRODUCT_SCREENS['sprint-tracker'] in MultiScreenshotGallery)
+    const CAPTURE_VIEWS: { viewId: ViewId; screenId: string; name: string }[] = [
+      { viewId: 'po-mission', screenId: 'po-mission-control', name: 'PO Mission Control' },
+      { viewId: 'po-gate', screenId: 'po-actions', name: 'PO Actions & Notes' },
+      { viewId: 'qa-signoff', screenId: 'qa-signoff', name: 'QA Sign-off' },
+      { viewId: 'eod-handoff', screenId: 'eod-handoff', name: 'EOD Auto-Handoff' },
+      { viewId: 'charter', screenId: 'sprint-charter', name: 'Sprint Charter' },
+      { viewId: 'governance', screenId: 'governance-guide', name: 'Governance Guide' },
+      { viewId: 'day-1' as ViewId, screenId: 'day-1-view', name: 'Day 1' },
+      { viewId: 'day-2' as ViewId, screenId: 'day-2-view', name: 'Day 2' },
+      { viewId: 'day-3' as ViewId, screenId: 'day-3-view', name: 'Day 3' },
+      { viewId: 'day-4' as ViewId, screenId: 'day-4-view', name: 'Day 4' },
+      { viewId: 'day-5' as ViewId, screenId: 'day-5-view', name: 'Day 5' },
+      { viewId: 'backlog', screenId: 'backlog-view', name: 'Backlog' },
+      { viewId: 'metrics', screenId: 'velocity-metrics', name: 'Velocity & Metrics' },
+      { viewId: 'effort', screenId: 'effort-tracking', name: 'Effort Tracking' },
+      { viewId: 'planning', screenId: 'project-plan', name: 'Project Plan' },
+      { viewId: 'findings', screenId: 'findings-qa', name: 'Findings & QA' },
+    ];
+
+    const runCapture = async () => {
+      const { default: html2canvas } = await import('html2canvas');
+      const { supabase } = await import('@/integrations/supabase/client');
+      setIsAutoCapturing(true);
+      let success = 0;
+
+      // Switch to dev mode so all sidebar items are accessible
+      setSidebarModeRaw('dev');
+
+      for (let i = 0; i < CAPTURE_VIEWS.length; i++) {
+        const view = CAPTURE_VIEWS[i];
+        setCaptureProgress(`${i + 1}/${CAPTURE_VIEWS.length}: ${view.name}`);
+        setActiveView(view.viewId);
+
+        // Wait for React render + any lazy components
+        await new Promise(r => setTimeout(r, 2000));
+
+        try {
+          const el = mainContentRef.current;
+          if (!el) { console.warn(`[AutoCapture] No main content ref for ${view.name}`); continue; }
+
+          const canvas = await html2canvas(el, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#0a0a0a',
+            logging: false,
+            width: el.offsetWidth,
+            height: Math.min(el.scrollHeight, 2000),
+            ignoreElements: (element) => element.classList?.contains('animate-spin') || element.tagName === 'VIDEO',
+          });
+
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob failed')), 'image/png', 0.95);
+          });
+
+          const storagePath = `screenshots/sprint-tracker-${view.screenId}.png`;
+          const { error } = await supabase.storage
+            .from('product-screenshots')
+            .upload(storagePath, blob, { contentType: 'image/png', upsert: true });
+
+          if (error) {
+            console.error(`[AutoCapture] Upload failed ${view.screenId}:`, error.message);
+          } else {
+            success++;
+            console.log(`[AutoCapture] ✅ ${view.name} captured and uploaded`);
+          }
+        } catch (err) {
+          console.error(`[AutoCapture] Failed ${view.name}:`, err);
+        }
+      }
+
+      setCaptureProgress(null);
+      setIsAutoCapturing(false);
+      alert(`Sprint Tracker: ${success}/${CAPTURE_VIEWS.length} screenshots captured and uploaded! You can close this window.`);
+    };
+
+    // Delay start to let the page fully render
+    setTimeout(runCapture, 3000);
+  }, [searchParams]);
 
   // ── computed ──────────────────────────────────────────────────────────────
   const overallPct = metrics.total > 0 ? Math.round((metrics.completed / metrics.total) * 100) : 0;
@@ -504,8 +597,16 @@ export const SprintTrackerDashboard: React.FC = () => {
           <Progress value={overallPct} className="h-0.5 rounded-none" />
         </header>
 
+        {/* Auto-capture progress banner */}
+        {isAutoCapturing && captureProgress && (
+          <div className="shrink-0 bg-cyan-600 text-white text-center text-sm font-medium py-2 px-4 flex items-center justify-center gap-2">
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Capturing screenshots: {captureProgress}
+          </div>
+        )}
+
         {/* Content */}
-        <main className="flex-1 overflow-auto w-full">
+        <main ref={mainContentRef} className="flex-1 overflow-auto w-full">
           <div className="p-5 w-full max-w-6xl mx-auto">
 
             {/* PO Mission Control — default landing view */}

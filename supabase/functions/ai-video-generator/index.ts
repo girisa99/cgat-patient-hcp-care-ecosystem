@@ -168,18 +168,20 @@ serve(async (req) => {
         const status = data.output?.task_status || 'UNKNOWN';
         console.log(`[poll_task] taskId=${body.taskId} status=${status} output_keys=${JSON.stringify(Object.keys(data.output || {}))}`);
         if (status === 'SUCCEEDED') {
-          // DashScope response varies by model — check all known video URL fields:
-          // - wan2.1: data.output.video_url
-          // - wan2.2-s2v (lipsync): data.output.output_video_url OR nested in results
-          // - generic: data.output.results[0].url or results[0].video_url
+          // DashScope response format varies by model:
+          // - wan2.1 t2v: output.video_url (string)
+          // - wan2.2-s2v lipsync: output.results.video_url (results is OBJECT, not array!)
+          // - wan2.6 i2v: output.results[0].url (results is array)
+          // - generic: output.output_video_url
           const output = data.output || {};
+          const results = output.results;
           const rawVideoUrl = output.video_url
             || output.output_video_url
             || output.video
-            || output.results?.[0]?.url
-            || output.results?.[0]?.video_url
-            || output.results?.[0]?.video;
-          console.log(`[poll_task] SUCCEEDED — rawVideoUrl=${rawVideoUrl ? rawVideoUrl.substring(0, 80) + '...' : 'NONE'}, full output: ${JSON.stringify(output).substring(0, 500)}`);
+            // results can be an OBJECT {video_url: "..."} or an ARRAY [{url: "..."}]
+            || (results && !Array.isArray(results) ? results.video_url || results.url : null)
+            || (Array.isArray(results) ? (results[0]?.url || results[0]?.video_url || results[0]?.video) : null);
+          console.log(`[poll_task] SUCCEEDED — rawVideoUrl=${rawVideoUrl ? rawVideoUrl.substring(0, 80) + '...' : 'NONE'}, results_type=${Array.isArray(results) ? 'array' : typeof results}, full output: ${JSON.stringify(output).substring(0, 500)}`);
           // Re-upload to Supabase Storage — Alibaba OSS URLs fail DNS in user browsers
           const videoUrl = rawVideoUrl ? await reuploadToStorage(rawVideoUrl, `wan-poll-${body.taskId}`) : rawVideoUrl;
           return new Response(JSON.stringify({ success: true, videoUrl, status }), {

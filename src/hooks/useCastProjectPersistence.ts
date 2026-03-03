@@ -359,11 +359,13 @@ export function useCastProjectPersistence() {
     jobId: string,
     actualTokens: number,
     outputUrl?: string,
+    actualProvider?: string,
   ) => {
     await productionCostAccumulator.completeJob({
       jobId,
       actualTokens,
       outputUrl,
+      actualProvider,
     });
   }, []);
 

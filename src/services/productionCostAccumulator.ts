@@ -36,6 +36,8 @@ export interface JobCompleteInput {
   outputDurationSeconds?: number;
   outputFileSizeBytes?: number;
   outputMetadata?: Record<string, unknown>;
+  /** Override provider for cost calc (e.g., job started as 'alibaba' but fell back to 'replicate') */
+  actualProvider?: string;
 }
 
 export interface ProjectCostSummary {
@@ -56,12 +58,15 @@ export interface ProjectCostSummary {
 // ============================================================================
 
 const COST_PER_1K_TOKENS: Record<string, number> = {
-  openai: 0.03,
-  anthropic: 0.025,
-  google: 0.02,
-  elevenlabs: 0.05,
-  azure: 0.03,
-  alibaba: 0.015,
+  openai: 0.03,       // GPT-4o ~$0.03/1K tokens
+  anthropic: 0.025,   // Claude ~$0.025/1K tokens
+  google: 0.02,       // Gemini ~$0.02/1K tokens
+  elevenlabs: 0.05,   // ElevenLabs ~$0.05/1K chars (mapped to tokens)
+  azure: 0.03,        // Azure TTS ~$0.03/1K chars
+  alibaba: 0.001,     // DashScope lipsync/video = FREE tier; image gen ~$0.001/1K
+  replicate: 8.00,    // Replicate omni-human = $4/run → use 500 tokens = $8/1K (so 500 tokens → $4)
+  suno: 0.10,         // Suno music gen = ~$0.10/song on Pro plan
+  assembly: 0.01,     // Assembly AI audio = ~$0.01/min
   default: 0.025,
 };
 
@@ -154,19 +159,29 @@ export async function startJob(jobId: string): Promise<void> {
 // ============================================================================
 
 export async function completeJob(input: JobCompleteInput): Promise<void> {
+  // If actualProvider is given (e.g., fallback from alibaba→replicate), update provider + recalc cost
+  const updateFields: Record<string, unknown> = {
+    status: 'completed',
+    actual_tokens_used: input.actualTokens,
+    output_url: input.outputUrl || null,
+    output_duration_seconds: input.outputDurationSeconds || null,
+    output_file_size_bytes: input.outputFileSizeBytes || null,
+    output_metadata: (input.outputMetadata || {}) as any,
+    completed_at: new Date().toISOString(),
+    progress_percent: 100,
+  };
+  if (input.actualProvider) {
+    updateFields.provider = input.actualProvider;
+  }
+  // Cost calc uses actual provider if set, otherwise fetch from existing job record
+  const costProvider = input.actualProvider;
+  updateFields.estimated_cost_usd = costProvider
+    ? tokensToCost(input.actualTokens, costProvider)
+    : tokensToCost(input.actualTokens);
+
   const { error: jobError } = await (supabase as any)
     .from('cast_generation_jobs')
-    .update({
-      status: 'completed',
-      actual_tokens_used: input.actualTokens,
-      estimated_cost_usd: tokensToCost(input.actualTokens),
-      output_url: input.outputUrl || null,
-      output_duration_seconds: input.outputDurationSeconds || null,
-      output_file_size_bytes: input.outputFileSizeBytes || null,
-      output_metadata: (input.outputMetadata || {}) as any,
-      completed_at: new Date().toISOString(),
-      progress_percent: 100,
-    })
+    .update(updateFields)
     .eq('id', input.jobId);
 
   if (jobError) {
