@@ -1455,44 +1455,45 @@ async function generateAvatarOrLipSync(request: AvatarRequestWithRouting): Promi
   console.log(`   Model: ${modelName}, Full Body: ${request.fullBody}, Priority: ${request.priorityRendering}`);
 
   // ── Smart audio-length routing ──
-  // Alibaba wan2.2-s2v has a 20s audio limit. If audio is too long, TRIM it to ~18s
-  // so Alibaba (free) handles it instead of Replicate ($4/run).
-  // For lipsync, a 18s talking head clip is sufficient — it's a visual sample, not the full dialogue.
+  // Alibaba wan2.2-s2v has a 20s audio limit. ALWAYS download and check actual size,
+  // then trim to ~18s if needed. HEAD requests may not return content-length.
   if (request.audioUrl && avatarProvider === 'alibaba') {
     try {
-      const headResp = await fetch(request.audioUrl, { method: 'HEAD' });
-      const contentLength = parseInt(headResp.headers.get('content-length') || '0', 10);
-      if (contentLength > 300_000) { // ~300KB ≈ ~19s of 128kbps MP3
-        console.log(`🎵 Audio size ${(contentLength / 1024).toFixed(0)}KB > 300KB (~20s) — trimming to first 18s for Alibaba`);
-        // Download audio and trim to first ~280KB (≈18s at 128kbps)
-        try {
-          const audioResp = await fetch(request.audioUrl);
-          if (audioResp.ok) {
-            const fullBlob = await audioResp.blob();
-            const trimmedBytes = fullBlob.slice(0, 280_000); // first ~18s of MP3
-            const sb = getSupabaseAdmin();
-            if (sb) {
-              const trimName = `cast-audio/trimmed-lipsync-${Date.now()}.mp3`;
-              const { error: trimUpErr } = await sb.storage.from('cast-assets').upload(trimName, trimmedBytes, {
-                contentType: 'audio/mpeg', upsert: true,
-              });
-              if (!trimUpErr) {
-                const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-                request.audioUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${trimName}`;
-                console.log(`✅ Trimmed audio uploaded: ${request.audioUrl.substring(0, 80)}`);
-              } else {
-                console.warn(`⚠️ Trimmed audio upload failed: ${trimUpErr.message}`);
-              }
+      console.log(`🎵 Checking audio size for Alibaba lipsync: ${request.audioUrl.substring(0, 80)}`);
+      const audioResp = await fetch(request.audioUrl);
+      if (audioResp.ok) {
+        const fullBuffer = await audioResp.arrayBuffer();
+        const audioSize = fullBuffer.byteLength;
+        console.log(`🎵 Audio actual size: ${(audioSize / 1024).toFixed(0)}KB (${audioSize} bytes)`);
+
+        // 280KB ≈ 18s at 128kbps MP3. Trim if >280KB to stay under 20s limit.
+        if (audioSize > 280_000) {
+          console.log(`🎵 Audio ${(audioSize / 1024).toFixed(0)}KB > 280KB — trimming to first 280KB (~18s) for Alibaba`);
+          const trimmedBuffer = fullBuffer.slice(0, 280_000);
+          const sb = getSupabaseAdmin();
+          if (sb) {
+            const trimName = `cast-audio/trimmed-lipsync-${Date.now()}.mp3`;
+            const { error: trimUpErr } = await sb.storage.from('cast-assets').upload(
+              trimName,
+              new Uint8Array(trimmedBuffer),
+              { contentType: 'audio/mpeg', upsert: true }
+            );
+            if (!trimUpErr) {
+              const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+              request.audioUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${trimName}`;
+              console.log(`✅ Trimmed audio uploaded: ${request.audioUrl.substring(0, 80)}`);
+            } else {
+              console.warn(`⚠️ Trimmed audio upload failed: ${trimUpErr.message} — trying with original`);
             }
           }
-        } catch (trimErr) {
-          console.warn('⚠️ Audio trim failed, will try Alibaba with full audio:', trimErr);
+        } else {
+          console.log(`🎵 Audio ${(audioSize / 1024).toFixed(0)}KB — within Alibaba 20s limit, no trim needed`);
         }
       } else {
-        console.log(`🎵 Audio size ${(contentLength / 1024).toFixed(0)}KB — within Alibaba 20s limit`);
+        console.warn(`⚠️ Could not download audio (${audioResp.status}) — trying Alibaba with original URL`);
       }
     } catch (e) {
-      console.warn('⚠️ Could not check audio size, trying Alibaba anyway:', e);
+      console.warn('⚠️ Audio size check failed, trying Alibaba anyway:', e);
     }
   }
 
