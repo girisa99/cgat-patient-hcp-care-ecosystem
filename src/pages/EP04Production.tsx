@@ -2883,16 +2883,14 @@ function EP04ProductionInner() {
                       )}
                       {phase3Unlocked && !visualProgress && (
                         <div className="flex gap-2">
-                          {!phase3Done && (
-                            <Button
-                              size="sm"
-                              onClick={startAllVisualProduction}
-                              disabled={scenesWithPipeline.length === 0}
-                            >
-                              <Film className="h-3 w-3 mr-1" />
-                              Produce All Visuals
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            onClick={startAllVisualProduction}
+                            disabled={scenesWithPipeline.length === 0}
+                          >
+                            <Film className="h-3 w-3 mr-1" />
+                            Produce All Visuals
+                          </Button>
                           <Button
                             size="sm" variant="outline"
                             className="border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
@@ -2904,24 +2902,23 @@ function EP04ProductionInner() {
                           </Button>
                         </div>
                       )}
-                      {phase3Done && !visualProgress && (
-                        <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
-                          Complete
-                        </Badge>
-                      )}
                       {phase3Unlocked && (
                         <Button
                           size="sm" variant="outline"
                           className="border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
                           onClick={async () => {
                             if (!projectId) { toast.error('No project ID'); return; }
-                            toast.info('Repairing storage URLs...');
+                            toast.info('Repairing storage URLs — checking DB...');
                             const { data, error } = await supabase.functions.invoke('ai-video-generator', {
                               body: { action: 'repair_urls', projectId },
                             });
                             if (error) { toast.error(`Repair failed: ${error.message}`); return; }
-                            toast.success(`Repaired ${data?.fixedCount || 0} URLs — refreshing...`);
-                            setTimeout(() => window.location.reload(), 1500);
+                            console.log('🔧 Repair result:', data);
+                            if (data?.diagnostics) {
+                              console.log('🔧 Diagnostics:\n' + data.diagnostics.join('\n'));
+                            }
+                            toast.success(`Fixed ${data?.fixedCount || 0} URLs, ${data?.expiredExternal || 0} expired external — refreshing...`);
+                            setTimeout(() => window.location.reload(), 2000);
                           }}
                         >
                           Repair URLs

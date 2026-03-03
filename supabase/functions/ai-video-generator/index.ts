@@ -235,19 +235,26 @@ serve(async (req) => {
         if (scErr) throw scErr;
 
         let fixedCount = 0;
+        let expiredExternal = 0;
         const fixedScenes: Record<string, any> = {};
+        const diagnostics: string[] = [];
 
         for (const scene of (scenes || [])) {
           const artifacts = (scene.scene_config as any)?.artifacts;
-          if (!artifacts) continue;
+          if (!artifacts) {
+            diagnostics.push(`${scene.scene_key}: no artifacts in scene_config`);
+            continue;
+          }
 
           let changed = false;
           const buckets = ['videoUrls', 'imageUrls', 'avatarUrls', 'lipsyncUrls'];
           for (const bucket of buckets) {
             const urls = artifacts[bucket] as Record<string, string> | undefined;
-            if (!urls) continue;
+            if (!urls || Object.keys(urls).length === 0) continue;
             for (const [key, url] of Object.entries(urls)) {
               if (!url) continue;
+              diagnostics.push(`${scene.scene_key}/${bucket}/${key}: ${url.substring(0, 80)}...`);
+
               // Fix broken public URLs → regenerate signed URL
               if (url.includes('/object/public/cast-assets/')) {
                 const filePath = url.split('/object/public/cast-assets/')[1];
@@ -259,7 +266,10 @@ serve(async (req) => {
                     urls[key] = signed.signedUrl;
                     fixedCount++;
                     changed = true;
-                    console.log(`🔧 Fixed: ${scene.scene_key}/${bucket}/${key}`);
+                    console.log(`🔧 Fixed public→signed: ${scene.scene_key}/${bucket}/${key}`);
+                  } else {
+                    console.log(`❌ File not found in storage: ${filePath}`);
+                    diagnostics.push(`  → FILE MISSING: ${filePath}`);
                   }
                 }
               }
@@ -267,7 +277,6 @@ serve(async (req) => {
               else if (url.includes('/object/sign/cast-assets/')) {
                 const filePath = url.split('/object/sign/cast-assets/')[1]?.split('?')[0];
                 if (filePath) {
-                  // Check if file still exists
                   const { data: signed, error: signErr } = await sb.storage
                     .from('cast-assets')
                     .createSignedUrl(filePath, 60 * 60 * 24 * 7);
@@ -275,7 +284,23 @@ serve(async (req) => {
                     urls[key] = signed.signedUrl;
                     fixedCount++;
                     changed = true;
+                    console.log(`🔧 Refreshed signed URL: ${scene.scene_key}/${bucket}/${key}`);
+                  } else {
+                    diagnostics.push(`  → FILE MISSING: ${filePath}`);
                   }
+                }
+              }
+              // External URL (DashScope CDN, etc.) — check if accessible
+              else if (url.startsWith('http')) {
+                try {
+                  const check = await fetch(url, { method: 'HEAD' });
+                  if (!check.ok) {
+                    diagnostics.push(`  → EXPIRED (${check.status}): external CDN URL`);
+                    expiredExternal++;
+                  }
+                } catch {
+                  diagnostics.push(`  → UNREACHABLE: external CDN URL`);
+                  expiredExternal++;
                 }
               }
             }
@@ -292,11 +317,45 @@ serve(async (req) => {
           }
         }
 
-        console.log(`🔧 Repair complete: ${fixedCount} URLs fixed across ${Object.keys(fixedScenes).length} scenes`);
+        // Also fix cast_generation_jobs.output_url (Source 2 for restoration)
+        let jobsFixed = 0;
+        const { data: jobs } = await sb.from('cast_generation_jobs')
+          .select('id, output_url')
+          .eq('project_id', body.projectId)
+          .eq('status', 'completed')
+          .not('output_url', 'is', null);
+
+        for (const job of (jobs || [])) {
+          const url = job.output_url as string;
+          if (!url) continue;
+          let filePath: string | null = null;
+          if (url.includes('/object/public/cast-assets/')) {
+            filePath = url.split('/object/public/cast-assets/')[1];
+          } else if (url.includes('/object/sign/cast-assets/')) {
+            filePath = url.split('/object/sign/cast-assets/')[1]?.split('?')[0] || null;
+          }
+          if (filePath) {
+            const { data: signed, error: signErr } = await sb.storage
+              .from('cast-assets')
+              .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+            if (!signErr && signed?.signedUrl && signed.signedUrl !== url) {
+              await sb.from('cast_generation_jobs')
+                .update({ output_url: signed.signedUrl })
+                .eq('id', job.id);
+              jobsFixed++;
+            }
+          }
+        }
+
+        console.log(`🔧 Repair complete: ${fixedCount} scene URLs + ${jobsFixed} job URLs fixed, ${expiredExternal} expired external`);
+        console.log(`🔧 Diagnostics:\n${diagnostics.join('\n')}`);
         return new Response(JSON.stringify({
           success: true,
-          fixedCount,
+          fixedCount: fixedCount + jobsFixed,
           fixedScenes,
+          jobsFixed,
+          expiredExternal,
+          diagnostics,
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       } catch (e: any) {
         return new Response(JSON.stringify({ error: e.message }), {
