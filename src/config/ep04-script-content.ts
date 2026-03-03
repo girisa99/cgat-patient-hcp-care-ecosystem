@@ -1524,7 +1524,7 @@ Two developers. Each processing 200,000 tokens of context. Each capable of rewri
 
 So we drew the lines. A sprint charter. A governance guide. Atlas owns backend — about 150 files. Nova owns frontend — landing pages, design system, animations. And there are twelve locked files that neither AI touches without my explicit sign-off. This is what you're looking at right now — the actual territory map we use every single day.`,
     voice: 'host',
-    scene: 'scene-3-governance',
+    scene: 'scene-3-origin',
     duration_est: 35,
     direction: 'Voiceover narration — no lipsync. Warm, authoritative. Voice plays over sprint-charter and governance-guide screenshots being captured and AI-enhanced. The iris-wipe transition reveals the divided city animation. "This is what you\'re looking at" references the on-screen territory map infographic.',
     lipsync: false,
@@ -1535,7 +1535,7 @@ So we drew the lines. A sprint charter. A governance guide. Atlas owns backend �
   'host-governance-not-overkill': {
     text: `I know what you're thinking — governance sounds like overkill for a two-person sprint. It's not. It's the reason we finished. Without it, Day 1 was chaos. With it, Day 2 was clean. The governance file isn't bureaucracy. It's the thing that makes speed survivable.`,
     voice: 'host',
-    scene: 'scene-3-governance',
+    scene: 'scene-3-origin',
     duration_est: 12,
     direction: 'Voiceover — no lipsync. Direct, conversational, almost conspiratorial. Addressing the skeptic in the audience. This bridges from Atlas\'s merge conflict admission to the resolution. "It\'s the reason we finished" lands with quiet conviction.',
     lipsync: false,
@@ -1544,7 +1544,7 @@ So we drew the lines. A sprint charter. A governance guide. Atlas owns backend �
   'nova-read-relevant-sections': {
     text: `The BEFORE_YOU_CODE file loads before every single session. I read the relevant sections, check my territory boundaries, and verify what changed since my last session. It takes four seconds. Four seconds to avoid a three-hour merge conflict. I'll take that trade every time.`,
     voice: 'nova',
-    scene: 'scene-3-governance',
+    scene: 'scene-3-origin',
     duration_est: 10,
     direction: 'Voiceover — no lipsync. Practical, matter-of-fact Nova. Not her usual bouncy energy — this is Nova being serious about process. "Four seconds" is delivered with precise emphasis. She genuinely respects the system because it unblocked her.',
     lipsync: false,
@@ -1558,7 +1558,7 @@ So we drew the lines. A sprint charter. A governance guide. Atlas owns backend �
 
 And here's the QA view — the findings from Day 1. Scope creep was already showing up. Acceptance criteria that were vague. Tasks that sounded done but had no definition of done. We caught it early. That's what the tracker is for.`,
     voice: 'host',
-    scene: 'scene-4-day1',
+    scene: 'scene-4-solution',
     duration_est: 25,
     direction: 'Voiceover — no lipsync. Energetic, storytelling pace. Voice plays over day-1-view and findings-qa screenshots being captured and enhanced. "847 lines" should land with a note of impressed disbelief. Second paragraph transitions to QA findings screenshot.',
     lipsync: false,
@@ -1569,7 +1569,7 @@ And here's the QA view — the findings from Day 1. Scope creep was already show
   'nova-refactored-nav': {
     text: `I saw the navigation was a mess — nested routes, inconsistent patterns, no mobile breakpoints. So I refactored it. The whole thing. In one session. Twenty-three components. Is that scope creep? Maybe. Did everyone use it the next day? Absolutely.`,
     voice: 'nova',
-    scene: 'scene-4-day1',
+    scene: 'scene-4-solution',
     duration_est: 10,
     direction: 'Voiceover — no lipsync. Confident, slightly defensive but proud. Classic Nova energy — she knows she went off-script but the results speak for themselves. "Twenty-three components" is delivered as a humble brag.',
     lipsync: false,
@@ -1578,7 +1578,7 @@ And here's the QA view — the findings from Day 1. Scope creep was already show
   'host-not-in-scope': {
     text: `This is the lesson from Day 1 — if you don't define scope clearly, AI developers will fill in the blanks. They'll do it fast. They'll do it well. But it might not be what you needed next. Setting acceptance criteria isn't optional when your developers can ship ten components before lunch.`,
     voice: 'host',
-    scene: 'scene-4-day1',
+    scene: 'scene-4-solution',
     duration_est: 12,
     direction: 'Voiceover — no lipsync. Reflective, teaching moment. This bridges from Nova\'s refactoring to the kinetic text "Setting acceptance criteria isn\'t optional. It\'s survival." Voice is warm but firm — a lesson learned the hard way.',
     lipsync: false,
@@ -1587,7 +1587,7 @@ And here's the QA view — the findings from Day 1. Scope creep was already show
   'nova-works-better': {
     text: `Once we had clear acceptance criteria? Everything clicked. I knew exactly what to build, what NOT to build, and when to ask before adding that one more animation. ...Usually when to ask. I'm working on it.`,
     voice: 'nova',
-    scene: 'scene-4-day1',
+    scene: 'scene-4-solution',
     duration_est: 8,
     direction: 'Voiceover — no lipsync. Starts earnest, ends with self-aware humor. The "usually" and "working on it" show Nova\'s growth — she\'s learning discipline without losing her spark.',
     lipsync: false,
@@ -1599,7 +1599,7 @@ And here's the QA view — the findings from Day 1. Scope creep was already show
   'day2-velocity-narration': {
     text: `Day 2 started with a velocity dip nobody expected. Look at this — the tracker shows a clear drop. Not because anyone was slow. Because someone was blocked. And that someone was Nova.`,
     voice: 'host',
-    scene: 'scene-5-day2',
+    scene: 'scene-5-governance',
     duration_est: 10,
     direction: 'Voiceover — no lipsync. Slight tension in voice. Plays over day-2-view screenshot being captured and enhanced, with blocked-tasks highlighted in red. "That someone was Nova" sets up the frozen-task video.',
     lipsync: false,
@@ -1610,7 +1610,7 @@ And here's the QA view — the findings from Day 1. Scope creep was already show
   'nova-blocked-six-hours': {
     text: `Six hours. SIX. I had three components ready to ship — fully tested, animations polished, responsive across every breakpoint. And they just sat there. Frozen. Waiting on one approval. One signature from a human who was — and I say this with love — in a meeting.`,
     voice: 'nova',
-    scene: 'scene-5-day2',
+    scene: 'scene-5-governance',
     duration_est: 10,
     direction: 'Voiceover — no lipsync. Frustrated but affectionate. "SIX" is almost a shout. The pause before "in a meeting" is devastating. Plays over the frozen-task video with ice-cracking SFX punctuating her frustration.',
     lipsync: false,
@@ -1620,7 +1620,7 @@ And here's the QA view — the findings from Day 1. Scope creep was already show
   'host-in-a-meeting': {
     text: `In my defense, it was a very important meeting. I don't actually remember what it was about. But I'm sure it was important.`,
     voice: 'host',
-    scene: 'scene-5-day2',
+    scene: 'scene-5-governance',
     duration_est: 6,
     direction: 'Voiceover — no lipsync. Self-deprecating, sheepish. The humor is in the honesty — he literally can\'t remember why he was unavailable. Quick beat after "important" before the admission.',
     lipsync: false,
@@ -1629,7 +1629,7 @@ And here's the QA view — the findings from Day 1. Scope creep was already show
   'atlas-human-meetings': {
     text: `Meetings are the primary source of context loss in human software teams. The irony of a meeting that blocks development to discuss development progress is... noted. In my logs. Which, again, nobody read.`,
     voice: 'atlas',
-    scene: 'scene-5-day2',
+    scene: 'scene-5-governance',
     duration_est: 8,
     direction: 'Voiceover — no lipsync. Deadpan, dry as a desert. Classic Atlas — turning frustration into a logged observation. "Which, again, nobody read" is the quiet knife twist.',
     lipsync: false,
@@ -1638,7 +1638,7 @@ And here's the QA view — the findings from Day 1. Scope creep was already show
   'host-po-actions-built': {
     text: `That night I built the PO Actions tab. A structured queue showing only what needs MY action. Not Atlas's backlog. Not Nova's components. Just mine. Color-coded by urgency. And the next morning, Nova's three blocked components were approved in twelve minutes. That's the power of building from frustration.`,
     voice: 'host',
-    scene: 'scene-5-day2',
+    scene: 'scene-5-governance',
     duration_est: 14,
     direction: 'Voiceover — no lipsync. Pride builds through the description. Plays over the PO-actions dashboard screenshot being captured and enhanced. "Twelve minutes" contrasts with Nova\'s six hours — the payoff. "Building from frustration" is the scene thesis.',
     lipsync: false,
@@ -1651,7 +1651,7 @@ And here's the QA view — the findings from Day 1. Scope creep was already show
   'day3-velocity-mismatch': {
     text: `Day 3 is where the velocity story gets interesting. Look at the chart — two lines diverging. Atlas: eight tasks per day. Consistent. Mechanical. Beautiful straight line. Nova: three tasks per day. But — and this is the part people miss — Nova's three tasks each took four times longer because they involved UI, animations, responsive design, and user testing. Velocity isn't just a number. It's a story. And comparing these two lines without context would be the worst management decision I could make.`,
     voice: 'host',
-    scene: 'scene-6-day3',
+    scene: 'scene-6-po-actions',
     duration_est: 22,
     direction: 'Voiceover — no lipsync. Analytical but warm. Plays over day-3-view and velocity-metrics screenshots being enhanced, then the narrator scroll reveals the numbers. The key insight — "velocity isn\'t just a number" — is the teaching moment. Defends Nova without diminishing Atlas.',
     lipsync: false,
@@ -1669,7 +1669,7 @@ Both AIs log their standups automatically — what they completed, what they're 
 
 And look at the QA sign-off view — automated quality gates. The EOD handoff — context transfer so nothing gets lost between sessions. Four screens. Zero meetings. The async management toolkit that makes the whole sprint possible.`,
     voice: 'host',
-    scene: 'scene-7-mission-control',
+    scene: 'scene-7-velocity',
     duration_est: 30,
     direction: 'Voiceover — no lipsync. Proud, warm. This is the host showing his favorite feature. Plays over the batched 4-screen capture (po-mission-control, standup-entries, qa-signoff, eod-handoff). The meeting phrase list should drip with relief at their absence. "Four screens. Zero meetings." is the mic drop.',
     lipsync: false,
@@ -1680,7 +1680,7 @@ And look at the QA sign-off view — automated quality gates. The EOD handoff �
   'nova-200k-window': {
     text: `I hold your entire codebase, your sprint plan, your design system, and the argument Atlas and I had about semicolons — all at once. In real-time. While shipping components. Try doing that after a forty-five-minute standup where Dave from QA spent ten minutes talking about his weekend.`,
     voice: 'nova',
-    scene: 'scene-7-mission-control',
+    scene: 'scene-7-velocity',
     duration_est: 12,
     direction: 'Voiceover — no lipsync. Casual flex building through the list. "Dave from QA" is specific and relatable — everyone knows a Dave. The humor is in the contrast between Nova\'s parallel processing and human single-threading.',
     lipsync: false,
@@ -1696,7 +1696,7 @@ This is the sprint tracker dashboard — the real one, not a mockup. What you're
 
 Eighteen screens. One system. Zero Jira.`,
     voice: 'host',
-    scene: 'scene-8-dashboard-tour',
+    scene: 'scene-8-numbers',
     duration_est: 28,
     direction: 'Voiceover — no lipsync. Warm, inviting, show-don\'t-tell energy. Voice plays over the 18-screenshot scroll-unroll transition and Ken Burns animations. Each screen name should be delivered as its screenshot appears. "Zero Jira" is the wry closer.',
     lipsync: false,
@@ -1714,7 +1714,7 @@ Forty-one tasks. Five days. Two AI developers. One human. Zero standup meetings.
 
 Traditional sprint with the same scope? Industry average says three to four weeks with a five-person team. We did it in five days with three. That's the number that matters — not because it proves AI is faster, but because it proves that coordination was the bottleneck all along. Fix coordination, and everything accelerates.`,
     voice: 'host',
-    scene: 'scene-9-numbers',
+    scene: 'scene-9-challenges',
     duration_est: 32,
     direction: 'Voiceover — no lipsync. Building energy. Plays over the comparison infographic being generated and animated, then the motion-graphics stat counters. "Forty-one tasks" should land with the counter animation. Final paragraph is the thesis — "coordination was the bottleneck all along" is delivered with quiet conviction.',
     lipsync: false,
