@@ -100,12 +100,16 @@ const VOICE_LABELS: Record<string, string> = {
 };
 
 const CHARACTER_AVATARS: Record<string, string> = {
-  // host removed — forces AI regeneration with updated human PO prompt (was showing only the dog)
+  host: hostAvatar,
   atlas: atlasAvatar,
   nova: novaAvatar,
   squirrel: squirrelAvatar,
   allaudin: allaudinAvatar,
 };
+
+// Characters that should regenerate via AI instead of using pre-made avatars
+// (host avatar PNG only shows the dog — needs AI regeneration to show the human PO)
+const REGENERATE_AVATAR_VIA_AI: Set<string> = new Set(['host']);
 
 // ─── Context-Aware Animation Engine ─────────────────────────────────────────
 // Parses direction + motion fields to determine mood, energy, and animation style
@@ -1442,12 +1446,13 @@ function EP04ProductionInner() {
     if (stepType === 'avatar-3d') {
       const character = (step.character as string) || 'host';
       const existingAvatar = CHARACTER_AVATARS[character];
-      if (existingAvatar) {
+      // Use pre-made avatar UNLESS character is flagged for AI regeneration
+      if (existingAvatar && !REGENERATE_AVATAR_VIA_AI.has(character)) {
         results[`avatar-3d-${character}-${sceneKey}`] = existingAvatar;
         console.log(`[EP04 Visual] ${stepLabel}: using pre-made avatar for "${character}"`);
         return;
       }
-      // No pre-made avatar — generate via AI using the character's pixarPrompt from config
+      // Generate via AI using the character's pixarPrompt from config
       const charConfig = EP04_AVATAR_CONFIG.characters[character as keyof typeof EP04_AVATAR_CONFIG.characters];
       if (charConfig) {
         const avatarStyle = (step.style as string) || 'pixar-3d';
