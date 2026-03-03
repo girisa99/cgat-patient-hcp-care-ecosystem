@@ -1475,14 +1475,35 @@ function EP04ProductionInner() {
             console.error(`[EP04 Visual] ${stepLabel}: edge function error detail:`, detail, data);
             throw new Error(detail);
           }
-          const url = data?.url || data?.imageUrl || data?.result?.url;
-          if (url) {
-            results[`avatar-3d-${character}-${sceneKey}`] = url;
-            console.log(`[EP04 Visual] ${stepLabel}: Alibaba avatar for "${character}": ${url.substring(0, 60)}...`);
-          } else {
-            throw new Error('No image URL in response');
+          const rawUrl = data?.url || data?.imageUrl || data?.result?.url;
+          if (!rawUrl) throw new Error('No image URL in response');
+
+          // Re-upload to Supabase Storage so URL persists (DashScope CDN URLs get filtered on restore)
+          let finalUrl = rawUrl;
+          try {
+            const imgResp = await fetch(rawUrl);
+            if (imgResp.ok) {
+              const blob = await imgResp.blob();
+              const ext = blob.type.includes('png') ? 'png' : 'jpg';
+              const storagePath = `cast-avatars/${projectId || 'ep04'}/${character}-${sceneKey}.${ext}`;
+              const { error: upErr } = await supabase.storage.from('cast-assets').upload(storagePath, blob, { upsert: true, contentType: blob.type });
+              if (!upErr) {
+                const { data: pubUrl } = supabase.storage.from('cast-assets').getPublicUrl(storagePath);
+                if (pubUrl?.publicUrl) {
+                  finalUrl = pubUrl.publicUrl;
+                  console.log(`[EP04 Visual] ${stepLabel}: re-uploaded avatar to Supabase Storage: ${finalUrl.substring(0, 80)}...`);
+                }
+              } else {
+                console.warn(`[EP04 Visual] ${stepLabel}: storage upload failed, using DashScope URL:`, upErr.message);
+              }
+            }
+          } catch (reupErr) {
+            console.warn(`[EP04 Visual] ${stepLabel}: re-upload failed, using DashScope URL:`, reupErr);
           }
-          if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+
+          results[`avatar-3d-${character}-${sceneKey}`] = finalUrl;
+          console.log(`[EP04 Visual] ${stepLabel}: Alibaba avatar for "${character}": ${finalUrl.substring(0, 60)}...`);
+          if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, finalUrl);
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           console.warn(`[EP04 Visual] ${stepLabel}: avatar generation failed for "${character}": ${msg}`);
