@@ -901,6 +901,27 @@ function EP04ProductionInner() {
         }
       }
 
+      // ── Fallback: check cast_projects.status to restore productionPhase ──
+      // When TTS is approved, status is set to 'visual_production'. This survives
+      // page refresh even if no visual artifacts exist yet (e.g. user approved TTS
+      // but hasn't clicked "Produce All Visuals" yet).
+      if (restoredCount === 0) {
+        try {
+          const { data: projRow } = await db
+            .from('cast_projects')
+            .select('status')
+            .eq('id', projectId)
+            .maybeSingle();
+
+          if (projRow?.status === 'visual_production' || projRow?.status === 'complete') {
+            setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
+            console.log(`[EP04] Phase restored from project status: ${projRow.status}`);
+          }
+        } catch (e) {
+          console.warn('[EP04] Project status check failed:', e);
+        }
+      }
+
       setContentLoaded(true);
     })();
   }, [projectId, contentLoaded, scriptContentForUI]);
