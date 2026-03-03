@@ -1247,11 +1247,44 @@ async function generateAvatarOrLipSync(request: AvatarRequestWithRouting): Promi
   console.log(`🎭 Using ${avatarProvider} for ${request.type} generation`);
   console.log(`   Model: ${modelName}, Full Body: ${request.fullBody}, Priority: ${request.priorityRendering}`);
 
+  // ── Smart audio-length routing ──
+  // Alibaba wan2.2-s2v has a 20s audio limit. Check audio size before routing.
+  // MP3 at 128kbps ≈ 16KB/sec, so 20s ≈ 320KB. Use 300KB as safe threshold.
+  // For audio >20s, skip Alibaba entirely → go straight to Replicate (saves 30s polling).
+  let audioTooLongForAlibaba = false;
+  if (request.audioUrl && avatarProvider === 'alibaba') {
+    try {
+      const headResp = await fetch(request.audioUrl, { method: 'HEAD' });
+      const contentLength = parseInt(headResp.headers.get('content-length') || '0', 10);
+      if (contentLength > 300_000) { // ~300KB ≈ ~19s of 128kbps MP3
+        audioTooLongForAlibaba = true;
+        console.log(`🎵 Audio size ${(contentLength / 1024).toFixed(0)}KB > 300KB — skipping Alibaba (20s limit), routing to Replicate`);
+      } else {
+        console.log(`🎵 Audio size ${(contentLength / 1024).toFixed(0)}KB — within Alibaba 20s limit`);
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not check audio size, trying Alibaba anyway:', e);
+    }
+  }
+
+  // Route to provider
+  if (audioTooLongForAlibaba) {
+    // Audio >20s → skip Alibaba, go to Replicate directly (handles any length)
+    try {
+      return await generateLipSyncWithReplicate(request);
+    } catch (repErr) {
+      console.warn('⚠️ Replicate failed for long audio:', repErr);
+      // Last resort: try Alibaba anyway (it will fail but at least we tried everything)
+      return await generateAvatarWithAlibaba(request, request.fullBody);
+    }
+  }
+
   switch (avatarProvider) {
     case 'alibaba':
       return await generateAvatarWithAlibaba(request, request.fullBody);
     case 'modelslab':
-      return await generateAvatarWithModelsLab(request);
+      // ModelsLab API changed (POST not supported) — route to Replicate instead
+      return await generateLipSyncWithReplicate(request);
     case 'azure':
       return await generateLipSyncWithAzure(request);
     case 'replicate':
@@ -1369,18 +1402,13 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
       model: 'wan-video',
     };
   } catch (err) {
-    console.warn('⚠️ Alibaba Avatar failed, trying Replicate SadTalker:', err);
-    // Fallback chain: Alibaba → Replicate SadTalker → ModelsLab
-    try {
-      return await generateLipSyncWithReplicate(request);
-    } catch (repErr) {
-      console.warn('⚠️ Replicate SadTalker failed, falling back to ModelsLab:', repErr);
-      return await generateAvatarWithModelsLab(request);
-    }
+    console.warn('⚠️ Alibaba Avatar failed, falling back to Replicate:', err);
+    // Fallback: Alibaba → Replicate (omni-human → fabric-1.0)
+    return await generateLipSyncWithReplicate(request);
   }
 }
 
-// Replicate SadTalker — audio-driven talking head (reliable lipsync fallback)
+// Replicate multi-model lipsync (official models, supports long audio)
 async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
   videoUrl: string;
   audioUrl?: string;
@@ -1396,10 +1424,10 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
   console.log(`   sourceImage: ${request.sourceImage.substring(0, 80)}`);
   console.log(`   audioUrl: ${request.audioUrl.substring(0, 80)}`);
 
-  // Try official models in order: bytedance/omni-human → veed/fabric-1.0 → cjwbw/sadtalker
+  // Try official models in order: bytedance/omni-human → veed/fabric-1.0
   // omni-human: single image + audio → full animated video (supports long audio)
-  // fabric-1.0: image + audio → talking head, up to 60s
-  // sadtalker: image + audio → talking head (community, older but reliable)
+  // fabric-1.0: image + audio → talking head, up to 60s, 480p/720p
+  // Note: cjwbw/sadtalker removed (404 — model no longer exists on Replicate)
   const models = [
     {
       name: 'bytedance/omni-human',
@@ -1408,10 +1436,6 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
     {
       name: 'veed/fabric-1.0',
       input: { image: request.sourceImage, audio: request.audioUrl },
-    },
-    {
-      name: 'cjwbw/sadtalker',
-      input: { source_image: request.sourceImage, driven_audio: request.audioUrl, enhancer: 'gfpgan', preprocess: 'crop', still: true },
     },
   ];
 
