@@ -1386,10 +1386,14 @@ function EP04ProductionInner() {
     // ── avatar-lipsync: CRITICAL — pass TTS audioUrl + avatar sourceImage for lip sync ──
     if (stepType === 'avatar-lipsync') {
       const character = (step.character as string) || 'host';
-      const ttsAudioUrl = lastTTSByCharacter[character] || null;
+      const lipsyncScriptKey = step.scriptKey as string | undefined;
+      // Per-segment: if scriptKey is specified, use that specific TTS audio (not first-wins)
+      const ttsAudioUrl = lipsyncScriptKey && audioMap[lipsyncScriptKey]?.audioUrl
+        ? audioMap[lipsyncScriptKey].audioUrl
+        : lastTTSByCharacter[character] || null;
 
       if (!ttsAudioUrl) {
-        toast.warning(`No TTS audio for "${character}" lipsync — skipping`);
+        toast.warning(`No TTS audio for "${character}"${lipsyncScriptKey ? ` (${lipsyncScriptKey})` : ''} lipsync — skipping`);
         return;
       }
 
@@ -1467,8 +1471,10 @@ function EP04ProductionInner() {
       }
 
       if (url) {
-        results[`avatar-lipsync-${character}`] = url;
-        console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" saved: ${url.substring(0, 60)}...`);
+        // Per-segment key: avatar-lipsync-allaudin-bridge-0-to-1 vs avatar-lipsync-allaudin-allaudin-emerge
+        const resultKey = lipsyncScriptKey ? `avatar-lipsync-${character}-${lipsyncScriptKey}` : `avatar-lipsync-${character}`;
+        results[resultKey] = url;
+        console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" [${resultKey}] saved: ${url.substring(0, 60)}...`);
       } else {
         console.warn(`[EP04 Visual] ${stepLabel}: lipsync "${character}" returned no URL`, data);
       }
@@ -1809,7 +1815,7 @@ function EP04ProductionInner() {
       const existingAvatarUrls = existingScene?.avatarUrls || {};
       const existingLipsyncUrls = existingScene?.lipsyncUrls || {};
 
-      const hasExistingAsset = (sType: string, sKey: string, character?: string): boolean => {
+      const hasExistingAsset = (sType: string, sKey: string, character?: string, scriptKey?: string): boolean => {
         if (sType === 'alibaba-video' || sType === 'video') {
           return Object.keys(existingVideoUrls).some(k => k.includes('video') && k.includes(sKey));
         }
@@ -1822,6 +1828,10 @@ function EP04ProductionInner() {
           return !!existingUrl && existingUrl.startsWith('http') && !existingUrl.includes('/assets/');
         }
         if (sType === 'avatar-lipsync' && character) {
+          // Per-scriptKey check: avatar-lipsync-allaudin-bridge-0-to-1 is different from avatar-lipsync-allaudin-allaudin-emerge
+          if (scriptKey) {
+            return Object.keys(existingLipsyncUrls).some(k => k.includes(character) && k.includes(scriptKey));
+          }
           return Object.keys(existingLipsyncUrls).some(k => k.includes(character));
         }
         return false;
@@ -1874,8 +1884,9 @@ function EP04ProductionInner() {
 
         // ── Skip steps that already have a generated asset ──
         const stepCharacter = step.character as string | undefined;
-        if (hasExistingAsset(stepType, sceneKey, stepCharacter)) {
-          const existKey = stepCharacter ? `${stepType}(${stepCharacter})` : stepType;
+        const stepScriptKey = step.scriptKey as string | undefined;
+        if (hasExistingAsset(stepType, sceneKey, stepCharacter, stepScriptKey)) {
+          const existKey = stepCharacter ? `${stepType}(${stepCharacter}${stepScriptKey ? ':' + stepScriptKey : ''})` : stepType;
           console.log(`[EP04 Visual] ${sceneKey}: skipping ${existKey} — already generated`);
           continue; // existing assets already carried forward above
         }

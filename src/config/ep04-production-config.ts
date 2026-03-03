@@ -325,7 +325,7 @@ export type ScenePipelineStep =
   | { type: 'screen-capture'; screenIds: string[]; multiCapture: boolean }
   | { type: 'ai-screen-enhance'; screenIds: string[]; scriptContext: string; enhanceMode: 'highlight' | 'stylize' | 'redraw'; focusAreas?: string[] }
   | { type: 'avatar-3d'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; style?: 'pixar-3d' | 'disney-2d' | 'hybrid-2.5d' }
-  | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab' }
+  | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab'; scriptKey?: string }
   | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v'; prompt: string; referenceImage?: string }
   | { type: 'alibaba-image'; model: 'flux-merged' | 'wanx-v2.1' | 'qwen-image-max'; prompt: string }
   | { type: 'music'; prompt: string; duration: number; style?: string }
@@ -434,14 +434,20 @@ export const EP04_MUSIC_SCORE: Record<string, { music: ScenePipelineStep & { typ
 
 export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-0-title': [
+    // Segment 1: Allaudin emerges (28s)
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A golden magical lamp on a dark surface, blue-purple mist swirling out from the spout, sparkle particles filling the frame, a small friendly blue-skinned genie with a purple turban and pointed goatee materializing from the mist with a warm smile, Pixar 3D animation style like Disney Genie but original, whimsical not muscular, cinematic volumetric lighting, 8K' },
     { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-emerge' },
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
-    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'allaudin-emerge' },
+    // Segment 2: Host welcome (60s)
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'tts', voice: 'host', scriptKey: 'title-welcome' },
-    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome' },
     { type: 'kinetic-text', text: 'Beyond AI Hype — Episode 2' },
+    // Segment 3: Allaudin bridge narrator (7s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-0-to-1' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-0-to-1' },
+    // Background
     { type: 'music', prompt: 'Mystical orchestral opening, deep gong reverberating, magical chimes ascending, transitioning to warm podcast intro theme, epic to intimate, 95 BPM', duration: 30, style: 'cinematic' },
     { type: 'sfx', prompt: 'Lamp whoosh with magical mist swirl and sparkle chimes' },
   ],
