@@ -148,7 +148,9 @@ async function generateWithProvider(
 async function generateWithGemini(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.gemini();
   if (!apiKey) throw new Error('Gemini key missing');
-  const model = options.model || ACTIVE_MODELS.image.gemini;
+  // Only use passed model if it's a Gemini/Imagen model; otherwise use default
+  const isGeminiModel = options.model && (options.model.startsWith('gemini') || options.model.startsWith('imagen'));
+  const model = isGeminiModel ? options.model! : ACTIVE_MODELS.image.gemini;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {
@@ -250,7 +252,9 @@ async function getVertexAccessToken(sa: any): Promise<string> {
 async function generateWithOpenAI(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.openai();
   if (!apiKey) throw new Error('OpenAI key missing');
-  const model = options.model || ACTIVE_MODELS.image.openai;
+  // Only use passed model if it's an OpenAI model; otherwise use default
+  const isOpenAIModel = options.model && (options.model.startsWith('dall-e') || options.model.startsWith('gpt-image'));
+  const model = isOpenAIModel ? options.model! : ACTIVE_MODELS.image.openai;
 
   const body: any = { model, prompt, n: 1, size: options.size || '1024x1024' };
   if (model === 'gpt-image-1') {
@@ -309,12 +313,14 @@ async function generateWithAlibaba(prompt: string, options: ImageGenOptions): Pr
     parameters: { size, n: 1, style: options.style },
   };
 
+  // Use SYNCHRONOUS mode (no X-DashScope-Async header).
+  // The API key does not support async calls (403 AccessDenied).
+  // Synchronous calls block until the image is ready (~10-30s for t2i).
   const response = await fetch(`${endpoint}${apiPath}`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'X-DashScope-Async': 'enable',
     },
     body: JSON.stringify(body),
   });
@@ -326,25 +332,45 @@ async function generateWithAlibaba(prompt: string, options: ImageGenOptions): Pr
   }
 
   const data = await response.json();
-  const taskId = data.output?.task_id;
-  if (!taskId) throw new Error('Alibaba: no task_id');
+  console.log(`[Alibaba-Image] Response keys: ${JSON.stringify(Object.keys(data))}, output keys: ${JSON.stringify(Object.keys(data.output || {}))}`);
 
-  // Poll for result (max 50s — fits within Supabase 60s edge function timeout)
-  for (let i = 0; i < 25; i++) {
-    await new Promise(r => setTimeout(r, 2000));
-    const statusRes = await fetch(`${endpoint}/api/v1/tasks/${taskId}`, {
-      headers: { 'Authorization': `Bearer ${apiKey}` },
-    });
-    const statusData = await statusRes.json();
-    const status = statusData.output?.task_status;
-    if (status === 'SUCCEEDED') {
-      const url = statusData.output?.results?.[0]?.url;
-      if (url) return url;
-      throw new Error('Alibaba: no image URL in result');
+  // Synchronous multimodal-generation response: choices[].message.content[].image
+  const choices = data.output?.choices;
+  if (choices?.length > 0) {
+    for (const choice of choices) {
+      const contentParts = choice?.message?.content || [];
+      for (const part of contentParts) {
+        if (part.image) return part.image;
+      }
     }
-    if (status === 'FAILED') throw new Error(`Alibaba task failed: ${JSON.stringify(statusData.output)}`);
   }
-  throw new Error('Alibaba: timeout');
+
+  // Older text2image synchronous response: results[].url
+  const directUrl = data.output?.results?.[0]?.url;
+  if (directUrl) return directUrl;
+
+  // If somehow we got a task_id (async response), poll for it
+  const taskId = data.output?.task_id;
+  if (taskId) {
+    console.log(`[Alibaba-Image] Got async task_id: ${taskId}, polling...`);
+    for (let i = 0; i < 25; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const statusRes = await fetch(`${endpoint}/api/v1/tasks/${taskId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      const statusData = await statusRes.json();
+      const status = statusData.output?.task_status;
+      if (status === 'SUCCEEDED') {
+        const url = statusData.output?.results?.[0]?.url;
+        if (url) return url;
+        throw new Error('Alibaba: no image URL in result');
+      }
+      if (status === 'FAILED') throw new Error(`Alibaba task failed: ${JSON.stringify(statusData.output)}`);
+    }
+    throw new Error('Alibaba: timeout');
+  }
+
+  throw new Error(`Alibaba: unexpected response format. Response: ${JSON.stringify(data).slice(0, 300)}`);
 }
 
 // ============================================================================
