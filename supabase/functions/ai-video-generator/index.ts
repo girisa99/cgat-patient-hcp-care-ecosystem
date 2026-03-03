@@ -1287,34 +1287,46 @@ async function generateAvatarOrLipSync(request: AvatarRequestWithRouting): Promi
   console.log(`   Model: ${modelName}, Full Body: ${request.fullBody}, Priority: ${request.priorityRendering}`);
 
   // ── Smart audio-length routing ──
-  // Alibaba wan2.2-s2v has a 20s audio limit. Check audio size before routing.
-  // MP3 at 128kbps ≈ 16KB/sec, so 20s ≈ 320KB. Use 300KB as safe threshold.
-  // For audio >20s, skip Alibaba entirely → go straight to Replicate (saves 30s polling).
-  let audioTooLongForAlibaba = false;
+  // Alibaba wan2.2-s2v has a 20s audio limit. If audio is too long, TRIM it to ~18s
+  // so Alibaba (free) handles it instead of Replicate ($4/run).
+  // For lipsync, a 18s talking head clip is sufficient — it's a visual sample, not the full dialogue.
   if (request.audioUrl && avatarProvider === 'alibaba') {
     try {
       const headResp = await fetch(request.audioUrl, { method: 'HEAD' });
       const contentLength = parseInt(headResp.headers.get('content-length') || '0', 10);
       if (contentLength > 300_000) { // ~300KB ≈ ~19s of 128kbps MP3
-        audioTooLongForAlibaba = true;
-        console.log(`🎵 Audio size ${(contentLength / 1024).toFixed(0)}KB > 300KB — skipping Alibaba (20s limit), routing to Replicate`);
+        console.log(`🎵 Audio size ${(contentLength / 1024).toFixed(0)}KB > 300KB (~20s) — trimming to first 18s for Alibaba`);
+        // Download audio and trim to first ~280KB (≈18s at 128kbps)
+        try {
+          const audioResp = await fetch(request.audioUrl);
+          if (audioResp.ok) {
+            const fullBlob = await audioResp.blob();
+            const trimmedBytes = fullBlob.slice(0, 280_000); // first ~18s of MP3
+            const sb = getSupabaseAdmin();
+            if (sb) {
+              const trimName = `cast-audio/trimmed-lipsync-${Date.now()}.mp3`;
+              const { error: trimUpErr } = await sb.storage.from('cast-assets').upload(trimName, trimmedBytes, {
+                contentType: 'audio/mpeg', upsert: true,
+              });
+              if (!trimUpErr) {
+                const { data: trimSigned, error: trimSignErr } = await sb.storage.from('cast-assets').createSignedUrl(trimName, 3600);
+                if (!trimSignErr && trimSigned?.signedUrl) {
+                  request.audioUrl = trimSigned.signedUrl;
+                  console.log(`✅ Trimmed audio uploaded: ${trimSigned.signedUrl.substring(0, 80)}`);
+                }
+              } else {
+                console.warn(`⚠️ Trimmed audio upload failed: ${trimUpErr.message}`);
+              }
+            }
+          }
+        } catch (trimErr) {
+          console.warn('⚠️ Audio trim failed, will try Alibaba with full audio:', trimErr);
+        }
       } else {
         console.log(`🎵 Audio size ${(contentLength / 1024).toFixed(0)}KB — within Alibaba 20s limit`);
       }
     } catch (e) {
       console.warn('⚠️ Could not check audio size, trying Alibaba anyway:', e);
-    }
-  }
-
-  // Route to provider
-  if (audioTooLongForAlibaba) {
-    // Audio >20s → skip Alibaba, go to Replicate directly (handles any length)
-    try {
-      return await generateLipSyncWithReplicate(request);
-    } catch (repErr) {
-      console.warn('⚠️ Replicate failed for long audio:', repErr);
-      // Last resort: try Alibaba anyway (it will fail but at least we tried everything)
-      return await generateAvatarWithAlibaba(request, request.fullBody);
     }
   }
 
