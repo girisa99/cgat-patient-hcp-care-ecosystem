@@ -436,6 +436,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-0-title': [
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A golden magical lamp on a dark surface, blue-purple mist swirling out from the spout, sparkle particles filling the frame, a small friendly blue-skinned genie with a purple turban and pointed goatee materializing from the mist with a warm smile, Pixar 3D animation style like Disney Genie but original, whimsical not muscular, cinematic volumetric lighting, 8K' },
     { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-emerge' },
+    { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'tts', voice: 'host', scriptKey: 'title-welcome' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
