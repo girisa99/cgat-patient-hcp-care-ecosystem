@@ -18,6 +18,50 @@ const corsHeaders = {
 };
 
 // ============================================
+// HELPER: Re-upload external image to Supabase Storage
+// DashScope/Alibaba OSS CDN URLs have CORS issues and may expire.
+// Mirror to cast-assets bucket for permanent, CORS-safe URLs.
+// ============================================
+async function mirrorImageToStorage(imageUrl: string, userId: string): Promise<string> {
+  // Skip if already a Supabase URL or data: URI
+  if (imageUrl.startsWith('data:') || imageUrl.includes('supabase.co')) return imageUrl;
+  try {
+    const resp = await fetch(imageUrl);
+    if (!resp.ok) return imageUrl;
+    const blob = await resp.blob();
+    const contentType = blob.type || 'image/png';
+    const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+    const fileName = `img-${crypto.randomUUID().slice(0, 12)}-${Date.now()}.${ext}`;
+    const storagePath = `cast-production/${fileName}`;
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const arrayBuf = await blob.arrayBuffer();
+
+    const uploadResp = await fetch(`${supabaseUrl}/storage/v1/object/cast-assets/${storagePath}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': contentType,
+        'x-upsert': 'true',
+      },
+      body: arrayBuf,
+    });
+    if (!uploadResp.ok) {
+      console.warn(`[UniversalAI] Storage upload failed: ${uploadResp.status}`);
+      return imageUrl;
+    }
+    // Return public URL
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${storagePath}`;
+    console.log(`[UniversalAI] Mirrored image to Storage: ${publicUrl.substring(0, 80)}...`);
+    return publicUrl;
+  } catch (e) {
+    console.warn(`[UniversalAI] Mirror failed:`, e);
+    return imageUrl;
+  }
+}
+
+// ============================================
 // RATE LIMITING — In-memory per IP (protects ALL 18+ AI providers)
 // ============================================
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -321,11 +365,15 @@ serve(async (req) => {
           { model, aspectRatio, style, size: aspectRatio ? undefined : '1024x1024' }
         );
 
+        // Mirror external URLs to Supabase Storage (CORS-safe, permanent)
+        const finalUrl = await mirrorImageToStorage(imageResult.imageUrl, authenticatedUserId);
+
         return new Response(JSON.stringify({
-          content: imageResult.imageUrl,
-          imageUrl: imageResult.imageUrl,
+          content: finalUrl,
+          imageUrl: finalUrl,
+          url: finalUrl,
           isImage: true,
-          images: [{ image_url: { url: imageResult.imageUrl } }],
+          images: [{ image_url: { url: finalUrl } }],
           provider: imageResult.provider,
           model: imageResult.model,
           providerChain: imageResult.providerChain,
