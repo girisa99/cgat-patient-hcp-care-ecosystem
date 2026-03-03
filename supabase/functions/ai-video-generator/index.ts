@@ -61,11 +61,16 @@ async function reuploadToStorage(externalUrl: string, prefix: string = 'video'):
       return externalUrl;
     }
 
-    // Use public URL — signed URLs cause ERR_CACHE_OPERATION_NOT_SUPPORTED in browsers
-    // due to long token query strings. Public URLs are simpler and cache-friendly.
-    const { data: { publicUrl } } = sb.storage.from('cast-assets').getPublicUrl(fileName);
-    console.log(`✅ Re-uploaded to Supabase Storage: ${publicUrl.substring(0, 80)}`);
-    return publicUrl;
+    // Use signed URL (7 days) — bucket is private so public URLs return 400
+    const { data: signedData, error: signErr } = await sb.storage
+      .from('cast-assets')
+      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
+    if (signErr || !signedData?.signedUrl) {
+      console.warn(`⚠️ Signed URL failed: ${signErr?.message} — returning original`);
+      return externalUrl;
+    }
+    console.log(`✅ Re-uploaded to Supabase Storage: ${signedData.signedUrl.substring(0, 80)}`);
+    return signedData.signedUrl;
   } catch (err) {
     console.warn(`⚠️ Re-upload failed: ${err}`);
     return externalUrl;
@@ -1465,6 +1470,7 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
   const isBadCdn = accessibleImage.includes('aliyuncs.com') || accessibleImage.includes('dashscope');
 
   // Helper: re-upload an image from URL to Supabase Storage
+  // Uses signed URL (1 hour) because cast-assets bucket is private (public URL returns 400)
   const reuploadImage = async (url: string): Promise<string | null> => {
     try {
       const sb = getSupabaseAdmin();
@@ -1477,9 +1483,14 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
       const fileName = `cast-avatars/lipsync-source-${Date.now()}.${ext}`;
       const { error: upErr } = await sb.storage.from('cast-assets').upload(fileName, blob, { contentType: ct, upsert: true });
       if (upErr) { console.warn(`⚠️ Avatar upload failed: ${upErr.message}`); return null; }
-      const { data: { publicUrl } } = sb.storage.from('cast-assets').getPublicUrl(fileName);
-      console.log(`✅ Re-uploaded avatar to Supabase: ${publicUrl.substring(0, 80)}`);
-      return publicUrl;
+      // Use signed URL — bucket is private so public URLs return 400
+      const { data: signedData, error: signErr } = await sb.storage.from('cast-assets').createSignedUrl(fileName, 3600); // 1 hour
+      if (signErr || !signedData?.signedUrl) {
+        console.warn(`⚠️ Signed URL failed: ${signErr?.message}`);
+        return null;
+      }
+      console.log(`✅ Re-uploaded avatar to Supabase (signed): ${signedData.signedUrl.substring(0, 80)}`);
+      return signedData.signedUrl;
     } catch (e) { console.warn('⚠️ Avatar re-upload error:', e); return null; }
   };
 

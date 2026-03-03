@@ -870,31 +870,11 @@ function EP04ProductionInner() {
         return clean;
       };
 
-      // Self-healing: convert signed URLs to public URLs
-      // Signed URLs (/object/sign/...?token=xxx) cause ERR_CACHE_OPERATION_NOT_SUPPORTED
-      // and expire in 7 days. Public URLs (/object/public/...) are permanent and cache-friendly.
-      const fixSignedUrls = (urls: Record<string, string>): Record<string, string> => {
-        const fixed: Record<string, string> = {};
-        let fixCount = 0;
-        for (const [k, v] of Object.entries(urls)) {
-          if (v && v.includes('/object/sign/')) {
-            // Convert: /object/sign/bucket/path?token=xxx → /object/public/bucket/path
-            const publicUrl = v.replace('/object/sign/', '/object/public/').split('?')[0];
-            fixed[k] = publicUrl;
-            fixCount++;
-          } else {
-            fixed[k] = v;
-          }
-        }
-        if (fixCount > 0) console.log(`[EP04] Fixed ${fixCount} signed URL(s) → public`);
-        return fixed;
-      };
-
       for (const sk of Object.keys(restored)) {
-        restored[sk].videoUrls = fixSignedUrls(filterPlaceholders(restored[sk].videoUrls));
-        restored[sk].imageUrls = fixSignedUrls(filterPlaceholders(restored[sk].imageUrls));
-        restored[sk].avatarUrls = fixSignedUrls(filterPlaceholders(restored[sk].avatarUrls));
-        restored[sk].lipsyncUrls = fixSignedUrls(filterPlaceholders(restored[sk].lipsyncUrls));
+        restored[sk].videoUrls = filterPlaceholders(restored[sk].videoUrls);
+        restored[sk].imageUrls = filterPlaceholders(restored[sk].imageUrls);
+        restored[sk].avatarUrls = filterPlaceholders(restored[sk].avatarUrls);
+        restored[sk].lipsyncUrls = filterPlaceholders(restored[sk].lipsyncUrls);
         const totalUrls = Object.keys(restored[sk].videoUrls).length + Object.keys(restored[sk].imageUrls).length
           + Object.keys(restored[sk].avatarUrls).length + Object.keys(restored[sk].lipsyncUrls).length;
         if (totalUrls === 0) {
