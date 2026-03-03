@@ -1358,7 +1358,7 @@ function EP04ProductionInner() {
       return;
     }
 
-    // ── avatar-lipsync: CRITICAL — pass TTS audioUrl for lip sync ──
+    // ── avatar-lipsync: CRITICAL — pass TTS audioUrl + avatar sourceImage for lip sync ──
     if (stepType === 'avatar-lipsync') {
       const character = (step.character as string) || 'host';
       const ttsAudioUrl = lastTTSByCharacter[character] || null;
@@ -1367,6 +1367,16 @@ function EP04ProductionInner() {
         toast.warning(`No TTS audio for "${character}" lipsync — skipping`);
         return;
       }
+
+      // Find the avatar source image for this character (from current results or pre-made)
+      const avatarFromResults = Object.entries(results).find(([k]) => k.includes('avatar-3d') && k.includes(character))?.[1];
+      const avatarPreMade = CHARACTER_AVATARS[character];
+      const sourceImage = avatarFromResults || avatarPreMade;
+      if (!sourceImage) {
+        toast.warning(`No avatar image for "${character}" lipsync — skipping`);
+        return;
+      }
+      console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" — audio: ${ttsAudioUrl.substring(0, 50)}..., avatar: ${sourceImage.substring(0, 50)}...`);
 
       let jobId: string | null = null;
       if (projectId) {
@@ -1382,11 +1392,21 @@ function EP04ProductionInner() {
           provider: step.provider || 'alibaba-wan2.2',
           lipsync: true,
           audioUrl: ttsAudioUrl,
+          sourceImage,
         },
       });
-      if (error) { toast.error(`${stepLabel} lipsync "${character}" failed: ${error.message}`); return; }
+      if (error) {
+        console.error(`[EP04 Visual] ${stepLabel}: lipsync "${character}" failed:`, error.message);
+        toast.error(`${stepLabel} lipsync "${character}" failed: ${error.message}`);
+        return;
+      }
       const url = data?.url || data?.videoUrl;
-      if (url) results[`avatar-lipsync-${character}`] = url;
+      if (url) {
+        results[`avatar-lipsync-${character}`] = url;
+        console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" done: ${url.substring(0, 60)}...`);
+      } else {
+        console.warn(`[EP04 Visual] ${stepLabel}: lipsync "${character}" returned no URL`, data);
+      }
       if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       return;
     }
