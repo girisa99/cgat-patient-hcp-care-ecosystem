@@ -858,31 +858,93 @@ function EP04ProductionInner() {
         console.warn('[EP04] generation_jobs visual restore failed:', e);
       }
 
-      // Filter out broken Alibaba OSS CDN URLs that cause ERR_NAME_NOT_RESOLVED
-      // These URLs use oss-accelerate.aliyuncs.com which doesn't resolve from many networks
-      const filterBrokenUrls = (urls: Record<string, string>): Record<string, string> => {
+      // Migrate external CDN URLs to Supabase Storage (fire-and-forget)
+      // DashScope/Alibaba OSS URLs may have DNS issues — re-upload to cast-assets for permanence
+      const isExternalCdnUrl = (url: string) =>
+        url.includes('oss-accelerate.aliyuncs.com') || url.includes('dashscope');
+      const isPlaceholder = (url: string) => url.includes('placehold.co');
+
+      const migrateUrlToStorage = async (url: string, key: string, sceneKey: string): Promise<string> => {
+        if (!projectId || isPlaceholder(url)) return url;
+        if (!isExternalCdnUrl(url)) return url; // already safe
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) return url; // can't fetch — keep original
+          const blob = await resp.blob();
+          const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+          const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, '_');
+          const storagePath = `cast-migrate/${projectId}/${sceneKey}/${safeKey}.${ext}`;
+          const { error: upErr } = await supabase.storage.from('cast-assets').upload(storagePath, blob, { upsert: true, contentType: blob.type });
+          if (upErr) { console.warn(`[EP04] Migration upload failed for ${key}:`, upErr.message); return url; }
+          const { data: pubUrl } = supabase.storage.from('cast-assets').getPublicUrl(storagePath);
+          if (pubUrl?.publicUrl) {
+            console.log(`[EP04] Migrated ${key} to Supabase Storage: ${pubUrl.publicUrl.substring(0, 80)}...`);
+            return pubUrl.publicUrl;
+          }
+          return url;
+        } catch { return url; } // keep original on any error
+      };
+
+      // Filter only placeholders; KEEP external CDN URLs (migrate in background)
+      const filterPlaceholders = (urls: Record<string, string>): Record<string, string> => {
         const clean: Record<string, string> = {};
         for (const [k, v] of Object.entries(urls)) {
-          if (v && !v.includes('oss-accelerate.aliyuncs.com') && !v.includes('dashscope') && !v.includes('placehold.co')) {
+          if (v && !isPlaceholder(v)) {
             clean[k] = v;
-          } else if (v) {
-            console.warn(`[EP04] Skipping broken CDN URL for ${k}: ${v.substring(0, 60)}...`);
           }
         }
         return clean;
       };
       for (const sk of Object.keys(restored)) {
-        restored[sk].videoUrls = filterBrokenUrls(restored[sk].videoUrls);
-        restored[sk].imageUrls = filterBrokenUrls(restored[sk].imageUrls);
-        restored[sk].avatarUrls = filterBrokenUrls(restored[sk].avatarUrls);
-        restored[sk].lipsyncUrls = filterBrokenUrls(restored[sk].lipsyncUrls);
-        // If all URLs were broken, reset scene to idle so it can be regenerated
+        restored[sk].videoUrls = filterPlaceholders(restored[sk].videoUrls);
+        restored[sk].imageUrls = filterPlaceholders(restored[sk].imageUrls);
+        restored[sk].avatarUrls = filterPlaceholders(restored[sk].avatarUrls);
+        restored[sk].lipsyncUrls = filterPlaceholders(restored[sk].lipsyncUrls);
         const totalUrls = Object.keys(restored[sk].videoUrls).length + Object.keys(restored[sk].imageUrls).length
           + Object.keys(restored[sk].avatarUrls).length + Object.keys(restored[sk].lipsyncUrls).length;
         if (totalUrls === 0) {
           restored[sk].visual = 'idle';
         }
       }
+
+      // Background migration: re-upload external CDN URLs to Supabase Storage
+      // This runs after restore so URLs display immediately, then get replaced with permanent ones
+      (async () => {
+        let migratedCount = 0;
+        for (const [sk, status] of Object.entries(restored)) {
+          const urlMaps = [
+            { map: status.videoUrls, field: 'videoUrls' },
+            { map: status.imageUrls, field: 'imageUrls' },
+            { map: status.avatarUrls, field: 'avatarUrls' },
+            { map: status.lipsyncUrls, field: 'lipsyncUrls' },
+          ];
+          for (const { map, field } of urlMaps) {
+            for (const [key, url] of Object.entries(map)) {
+              if (isExternalCdnUrl(url)) {
+                const newUrl = await migrateUrlToStorage(url, key, sk);
+                if (newUrl !== url) {
+                  (status as any)[field][key] = newUrl;
+                  migratedCount++;
+                }
+              }
+            }
+          }
+        }
+        if (migratedCount > 0) {
+          console.log(`[EP04] Migrated ${migratedCount} external URLs to Supabase Storage`);
+          // Update in-memory state with migrated URLs
+          setSceneProduction(prev => ({ ...prev, ...restored }));
+          // Persist migrated URLs to DB
+          for (const [sk, status] of Object.entries(restored)) {
+            updateSceneArtifacts(projectId, sk, {
+              videoUrls: status.videoUrls,
+              imageUrls: status.imageUrls,
+              avatarUrls: status.avatarUrls,
+              lipsyncUrls: status.lipsyncUrls,
+            }).catch(() => {});
+          }
+        }
+      })();
 
       const restoredCount = Object.keys(restored).filter(sk => restored[sk].visual === 'done').length;
       if (restoredCount > 0) {
