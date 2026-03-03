@@ -1458,33 +1458,49 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
   console.log(`   sourceImage: ${request.sourceImage.substring(0, 80)}`);
   console.log(`   audioUrl: ${request.audioUrl.substring(0, 80)}`);
 
-  // Re-upload sourceImage if it's on DashScope CDN (Replicate can't access Alibaba CDN)
+  // Ensure sourceImage is accessible by Replicate:
+  // 1. DashScope CDN URLs → re-upload to Supabase (edge function can access, Replicate can't)
+  // 2. Any URL → verify with HEAD request; if 400/404 → try to re-upload
   let accessibleImage = request.sourceImage;
   const isBadCdn = accessibleImage.includes('aliyuncs.com') || accessibleImage.includes('dashscope');
-  if (isBadCdn) {
-    console.log('🔄 sourceImage is DashScope CDN — re-uploading to Supabase for Replicate access');
+
+  // Helper: re-upload an image from URL to Supabase Storage
+  const reuploadImage = async (url: string): Promise<string | null> => {
     try {
       const sb = getSupabaseAdmin();
-      if (sb) {
-        const imgResp = await fetch(accessibleImage);
-        if (imgResp.ok) {
-          const blob = await imgResp.blob();
-          const ext = accessibleImage.includes('.png') ? 'png' : 'jpg';
-          const fileName = `cast-avatars/lipsync-source-${Date.now()}.${ext}`;
-          const { error: upErr } = await sb.storage.from('cast-assets').upload(fileName, blob, {
-            contentType: `image/${ext}`, upsert: true,
-          });
-          if (!upErr) {
-            const { data: { publicUrl } } = sb.storage.from('cast-assets').getPublicUrl(fileName);
-            accessibleImage = publicUrl;
-            console.log(`✅ Re-uploaded avatar to Supabase: ${accessibleImage.substring(0, 80)}`);
-          } else {
-            console.warn(`⚠️ Avatar re-upload failed: ${upErr.message}`);
-          }
-        }
+      if (!sb) return null;
+      const imgResp = await fetch(url);
+      if (!imgResp.ok) { console.warn(`⚠️ Could not fetch image (${imgResp.status}): ${url.substring(0, 60)}`); return null; }
+      const blob = await imgResp.blob();
+      const ct = imgResp.headers.get('content-type') || 'image/png';
+      const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : 'jpg';
+      const fileName = `cast-avatars/lipsync-source-${Date.now()}.${ext}`;
+      const { error: upErr } = await sb.storage.from('cast-assets').upload(fileName, blob, { contentType: ct, upsert: true });
+      if (upErr) { console.warn(`⚠️ Avatar upload failed: ${upErr.message}`); return null; }
+      const { data: { publicUrl } } = sb.storage.from('cast-assets').getPublicUrl(fileName);
+      console.log(`✅ Re-uploaded avatar to Supabase: ${publicUrl.substring(0, 80)}`);
+      return publicUrl;
+    } catch (e) { console.warn('⚠️ Avatar re-upload error:', e); return null; }
+  };
+
+  if (isBadCdn) {
+    console.log('🔄 sourceImage is DashScope CDN — re-uploading to Supabase for Replicate access');
+    const reuploaded = await reuploadImage(accessibleImage);
+    if (reuploaded) accessibleImage = reuploaded;
+  } else {
+    // Verify the URL is accessible (catches broken Supabase URLs from failed client uploads)
+    try {
+      const headResp = await fetch(accessibleImage, { method: 'HEAD' });
+      if (!headResp.ok) {
+        console.warn(`⚠️ sourceImage returned ${headResp.status} — attempting re-upload`);
+        // Try to fetch and re-upload (might be a different format)
+        const reuploaded = await reuploadImage(accessibleImage);
+        if (reuploaded) accessibleImage = reuploaded;
+        else throw new Error(`sourceImage not accessible (${headResp.status}): ${accessibleImage.substring(0, 60)}`);
       }
-    } catch (e) {
-      console.warn('⚠️ Could not re-upload avatar:', e);
+    } catch (e: any) {
+      if (e.message?.includes('sourceImage not accessible')) throw e;
+      console.warn('⚠️ Could not verify sourceImage:', e);
     }
   }
 
