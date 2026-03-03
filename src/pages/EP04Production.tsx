@@ -1778,7 +1778,7 @@ function EP04ProductionInner() {
     if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, isPlaceholder ? null : url);
   }, [projectId, screenshotUrls, scenes, scriptContentForUI, trackGenerationJob, completeGenerationJob]);
 
-  const startSceneVisualProduction = useCallback(async (sceneKey: string, onlyTypes?: Set<string>) => {
+  const startSceneVisualProduction = useCallback(async (sceneKey: string, onlyTypes?: Set<string>, forceRegenAll = false) => {
     setSceneProduction(prev => ({
       ...prev,
       [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), visual: 'generating' },
@@ -1835,11 +1835,15 @@ function EP04ProductionInner() {
       }
 
       // ── Smart regeneration: skip steps that already have a generated asset ──
-      const existingScene = sceneProduction[sceneKey];
+      // forceRegenAll = true → ignore ALL existing assets (full fresh generation)
+      const existingScene = forceRegenAll ? null : sceneProduction[sceneKey];
       const existingVideoUrls = existingScene?.videoUrls || {};
       const existingImageUrls = existingScene?.imageUrls || {};
       const existingAvatarUrls = existingScene?.avatarUrls || {};
       const existingLipsyncUrls = existingScene?.lipsyncUrls || {};
+      if (forceRegenAll) {
+        console.log(`[EP04 Visual] ${sceneKey}: forceRegenAll — ignoring all existing assets`);
+      }
 
       const hasExistingAsset = (sType: string, sKey: string, character?: string, scriptKey?: string): boolean => {
         // Only trust permanent Supabase URLs — external CDN URLs expire
@@ -3073,12 +3077,8 @@ function EP04ProductionInner() {
                               <Button
                                 size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
                                 onClick={() => {
-                                  // Clear ALL URL data so smart-skip has nothing to skip — full fresh regeneration
-                                  setSceneProduction(prev => ({
-                                    ...prev,
-                                    [sceneKey]: { ...defaultSceneStatus(), visual: 'idle' },
-                                  }));
-                                  startSceneVisualProduction(sceneKey);
+                                  // Pass forceRegenAll=true to bypass smart-skip entirely (fixes async state race)
+                                  startSceneVisualProduction(sceneKey, undefined, true);
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >

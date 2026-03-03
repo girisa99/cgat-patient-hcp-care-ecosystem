@@ -1542,18 +1542,43 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
     }
   }
 
-  // Step 2: Animate the source image with lip-sync via DashScope
+  // Step 2: Ensure source image is accessible from China / any provider
+  // Vercel, local, DashScope CDN URLs can't be reached from China endpoint
+  let sourceImageUrl = request.sourceImage;
+  if (sourceImageUrl && !sourceImageUrl.includes('supabase.co/storage')) {
+    console.log(`🔄 Avatar sourceImage not on Supabase — re-uploading for China/provider access: ${sourceImageUrl.substring(0, 60)}`);
+    try {
+      const sb = getSupabaseAdmin();
+      if (sb) {
+        const imgResp = await fetch(sourceImageUrl);
+        if (imgResp.ok) {
+          const blob = await imgResp.blob();
+          const ct = imgResp.headers.get('content-type') || 'image/png';
+          const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : 'jpg';
+          const fileName = `cast-avatars/lipsync-source-${Date.now()}.${ext}`;
+          const { error: upErr } = await sb.storage.from('cast-assets').upload(fileName, blob, { contentType: ct, upsert: true });
+          if (!upErr) {
+            const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+            sourceImageUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${fileName}`;
+            console.log(`✅ Re-uploaded avatar to Supabase for provider access: ${sourceImageUrl.substring(0, 80)}`);
+          }
+        }
+      }
+    } catch (e) { console.warn('⚠️ Avatar re-upload for China access failed:', e); }
+  }
+
+  // Step 3: Animate the source image with lip-sync via DashScope
   const baseUrl = useChina
     ? 'https://dashscope.aliyuncs.com/api/v1'
     : 'https://dashscope-intl.aliyuncs.com/api/v1';
   const endpoint = fullBody
     ? `${baseUrl}/services/aigc/omniavatar/generation`
     : `${baseUrl}/services/aigc/image2video/video-synthesis`;
-  
+
   const requestBody = {
     model: modelName,
     input: {
-      image_url: request.sourceImage,
+      image_url: sourceImageUrl,
       audio_url: audioUrl,
     },
     parameters: {
@@ -1635,11 +1660,11 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
   console.log(`   sourceImage: ${request.sourceImage.substring(0, 80)}`);
   console.log(`   audioUrl: ${request.audioUrl.substring(0, 80)}`);
 
-  // Ensure sourceImage is accessible by Replicate:
-  // 1. DashScope CDN URLs → re-upload to Supabase (edge function can access, Replicate can't)
-  // 2. Any URL → verify with HEAD request; if 400/404 → try to re-upload
+  // Ensure sourceImage is accessible by Replicate AND Alibaba China:
+  // ANY non-Supabase URL must be re-uploaded (Vercel, DashScope, local app URLs can't be reached)
   let accessibleImage = request.sourceImage;
-  const isBadCdn = accessibleImage.includes('aliyuncs.com') || accessibleImage.includes('dashscope');
+  const isOnSupabase = accessibleImage.includes('supabase.co/storage');
+  const needsReupload = !isOnSupabase; // Re-upload everything that's not already on Supabase
 
   // Helper: re-upload an image from URL to Supabase Storage
   // Uses signed URL (1 hour) because cast-assets bucket is private (public URL returns 400)
@@ -1663,24 +1688,13 @@ async function generateLipSyncWithReplicate(request: AvatarRequest): Promise<{
     } catch (e) { console.warn('⚠️ Avatar re-upload error:', e); return null; }
   };
 
-  if (isBadCdn) {
-    console.log('🔄 sourceImage is DashScope CDN — re-uploading to Supabase for Replicate access');
+  if (needsReupload) {
+    console.log(`🔄 sourceImage is not on Supabase (${accessibleImage.substring(0, 60)}) — re-uploading for provider access`);
     const reuploaded = await reuploadImage(accessibleImage);
-    if (reuploaded) accessibleImage = reuploaded;
-  } else {
-    // Verify the URL is accessible (catches broken Supabase URLs from failed client uploads)
-    try {
-      const headResp = await fetch(accessibleImage, { method: 'HEAD' });
-      if (!headResp.ok) {
-        console.warn(`⚠️ sourceImage returned ${headResp.status} — attempting re-upload`);
-        // Try to fetch and re-upload (might be a different format)
-        const reuploaded = await reuploadImage(accessibleImage);
-        if (reuploaded) accessibleImage = reuploaded;
-        else throw new Error(`sourceImage not accessible (${headResp.status}): ${accessibleImage.substring(0, 60)}`);
-      }
-    } catch (e: any) {
-      if (e.message?.includes('sourceImage not accessible')) throw e;
-      console.warn('⚠️ Could not verify sourceImage:', e);
+    if (reuploaded) {
+      accessibleImage = reuploaded;
+    } else {
+      console.warn('⚠️ Re-upload failed — trying provider with original URL (may fail)');
     }
   }
 
