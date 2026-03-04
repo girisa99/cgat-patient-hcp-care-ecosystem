@@ -549,10 +549,26 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-disappointed' },
   ],
   'scene-5-day2': [
-    { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
+    // ── Governance deep-dive: why guardrails exist ──
+    { type: 'tts', voice: 'host', scriptKey: 'governance-intro' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-sneak' },
+    { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-governance-guide' },
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-blocked-reaction' },
+    // ── Atlas & Nova confess their Day 1 mistakes ──
+    { type: 'tts', voice: 'nova', scriptKey: 'nova-my-component' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'atlas-shortest-path' },
+    // ── The governance solution: CLAUDE.md, territory rules, enforcement ──
+    { type: 'tts', voice: 'host', scriptKey: 'governance-solution' },
+    { type: 'screen-capture', screenIds: ['territory-guardrails'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['territory-guardrails'], scriptContext: 'Territory guardrails showing file ownership boundaries — Atlas owns genie-studio (150+ files), Nova owns landing pages. 12 locked shared files need PO approval. Auto-flagging territory violations.', enhanceMode: 'highlight', focusAreas: ['file-ownership-matrix', 'locked-shared-files', 'territory-violation-flags'] },
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-exit' },
+    // ── Day 2 velocity: Nova blocked for 6 hours ──
+    { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
     { type: 'screen-capture', screenIds: ['day-2-view'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['day-2-view'], scriptContext: 'Day 2 — Nova blocked for 6 hours waiting on PO approval. Velocity dip visible. The frozen task and blocker status are the key story points.', enhanceMode: 'highlight', focusAreas: ['blocked-tasks', 'velocity-dip', 'blocker-status-red'] },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A frozen task card encased in ice slowly cracking and thawing as a small fox character taps it impatiently, Pixar-quality animation, dramatic lighting' },
@@ -561,9 +577,11 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'nova', scriptKey: 'nova-blocked-six-hours' },
     { type: 'tts', voice: 'host', scriptKey: 'host-in-a-meeting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-human-meetings' },
+    // ── PO Actions: the solution born from frustration ──
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions dashboard built to prevent future blockers — async approval queue, priority flags, response time tracking.', enhanceMode: 'stylize', focusAreas: ['approval-queue', 'priority-flags', 'response-times'] },
     { type: 'tts', voice: 'host', scriptKey: 'host-po-actions-built' },
+    { type: 'kinetic-text', text: '6 hours blocked. 12 minutes approved. Async governance works.' },
   ],
   'scene-6-day3': [
     { type: 'tts', voice: 'host', scriptKey: 'day3-velocity-mismatch' },
