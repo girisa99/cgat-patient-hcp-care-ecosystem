@@ -109,7 +109,8 @@ const CHARACTER_AVATARS: Record<string, string> = {
 
 // Characters that should regenerate via AI instead of using pre-made avatars
 // (host avatar PNG only shows the dog — needs AI regeneration to show the human PO)
-const REGENERATE_AVATAR_VIA_AI: Set<string> = new Set(['host', 'allaudin']);
+// Note: allaudin removed — pre-made genie avatar works well, AI regen hits DashScope rate limits
+const REGENERATE_AVATAR_VIA_AI: Set<string> = new Set(['host']);
 
 // ─── Context-Aware Animation Engine ─────────────────────────────────────────
 // Parses direction + motion fields to determine mood, energy, and animation style
