@@ -3362,16 +3362,13 @@ function EP04ProductionInner() {
           {/* PHASE 4: MUSIC & SFX (always visible)                             */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {(() => {
-            // Phase 4 is always accessible once TTS is approved — music doesn't depend on visuals
-            const phase4Active = productionPhase !== 'tts';
             const allMusicDone = Object.keys(sceneProduction).length > 0 &&
               Array.from(scenes.keys()).every(sk => sceneProduction[sk]?.music === 'done');
             return (
             <div className="mt-6">
               <Card className={cn(
                 'border transition-all',
-                !phase4Active && 'opacity-50',
-                phase4Active && !allMusicDone && 'ring-2 ring-primary/30',
+                !allMusicDone && 'ring-2 ring-primary/30',
                 allMusicDone && 'border-green-500/30 bg-green-500/[0.02]',
               )}>
                 <CardContent className="p-6">
@@ -3379,8 +3376,7 @@ function EP04ProductionInner() {
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold',
-                        allMusicDone ? 'bg-green-500 text-white' :
-                        phase4Active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                        allMusicDone ? 'bg-green-500 text-white' : 'bg-primary/10 text-primary',
                       )}>
                         {allMusicDone ? <CheckCircle2 className="h-4 w-4" /> : '4'}
                       </div>
@@ -3398,7 +3394,7 @@ function EP04ProductionInner() {
                           <span className="text-xs text-muted-foreground">{musicProgress.current}/{musicProgress.total}</span>
                         </>
                       )}
-                      {phase4Active && !allMusicDone && !musicProgress && (
+                      {!allMusicDone && !musicProgress && (
                         <Button size="sm" onClick={startAllMusicProduction}>
                           <Music className="h-3 w-3 mr-1" />
                           Generate All Music & SFX
@@ -3442,15 +3438,12 @@ function EP04ProductionInner() {
           {/* PHASE 5: ASSEMBLY → ONE CINEMATIC MOVIE (always visible)          */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {(() => {
-            // Phase 5 is accessible once TTS is approved — assembly uses TTS + visuals + music
-            const phase5Active = productionPhase !== 'tts';
             const phase5Done = finalVideoUrl !== null;
             return (
             <div className="mt-6 mb-8">
               <Card className={cn(
                 'border transition-all',
-                !phase5Active && 'opacity-50',
-                phase5Active && !phase5Done && 'ring-2 ring-primary/30',
+                !phase5Done && 'ring-2 ring-primary/30',
                 phase5Done && 'border-green-500/30 bg-green-500/[0.02]',
               )}>
                 <CardContent className="p-6">
@@ -3458,8 +3451,7 @@ function EP04ProductionInner() {
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold',
-                        phase5Done ? 'bg-green-500 text-white' :
-                        phase5Active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                        phase5Done ? 'bg-green-500 text-white' : 'bg-primary/10 text-primary',
                       )}>
                         {phase5Done ? <CheckCircle2 className="h-4 w-4" /> : '5'}
                       </div>
@@ -3477,7 +3469,7 @@ function EP04ProductionInner() {
                           <span className="text-xs text-muted-foreground">{assemblyProgress}</span>
                         </div>
                       )}
-                      {phase5Active && !phase5Done && !assemblyProgress && (
+                      {!phase5Done && !assemblyProgress && (
                         <Button size="sm" onClick={startFinalAssembly}>
                           <Clapperboard className="h-3 w-3 mr-1" />
                           Assemble Movie
