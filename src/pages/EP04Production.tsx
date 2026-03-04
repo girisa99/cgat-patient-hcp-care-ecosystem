@@ -1377,7 +1377,12 @@ function EP04ProductionInner() {
           },
         });
         if (error) { toast.error(`${stepLabel} enhance "${sid}" failed: ${error.message}`); continue; }
-        const url = data?.url || data?.videoUrl || data?.imageUrl;
+        let url = data?.url || data?.videoUrl || data?.imageUrl;
+        // WAN i2v is always async — poll for result
+        if (!url && data?.asyncGeneration && data?.taskId) {
+          toast.info(`${stepLabel}: enhancing "${sid}"... polling for result`);
+          url = await pollVideoTaskResult(data.taskId);
+        }
         if (url) results[`ai-screen-enhance-${sid}`] = url;
         if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       }
