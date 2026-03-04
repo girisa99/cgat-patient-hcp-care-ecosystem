@@ -129,15 +129,40 @@ export function useCastProjectPersistence() {
         if (charErr) throw charErr;
       }
 
-      // 2. Upsert scenes
+      // 2. Upsert scenes — PRESERVE existing artifacts in scene_config
       if (content.scenes.length > 0) {
+        // Read existing scene_configs to preserve artifacts during upsert
+        let existingArtifacts: Record<string, Record<string, unknown>> = {};
+        try {
+          const { data: existing } = await db
+            .from('cast_project_scenes')
+            .select('scene_key, scene_config')
+            .eq('project_id', projectId);
+          if (existing) {
+            for (const row of existing) {
+              const cfg = (row.scene_config || {}) as Record<string, unknown>;
+              if (cfg.artifacts) {
+                existingArtifacts[row.scene_key] = cfg.artifacts as Record<string, unknown>;
+              }
+            }
+          }
+        } catch (_) { /* ignore — first seed won't have existing rows */ }
+
         const { data: scenesData, error: sceneErr } = await db
           .from('cast_project_scenes')
           .upsert(
-            content.scenes.map(s => ({
-              ...s,
-              project_id: projectId,
-            })),
+            content.scenes.map(s => {
+              const sceneConfig = (s as any).scene_config || {};
+              // Merge back any existing artifacts that would be wiped by the upsert
+              if (existingArtifacts[s.scene_key]) {
+                sceneConfig.artifacts = existingArtifacts[s.scene_key];
+              }
+              return {
+                ...s,
+                project_id: projectId,
+                scene_config: sceneConfig,
+              };
+            }),
             { onConflict: 'project_id,scene_key' }
           )
           .select('id, scene_key');

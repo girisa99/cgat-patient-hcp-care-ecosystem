@@ -941,17 +941,34 @@ function EP04ProductionInner() {
     // Wait for restoration to finish before deciding to seed — otherwise we race with artifact restore
     if (!contentLoaded) return;
     // Don't re-seed if we already restored visual artifacts — the upsert wipes scene_config.artifacts
-    if (Object.values(sceneProduction).some(s => s.visual === 'done')) {
+    // Check BOTH in-memory state AND whether any audio/visual generation jobs exist in DB
+    const hasRestoredAssets = Object.values(sceneProduction).some(s => s.visual === 'done');
+    if (hasRestoredAssets) {
       console.log('[EP04] Skipping auto-seed — visual artifacts already restored from DB');
       seedAttemptedRef.current = true;
       return;
     }
+    // Extra guard: check DB directly for existing scene rows with artifacts before wiping
     seedAttemptedRef.current = true;
-    console.log('[EP04] No DB data found — auto-seeding from config files...');
-    dbProject.seedFromConfig().then(ok => {
-      if (ok) toast.success('Project seeded from config — DB is now source of truth');
-      else console.warn('[EP04] Auto-seed failed — using config file fallback');
-    });
+    (async () => {
+      try {
+        const { count } = await supabase
+          .from('cast_project_scenes')
+          .select('id', { count: 'exact', head: true })
+          .eq('project_id', projectId);
+        if (count && count > 0) {
+          console.log(`[EP04] Skipping auto-seed — ${count} scene rows already exist in DB`);
+          return;
+        }
+      } catch (e) {
+        // If check fails, proceed cautiously
+      }
+      console.log('[EP04] No DB data found — auto-seeding from config files...');
+      dbProject.seedFromConfig().then(ok => {
+        if (ok) toast.success('Project seeded from config — DB is now source of truth');
+        else console.warn('[EP04] Auto-seed failed — using config file fallback');
+      });
+    })();
   }, [projectId, dbProject.isLoading, dbProject.isSeeded, sceneProduction, contentLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Load token breakdown on mount ──────────────────────────────────────
@@ -1196,7 +1213,23 @@ function EP04ProductionInner() {
       return;
     }
 
-    // Build scenes
+    // Read existing scene_configs from DB FIRST so we don't wipe artifacts
+    let existingConfigs: Record<string, Record<string, unknown>> = {};
+    try {
+      const { data: dbScenes } = await supabase
+        .from('cast_project_scenes')
+        .select('scene_key, scene_config')
+        .eq('project_id', projectId);
+      if (dbScenes) {
+        for (const row of dbScenes) {
+          existingConfigs[row.scene_key] = (row.scene_config || {}) as Record<string, unknown>;
+        }
+      }
+    } catch (e) {
+      console.warn('[EP04] Could not read existing scene_configs before save:', e);
+    }
+
+    // Build scenes — PRESERVE existing scene_config (especially artifacts)
     const sceneEntries = Array.from(new Set(scriptKeys.map(k => scriptContentForUI[k].scene)));
     const scenesPayload = sceneEntries.map((sceneKey, idx) => ({
       project_id: projectId,
@@ -1206,7 +1239,7 @@ function EP04ProductionInner() {
       art_style: SCENE_STYLES[sceneKey] || null,
       visual_style: SCENE_STYLES[sceneKey] || null,
       background_url: null, // Asset imports can't be persisted as URLs
-      scene_config: {} as Record<string, unknown>,
+      scene_config: existingConfigs[sceneKey] || {} as Record<string, unknown>,
     }));
 
     // Build characters
@@ -1863,15 +1896,9 @@ function EP04ProductionInner() {
 
       if (configPipeline) {
         console.log(`[EP04 Visual] ${sceneKey}: using config file pipeline (${pipelineSceneKey}, ${pipelineSteps.length} steps)`);
-        // Sync config pipeline to DB so scenePipelineFor stays current (fire-and-forget)
-        if (projectId) {
-          supabase.from('cast_project_scenes').select('scene_config').eq('project_id', projectId).eq('scene_key', sceneKey).single()
-            .then(({ data: row }) => {
-              const existing = (row?.scene_config || {}) as Record<string, unknown>;
-              return supabase.from('cast_project_scenes').update({ scene_config: { ...existing, pipeline: configPipeline } })
-                .eq('project_id', projectId).eq('scene_key', sceneKey);
-            }).catch(() => {}); // fire-and-forget
-        }
+        // NOTE: Pipeline sync to DB removed — it raced with updateSceneArtifacts and could
+        // overwrite artifacts with stale scene_config. Config file is already the source of
+        // truth for pipeline lookups via EP04_SCENE_PIPELINES, so DB sync is unnecessary.
       }
 
       // Verify pipeline data exists
