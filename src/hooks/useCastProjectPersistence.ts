@@ -425,22 +425,44 @@ export function useCastProjectPersistence() {
   ): Promise<boolean> => {
     try {
       // 1. Upsert scene configs from scenePipelines + musicScore
+      // PRESERVE existing artifacts during upsert (same pattern as saveProjectContent)
       const sceneEntries = Object.entries(output.scenePipelines);
       if (sceneEntries.length > 0) {
+        let existingArtifacts: Record<string, Record<string, unknown>> = {};
+        try {
+          const { data: existing } = await db
+            .from('cast_project_scenes')
+            .select('scene_key, scene_config')
+            .eq('project_id', projectId);
+          if (existing) {
+            for (const row of existing) {
+              const cfg = (row.scene_config || {}) as Record<string, unknown>;
+              if (cfg.artifacts) {
+                existingArtifacts[row.scene_key] = cfg.artifacts as Record<string, unknown>;
+              }
+            }
+          }
+        } catch (_) { /* first seed won't have existing rows */ }
+
         const sceneRows = sceneEntries.map(([sceneKey, pipeline], idx) => {
           const music = output.musicScore[sceneKey];
           const transition = output.transitions?.find(t => t.from === sceneKey);
+          const sceneConfig: Record<string, unknown> = {
+            pipeline,
+            music: music?.music || null,
+            sfx: music?.sfx || [],
+            transition: transition || null,
+          };
+          // Merge back existing artifacts
+          if (existingArtifacts[sceneKey]) {
+            sceneConfig.artifacts = existingArtifacts[sceneKey];
+          }
           return {
             project_id: projectId,
             scene_key: sceneKey,
             title: sceneKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
             scene_index: idx,
-            scene_config: {
-              pipeline,
-              music: music?.music || null,
-              sfx: music?.sfx || [],
-              transition: transition || null,
-            },
+            scene_config: sceneConfig,
           };
         });
 
