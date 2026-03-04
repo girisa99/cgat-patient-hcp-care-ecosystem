@@ -902,9 +902,29 @@ function EP04ProductionInner() {
       const restoredCount = Object.keys(restored).filter(sk => restored[sk].visual === 'done').length;
       if (restoredCount > 0) {
         setSceneProduction(prev => ({ ...prev, ...restored }));
-        // Advance phase so Phase 3 is visible — scenes show assets not "Start Scene"
-        setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
-        console.log(`[EP04] Restored visual artifacts for ${restoredCount} scenes from DB`);
+        // Smart phase advancement:
+        //  - ALL scenes have visuals → Phase 3 done → unlock Phase 4 (Music & SFX)
+        //  - Some scenes have visuals → at least past TTS approval
+        const totalSceneCount = Object.keys(SCENE_TITLES).length;
+        const musicCount = Object.values(restored).filter(s => s.music === 'done').length;
+        const assembledCount = Object.values(restored).filter(s => s.assembled === 'done').length;
+
+        if (assembledCount >= totalSceneCount) {
+          // All scenes assembled → Phase 5 done
+          setProductionPhase('complete');
+          console.log(`[EP04] All ${assembledCount} scenes assembled — Phase 5 complete`);
+        } else if (musicCount >= totalSceneCount) {
+          // All scenes have music → Phase 4 done → unlock Phase 5
+          setProductionPhase('assembly');
+          console.log(`[EP04] All ${musicCount} scenes have music — advancing to Phase 5 (Assembly)`);
+        } else if (restoredCount >= totalSceneCount) {
+          // All scenes have visuals → Phase 3 done → unlock Phase 4
+          setProductionPhase('music');
+          console.log(`[EP04] All ${restoredCount}/${totalSceneCount} scenes have visuals — advancing to Phase 4 (Music & SFX)`);
+        } else {
+          setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
+          console.log(`[EP04] Restored visual artifacts for ${restoredCount}/${totalSceneCount} scenes from DB`);
+        }
         toast.success(`Restored ${restoredCount} scene(s) with visual assets`);
 
         // Re-persist restored artifacts back to scene_config so Source 1 works next time
@@ -3342,52 +3362,49 @@ function EP04ProductionInner() {
           {/* PHASE 4: MUSIC & SFX (always visible)                             */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {(() => {
-            const phase4Unlocked = productionPhase === 'music' || productionPhase === 'assembly' || productionPhase === 'complete';
-            const phase4Done = productionPhase === 'assembly' || productionPhase === 'complete';
+            // Phase 4 is always accessible once TTS is approved — music doesn't depend on visuals
+            const phase4Active = productionPhase !== 'tts';
+            const allMusicDone = Object.keys(sceneProduction).length > 0 &&
+              Array.from(scenes.keys()).every(sk => sceneProduction[sk]?.music === 'done');
             return (
             <div className="mt-6">
               <Card className={cn(
                 'border transition-all',
-                !phase4Unlocked && 'opacity-50',
-                phase4Unlocked && !phase4Done && 'ring-2 ring-primary/30',
-                phase4Done && 'border-green-500/30 bg-green-500/[0.02]',
+                !phase4Active && 'opacity-50',
+                phase4Active && !allMusicDone && 'ring-2 ring-primary/30',
+                allMusicDone && 'border-green-500/30 bg-green-500/[0.02]',
               )}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold',
-                        phase4Done ? 'bg-green-500 text-white' :
-                        phase4Unlocked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                        allMusicDone ? 'bg-green-500 text-white' :
+                        phase4Active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
                       )}>
-                        {phase4Done ? <CheckCircle2 className="h-4 w-4" /> : '4'}
+                        {allMusicDone ? <CheckCircle2 className="h-4 w-4" /> : '4'}
                       </div>
                       <div>
                         <h3 className="text-lg font-bold">Phase 4: Music & SFX</h3>
                         <p className="text-sm text-muted-foreground">
-                          {phase4Unlocked
-                            ? 'Generate per-scene music tracks and sound effects'
-                            : 'Complete visual production to unlock music & SFX'}
+                          Generate per-scene music tracks and sound effects
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {!phase4Unlocked && (
-                        <Badge variant="outline" className="text-xs">Locked</Badge>
-                      )}
                       {musicProgress && (
                         <>
                           <Progress value={(musicProgress.current / musicProgress.total) * 100} className="w-32 h-2" />
                           <span className="text-xs text-muted-foreground">{musicProgress.current}/{musicProgress.total}</span>
                         </>
                       )}
-                      {phase4Unlocked && !phase4Done && !musicProgress && (
+                      {phase4Active && !allMusicDone && !musicProgress && (
                         <Button size="sm" onClick={startAllMusicProduction}>
                           <Music className="h-3 w-3 mr-1" />
-                          Generate All Music
+                          Generate All Music & SFX
                         </Button>
                       )}
-                      {phase4Done && (
+                      {allMusicDone && (
                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
                           Complete
                         </Badge>
@@ -3425,14 +3442,15 @@ function EP04ProductionInner() {
           {/* PHASE 5: ASSEMBLY → ONE CINEMATIC MOVIE (always visible)          */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {(() => {
-            const phase5Unlocked = productionPhase === 'assembly' || productionPhase === 'complete';
-            const phase5Done = productionPhase === 'complete';
+            // Phase 5 is accessible once TTS is approved — assembly uses TTS + visuals + music
+            const phase5Active = productionPhase !== 'tts';
+            const phase5Done = finalVideoUrl !== null;
             return (
             <div className="mt-6 mb-8">
               <Card className={cn(
                 'border transition-all',
-                !phase5Unlocked && 'opacity-50',
-                phase5Unlocked && !phase5Done && 'ring-2 ring-primary/30',
+                !phase5Active && 'opacity-50',
+                phase5Active && !phase5Done && 'ring-2 ring-primary/30',
                 phase5Done && 'border-green-500/30 bg-green-500/[0.02]',
               )}>
                 <CardContent className="p-6">
@@ -3441,30 +3459,25 @@ function EP04ProductionInner() {
                       <div className={cn(
                         'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold',
                         phase5Done ? 'bg-green-500 text-white' :
-                        phase5Unlocked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                        phase5Active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
                       )}>
                         {phase5Done ? <CheckCircle2 className="h-4 w-4" /> : '5'}
                       </div>
                       <div>
                         <h3 className="text-lg font-bold">Phase 5: Final Assembly</h3>
                         <p className="text-sm text-muted-foreground">
-                          {phase5Unlocked
-                            ? 'Stitch all scenes + transitions + bookends + audio into one cinematic MP4'
-                            : 'Complete music & SFX production to unlock final assembly'}
+                          Stitch all scenes + transitions + bookends + audio into one cinematic MP4
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {!phase5Unlocked && (
-                        <Badge variant="outline" className="text-xs">Locked</Badge>
-                      )}
                       {assemblyProgress && (
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin text-primary" />
                           <span className="text-xs text-muted-foreground">{assemblyProgress}</span>
                         </div>
                       )}
-                      {phase5Unlocked && !phase5Done && !assemblyProgress && (
+                      {phase5Active && !phase5Done && !assemblyProgress && (
                         <Button size="sm" onClick={startFinalAssembly}>
                           <Clapperboard className="h-3 w-3 mr-1" />
                           Assemble Movie
