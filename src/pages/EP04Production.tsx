@@ -2333,8 +2333,13 @@ function EP04ProductionInner() {
       let musicUrl: string | null = null;
       const sfxUrls: string[] = [];
 
-      // Generate music
-      if (musicConfig) {
+      // Generate music — use scene config if available, otherwise auto-generate from scene title
+      const sceneTitle = SCENE_TITLES[sceneKey] || sceneKey;
+      const fallbackPrompt = `Cinematic instrumental background music for a documentary scene: "${sceneTitle}". Emotional, orchestral, suitable for a tech sprint retrospective video.`;
+      const musicPrompt = musicConfig?.prompt || fallbackPrompt;
+      const musicDuration = musicConfig?.duration || 30;
+
+      {
         let jobId: string | null = null;
         if (projectId) {
           jobId = await trackGenerationJob({
@@ -2344,14 +2349,16 @@ function EP04ProductionInner() {
 
         const { data, error } = await supabase.functions.invoke('multi-provider-music', {
           body: {
-            prompt: musicConfig.prompt || `Background music for ${sceneKey}`,
-            duration: musicConfig.duration || 30,
+            prompt: musicPrompt,
+            duration: musicDuration,
             instrumental: true,
           },
         });
 
         if (!error && data?.audioUrl) {
           musicUrl = data.audioUrl;
+        } else {
+          console.warn(`[EP04 Music] ${sceneKey}: music generation returned no URL`, { error, data });
         }
 
         if (jobId && projectId) {
