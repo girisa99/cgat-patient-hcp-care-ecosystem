@@ -854,19 +854,17 @@ function EP04ProductionInner() {
             const url = job.output_url as string;
             const isImageUrl = /\.(png|jpg|jpeg|webp|gif)(\?|$)/i.test(url);
             const urlKey = `${jt}-${sk}-${idx}`;
-            // Merge: only add if the URL type bucket is empty (don't duplicate Source 1 data)
-            if (jt === 'avatar' || jt === 'lipsync') {
-              if (Object.keys(restored[sk].avatarUrls).length === 0) {
-                restored[sk].avatarUrls[urlKey] = url;
-              }
+            // ALWAYS add — accumulate ALL URLs from generation jobs, dedup by URL value
+            const alreadyHasUrl = (bucket: Record<string, string>) =>
+              Object.values(bucket).includes(url);
+            if (jt === 'avatar') {
+              if (!alreadyHasUrl(restored[sk].avatarUrls)) restored[sk].avatarUrls[urlKey] = url;
+            } else if (jt === 'lipsync') {
+              if (!alreadyHasUrl(restored[sk].lipsyncUrls)) restored[sk].lipsyncUrls[urlKey] = url;
             } else if (jt === 'image' || isImageUrl) {
-              if (Object.keys(restored[sk].imageUrls).length === 0) {
-                restored[sk].imageUrls[urlKey] = url;
-              }
+              if (!alreadyHasUrl(restored[sk].imageUrls)) restored[sk].imageUrls[urlKey] = url;
             } else {
-              if (Object.keys(restored[sk].videoUrls).length === 0) {
-                restored[sk].videoUrls[urlKey] = url;
-              }
+              if (!alreadyHasUrl(restored[sk].videoUrls)) restored[sk].videoUrls[urlKey] = url;
             }
           }
         }
@@ -928,14 +926,19 @@ function EP04ProductionInner() {
         toast.success(`Restored ${restoredCount} scene(s) with visual assets`);
 
         // Re-persist restored artifacts back to scene_config so Source 1 works next time
-        for (const [sk, status] of Object.entries(restored)) {
-          updateSceneArtifacts(projectId, sk, {
-            videoUrls: status.videoUrls,
-            imageUrls: status.imageUrls,
-            avatarUrls: status.avatarUrls,
-            lipsyncUrls: status.lipsyncUrls,
-          }).catch(() => {}); // fire-and-forget repair
-        }
+        // AWAIT all writes — do NOT proceed until DB is fully updated
+        const repersistResults = await Promise.allSettled(
+          Object.entries(restored).map(([sk, status]) =>
+            updateSceneArtifacts(projectId, sk, {
+              videoUrls: status.videoUrls,
+              imageUrls: status.imageUrls,
+              avatarUrls: status.avatarUrls,
+              lipsyncUrls: status.lipsyncUrls,
+            })
+          )
+        );
+        const repersistOk = repersistResults.filter(r => r.status === 'fulfilled' && (r as PromiseFulfilledResult<boolean>).value).length;
+        console.log(`[EP04] Re-persist complete: ${repersistOk}/${Object.keys(restored).length} scenes saved to DB`);
       }
 
       // ── Fallback: check cast_projects.status to restore productionPhase ──
@@ -2212,6 +2215,34 @@ function EP04ProductionInner() {
     }
   }, [scenes, startSceneVisualProduction]);
 
+  // ─── Save All Assets to DB (manual trigger) ─────────────────────────────
+  // Persists every asset currently in sceneProduction state to DB
+  const saveAllAssetsToDb = useCallback(async () => {
+    if (!projectId) { toast.error('No project ID'); return; }
+    const sceneKeys = Object.keys(sceneProduction).filter(sk => {
+      const s = sceneProduction[sk];
+      return s.visual === 'done' || Object.keys(s.videoUrls).length > 0 ||
+        Object.keys(s.imageUrls).length > 0 || Object.keys(s.avatarUrls).length > 0 ||
+        Object.keys(s.lipsyncUrls).length > 0;
+    });
+    if (sceneKeys.length === 0) { toast.warning('No assets in memory to save'); return; }
+    toast.info(`Saving assets for ${sceneKeys.length} scenes to DB...`);
+    const results = await Promise.allSettled(
+      sceneKeys.map(sk => {
+        const s = sceneProduction[sk];
+        return updateSceneArtifacts(projectId, sk, {
+          videoUrls: s.videoUrls,
+          imageUrls: s.imageUrls,
+          avatarUrls: s.avatarUrls,
+          lipsyncUrls: s.lipsyncUrls,
+        });
+      })
+    );
+    const ok = results.filter(r => r.status === 'fulfilled' && (r as PromiseFulfilledResult<boolean>).value).length;
+    toast.success(`Saved assets for ${ok}/${sceneKeys.length} scenes to DB`);
+    console.log(`[EP04] Manual save: ${ok}/${sceneKeys.length} scenes persisted`);
+  }, [projectId, sceneProduction, updateSceneArtifacts]);
+
   // ─── Phase 4: Music & SFX (per scene) ─────────────────────────────────
 
   const startSceneMusicProduction = useCallback(async (sceneKey: string) => {
@@ -3187,6 +3218,14 @@ function EP04ProductionInner() {
                         >
                           <Camera className="h-3 w-3 mr-1" />
                           Capture Sprint Screenshots
+                        </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          className="border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10"
+                          onClick={saveAllAssetsToDb}
+                        >
+                          <Save className="h-3 w-3 mr-1" />
+                          Save All Assets to DB
                         </Button>
                         </>
                       )}
