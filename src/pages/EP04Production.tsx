@@ -15,10 +15,10 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Play, Pause, Square, Volume2, VolumeX, Loader2,
-  CheckCircle2, AlertCircle, Mic, SkipForward, ArrowLeft,
+  CheckCircle2, AlertCircle, AlertTriangle, Mic, SkipForward, ArrowLeft,
   Camera, Monitor, Image as ImageIcon, ExternalLink,
   Film, Music, Clapperboard, Download, Eye, Layers,
-  Share2, Scissors
+  Share2, Scissors, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,6 +33,12 @@ import { ContentRepurposingPanel } from '@/components/genie-cast/ContentRepurpos
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
 import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
+
+// Shared helper: detect external CDN URLs that may have expired (~24h TTL)
+const isExpiredCdnUrl = (url: string): boolean =>
+  !!url && !url.includes('supabase.co/storage') && (
+    url.includes('oss-cn-beijing') || url.includes('replicate.delivery') || url.includes('dashscope')
+  );
 
 // Character avatar imports — upgraded to Pixar 3D portraits for visual consistency with scene backgrounds
 import hostAvatar from '@/assets/characters/host-avatar-3d.png';
@@ -823,9 +829,12 @@ function EP04ProductionInner() {
         console.warn('[PERSIST RESTORE] scene_config artifacts restore FAILED:', e);
       }
 
-      // Source 2: cast_generation_jobs — MERGE into Source 1 to fill gaps
-      // Source 1 may have video/image URLs but be missing avatars (e.g. DashScope URLs were wiped)
-      // Source 2 always has the original output_url from generation — never wiped
+      // Track which scenes came from Source 1 (authoritative) — Source 2 will skip these
+      const source1SceneKeys = new Set<string>(Object.keys(restored));
+
+      // Source 2: cast_generation_jobs — ONLY latest job per (scene_key, job_type)
+      // Used as gap-fill when Source 1 is empty for a scene. ORDER BY DESC so we
+      // see newest first, then deduplicate by (scene_key, job_type) keeping only the first.
       try {
         const { data: visualJobs } = await db
           .from('cast_generation_jobs')
@@ -835,13 +844,21 @@ function EP04ProductionInner() {
           .not('output_url', 'is', null)
           .not('scene_key', 'is', null)
           .neq('job_type', 'tts')
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: false });
 
         if (visualJobs) {
-          let idx = 0;
+          // Deduplicate: keep only the LATEST job per (scene_key, job_type)
+          const seen = new Set<string>();
           for (const job of visualJobs) {
             const sk = job.scene_key;
             if (!sk || !job.output_url) continue;
+            const dedupeKey = `${sk}::${job.job_type}`;
+            if (seen.has(dedupeKey)) continue; // skip older versions
+            seen.add(dedupeKey);
+
+            // Skip if Source 1 already has this scene (Source 1 is authoritative)
+            if (source1SceneKeys.has(sk)) continue;
+
             if (!restored[sk]) {
               restored[sk] = {
                 visual: 'done', music: 'idle', sfx: 'idle', assembled: 'idle',
@@ -849,12 +866,11 @@ function EP04ProductionInner() {
                 musicUrl: null, sfxUrls: [], assembledClipUrl: null,
               };
             }
-            idx++;
             const jt = job.job_type;
             const url = job.output_url as string;
             const isImageUrl = /\.(png|jpg|jpeg|webp|gif)(\?|$)/i.test(url);
-            const urlKey = `${jt}-${sk}-${idx}`;
-            // ALWAYS add — accumulate ALL URLs from generation jobs, dedup by URL value
+            const urlKey = `${jt}-${sk}`;
+            // Also skip if this URL is already present in the bucket
             const alreadyHasUrl = (bucket: Record<string, string>) =>
               Object.values(bucket).includes(url);
             if (jt === 'avatar') {
@@ -897,6 +913,50 @@ function EP04ProductionInner() {
         }
       }
 
+      // ── Auto-cleanup: dedup by URL value + detect expired CDN URLs ──
+      let totalDupsRemoved = 0;
+      let expiredSceneCount = 0;
+      const dedupBucket = (bucket: Record<string, string>): Record<string, string> => {
+        const seenUrls = new Set<string>();
+        const clean: Record<string, string> = {};
+        for (const [k, v] of Object.entries(bucket)) {
+          if (!v || seenUrls.has(v)) {
+            totalDupsRemoved++;
+            continue;
+          }
+          seenUrls.add(v);
+          clean[k] = v;
+        }
+        return clean;
+      };
+      for (const sk of Object.keys(restored)) {
+        restored[sk].videoUrls = dedupBucket(restored[sk].videoUrls);
+        restored[sk].imageUrls = dedupBucket(restored[sk].imageUrls);
+        restored[sk].avatarUrls = dedupBucket(restored[sk].avatarUrls);
+        restored[sk].lipsyncUrls = dedupBucket(restored[sk].lipsyncUrls);
+        // Check for expired CDN URLs in this scene
+        const allUrls = [
+          ...Object.values(restored[sk].videoUrls),
+          ...Object.values(restored[sk].imageUrls),
+          ...Object.values(restored[sk].avatarUrls),
+          ...Object.values(restored[sk].lipsyncUrls),
+        ];
+        if (allUrls.some(u => isExpiredCdnUrl(u))) {
+          expiredSceneCount++;
+        }
+      }
+      // Count scenes with no assets at all
+      const allSceneKeys = Object.keys(SCENE_TITLES);
+      const notGeneratedCount = allSceneKeys.filter(sk => !restored[sk] || restored[sk].visual !== 'done').length;
+      // Summary toast (silent for dedup, informational for expired/missing)
+      const toastParts: string[] = [];
+      if (totalDupsRemoved > 0) toastParts.push(`Cleaned ${totalDupsRemoved} duplicate(s)`);
+      if (expiredSceneCount > 0) toastParts.push(`${expiredSceneCount} scene(s) may have expired CDN URLs`);
+      if (notGeneratedCount > 0 && notGeneratedCount < allSceneKeys.length) toastParts.push(`${notGeneratedCount} scene(s) not yet generated`);
+      if (toastParts.length > 0) {
+        console.log(`[EP04 Cleanup] ${toastParts.join('. ')}`);
+      }
+
       const restoredCount = Object.keys(restored).filter(sk => restored[sk].visual === 'done').length;
       if (restoredCount > 0) {
         setSceneProduction(prev => ({ ...prev, ...restored }));
@@ -923,22 +983,29 @@ function EP04ProductionInner() {
           setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
           console.log(`[EP04] Restored visual artifacts for ${restoredCount}/${totalSceneCount} scenes from DB`);
         }
-        toast.success(`Restored ${restoredCount} scene(s) with visual assets`);
+        const restoreMsg = `Restored ${restoredCount} scene(s) with visual assets`;
+        toast.success(toastParts.length > 0 ? `${restoreMsg}. ${toastParts.join('. ')}.` : restoreMsg);
 
-        // Re-persist restored artifacts back to scene_config so Source 1 works next time
-        // AWAIT all writes — do NOT proceed until DB is fully updated
-        const repersistResults = await Promise.allSettled(
-          Object.entries(restored).map(([sk, status]) =>
-            updateSceneArtifacts(projectId, sk, {
-              videoUrls: status.videoUrls,
-              imageUrls: status.imageUrls,
-              avatarUrls: status.avatarUrls,
-              lipsyncUrls: status.lipsyncUrls,
-            })
-          )
-        );
-        const repersistOk = repersistResults.filter(r => r.status === 'fulfilled' && (r as PromiseFulfilledResult<boolean>).value).length;
-        console.log(`[EP04] Re-persist complete: ${repersistOk}/${Object.keys(restored).length} scenes saved to DB`);
+        // Re-persist ONLY for scenes that came from Source 2 (gap-fill).
+        // If Source 1 already had artifacts, do NOT re-persist (it's already authoritative).
+        const source2OnlyScenes = Object.entries(restored).filter(([sk]) => !source1SceneKeys.has(sk));
+        if (source2OnlyScenes.length > 0) {
+          console.log(`[EP04] Re-persisting ${source2OnlyScenes.length} Source-2-only scenes to fill Source 1 gaps`);
+          const repersistResults = await Promise.allSettled(
+            source2OnlyScenes.map(([sk, status]) =>
+              updateSceneArtifacts(projectId, sk, {
+                videoUrls: status.videoUrls,
+                imageUrls: status.imageUrls,
+                avatarUrls: status.avatarUrls,
+                lipsyncUrls: status.lipsyncUrls,
+              })
+            )
+          );
+          const repersistOk = repersistResults.filter(r => r.status === 'fulfilled' && (r as PromiseFulfilledResult<boolean>).value).length;
+          console.log(`[EP04] Re-persist complete: ${repersistOk}/${source2OnlyScenes.length} gap-fill scenes saved to DB`);
+        } else {
+          console.log(`[EP04] All ${Object.keys(restored).length} scenes came from Source 1 — no re-persist needed`);
+        }
       }
 
       // ── Fallback: check cast_projects.status to restore productionPhase ──
@@ -3263,9 +3330,21 @@ function EP04ProductionInner() {
                             <span className="text-xs font-bold truncate">{SCENE_TITLES[sceneKey] || sceneKey}</span>
                             <div className="flex items-center gap-1">
                               <span className="text-[9px] text-muted-foreground">{visualOnlySteps.length}{extraCount > 0 ? `+${extraCount}` : ''}</span>
-                              {status?.visual === 'done' && <CheckCircle2 className="h-3 w-3 text-green-500" />}
+                              {/* Per-scene health badges */}
+                              {status?.visual === 'done' && (() => {
+                                const allUrls = [
+                                  ...Object.values(status.videoUrls || {}),
+                                  ...Object.values(status.imageUrls || {}),
+                                  ...Object.values(status.avatarUrls || {}),
+                                  ...Object.values(status.lipsyncUrls || {}),
+                                ];
+                                const expCount = allUrls.filter(u => isExpiredCdnUrl(u)).length;
+                                if (expCount > 0) return <AlertTriangle className="h-3 w-3 text-amber-500" title={`${expCount} expired — Regen needed`} />;
+                                return <CheckCircle2 className="h-3 w-3 text-green-500" />;
+                              })()}
                               {status?.visual === 'generating' && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
                               {status?.visual === 'error' && <AlertCircle className="h-3 w-3 text-red-500" />}
+                              {(!status || status.visual === 'idle') && <AlertCircle className="h-3 w-3 text-muted-foreground" title="Not generated" />}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-1 mb-2">
@@ -3326,6 +3405,28 @@ function EP04ProductionInner() {
                             </div>
                           )}
 
+                          {/* ── Clear Scene Assets button ── */}
+                          {status?.visual === 'done' && (
+                            <Button
+                              size="sm" variant="ghost" className="w-full h-6 text-[9px] text-red-500 hover:text-red-600 hover:bg-red-500/10 mt-1"
+                              onClick={async () => {
+                                setSceneProduction(prev => ({
+                                  ...prev,
+                                  [sceneKey]: defaultSceneStatus(),
+                                }));
+                                if (projectId) {
+                                  await updateSceneArtifacts(projectId, sceneKey, {
+                                    videoUrls: {}, imageUrls: {}, avatarUrls: {}, lipsyncUrls: {},
+                                  });
+                                }
+                                toast.success(`Cleared all assets for ${SCENE_TITLES[sceneKey] || sceneKey}`);
+                              }}
+                            >
+                              <Trash2 className="h-2.5 w-2.5 mr-1" />
+                              Clear Assets
+                            </Button>
+                          )}
+
                           {/* ── Categorized asset preview for completed scenes ── */}
                           {status?.visual === 'done' && (() => {
                             const categories = [
@@ -3335,10 +3436,18 @@ function EP04ProductionInner() {
                               { label: 'Lipsync', icon: Mic, entries: Object.entries(status.lipsyncUrls || {}).filter(([, u]) => u), isVideo: true },
                             ].filter(c => c.entries.length > 0);
                             const totalAssets = categories.reduce((s, c) => s + c.entries.length, 0);
+                            const expiredCount = categories.reduce((s, c) => s + c.entries.filter(([, u]) => isExpiredCdnUrl(u)).length, 0);
                             if (totalAssets === 0) return null;
                             return (
                               <div className="mt-2 space-y-2">
-                                <p className="text-[9px] text-muted-foreground font-medium">{totalAssets} assets generated:</p>
+                                <div className="flex items-center gap-1">
+                                  <p className="text-[9px] text-muted-foreground font-medium">{totalAssets} assets generated</p>
+                                  {expiredCount > 0 && (
+                                    <Badge variant="outline" className="text-[7px] h-3 px-1 border-amber-500/30 text-amber-500">
+                                      {expiredCount} possibly expired
+                                    </Badge>
+                                  )}
+                                </div>
                                 {categories.map(cat => {
                                   const CatIcon = cat.icon;
                                   return (
@@ -3358,6 +3467,12 @@ function EP04ProductionInner() {
                                                 controls
                                                 muted
                                                 preload="metadata"
+                                                onError={(e) => {
+                                                  const el = e.currentTarget;
+                                                  el.style.display = 'none';
+                                                  const badge = el.parentElement?.querySelector('.expired-badge');
+                                                  if (badge) (badge as HTMLElement).style.display = 'flex';
+                                                }}
                                               />
                                             ) : (
                                               <img
@@ -3365,11 +3480,30 @@ function EP04ProductionInner() {
                                                 alt={key}
                                                 className="w-full h-24 object-cover rounded border border-border/30 bg-black"
                                                 loading="lazy"
+                                                onError={(e) => {
+                                                  const el = e.currentTarget;
+                                                  el.style.display = 'none';
+                                                  const badge = el.parentElement?.querySelector('.expired-badge');
+                                                  if (badge) (badge as HTMLElement).style.display = 'flex';
+                                                }}
                                               />
                                             )}
+                                            {/* Expired/broken fallback placeholder — hidden by default, shown on error */}
+                                            <div
+                                              className="expired-badge w-full h-24 rounded border border-amber-500/30 bg-amber-950/20 items-center justify-center flex-col gap-1"
+                                              style={{ display: 'none' }}
+                                            >
+                                              <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                              <span className="text-[8px] text-amber-400 font-medium">Expired</span>
+                                            </div>
                                             <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1 py-0.5 rounded-b">
                                               <span className="text-[7px] text-white/80 truncate block">{key}</span>
                                             </div>
+                                            {isExpiredCdnUrl(url) && (
+                                              <div className="absolute top-0.5 left-0.5">
+                                                <Badge variant="outline" className="text-[6px] h-3 px-0.5 border-amber-500/50 text-amber-400 bg-black/60">CDN</Badge>
+                                              </div>
+                                            )}
                                             <a
                                               href={url}
                                               target="_blank"

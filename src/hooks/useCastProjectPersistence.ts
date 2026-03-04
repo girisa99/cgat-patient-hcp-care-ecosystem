@@ -549,25 +549,17 @@ export function useCastProjectPersistence() {
       }
 
       const existingConfig = (scene?.scene_config || {}) as Record<string, unknown>;
-      const existingArtifacts = (existingConfig.artifacts as Record<string, Record<string, string>>) || {};
-      console.log(`[PERSIST SAVE] ${sceneKey}: existing config has ${Object.keys(existingArtifacts).length} artifact groups`);
-      // DEEP merge — merge individual URLs within each bucket, never lose existing URLs
-      const deepMergedArtifacts: Record<string, Record<string, string>> = {};
-      for (const bucket of ['videoUrls', 'imageUrls', 'avatarUrls', 'lipsyncUrls'] as const) {
-        deepMergedArtifacts[bucket] = {
-          ...(existingArtifacts[bucket] || {}),
-          ...(artifacts[bucket as keyof typeof artifacts] || {}),
-        };
-      }
-      // Also keep any extra keys from existing artifacts (e.g. musicUrl, sfxUrls)
-      for (const key of Object.keys(existingArtifacts)) {
-        if (!deepMergedArtifacts[key]) {
-          deepMergedArtifacts[key] = existingArtifacts[key];
-        }
-      }
+      console.log(`[PERSIST SAVE] ${sceneKey}: REPLACE mode — overwriting artifact buckets entirely`);
+      // REPLACE mode — each call overwrites buckets entirely (no accumulation)
+      // Regeneration produces a complete set of assets; old/stale assets are discarded.
       const updatedConfig = {
         ...existingConfig,
-        artifacts: deepMergedArtifacts,
+        artifacts: {
+          videoUrls: artifacts.videoUrls || {},
+          imageUrls: artifacts.imageUrls || {},
+          avatarUrls: artifacts.avatarUrls || {},
+          lipsyncUrls: artifacts.lipsyncUrls || {},
+        },
       };
 
       const { error } = await db
