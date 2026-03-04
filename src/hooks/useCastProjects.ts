@@ -47,7 +47,7 @@ export function useCastProjects() {
         .from('cast_projects')
         .select(`
           *,
-          cast_generation_jobs (*),
+          cast_generation_jobs (id, job_type, status, scene_key, actual_tokens_used),
           cast_project_variants (*),
           cast_accessibility_config (*)
         `)

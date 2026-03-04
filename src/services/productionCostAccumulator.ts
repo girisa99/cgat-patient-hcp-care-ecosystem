@@ -242,7 +242,7 @@ async function rollupProjectTokens(projectId: string): Promise<void> {
 export async function getProjectCostSummary(projectId: string): Promise<ProjectCostSummary | null> {
   const { data: jobs, error } = await (supabase as any)
     .from('cast_generation_jobs')
-    .select('*')
+    .select('job_type, status, scene_key, actual_tokens_used, estimated_tokens, estimated_cost_usd, provider')
     .eq('project_id', projectId);
 
   if (error || !jobs) return null;
