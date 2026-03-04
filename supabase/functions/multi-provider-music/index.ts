@@ -216,18 +216,25 @@ async function generateModelsLabMusicDirect(prompt: string, duration: number): P
   }
 
   try {
-    // Correct endpoint: v6/voice/text2audio with MusicGen model
-    console.log(`🎵 ModelsLab music request: "${prompt.substring(0, 80)}..." duration=${duration}s`);
-    const response = await fetch('https://modelslab.com/api/v6/voice/text2audio', {
+    // Correct endpoint: v6/voice/music_gen (MusicGen model)
+    // Docs: https://docs.modelslab.com/voice-cloning/music-gen
+    // max_new_token controls duration: ~640 tokens ≈ 20s, ~1280 ≈ 40s
+    const tokensForDuration = Math.min(Math.round((duration / 20) * 640), 1280);
+    console.log(`🎵 ModelsLab music_gen: "${prompt.substring(0, 80)}..." duration=${duration}s tokens=${tokensForDuration}`);
+    const response = await fetch('https://modelslab.com/api/v6/voice/music_gen', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         key: MODELSLAB_API_KEY,
-        model_id: 'musicgen',
         prompt: prompt,
-        duration: Math.min(duration, 30),
+        sampling_rate: 32000,
+        max_new_token: tokensForDuration,
+        base64: false,
+        temp: false,
+        webhook: null,
+        track_id: null,
       }),
     });
 
@@ -476,17 +483,22 @@ async function generateModelsLabMusic(prompt: string, duration: number): Promise
     return generateElevenLabsMusic(prompt, duration);
   }
 
-  // Correct endpoint: v6/voice/text2audio with MusicGen model
-  const response = await fetch('https://modelslab.com/api/v6/voice/text2audio', {
+  // Correct endpoint: v6/voice/music_gen (MusicGen model)
+  const tokensForDuration = Math.min(Math.round((duration / 20) * 640), 1280);
+  const response = await fetch('https://modelslab.com/api/v6/voice/music_gen', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       key: MODELSLAB_API_KEY,
-      model_id: 'musicgen',
       prompt: prompt,
-      duration: Math.min(duration, 30),
+      sampling_rate: 32000,
+      max_new_token: tokensForDuration,
+      base64: false,
+      temp: false,
+      webhook: null,
+      track_id: null,
     }),
   });
 
