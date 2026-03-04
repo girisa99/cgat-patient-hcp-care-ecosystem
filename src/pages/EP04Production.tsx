@@ -779,17 +779,30 @@ function EP04ProductionInner() {
           .select('scene_key, scene_config')
           .eq('project_id', projectId);
 
+        console.log(`[PERSIST RESTORE] Found ${dbScenes?.length || 0} scene rows in DB`);
         if (dbScenes) {
           for (const row of dbScenes) {
             const cfg = (row.scene_config || {}) as Record<string, any>;
             const artifacts = cfg.artifacts as Record<string, Record<string, string>> | undefined;
-            if (!artifacts) continue;
+            const configKeys = Object.keys(cfg);
+            if (!artifacts) {
+              console.log(`[PERSIST RESTORE] ${row.scene_key}: NO artifacts in scene_config (keys: ${configKeys.join(', ')})`);
+              continue;
+            }
+            const vCount = Object.keys(artifacts.videoUrls || {}).length;
+            const iCount = Object.keys(artifacts.imageUrls || {}).length;
+            const aCount = Object.keys(artifacts.avatarUrls || {}).length;
+            const lCount = Object.keys(artifacts.lipsyncUrls || {}).length;
+            console.log(`[PERSIST RESTORE] ${row.scene_key}: found artifacts — ${vCount} videos, ${iCount} images, ${aCount} avatars, ${lCount} lipsync`);
             const hasAnyUrl =
               Object.values(artifacts.videoUrls || {}).some(u => u) ||
               Object.values(artifacts.imageUrls || {}).some(u => u) ||
               Object.values(artifacts.avatarUrls || {}).some(u => u) ||
               Object.values(artifacts.lipsyncUrls || {}).some(u => u);
-            if (!hasAnyUrl) continue;
+            if (!hasAnyUrl) {
+              console.log(`[PERSIST RESTORE] ${row.scene_key}: all URLs empty — skipping`);
+              continue;
+            }
             restored[row.scene_key] = {
               visual: 'done',
               music: cfg.musicUrl ? 'done' : 'idle',
@@ -806,7 +819,7 @@ function EP04ProductionInner() {
           }
         }
       } catch (e) {
-        console.warn('[EP04] scene_config artifacts restore failed:', e);
+        console.warn('[PERSIST RESTORE] scene_config artifacts restore FAILED:', e);
       }
 
       // Source 2: cast_generation_jobs — MERGE into Source 1 to fill gaps
@@ -926,6 +939,30 @@ function EP04ProductionInner() {
       }
 
       setContentLoaded(true);
+
+      // ── Debug: expose DB scene check in browser console ──
+      // Run window.__debugSceneDB() in console to see what's stored in DB
+      (window as any).__debugSceneDB = async () => {
+        const { data } = await supabase
+          .from('cast_project_scenes')
+          .select('scene_key, scene_config')
+          .eq('project_id', projectId);
+        console.table((data || []).map(r => {
+          const cfg = (r.scene_config || {}) as any;
+          const art = cfg.artifacts || {};
+          return {
+            scene_key: r.scene_key,
+            has_artifacts: !!cfg.artifacts,
+            videos: Object.keys(art.videoUrls || {}).length,
+            images: Object.keys(art.imageUrls || {}).length,
+            avatars: Object.keys(art.avatarUrls || {}).length,
+            lipsync: Object.keys(art.lipsyncUrls || {}).length,
+            config_keys: Object.keys(cfg).join(', '),
+          };
+        }));
+        return data;
+      };
+      console.log('[EP04] Debug: run window.__debugSceneDB() in console to check DB artifacts');
     })();
   }, [projectId, contentLoaded, scriptContentForUI]);
 
@@ -2058,13 +2095,22 @@ function EP04ProductionInner() {
       }
 
       // Persist visual artifacts to DB
+      console.log(`[PERSIST SAVE] ${sceneKey}: visual production complete, ${Object.keys(results).length} total results:`, Object.keys(results));
       if (projectId) {
-        await updateSceneArtifacts(projectId, sceneKey, {
+        const saveOk = await updateSceneArtifacts(projectId, sceneKey, {
           videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition'))),
           imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame'))),
           avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d'))),
           lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync'))),
         });
+        if (saveOk) {
+          console.log(`[PERSIST SAVE] ${sceneKey}: ✅ DB save confirmed — artifacts will survive refresh`);
+        } else {
+          console.error(`[PERSIST SAVE] ${sceneKey}: ❌ DB SAVE FAILED — artifacts will be LOST on refresh!`);
+          toast.error(`Failed to save ${sceneKey} artifacts to DB — they may be lost on refresh`);
+        }
+      } else {
+        console.warn(`[PERSIST SAVE] ${sceneKey}: ⚠️ No projectId — artifacts NOT saved to DB!`);
       }
 
       setSceneProduction(prev => ({

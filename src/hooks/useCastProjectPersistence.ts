@@ -525,6 +525,16 @@ export function useCastProjectPersistence() {
       lipsyncUrls?: Record<string, string>;
     },
   ): Promise<boolean> => {
+    const artifactCount = Object.keys(artifacts.videoUrls || {}).length
+      + Object.keys(artifacts.imageUrls || {}).length
+      + Object.keys(artifacts.avatarUrls || {}).length
+      + Object.keys(artifacts.lipsyncUrls || {}).length;
+    console.log(`[PERSIST SAVE] ${sceneKey}: saving ${artifactCount} artifacts to DB...`, {
+      videos: Object.keys(artifacts.videoUrls || {}),
+      images: Object.keys(artifacts.imageUrls || {}),
+      avatars: Object.keys(artifacts.avatarUrls || {}),
+      lipsync: Object.keys(artifacts.lipsyncUrls || {}),
+    });
     try {
       // Fetch current scene_config to merge (not overwrite)
       const { data: scene, error: fetchErr } = await db
@@ -533,13 +543,18 @@ export function useCastProjectPersistence() {
         .eq('project_id', projectId)
         .eq('scene_key', sceneKey)
         .single();
-      if (fetchErr) throw fetchErr;
+      if (fetchErr) {
+        console.error(`[PERSIST SAVE] ${sceneKey}: FAILED to fetch scene row — scene_key may not exist in DB!`, fetchErr);
+        throw fetchErr;
+      }
 
       const existingConfig = (scene?.scene_config || {}) as Record<string, unknown>;
+      const existingArtifacts = (existingConfig.artifacts as Record<string, unknown>) || {};
+      console.log(`[PERSIST SAVE] ${sceneKey}: existing config has ${Object.keys(existingArtifacts).length} artifact groups`);
       const updatedConfig = {
         ...existingConfig,
         artifacts: {
-          ...((existingConfig.artifacts as Record<string, unknown>) || {}),
+          ...existingArtifacts,
           ...artifacts,
         },
       };
@@ -549,10 +564,14 @@ export function useCastProjectPersistence() {
         .update({ scene_config: updatedConfig })
         .eq('project_id', projectId)
         .eq('scene_key', sceneKey);
-      if (error) throw error;
+      if (error) {
+        console.error(`[PERSIST SAVE] ${sceneKey}: UPDATE failed!`, error);
+        throw error;
+      }
+      console.log(`[PERSIST SAVE] ${sceneKey}: ✅ saved ${artifactCount} artifacts successfully`);
       return true;
     } catch (err: any) {
-      console.error('[Persistence] Scene artifacts update error:', err);
+      console.error(`[PERSIST SAVE] ${sceneKey}: ❌ FAILED:`, err);
       return false;
     }
   }, []);
