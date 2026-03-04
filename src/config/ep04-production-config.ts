@@ -688,19 +688,20 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
-    // ── Infographic: Traditional vs AI Sprint comparison (fixed: wan2.6-t2i replaces deprecated wanx-v2.1) ──
-    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: '3D comparison infographic: Traditional Sprint (left, red tones) vs AI Sprint (right, green tones). Metrics: 41 tasks in 5 days, 5x velocity, 0 blockers, 0 standup meetings, 100% completion. Clean modern design with depth, shadows, and glass-morphism cards' },
-    { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Animated infographic with numbers counting up dynamically, bars growing, green checkmarks appearing, professional motion graphics style', referenceImage: 'comparison-infographic' },
-    // SHOWCASE: Motion graphics — animated stat counters for the big number reveal
-    { type: 'motion-graphics', content: '41 TASKS | 5 DAYS | 5x VELOCITY | 0 BLOCKERS | 0 STANDUP MEETINGS — numbers count up with particle burst on each stat, green checkmarks animate in sequence, final golden badge pulses: "Sprint Complete"' },
+    // ── Infographic: Traditional vs AI Sprint — emotional contrast, not just numbers ──
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Split-screen 3D comparison infographic: LEFT (red tones, dimmed) — traditional sprint chaos, 5-person team drowning in Jira cards, sticky notes everywhere, exhausted faces in a Zoom call with 40 browser tabs open, "3-4 WEEKS" stamped in red. RIGHT (green tones, glowing) — AI sprint clarity, pristine dashboard with zero red blockers, 4 async standup screens, peaceful human PO sipping coffee in pajamas, bear and fox characters working in parallel, "5 DAYS" in radiant green. Center divider: "41 TASKS — Same Scope, Different Coordination." Glass-morphism cards, depth, cinematic lighting' },
+    { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'The split comparison comes alive: LEFT side numbers freeze and dim with a sad thud sound. RIGHT side numbers count up with satisfying mechanical clicks — 41 tasks, 5 days, each stat overshoots slightly then settles with a micro-bounce. Zero-blockers badge EXPLODES with green particle burst. 100% completion checkmark GROWS to fill its panel. Final moment: golden "Sprint Complete" badge pulses triumphantly while left side fades to grayscale. Celebratory, earned, cinematic', referenceImage: 'comparison-infographic' },
+    // SHOWCASE: Motion graphics — animated stat counters with contrast reveal
+    { type: 'motion-graphics', content: '41 TASKS | 5 DAYS | 5x VELOCITY | 0 BLOCKERS | 0 STANDUP MEETINGS — each number reveals with a satisfying click, compared against a faded red traditional-sprint number on the left (3-4 weeks, 5+ people, constant blockers, endless standups). Right side GLOWS green as left fades out. Golden "Sprint Complete" badge appears with light beam shooting upward — celebration, not just completion.' },
     { type: 'screen-capture', screenIds: ['velocity-metrics'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['velocity-metrics'], scriptContext: 'Final velocity metrics — 41 tasks completed, 5x traditional speed, zero blockers at sprint end. The big number reveal + honest challenges context.', enhanceMode: 'redraw', focusAreas: ['total-velocity-number', 'completion-percentage', 'zero-blockers-badge'] },
     // ── Kinetic text: the thesis statement ──
     { type: 'kinetic-text', text: '"Who makes sure the AIs don\'t build the wrong thing really fast?" — The governance layer isn\'t project management theater. It\'s survival tools.' },
   ],
   'scene-10-whats-next': [
-    // ── MCP vision — host introduces, atlas + nova add their perspectives ──
+    // ── MCP vision — host introduces, all 3 characters contribute perspectives ──
     { type: 'tts', voice: 'host', scriptKey: 'whats-next-intro' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'whats-next-atlas' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-language-foundational' },
     { type: 'tts', voice: 'nova', scriptKey: 'whats-next-nova' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-data-quality' },
@@ -709,10 +710,10 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
-    // ── Visual assets — world map, MCP diagram, velocity prediction ──
+    // ── Visual assets — world map, MCP diagram, velocity methodology ──
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Animated world map with 16 language zones lighting up one by one — Arabic dialects, Hindi, Bengali, Mandarin, Spanish, Turkish — each zone pulses with a unique color as regional routing nodes activate, camera slowly rotating around a 3D globe, cinematic sci-fi feel, holographic data streams connecting zones' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'MCP (Model Context Protocol) network diagram coming alive: GitHub commit triggers a cascade — diff parsing node glows, sprint tracker updates automatically, QA checklist generates itself, acceptance criteria light up green. Data packets flow as glowing orbs between Jira, GitHub, Slack nodes on dark tech background with blue-violet nebula, 3D space visualization' },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Velocity prediction chart animating forward in time — historical sprint data on the left showing 5x acceleration, trend line curving upward into the future with confidence intervals fading in, futuristic holographic display style with particle effects' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Velocity methodology validation dashboard: Sprint Day 1-5 columns rising with weighted task complexity calculations visible on each bar, a "Confidence Level" meter at the top glowing at 95% verified, context-switching overhead tracked as small amber annotations. NOT marketing — engineering. Holographic display style, verification checkmarks glowing green on each validated metric, futuristic but data-grounded' },
     // SHOWCASE: Kinetic text — forward-looking vision statement
     { type: 'kinetic-text', text: '85 LANGUAGES. 16 REGIONS. 4 AI ZONES. ONE UNIFIED PIPELINE. Push code → MCP reads diff → tracker updates → QA report generated. The board updates itself.' },
   ],
@@ -738,14 +739,14 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'close-atlas-heard' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'close-nova-goodbye' },
     { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-finale' },
-    // SHOWCASE: Character group farewell — all characters together for emotional close
-    { type: 'character-interaction', characters: ['host', 'atlas', 'nova', 'squirrel'], prompt: 'All four characters gathered in a warm sunlit forest-tech clearing — human PO, bear Atlas, fox Nova, and squirrel perched on bear\'s shoulder. Group portrait moment: they look at camera with pride, golden retriever sits at their feet, woodland creatures peek from bushes. Warm golden hour lighting, Pixar quality', style: 'farewell-wave' },
+    // SHOWCASE: Character group farewell — Nutcracker finale energy, choreographed bows
+    { type: 'character-interaction', characters: ['host', 'atlas', 'nova', 'squirrel'], prompt: 'Nutcracker finale moment in a warm sunlit forest-tech clearing: human PO host takes a theatrical bow center stage, bear Atlas gives a formal measured nod with hands clasped behind his back, fox Nova does an exuberant curtsy with a sparkle burst, squirrel attempts a bow but topples forward and catches itself on bear\'s shoulder — all four laughing. Golden retriever sits at their feet wagging tail, woodland creatures peek from bushes applauding. Warm golden hour lighting, confetti particles, Pixar quality, cinematic depth of field', style: 'farewell-bow' },
     { type: 'screen-capture', screenIds: ['day-5-view'], multiCapture: false },
     // SHOWCASE: "Powered by" provider montage — highlights the AI stack that built this episode
     { type: 'storybook-frame', variant: 'closing', prompt: 'Elegant "Powered By" credits page in storybook style — provider logos arranged in a constellation pattern: ElevenLabs (voice), Azure Neural (voice), Alibaba Wan2.6 (video), Alibaba Wan2.2 (lipsync), Alibaba Wanx (images), Alibaba FLUX (images), Meshy (3D), Alibaba CosyVoice (fallback TTS), ModelsLab (motion), JSON2Video (assembly) — each logo connected by golden thread lines forming a production pipeline flowchart, warm parchment background, calligraphy header "10 AI Providers — 1 Unified Pipeline", 8K quality', duration: 6 },
     { type: 'kinetic-text', text: '10 AI PROVIDERS. 1 UNIFIED PIPELINE. EVERY FRAME AI-GENERATED.' },
-    // ── CTA overlay — links from the script ──
-    { type: 'kinetic-text', text: 'EXPLORE: genieaiexperimentationhub.tech | SUBSCRIBE: YouTube @GenieAIPodcast | CONNECT: LinkedIn — Sai Dasika | Beyond AI Hype — we bring it to life.' },
+    // ── CTA overlay — links from the script (URLs match close-cta links array) ──
+    { type: 'kinetic-text', text: 'EXPLORE: genieaiexperimentationhub.tech | SUBSCRIBE: YouTube @GenieAIPodcast | CONNECT: LinkedIn — Genie AI Suite | Beyond AI Hype — we bring it to life.' },
     { type: 'narrator-scroll', prompt: 'Final scroll revealing the complete AI provider stack used to produce this episode: "Voice: ElevenLabs + Azure Neural + Alibaba CosyVoice | Video: Alibaba Wan2.6 T2V/I2V | Lipsync: Alibaba Wan2.2 S2V | Images: Alibaba Wanx + FLUX Merged | 3D: Meshy | Motion: ModelsLab AnimateDiff | Assembly: JSON2Video | Orchestration: GenieCast" — golden ink on aged paper, each provider name illuminates as the scroll passes', duration: 8, dataContent: 'Voice: ElevenLabs + Azure Neural + CosyVoice | Video: Wan2.6 | Lipsync: Wan2.2 | Images: Wanx + FLUX | 3D: Meshy | Motion: ModelsLab | Assembly: JSON2Video | Orchestration: GenieCast' },
     { type: 'sfx', prompt: 'Orchestral crescendo resolving into a warm music box chime, the sound of a book page turning, and a final magical sparkle', duration: 5 },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'End card: four animated characters (bear Atlas, fox Nova, human host, squirrel perched on shoulder) standing together in a sunlit forest-tech hub, golden retriever at their feet, woodland creatures gathered around, text "Two AIs, One Sprint, Zero Standup Meetings" floating above in holographic letters, cinematic Pixar quality, warm golden hour lighting, 8K' },
