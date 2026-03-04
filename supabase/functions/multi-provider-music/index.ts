@@ -202,17 +202,21 @@ async function generateElevenLabsMusic(prompt: string, duration: number): Promis
 }
 
 // Direct ModelsLab call — uses v6/voice/text2audio (MusicGen model)
+// Set _debugErrors on the module to collect error details for diagnostics
+const _debugErrors: string[] = [];
+
 async function generateModelsLabMusicDirect(prompt: string, duration: number): Promise<ArrayBuffer> {
   const MODELSLAB_API_KEY = Deno.env.get('MODELSLAB_API_KEY');
 
   if (!MODELSLAB_API_KEY) {
-    console.log('⚠️ MODELSLAB_API_KEY not configured, using silent audio placeholder');
+    const msg = 'MODELSLAB_API_KEY not configured';
+    console.log(`⚠️ ${msg}`);
+    _debugErrors.push(msg);
     return generateSilentAudioPlaceholder(duration);
   }
 
   try {
     // Correct endpoint: v6/voice/text2audio with MusicGen model
-    // (matches modelslab-media edge function which is known to work)
     console.log(`🎵 ModelsLab music request: "${prompt.substring(0, 80)}..." duration=${duration}s`);
     const response = await fetch('https://modelslab.com/api/v6/voice/text2audio', {
       method: 'POST',
@@ -229,42 +233,51 @@ async function generateModelsLabMusicDirect(prompt: string, duration: number): P
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('ModelsLab Music API error:', errorText);
-      console.log('⚠️ ModelsLab failed, using silent audio placeholder');
+      const msg = `ModelsLab API ${response.status}: ${errorText.substring(0, 200)}`;
+      console.error(msg);
+      _debugErrors.push(msg);
       return generateSilentAudioPlaceholder(duration);
     }
 
     const result = await response.json();
-    console.log('ModelsLab Music response:', JSON.stringify(result).substring(0, 200));
-    
+    const resultStr = JSON.stringify(result).substring(0, 300);
+    console.log('ModelsLab Music response:', resultStr);
+
     // Immediate success with output
     if (result.status === 'success' && result.output && result.output[0]) {
+      console.log('✅ ModelsLab: immediate success, downloading audio from:', result.output[0]);
       const audioResponse = await fetch(result.output[0]);
+      if (!audioResponse.ok) {
+        _debugErrors.push(`ModelsLab audio download failed: ${audioResponse.status}`);
+        return generateSilentAudioPlaceholder(duration);
+      }
       return audioResponse.arrayBuffer();
     }
-    
+
     // Handle direct link response
     if (result.link) {
+      console.log('✅ ModelsLab: direct link, downloading from:', result.link);
       const audioResponse = await fetch(result.link);
       return audioResponse.arrayBuffer();
     }
-    
+
     // Handle async processing with fetch_result URL
     if (result.fetch_result) {
       console.log('📍 ModelsLab async processing, polling:', result.fetch_result);
       return await pollModelsLabMusicResult(result.fetch_result, MODELSLAB_API_KEY);
     }
-    
+
     // Handle processing status with id (v6 uses different fetch URL)
-    if (result.status === 'processing' && result.id) {
+    if ((result.status === 'processing' || result.status === 'queued') && result.id) {
       const fetchUrl = result.fetch_result || `https://modelslab.com/api/v6/voice/fetch/${result.id}`;
-      console.log('📍 ModelsLab processing, fetch URL:', fetchUrl);
+      console.log('📍 ModelsLab processing/queued, fetch URL:', fetchUrl);
       return await pollModelsLabMusicResult(fetchUrl, MODELSLAB_API_KEY);
     }
-    
+
     // If we get here, ModelsLab didn't return expected format
-    console.warn('ModelsLab unexpected response format:', result);
-    console.log('⚠️ Using silent audio placeholder as fallback');
+    const msg = `ModelsLab unexpected response: ${resultStr}`;
+    console.warn(msg);
+    _debugErrors.push(msg);
     return generateSilentAudioPlaceholder(duration);
     
   } catch (error) {
@@ -550,7 +563,8 @@ serve(async (req) => {
 
     const audioBase64 = base64Encode(audioBuffer);
 
-    console.log(`✅ Music generated: ${audioBuffer.byteLength} bytes via ${provider}`);
+    const isSilentPlaceholder = audioBuffer.byteLength < 60000 && new Uint8Array(audioBuffer).every((b, i) => i < 4 || b === 0);
+    console.log(`${isSilentPlaceholder ? '⚠️ SILENT PLACEHOLDER' : '✅ Real music'}: ${audioBuffer.byteLength} bytes via ${provider}`);
 
     return new Response(
       JSON.stringify({
@@ -563,6 +577,8 @@ serve(async (req) => {
         cost: routing.cost,
         quality: routing.quality,
         type: request.instrumental !== false ? 'instrumental' : 'vocal',
+        isSilentPlaceholder,
+        debugErrors: _debugErrors.length > 0 ? _debugErrors : undefined,
         metadata: {
           promptUsed: request.prompt,
           format: 'mp3',
