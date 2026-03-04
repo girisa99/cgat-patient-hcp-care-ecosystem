@@ -61,11 +61,14 @@ interface MusicRouting {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function getAvailableMusicProviders(): { id: MusicProvider; available: boolean; priority: number }[] {
-  // Match key names used by ai-universal-processor (ALIBABA_SINGAPORE_API_KEY is the working one)
+  // ModelsLab (MusicGen) is the only working music provider:
+  // - ElevenLabs: missing_permissions for music_generation
+  // - DashScope: no music generation API on Singapore endpoint
+  // - ModelsLab: has MusicGen model via v6/voice/text2audio
   const hasAlibaba = !!(Deno.env.get('ALIBABA_SINGAPORE_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY'));
   return [
-    { id: 'alibaba', available: hasAlibaba, priority: 1 },
-    { id: 'modelslab', available: !!Deno.env.get('MODELSLAB_API_KEY'), priority: 2 },
+    { id: 'modelslab', available: !!Deno.env.get('MODELSLAB_API_KEY'), priority: 1 },
+    { id: 'alibaba', available: hasAlibaba, priority: 2 },
     { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 3 },
   ];
 }
@@ -116,25 +119,25 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
     };
   }
 
-  // Default: Prefer Alibaba/DashScope (known working key) over ModelsLab
-  if (hasProvider('alibaba')) {
-    console.log('🎯 Default routing: Alibaba/DashScope (known working key)');
-    return {
-      provider: 'alibaba',
-      cost: 0.015,
-      zone: 'alibaba',
-      quality: 'standard',
-      maxDuration: 60
-    };
-  }
-
-  // Fallback: ModelsLab
+  // Default: ModelsLab MusicGen (only confirmed working music provider)
   if (hasProvider('modelslab')) {
-    console.log('🎯 Fallback routing: ModelsLab');
+    console.log('🎯 Default routing: ModelsLab MusicGen (confirmed working)');
     return {
       provider: 'modelslab',
       cost: 0.015,
       zone: 'modelslab',
+      quality: 'standard',
+      maxDuration: 30
+    };
+  }
+
+  // Fallback: Alibaba (music API may not exist on all endpoints)
+  if (hasProvider('alibaba')) {
+    console.log('🎯 Fallback routing: Alibaba/DashScope');
+    return {
+      provider: 'alibaba',
+      cost: 0.015,
+      zone: 'alibaba',
       quality: 'standard',
       maxDuration: 60
     };
@@ -198,30 +201,29 @@ async function generateElevenLabsMusic(prompt: string, duration: number): Promis
   }
 }
 
-// Direct ModelsLab call without circular fallback
+// Direct ModelsLab call — uses v6/voice/text2audio (MusicGen model)
 async function generateModelsLabMusicDirect(prompt: string, duration: number): Promise<ArrayBuffer> {
   const MODELSLAB_API_KEY = Deno.env.get('MODELSLAB_API_KEY');
-  
+
   if (!MODELSLAB_API_KEY) {
     console.log('⚠️ MODELSLAB_API_KEY not configured, using silent audio placeholder');
     return generateSilentAudioPlaceholder(duration);
   }
 
   try {
-    // Use the correct ModelsLab audio generation endpoint
-    const response = await fetch('https://modelslab.com/api/v1/enterprise/voice/music_generate', {
+    // Correct endpoint: v6/voice/text2audio with MusicGen model
+    // (matches modelslab-media edge function which is known to work)
+    console.log(`🎵 ModelsLab music request: "${prompt.substring(0, 80)}..." duration=${duration}s`);
+    const response = await fetch('https://modelslab.com/api/v6/voice/text2audio', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         key: MODELSLAB_API_KEY,
+        model_id: 'musicgen',
         prompt: prompt,
-        seconds: Math.min(duration, 30), // Max 30 seconds
-        seed: null,
-        base64: false,
-        webhook: null,
-        track_id: null,
+        duration: Math.min(duration, 30),
       }),
     });
 
@@ -253,10 +255,10 @@ async function generateModelsLabMusicDirect(prompt: string, duration: number): P
       return await pollModelsLabMusicResult(result.fetch_result, MODELSLAB_API_KEY);
     }
     
-    // Handle processing status with id
+    // Handle processing status with id (v6 uses different fetch URL)
     if (result.status === 'processing' && result.id) {
-      const fetchUrl = `https://modelslab.com/api/v1/enterprise/fetch/${result.id}`;
-      console.log('📍 ModelsLab processing, constructed fetch URL:', fetchUrl);
+      const fetchUrl = result.fetch_result || `https://modelslab.com/api/v6/voice/fetch/${result.id}`;
+      console.log('📍 ModelsLab processing, fetch URL:', fetchUrl);
       return await pollModelsLabMusicResult(fetchUrl, MODELSLAB_API_KEY);
     }
     
@@ -455,23 +457,23 @@ async function pollDashScopeMusicTask(taskId: string, apiKey: string, baseUrl: s
 
 async function generateModelsLabMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
   const MODELSLAB_API_KEY = Deno.env.get('MODELSLAB_API_KEY');
-  
+
   if (!MODELSLAB_API_KEY) {
     console.warn('ModelsLab not configured, falling back to ElevenLabs');
     return generateElevenLabsMusic(prompt, duration);
   }
 
-  const response = await fetch('https://modelslab.com/api/v6/audio/text2music', {
+  // Correct endpoint: v6/voice/text2audio with MusicGen model
+  const response = await fetch('https://modelslab.com/api/v6/voice/text2audio', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       key: MODELSLAB_API_KEY,
+      model_id: 'musicgen',
       prompt: prompt,
-      duration: duration,
-      seed: null,
-      guidance_scale: 3.0,
+      duration: Math.min(duration, 30),
     }),
   });
 
