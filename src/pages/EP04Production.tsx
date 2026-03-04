@@ -18,7 +18,7 @@ import {
   CheckCircle2, AlertCircle, AlertTriangle, Mic, SkipForward, ArrowLeft,
   Camera, Monitor, Image as ImageIcon, ExternalLink,
   Film, Music, Clapperboard, Download, Eye, Layers,
-  Share2, Scissors, Trash2, RefreshCw
+  Share2, Scissors, Trash2, RefreshCw, Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -1531,8 +1531,12 @@ function EP04ProductionInner() {
       const focusAreas = (step.focusAreas as string[]) || [];
 
       for (const sid of screenIds) {
-        const sourceUrl = screenshotUrls[sid];
+        let sourceUrl = screenshotUrls[sid];
         if (!sourceUrl) { toast.warning(`Screenshot "${sid}" not captured — skipping enhance`); continue; }
+        // Convert local Vite asset paths to full URLs for edge function access
+        if (sourceUrl.startsWith('/') && !sourceUrl.startsWith('//')) {
+          sourceUrl = `${window.location.origin}${sourceUrl}`;
+        }
 
         let jobId: string | null = null;
         if (projectId) {
@@ -1970,13 +1974,20 @@ function EP04ProductionInner() {
           body.referenceImage = refImage;
         } else {
           // Try to find a matching image: screenshots → already-generated results → scene backgrounds
+          // Results may contain data: URLs (base64 from Alibaba image gen) — include those too
+          const httpOrDataUrl = (u: unknown): boolean =>
+            typeof u === 'string' && (u.startsWith('http') || u.startsWith('data:image'));
           const resolvedUrl = screenshotUrls[refImage]
             || Object.entries(screenshotUrls).find(([k]) => refImage.includes(k) || k.includes(refImage))?.[1]
-            || Object.values(results).find(url => url && typeof url === 'string' && url.startsWith('http'))
+            || Object.values(results).find(u => httpOrDataUrl(u))
             || SCENE_BACKGROUNDS[sceneKey];
           if (resolvedUrl) {
-            body.referenceImage = resolvedUrl;
-            console.log(`[EP04 Visual] Resolved i2v referenceImage "${refImage}" → ${resolvedUrl.substring(0, 80)}`);
+            // Convert Vite asset paths (/assets/...) to full URLs so edge functions can download them
+            const finalUrl = (typeof resolvedUrl === 'string' && resolvedUrl.startsWith('/') && !resolvedUrl.startsWith('//'))
+              ? `${window.location.origin}${resolvedUrl}`
+              : resolvedUrl;
+            body.referenceImage = finalUrl;
+            console.log(`[EP04 Visual] Resolved i2v referenceImage "${refImage}" → ${String(finalUrl).substring(0, 80)}`);
           } else {
             // Fallback: no reference image available, switch to t2v instead
             console.warn(`[EP04 Visual] No screenshot for i2v ref "${refImage}" — falling back to t2v`);
@@ -2269,6 +2280,22 @@ function EP04ProductionInner() {
       toast.warning('Visual production cancelled');
     }
   }, [scenes, startSceneVisualProduction]);
+
+  // ── Parallel regen for selected scenes (runs all at once) ──
+  const startParallelSceneRegen = useCallback(async (sceneKeys: string[], forceRegenAll = false) => {
+    if (sceneKeys.length === 0) { toast.warning('No scenes selected for regen'); return; }
+    toast.info(`Regenerating ${sceneKeys.length} scene(s) in parallel: ${sceneKeys.map(sk => SCENE_TITLES[sk]?.split(' — ')[1] || sk).join(', ')}`);
+    const results = await Promise.allSettled(
+      sceneKeys.map(sk => startSceneVisualProduction(sk, undefined, forceRegenAll))
+    );
+    const ok = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    if (failed === 0) {
+      toast.success(`Parallel regen complete: all ${ok} scene(s) succeeded`);
+    } else {
+      toast.warning(`Parallel regen: ${ok} succeeded, ${failed} failed`);
+    }
+  }, [startSceneVisualProduction]);
 
   // ── Lipsync-only production across all scenes ──
   const startAllLipsyncProduction = useCallback(async () => {
@@ -3576,7 +3603,7 @@ function EP04ProductionInner() {
                         </>
                       )}
                       {!visualProgress && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
                           <Button
                             size="sm"
                             onClick={startAllVisualProduction}
@@ -3585,6 +3612,34 @@ function EP04ProductionInner() {
                             <Film className="h-3 w-3 mr-1" />
                             Produce All Visuals
                           </Button>
+                          {/* Regen only scenes with missing/errored assets — runs in parallel */}
+                          {(() => {
+                            const incompleteScenes = Array.from(scenes.keys()).filter(sk => {
+                              const s = sceneProduction[sk];
+                              if (!s) return true; // never generated
+                              if (s.visual === 'error') return true;
+                              if (s.visual !== 'done') return true;
+                              // Check if asset count is less than expected pipeline steps
+                              const pid = SCRIPT_TO_PIPELINE_MAP[sk] || sk;
+                              const cfg = EP04_SCENE_PIPELINES[pid as keyof typeof EP04_SCENE_PIPELINES];
+                              const steps = Array.isArray(cfg) ? cfg : [];
+                              const expectedVisual = steps.filter(st => !new Set(['tts', 'music', 'sfx']).has(st.type)).length;
+                              const actualCount = Object.keys(s.videoUrls).length + Object.keys(s.imageUrls).length
+                                + Object.keys(s.avatarUrls).length + Object.keys(s.lipsyncUrls).length;
+                              return actualCount < expectedVisual;
+                            });
+                            return incompleteScenes.length > 0 ? (
+                              <Button
+                                size="sm" variant="outline"
+                                className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                                onClick={() => startParallelSceneRegen(incompleteScenes)}
+                                disabled={incompleteScenes.some(sk => sceneProduction[sk]?.visual === 'generating')}
+                              >
+                                <Zap className="h-3 w-3 mr-1" />
+                                Regen {incompleteScenes.length} Incomplete (Parallel)
+                              </Button>
+                            ) : null;
+                          })()}
                           <Button
                             size="sm" variant="outline"
                             className="border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
