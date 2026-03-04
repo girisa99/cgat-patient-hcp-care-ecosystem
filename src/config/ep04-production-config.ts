@@ -342,7 +342,7 @@ export type ScenePipelineStep =
   | { type: 'avatar-3d'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; style?: 'pixar-3d' | 'disney-2d' | 'hybrid-2.5d' }
   | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab'; scriptKey?: string }
   | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v'; prompt: string; referenceImage?: string }
-  | { type: 'alibaba-image'; model: 'flux-merged' | 'wanx-v2.1' | 'qwen-image-max'; prompt: string }
+  | { type: 'alibaba-image'; model: 'flux-merged' | 'wan2.6-t2i' | 'wanx-v2.1' | 'qwen-image-max'; prompt: string }
   | { type: 'music'; prompt: string; duration: number; style?: string }
   | { type: 'sfx'; prompt: string; duration?: number }
   | { type: 'motion-graphics'; content: string }
@@ -606,24 +606,55 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'kinetic-text', text: '36 hours → 22 minutes. 98.9% improvement. Frustration breeds features.' },
   ],
   'scene-7-mission-control': [
+    // ── Part 1: Velocity Contest — Atlas vs Nova burndown showdown ──
+    { type: 'tts', voice: 'host', scriptKey: 'velocity-intro' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'atlas-predictability' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene7-atlas-burndown-scroll' },
+    { type: 'tts', voice: 'host', scriptKey: 'velocity-nova' },
+    { type: 'tts', voice: 'host', scriptKey: 'host-nova-how' },
+    { type: 'tts', voice: 'nova', scriptKey: 'nova-scope-now' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene7-nova-burndown-scroll-chaos' },
+    { type: 'tts', voice: 'host', scriptKey: 'velocity-scope-creep' },
+    { type: 'tts', voice: 'nova', scriptKey: 'nova-dark-mode' },
+    // ── Squirrel interrupt — acorn futures comedy beat ──
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-3' },
+    { type: 'tts', voice: 'nova', scriptKey: 'nova-squirrel-response' },
+    { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-focus' },
+    // ── Part 2: Mission Control showcase ──
     { type: 'tts', voice: 'host', scriptKey: 'mission-control-narration' },
-    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
-    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
-    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
-    // SHOWCASE: Storybook chapter frame — marks the "Act 3: Triumph" turning point
-    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider page: "Act III — Mission Control" in golden calligraphy, surrounded by illustrated mission control panels, radar dishes, and data streams, warm parchment background with ink flourishes, Pixar-quality illustration', duration: 4 },
-    // Batch all 4 mission-control screens in one capture (was 4 separate captures + 4 separate enhances = 8 calls → now 2)
-    { type: 'screen-capture', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], multiCapture: true },
-    { type: 'ai-screen-enhance', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], scriptContext: 'Mission Control suite — PO dashboard with real-time developer status and async standup feed; structured standup entries (yesterday/today/blockers); QA sign-off with automated quality gates and approval badges; EOD handoff with context transfer and next-session priorities. The 4 screens together show the full async management toolkit that replaced daily standup meetings.', enhanceMode: 'stylize', focusAreas: ['developer-status-cards', 'async-standup-feed', 'blocker-alerts', 'standup-structure', 'quality-gates', 'approval-badges', 'handoff-summary', 'dependency-flags'] },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup with people talking over each other, RIGHT side shows calm AI-powered async standup with organized data flowing smoothly, cinematic quality' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-context-loss' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-window' },
     { type: 'tts', voice: 'host', scriptKey: 'host-forgot-breakfast' },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: bear character unrolls a pristine white scroll showing a perfectly straight burndown chart line, then fox character yanks out a crumpled paint-splattered enormous scroll that extends off the table, her chart line zigzags wildly with sticky notes and doodles everywhere, bear reaches for his ruler and fox slaps his paw away — comedic timing, warm studio lighting' },
+    // ── Avatars (all 4 characters appear in this scene) ──
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
+    // SHOWCASE: Storybook chapter frame — marks the "Act 3: Triumph" turning point
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider page: "Act III — Mission Control" in golden calligraphy, surrounded by illustrated mission control panels, radar dishes, and data streams, warm parchment background with ink flourishes, Pixar-quality illustration', duration: 4 },
+    // Batch all 4 mission-control screens in one capture
+    { type: 'screen-capture', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], multiCapture: true },
+    { type: 'ai-screen-enhance', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], scriptContext: 'Mission Control suite — PO dashboard with real-time developer status and async standup feed; structured standup entries (yesterday/today/blockers); QA sign-off with automated quality gates and approval badges; EOD handoff with context transfer and next-session priorities. The 4 screens together show the full async management toolkit that replaced daily standup meetings.', enhanceMode: 'stylize', focusAreas: ['developer-status-cards', 'async-standup-feed', 'blocker-alerts', 'standup-structure', 'quality-gates', 'approval-badges', 'handoff-summary', 'dependency-flags'] },
+    // ── Videos: burndown scroll comedy + standup comparison ──
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: bear character (Atlas) unrolls a pristine white scroll showing a perfectly straight burndown chart line descending at 45 degrees, each data point labeled Day 1-5 with precise margins. Then fox character (Nova) yanks out a MASSIVE crumpled paint-splattered scroll that extends off the table, her chart line zigzags wildly with sticky notes, doodles, dark-mode toggles, and scope-creep annotations everywhere. Bear reaches for his ruler, fox slaps his paw away — comedic timing, warm studio lighting' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup meeting with people talking over each other and sticky notes flying. RIGHT side shows calm AI-powered async standup with organized data flowing smoothly on a dashboard, cinematic quality, warm lighting' },
+    // ── Kinetic text: velocity stats ──
+    { type: 'kinetic-text', text: 'ATLAS: 85% velocity. Straight-line burndown. NOVA: 110% velocity. "Things that are in scope... now." SCOPE CREEP ≠ MALICIOUS. It\'s a dev who fixes something in 90 seconds and believes she helped.' },
   ],
   'scene-8-dashboard-tour': [
+    // ── Full dashboard tour narrative — host introduces, atlas/nova add perspective ──
+    { type: 'tts', voice: 'host', scriptKey: 'numbers-intro' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'numbers-tour-atlas' },
+    { type: 'tts', voice: 'host', scriptKey: 'numbers-tour-host-cut' },
+    { type: 'tts', voice: 'nova', scriptKey: 'numbers-nova-perspective' },
+    { type: 'tts', voice: 'host', scriptKey: 'numbers-cost' },
+    // ── Voiceover montage — rapid 18-screen walkthrough ──
     { type: 'tts', voice: 'host', scriptKey: 'tour-narration' },
+    // ── Avatars — all 3 characters contribute to the tour ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    // ── 18 dashboard screenshots ──
     {
       type: 'screen-capture',
       screenIds: [
@@ -634,20 +665,38 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
       ],
       multiCapture: true,
     },
-    // SHOWCASE: Scroll-unroll transition — 18 screenshots unroll like a parchment scroll (perfect for rapid tour)
+    // SHOWCASE: Scroll-unroll transition — 18 screenshots unroll like a parchment scroll
     { type: 'scene-transition', style: 'scroll-unroll', prompt: 'Ancient parchment scroll unrolling horizontally to reveal a montage of 18 dashboard screenshots arranged like panels in an illuminated manuscript, each panel glowing as the scroll passes over it, golden light and ink flourishes', duration: 4 },
     // Animate each screenshot with subtle pan/zoom via Alibaba i2v
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Ken Burns style slow zoom and pan across a software dashboard screenshot, subtle particle effects, professional product demo feel', referenceImage: 'auto-captured-screenshots' },
+    // ── Kinetic text: dashboard tour stats ──
+    { type: 'kinetic-text', text: '18 SCREENS. 1 SYSTEM. ZERO JIRA. PO sees actions & blockers. Dev sees task queue & deploy status. Same system, different lens.' },
   ],
   'scene-9-numbers': [
+    // ── Full challenges narrative — vulnerability + thesis moment ──
+    { type: 'tts', voice: 'host', scriptKey: 'challenges-intro' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'challenges-atlas' },
+    { type: 'tts', voice: 'nova', scriptKey: 'challenges-nova' },
+    // ── Squirrel asks THE question — emotional pivot of the episode ──
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-4' },
+    { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-good-question' },
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-vindicated' },
+    // ── Numbers voiceover — stats montage ──
     { type: 'tts', voice: 'host', scriptKey: 'numbers-narration' },
+    // ── Avatars — all 4 characters in this emotional scene ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
-    { type: 'alibaba-image', model: 'wanx-v2.1', prompt: '3D comparison infographic table: Traditional Sprint (left, red) vs AI Sprint (right, green), showing metrics — velocity 5x, blockers 0, async standups, clean modern design with depth and shadows' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
+    // ── Infographic: Traditional vs AI Sprint comparison (fixed: wan2.6-t2i replaces deprecated wanx-v2.1) ──
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: '3D comparison infographic: Traditional Sprint (left, red tones) vs AI Sprint (right, green tones). Metrics: 41 tasks in 5 days, 5x velocity, 0 blockers, 0 standup meetings, 100% completion. Clean modern design with depth, shadows, and glass-morphism cards' },
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Animated infographic with numbers counting up dynamically, bars growing, green checkmarks appearing, professional motion graphics style', referenceImage: 'comparison-infographic' },
     // SHOWCASE: Motion graphics — animated stat counters for the big number reveal
     { type: 'motion-graphics', content: '41 TASKS | 5 DAYS | 5x VELOCITY | 0 BLOCKERS | 0 STANDUP MEETINGS — numbers count up with particle burst on each stat, green checkmarks animate in sequence, final golden badge pulses: "Sprint Complete"' },
     { type: 'screen-capture', screenIds: ['velocity-metrics'], multiCapture: false },
-    { type: 'ai-screen-enhance', screenIds: ['velocity-metrics'], scriptContext: 'Final velocity metrics — 41 tasks completed, 5x traditional speed, zero blockers at sprint end. The big number reveal moment.', enhanceMode: 'redraw', focusAreas: ['total-velocity-number', 'completion-percentage', 'zero-blockers-badge'] },
+    { type: 'ai-screen-enhance', screenIds: ['velocity-metrics'], scriptContext: 'Final velocity metrics — 41 tasks completed, 5x traditional speed, zero blockers at sprint end. The big number reveal + honest challenges context.', enhanceMode: 'redraw', focusAreas: ['total-velocity-number', 'completion-percentage', 'zero-blockers-badge'] },
+    // ── Kinetic text: the thesis statement ──
+    { type: 'kinetic-text', text: '"Who makes sure the AIs don\'t build the wrong thing really fast?" — The governance layer isn\'t project management theater. It\'s survival tools.' },
   ],
   'scene-10-whats-next': [
     { type: 'tts', voice: 'host', scriptKey: 'whats-next-narration' },
