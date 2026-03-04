@@ -247,6 +247,12 @@ serve(async (req) => {
       // Accept pre-generated scene chapters and go straight to JSON2Video assembly.
       mode = 'full' as string,
       preBuiltChapters = null as ChapterResult[] | null,
+      // Layered timeline data from EP04Production Phase 5
+      transitions = null as Array<{
+        from: string; to: string; style: string; duration: number;
+        bridgeAudioUrl?: string; bridgeDuration?: number;
+      }> | null,
+      bookends = null as { opening: { duration: number }; closing: { duration: number } } | null,
     } = await req.json();
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -254,7 +260,11 @@ serve(async (req) => {
     // Used by EP04Production Phase 5 which generates TTS/visuals/music separately
     // ═══════════════════════════════════════════════════════════════════════
     if (mode === 'stitch-only' && preBuiltChapters && preBuiltChapters.length > 0) {
+      // Detect if chapters carry layered audio data (allTtsUrls array)
+      const hasLayeredAudio = preBuiltChapters.some((c: any) => c.allTtsUrls && c.allTtsUrls.length > 0);
       console.log(`🎬 STITCH-ONLY mode — assembling ${preBuiltChapters.length} pre-built scenes via JSON2Video`);
+      console.log(`   Layered audio: ${hasLayeredAudio ? 'YES' : 'NO (legacy single-audio)'}`);
+      console.log(`   Transitions: ${transitions?.length || 0}, Bookends: ${bookends ? 'yes' : 'no'}`);
 
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -274,7 +284,12 @@ serve(async (req) => {
               provider: 'json2video',
               status: 'processing',
               started_at: new Date().toISOString(),
-              input_config: { mode: 'stitch-only', sceneCount: preBuiltChapters.length },
+              input_config: {
+                mode: 'stitch-only',
+                sceneCount: preBuiltChapters.length,
+                layeredAudio: hasLayeredAudio,
+                transitions: transitions?.length || 0,
+              },
             })
             .select('id')
             .single();
@@ -282,15 +297,33 @@ serve(async (req) => {
         } catch (_) { /* best-effort */ }
       }
 
-      const totalDuration = preBuiltChapters.reduce((sum, c) => sum + c.duration, 0);
+      const sceneDuration = preBuiltChapters.reduce((sum, c) => sum + c.duration, 0);
+      const transitionDuration = (transitions || []).reduce((sum, t) => sum + t.duration, 0);
+      const bookendDuration = (bookends?.opening.duration || 0) + (bookends?.closing.duration || 0);
+      const totalDuration = sceneDuration + transitionDuration + bookendDuration;
 
-      // Go straight to video stitching
-      const assemblyResult = await stitchChaptersToVideo(
-        preBuiltChapters,
-        language,
-        'json2video',
-        quality
-      );
+      // ── Build layered timeline or fall back to legacy stitching ──
+      let assemblyResult: { success: boolean; videoUrl?: string; thumbnailUrl?: string; pendingGeneration: boolean; taskId?: string };
+
+      if (hasLayeredAudio) {
+        // Use the new layered timeline builder that handles per-TTS-line start offsets,
+        // music looping, SFX placement, and transition/bookend segments
+        assemblyResult = await stitchLayeredTimeline(
+          preBuiltChapters,
+          transitions || [],
+          bookends || null,
+          language,
+          quality,
+        );
+      } else {
+        // Legacy: go straight to basic video stitching
+        assemblyResult = await stitchChaptersToVideo(
+          preBuiltChapters,
+          language,
+          'json2video',
+          quality
+        );
+      }
 
       // Update job + project
       if (castJobId && castProjectId) {
@@ -1808,6 +1841,231 @@ function getEducationalScript(chapterId: string, _baseScript: string): string {
  * PRIMARY: JSON2Video (Render tier) for timeline-based stitching
  * FALLBACK: Replicate/ModelsLab for video generation
  */
+/**
+ * Layered timeline assembly for EP04 cinematic movie.
+ * Builds a JSON2Video timeline with:
+ * - Per-TTS-line audio elements with sequential start offsets (master clock)
+ * - Visual elements aligned to TTS durations
+ * - Music looped at original speed (volume 0.3) when shorter than scene
+ * - SFX placed at specific timestamps
+ * - Transition segments between scenes (narrator bridge + SFX)
+ * - Opening/closing bookend segments
+ *
+ * CORE SYNC PRINCIPLE: TTS audio = master clock. Nothing sped up or slowed down.
+ */
+async function stitchLayeredTimeline(
+  chapters: any[],
+  transitions: Array<{ from: string; to: string; style: string; duration: number; bridgeAudioUrl?: string; bridgeDuration?: number }>,
+  bookends: { opening: { duration: number }; closing: { duration: number } } | null,
+  language: string,
+  quality: string,
+): Promise<{ success: boolean; videoUrl?: string; thumbnailUrl?: string; pendingGeneration: boolean; taskId?: string }> {
+  const apiKey = Deno.env.get('JSON2VIDEO_API_KEY');
+  if (!apiKey) {
+    console.log('⚠️ JSON2VIDEO_API_KEY not configured — falling back to legacy stitch');
+    return stitchChaptersToVideo(chapters, language, 'json2video', quality);
+  }
+
+  const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
+  const scenes: any[] = [];
+
+  // ── Opening bookend ──
+  if (bookends) {
+    scenes.push({
+      comment: 'Opening Bookend',
+      duration: bookends.opening.duration,
+      'background-color': '#0f0a1a',
+      elements: [
+        { type: 'text', text: 'Beyond AI Hype — Episode 2', duration: bookends.opening.duration,
+          settings: { 'font-family': 'Inter', 'font-size': '64px', 'font-color': '#f5d77a',
+            'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)' }, position: 'center', start: 0 },
+      ],
+    });
+  }
+
+  // ── Scene segments with layered audio ──
+  chapters.forEach((chapter: any, chapterIndex: number) => {
+    const allTts: Array<{ url: string; start: number; duration: number; voice: string }> = chapter.allTtsUrls || [];
+    const chapterVisuals: string[] = chapter.visualUrls || (chapter.visualUrl ? [chapter.visualUrl] : []);
+    const sceneDuration: number = chapter.duration || 30;
+
+    const elements: any[] = [];
+
+    // ── Visual layer: distribute visuals across scene duration ──
+    if (chapterVisuals.length > 0) {
+      if (allTts.length > 0 && chapterVisuals.length >= allTts.length) {
+        // One visual per TTS line — aligned to TTS timing
+        allTts.forEach((tts, idx) => {
+          const visualUrl = chapterVisuals[idx % chapterVisuals.length];
+          elements.push({
+            type: 'image', src: visualUrl,
+            start: tts.start, duration: tts.duration,
+          });
+        });
+      } else if (chapterVisuals.length > 1) {
+        // Multiple visuals, distribute evenly across scene duration
+        const durPerVisual = Math.max(1, Math.floor(sceneDuration / chapterVisuals.length));
+        chapterVisuals.forEach((url, idx) => {
+          elements.push({
+            type: 'image', src: url,
+            start: idx * durPerVisual,
+            duration: Math.min(durPerVisual, sceneDuration - idx * durPerVisual),
+          });
+        });
+      } else {
+        // Single visual — holds for full scene duration
+        elements.push({
+          type: 'image', src: chapterVisuals[0],
+          start: 0, duration: sceneDuration,
+        });
+      }
+    }
+
+    // ── TTS layer: sequential dialogue lines with start offsets ──
+    allTts.forEach(tts => {
+      if (tts.url && tts.url.startsWith('http')) {
+        elements.push({
+          type: 'audio', src: tts.url,
+          start: tts.start, duration: tts.duration,
+          volume: 1.0,
+        });
+      }
+    });
+
+    // ── Music layer: loop at original speed, volume ducked ──
+    if (chapter.musicUrl && chapter.musicUrl.startsWith('http')) {
+      elements.push({
+        type: 'audio', src: chapter.musicUrl,
+        start: 0, duration: sceneDuration,
+        volume: 0.3,
+        loop: !!chapter.musicLoop,
+      });
+    }
+
+    // ── SFX layer ──
+    const sfxUrls: string[] = chapter.sfxUrls || [];
+    sfxUrls.forEach((sfxUrl: string, sfxIdx: number) => {
+      if (sfxUrl && sfxUrl.startsWith('http')) {
+        // Distribute SFX evenly across scene (rough placement)
+        const sfxStart = sfxIdx > 0 ? Math.floor(sceneDuration * sfxIdx / sfxUrls.length) : 0;
+        elements.push({
+          type: 'audio', src: sfxUrl,
+          start: sfxStart, duration: Math.min(5, sceneDuration - sfxStart),
+          volume: 0.6,
+        });
+      }
+    });
+
+    // ── Scene title overlay (first 5s) ──
+    elements.push({
+      type: 'text', text: chapter.product || chapter.chapterId,
+      start: 0, duration: Math.min(5, sceneDuration),
+      settings: { 'font-family': 'Inter', 'font-size': '42px', 'font-color': '#ffffff',
+        'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)' },
+      position: 'bottom-left',
+    });
+
+    scenes.push({
+      comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS lines, ${sceneDuration}s)`,
+      duration: sceneDuration,
+      'background-color': '#1e293b',
+      elements,
+    });
+
+    // ── Transition segment after this scene (except last) ──
+    if (transitions.length > chapterIndex) {
+      const t = transitions[chapterIndex];
+      const transElements: any[] = [];
+
+      // Transition visual placeholder (text card)
+      transElements.push({
+        type: 'text', text: `~ ${t.style.replace(/-/g, ' ')} ~`,
+        start: 0, duration: t.duration,
+        settings: { 'font-family': 'Inter', 'font-size': '36px', 'font-color': '#c4b5fd',
+          'text-shadow': '2px 2px 6px rgba(0,0,0,0.6)' },
+        position: 'center',
+      });
+
+      // Narrator bridge audio
+      if (t.bridgeAudioUrl && t.bridgeAudioUrl.startsWith('http')) {
+        transElements.push({
+          type: 'audio', src: t.bridgeAudioUrl,
+          start: 1, // slight delay after transition visual appears
+          duration: t.bridgeDuration || (t.duration - 1),
+          volume: 1.0,
+        });
+      }
+
+      scenes.push({
+        comment: `Transition: ${t.from} → ${t.to} (${t.style})`,
+        duration: t.duration,
+        'background-color': '#0f0a1a',
+        elements: transElements,
+      });
+    }
+  });
+
+  // ── Closing bookend ──
+  if (bookends) {
+    scenes.push({
+      comment: 'Closing Bookend',
+      duration: bookends.closing.duration,
+      'background-color': '#0f0a1a',
+      elements: [
+        { type: 'text', text: 'The End... For Now', duration: bookends.closing.duration,
+          settings: { 'font-family': 'Inter', 'font-size': '56px', 'font-color': '#f5d77a',
+            'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)' }, position: 'center', start: 0 },
+      ],
+    });
+  }
+
+  const totalDuration = scenes.reduce((sum, s) => sum + (s.duration || 0), 0);
+  console.log(`📹 Built layered JSON2Video timeline: ${scenes.length} scenes, ${totalDuration}s total`);
+
+  // Submit to JSON2Video
+  const timeline = { resolution, quality: quality === 'cinematic' ? 'high' : 'medium', scenes };
+
+  try {
+    const response = await fetch('https://api.json2video.com/v2/movies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+      body: JSON.stringify(timeline),
+    });
+
+    const responseText = await response.text();
+    console.log(`📹 JSON2Video response status: ${response.status}`);
+    console.log(`📹 JSON2Video response (first 1000): ${responseText.substring(0, 1000)}`);
+
+    if (!response.ok) {
+      console.error(`JSON2Video API error: ${response.status} - ${responseText}`);
+      return { success: false, pendingGeneration: false };
+    }
+
+    const data = JSON.parse(responseText);
+    const projectId = data.project || data.id || data.movie_id;
+
+    if (projectId) {
+      console.log(`📹 JSON2Video layered job created: ${projectId}`);
+      return { success: true, pendingGeneration: true, taskId: projectId };
+    }
+
+    if (data.url || data.movie_url || data.movie?.url) {
+      return {
+        success: true,
+        videoUrl: data.url || data.movie_url || data.movie?.url,
+        thumbnailUrl: data.poster || data.thumbnail || data.movie?.poster,
+        pendingGeneration: false,
+      };
+    }
+
+    console.error(`⚠️ JSON2Video layered: unexpected response`, data);
+    return { success: false, pendingGeneration: false };
+  } catch (err) {
+    console.error('JSON2Video layered assembly error:', err);
+    return { success: false, pendingGeneration: false };
+  }
+}
+
 async function stitchChaptersToVideo(
   chapters: ChapterResult[],
   language: string,

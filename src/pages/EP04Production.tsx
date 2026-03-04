@@ -2440,43 +2440,108 @@ function EP04ProductionInner() {
 
   // ─── Phase 5: Assembly → One Cinematic Movie ──────────────────────────
 
+  // ─── LIPSYNC CONSTANTS ─────────────────────────────────────────────────────
+  // Alibaba WAN 2.2 silently trims audio to ~18s (280KB). Lines longer than this
+  // play as voiceover with a static/looping avatar after the lipsync portion.
+  const LIPSYNC_MAX_DURATION = 18; // seconds
+
   // Readiness audit — checks all 12 scenes for required assets before assembly
+  // Enhanced: per-scene TTS lines with durations, lipsync handoff detection,
+  // music-vs-scene duration comparison, pipeline step cross-reference.
   const getAssemblyReadiness = useCallback(() => {
     const sceneKeys = Array.from(scenes.keys());
     const report: Array<{
       sceneKey: string;
       title: string;
-      ttsCount: number;
-      ttsTotal: number;
-      hasVisuals: boolean;
-      visualCount: number;
-      hasAvatars: boolean;
-      hasLipsync: boolean;
+      // TTS
+      ttsLines: { key: string; voice: string; duration: number; hasAudio: boolean }[];
+      ttsReady: number;
+      ttsMissing: number;
+      expectedDuration: number; // sum of TTS durations (master clock)
+      // Visuals
+      expectedVisualSteps: { type: string; label: string }[];
+      videoCount: number;
+      imageCount: number;
+      // Lipsync
+      lipsyncEntries: { character: string; hasLipsync: boolean; ttsExceeds18s: boolean }[];
+      lipsyncReady: number;
+      lipsyncMissing: number;
+      // Avatar 3D
+      avatarCount: number;
+      // Music & SFX
       hasMusic: boolean;
-      hasSfx: boolean;
+      musicDuration: number | null;
+      musicCoversScene: boolean;
+      sfxCount: number;
+      // Overall
       missing: string[];
+      canAssemble: boolean; // minimum: TTS + at least 1 visual
     }> = [];
 
     let totalReady = 0;
     let totalMissing = 0;
+    let grandTotalDuration = 0;
 
     for (const sceneKey of sceneKeys) {
       const status = sceneProduction[sceneKey];
       const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
-      const ttsCount = sceneLines.filter(k => audioMap[k]?.audioUrl).length;
-      const ttsTotal = sceneLines.length;
+
+      // Per-TTS-line detail
+      const ttsLines = sceneLines.map(k => {
+        const line = scriptContentForUI[k];
+        return {
+          key: k,
+          voice: line?.voice || 'unknown',
+          duration: line?.duration_est || 5,
+          hasAudio: !!audioMap[k]?.audioUrl,
+        };
+      });
+      const ttsReady = ttsLines.filter(l => l.hasAudio).length;
+      const ttsMissing = ttsLines.filter(l => !l.hasAudio).length;
+      const expectedDuration = ttsLines.reduce((sum, l) => sum + l.duration, 0);
+      grandTotalDuration += expectedDuration;
+
+      // Pipeline steps cross-reference
+      const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
+      const configPipeline = EP04_SCENE_PIPELINES[pipelineSceneKey as keyof typeof EP04_SCENE_PIPELINES];
+      const steps = Array.isArray(configPipeline) ? configPipeline : [];
+
+      const expectedVisualSteps = steps
+        .filter(s => ['alibaba-video', 'alibaba-image', 'screen-capture', 'ai-screen-enhance'].includes(s.type))
+        .map(s => ({ type: s.type, label: s.type.replace(/-/g, ' ') }));
 
       const videoCount = Object.values(status?.videoUrls || {}).filter(u => u).length;
       const imageCount = Object.values(status?.imageUrls || {}).filter(u => u).length;
       const avatarCount = Object.values(status?.avatarUrls || {}).filter(u => u).length;
-      const lipsyncCount = Object.values(status?.lipsyncUrls || {}).filter(u => u).length;
-      const hasMusic = !!status?.musicUrl;
-      const hasSfx = (status?.sfxUrls || []).length > 0;
 
+      // Lipsync entries — detect which characters need lipsync and whether TTS exceeds limit
+      const lipsyncSteps = steps.filter(s => s.type === 'avatar-lipsync') as Array<{ type: 'avatar-lipsync'; character: string; scriptKey?: string }>;
+      const lipsyncEntries = lipsyncSteps.map(ls => {
+        const hasLipsync = !!(status?.lipsyncUrls || {})[ls.character];
+        // Check if the TTS line for this character exceeds the lipsync limit
+        const charTtsLines = ttsLines.filter(l => l.voice === ls.character);
+        const longestTts = charTtsLines.reduce((max, l) => Math.max(max, l.duration), 0);
+        return {
+          character: ls.character,
+          hasLipsync,
+          ttsExceeds18s: longestTts > LIPSYNC_MAX_DURATION,
+        };
+      });
+      const lipsyncReady = lipsyncEntries.filter(l => l.hasLipsync).length;
+      const lipsyncMissing = lipsyncEntries.filter(l => !l.hasLipsync).length;
+
+      // Music & SFX
+      const hasMusic = !!status?.musicUrl;
+      // Estimate music duration from pipeline config
+      const musicStep = steps.find(s => s.type === 'music') as { type: 'music'; duration: number } | undefined;
+      const musicDuration = musicStep?.duration || null;
+      const musicCoversScene = hasMusic && musicDuration != null ? musicDuration >= expectedDuration : false;
+      const sfxCount = (status?.sfxUrls || []).length;
+
+      // Missing assets report
       const missing: string[] = [];
-      if (ttsCount === 0) missing.push('TTS audio');
+      if (ttsReady === 0) missing.push('TTS audio');
       if (videoCount === 0 && imageCount === 0) missing.push('Visuals');
-      // Avatars/lipsync are optional — only flag if scene has them partially
       if (!hasMusic) missing.push('Music');
 
       if (missing.length === 0) totalReady++;
@@ -2485,15 +2550,23 @@ function EP04ProductionInner() {
       report.push({
         sceneKey,
         title: SCENE_TITLES[sceneKey] || sceneKey,
-        ttsCount,
-        ttsTotal,
-        hasVisuals: videoCount > 0 || imageCount > 0,
-        visualCount: videoCount + imageCount,
-        hasAvatars: avatarCount > 0,
-        hasLipsync: lipsyncCount > 0,
+        ttsLines,
+        ttsReady,
+        ttsMissing,
+        expectedDuration,
+        expectedVisualSteps,
+        videoCount,
+        imageCount,
+        lipsyncEntries,
+        lipsyncReady,
+        lipsyncMissing,
+        avatarCount,
         hasMusic,
-        hasSfx,
+        musicDuration,
+        musicCoversScene,
+        sfxCount,
         missing,
+        canAssemble: ttsReady > 0 && (videoCount > 0 || imageCount > 0),
       });
     }
 
@@ -2503,8 +2576,9 @@ function EP04ProductionInner() {
       readyScenes: totalReady,
       missingScenes: totalMissing,
       isReady: totalMissing === 0,
+      grandTotalDuration,
       // Minimum requirements: at least TTS + visuals for every scene
-      canAssemble: report.every(s => s.ttsCount > 0 && s.hasVisuals),
+      canAssemble: report.every(s => s.canAssemble),
     };
   }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap]);
 
@@ -2562,22 +2636,39 @@ function EP04ProductionInner() {
     }
 
     setProductionPhase('assembly');
-    setAssemblyProgress('Building scene timeline for JSON2Video...');
+    setAssemblyProgress('Building layered scene timeline for JSON2Video...');
 
     try {
       const sceneKeys = Array.from(scenes.keys());
 
-      // Build ChapterResult-compatible objects for each scene
-      // JSON2Video assembler expects: audioUrl, visualUrls, duration, etc.
+      // ── Build layered ChapterResult objects per scene ──
+      // Each scene carries: all TTS URLs with start offsets, visuals, music loop flag,
+      // lipsync entries, and SFX — the assembler uses these to construct the JSON2Video timeline.
       const preBuiltChapters = sceneKeys.map(sceneKey => {
         const status = sceneProduction[sceneKey] || defaultSceneStatus();
         const sceneTitle = SCENE_TITLES[sceneKey] || sceneKey;
 
-        // Collect TTS audio URLs for this scene (pick first valid one for the chapter audio)
+        // All TTS lines for this scene with sequential start offsets (master clock)
         const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
-        const ttsUrls = sceneLines
-          .filter(k => audioMap[k]?.audioUrl)
-          .map(k => audioMap[k].audioUrl);
+        let cumulativeStart = 0;
+        const allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string; key: string }> = [];
+
+        for (const k of sceneLines) {
+          const line = scriptContentForUI[k];
+          const dur = line?.duration_est || 5;
+          if (audioMap[k]?.audioUrl) {
+            allTtsUrls.push({
+              url: audioMap[k].audioUrl,
+              start: cumulativeStart,
+              duration: dur,
+              voice: line?.voice || 'unknown',
+              key: k,
+            });
+          }
+          cumulativeStart += dur;
+        }
+
+        const sceneDuration = cumulativeStart || 30;
 
         // Collect ALL visual URLs (images + videos + avatars + lipsync)
         const allVisualUrls: string[] = [
@@ -2587,30 +2678,77 @@ function EP04ProductionInner() {
           ...Object.values(status.lipsyncUrls || {}).filter(u => u),
         ];
 
-        // Estimate duration from script line durations
-        const sceneDuration = sceneLines.reduce(
-          (sum, k) => sum + (scriptContentForUI[k]?.duration_est || 5), 0
-        );
+        // Music loop detection — music track is typically 20-30s, scenes can be 50-270s
+        const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
+        const pipeline = EP04_SCENE_PIPELINES[pipelineSceneKey as keyof typeof EP04_SCENE_PIPELINES];
+        const musicStep = (Array.isArray(pipeline) ? pipeline : []).find(s => s.type === 'music') as { type: 'music'; duration: number } | undefined;
+        const musicDuration = musicStep?.duration || 30;
+        const musicLoop = status.musicUrl ? musicDuration < sceneDuration : false;
+
+        // Lipsync entries with character and whether TTS exceeds 18s limit
+        const lipsyncData: Array<{ character: string; lipsyncUrl: string | null; ttsExceeds18s: boolean }> = [];
+        if (status?.lipsyncUrls) {
+          for (const [character, url] of Object.entries(status.lipsyncUrls)) {
+            if (url) {
+              const charTts = allTtsUrls.filter(t => t.voice === character);
+              const longest = charTts.reduce((max, t) => Math.max(max, t.duration), 0);
+              lipsyncData.push({ character, lipsyncUrl: url, ttsExceeds18s: longest > LIPSYNC_MAX_DURATION });
+            }
+          }
+        }
 
         return {
           chapterId: sceneKey,
           product: sceneTitle,
-          audioUrl: ttsUrls[0] || undefined,
+          audioUrl: allTtsUrls[0]?.url || undefined,
           visualUrl: allVisualUrls[0] || undefined,
           visualUrls: allVisualUrls,
-          duration: sceneDuration || 30,
+          duration: sceneDuration,
           ttsProvider: 'pre-generated',
           videoProvider: 'pre-generated',
           success: true,
-          // Music + SFX passed as extra fields for timeline audio layering
+          // Layered audio data for proper timeline construction
+          allTtsUrls,
           musicUrl: status.musicUrl || undefined,
+          musicLoop,
+          musicDuration,
           sfxUrls: status.sfxUrls || [],
+          lipsyncData,
         };
       });
 
-      console.log('[EP04 Assembly] Pre-built chapters:', preBuiltChapters.map(c =>
-        `${c.chapterId}: ${c.visualUrls?.length || 0} visuals, audio=${!!c.audioUrl}, music=${!!c.musicUrl}, dur=${c.duration}s`
+      // ── Build transition segments between scenes ──
+      const transitions = EP04_STORYBOOK_TRANSITIONS.map(t => ({
+        from: t.from,
+        to: t.to,
+        style: t.style,
+        duration: t.steps.reduce((sum, s) => sum + ('duration' in s ? (s as any).duration : 3), 0),
+        // Check if narrator bridge TTS exists for this transition
+        bridgeKey: `bridge-${t.from.replace('scene-', '').split('-')[0]}-to-${t.to.replace('scene-', '').split('-')[0]}`,
+      })).map(t => {
+        const bridgeAudio = audioMap[t.bridgeKey]?.audioUrl;
+        const bridgeLine = EP04_NARRATOR_BRIDGES[t.bridgeKey];
+        return {
+          ...t,
+          bridgeAudioUrl: bridgeAudio || undefined,
+          bridgeDuration: bridgeLine?.duration_est || 7,
+        };
+      });
+
+      // ── Bookend data ──
+      const bookends = {
+        opening: { duration: 21, hasAssets: true },
+        closing: { duration: 16, hasAssets: true },
+      };
+
+      const grandTotalDuration = preBuiltChapters.reduce((s, c) => s + c.duration, 0)
+        + transitions.reduce((s, t) => s + t.duration, 0)
+        + bookends.opening.duration + bookends.closing.duration;
+
+      console.log('[EP04 Assembly] Layered chapters:', preBuiltChapters.map(c =>
+        `${c.chapterId}: ${c.allTtsUrls.length} TTS lines, ${c.visualUrls?.length || 0} visuals, music=${!!c.musicUrl}(loop=${c.musicLoop}), dur=${c.duration}s`
       ));
+      console.log(`[EP04 Assembly] ${transitions.length} transitions, total estimated: ${Math.round(grandTotalDuration / 60)}min`);
 
       // Track the assembly job
       let jobId: string | null = null;
@@ -2620,15 +2758,17 @@ function EP04ProductionInner() {
         });
       }
 
-      setAssemblyProgress('Submitting to JSON2Video assembly...');
+      setAssemblyProgress('Submitting layered timeline to JSON2Video assembly...');
 
-      // Call genie-cast-assembler in stitch-only mode
+      // Call genie-cast-assembler in stitch-only mode with layered data
       const { data, error } = await supabase.functions.invoke('genie-cast-assembler', {
         body: {
           mode: 'stitch-only',
           language: 'en',
           quality: 'production',
           preBuiltChapters,
+          transitions,
+          bookends,
           castProjectId: projectId,
         },
       });
@@ -2653,7 +2793,7 @@ function EP04ProductionInner() {
 
         if (projectId && data.videoUrl) {
           await updateFinalAssembly(projectId, data.videoUrl, {
-            totalDuration,
+            totalDuration: grandTotalDuration,
             sceneCount: sceneKeys.length,
             resolution: '1920x1080',
           });
@@ -3332,14 +3472,12 @@ function EP04ProductionInner() {
           {/* PHASE 3: VISUAL PRODUCTION (always visible)                       */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {(() => {
-            const phase3Unlocked = productionPhase !== 'tts';
             const phase3Done = productionPhase === 'music' || productionPhase === 'assembly' || productionPhase === 'complete';
             return (
             <div className="mt-6">
               <Card className={cn(
                 'border transition-all',
-                !phase3Unlocked && 'opacity-50',
-                phase3Unlocked && !phase3Done && 'ring-2 ring-primary/30',
+                !phase3Done && 'ring-2 ring-primary/30',
                 phase3Done && 'border-green-500/30 bg-green-500/[0.02]',
               )}>
                 <CardContent className="p-6">
@@ -3348,18 +3486,16 @@ function EP04ProductionInner() {
                       <div className={cn(
                         'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold',
                         phase3Done ? 'bg-green-500 text-white' :
-                        phase3Unlocked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                        'bg-primary/10 text-primary',
                       )}>
                         {phase3Done ? <CheckCircle2 className="h-4 w-4" /> : '3'}
                       </div>
                       <div>
                         <h3 className="text-lg font-bold">Phase 3: Visual Production</h3>
                         <p className="text-sm text-muted-foreground">
-                          {phase3Unlocked
-                            ? 'Generate video, avatar, lipsync assets per scene pipeline'
-                            : 'Approve TTS to unlock visual production'}
+                          Generate video, avatar, lipsync assets per scene pipeline
                         </p>
-                        {phase3Unlocked && !phase3Done && (
+                        {!phase3Done && (
                           <div className="flex items-center gap-3 mt-1">
                             <span className={cn('text-[10px] font-medium', scenesWithPipeline.length >= 12 ? 'text-green-500' : 'text-amber-500')}>
                               {scenesWithPipeline.length}/{scenes.size} pipelines ready
@@ -3372,16 +3508,13 @@ function EP04ProductionInner() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {!phase3Unlocked && (
-                        <Badge variant="outline" className="text-xs">Locked</Badge>
-                      )}
                       {visualProgress && (
                         <>
                           <Progress value={(visualProgress.current / visualProgress.total) * 100} className="w-32 h-2" />
                           <span className="text-xs text-muted-foreground">{visualProgress.current}/{visualProgress.total}</span>
                         </>
                       )}
-                      {phase3Unlocked && !visualProgress && (
+                      {!visualProgress && (
                         <div className="flex gap-2">
                           <Button
                             size="sm"
@@ -3402,7 +3535,7 @@ function EP04ProductionInner() {
                           </Button>
                         </div>
                       )}
-                      {phase3Unlocked && (
+                      {(
                         <>
                         <Button
                           size="sm" variant="outline"
@@ -3520,7 +3653,7 @@ function EP04ProductionInner() {
                               <span className="text-[9px] text-muted-foreground">No pipeline configured</span>
                             )}
                           </div>
-                          {phase3Unlocked && !phase3Done && status?.visual !== 'done' && (
+                          {!phase3Done && status?.visual !== 'done' && (
                             <Button
                               size="sm" variant="outline" className="w-full h-7 text-[10px]"
                               onClick={() => startSceneVisualProduction(sceneKey)}
@@ -3530,7 +3663,7 @@ function EP04ProductionInner() {
                             </Button>
                           )}
                           {/* Regenerate buttons for completed/errored scenes */}
-                          {phase3Unlocked && (status?.visual === 'done' || status?.visual === 'error') && (
+                          {(status?.visual === 'done' || status?.visual === 'error') && (
                             <div className="flex gap-1 mt-1">
                               {/* Regen All — clears ALL state and regenerates everything with latest prompts */}
                               <Button
@@ -3796,17 +3929,19 @@ function EP04ProductionInner() {
                           {status?.musicUrl && (
                             <audio src={status.musicUrl} controls className="w-full mt-2 h-6" />
                           )}
-                          {/* Per-scene regen button — shows for error or idle states */}
-                          {(status?.music === 'error' || status?.music === 'idle' || (status?.music === 'done' && !status?.musicUrl)) && (
+                          {/* Per-scene regen button — always visible unless actively generating */}
+                          {status?.music !== 'generating' && (
                             <Button
                               size="sm"
                               variant="outline"
-                              className="w-full mt-1 h-5 text-[8px]"
+                              className={cn(
+                                'w-full mt-1 h-5 text-[8px]',
+                                !status?.musicUrl && 'border-amber-500/30 text-amber-500',
+                              )}
                               onClick={() => startSceneMusicProduction(sceneKey)}
-                              disabled={status?.music === 'generating'}
                             >
                               <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
-                              Regen Music
+                              {status?.musicUrl ? 'Regen' : 'Generate'} Music
                             </Button>
                           )}
                         </div>
@@ -3874,9 +4009,10 @@ function EP04ProductionInner() {
                     </div>
                   </div>
 
-                  {/* Readiness Audit Report */}
-                  {assemblyReadiness && !phase5Done && (
+                  {/* ── Timeline Visualization Bar ───────────────────── */}
+                  {assemblyReadiness && (
                     <div className="mb-4 p-3 rounded-lg border bg-muted/10">
+                      {/* Summary header */}
                       <div className="flex items-center gap-2 mb-3">
                         {assemblyReadiness.canAssemble ? (
                           <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -3888,30 +4024,125 @@ function EP04ProductionInner() {
                             ? `Ready to assemble — ${assemblyReadiness.readyScenes}/${assemblyReadiness.totalScenes} scenes fully ready`
                             : `Not ready — ${assemblyReadiness.missingScenes} scene(s) missing required assets`}
                         </span>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          ~{Math.round((assemblyReadiness.grandTotalDuration || 0) / 60)}min total
+                        </span>
                       </div>
+
+                      {/* Timeline bar: [OPEN] [S0] [T] [S1] [T] ... [S11] [CLOSE] */}
+                      <div className="flex items-center gap-0.5 mb-4 overflow-x-auto pb-1">
+                        {/* Opening bookend */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex-shrink-0 h-6 px-1.5 rounded text-[7px] font-bold flex items-center justify-center bg-violet-500/20 text-violet-400 border border-violet-500/30 cursor-default">
+                                OPEN
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">Opening bookend (21s) — storybook + music + SFX</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        {assemblyReadiness.scenes.map((s, i) => {
+                          const readiness = s.canAssemble ? (s.missing.length === 0 ? 'ready' : 'partial') : 'missing';
+                          const colors = {
+                            ready: 'bg-green-500/20 text-green-400 border-green-500/30',
+                            partial: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+                            missing: 'bg-red-500/20 text-red-400 border-red-500/30',
+                          };
+                          return (
+                            <React.Fragment key={s.sceneKey}>
+                              {/* Transition indicator (between scenes) */}
+                              {i > 0 && (
+                                <div className="flex-shrink-0 h-4 w-4 rounded-sm text-[6px] font-bold flex items-center justify-center bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 cursor-default" title={`Transition ${i - 1}→${i}`}>
+                                  T
+                                </div>
+                              )}
+                              {/* Scene segment */}
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className={cn(
+                                      'flex-shrink-0 h-6 px-1 rounded text-[7px] font-bold flex items-center justify-center border cursor-default min-w-[28px]',
+                                      colors[readiness],
+                                    )}>
+                                      S{i}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs max-w-xs">
+                                    <p className="font-bold">{s.title}</p>
+                                    <p>TTS: {s.ttsReady}/{s.ttsReady + s.ttsMissing} ({s.expectedDuration}s)</p>
+                                    <p>Visuals: {s.videoCount + s.imageCount} | Avatars: {s.avatarCount}</p>
+                                    <p>Lipsync: {s.lipsyncReady}/{s.lipsyncReady + s.lipsyncMissing} | Music: {s.hasMusic ? `Yes (${s.musicCoversScene ? 'covers' : 'loops'})` : 'No'}</p>
+                                    {s.missing.length > 0 && <p className="text-red-400 font-semibold">Missing: {s.missing.join(', ')}</p>}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </React.Fragment>
+                          );
+                        })}
+
+                        {/* Closing bookend */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex-shrink-0 h-6 px-1.5 rounded text-[7px] font-bold flex items-center justify-center bg-violet-500/20 text-violet-400 border border-violet-500/30 cursor-default">
+                                CLOSE
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">Closing bookend (16s) — storybook closing + music + SFX</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+
+                      {/* Per-scene detail grid */}
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                         {assemblyReadiness.scenes.map(s => (
                           <div key={s.sceneKey} className={cn(
                             'p-2 rounded border text-[9px]',
-                            s.missing.length === 0 ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5',
+                            s.canAssemble
+                              ? (s.missing.length === 0 ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5')
+                              : 'border-red-500/30 bg-red-500/5',
                           )}>
                             <p className="font-bold truncate mb-1">{s.title.split(' — ')[1] || s.sceneKey}</p>
                             <div className="space-y-0.5">
-                              <p className={s.ttsCount > 0 ? 'text-green-600' : 'text-red-500'}>
-                                TTS: {s.ttsCount}/{s.ttsTotal}
+                              <p className={s.ttsReady > 0 ? 'text-green-600' : 'text-red-500'}>
+                                TTS: {s.ttsReady}/{s.ttsReady + s.ttsMissing} ({s.expectedDuration}s)
                               </p>
-                              <p className={s.hasVisuals ? 'text-green-600' : 'text-red-500'}>
-                                Visuals: {s.visualCount}
+                              <p className={s.videoCount + s.imageCount > 0 ? 'text-green-600' : 'text-red-500'}>
+                                Visuals: {s.videoCount}V + {s.imageCount}I
                               </p>
                               <p className={s.hasMusic ? 'text-green-600' : 'text-amber-500'}>
-                                Music: {s.hasMusic ? 'Yes' : 'No'}
+                                Music: {s.hasMusic ? (s.musicCoversScene ? 'Full' : 'Loop') : 'Missing'}
+                                {s.musicDuration != null && s.hasMusic && (
+                                  <span className="text-muted-foreground"> ({s.musicDuration}s/{s.expectedDuration}s)</span>
+                                )}
                               </p>
-                              {s.hasAvatars && <p className="text-green-600">Avatars: Yes</p>}
-                              {s.hasLipsync && <p className="text-green-600">Lipsync: Yes</p>}
-                              {s.hasSfx && <p className="text-green-600">SFX: Yes</p>}
+                              {s.avatarCount > 0 && <p className="text-green-600">Avatars: {s.avatarCount}</p>}
+                              {s.lipsyncReady > 0 && (
+                                <p className="text-green-600">
+                                  Lipsync: {s.lipsyncReady}
+                                  {s.lipsyncEntries.some(l => l.ttsExceeds18s) && (
+                                    <span className="text-amber-500"> (voiceover handoff)</span>
+                                  )}
+                                </p>
+                              )}
+                              {s.sfxCount > 0 && <p className="text-green-600">SFX: {s.sfxCount}</p>}
                             </div>
                             {s.missing.length > 0 && (
                               <p className="text-red-500 mt-1 font-semibold">Missing: {s.missing.join(', ')}</p>
+                            )}
+                            {/* Per-scene music regen button if music missing */}
+                            {!s.hasMusic && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full mt-1 h-5 text-[8px]"
+                                onClick={() => startSceneMusicProduction(s.sceneKey)}
+                              >
+                                <Music className="h-2.5 w-2.5 mr-0.5" />
+                                Regen Music
+                              </Button>
                             )}
                           </div>
                         ))}
@@ -3982,8 +4213,8 @@ function EP04ProductionInner() {
               Object.values(s.avatarUrls || {}).some(u => u) ||
               Object.values(s.lipsyncUrls || {}).some(u => u)
             );
-            const phase6Unlocked = hasAnyAssets || productionPhase === 'complete';
-            if (!phase6Unlocked) return null;
+            // Phase 6 always visible — no gating
+            const _hasAnyAssetsOrComplete = hasAnyAssets || productionPhase === 'complete';
 
             // Gather all scene keys that have assets
             const sceneKeys = Array.from(scenes.keys());
