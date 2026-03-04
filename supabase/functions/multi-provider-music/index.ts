@@ -61,9 +61,11 @@ interface MusicRouting {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function getAvailableMusicProviders(): { id: MusicProvider; available: boolean; priority: number }[] {
+  // Match key names used by ai-universal-processor (ALIBABA_SINGAPORE_API_KEY is the working one)
+  const hasAlibaba = !!(Deno.env.get('ALIBABA_SINGAPORE_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY'));
   return [
-    { id: 'modelslab', available: !!Deno.env.get('MODELSLAB_API_KEY'), priority: 1 },
-    { id: 'alibaba', available: !!Deno.env.get('ALIBABA_API_KEY'), priority: 2 },
+    { id: 'alibaba', available: hasAlibaba, priority: 1 },
+    { id: 'modelslab', available: !!Deno.env.get('MODELSLAB_API_KEY'), priority: 2 },
     { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 3 },
   ];
 }
@@ -114,24 +116,25 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
     };
   }
 
-  // Default: Use ModelsLab as most reliable option
-  if (hasProvider('modelslab')) {
-    console.log('🎯 Default routing: ModelsLab (most reliable)');
+  // Default: Prefer Alibaba/DashScope (known working key) over ModelsLab
+  if (hasProvider('alibaba')) {
+    console.log('🎯 Default routing: Alibaba/DashScope (known working key)');
     return {
-      provider: 'modelslab',
+      provider: 'alibaba',
       cost: 0.015,
-      zone: 'modelslab',
+      zone: 'alibaba',
       quality: 'standard',
       maxDuration: 60
     };
   }
-  
-  // Last resort: Alibaba
-  if (hasProvider('alibaba')) {
+
+  // Fallback: ModelsLab
+  if (hasProvider('modelslab')) {
+    console.log('🎯 Fallback routing: ModelsLab');
     return {
-      provider: 'alibaba',
+      provider: 'modelslab',
       cost: 0.015,
-      zone: 'alibaba-fallback',
+      zone: 'modelslab',
       quality: 'standard',
       maxDuration: 60
     };
@@ -338,23 +341,25 @@ function generateSilentAudioPlaceholder(duration: number): ArrayBuffer {
 }
 
 async function generateAlibabaMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
-  // Try both API keys - China (Beijing) preferred for audio models, International (Virginia) as fallback
-  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  // Match key names used by ai-universal-processor (the working visual generator)
+  const sgKey = Deno.env.get('ALIBABA_SINGAPORE_API_KEY');
   const intlKey = Deno.env.get('ALIBABA_API_KEY');
-  const ALIBABA_API_KEY = chinaKey || intlKey;
-  
+  const dsKey = Deno.env.get('DASHSCOPE_API_KEY');
+  const chinaKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const ALIBABA_API_KEY = sgKey || intlKey || dsKey || chinaKey;
+
   if (!ALIBABA_API_KEY) {
-    console.warn('Neither Alibaba key configured, falling back to ElevenLabs');
+    console.warn('No Alibaba/DashScope key configured, falling back to ElevenLabs');
     return generateElevenLabsMusic(prompt, duration);
   }
 
-  // Route to correct endpoint
-  const useChina = !!chinaKey;
+  // Route to correct endpoint — Singapore/International preferred, China as fallback
+  const useChina = !sgKey && !intlKey && !dsKey && !!chinaKey;
   const baseUrl = useChina
     ? 'https://dashscope.aliyuncs.com/api/v1'
     : 'https://dashscope-intl.aliyuncs.com/api/v1';
 
-  console.log(`🎵 Alibaba Music via ${useChina ? 'China (Beijing)' : 'International (Virginia)'}`);
+  console.log(`🎵 Alibaba Music via ${useChina ? 'China (Beijing)' : 'International (Singapore)'}`);
 
   const response = await fetch(`${baseUrl}/services/audio/music-generate`, {
     method: 'POST',
@@ -373,12 +378,23 @@ async function generateAlibabaMusic(prompt: string, duration: number): Promise<A
   });
 
   if (!response.ok) {
-    console.warn('Alibaba Music failed, falling back to ElevenLabs');
-    return generateElevenLabsMusic(prompt, duration);
+    const errText = await response.text().catch(() => 'unknown');
+    console.warn(`Alibaba Music failed (${response.status}): ${errText}`);
+    return generateModelsLabMusicDirect(prompt, duration);
   }
 
   const result = await response.json();
+  console.log('🎵 Alibaba Music response keys:', Object.keys(result), 'status:', result.status_code || result.code || 'n/a');
+
+  // DashScope async task pattern — submit then poll
+  if (result.output?.task_id) {
+    console.log(`📍 Alibaba Music async task: ${result.output.task_id}, polling...`);
+    return await pollDashScopeMusicTask(result.output.task_id, ALIBABA_API_KEY, baseUrl);
+  }
+
+  // Direct base64 audio response
   if (result.output?.audio) {
+    console.log('✅ Alibaba Music returned direct audio');
     const binaryString = atob(result.output.audio);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
@@ -387,7 +403,54 @@ async function generateAlibabaMusic(prompt: string, duration: number): Promise<A
     return bytes.buffer;
   }
 
-  return generateElevenLabsMusic(prompt, duration);
+  // Direct URL response
+  if (result.output?.audio_url) {
+    console.log('✅ Alibaba Music returned audio URL:', result.output.audio_url);
+    const audioResp = await fetch(result.output.audio_url);
+    return audioResp.arrayBuffer();
+  }
+
+  console.warn('Alibaba Music unexpected response:', JSON.stringify(result).substring(0, 300));
+  return generateModelsLabMusicDirect(prompt, duration);
+}
+
+// Poll DashScope async music task (similar to image/video pattern)
+async function pollDashScopeMusicTask(taskId: string, apiKey: string, baseUrl: string): Promise<ArrayBuffer> {
+  const maxAttempts = 30;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    await new Promise(r => setTimeout(r, 3000));
+    try {
+      const resp = await fetch(`${baseUrl}/tasks/${taskId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      const data = await resp.json();
+      const status = data.output?.task_status || 'UNKNOWN';
+      console.log(`⏳ DashScope Music task ${taskId} (${attempt}/${maxAttempts}): ${status}`);
+
+      if (status === 'SUCCEEDED') {
+        if (data.output?.audio_url) {
+          const audioResp = await fetch(data.output.audio_url);
+          return audioResp.arrayBuffer();
+        }
+        if (data.output?.audio) {
+          const binaryString = atob(data.output.audio);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+          return bytes.buffer;
+        }
+        console.warn('DashScope Music SUCCEEDED but no audio in output:', Object.keys(data.output || {}));
+        break;
+      }
+      if (status === 'FAILED') {
+        console.warn('DashScope Music task FAILED:', data.output?.message || data.message);
+        break;
+      }
+    } catch (e) {
+      console.error(`DashScope Music poll error (attempt ${attempt}):`, e);
+    }
+  }
+  console.log('⚠️ DashScope Music polling exhausted, using silent placeholder');
+  return generateSilentAudioPlaceholder(30);
 }
 
 async function generateModelsLabMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
