@@ -2137,15 +2137,22 @@ function EP04ProductionInner() {
         console.warn(`[PERSIST SAVE] ${sceneKey}: ⚠️ No projectId — artifacts NOT saved to DB!`);
       }
 
+      // State update — MUST match DB save buckets exactly (no double-counting)
+      const savedVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition')));
+      const savedImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame')));
+      const savedAvatarUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')));
+      const savedLipsyncUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync')));
+      const totalSaved = Object.keys(savedVideoUrls).length + Object.keys(savedImageUrls).length + Object.keys(savedAvatarUrls).length + Object.keys(savedLipsyncUrls).length;
+      console.log(`[EP04] ${sceneKey}: state update — ${Object.keys(savedVideoUrls).length} videos, ${Object.keys(savedImageUrls).length} images, ${Object.keys(savedAvatarUrls).length} avatars, ${Object.keys(savedLipsyncUrls).length} lipsync = ${totalSaved} total`);
       setSceneProduction(prev => ({
         ...prev,
         [sceneKey]: {
           ...(prev[sceneKey] || defaultSceneStatus()),
           visual: 'done',
-          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition') || k.includes('lipsync'))),
-          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => !k.includes('video') && !k.includes('lipsync') && !k.includes('character-interaction') && !k.includes('narrator-scroll') && !k.includes('scene-transition'))),
-          avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d'))),
-          lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync'))),
+          videoUrls: savedVideoUrls,
+          imageUrls: savedImageUrls,
+          avatarUrls: savedAvatarUrls,
+          lipsyncUrls: savedLipsyncUrls,
         },
       }));
 
