@@ -810,19 +810,24 @@ function EP04ProductionInner() {
               console.log(`[PERSIST RESTORE] ${row.scene_key}: all URLs empty — skipping`);
               continue;
             }
+            // Music is stored under cfg.generatedMusic by updateSceneMusic
+            const gm = cfg.generatedMusic as { url?: string; sfxUrls?: string[] } | undefined;
             restored[row.scene_key] = {
               visual: 'done',
-              music: cfg.musicUrl ? 'done' : 'idle',
-              sfx: 'idle',
+              music: gm?.url ? 'done' : 'idle',
+              sfx: (gm?.sfxUrls && gm.sfxUrls.length > 0) ? 'done' : 'idle',
               assembled: cfg.assembledClipUrl ? 'done' : 'idle',
               videoUrls: artifacts.videoUrls || {},
               imageUrls: artifacts.imageUrls || {},
               avatarUrls: artifacts.avatarUrls || {},
               lipsyncUrls: artifacts.lipsyncUrls || {},
-              musicUrl: cfg.musicUrl || null,
-              sfxUrls: cfg.sfxUrls || [],
+              musicUrl: gm?.url || null,
+              sfxUrls: gm?.sfxUrls || [],
               assembledClipUrl: cfg.assembledClipUrl || null,
             };
+            if (gm?.url) {
+              console.log(`[PERSIST RESTORE] ${row.scene_key}: music=${gm.url}, sfx=${(gm.sfxUrls || []).length}`);
+            }
           }
         }
       } catch (e) {
@@ -965,7 +970,9 @@ function EP04ProductionInner() {
         //  - Some scenes have visuals → at least past TTS approval
         const totalSceneCount = Object.keys(SCENE_TITLES).length;
         const musicCount = Object.values(restored).filter(s => s.music === 'done').length;
+        const sfxCount = Object.values(restored).filter(s => s.sfx === 'done').length;
         const assembledCount = Object.values(restored).filter(s => s.assembled === 'done').length;
+        console.log(`[EP04] Restore summary: ${restoredCount} visuals, ${musicCount} music, ${sfxCount} sfx, ${assembledCount} assembled (of ${totalSceneCount} total)`);
 
         if (assembledCount >= totalSceneCount) {
           // All scenes assembled → Phase 5 done
@@ -983,25 +990,31 @@ function EP04ProductionInner() {
           setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
           console.log(`[EP04] Restored visual artifacts for ${restoredCount}/${totalSceneCount} scenes from DB`);
         }
-        const restoreMsg = `Restored ${restoredCount} scene(s) with visual assets`;
+        const restoreMsg = `Restored ${restoredCount} scene(s) with visual assets${musicCount > 0 ? `, ${musicCount} with music` : ''}`;
         toast.success(toastParts.length > 0 ? `${restoreMsg}. ${toastParts.join('. ')}.` : restoreMsg);
 
         // Re-persist ONLY for scenes that came from Source 2 (gap-fill).
         // If Source 1 already had artifacts, do NOT re-persist (it's already authoritative).
+        // Serialized to avoid Supabase statement timeout from parallel writes.
         const source2OnlyScenes = Object.entries(restored).filter(([sk]) => !source1SceneKeys.has(sk));
         if (source2OnlyScenes.length > 0) {
-          console.log(`[EP04] Re-persisting ${source2OnlyScenes.length} Source-2-only scenes to fill Source 1 gaps`);
-          const repersistResults = await Promise.allSettled(
-            source2OnlyScenes.map(([sk, status]) =>
-              updateSceneArtifacts(projectId, sk, {
-                videoUrls: status.videoUrls,
-                imageUrls: status.imageUrls,
-                avatarUrls: status.avatarUrls,
-                lipsyncUrls: status.lipsyncUrls,
-              })
-            )
-          );
-          const repersistOk = repersistResults.filter(r => r.status === 'fulfilled' && (r as PromiseFulfilledResult<boolean>).value).length;
+          console.log(`[EP04] Re-persisting ${source2OnlyScenes.length} Source-2-only scenes to fill Source 1 gaps (serialized)`);
+          let repersistOk = 0;
+          for (let i = 0; i < source2OnlyScenes.length; i++) {
+            const [sk, sceneStatus] = source2OnlyScenes[i];
+            try {
+              const ok = await updateSceneArtifacts(projectId, sk, {
+                videoUrls: sceneStatus.videoUrls,
+                imageUrls: sceneStatus.imageUrls,
+                avatarUrls: sceneStatus.avatarUrls,
+                lipsyncUrls: sceneStatus.lipsyncUrls,
+              });
+              if (ok) repersistOk++;
+            } catch (e) {
+              console.warn(`[EP04] Re-persist ${sk} failed:`, e);
+            }
+            if (i < source2OnlyScenes.length - 1) await new Promise(r => setTimeout(r, 300));
+          }
           console.log(`[EP04] Re-persist complete: ${repersistOk}/${source2OnlyScenes.length} gap-fill scenes saved to DB`);
         } else {
           console.log(`[EP04] All ${Object.keys(restored).length} scenes came from Source 1 — no re-persist needed`);
