@@ -499,33 +499,53 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'screen-capture', screenIds: ['sprint-charter', 'governance-guide'], multiCapture: true },
     { type: 'ai-screen-enhance', screenIds: ['sprint-charter', 'governance-guide'], scriptContext: 'Sprint charter defining territory rules — Claude owns backend, Lovable owns frontend. Governance guide with file ownership boundaries.', enhanceMode: 'highlight', focusAreas: ['territory-map', 'file-ownership-rules', 'merge-conflict-policy'] },
-    // SHOWCASE: Scene transitions — cinematic iris-wipe between governance segments
-    { type: 'scene-transition', style: 'iris-wipe', prompt: 'Golden iris wipe revealing a divided miniature city — blue crystal zone and green garden zone separated by a shimmering boundary wall, storybook illustration transitioning to 3D', duration: 3 },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Cinematic aerial fly-through of a divided miniature city: blue crystal towers on left, green garden towers on right, golden bridge connecting them, Pixar-quality 3D, dramatic sunset lighting' },
+    // SHOWCASE: Scene transitions — territory boundary reveal
+    { type: 'scene-transition', style: 'iris-wipe', prompt: 'Split-screen transition revealing a software sprint management dashboard: left side shows backend code files in terracotta-orange (src/components/genie-studio), right side shows frontend UI components in magenta-pink (src/components/landing), a glowing boundary line separates the two developer territories, Kanban board columns visible in the background, clean professional UI design, cinematic lighting', duration: 3 },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Animated sprint management dashboard coming to life: Kanban board with task cards flying into columns labeled TODO DOING DONE, two developer avatars — a bear (Atlas/Claude) placing backend task cards on the left side in terracotta-orange, a fox (Nova/Lovable) arranging frontend task cards on the right side in magenta-pink, a glowing territory boundary line between their zones, burndown chart animating in the corner, task count numbers ticking up, professional dark UI with neon accents, Pixar-quality 3D animation' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-merge-conflict' },
     { type: 'tts', voice: 'host', scriptKey: 'host-governance-not-overkill' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-read-relevant-sections' },
-    { type: 'alibaba-image', model: 'wanx-v2.1', prompt: 'Infographic showing sprint territory map with two color-coded zones (blue Atlas, green Nova), clear boundary lines, task distribution icons, clean professional design' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Clean professional infographic: Sprint Territory Map showing file ownership boundaries for a dual-developer sprint. Left zone labeled "Atlas (Claude)" in terracotta-orange with icons for backend files, API routes, database migrations, edge functions. Right zone labeled "Nova (Lovable)" in magenta-pink with icons for landing pages, UI components, CSS styling. Center shows shared infrastructure with lock icons. Bottom bar shows 41 tasks split between developers. Clean data visualization style, dark background with glowing elements, 8K detail' },
   ],
   'scene-4-day1': [
+    // ── Host intro: Day 1 overview ──
     { type: 'tts', voice: 'host', scriptKey: 'day1-narration' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    // ── Sprint tracker screenshots ──
     { type: 'screen-capture', screenIds: ['day-1-view'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['day-1-view'], scriptContext: 'Day 1 sprint view — 12 tasks started, Atlas diagnoses 847-line session instructions, Nova refactors navigation. Focus on task cards and status columns.', enhanceMode: 'stylize', focusAreas: ['task-cards', 'status-columns', 'developer-assignments'] },
     { type: 'screen-capture', screenIds: ['findings-qa'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['findings-qa'], scriptContext: 'QA findings from Day 1 — scope creep detected, acceptance criteria discussion. Highlight the finding severity and action items.', enhanceMode: 'highlight', focusAreas: ['finding-severity', 'action-items', 'scope-flags'] },
-    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    // ── Nova's Day 1 accomplishments ──
     { type: 'tts', voice: 'nova', scriptKey: 'nova-refactored-nav' },
-    // SHOWCASE: Character interactions — Atlas & Nova argue over scope without lipsync
+    // ── Atlas & Nova debate: the bottleneck problem ──
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-proposal' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-agrees' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-empathy' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-optimization' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-shared-log' },
+    // SHOWCASE: Character interactions — Atlas & Nova debate over the sprint board
     { type: 'character-interaction', characters: ['atlas', 'nova'], prompt: 'Bear (Atlas) and fox (Nova) face each other across a holographic sprint board, bear points methodically at task cards while fox waves her arms expressively, split-screen showing their contrasting work styles, Pixar-quality character acting', style: 'duo-argument' },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: fox character unrolls a large paper scroll across a holographic war table, grabs a quill pen and scribbles a sprint board with colorful task columns and sticky notes, bear character takes the quill and adds precise annotations with a ruler, both hold the scroll up to camera proudly — warm lighting, god rays, cinematic quality' },
+    // ── Paper scroll demo: the visual centerpiece ──
+    { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-paper-roll-demo' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: fox character unrolls a large paper scroll across a holographic war table, grabs a quill pen and scribbles a sprint board with colorful task columns labeled TODO DOING DONE and sticky notes, bear character takes the quill and adds precise annotations with a ruler, both hold the scroll up to camera proudly — warm lighting, god rays, cinematic quality' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-paper-annotation' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-atlas-scroll-present' },
+    // ── Host lesson: acceptance criteria ──
     { type: 'tts', voice: 'host', scriptKey: 'host-not-in-scope' },
+    // ── Beta agreement ──
+    { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-beta-idea' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-beta-agree' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-works-better' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-high-five' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-lets-go' },
     { type: 'kinetic-text', text: 'Setting acceptance criteria isn\'t optional. It\'s survival.' },
-    // Squirrel interruptions (10s + 5s) — drops in asking about acorns
+    // ── Squirrel comic relief ──
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-2' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'atlas-squirrel-response' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-disappointed' },
   ],
   'scene-5-day2': [
