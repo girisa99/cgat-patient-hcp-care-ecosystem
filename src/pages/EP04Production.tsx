@@ -2290,32 +2290,80 @@ function EP04ProductionInner() {
   }, [scenes, startSceneVisualProduction]);
 
   // ─── Save All Assets to DB (manual trigger) ─────────────────────────────
-  // Persists every asset currently in sceneProduction state to DB
+  // Persists every asset currently in sceneProduction state to DB.
+  // SERIALIZED: saves scenes one at a time to avoid Supabase connection pool
+  // exhaustion and statement timeouts (code 57014). Each scene does 2 queries
+  // (SELECT + UPDATE), so 12 parallel saves = 24 concurrent queries → timeouts.
   const saveAllAssetsToDb = useCallback(async () => {
     if (!projectId) { toast.error('No project ID'); return; }
-    const sceneKeys = Object.keys(sceneProduction).filter(sk => {
+    const allSceneKeys = Object.keys(sceneProduction).filter(sk => {
       const s = sceneProduction[sk];
       return s.visual === 'done' || Object.keys(s.videoUrls).length > 0 ||
         Object.keys(s.imageUrls).length > 0 || Object.keys(s.avatarUrls).length > 0 ||
-        Object.keys(s.lipsyncUrls).length > 0;
+        Object.keys(s.lipsyncUrls).length > 0 || s.musicUrl;
     });
-    if (sceneKeys.length === 0) { toast.warning('No assets in memory to save'); return; }
-    toast.info(`Saving assets for ${sceneKeys.length} scenes to DB...`);
-    const results = await Promise.allSettled(
-      sceneKeys.map(sk => {
-        const s = sceneProduction[sk];
-        return updateSceneArtifacts(projectId, sk, {
+    if (allSceneKeys.length === 0) { toast.warning('No assets in memory to save'); return; }
+    toast.info(`Saving ALL assets (visuals + music + TTS) for ${allSceneKeys.length} scenes...`);
+
+    let okScenes = 0;
+    let failedScenes = 0;
+    let totalTtsSaved = 0;
+
+    for (let i = 0; i < allSceneKeys.length; i++) {
+      const sk = allSceneKeys[i];
+      const s = sceneProduction[sk];
+
+      // 1. Save TTS lines for this scene
+      const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sk);
+      for (const lk of sceneLines) {
+        if (audioMap[lk]?.audioUrl) {
+          const ttsOk = await updateLineTTS(projectId, lk, {
+            tts_audio_url: audioMap[lk].audioUrl,
+            tts_provider: audioMap[lk].provider,
+            tts_voice_id: audioMap[lk].voice,
+            tts_status: 'generated',
+          });
+          if (ttsOk) totalTtsSaved++;
+          await new Promise(r => setTimeout(r, 100)); // micro-delay between TTS saves
+        }
+      }
+
+      // 2. Save visual artifacts (with 1 retry)
+      let visSaved = false;
+      for (let attempt = 0; attempt < 2 && !visSaved; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 1000));
+        visSaved = await updateSceneArtifacts(projectId, sk, {
           videoUrls: s.videoUrls,
           imageUrls: s.imageUrls,
           avatarUrls: s.avatarUrls,
           lipsyncUrls: s.lipsyncUrls,
         });
-      })
-    );
-    const ok = results.filter(r => r.status === 'fulfilled' && (r as PromiseFulfilledResult<boolean>).value).length;
-    toast.success(`Saved assets for ${ok}/${sceneKeys.length} scenes to DB`);
-    console.log(`[EP04] Manual save: ${ok}/${sceneKeys.length} scenes persisted`);
-  }, [projectId, sceneProduction, updateSceneArtifacts]);
+      }
+
+      // 3. Save music + SFX
+      let musSaved = true;
+      if (s.musicUrl || (s.sfxUrls && s.sfxUrls.length > 0)) {
+        await new Promise(r => setTimeout(r, 300));
+        musSaved = await updateSceneMusic(projectId, sk, s.musicUrl, s.sfxUrls || []);
+      }
+
+      if (visSaved && musSaved) {
+        okScenes++;
+      } else {
+        failedScenes++;
+      }
+      console.log(`[EP04] Save ${sk} (${i + 1}/${allSceneKeys.length}): vis=${visSaved}, mus=${musSaved}`);
+
+      // Delay between scenes
+      if (i < allSceneKeys.length - 1) await new Promise(r => setTimeout(r, 500));
+    }
+
+    if (failedScenes === 0) {
+      toast.success(`Saved all ${okScenes} scenes + ${totalTtsSaved} TTS lines to DB`);
+    } else {
+      toast.warning(`${okScenes} OK, ${failedScenes} failed — use per-scene Save to retry`);
+    }
+  }, [projectId, sceneProduction, scriptKeys, scriptContentForUI, audioMap, updateSceneArtifacts, updateSceneMusic, updateLineTTS]);
 
   // ─── Phase 4: Music & SFX (per scene) ─────────────────────────────────
 
@@ -3694,6 +3742,58 @@ function EP04ProductionInner() {
                                 Regen Lipsync
                               </Button>
                             </div>
+                          )}
+
+                          {/* ── Save Scene to DB button (visuals + music + TTS) ── */}
+                          {status && (Object.keys(status.videoUrls).length > 0 || Object.keys(status.imageUrls).length > 0 || Object.keys(status.avatarUrls).length > 0 || status.musicUrl) && (
+                            <Button
+                              size="sm" variant="outline" className="w-full h-6 text-[9px] mt-1 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10"
+                              onClick={async () => {
+                                if (!projectId) { toast.error('No project ID'); return; }
+                                const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
+                                const ttsLines = sceneLines.filter(k => audioMap[k]?.audioUrl);
+                                const artCount = Object.keys(status.videoUrls).length + Object.keys(status.imageUrls).length
+                                  + Object.keys(status.avatarUrls).length + Object.keys(status.lipsyncUrls).length;
+                                toast.info(`Saving ${SCENE_TITLES[sceneKey]?.split(' — ')[1] || sceneKey}: ${artCount} visuals, ${ttsLines.length} TTS, music...`);
+
+                                // 1. Save TTS lines for this scene
+                                let ttsSaved = 0;
+                                for (const lk of ttsLines) {
+                                  const audio = audioMap[lk];
+                                  const ok = await updateLineTTS(projectId, lk, {
+                                    tts_audio_url: audio.audioUrl,
+                                    tts_provider: audio.provider,
+                                    tts_voice_id: audio.voice,
+                                    tts_status: 'generated',
+                                  });
+                                  if (ok) ttsSaved++;
+                                }
+
+                                // 2. Save visual artifacts
+                                const visSaved = await updateSceneArtifacts(projectId, sceneKey, {
+                                  videoUrls: status.videoUrls,
+                                  imageUrls: status.imageUrls,
+                                  avatarUrls: status.avatarUrls,
+                                  lipsyncUrls: status.lipsyncUrls,
+                                });
+
+                                // 3. Save music + SFX
+                                let musSaved = true;
+                                if (status.musicUrl || (status.sfxUrls && status.sfxUrls.length > 0)) {
+                                  musSaved = await updateSceneMusic(projectId, sceneKey, status.musicUrl, status.sfxUrls || []);
+                                }
+
+                                const sceneName = SCENE_TITLES[sceneKey]?.split(' — ')[1] || sceneKey;
+                                if (visSaved && musSaved) {
+                                  toast.success(`${sceneName}: ${artCount} visuals, ${ttsSaved} TTS, music saved`);
+                                } else {
+                                  toast.error(`${sceneName}: partial save — vis=${visSaved}, mus=${musSaved}, tts=${ttsSaved}/${ttsLines.length}`);
+                                }
+                              }}
+                            >
+                              <Save className="h-2.5 w-2.5 mr-1" />
+                              Save Scene to DB
+                            </Button>
                           )}
 
                           {/* ── Clear Scene Assets button ── */}
