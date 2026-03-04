@@ -3588,9 +3588,30 @@ function EP04ProductionInner() {
                         </Button>
                       )}
                       {allMusicDone && (
-                        <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
-                          Complete
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                            Complete
+                          </Badge>
+                          <Button
+                            size="sm" variant="outline"
+                            className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                            onClick={() => {
+                              // Reset all music states so regeneration runs fresh
+                              setSceneProduction(prev => {
+                                const next = { ...prev };
+                                for (const sk of Object.keys(next)) {
+                                  next[sk] = { ...next[sk], music: 'idle', musicUrl: null, sfxUrls: [] };
+                                }
+                                return next;
+                              });
+                              // Small delay to let state update, then trigger generation
+                              setTimeout(() => startAllMusicProduction(), 100);
+                            }}
+                          >
+                            <Music className="h-3 w-3 mr-1" />
+                            Regen All Music
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
