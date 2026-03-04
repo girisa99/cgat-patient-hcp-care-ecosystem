@@ -584,16 +584,26 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'kinetic-text', text: '6 hours blocked. 12 minutes approved. Async governance works.' },
   ],
   'scene-6-day3': [
+    // ── Day 3 velocity mismatch: the gap reveals itself ──
     { type: 'tts', voice: 'host', scriptKey: 'day3-velocity-mismatch' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
-    { type: 'screen-capture', screenIds: ['day-3-view', 'velocity-metrics'], multiCapture: true },
-    { type: 'ai-screen-enhance', screenIds: ['day-3-view', 'velocity-metrics'], scriptContext: 'Day 3 velocity mismatch — Claude completing 8 tasks/day vs Lovable at 3. Velocity chart shows diverging lines. The gap is the story.', enhanceMode: 'highlight', focusAreas: ['velocity-comparison-chart', 'task-completion-rates', 'developer-velocity-gap'] },
-    // SHOWCASE: Narrator scroll — data-driven reveal of velocity numbers (perfect for stats-heavy scene)
-    { type: 'narrator-scroll', prompt: 'Ornate parchment scroll unrolling to reveal hand-lettered velocity statistics: "Atlas: 8 tasks/day — Nova: 3 tasks/day — Gap: 2.7x" with decorative data visualization flourishes, golden ink on aged paper, tiny chart sparklines in the margins', duration: 5, dataContent: 'Atlas: 8 tasks/day | Nova: 3 tasks/day | The velocity gap tells the real story' },
-    { type: 'tts', voice: 'nova', scriptKey: 'nova-scope-now' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    { type: 'screen-capture', screenIds: ['day-3-view', 'velocity-metrics'], multiCapture: true },
+    { type: 'ai-screen-enhance', screenIds: ['day-3-view', 'velocity-metrics'], scriptContext: 'Day 3 velocity mismatch — Claude completing 8 tasks/day vs Lovable at 3. Velocity chart shows diverging lines. The gap is the story.', enhanceMode: 'highlight', focusAreas: ['velocity-comparison-chart', 'task-completion-rates', 'developer-velocity-gap'] },
+    // SHOWCASE: Narrator scroll — data-driven reveal of velocity numbers
+    { type: 'narrator-scroll', prompt: 'Ornate parchment scroll unrolling to reveal hand-lettered velocity statistics: "Atlas: 8 tasks/day — Nova: 3 tasks/day — Gap: 2.7x" with decorative data visualization flourishes, golden ink on aged paper, tiny chart sparklines in the margins', duration: 5, dataContent: 'Atlas: 8 tasks/day | Nova: 3 tasks/day | The velocity gap tells the real story' },
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Velocity chart bars growing dynamically with sparkle effects, camera slowly zooming out to reveal full sprint dashboard, smooth cinematic motion', referenceImage: 'velocity-metrics-screenshot' },
+    // ── PO Actions origin story: born from frustration ──
+    { type: 'tts', voice: 'host', scriptKey: 'po-actions-origin' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'po-actions-atlas-frustrated' },
+    { type: 'tts', voice: 'nova', scriptKey: 'po-actions-nova-blocked' },
+    { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions tab — structured queue with color-coded urgency cards, approval gates linked to dev task completion, real-time Supabase sync, showing pending reviews cleared in 22 minutes vs 36 hours previously.', enhanceMode: 'highlight', focusAreas: ['approval-queue', 'urgency-cards', 'dev-task-completion-gates', 'realtime-sync-indicator'] },
+    { type: 'tts', voice: 'host', scriptKey: 'po-actions-breakthrough' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'po-actions-atlas-relief' },
+    { type: 'tts', voice: 'nova', scriptKey: 'po-actions-nova-relief' },
+    { type: 'kinetic-text', text: '36 hours → 22 minutes. 98.9% improvement. Frustration breeds features.' },
   ],
   'scene-7-mission-control': [
     { type: 'tts', voice: 'host', scriptKey: 'mission-control-narration' },
