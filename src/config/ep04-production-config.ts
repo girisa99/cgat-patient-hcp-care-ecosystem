@@ -699,36 +699,56 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'kinetic-text', text: '"Who makes sure the AIs don\'t build the wrong thing really fast?" — The governance layer isn\'t project management theater. It\'s survival tools.' },
   ],
   'scene-10-whats-next': [
-    { type: 'tts', voice: 'host', scriptKey: 'whats-next-narration' },
-    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
-    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Animated world map with language zones lighting up one by one — Arabic, Hindi, Mandarin, Spanish — each zone pulses with a unique color, camera slowly rotating around a 3D globe, cinematic sci-fi feel' },
+    // ── MCP vision — host introduces, atlas + nova add their perspectives ──
+    { type: 'tts', voice: 'host', scriptKey: 'whats-next-intro' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-language-foundational' },
-    // Lipsync removed — atlas voiceover plays over animated world map + MCP visuals (conceptual scene, not character scene)
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'MCP network diagram coming alive: central hub pulsing with energy, connection lines extending to Jira, GitHub, Slack nodes, data packets flowing as glowing orbs, dark tech background with blue-violet nebula, 3D space visualization' },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Velocity prediction chart animating forward in time, trend line curving upward with confidence intervals fading in, futuristic holographic display style' },
+    { type: 'tts', voice: 'nova', scriptKey: 'whats-next-nova' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-data-quality' },
     { type: 'tts', voice: 'host', scriptKey: 'host-atlas-said' },
-    // SHOWCASE: Kinetic text — forward-looking vision statement caps the "what's next" scene
-    { type: 'kinetic-text', text: '85 LANGUAGES. 16 REGIONS. 4 AI ZONES. ONE UNIFIED PIPELINE.' },
-  ],
-  'scene-11-close': [
+    // ── Avatars — all 3 characters contribute to the vision ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
-    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
-    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
-    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
+    // ── Visual assets — world map, MCP diagram, velocity prediction ──
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Animated world map with 16 language zones lighting up one by one — Arabic dialects, Hindi, Bengali, Mandarin, Spanish, Turkish — each zone pulses with a unique color as regional routing nodes activate, camera slowly rotating around a 3D globe, cinematic sci-fi feel, holographic data streams connecting zones' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'MCP (Model Context Protocol) network diagram coming alive: GitHub commit triggers a cascade — diff parsing node glows, sprint tracker updates automatically, QA checklist generates itself, acceptance criteria light up green. Data packets flow as glowing orbs between Jira, GitHub, Slack nodes on dark tech background with blue-violet nebula, 3D space visualization' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Velocity prediction chart animating forward in time — historical sprint data on the left showing 5x acceleration, trend line curving upward into the future with confidence intervals fading in, futuristic holographic display style with particle effects' },
+    // SHOWCASE: Kinetic text — forward-looking vision statement
+    { type: 'kinetic-text', text: '85 LANGUAGES. 16 REGIONS. 4 AI ZONES. ONE UNIFIED PIPELINE. Push code → MCP reads diff → tracker updates → QA report generated. The board updates itself.' },
+  ],
+  'scene-11-close': [
+    // ── Full closing dialogue — emotional sign-off (all 9 script entries) ──
     { type: 'tts', voice: 'host', scriptKey: 'close-takeaway' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-final' },
+    { type: 'tts', voice: 'nova', scriptKey: 'close-nova-final' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-heard' },
+    { type: 'tts', voice: 'host', scriptKey: 'close-rationale' },
+    { type: 'tts', voice: 'host', scriptKey: 'close-cta' },
+    // ── Goodbye round — each character signs off in character ──
+    { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-goodbye' },
+    { type: 'tts', voice: 'nova', scriptKey: 'close-nova-goodbye' },
+    { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-finale' },
+    // ── Avatars — all 4 characters for the finale (bookend: characters return) ──
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
+    // ── Lipsync — bookend finale: characters speak on-camera for emotional close ──
+    // Note: Host entries (35-40s) exceed 20s lipsync limit — host plays as voiceover
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'close-atlas-heard' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'close-nova-goodbye' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-finale' },
     // SHOWCASE: Character group farewell — all characters together for emotional close
     { type: 'character-interaction', characters: ['host', 'atlas', 'nova', 'squirrel'], prompt: 'All four characters gathered in a warm sunlit forest-tech clearing — human PO, bear Atlas, fox Nova, and squirrel perched on bear\'s shoulder. Group portrait moment: they look at camera with pride, golden retriever sits at their feet, woodland creatures peek from bushes. Warm golden hour lighting, Pixar quality', style: 'farewell-wave' },
     { type: 'screen-capture', screenIds: ['day-5-view'], multiCapture: false },
     // SHOWCASE: "Powered by" provider montage — highlights the AI stack that built this episode
     { type: 'storybook-frame', variant: 'closing', prompt: 'Elegant "Powered By" credits page in storybook style — provider logos arranged in a constellation pattern: ElevenLabs (voice), Azure Neural (voice), Alibaba Wan2.6 (video), Alibaba Wan2.2 (lipsync), Alibaba Wanx (images), Alibaba FLUX (images), Meshy (3D), Alibaba CosyVoice (fallback TTS), ModelsLab (motion), JSON2Video (assembly) — each logo connected by golden thread lines forming a production pipeline flowchart, warm parchment background, calligraphy header "10 AI Providers — 1 Unified Pipeline", 8K quality', duration: 6 },
     { type: 'kinetic-text', text: '10 AI PROVIDERS. 1 UNIFIED PIPELINE. EVERY FRAME AI-GENERATED.' },
+    // ── CTA overlay — links from the script ──
+    { type: 'kinetic-text', text: 'EXPLORE: genieaiexperimentationhub.tech | SUBSCRIBE: YouTube @GenieAIPodcast | CONNECT: LinkedIn — Sai Dasika | Beyond AI Hype — we bring it to life.' },
     { type: 'narrator-scroll', prompt: 'Final scroll revealing the complete AI provider stack used to produce this episode: "Voice: ElevenLabs + Azure Neural + Alibaba CosyVoice | Video: Alibaba Wan2.6 T2V/I2V | Lipsync: Alibaba Wan2.2 S2V | Images: Alibaba Wanx + FLUX Merged | 3D: Meshy | Motion: ModelsLab AnimateDiff | Assembly: JSON2Video | Orchestration: GenieCast" — golden ink on aged paper, each provider name illuminates as the scroll passes', duration: 8, dataContent: 'Voice: ElevenLabs + Azure Neural + CosyVoice | Video: Wan2.6 | Lipsync: Wan2.2 | Images: Wanx + FLUX | 3D: Meshy | Motion: ModelsLab | Assembly: JSON2Video | Orchestration: GenieCast' },
     { type: 'sfx', prompt: 'Orchestral crescendo resolving into a warm music box chime, the sound of a book page turning, and a final magical sparkle', duration: 5 },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'End card: three animated characters (bear, fox, human) standing together in a sunlit forest-tech hub, golden retriever at their feet, woodland creatures gathered around, text "Two AIs, One Sprint, Zero Standup Meetings" floating above in holographic letters, cinematic Pixar quality, warm golden hour lighting, 8K' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'End card: four animated characters (bear Atlas, fox Nova, human host, squirrel perched on shoulder) standing together in a sunlit forest-tech hub, golden retriever at their feet, woodland creatures gathered around, text "Two AIs, One Sprint, Zero Standup Meetings" floating above in holographic letters, cinematic Pixar quality, warm golden hour lighting, 8K' },
   ],
 };
 
