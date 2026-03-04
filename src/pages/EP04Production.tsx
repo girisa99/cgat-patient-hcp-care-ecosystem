@@ -18,7 +18,7 @@ import {
   CheckCircle2, AlertCircle, AlertTriangle, Mic, SkipForward, ArrowLeft,
   Camera, Monitor, Image as ImageIcon, ExternalLink,
   Film, Music, Clapperboard, Download, Eye, Layers,
-  Share2, Scissors, Trash2
+  Share2, Scissors, Trash2, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -2355,8 +2355,13 @@ function EP04ProductionInner() {
           },
         });
 
-        if (!error && data?.audioUrl) {
+        if (!error && data?.audioUrl && !data?.isSilentPlaceholder) {
           musicUrl = data.audioUrl;
+        } else if (data?.isSilentPlaceholder) {
+          console.warn(`[EP04 Music] ${sceneKey}: got silent placeholder — all providers failed`, {
+            debugErrors: data?.debugErrors,
+          });
+          toast.error(`Music for "${sceneTitle}" failed — all providers returned silent. Try "Regen All Music".`);
         } else {
           console.warn(`[EP04 Music] ${sceneKey}: music generation returned no URL`, { error, data });
         }
@@ -2383,13 +2388,15 @@ function EP04ProductionInner() {
         ...prev,
         [sceneKey]: {
           ...(prev[sceneKey] || defaultSceneStatus()),
-          music: 'done',
+          music: musicUrl ? 'done' : 'error',
           musicUrl,
           sfxUrls,
         },
       }));
 
-      toast.success(`Music & SFX complete for ${sceneKey}`);
+      if (musicUrl) {
+        toast.success(`Music & SFX complete for ${sceneKey}`);
+      }
     } catch (err: any) {
       console.error(`[EP04 Music] Scene ${sceneKey} failed:`, err);
       setSceneProduction(prev => ({
@@ -2399,9 +2406,26 @@ function EP04ProductionInner() {
     }
   }, [dbProject, projectId, trackGenerationJob, completeGenerationJob, updateSceneMusic]);
 
-  const startAllMusicProduction = useCallback(async () => {
-    const sceneKeys = Array.from(scenes.keys());
+  const startAllMusicProduction = useCallback(async (skipCompleted = false) => {
+    const allSceneKeys = Array.from(scenes.keys());
+    // When skipCompleted is true, only regen scenes that failed or have no music
+    const sceneKeys = skipCompleted
+      ? allSceneKeys.filter(sk => {
+          const status = sceneProduction[sk];
+          return !status?.musicUrl || status?.music === 'error' || status?.music === 'idle';
+        })
+      : allSceneKeys;
+
+    if (sceneKeys.length === 0) {
+      toast.success('All scenes already have music — nothing to regenerate');
+      return;
+    }
+
     setProductionPhase('music');
+    const skipped = allSceneKeys.length - sceneKeys.length;
+    if (skipped > 0) {
+      toast.info(`Skipping ${skipped} scene(s) with existing music, regenerating ${sceneKeys.length} scene(s)`);
+    }
     setMusicProgress({ current: 0, total: sceneKeys.length });
 
     for (let i = 0; i < sceneKeys.length; i++) {
@@ -2411,126 +2435,253 @@ function EP04ProductionInner() {
     }
 
     setMusicProgress(null);
-    toast.success('All music & SFX production complete');
-  }, [scenes, startSceneMusicProduction]);
+    toast.success('Music & SFX production complete');
+  }, [scenes, sceneProduction, startSceneMusicProduction]);
 
   // ─── Phase 5: Assembly → One Cinematic Movie ──────────────────────────
 
+  // Readiness audit — checks all 12 scenes for required assets before assembly
+  const getAssemblyReadiness = useCallback(() => {
+    const sceneKeys = Array.from(scenes.keys());
+    const report: Array<{
+      sceneKey: string;
+      title: string;
+      ttsCount: number;
+      ttsTotal: number;
+      hasVisuals: boolean;
+      visualCount: number;
+      hasAvatars: boolean;
+      hasLipsync: boolean;
+      hasMusic: boolean;
+      hasSfx: boolean;
+      missing: string[];
+    }> = [];
+
+    let totalReady = 0;
+    let totalMissing = 0;
+
+    for (const sceneKey of sceneKeys) {
+      const status = sceneProduction[sceneKey];
+      const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
+      const ttsCount = sceneLines.filter(k => audioMap[k]?.audioUrl).length;
+      const ttsTotal = sceneLines.length;
+
+      const videoCount = Object.values(status?.videoUrls || {}).filter(u => u).length;
+      const imageCount = Object.values(status?.imageUrls || {}).filter(u => u).length;
+      const avatarCount = Object.values(status?.avatarUrls || {}).filter(u => u).length;
+      const lipsyncCount = Object.values(status?.lipsyncUrls || {}).filter(u => u).length;
+      const hasMusic = !!status?.musicUrl;
+      const hasSfx = (status?.sfxUrls || []).length > 0;
+
+      const missing: string[] = [];
+      if (ttsCount === 0) missing.push('TTS audio');
+      if (videoCount === 0 && imageCount === 0) missing.push('Visuals');
+      // Avatars/lipsync are optional — only flag if scene has them partially
+      if (!hasMusic) missing.push('Music');
+
+      if (missing.length === 0) totalReady++;
+      else totalMissing++;
+
+      report.push({
+        sceneKey,
+        title: SCENE_TITLES[sceneKey] || sceneKey,
+        ttsCount,
+        ttsTotal,
+        hasVisuals: videoCount > 0 || imageCount > 0,
+        visualCount: videoCount + imageCount,
+        hasAvatars: avatarCount > 0,
+        hasLipsync: lipsyncCount > 0,
+        hasMusic,
+        hasSfx,
+        missing,
+      });
+    }
+
+    return {
+      scenes: report,
+      totalScenes: sceneKeys.length,
+      readyScenes: totalReady,
+      missingScenes: totalMissing,
+      isReady: totalMissing === 0,
+      // Minimum requirements: at least TTS + visuals for every scene
+      canAssemble: report.every(s => s.ttsCount > 0 && s.hasVisuals),
+    };
+  }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap]);
+
+  const [assemblyReadiness, setAssemblyReadiness] = useState<ReturnType<typeof getAssemblyReadiness> | null>(null);
+  const [assemblyJobId, setAssemblyJobId] = useState<string | null>(null);
+  const [assemblyPollTimer, setAssemblyPollTimer] = useState<ReturnType<typeof setInterval> | null>(null);
+
+  // Poll for assembly completion when we have a pending job
+  useEffect(() => {
+    if (!assemblyJobId) return;
+    const timer = setInterval(async () => {
+      try {
+        const { data } = await supabase.functions.invoke('genie-cast-status', {
+          body: { castJobId: assemblyJobId },
+        });
+        if (data?.job?.status === 'completed') {
+          setFinalVideoUrl(data.job.outputUrl);
+          setAssemblyProgress(null);
+          setProductionPhase('complete');
+          setAssemblyJobId(null);
+          if (projectId && data.job.outputUrl) {
+            updateFinalAssembly(projectId, data.job.outputUrl, {
+              totalDuration,
+              sceneCount: Array.from(scenes.keys()).length,
+              resolution: '1920x1080',
+            });
+          }
+          toast.success('Cinematic movie assembled successfully!');
+        } else if (data?.job?.status === 'failed') {
+          setAssemblyProgress(null);
+          setAssemblyJobId(null);
+          toast.error(`Assembly failed: ${data.job.errorMessage || 'Unknown error'}`);
+        } else {
+          const pct = data?.job?.progressPercent || 0;
+          setAssemblyProgress(`Rendering video... ${pct}%`);
+        }
+      } catch (err) {
+        console.error('[EP04 Assembly] Poll error:', err);
+      }
+    }, 10000); // Poll every 10 seconds
+    setAssemblyPollTimer(timer);
+    return () => clearInterval(timer);
+  }, [assemblyJobId, projectId, totalDuration, scenes, updateFinalAssembly]);
+
   const startFinalAssembly = useCallback(async () => {
+    // Step 0: Run readiness audit
+    const readiness = getAssemblyReadiness();
+    setAssemblyReadiness(readiness);
+
+    if (!readiness.canAssemble) {
+      const missingScenes = readiness.scenes.filter(s => s.missing.length > 0);
+      const summary = missingScenes.map(s => `${s.title}: ${s.missing.join(', ')}`).join('; ');
+      toast.error(`Cannot assemble — missing assets: ${summary}`);
+      return;
+    }
+
     setProductionPhase('assembly');
-    setAssemblyProgress('Assembling per-scene clips...');
+    setAssemblyProgress('Building scene timeline for JSON2Video...');
 
     try {
       const sceneKeys = Array.from(scenes.keys());
 
-      // Step 1: Per-scene assembly (TTS audio + visual + lipsync)
-      setAssemblyProgress(`Assembling ${sceneKeys.length} scene clips...`);
-      for (const sceneKey of sceneKeys) {
-        const sceneStatus = sceneProduction[sceneKey];
-        if (!sceneStatus) continue;
+      // Build ChapterResult-compatible objects for each scene
+      // JSON2Video assembler expects: audioUrl, visualUrls, duration, etc.
+      const preBuiltChapters = sceneKeys.map(sceneKey => {
+        const status = sceneProduction[sceneKey] || defaultSceneStatus();
+        const sceneTitle = SCENE_TITLES[sceneKey] || sceneKey;
 
+        // Collect TTS audio URLs for this scene (pick first valid one for the chapter audio)
         const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
-        const sceneTTSUrls = sceneLines
-          .filter(k => audioMap[k])
-          .reduce((acc, k) => ({ ...acc, [k]: audioMap[k].audioUrl }), {});
+        const ttsUrls = sceneLines
+          .filter(k => audioMap[k]?.audioUrl)
+          .map(k => audioMap[k].audioUrl);
 
-        let jobId: string | null = null;
-        if (projectId) {
-          jobId = await trackGenerationJob({
-            projectId, jobType: 'video', sceneKey, provider: 'assembly', estimatedTokens: 2000,
+        // Collect ALL visual URLs (images + videos + avatars + lipsync)
+        const allVisualUrls: string[] = [
+          ...Object.values(status.videoUrls || {}).filter(u => u),
+          ...Object.values(status.imageUrls || {}).filter(u => u),
+          ...Object.values(status.avatarUrls || {}).filter(u => u),
+          ...Object.values(status.lipsyncUrls || {}).filter(u => u),
+        ];
+
+        // Estimate duration from script line durations
+        const sceneDuration = sceneLines.reduce(
+          (sum, k) => sum + (scriptContentForUI[k]?.duration_est || 5), 0
+        );
+
+        return {
+          chapterId: sceneKey,
+          product: sceneTitle,
+          audioUrl: ttsUrls[0] || undefined,
+          visualUrl: allVisualUrls[0] || undefined,
+          visualUrls: allVisualUrls,
+          duration: sceneDuration || 30,
+          ttsProvider: 'pre-generated',
+          videoProvider: 'pre-generated',
+          success: true,
+          // Music + SFX passed as extra fields for timeline audio layering
+          musicUrl: status.musicUrl || undefined,
+          sfxUrls: status.sfxUrls || [],
+        };
+      });
+
+      console.log('[EP04 Assembly] Pre-built chapters:', preBuiltChapters.map(c =>
+        `${c.chapterId}: ${c.visualUrls?.length || 0} visuals, audio=${!!c.audioUrl}, music=${!!c.musicUrl}, dur=${c.duration}s`
+      ));
+
+      // Track the assembly job
+      let jobId: string | null = null;
+      if (projectId) {
+        jobId = await trackGenerationJob({
+          projectId, jobType: 'assembly', sceneKey: 'final', provider: 'json2video', estimatedTokens: 5000,
+        });
+      }
+
+      setAssemblyProgress('Submitting to JSON2Video assembly...');
+
+      // Call genie-cast-assembler in stitch-only mode
+      const { data, error } = await supabase.functions.invoke('genie-cast-assembler', {
+        body: {
+          mode: 'stitch-only',
+          language: 'en',
+          quality: 'production',
+          preBuiltChapters,
+          castProjectId: projectId,
+        },
+      });
+
+      if (error) {
+        throw new Error(`Assembly edge function error: ${error.message}`);
+      }
+
+      console.log('[EP04 Assembly] Response:', data);
+
+      if (data?.generationStatus === 'pending' && (data?.castJobId || data?.taskId)) {
+        // JSON2Video is rendering asynchronously — start polling
+        const pollId = data.castJobId || data.taskId;
+        setAssemblyJobId(pollId);
+        setAssemblyProgress('Video rendering in progress... polling for completion');
+        toast.success('Assembly submitted! Video is rendering — will auto-update when done.');
+      } else if (data?.videoUrl) {
+        // Synchronous completion (rare but possible)
+        setFinalVideoUrl(data.videoUrl);
+        setProductionPhase('complete');
+        setAssemblyProgress(null);
+
+        if (projectId && data.videoUrl) {
+          await updateFinalAssembly(projectId, data.videoUrl, {
+            totalDuration,
+            sceneCount: sceneKeys.length,
+            resolution: '1920x1080',
           });
         }
 
-        const { data } = await supabase.functions.invoke('ai-universal-processor', {
-          body: {
-            action: 'assemble_video',
-            sceneKey,
-            ttsAudioUrls: sceneTTSUrls,
-            videoUrls: sceneStatus.videoUrls,
-            imageUrls: sceneStatus.imageUrls,
-            avatarUrls: sceneStatus.avatarUrls,
-            lipsyncUrls: sceneStatus.lipsyncUrls,
-            musicUrl: sceneStatus.musicUrl,
-            sfxUrls: sceneStatus.sfxUrls,
-          },
-        });
-
-        if (data?.videoUrl) {
-          setSceneProduction(prev => ({
-            ...prev,
-            [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), assembled: 'done', assembledClipUrl: data.videoUrl },
-          }));
-        }
-
-        if (jobId && projectId) {
-          await completeGenerationJob(jobId, data?.tokensUsed || 2000, data?.videoUrl);
-        }
+        toast.success('Cinematic movie assembled successfully!');
+      } else {
+        throw new Error(data?.message || 'Assembly returned no video URL');
       }
 
-      // Step 2: Render transitions
-      setAssemblyProgress('Rendering storybook transitions...');
-      await supabase.functions.invoke('ai-universal-processor', {
-        body: { action: 'generate_video', type: 'transitions', transitions: EP04_STORYBOOK_TRANSITIONS },
+      // Mark all scenes as assembled
+      setSceneProduction(prev => {
+        const next = { ...prev };
+        for (const sk of sceneKeys) {
+          next[sk] = { ...(next[sk] || defaultSceneStatus()), assembled: 'done' };
+        }
+        return next;
       });
 
-      // Step 3: Render bookends
-      setAssemblyProgress('Rendering opening & closing bookends...');
-      await supabase.functions.invoke('ai-universal-processor', {
-        body: { action: 'generate_video', type: 'bookends', bookends: EP04_STORYBOOK_BOOKENDS },
-      });
-
-      // Step 4: Audio mixing
-      setAssemblyProgress('Mixing audio: dialogue + music + SFX...');
-      await supabase.functions.invoke('ai-universal-processor', {
-        body: {
-          action: 'mix_audio',
-          sceneAudio: Object.fromEntries(
-            sceneKeys.map(sk => [sk, {
-              tts: scriptKeys.filter(k => scriptContentForUI[k]?.scene === sk && audioMap[k]).map(k => audioMap[k].audioUrl),
-              music: sceneProduction[sk]?.musicUrl,
-              sfx: sceneProduction[sk]?.sfxUrls || [],
-            }])
-          ),
-        },
-      });
-
-      // Step 5: Final stitching → one MP4
-      setAssemblyProgress('Final stitching — assembling cinematic movie...');
-      const assembledClips = sceneKeys
-        .map(sk => sceneProduction[sk]?.assembledClipUrl)
-        .filter(Boolean);
-
-      const { data: finalData } = await supabase.functions.invoke('ai-universal-processor', {
-        body: {
-          action: 'assemble_video',
-          type: 'final',
-          sceneClips: assembledClips,
-          transitions: EP04_STORYBOOK_TRANSITIONS,
-          bookends: EP04_STORYBOOK_BOOKENDS,
-        },
-      });
-
-      const finalUrl = finalData?.videoUrl || finalData?.url || null;
-      setFinalVideoUrl(finalUrl);
-
-      // Persist final assembly
-      if (projectId && finalUrl) {
-        await updateFinalAssembly(projectId, finalUrl, {
-          totalDuration: totalDuration,
-          sceneCount: sceneKeys.length,
-          resolution: '1920x1080',
-        });
+      if (jobId && projectId) {
+        await completeGenerationJob(jobId, data?.tokensUsed || 5000, data?.videoUrl);
       }
-
-      setProductionPhase('complete');
-      setAssemblyProgress(null);
-      toast.success('Cinematic movie assembled successfully!');
     } catch (err: any) {
       console.error('[EP04 Assembly] Failed:', err);
       setAssemblyProgress(null);
       toast.error(`Assembly failed: ${err.message}`);
     }
-  }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration]);
+  }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration, getAssemblyReadiness]);
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
@@ -3581,12 +3732,26 @@ function EP04ProductionInner() {
                           <span className="text-xs text-muted-foreground">{musicProgress.current}/{musicProgress.total}</span>
                         </>
                       )}
-                      {!allMusicDone && !musicProgress && (
-                        <Button size="sm" onClick={startAllMusicProduction}>
-                          <Music className="h-3 w-3 mr-1" />
-                          Generate All Music & SFX
-                        </Button>
-                      )}
+                      {!allMusicDone && !musicProgress && (() => {
+                        const failedCount = Array.from(scenes.keys()).filter(sk =>
+                          sceneProduction[sk]?.music === 'error' || (sceneProduction[sk]?.music === 'done' && !sceneProduction[sk]?.musicUrl)
+                        ).length;
+                        const hasAnyMusic = Array.from(scenes.keys()).some(sk => sceneProduction[sk]?.musicUrl);
+                        return (
+                          <div className="flex items-center gap-2">
+                            {failedCount > 0 && hasAnyMusic && (
+                              <Button size="sm" variant="outline" className="border-amber-500/30 text-amber-600" onClick={() => startAllMusicProduction(true)}>
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Regen {failedCount} Failed
+                              </Button>
+                            )}
+                            <Button size="sm" onClick={() => startAllMusicProduction(false)}>
+                              <Music className="h-3 w-3 mr-1" />
+                              {hasAnyMusic ? 'Regen All Music' : 'Generate All Music & SFX'}
+                            </Button>
+                          </div>
+                        );
+                      })()}
                       {allMusicDone && (
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
@@ -3596,16 +3761,8 @@ function EP04ProductionInner() {
                             size="sm" variant="outline"
                             className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
                             onClick={() => {
-                              // Reset all music states so regeneration runs fresh
-                              setSceneProduction(prev => {
-                                const next = { ...prev };
-                                for (const sk of Object.keys(next)) {
-                                  next[sk] = { ...next[sk], music: 'idle', musicUrl: null, sfxUrls: [] };
-                                }
-                                return next;
-                              });
-                              // Small delay to let state update, then trigger generation
-                              setTimeout(() => startAllMusicProduction(), 100);
+                              // Smart regen: only regenerate scenes that failed or have no music
+                              startAllMusicProduction(true);
                             }}
                           >
                             <Music className="h-3 w-3 mr-1" />
@@ -3624,13 +3781,33 @@ function EP04ProductionInner() {
                         <div key={sceneKey} className={cn(
                           'p-2.5 rounded-lg border text-center',
                           status?.music === 'done' ? 'border-green-500/30 bg-green-500/[0.02]' :
+                          status?.music === 'error' ? 'border-red-500/30 bg-red-500/[0.02]' :
                           status?.music === 'generating' ? 'border-primary/30' : 'border-border/30',
                         )}>
                           <p className="text-[10px] font-bold truncate">{SCENE_TITLES[sceneKey]?.split(' — ')[1] || sceneKey}</p>
-                          {status?.music === 'done' && <CheckCircle2 className="h-3 w-3 text-green-500 mx-auto mt-1" />}
+                          {status?.music === 'done' && status?.musicUrl && <CheckCircle2 className="h-3 w-3 text-green-500 mx-auto mt-1" />}
                           {status?.music === 'generating' && <Loader2 className="h-3 w-3 animate-spin text-primary mx-auto mt-1" />}
+                          {status?.music === 'error' && (
+                            <div className="mt-1">
+                              <AlertTriangle className="h-3 w-3 text-red-500 mx-auto" />
+                              <p className="text-[8px] text-red-500 mt-0.5">Failed</p>
+                            </div>
+                          )}
                           {status?.musicUrl && (
                             <audio src={status.musicUrl} controls className="w-full mt-2 h-6" />
+                          )}
+                          {/* Per-scene regen button — shows for error or idle states */}
+                          {(status?.music === 'error' || status?.music === 'idle' || (status?.music === 'done' && !status?.musicUrl)) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full mt-1 h-5 text-[8px]"
+                              onClick={() => startSceneMusicProduction(sceneKey)}
+                              disabled={status?.music === 'generating'}
+                            >
+                              <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                              Regen Music
+                            </Button>
                           )}
                         </div>
                       );
@@ -3678,10 +3855,16 @@ function EP04ProductionInner() {
                         </div>
                       )}
                       {!phase5Done && !assemblyProgress && (
-                        <Button size="sm" onClick={startFinalAssembly}>
-                          <Clapperboard className="h-3 w-3 mr-1" />
-                          Assemble Movie
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setAssemblyReadiness(getAssemblyReadiness())}>
+                            <Eye className="h-3 w-3 mr-1" />
+                            Check Readiness
+                          </Button>
+                          <Button size="sm" onClick={startFinalAssembly}>
+                            <Clapperboard className="h-3 w-3 mr-1" />
+                            Assemble Movie
+                          </Button>
+                        </div>
                       )}
                       {phase5Done && (
                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
@@ -3691,14 +3874,57 @@ function EP04ProductionInner() {
                     </div>
                   </div>
 
-                  {/* Assembly stages */}
+                  {/* Readiness Audit Report */}
+                  {assemblyReadiness && !phase5Done && (
+                    <div className="mb-4 p-3 rounded-lg border bg-muted/10">
+                      <div className="flex items-center gap-2 mb-3">
+                        {assemblyReadiness.canAssemble ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                        )}
+                        <span className="text-sm font-semibold">
+                          {assemblyReadiness.canAssemble
+                            ? `Ready to assemble — ${assemblyReadiness.readyScenes}/${assemblyReadiness.totalScenes} scenes fully ready`
+                            : `Not ready — ${assemblyReadiness.missingScenes} scene(s) missing required assets`}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {assemblyReadiness.scenes.map(s => (
+                          <div key={s.sceneKey} className={cn(
+                            'p-2 rounded border text-[9px]',
+                            s.missing.length === 0 ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5',
+                          )}>
+                            <p className="font-bold truncate mb-1">{s.title.split(' — ')[1] || s.sceneKey}</p>
+                            <div className="space-y-0.5">
+                              <p className={s.ttsCount > 0 ? 'text-green-600' : 'text-red-500'}>
+                                TTS: {s.ttsCount}/{s.ttsTotal}
+                              </p>
+                              <p className={s.hasVisuals ? 'text-green-600' : 'text-red-500'}>
+                                Visuals: {s.visualCount}
+                              </p>
+                              <p className={s.hasMusic ? 'text-green-600' : 'text-amber-500'}>
+                                Music: {s.hasMusic ? 'Yes' : 'No'}
+                              </p>
+                              {s.hasAvatars && <p className="text-green-600">Avatars: Yes</p>}
+                              {s.hasLipsync && <p className="text-green-600">Lipsync: Yes</p>}
+                              {s.hasSfx && <p className="text-green-600">SFX: Yes</p>}
+                            </div>
+                            {s.missing.length > 0 && (
+                              <p className="text-red-500 mt-1 font-semibold">Missing: {s.missing.join(', ')}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Assembly pipeline — JSON2Video */}
                   <div className="space-y-2">
                     {[
-                      { label: 'Per-scene assembly', desc: 'Combine TTS + visual + lipsync for each scene' },
-                      { label: 'Transition rendering', desc: 'Storybook page turns, iris wipes, dissolves' },
-                      { label: 'Bookend rendering', desc: 'Opening + closing storybook sequences' },
-                      { label: 'Audio mixing', desc: 'Layer music + SFX under dialogue' },
-                      { label: 'Final stitching', desc: 'All clips → one cinematic MP4' },
+                      { label: 'Readiness audit', desc: 'Verify TTS + visuals + music for all 12 scenes' },
+                      { label: 'Build timeline', desc: 'Assemble scene chapters with audio + visual layers' },
+                      { label: 'JSON2Video render', desc: 'Cloud-based timeline rendering → cinematic MP4' },
                     ].map(stage => (
                       <div key={stage.label} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20">
                         <Layers className="h-3.5 w-3.5 text-muted-foreground" />

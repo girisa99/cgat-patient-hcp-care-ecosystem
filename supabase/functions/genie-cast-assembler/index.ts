@@ -242,8 +242,96 @@ serve(async (req) => {
       } | null,
       // Cast project persistence — when provided, creates/updates cast_generation_jobs
       castProjectId = null as string | null,
+      // ─── STITCH-ONLY MODE ───────────────────────────────────────────────
+      // When mode='stitch-only', skip TTS/visual generation entirely.
+      // Accept pre-generated scene chapters and go straight to JSON2Video assembly.
+      mode = 'full' as string,
+      preBuiltChapters = null as ChapterResult[] | null,
     } = await req.json();
-    
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STITCH-ONLY MODE — accepts pre-generated assets, goes straight to assembly
+    // Used by EP04Production Phase 5 which generates TTS/visuals/music separately
+    // ═══════════════════════════════════════════════════════════════════════
+    if (mode === 'stitch-only' && preBuiltChapters && preBuiltChapters.length > 0) {
+      console.log(`🎬 STITCH-ONLY mode — assembling ${preBuiltChapters.length} pre-built scenes via JSON2Video`);
+
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      // Track assembly job if castProjectId provided
+      let castJobId: string | null = null;
+      if (castProjectId) {
+        try {
+          const { data: job } = await supabase
+            .from('cast_generation_jobs')
+            .insert({
+              project_id: castProjectId,
+              job_type: 'assembly',
+              language,
+              quality,
+              provider: 'json2video',
+              status: 'processing',
+              started_at: new Date().toISOString(),
+              input_config: { mode: 'stitch-only', sceneCount: preBuiltChapters.length },
+            })
+            .select('id')
+            .single();
+          if (job) castJobId = job.id;
+        } catch (_) { /* best-effort */ }
+      }
+
+      const totalDuration = preBuiltChapters.reduce((sum, c) => sum + c.duration, 0);
+
+      // Go straight to video stitching
+      const assemblyResult = await stitchChaptersToVideo(
+        preBuiltChapters,
+        language,
+        'json2video',
+        quality
+      );
+
+      // Update job + project
+      if (castJobId && castProjectId) {
+        try {
+          const jobStatus = assemblyResult.success ? (assemblyResult.pendingGeneration ? 'rendering' : 'completed') : 'failed';
+          await supabase.from('cast_generation_jobs').update({
+            status: jobStatus,
+            output_url: assemblyResult.videoUrl || null,
+            output_thumbnail_url: assemblyResult.thumbnailUrl || null,
+            output_duration_seconds: totalDuration || null,
+            provider_job_id: assemblyResult.taskId || null,
+            completed_at: jobStatus === 'completed' ? new Date().toISOString() : null,
+          }).eq('id', castJobId);
+
+          if (assemblyResult.success) {
+            const update: Record<string, any> = { status: assemblyResult.pendingGeneration ? 'generating' : 'review' };
+            if (assemblyResult.videoUrl) update.final_video_url = assemblyResult.videoUrl;
+            if (assemblyResult.thumbnailUrl) update.thumbnail_url = assemblyResult.thumbnailUrl;
+            if (totalDuration > 0) update.total_duration_seconds = totalDuration;
+            await supabase.from('cast_projects').update(update).eq('id', castProjectId);
+          }
+        } catch (_) { /* best-effort */ }
+      }
+
+      return new Response(JSON.stringify({
+        success: assemblyResult.success,
+        videoUrl: assemblyResult.videoUrl,
+        thumbnailUrl: assemblyResult.thumbnailUrl,
+        totalDuration,
+        generationStatus: assemblyResult.pendingGeneration ? 'pending' : 'completed',
+        castJobId,
+        taskId: assemblyResult.taskId,
+        message: assemblyResult.pendingGeneration
+          ? 'Assembly submitted to JSON2Video. Poll genie-cast-status for completion.'
+          : 'Video assembly completed.',
+        chapters: preBuiltChapters.map(c => ({ id: c.chapterId, product: c.product, success: c.success })),
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Create messaging context for script generation
     const messagingContext = {
       customScript,
@@ -253,7 +341,7 @@ serve(async (req) => {
       approvedMessaging,
       chapterMessaging,
     };
-    
+
     console.log(`📷 Received ${screenshots.length} screenshots from orchestration service`);
 
     if (!language) {
