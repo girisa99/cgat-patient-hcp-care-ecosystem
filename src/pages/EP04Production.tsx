@@ -5143,14 +5143,28 @@ function EP04ProductionInner() {
                                   </Button>
                                 )}
                                 {part.status === 'completed' && part.videoUrl && (
-                                  <a
-                                    href={part.videoUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5"
-                                  >
-                                    <Download className="h-2.5 w-2.5" /> Download MP4
-                                  </a>
+                                  <>
+                                    <a
+                                      href={part.videoUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5"
+                                    >
+                                      <Download className="h-2.5 w-2.5" /> Download
+                                    </a>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-6 text-[10px] px-2"
+                                      onClick={() => {
+                                        // Toggle inline video player
+                                        const el = document.getElementById(`part-video-${part.partNumber}`);
+                                        if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                                      }}
+                                    >
+                                      <Eye className="h-2.5 w-2.5 mr-0.5" /> Preview
+                                    </Button>
+                                  </>
                                 )}
                                 {part.errorMessage && (
                                   <span className="text-[9px] text-red-500 truncate max-w-[200px]" title={part.errorMessage}>
@@ -5158,6 +5172,18 @@ function EP04ProductionInner() {
                                   </span>
                                 )}
                               </div>
+
+                              {/* Inline video player */}
+                              {part.status === 'completed' && part.videoUrl && (
+                                <div id={`part-video-${part.partNumber}`} style={{ display: 'none' }} className="mt-2">
+                                  <video
+                                    src={part.videoUrl}
+                                    controls
+                                    className="w-full rounded-lg border max-h-[200px]"
+                                    preload="metadata"
+                                  />
+                                </div>
+                              )}
                             </div>
                           );
                         })}
