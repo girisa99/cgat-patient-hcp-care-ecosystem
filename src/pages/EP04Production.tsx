@@ -3019,18 +3019,19 @@ function EP04ProductionInner() {
 
       setAssemblyProgress('Submitting pre-built timeline to JSON2Video...');
 
-      // Send pre-built timeline to edge function which just forwards to JSON2Video
+      // Send pre-built timeline to lightweight edge function (NOT the heavy 3300-line assembler
+      // which OOMs even before reaching our code). genie-cast-timeline-submit is ~120 lines
+      // and just proxies the timeline to JSON2Video.
       const assemblyBody = {
-        mode: 'submit-timeline',
-        language: 'en',
-        quality: 'production',
         timeline: timelinePayload,
         castProjectId: projectId,
+        language: 'en',
+        quality: 'production',
       };
       const payloadSize = JSON.stringify(assemblyBody).length;
       console.log(`[EP04 Assembly] Payload size: ${(payloadSize / 1024).toFixed(1)}KB (${timelinePayload.scenes.length} scenes)`);
 
-      const { data, error } = await supabase.functions.invoke('genie-cast-assembler', {
+      const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
         body: assemblyBody,
       });
 
