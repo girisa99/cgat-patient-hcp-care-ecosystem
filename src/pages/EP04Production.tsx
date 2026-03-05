@@ -3017,19 +3017,37 @@ function EP04ProductionInner() {
       const { _totalDuration: timelineDuration, ...timelinePayload } = timeline;
       console.log(`[EP04 Assembly] Built timeline: ${timelinePayload.scenes.length} scenes, ~${timelineDuration}s, payload: ${(JSON.stringify(timelinePayload).length / 1024).toFixed(0)}kb`);
 
-      setAssemblyProgress('Submitting pre-built timeline to JSON2Video...');
+      setAssemblyProgress('Uploading timeline to storage...');
 
-      // Send pre-built timeline to lightweight edge function (NOT the heavy 3300-line assembler
-      // which OOMs even before reaching our code). genie-cast-timeline-submit is ~120 lines
-      // and just proxies the timeline to JSON2Video.
+      // Timeline is too large (38MB+) for edge function request body.
+      // Upload to Supabase Storage, then tell edge function to fetch from there.
+      const timelineJson = JSON.stringify(timelinePayload);
+      const timelinePath = `cast-timelines/${projectId}/timeline-${Date.now()}.json`;
+      const { error: uploadError } = await supabase.storage
+        .from('cast-assets')
+        .upload(timelinePath, new Blob([timelineJson], { type: 'application/json' }), {
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('[EP04 Assembly] Timeline upload failed:', uploadError);
+        throw new Error(`Failed to upload timeline: ${uploadError.message}`);
+      }
+
+      const { data: urlData } = supabase.storage.from('cast-assets').getPublicUrl(timelinePath);
+      const timelineUrl = urlData?.publicUrl;
+      console.log(`[EP04 Assembly] Timeline uploaded: ${(timelineJson.length / 1024).toFixed(0)}KB → ${timelinePath}`);
+
+      setAssemblyProgress('Submitting timeline to JSON2Video...');
+
+      // Send only the storage URL to the lightweight edge function
       const assemblyBody = {
-        timeline: timelinePayload,
+        timelineUrl,
         castProjectId: projectId,
         language: 'en',
         quality: 'production',
       };
-      const payloadSize = JSON.stringify(assemblyBody).length;
-      console.log(`[EP04 Assembly] Payload size: ${(payloadSize / 1024).toFixed(1)}KB (${timelinePayload.scenes.length} scenes)`);
+      console.log(`[EP04 Assembly] Sending timeline URL to edge function (${timelinePayload.scenes.length} scenes)`);
 
       const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
         body: assemblyBody,
