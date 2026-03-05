@@ -3025,7 +3025,7 @@ function EP04ProductionInner() {
       const timelinePath = `cast-timelines/${projectId}/timeline-${Date.now()}.json`;
       const { error: uploadError } = await supabase.storage
         .from('cast-assets')
-        .upload(timelinePath, new Blob([timelineJson], { type: 'application/json' }), {
+        .upload(timelinePath, new Blob([timelineJson], { type: 'text/plain' }), {
           upsert: true,
         });
 
