@@ -182,7 +182,17 @@ export async function seedProjectFromTemplate(
       await new Promise(r => setTimeout(r, 100));
     }
 
-    // 4. Upsert script lines (grouped by scene for efficiency)
+    // 4. Build character key → UUID lookup for foreign keys
+    const { data: charRows } = await supabase
+      .from('cast_project_characters')
+      .select('id, character_key')
+      .eq('project_id', projectId);
+    const charKeyToId: Record<string, string> = {};
+    for (const row of (charRows || [])) {
+      charKeyToId[(row as any).character_key] = (row as any).id;
+    }
+
+    // 5. Upsert script lines (grouped by scene for efficiency)
     const linesByScene = new Map<string, typeof template.scriptLines>();
     for (const line of template.scriptLines) {
       if (!linesByScene.has(line.sceneKey)) linesByScene.set(line.sceneKey, []);
@@ -201,12 +211,15 @@ export async function seedProjectFromTemplate(
       const sceneId = sceneRow?.id || null;
 
       for (const line of lines) {
+        // Resolve character key → UUID; fall back to key string if character not seeded
+        const characterId = charKeyToId[line.characterKey] || line.characterKey;
+
         const { error } = await supabase.from('cast_project_script_lines').upsert({
           project_id: projectId,
           scene_id: sceneId,
           line_key: line.key,
           line_index: line.lineIndex,
-          character_id: line.characterKey,
+          character_id: characterId,
           dialogue: line.text,
           direction: line.direction || null,
           motion: line.motion || null,

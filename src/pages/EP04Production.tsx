@@ -452,6 +452,8 @@ function EP04ProductionInner() {
   const [autoProjectId, setAutoProjectId] = useState<string | null>(null);
   const [projectLoadError, setProjectLoadError] = useState<string | null>(null);
   const [projectLoading, setProjectLoading] = useState(!urlProjectId);
+  const [loadStep, setLoadStep] = useState<string>(''); // diagnostic step
+  const [retryCount, setRetryCount] = useState(0); // triggers effect re-run
   const projectId = urlProjectId || autoProjectId;
   const {
     saveProjectContent, loadProjectContent, updateLineTTS,
@@ -465,37 +467,61 @@ function EP04ProductionInner() {
   const autoCreateAttempted = React.useRef(false);
   useEffect(() => {
     if (urlProjectId || autoProjectId) return;
-    if (autoCreateAttempted.current) return; // guard against React strict-mode double-fire
+    // Guard against React strict-mode double-fire, but allow retries
+    if (autoCreateAttempted.current && retryCount === 0) return;
     autoCreateAttempted.current = true;
     setProjectLoading(true);
     setProjectLoadError(null);
+    setLoadStep('Checking authentication...');
 
-    // Timeout guard — if DB hangs, don't spin forever (30s max)
+    // Timeout guard — 20s max (down from 30s for faster feedback)
     const timeoutId = setTimeout(() => {
       setProjectLoading(false);
-      setProjectLoadError('Project lookup timed out after 30 seconds — please refresh or check your network');
-    }, 30000);
+      setProjectLoadError(`Timed out at step: "${loadStep || 'authentication check'}". Supabase may be unreachable — check your network or try again.`);
+    }, 20000);
+
+    let cancelled = false;
 
     (async () => {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('[EP04] Auth failed — no user session:', authError);
-        setProjectLoadError(authError?.message || 'Not authenticated — please sign in and refresh');
-        setProjectLoading(false);
-        clearTimeout(timeoutId);
-        return;
-      }
-      const db = supabase as any;
-
       try {
-        // Check if EP04 project already exists using exact style_intent match
-        const { data: existing } = await db
+        // Step 1: Auth check with explicit timeout
+        const authPromise = supabase.auth.getUser();
+        const authTimeout = new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error('Auth check timed out after 8 seconds')), 8000)
+        );
+        const authResult = await Promise.race([authPromise, authTimeout]) as any;
+        if (cancelled) return;
+
+        const user = authResult?.data?.user;
+        if (!user) {
+          const authError = authResult?.error;
+          console.error('[EP04] Auth failed — no user session:', authError);
+          setProjectLoadError(authError?.message || 'Not authenticated — please sign in and refresh');
+          setProjectLoading(false);
+          clearTimeout(timeoutId);
+          return;
+        }
+        setLoadStep('Looking up EP04 project...');
+
+        const db = supabase as any;
+
+        // Step 2: Look up existing project by style_intent
+        const { data: existing, error: lookupErr } = await db
           .from('cast_projects')
           .select('id')
           .eq('user_id', user.id)
           .eq('style_intent', 'ep04-sprint-documentary')
           .limit(1)
           .maybeSingle();
+
+        if (cancelled) return;
+        if (lookupErr) {
+          console.error('[EP04] DB lookup error:', lookupErr);
+          setProjectLoadError(`Database query failed: ${lookupErr.message}`);
+          setProjectLoading(false);
+          clearTimeout(timeoutId);
+          return;
+        }
 
         if (existing?.id) {
           setAutoProjectId(existing.id);
@@ -504,7 +530,8 @@ function EP04ProductionInner() {
           return;
         }
 
-        // Also check by title as fallback (for rows created before this fix)
+        // Step 3: Fallback — check by title for legacy rows
+        setLoadStep('Checking legacy project titles...');
         const { data: legacyExisting } = await db
           .from('cast_projects')
           .select('id')
@@ -513,8 +540,9 @@ function EP04ProductionInner() {
           .limit(1)
           .maybeSingle();
 
+        if (cancelled) return;
+
         if (legacyExisting?.id) {
-          // Update legacy row with the stable style_intent so future lookups use exact match
           await db.from('cast_projects')
             .update({ style_intent: 'ep04-sprint-documentary' })
             .eq('id', legacyExisting.id);
@@ -524,7 +552,8 @@ function EP04ProductionInner() {
           return;
         }
 
-        // Create new EP04 project row with stable style_intent
+        // Step 4: Create new project
+        setLoadStep('Creating EP04 project...');
         const { data: created, error } = await db
           .from('cast_projects')
           .insert({
@@ -540,6 +569,7 @@ function EP04ProductionInner() {
           .select('id')
           .single();
 
+        if (cancelled) return;
         if (!error && created) {
           setAutoProjectId(created.id);
           console.log('[EP04] Auto-created project:', created.id);
@@ -548,14 +578,22 @@ function EP04ProductionInner() {
           setProjectLoadError(error?.message || 'Failed to create project — check database');
         }
       } catch (err: any) {
+        if (cancelled) return;
         console.error('[EP04] Project lookup/create error:', err);
         setProjectLoadError(err.message || 'Failed to load project');
       } finally {
-        setProjectLoading(false);
-        clearTimeout(timeoutId);
+        if (!cancelled) {
+          setProjectLoading(false);
+          clearTimeout(timeoutId);
+        }
       }
     })();
-  }, [urlProjectId, autoProjectId]);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [urlProjectId, autoProjectId, retryCount]); // retryCount triggers re-run
 
   // ─── DB-driven data (with fallback to config imports) ──────────────
   const dbProject = useCastProjectData(projectId);
@@ -3120,7 +3158,7 @@ function EP04ProductionInner() {
         <Card className="p-8 text-center max-w-md">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
           <h2 className="text-lg font-semibold mb-2">Loading EP04 Project...</h2>
-          <p className="text-sm text-muted-foreground">Looking up project in database</p>
+          <p className="text-sm text-muted-foreground">{loadStep || 'Connecting to database...'}</p>
         </Card>
       </div>
     );
@@ -3134,23 +3172,16 @@ function EP04ProductionInner() {
           <h2 className="text-lg font-semibold mb-2">Project Load Failed</h2>
           <p className="text-sm text-muted-foreground mb-4">{projectLoadError || 'No project ID found — try refreshing'}</p>
           <div className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={() => { autoCreateAttempted.current = false; setProjectLoadError(null); setProjectLoading(true); window.location.reload(); }}>
+            <Button onClick={() => {
+              autoCreateAttempted.current = false;
+              setProjectLoadError(null);
+              setAutoProjectId(null);
+              setRetryCount(c => c + 1);
+            }}>
               <RefreshCw className="h-4 w-4 mr-1" /> Retry
             </Button>
             <Button variant="outline" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Go Back
-            </Button>
-            <Button onClick={() => {
-              autoCreateAttempted.current = false;
-              setProjectLoadError(null);
-              setProjectLoading(true);
-              // Re-trigger the effect by resetting the ref guard
-              setTimeout(() => {
-                autoCreateAttempted.current = false;
-                setAutoProjectId(null);
-              }, 0);
-            }}>
-              Retry
             </Button>
           </div>
         </Card>

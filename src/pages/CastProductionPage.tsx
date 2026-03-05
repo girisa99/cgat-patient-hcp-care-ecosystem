@@ -74,6 +74,7 @@ interface DbScriptLine {
   line_key: string;
   line_index: number;
   character_id: string;
+  scene_id: string | null;
   dialogue: string;
   direction: string | null;
   duration_hint: string | null;
@@ -91,6 +92,7 @@ export default function CastProductionPage() {
   const [scenes, setScenes] = useState<DbScene[]>([]);
   const [scriptLines, setScriptLines] = useState<DbScriptLine[]>([]);
   const [projectTitle, setProjectTitle] = useState('Cast Production');
+  const [projectLanguage, setProjectLanguage] = useState('en-US');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -112,7 +114,7 @@ export default function CastProductionPage() {
         // Load project metadata (lean query — no JSONB)
         const { data: project } = await supabase
           .from('cast_projects')
-          .select('id, title, status, quality')
+          .select('id, title, status, quality, selected_dialects, target_regions')
           .eq('id', projectId)
           .maybeSingle();
 
@@ -123,6 +125,11 @@ export default function CastProductionPage() {
           return;
         }
         setProjectTitle(project.title || 'Cast Production');
+        // Resolve language from selected_dialects (first entry) or default
+        const dialects = project.selected_dialects as string[] | null;
+        if (dialects && dialects.length > 0) {
+          setProjectLanguage(dialects[0]);
+        }
 
         // Load characters, scenes (metadata only), and script lines in parallel
         const [charsRes, scenesRes, linesRes] = await Promise.all([
@@ -134,7 +141,7 @@ export default function CastProductionPage() {
             .eq('project_id', projectId)
             .order('scene_index'),
           supabase.from('cast_project_script_lines')
-            .select('id, line_key, line_index, character_id, dialogue, direction, duration_hint, sfx_tags')
+            .select('id, line_key, line_index, character_id, scene_id, dialogue, direction, duration_hint, sfx_tags')
             .eq('project_id', projectId)
             .order('line_index'),
         ]);
@@ -180,17 +187,31 @@ export default function CastProductionPage() {
     return map;
   }, [characters]);
 
+  // Build scene UUID → scene_key lookup
+  const sceneIdToKey = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const s of scenes) map[s.id] = s.scene_key;
+    return map;
+  }, [scenes]);
+
+  // Build character UUID → character_key lookup (for display)
+  const charIdToKey = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const c of characters) map[c.id] = c.character_key;
+    return map;
+  }, [characters]);
+
   const scriptLineData = useMemo<ScriptLineData[]>(() => {
     return scriptLines.map(l => ({
       key: l.line_key,
       text: l.dialogue,
-      characterKey: l.character_id,
-      sceneKey: scenes.find(s => s.id === l.id)?.scene_key || '', // fallback
+      characterKey: charIdToKey[l.character_id] || l.character_id,
+      sceneKey: l.scene_id ? (sceneIdToKey[l.scene_id] || '') : '',
       durationEst: parseFloat(l.duration_hint || '5'),
       direction: l.direction || undefined,
       sfx: l.sfx_tags || undefined,
     }));
-  }, [scriptLines, scenes]);
+  }, [scriptLines, sceneIdToKey, charIdToKey]);
 
   // Group script lines by scene
   const scriptLinesByScene = useMemo(() => {
@@ -205,7 +226,7 @@ export default function CastProductionPage() {
   // ─── Production hooks ─────────────────────────────────────────────────
 
   const phaseManager = useProductionPhaseManager('tts');
-  const tts = useTtsGeneration(projectId || null, scriptLineData, voiceConfigMap);
+  const tts = useTtsGeneration(projectId || null, scriptLineData, voiceConfigMap, projectLanguage);
   const visual = useVisualGeneration(projectId || null, scriptLinesByScene);
   const musicSfx = useMusicSfxGeneration(projectId || null);
   const assembly = useAssemblyPipeline(projectId || null);
