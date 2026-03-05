@@ -297,9 +297,12 @@ export function useCastProjectPersistence() {
       let scriptLines: PersistedScriptLine[] = [];
       if (scenes.length > 0) {
         const sceneIds = scenes.map((s: any) => s.id);
+        // CRITICAL: Do NOT load tts_audio_url here — base64 audio blobs are 50-500KB EACH.
+        // 120 lines × 200KB = 24MB payload that crashes the DB.
+        // TTS audio is loaded separately by the TTS restore effect when needed.
         const { data: linesData, error: linesErr } = await db
           .from('cast_project_script_lines')
-          .select('id, project_id, scene_id, line_key, line_index, character_id, dialogue, direction, motion, duration_hint, visual_tags, sfx_tags, tts_audio_url, tts_status, tts_provider, tts_voice_id, tts_generated_at')
+          .select('id, project_id, scene_id, line_key, line_index, character_id, dialogue, direction, motion, duration_hint, visual_tags, sfx_tags, tts_status, tts_provider, tts_voice_id, tts_generated_at')
           .in('scene_id', sceneIds)
           .order('line_index', { ascending: true });
 

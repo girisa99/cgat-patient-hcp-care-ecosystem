@@ -805,8 +805,13 @@ function EP04ProductionInner() {
         console.log(`[EP04] TTS restored: ${matchCount} match static config, ${Object.keys(restoredAudio).length} total from DB`);
 
         // ── Re-persist recovered TTS back to script_lines (repair wiped data) ──
-        for (const [lineKey, audio] of Object.entries(restoredAudio)) {
-          if (staticKeys.has(lineKey)) {
+        // CRITICAL: Batch updates with delays to avoid exhausting the DB connection pool.
+        // Previously fired 120 concurrent UPDATE queries that crashed Supabase.
+        const linesToRepair = Object.entries(restoredAudio).filter(([k]) => staticKeys.has(k));
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < linesToRepair.length; i += BATCH_SIZE) {
+          const batch = linesToRepair.slice(i, i + BATCH_SIZE);
+          await Promise.allSettled(batch.map(([lineKey, audio]) =>
             db.from('cast_project_script_lines')
               .update({
                 tts_audio_url: audio.audioUrl,
@@ -815,8 +820,10 @@ function EP04ProductionInner() {
               })
               .eq('project_id', projectId)
               .eq('line_key', lineKey)
-              .then(() => {}) // fire-and-forget repair
-              .catch(() => {});
+          ));
+          // Breathe between batches to avoid connection pool exhaustion
+          if (i + BATCH_SIZE < linesToRepair.length) {
+            await new Promise(r => setTimeout(r, 200));
           }
         }
       }
