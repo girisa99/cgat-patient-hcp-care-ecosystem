@@ -2533,6 +2533,8 @@ function EP04ProductionInner() {
             prompt: musicPrompt,
             duration: musicDuration,
             instrumental: true,
+            projectId: projectId || undefined,
+            sceneKey: sceneKey,
           },
         });
 

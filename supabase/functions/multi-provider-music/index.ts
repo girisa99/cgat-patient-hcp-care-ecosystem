@@ -9,11 +9,46 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// ── Upload music to Supabase Storage (uses service role — no RLS issues) ──
+async function uploadMusicToStorage(audioBuffer: ArrayBuffer, sceneKey: string, projectId?: string): Promise<string | null> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.warn('[Music] Missing SUPABASE_URL or SERVICE_ROLE_KEY — cannot upload to Storage');
+    return null;
+  }
+
+  try {
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const folder = projectId || 'shared';
+    const path = `${folder}/music/${sceneKey}-${Date.now()}.mp3`;
+    const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
+
+    const { error } = await supabase.storage.from('cast-assets').upload(path, blob, {
+      contentType: 'audio/mpeg',
+      upsert: true,
+    });
+
+    if (error) {
+      console.warn(`[Music] Storage upload failed for ${sceneKey}:`, error.message);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('cast-assets').getPublicUrl(path);
+    console.log(`[Music] Uploaded to Storage: ${publicUrl.substring(0, 80)}...`);
+    return publicUrl;
+  } catch (err) {
+    console.warn(`[Music] Storage upload error:`, err);
+    return null;
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // REGION ZONE DEFINITIONS
@@ -46,6 +81,8 @@ interface MusicRequest {
   tier?: 'standard' | 'advanced' | 'premium';
   style?: string;
   instrumental?: boolean;
+  projectId?: string;  // For uploading to Storage
+  sceneKey?: string;   // For Storage path naming
 }
 
 interface MusicRouting {
@@ -573,16 +610,26 @@ serve(async (req) => {
         audioBuffer = await generateElevenLabsMusic(request.prompt, duration);
     }
 
-    const audioBase64 = base64Encode(audioBuffer);
-
     const isSilentPlaceholder = audioBuffer.byteLength < 60000 && new Uint8Array(audioBuffer).every((b, i) => i < 4 || b === 0);
     console.log(`${isSilentPlaceholder ? '⚠️ SILENT PLACEHOLDER' : '✅ Real music'}: ${audioBuffer.byteLength} bytes via ${provider}`);
+
+    // Upload to Supabase Storage (service role — no RLS issues)
+    // Returns HTTP URL so client never has to deal with data: URIs for music
+    let storageUrl: string | null = null;
+    if (!isSilentPlaceholder) {
+      const sceneKey = request.sceneKey || `music-${Date.now()}`;
+      storageUrl = await uploadMusicToStorage(audioBuffer, sceneKey, request.projectId);
+    }
+
+    // Only include base64 as fallback if Storage upload failed
+    const audioBase64 = storageUrl ? undefined : base64Encode(audioBuffer);
+    const audioUrl = storageUrl || (audioBase64 ? `data:audio/mpeg;base64,${audioBase64}` : undefined);
 
     return new Response(
       JSON.stringify({
         success: true,
         audioContent: audioBase64,
-        audioUrl: `data:audio/mpeg;base64,${audioBase64}`,
+        audioUrl,
         duration,
         provider,
         zone: routing.zone,
