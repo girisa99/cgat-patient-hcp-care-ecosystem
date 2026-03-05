@@ -2922,11 +2922,13 @@ function EP04ProductionInner() {
         const sceneDuration = cumulativeStart || 30;
 
         // Collect ALL visual URLs (images + videos + avatars + lipsync)
+        // Filter out data: URIs — they bloat the payload (38MB+) and JSON2Video can't use them
+        const isHttpUrl = (u: string) => u && u.startsWith('http');
         const allVisualUrls: string[] = [
-          ...Object.values(status.videoUrls || {}).filter(u => u),
-          ...Object.values(status.imageUrls || {}).filter(u => u),
-          ...Object.values(status.avatarUrls || {}).filter(u => u),
-          ...Object.values(status.lipsyncUrls || {}).filter(u => u),
+          ...Object.values(status.videoUrls || {}).filter(isHttpUrl),
+          ...Object.values(status.imageUrls || {}).filter(isHttpUrl),
+          ...Object.values(status.avatarUrls || {}).filter(isHttpUrl),
+          ...Object.values(status.lipsyncUrls || {}).filter(isHttpUrl),
         ];
 
         // Music loop detection — music track is typically 20-30s, scenes can be 50-270s
