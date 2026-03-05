@@ -2771,9 +2771,11 @@ function EP04ProductionInner() {
 
   // ─── Multi-Part Assembly ──────────────────────────────────────────────────
   // JSON2Video Professional plan caps at 10 minutes per video.
-  // EP04 is ~36 minutes → split into 4 parts, each under 10 minutes.
-  const MAX_PART_DURATION = 570; // 9.5 minutes (buffer under 10-min limit)
-  const MAX_PART_TTS = 28; // Max TTS audio files per part — Part 1 (23 TTS) rendered OK, Part 2 (45 TTS) timed out
+  // Render timeouts happen even under 10min if too many assets to download.
+  // Conservative limits: more parts = smaller/faster renders = less timeout risk.
+  const BOOKEND_BUFFER = 22; // 12s opening + 10s closing = 22s reserved for bookends
+  const MAX_PART_DURATION = 300; // 5 minutes max per part — keeps render time well under timeout
+  const MAX_PART_TTS = 18; // Max TTS audio files per part — Part 1 (23 TTS, 517s) was borderline
 
   interface AssemblyPart {
     partNumber: number;
@@ -2978,7 +2980,7 @@ function EP04ProductionInner() {
       bridgeAudioUrl?: string; bridgeDuration?: number;
       nextSceneVisualUrl?: string; // Background for visual transition
     }>,
-    bookends: { opening: { duration: number }; closing: { duration: number } } | null,
+    bookends: { opening: { duration: number; backgroundUrl?: string }; closing: { duration: number; backgroundUrl?: string } } | null,
     quality: string,
   ) => {
     const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
@@ -4872,7 +4874,7 @@ function EP04ProductionInner() {
                                 OPEN
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs">Opening bookend (21s) — storybook + music + SFX</TooltipContent>
+                            <TooltipContent side="top" className="text-xs">Opening bookend (12s) — cinematic reveal + branding</TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
 
@@ -4988,94 +4990,190 @@ function EP04ProductionInner() {
                     <div className="mb-4 p-3 rounded-lg border border-blue-500/30 bg-blue-500/[0.03]">
                       <div className="flex items-center gap-2 mb-3">
                         <Layers className="h-4 w-4 text-blue-500" />
-                        <span className="text-sm font-semibold">Multi-Part Assembly</span>
+                        <span className="text-sm font-semibold">Multi-Part Assembly ({assemblyParts.length} parts)</span>
                         <span className="text-xs text-muted-foreground ml-auto">
-                          JSON2Video Professional: 10 min max per video
+                          {assemblyParts.filter(p => p.status === 'completed').length}/{assemblyParts.length} done | JSON2Video Pro: 10min max
                         </span>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {assemblyParts.map(part => (
-                          <div key={part.partNumber} className={cn(
-                            'p-3 rounded-lg border',
-                            part.status === 'completed' && 'border-green-500/30 bg-green-500/[0.03]',
-                            part.status === 'rendering' && 'border-amber-500/30 bg-amber-500/[0.03]',
-                            part.status === 'failed' && 'border-red-500/30 bg-red-500/[0.03]',
-                            part.status === 'pending' && 'border-muted bg-muted/10',
-                          )}>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-bold">
-                                Part {part.partNumber}
-                              </span>
-                              <Badge variant="outline" className={cn(
-                                'text-[9px]',
-                                part.status === 'completed' && 'bg-green-500/10 text-green-600 border-green-500/30',
-                                part.status === 'rendering' && 'bg-amber-500/10 text-amber-600 border-amber-500/30',
-                                part.status === 'failed' && 'bg-red-500/10 text-red-600 border-red-500/30',
-                                part.status === 'pending' && 'bg-muted/10 text-muted-foreground',
-                              )}>
-                                {part.status === 'rendering' && <Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" />}
-                                {part.status}
-                              </Badge>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground mb-1">
-                              {part.sceneKeys.map(k => SCENE_TITLES[k]?.replace(/Scene \d+ — /, '') || k).join(', ')}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground mb-2">
-                              ~{Math.round(part.estimatedDuration / 60)}min, {part.ttsCount} TTS ({part.sceneKeys.length} scenes)
-                            </p>
-                            <div className="flex items-center gap-1">
-                              {part.status === 'pending' && (
-                                <Button
-                                  size="sm"
-                                  className="h-6 text-[10px] px-2"
-                                  disabled={!!assemblyJobId}
-                                  onClick={() => startFinalAssembly(part.partNumber)}
-                                >
-                                  <Clapperboard className="h-2.5 w-2.5 mr-0.5" />
-                                  Assemble Part {part.partNumber}
-                                </Button>
-                              )}
-                              {part.status === 'failed' && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-6 text-[10px] px-2 border-red-500/30 text-red-600"
-                                  disabled={!!assemblyJobId}
-                                  onClick={() => startFinalAssembly(part.partNumber)}
-                                >
-                                  <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
-                                  Retry
-                                </Button>
-                              )}
-                              {part.status === 'completed' && part.videoUrl && (
-                                <a
-                                  href={part.videoUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5"
-                                >
-                                  <Download className="h-2.5 w-2.5" /> Download
-                                </a>
-                              )}
-                              {part.errorMessage && (
-                                <span className="text-[9px] text-red-500 truncate max-w-[150px]" title={part.errorMessage}>
-                                  {part.errorMessage}
-                                </span>
-                              )}
-                            </div>
+
+                      {/* Live assembly status bar */}
+                      {assemblyProgress && (
+                        <div className="mb-3 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500 flex-shrink-0" />
+                            <span className="text-xs text-amber-600 font-medium flex-1">{assemblyProgress}</span>
+                            <Button size="sm" variant="destructive" className="h-6 text-[10px] px-2" onClick={() => {
+                              setAssemblyJobId(null);
+                              setAssemblyProgress(null);
+                              setActivePartNumber(null);
+                              toast.info('Assembly cancelled');
+                            }}>
+                              <XCircle className="h-2.5 w-2.5 mr-0.5" /> Cancel
+                            </Button>
                           </div>
-                        ))}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {assemblyParts.map(part => {
+                          // Calculate what's being stitched for this part
+                          const partVisuals = part.sceneKeys.reduce((sum, sk) => {
+                            const s = sceneProduction[sk];
+                            return sum + Object.values(s?.imageUrls || {}).filter(u => u?.startsWith('http')).length
+                              + Object.values(s?.avatarUrls || {}).filter(u => u?.startsWith('http')).length;
+                          }, 0);
+                          const partLipsync = part.sceneKeys.reduce((sum, sk) => {
+                            const s = sceneProduction[sk];
+                            return sum + Object.values(s?.lipsyncUrls || {}).filter(u => u?.startsWith('http')).length;
+                          }, 0);
+                          const partMusic = part.sceneKeys.filter(sk => {
+                            const s = sceneProduction[sk];
+                            return s?.musicUrl && s.musicUrl.startsWith('http');
+                          }).length;
+                          const partMusicData = part.sceneKeys.filter(sk => {
+                            const s = sceneProduction[sk];
+                            return s?.musicUrl && !s.musicUrl.startsWith('http');
+                          }).length;
+                          const isActive = activePartNumber === part.partNumber;
+
+                          return (
+                            <div key={part.partNumber} className={cn(
+                              'p-3 rounded-lg border transition-all',
+                              part.status === 'completed' && 'border-green-500/30 bg-green-500/[0.03]',
+                              part.status === 'rendering' && 'border-amber-500/30 bg-amber-500/[0.03] ring-1 ring-amber-500/20',
+                              part.status === 'failed' && 'border-red-500/30 bg-red-500/[0.03]',
+                              part.status === 'pending' && 'border-muted bg-muted/10',
+                            )}>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-bold">
+                                  Part {part.partNumber}/{assemblyParts.length}
+                                  {part.partNumber === 1 && ' (+ Opening)'}
+                                  {part.partNumber === assemblyParts.length && ' (+ Closing)'}
+                                </span>
+                                <Badge variant="outline" className={cn(
+                                  'text-[9px]',
+                                  part.status === 'completed' && 'bg-green-500/10 text-green-600 border-green-500/30',
+                                  part.status === 'rendering' && 'bg-amber-500/10 text-amber-600 border-amber-500/30',
+                                  part.status === 'failed' && 'bg-red-500/10 text-red-600 border-red-500/30',
+                                  part.status === 'pending' && 'bg-muted/10 text-muted-foreground',
+                                )}>
+                                  {part.status === 'rendering' && <Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" />}
+                                  {part.status}
+                                </Badge>
+                              </div>
+
+                              {/* Scene names */}
+                              <p className="text-[10px] text-muted-foreground mb-1">
+                                {part.sceneKeys.map(k => SCENE_TITLES[k]?.replace(/Scene \d+ — /, '') || k).join(' → ')}
+                              </p>
+
+                              {/* Stitch details: what goes into this part */}
+                              <div className="flex flex-wrap gap-1.5 mb-2">
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600">
+                                  {part.ttsCount} TTS
+                                </span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600">
+                                  {partVisuals} images
+                                </span>
+                                {partLipsync > 0 && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-600">
+                                    {partLipsync} lipsync
+                                  </span>
+                                )}
+                                <span className={cn(
+                                  'text-[9px] px-1.5 py-0.5 rounded',
+                                  partMusic > 0 ? 'bg-green-500/10 text-green-600' : 'bg-amber-500/10 text-amber-600',
+                                )}>
+                                  {partMusic > 0 ? `${partMusic} music` : partMusicData > 0 ? `${partMusicData} music (needs regen)` : 'no music'}
+                                </span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                  ~{Math.round(part.estimatedDuration / 60)}min
+                                </span>
+                              </div>
+
+                              {/* Rendering progress for active part */}
+                              {part.status === 'rendering' && isActive && assemblyProgress && (
+                                <div className="mb-2 text-[10px] text-amber-600 font-medium flex items-center gap-1">
+                                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                  {assemblyProgress}
+                                </div>
+                              )}
+
+                              {/* Action buttons */}
+                              <div className="flex items-center gap-1">
+                                {part.status === 'pending' && (
+                                  <Button
+                                    size="sm"
+                                    className="h-6 text-[10px] px-2"
+                                    disabled={!!assemblyJobId}
+                                    onClick={() => startFinalAssembly(part.partNumber)}
+                                  >
+                                    <Clapperboard className="h-2.5 w-2.5 mr-0.5" />
+                                    Assemble Part {part.partNumber}
+                                  </Button>
+                                )}
+                                {part.status === 'rendering' && isActive && (
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-6 text-[10px] px-2"
+                                    onClick={() => {
+                                      setAssemblyJobId(null);
+                                      setAssemblyProgress(null);
+                                      setActivePartNumber(null);
+                                      setAssemblyParts(prev => prev.map(p =>
+                                        p.partNumber === part.partNumber ? { ...p, status: 'failed', errorMessage: 'Cancelled by user' } : p
+                                      ));
+                                      toast.info(`Part ${part.partNumber} cancelled`);
+                                    }}
+                                  >
+                                    <XCircle className="h-2.5 w-2.5 mr-0.5" /> Cancel
+                                  </Button>
+                                )}
+                                {part.status === 'failed' && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 text-[10px] px-2 border-red-500/30 text-red-600"
+                                    disabled={!!assemblyJobId}
+                                    onClick={() => startFinalAssembly(part.partNumber)}
+                                  >
+                                    <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                                    Retry
+                                  </Button>
+                                )}
+                                {part.status === 'completed' && part.videoUrl && (
+                                  <a
+                                    href={part.videoUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5"
+                                  >
+                                    <Download className="h-2.5 w-2.5" /> Download MP4
+                                  </a>
+                                )}
+                                {part.errorMessage && (
+                                  <span className="text-[9px] text-red-500 truncate max-w-[200px]" title={part.errorMessage}>
+                                    {part.errorMessage}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
+
+                      {/* All parts complete */}
                       {assemblyParts.every(p => p.status === 'completed') && (
                         <div className="mt-3 p-2 rounded-lg bg-green-500/10 border border-green-500/30">
-                          <p className="text-xs text-green-600 font-semibold">
-                            All {assemblyParts.length} parts assembled! Use a video editor (DaVinci Resolve, CapCut, etc.) to concatenate the parts into one final video.
+                          <p className="text-xs text-green-600 font-semibold mb-1">
+                            All {assemblyParts.length} parts assembled! Concatenate into one video using DaVinci Resolve, CapCut, or similar.
                           </p>
-                          <div className="mt-2 flex flex-wrap gap-1">
+                          <div className="mt-2 flex flex-wrap gap-2">
                             {assemblyParts.map(p => p.videoUrl && (
                               <a key={p.partNumber} href={p.videoUrl} target="_blank" rel="noopener noreferrer"
-                                className="text-[10px] text-blue-500 hover:underline">
-                                Part {p.partNumber}
+                                className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
+                                <Download className="h-2.5 w-2.5" /> Part {p.partNumber}
                               </a>
                             ))}
                           </div>
