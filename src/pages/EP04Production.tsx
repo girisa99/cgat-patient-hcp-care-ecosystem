@@ -2767,6 +2767,78 @@ function EP04ProductionInner() {
   const [assemblyJobId, setAssemblyJobId] = useState<string | null>(null);
   const [assemblyPollTimer, setAssemblyPollTimer] = useState<ReturnType<typeof setInterval> | null>(null);
 
+  // ─── Multi-Part Assembly ──────────────────────────────────────────────────
+  // JSON2Video Professional plan caps at 10 minutes per video.
+  // EP04 is ~36 minutes → split into 4 parts, each under 10 minutes.
+  const MAX_PART_DURATION = 570; // 9.5 minutes (buffer under 10-min limit)
+
+  interface AssemblyPart {
+    partNumber: number;
+    sceneKeys: string[];
+    estimatedDuration: number;
+    jobId: string | null;
+    status: 'pending' | 'rendering' | 'completed' | 'failed';
+    videoUrl: string | null;
+    errorMessage?: string;
+  }
+
+  const [assemblyParts, setAssemblyParts] = useState<AssemblyPart[]>([]);
+  const [activePartNumber, setActivePartNumber] = useState<number | null>(null);
+
+  // Compute part boundaries dynamically from scene durations
+  const computePartBoundaries = useCallback((): AssemblyPart[] => {
+    const sceneKeys = Array.from(scenes.keys());
+    const parts: AssemblyPart[] = [];
+    let currentPart: string[] = [];
+    let currentDuration = 0;
+    let partNum = 1;
+
+    for (const sceneKey of sceneKeys) {
+      // Calculate scene duration from TTS lines
+      const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
+      let sceneDuration = 0;
+      for (const k of sceneLines) {
+        sceneDuration += scriptContentForUI[k]?.duration_est || 5;
+      }
+      sceneDuration = sceneDuration || 30;
+
+      // Add transition duration (~5-7s per transition)
+      const transitionDuration = currentPart.length > 0 ? 6 : 0;
+
+      // If adding this scene would exceed limit, finalize current part
+      if (currentPart.length > 0 && (currentDuration + sceneDuration + transitionDuration) > MAX_PART_DURATION) {
+        parts.push({
+          partNumber: partNum,
+          sceneKeys: [...currentPart],
+          estimatedDuration: currentDuration,
+          jobId: null,
+          status: 'pending',
+          videoUrl: null,
+        });
+        partNum++;
+        currentPart = [sceneKey];
+        currentDuration = sceneDuration;
+      } else {
+        currentPart.push(sceneKey);
+        currentDuration += sceneDuration + transitionDuration;
+      }
+    }
+
+    // Push final part
+    if (currentPart.length > 0) {
+      parts.push({
+        partNumber: partNum,
+        sceneKeys: [...currentPart],
+        estimatedDuration: currentDuration,
+        jobId: null,
+        status: 'pending',
+        videoUrl: null,
+      });
+    }
+
+    return parts;
+  }, [scenes, scriptKeys, scriptContentForUI]);
+
   // Poll for assembly completion when we have a pending job
   const pollCountRef = React.useRef(0);
   const pollErrorCountRef = React.useRef(0);
@@ -2803,25 +2875,61 @@ function EP04ProductionInner() {
         pollErrorCountRef.current = 0; // reset on success
         const jobStatus = data?.job?.status;
         if (jobStatus === 'completed') {
-          setFinalVideoUrl(data.job.outputUrl);
-          setAssemblyProgress(null);
-          setProductionPhase('complete');
+          const videoUrl = data.job.outputUrl;
           setAssemblyJobId(null);
-          if (projectId && data.job.outputUrl) {
-            updateFinalAssembly(projectId, data.job.outputUrl, {
-              totalDuration,
-              sceneCount: Array.from(scenes.keys()).length,
-              resolution: '1920x1080',
+          setAssemblyProgress(null);
+
+          // If this was a multi-part assembly, update the specific part
+          if (activePartNumber != null) {
+            setAssemblyParts(prev => prev.map(p =>
+              p.partNumber === activePartNumber
+                ? { ...p, status: 'completed', videoUrl }
+                : p
+            ));
+            setActivePartNumber(null);
+            toast.success(`Part ${activePartNumber} assembled! Video: ${videoUrl?.substring(0, 60)}...`);
+
+            // Check if ALL parts are done
+            setAssemblyParts(prev => {
+              const allDone = prev.every(p =>
+                p.partNumber === activePartNumber ? true : p.status === 'completed'
+              );
+              if (allDone) {
+                setProductionPhase('complete');
+                toast.success('All parts assembled! Ready for concatenation.');
+              }
+              return prev;
             });
+          } else {
+            // Full (non-part) assembly completed
+            setFinalVideoUrl(videoUrl);
+            setProductionPhase('complete');
+            if (projectId && videoUrl) {
+              updateFinalAssembly(projectId, videoUrl, {
+                totalDuration,
+                sceneCount: Array.from(scenes.keys()).length,
+                resolution: '1920x1080',
+              });
+            }
+            toast.success('Cinematic movie assembled successfully!');
           }
-          toast.success('Cinematic movie assembled successfully!');
         } else if (jobStatus === 'failed') {
+          const errMsg = data.job.errorMessage || 'Unknown error';
           setAssemblyProgress(null);
           setAssemblyJobId(null);
-          toast.error(`Assembly failed: ${data.job.errorMessage || 'Unknown error'}`);
+          if (activePartNumber != null) {
+            setAssemblyParts(prev => prev.map(p =>
+              p.partNumber === activePartNumber
+                ? { ...p, status: 'failed', errorMessage: errMsg }
+                : p
+            ));
+            setActivePartNumber(null);
+          }
+          toast.error(`Assembly failed: ${errMsg}`);
         } else {
           const pct = data?.job?.progressPercent || 0;
-          setAssemblyProgress(`Rendering video... ${pct}% (poll ${pollCountRef.current})`);
+          const partLabel = activePartNumber != null ? ` Part ${activePartNumber}` : '';
+          setAssemblyProgress(`Rendering${partLabel}... ${pct}% (poll ${pollCountRef.current})`);
         }
       } catch (err) {
         pollErrorCountRef.current++;
@@ -2835,7 +2943,7 @@ function EP04ProductionInner() {
     }, 10000); // Poll every 10 seconds
     setAssemblyPollTimer(timer);
     return () => clearInterval(timer);
-  }, [assemblyJobId, projectId, totalDuration, scenes, updateFinalAssembly]);
+  }, [assemblyJobId, projectId, totalDuration, scenes, updateFinalAssembly, activePartNumber]);
 
   // ─── Client-side JSON2Video timeline builder ────────────────────────────
   // Ported from stitchLayeredTimeline in genie-cast-assembler edge function.
@@ -3005,7 +3113,10 @@ function EP04ProductionInner() {
     return { resolution, quality: quality === 'cinematic' ? 'high' : 'medium', scenes, _totalDuration: totalDuration };
   }, []);
 
-  const startFinalAssembly = useCallback(async () => {
+  // ── Core assembly function: builds timeline for a subset of scenes ──
+  // partNumber=null means full assembly (for plans with higher limits)
+  // partNumber=1..N means assemble only that part's scenes
+  const startFinalAssembly = useCallback(async (partNumber?: number) => {
     // Step 0: Run readiness audit
     const readiness = getAssemblyReadiness();
     setAssemblyReadiness(readiness);
@@ -3017,20 +3128,40 @@ function EP04ProductionInner() {
       return;
     }
 
+    // Determine which scenes to include
+    const allSceneKeys = Array.from(scenes.keys());
+    let targetSceneKeys: string[];
+    let parts = computePartBoundaries();
+
+    if (partNumber != null) {
+      const part = parts.find(p => p.partNumber === partNumber);
+      if (!part) {
+        toast.error(`Part ${partNumber} not found`);
+        return;
+      }
+      targetSceneKeys = part.sceneKeys;
+      setActivePartNumber(partNumber);
+      // Update part status
+      setAssemblyParts(prev => prev.map(p =>
+        p.partNumber === partNumber ? { ...p, status: 'rendering' } : p
+      ));
+    } else {
+      targetSceneKeys = allSceneKeys;
+    }
+
+    const isFirstPart = partNumber == null || partNumber === 1;
+    const isLastPart = partNumber == null || partNumber === parts.length;
+    const partLabel = partNumber != null ? ` (Part ${partNumber}/${parts.length})` : '';
+
     setProductionPhase('assembly');
-    setAssemblyProgress('Building layered scene timeline for JSON2Video...');
+    setAssemblyProgress(`Building timeline${partLabel}...`);
 
     try {
-      const sceneKeys = Array.from(scenes.keys());
-
       // ── Build layered ChapterResult objects per scene ──
-      // Each scene carries: all TTS URLs with start offsets, visuals, music loop flag,
-      // lipsync entries, and SFX — the assembler uses these to construct the JSON2Video timeline.
-      const preBuiltChapters = sceneKeys.map(sceneKey => {
+      const preBuiltChapters = targetSceneKeys.map(sceneKey => {
         const status = sceneProduction[sceneKey] || defaultSceneStatus();
         const sceneTitle = SCENE_TITLES[sceneKey] || sceneKey;
 
-        // All TTS lines for this scene with sequential start offsets (master clock)
         const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
         let cumulativeStart = 0;
         const allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string; key: string }> = [];
@@ -3052,8 +3183,7 @@ function EP04ProductionInner() {
 
         const sceneDuration = cumulativeStart || 30;
 
-        // Collect ALL visual URLs (images + videos + avatars + lipsync)
-        // Filter out data: URIs — they bloat the payload (38MB+) and JSON2Video can't use them
+        // Filter out data: URIs — they bloat the payload (38MB+)
         const isHttpUrl = (u: string) => u && u.startsWith('http');
         const allVisualUrls: string[] = [
           ...Object.values(status.videoUrls || {}).filter(isHttpUrl),
@@ -3062,14 +3192,12 @@ function EP04ProductionInner() {
           ...Object.values(status.lipsyncUrls || {}).filter(isHttpUrl),
         ];
 
-        // Music loop detection — music track is typically 20-30s, scenes can be 50-270s
         const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
         const pipeline = EP04_SCENE_PIPELINES[pipelineSceneKey as keyof typeof EP04_SCENE_PIPELINES];
         const musicStep = (Array.isArray(pipeline) ? pipeline : []).find(s => s.type === 'music') as { type: 'music'; duration: number } | undefined;
         const musicDuration = musicStep?.duration || 30;
         const musicLoop = status.musicUrl ? musicDuration < sceneDuration : false;
 
-        // Lipsync entries with character and whether TTS exceeds 18s limit
         const lipsyncData: Array<{ character: string; lipsyncUrl: string | null; ttsExceeds18s: boolean }> = [];
         if (status?.lipsyncUrls) {
           for (const [character, url] of Object.entries(status.lipsyncUrls)) {
@@ -3091,7 +3219,6 @@ function EP04ProductionInner() {
           ttsProvider: 'pre-generated',
           videoProvider: 'pre-generated',
           success: true,
-          // Layered audio data for proper timeline construction
           allTtsUrls,
           musicUrl: status.musicUrl || undefined,
           musicLoop,
@@ -3101,59 +3228,71 @@ function EP04ProductionInner() {
         };
       });
 
-      // ── Build transition segments between scenes ──
-      const transitions = EP04_STORYBOOK_TRANSITIONS.map(t => ({
-        from: t.from,
-        to: t.to,
-        style: t.style,
-        duration: t.steps.reduce((sum, s) => sum + ('duration' in s ? (s as any).duration : 3), 0),
-        // Check if narrator bridge TTS exists for this transition
-        bridgeKey: `bridge-${t.from.replace('scene-', '').split('-')[0]}-to-${t.to.replace('scene-', '').split('-')[0]}`,
-      })).map(t => {
-        const bridgeAudio = audioMap[t.bridgeKey]?.audioUrl;
-        const bridgeLine = EP04_NARRATOR_BRIDGES[t.bridgeKey];
-        return {
-          ...t,
-          bridgeAudioUrl: bridgeAudio || undefined,
-          bridgeDuration: bridgeLine?.duration_est || 7,
-        };
-      });
+      // ── Only include transitions between scenes WITHIN this part ──
+      const targetSceneSet = new Set(targetSceneKeys);
+      const transitions = EP04_STORYBOOK_TRANSITIONS
+        .filter(t => targetSceneSet.has(t.from) && targetSceneSet.has(t.to))
+        .map(t => ({
+          from: t.from,
+          to: t.to,
+          style: t.style,
+          duration: t.steps.reduce((sum, s) => sum + ('duration' in s ? (s as any).duration : 3), 0),
+          bridgeKey: `bridge-${t.from.replace('scene-', '').split('-')[0]}-to-${t.to.replace('scene-', '').split('-')[0]}`,
+        })).map(t => {
+          const bridgeAudio = audioMap[t.bridgeKey]?.audioUrl;
+          const bridgeLine = EP04_NARRATOR_BRIDGES[t.bridgeKey];
+          return {
+            ...t,
+            bridgeAudioUrl: bridgeAudio || undefined,
+            bridgeDuration: bridgeLine?.duration_est || 7,
+          };
+        });
 
-      // ── Bookend data ──
+      // ── Bookend data: opening only for first part, closing only for last ──
       const bookends = {
-        opening: { duration: 21, hasAssets: true },
-        closing: { duration: 16, hasAssets: true },
+        opening: { duration: isFirstPart ? 21 : 0, hasAssets: isFirstPart },
+        closing: { duration: isLastPart ? 16 : 0, hasAssets: isLastPart },
       };
 
-      const grandTotalDuration = preBuiltChapters.reduce((s, c) => s + c.duration, 0)
+      const partDuration = preBuiltChapters.reduce((s, c) => s + c.duration, 0)
         + transitions.reduce((s, t) => s + t.duration, 0)
         + bookends.opening.duration + bookends.closing.duration;
 
-      console.log('[EP04 Assembly] Layered chapters:', preBuiltChapters.map(c =>
-        `${c.chapterId}: ${c.allTtsUrls.length} TTS lines, ${c.visualUrls?.length || 0} visuals, music=${!!c.musicUrl}(loop=${c.musicLoop}), dur=${c.duration}s`
+      console.log(`[EP04 Assembly${partLabel}] ${preBuiltChapters.length} chapters:`, preBuiltChapters.map(c =>
+        `${c.chapterId}: ${c.allTtsUrls.length} TTS, ${c.visualUrls?.length || 0} vis, music=${!!c.musicUrl}(loop=${c.musicLoop}), dur=${c.duration}s`
       ));
-      console.log(`[EP04 Assembly] ${transitions.length} transitions, total estimated: ${Math.round(grandTotalDuration / 60)}min`);
+      console.log(`[EP04 Assembly${partLabel}] ${transitions.length} transitions, duration: ${Math.round(partDuration / 60)}min (${partDuration}s)`);
+
+      // Guard: reject if part exceeds plan limit (10 min = 600s for Professional)
+      if (partDuration > 600) {
+        toast.error(`Part${partLabel} is ${Math.round(partDuration / 60)}min — still exceeds 10-min limit. Split into smaller parts.`);
+        setAssemblyProgress(null);
+        if (partNumber != null) {
+          setAssemblyParts(prev => prev.map(p =>
+            p.partNumber === partNumber ? { ...p, status: 'failed', errorMessage: `Duration ${Math.round(partDuration / 60)}min exceeds limit` } : p
+          ));
+        }
+        return;
+      }
 
       // Track the assembly job
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
-          projectId, jobType: 'assembly', sceneKey: 'final', provider: 'json2video', estimatedTokens: 5000,
+          projectId, jobType: 'assembly',
+          sceneKey: partNumber != null ? `part-${partNumber}` : 'final',
+          provider: 'json2video', estimatedTokens: 5000,
         });
       }
 
-      setAssemblyProgress('Building JSON2Video timeline locally...');
+      setAssemblyProgress(`Building JSON2Video timeline${partLabel}...`);
 
-      // Build the JSON2Video timeline on the client side (browser has unlimited memory)
-      // instead of sending raw chapters to the edge function which OOMs on large timelines.
       const timeline = buildJson2VideoTimeline(preBuiltChapters, transitions, bookends, 'production');
       const { _totalDuration: timelineDuration, ...timelinePayload } = timeline;
-      console.log(`[EP04 Assembly] Built timeline: ${timelinePayload.scenes.length} scenes, ~${timelineDuration}s, payload: ${(JSON.stringify(timelinePayload).length / 1024).toFixed(0)}kb`);
+      console.log(`[EP04 Assembly${partLabel}] Built timeline: ${timelinePayload.scenes.length} scenes, ~${timelineDuration}s, payload: ${(JSON.stringify(timelinePayload).length / 1024).toFixed(0)}kb`);
 
-      setAssemblyProgress('Submitting timeline to JSON2Video...');
+      setAssemblyProgress(`Submitting timeline${partLabel} to JSON2Video...`);
 
-      // With data: URIs filtered out, timeline should be ~100KB (not 38MB).
-      // Send directly to the lightweight edge function — no storage upload needed.
       const assemblyBody = {
         timeline: timelinePayload,
         castProjectId: projectId,
@@ -3161,56 +3300,68 @@ function EP04ProductionInner() {
         quality: 'production',
       };
       const payloadSize = JSON.stringify(assemblyBody).length;
-      console.log(`[EP04 Assembly] Sending timeline directly: ${timelinePayload.scenes.length} scenes, ${(payloadSize / 1024).toFixed(0)}KB`);
+      console.log(`[EP04 Assembly${partLabel}] Sending: ${timelinePayload.scenes.length} scenes, ${(payloadSize / 1024).toFixed(0)}KB`);
 
       const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
         body: assemblyBody,
       });
 
       if (error) {
-        // Capture the actual response body for debugging (supabase-js wraps it in error.context)
         let detail = error.message;
         try {
           if (error.context && typeof error.context.text === 'function') {
             const body = await error.context.text();
-            console.error('[EP04 Assembly] Edge function error body:', body);
+            console.error(`[EP04 Assembly${partLabel}] Edge function error body:`, body);
             detail = `${error.message} — ${body.substring(0, 500)}`;
           }
         } catch (_) { /* response body may not be readable */ }
         throw new Error(`Assembly edge function error: ${detail}`);
       }
 
-      console.log('[EP04 Assembly] Response:', data);
+      console.log(`[EP04 Assembly${partLabel}] Response:`, data);
 
       if (data?.generationStatus === 'pending' && (data?.castJobId || data?.taskId)) {
-        // JSON2Video is rendering asynchronously — start polling
         const pollId = data.castJobId || data.taskId;
         setAssemblyJobId(pollId);
-        setAssemblyProgress('Video rendering in progress... polling for completion');
-        toast.success('Assembly submitted! Video is rendering — will auto-update when done.');
-      } else if (data?.videoUrl) {
-        // Synchronous completion (rare but possible)
-        setFinalVideoUrl(data.videoUrl);
-        setProductionPhase('complete');
-        setAssemblyProgress(null);
-
-        if (projectId && data.videoUrl) {
-          await updateFinalAssembly(projectId, data.videoUrl, {
-            totalDuration: grandTotalDuration,
-            sceneCount: sceneKeys.length,
-            resolution: '1920x1080',
-          });
+        setAssemblyProgress(`Rendering${partLabel}... polling for completion`);
+        // Track job ID in parts state
+        if (partNumber != null) {
+          setAssemblyParts(prev => prev.map(p =>
+            p.partNumber === partNumber ? { ...p, jobId: pollId, status: 'rendering' } : p
+          ));
         }
-
-        toast.success('Cinematic movie assembled successfully!');
+        toast.success(`Assembly${partLabel} submitted! Rendering — will auto-update.`);
+      } else if (data?.videoUrl) {
+        if (partNumber != null) {
+          // Part completed synchronously
+          setAssemblyParts(prev => prev.map(p =>
+            p.partNumber === partNumber ? { ...p, status: 'completed', videoUrl: data.videoUrl } : p
+          ));
+          setAssemblyProgress(null);
+          setActivePartNumber(null);
+          toast.success(`Part ${partNumber} assembled!`);
+        } else {
+          // Full assembly completed synchronously
+          setFinalVideoUrl(data.videoUrl);
+          setProductionPhase('complete');
+          setAssemblyProgress(null);
+          if (projectId && data.videoUrl) {
+            await updateFinalAssembly(projectId, data.videoUrl, {
+              totalDuration: partDuration,
+              sceneCount: targetSceneKeys.length,
+              resolution: '1920x1080',
+            });
+          }
+          toast.success('Cinematic movie assembled successfully!');
+        }
       } else {
         throw new Error(data?.message || 'Assembly returned no video URL');
       }
 
-      // Mark all scenes as assembled
+      // Mark assembled scenes
       setSceneProduction(prev => {
         const next = { ...prev };
-        for (const sk of sceneKeys) {
+        for (const sk of targetSceneKeys) {
           next[sk] = { ...(next[sk] || defaultSceneStatus()), assembled: 'done' };
         }
         return next;
@@ -3220,11 +3371,35 @@ function EP04ProductionInner() {
         await completeGenerationJob(jobId, data?.tokensUsed || 5000, data?.videoUrl);
       }
     } catch (err: any) {
-      console.error('[EP04 Assembly] Failed:', err);
+      console.error(`[EP04 Assembly${partLabel}] Failed:`, err);
       setAssemblyProgress(null);
-      toast.error(`Assembly failed: ${err.message}`);
+      if (partNumber != null) {
+        setAssemblyParts(prev => prev.map(p =>
+          p.partNumber === partNumber ? { ...p, status: 'failed', errorMessage: err.message } : p
+        ));
+        setActivePartNumber(null);
+      }
+      toast.error(`Assembly${partLabel} failed: ${err.message}`);
     }
-  }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration, getAssemblyReadiness, buildJson2VideoTimeline]);
+  }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration, getAssemblyReadiness, buildJson2VideoTimeline, computePartBoundaries]);
+
+  // Initialize multi-part boundaries when readiness is checked
+  const showMultiPartAssembly = useCallback(() => {
+    const readiness = getAssemblyReadiness();
+    setAssemblyReadiness(readiness);
+    if (!readiness.canAssemble) {
+      const missingScenes = readiness.scenes.filter(s => s.missing.length > 0);
+      const summary = missingScenes.map(s => `${s.title}: ${s.missing.join(', ')}`).join('; ');
+      toast.error(`Cannot assemble — missing assets: ${summary}`);
+      return;
+    }
+    const parts = computePartBoundaries();
+    setAssemblyParts(parts);
+    console.log('[EP04 Assembly] Multi-part boundaries:', parts.map(p =>
+      `Part ${p.partNumber}: ${p.sceneKeys.join(', ')} (~${Math.round(p.estimatedDuration / 60)}min)`
+    ));
+    toast.info(`Split into ${parts.length} parts — assemble each part individually`);
+  }, [getAssemblyReadiness, computePartBoundaries]);
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
@@ -4496,9 +4671,13 @@ function EP04ProductionInner() {
                             <Eye className="h-3 w-3 mr-1" />
                             Check Readiness
                           </Button>
-                          <Button size="sm" onClick={startFinalAssembly}>
+                          <Button size="sm" variant="outline" onClick={showMultiPartAssembly}>
+                            <Layers className="h-3 w-3 mr-1" />
+                            Split into Parts
+                          </Button>
+                          <Button size="sm" onClick={() => startFinalAssembly()}>
                             <Clapperboard className="h-3 w-3 mr-1" />
-                            Assemble Movie
+                            Assemble Full Movie
                           </Button>
                         </div>
                       )}
@@ -4648,6 +4827,107 @@ function EP04ProductionInner() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* ── Multi-Part Assembly Panel ─────────────────── */}
+                  {assemblyParts.length > 0 && (
+                    <div className="mb-4 p-3 rounded-lg border border-blue-500/30 bg-blue-500/[0.03]">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Layers className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm font-semibold">Multi-Part Assembly</span>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          JSON2Video Professional: 10 min max per video
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {assemblyParts.map(part => (
+                          <div key={part.partNumber} className={cn(
+                            'p-3 rounded-lg border',
+                            part.status === 'completed' && 'border-green-500/30 bg-green-500/[0.03]',
+                            part.status === 'rendering' && 'border-amber-500/30 bg-amber-500/[0.03]',
+                            part.status === 'failed' && 'border-red-500/30 bg-red-500/[0.03]',
+                            part.status === 'pending' && 'border-muted bg-muted/10',
+                          )}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold">
+                                Part {part.partNumber}
+                              </span>
+                              <Badge variant="outline" className={cn(
+                                'text-[9px]',
+                                part.status === 'completed' && 'bg-green-500/10 text-green-600 border-green-500/30',
+                                part.status === 'rendering' && 'bg-amber-500/10 text-amber-600 border-amber-500/30',
+                                part.status === 'failed' && 'bg-red-500/10 text-red-600 border-red-500/30',
+                                part.status === 'pending' && 'bg-muted/10 text-muted-foreground',
+                              )}>
+                                {part.status === 'rendering' && <Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" />}
+                                {part.status}
+                              </Badge>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mb-1">
+                              {part.sceneKeys.map(k => SCENE_TITLES[k]?.replace(/Scene \d+ — /, '') || k).join(', ')}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mb-2">
+                              ~{Math.round(part.estimatedDuration / 60)}min ({part.sceneKeys.length} scenes)
+                            </p>
+                            <div className="flex items-center gap-1">
+                              {part.status === 'pending' && (
+                                <Button
+                                  size="sm"
+                                  className="h-6 text-[10px] px-2"
+                                  disabled={!!assemblyJobId}
+                                  onClick={() => startFinalAssembly(part.partNumber)}
+                                >
+                                  <Clapperboard className="h-2.5 w-2.5 mr-0.5" />
+                                  Assemble Part {part.partNumber}
+                                </Button>
+                              )}
+                              {part.status === 'failed' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 text-[10px] px-2 border-red-500/30 text-red-600"
+                                  disabled={!!assemblyJobId}
+                                  onClick={() => startFinalAssembly(part.partNumber)}
+                                >
+                                  <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                                  Retry
+                                </Button>
+                              )}
+                              {part.status === 'completed' && part.videoUrl && (
+                                <a
+                                  href={part.videoUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5"
+                                >
+                                  <Download className="h-2.5 w-2.5" /> Download
+                                </a>
+                              )}
+                              {part.errorMessage && (
+                                <span className="text-[9px] text-red-500 truncate max-w-[150px]" title={part.errorMessage}>
+                                  {part.errorMessage}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {assemblyParts.every(p => p.status === 'completed') && (
+                        <div className="mt-3 p-2 rounded-lg bg-green-500/10 border border-green-500/30">
+                          <p className="text-xs text-green-600 font-semibold">
+                            All {assemblyParts.length} parts assembled! Use a video editor (DaVinci Resolve, CapCut, etc.) to concatenate the parts into one final video.
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {assemblyParts.map(p => p.videoUrl && (
+                              <a key={p.partNumber} href={p.videoUrl} target="_blank" rel="noopener noreferrer"
+                                className="text-[10px] text-blue-500 hover:underline">
+                                Part {p.partNumber}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
