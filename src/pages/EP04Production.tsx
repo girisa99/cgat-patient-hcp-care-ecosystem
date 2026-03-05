@@ -3273,6 +3273,7 @@ function EP04ProductionInner() {
           success: true,
           allTtsUrls,
           musicUrl: status.musicUrl || undefined,
+          _musicUrlFormat: status.musicUrl ? (status.musicUrl.startsWith('http') ? 'http' : status.musicUrl.substring(0, 30)) : 'none',
           musicLoop,
           musicDuration,
           sfxUrls: status.sfxUrls || [],
@@ -3321,9 +3322,26 @@ function EP04ProductionInner() {
         + bookends.opening.duration + bookends.closing.duration;
 
       console.log(`[EP04 Assembly${partLabel}] ${preBuiltChapters.length} chapters:`, preBuiltChapters.map(c =>
-        `${c.chapterId}: ${c.allTtsUrls.length} TTS, ${c.visualUrls?.length || 0} vis, music=${!!c.musicUrl}(loop=${c.musicLoop}), dur=${c.duration}s`
+        `${c.chapterId}: ${c.allTtsUrls.length} TTS, ${c.visualUrls?.length || 0} vis, music=${!!c.musicUrl}(${(c as any)._musicUrlFormat})(loop=${c.musicLoop}), dur=${c.duration}s`
       ));
       console.log(`[EP04 Assembly${partLabel}] ${transitions.length} transitions, duration: ${Math.round(partDuration / 60)}min (${partDuration}s)`);
+
+      // ── Pre-assembly: upload any data: URI music to Storage ──
+      // Music generated before Storage upload fix may be stored as data: URIs.
+      // JSON2Video needs HTTP URLs, so upload them to Supabase Storage first.
+      for (const chapter of preBuiltChapters) {
+        if (chapter.musicUrl && !chapter.musicUrl.startsWith('http')) {
+          console.log(`[EP04 Assembly${partLabel}] Uploading data: URI music for ${chapter.chapterId} to Storage...`);
+          try {
+            const httpUrl = await uploadTtsToStorage(projectId || 'unknown', `music-${chapter.chapterId}`, chapter.musicUrl.split(',')[1] || '');
+            chapter.musicUrl = httpUrl;
+            console.log(`[EP04 Assembly${partLabel}] Music uploaded: ${httpUrl.substring(0, 80)}`);
+          } catch (uploadErr) {
+            console.warn(`[EP04 Assembly${partLabel}] Music upload failed for ${chapter.chapterId}, skipping music:`, uploadErr);
+            chapter.musicUrl = undefined;
+          }
+        }
+      }
 
       // Guard: reject if part exceeds plan limit (10 min = 600s for Professional)
       if (partDuration > 600) {
