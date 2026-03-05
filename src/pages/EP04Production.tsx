@@ -791,43 +791,44 @@ function EP04ProductionInner() {
           for (const row of dbScenes) {
             const cfg = (row.scene_config || {}) as Record<string, any>;
             const artifacts = cfg.artifacts as Record<string, Record<string, string>> | undefined;
-            const configKeys = Object.keys(cfg);
-            if (!artifacts) {
-              console.log(`[PERSIST RESTORE] ${row.scene_key}: NO artifacts in scene_config (keys: ${configKeys.join(', ')})`);
-              continue;
-            }
-            const vCount = Object.keys(artifacts.videoUrls || {}).length;
-            const iCount = Object.keys(artifacts.imageUrls || {}).length;
-            const aCount = Object.keys(artifacts.avatarUrls || {}).length;
-            const lCount = Object.keys(artifacts.lipsyncUrls || {}).length;
-            console.log(`[PERSIST RESTORE] ${row.scene_key}: found artifacts — ${vCount} videos, ${iCount} images, ${aCount} avatars, ${lCount} lipsync`);
-            const hasAnyUrl =
+            const gm = cfg.generatedMusic as { url?: string; sfxUrls?: string[] } | undefined;
+
+            // Check ALL production data — not just artifacts
+            const hasArtifacts = artifacts && (
               Object.values(artifacts.videoUrls || {}).some(u => u) ||
               Object.values(artifacts.imageUrls || {}).some(u => u) ||
               Object.values(artifacts.avatarUrls || {}).some(u => u) ||
-              Object.values(artifacts.lipsyncUrls || {}).some(u => u);
-            if (!hasAnyUrl) {
-              console.log(`[PERSIST RESTORE] ${row.scene_key}: all URLs empty — skipping`);
+              Object.values(artifacts.lipsyncUrls || {}).some(u => u)
+            );
+            const hasMusic = !!(gm?.url);
+            const hasSfx = !!(gm?.sfxUrls && gm.sfxUrls.length > 0);
+            const hasAssembly = !!cfg.assembledClipUrl;
+
+            if (!hasArtifacts && !hasMusic && !hasSfx && !hasAssembly) {
+              const configKeys = Object.keys(cfg);
+              console.log(`[PERSIST RESTORE] ${row.scene_key}: no production data in scene_config (keys: ${configKeys.join(', ')})`);
               continue;
             }
-            // Music is stored under cfg.generatedMusic by updateSceneMusic
-            const gm = cfg.generatedMusic as { url?: string; sfxUrls?: string[] } | undefined;
+
+            const vCount = Object.keys(artifacts?.videoUrls || {}).length;
+            const iCount = Object.keys(artifacts?.imageUrls || {}).length;
+            const aCount = Object.keys(artifacts?.avatarUrls || {}).length;
+            const lCount = Object.keys(artifacts?.lipsyncUrls || {}).length;
+            console.log(`[PERSIST RESTORE] ${row.scene_key}: ${vCount} videos, ${iCount} images, ${aCount} avatars, ${lCount} lipsync, music=${hasMusic}, sfx=${hasSfx}, assembled=${hasAssembly}`);
+
             restored[row.scene_key] = {
-              visual: 'done',
-              music: gm?.url ? 'done' : 'idle',
-              sfx: (gm?.sfxUrls && gm.sfxUrls.length > 0) ? 'done' : 'idle',
-              assembled: cfg.assembledClipUrl ? 'done' : 'idle',
-              videoUrls: artifacts.videoUrls || {},
-              imageUrls: artifacts.imageUrls || {},
-              avatarUrls: artifacts.avatarUrls || {},
-              lipsyncUrls: artifacts.lipsyncUrls || {},
+              visual: hasArtifacts ? 'done' : 'idle',
+              music: hasMusic ? 'done' : 'idle',
+              sfx: hasSfx ? 'done' : 'idle',
+              assembled: hasAssembly ? 'done' : 'idle',
+              videoUrls: artifacts?.videoUrls || {},
+              imageUrls: artifacts?.imageUrls || {},
+              avatarUrls: artifacts?.avatarUrls || {},
+              lipsyncUrls: artifacts?.lipsyncUrls || {},
               musicUrl: gm?.url || null,
               sfxUrls: gm?.sfxUrls || [],
               assembledClipUrl: cfg.assembledClipUrl || null,
             };
-            if (gm?.url) {
-              console.log(`[PERSIST RESTORE] ${row.scene_key}: music=${gm.url}, sfx=${(gm.sfxUrls || []).length}`);
-            }
           }
         }
       } catch (e) {

@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { productionCostAccumulator, type ProjectCostSummary } from '@/services/productionCostAccumulator';
 import type { CastJobType } from '@/types/castProjects';
 import type { SceneEnrichmentOutput } from '@/services/production/sceneEnrichmentEngine';
-import type { OrchestrationCheckpoint, StepResult } from './useCastProductionOrchestrator';
+import type { OrchestrationCheckpoint } from './useCastProductionOrchestrator';
 
 // ── Types matching DB schema — no hardcoding ────────────────────────────────
 
@@ -102,6 +102,49 @@ export function useCastProjectPersistence() {
   const [tokenBreakdown, setTokenBreakdown] = useState<StepTokenBreakdown | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Per-scene write lock — serializes concurrent writes to the same scene ──
+  // Prevents race condition where updateSceneArtifacts + updateSceneMusic both
+  // SELECT→merge→UPSERT the same scene_config row and the last write wins.
+  const writeLocks = useRef(new Map<string, Promise<any>>());
+
+  function withSceneLock(key: string, fn: () => Promise<any>): Promise<any> {
+    const prev = writeLocks.current.get(key) || Promise.resolve();
+    const next = prev.then(fn, fn); // chain regardless of success/failure
+    writeLocks.current.set(key, next);
+    return next;
+  }
+
+  // ── Atomic merge helper — SELECT existing config, merge ONE field, UPSERT ──
+  // Replaces duplicated SELECT→merge→UPSERT patterns in updateSceneArtifacts
+  // and updateSceneMusic. Always call inside withSceneLock().
+  async function updateSceneConfigField(
+    projectId: string,
+    sceneKey: string,
+    fieldName: string,
+    fieldValue: unknown,
+  ): Promise<boolean> {
+    // maybeSingle() returns null if row doesn't exist (no error thrown)
+    const { data: scene } = await db.from('cast_project_scenes')
+      .select('scene_config').eq('project_id', projectId)
+      .eq('scene_key', sceneKey).maybeSingle();
+    // Merge ONLY the specified field into existing config
+    const existing = (scene?.scene_config || {}) as Record<string, unknown>;
+    const merged = { ...existing, [fieldName]: fieldValue };
+    // Upsert — creates row if missing, updates if exists
+    const { error } = await db.from('cast_project_scenes')
+      .upsert({
+        project_id: projectId,
+        scene_key: sceneKey,
+        title: sceneKey,
+        scene_index: 0,
+        scene_config: merged,
+      }, { onConflict: 'project_id,scene_key' });
+    if (error) {
+      console.error(`[PERSIST] updateSceneConfigField(${sceneKey}, ${fieldName}) failed:`, error);
+    }
+    return !error;
+  }
+
   // ──────────────────────────────────────────────────────────────────────
   // SAVE — upsert full project content (scenes → lines → characters)
   // ──────────────────────────────────────────────────────────────────────
@@ -129,10 +172,11 @@ export function useCastProjectPersistence() {
         if (charErr) throw charErr;
       }
 
-      // 2. Upsert scenes — PRESERVE existing artifacts in scene_config
+      // 2. Upsert scenes — PRESERVE all existing production fields in scene_config
       if (content.scenes.length > 0) {
-        // Read existing scene_configs to preserve artifacts during upsert
-        let existingArtifacts: Record<string, Record<string, unknown>> = {};
+        // Read existing scene_configs so production data (artifacts, music, assembly)
+        // isn't wiped when the content snapshot re-upserts scene rows
+        let existingConfigs: Record<string, Record<string, unknown>> = {};
         try {
           const { data: existing } = await db
             .from('cast_project_scenes')
@@ -140,27 +184,31 @@ export function useCastProjectPersistence() {
             .eq('project_id', projectId);
           if (existing) {
             for (const row of existing) {
-              const cfg = (row.scene_config || {}) as Record<string, unknown>;
-              if (cfg.artifacts) {
-                existingArtifacts[row.scene_key] = cfg.artifacts as Record<string, unknown>;
-              }
+              existingConfigs[row.scene_key] = (row.scene_config || {}) as Record<string, unknown>;
             }
           }
         } catch (_) { /* ignore — first seed won't have existing rows */ }
+
+        const PRESERVE_KEYS = ['artifacts', 'generatedMusic', 'assembledClipUrl'];
 
         const { data: scenesData, error: sceneErr } = await db
           .from('cast_project_scenes')
           .upsert(
             content.scenes.map(s => {
-              const sceneConfig = (s as any).scene_config || {};
-              // Merge back any existing artifacts that would be wiped by the upsert
-              if (existingArtifacts[s.scene_key]) {
-                sceneConfig.artifacts = existingArtifacts[s.scene_key];
+              const newConfig = (s as any).scene_config || {};
+              const existCfg = existingConfigs[s.scene_key] || {};
+              // Merge: new config fields + preserve existing production fields
+              // that the content snapshot doesn't set
+              const mergedConfig = { ...newConfig };
+              for (const key of PRESERVE_KEYS) {
+                if (existCfg[key] && !newConfig[key]) {
+                  mergedConfig[key] = existCfg[key];
+                }
               }
               return {
                 ...s,
                 project_id: projectId,
-                scene_config: sceneConfig,
+                scene_config: mergedConfig,
               };
             }),
             { onConflict: 'project_id,scene_key' }
@@ -428,7 +476,7 @@ export function useCastProjectPersistence() {
       // PRESERVE existing artifacts during upsert (same pattern as saveProjectContent)
       const sceneEntries = Object.entries(output.scenePipelines);
       if (sceneEntries.length > 0) {
-        let existingArtifacts: Record<string, Record<string, unknown>> = {};
+        let existingConfigs: Record<string, Record<string, unknown>> = {};
         try {
           const { data: existing } = await db
             .from('cast_project_scenes')
@@ -436,26 +484,28 @@ export function useCastProjectPersistence() {
             .eq('project_id', projectId);
           if (existing) {
             for (const row of existing) {
-              const cfg = (row.scene_config || {}) as Record<string, unknown>;
-              if (cfg.artifacts) {
-                existingArtifacts[row.scene_key] = cfg.artifacts as Record<string, unknown>;
-              }
+              existingConfigs[row.scene_key] = (row.scene_config || {}) as Record<string, unknown>;
             }
           }
         } catch (_) { /* first seed won't have existing rows */ }
 
+        const PRESERVE_KEYS = ['artifacts', 'generatedMusic', 'assembledClipUrl'];
+
         const sceneRows = sceneEntries.map(([sceneKey, pipeline], idx) => {
           const music = output.musicScore[sceneKey];
           const transition = output.transitions?.find(t => t.from === sceneKey);
+          const existCfg = existingConfigs[sceneKey] || {};
           const sceneConfig: Record<string, unknown> = {
             pipeline,
             music: music?.music || null,
             sfx: music?.sfx || [],
             transition: transition || null,
           };
-          // Merge back existing artifacts
-          if (existingArtifacts[sceneKey]) {
-            sceneConfig.artifacts = existingArtifacts[sceneKey];
+          // Preserve existing production fields that enrichment doesn't set
+          for (const key of PRESERVE_KEYS) {
+            if (existCfg[key]) {
+              sceneConfig[key] = existCfg[key];
+            }
           }
           return {
             project_id: projectId,
@@ -536,43 +586,20 @@ export function useCastProjectPersistence() {
       lipsync: Object.keys(artifacts.lipsyncUrls || {}),
     });
     try {
-      // Fetch current scene_config to merge (not overwrite)
-      const { data: scene, error: fetchErr } = await db
-        .from('cast_project_scenes')
-        .select('scene_config')
-        .eq('project_id', projectId)
-        .eq('scene_key', sceneKey)
-        .single();
-      if (fetchErr) {
-        console.error(`[PERSIST SAVE] ${sceneKey}: FAILED to fetch scene row — scene_key may not exist in DB!`, fetchErr);
-        throw fetchErr;
-      }
-
-      const existingConfig = (scene?.scene_config || {}) as Record<string, unknown>;
-      console.log(`[PERSIST SAVE] ${sceneKey}: REPLACE mode — overwriting artifact buckets entirely`);
-      // REPLACE mode — each call overwrites buckets entirely (no accumulation)
-      // Regeneration produces a complete set of assets; old/stale assets are discarded.
-      const updatedConfig = {
-        ...existingConfig,
-        artifacts: {
+      const ok = await withSceneLock(`${projectId}:${sceneKey}`, () =>
+        updateSceneConfigField(projectId, sceneKey, 'artifacts', {
           videoUrls: artifacts.videoUrls || {},
           imageUrls: artifacts.imageUrls || {},
           avatarUrls: artifacts.avatarUrls || {},
           lipsyncUrls: artifacts.lipsyncUrls || {},
-        },
-      };
-
-      const { error } = await db
-        .from('cast_project_scenes')
-        .update({ scene_config: updatedConfig })
-        .eq('project_id', projectId)
-        .eq('scene_key', sceneKey);
-      if (error) {
-        console.error(`[PERSIST SAVE] ${sceneKey}: UPDATE failed!`, error);
-        throw error;
+        })
+      );
+      if (ok) {
+        console.log(`[PERSIST SAVE] ${sceneKey}: ✅ saved ${artifactCount} artifacts successfully`);
+      } else {
+        console.error(`[PERSIST SAVE] ${sceneKey}: ❌ UPSERT failed`);
       }
-      console.log(`[PERSIST SAVE] ${sceneKey}: ✅ saved ${artifactCount} artifacts successfully`);
-      return true;
+      return ok;
     } catch (err: any) {
       console.error(`[PERSIST SAVE] ${sceneKey}: ❌ FAILED:`, err);
       return false;
@@ -590,28 +617,14 @@ export function useCastProjectPersistence() {
     musicUrl: string | null,
     sfxUrls: string[],
   ): Promise<boolean> => {
+    console.log(`[PERSIST SAVE] ${sceneKey}: saving music to DB (url=${musicUrl ? 'yes' : 'null'}, sfx=${sfxUrls.length})`);
     try {
-      const { data: scene, error: fetchErr } = await db
-        .from('cast_project_scenes')
-        .select('scene_config')
-        .eq('project_id', projectId)
-        .eq('scene_key', sceneKey)
-        .single();
-      if (fetchErr) throw fetchErr;
-
-      const existingConfig = (scene?.scene_config || {}) as Record<string, unknown>;
-      const updatedConfig = {
-        ...existingConfig,
-        generatedMusic: { url: musicUrl, sfxUrls, generatedAt: new Date().toISOString() },
-      };
-
-      const { error } = await db
-        .from('cast_project_scenes')
-        .update({ scene_config: updatedConfig })
-        .eq('project_id', projectId)
-        .eq('scene_key', sceneKey);
-      if (error) throw error;
-      return true;
+      const ok = await withSceneLock(`${projectId}:${sceneKey}`, () =>
+        updateSceneConfigField(projectId, sceneKey, 'generatedMusic', {
+          url: musicUrl, sfxUrls, generatedAt: new Date().toISOString(),
+        })
+      );
+      return ok;
     } catch (err: any) {
       console.error('[Persistence] Scene music update error:', err);
       return false;
@@ -697,39 +710,6 @@ export function useCastProjectPersistence() {
     }
   }, []);
 
-  const updateStepResult = useCallback(async (
-    projectId: string,
-    sceneKey: string,
-    stepIndex: number,
-    result: StepResult,
-  ): Promise<boolean> => {
-    try {
-      // Fetch current scene_config, merge step result into artifacts
-      const { data: scene, error: fetchErr } = await db
-        .from('cast_project_scenes')
-        .select('scene_config')
-        .eq('project_id', projectId)
-        .eq('scene_key', sceneKey)
-        .single();
-      if (fetchErr) throw fetchErr;
-
-      const existingConfig = (scene?.scene_config || {}) as Record<string, unknown>;
-      const stepResults = ((existingConfig.stepResults || {}) as Record<string, StepResult>);
-      stepResults[`step_${stepIndex}`] = result;
-
-      const { error } = await db
-        .from('cast_project_scenes')
-        .update({ scene_config: { ...existingConfig, stepResults } })
-        .eq('project_id', projectId)
-        .eq('scene_key', sceneKey);
-      if (error) throw error;
-      return true;
-    } catch (err: any) {
-      console.error('[Persistence] Step result update error:', err);
-      return false;
-    }
-  }, []);
-
   return {
     // State
     isSaving,
@@ -754,7 +734,6 @@ export function useCastProjectPersistence() {
     // Orchestration checkpoint persistence (Part C)
     saveOrchestrationCheckpoint,
     loadOrchestrationCheckpoint,
-    updateStepResult,
 
     // Token / cost tracking
     fetchTokenBreakdown,
