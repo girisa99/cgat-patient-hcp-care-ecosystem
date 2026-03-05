@@ -2967,8 +2967,8 @@ function EP04ProductionInner() {
     const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
     const scenes: Array<Record<string, any>> = [];
 
-    // ── Opening bookend ──
-    if (bookends) {
+    // ── Opening bookend (skip if duration is 0 — multi-part: only Part 1 gets this) ──
+    if (bookends && bookends.opening.duration > 0) {
       scenes.push({
         comment: 'Opening Bookend',
         duration: bookends.opening.duration,
@@ -3095,8 +3095,8 @@ function EP04ProductionInner() {
       }
     });
 
-    // ── Closing bookend ──
-    if (bookends) {
+    // ── Closing bookend (skip if duration is 0 — multi-part: only last part gets this) ──
+    if (bookends && bookends.closing.duration > 0) {
       scenes.push({
         comment: 'Closing Bookend',
         duration: bookends.closing.duration,
