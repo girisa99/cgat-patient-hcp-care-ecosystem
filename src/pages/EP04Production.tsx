@@ -2803,7 +2803,7 @@ function EP04ProductionInner() {
       let sceneDuration = 0;
       let sceneTtsCount = 0;
       for (const k of sceneLines) {
-        sceneDuration += scriptContentForUI[k]?.duration_est || 5;
+        sceneDuration += (scriptContentForUI[k]?.duration_est || 5) + 1.5; // +1.5s TTS gap per line
         if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
       sceneDuration = sceneDuration || 30;
@@ -3215,6 +3215,11 @@ function EP04ProductionInner() {
         let cumulativeStart = 0;
         const allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string; key: string }> = [];
 
+        // Buffer between TTS lines to prevent voice overlap.
+        // duration_est is an estimate (~150 wpm); actual TTS audio may run longer.
+        // 1.5s gap ensures host/nova/atlas voices don't overlap.
+        const TTS_GAP = 1.5;
+
         for (const k of sceneLines) {
           const line = scriptContentForUI[k];
           const dur = line?.duration_est || 5;
@@ -3222,12 +3227,12 @@ function EP04ProductionInner() {
             allTtsUrls.push({
               url: audioMap[k].audioUrl,
               start: cumulativeStart,
-              duration: dur,
+              duration: dur + 1, // +1s buffer so audio isn't cut short
               voice: line?.voice || 'unknown',
               key: k,
             });
           }
-          cumulativeStart += dur;
+          cumulativeStart += dur + TTS_GAP;
         }
 
         const sceneDuration = cumulativeStart || 30;
