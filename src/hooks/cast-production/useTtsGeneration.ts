@@ -11,6 +11,28 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
 
+// ─── Upload base64 TTS audio to Supabase Storage ────────────────────────────
+async function uploadTtsToStorage(
+  projectId: string,
+  lineKey: string,
+  base64Audio: string,
+): Promise<string> {
+  const binaryStr = atob(base64Audio);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+  const blob = new Blob([bytes], { type: 'audio/mpeg' });
+
+  const path = `${projectId}/tts/${lineKey}.mp3`;
+  const { error } = await supabase.storage.from('cast-assets').upload(path, blob, {
+    contentType: 'audio/mpeg',
+    upsert: true,
+  });
+  if (error) throw error;
+
+  const { data: { publicUrl } } = supabase.storage.from('cast-assets').getPublicUrl(path);
+  return publicUrl;
+}
+
 export interface GeneratedAudio {
   audioUrl: string;
   provider: string;
@@ -158,18 +180,33 @@ export function useTtsGeneration(
         return false;
       }
 
-      const audioUrl = data.audioUrl || `data:audio/mpeg;base64,${data.audioContent}`;
+      // Upload base64 audio to Supabase Storage instead of storing as data URI
+      let audioUrl = data.audioUrl; // Use URL if provider already returns one
+      if (!audioUrl && data.audioContent) {
+        if (projectId) {
+          try {
+            audioUrl = await uploadTtsToStorage(projectId, key, data.audioContent);
+          } catch (uploadErr) {
+            console.warn(`[TTS] Storage upload failed for "${key}", falling back to data URI:`, uploadErr);
+            audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+          }
+        } else {
+          // No projectId — can't build a storage path, use data URI as fallback
+          audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+        }
+      }
+
       const resolvedProvider = data.provider || voiceConfig.provider;
       const resolvedVoice = data.voice || voiceConfig.voiceId;
       const actualTokens = data.tokensUsed || Math.ceil(line.text.length / 4);
 
-      setAudioMap(prev => ({ ...prev, [key]: { audioUrl, provider: resolvedProvider, voice: resolvedVoice } }));
+      setAudioMap(prev => ({ ...prev, [key]: { audioUrl: audioUrl!, provider: resolvedProvider, voice: resolvedVoice } }));
       setStatusMap(prev => ({ ...prev, [key]: 'done' }));
 
       // Persist to DB
       if (projectId) {
         updateLineTTS(projectId, key, {
-          tts_audio_url: audioUrl,
+          tts_audio_url: audioUrl!,
           tts_provider: resolvedProvider,
           tts_voice_id: resolvedVoice,
           tts_status: 'generated',

@@ -18,7 +18,7 @@ import {
   CheckCircle2, AlertCircle, AlertTriangle, Mic, SkipForward, ArrowLeft,
   Camera, Monitor, Image as ImageIcon, ExternalLink,
   Film, Music, Clapperboard, Download, Eye, Layers,
-  Share2, Scissors, Trash2, RefreshCw, Zap
+  Share2, Scissors, Trash2, RefreshCw, Zap, XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +39,28 @@ const isExpiredCdnUrl = (url: string): boolean =>
   !!url && !url.includes('supabase.co/storage') && (
     url.includes('oss-cn-beijing') || url.includes('replicate.delivery') || url.includes('dashscope')
   );
+
+// Upload base64 TTS audio to Supabase Storage instead of storing as data URI
+async function uploadTtsToStorage(
+  projectId: string,
+  lineKey: string,
+  base64Audio: string,
+): Promise<string> {
+  const binaryStr = atob(base64Audio);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+  const blob = new Blob([bytes], { type: 'audio/mpeg' });
+
+  const path = `${projectId}/tts/${lineKey}.mp3`;
+  const { error } = await supabase.storage.from('cast-assets').upload(path, blob, {
+    contentType: 'audio/mpeg',
+    upsert: true,
+  });
+  if (error) throw error;
+
+  const { data: { publicUrl } } = supabase.storage.from('cast-assets').getPublicUrl(path);
+  return publicUrl;
+}
 
 // Character avatar imports — upgraded to Pixar 3D portraits for visual consistency with scene backgrounds
 import hostAvatar from '@/assets/characters/host-avatar-3d.png';
@@ -1292,21 +1314,36 @@ function EP04ProductionInner() {
         return false;
       }
 
-      const audioUrl = data.audioUrl || `data:audio/mpeg;base64,${data.audioContent}`;
+      // Upload base64 audio to Supabase Storage instead of storing as data URI
+      let audioUrl = data.audioUrl; // Use URL if provider already returns one
+      if (!audioUrl && data.audioContent) {
+        if (projectId) {
+          try {
+            audioUrl = await uploadTtsToStorage(projectId, key, data.audioContent);
+          } catch (uploadErr) {
+            console.warn(`[EP04 TTS] Storage upload failed for "${key}", falling back to data URI:`, uploadErr);
+            audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+          }
+        } else {
+          // No projectId — can't build a storage path, use data URI as fallback
+          audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+        }
+      }
+
       const resolvedProvider = data.provider || voiceConfig.provider;
       const resolvedVoice = data.voice || voiceConfig.voiceId;
       const actualTokens = data.tokensUsed || Math.ceil(line.text.length / 4);
 
       setAudioMap(prev => ({
         ...prev,
-        [key]: { audioUrl, provider: resolvedProvider, voice: resolvedVoice },
+        [key]: { audioUrl: audioUrl!, provider: resolvedProvider, voice: resolvedVoice },
       }));
       setStatusMap(prev => ({ ...prev, [key]: 'done' }));
 
       // Auto-persist TTS result + complete job tracking
       if (projectId) {
         updateLineTTS(projectId, key, {
-          tts_audio_url: audioUrl,
+          tts_audio_url: audioUrl!,
           tts_provider: resolvedProvider,
           tts_voice_id: resolvedVoice,
           tts_status: 'generated',
@@ -2731,14 +2768,41 @@ function EP04ProductionInner() {
   const [assemblyPollTimer, setAssemblyPollTimer] = useState<ReturnType<typeof setInterval> | null>(null);
 
   // Poll for assembly completion when we have a pending job
+  const pollCountRef = React.useRef(0);
+  const pollErrorCountRef = React.useRef(0);
   useEffect(() => {
-    if (!assemblyJobId) return;
+    if (!assemblyJobId) {
+      pollCountRef.current = 0;
+      pollErrorCountRef.current = 0;
+      return;
+    }
+    const MAX_POLLS = 120; // 120 × 10s = 20 minutes max
+    const MAX_ERRORS = 5;  // 5 consecutive errors = stop
     const timer = setInterval(async () => {
+      pollCountRef.current++;
+      if (pollCountRef.current > MAX_POLLS) {
+        setAssemblyProgress(null);
+        setAssemblyJobId(null);
+        toast.error('Assembly polling timed out after 20 minutes — check JSON2Video dashboard');
+        return;
+      }
       try {
-        const { data } = await supabase.functions.invoke('genie-cast-status', {
+        const { data, error: fnError } = await supabase.functions.invoke('genie-cast-status', {
           body: { castJobId: assemblyJobId },
         });
-        if (data?.job?.status === 'completed') {
+        if (fnError) {
+          pollErrorCountRef.current++;
+          console.error(`[EP04 Assembly] Poll error ${pollErrorCountRef.current}/${MAX_ERRORS}:`, fnError);
+          if (pollErrorCountRef.current >= MAX_ERRORS) {
+            setAssemblyProgress(null);
+            setAssemblyJobId(null);
+            toast.error('Assembly polling failed repeatedly — check console');
+          }
+          return;
+        }
+        pollErrorCountRef.current = 0; // reset on success
+        const jobStatus = data?.job?.status;
+        if (jobStatus === 'completed') {
           setFinalVideoUrl(data.job.outputUrl);
           setAssemblyProgress(null);
           setProductionPhase('complete');
@@ -2751,16 +2815,22 @@ function EP04ProductionInner() {
             });
           }
           toast.success('Cinematic movie assembled successfully!');
-        } else if (data?.job?.status === 'failed') {
+        } else if (jobStatus === 'failed') {
           setAssemblyProgress(null);
           setAssemblyJobId(null);
           toast.error(`Assembly failed: ${data.job.errorMessage || 'Unknown error'}`);
         } else {
           const pct = data?.job?.progressPercent || 0;
-          setAssemblyProgress(`Rendering video... ${pct}%`);
+          setAssemblyProgress(`Rendering video... ${pct}% (poll ${pollCountRef.current})`);
         }
       } catch (err) {
-        console.error('[EP04 Assembly] Poll error:', err);
+        pollErrorCountRef.current++;
+        console.error(`[EP04 Assembly] Poll exception ${pollErrorCountRef.current}/${MAX_ERRORS}:`, err);
+        if (pollErrorCountRef.current >= MAX_ERRORS) {
+          setAssemblyProgress(null);
+          setAssemblyJobId(null);
+          toast.error('Assembly polling failed — check network/console');
+        }
       }
     }, 10000); // Poll every 10 seconds
     setAssemblyPollTimer(timer);
@@ -4411,6 +4481,13 @@ function EP04ProductionInner() {
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin text-primary" />
                           <span className="text-xs text-muted-foreground">{assemblyProgress}</span>
+                          <Button size="sm" variant="destructive" onClick={() => {
+                            setAssemblyJobId(null);
+                            setAssemblyProgress(null);
+                            toast.info('Assembly polling cancelled');
+                          }}>
+                            <XCircle className="h-3 w-3 mr-1" /> Cancel
+                          </Button>
                         </div>
                       )}
                       {!phase5Done && !assemblyProgress && (
