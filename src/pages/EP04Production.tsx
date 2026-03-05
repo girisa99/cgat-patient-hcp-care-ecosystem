@@ -470,12 +470,19 @@ function EP04ProductionInner() {
     setProjectLoading(true);
     setProjectLoadError(null);
 
+    // Timeout guard — if DB hangs, don't spin forever (30s max)
+    const timeoutId = setTimeout(() => {
+      setProjectLoading(false);
+      setProjectLoadError('Project lookup timed out after 30 seconds — please refresh or check your network');
+    }, 30000);
+
     (async () => {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (!user) {
         console.error('[EP04] Auth failed — no user session:', authError);
         setProjectLoadError(authError?.message || 'Not authenticated — please sign in and refresh');
         setProjectLoading(false);
+        clearTimeout(timeoutId);
         return;
       }
       const db = supabase as any;
@@ -493,6 +500,7 @@ function EP04ProductionInner() {
         if (existing?.id) {
           setAutoProjectId(existing.id);
           setProjectLoading(false);
+          clearTimeout(timeoutId);
           return;
         }
 
@@ -512,6 +520,7 @@ function EP04ProductionInner() {
             .eq('id', legacyExisting.id);
           setAutoProjectId(legacyExisting.id);
           setProjectLoading(false);
+          clearTimeout(timeoutId);
           return;
         }
 
@@ -543,6 +552,7 @@ function EP04ProductionInner() {
         setProjectLoadError(err.message || 'Failed to load project');
       } finally {
         setProjectLoading(false);
+        clearTimeout(timeoutId);
       }
     })();
   }, [urlProjectId, autoProjectId]);
@@ -2748,6 +2758,10 @@ function EP04ProductionInner() {
       });
     }
 
+    // Helper: detect video URLs vs image URLs for JSON2Video element type
+    const detectMediaType = (url: string): 'video' | 'image' =>
+      url.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i) ? 'video' : 'image';
+
     // ── Scene segments with layered audio ──
     chapters.forEach((chapter, chapterIndex) => {
       const allTts = chapter.allTtsUrls || [];
@@ -2756,12 +2770,14 @@ function EP04ProductionInner() {
       const elements: Array<Record<string, any>> = [];
 
       // Visual layer: distribute visuals across scene duration
+      // FIXED: detect video vs image URLs — JSON2Video rejects video files as 'image' type
       if (chapterVisuals.length > 0) {
         if (allTts.length > 0 && chapterVisuals.length >= allTts.length) {
           // One visual per TTS line — aligned to TTS timing
           allTts.forEach((tts, idx) => {
+            const src = chapterVisuals[idx % chapterVisuals.length];
             elements.push({
-              type: 'image', src: chapterVisuals[idx % chapterVisuals.length],
+              type: detectMediaType(src), src,
               start: tts.start, duration: tts.duration,
             });
           });
@@ -2770,14 +2786,14 @@ function EP04ProductionInner() {
           const durPerVisual = Math.max(1, Math.floor(sceneDuration / chapterVisuals.length));
           chapterVisuals.forEach((url, idx) => {
             elements.push({
-              type: 'image', src: url,
+              type: detectMediaType(url), src: url,
               start: idx * durPerVisual,
               duration: Math.min(durPerVisual, sceneDuration - idx * durPerVisual),
             });
           });
         } else {
           // Single visual — holds for full scene duration
-          elements.push({ type: 'image', src: chapterVisuals[0], start: 0, duration: sceneDuration });
+          elements.push({ type: detectMediaType(chapterVisuals[0]), src: chapterVisuals[0], start: 0, duration: sceneDuration });
         }
       }
 
@@ -3098,7 +3114,7 @@ function EP04ProductionInner() {
   // ─── Render ──────────────────────────────────────────────────────────────
 
   // Show loading/error state while project is being resolved
-  if (projectLoading || (!projectId && !projectLoadError)) {
+  if (projectLoading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <Card className="p-8 text-center max-w-md">
@@ -3110,14 +3126,17 @@ function EP04ProductionInner() {
     );
   }
 
-  if (projectLoadError) {
+  if (projectLoadError || (!projectId && !projectLoading)) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <Card className="p-8 text-center max-w-md">
           <AlertCircle className="h-8 w-8 mx-auto mb-4 text-destructive" />
           <h2 className="text-lg font-semibold mb-2">Project Load Failed</h2>
-          <p className="text-sm text-muted-foreground mb-4">{projectLoadError}</p>
+          <p className="text-sm text-muted-foreground mb-4">{projectLoadError || 'No project ID found — try refreshing'}</p>
           <div className="flex gap-2 justify-center">
+            <Button variant="outline" onClick={() => { autoCreateAttempted.current = false; setProjectLoadError(null); setProjectLoading(true); window.location.reload(); }}>
+              <RefreshCw className="h-4 w-4 mr-1" /> Retry
+            </Button>
             <Button variant="outline" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Go Back
             </Button>

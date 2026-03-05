@@ -118,6 +118,7 @@ const AppContent = () => {
     location.startsWith('/genie-hub') ||
     location.startsWith('/genie-landing') ||
     location.startsWith('/genie-cast') ||
+    location.startsWith('/cast/production') ||
     location.startsWith('/ep04-production') ||
     location.startsWith('/subscription') ||
     location.startsWith('/marketing-materials') ||
@@ -260,7 +261,14 @@ const AppContent = () => {
                   {React.createElement(React.lazy(() => import('@/pages/EP04Production')))}
                 </Suspense>
               } />
-              
+
+              {/* Generic Cast Production — works for ANY project type */}
+              <Route path="/cast/production/:projectId" element={
+                <Suspense fallback={<PageLoading message="Loading Cast Production..." />}>
+                  {React.createElement(React.lazy(() => import('@/pages/CastProductionPage')))}
+                </Suspense>
+              } />
+
               {/* Root path - Dashboard redirect */}
               <Route path="/" element={
                 isAuthenticated ? (

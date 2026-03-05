@@ -275,13 +275,15 @@ export function useCastProjectPersistence() {
   ): Promise<ProjectContentSnapshot | null> => {
     setIsLoading(true);
     try {
+      // Lean queries: avoid select('*') on JSONB-heavy tables to reduce disk IO.
+      // Scene scene_config is loaded separately when needed (lazy expansion).
       const [scenesRes, charsRes] = await Promise.all([
         db.from('cast_project_scenes')
-          .select('*')
+          .select('id, project_id, scene_key, title, scene_index, art_style, visual_style, background_url, thumbnail_url, duration_seconds, is_optional, scene_config')
           .eq('project_id', projectId)
           .order('scene_index', { ascending: true }),
         db.from('cast_project_characters')
-          .select('*')
+          .select('id, project_id, character_key, display_name, role_description, voice_provider, voice_id, avatar_url, color_class, voice_config')
           .eq('project_id', projectId)
           .order('character_key', { ascending: true }),
       ]);
@@ -297,7 +299,7 @@ export function useCastProjectPersistence() {
         const sceneIds = scenes.map((s: any) => s.id);
         const { data: linesData, error: linesErr } = await db
           .from('cast_project_script_lines')
-          .select('*')
+          .select('id, project_id, scene_id, line_key, line_index, character_id, dialogue, direction, motion, duration_hint, visual_tags, sfx_tags, tts_audio_url, tts_status, tts_provider, tts_voice_id, tts_generated_at')
           .in('scene_id', sceneIds)
           .order('line_index', { ascending: true });
 
