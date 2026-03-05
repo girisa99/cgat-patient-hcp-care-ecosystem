@@ -2982,15 +2982,33 @@ function EP04ProductionInner() {
 
     // ── Opening bookend (skip if duration is 0 — multi-part: only Part 1 gets this) ──
     if (bookends && bookends.opening.duration > 0) {
+      const openElements: Array<Record<string, any>> = [];
+      // Background image from first scene (professional look for LinkedIn/X)
+      if (bookends.opening.backgroundUrl) {
+        openElements.push({
+          type: 'image', src: bookends.opening.backgroundUrl,
+          start: 0, duration: bookends.opening.duration,
+        });
+      }
+      // Title text overlay
+      openElements.push({
+        type: 'text', text: 'Beyond AI Hype — Episode 2',
+        duration: bookends.opening.duration, start: 0,
+        settings: { 'font-family': 'Inter', 'font-size': '64px', 'font-color': '#f5d77a',
+          'text-shadow': '3px 3px 12px rgba(0,0,0,0.9)' }, position: 'center',
+      });
+      // Subtitle
+      openElements.push({
+        type: 'text', text: 'A GenieSuite Documentary',
+        duration: bookends.opening.duration - 3, start: 3,
+        settings: { 'font-family': 'Inter', 'font-size': '28px', 'font-color': '#c4b5fd',
+          'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' }, position: 'bottom-center',
+      });
       scenes.push({
         comment: 'Opening Bookend',
         duration: bookends.opening.duration,
         'background-color': '#0f0a1a',
-        elements: [
-          { type: 'text', text: 'Beyond AI Hype — Episode 2', duration: bookends.opening.duration,
-            settings: { 'font-family': 'Inter', 'font-size': '64px', 'font-color': '#f5d77a',
-              'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)' }, position: 'center', start: 0 },
-        ],
+        elements: openElements,
       });
     }
 
@@ -3110,15 +3128,33 @@ function EP04ProductionInner() {
 
     // ── Closing bookend (skip if duration is 0 — multi-part: only last part gets this) ──
     if (bookends && bookends.closing.duration > 0) {
+      const closeElements: Array<Record<string, any>> = [];
+      // Background image from last scene
+      if (bookends.closing.backgroundUrl) {
+        closeElements.push({
+          type: 'image', src: bookends.closing.backgroundUrl,
+          start: 0, duration: bookends.closing.duration,
+        });
+      }
+      // Closing title
+      closeElements.push({
+        type: 'text', text: 'The End... For Now',
+        duration: bookends.closing.duration, start: 0,
+        settings: { 'font-family': 'Inter', 'font-size': '56px', 'font-color': '#f5d77a',
+          'text-shadow': '3px 3px 12px rgba(0,0,0,0.9)' }, position: 'center',
+      });
+      // CTA text
+      closeElements.push({
+        type: 'text', text: 'Built with GenieSuite Cast  •  Follow for more',
+        duration: bookends.closing.duration - 4, start: 4,
+        settings: { 'font-family': 'Inter', 'font-size': '24px', 'font-color': '#c4b5fd',
+          'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' }, position: 'bottom-center',
+      });
       scenes.push({
         comment: 'Closing Bookend',
         duration: bookends.closing.duration,
         'background-color': '#0f0a1a',
-        elements: [
-          { type: 'text', text: 'The End... For Now', duration: bookends.closing.duration,
-            settings: { 'font-family': 'Inter', 'font-size': '56px', 'font-color': '#f5d77a',
-              'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)' }, position: 'center', start: 0 },
-        ],
+        elements: closeElements,
       });
     }
 
@@ -3272,9 +3308,12 @@ function EP04ProductionInner() {
         });
 
       // ── Bookend data: opening only for first part, closing only for last ──
+      // Use scene visuals as bookend backgrounds for professional look (LinkedIn/X publishing)
+      const firstChapterVisual = preBuiltChapters[0]?.visualUrls?.[0];
+      const lastChapterVisual = preBuiltChapters[preBuiltChapters.length - 1]?.visualUrls?.[0];
       const bookends = {
-        opening: { duration: isFirstPart ? 21 : 0, hasAssets: isFirstPart },
-        closing: { duration: isLastPart ? 16 : 0, hasAssets: isLastPart },
+        opening: { duration: isFirstPart ? 21 : 0, hasAssets: isFirstPart, backgroundUrl: firstChapterVisual },
+        closing: { duration: isLastPart ? 16 : 0, hasAssets: isLastPart, backgroundUrl: lastChapterVisual },
       };
 
       const partDuration = preBuiltChapters.reduce((s, c) => s + c.duration, 0)
