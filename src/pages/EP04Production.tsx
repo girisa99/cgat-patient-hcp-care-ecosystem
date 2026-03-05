@@ -2771,11 +2771,13 @@ function EP04ProductionInner() {
   // JSON2Video Professional plan caps at 10 minutes per video.
   // EP04 is ~36 minutes → split into 4 parts, each under 10 minutes.
   const MAX_PART_DURATION = 570; // 9.5 minutes (buffer under 10-min limit)
+  const MAX_PART_TTS = 28; // Max TTS audio files per part — Part 1 (23 TTS) rendered OK, Part 2 (45 TTS) timed out
 
   interface AssemblyPart {
     partNumber: number;
     sceneKeys: string[];
     estimatedDuration: number;
+    ttsCount: number;
     jobId: string | null;
     status: 'pending' | 'rendering' | 'completed' | 'failed';
     videoUrl: string | null;
@@ -2785,32 +2787,40 @@ function EP04ProductionInner() {
   const [assemblyParts, setAssemblyParts] = useState<AssemblyPart[]>([]);
   const [activePartNumber, setActivePartNumber] = useState<number | null>(null);
 
-  // Compute part boundaries dynamically from scene durations
+  // Compute part boundaries dynamically from scene durations AND TTS count
+  // Both caps must be respected: duration < 570s AND TTS count < 28
   const computePartBoundaries = useCallback((): AssemblyPart[] => {
     const sceneKeys = Array.from(scenes.keys());
     const parts: AssemblyPart[] = [];
     let currentPart: string[] = [];
     let currentDuration = 0;
+    let currentTts = 0;
     let partNum = 1;
 
     for (const sceneKey of sceneKeys) {
-      // Calculate scene duration from TTS lines
+      // Calculate scene duration and TTS count from script lines
       const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
       let sceneDuration = 0;
+      let sceneTtsCount = 0;
       for (const k of sceneLines) {
         sceneDuration += scriptContentForUI[k]?.duration_est || 5;
+        if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
       sceneDuration = sceneDuration || 30;
 
       // Add transition duration (~5-7s per transition)
       const transitionDuration = currentPart.length > 0 ? 6 : 0;
 
-      // If adding this scene would exceed limit, finalize current part
-      if (currentPart.length > 0 && (currentDuration + sceneDuration + transitionDuration) > MAX_PART_DURATION) {
+      // If adding this scene would exceed EITHER limit, finalize current part
+      const wouldExceedDuration = (currentDuration + sceneDuration + transitionDuration) > MAX_PART_DURATION;
+      const wouldExceedTts = (currentTts + sceneTtsCount) > MAX_PART_TTS;
+
+      if (currentPart.length > 0 && (wouldExceedDuration || wouldExceedTts)) {
         parts.push({
           partNumber: partNum,
           sceneKeys: [...currentPart],
           estimatedDuration: currentDuration,
+          ttsCount: currentTts,
           jobId: null,
           status: 'pending',
           videoUrl: null,
@@ -2818,9 +2828,11 @@ function EP04ProductionInner() {
         partNum++;
         currentPart = [sceneKey];
         currentDuration = sceneDuration;
+        currentTts = sceneTtsCount;
       } else {
         currentPart.push(sceneKey);
         currentDuration += sceneDuration + transitionDuration;
+        currentTts += sceneTtsCount;
       }
     }
 
@@ -2830,6 +2842,7 @@ function EP04ProductionInner() {
         partNumber: partNum,
         sceneKeys: [...currentPart],
         estimatedDuration: currentDuration,
+        ttsCount: currentTts,
         jobId: null,
         status: 'pending',
         videoUrl: null,
@@ -2837,7 +2850,7 @@ function EP04ProductionInner() {
     }
 
     return parts;
-  }, [scenes, scriptKeys, scriptContentForUI]);
+  }, [scenes, scriptKeys, scriptContentForUI, audioMap]);
 
   // Poll for assembly completion when we have a pending job
   const pollCountRef = React.useRef(0);
@@ -3403,7 +3416,7 @@ function EP04ProductionInner() {
     const parts = computePartBoundaries();
     setAssemblyParts(parts);
     console.log('[EP04 Assembly] Multi-part boundaries:', parts.map(p =>
-      `Part ${p.partNumber}: ${p.sceneKeys.join(', ')} (~${Math.round(p.estimatedDuration / 60)}min)`
+      `Part ${p.partNumber}: ${p.sceneKeys.join(', ')} (~${Math.round(p.estimatedDuration / 60)}min, ${p.ttsCount} TTS)`
     ));
     toast.info(`Split into ${parts.length} parts — assemble each part individually`);
   }, [getAssemblyReadiness, computePartBoundaries]);
@@ -4875,7 +4888,7 @@ function EP04ProductionInner() {
                               {part.sceneKeys.map(k => SCENE_TITLES[k]?.replace(/Scene \d+ — /, '') || k).join(', ')}
                             </p>
                             <p className="text-[10px] text-muted-foreground mb-2">
-                              ~{Math.round(part.estimatedDuration / 60)}min ({part.sceneKeys.length} scenes)
+                              ~{Math.round(part.estimatedDuration / 60)}min, {part.ttsCount} TTS ({part.sceneKeys.length} scenes)
                             </p>
                             <div className="flex items-center gap-1">
                               {part.status === 'pending' && (
