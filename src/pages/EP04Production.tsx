@@ -2712,6 +2712,168 @@ function EP04ProductionInner() {
     return () => clearInterval(timer);
   }, [assemblyJobId, projectId, totalDuration, scenes, updateFinalAssembly]);
 
+  // ─── Client-side JSON2Video timeline builder ────────────────────────────
+  // Ported from stitchLayeredTimeline in genie-cast-assembler edge function.
+  // Builds the full { resolution, quality, scenes } payload in the browser
+  // (unlimited memory) so the edge function just forwards it to JSON2Video.
+  const buildJson2VideoTimeline = useCallback((
+    chapters: Array<{
+      chapterId: string; product: string; duration: number;
+      allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string }>;
+      visualUrls?: string[]; visualUrl?: string;
+      musicUrl?: string; musicLoop?: boolean;
+      sfxUrls?: string[];
+    }>,
+    transitions: Array<{
+      from: string; to: string; style: string; duration: number;
+      bridgeAudioUrl?: string; bridgeDuration?: number;
+    }>,
+    bookends: { opening: { duration: number }; closing: { duration: number } } | null,
+    quality: string,
+  ) => {
+    const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
+    const scenes: Array<Record<string, any>> = [];
+
+    // ── Opening bookend ──
+    if (bookends) {
+      scenes.push({
+        comment: 'Opening Bookend',
+        duration: bookends.opening.duration,
+        'background-color': '#0f0a1a',
+        elements: [
+          { type: 'text', text: 'Beyond AI Hype — Episode 2', duration: bookends.opening.duration,
+            settings: { 'font-family': 'Inter', 'font-size': '64px', 'font-color': '#f5d77a',
+              'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)' }, position: 'center', start: 0 },
+        ],
+      });
+    }
+
+    // ── Scene segments with layered audio ──
+    chapters.forEach((chapter, chapterIndex) => {
+      const allTts = chapter.allTtsUrls || [];
+      const chapterVisuals: string[] = chapter.visualUrls || (chapter.visualUrl ? [chapter.visualUrl] : []);
+      const sceneDuration: number = chapter.duration || 30;
+      const elements: Array<Record<string, any>> = [];
+
+      // Visual layer: distribute visuals across scene duration
+      if (chapterVisuals.length > 0) {
+        if (allTts.length > 0 && chapterVisuals.length >= allTts.length) {
+          // One visual per TTS line — aligned to TTS timing
+          allTts.forEach((tts, idx) => {
+            elements.push({
+              type: 'image', src: chapterVisuals[idx % chapterVisuals.length],
+              start: tts.start, duration: tts.duration,
+            });
+          });
+        } else if (chapterVisuals.length > 1) {
+          // Multiple visuals, distribute evenly
+          const durPerVisual = Math.max(1, Math.floor(sceneDuration / chapterVisuals.length));
+          chapterVisuals.forEach((url, idx) => {
+            elements.push({
+              type: 'image', src: url,
+              start: idx * durPerVisual,
+              duration: Math.min(durPerVisual, sceneDuration - idx * durPerVisual),
+            });
+          });
+        } else {
+          // Single visual — holds for full scene duration
+          elements.push({ type: 'image', src: chapterVisuals[0], start: 0, duration: sceneDuration });
+        }
+      }
+
+      // TTS layer: sequential dialogue lines with start offsets
+      allTts.forEach(tts => {
+        if (tts.url && tts.url.startsWith('http')) {
+          elements.push({ type: 'audio', src: tts.url, start: tts.start, duration: tts.duration, volume: 1.0 });
+        }
+      });
+
+      // Music layer: loop at original speed, volume ducked
+      if (chapter.musicUrl && chapter.musicUrl.startsWith('http')) {
+        elements.push({
+          type: 'audio', src: chapter.musicUrl,
+          start: 0, duration: sceneDuration,
+          volume: 0.3, loop: !!chapter.musicLoop,
+        });
+      }
+
+      // SFX layer
+      const sfxUrls = chapter.sfxUrls || [];
+      sfxUrls.forEach((sfxUrl, sfxIdx) => {
+        if (sfxUrl && sfxUrl.startsWith('http')) {
+          const sfxStart = sfxIdx > 0 ? Math.floor(sceneDuration * sfxIdx / sfxUrls.length) : 0;
+          elements.push({
+            type: 'audio', src: sfxUrl,
+            start: sfxStart, duration: Math.min(5, sceneDuration - sfxStart),
+            volume: 0.6,
+          });
+        }
+      });
+
+      // Scene title overlay (first 5s)
+      elements.push({
+        type: 'text', text: chapter.product || chapter.chapterId,
+        start: 0, duration: Math.min(5, sceneDuration),
+        settings: { 'font-family': 'Inter', 'font-size': '42px', 'font-color': '#ffffff',
+          'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)' },
+        position: 'bottom-left',
+      });
+
+      scenes.push({
+        comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS lines, ${sceneDuration}s)`,
+        duration: sceneDuration,
+        'background-color': '#1e293b',
+        elements,
+      });
+
+      // Transition segment after this scene (except last)
+      if (transitions.length > chapterIndex) {
+        const t = transitions[chapterIndex];
+        const transElements: Array<Record<string, any>> = [];
+
+        transElements.push({
+          type: 'text', text: `~ ${t.style.replace(/-/g, ' ')} ~`,
+          start: 0, duration: t.duration,
+          settings: { 'font-family': 'Inter', 'font-size': '36px', 'font-color': '#c4b5fd',
+            'text-shadow': '2px 2px 6px rgba(0,0,0,0.6)' },
+          position: 'center',
+        });
+
+        if (t.bridgeAudioUrl && t.bridgeAudioUrl.startsWith('http')) {
+          transElements.push({
+            type: 'audio', src: t.bridgeAudioUrl,
+            start: 1, duration: t.bridgeDuration || (t.duration - 1),
+            volume: 1.0,
+          });
+        }
+
+        scenes.push({
+          comment: `Transition: ${t.from} → ${t.to} (${t.style})`,
+          duration: t.duration,
+          'background-color': '#0f0a1a',
+          elements: transElements,
+        });
+      }
+    });
+
+    // ── Closing bookend ──
+    if (bookends) {
+      scenes.push({
+        comment: 'Closing Bookend',
+        duration: bookends.closing.duration,
+        'background-color': '#0f0a1a',
+        elements: [
+          { type: 'text', text: 'The End... For Now', duration: bookends.closing.duration,
+            settings: { 'font-family': 'Inter', 'font-size': '56px', 'font-color': '#f5d77a',
+              'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)' }, position: 'center', start: 0 },
+        ],
+      });
+    }
+
+    const totalDuration = scenes.reduce((sum, s) => sum + (s.duration || 0), 0);
+    return { resolution, quality: quality === 'cinematic' ? 'high' : 'medium', scenes, _totalDuration: totalDuration };
+  }, []);
+
   const startFinalAssembly = useCallback(async () => {
     // Step 0: Run readiness audit
     const readiness = getAssemblyReadiness();
@@ -2847,23 +3009,42 @@ function EP04ProductionInner() {
         });
       }
 
-      setAssemblyProgress('Submitting layered timeline to JSON2Video assembly...');
+      setAssemblyProgress('Building JSON2Video timeline locally...');
 
-      // Call genie-cast-assembler in stitch-only mode with layered data
+      // Build the JSON2Video timeline on the client side (browser has unlimited memory)
+      // instead of sending raw chapters to the edge function which OOMs on large timelines.
+      const timeline = buildJson2VideoTimeline(preBuiltChapters, transitions, bookends, 'production');
+      const { _totalDuration: timelineDuration, ...timelinePayload } = timeline;
+      console.log(`[EP04 Assembly] Built timeline: ${timelinePayload.scenes.length} scenes, ~${timelineDuration}s, payload: ${(JSON.stringify(timelinePayload).length / 1024).toFixed(0)}kb`);
+
+      setAssemblyProgress('Submitting pre-built timeline to JSON2Video...');
+
+      // Send pre-built timeline to edge function which just forwards to JSON2Video
+      const assemblyBody = {
+        mode: 'submit-timeline',
+        language: 'en',
+        quality: 'production',
+        timeline: timelinePayload,
+        castProjectId: projectId,
+      };
+      const payloadSize = JSON.stringify(assemblyBody).length;
+      console.log(`[EP04 Assembly] Payload size: ${(payloadSize / 1024).toFixed(1)}KB (${timelinePayload.scenes.length} scenes)`);
+
       const { data, error } = await supabase.functions.invoke('genie-cast-assembler', {
-        body: {
-          mode: 'stitch-only',
-          language: 'en',
-          quality: 'production',
-          preBuiltChapters,
-          transitions,
-          bookends,
-          castProjectId: projectId,
-        },
+        body: assemblyBody,
       });
 
       if (error) {
-        throw new Error(`Assembly edge function error: ${error.message}`);
+        // Capture the actual response body for debugging (supabase-js wraps it in error.context)
+        let detail = error.message;
+        try {
+          if (error.context && typeof error.context.text === 'function') {
+            const body = await error.context.text();
+            console.error('[EP04 Assembly] Edge function error body:', body);
+            detail = `${error.message} — ${body.substring(0, 500)}`;
+          }
+        } catch (_) { /* response body may not be readable */ }
+        throw new Error(`Assembly edge function error: ${detail}`);
       }
 
       console.log('[EP04 Assembly] Response:', data);
@@ -2910,7 +3091,7 @@ function EP04ProductionInner() {
       setAssemblyProgress(null);
       toast.error(`Assembly failed: ${err.message}`);
     }
-  }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration, getAssemblyReadiness]);
+  }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration, getAssemblyReadiness, buildJson2VideoTimeline]);
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
