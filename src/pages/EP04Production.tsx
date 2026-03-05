@@ -2969,12 +2969,14 @@ function EP04ProductionInner() {
       chapterId: string; product: string; duration: number;
       allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string }>;
       visualUrls?: string[]; visualUrl?: string;
+      lipsyncClips?: Array<{ url: string; start: number; duration: number; character: string }>;
       musicUrl?: string; musicLoop?: boolean;
       sfxUrls?: string[];
     }>,
     transitions: Array<{
       from: string; to: string; style: string; duration: number;
       bridgeAudioUrl?: string; bridgeDuration?: number;
+      nextSceneVisualUrl?: string; // Background for visual transition
     }>,
     bookends: { opening: { duration: number }; closing: { duration: number } } | null,
     quality: string,
@@ -2982,33 +2984,52 @@ function EP04ProductionInner() {
     const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
     const scenes: Array<Record<string, any>> = [];
 
-    // ── Opening bookend (skip if duration is 0 — multi-part: only Part 1 gets this) ──
+    // ── Opening bookend — Cinematic staggered reveal (Part 1 only) ──
     if (bookends && bookends.opening.duration > 0) {
+      const dur = bookends.opening.duration;
       const openElements: Array<Record<string, any>> = [];
-      // Background image from first scene (professional look for LinkedIn/X)
+      // Background image with dark overlay feel
       if (bookends.opening.backgroundUrl) {
         openElements.push({
           type: 'image', src: bookends.opening.backgroundUrl,
-          start: 0, duration: bookends.opening.duration,
+          start: 0, duration: dur,
         });
       }
-      // Title text overlay
+      // Staggered kinetic text: episode label → title → subtitle → branding
       openElements.push({
-        type: 'text', text: 'Beyond AI Hype — Episode 2',
-        duration: bookends.opening.duration, start: 0,
-        settings: { 'font-family': 'Inter', 'font-size': '64px', 'font-color': '#f5d77a',
-          'text-shadow': '3px 3px 12px rgba(0,0,0,0.9)' }, position: 'center',
+        type: 'text', text: 'EPISODE 2',
+        start: 1, duration: dur - 1,
+        settings: { 'font-family': 'Inter', 'font-size': '24px', 'font-color': '#c4b5fd',
+          'font-weight': '600', 'letter-spacing': '6px',
+          'text-shadow': '2px 2px 8px rgba(0,0,0,0.9)' },
+        position: 'center', y: '-15%',
       });
-      // Subtitle
+      openElements.push({
+        type: 'text', text: 'Beyond AI Hype',
+        start: 2.5, duration: dur - 2.5,
+        settings: { 'font-family': 'Inter', 'font-size': '72px', 'font-color': '#f5d77a',
+          'font-weight': '700',
+          'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)' },
+        position: 'center',
+      });
+      openElements.push({
+        type: 'text', text: 'The Real Story of an AI Sprint',
+        start: 4.5, duration: dur - 4.5,
+        settings: { 'font-family': 'Inter', 'font-size': '28px', 'font-color': '#e2e8f0',
+          'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' },
+        position: 'center', y: '12%',
+      });
       openElements.push({
         type: 'text', text: 'A GenieSuite Documentary',
-        duration: bookends.opening.duration - 3, start: 3,
-        settings: { 'font-family': 'Inter', 'font-size': '28px', 'font-color': '#c4b5fd',
-          'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' }, position: 'bottom-center',
+        start: 7, duration: dur - 7,
+        settings: { 'font-family': 'Inter', 'font-size': '20px', 'font-color': '#94a3b8',
+          'font-weight': '500', 'letter-spacing': '3px',
+          'text-shadow': '2px 2px 6px rgba(0,0,0,0.7)' },
+        position: 'bottom-center',
       });
       scenes.push({
-        comment: 'Opening Bookend',
-        duration: bookends.opening.duration,
+        comment: 'Opening Bookend — Cinematic Reveal',
+        duration: dur,
         'background-color': '#0f0a1a',
         elements: openElements,
       });
@@ -3018,40 +3039,50 @@ function EP04ProductionInner() {
     const detectMediaType = (url: string): 'video' | 'image' =>
       url.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i) ? 'video' : 'image';
 
-    // ── Scene segments with layered audio ──
+    // ── Scene segments with layered audio + lipsync ──
     chapters.forEach((chapter, chapterIndex) => {
       const allTts = chapter.allTtsUrls || [];
       const chapterVisuals: string[] = chapter.visualUrls || (chapter.visualUrl ? [chapter.visualUrl] : []);
+      const lipsyncClips = chapter.lipsyncClips || [];
       const sceneDuration: number = chapter.duration || 30;
       const elements: Array<Record<string, any>> = [];
 
-      // Visual layer: distribute visuals across scene duration
-      // FIXED: detect video vs image URLs — JSON2Video rejects video files as 'image' type
+      // Visual layer: background image holds full scene, rotates if multiple
       if (chapterVisuals.length > 0) {
-        if (allTts.length > 0 && chapterVisuals.length >= allTts.length) {
-          // One visual per TTS line — aligned to TTS timing
-          allTts.forEach((tts, idx) => {
-            const src = chapterVisuals[idx % chapterVisuals.length];
-            elements.push({
-              type: detectMediaType(src), src,
-              start: tts.start, duration: tts.duration,
-            });
-          });
-        } else if (chapterVisuals.length > 1) {
-          // Multiple visuals, distribute evenly
-          const durPerVisual = Math.max(1, Math.floor(sceneDuration / chapterVisuals.length));
+        if (chapterVisuals.length > 1) {
+          // Rotate visuals every ~15-20s for visual variety
+          const rotateInterval = Math.max(10, Math.min(20, Math.floor(sceneDuration / chapterVisuals.length)));
           chapterVisuals.forEach((url, idx) => {
-            elements.push({
-              type: detectMediaType(url), src: url,
-              start: idx * durPerVisual,
-              duration: Math.min(durPerVisual, sceneDuration - idx * durPerVisual),
-            });
+            const start = idx * rotateInterval;
+            const dur = idx < chapterVisuals.length - 1
+              ? rotateInterval
+              : sceneDuration - start; // Last visual fills remaining time
+            if (start < sceneDuration) {
+              elements.push({
+                type: detectMediaType(url), src: url,
+                start, duration: Math.max(1, dur),
+              });
+            }
           });
         } else {
           // Single visual — holds for full scene duration
-          elements.push({ type: detectMediaType(chapterVisuals[0]), src: chapterVisuals[0], start: 0, duration: sceneDuration });
+          elements.push({
+            type: detectMediaType(chapterVisuals[0]), src: chapterVisuals[0],
+            start: 0, duration: sceneDuration,
+          });
         }
       }
+
+      // Lipsync video layer: short MP4 clips aligned to their TTS line timing
+      // These overlay on top of background images for talking-avatar wow factor
+      lipsyncClips.forEach(clip => {
+        if (clip.url && clip.url.startsWith('http')) {
+          elements.push({
+            type: 'video', src: clip.url,
+            start: clip.start, duration: clip.duration,
+          });
+        }
+      });
 
       // TTS layer: sequential dialogue lines with start offsets
       allTts.forEach(tts => {
@@ -3060,12 +3091,12 @@ function EP04ProductionInner() {
         }
       });
 
-      // Music layer: loop at original speed, volume ducked
+      // Music layer: loop at original speed, volume ducked under dialogue
       if (chapter.musicUrl && chapter.musicUrl.startsWith('http')) {
         elements.push({
           type: 'audio', src: chapter.musicUrl,
           start: 0, duration: sceneDuration,
-          volume: 0.3, loop: !!chapter.musicLoop,
+          volume: 0.25, loop: !!chapter.musicLoop,
         });
       }
 
@@ -3077,44 +3108,56 @@ function EP04ProductionInner() {
           elements.push({
             type: 'audio', src: sfxUrl,
             start: sfxStart, duration: Math.min(5, sceneDuration - sfxStart),
-            volume: 0.6,
+            volume: 0.5,
           });
         }
       });
 
-      // Scene title overlay (first 5s)
+      // Scene title overlay — lower-third style (first 6s)
       elements.push({
         type: 'text', text: chapter.product || chapter.chapterId,
-        start: 0, duration: Math.min(5, sceneDuration),
-        settings: { 'font-family': 'Inter', 'font-size': '42px', 'font-color': '#ffffff',
-          'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)' },
+        start: 0.5, duration: Math.min(6, sceneDuration - 0.5),
+        settings: { 'font-family': 'Inter', 'font-size': '36px', 'font-color': '#ffffff',
+          'font-weight': '600',
+          'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)',
+          'background-color': 'rgba(15,10,26,0.6)', padding: '8px 16px' },
         position: 'bottom-left',
       });
 
       scenes.push({
-        comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS lines, ${sceneDuration}s)`,
+        comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS, ${lipsyncClips.length} lipsync, ${sceneDuration}s)`,
         duration: sceneDuration,
         'background-color': '#1e293b',
         elements,
       });
 
-      // Transition segment after this scene (except last)
+      // Transition segment — visual background + bridge audio + title
       if (transitions.length > chapterIndex) {
         const t = transitions[chapterIndex];
         const transElements: Array<Record<string, any>> = [];
 
+        // Use next scene's visual as transition background (not black)
+        if (t.nextSceneVisualUrl) {
+          transElements.push({
+            type: 'image', src: t.nextSceneVisualUrl,
+            start: 0, duration: t.duration,
+          });
+        }
+
+        // Style label (e.g., "scene transition")
         transElements.push({
-          type: 'text', text: `~ ${t.style.replace(/-/g, ' ')} ~`,
-          start: 0, duration: t.duration,
-          settings: { 'font-family': 'Inter', 'font-size': '36px', 'font-color': '#c4b5fd',
-            'text-shadow': '2px 2px 6px rgba(0,0,0,0.6)' },
+          type: 'text', text: t.style.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          start: 0.5, duration: t.duration - 0.5,
+          settings: { 'font-family': 'Inter', 'font-size': '32px', 'font-color': '#f5d77a',
+            'font-weight': '600',
+            'text-shadow': '3px 3px 10px rgba(0,0,0,0.9)' },
           position: 'center',
         });
 
         if (t.bridgeAudioUrl && t.bridgeAudioUrl.startsWith('http')) {
           transElements.push({
             type: 'audio', src: t.bridgeAudioUrl,
-            start: 1, duration: t.bridgeDuration || (t.duration - 1),
+            start: 0.5, duration: t.bridgeDuration || (t.duration - 0.5),
             volume: 1.0,
           });
         }
@@ -3128,33 +3171,44 @@ function EP04ProductionInner() {
       }
     });
 
-    // ── Closing bookend (skip if duration is 0 — multi-part: only last part gets this) ──
+    // ── Closing bookend — CTA with impact (last Part only) ──
     if (bookends && bookends.closing.duration > 0) {
+      const dur = bookends.closing.duration;
       const closeElements: Array<Record<string, any>> = [];
       // Background image from last scene
       if (bookends.closing.backgroundUrl) {
         closeElements.push({
           type: 'image', src: bookends.closing.backgroundUrl,
-          start: 0, duration: bookends.closing.duration,
+          start: 0, duration: dur,
         });
       }
-      // Closing title
+      // Staggered closing: thank you → key message → CTA
       closeElements.push({
-        type: 'text', text: 'The End... For Now',
-        duration: bookends.closing.duration, start: 0,
+        type: 'text', text: 'Thank You for Watching',
+        start: 1, duration: dur - 1,
         settings: { 'font-family': 'Inter', 'font-size': '56px', 'font-color': '#f5d77a',
-          'text-shadow': '3px 3px 12px rgba(0,0,0,0.9)' }, position: 'center',
+          'font-weight': '700',
+          'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)' },
+        position: 'center', y: '-10%',
       });
-      // CTA text
       closeElements.push({
-        type: 'text', text: 'Built with GenieSuite Cast  •  Follow for more',
-        duration: bookends.closing.duration - 4, start: 4,
-        settings: { 'font-family': 'Inter', 'font-size': '24px', 'font-color': '#c4b5fd',
-          'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' }, position: 'bottom-center',
+        type: 'text', text: 'The sprint continues...',
+        start: 3.5, duration: dur - 3.5,
+        settings: { 'font-family': 'Inter', 'font-size': '28px', 'font-color': '#e2e8f0',
+          'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' },
+        position: 'center', y: '5%',
+      });
+      closeElements.push({
+        type: 'text', text: 'Built with GenieSuite Cast  |  Follow @GenieSuite',
+        start: 6, duration: dur - 6,
+        settings: { 'font-family': 'Inter', 'font-size': '22px', 'font-color': '#c4b5fd',
+          'font-weight': '500', 'letter-spacing': '2px',
+          'text-shadow': '2px 2px 6px rgba(0,0,0,0.7)' },
+        position: 'bottom-center',
       });
       scenes.push({
-        comment: 'Closing Bookend',
-        duration: bookends.closing.duration,
+        comment: 'Closing Bookend — CTA',
+        duration: dur,
         'background-color': '#0f0a1a',
         elements: closeElements,
       });
@@ -3239,17 +3293,35 @@ function EP04ProductionInner() {
 
         const sceneDuration = cumulativeStart || 30;
 
-        // Filter out data: URIs AND MP4 video files
-        // data: URIs bloat the payload (38MB+), MP4 videos cause JSON2Video render timeouts
+        // Background visuals: images + avatars (no MP4 videos — they cause render timeouts)
         const isHttpUrl = (u: string) => u && u.startsWith('http');
-        const isNotVideoFile = (u: string) => !u.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i);
-        const isUsableVisual = (u: string) => isHttpUrl(u) && isNotVideoFile(u);
+        const isImageUrl = (u: string) => isHttpUrl(u) && !u.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i);
         const allVisualUrls: string[] = [
-          // Skip videoUrls entirely — MP4s cause JSON2Video render timeouts
-          ...Object.values(status.imageUrls || {}).filter(isUsableVisual),
-          ...Object.values(status.avatarUrls || {}).filter(isUsableVisual),
-          ...Object.values(status.lipsyncUrls || {}).filter(isUsableVisual),
+          ...Object.values(status.imageUrls || {}).filter(isImageUrl),
+          ...Object.values(status.avatarUrls || {}).filter(isImageUrl),
+          // lipsyncUrls handled separately as overlay clips below
         ];
+
+        // Lipsync clips: short MP4 videos (<18s) aligned to their TTS line timing
+        // These are the "wow factor" — talking avatars synced to voiceover
+        const lipsyncClips: Array<{ url: string; start: number; duration: number; character: string }> = [];
+        if (status?.lipsyncUrls) {
+          for (const [character, url] of Object.entries(status.lipsyncUrls)) {
+            if (url && isHttpUrl(url)) {
+              // Find the TTS line for this character to get its start time
+              const charTts = allTtsUrls.find(t => t.voice === character);
+              if (charTts && charTts.duration <= 18) {
+                // Only include short lipsync clips — long ones timeout JSON2Video
+                lipsyncClips.push({
+                  url,
+                  start: charTts.start,
+                  duration: charTts.duration,
+                  character,
+                });
+              }
+            }
+          }
+        }
 
         const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
         const pipeline = EP04_SCENE_PIPELINES[pipelineSceneKey as keyof typeof EP04_SCENE_PIPELINES];
@@ -3257,23 +3329,13 @@ function EP04ProductionInner() {
         const musicDuration = musicStep?.duration || 30;
         const musicLoop = status.musicUrl ? musicDuration < sceneDuration : false;
 
-        const lipsyncData: Array<{ character: string; lipsyncUrl: string | null; ttsExceeds18s: boolean }> = [];
-        if (status?.lipsyncUrls) {
-          for (const [character, url] of Object.entries(status.lipsyncUrls)) {
-            if (url) {
-              const charTts = allTtsUrls.filter(t => t.voice === character);
-              const longest = charTts.reduce((max, t) => Math.max(max, t.duration), 0);
-              lipsyncData.push({ character, lipsyncUrl: url, ttsExceeds18s: longest > LIPSYNC_MAX_DURATION });
-            }
-          }
-        }
-
         return {
           chapterId: sceneKey,
           product: sceneTitle,
           audioUrl: allTtsUrls[0]?.url || undefined,
           visualUrl: allVisualUrls[0] || undefined,
           visualUrls: allVisualUrls,
+          lipsyncClips,
           duration: sceneDuration,
           ttsProvider: 'pre-generated',
           videoProvider: 'pre-generated',
@@ -3284,7 +3346,6 @@ function EP04ProductionInner() {
           musicLoop,
           musicDuration,
           sfxUrls: status.sfxUrls || [],
-          lipsyncData,
         };
       });
 
@@ -3308,10 +3369,15 @@ function EP04ProductionInner() {
         })).map(t => {
           const bridgeAudio = audioMap[t.bridgeKey]?.audioUrl;
           const bridgeLine = EP04_NARRATOR_BRIDGES[t.bridgeKey];
+          // Find next scene's visual for transition background (not black screen)
+          const toSceneIdx = getSceneIndex(t.to);
+          const toSceneKey = toSceneIdx ? targetSceneKeys.find(k => getSceneIndex(k) === toSceneIdx) : undefined;
+          const toChapter = toSceneKey ? preBuiltChapters.find(c => c.chapterId === toSceneKey) : undefined;
           return {
             ...t,
             bridgeAudioUrl: bridgeAudio || undefined,
             bridgeDuration: bridgeLine?.duration_est || 7,
+            nextSceneVisualUrl: toChapter?.visualUrls?.[0] || undefined,
           };
         });
 
@@ -3320,8 +3386,8 @@ function EP04ProductionInner() {
       const firstChapterVisual = preBuiltChapters[0]?.visualUrls?.[0];
       const lastChapterVisual = preBuiltChapters[preBuiltChapters.length - 1]?.visualUrls?.[0];
       const bookends = {
-        opening: { duration: isFirstPart ? 21 : 0, hasAssets: isFirstPart, backgroundUrl: firstChapterVisual },
-        closing: { duration: isLastPart ? 16 : 0, hasAssets: isLastPart, backgroundUrl: lastChapterVisual },
+        opening: { duration: isFirstPart ? 12 : 0, hasAssets: isFirstPart, backgroundUrl: firstChapterVisual },
+        closing: { duration: isLastPart ? 10 : 0, hasAssets: isLastPart, backgroundUrl: lastChapterVisual },
       };
 
       const partDuration = preBuiltChapters.reduce((s, c) => s + c.duration, 0)
@@ -3329,9 +3395,9 @@ function EP04ProductionInner() {
         + bookends.opening.duration + bookends.closing.duration;
 
       console.log(`[EP04 Assembly${partLabel}] ${preBuiltChapters.length} chapters:`, preBuiltChapters.map(c =>
-        `${c.chapterId}: ${c.allTtsUrls.length} TTS, ${c.visualUrls?.length || 0} vis, music=${!!c.musicUrl}(${(c as any)._musicUrlFormat})(loop=${c.musicLoop}), dur=${c.duration}s`
+        `${c.chapterId}: ${c.allTtsUrls.length} TTS, ${c.visualUrls?.length || 0} vis, ${c.lipsyncClips?.length || 0} lipsync, music=${!!c.musicUrl}(${(c as any)._musicUrlFormat})(loop=${c.musicLoop}), dur=${c.duration}s`
       ));
-      console.log(`[EP04 Assembly${partLabel}] ${transitions.length} transitions, duration: ${Math.round(partDuration / 60)}min (${partDuration}s)`);
+      console.log(`[EP04 Assembly${partLabel}] ${transitions.length} transitions (${transitions.filter(t => t.nextSceneVisualUrl).length} with visuals), duration: ${Math.round(partDuration / 60)}min (${partDuration}s)`);
 
       // ── Pre-assembly: upload any data: URI music to Storage ──
       // Music generated before Storage upload fix may be stored as data: URIs.
