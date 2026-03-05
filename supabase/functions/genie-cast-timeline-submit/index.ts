@@ -1,11 +1,11 @@
 /**
  * GENIE CAST TIMELINE SUBMIT
  *
- * Lightweight edge function that downloads a pre-built JSON2Video timeline
- * from Supabase Storage and forwards it to the JSON2Video API.
+ * Lightweight edge function that receives a pre-built JSON2Video timeline
+ * and forwards it to the JSON2Video API.
  *
- * Flow: Client builds timeline → uploads to Storage → sends URL here →
- *       we download + stream to JSON2Video → return taskId for polling.
+ * The client builds the timeline locally (browser has unlimited memory),
+ * filters out data: URIs to keep payload small (~100KB), and sends it here.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -22,33 +22,16 @@ serve(async (req) => {
   }
 
   try {
-    const { timelineUrl, castProjectId = null, language = 'en', quality = 'production' } = await req.json();
-
-    if (!timelineUrl) {
-      return new Response(JSON.stringify({ success: false, message: 'Missing timelineUrl' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    console.log(`🎬 Timeline submit: fetching from ${timelineUrl.substring(0, 120)}...`);
-
-    // Download timeline from Supabase Storage
-    const timelineResp = await fetch(timelineUrl);
-    if (!timelineResp.ok) {
-      return new Response(JSON.stringify({ success: false, message: `Failed to download timeline: ${timelineResp.status}` }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    const timeline = await timelineResp.json();
+    const { timeline, castProjectId = null, language = 'en', quality = 'production' } = await req.json();
 
     if (!timeline || !timeline.scenes || timeline.scenes.length === 0) {
-      return new Response(JSON.stringify({ success: false, message: 'Downloaded timeline is empty' }), {
+      return new Response(JSON.stringify({ success: false, message: 'Missing or empty timeline' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const totalDuration = timeline.scenes.reduce((sum: number, s: any) => sum + (s.duration || 0), 0);
-    console.log(`🎬 Timeline loaded: ${timeline.scenes.length} scenes, ${totalDuration}s`);
+    console.log(`🎬 Timeline submit: ${timeline.scenes.length} scenes, ${totalDuration}s`);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -88,7 +71,6 @@ serve(async (req) => {
       });
     }
 
-    // Stream the timeline directly — don't JSON.stringify the whole thing in memory
     const response = await fetch('https://api.json2video.com/v2/movies', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
