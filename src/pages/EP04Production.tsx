@@ -3229,9 +3229,16 @@ function EP04ProductionInner() {
       });
 
       // ── Only include transitions between scenes WITHIN this part ──
-      const targetSceneSet = new Set(targetSceneKeys);
+      // NOTE: SCENE_TITLES keys (scene-1-problem) differ from EP04_STORYBOOK_TRANSITIONS keys (scene-1-cold-open)
+      // Match by scene index number (the digit after 'scene-') instead of exact key match
+      const targetSceneIndices = new Set(targetSceneKeys.map(k => k.match(/scene-(\d+)/)?.[1]).filter(Boolean));
+      const getSceneIndex = (key: string) => key.match(/scene-(\d+)/)?.[1];
       const transitions = EP04_STORYBOOK_TRANSITIONS
-        .filter(t => targetSceneSet.has(t.from) && targetSceneSet.has(t.to))
+        .filter(t => {
+          const fromIdx = getSceneIndex(t.from);
+          const toIdx = getSceneIndex(t.to);
+          return fromIdx && toIdx && targetSceneIndices.has(fromIdx) && targetSceneIndices.has(toIdx);
+        })
         .map(t => ({
           from: t.from,
           to: t.to,
