@@ -3196,13 +3196,16 @@ function EP04ProductionInner() {
 
         const sceneDuration = cumulativeStart || 30;
 
-        // Filter out data: URIs — they bloat the payload (38MB+)
+        // Filter out data: URIs AND MP4 video files
+        // data: URIs bloat the payload (38MB+), MP4 videos cause JSON2Video render timeouts
         const isHttpUrl = (u: string) => u && u.startsWith('http');
+        const isNotVideoFile = (u: string) => !u.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i);
+        const isUsableVisual = (u: string) => isHttpUrl(u) && isNotVideoFile(u);
         const allVisualUrls: string[] = [
-          ...Object.values(status.videoUrls || {}).filter(isHttpUrl),
-          ...Object.values(status.imageUrls || {}).filter(isHttpUrl),
-          ...Object.values(status.avatarUrls || {}).filter(isHttpUrl),
-          ...Object.values(status.lipsyncUrls || {}).filter(isHttpUrl),
+          // Skip videoUrls entirely — MP4s cause JSON2Video render timeouts
+          ...Object.values(status.imageUrls || {}).filter(isUsableVisual),
+          ...Object.values(status.avatarUrls || {}).filter(isUsableVisual),
+          ...Object.values(status.lipsyncUrls || {}).filter(isUsableVisual),
         ];
 
         const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
