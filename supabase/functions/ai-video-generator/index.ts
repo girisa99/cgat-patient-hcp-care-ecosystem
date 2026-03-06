@@ -203,6 +203,90 @@ serve(async (req) => {
       }
     }
 
+    // Handle poll_sora2api — client-side polling for async Sora2API video generation
+    if (body.action === 'poll_sora2api' && body.taskId) {
+      const sora2apiKey = Deno.env.get('SORA2API_KEY');
+      if (!sora2apiKey) {
+        return new Response(JSON.stringify({ error: 'SORA2API_KEY not configured' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log(`[poll_sora2api] taskId=${body.taskId}`);
+      try {
+        const resp = await fetch('https://sora2api.org/api/check-video-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sora2apiKey}`,
+          },
+          body: JSON.stringify({ taskId: body.taskId }),
+        });
+        const data = await resp.json();
+        const status = data.data?.status || data.status;
+        const progress = data.data?.progress || data.progress || 0;
+        console.log(`[poll_sora2api] taskId=${body.taskId} status=${status}, progress=${progress}%`);
+        if (status === 'succeeded' || status === 'completed' || status === 'success') {
+          const rawVideoUrl = data.data?.videoUrl || data.videoUrl || data.url;
+          // Re-upload to Supabase Storage to avoid CDN expiry
+          const videoUrl = rawVideoUrl ? await reuploadToStorage(rawVideoUrl, `sora2api-${body.taskId}`) : rawVideoUrl;
+          return new Response(JSON.stringify({ success: true, videoUrl, status: 'SUCCEEDED' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (status === 'failed' || status === 'error') {
+          return new Response(JSON.stringify({ success: false, status: 'FAILED', message: data.data?.error || 'Sora2API generation failed' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        // Still processing
+        return new Response(JSON.stringify({ success: false, status: 'PROCESSING', progress }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, status: 'ERROR', message: String(e) }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Handle poll_gemini — client-side polling for async Gemini Veo video generation
+    if (body.action === 'poll_gemini' && body.taskId) {
+      const geminiKey = Deno.env.get('GOOGLE_API_KEY');
+      if (!geminiKey) {
+        return new Response(JSON.stringify({ error: 'GOOGLE_API_KEY not configured' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log(`[poll_gemini] operationName=${body.taskId}`);
+      try {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/${body.taskId}?key=${geminiKey}`
+        );
+        const data = await resp.json();
+        console.log(`[poll_gemini] done=${data.done}, error=${!!data.error}`);
+        if (data.done) {
+          if (data.error) {
+            return new Response(JSON.stringify({ success: false, status: 'FAILED', message: data.error.message || 'Gemini Veo failed' }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          const rawUrl = data.response?.generatedVideos?.[0]?.uri;
+          const videoUrl = rawUrl ? await reuploadToStorage(rawUrl, `gemini-veo-${Date.now()}`) : rawUrl;
+          return new Response(JSON.stringify({ success: true, videoUrl: videoUrl || rawUrl, status: 'SUCCEEDED' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        // Still processing
+        return new Response(JSON.stringify({ success: false, status: 'PROCESSING' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, status: 'ERROR', message: String(e) }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Handle poll_replicate — client-side polling for async Replicate predictions
     if (body.action === 'poll_replicate' && body.predictionId) {
       const repKey = Deno.env.get('REPLICATE_API_TOKEN');
@@ -919,13 +1003,15 @@ async function pollSora2APIResult(taskId: string, apiKey: string): Promise<Video
     }
   }
 
-  // If polling didn't complete, return a placeholder and log that video is still processing
-  console.log('⚠️ Sora2API still processing, returning placeholder (video will complete async)');
+  // If polling didn't complete, return taskId so client can continue polling
+  console.log(`⚠️ Sora2API still processing after ${maxAttempts} polls, returning taskId=${taskId} for client-side polling`);
   return {
-    videoUrl: '', // Empty triggers placeholder in main handler
+    videoUrl: '', // Empty triggers async handling in main handler
     thumbnailUrl: '',
     provider: 'sora2api',
     model: 'sora-2',
+    taskId: taskId, // CRITICAL: pass taskId back so client can poll via poll_sora2api
+    asyncGeneration: true,
   };
 }
 
@@ -1085,33 +1171,49 @@ async function generateWithGemini(prompt: string, duration: number, aspectRatio:
 }
 
 async function pollGeminiOperation(operationName: string, apiKey: string): Promise<VideoResult> {
-  const maxAttempts = 60;
+  // Poll for ~20s inside edge function, then return taskId for client-side polling
+  const maxAttempts = 4; // 4 × 5s = 20s (stay well under edge function timeout)
   let attempts = 0;
 
   while (attempts < maxAttempts) {
     await new Promise(resolve => setTimeout(resolve, 5000));
     attempts++;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`
-    );
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`
+      );
 
-    const data = await response.json();
-    console.log(`⏳ Gemini Veo status (attempt ${attempts}):`, data.done ? 'done' : 'processing');
+      const data = await response.json();
+      console.log(`⏳ Gemini Veo status (attempt ${attempts}/${maxAttempts}):`, data.done ? 'done' : 'processing');
 
-    if (data.done) {
-      if (data.error) {
-        throw new Error(data.error.message || 'Video generation failed');
+      if (data.done) {
+        if (data.error) {
+          throw new Error(data.error.message || 'Video generation failed');
+        }
+        const rawUrl = data.response?.generatedVideos?.[0]?.uri;
+        const videoUrl = rawUrl ? await reuploadToStorage(rawUrl, `gemini-veo-${Date.now()}`) : rawUrl;
+        return {
+          videoUrl: videoUrl || rawUrl,
+          provider: 'gemini',
+          model: 'veo-002',
+        };
       }
-      return {
-        videoUrl: data.response?.generatedVideos?.[0]?.uri,
-        provider: 'gemini',
-        model: 'veo-002',
-      };
+    } catch (e) {
+      console.warn(`Gemini poll attempt ${attempts} error:`, e);
+      if (attempts >= maxAttempts) break;
     }
   }
 
-  throw new Error('Gemini Veo video generation timed out');
+  // Return operation name as taskId so client can continue polling
+  console.log(`⚠️ Gemini Veo still processing after ${maxAttempts} polls, returning taskId=${operationName} for client-side polling`);
+  return {
+    videoUrl: '',
+    provider: 'gemini',
+    model: 'veo-002',
+    taskId: operationName,
+    asyncGeneration: true,
+  };
 }
 
 // Replicate Video Generation

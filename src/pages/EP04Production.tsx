@@ -1604,24 +1604,31 @@ function EP04ProductionInner() {
   const SKIP_IN_VISUAL = new Set(['tts', 'music', 'sfx']);
 
   // ─── Client-side polling for async WAN video tasks ───────────────────────
-  const pollVideoTaskResult = useCallback(async (taskId: string): Promise<string | null> => {
-    // Poll DashScope task status via the edge function's poll endpoint
-    // We re-invoke ai-video-generator with action=poll_task
-    const maxPolls = 36; // 36 × 10s = 6 min max
+  const pollVideoTaskResult = useCallback(async (taskId: string, provider?: string): Promise<string | null> => {
+    // Poll video task status via the edge function
+    // Routes to correct poll endpoint based on provider:
+    //   - 'sora2api' → poll_sora2api (Sora2API status check)
+    //   - 'gemini' → poll_gemini (Gemini Veo operation polling)
+    //   - default → poll_task (Alibaba DashScope)
+    const pollAction = provider === 'sora2api' ? 'poll_sora2api' : provider === 'gemini' ? 'poll_gemini' : 'poll_task';
+    const maxPolls = provider === 'sora2api' ? 60 : provider === 'gemini' ? 60 : 36; // Sora2API/Gemini: 60 × 10s = 10 min; DashScope: 36 × 10s = 6 min
+    console.log(`[EP04] Starting ${pollAction} for taskId=${taskId}, provider=${provider || 'alibaba'}, maxPolls=${maxPolls}`);
     for (let i = 0; i < maxPolls; i++) {
       await new Promise(r => setTimeout(r, 10000)); // 10s between polls
       try {
         const { data } = await supabase.functions.invoke('ai-video-generator', {
-          body: { action: 'poll_task', taskId },
+          body: { action: pollAction, taskId },
         });
         if (data?.videoUrl && !data.videoUrl.includes('placehold.co')) {
+          console.log(`[EP04] Video task ${taskId} completed: ${data.videoUrl.substring(0, 80)}`);
           return data.videoUrl;
         }
         if (data?.status === 'FAILED') {
           console.warn(`[EP04] Video task ${taskId} failed:`, data?.message);
           return null;
         }
-        console.log(`[EP04] Video task ${taskId} poll ${i + 1}/${maxPolls}: ${data?.status || 'pending'}`);
+        const progress = data?.progress ? ` (${data.progress}%)` : '';
+        console.log(`[EP04] Video task ${taskId} poll ${i + 1}/${maxPolls}: ${data?.status || 'pending'}${progress}`);
       } catch (e) {
         console.warn(`[EP04] Poll error for task ${taskId}:`, e);
       }
@@ -1675,7 +1682,7 @@ function EP04ProductionInner() {
       if (!videoUrl && (data?.asyncGeneration || data?.alibabaTaskId || data?.taskId)) {
         const pollId = data.alibabaTaskId || data.taskId;
         toast.info(`${sceneKey}: video rendering on ${provider} — polling...`);
-        videoUrl = await pollVideoTaskResult(pollId);
+        videoUrl = await pollVideoTaskResult(pollId, provider);
       }
 
       if (videoUrl) {
