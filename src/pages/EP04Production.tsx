@@ -23,7 +23,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EP04_SCRIPT_CONTENT, EP04_NARRATOR_BRIDGES, type ScriptLine } from '@/config/ep04-script-content';
-import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP, EP04_AVATAR_CONFIG, EP04_SCENE_PIPELINES } from '@/config/ep04-production-config';
+import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP, EP04_AVATAR_CONFIG, EP04_SCENE_PIPELINES, EP04_MUSIC_SCORE } from '@/config/ep04-production-config';
 import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -331,6 +331,31 @@ const TRANSITION_COLORS: Record<string, string> = {
   'chapter-card': 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
   'dissolve-morph': 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
 };
+
+// ─── THREE-PROVIDER SHOWCASE MIX ──────────────────────────────────────────
+// Pre-selected video provider per scene based on narrative tone.
+// Sora2API: cinematic hero moments. Gemini Veo: data/numbers. Wan: character-driven.
+type VideoProviderChoice = 'alibaba' | 'sora2api' | 'gemini';
+const SCENE_PROVIDER_DEFAULTS: Record<string, { provider: VideoProviderChoice; rationale: string }> = {
+  'scene-0-title':          { provider: 'sora2api', rationale: 'Cinematic genie lamp — emotional hook' },
+  'scene-1-problem':        { provider: 'alibaba',  rationale: 'Character-driven — Pixar warmth' },
+  'scene-2-introductions':  { provider: 'alibaba',  rationale: 'Character intros — Pixar personality' },
+  'scene-3-origin':         { provider: 'sora2api', rationale: 'Dramatic turning point — cinematic' },
+  'scene-4-solution':       { provider: 'alibaba',  rationale: 'Sprint action — Pixar energy' },
+  'scene-5-governance':     { provider: 'alibaba',  rationale: 'Team collaboration — animated warmth' },
+  'scene-6-po-actions':     { provider: 'alibaba',  rationale: 'Technical showcase — stylized' },
+  'scene-7-velocity':       { provider: 'gemini',   rationale: 'Data storytelling — velocity stats' },
+  'scene-8-numbers':        { provider: 'gemini',   rationale: '18-screen montage — data viz precision' },
+  'scene-9-challenges':     { provider: 'gemini',   rationale: '"36h→22min" — typography, data reveal' },
+  'scene-10-whats-next':    { provider: 'alibaba',  rationale: 'Language constellation — Pixar 3D' },
+  'scene-11-close':         { provider: 'sora2api', rationale: 'Emotional farewell — cinematic close' },
+};
+
+const VIDEO_PROVIDER_OPTIONS: Array<{ id: VideoProviderChoice; label: string; color: string; description: string }> = [
+  { id: 'alibaba',  label: 'Alibaba Wan 2.6', color: 'text-orange-400 bg-orange-500/10 border-orange-500/30', description: 'Pixar 3D, animation (current)' },
+  { id: 'sora2api', label: 'Sora2API (Sora-2)', color: 'text-violet-400 bg-violet-500/10 border-violet-500/30', description: 'Cinematic, realistic, documentary' },
+  { id: 'gemini',   label: 'Gemini Veo 2', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30', description: 'Data viz, typography, explainer' },
+];
 
 const SCENE_STYLES: Record<string, string> = {
   'scene-0-title': 'Pixar 3D',
@@ -641,7 +666,7 @@ function EP04ProductionInner() {
   const remapScene = (sceneKey: string) => TRANSITION_TO_SCENE[sceneKey] || sceneKey;
 
   const scriptContentForUI = React.useMemo<Record<string, ScriptLine>>(() => {
-    // AUTHORITATIVE line list — always from static config (109 dialogue + 11 bridges = 120).
+    // AUTHORITATIVE line list — always from static config (143 dialogue + 11 bridges = 154 total).
     // DB data is ONLY used for TTS audio restoration (handled by loadProjectContent effect).
     // This prevents duplicate lines from DB seeding issues (transition-scene double-entries).
     const fullStaticScript: Record<string, ScriptLine> = {};
@@ -744,6 +769,21 @@ function EP04ProductionInner() {
   const [musicProgress, setMusicProgress] = useState<{ current: number; total: number } | null>(null);
   const [assemblyProgress, setAssemblyProgress] = useState<string | null>(null);
   const [finalVideoUrl, setFinalVideoUrl] = useState<string | null>(null);
+  // Per-scene video provider selections (for three-provider showcase)
+  const [sceneProviders, setSceneProviders] = useState<Record<string, VideoProviderChoice>>(() => {
+    const defaults: Record<string, VideoProviderChoice> = {};
+    for (const [key, val] of Object.entries(SCENE_PROVIDER_DEFAULTS)) {
+      defaults[key] = val.provider;
+    }
+    return defaults;
+  });
+  const [regenProgress, setRegenProgress] = useState<Record<string, 'idle' | 'generating' | 'done' | 'error'>>({});
+
+  // ─── Concat / Stitching state ──────────────────────────────────────────
+  const [concatStatus, setConcatStatus] = useState<'idle' | 'submitting' | 'rendering' | 'completed' | 'failed'>('idle');
+  const [concatJobId, setConcatJobId] = useState<string | null>(null);
+  const [concatVideoUrl, setConcatVideoUrl] = useState<string | null>(null);
+  const [concatError, setConcatError] = useState<string | null>(null);
 
   // ─── Load persisted TTS audio + production phase on mount ───────────────
   // Strategy: Try cast_project_script_lines first. If empty (auto-seed wiped TTS),
@@ -1589,6 +1629,102 @@ function EP04ProductionInner() {
     console.warn(`[EP04] Video task ${taskId} timed out after ${maxPolls} polls`);
     return null;
   }, []);
+
+  // ── Regenerate scene video with a different provider ──
+  // Only regenerates the establishing shot video, not TTS or images.
+  const regenerateSceneVideo = useCallback(async (sceneKey: string) => {
+    const provider = sceneProviders[sceneKey] || 'alibaba';
+    const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
+    const pipeline = EP04_SCENE_PIPELINES[pipelineSceneKey as keyof typeof EP04_SCENE_PIPELINES];
+    const videoStep = (Array.isArray(pipeline) ? pipeline : []).find(s => s.type === 'alibaba-video') as
+      { type: 'alibaba-video'; model: string; prompt: string } | undefined;
+
+    if (!videoStep) {
+      toast.error(`No video step found for ${sceneKey}`);
+      return;
+    }
+
+    setRegenProgress(prev => ({ ...prev, [sceneKey]: 'generating' }));
+    toast.info(`Regenerating ${sceneKey} with ${provider}...`);
+
+    try {
+      // Map provider to edge function parameters
+      const providerModel: Record<string, string> = {
+        alibaba: 'wan2.6-t2v',
+        sora2api: 'sora-2',
+        gemini: 'veo-002',
+      };
+
+      const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+        body: {
+          type: 'video',
+          action: 'generate_video',
+          prompt: videoStep.prompt,
+          model: providerModel[provider] || 'wan2.6-t2v',
+          duration: provider === 'sora2api' ? 10 : provider === 'gemini' ? 8 : 5, // Sora2API: 10s = 20 credits (vs 15s = 25 credits); establishing shots play for 8s
+          provider,
+          aspectRatio: '16:9',
+        },
+      });
+
+      if (error) throw new Error(error.message);
+
+      let videoUrl = data?.url || data?.videoUrl;
+
+      // Poll for async result if needed (DashScope, Sora2API, Gemini all can be async)
+      if (!videoUrl && (data?.asyncGeneration || data?.alibabaTaskId || data?.taskId)) {
+        const pollId = data.alibabaTaskId || data.taskId;
+        toast.info(`${sceneKey}: video rendering on ${provider} — polling...`);
+        videoUrl = await pollVideoTaskResult(pollId);
+      }
+
+      if (videoUrl) {
+        // Re-upload to Supabase Storage to avoid CDN expiry
+        if (projectId && !videoUrl.includes('supabase.co/storage')) {
+          try {
+            const resp = await fetch(videoUrl);
+            const blob = await resp.blob();
+            const path = `${projectId}/videos/${sceneKey}-${provider}-${Date.now()}.mp4`;
+            await supabase.storage.from('cast-assets').upload(path, blob, { contentType: 'video/mp4', upsert: true });
+            const { data: { publicUrl } } = supabase.storage.from('cast-assets').getPublicUrl(path);
+            videoUrl = publicUrl;
+          } catch (uploadErr) {
+            console.warn(`[EP04] Re-upload failed for ${sceneKey}, using original URL:`, uploadErr);
+          }
+        }
+
+        // Update scene production state with new video URL
+        setSceneProduction(prev => {
+          const current = prev[sceneKey] || defaultSceneStatus();
+          return {
+            ...prev,
+            [sceneKey]: {
+              ...current,
+              videoUrls: { ...current.videoUrls, [`${provider}-establishing`]: videoUrl! },
+              visual: 'done',
+            },
+          };
+        });
+
+        // Persist to DB
+        if (projectId) {
+          const status = sceneProduction[sceneKey] || defaultSceneStatus();
+          await updateSceneArtifacts(projectId, sceneKey, {
+            videoUrls: { ...status.videoUrls, [`${provider}-establishing`]: videoUrl },
+          });
+        }
+
+        setRegenProgress(prev => ({ ...prev, [sceneKey]: 'done' }));
+        toast.success(`${sceneKey} regenerated with ${provider}!`);
+      } else {
+        throw new Error('No video URL returned');
+      }
+    } catch (err: any) {
+      console.error(`[EP04] Regen ${sceneKey} with ${provider} failed:`, err);
+      setRegenProgress(prev => ({ ...prev, [sceneKey]: 'error' }));
+      toast.error(`Regen ${sceneKey} failed: ${err.message}`);
+    }
+  }, [sceneProviders, projectId, pollVideoTaskResult, sceneProduction, updateSceneArtifacts]);
 
   // Helper: process a single visual step and return the result URL (or null)
   const processVisualStep = useCallback(async (
@@ -2700,7 +2836,8 @@ function EP04ProductionInner() {
       // Lipsync entries — detect which characters need lipsync and whether TTS exceeds limit
       const lipsyncSteps = steps.filter(s => s.type === 'avatar-lipsync') as Array<{ type: 'avatar-lipsync'; character: string; scriptKey?: string }>;
       const lipsyncEntries = lipsyncSteps.map(ls => {
-        const hasLipsync = !!(status?.lipsyncUrls || {})[ls.character];
+        // Lipsync keys are like "avatar-lipsync-host-title-welcome" — match by character name substring
+        const hasLipsync = Object.keys(status?.lipsyncUrls || {}).some(k => k.includes(ls.character) && (status?.lipsyncUrls || {})[k]?.startsWith('http'));
         // Check if the TTS line for this character exceeds the lipsync limit
         const charTtsLines = ttsLines.filter(l => l.voice === ls.character);
         const longestTts = charTtsLines.reduce((max, l) => Math.max(max, l.duration), 0);
@@ -2771,11 +2908,12 @@ function EP04ProductionInner() {
 
   // ─── Multi-Part Assembly ──────────────────────────────────────────────────
   // JSON2Video Professional plan caps at 10 minutes per video.
-  // Render timeouts happen even under 10min if too many assets to download.
-  // Conservative limits: more parts = smaller/faster renders = less timeout risk.
+  // Keep full cinematic content per part (Ken Burns, lipsync, kinetic text, SFX, transitions).
+  // If this produces 20+ parts, that's fine — the concat stitch combines them all.
+  // Per-scene rendering (1 scene = 1 part) is the recommended mode.
   const BOOKEND_BUFFER = 22; // 12s opening + 10s closing = 22s reserved for bookends
-  const MAX_PART_DURATION = 300; // 5 minutes max per part — keeps render time well under timeout
-  const MAX_PART_TTS = 18; // Max TTS audio files per part — Part 1 (23 TTS, 517s) was borderline
+  const MAX_PART_DURATION = 300; // 5 minutes max per part — full cinematic content, no compromise
+  const MAX_PART_TTS = 18; // Max TTS audio files per part
 
   interface AssemblyPart {
     partNumber: number;
@@ -2791,8 +2929,41 @@ function EP04ProductionInner() {
   const [assemblyParts, setAssemblyParts] = useState<AssemblyPart[]>([]);
   const [activePartNumber, setActivePartNumber] = useState<number | null>(null);
 
+  // ── Per-Scene Assembly: one scene = one JSON2Video job ──
+  // Each scene renders independently (1-3 min each, well under 10-min limit)
+  const computePerSceneParts = useCallback((): AssemblyPart[] => {
+    const sceneKeys = Array.from(scenes.keys());
+    return sceneKeys.map((sceneKey, idx) => {
+      const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
+      let sceneDuration = 0;
+      let sceneTtsCount = 0;
+      for (const k of sceneLines) {
+        sceneDuration += (scriptContentForUI[k]?.duration_est || 5) + 1.5;
+        if (audioMap[k]?.audioUrl) sceneTtsCount++;
+      }
+      // Count lipsync clips — each is a video element that adds render load
+      const lipsyncCount = Object.values(sceneProduction[sceneKey]?.lipsyncUrls || {}).filter(u => u?.startsWith('http')).length;
+      const totalElements = sceneTtsCount + lipsyncCount;
+      console.log(`[PerScene] ${sceneKey}: ${sceneTtsCount} TTS + ${lipsyncCount} lipsync = ${totalElements} elements, ~${Math.round(sceneDuration)}s`);
+      return {
+        partNumber: idx + 1,
+        sceneKeys: [sceneKey],
+        estimatedDuration: sceneDuration || 30,
+        ttsCount: totalElements, // includes lipsync for accurate element count
+        jobId: null,
+        status: 'pending' as const,
+        videoUrl: null,
+      };
+    });
+  }, [scenes, scriptKeys, scriptContentForUI, audioMap, sceneProduction]);
+
+  // Per-scene polling state — polls all parts with status='rendering'
+  const [perScenePolling, setPerScenePolling] = useState(false);
+  const perScenePollCountRef = useRef(0);
+
   // Compute part boundaries dynamically from scene durations AND TTS count
-  // Both caps must be respected: duration < 570s AND TTS count < 28
+  // Both caps must be respected: duration < MAX_PART_DURATION AND TTS count < MAX_PART_TTS
+  // With 143 TTS lines + 13 lipsync clips, expect 20+ parts for reliable rendering
   const computePartBoundaries = useCallback((): AssemblyPart[] => {
     const sceneKeys = Array.from(scenes.keys());
     const parts: AssemblyPart[] = [];
@@ -2962,6 +3133,86 @@ function EP04ProductionInner() {
     return () => clearInterval(timer);
   }, [assemblyJobId, projectId, totalDuration, scenes, updateFinalAssembly, activePartNumber]);
 
+  // ── Per-Scene Parallel Polling: poll ALL parts with status='rendering' ──
+  useEffect(() => {
+    if (!perScenePolling) return;
+    const renderingParts = assemblyParts.filter(p => p.status === 'rendering' && p.jobId);
+    if (renderingParts.length === 0) {
+      setPerScenePolling(false);
+      const completedCount = assemblyParts.filter(p => p.status === 'completed').length;
+      if (completedCount === assemblyParts.length && assemblyParts.length > 0) {
+        toast.success(`All ${completedCount} scenes assembled!`);
+        setAssemblyProgress(null);
+      }
+      return;
+    }
+
+    setAssemblyProgress(`Rendering ${renderingParts.length} scenes in parallel... (poll ${perScenePollCountRef.current})`);
+
+    const timer = setInterval(async () => {
+      perScenePollCountRef.current++;
+      if (perScenePollCountRef.current > 120) {
+        setPerScenePolling(false);
+        setAssemblyProgress(null);
+        toast.error('Per-scene polling timed out after 20 minutes');
+        return;
+      }
+
+      for (const part of renderingParts) {
+        try {
+          const { data, error: fnError } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+            body: { castJobId: part.jobId },
+          });
+          if (fnError) continue;
+
+          if (data?.videoUrl) {
+            setAssemblyParts(prev => prev.map(p =>
+              p.partNumber === part.partNumber ? { ...p, status: 'completed', videoUrl: data.videoUrl } : p
+            ));
+            toast.success(`Scene ${part.partNumber} (${part.sceneKeys[0]}) assembled!`);
+          } else if (data?.error || data?.status === 'error') {
+            setAssemblyParts(prev => prev.map(p =>
+              p.partNumber === part.partNumber ? { ...p, status: 'failed', errorMessage: data.error || 'Unknown error' } : p
+            ));
+          }
+        } catch (err) {
+          console.error(`[EP04 PerScene] Poll error for part ${part.partNumber}:`, err);
+        }
+      }
+    }, 12000); // Poll every 12 seconds to avoid rate limiting
+
+    return () => clearInterval(timer);
+  }, [perScenePolling, assemblyParts]);
+
+  // ─── Assembly Constants ─────────────────────────────────────────────────
+  // Ken Burns patterns — cycle through for visual variety across images
+  const KEN_BURNS_PATTERNS = [
+    { zoom: 2, pan: 'left' as const, 'pan-distance': 0.15 },
+    { zoom: -1, pan: 'right' as const, 'pan-distance': 0.1 },
+    { zoom: 3, pan: 'top-left' as const, 'pan-distance': 0.12 },
+    { zoom: 1, pan: 'bottom-right' as const, 'pan-distance': 0.08 },
+    { zoom: -2, pan: 'top' as const, 'pan-distance': 0.1 },
+  ];
+
+  // Map storybook transition styles to JSON2Video scene transition presets
+  const TRANSITION_STYLE_MAP: Record<string, string> = {
+    'page-turn': 'wipeleft',
+    'iris-wipe': 'circleopen',
+    'scroll-unroll': 'slideup',
+    'storybook-flip': 'wiperight',
+    'dissolve-morph': 'dissolve',
+    'chapter-card': 'fade',
+  };
+
+  // Character info for lower-third speaker identification
+  const CHARACTER_LOWER_THIRDS: Record<string, { headline: string; lead: string; barColor: string }> = {
+    host: { headline: 'HOST', lead: 'Product Owner & Narrator', barColor: '#d4a574' },
+    atlas: { headline: 'ATLAS', lead: 'Claude Code — Backend Engineer', barColor: '#6366f1' },
+    nova: { headline: 'NOVA', lead: 'Lovable — Frontend Developer', barColor: '#10b981' },
+    squirrel: { headline: 'SQUIRREL', lead: 'QA Chaos Agent', barColor: '#f97316' },
+    allaudin: { headline: 'ALLAUDIN', lead: 'The Genie — Narrator', barColor: '#8b5cf6' },
+  };
+
   // ─── Client-side JSON2Video timeline builder ────────────────────────────
   // Ported from stitchLayeredTimeline in genie-cast-assembler edge function.
   // Builds the full { resolution, quality, scenes } payload in the browser
@@ -2969,16 +3220,20 @@ function EP04ProductionInner() {
   const buildJson2VideoTimeline = useCallback((
     chapters: Array<{
       chapterId: string; product: string; duration: number;
-      allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string }>;
+      allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string; key?: string }>;
       visualUrls?: string[]; visualUrl?: string;
       lipsyncClips?: Array<{ url: string; start: number; duration: number; character: string }>;
       musicUrl?: string; musicLoop?: boolean;
       sfxUrls?: string[];
+      // Rich assembly fields
+      kineticTexts?: Array<{ text: string; start: number; duration: number; style: string }>;
+      sfxTimings?: Array<{ url: string; start: number; duration: number }>;
     }>,
     transitions: Array<{
       from: string; to: string; style: string; duration: number;
       bridgeAudioUrl?: string; bridgeDuration?: number;
-      nextSceneVisualUrl?: string; // Background for visual transition
+      nextSceneVisualUrl?: string;
+      j2vTransition?: string; // JSON2Video transition preset name
     }>,
     bookends: { opening: { duration: number; backgroundUrl?: string }; closing: { duration: number; backgroundUrl?: string } } | null,
     quality: string,
@@ -2990,50 +3245,66 @@ function EP04ProductionInner() {
     if (bookends && bookends.opening.duration > 0) {
       const dur = bookends.opening.duration;
       const openElements: Array<Record<string, any>> = [];
-      // Background image with dark overlay feel
-      if (bookends.opening.backgroundUrl) {
+      // Background image with Ken Burns slow zoom + fade-in
+      if (bookends.opening.backgroundUrl && bookends.opening.backgroundUrl.startsWith('http')) {
         openElements.push({
           type: 'image', src: bookends.opening.backgroundUrl,
           start: 0, duration: dur,
+          zoom: 2, pan: 'right', 'pan-distance': 0.08,
+          'fade-in': 1.0, 'fade-out': 0.5,
+          'z-index': 0,
         });
       }
-      // Staggered kinetic text: episode label → title → subtitle → branding
+      // Staggered kinetic text with animation styles
       openElements.push({
         type: 'text', text: 'EPISODE 2',
+        style: '002', // fade-in style
         start: 1, duration: dur - 1,
         settings: { 'font-family': 'Inter', 'font-size': '24px', 'font-color': '#c4b5fd',
           'font-weight': '600', 'letter-spacing': '6px',
           'text-shadow': '2px 2px 8px rgba(0,0,0,0.9)' },
         position: 'center', y: '-15%',
+        'fade-in': 0.5, 'fade-out': 0.5,
+        'z-index': 20,
       });
       openElements.push({
         type: 'text', text: 'Beyond AI Hype',
+        style: '003', // word-by-word reveal
         start: 2.5, duration: dur - 2.5,
         settings: { 'font-family': 'Inter', 'font-size': '72px', 'font-color': '#f5d77a',
           'font-weight': '700',
           'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)' },
         position: 'center',
+        'fade-in': 0.5, 'fade-out': 0.5,
+        'z-index': 20,
       });
       openElements.push({
         type: 'text', text: 'The Real Story of an AI Sprint',
+        style: '002',
         start: 4.5, duration: dur - 4.5,
         settings: { 'font-family': 'Inter', 'font-size': '28px', 'font-color': '#e2e8f0',
           'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' },
         position: 'center', y: '12%',
+        'fade-in': 0.5, 'fade-out': 0.5,
+        'z-index': 20,
       });
       openElements.push({
         type: 'text', text: 'A GenieSuite Documentary',
+        style: '002',
         start: 7, duration: dur - 7,
         settings: { 'font-family': 'Inter', 'font-size': '20px', 'font-color': '#94a3b8',
           'font-weight': '500', 'letter-spacing': '3px',
           'text-shadow': '2px 2px 6px rgba(0,0,0,0.7)' },
         position: 'bottom-center',
+        'fade-in': 0.5, 'fade-out': 0.5,
+        'z-index': 20,
       });
       scenes.push({
         comment: 'Opening Bookend — Cinematic Reveal',
         duration: dur,
         'background-color': '#0f0a1a',
         elements: openElements,
+        transition: { style: 'fade', duration: 0.5 },
       });
     }
 
@@ -3049,39 +3320,92 @@ function EP04ProductionInner() {
       const sceneDuration: number = chapter.duration || 30;
       const elements: Array<Record<string, any>> = [];
 
-      // Visual layer: background image holds full scene, rotates if multiple
+      // Visual layer: establishing video → rotate images with Ken Burns + fade + z-index
+      // Ken Burns (zoom+pan) on EVERY image makes static visuals feel alive.
+      let kbIdx = chapterIndex * 3; // Offset per chapter so adjacent chapters don't repeat
+      const getKenBurns = () => {
+        const kb = KEN_BURNS_PATTERNS[kbIdx % KEN_BURNS_PATTERNS.length];
+        kbIdx++;
+        return kb;
+      };
       if (chapterVisuals.length > 0) {
-        if (chapterVisuals.length > 1) {
-          // Rotate visuals every ~15-20s for visual variety
+        const firstIsVideo = detectMediaType(chapterVisuals[0]) === 'video';
+        const ESTABLISHING_SHOT_DURATION = 8;
+
+        if (firstIsVideo && chapterVisuals.length > 1) {
+          // Establishing video at t=0, muted (music bed handles audio), z-index 0
+          const videoEnd = Math.min(ESTABLISHING_SHOT_DURATION, sceneDuration);
+          elements.push({
+            type: 'video', src: chapterVisuals[0],
+            start: 0, duration: videoEnd,
+            volume: 0, 'fade-in': 0.5, 'fade-out': 0.5,
+            'z-index': 0,
+          });
+          // Remaining images with Ken Burns
+          const remainingImages = chapterVisuals.slice(1);
+          const remainingDuration = sceneDuration - videoEnd;
+          if (remainingImages.length > 0 && remainingDuration > 0) {
+            const imgInterval = Math.max(8, Math.floor(remainingDuration / remainingImages.length));
+            remainingImages.forEach((url, idx) => {
+              const start = videoEnd + idx * imgInterval;
+              const dur = idx < remainingImages.length - 1
+                ? imgInterval
+                : sceneDuration - start;
+              if (start < sceneDuration) {
+                const mediaType = detectMediaType(url);
+                const kb = mediaType === 'image' ? getKenBurns() : {};
+                elements.push({
+                  type: mediaType, src: url,
+                  start, duration: Math.max(1, dur),
+                  ...(mediaType === 'image' ? kb : { volume: 0 }),
+                  'fade-in': 0.5, 'fade-out': 0.5,
+                  'z-index': 0,
+                });
+              }
+            });
+          }
+        } else if (chapterVisuals.length > 1) {
+          // All images — rotate with Ken Burns variety
           const rotateInterval = Math.max(10, Math.min(20, Math.floor(sceneDuration / chapterVisuals.length)));
           chapterVisuals.forEach((url, idx) => {
             const start = idx * rotateInterval;
             const dur = idx < chapterVisuals.length - 1
               ? rotateInterval
-              : sceneDuration - start; // Last visual fills remaining time
+              : sceneDuration - start;
             if (start < sceneDuration) {
+              const mediaType = detectMediaType(url);
+              const kb = mediaType === 'image' ? getKenBurns() : {};
               elements.push({
-                type: detectMediaType(url), src: url,
+                type: mediaType, src: url,
                 start, duration: Math.max(1, dur),
+                ...(mediaType === 'image' ? kb : { volume: 0 }),
+                'fade-in': 0.5, 'fade-out': 0.5,
+                'z-index': 0,
               });
             }
           });
         } else {
-          // Single visual — holds for full scene duration
+          // Single visual — Ken Burns for the full duration
+          const mediaType = detectMediaType(chapterVisuals[0]);
+          const kb = mediaType === 'image' ? getKenBurns() : {};
           elements.push({
-            type: detectMediaType(chapterVisuals[0]), src: chapterVisuals[0],
+            type: mediaType, src: chapterVisuals[0],
             start: 0, duration: sceneDuration,
+            ...(mediaType === 'image' ? kb : { volume: 0 }),
+            'fade-in': 0.5, 'fade-out': 0.5,
+            'z-index': 0,
           });
         }
       }
 
-      // Lipsync video layer: short MP4 clips aligned to their TTS line timing
-      // These overlay on top of background images for talking-avatar wow factor
+      // Lipsync video layer: z-index 10 so they overlay on background images
       lipsyncClips.forEach(clip => {
         if (clip.url && clip.url.startsWith('http')) {
           elements.push({
             type: 'video', src: clip.url,
             start: clip.start, duration: clip.duration,
+            'fade-in': 0.3, 'fade-out': 0.3,
+            'z-index': 10,
           });
         }
       });
@@ -3093,67 +3417,156 @@ function EP04ProductionInner() {
         }
       });
 
-      // Music layer: loop at original speed, volume ducked under dialogue
+      // Music layer: loop, ducked volume, smooth fade-in/fade-out
       if (chapter.musicUrl && chapter.musicUrl.startsWith('http')) {
         elements.push({
           type: 'audio', src: chapter.musicUrl,
           start: 0, duration: sceneDuration,
           volume: 0.25, loop: !!chapter.musicLoop,
+          'fade-in': 0.5, 'fade-out': 0.5,
         });
       }
 
-      // SFX layer
-      const sfxUrls = chapter.sfxUrls || [];
-      sfxUrls.forEach((sfxUrl, sfxIdx) => {
-        if (sfxUrl && sfxUrl.startsWith('http')) {
-          const sfxStart = sfxIdx > 0 ? Math.floor(sceneDuration * sfxIdx / sfxUrls.length) : 0;
+      // SFX layer: use pre-computed narrative-beat timings if available, else TTS-aligned fallback
+      if (chapter.sfxTimings && chapter.sfxTimings.length > 0) {
+        // Rich timing: SFX placed at narrative beats by startFinalAssembly
+        chapter.sfxTimings.forEach(sfx => {
+          if (sfx.url && sfx.url.startsWith('http')) {
+            elements.push({
+              type: 'audio', src: sfx.url,
+              start: sfx.start, duration: sfx.duration,
+              volume: 0.5, 'fade-in': 0.1, 'fade-out': 0.2,
+            });
+          }
+        });
+      } else {
+        // Fallback: align SFX to TTS line boundaries for narrative beats
+        const sfxUrls = chapter.sfxUrls || [];
+        const ttsStarts = allTts.map(t => t.start).filter(s => s >= 0);
+        sfxUrls.forEach((sfxUrl, sfxIdx) => {
+          if (sfxUrl && sfxUrl.startsWith('http')) {
+            let sfxStart = 0;
+            if (sfxIdx === 0) {
+              sfxStart = 0; // First SFX at scene start
+            } else if (ttsStarts.length > 1) {
+              // Distribute across TTS boundaries
+              const ttsSlotIdx = Math.min(
+                Math.floor((sfxIdx / sfxUrls.length) * ttsStarts.length),
+                ttsStarts.length - 1
+              );
+              sfxStart = ttsStarts[ttsSlotIdx];
+            } else {
+              sfxStart = Math.floor(sceneDuration * sfxIdx / sfxUrls.length);
+            }
+            elements.push({
+              type: 'audio', src: sfxUrl,
+              start: sfxStart, duration: Math.min(5, sceneDuration - sfxStart),
+              volume: 0.5, 'fade-in': 0.1, 'fade-out': 0.2,
+            });
+          }
+        });
+      }
+
+      // Lower-third speaker identification at voice changes (CNN-style)
+      let lastSpeaker = '';
+      allTts.forEach(tts => {
+        const speaker = tts.voice || 'unknown';
+        if (speaker !== lastSpeaker && CHARACTER_LOWER_THIRDS[speaker]) {
+          const lt = CHARACTER_LOWER_THIRDS[speaker];
           elements.push({
-            type: 'audio', src: sfxUrl,
-            start: sfxStart, duration: Math.min(5, sceneDuration - sfxStart),
-            volume: 0.5,
+            type: 'component', component: 'basic/050',
+            start: tts.start + 0.5, duration: Math.min(5, sceneDuration - tts.start - 0.5),
+            settings: {
+              headline: { text: lt.headline, color: lt.barColor },
+              lead: { text: lt.lead, color: '#94a3b8' },
+              bar: { background: lt.barColor },
+            },
+            position: 'bottom-left',
+            'fade-in': 0.5, 'fade-out': 0.5,
+            'z-index': 30,
           });
+          lastSpeaker = speaker;
         }
       });
 
-      // Scene title overlay — lower-third style (first 6s)
-      elements.push({
-        type: 'text', text: chapter.product || chapter.chapterId,
-        start: 0.5, duration: Math.min(6, sceneDuration - 0.5),
-        settings: { 'font-family': 'Inter', 'font-size': '36px', 'font-color': '#ffffff',
-          'font-weight': '600',
-          'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)',
-          'background-color': 'rgba(15,10,26,0.6)', padding: '8px 16px' },
-        position: 'bottom-left',
+      // Scene title overlay — fallback if no speaker lower-thirds
+      if (allTts.length === 0) {
+        elements.push({
+          type: 'text', text: chapter.product || chapter.chapterId,
+          style: '002',
+          start: 0.5, duration: Math.min(6, sceneDuration - 0.5),
+          settings: { 'font-family': 'Inter', 'font-size': '36px', 'font-color': '#ffffff',
+            'font-weight': '600',
+            'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)',
+            'background-color': 'rgba(15,10,26,0.6)', padding: '8px 16px' },
+          position: 'bottom-left',
+          'fade-in': 0.5, 'fade-out': 0.5,
+          'z-index': 25,
+        });
+      }
+
+      // Kinetic text overlays — key statements at narrative moments
+      const kineticTexts = chapter.kineticTexts || [];
+      kineticTexts.forEach(kt => {
+        elements.push({
+          type: 'text', text: kt.text,
+          style: kt.style, // '003' word-by-word or '005' jumping
+          start: kt.start, duration: kt.duration,
+          settings: {
+            'font-family': 'Inter',
+            'font-size': kt.text.length > 100 ? '24px' : kt.text.length > 50 ? '32px' : '42px',
+            'font-color': '#f5d77a',
+            'font-weight': '700',
+            'text-shadow': '3px 3px 12px rgba(0,0,0,0.95)',
+            'background-color': 'rgba(15,10,26,0.5)',
+            padding: '12px 24px',
+          },
+          position: 'center',
+          'fade-in': 0.5, 'fade-out': 0.5,
+          'z-index': 25,
+        });
       });
 
+      // Get scene-level transition from the transition following this chapter
+      const nextTransition = transitions.length > chapterIndex ? transitions[chapterIndex] : undefined;
+      const j2vTransitionStyle = nextTransition?.j2vTransition;
+
       scenes.push({
-        comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS, ${lipsyncClips.length} lipsync, ${sceneDuration}s)`,
+        comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS, ${lipsyncClips.length} lipsync, ${kineticTexts.length} kinetic, ${sceneDuration}s)`,
         duration: sceneDuration,
         'background-color': '#1e293b',
         elements,
+        ...(j2vTransitionStyle ? { transition: { style: j2vTransitionStyle, duration: 0.5 } } : {}),
       });
 
-      // Transition segment — visual background + bridge audio + title
+      // Transition segment — visual background + bridge audio + chapter title
       if (transitions.length > chapterIndex) {
         const t = transitions[chapterIndex];
         const transElements: Array<Record<string, any>> = [];
 
-        // Use next scene's visual as transition background (not black)
+        // Next scene's visual as transition background with Ken Burns
         if (t.nextSceneVisualUrl) {
           transElements.push({
             type: 'image', src: t.nextSceneVisualUrl,
             start: 0, duration: t.duration,
+            zoom: 1, pan: 'center', 'pan-distance': 0.05,
+            'fade-in': 0.3, 'fade-out': 0.3,
+            'z-index': 0,
           });
         }
 
-        // Style label (e.g., "scene transition")
+        // Chapter title with animation style
         transElements.push({
-          type: 'text', text: t.style.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          type: 'text',
+          text: t.style.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+          style: '003', // word-by-word reveal
           start: 0.5, duration: t.duration - 0.5,
           settings: { 'font-family': 'Inter', 'font-size': '32px', 'font-color': '#f5d77a',
             'font-weight': '600',
             'text-shadow': '3px 3px 10px rgba(0,0,0,0.9)' },
           position: 'center',
+          'fade-in': 0.5, 'fade-out': 0.5,
+          'z-index': 20,
         });
 
         if (t.bridgeAudioUrl && t.bridgeAudioUrl.startsWith('http')) {
@@ -3161,14 +3574,17 @@ function EP04ProductionInner() {
             type: 'audio', src: t.bridgeAudioUrl,
             start: 0.5, duration: t.bridgeDuration || (t.duration - 0.5),
             volume: 1.0,
+            'fade-in': 0.2,
           });
         }
 
+        const transJ2vStyle = t.j2vTransition || TRANSITION_STYLE_MAP[t.style] || 'fade';
         scenes.push({
           comment: `Transition: ${t.from} → ${t.to} (${t.style})`,
           duration: t.duration,
           'background-color': '#0f0a1a',
           elements: transElements,
+          transition: { style: transJ2vStyle, duration: 0.5 },
         });
       }
     });
@@ -3177,36 +3593,48 @@ function EP04ProductionInner() {
     if (bookends && bookends.closing.duration > 0) {
       const dur = bookends.closing.duration;
       const closeElements: Array<Record<string, any>> = [];
-      // Background image from last scene
-      if (bookends.closing.backgroundUrl) {
+      // Background image with Ken Burns + fade
+      if (bookends.closing.backgroundUrl && bookends.closing.backgroundUrl.startsWith('http')) {
         closeElements.push({
           type: 'image', src: bookends.closing.backgroundUrl,
           start: 0, duration: dur,
+          zoom: -1, pan: 'left', 'pan-distance': 0.06,
+          'fade-in': 0.5, 'fade-out': 1.0,
+          'z-index': 0,
         });
       }
-      // Staggered closing: thank you → key message → CTA
+      // Staggered closing with animation styles
       closeElements.push({
         type: 'text', text: 'Thank You for Watching',
+        style: '003', // word-by-word
         start: 1, duration: dur - 1,
         settings: { 'font-family': 'Inter', 'font-size': '56px', 'font-color': '#f5d77a',
           'font-weight': '700',
           'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)' },
         position: 'center', y: '-10%',
+        'fade-in': 0.5, 'fade-out': 0.5,
+        'z-index': 20,
       });
       closeElements.push({
         type: 'text', text: 'The sprint continues...',
+        style: '002', // fade
         start: 3.5, duration: dur - 3.5,
         settings: { 'font-family': 'Inter', 'font-size': '28px', 'font-color': '#e2e8f0',
           'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' },
         position: 'center', y: '5%',
+        'fade-in': 0.5, 'fade-out': 0.5,
+        'z-index': 20,
       });
       closeElements.push({
         type: 'text', text: 'Built with GenieSuite Cast  |  Follow @GenieSuite',
+        style: '002',
         start: 6, duration: dur - 6,
         settings: { 'font-family': 'Inter', 'font-size': '22px', 'font-color': '#c4b5fd',
           'font-weight': '500', 'letter-spacing': '2px',
           'text-shadow': '2px 2px 6px rgba(0,0,0,0.7)' },
         position: 'bottom-center',
+        'fade-in': 0.5, 'fade-out': 0.5,
+        'z-index': 20,
       });
       scenes.push({
         comment: 'Closing Bookend — CTA',
@@ -3278,58 +3706,172 @@ function EP04ProductionInner() {
         // 1.5s gap ensures host/nova/atlas voices don't overlap.
         const TTS_GAP = 1.5;
 
+        let dataUriTtsCount = 0;
         for (const k of sceneLines) {
           const line = scriptContentForUI[k];
           const dur = line?.duration_est || 5;
-          if (audioMap[k]?.audioUrl) {
-            allTtsUrls.push({
-              url: audioMap[k].audioUrl,
-              start: cumulativeStart,
-              duration: dur + 1, // +1s buffer so audio isn't cut short
-              voice: line?.voice || 'unknown',
-              key: k,
-            });
+          const audioUrl = audioMap[k]?.audioUrl;
+          if (audioUrl) {
+            if (audioUrl.startsWith('http')) {
+              allTtsUrls.push({
+                url: audioUrl,
+                start: cumulativeStart,
+                duration: dur + 1, // +1s buffer so audio isn't cut short
+                voice: line?.voice || 'unknown',
+                key: k,
+              });
+            } else {
+              // data: URI — will be filtered by buildJson2VideoTimeline, warn user
+              dataUriTtsCount++;
+            }
           }
           cumulativeStart += dur + TTS_GAP;
+        }
+        if (dataUriTtsCount > 0) {
+          console.warn(`[EP04 Assembly] ${sceneKey}: ${dataUriTtsCount} TTS lines have data: URIs (not uploaded to Storage) — these will be SILENT in the video`);
         }
 
         const sceneDuration = cumulativeStart || 30;
 
-        // Background visuals: images + avatars (no MP4 videos — they cause render timeouts)
+        // Background visuals: scene images + avatars + up to 1 Wan establishing-shot video
+        // Each Wan video was generated for THIS scene's narrative (e.g. "genie from lamp",
+        // "frozen task thawing"). Placing it at t=0 as an establishing shot makes sense
+        // contextually. Randomly rotating videos alongside images would look disconnected.
+        // Lipsync MP4s are handled separately below (aligned to TTS timing).
         const isHttpUrl = (u: string) => u && u.startsWith('http');
-        const isImageUrl = (u: string) => isHttpUrl(u) && !u.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i);
-        const allVisualUrls: string[] = [
+        // Exclude expired CDN URLs that will 403/404 during JSON2Video render
+        const isSafeUrl = (u: string) => isHttpUrl(u) && !isExpiredCdnUrl(u);
+        const isVideoUrl = (u: string) => isSafeUrl(u) && !!u.match(/\.(mp4|webm|mov)(\?|$)/i);
+        const isImageUrl = (u: string) => isSafeUrl(u) && !u.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i);
+
+        // Collect scene images (always included)
+        const imageVisuals: string[] = [
           ...Object.values(status.imageUrls || {}).filter(isImageUrl),
           ...Object.values(status.avatarUrls || {}).filter(isImageUrl),
+        ];
+
+        // Option D: pick first Wan scene video as an establishing shot (plays at scene start)
+        // Only 1 per scene — more would compete for attention and risk render timeout
+        const lipsyncSet = new Set(Object.values(status.lipsyncUrls || {}));
+        const establishingVideo: string | null = Object.values(status.videoUrls || {})
+          .filter(isVideoUrl)
+          .filter(u => !lipsyncSet.has(u))  // Exclude lipsync URLs
+          [0] || null;
+
+        // Establishing video goes FIRST so it plays at t=0, then images follow
+        const allVisualUrls: string[] = [
+          ...(establishingVideo ? [establishingVideo] : []),
+          ...imageVisuals,
           // lipsyncUrls handled separately as overlay clips below
         ];
 
-        // Lipsync clips: short MP4 videos (<18s) aligned to their TTS line timing
-        // These are the "wow factor" — talking avatars synced to voiceover
+        // Lipsync clips: short MP4 videos (<18s) aligned to their specific TTS line.
+        // Keys are like "avatar-lipsync-host-title-welcome" or "avatar-lipsync-atlas".
+        // Extract character name + optional scriptKey to match the correct TTS entry.
+        // Each lipsync was generated from a SPECIFIC TTS line's audio (via Alibaba wan2.2-s2v),
+        // so we must align it to THAT exact TTS entry's start time.
+        const KNOWN_CHARACTERS = ['host', 'atlas', 'nova', 'squirrel', 'allaudin'];
         const lipsyncClips: Array<{ url: string; start: number; duration: number; character: string }> = [];
         if (status?.lipsyncUrls) {
-          for (const [character, url] of Object.entries(status.lipsyncUrls)) {
-            if (url && isHttpUrl(url)) {
-              // Find the TTS line for this character to get its start time
-              const charTts = allTtsUrls.find(t => t.voice === character);
-              if (charTts && charTts.duration <= 18) {
-                // Only include short lipsync clips — long ones timeout JSON2Video
-                lipsyncClips.push({
-                  url,
-                  start: charTts.start,
-                  duration: charTts.duration,
-                  character,
-                });
-              }
+          for (const [lipsyncKey, url] of Object.entries(status.lipsyncUrls)) {
+            if (!url || !isHttpUrl(url)) continue;
+
+            // Extract character name from key: "avatar-lipsync-host-title-welcome" → "host"
+            const charMatch = KNOWN_CHARACTERS.find(c => lipsyncKey.includes(c));
+            if (!charMatch) continue;
+
+            // Extract scriptKey (everything after character name): "avatar-lipsync-host-title-welcome" → "title-welcome"
+            const charIdx = lipsyncKey.indexOf(charMatch);
+            const afterChar = lipsyncKey.substring(charIdx + charMatch.length + 1); // skip the "-" after character
+            const scriptKey = afterChar || null;
+
+            // Match to the specific TTS line:
+            // 1. If scriptKey exists, find TTS with matching key (exact alignment)
+            // 2. Otherwise, find first TTS line for this character (fallback)
+            let charTts = scriptKey
+              ? allTtsUrls.find(t => t.voice === charMatch && t.key === scriptKey)
+              : null;
+            if (!charTts) {
+              charTts = allTtsUrls.find(t => t.voice === charMatch);
+            }
+
+            if (charTts && charTts.duration <= 18) {
+              lipsyncClips.push({
+                url,
+                start: charTts.start,
+                duration: charTts.duration,
+                character: charMatch,
+              });
+              console.log(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) → TTS "${charTts.key}" at t=${charTts.start}s`);
+            } else if (charTts) {
+              console.warn(`[EP04 Assembly] Lipsync: "${charMatch}" skipped — TTS duration ${charTts.duration}s > 18s limit`);
+            } else {
+              console.warn(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) — no matching TTS found in scene`);
             }
           }
         }
 
         const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
         const pipeline = EP04_SCENE_PIPELINES[pipelineSceneKey as keyof typeof EP04_SCENE_PIPELINES];
-        const musicStep = (Array.isArray(pipeline) ? pipeline : []).find(s => s.type === 'music') as { type: 'music'; duration: number } | undefined;
+        const pipelineSteps = Array.isArray(pipeline) ? pipeline : [];
+        const musicStep = pipelineSteps.find(s => s.type === 'music') as { type: 'music'; duration: number } | undefined;
         const musicDuration = musicStep?.duration || 30;
         const musicLoop = status.musicUrl ? musicDuration < sceneDuration : false;
+
+        // ── Extract kinetic texts from pipeline config with computed timestamps ──
+        // Walk pipeline steps: when we hit a kinetic-text, use the preceding TTS line's
+        // start time + 2s offset to place it at the right narrative moment.
+        const kineticTexts: Array<{ text: string; start: number; duration: number; style: string }> = [];
+        let lastPipelineTtsStart = 0;
+        for (const step of pipelineSteps) {
+          if (step.type === 'tts') {
+            const ttsEntry = allTtsUrls.find(t => t.key === (step as any).scriptKey);
+            if (ttsEntry) lastPipelineTtsStart = ttsEntry.start;
+          } else if (step.type === 'kinetic-text') {
+            const text = (step as any).text as string;
+            const ktStart = lastPipelineTtsStart > 0
+              ? Math.min(lastPipelineTtsStart + 2, sceneDuration - 7)
+              : 5;
+            // Impact texts (short, dramatic) get jumping style; longer ones get word-by-word
+            const isImpact = text.length < 80 && (
+              text.includes('→') || text.includes('NOBODY') || text.includes('tasks.') ||
+              text.includes('PROVIDERS') || text.includes('LANGUAGES') || text.includes('SCREENS')
+            );
+            kineticTexts.push({
+              text,
+              start: Math.max(0, ktStart),
+              duration: 6,
+              style: isImpact ? '005' : '003',
+            });
+          }
+        }
+
+        // ── Compute SFX timings aligned to TTS narrative beats ──
+        const sfxRawUrls = status.sfxUrls || [];
+        const sfxTimings: Array<{ url: string; start: number; duration: number }> = [];
+        const musicScoreKey = pipelineSceneKey as keyof typeof EP04_MUSIC_SCORE;
+        const scoreSfx = EP04_MUSIC_SCORE[musicScoreKey]?.sfx || [];
+        if (sfxRawUrls.length > 0) {
+          const ttsStarts = allTtsUrls.map(t => t.start);
+          sfxRawUrls.forEach((sfxUrl, sfxIdx) => {
+            if (!sfxUrl || !sfxUrl.startsWith('http')) return;
+            let sfxStart = 0;
+            const sfxDuration = scoreSfx[sfxIdx]?.duration || 3;
+            if (sfxIdx === 0) {
+              sfxStart = 0; // First SFX at scene start
+            } else if (ttsStarts.length > 1) {
+              // Distribute across TTS line boundaries
+              const ttsSlotIdx = Math.min(
+                Math.floor((sfxIdx / sfxRawUrls.length) * ttsStarts.length),
+                ttsStarts.length - 1
+              );
+              sfxStart = ttsStarts[ttsSlotIdx];
+            } else {
+              sfxStart = Math.floor(sceneDuration * sfxIdx / sfxRawUrls.length);
+            }
+            sfxTimings.push({ url: sfxUrl, start: sfxStart, duration: sfxDuration });
+          });
+        }
 
         return {
           chapterId: sceneKey,
@@ -3347,7 +3889,9 @@ function EP04ProductionInner() {
           _musicUrlFormat: status.musicUrl ? (status.musicUrl.startsWith('http') ? 'http' : status.musicUrl.substring(0, 30)) : 'none',
           musicLoop,
           musicDuration,
-          sfxUrls: status.sfxUrls || [],
+          sfxUrls: sfxRawUrls,
+          kineticTexts,
+          sfxTimings,
         };
       });
 
@@ -3380,6 +3924,7 @@ function EP04ProductionInner() {
             bridgeAudioUrl: bridgeAudio || undefined,
             bridgeDuration: bridgeLine?.duration_est || 7,
             nextSceneVisualUrl: toChapter?.visualUrls?.[0] || undefined,
+            j2vTransition: TRANSITION_STYLE_MAP[t.style] || 'fade',
           };
         });
 
@@ -3396,9 +3941,11 @@ function EP04ProductionInner() {
         + transitions.reduce((s, t) => s + t.duration, 0)
         + bookends.opening.duration + bookends.closing.duration;
 
-      console.log(`[EP04 Assembly${partLabel}] ${preBuiltChapters.length} chapters:`, preBuiltChapters.map(c =>
-        `${c.chapterId}: ${c.allTtsUrls.length} TTS, ${c.visualUrls?.length || 0} vis, ${c.lipsyncClips?.length || 0} lipsync, music=${!!c.musicUrl}(${(c as any)._musicUrlFormat})(loop=${c.musicLoop}), dur=${c.duration}s`
-      ));
+      console.log(`[EP04 Assembly${partLabel}] ${preBuiltChapters.length} chapters:`, preBuiltChapters.map(c => {
+        const hasEstablishing = (c.visualUrls || []).some((u: string) => u.match(/\.(mp4|webm|mov)(\?|$)/i));
+        const imgCount = (c.visualUrls || []).filter((u: string) => !u.match(/\.(mp4|webm|mov)(\?|$)/i)).length;
+        return `${c.chapterId}: ${c.allTtsUrls.length} TTS, ${imgCount} img, ${hasEstablishing ? '1 establishing-shot' : 'no vid'}, ${c.lipsyncClips?.length || 0} lipsync, ${c.kineticTexts?.length || 0} kinetic, ${c.sfxTimings?.length || 0} sfx, music=${!!c.musicUrl}(${(c as any)._musicUrlFormat})(loop=${c.musicLoop}), dur=${c.duration}s`;
+      }));
       console.log(`[EP04 Assembly${partLabel}] ${transitions.length} transitions (${transitions.filter(t => t.nextSceneVisualUrl).length} with visuals), duration: ${Math.round(partDuration / 60)}min (${partDuration}s)`);
 
       // ── Pre-assembly: upload any data: URI music to Storage ──
@@ -3456,6 +4003,16 @@ function EP04ProductionInner() {
       };
       const payloadSize = JSON.stringify(assemblyBody).length;
       console.log(`[EP04 Assembly${partLabel}] Sending: ${timelinePayload.scenes.length} scenes, ${(payloadSize / 1024).toFixed(0)}KB`);
+
+      // PAYLOAD GUARD: Reject if payload exceeds safe limit (edge fn body limit ~6MB)
+      // Typical timeline: 50-200KB. Anything over 600KB likely contains data: URIs that slipped through.
+      if (payloadSize > 600 * 1024) {
+        const msg = `Payload too large (${(payloadSize / 1024).toFixed(0)}KB > 600KB limit). Likely contains data: URIs — check music/images.`;
+        console.error(`[EP04 Assembly${partLabel}] ${msg}`);
+        toast.error(msg);
+        setAssemblyProgress(null);
+        return;
+      }
 
       const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
         body: assemblyBody,
@@ -3555,6 +4112,248 @@ function EP04ProductionInner() {
     ));
     toast.info(`Split into ${parts.length} parts — assemble each part individually`);
   }, [getAssemblyReadiness, computePartBoundaries]);
+
+  // Per-Scene Assembly: one scene per part, can render all in parallel
+  const showPerSceneAssembly = useCallback(() => {
+    const readiness = getAssemblyReadiness();
+    setAssemblyReadiness(readiness);
+    if (!readiness.canAssemble) {
+      const missingScenes = readiness.scenes.filter(s => s.missing.length > 0);
+      const summary = missingScenes.map(s => `${s.title}: ${s.missing.join(', ')}`).join('; ');
+      toast.error(`Cannot assemble — missing assets: ${summary}`);
+      return;
+    }
+    const parts = computePerSceneParts();
+    setAssemblyParts(parts);
+    console.log('[EP04 PerScene] Scene boundaries:', parts.map(p =>
+      `Scene ${p.partNumber}: ${p.sceneKeys[0]} (~${Math.round(p.estimatedDuration / 60)}min, ${p.ttsCount} TTS)`
+    ));
+    toast.info(`Per-scene mode: ${parts.length} individual scenes — render each or all at once`);
+  }, [getAssemblyReadiness, computePerSceneParts]);
+
+  // Start ALL pending per-scene renders in rapid succession
+  const startAllPerSceneAssembly = useCallback(async () => {
+    const pendingParts = assemblyParts.filter(p => p.status === 'pending');
+    if (pendingParts.length === 0) {
+      toast.info('No pending scenes to render');
+      return;
+    }
+
+    setAssemblyProgress(`Submitting ${pendingParts.length} scenes...`);
+    let submitted = 0;
+
+    for (const part of pendingParts) {
+      try {
+        // Fire off each scene render without waiting for completion
+        await startFinalAssembly(part.partNumber);
+        submitted++;
+        // Small delay between submissions to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (err: any) {
+        console.error(`[EP04 PerScene] Failed to submit scene ${part.partNumber}:`, err);
+      }
+    }
+
+    // Start parallel polling for all submitted scenes
+    if (submitted > 0) {
+      perScenePollCountRef.current = 0;
+      setPerScenePolling(true);
+      toast.success(`Submitted ${submitted} scenes for rendering — polling for completion`);
+    }
+  }, [assemblyParts, startFinalAssembly]);
+
+  // ─── Reusable Video Stitching (Concat) via JSON2Video ────────────────────
+  // Takes ordered list of MP4 URLs → builds a minimal JSON2Video timeline
+  // where each URL becomes a video element in its own scene → submits → polls.
+  // Reusable for ANY Cast production, not EP04-specific.
+
+  /**
+   * Build a minimal JSON2Video "stitching timeline" from ordered video URLs.
+   * Each URL becomes a full-screen video element inside its own scene.
+   * JSON2Video renders them sequentially → one combined MP4.
+   *
+   * @param videoUrls - Ordered array of Supabase Storage MP4 URLs
+   * @param resolution - Output resolution (default: full-hd)
+   * @returns JSON2Video timeline payload ready for genie-cast-timeline-submit
+   */
+  const buildStitchingTimeline = useCallback((
+    videoUrls: string[],
+    resolution: string = 'full-hd'
+  ): Record<string, any> => {
+    const scenes = videoUrls.map((url, idx) => ({
+      comment: `Segment ${idx + 1} of ${videoUrls.length}`,
+      transition: idx > 0 ? { style: 'fade', duration: 0.3 } : undefined,
+      elements: [
+        {
+          type: 'video',
+          src: url,
+          // Let JSON2Video auto-detect duration from the source video
+          // by NOT specifying duration — it plays the full clip
+        },
+      ],
+    }));
+
+    console.log(`[Cast Stitching] Built timeline: ${scenes.length} segments, resolution: ${resolution}`);
+    return { resolution, quality: 'high', scenes };
+  }, []);
+
+  /**
+   * Start the concat/stitch process:
+   * 1. Collect completed part video URLs in order
+   * 2. Build stitching timeline
+   * 3. Submit to genie-cast-timeline-submit
+   * 4. Poll for completion via concatJobId
+   */
+  const startConcatStitch = useCallback(async () => {
+    // Collect all completed part URLs in order — ONLY HTTP URLs (no data: URIs)
+    const orderedUrls = assemblyParts
+      .filter(p => p.status === 'completed' && p.videoUrl && p.videoUrl.startsWith('http'))
+      .sort((a, b) => a.partNumber - b.partNumber)
+      .map(p => p.videoUrl!);
+
+    // Warn if some parts had non-HTTP URLs (data: URIs or null)
+    const droppedParts = assemblyParts.filter(p => p.status === 'completed' && p.videoUrl && !p.videoUrl.startsWith('http'));
+    if (droppedParts.length > 0) {
+      console.warn(`[Cast Stitching] Dropped ${droppedParts.length} parts with non-HTTP URLs:`, droppedParts.map(p => `Part ${p.partNumber}`));
+      toast.warning(`${droppedParts.length} parts have invalid URLs and were excluded`);
+    }
+
+    if (orderedUrls.length < 2) {
+      toast.error('Need at least 2 completed parts with valid HTTP URLs to stitch');
+      return;
+    }
+
+    console.log(`[Cast Stitching] Starting concat of ${orderedUrls.length} parts:`, orderedUrls.map(u => u.substring(0, 60)));
+
+    setConcatStatus('submitting');
+    setConcatError(null);
+    setConcatVideoUrl(null);
+
+    try {
+      const timeline = buildStitchingTimeline(orderedUrls);
+      const assemblyBody = {
+        timeline,
+        castProjectId: projectId,
+        language: 'en',
+        quality: 'production',
+      };
+
+      const payloadSize = JSON.stringify(assemblyBody).length;
+      console.log(`[Cast Stitching] Submitting: ${timeline.scenes.length} segments, ${(payloadSize / 1024).toFixed(0)}KB`);
+
+      // PAYLOAD GUARD: Stitch payload should be tiny (just video URLs) — reject if suspiciously large
+      if (payloadSize > 100 * 1024) {
+        throw new Error(`Stitch payload unexpectedly large (${(payloadSize / 1024).toFixed(0)}KB) — should be <100KB for URL-only timeline`);
+      }
+
+      const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+        body: assemblyBody,
+      });
+
+      if (error) {
+        let detail = error.message;
+        try {
+          if (error.context && typeof error.context.text === 'function') {
+            const body = await error.context.text();
+            detail += ` — ${body}`;
+          }
+        } catch (_) {}
+        throw new Error(detail);
+      }
+
+      if (data?.videoUrl) {
+        // Immediate completion (unlikely for concat, but handle it)
+        setConcatStatus('completed');
+        setConcatVideoUrl(data.videoUrl);
+        setFinalVideoUrl(data.videoUrl);
+        setProductionPhase('complete');
+        if (projectId && data.videoUrl) {
+          updateFinalAssembly(projectId, data.videoUrl, {
+            totalDuration: assemblyParts.reduce((s, p) => s + p.estimatedDuration, 0),
+            sceneCount: assemblyParts.reduce((s, p) => s + p.sceneKeys.length, 0),
+            resolution: '1920x1080',
+            stitchedFromParts: assemblyParts.length,
+          });
+        }
+        toast.success('Video stitched successfully!');
+      } else if (data?.castJobId || data?.taskId) {
+        // Async — need to poll
+        const jobId = data.castJobId || data.taskId;
+        setConcatJobId(jobId);
+        setConcatStatus('rendering');
+        toast.success('Stitching timeline submitted — rendering final video...');
+      } else {
+        throw new Error('No job ID or video URL returned from timeline submit');
+      }
+    } catch (err: any) {
+      console.error('[Cast Stitching] Submit failed:', err);
+      setConcatStatus('failed');
+      setConcatError(err.message || String(err));
+      toast.error(`Stitching failed: ${err.message?.substring(0, 100)}`);
+    }
+  }, [assemblyParts, buildStitchingTimeline, projectId, supabase]);
+
+  // Poll for concat job completion
+  const concatPollRef = useRef(0);
+  useEffect(() => {
+    if (!concatJobId || concatStatus !== 'rendering') {
+      concatPollRef.current = 0;
+      return;
+    }
+    const MAX_POLLS = 360; // 360 × 10s = 60 minutes (full-length documentary stitch needs headroom)
+    const timer = setInterval(async () => {
+      concatPollRef.current++;
+      if (concatPollRef.current > MAX_POLLS) {
+        setConcatStatus('failed');
+        setConcatError('Stitching timed out after 30 minutes');
+        setConcatJobId(null);
+        toast.error('Stitching timed out — check JSON2Video dashboard');
+        return;
+      }
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke('genie-cast-status', {
+          body: { castJobId: concatJobId },
+        });
+        if (fnError) {
+          console.warn(`[Cast Stitching] Poll error (attempt ${concatPollRef.current}):`, fnError);
+          return;
+        }
+        const jobStatus = data?.job?.status;
+        const progress = data?.job?.progressPercent;
+        if (progress) {
+          setAssemblyProgress(`Stitching: ${progress}%`);
+        }
+        if (jobStatus === 'completed') {
+          const videoUrl = data.job.outputUrl;
+          setConcatJobId(null);
+          setConcatStatus('completed');
+          setConcatVideoUrl(videoUrl);
+          setFinalVideoUrl(videoUrl);
+          setAssemblyProgress(null);
+          setProductionPhase('complete');
+          if (projectId && videoUrl) {
+            updateFinalAssembly(projectId, videoUrl, {
+              totalDuration: assemblyParts.reduce((s, p) => s + p.estimatedDuration, 0),
+              sceneCount: assemblyParts.reduce((s, p) => s + p.sceneKeys.length, 0),
+              resolution: '1920x1080',
+              stitchedFromParts: assemblyParts.length,
+            });
+          }
+          toast.success('Final cinematic video stitched successfully!');
+        } else if (jobStatus === 'failed') {
+          setConcatJobId(null);
+          setConcatStatus('failed');
+          setConcatError(data.job.errorMessage || 'JSON2Video rendering failed');
+          setAssemblyProgress(null);
+          toast.error('Stitching render failed — check JSON2Video dashboard');
+        }
+      } catch (err) {
+        console.warn('[Cast Stitching] Poll exception:', err);
+      }
+    }, 10000);
+
+    return () => clearInterval(timer);
+  }, [concatJobId, concatStatus, supabase, projectId, assemblyParts]);
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
@@ -4410,6 +5209,39 @@ function EP04ProductionInner() {
                               <span className="text-[9px] text-muted-foreground">No pipeline configured</span>
                             )}
                           </div>
+                          {/* Video Provider Selector — three-provider showcase */}
+                          {pipelineSteps.some(s => (s.type as string) === 'alibaba-video') && (
+                            <div className="flex items-center gap-1 mb-2">
+                              <span className="text-[8px] text-muted-foreground whitespace-nowrap">Provider:</span>
+                              <select
+                                className="flex-1 h-5 text-[9px] rounded border border-border/50 bg-background px-1"
+                                value={sceneProviders[sceneKey] || 'alibaba'}
+                                onChange={e => setSceneProviders(prev => ({ ...prev, [sceneKey]: e.target.value as VideoProviderChoice }))}
+                              >
+                                {VIDEO_PROVIDER_OPTIONS.map(opt => (
+                                  <option key={opt.id} value={opt.id}>
+                                    {opt.label}{SCENE_PROVIDER_DEFAULTS[sceneKey]?.provider === opt.id ? ' ★' : ''}
+                                  </option>
+                                ))}
+                              </select>
+                              {(sceneProviders[sceneKey] || 'alibaba') !== 'alibaba' && (
+                                <Button
+                                  size="sm" variant="outline"
+                                  className="h-5 text-[8px] px-1.5 border-violet-500/30 text-violet-500 hover:bg-violet-500/10"
+                                  onClick={() => regenerateSceneVideo(sceneKey)}
+                                  disabled={regenProgress[sceneKey] === 'generating'}
+                                >
+                                  {regenProgress[sceneKey] === 'generating' ? (
+                                    <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                  ) : (
+                                    <><RefreshCw className="h-2.5 w-2.5 mr-0.5" />Regen</>
+                                  )}
+                                </Button>
+                              )}
+                              {regenProgress[sceneKey] === 'done' && <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0" />}
+                              {regenProgress[sceneKey] === 'error' && <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />}
+                            </div>
+                          )}
                           {!phase3Done && status?.visual !== 'done' && (
                             <Button
                               size="sm" variant="outline" className="w-full h-7 text-[10px]"
@@ -4821,10 +5653,14 @@ function EP04ProductionInner() {
                         </div>
                       )}
                       {!phase5Done && !assemblyProgress && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Button size="sm" variant="outline" onClick={() => setAssemblyReadiness(getAssemblyReadiness())}>
                             <Eye className="h-3 w-3 mr-1" />
                             Check Readiness
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={showPerSceneAssembly}>
+                            <Film className="h-3 w-3 mr-1" />
+                            Per-Scene (Recommended)
                           </Button>
                           <Button size="sm" variant="outline" onClick={showMultiPartAssembly}>
                             <Layers className="h-3 w-3 mr-1" />
@@ -4985,15 +5821,29 @@ function EP04ProductionInner() {
                     </div>
                   )}
 
-                  {/* ── Multi-Part Assembly Panel ─────────────────── */}
+                  {/* ── Multi-Part / Per-Scene Assembly Panel ───────── */}
                   {assemblyParts.length > 0 && (
                     <div className="mb-4 p-3 rounded-lg border border-blue-500/30 bg-blue-500/[0.03]">
                       <div className="flex items-center gap-2 mb-3">
-                        <Layers className="h-4 w-4 text-blue-500" />
-                        <span className="text-sm font-semibold">Multi-Part Assembly ({assemblyParts.length} parts)</span>
+                        {assemblyParts.every(p => p.sceneKeys.length === 1) ? (
+                          <Film className="h-4 w-4 text-violet-500" />
+                        ) : (
+                          <Layers className="h-4 w-4 text-blue-500" />
+                        )}
+                        <span className="text-sm font-semibold">
+                          {assemblyParts.every(p => p.sceneKeys.length === 1)
+                            ? `Per-Scene Assembly (${assemblyParts.length} scenes)`
+                            : `Multi-Part Assembly (${assemblyParts.length} parts)`}
+                        </span>
                         <span className="text-xs text-muted-foreground ml-auto">
                           {assemblyParts.filter(p => p.status === 'completed').length}/{assemblyParts.length} done | JSON2Video Pro: 10min max
                         </span>
+                        {/* Render All button for per-scene mode */}
+                        {assemblyParts.every(p => p.sceneKeys.length === 1) && assemblyParts.some(p => p.status === 'pending') && !assemblyProgress && (
+                          <Button size="sm" variant="default" className="h-6 text-[10px] px-3" onClick={startAllPerSceneAssembly}>
+                            <Zap className="h-2.5 w-2.5 mr-0.5" /> Render All ({assemblyParts.filter(p => p.status === 'pending').length})
+                          </Button>
+                        )}
                       </div>
 
                       {/* Live assembly status bar */}
@@ -5017,10 +5867,17 @@ function EP04ProductionInner() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {assemblyParts.map(part => {
                           // Calculate what's being stitched for this part
-                          const partVisuals = part.sceneKeys.reduce((sum, sk) => {
+                          const partImages = part.sceneKeys.reduce((sum, sk) => {
                             const s = sceneProduction[sk];
                             return sum + Object.values(s?.imageUrls || {}).filter(u => u?.startsWith('http')).length
                               + Object.values(s?.avatarUrls || {}).filter(u => u?.startsWith('http')).length;
+                          }, 0);
+                          const partEstablishingShots = part.sceneKeys.reduce((sum, sk) => {
+                            const s = sceneProduction[sk];
+                            const lipsyncSet = new Set(Object.values(s?.lipsyncUrls || {}));
+                            const hasWanVideo = Object.values(s?.videoUrls || {})
+                              .some(u => u?.startsWith('http') && !lipsyncSet.has(u));
+                            return sum + (hasWanVideo ? 1 : 0);
                           }, 0);
                           const partLipsync = part.sceneKeys.reduce((sum, sk) => {
                             const s = sceneProduction[sk];
@@ -5073,8 +5930,13 @@ function EP04ProductionInner() {
                                   {part.ttsCount} TTS
                                 </span>
                                 <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600">
-                                  {partVisuals} images
+                                  {partImages} images
                                 </span>
+                                {partEstablishingShots > 0 && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600">
+                                    {partEstablishingShots} scene clips
+                                  </span>
+                                )}
                                 {partLipsync > 0 && (
                                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-600">
                                     {partLipsync} lipsync
@@ -5189,20 +6051,72 @@ function EP04ProductionInner() {
                         })}
                       </div>
 
-                      {/* All parts complete */}
+                      {/* All parts complete — Stitch into final video */}
                       {assemblyParts.every(p => p.status === 'completed') && (
-                        <div className="mt-3 p-2 rounded-lg bg-green-500/10 border border-green-500/30">
-                          <p className="text-xs text-green-600 font-semibold mb-1">
-                            All {assemblyParts.length} parts assembled! Concatenate into one video using DaVinci Resolve, CapCut, or similar.
+                        <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                          <p className="text-xs text-green-600 font-semibold mb-2">
+                            All {assemblyParts.length} parts rendered successfully!
                           </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {assemblyParts.map(p => p.videoUrl && (
-                              <a key={p.partNumber} href={p.videoUrl} target="_blank" rel="noopener noreferrer"
+
+                          {/* Stitch button + status */}
+                          {concatStatus === 'idle' && !concatVideoUrl && (
+                            <Button
+                              size="sm"
+                              onClick={startConcatStitch}
+                              className="w-full mb-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs"
+                            >
+                              <Film className="h-3.5 w-3.5 mr-1.5" />
+                              Stitch All {assemblyParts.length} Parts into Final Video
+                            </Button>
+                          )}
+                          {concatStatus === 'submitting' && (
+                            <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Submitting stitching timeline...
+                            </div>
+                          )}
+                          {concatStatus === 'rendering' && (
+                            <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Rendering final video... {assemblyProgress || ''}
+                            </div>
+                          )}
+                          {concatStatus === 'failed' && (
+                            <div className="mb-2">
+                              <p className="text-xs text-red-500 mb-1">Stitching failed: {concatError}</p>
+                              <Button size="sm" variant="outline" onClick={() => { setConcatStatus('idle'); setConcatError(null); }}
+                                className="text-[10px]">
+                                Retry
+                              </Button>
+                            </div>
+                          )}
+                          {concatStatus === 'completed' && concatVideoUrl && (
+                            <div className="mb-2 p-2 rounded bg-green-500/10 border border-green-500/30">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                <span className="text-xs font-semibold text-green-600">Final Video Ready</span>
+                              </div>
+                              <a href={concatVideoUrl} target="_blank" rel="noopener noreferrer"
                                 className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
-                                <Download className="h-2.5 w-2.5" /> Part {p.partNumber}
+                                <Download className="h-2.5 w-2.5" /> Download Final Video
                               </a>
-                            ))}
-                          </div>
+                            </div>
+                          )}
+
+                          {/* Individual part downloads (always available) */}
+                          <details className="mt-1">
+                            <summary className="text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
+                              Individual part downloads
+                            </summary>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                              {assemblyParts.map(p => p.videoUrl && (
+                                <a key={p.partNumber} href={p.videoUrl} target="_blank" rel="noopener noreferrer"
+                                  className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
+                                  <Download className="h-2.5 w-2.5" /> Part {p.partNumber}
+                                </a>
+                              ))}
+                            </div>
+                          </details>
                         </div>
                       )}
                     </div>
