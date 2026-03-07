@@ -205,7 +205,7 @@ serve(async (req) => {
 
     // Handle poll_sora2api — client-side polling for async Sora2API video generation
     if (body.action === 'poll_sora2api' && body.taskId) {
-      const sora2apiKey = Deno.env.get('SORA2API_KEY');
+      const sora2apiKey = Deno.env.get('SORA2API_KEY') || Deno.env.get('Sora2api.org');
       if (!sora2apiKey) {
         return new Response(JSON.stringify({ error: 'SORA2API_KEY not configured' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -749,7 +749,7 @@ function getAvailableProviders(): ProviderConfig[] {
   return [
     { 
       id: 'sora2api', 
-      available: !!Deno.env.get('SORA2API_KEY'),
+      available: !!(Deno.env.get('SORA2API_KEY') || Deno.env.get('Sora2api.org')),
       priority: 1,
       bestFor: ['sora', 'premium', 'high-quality', 'cinematic', 'realistic']
     },
@@ -908,56 +908,78 @@ function selectModel(provider: string, requestedModel: string): string {
 // SORA2API - Third-party Sora access via sora2api.ai
 // ═══════════════════════════════════════════════════════════════════════════════
 async function generateWithSora2API(prompt: string, model: string, duration: number, aspectRatio: string): Promise<VideoResult> {
-  const apiKey = Deno.env.get('SORA2API_KEY');
-  
+  const apiKey = Deno.env.get('SORA2API_KEY') || Deno.env.get('Sora2api.org');
+
   if (!apiKey) {
-    console.log('⚠️ SORA2API_KEY not configured, falling back to ModelsLab');
-    return generateWithModelsLab(prompt, 'animatediff', duration);
+    // Return error — don't silently fall back when provider was explicitly requested
+    throw new Error('SORA2API_KEY not configured. Set it in Supabase secrets.');
   }
 
   console.log('🎬 Generating video with Sora2API (sora2api.org)');
+  console.log(`   Prompt (first 200): ${prompt.substring(0, 200)}`);
+  console.log(`   Duration: ${duration}s, Aspect: ${aspectRatio}`);
 
   try {
     // Sora2API correct endpoint: sora2api.org/api/generate-video
+    const requestBody = {
+      prompt: `${prompt}. High quality, cinematic, safe for all audiences.`,
+      aspectRatio: aspectRatio || '16:9',
+      duration: duration >= 15 ? 15 : 10, // Sora2API only accepts 10 or 15 seconds
+      type: 'text2video',
+    };
+    console.log(`   Request body: ${JSON.stringify(requestBody).substring(0, 300)}`);
+
     const response = await fetch('https://sora2api.org/api/generate-video', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        prompt: `${prompt}. High quality, cinematic, safe for all audiences.`,
-        aspectRatio: aspectRatio || '16:9',
-        duration: Math.min(duration, 20),
-        type: 'text2video',
-      }),
+      body: JSON.stringify(requestBody),
     });
 
+    const responseText = await response.text();
+    console.log(`   Sora2API response status: ${response.status}`);
+    console.log(`   Sora2API response body (first 500): ${responseText.substring(0, 500)}`);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Sora2API error:', errorText);
-      console.log('⚠️ Sora2API failed, falling back to ModelsLab');
-      return generateWithModelsLab(prompt, 'animatediff', duration);
+      // Return error with details — don't silently fall back
+      throw new Error(`Sora2API HTTP ${response.status}: ${responseText.substring(0, 200)}`);
     }
 
-    const data = await response.json();
-    
+    const data = JSON.parse(responseText);
+
+    // Check for API-level errors (Sora2API returns HTTP 200 with code:-1 on errors)
+    if (data.code === -1 || data.code === 'error' || data.error) {
+      const errMsg = data.message || data.error || 'Unknown Sora2API error';
+      console.error(`   Sora2API API error: ${errMsg}`);
+      throw new Error(`Sora2API: ${errMsg}`);
+    }
+
     // Handle async task - poll for result using taskId
-    if (data.data?.taskId) {
-      return await pollSora2APIResult(data.data.taskId, apiKey);
+    const taskId = data.data?.taskId || data.taskId;
+    if (taskId) {
+      console.log(`   Sora2API taskId: ${taskId} — starting edge-side polling`);
+      return await pollSora2APIResult(taskId, apiKey);
     }
 
     // Immediate result (unlikely but handle it)
+    const videoUrl = data.data?.videoUrl || data.videoUrl || data.url;
+    console.log(`   Sora2API immediate result: videoUrl=${videoUrl ? videoUrl.substring(0, 80) : 'none'}`);
+    if (!videoUrl) {
+      console.error('   Sora2API: no taskId and no videoUrl in response:', JSON.stringify(data).substring(0, 300));
+      throw new Error('Sora2API returned no taskId and no videoUrl');
+    }
     return {
-      videoUrl: data.data?.videoUrl || data.videoUrl || data.url,
+      videoUrl,
       thumbnailUrl: data.data?.thumbnail || data.thumbnail,
       provider: 'sora2api',
       model: model || 'sora-2',
     };
   } catch (error) {
     console.error('Sora2API generation error:', error);
-    console.log('⚠️ Sora2API failed, falling back to ModelsLab');
-    return generateWithModelsLab(prompt, 'animatediff', duration);
+    // Re-throw — let the main handler return the error to the client
+    throw error;
   }
 }
 
@@ -1127,47 +1149,71 @@ async function pollModelsLabResult(fetchUrl: string, apiKey: string): Promise<Vi
   };
 }
 
-// Gemini Veo Video Generation
+// Gemini Veo 2 Video Generation
+// Correct endpoint: models/veo-2-generate-preview:predictLongRunning
+// Docs: https://ai.google.dev/gemini-api/docs/video
 async function generateWithGemini(prompt: string, duration: number, aspectRatio: string): Promise<VideoResult> {
   const apiKey = Deno.env.get('GOOGLE_API_KEY');
-  
+
   if (!apiKey) {
     throw new Error('GOOGLE_API_KEY is not configured');
   }
 
-  console.log('🎥 Generating video with Gemini Veo');
+  console.log('🎥 Generating video with Gemini Veo 2');
+  console.log(`   Prompt (first 200): ${prompt.substring(0, 200)}`);
+  console.log(`   Duration: ${duration}s, Aspect: ${aspectRatio}`);
+
+  const durationNum = Math.min(duration, 8); // Veo 2 max 8 seconds
+  const requestBody = {
+    instances: [{
+      prompt: `${prompt}. Safe for all audiences, high quality.`,
+    }],
+    parameters: {
+      aspectRatio: aspectRatio || '16:9',
+      durationSeconds: durationNum,
+      personGeneration: 'allow_adult',
+    },
+  };
+  console.log(`   Request body: ${JSON.stringify(requestBody).substring(0, 400)}`);
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/veo-002:generateVideo?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/veo-2.0-generate-001:predictLongRunning?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: `${prompt}. Safe for all audiences, high quality.`,
-        duration: Math.min(duration, 8), // Veo max 8 seconds
-        aspectRatio: aspectRatio,
-      }),
+      body: JSON.stringify(requestBody),
     }
   );
 
+  const responseText = await response.text();
+  console.log(`   Gemini Veo response status: ${response.status}`);
+  console.log(`   Gemini Veo response body (first 500): ${responseText.substring(0, 500)}`);
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Gemini Veo API error:', errorText);
-    throw new Error(`Gemini Veo API error: ${response.status}`);
+    throw new Error(`Gemini Veo API error ${response.status}: ${responseText.substring(0, 200)}`);
   }
 
-  const data = await response.json();
+  const data = JSON.parse(responseText);
 
-  // Handle async operation
+  // Handle async operation — predictLongRunning returns operation name
   if (data.name) {
+    console.log(`   Gemini Veo operation: ${data.name} — starting edge-side polling`);
     return await pollGeminiOperation(data.name, apiKey);
   }
 
-  return {
-    videoUrl: data.video?.uri || data.generatedVideos?.[0]?.uri,
-    provider: 'gemini',
-    model: 'veo-002',
-  };
+  // Check for direct video result
+  const videoUrl = data.video?.uri || data.generatedVideos?.[0]?.uri;
+  if (videoUrl) {
+    const reuploadedUrl = await reuploadToStorage(videoUrl, `gemini-veo-${Date.now()}`);
+    return {
+      videoUrl: reuploadedUrl || videoUrl,
+      provider: 'gemini',
+      model: 'veo-002',
+    };
+  }
+
+  console.error('   Gemini Veo: no operation name and no videoUrl:', JSON.stringify(data).substring(0, 300));
+  throw new Error('Gemini Veo returned no operation name and no videoUrl');
 }
 
 async function pollGeminiOperation(operationName: string, apiKey: string): Promise<VideoResult> {

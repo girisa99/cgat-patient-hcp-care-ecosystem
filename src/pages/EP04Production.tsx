@@ -1679,10 +1679,14 @@ function EP04ProductionInner() {
       let videoUrl = data?.url || data?.videoUrl;
 
       // Poll for async result if needed (DashScope, Sora2API, Gemini all can be async)
-      if (!videoUrl && (data?.asyncGeneration || data?.alibabaTaskId || data?.taskId)) {
-        const pollId = data.alibabaTaskId || data.taskId;
-        toast.info(`${sceneKey}: video rendering on ${provider} — polling...`);
+      const pollId = data?.alibabaTaskId || data?.taskId;
+      if (!videoUrl && pollId) {
+        toast.info(`${sceneKey}: video rendering on ${provider} — polling (taskId: ${String(pollId).substring(0, 20)})...`);
         videoUrl = await pollVideoTaskResult(pollId, provider);
+      } else if (!videoUrl && !pollId) {
+        // No video URL AND no taskId — the provider call itself failed
+        console.error(`[EP04] Regen ${sceneKey}: no videoUrl AND no taskId — ${provider} failed`, data);
+        throw new Error(data?.error || data?.message || `${provider} returned no video and no taskId — check edge function logs`);
       }
 
       if (videoUrl) {
