@@ -5218,35 +5218,40 @@ function EP04ProductionInner() {
                           </div>
                           {/* Video Provider Selector — three-provider showcase */}
                           {pipelineSteps.some(s => (s.type as string) === 'alibaba-video') && (
-                            <div className="flex items-center gap-1 mb-2">
-                              <span className="text-[8px] text-muted-foreground whitespace-nowrap">Provider:</span>
-                              <select
-                                className="flex-1 h-5 text-[9px] rounded border border-border/50 bg-background px-1"
-                                value={sceneProviders[sceneKey] || 'alibaba'}
-                                onChange={e => setSceneProviders(prev => ({ ...prev, [sceneKey]: e.target.value as VideoProviderChoice }))}
-                              >
-                                {VIDEO_PROVIDER_OPTIONS.map(opt => (
-                                  <option key={opt.id} value={opt.id}>
-                                    {opt.label}{SCENE_PROVIDER_DEFAULTS[sceneKey]?.provider === opt.id ? ' ★' : ''}
-                                  </option>
-                                ))}
-                              </select>
-                              {(sceneProviders[sceneKey] || 'alibaba') !== 'alibaba' && (
+                            <div className="p-2 rounded-md border border-violet-500/20 bg-violet-500/[0.03] mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-medium text-violet-400 whitespace-nowrap">Video Provider:</span>
+                                <select
+                                  className="flex-1 h-7 text-xs rounded border border-violet-500/30 bg-background px-2 font-medium"
+                                  value={sceneProviders[sceneKey] || 'alibaba'}
+                                  onChange={e => setSceneProviders(prev => ({ ...prev, [sceneKey]: e.target.value as VideoProviderChoice }))}
+                                >
+                                  {VIDEO_PROVIDER_OPTIONS.map(opt => (
+                                    <option key={opt.id} value={opt.id}>
+                                      {opt.label}{SCENE_PROVIDER_DEFAULTS[sceneKey]?.provider === opt.id ? ' (Recommended)' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1.5">
                                 <Button
-                                  size="sm" variant="outline"
-                                  className="h-5 text-[8px] px-1.5 border-violet-500/30 text-violet-500 hover:bg-violet-500/10"
+                                  size="sm" variant="default"
+                                  className="h-7 text-xs px-3 bg-violet-600 hover:bg-violet-700 text-white"
                                   onClick={() => regenerateSceneVideo(sceneKey)}
                                   disabled={regenProgress[sceneKey] === 'generating'}
                                 >
                                   {regenProgress[sceneKey] === 'generating' ? (
-                                    <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                    <><Loader2 className="h-3 w-3 animate-spin mr-1" />Generating...</>
                                   ) : (
-                                    <><RefreshCw className="h-2.5 w-2.5 mr-0.5" />Regen</>
+                                    <><RefreshCw className="h-3 w-3 mr-1" />Regen Video with {VIDEO_PROVIDER_OPTIONS.find(o => o.id === (sceneProviders[sceneKey] || 'alibaba'))?.label || 'Provider'}</>
                                   )}
                                 </Button>
+                                {regenProgress[sceneKey] === 'done' && <span className="flex items-center gap-1 text-green-500 text-xs"><CheckCircle2 className="h-3.5 w-3.5" />Done</span>}
+                                {regenProgress[sceneKey] === 'error' && <span className="flex items-center gap-1 text-red-500 text-xs"><AlertCircle className="h-3.5 w-3.5" />Failed</span>}
+                              </div>
+                              {SCENE_PROVIDER_DEFAULTS[sceneKey] && (
+                                <p className="text-[9px] text-muted-foreground mt-1">{SCENE_PROVIDER_DEFAULTS[sceneKey].rationale}</p>
                               )}
-                              {regenProgress[sceneKey] === 'done' && <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0" />}
-                              {regenProgress[sceneKey] === 'error' && <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />}
                             </div>
                           )}
                           {!phase3Done && status?.visual !== 'done' && (
