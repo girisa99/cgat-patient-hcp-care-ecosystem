@@ -1197,23 +1197,23 @@ async function generateWithGemini(prompt: string, duration: number, aspectRatio:
   console.log(`   Prompt (first 200): ${prompt.substring(0, 200)}`);
   console.log(`   Duration: ${duration}s, Aspect: ${aspectRatio}`);
 
-  const durationStr = String(Math.min(duration, 8)); // Veo 2 max 8 seconds; MUST be string per API docs
+  const durationNum = Math.min(duration, 8); // Veo 2 max 8 seconds
   const requestBody = {
     instances: [{
       prompt: `${prompt}. Safe for all audiences, high quality.`,
     }],
     parameters: {
       aspectRatio: aspectRatio || '16:9',
-      durationSeconds: durationStr,
+      durationSeconds: durationNum,
       personGeneration: 'allow_adult',
     },
   };
   console.log(`   Request body: ${JSON.stringify(requestBody).substring(0, 400)}`);
 
-  // Correct model: veo-2-generate-preview (NOT veo-2.0-generate-001)
+  // Model: veo-2.0-generate-001 (stable Veo 2)
   // Auth via x-goog-api-key header (more reliable than query param)
   const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/veo-2-generate-preview:predictLongRunning',
+    'https://generativelanguage.googleapis.com/v1beta/models/veo-2.0-generate-001:predictLongRunning',
     {
       method: 'POST',
       headers: {
