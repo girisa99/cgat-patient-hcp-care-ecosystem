@@ -26,9 +26,12 @@ async function reuploadToStorage(externalUrl: string, prefix: string = 'video'):
   if (!externalUrl || externalUrl.includes('placehold.co')) return externalUrl;
   // Skip if already on Supabase Storage
   if (externalUrl.includes('supabase.co')) return externalUrl;
-  // Re-upload external provider URLs (Alibaba CDN, Replicate delivery, etc.) to Supabase Storage
-  // These URLs may expire or have DNS issues from user browsers
-  const needsReupload = externalUrl.includes('aliyuncs.com') || externalUrl.includes('dashscope') || externalUrl.includes('replicate.delivery') || externalUrl.includes('pbxt.replicate');
+  // Re-upload external provider URLs to Supabase Storage
+  // These URLs may expire, require auth, or have DNS issues from user browsers
+  const needsReupload = externalUrl.includes('aliyuncs.com') || externalUrl.includes('dashscope') ||
+    externalUrl.includes('replicate.delivery') || externalUrl.includes('pbxt.replicate') ||
+    externalUrl.includes('googleapis.com') || externalUrl.includes('sora2api') ||
+    externalUrl.startsWith('gs://');
   if (!needsReupload) return externalUrl;
 
   try {
@@ -38,8 +41,23 @@ async function reuploadToStorage(externalUrl: string, prefix: string = 'video'):
       return externalUrl;
     }
 
-    // Download the video from Alibaba CDN (edge function CAN resolve it, user browser can't)
-    const resp = await fetch(externalUrl);
+    // Handle GCS URIs — convert gs://bucket/path to HTTPS
+    let downloadUrl = externalUrl;
+    if (externalUrl.startsWith('gs://')) {
+      const gcsPath = externalUrl.replace('gs://', '');
+      downloadUrl = `https://storage.googleapis.com/${gcsPath}`;
+      console.log(`📦 Converting GCS URI to HTTPS: ${downloadUrl.substring(0, 100)}`);
+    }
+    // For googleapis.com URLs, may need API key
+    if (downloadUrl.includes('generativelanguage.googleapis.com') && !downloadUrl.includes('key=')) {
+      const gKey = Deno.env.get('GOOGLE_API_KEY');
+      if (gKey) {
+        downloadUrl += (downloadUrl.includes('?') ? '&' : '?') + `key=${gKey}`;
+      }
+    }
+
+    // Download the video from provider CDN (edge function CAN resolve it, user browser can't)
+    const resp = await fetch(downloadUrl);
     if (!resp.ok) {
       console.warn(`⚠️ Failed to download from Alibaba CDN: ${resp.status}`);
       return externalUrl;
@@ -260,7 +278,8 @@ serve(async (req) => {
       console.log(`[poll_gemini] operationName=${body.taskId}`);
       try {
         const resp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/${body.taskId}?key=${geminiKey}`
+          `https://generativelanguage.googleapis.com/v1beta/${body.taskId}`,
+          { headers: { 'x-goog-api-key': geminiKey } }
         );
         const data = await resp.json();
         console.log(`[poll_gemini] done=${data.done}, error=${!!data.error}`);
@@ -270,8 +289,23 @@ serve(async (req) => {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
           }
-          const rawUrl = data.response?.generatedVideos?.[0]?.uri;
-          const videoUrl = rawUrl ? await reuploadToStorage(rawUrl, `gemini-veo-${Date.now()}`) : rawUrl;
+          // Log full response for debugging (first 1000 chars)
+          console.log(`[poll_gemini] DONE response: ${JSON.stringify(data.response || data).substring(0, 1000)}`);
+          // Veo 2: response.generateVideoResponse.generatedSamples[0].video.uri
+          // Veo 3+: response.generatedVideos[0].video.uri
+          const rawUrl =
+            data.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri ||
+            data.response?.generatedSamples?.[0]?.video?.uri ||
+            data.response?.generatedVideos?.[0]?.video?.uri ||
+            data.response?.generatedVideos?.[0]?.uri ||
+            data.response?.video?.uri;
+          console.log(`[poll_gemini] rawUrl=${rawUrl ? rawUrl.substring(0, 120) : 'null'}`);
+          if (!rawUrl) {
+            return new Response(JSON.stringify({ success: false, status: 'FAILED', message: 'Video completed but no URI found in response', responseKeys: Object.keys(data.response || {}) }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          const videoUrl = await reuploadToStorage(rawUrl, `gemini-veo-${Date.now()}`);
           return new Response(JSON.stringify({ success: true, videoUrl: videoUrl || rawUrl, status: 'SUCCEEDED' }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -1163,24 +1197,29 @@ async function generateWithGemini(prompt: string, duration: number, aspectRatio:
   console.log(`   Prompt (first 200): ${prompt.substring(0, 200)}`);
   console.log(`   Duration: ${duration}s, Aspect: ${aspectRatio}`);
 
-  const durationNum = Math.min(duration, 8); // Veo 2 max 8 seconds
+  const durationStr = String(Math.min(duration, 8)); // Veo 2 max 8 seconds; MUST be string per API docs
   const requestBody = {
     instances: [{
       prompt: `${prompt}. Safe for all audiences, high quality.`,
     }],
     parameters: {
       aspectRatio: aspectRatio || '16:9',
-      durationSeconds: durationNum,
+      durationSeconds: durationStr,
       personGeneration: 'allow_adult',
     },
   };
   console.log(`   Request body: ${JSON.stringify(requestBody).substring(0, 400)}`);
 
+  // Correct model: veo-2-generate-preview (NOT veo-2.0-generate-001)
+  // Auth via x-goog-api-key header (more reliable than query param)
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/veo-2.0-generate-001:predictLongRunning?key=${apiKey}`,
+    'https://generativelanguage.googleapis.com/v1beta/models/veo-2-generate-preview:predictLongRunning',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
       body: JSON.stringify(requestBody),
     }
   );
@@ -1227,7 +1266,8 @@ async function pollGeminiOperation(operationName: string, apiKey: string): Promi
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`
+        `https://generativelanguage.googleapis.com/v1beta/${operationName}`,
+        { headers: { 'x-goog-api-key': apiKey } }
       );
 
       const data = await response.json();
@@ -1237,8 +1277,20 @@ async function pollGeminiOperation(operationName: string, apiKey: string): Promi
         if (data.error) {
           throw new Error(data.error.message || 'Video generation failed');
         }
-        const rawUrl = data.response?.generatedVideos?.[0]?.uri;
-        const videoUrl = rawUrl ? await reuploadToStorage(rawUrl, `gemini-veo-${Date.now()}`) : rawUrl;
+        console.log(`⏳ Gemini Veo DONE response: ${JSON.stringify(data.response || data).substring(0, 1000)}`);
+        // Veo 2: response.generateVideoResponse.generatedSamples[0].video.uri
+        // Veo 3+: response.generatedVideos[0].video.uri
+        const rawUrl =
+          data.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri ||
+          data.response?.generatedSamples?.[0]?.video?.uri ||
+          data.response?.generatedVideos?.[0]?.video?.uri ||
+          data.response?.generatedVideos?.[0]?.uri ||
+          data.response?.video?.uri;
+        console.log(`⏳ Gemini Veo rawUrl=${rawUrl ? rawUrl.substring(0, 120) : 'null'}`);
+        if (!rawUrl) {
+          throw new Error('Video completed but no URI found in Gemini response. Keys: ' + Object.keys(data.response || {}).join(','));
+        }
+        const videoUrl = await reuploadToStorage(rawUrl, `gemini-veo-${Date.now()}`);
         return {
           videoUrl: videoUrl || rawUrl,
           provider: 'gemini',
