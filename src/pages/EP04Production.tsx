@@ -5286,10 +5286,10 @@ function EP04ProductionInner() {
                               <Button
                                 size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
                                 onClick={() => {
-                                  // Clear lipsync + avatar data so lipsync steps regenerate with fresh avatars
+                                  // Clear ONLY lipsync + avatar data — preserve existing videos/images
                                   setSceneProduction(prev => ({
                                     ...prev,
-                                    [sceneKey]: { ...defaultSceneStatus(), visual: 'idle' },
+                                    [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), lipsyncUrls: {}, avatarUrls: {}, visual: 'idle' },
                                   }));
                                   startSceneVisualProduction(sceneKey, new Set(['avatar-lipsync']));
                                 }}
