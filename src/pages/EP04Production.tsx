@@ -1429,6 +1429,45 @@ function EP04ProductionInner() {
     }
   }, [scriptKeys, statusMap, generateLine]);
 
+  // Generate ONLY missing TTS lines for a specific scene (or bridge keys)
+  const generateMissingForKeys = useCallback(async (keys: string[]) => {
+    const missing = keys.filter(k => !audioMap[k]?.audioUrl);
+    if (missing.length === 0) {
+      toast.info('All TTS lines already generated for this selection');
+      return;
+    }
+    abortRef.current = false;
+    setBatchProgress({ current: 0, total: missing.length });
+    let success = 0;
+    for (let i = 0; i < missing.length; i++) {
+      if (abortRef.current) break;
+      setBatchProgress({ current: i + 1, total: missing.length });
+      const ok = await generateLine(missing[i]);
+      if (ok) success++;
+      if (i < missing.length - 1) await new Promise(r => setTimeout(r, 500));
+    }
+    setBatchProgress(null);
+    if (success === missing.length) {
+      toast.success(`Generated ${success} missing TTS lines`);
+    } else {
+      toast.warning(`Generated ${success}/${missing.length} — ${missing.length - success} failed`);
+    }
+  }, [audioMap, generateLine]);
+
+  // Convenience: regen missing TTS for a specific scene
+  const generateMissingTtsForScene = useCallback((sceneKey: string) => {
+    const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
+    generateMissingForKeys(sceneLines);
+  }, [scriptKeys, scriptContentForUI, generateMissingForKeys]);
+
+  // Convenience: regen missing bridge narrator TTS
+  const generateMissingBridgeTts = useCallback(() => {
+    const bridgeKeys = EP04_STORYBOOK_TRANSITIONS.map(t =>
+      `bridge-${t.from.replace('scene-', '').split('-')[0]}-to-${t.to.replace('scene-', '').split('-')[0]}`
+    );
+    generateMissingForKeys(bridgeKeys);
+  }, [generateMissingForKeys]);
+
   const cancelBatch = useCallback(() => {
     abortRef.current = true;
     setBatchProgress(null);
@@ -5938,7 +5977,33 @@ function EP04ProductionInner() {
                                   </div>
                                 )}
                               </div>
-                              {s.missing.length > 0 && (
+                              {/* Missing TTS line details */}
+                              {s.ttsMissing > 0 && (
+                                <div className="mt-1.5 pt-1.5 border-t border-red-500/20">
+                                  <p className="text-[9px] text-red-500 font-semibold mb-1">Missing TTS ({s.ttsMissing}):</p>
+                                  <div className="space-y-0.5 mb-1.5">
+                                    {s.ttsLines.filter(l => !l.hasAudio).slice(0, 5).map(l => (
+                                      <p key={l.key} className="text-[8px] text-red-400 truncate" title={l.key}>
+                                        {l.voice}: {l.key}
+                                      </p>
+                                    ))}
+                                    {s.ttsLines.filter(l => !l.hasAudio).length > 5 && (
+                                      <p className="text-[8px] text-red-400">+{s.ttsLines.filter(l => !l.hasAudio).length - 5} more</p>
+                                    )}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full h-6 text-[9px] border-red-500/30 text-red-600 hover:bg-red-500/10"
+                                    onClick={() => generateMissingTtsForScene(s.sceneKey)}
+                                    disabled={!!batchProgress}
+                                  >
+                                    <Volume2 className="h-2.5 w-2.5 mr-0.5" />
+                                    Regen {s.ttsMissing} Missing TTS
+                                  </Button>
+                                </div>
+                              )}
+                              {s.missing.length > 0 && s.ttsMissing === 0 && (
                                 <p className="text-[10px] text-red-500 mt-1.5 pt-1.5 border-t border-red-500/20 font-semibold">
                                   Missing: {s.missing.join(', ')}
                                 </p>
@@ -5967,9 +6032,21 @@ function EP04ProductionInner() {
                               Bridge Narrator TTS: {assemblyReadiness.bridgeReady}/{assemblyReadiness.bridgeAudit.length}
                             </span>
                             {assemblyReadiness.bridgeMissing > 0 && (
-                              <Badge variant="outline" className="text-[8px] bg-red-500/10 text-red-500 border-red-500/30">
-                                {assemblyReadiness.bridgeMissing} missing
-                              </Badge>
+                              <>
+                                <Badge variant="outline" className="text-[8px] bg-red-500/10 text-red-500 border-red-500/30">
+                                  {assemblyReadiness.bridgeMissing} missing
+                                </Badge>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-5 text-[9px] px-2 border-red-500/30 text-red-600 hover:bg-red-500/10"
+                                  onClick={generateMissingBridgeTts}
+                                  disabled={!!batchProgress}
+                                >
+                                  <Volume2 className="h-2.5 w-2.5 mr-0.5" />
+                                  Regen {assemblyReadiness.bridgeMissing} Missing
+                                </Button>
+                              </>
                             )}
                           </div>
                           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1">
