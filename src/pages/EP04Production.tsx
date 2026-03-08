@@ -2901,15 +2901,39 @@ function EP04ProductionInner() {
       });
     }
 
+    // ── Bridge narrator TTS audit (11 transitions) ──
+    const bridgeAudit = EP04_STORYBOOK_TRANSITIONS.map((t, idx) => {
+      const bridgeKey = `bridge-${t.from.replace('scene-', '').split('-')[0]}-to-${t.to.replace('scene-', '').split('-')[0]}`;
+      const bridgeLine = EP04_NARRATOR_BRIDGES[bridgeKey];
+      const audio = audioMap[bridgeKey]?.audioUrl;
+      const hasAudio = !!audio && audio.startsWith('http');
+      return {
+        bridgeKey,
+        from: t.from,
+        to: t.to,
+        style: t.style,
+        text: bridgeLine?.text?.substring(0, 60) || '(unknown)',
+        duration: bridgeLine?.duration_est || 7,
+        hasAudio,
+        audioUrl: hasAudio ? audio : null,
+      };
+    });
+    const bridgeReady = bridgeAudit.filter(b => b.hasAudio).length;
+    const bridgeMissing = bridgeAudit.filter(b => !b.hasAudio).length;
+
     return {
       scenes: report,
       totalScenes: sceneKeys.length,
       readyScenes: totalReady,
       missingScenes: totalMissing,
-      isReady: totalMissing === 0,
+      isReady: totalMissing === 0 && bridgeMissing === 0,
       grandTotalDuration,
       // Minimum requirements: at least TTS + visuals for every scene
       canAssemble: report.every(s => s.canAssemble),
+      // Bridge narrator TTS (for transitions between scenes)
+      bridgeAudit,
+      bridgeReady,
+      bridgeMissing,
     };
   }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap]);
 
@@ -2935,16 +2959,26 @@ function EP04ProductionInner() {
     status: 'pending' | 'rendering' | 'completed' | 'failed';
     videoUrl: string | null;
     errorMessage?: string;
+    /** When a scene is split into sub-parts, this tracks which TTS lines belong to this sub-part */
+    _subPartLineRange?: { start: number; end: number };
   }
 
   const [assemblyParts, setAssemblyParts] = useState<AssemblyPart[]>([]);
   const [activePartNumber, setActivePartNumber] = useState<number | null>(null);
 
-  // ── Per-Scene Assembly: one scene = one JSON2Video job ──
-  // Each scene renders independently (1-3 min each, well under 10-min limit)
+  // ── Per-Scene Assembly with Smart Splitting ──
+  // Each scene renders independently. Heavy scenes (>15 TTS lines or >180s)
+  // are split into sub-parts to prevent JSON2Video render timeouts.
+  // Whether we produce 12 or 20 parts, the concat stitch handles them all the same.
+  const MAX_SUB_TTS = 15;
+  const MAX_SUB_DURATION = 180; // 3 minutes
+
   const computePerSceneParts = useCallback((): AssemblyPart[] => {
     const sceneKeys = Array.from(scenes.keys());
-    return sceneKeys.map((sceneKey, idx) => {
+    const parts: AssemblyPart[] = [];
+    let partNum = 1;
+
+    for (const sceneKey of sceneKeys) {
       const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
       let sceneDuration = 0;
       let sceneTtsCount = 0;
@@ -2956,16 +2990,47 @@ function EP04ProductionInner() {
       const lipsyncCount = Object.values(sceneProduction[sceneKey]?.lipsyncUrls || {}).filter(u => u?.startsWith('http')).length;
       const totalElements = sceneTtsCount + lipsyncCount;
       console.log(`[PerScene] ${sceneKey}: ${sceneTtsCount} TTS + ${lipsyncCount} lipsync = ${totalElements} elements, ~${Math.round(sceneDuration)}s`);
-      return {
-        partNumber: idx + 1,
-        sceneKeys: [sceneKey],
-        estimatedDuration: sceneDuration || 30,
-        ttsCount: totalElements, // includes lipsync for accurate element count
-        jobId: null,
-        status: 'pending' as const,
-        videoUrl: null,
-      };
-    });
+
+      // Split threshold: >15 TTS or >180s duration
+      const needsSplit = sceneTtsCount > MAX_SUB_TTS || sceneDuration > MAX_SUB_DURATION;
+
+      if (needsSplit && sceneLines.length > 1) {
+        // Split scene into sub-parts of ~MAX_SUB_TTS lines each
+        const subPartSize = MAX_SUB_TTS;
+        for (let i = 0; i < sceneLines.length; i += subPartSize) {
+          const subLines = sceneLines.slice(i, i + subPartSize);
+          let subDuration = 0;
+          let subTts = 0;
+          for (const k of subLines) {
+            subDuration += (scriptContentForUI[k]?.duration_est || 5) + 1.5;
+            if (audioMap[k]?.audioUrl) subTts++;
+          }
+          const subLipsync = Math.ceil(lipsyncCount * subLines.length / sceneLines.length);
+          console.log(`[PerScene] ${sceneKey} sub-part ${Math.floor(i / subPartSize) + 1}: ${subTts} TTS, ~${Math.round(subDuration)}s`);
+          parts.push({
+            partNumber: partNum++,
+            sceneKeys: [sceneKey],
+            estimatedDuration: subDuration || 30,
+            ttsCount: subTts + subLipsync,
+            jobId: null,
+            status: 'pending' as const,
+            videoUrl: null,
+            _subPartLineRange: { start: i, end: Math.min(i + subPartSize, sceneLines.length) },
+          });
+        }
+      } else {
+        parts.push({
+          partNumber: partNum++,
+          sceneKeys: [sceneKey],
+          estimatedDuration: sceneDuration || 30,
+          ttsCount: totalElements,
+          jobId: null,
+          status: 'pending' as const,
+          videoUrl: null,
+        });
+      }
+    }
+    return parts;
   }, [scenes, scriptKeys, scriptContentForUI, audioMap, sceneProduction]);
 
   // Per-scene polling state — polls all parts with status='rendering'
@@ -3340,72 +3405,47 @@ function EP04ProductionInner() {
         return kb;
       };
       if (chapterVisuals.length > 0) {
-        const firstIsVideo = detectMediaType(chapterVisuals[0]) === 'video';
-        const ESTABLISHING_SHOT_DURATION = 8;
+        // Unified visual layout: play ALL videos at full duration sequentially,
+        // then fill remaining time with Ken Burns images.
+        // No more 8s cap — each Alibaba/Gemini video plays its full 5-10s.
+        const videos = chapterVisuals.filter(u => detectMediaType(u) === 'video');
+        const images = chapterVisuals.filter(u => detectMediaType(u) === 'image');
 
-        if (firstIsVideo && chapterVisuals.length > 1) {
-          // Establishing video at t=0, muted (music bed handles audio), z-index 0
-          const videoEnd = Math.min(ESTABLISHING_SHOT_DURATION, sceneDuration);
+        let currentTime = 0;
+
+        // Play each video at full duration (5-10s each), sequentially, muted
+        for (const videoUrl of videos) {
+          const videoDuration = 10; // Alibaba max = 10s, Gemini = 8s; safe upper bound
+          const dur = Math.min(videoDuration, sceneDuration - currentTime);
+          if (dur <= 0) break;
           elements.push({
-            type: 'video', src: chapterVisuals[0],
-            start: 0, duration: videoEnd,
+            type: 'video', src: videoUrl,
+            start: currentTime, duration: dur,
             volume: 0, 'fade-in': 0.5, 'fade-out': 0.5,
             'z-index': 0,
           });
-          // Remaining images with Ken Burns
-          const remainingImages = chapterVisuals.slice(1);
-          const remainingDuration = sceneDuration - videoEnd;
-          if (remainingImages.length > 0 && remainingDuration > 0) {
-            const imgInterval = Math.max(8, Math.floor(remainingDuration / remainingImages.length));
-            remainingImages.forEach((url, idx) => {
-              const start = videoEnd + idx * imgInterval;
-              const dur = idx < remainingImages.length - 1
-                ? imgInterval
-                : sceneDuration - start;
-              if (start < sceneDuration) {
-                const mediaType = detectMediaType(url);
-                const kb = mediaType === 'image' ? getKenBurns() : {};
-                elements.push({
-                  type: mediaType, src: url,
-                  start, duration: Math.max(1, dur),
-                  ...(mediaType === 'image' ? kb : { volume: 0 }),
-                  'fade-in': 0.5, 'fade-out': 0.5,
-                  'z-index': 0,
-                });
-              }
-            });
-          }
-        } else if (chapterVisuals.length > 1) {
-          // All images — rotate with Ken Burns variety
-          const rotateInterval = Math.max(10, Math.min(20, Math.floor(sceneDuration / chapterVisuals.length)));
-          chapterVisuals.forEach((url, idx) => {
-            const start = idx * rotateInterval;
-            const dur = idx < chapterVisuals.length - 1
-              ? rotateInterval
-              : sceneDuration - start;
+          currentTime += dur;
+        }
+
+        // Fill remaining time with images (Ken Burns rotation)
+        const remainingDuration = sceneDuration - currentTime;
+        if (images.length > 0 && remainingDuration > 0) {
+          const imgInterval = Math.max(8, Math.floor(remainingDuration / images.length));
+          images.forEach((url, idx) => {
+            const start = currentTime + idx * imgInterval;
+            const dur = idx < images.length - 1 ? imgInterval : sceneDuration - start;
             if (start < sceneDuration) {
-              const mediaType = detectMediaType(url);
-              const kb = mediaType === 'image' ? getKenBurns() : {};
+              const kb = getKenBurns();
               elements.push({
-                type: mediaType, src: url,
+                type: 'image', src: url,
                 start, duration: Math.max(1, dur),
-                ...(mediaType === 'image' ? kb : { volume: 0 }),
-                'fade-in': 0.5, 'fade-out': 0.5,
+                ...kb, 'fade-in': 0.5, 'fade-out': 0.5,
                 'z-index': 0,
               });
             }
           });
-        } else {
-          // Single visual — Ken Burns for the full duration
-          const mediaType = detectMediaType(chapterVisuals[0]);
-          const kb = mediaType === 'image' ? getKenBurns() : {};
-          elements.push({
-            type: mediaType, src: chapterVisuals[0],
-            start: 0, duration: sceneDuration,
-            ...(mediaType === 'image' ? kb : { volume: 0 }),
-            'fade-in': 0.5, 'fade-out': 0.5,
-            'z-index': 0,
-          });
+        } else if (videos.length === 0 && images.length === 0) {
+          // No visuals at all — solid background only (handled by scene background-color)
         }
       }
 
@@ -3704,11 +3744,21 @@ function EP04ProductionInner() {
 
     try {
       // ── Build layered ChapterResult objects per scene ──
+      // When a scene is split into sub-parts, each sub-part only processes its
+      // slice of TTS lines and gets proportional visuals. This keeps lipsync
+      // aligned (cumulativeStart resets per sub-part) and prevents timeline gaps.
+      const currentPart = partNumber != null ? parts.find(p => p.partNumber === partNumber) : null;
+      const lineRange = currentPart?._subPartLineRange;
+
       const preBuiltChapters = targetSceneKeys.map(sceneKey => {
         const status = sceneProduction[sceneKey] || defaultSceneStatus();
         const sceneTitle = SCENE_TITLES[sceneKey] || sceneKey;
 
-        const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
+        // Filter scene lines to sub-part range if applicable
+        const allSceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
+        const sceneLines = lineRange
+          ? allSceneLines.slice(lineRange.start, lineRange.end)
+          : allSceneLines;
         let cumulativeStart = 0;
         const allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string; key: string }> = [];
 
@@ -3744,10 +3794,7 @@ function EP04ProductionInner() {
 
         const sceneDuration = cumulativeStart || 30;
 
-        // Background visuals: scene images + avatars + up to 1 Wan establishing-shot video
-        // Each Wan video was generated for THIS scene's narrative (e.g. "genie from lamp",
-        // "frozen task thawing"). Placing it at t=0 as an establishing shot makes sense
-        // contextually. Randomly rotating videos alongside images would look disconnected.
+        // Background visuals: ALL scene videos (play sequentially) + images (Ken Burns).
         // Lipsync MP4s are handled separately below (aligned to TTS timing).
         const isHttpUrl = (u: string) => u && u.startsWith('http');
         // Exclude expired CDN URLs that will 403/404 during JSON2Video render
@@ -3755,23 +3802,42 @@ function EP04ProductionInner() {
         const isVideoUrl = (u: string) => isSafeUrl(u) && !!u.match(/\.(mp4|webm|mov)(\?|$)/i);
         const isImageUrl = (u: string) => isSafeUrl(u) && !u.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i);
 
-        // Collect scene images (always included)
-        const imageVisuals: string[] = [
+        // Collect all scene images
+        const allImageVisuals: string[] = [
           ...Object.values(status.imageUrls || {}).filter(isImageUrl),
           ...Object.values(status.avatarUrls || {}).filter(isImageUrl),
         ];
 
-        // Option D: pick first Wan scene video as an establishing shot (plays at scene start)
-        // Only 1 per scene — more would compete for attention and risk render timeout
+        // Collect all non-lipsync scene videos
         const lipsyncSet = new Set(Object.values(status.lipsyncUrls || {}));
-        const establishingVideo: string | null = Object.values(status.videoUrls || {})
+        const allSceneVideos: string[] = Object.values(status.videoUrls || {})
           .filter(isVideoUrl)
-          .filter(u => !lipsyncSet.has(u))  // Exclude lipsync URLs
-          [0] || null;
+          .filter(u => !lipsyncSet.has(u));
 
-        // Establishing video goes FIRST so it plays at t=0, then images follow
+        // For sub-parts: distribute visuals proportionally across sub-parts.
+        // First sub-part gets the first N videos, second gets next N, etc.
+        // Images are distributed evenly across all sub-parts.
+        let sceneVideos = allSceneVideos;
+        let imageVisuals = allImageVisuals;
+        if (lineRange && allSceneLines.length > 0) {
+          const subPartFraction = (lineRange.end - lineRange.start) / allSceneLines.length;
+          const subPartIndex = Math.floor(lineRange.start / (lineRange.end - lineRange.start || 1));
+          const totalSubParts = Math.ceil(allSceneLines.length / (lineRange.end - lineRange.start));
+
+          // Distribute videos: sub-part N gets video N (if available)
+          const videosPerPart = Math.max(1, Math.ceil(allSceneVideos.length / totalSubParts));
+          const videoStart = subPartIndex * videosPerPart;
+          sceneVideos = allSceneVideos.slice(videoStart, videoStart + videosPerPart);
+
+          // Distribute images proportionally
+          const imagesPerPart = Math.max(1, Math.ceil(allImageVisuals.length / totalSubParts));
+          const imgStart = subPartIndex * imagesPerPart;
+          imageVisuals = allImageVisuals.slice(imgStart, imgStart + imagesPerPart);
+        }
+
+        // Videos first (play sequentially), then images fill remaining time
         const allVisualUrls: string[] = [
-          ...(establishingVideo ? [establishingVideo] : []),
+          ...sceneVideos,
           ...imageVisuals,
           // lipsyncUrls handled separately as overlay clips below
         ];
@@ -5739,12 +5805,34 @@ function EP04ProductionInner() {
                           };
                           return (
                             <React.Fragment key={s.sceneKey}>
-                              {/* Transition indicator (between scenes) */}
-                              {i > 0 && (
-                                <div className="flex-shrink-0 h-4 w-4 rounded-sm text-[6px] font-bold flex items-center justify-center bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 cursor-default" title={`Transition ${i - 1}→${i}`}>
-                                  T
-                                </div>
-                              )}
+                              {/* Transition indicator — colored by bridge TTS status */}
+                              {i > 0 && (() => {
+                                const bridge = assemblyReadiness.bridgeAudit?.[i - 1];
+                                const hasBridgeAudio = bridge?.hasAudio;
+                                return (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className={cn(
+                                          'flex-shrink-0 h-4 w-4 rounded-sm text-[6px] font-bold flex items-center justify-center border cursor-default',
+                                          hasBridgeAudio
+                                            ? 'bg-green-500/15 text-green-400 border-green-500/20'
+                                            : 'bg-red-500/15 text-red-400 border-red-500/20',
+                                        )} title={`Transition ${i - 1}→${i}`}>
+                                          T
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="text-xs max-w-xs">
+                                        <p className="font-bold">Transition {i - 1}→{i} ({bridge?.style || '?'})</p>
+                                        <p>{bridge?.text || 'No bridge text'}</p>
+                                        <p className={hasBridgeAudio ? 'text-green-400' : 'text-red-400'}>
+                                          Bridge TTS: {hasBridgeAudio ? 'Ready' : 'Missing'}
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                );
+                              })()}
                               {/* Scene segment */}
                               <TooltipProvider>
                                 <Tooltip>
@@ -5782,58 +5870,196 @@ function EP04ProductionInner() {
                         </TooltipProvider>
                       </div>
 
-                      {/* Per-scene detail grid */}
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {assemblyReadiness.scenes.map(s => (
-                          <div key={s.sceneKey} className={cn(
-                            'p-2 rounded border text-[9px]',
-                            s.canAssemble
-                              ? (s.missing.length === 0 ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5')
-                              : 'border-red-500/30 bg-red-500/5',
-                          )}>
-                            <p className="font-bold truncate mb-1">{s.title.split(' — ')[1] || s.sceneKey}</p>
-                            <div className="space-y-0.5">
-                              <p className={s.ttsReady > 0 ? 'text-green-600' : 'text-red-500'}>
-                                TTS: {s.ttsReady}/{s.ttsReady + s.ttsMissing} ({s.expectedDuration}s)
-                              </p>
-                              <p className={s.videoCount + s.imageCount > 0 ? 'text-green-600' : 'text-red-500'}>
-                                Visuals: {s.videoCount}V + {s.imageCount}I
-                              </p>
-                              <p className={s.hasMusic ? 'text-green-600' : 'text-amber-500'}>
-                                Music: {s.hasMusic ? (s.musicCoversScene ? 'Full' : 'Loop') : 'Missing'}
-                                {s.musicDuration != null && s.hasMusic && (
-                                  <span className="text-muted-foreground"> ({s.musicDuration}s/{s.expectedDuration}s)</span>
+                      {/* Per-scene detail grid — readable cards with clear status */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                        {assemblyReadiness.scenes.map(s => {
+                          const totalTts = s.ttsReady + s.ttsMissing;
+                          const totalVisuals = s.videoCount + s.imageCount;
+                          const totalLipsync = s.lipsyncReady + s.lipsyncMissing;
+                          return (
+                            <div key={s.sceneKey} className={cn(
+                              'p-2.5 rounded-lg border',
+                              s.canAssemble
+                                ? (s.missing.length === 0 ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5')
+                                : 'border-red-500/30 bg-red-500/5',
+                            )}>
+                              <p className="text-[11px] font-bold truncate mb-1.5">{s.title.split(' — ')[1] || s.sceneKey}</p>
+                              <div className="space-y-1">
+                                {/* TTS row */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-muted-foreground">TTS</span>
+                                  <span className={cn('text-[10px] font-semibold', s.ttsReady === totalTts ? 'text-green-600' : s.ttsReady > 0 ? 'text-amber-500' : 'text-red-500')}>
+                                    {s.ttsReady}/{totalTts} <span className="text-muted-foreground font-normal">({s.expectedDuration}s)</span>
+                                  </span>
+                                </div>
+                                {/* Videos row */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-muted-foreground">Videos</span>
+                                  <span className={cn('text-[10px] font-semibold', s.videoCount > 0 ? 'text-green-600' : 'text-muted-foreground')}>
+                                    {s.videoCount > 0 ? s.videoCount : 'none'}
+                                  </span>
+                                </div>
+                                {/* Images row */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-muted-foreground">Images</span>
+                                  <span className={cn('text-[10px] font-semibold', s.imageCount > 0 ? 'text-green-600' : totalVisuals > 0 ? 'text-muted-foreground' : 'text-red-500')}>
+                                    {s.imageCount > 0 ? s.imageCount : 'none'}
+                                  </span>
+                                </div>
+                                {/* Lipsync row */}
+                                {totalLipsync > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-muted-foreground">Lipsync</span>
+                                    <span className={cn('text-[10px] font-semibold', s.lipsyncReady === totalLipsync ? 'text-green-600' : s.lipsyncReady > 0 ? 'text-amber-500' : 'text-red-500')}>
+                                      {s.lipsyncReady}/{totalLipsync}
+                                      {s.lipsyncEntries.some(l => l.ttsExceeds18s) && <span className="text-amber-500"> (voiceover)</span>}
+                                    </span>
+                                  </div>
                                 )}
-                              </p>
-                              {s.avatarCount > 0 && <p className="text-green-600">Avatars: {s.avatarCount}</p>}
-                              {s.lipsyncReady > 0 && (
-                                <p className="text-green-600">
-                                  Lipsync: {s.lipsyncReady}
-                                  {s.lipsyncEntries.some(l => l.ttsExceeds18s) && (
-                                    <span className="text-amber-500"> (voiceover handoff)</span>
-                                  )}
+                                {/* Avatars row */}
+                                {s.avatarCount > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-muted-foreground">Avatars</span>
+                                    <span className="text-[10px] font-semibold text-green-600">{s.avatarCount}</span>
+                                  </div>
+                                )}
+                                {/* Music row */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] text-muted-foreground">Music</span>
+                                  <span className={cn('text-[10px] font-semibold', s.hasMusic ? 'text-green-600' : 'text-amber-500')}>
+                                    {s.hasMusic ? (s.musicCoversScene ? 'Full' : 'Loop') : 'Missing'}
+                                  </span>
+                                </div>
+                                {/* SFX row */}
+                                {s.sfxCount > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-muted-foreground">SFX</span>
+                                    <span className="text-[10px] font-semibold text-green-600">{s.sfxCount}</span>
+                                  </div>
+                                )}
+                              </div>
+                              {s.missing.length > 0 && (
+                                <p className="text-[10px] text-red-500 mt-1.5 pt-1.5 border-t border-red-500/20 font-semibold">
+                                  Missing: {s.missing.join(', ')}
                                 </p>
                               )}
-                              {s.sfxCount > 0 && <p className="text-green-600">SFX: {s.sfxCount}</p>}
+                              {!s.hasMusic && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full mt-1.5 h-6 text-[9px]"
+                                  onClick={() => startSceneMusicProduction(s.sceneKey)}
+                                >
+                                  <Music className="h-2.5 w-2.5 mr-0.5" />
+                                  Regen Music
+                                </Button>
+                              )}
                             </div>
-                            {s.missing.length > 0 && (
-                              <p className="text-red-500 mt-1 font-semibold">Missing: {s.missing.join(', ')}</p>
-                            )}
-                            {/* Per-scene music regen button if music missing */}
-                            {!s.hasMusic && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full mt-1 h-5 text-[8px]"
-                                onClick={() => startSceneMusicProduction(s.sceneKey)}
-                              >
-                                <Music className="h-2.5 w-2.5 mr-0.5" />
-                                Regen Music
-                              </Button>
+                          );
+                        })}
+                      </div>
+
+                      {/* ── Bridge Narrator TTS Status ─────────────── */}
+                      {assemblyReadiness.bridgeAudit && assemblyReadiness.bridgeAudit.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-border/50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-semibold">
+                              Bridge Narrator TTS: {assemblyReadiness.bridgeReady}/{assemblyReadiness.bridgeAudit.length}
+                            </span>
+                            {assemblyReadiness.bridgeMissing > 0 && (
+                              <Badge variant="outline" className="text-[8px] bg-red-500/10 text-red-500 border-red-500/30">
+                                {assemblyReadiness.bridgeMissing} missing
+                              </Badge>
                             )}
                           </div>
-                        ))}
-                      </div>
+                          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1">
+                            {assemblyReadiness.bridgeAudit.map(b => (
+                              <div key={b.bridgeKey} className={cn(
+                                'p-1.5 rounded border text-[8px]',
+                                b.hasAudio ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5',
+                              )}>
+                                <p className="font-bold">{b.bridgeKey.replace('bridge-', 'B')}</p>
+                                <p className="truncate text-muted-foreground">{b.text}</p>
+                                <p className={b.hasAudio ? 'text-green-600' : 'text-red-500'}>
+                                  {b.hasAudio ? 'Ready' : 'No Audio'}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── Regeneration Summary ────────────────────── */}
+                      {(() => {
+                        const missingTtsScenes = assemblyReadiness.scenes.filter(s => s.ttsMissing > 0);
+                        const missingVisualScenes = assemblyReadiness.scenes.filter(s => s.videoCount === 0 && s.imageCount === 0);
+                        const missingMusicScenes = assemblyReadiness.scenes.filter(s => !s.hasMusic);
+                        const missingLipsyncScenes = assemblyReadiness.scenes.filter(s => s.lipsyncMissing > 0);
+                        const missingBridges = (assemblyReadiness.bridgeAudit || []).filter(b => !b.hasAudio);
+                        const totalMissingTts = missingTtsScenes.reduce((sum, s) => sum + s.ttsMissing, 0);
+                        const hasIssues = missingTtsScenes.length > 0 || missingVisualScenes.length > 0 ||
+                          missingMusicScenes.length > 0 || missingBridges.length > 0 || missingLipsyncScenes.length > 0;
+
+                        if (!hasIssues) return (
+                          <div className="mt-3 pt-3 border-t border-border/50">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              <span className="text-xs font-semibold text-green-600">All assets complete — ready for full assembly</span>
+                            </div>
+                          </div>
+                        );
+
+                        return (
+                          <div className="mt-3 pt-3 border-t border-border/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <AlertTriangle className="h-4 w-4 text-amber-500" />
+                              <span className="text-xs font-semibold">Regeneration Needed</span>
+                            </div>
+                            <div className="space-y-1 text-[9px]">
+                              {missingTtsScenes.length > 0 && (
+                                <div className="flex items-start gap-1">
+                                  <span className="text-red-500 font-bold min-w-[70px]">TTS ({totalMissingTts} lines):</span>
+                                  <span className="text-muted-foreground">
+                                    {missingTtsScenes.map(s => `${s.title.split(' — ')[1] || s.sceneKey} (${s.ttsMissing})`).join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                              {missingVisualScenes.length > 0 && (
+                                <div className="flex items-start gap-1">
+                                  <span className="text-red-500 font-bold min-w-[70px]">Visuals:</span>
+                                  <span className="text-muted-foreground">
+                                    {missingVisualScenes.map(s => s.title.split(' — ')[1] || s.sceneKey).join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                              {missingMusicScenes.length > 0 && (
+                                <div className="flex items-start gap-1">
+                                  <span className="text-amber-500 font-bold min-w-[70px]">Music ({missingMusicScenes.length}):</span>
+                                  <span className="text-muted-foreground">
+                                    {missingMusicScenes.map(s => s.title.split(' — ')[1] || s.sceneKey).join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                              {missingLipsyncScenes.length > 0 && (
+                                <div className="flex items-start gap-1">
+                                  <span className="text-amber-500 font-bold min-w-[70px]">Lipsync:</span>
+                                  <span className="text-muted-foreground">
+                                    {missingLipsyncScenes.map(s => `${s.title.split(' — ')[1] || s.sceneKey} (${s.lipsyncMissing})`).join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                              {missingBridges.length > 0 && (
+                                <div className="flex items-start gap-1">
+                                  <span className="text-red-500 font-bold min-w-[70px]">Bridges ({missingBridges.length}):</span>
+                                  <span className="text-muted-foreground">
+                                    {missingBridges.map(b => b.bridgeKey.replace('bridge-', '')).join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
@@ -5888,25 +6114,24 @@ function EP04ProductionInner() {
                             return sum + Object.values(s?.imageUrls || {}).filter(u => u?.startsWith('http')).length
                               + Object.values(s?.avatarUrls || {}).filter(u => u?.startsWith('http')).length;
                           }, 0);
-                          const partEstablishingShots = part.sceneKeys.reduce((sum, sk) => {
+                          // Count ALL non-lipsync videos (not just 1 establishing shot)
+                          const partVideos = part.sceneKeys.reduce((sum, sk) => {
                             const s = sceneProduction[sk];
                             const lipsyncSet = new Set(Object.values(s?.lipsyncUrls || {}));
-                            const hasWanVideo = Object.values(s?.videoUrls || {})
-                              .some(u => u?.startsWith('http') && !lipsyncSet.has(u));
-                            return sum + (hasWanVideo ? 1 : 0);
+                            return sum + Object.values(s?.videoUrls || {})
+                              .filter(u => u?.startsWith('http') && !lipsyncSet.has(u)).length;
                           }, 0);
                           const partLipsync = part.sceneKeys.reduce((sum, sk) => {
                             const s = sceneProduction[sk];
                             return sum + Object.values(s?.lipsyncUrls || {}).filter(u => u?.startsWith('http')).length;
                           }, 0);
-                          const partMusic = part.sceneKeys.filter(sk => {
-                            const s = sceneProduction[sk];
-                            return s?.musicUrl && s.musicUrl.startsWith('http');
-                          }).length;
+                          // Music: check both HTTP and data: URIs (data: will be auto-uploaded before render)
+                          const partMusicHttp = part.sceneKeys.filter(sk => sceneProduction[sk]?.musicUrl?.startsWith('http')).length;
                           const partMusicData = part.sceneKeys.filter(sk => {
-                            const s = sceneProduction[sk];
-                            return s?.musicUrl && !s.musicUrl.startsWith('http');
+                            const m = sceneProduction[sk]?.musicUrl;
+                            return m && !m.startsWith('http');
                           }).length;
+                          const partMusicTotal = partMusicHttp + partMusicData;
                           const isActive = activePartNumber === part.partNumber;
 
                           return (
@@ -5938,33 +6163,45 @@ function EP04ProductionInner() {
                               {/* Scene names */}
                               <p className="text-[10px] text-muted-foreground mb-1">
                                 {part.sceneKeys.map(k => SCENE_TITLES[k]?.replace(/Scene \d+ — /, '') || k).join(' → ')}
+                                {part._subPartLineRange && (
+                                  <span className="text-violet-500 ml-1">(lines {part._subPartLineRange.start + 1}-{part._subPartLineRange.end})</span>
+                                )}
                               </p>
 
-                              {/* Stitch details: what goes into this part */}
+                              {/* Asset summary — clearer layout with icons */}
                               <div className="flex flex-wrap gap-1.5 mb-2">
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 font-medium">
                                   {part.ttsCount} TTS
                                 </span>
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600">
-                                  {partImages} images
-                                </span>
-                                {partEstablishingShots > 0 && (
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600">
-                                    {partEstablishingShots} scene clips
+                                {partVideos > 0 && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600 font-medium">
+                                    {partVideos} video{partVideos > 1 ? 's' : ''}
+                                  </span>
+                                )}
+                                {partImages > 0 && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 font-medium">
+                                    {partImages} image{partImages > 1 ? 's' : ''}
+                                  </span>
+                                )}
+                                {partVideos === 0 && partImages === 0 && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-600 font-medium">
+                                    no visuals
                                   </span>
                                 )}
                                 {partLipsync > 0 && (
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-600">
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-600 font-medium">
                                     {partLipsync} lipsync
                                   </span>
                                 )}
                                 <span className={cn(
-                                  'text-[9px] px-1.5 py-0.5 rounded',
-                                  partMusic > 0 ? 'bg-green-500/10 text-green-600' : 'bg-amber-500/10 text-amber-600',
+                                  'text-[10px] px-1.5 py-0.5 rounded font-medium',
+                                  partMusicTotal > 0 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600',
                                 )}>
-                                  {partMusic > 0 ? `${partMusic} music` : partMusicData > 0 ? `${partMusicData} music (needs regen)` : 'no music'}
+                                  {partMusicTotal > 0
+                                    ? `music ${partMusicHttp > 0 ? '(uploaded)' : '(auto-upload)'}`
+                                    : 'no music'}
                                 </span>
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
                                   ~{Math.round(part.estimatedDuration / 60)}min
                                 </span>
                               </div>
