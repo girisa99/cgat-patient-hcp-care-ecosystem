@@ -1452,9 +1452,7 @@ function EP04ProductionInner() {
     } else {
       toast.warning(`Generated ${success}/${missing.length} — ${missing.length - success} failed`);
     }
-    // Auto-refresh readiness audit so UI reflects the new state
-    setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 300);
-  }, [audioMap, generateLine, getAssemblyReadiness]);
+  }, [audioMap, generateLine]);
 
   // Convenience: regen missing TTS for a specific scene
   const generateMissingTtsForScene = useCallback((sceneKey: string) => {
@@ -2530,8 +2528,6 @@ function EP04ProductionInner() {
 
       const totalResults = Object.keys(results).length;
       toast.success(`Visual production complete for ${sceneKey} (${totalResults} assets)`);
-      // Auto-refresh readiness audit
-      setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 300);
     } catch (err: any) {
       console.error(`[EP04 Visual] Scene ${sceneKey} failed:`, err);
       setSceneProduction(prev => ({
@@ -2540,7 +2536,7 @@ function EP04ProductionInner() {
       }));
       toast.error(`Visual production failed for ${sceneKey}: ${err.message}`);
     }
-  }, [dbProject, projectId, audioMap, screenshotUrls, scenes, scriptContentForUI, processVisualStep, trackGenerationJob, completeGenerationJob, updateSceneArtifacts, getAssemblyReadiness]);
+  }, [dbProject, projectId, audioMap, screenshotUrls, scenes, scriptContentForUI, processVisualStep, trackGenerationJob, completeGenerationJob, updateSceneArtifacts]);
 
   const startAllVisualProduction = useCallback(async () => {
     abortRef.current = false;
@@ -2770,8 +2766,6 @@ function EP04ProductionInner() {
       if (musicUrl) {
         toast.success(`Music & SFX complete for ${sceneKey}`);
       }
-      // Auto-refresh readiness audit
-      setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 300);
     } catch (err: any) {
       console.error(`[EP04 Music] Scene ${sceneKey} failed:`, err);
       setSceneProduction(prev => ({
@@ -2779,7 +2773,7 @@ function EP04ProductionInner() {
         [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), music: 'error' },
       }));
     }
-  }, [dbProject, projectId, trackGenerationJob, completeGenerationJob, updateSceneMusic, getAssemblyReadiness]);
+  }, [dbProject, projectId, trackGenerationJob, completeGenerationJob, updateSceneMusic]);
 
   const startAllMusicProduction = useCallback(async (skipCompleted = false) => {
     const allSceneKeys = Array.from(scenes.keys());
@@ -2811,9 +2805,7 @@ function EP04ProductionInner() {
 
     setMusicProgress(null);
     toast.success('Music & SFX production complete');
-    // Auto-refresh readiness audit
-    setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 300);
-  }, [scenes, sceneProduction, startSceneMusicProduction, getAssemblyReadiness]);
+  }, [scenes, sceneProduction, startSceneMusicProduction]);
 
   // ─── Phase 5: Assembly → One Cinematic Movie ──────────────────────────
 
