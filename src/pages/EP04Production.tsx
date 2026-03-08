@@ -1452,7 +1452,9 @@ function EP04ProductionInner() {
     } else {
       toast.warning(`Generated ${success}/${missing.length} — ${missing.length - success} failed`);
     }
-  }, [audioMap, generateLine]);
+    // Auto-refresh readiness audit so UI reflects the new state
+    setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 300);
+  }, [audioMap, generateLine, getAssemblyReadiness]);
 
   // Convenience: regen missing TTS for a specific scene
   const generateMissingTtsForScene = useCallback((sceneKey: string) => {
@@ -2528,6 +2530,8 @@ function EP04ProductionInner() {
 
       const totalResults = Object.keys(results).length;
       toast.success(`Visual production complete for ${sceneKey} (${totalResults} assets)`);
+      // Auto-refresh readiness audit
+      setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 300);
     } catch (err: any) {
       console.error(`[EP04 Visual] Scene ${sceneKey} failed:`, err);
       setSceneProduction(prev => ({
@@ -2536,7 +2540,7 @@ function EP04ProductionInner() {
       }));
       toast.error(`Visual production failed for ${sceneKey}: ${err.message}`);
     }
-  }, [dbProject, projectId, audioMap, screenshotUrls, scenes, scriptContentForUI, processVisualStep, trackGenerationJob, completeGenerationJob, updateSceneArtifacts]);
+  }, [dbProject, projectId, audioMap, screenshotUrls, scenes, scriptContentForUI, processVisualStep, trackGenerationJob, completeGenerationJob, updateSceneArtifacts, getAssemblyReadiness]);
 
   const startAllVisualProduction = useCallback(async () => {
     abortRef.current = false;
@@ -2766,6 +2770,8 @@ function EP04ProductionInner() {
       if (musicUrl) {
         toast.success(`Music & SFX complete for ${sceneKey}`);
       }
+      // Auto-refresh readiness audit
+      setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 300);
     } catch (err: any) {
       console.error(`[EP04 Music] Scene ${sceneKey} failed:`, err);
       setSceneProduction(prev => ({
@@ -2773,7 +2779,7 @@ function EP04ProductionInner() {
         [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), music: 'error' },
       }));
     }
-  }, [dbProject, projectId, trackGenerationJob, completeGenerationJob, updateSceneMusic]);
+  }, [dbProject, projectId, trackGenerationJob, completeGenerationJob, updateSceneMusic, getAssemblyReadiness]);
 
   const startAllMusicProduction = useCallback(async (skipCompleted = false) => {
     const allSceneKeys = Array.from(scenes.keys());
@@ -2805,7 +2811,9 @@ function EP04ProductionInner() {
 
     setMusicProgress(null);
     toast.success('Music & SFX production complete');
-  }, [scenes, sceneProduction, startSceneMusicProduction]);
+    // Auto-refresh readiness audit
+    setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 300);
+  }, [scenes, sceneProduction, startSceneMusicProduction, getAssemblyReadiness]);
 
   // ─── Phase 5: Assembly → One Cinematic Movie ──────────────────────────
 
@@ -6132,6 +6140,48 @@ function EP04ProductionInner() {
                                     {missingBridges.map(b => b.bridgeKey.replace('bridge-', '')).join(', ')}
                                   </span>
                                 </div>
+                              )}
+                            </div>
+                            {/* ── Batch Regen Action Buttons ──────────── */}
+                            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-border/30">
+                              {totalMissingTts > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-[10px] border-red-500/30 text-red-600 hover:bg-red-500/10"
+                                  disabled={!!batchProgress}
+                                  onClick={() => {
+                                    const allMissingKeys = missingTtsScenes.flatMap(s => s.ttsLines.filter(l => !l.hasAudio).map(l => l.key));
+                                    generateMissingForKeys(allMissingKeys);
+                                  }}
+                                >
+                                  <Volume2 className="h-3 w-3 mr-1" />
+                                  Regen All {totalMissingTts} Missing TTS
+                                </Button>
+                              )}
+                              {missingMusicScenes.length > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-[10px] border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                                  disabled={!!musicProgress}
+                                  onClick={() => startAllMusicProduction(true)}
+                                >
+                                  <Music className="h-3 w-3 mr-1" />
+                                  Regen {missingMusicScenes.length} Missing Music + SFX
+                                </Button>
+                              )}
+                              {missingBridges.length > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-[10px] border-red-500/30 text-red-600 hover:bg-red-500/10"
+                                  disabled={!!batchProgress}
+                                  onClick={generateMissingBridgeTts}
+                                >
+                                  <Mic className="h-3 w-3 mr-1" />
+                                  Regen {missingBridges.length} Missing Bridges
+                                </Button>
                               )}
                             </div>
                           </div>
