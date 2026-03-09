@@ -864,7 +864,7 @@ function EP04ProductionInner() {
         }
       }
 
-      // Apply restored TTS
+      // Apply restored TTS — set state immediately, re-persist in background
       if (Object.keys(restoredAudio).length > 0) {
         setAudioMap(restoredAudio);
         setStatusMap(restoredStatus);
@@ -873,27 +873,30 @@ function EP04ProductionInner() {
         toast.success(`Restored ${matchCount} saved voiceovers`);
         console.log(`[EP04] TTS restored: ${matchCount} match static config, ${Object.keys(restoredAudio).length} total from DB`);
 
-        // ── Re-persist recovered TTS back to script_lines (repair wiped data) ──
-        // CRITICAL: Batch updates with delays to avoid exhausting the DB connection pool.
-        // Previously fired 120 concurrent UPDATE queries that crashed Supabase.
+        // ── Re-persist recovered TTS back to script_lines (fire-and-forget background) ──
+        // Don't block UI load — this is a repair operation, not required for rendering.
         const linesToRepair = Object.entries(restoredAudio).filter(([k]) => staticKeys.has(k));
-        const BATCH_SIZE = 5;
-        for (let i = 0; i < linesToRepair.length; i += BATCH_SIZE) {
-          const batch = linesToRepair.slice(i, i + BATCH_SIZE);
-          await Promise.allSettled(batch.map(([lineKey, audio]) =>
-            db.from('cast_project_script_lines')
-              .update({
-                tts_audio_url: audio.audioUrl,
-                tts_provider: audio.provider,
-                tts_status: 'generated',
-              })
-              .eq('project_id', projectId)
-              .eq('line_key', lineKey)
-          ));
-          // Breathe between batches to avoid connection pool exhaustion
-          if (i + BATCH_SIZE < linesToRepair.length) {
-            await new Promise(r => setTimeout(r, 200));
-          }
+        if (linesToRepair.length > 0) {
+          (async () => {
+            const BATCH_SIZE = 10;
+            for (let i = 0; i < linesToRepair.length; i += BATCH_SIZE) {
+              const batch = linesToRepair.slice(i, i + BATCH_SIZE);
+              await Promise.allSettled(batch.map(([lineKey, audio]) =>
+                db.from('cast_project_script_lines')
+                  .update({
+                    tts_audio_url: audio.audioUrl,
+                    tts_provider: audio.provider,
+                    tts_status: 'generated',
+                  })
+                  .eq('project_id', projectId)
+                  .eq('line_key', lineKey)
+              ));
+              if (i + BATCH_SIZE < linesToRepair.length) {
+                await new Promise(r => setTimeout(r, 100));
+              }
+            }
+            console.log(`[EP04] Background TTS re-persist complete: ${linesToRepair.length} lines`);
+          })();
         }
       }
 
@@ -1118,31 +1121,29 @@ function EP04ProductionInner() {
         const restoreMsg = `Restored ${restoredCount} scene(s) with visual assets${musicCount > 0 ? `, ${musicCount} with music` : ''}`;
         toast.success(toastParts.length > 0 ? `${restoreMsg}. ${toastParts.join('. ')}.` : restoreMsg);
 
-        // Re-persist ONLY for scenes that came from Source 2 (gap-fill).
-        // If Source 1 already had artifacts, do NOT re-persist (it's already authoritative).
-        // Serialized to avoid Supabase statement timeout from parallel writes.
+        // Re-persist Source 2 gap-fill in background — don't block UI
         const source2OnlyScenes = Object.entries(restored).filter(([sk]) => !source1SceneKeys.has(sk));
         if (source2OnlyScenes.length > 0) {
-          console.log(`[EP04] Re-persisting ${source2OnlyScenes.length} Source-2-only scenes to fill Source 1 gaps (serialized)`);
-          let repersistOk = 0;
-          for (let i = 0; i < source2OnlyScenes.length; i++) {
-            const [sk, sceneStatus] = source2OnlyScenes[i];
-            try {
-              const ok = await updateSceneArtifacts(projectId, sk, {
-                videoUrls: sceneStatus.videoUrls,
-                imageUrls: sceneStatus.imageUrls,
-                avatarUrls: sceneStatus.avatarUrls,
-                lipsyncUrls: sceneStatus.lipsyncUrls,
-              });
-              if (ok) repersistOk++;
-            } catch (e) {
-              console.warn(`[EP04] Re-persist ${sk} failed:`, e);
+          (async () => {
+            console.log(`[EP04] Background: re-persisting ${source2OnlyScenes.length} Source-2-only scenes`);
+            let repersistOk = 0;
+            for (let i = 0; i < source2OnlyScenes.length; i++) {
+              const [sk, sceneStatus] = source2OnlyScenes[i];
+              try {
+                const ok = await updateSceneArtifacts(projectId, sk, {
+                  videoUrls: sceneStatus.videoUrls,
+                  imageUrls: sceneStatus.imageUrls,
+                  avatarUrls: sceneStatus.avatarUrls,
+                  lipsyncUrls: sceneStatus.lipsyncUrls,
+                });
+                if (ok) repersistOk++;
+              } catch (e) {
+                console.warn(`[EP04] Re-persist ${sk} failed:`, e);
+              }
+              if (i < source2OnlyScenes.length - 1) await new Promise(r => setTimeout(r, 200));
             }
-            if (i < source2OnlyScenes.length - 1) await new Promise(r => setTimeout(r, 300));
-          }
-          console.log(`[EP04] Re-persist complete: ${repersistOk}/${source2OnlyScenes.length} gap-fill scenes saved to DB`);
-        } else {
-          console.log(`[EP04] All ${Object.keys(restored).length} scenes came from Source 1 — no re-persist needed`);
+            console.log(`[EP04] Background re-persist complete: ${repersistOk}/${source2OnlyScenes.length} gap-fill scenes`);
+          })();
         }
       }
 
@@ -2721,7 +2722,8 @@ function EP04ProductionInner() {
           });
         }
 
-        const { data, error } = await supabase.functions.invoke('multi-provider-music', {
+        // 60-second timeout to prevent infinite spin
+        const musicPromise = supabase.functions.invoke('multi-provider-music', {
           body: {
             prompt: musicPrompt,
             duration: musicDuration,
@@ -2730,6 +2732,10 @@ function EP04ProductionInner() {
             sceneKey: sceneKey,
           },
         });
+        const musicTimeout = new Promise<{ data: null; error: Error }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: new Error('Music generation timed out after 60s') }), 60000)
+        );
+        const { data, error } = await Promise.race([musicPromise, musicTimeout]);
 
         if (!error && data?.audioUrl && !data?.isSilentPlaceholder) {
           musicUrl = data.audioUrl;
@@ -2747,12 +2753,20 @@ function EP04ProductionInner() {
         }
       }
 
-      // Generate SFX clips
+      // Generate SFX clips (30s timeout each)
       for (const sfx of sfxList) {
-        const { data } = await supabase.functions.invoke('ai-universal-processor', {
-          body: { action: 'generate_sfx', prompt: sfx.prompt, duration: sfx.duration || 3 },
-        });
-        if (data?.audioUrl) sfxUrls.push(data.audioUrl);
+        try {
+          const sfxPromise = supabase.functions.invoke('ai-universal-processor', {
+            body: { action: 'generate_sfx', prompt: sfx.prompt, duration: sfx.duration || 3 },
+          });
+          const sfxTimeout = new Promise<{ data: null }>((resolve) =>
+            setTimeout(() => resolve({ data: null }), 30000)
+          );
+          const { data } = await Promise.race([sfxPromise, sfxTimeout]);
+          if (data?.audioUrl) sfxUrls.push(data.audioUrl);
+        } catch (sfxErr) {
+          console.warn(`[EP04 Music] SFX failed for ${sceneKey}:`, sfxErr);
+        }
       }
 
       // Persist to DB
@@ -2984,6 +2998,16 @@ function EP04ProductionInner() {
   }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap]);
 
   const [assemblyReadiness, setAssemblyReadiness] = useState<ReturnType<typeof getAssemblyReadiness> | null>(null);
+
+  // Auto-refresh readiness when audioMap or sceneProduction changes (e.g. after regen)
+  useEffect(() => {
+    if (assemblyReadiness) {
+      // Debounce: wait for state to settle after batch operations
+      const t = setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 500);
+      return () => clearTimeout(t);
+    }
+  }, [audioMap, sceneProduction]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [assemblyJobId, setAssemblyJobId] = useState<string | null>(null);
   const [assemblyPollTimer, setAssemblyPollTimer] = useState<ReturnType<typeof setInterval> | null>(null);
 
@@ -3024,7 +3048,8 @@ function EP04ProductionInner() {
     const parts: AssemblyPart[] = [];
     let partNum = 1;
 
-    for (const sceneKey of sceneKeys) {
+    for (let si = 0; si < sceneKeys.length; si++) {
+      const sceneKey = sceneKeys[si];
       const sceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
       let sceneDuration = 0;
       let sceneTtsCount = 0;
@@ -3032,10 +3057,14 @@ function EP04ProductionInner() {
         sceneDuration += (scriptContentForUI[k]?.duration_est || 5) + 1.5;
         if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
+      // Add trailing transition duration (~6s bridge narrator + transition visual)
+      const sceneIdx = sceneKey.match(/scene-(\d+)/)?.[1];
+      const hasTrailingTransition = sceneIdx && si < sceneKeys.length - 1;
+      if (hasTrailingTransition) sceneDuration += 6;
       // Count lipsync clips — each is a video element that adds render load
       const lipsyncCount = Object.values(sceneProduction[sceneKey]?.lipsyncUrls || {}).filter(u => u?.startsWith('http')).length;
-      const totalElements = sceneTtsCount + lipsyncCount;
-      console.log(`[PerScene] ${sceneKey}: ${sceneTtsCount} TTS + ${lipsyncCount} lipsync = ${totalElements} elements, ~${Math.round(sceneDuration)}s`);
+      const totalElements = sceneTtsCount + lipsyncCount + (hasTrailingTransition ? 1 : 0); // bridge TTS = 1 extra audio
+      console.log(`[PerScene] ${sceneKey}: ${sceneTtsCount} TTS + ${lipsyncCount} lipsync + ${hasTrailingTransition ? '1 bridge' : '0 bridge'} = ${totalElements} elements, ~${Math.round(sceneDuration)}s`);
 
       // Split threshold: >15 TTS or >180s duration
       const needsSplit = sceneTtsCount > MAX_SUB_TTS || sceneDuration > MAX_SUB_DURATION;
@@ -4018,16 +4047,21 @@ function EP04ProductionInner() {
         };
       });
 
-      // ── Only include transitions between scenes WITHIN this part ──
-      // NOTE: SCENE_TITLES keys (scene-1-problem) differ from EP04_STORYBOOK_TRANSITIONS keys (scene-1-cold-open)
-      // Match by scene index number (the digit after 'scene-') instead of exact key match
+      // ── Include transitions — between scenes WITHIN this part, OR trailing transition after last scene ──
+      // For per-scene mode (1 scene per part), include the transition AFTER that scene
+      // so bridge narrator TTS and chapter titles are in the final assembly.
       const targetSceneIndices = new Set(targetSceneKeys.map(k => k.match(/scene-(\d+)/)?.[1]).filter(Boolean));
       const getSceneIndex = (key: string) => key.match(/scene-(\d+)/)?.[1];
+      const isPerSceneMode = targetSceneKeys.length === 1;
       const transitions = EP04_STORYBOOK_TRANSITIONS
         .filter(t => {
           const fromIdx = getSceneIndex(t.from);
           const toIdx = getSceneIndex(t.to);
-          return fromIdx && toIdx && targetSceneIndices.has(fromIdx) && targetSceneIndices.has(toIdx);
+          if (!fromIdx || !toIdx) return false;
+          // Multi-part: both from and to must be in this part
+          if (!isPerSceneMode) return targetSceneIndices.has(fromIdx) && targetSceneIndices.has(toIdx);
+          // Per-scene: include transition that starts from this scene (trailing transition)
+          return targetSceneIndices.has(fromIdx);
         })
         .map(t => ({
           from: t.from,
