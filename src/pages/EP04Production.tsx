@@ -1205,7 +1205,96 @@ function EP04ProductionInner() {
         }));
         return data;
       };
-      console.log('[EP04] Debug: run window.__debugSceneDB() in console to check DB artifacts');
+      // Run window.__auditAssets() to check which URLs are active vs expired
+      (window as any).__auditAssets = async () => {
+        const SCENE_KEYS = Object.keys(SCENE_TITLES);
+        console.log(`\n🔍 ASSET AUDIT — checking all URLs across ${SCENE_KEYS.length} scenes...\n`);
+
+        const checkUrl = async (url: string): Promise<'active' | 'expired' | 'data-uri' | 'empty'> => {
+          if (!url) return 'empty';
+          if (!url.startsWith('http')) return 'data-uri';
+          if (url.includes('supabase.co/storage')) return 'active'; // Supabase Storage never expires
+          try {
+            const resp = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+            // no-cors returns opaque response (status 0) — can't tell if 403
+            // Fall back to heuristic for external CDN
+            if (isExpiredCdnUrl(url)) return 'expired';
+            return 'active';
+          } catch {
+            return 'expired';
+          }
+        };
+
+        const results: any[] = [];
+        let totalActive = 0, totalExpired = 0, totalDataUri = 0, totalEmpty = 0;
+
+        for (const sk of SCENE_KEYS) {
+          const status = sceneProduction[sk];
+          if (!status) {
+            results.push({ scene: sk, category: 'ALL', status: '❌ NO DATA', url: '' });
+            continue;
+          }
+
+          const buckets: Array<{ name: string; urls: Record<string, string> }> = [
+            { name: 'videos', urls: status.videoUrls || {} },
+            { name: 'images', urls: status.imageUrls || {} },
+            { name: 'avatars', urls: status.avatarUrls || {} },
+            { name: 'lipsync', urls: status.lipsyncUrls || {} },
+          ];
+
+          for (const bucket of buckets) {
+            for (const [key, url] of Object.entries(bucket.urls)) {
+              const s = await checkUrl(url);
+              if (s === 'active') totalActive++;
+              else if (s === 'expired') totalExpired++;
+              else if (s === 'data-uri') totalDataUri++;
+              else totalEmpty++;
+              results.push({
+                scene: SCENE_TITLES[sk]?.split(' — ')[1] || sk,
+                category: bucket.name,
+                status: s === 'active' ? '✅ active' : s === 'expired' ? '❌ EXPIRED' : s === 'data-uri' ? '⚠️ data:URI' : '⬜ empty',
+                key: key.substring(0, 40),
+                url: url?.substring(0, 80) || '',
+              });
+            }
+          }
+
+          // Music
+          const musicStatus = await checkUrl(status.musicUrl || '');
+          if (musicStatus === 'active') totalActive++;
+          else if (musicStatus === 'expired') totalExpired++;
+          else if (musicStatus === 'data-uri') totalDataUri++;
+          else totalEmpty++;
+          results.push({
+            scene: SCENE_TITLES[sk]?.split(' — ')[1] || sk,
+            category: 'music',
+            status: musicStatus === 'active' ? '✅ active' : musicStatus === 'expired' ? '❌ EXPIRED' : musicStatus === 'data-uri' ? '⚠️ data:URI' : '⬜ empty/none',
+            key: 'musicUrl',
+            url: status.musicUrl?.substring(0, 80) || '(none)',
+          });
+        }
+
+        // TTS audit
+        let ttsActive = 0, ttsExpired = 0, ttsDataUri = 0, ttsMissing = 0;
+        for (const k of scriptKeys) {
+          const url = audioMap[k]?.audioUrl;
+          if (!url) { ttsMissing++; continue; }
+          if (!url.startsWith('http')) { ttsDataUri++; continue; }
+          if (url.includes('supabase.co/storage')) { ttsActive++; continue; }
+          if (isExpiredCdnUrl(url)) { ttsExpired++; } else { ttsActive++; }
+        }
+
+        console.table(results);
+        console.log(`\n📊 SUMMARY:`);
+        console.log(`   Assets: ✅ ${totalActive} active | ❌ ${totalExpired} expired | ⚠️ ${totalDataUri} data:URI | ⬜ ${totalEmpty} empty`);
+        console.log(`   TTS:    ✅ ${ttsActive} active | ❌ ${ttsExpired} expired | ⚠️ ${ttsDataUri} data:URI | ⬜ ${ttsMissing} missing`);
+        console.log(`\n💡 Expired assets need regeneration. data:URI assets work but won't render in JSON2Video assembly.`);
+
+        // Return structured data for programmatic use
+        return { results, summary: { totalActive, totalExpired, totalDataUri, totalEmpty, ttsActive, ttsExpired, ttsDataUri, ttsMissing } };
+      };
+      console.log('[EP04] Debug: run window.__auditAssets() to check all asset URLs');
+      console.log('[EP04] Debug: run window.__debugSceneDB() to check DB artifacts');
     })();
   }, [projectId, contentLoaded, scriptContentForUI]);
 
