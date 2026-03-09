@@ -3550,7 +3550,7 @@ function EP04ProductionInner() {
         elements.push({
           type: 'audio', src: chapter.musicUrl,
           start: 0, duration: sceneDuration,
-          volume: 0.25, loop: !!chapter.musicLoop,
+          volume: 0.25, loop: chapter.musicLoop ? -1 : 0,
           'fade-in': 0.5, 'fade-out': 0.5,
         });
       }
