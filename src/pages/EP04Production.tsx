@@ -1541,7 +1541,13 @@ function EP04ProductionInner() {
 
   // Generate ONLY missing TTS lines for a specific scene (or bridge keys)
   const generateMissingForKeys = useCallback(async (keys: string[]) => {
-    const missing = keys.filter(k => !audioMap[k]?.audioUrl);
+    const missing = keys.filter(k => {
+      if (audioMap[k]?.audioUrl) return false; // already has audio
+      // Skip visual-only lines (no dialogue text) — they don't need TTS
+      const line = scriptContentForUI[k];
+      if (!line?.text || line.text.trim().length === 0) return false;
+      return true;
+    });
     if (missing.length === 0) {
       toast.info('All TTS lines already generated for this selection');
       return;
@@ -1562,7 +1568,7 @@ function EP04ProductionInner() {
     } else {
       toast.warning(`Generated ${success}/${missing.length} — ${missing.length - success} failed`);
     }
-  }, [audioMap, generateLine]);
+  }, [audioMap, scriptContentForUI, generateLine]);
 
   // Convenience: regen missing TTS for a specific scene
   const generateMissingTtsForScene = useCallback((sceneKey: string) => {
@@ -2835,7 +2841,7 @@ function EP04ProductionInner() {
           },
         });
         const musicTimeout = new Promise<{ data: null; error: Error }>((resolve) =>
-          setTimeout(() => resolve({ data: null, error: new Error('Music generation timed out after 60s') }), 60000)
+          setTimeout(() => resolve({ data: null, error: new Error('Music generation timed out after 120s') }), 120000)
         );
         const { data, error } = await Promise.race([musicPromise, musicTimeout]);
 
@@ -2981,11 +2987,13 @@ function EP04ProductionInner() {
       // Per-TTS-line detail
       const ttsLines = sceneLines.map(k => {
         const line = scriptContentForUI[k];
+        const isVisualOnly = !line?.text || line.text.trim().length === 0;
         return {
           key: k,
           voice: line?.voice || 'unknown',
           duration: line?.duration_est || 5,
-          hasAudio: !!audioMap[k]?.audioUrl,
+          hasAudio: !!audioMap[k]?.audioUrl || isVisualOnly,
+          isVisualOnly,
         };
       });
       const ttsReady = ttsLines.filter(l => l.hasAudio).length;
