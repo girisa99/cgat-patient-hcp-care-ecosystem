@@ -3569,13 +3569,20 @@ function EP04ProductionInner() {
       });
     }
 
-    // Helper: detect video URLs vs image URLs for JSON2Video element type
-    const detectMediaType = (url: string): 'video' | 'image' =>
-      url.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i) ? 'video' : 'image';
+    // Helper: detect video URLs vs image URLs for JSON2Video element type.
+    // Checks file extension AND Supabase Storage path patterns.
+    const detectMediaType = (url: string): 'video' | 'image' => {
+      if (url.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i)) return 'video';
+      if (url.match(/\.(png|jpg|jpeg|webp|gif|svg|bmp)(\?|$)/i)) return 'image';
+      if (url.includes('/video/') || url.includes('/videos/')) return 'video';
+      if (url.includes('/image/') || url.includes('/images/') || url.includes('/avatar/')) return 'image';
+      return 'image'; // safe default
+    };
 
     // ── Scene segments with layered audio + lipsync ──
     chapters.forEach((chapter, chapterIndex) => {
       const allTts = chapter.allTtsUrls || [];
+      // Use pre-separated video/image arrays if available, else fall back to mixed visualUrls
       const chapterVisuals: string[] = chapter.visualUrls || (chapter.visualUrl ? [chapter.visualUrl] : []);
       const lipsyncClips = chapter.lipsyncClips || [];
       const sceneDuration: number = chapter.duration || 30;
@@ -3589,12 +3596,15 @@ function EP04ProductionInner() {
         kbIdx++;
         return kb;
       };
-      if (chapterVisuals.length > 0) {
-        // Unified visual layout: play ALL videos at full duration sequentially,
-        // then fill remaining time with Ken Burns images.
-        // No more 8s cap — each Alibaba/Gemini video plays its full 5-10s.
-        const videos = chapterVisuals.filter(u => detectMediaType(u) === 'video');
-        const images = chapterVisuals.filter(u => detectMediaType(u) === 'image');
+      if (chapterVisuals.length > 0 || (chapter as any).sceneVideos?.length > 0 || (chapter as any).sceneImages?.length > 0) {
+        // Use pre-separated arrays from source buckets (trust the bucket type).
+        // Fall back to detectMediaType only for legacy mixed visualUrls.
+        const videos: string[] = (chapter as any).sceneVideos?.length > 0
+          ? (chapter as any).sceneVideos
+          : chapterVisuals.filter(u => detectMediaType(u) === 'video');
+        const images: string[] = (chapter as any).sceneImages?.length > 0
+          ? (chapter as any).sceneImages
+          : chapterVisuals.filter(u => detectMediaType(u) === 'image');
 
         let currentTime = 0;
 
@@ -3985,19 +3995,17 @@ function EP04ProductionInner() {
         const isHttpUrl = (u: string) => u && u.startsWith('http');
         // Exclude expired CDN URLs that will 403/404 during JSON2Video render
         const isSafeUrl = (u: string) => isHttpUrl(u) && !isExpiredCdnUrl(u);
-        const isVideoUrl = (u: string) => isSafeUrl(u) && !!u.match(/\.(mp4|webm|mov)(\?|$)/i);
-        const isImageUrl = (u: string) => isSafeUrl(u) && !u.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i);
 
-        // Collect all scene images
+        // Collect all scene images — from imageUrls + avatarUrls buckets (trust the source bucket)
         const allImageVisuals: string[] = [
-          ...Object.values(status.imageUrls || {}).filter(isImageUrl),
-          ...Object.values(status.avatarUrls || {}).filter(isImageUrl),
+          ...Object.values(status.imageUrls || {}).filter(isSafeUrl),
+          ...Object.values(status.avatarUrls || {}).filter(isSafeUrl),
         ];
 
-        // Collect all non-lipsync scene videos
+        // Collect all non-lipsync scene videos — from videoUrls bucket (trust the source bucket)
         const lipsyncSet = new Set(Object.values(status.lipsyncUrls || {}));
         const allSceneVideos: string[] = Object.values(status.videoUrls || {})
-          .filter(isVideoUrl)
+          .filter(isSafeUrl)
           .filter(u => !lipsyncSet.has(u));
 
         // For sub-parts: distribute visuals proportionally across sub-parts.
@@ -4142,6 +4150,8 @@ function EP04ProductionInner() {
           audioUrl: allTtsUrls[0]?.url || undefined,
           visualUrl: allVisualUrls[0] || undefined,
           visualUrls: allVisualUrls,
+          sceneVideos,    // pre-separated: guaranteed video URLs from videoUrls bucket
+          sceneImages: imageVisuals, // pre-separated: guaranteed image URLs from imageUrls/avatarUrls buckets
           lipsyncClips,
           duration: sceneDuration,
           ttsProvider: 'pre-generated',
@@ -4210,8 +4220,8 @@ function EP04ProductionInner() {
         + bookends.opening.duration + bookends.closing.duration;
 
       console.log(`[EP04 Assembly${partLabel}] ${preBuiltChapters.length} chapters:`, preBuiltChapters.map(c => {
-        const hasEstablishing = (c.visualUrls || []).some((u: string) => u.match(/\.(mp4|webm|mov)(\?|$)/i));
-        const imgCount = (c.visualUrls || []).filter((u: string) => !u.match(/\.(mp4|webm|mov)(\?|$)/i)).length;
+        const hasEstablishing = ((c as any).sceneVideos || []).length > 0;
+        const imgCount = ((c as any).sceneImages || []).length;
         return `${c.chapterId}: ${c.allTtsUrls.length} TTS, ${imgCount} img, ${hasEstablishing ? '1 establishing-shot' : 'no vid'}, ${c.lipsyncClips?.length || 0} lipsync, ${c.kineticTexts?.length || 0} kinetic, ${c.sfxTimings?.length || 0} sfx, music=${!!c.musicUrl}(${(c as any)._musicUrlFormat})(loop=${c.musicLoop}), dur=${c.duration}s`;
       }));
       console.log(`[EP04 Assembly${partLabel}] ${transitions.length} transitions (${transitions.filter(t => t.nextSceneVisualUrl).length} with visuals), duration: ${Math.round(partDuration / 60)}min (${partDuration}s)`);
