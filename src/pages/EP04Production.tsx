@@ -336,19 +336,21 @@ const TRANSITION_COLORS: Record<string, string> = {
 // Pre-selected video provider per scene based on narrative tone.
 // Sora2API: cinematic hero moments. Gemini Veo: data/numbers. Wan: character-driven.
 type VideoProviderChoice = 'alibaba' | 'sora2api' | 'gemini';
+// EP04 uses Alibaba (WAN) for all video generation — consistent Pixar 3D style.
+// Future episodes can mix Sora2API + Gemini Veo for variety.
 const SCENE_PROVIDER_DEFAULTS: Record<string, { provider: VideoProviderChoice; rationale: string }> = {
-  'scene-0-title':          { provider: 'sora2api', rationale: 'Cinematic genie lamp — emotional hook' },
+  'scene-0-title':          { provider: 'alibaba',  rationale: 'Cinematic genie lamp — Pixar 3D' },
   'scene-1-problem':        { provider: 'alibaba',  rationale: 'Character-driven — Pixar warmth' },
   'scene-2-introductions':  { provider: 'alibaba',  rationale: 'Character intros — Pixar personality' },
-  'scene-3-origin':         { provider: 'sora2api', rationale: 'Dramatic turning point — cinematic' },
+  'scene-3-origin':         { provider: 'alibaba',  rationale: 'Dramatic turning point — Pixar 3D' },
   'scene-4-solution':       { provider: 'alibaba',  rationale: 'Sprint action — Pixar energy' },
   'scene-5-governance':     { provider: 'alibaba',  rationale: 'Team collaboration — animated warmth' },
   'scene-6-po-actions':     { provider: 'alibaba',  rationale: 'Technical showcase — stylized' },
-  'scene-7-velocity':       { provider: 'gemini',   rationale: 'Data storytelling — velocity stats' },
-  'scene-8-numbers':        { provider: 'gemini',   rationale: '18-screen montage — data viz precision' },
-  'scene-9-challenges':     { provider: 'gemini',   rationale: '"36h→22min" — typography, data reveal' },
+  'scene-7-velocity':       { provider: 'alibaba',  rationale: 'Data storytelling — Pixar 3D' },
+  'scene-8-numbers':        { provider: 'alibaba',  rationale: '18-screen montage — Pixar 3D' },
+  'scene-9-challenges':     { provider: 'alibaba',  rationale: '"36h→22min" — Pixar 3D reveal' },
   'scene-10-whats-next':    { provider: 'alibaba',  rationale: 'Language constellation — Pixar 3D' },
-  'scene-11-close':         { provider: 'sora2api', rationale: 'Emotional farewell — cinematic close' },
+  'scene-11-close':         { provider: 'alibaba',  rationale: 'Emotional farewell — Pixar 3D close' },
 };
 
 const VIDEO_PROVIDER_OPTIONS: Array<{ id: VideoProviderChoice; label: string; color: string; description: string }> = [
