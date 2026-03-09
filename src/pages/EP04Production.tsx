@@ -534,6 +534,7 @@ function EP04ProductionInner() {
     (async () => {
       try {
         // Step 1: Auth check with explicit timeout
+        console.log('[EP04 LOAD] Step 1: checking auth...');
         const authPromise = supabase.auth.getUser();
         const authTimeout = new Promise<null>((_, reject) =>
           setTimeout(() => reject(new Error('Auth check timed out after 12 seconds — Supabase may be cold-starting')), 12000)
@@ -544,17 +545,19 @@ function EP04ProductionInner() {
         const user = authResult?.data?.user;
         if (!user) {
           const authError = authResult?.error;
-          console.error('[EP04] Auth failed — no user session:', authError);
+          console.error('[EP04 LOAD] Auth failed — no user session:', authError);
           setProjectLoadError(authError?.message || 'Not authenticated — please sign in and refresh');
           setProjectLoading(false);
           clearTimeout(timeoutId);
           return;
         }
+        console.log('[EP04 LOAD] Step 1 done — user:', user.id);
         updateStep('Looking up EP04 project...');
 
         const db = supabase as any;
 
         // Step 2: Look up existing project by style_intent
+        console.log('[EP04 LOAD] Step 2: querying cast_projects by style_intent...');
         const { data: existing, error: lookupErr } = await db
           .from('cast_projects')
           .select('id')
@@ -565,7 +568,7 @@ function EP04ProductionInner() {
 
         if (cancelled) return;
         if (lookupErr) {
-          console.error('[EP04] DB lookup error:', lookupErr);
+          console.error('[EP04 LOAD] DB lookup error:', lookupErr);
           setProjectLoadError(`Database query failed: ${lookupErr.message}`);
           setProjectLoading(false);
           clearTimeout(timeoutId);
@@ -573,6 +576,7 @@ function EP04ProductionInner() {
         }
 
         if (existing?.id) {
+          console.log('[EP04 LOAD] Step 2 done — found project:', existing.id);
           setAutoProjectId(existing.id);
           setProjectLoading(false);
           clearTimeout(timeoutId);
@@ -580,6 +584,7 @@ function EP04ProductionInner() {
         }
 
         // Step 3: Fallback — check by title for legacy rows
+        console.log('[EP04 LOAD] Step 3: checking legacy titles...');
         updateStep('Checking legacy project titles...');
         const { data: legacyExisting } = await db
           .from('cast_projects')
