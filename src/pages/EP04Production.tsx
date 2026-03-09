@@ -525,35 +525,42 @@ function EP04ProductionInner() {
     const updateStep = (step: string) => { loadStepRef.current = step; setLoadStep(step); };
     updateStep('Checking authentication...');
 
-    // Timeout guard — 30s max (Supabase Micro cold-starts can be slow)
+    // Timeout guard — 45s max (Supabase cold-starts can be slow)
     const timeoutId = setTimeout(() => {
       setProjectLoading(false);
       setProjectLoadError(`Timed out at step: "${loadStepRef.current || 'authentication check'}". Supabase may be unreachable — check your network or try again.`);
-    }, 30000);
+    }, 45000);
 
     let cancelled = false;
 
     (async () => {
       try {
-        // Step 1: Auth check — try getSession (local, fast) then getUser (network)
+        // Step 1: Auth check — fast local session, then network validation
         console.log('[EP04 LOAD] Step 1: checking auth...');
         let user: any = null;
-        // Fast path: read session from local storage (no network call)
+        // Fast path: read session from local storage (with timeout)
         try {
-          const { data: sessionData } = await supabase.auth.getSession();
-          user = sessionData?.session?.user;
+          const sessionPromise = supabase.auth.getSession();
+          const sessionTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+          const sessionResult = await Promise.race([sessionPromise, sessionTimeout]) as any;
+          user = sessionResult?.data?.session?.user;
           if (user) console.log('[EP04 LOAD] Step 1a: got user from session (local)');
         } catch (e) {
           console.warn('[EP04 LOAD] getSession failed:', e);
         }
         // Slow path: validate with server (only if local session missing)
         if (!user) {
-          const authPromise = supabase.auth.getUser();
-          const authTimeout = new Promise<null>((_, reject) =>
-            setTimeout(() => reject(new Error('Auth check timed out after 12 seconds')), 12000)
-          );
-          const authResult = await Promise.race([authPromise, authTimeout]) as any;
-          user = authResult?.data?.user;
+          console.log('[EP04 LOAD] Step 1b: trying getUser (network)...');
+          try {
+            const authPromise = supabase.auth.getUser();
+            const authTimeout = new Promise<null>((_, reject) =>
+              setTimeout(() => reject(new Error('Auth check timed out after 15 seconds')), 15000)
+            );
+            const authResult = await Promise.race([authPromise, authTimeout]) as any;
+            user = authResult?.data?.user;
+          } catch (authErr: any) {
+            console.warn('[EP04 LOAD] getUser failed:', authErr?.message || authErr);
+          }
         }
         if (cancelled) return;
 
@@ -3597,14 +3604,16 @@ function EP04ProductionInner() {
         return kb;
       };
       if (chapterVisuals.length > 0 || (chapter as any).sceneVideos?.length > 0 || (chapter as any).sceneImages?.length > 0) {
-        // Use pre-separated arrays from source buckets (trust the bucket type).
-        // Fall back to detectMediaType only for legacy mixed visualUrls.
-        const videos: string[] = (chapter as any).sceneVideos?.length > 0
-          ? (chapter as any).sceneVideos
+        // Use pre-separated arrays from source buckets (trust the bucket, not URL extension).
+        // sceneVideos = from videoUrls bucket, sceneImages = from imageUrls/avatarUrls buckets.
+        const hasPreSeparated = (chapter as any).sceneVideos || (chapter as any).sceneImages;
+        const videos: string[] = hasPreSeparated
+          ? ((chapter as any).sceneVideos || [])
           : chapterVisuals.filter(u => detectMediaType(u) === 'video');
-        const images: string[] = (chapter as any).sceneImages?.length > 0
-          ? (chapter as any).sceneImages
+        const images: string[] = hasPreSeparated
+          ? ((chapter as any).sceneImages || [])
           : chapterVisuals.filter(u => detectMediaType(u) === 'image');
+        console.log(`[EP04 Timeline] ${chapter.chapterId}: ${videos.length} videos, ${images.length} images (pre-separated=${!!hasPreSeparated})`);
 
         let currentTime = 0;
 
@@ -4066,16 +4075,21 @@ function EP04ProductionInner() {
               charTts = allTtsUrls.find(t => t.voice === charMatch);
             }
 
-            if (charTts && charTts.duration <= 18) {
+            if (charTts) {
+              // Use lipsync clip for up to 18s; if TTS is longer, the remaining
+              // audio plays as voiceover over background visuals (handled by TTS layer).
+              const clipDuration = Math.min(charTts.duration, 18);
               lipsyncClips.push({
                 url,
                 start: charTts.start,
-                duration: charTts.duration,
+                duration: clipDuration,
                 character: charMatch,
               });
-              console.log(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) → TTS "${charTts.key}" at t=${charTts.start}s`);
-            } else if (charTts) {
-              console.warn(`[EP04 Assembly] Lipsync: "${charMatch}" skipped — TTS duration ${charTts.duration}s > 18s limit`);
+              if (charTts.duration > 18) {
+                console.log(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) → TTS "${charTts.key}" at t=${charTts.start}s (clip=18s, voiceover for remaining ${charTts.duration - 18}s)`);
+              } else {
+                console.log(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) → TTS "${charTts.key}" at t=${charTts.start}s`);
+              }
             } else {
               console.warn(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) — no matching TTS found in scene`);
             }
@@ -4201,15 +4215,16 @@ function EP04ProductionInner() {
             ...t,
             bridgeAudioUrl: bridgeAudio || undefined,
             bridgeDuration: bridgeLine?.duration_est || 7,
-            nextSceneVisualUrl: toChapter?.visualUrls?.[0] || undefined,
+            nextSceneVisualUrl: (toChapter as any)?.sceneImages?.[0] || undefined,
             j2vTransition: TRANSITION_STYLE_MAP[t.style] || 'fade',
           };
         });
 
       // ── Bookend data: opening only for first part, closing only for last ──
       // Use scene visuals as bookend backgrounds for professional look (LinkedIn/X publishing)
-      const firstChapterVisual = preBuiltChapters[0]?.visualUrls?.[0];
-      const lastChapterVisual = preBuiltChapters[preBuiltChapters.length - 1]?.visualUrls?.[0];
+      // Use images (not videos) for bookend backgrounds — JSON2Video requires image type
+      const firstChapterVisual = (preBuiltChapters[0] as any)?.sceneImages?.[0] || preBuiltChapters[0]?.visualUrls?.find((u: string) => u.match(/\.(png|jpg|jpeg|webp|gif)(\?|$)/i));
+      const lastChapterVisual = (preBuiltChapters[preBuiltChapters.length - 1] as any)?.sceneImages?.[0] || preBuiltChapters[preBuiltChapters.length - 1]?.visualUrls?.find((u: string) => u.match(/\.(png|jpg|jpeg|webp|gif)(\?|$)/i));
       const bookends = {
         opening: { duration: isFirstPart ? 12 : 0, hasAssets: isFirstPart, backgroundUrl: firstChapterVisual },
         closing: { duration: isLastPart ? 10 : 0, hasAssets: isLastPart, backgroundUrl: lastChapterVisual },
