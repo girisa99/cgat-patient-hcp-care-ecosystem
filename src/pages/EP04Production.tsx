@@ -535,20 +535,31 @@ function EP04ProductionInner() {
 
     (async () => {
       try {
-        // Step 1: Auth check with explicit timeout
+        // Step 1: Auth check — try getSession (local, fast) then getUser (network)
         console.log('[EP04 LOAD] Step 1: checking auth...');
-        const authPromise = supabase.auth.getUser();
-        const authTimeout = new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error('Auth check timed out after 12 seconds — Supabase may be cold-starting')), 12000)
-        );
-        const authResult = await Promise.race([authPromise, authTimeout]) as any;
+        let user: any = null;
+        // Fast path: read session from local storage (no network call)
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          user = sessionData?.session?.user;
+          if (user) console.log('[EP04 LOAD] Step 1a: got user from session (local)');
+        } catch (e) {
+          console.warn('[EP04 LOAD] getSession failed:', e);
+        }
+        // Slow path: validate with server (only if local session missing)
+        if (!user) {
+          const authPromise = supabase.auth.getUser();
+          const authTimeout = new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error('Auth check timed out after 12 seconds')), 12000)
+          );
+          const authResult = await Promise.race([authPromise, authTimeout]) as any;
+          user = authResult?.data?.user;
+        }
         if (cancelled) return;
 
-        const user = authResult?.data?.user;
         if (!user) {
-          const authError = authResult?.error;
-          console.error('[EP04 LOAD] Auth failed — no user session:', authError);
-          setProjectLoadError(authError?.message || 'Not authenticated — please sign in and refresh');
+          console.error('[EP04 LOAD] Auth failed — no user session');
+          setProjectLoadError('Not authenticated — please sign in and refresh');
           setProjectLoading(false);
           clearTimeout(timeoutId);
           return;
