@@ -512,6 +512,7 @@ function EP04ProductionInner() {
   // ─── Auto-create cast_projects row if none exists ──────────────────
   // Uses exact style_intent match to prevent duplicates (not fuzzy title match)
   const autoCreateAttempted = React.useRef(false);
+  const loadStepRef = React.useRef('');
   useEffect(() => {
     if (urlProjectId || autoProjectId) return;
     // Guard against React strict-mode double-fire, but allow retries
@@ -519,13 +520,14 @@ function EP04ProductionInner() {
     autoCreateAttempted.current = true;
     setProjectLoading(true);
     setProjectLoadError(null);
-    setLoadStep('Checking authentication...');
+    const updateStep = (step: string) => { loadStepRef.current = step; setLoadStep(step); };
+    updateStep('Checking authentication...');
 
-    // Timeout guard — 20s max (down from 30s for faster feedback)
+    // Timeout guard — 30s max (Supabase Micro cold-starts can be slow)
     const timeoutId = setTimeout(() => {
       setProjectLoading(false);
-      setProjectLoadError(`Timed out at step: "${loadStep || 'authentication check'}". Supabase may be unreachable — check your network or try again.`);
-    }, 20000);
+      setProjectLoadError(`Timed out at step: "${loadStepRef.current || 'authentication check'}". Supabase may be unreachable — check your network or try again.`);
+    }, 30000);
 
     let cancelled = false;
 
@@ -534,7 +536,7 @@ function EP04ProductionInner() {
         // Step 1: Auth check with explicit timeout
         const authPromise = supabase.auth.getUser();
         const authTimeout = new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error('Auth check timed out after 8 seconds')), 8000)
+          setTimeout(() => reject(new Error('Auth check timed out after 12 seconds — Supabase may be cold-starting')), 12000)
         );
         const authResult = await Promise.race([authPromise, authTimeout]) as any;
         if (cancelled) return;
@@ -548,7 +550,7 @@ function EP04ProductionInner() {
           clearTimeout(timeoutId);
           return;
         }
-        setLoadStep('Looking up EP04 project...');
+        updateStep('Looking up EP04 project...');
 
         const db = supabase as any;
 
@@ -578,7 +580,7 @@ function EP04ProductionInner() {
         }
 
         // Step 3: Fallback — check by title for legacy rows
-        setLoadStep('Checking legacy project titles...');
+        updateStep('Checking legacy project titles...');
         const { data: legacyExisting } = await db
           .from('cast_projects')
           .select('id')
@@ -600,7 +602,7 @@ function EP04ProductionInner() {
         }
 
         // Step 4: Create new project
-        setLoadStep('Creating EP04 project...');
+        updateStep('Creating EP04 project...');
         const { data: created, error } = await db
           .from('cast_projects')
           .insert({
