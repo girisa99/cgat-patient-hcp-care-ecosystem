@@ -3794,12 +3794,13 @@ function EP04ProductionInner() {
     // Determine which scenes to include
     const allSceneKeys = Array.from(scenes.keys());
     let targetSceneKeys: string[];
-    let parts = computePartBoundaries();
+    // Use assemblyParts state (from per-scene or multi-part mode), fallback to computePartBoundaries
+    let parts = assemblyParts.length > 0 ? assemblyParts : computePartBoundaries();
 
     if (partNumber != null) {
       const part = parts.find(p => p.partNumber === partNumber);
       if (!part) {
-        toast.error(`Part ${partNumber} not found`);
+        toast.error(`Part ${partNumber} not found in ${parts.length}-part list`);
         return;
       }
       targetSceneKeys = part.sceneKeys;
