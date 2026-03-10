@@ -4073,8 +4073,10 @@ function EP04ProductionInner() {
         // Background visuals: ALL scene videos (play sequentially) + images (Ken Burns).
         // Lipsync MP4s are handled separately below (aligned to TTS timing).
         const isHttpUrl = (u: string) => u && u.startsWith('http');
-        // Exclude expired CDN URLs that will 403/404 during JSON2Video render
-        const isSafeUrl = (u: string) => isHttpUrl(u) && !isExpiredCdnUrl(u);
+        // Include all HTTP URLs for assembly — freshly regenerated CDN URLs are valid (~24h TTL).
+        // isExpiredCdnUrl is pattern-based (matches all Alibaba/DashScope URLs) and can't tell
+        // fresh from expired. JSON2Video will fetch during render; fresh URLs will work fine.
+        const isSafeUrl = (u: string) => isHttpUrl(u);
 
         // Collect all scene images — from imageUrls + avatarUrls buckets (trust the source bucket)
         const allImageVisuals: string[] = [
