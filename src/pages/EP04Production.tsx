@@ -32,6 +32,7 @@ import { EP04PublishHub } from '@/components/genie-cast/EP04PublishHub';
 import { ContentRepurposingPanel } from '@/components/genie-cast/ContentRepurposingPanel';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
 import { useCastProjectData } from '@/hooks/useCastProjectData';
+import { buildCastTimeline, type CastChapter, type CastTransition, type CastBookends, type CastSpeakerInfo } from '@/utils/castTimelineEngine';
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
@@ -3784,15 +3785,6 @@ function EP04ProductionInner() {
   }, [perScenePolling, assemblyParts]);
 
   // ─── Assembly Constants ─────────────────────────────────────────────────
-  // Ken Burns patterns — cycle through for visual variety across images
-  const KEN_BURNS_PATTERNS = [
-    { zoom: 2, pan: 'left' as const, 'pan-distance': 0.15 },
-    { zoom: 1, pan: 'right' as const, 'pan-distance': 0.1 },
-    { zoom: 2, pan: 'top-left' as const, 'pan-distance': 0.12 },
-    { zoom: 1, pan: 'bottom-right' as const, 'pan-distance': 0.08 },
-    { zoom: 1, pan: 'top' as const, 'pan-distance': 0.1 },
-  ];
-
   // Map storybook transition styles to JSON2Video scene transition presets
   const TRANSITION_STYLE_MAP: Record<string, string> = {
     'page-turn': 'wipeleft',
@@ -3812,524 +3804,9 @@ function EP04ProductionInner() {
     squirrel: { headline: 'SQUIRREL', lead: 'QA Chaos Agent', barColor: '#f97316' },
   };
 
-  // ─── Client-side JSON2Video timeline builder ────────────────────────────
-  // Ported from stitchLayeredTimeline in genie-cast-assembler edge function.
-  // Builds the full { resolution, quality, scenes } payload in the browser
-  // (unlimited memory) so the edge function just forwards it to JSON2Video.
-  const buildJson2VideoTimeline = useCallback((
-    chapters: Array<{
-      chapterId: string; product: string; duration: number;
-      allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string; key?: string }>;
-      visualUrls?: string[]; visualUrl?: string;
-      lipsyncClips?: Array<{ url: string; start: number; duration: number; character: string }>;
-      musicUrl?: string; musicLoop?: boolean;
-      sfxUrls?: string[];
-      // Rich assembly fields
-      kineticTexts?: Array<{ text: string; start: number; duration: number; style: string }>;
-      sfxTimings?: Array<{ url: string; start: number; duration: number }>;
-    }>,
-    transitions: Array<{
-      from: string; to: string; style: string; duration: number;
-      bridgeAudioUrl?: string; bridgeDuration?: number;
-      nextSceneVisualUrl?: string;
-      j2vTransition?: string; // JSON2Video transition preset name
-    }>,
-    bookends: { opening: { duration: number; backgroundUrl?: string }; closing: { duration: number; backgroundUrl?: string } } | null,
-    quality: string,
-  ) => {
-    const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
-    const scenes: Array<Record<string, any>> = [];
-
-    // ── Opening bookend — Cinematic staggered reveal (Part 1 only) ──
-    if (bookends && bookends.opening.duration > 0) {
-      const dur = bookends.opening.duration;
-      const openElements: Array<Record<string, any>> = [];
-      // Background image with Ken Burns slow zoom + fade-in
-      if (bookends.opening.backgroundUrl && bookends.opening.backgroundUrl.startsWith('http')) {
-        openElements.push({
-          type: 'image', src: bookends.opening.backgroundUrl,
-          start: 0, duration: dur,
-          zoom: 2, pan: 'right', 'pan-distance': 0.08,
-          'fade-in': 1.0, 'fade-out': 0.5,
-          'z-index': 0,
-          width: 1920, height: 1080,
-        });
-      }
-      // Staggered kinetic text with animation styles
-      openElements.push({
-        type: 'text', text: 'EPISODE 2',
-        style: '002', // fade-in style
-        start: 1, duration: dur - 1,
-        settings: { 'font-family': 'Inter', 'font-size': '24px', 'font-color': '#c4b5fd',
-          'font-weight': '600', 'letter-spacing': '6px',
-          'text-shadow': '2px 2px 8px rgba(0,0,0,0.9)' },
-        position: 'center', y: '-15%',
-        'fade-in': 0.5, 'fade-out': 0.5,
-        'z-index': 20,
-      });
-      openElements.push({
-        type: 'text', text: 'Beyond AI Hype',
-        style: '003', // word-by-word reveal
-        start: 2.5, duration: dur - 2.5,
-        settings: { 'font-family': 'Inter', 'font-size': '72px', 'font-color': '#f5d77a',
-          'font-weight': '700',
-          'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)' },
-        position: 'center',
-        'fade-in': 0.5, 'fade-out': 0.5,
-        'z-index': 20,
-      });
-      openElements.push({
-        type: 'text', text: 'The Real Story of an AI Sprint',
-        style: '002',
-        start: 4.5, duration: dur - 4.5,
-        settings: { 'font-family': 'Inter', 'font-size': '28px', 'font-color': '#e2e8f0',
-          'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' },
-        position: 'center', y: '12%',
-        'fade-in': 0.5, 'fade-out': 0.5,
-        'z-index': 20,
-      });
-      openElements.push({
-        type: 'text', text: 'A GenieSuite Documentary',
-        style: '002',
-        start: 7, duration: dur - 7,
-        settings: { 'font-family': 'Inter', 'font-size': '20px', 'font-color': '#94a3b8',
-          'font-weight': '500', 'letter-spacing': '3px',
-          'text-shadow': '2px 2px 6px rgba(0,0,0,0.7)' },
-        position: 'bottom-center',
-        'fade-in': 0.5, 'fade-out': 0.5,
-        'z-index': 20,
-      });
-      scenes.push({
-        comment: 'Opening Bookend — Cinematic Reveal',
-        duration: dur,
-        'background-color': '#0f0a1a',
-        elements: openElements,
-        transition: { style: 'fade', duration: 0.5 },
-      });
-    }
-
-    // Helper: detect video URLs vs image URLs for JSON2Video element type.
-    // Checks file extension AND Supabase Storage path patterns.
-    const detectMediaType = (url: string): 'video' | 'image' => {
-      if (url.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i)) return 'video';
-      if (url.match(/\.(png|jpg|jpeg|webp|gif|svg|bmp)(\?|$)/i)) return 'image';
-      if (url.includes('/video/') || url.includes('/videos/')) return 'video';
-      if (url.includes('/image/') || url.includes('/images/') || url.includes('/avatar/')) return 'image';
-      return 'image'; // safe default
-    };
-
-    // ── Scene segments with layered audio + lipsync ──
-    chapters.forEach((chapter, chapterIndex) => {
-      const allTts = chapter.allTtsUrls || [];
-      // Use pre-separated video/image arrays if available, else fall back to mixed visualUrls
-      const chapterVisuals: string[] = chapter.visualUrls || (chapter.visualUrl ? [chapter.visualUrl] : []);
-      const lipsyncClips = chapter.lipsyncClips || [];
-      const sceneDuration: number = chapter.duration || 30;
-      const elements: Array<Record<string, any>> = [];
-
-      // Visual layer: establishing video → rotate images with Ken Burns + fade + z-index
-      // Ken Burns (zoom+pan) on EVERY image makes static visuals feel alive.
-      let kbIdx = chapterIndex * 3; // Offset per chapter so adjacent chapters don't repeat
-      const getKenBurns = () => {
-        const kb = KEN_BURNS_PATTERNS[kbIdx % KEN_BURNS_PATTERNS.length];
-        kbIdx++;
-        return kb;
-      };
-      if (chapterVisuals.length > 0 || (chapter as any).sceneVideos?.length > 0 || (chapter as any).sceneImages?.length > 0) {
-        // Use pre-separated arrays from source buckets (trust the bucket, not URL extension).
-        // sceneVideos = from videoUrls bucket, sceneImages = from imageUrls/avatarUrls buckets.
-        const hasPreSeparated = (chapter as any).sceneVideos || (chapter as any).sceneImages;
-        const videos: string[] = hasPreSeparated
-          ? ((chapter as any).sceneVideos || [])
-          : chapterVisuals.filter(u => detectMediaType(u) === 'video');
-        const images: string[] = hasPreSeparated
-          ? ((chapter as any).sceneImages || [])
-          : chapterVisuals.filter(u => detectMediaType(u) === 'image');
-        console.log(`[EP04 Timeline] ${chapter.chapterId}: ${videos.length} videos, ${images.length} images (pre-separated=${!!hasPreSeparated})`);
-
-        let currentTime = 0;
-
-        // Play each video at full duration (5-10s each), sequentially, muted, FULL FRAME
-        for (const videoUrl of videos) {
-          const videoDuration = 10; // Alibaba max = 10s, Gemini = 8s; safe upper bound
-          const dur = Math.min(videoDuration, sceneDuration - currentTime);
-          if (dur <= 0) break;
-          elements.push({
-            type: 'video', src: videoUrl,
-            start: currentTime, duration: dur,
-            volume: 0, 'fade-in': 0.5, 'fade-out': 0.5,
-            'z-index': 0,
-            width: 1920, height: 1080, // Full frame
-          });
-          currentTime += dur;
-        }
-
-        // Fill remaining time with images (Ken Burns rotation), FULL FRAME
-        const remainingDuration = sceneDuration - currentTime;
-        if (images.length > 0 && remainingDuration > 0) {
-          const imgInterval = Math.max(8, Math.floor(remainingDuration / images.length));
-          images.forEach((url, idx) => {
-            const start = currentTime + idx * imgInterval;
-            const dur = idx < images.length - 1 ? imgInterval : sceneDuration - start;
-            if (start < sceneDuration) {
-              const kb = getKenBurns();
-              elements.push({
-                type: 'image', src: url,
-                start, duration: Math.max(1, dur),
-                ...kb, 'fade-in': 0.5, 'fade-out': 0.5,
-                'z-index': 0,
-                width: 1920, height: 1080, // Full frame
-              });
-            }
-          });
-        } else if (videos.length === 0 && images.length === 0) {
-          // No visuals at all — solid background only (handled by scene background-color)
-        }
-      }
-
-      // Lipsync video layer: z-index 10 so they overlay on background images, FULL FRAME
-      // IMPORTANT: volume=0 because lipsync videos have TTS audio baked in
-      // (WAN generates video from audio input). TTS is already added separately
-      // as type:'audio' elements above, so we mute the lipsync to avoid echo.
-      lipsyncClips.forEach(clip => {
-        if (clip.url && clip.url.startsWith('http')) {
-          elements.push({
-            type: 'video', src: clip.url,
-            start: clip.start, duration: clip.duration,
-            volume: 0, // Mute — TTS audio is a separate element, lipsync has it baked in
-            'fade-in': 0.3, 'fade-out': 1.0, // 1s fade-out hides WAN2.2 loop artifacts at clip end
-            'z-index': 10,
-            width: 1920, height: 1080, // Full frame
-          });
-        }
-      });
-
-      // TTS layer: sequential dialogue lines with start offsets
-      allTts.forEach(tts => {
-        if (tts.url && tts.url.startsWith('http')) {
-          elements.push({ type: 'audio', src: tts.url, start: tts.start, duration: tts.duration, volume: 1.0 });
-        }
-      });
-
-      // Music layer: loop, ducked volume, smooth fade-in/fade-out
-      if (chapter.musicUrl && chapter.musicUrl.startsWith('http')) {
-        elements.push({
-          type: 'audio', src: chapter.musicUrl,
-          start: 0, duration: sceneDuration,
-          volume: 0.25, loop: chapter.musicLoop ? -1 : 0,
-          'fade-in': 0.5, 'fade-out': 0.5,
-        });
-      }
-
-      // SFX layer: use pre-computed narrative-beat timings if available, else TTS-aligned fallback
-      if (chapter.sfxTimings && chapter.sfxTimings.length > 0) {
-        // Rich timing: SFX placed at narrative beats by startFinalAssembly
-        chapter.sfxTimings.forEach(sfx => {
-          if (sfx.url && sfx.url.startsWith('http')) {
-            elements.push({
-              type: 'audio', src: sfx.url,
-              start: sfx.start, duration: sfx.duration,
-              volume: 0.5, 'fade-in': 0.1, 'fade-out': 0.2,
-            });
-          }
-        });
-      } else {
-        // Fallback: align SFX to TTS line boundaries for narrative beats
-        const sfxUrls = chapter.sfxUrls || [];
-        const ttsStarts = allTts.map(t => t.start).filter(s => s >= 0);
-        sfxUrls.forEach((sfxUrl, sfxIdx) => {
-          if (sfxUrl && sfxUrl.startsWith('http')) {
-            let sfxStart = 0;
-            if (sfxIdx === 0) {
-              sfxStart = 0; // First SFX at scene start
-            } else if (ttsStarts.length > 1) {
-              // Distribute across TTS boundaries
-              const ttsSlotIdx = Math.min(
-                Math.floor((sfxIdx / sfxUrls.length) * ttsStarts.length),
-                ttsStarts.length - 1
-              );
-              sfxStart = ttsStarts[ttsSlotIdx];
-            } else {
-              sfxStart = Math.floor(sceneDuration * sfxIdx / sfxUrls.length);
-            }
-            elements.push({
-              type: 'audio', src: sfxUrl,
-              start: sfxStart, duration: Math.min(5, sceneDuration - sfxStart),
-              volume: 0.5, 'fade-in': 0.1, 'fade-out': 0.2,
-            });
-          }
-        });
-      }
-
-      // Lower-third speaker identification at voice changes (CNN-style)
-      let lastSpeaker = '';
-      allTts.forEach(tts => {
-        const speaker = tts.voice || 'unknown';
-        const ltDuration = Math.min(5, sceneDuration - tts.start - 0.5);
-        if (speaker !== lastSpeaker && CHARACTER_LOWER_THIRDS[speaker] && ltDuration > 0.5) {
-          const lt = CHARACTER_LOWER_THIRDS[speaker];
-          elements.push({
-            type: 'component', component: 'basic/050',
-            start: tts.start + 0.5, duration: ltDuration,
-            settings: {
-              headline: { text: lt.headline, color: lt.barColor },
-              lead: { text: lt.lead, color: '#94a3b8' },
-              bar: { background: lt.barColor },
-            },
-            position: 'bottom-left',
-            'fade-in': 0.5, 'fade-out': 0.5,
-            'z-index': 30,
-          });
-          lastSpeaker = speaker;
-        }
-      });
-
-      // Scene title overlay — fallback if no speaker lower-thirds
-      if (allTts.length === 0) {
-        elements.push({
-          type: 'text', text: chapter.product || chapter.chapterId,
-          style: '002',
-          start: 0.5, duration: Math.min(6, sceneDuration - 0.5),
-          settings: { 'font-family': 'Inter', 'font-size': '36px', 'font-color': '#ffffff',
-            'font-weight': '600',
-            'text-shadow': '2px 2px 8px rgba(0,0,0,0.7)',
-            'background-color': 'rgba(15,10,26,0.6)', padding: '8px 16px' },
-          position: 'bottom-left',
-          'fade-in': 0.5, 'fade-out': 0.5,
-          'z-index': 25,
-        });
-      }
-
-      // Kinetic text overlays — key statements at narrative moments
-      const kineticTexts = chapter.kineticTexts || [];
-      kineticTexts.forEach(kt => {
-        elements.push({
-          type: 'text', text: kt.text,
-          style: kt.style, // '003' word-by-word or '005' jumping
-          start: kt.start, duration: kt.duration,
-          settings: {
-            'font-family': 'Inter',
-            'font-size': kt.text.length > 100 ? '24px' : kt.text.length > 50 ? '32px' : '42px',
-            'font-color': '#f5d77a',
-            'font-weight': '700',
-            'text-shadow': '3px 3px 12px rgba(0,0,0,0.95)',
-            'background-color': 'rgba(15,10,26,0.5)',
-            padding: '12px 24px',
-          },
-          position: 'center',
-          'fade-in': 0.5, 'fade-out': 0.5,
-          'z-index': 25,
-        });
-      });
-
-      // Get scene-level transition from the transition following this chapter
-      const nextTransition = transitions.length > chapterIndex ? transitions[chapterIndex] : undefined;
-      const j2vTransitionStyle = nextTransition?.j2vTransition;
-
-      // Safety: filter out any elements with invalid duration (<=0) or missing src
-      const safeElements = elements.filter(el => {
-        if (el.duration != null && el.duration <= 0) return false;
-        if ((el.type === 'video' || el.type === 'image' || el.type === 'audio') && !el.src) return false;
-        return true;
-      });
-
-      // Split long scenes into ~30s JSON2Video sub-scenes to prevent render timeouts
-      const MAX_J2V_SCENE = 30; // seconds
-      if (sceneDuration > MAX_J2V_SCENE && safeElements.length > 2) {
-        const numSubs = Math.ceil(sceneDuration / MAX_J2V_SCENE);
-        const subLen = Math.ceil(sceneDuration / numSubs);
-        // Classify elements: music (looped, in every sub), audio/TTS (start-based), visual (overlap-based)
-        const musicElements = safeElements.filter(el => el.type === 'audio' && el.loop != null);
-        const ttsElements = safeElements.filter(el => el.type === 'audio' && el.loop == null);
-        const visualElements = safeElements.filter(el => el.type !== 'audio');
-
-        for (let s = 0; s < numSubs; s++) {
-          const subStart = s * subLen;
-          const subEnd = Math.min(subStart + subLen, sceneDuration);
-          const subDur = subEnd - subStart;
-
-          // VISUAL elements (image, video, text, component): include if they OVERLAP this sub-scene
-          const subVisuals = visualElements.filter(el => {
-            const elStart = el.start ?? 0;
-            const elEnd = elStart + (el.duration ?? 0);
-            return elStart < subEnd && elEnd > subStart;
-          }).map(el => {
-            const elStart = el.start ?? 0;
-            const newStart = Math.max(0, elStart - subStart);
-            const originalEnd = elStart + (el.duration ?? 0);
-            const newDur = Math.min(originalEnd - subStart, subDur) - newStart;
-            return { ...el, start: newStart, duration: Math.max(0.5, newDur) };
-          });
-
-          // TTS audio: ONLY include if the element STARTS within this sub-scene.
-          // JSON2Video cannot seek — it always plays audio from file start.
-          // If we carry tail-end TTS into the next sub-scene, it replays from beginning = duplication.
-          const subTts = ttsElements.filter(el => {
-            const elStart = el.start ?? 0;
-            return elStart >= subStart && elStart < subEnd;
-          }).map(el => {
-            const elStart = el.start ?? 0;
-            const newStart = elStart - subStart;
-            // Keep original duration (TTS plays from file start for its full length)
-            return { ...el, start: newStart };
-          });
-
-          // Music: in every sub-scene (looped, full sub-scene duration)
-          const subMusic = musicElements.map(m => ({ ...m, start: 0, duration: subDur }));
-
-          const subElements = [...subVisuals, ...subTts, ...subMusic];
-
-          scenes.push({
-            comment: `${chapter.product || chapter.chapterId} (sub ${s + 1}/${numSubs}, ${Math.round(subDur)}s)`,
-            duration: subDur,
-            'background-color': '#1e293b',
-            elements: subElements.filter(el => el.duration > 0),
-            ...(s === 0 && j2vTransitionStyle ? { transition: { style: j2vTransitionStyle, duration: 0.5 } } : { transition: { style: 'fade', duration: 0.3 } }),
-          });
-        }
-        console.log(`[EP04 Timeline] ${chapter.chapterId}: split ${Math.round(sceneDuration)}s into ${numSubs} sub-scenes of ~${subLen}s`);
-      } else {
-        scenes.push({
-          comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS, ${lipsyncClips.length} lipsync, ${kineticTexts.length} kinetic, ${sceneDuration}s)`,
-          duration: sceneDuration,
-          'background-color': '#1e293b',
-          elements: safeElements,
-          ...(j2vTransitionStyle ? { transition: { style: j2vTransitionStyle, duration: 0.5 } } : {}),
-        });
-      }
-
-      // Transition segment — visual background + bridge audio + chapter title
-      if (transitions.length > chapterIndex) {
-        const t = transitions[chapterIndex];
-        const transElements: Array<Record<string, any>> = [];
-
-        // Next scene's visual as transition background with Ken Burns
-        if (t.nextSceneVisualUrl) {
-          transElements.push({
-            type: 'image', src: t.nextSceneVisualUrl,
-            start: 0, duration: t.duration,
-            zoom: 1, pan: 'center', 'pan-distance': 0.05,
-            'fade-in': 0.3, 'fade-out': 0.3,
-            'z-index': 0,
-            width: 1920, height: 1080,
-          });
-        }
-
-        // Chapter title with animation style
-        transElements.push({
-          type: 'text',
-          text: t.style.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-          style: '003', // word-by-word reveal
-          start: 0.5, duration: t.duration - 0.5,
-          settings: { 'font-family': 'Inter', 'font-size': '32px', 'font-color': '#f5d77a',
-            'font-weight': '600',
-            'text-shadow': '3px 3px 10px rgba(0,0,0,0.9)' },
-          position: 'center',
-          'fade-in': 0.5, 'fade-out': 0.5,
-          'z-index': 20,
-        });
-
-        if (t.bridgeAudioUrl && t.bridgeAudioUrl.startsWith('http')) {
-          transElements.push({
-            type: 'audio', src: t.bridgeAudioUrl,
-            start: 0.5, duration: t.bridgeDuration || (t.duration - 0.5),
-            volume: 1.0,
-            'fade-in': 0.2,
-          });
-        }
-
-        const transJ2vStyle = t.j2vTransition || TRANSITION_STYLE_MAP[t.style] || 'fade';
-        scenes.push({
-          comment: `Transition: ${t.from} → ${t.to} (${t.style})`,
-          duration: t.duration,
-          'background-color': '#0f0a1a',
-          elements: transElements,
-          transition: { style: transJ2vStyle, duration: 0.5 },
-        });
-      }
-    });
-
-    // ── Closing bookend — CTA with impact (last Part only) ──
-    if (bookends && bookends.closing.duration > 0) {
-      const dur = bookends.closing.duration;
-      const closeElements: Array<Record<string, any>> = [];
-      // Background image with Ken Burns + fade
-      if (bookends.closing.backgroundUrl && bookends.closing.backgroundUrl.startsWith('http')) {
-        closeElements.push({
-          type: 'image', src: bookends.closing.backgroundUrl,
-          start: 0, duration: dur,
-          zoom: 1, pan: 'left', 'pan-distance': 0.06,
-          'fade-in': 0.5, 'fade-out': 1.0,
-          'z-index': 0,
-          width: 1920, height: 1080,
-        });
-      }
-      // Staggered closing with animation styles
-      closeElements.push({
-        type: 'text', text: 'Thank You for Watching',
-        style: '003', // word-by-word
-        start: 1, duration: dur - 1,
-        settings: { 'font-family': 'Inter', 'font-size': '56px', 'font-color': '#f5d77a',
-          'font-weight': '700',
-          'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)' },
-        position: 'center', y: '-10%',
-        'fade-in': 0.5, 'fade-out': 0.5,
-        'z-index': 20,
-      });
-      closeElements.push({
-        type: 'text', text: 'The sprint continues...',
-        style: '002', // fade
-        start: 3.5, duration: dur - 3.5,
-        settings: { 'font-family': 'Inter', 'font-size': '28px', 'font-color': '#e2e8f0',
-          'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)' },
-        position: 'center', y: '5%',
-        'fade-in': 0.5, 'fade-out': 0.5,
-        'z-index': 20,
-      });
-      closeElements.push({
-        type: 'text', text: 'Built with GenieSuite Cast  |  Follow @GenieSuite',
-        style: '002',
-        start: 6, duration: dur - 6,
-        settings: { 'font-family': 'Inter', 'font-size': '22px', 'font-color': '#c4b5fd',
-          'font-weight': '500', 'letter-spacing': '2px',
-          'text-shadow': '2px 2px 6px rgba(0,0,0,0.7)' },
-        position: 'bottom-center',
-        'fade-in': 0.5, 'fade-out': 0.5,
-        'z-index': 20,
-      });
-      scenes.push({
-        comment: 'Closing Bookend — CTA',
-        duration: dur,
-        'background-color': '#0f0a1a',
-        elements: closeElements,
-      });
-    }
-
-    // Safety pass: clamp durations, fix zoom, ensure full-frame sizing
-    for (const scene of scenes) {
-      const sd = scene.duration || 0;
-      for (const el of (scene.elements || [])) {
-        const elStart = el.start ?? 0;
-        // Clamp: element must not exceed scene duration
-        if (elStart + (el.duration ?? 0) > sd) {
-          el.duration = Math.max(0.5, sd - elStart);
-        }
-        // Fix: negative zoom is invalid
-        if (el.zoom != null && el.zoom < 1) {
-          el.zoom = 1;
-        }
-        // Full-frame: ensure all images/videos have explicit sizing (full-hd)
-        if ((el.type === 'image' || el.type === 'video') && !el.width) {
-          el.width = 1920;
-          el.height = 1080;
-        }
-      }
-    }
-
-    const totalDuration = scenes.reduce((sum, s) => sum + (s.duration || 0), 0);
-    return { resolution, quality: quality === 'cinematic' ? 'high' : 'medium', scenes, _totalDuration: totalDuration };
-  }, []);
-
+  // ─── OLD buildJson2VideoTimeline DELETED ─────────────────────────────────
+  // Replaced by castTimelineEngine.ts — professional per-TTS-line scene architecture.
+  // See buildCastTimeline() in src/utils/castTimelineEngine.ts.
   // ── Core assembly function: builds timeline for a subset of scenes ──
   // partNumber=null means full assembly (for plans with higher limits)
   // partNumber=1..N means assemble only that part's scenes
@@ -4417,7 +3894,7 @@ function EP04ProductionInner() {
                 key: k,
               });
             } else {
-              // data: URI — will be filtered by buildJson2VideoTimeline, warn user
+              // data: URI — will be filtered by castTimelineEngine (only HTTP URLs pass), warn user
               dataUriTtsCount++;
             }
           }
@@ -4748,7 +4225,110 @@ function EP04ProductionInner() {
 
       setAssemblyProgress(`Building JSON2Video timeline${partLabel}...`);
 
-      const timeline = buildJson2VideoTimeline(preBuiltChapters, transitions, bookends, 'production');
+      // ── Map EP04 data → generic CastTimeline interfaces ──
+      const isSafeUrl = (u: string | undefined | null): u is string => !!u && u.startsWith('http');
+      const castChapters: CastChapter[] = preBuiltChapters.map(ch => {
+        const status = sceneProduction[ch.chapterId] || defaultSceneStatus();
+        // Separate kinetic text images from regular images (by key pattern)
+        const kineticImageMap: Record<string, string> = {};
+        const regularImages: string[] = [];
+        for (const [key, url] of Object.entries(status.imageUrls || {})) {
+          if (!isSafeUrl(url)) continue;
+          if (key.includes('kinetic-text')) {
+            kineticImageMap[key] = url;
+          } else {
+            regularImages.push(url);
+          }
+        }
+        // Add avatar images to regular pool
+        for (const url of Object.values(status.avatarUrls || {})) {
+          if (isSafeUrl(url)) regularImages.push(url);
+        }
+        // Match kinetic text entries to their FLUX-generated images (by index order)
+        const kineticKeys = Object.keys(kineticImageMap).sort();
+        const kineticTexts = (ch.kineticTexts || []).map((kt, idx) => ({
+          ...kt,
+          imageUrl: idx < kineticKeys.length ? kineticImageMap[kineticKeys[idx]] : undefined,
+        }));
+        return {
+          id: ch.chapterId,
+          title: ch.product,
+          duration: ch.duration,
+          ttsLines: ch.allTtsUrls,
+          lipsyncClips: ch.lipsyncClips || [],
+          videos: (ch as any).sceneVideos || [],
+          images: regularImages,
+          musicUrl: ch.musicUrl,
+          musicLoop: ch.musicLoop,
+          sfxTimings: ch.sfxTimings,
+          kineticTexts,
+        };
+      });
+
+      const castTransitions: CastTransition[] = transitions.map(t => {
+        // Derive rich chapter title: "Chapter II — The Cast"
+        const toChapterInfo = SCENE_CHAPTERS[t.to];
+        const chapterTitle = toChapterInfo
+          ? `${toChapterInfo.chapter} — ${toChapterInfo.subtitle}`
+          : SCENE_TITLES[t.to] || undefined;
+        // Check sceneProduction for AI-generated transition visuals
+        const toStatus = sceneProduction[t.to] || defaultSceneStatus();
+        const transitionImageKeys = Object.keys(toStatus.imageUrls || {}).filter(k =>
+          k.includes('scene-transition') || k.includes('storybook-frame') || k.includes('transition')
+        );
+        const transitionImageUrl = transitionImageKeys.length > 0
+          ? toStatus.imageUrls[transitionImageKeys[0]]
+          : t.nextSceneVisualUrl; // fallback to next scene's first image
+        return {
+          from: t.from,
+          to: t.to,
+          style: t.style,
+          duration: t.duration,
+          bridgeAudioUrl: t.bridgeAudioUrl,
+          bridgeDuration: t.bridgeDuration,
+          transitionImageUrl: transitionImageUrl && transitionImageUrl.startsWith('http') ? transitionImageUrl : undefined,
+          chapterHeaderImageUrl: undefined,
+          sfxUrl: undefined,
+          chapterTitle,
+          j2vTransition: t.j2vTransition || 'fade',
+        };
+      });
+
+      const castBookends: CastBookends = {
+        opening: {
+          duration: bookends.opening.duration,
+          backgroundUrl: (bookends.opening as any).backgroundUrl,
+          title: 'Beyond AI Hype',
+          subtitle: 'The Real Story of an AI Sprint',
+          episodeTag: 'EPISODE 2',
+          brand: 'A GenieSuite Documentary',
+        },
+        closing: {
+          duration: bookends.closing.duration,
+          backgroundUrl: (bookends.closing as any).backgroundUrl,
+        },
+      };
+
+      // Build speaker info with avatar URLs for basic/051 lower-thirds
+      const castSpeakers: CastSpeakerInfo = Object.fromEntries(
+        Object.entries(CHARACTER_LOWER_THIRDS).map(([char, info]) => {
+          // Find avatar URL for this character across all scene production statuses
+          let avatarUrl: string | undefined;
+          for (const ch of castChapters) {
+            const status = sceneProduction[ch.id] || defaultSceneStatus();
+            const avatarKey = Object.keys(status.avatarUrls || {}).find(k =>
+              k.includes(char) || k.includes(`avatar-3d-${char}`)
+            );
+            if (avatarKey && status.avatarUrls[avatarKey]?.startsWith('http')) {
+              avatarUrl = status.avatarUrls[avatarKey];
+              break; // use first found
+            }
+          }
+          return [char, { ...info, avatarUrl }];
+        })
+      );
+
+      const timeline = buildCastTimeline(castChapters, castTransitions, castBookends, castSpeakers, 'production');
       const { _totalDuration: timelineDuration, ...timelinePayload } = timeline;
       console.log(`[EP04 Assembly${partLabel}] Built timeline: ${timelinePayload.scenes.length} scenes, ~${timelineDuration}s, payload: ${(JSON.stringify(timelinePayload).length / 1024).toFixed(0)}kb`);
 
@@ -4861,7 +4441,7 @@ function EP04ProductionInner() {
       }
       toast.error(`Assembly${partLabel} failed: ${err.message}`);
     }
-  }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration, getAssemblyReadiness, buildJson2VideoTimeline, computePartBoundaries]);
+  }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration, getAssemblyReadiness, computePartBoundaries]);
 
   // Initialize multi-part boundaries when readiness is checked
   const showMultiPartAssembly = useCallback(() => {
