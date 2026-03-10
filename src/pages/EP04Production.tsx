@@ -3318,6 +3318,7 @@ function EP04ProductionInner() {
         const { data, error: fnError } = await supabase.functions.invoke('genie-cast-status', {
           body: { castJobId: assemblyJobId },
         });
+        console.log(`[EP04 Poll #${pollCountRef.current}] castJobId=${assemblyJobId}, response:`, JSON.stringify(data)?.substring(0, 300), fnError ? `ERROR: ${fnError.message}` : '');
         if (fnError) {
           pollErrorCountRef.current++;
           console.error(`[EP04 Assembly] Poll error ${pollErrorCountRef.current}/${MAX_ERRORS}:`, fnError);
@@ -3428,20 +3429,25 @@ function EP04ProductionInner() {
 
       for (const part of renderingParts) {
         try {
-          const { data, error: fnError } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+          const { data, error: fnError } = await supabase.functions.invoke('genie-cast-status', {
             body: { castJobId: part.jobId },
           });
+          console.log(`[EP04 PerScene Poll #${perScenePollCountRef.current}] part=${part.partNumber}, jobId=${part.jobId}, response:`, JSON.stringify(data)?.substring(0, 200));
           if (fnError) continue;
 
-          if (data?.videoUrl) {
+          const partJobStatus = data?.job?.status;
+          if (partJobStatus === 'completed') {
+            const videoUrl = data.job.outputUrl;
             setAssemblyParts(prev => prev.map(p =>
-              p.partNumber === part.partNumber ? { ...p, status: 'completed', videoUrl: data.videoUrl } : p
+              p.partNumber === part.partNumber ? { ...p, status: 'completed', videoUrl } : p
             ));
-            toast.success(`Scene ${part.partNumber} (${part.sceneKeys[0]}) assembled!`);
-          } else if (data?.error || data?.status === 'error') {
+            toast.success(`Scene ${part.partNumber} (${part.sceneKeys[0]}) assembled! URL: ${videoUrl?.substring(0, 60)}...`);
+          } else if (partJobStatus === 'failed') {
+            const errMsg = data.job.errorMessage || 'Unknown error';
             setAssemblyParts(prev => prev.map(p =>
-              p.partNumber === part.partNumber ? { ...p, status: 'failed', errorMessage: data.error || 'Unknown error' } : p
+              p.partNumber === part.partNumber ? { ...p, status: 'failed', errorMessage: errMsg } : p
             ));
+            toast.error(`Scene ${part.partNumber} failed: ${errMsg}`);
           }
         } catch (err) {
           console.error(`[EP04 PerScene] Poll error for part ${part.partNumber}:`, err);
@@ -4335,10 +4341,16 @@ function EP04ProductionInner() {
         throw new Error(`Assembly edge function error: ${detail}`);
       }
 
-      console.log(`[EP04 Assembly${partLabel}] Response:`, data);
+      console.log(`[EP04 Assembly${partLabel}] Response:`, JSON.stringify(data));
 
       if (data?.generationStatus === 'pending' && (data?.castJobId || data?.taskId)) {
-        const pollId = data.castJobId || data.taskId;
+        const pollId = data.castJobId || null;
+        if (!pollId) {
+          console.warn(`[EP04 Assembly${partLabel}] ⚠️ No castJobId — DB insert failed. taskId=${data.taskId}. Polling will NOT auto-detect completion. Check JSON2Video dashboard manually.`);
+          toast.warning?.(`Assembly submitted but polling unavailable — check JSON2Video dashboard for taskId: ${data.taskId}`);
+        } else {
+          console.log(`[EP04 Assembly${partLabel}] ✅ Polling with castJobId=${pollId}`);
+        }
         setAssemblyJobId(pollId);
         setAssemblyProgress(`Rendering${partLabel}... polling for completion`);
         // Track job ID in parts state
