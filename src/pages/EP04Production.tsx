@@ -3654,11 +3654,15 @@ function EP04ProductionInner() {
       }
 
       // Lipsync video layer: z-index 10 so they overlay on background images
+      // IMPORTANT: volume=0 because lipsync videos have TTS audio baked in
+      // (WAN generates video from audio input). TTS is already added separately
+      // as type:'audio' elements above, so we mute the lipsync to avoid echo.
       lipsyncClips.forEach(clip => {
         if (clip.url && clip.url.startsWith('http')) {
           elements.push({
             type: 'video', src: clip.url,
             start: clip.start, duration: clip.duration,
+            volume: 0, // Mute — TTS audio is a separate element, lipsync has it baked in
             'fade-in': 0.3, 'fade-out': 0.3,
             'z-index': 10,
           });
