@@ -35,7 +35,7 @@ import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
-const EP04_BUILD = 'v2026-03-10-E';
+const EP04_BUILD = 'v2026-03-10-F';
 console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
 
 // Shared helper: detect external CDN URLs that may have expired (~24h TTL)
@@ -2005,7 +2005,8 @@ function EP04ProductionInner() {
       // Find the avatar source image for lipsync
       // Priority: lipsync-specific avatar > Supabase URL > DashScope CDN > pre-made local asset
       // For host: use lipsyncPrompt (headshot, no dog) instead of regular avatar (which may show the dog)
-      const lipsyncAvatarKey = `avatar-lipsync-source-${character}`;
+      // Key uses underscore prefix so it's NOT captured by the lipsyncUrls filter (which matches 'lipsync')
+      const lipsyncAvatarKey = `_headshot-source-${character}`;
       const avatarFromLipsyncGen = results[lipsyncAvatarKey];
       const avatarFromResults = Object.entries(results).find(([k]) => k.includes('avatar-3d') && k.includes(character))?.[1];
       const avatarPreMade = CHARACTER_AVATARS[character];
@@ -2663,7 +2664,7 @@ function EP04ProductionInner() {
           videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition'))),
           imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame'))),
           avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d'))),
-          lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync'))),
+          lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_'))),
         });
         if (saveOk) {
           console.log(`[PERSIST SAVE] ${sceneKey}: ✅ DB save confirmed — artifacts will survive refresh`);
