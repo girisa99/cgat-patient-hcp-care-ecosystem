@@ -4127,13 +4127,56 @@ function EP04ProductionInner() {
         return true;
       });
 
-      scenes.push({
-        comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS, ${lipsyncClips.length} lipsync, ${kineticTexts.length} kinetic, ${sceneDuration}s)`,
-        duration: sceneDuration,
-        'background-color': '#1e293b',
-        elements: safeElements,
-        ...(j2vTransitionStyle ? { transition: { style: j2vTransitionStyle, duration: 0.5 } } : {}),
-      });
+      // Split long scenes into ~30s JSON2Video sub-scenes to prevent render timeouts
+      const MAX_J2V_SCENE = 30; // seconds
+      if (sceneDuration > MAX_J2V_SCENE && safeElements.length > 2) {
+        const numSubs = Math.ceil(sceneDuration / MAX_J2V_SCENE);
+        const subLen = Math.ceil(sceneDuration / numSubs);
+        // Identify music elements (need to be in every sub-scene)
+        const musicElements = safeElements.filter(el => el.type === 'audio' && el.loop != null);
+        const nonMusicElements = safeElements.filter(el => !(el.type === 'audio' && el.loop != null));
+
+        for (let s = 0; s < numSubs; s++) {
+          const subStart = s * subLen;
+          const subEnd = Math.min(subStart + subLen, sceneDuration);
+          const subDur = subEnd - subStart;
+
+          // Include elements that overlap with this sub-scene's time range
+          const subElements = nonMusicElements.filter(el => {
+            const elStart = el.start ?? 0;
+            const elEnd = elStart + (el.duration ?? 0);
+            return elStart < subEnd && elEnd > subStart;
+          }).map(el => {
+            const elStart = el.start ?? 0;
+            const newStart = Math.max(0, elStart - subStart);
+            const originalEnd = elStart + (el.duration ?? 0);
+            const newDur = Math.min(originalEnd - subStart, subDur) - newStart;
+            return { ...el, start: newStart, duration: Math.max(0.5, newDur) };
+          });
+
+          // Add music to every sub-scene (looped, full sub-scene duration)
+          musicElements.forEach(m => {
+            subElements.push({ ...m, start: 0, duration: subDur });
+          });
+
+          scenes.push({
+            comment: `${chapter.product || chapter.chapterId} (sub ${s + 1}/${numSubs}, ${Math.round(subDur)}s)`,
+            duration: subDur,
+            'background-color': '#1e293b',
+            elements: subElements.filter(el => el.duration > 0),
+            ...(s === 0 && j2vTransitionStyle ? { transition: { style: j2vTransitionStyle, duration: 0.5 } } : { transition: { style: 'fade', duration: 0.3 } }),
+          });
+        }
+        console.log(`[EP04 Timeline] ${chapter.chapterId}: split ${Math.round(sceneDuration)}s into ${numSubs} sub-scenes of ~${subLen}s`);
+      } else {
+        scenes.push({
+          comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS, ${lipsyncClips.length} lipsync, ${kineticTexts.length} kinetic, ${sceneDuration}s)`,
+          duration: sceneDuration,
+          'background-color': '#1e293b',
+          elements: safeElements,
+          ...(j2vTransitionStyle ? { transition: { style: j2vTransitionStyle, duration: 0.5 } } : {}),
+        });
+      }
 
       // Transition segment — visual background + bridge audio + chapter title
       if (transitions.length > chapterIndex) {
