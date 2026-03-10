@@ -131,14 +131,14 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, session, profile, userRoles]);
 
-  // Force loading to complete after 10 seconds to prevent infinite loading
+  // Force loading to complete after 5 seconds to prevent infinite loading
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoading) {
-        console.log('🚨 Auth loading timeout - force completing...');
+        console.log('🚨 Auth loading timeout (5s) - force completing...');
         setIsLoading(false);
       }
-    }, 10000);
+    }, 5000);
     
     return () => clearTimeout(timeout);
   }, [isLoading]);

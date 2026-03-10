@@ -626,11 +626,11 @@ function EP04ProductionInner() {
     const updateStep = (step: string) => { loadStepRef.current = step; setLoadStep(step); };
     updateStep('Checking authentication...');
 
-    // Timeout guard — 45s max (Supabase cold-starts can be slow)
+    // Timeout guard — 20s max (reduced from 45s; better to show retry button quickly)
     const timeoutId = setTimeout(() => {
       setProjectLoading(false);
       setProjectLoadError(`Timed out at step: "${loadStepRef.current || 'authentication check'}". Supabase may be unreachable — check your network or try again.`);
-    }, 45000);
+    }, 20000);
 
     let cancelled = false;
 
@@ -642,7 +642,7 @@ function EP04ProductionInner() {
         // Fast path: read session from local storage (with timeout)
         try {
           const sessionPromise = supabase.auth.getSession();
-          const sessionTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+          const sessionTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
           const sessionResult = await Promise.race([sessionPromise, sessionTimeout]) as any;
           user = sessionResult?.data?.session?.user;
           if (user) console.log('[EP04 LOAD] Step 1a: got user from session (local)');
@@ -655,7 +655,7 @@ function EP04ProductionInner() {
           try {
             const authPromise = supabase.auth.getUser();
             const authTimeout = new Promise<null>((_, reject) =>
-              setTimeout(() => reject(new Error('Auth check timed out after 15 seconds')), 15000)
+              setTimeout(() => reject(new Error('Auth check timed out after 8 seconds')), 8000)
             );
             const authResult = await Promise.race([authPromise, authTimeout]) as any;
             user = authResult?.data?.user;
@@ -665,12 +665,12 @@ function EP04ProductionInner() {
         }
         // Retry once if both paths failed — Supabase can be slow on first load
         if (!user) {
-          console.log('[EP04 LOAD] Step 1c: RETRY — waiting 3s then trying getSession again...');
-          await new Promise(r => setTimeout(r, 3000));
+          console.log('[EP04 LOAD] Step 1c: RETRY — waiting 1s then trying getSession again...');
+          await new Promise(r => setTimeout(r, 1000));
           try {
             const retryResult = await Promise.race([
               supabase.auth.getSession(),
-              new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
             ]) as any;
             user = retryResult?.data?.session?.user;
             if (user) console.log('[EP04 LOAD] Step 1c: retry succeeded!');
