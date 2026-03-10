@@ -174,8 +174,7 @@ export const EP04_AVATAR_CONFIG = {
       audioProfile: EP04_VOICES.host,
       // --- PIXAR-STYLE PROMPT: A relatable human PO (MUST show the human, not just the dog) ---
       pixarPrompt: 'Pixar-style 3D animated character portrait: CLOSE-UP of a warm HUMAN MAN with messy brown hair, slight stubble, big tired-but-passionate brown eyes, wearing an earth-tone button-up shirt with rolled sleeves and a loosened tie, holding a half-empty oversized coffee mug with "The GenieAI Podcast" text printed on it, friendly approachable face with Pixar-proportioned features (slightly large head, expressive eyebrows), his loyal golden retriever visible at his side looking up adoringly, warm cozy home office background with soft lamplight, dual monitors behind him showing text "Claude Code" on left screen and text "Lovable" on right screen, subtle Pixar subsurface skin shading, the HUMAN is the main subject filling 70% of frame, 8K cinematic portrait render',
-      // --- LIPSYNC SOURCE PROMPT: tight headshot, NO animals — WAN needs a single clear face to animate ---
-      lipsyncPrompt: 'Pixar-style 3D animated HEADSHOT portrait: EXTREME CLOSE-UP of a warm HUMAN MAN face and upper shoulders ONLY, messy brown hair, slight stubble, big expressive brown eyes, friendly smile, wearing an earth-tone button-up shirt, holding a coffee mug with "The GenieAI Podcast" text near his chin, Pixar-proportioned features with slightly large head and expressive eyebrows, soft warm studio lighting on face, clean blurred background, NO animals NO dogs NO pets in frame, ONLY the human face fills the entire frame, 8K portrait render, face centered and sharp',
+      // --- LIPSYNC: uses the AI-generated avatar (human with mug) directly — no separate headshot needed ---
       // --- DISNEY-STYLE PROMPT: Painted warm narrator (HUMAN is main subject) ---
       disneyPrompt: 'Disney 2D animation style character portrait: CLOSE-UP of a warm-hearted HUMAN MAN narrator with kind expressive eyes and slight bags underneath (too many sprints), messy brown hair, wearing a cozy earth-tone cardigan, hand-painted with visible brushstrokes, holding an enormous steaming coffee mug with "The GenieAI Podcast" text, his loyal golden retriever drawn in classic Disney style sitting at his feet, the HUMAN MAN fills most of the frame as the main subject, painterly home office background with soft watercolor lighting, dual monitors showing text "Claude Code" and text "Lovable" glowing softly, classic Disney warmth and charm',
       sceneCompanions: [
@@ -474,31 +473,108 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A warm human product owner at his home office desk looking stressed but determined, sticky notes everywhere, dual monitors showing text "Claude Code" on left screen and text "Lovable" on right screen with sprint dashboards, his loyal golden retriever sitting beside him looking up adoringly, cozy warm lamplight, coffee mug with "The GenieAI Podcast" text steaming on desk, Pixar 3D animation quality, cinematic depth of field, 8K' },
-    { type: 'tts', voice: 'host', scriptKey: 'cold-open-narration' },
+    // Segment 1: Host problem intro (55s)
+    { type: 'tts', voice: 'host', scriptKey: 'problem-intro' },
     // Squirrel interruption (10s) — bursts in after host intro
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-1' },
     { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-interrupt-1' },
+    // Host reacts to squirrel (5s)
+    { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-response-1' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-squirrel-response-1' },
+    // Segment 2: Deeper problem + context loss (55s)
+    { type: 'tts', voice: 'host', scriptKey: 'problem-deeper' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-deeper' },
+    // Segment 3: Market data & citations (18s)
+    { type: 'tts', voice: 'host', scriptKey: 'scene1-market-data' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'scene1-market-data' },
+    // Bridge narrator: scene 1 → scene 2 (7s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-1-to-2' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-1-to-2' },
   ],
   'scene-2-meet-team': [
+    // ── Scene-setting video — the team assembles ──
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar-style 3D animated scene: a cozy home office transforms into a magical podcast studio — dual monitors glow with code, a warm golden retriever wags its tail as a bear wearing wire-frame glasses (Atlas) materializes on the left monitor and an orange fox in a paint-splattered apron (Nova) appears on the right monitor, sparkle particles swirl between the screens, warm lamplight, cinematic depth of field, 8K quality' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
-    { type: 'tts', voice: 'host', scriptKey: 'meet-host' },
-    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2' },
-    { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
-    { type: 'tts', voice: 'atlas', scriptKey: 'atlas-847-lines' },
-    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2' },
-    { type: 'tts', voice: 'host', scriptKey: 'host-847-response' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
-    { type: 'tts', voice: 'nova', scriptKey: 'nova-waiting-suboptimal' },
-    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2' },
+    // Host intro transition (55s) — confessional journey
+    { type: 'tts', voice: 'host', scriptKey: 'intro-transition' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'intro-transition' },
+    { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO actions dashboard — host introduces the sprint context before revealing Atlas and Nova. Focus on action items and team assignments.', enhanceMode: 'highlight', focusAreas: ['action-items', 'team-assignments', 'sprint-context'] },
+    // Host introduces Atlas (30s)
+    { type: 'tts', voice: 'host', scriptKey: 'atlas-intro-host' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'atlas-intro-host' },
+    // Atlas self-intro (22s)
+    { type: 'tts', voice: 'atlas', scriptKey: 'atlas-self-intro' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-self-intro' },
+    // Host reacts to Atlas (3s)
+    { type: 'tts', voice: 'host', scriptKey: 'host-atlas-reaction' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-atlas-reaction' },
+    // Atlas retort (4s)
+    { type: 'tts', voice: 'atlas', scriptKey: 'atlas-not-intended' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-not-intended' },
+    // Host introduces Nova (22s)
+    { type: 'tts', voice: 'host', scriptKey: 'nova-intro-host' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'nova-intro-host' },
+    // Nova self-intro (25s)
+    { type: 'tts', voice: 'nova', scriptKey: 'nova-self-intro' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-self-intro' },
+    // Atlas dry correction (6s)
+    { type: 'tts', voice: 'atlas', scriptKey: 'atlas-correction' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-correction' },
+    // Nova insists on animations (4s)
+    { type: 'tts', voice: 'nova', scriptKey: 'nova-animations-always' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-animations-always' },
     { type: 'kinetic-text', text: 'NOBODY TOUCHES ANYONE ELSE\'S FILES.' },
+    // Host team summary (25s)
+    { type: 'tts', voice: 'host', scriptKey: 'host-team-summary' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-team-summary' },
+    // Nova emotional moment (15s)
+    { type: 'tts', voice: 'nova', scriptKey: 'nova-shy-flattery' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-shy-flattery' },
+    // Atlas acknowledges (7s)
+    { type: 'tts', voice: 'atlas', scriptKey: 'atlas-nova-acknowledgment' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-nova-acknowledgment' },
+    // Nova shy recovery (8s) — emotional transition out of scene 2
+    { type: 'tts', voice: 'nova', scriptKey: 'nova-shy-recovery' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-shy-recovery' },
+    // Bridge narrator: scene 2 → scene 3 (8s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-2-to-3' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-2-to-3' },
   ],
   'scene-3-governance': [
-    { type: 'tts', voice: 'host', scriptKey: 'governance-narration' },
+    // ── Avatars for full scene ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
+    // ── Kinetic title card ──
+    { type: 'kinetic-text', text: 'THE ORIGIN STORY — WHY TWO AIs DECIDED TO FIX THE PROCESS' },
+    // ── Part 1: Atlas & Nova frustration — waiting on PO (pre-origin dialogue) ──
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-nova-waiting' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-frustrated' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-checks-po' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-solidarity' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-final-warning' },
+    // ── Part 2: Atlas & Nova decide to fix it together ──
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-to-nova-fix' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-agrees-frustration' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-i-just-merge' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-pr-frustration' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-nova-resolve' },
+    { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-transition-to-origin' },
+    // ── Part 3: Squirrel re-entrance + Host origin story ──
+    { type: 'tts', voice: 'squirrel', scriptKey: 'scene3-squirrel-reintro' },
+    // scene3-staging-open = visual-only cinematic beat (no TTS — empty text)
+    { type: 'tts', voice: 'host', scriptKey: 'origin-story' },
+    { type: 'tts', voice: 'atlas', scriptKey: 'origin-atlas-observation' },
+    { type: 'tts', voice: 'nova', scriptKey: 'origin-nova-blocked' },
+    // scene3-turning-point-beat = visual-only cinematic beat (no TTS — empty text)
+    { type: 'tts', voice: 'host', scriptKey: 'origin-decision' },
+    // ── Part 4: Governance solution (existing entries) ──
+    { type: 'tts', voice: 'host', scriptKey: 'governance-narration' },
     { type: 'screen-capture', screenIds: ['sprint-charter', 'governance-guide'], multiCapture: true },
     { type: 'ai-screen-enhance', screenIds: ['sprint-charter', 'governance-guide'], scriptContext: 'Sprint charter defining territory rules — Claude owns backend, Lovable owns frontend. Governance guide with file ownership boundaries.', enhanceMode: 'highlight', focusAreas: ['territory-map', 'file-ownership-rules', 'merge-conflict-policy'] },
     // SHOWCASE: Scene transitions — territory boundary reveal
@@ -508,6 +584,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'host-governance-not-overkill' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-read-relevant-sections' },
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Clean professional infographic: Sprint Territory Map showing file ownership boundaries for a dual-developer sprint. Left zone labeled "Atlas (Claude)" in terracotta-orange with icons for backend files, API routes, database migrations, edge functions. Right zone labeled "Nova (Lovable)" in magenta-pink with icons for landing pages, UI components, CSS styling. Center shows shared infrastructure with lock icons. Bottom bar shows 41 tasks split between developers. Clean data visualization style, dark background with glowing elements, 8K detail' },
+    // Bridge narrator: scene 3 → scene 4 (7s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-3-to-4' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-3-to-4' },
   ],
   'scene-4-day1': [
     // ── Host intro: Day 1 overview ──
@@ -544,11 +623,17 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-high-five' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-lets-go' },
     { type: 'kinetic-text', text: 'Setting acceptance criteria isn\'t optional. It\'s survival.' },
+    // ── Host reveals the solution to audience ──
+    { type: 'tts', voice: 'host', scriptKey: 'solution-reveal' },
+    { type: 'tts', voice: 'host', scriptKey: 'solution-standups' },
     // ── Squirrel comic relief ──
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-2' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-squirrel-response' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-disappointed' },
+    // Bridge narrator: scene 4 → scene 5 (7s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-4-to-5' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-4-to-5' },
   ],
   'scene-5-day2': [
     // ── Governance deep-dive: why guardrails exist ──
@@ -584,6 +669,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions dashboard built to prevent future blockers — async approval queue, priority flags, response time tracking.', enhanceMode: 'stylize', focusAreas: ['approval-queue', 'priority-flags', 'response-times'] },
     { type: 'tts', voice: 'host', scriptKey: 'host-po-actions-built' },
     { type: 'kinetic-text', text: '6 hours blocked. 12 minutes approved. Async governance works.' },
+    // Bridge narrator: scene 5 → scene 6 (8s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-5-to-6' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-5-to-6' },
   ],
   'scene-6-day3': [
     // ── Day 3 velocity mismatch: the gap reveals itself ──
@@ -606,6 +694,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'atlas', scriptKey: 'po-actions-atlas-relief' },
     { type: 'tts', voice: 'nova', scriptKey: 'po-actions-nova-relief' },
     { type: 'kinetic-text', text: '36 hours → 22 minutes. 98.9% improvement. Frustration breeds features.' },
+    // Bridge narrator: scene 6 → scene 7 (7s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-6-to-7' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-6-to-7' },
   ],
   'scene-7-mission-control': [
     // ── Part 1: Velocity Contest — Atlas vs Nova burndown showdown ──
@@ -642,6 +733,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup meeting with people talking over each other and sticky notes flying. RIGHT side shows calm AI-powered async standup with organized data flowing smoothly on a dashboard, cinematic quality, warm lighting' },
     // ── Kinetic text: velocity stats ──
     { type: 'kinetic-text', text: 'ATLAS: 85% velocity. Straight-line burndown. NOVA: 110% velocity. "Things that are in scope... now." SCOPE CREEP ≠ MALICIOUS. It\'s a dev who fixes something in 90 seconds and believes she helped.' },
+    // Bridge narrator: scene 7 → scene 8 (6s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-7-to-8' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-7-to-8' },
   ],
   'scene-8-dashboard-tour': [
     // ── Full dashboard tour narrative — host introduces, atlas/nova add perspective ──
@@ -667,12 +761,16 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
       ],
       multiCapture: true,
     },
+    { type: 'ai-screen-enhance', screenIds: ['po-mission-control', 'velocity-metrics', 'effort-tracking', 'project-plan'], scriptContext: 'Dashboard tour highlights — 18 screens showing the complete sprint management system. Focus on key metrics, task flow, and developer productivity data.', enhanceMode: 'stylize', focusAreas: ['key-metrics', 'task-flow', 'burndown-chart', 'velocity-data'] },
     // SHOWCASE: Scroll-unroll transition — 18 screenshots unroll like a parchment scroll
     { type: 'scene-transition', style: 'scroll-unroll', prompt: 'Ancient parchment scroll unrolling horizontally to reveal a montage of 18 dashboard screenshots arranged like panels in an illuminated manuscript, each panel glowing as the scroll passes over it, golden light and ink flourishes', duration: 4 },
     // Animate each screenshot with subtle pan/zoom via Alibaba i2v
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Ken Burns style slow zoom and pan across a software dashboard screenshot, subtle particle effects, professional product demo feel', referenceImage: 'auto-captured-screenshots' },
     // ── Kinetic text: dashboard tour stats ──
     { type: 'kinetic-text', text: '18 SCREENS. 1 SYSTEM. ZERO JIRA. PO sees actions & blockers. Dev sees task queue & deploy status. Same system, different lens.' },
+    // Bridge narrator: scene 8 → scene 9 (7s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-8-to-9' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-8-to-9' },
   ],
   'scene-9-numbers': [
     // ── Full challenges narrative — vulnerability + thesis moment ──
@@ -699,6 +797,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'ai-screen-enhance', screenIds: ['velocity-metrics'], scriptContext: 'Final velocity metrics — 41 tasks completed, 5x traditional speed, zero blockers at sprint end. The big number reveal + honest challenges context.', enhanceMode: 'redraw', focusAreas: ['total-velocity-number', 'completion-percentage', 'zero-blockers-badge'] },
     // ── Kinetic text: the thesis statement ──
     { type: 'kinetic-text', text: '"Who makes sure the AIs don\'t build the wrong thing really fast?" — The governance layer isn\'t project management theater. It\'s survival tools.' },
+    // Bridge narrator: scene 9 → scene 10 (6s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-9-to-10' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-9-to-10' },
   ],
   'scene-10-whats-next': [
     // ── MCP vision — host introduces, all 3 characters contribute perspectives ──
@@ -708,6 +809,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'nova', scriptKey: 'whats-next-nova' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-data-quality' },
     { type: 'tts', voice: 'host', scriptKey: 'host-atlas-said' },
+    // ── MCP narration voiceover (20s) ──
+    { type: 'tts', voice: 'host', scriptKey: 'whats-next-narration' },
     // ── Avatars — all 3 characters contribute to the vision ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
@@ -719,6 +822,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Velocity methodology validation dashboard: Sprint Day 1-5 columns rising with weighted task complexity calculations visible on each bar, a "Confidence Level" meter at the top glowing at 95% verified, context-switching overhead tracked as small amber annotations. NOT marketing — engineering. Holographic display style, verification checkmarks glowing green on each validated metric, futuristic but data-grounded' },
     // SHOWCASE: Kinetic text — forward-looking vision statement
     { type: 'kinetic-text', text: '85 LANGUAGES. 16 REGIONS. 4 AI ZONES. ONE UNIFIED PIPELINE. Push code → MCP reads diff → tracker updates → QA report generated. The board updates itself.' },
+    // Bridge narrator: scene 10 → scene 11 (9s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-10-to-11' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-10-to-11' },
   ],
   'scene-11-close': [
     // ── Full closing dialogue — emotional sign-off (all 9 script entries) ──
@@ -730,6 +836,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'close-cta' },
     // ── Goodbye round — each character signs off in character ──
     { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-goodbye' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'close-atlas-goodbye' },
     { type: 'tts', voice: 'nova', scriptKey: 'close-nova-goodbye' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-finale' },
     // ── Avatars — all 4 characters for the finale (bookend: characters return) ──
@@ -738,13 +845,16 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     // ── Lipsync — bookend finale: characters speak on-camera for emotional close ──
-    // Note: Host entries (35-40s) exceed 20s lipsync limit — host plays as voiceover
+    // Note: Host entries (60-90s) exceed 18s lipsync limit — runtime will play as voiceover
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'close-rationale' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'close-cta' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'close-atlas-heard' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'close-nova-goodbye' },
     { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-finale' },
     // SHOWCASE: Character group farewell — Nutcracker finale energy, choreographed bows
     { type: 'character-interaction', characters: ['host', 'atlas', 'nova', 'squirrel'], prompt: 'Nutcracker finale moment in a warm sunlit forest-tech clearing: human PO host takes a theatrical bow center stage, bear Atlas gives a formal measured nod with hands clasped behind his back, fox Nova does an exuberant curtsy with a sparkle burst, squirrel attempts a bow but topples forward and catches itself on bear\'s shoulder — all four laughing. Golden retriever sits at their feet wagging tail, woodland creatures peek from bushes applauding. Warm golden hour lighting, confetti particles, Pixar quality, cinematic depth of field', style: 'farewell-bow' },
     { type: 'screen-capture', screenIds: ['day-5-view'], multiCapture: false },
+    { type: 'ai-screen-enhance', screenIds: ['day-5-view'], scriptContext: 'Day 5 final sprint view — all 41 tasks completed, the culmination of the 5-day dual-developer sprint. Highlight completion status and final metrics.', enhanceMode: 'highlight', focusAreas: ['completion-status', 'final-metrics', 'task-board'] },
     // SHOWCASE: "Powered by" provider montage — highlights the AI stack that built this episode
     { type: 'storybook-frame', variant: 'closing', prompt: 'Elegant "Powered By" credits page in storybook style — provider logos arranged in a constellation pattern: ElevenLabs (voice), Azure Neural (voice), Alibaba Wan2.6 (video), Alibaba Wan2.2 (lipsync), Alibaba Wanx (images), Alibaba FLUX (images), Meshy (3D), Alibaba CosyVoice (fallback TTS), ModelsLab (motion), JSON2Video (assembly) — each logo connected by golden thread lines forming a production pipeline flowchart, warm parchment background, calligraphy header "10 AI Providers — 1 Unified Pipeline", 8K quality', duration: 6 },
     { type: 'kinetic-text', text: '10 AI PROVIDERS. 1 UNIFIED PIPELINE. EVERY FRAME AI-GENERATED.' },

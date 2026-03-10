@@ -35,7 +35,7 @@ import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
-const EP04_BUILD = 'v2026-03-10-G';
+const EP04_BUILD = 'v2026-03-10-I';
 console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
 
 // Shared helper: detect external CDN URLs that may have expired (~24h TTL)
@@ -65,6 +65,101 @@ async function uploadTtsToStorage(
   const { data: { publicUrl } } = supabase.storage.from('cast-assets').getPublicUrl(path);
   return publicUrl;
 }
+
+// Upload base64 image data URI to Supabase Storage — prevents MB-sized base64 from bloating DB JSONB
+async function uploadBase64ImageToStorage(
+  projectId: string,
+  key: string,
+  dataUri: string,
+): Promise<string> {
+  // Parse "data:image/png;base64,iVBOR..." → extract mime + raw base64
+  const match = dataUri.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (!match) throw new Error('Invalid base64 data URI');
+  const mime = match[1];
+  const ext = mime.split('/')[1] || 'png';
+  const binaryStr = atob(match[2]);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+  const blob = new Blob([bytes], { type: mime });
+
+  const safeName = key.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const path = `${projectId}/images/${safeName}.${ext}`;
+  const { error } = await supabase.storage.from('cast-assets').upload(path, blob, {
+    contentType: mime,
+    upsert: true,
+  });
+  if (error) throw error;
+
+  const { data: { publicUrl } } = supabase.storage.from('cast-assets').getPublicUrl(path);
+  console.log(`[EP04] Uploaded base64 image → Supabase Storage: ${publicUrl.substring(0, 80)}...`);
+  return publicUrl;
+}
+
+// Check if a value is a base64 data URI (not a proper HTTP URL)
+const isBase64DataUri = (url: string): boolean =>
+  typeof url === 'string' && url.startsWith('data:');
+
+// Check if URL is already on Supabase Storage (permanent, never expires)
+const isSupabaseStorageUrl = (url: string): boolean =>
+  typeof url === 'string' && url.includes('supabase.co/storage');
+
+// Ensure a URL is on Supabase Storage — mirrors base64, CDN, or local assets
+// Returns: permanent Supabase Storage URL, or original URL if mirroring fails
+async function ensureStorageUrl(
+  projectId: string,
+  key: string,
+  url: string,
+  contentType: 'image' | 'video' = 'image',
+): Promise<string> {
+  // Already on Supabase Storage — nothing to do
+  if (isSupabaseStorageUrl(url)) return url;
+
+  // Base64 data URI — decode and upload directly
+  if (isBase64DataUri(url)) {
+    return uploadBase64ImageToStorage(projectId, key, url);
+  }
+
+  // Relative Vite asset path (e.g., /assets/scene-0-title-abc123.png) — make absolute
+  let fetchUrl = url;
+  if (url.startsWith('/') && !url.startsWith('//')) {
+    fetchUrl = `${window.location.origin}${url}`;
+  }
+
+  // HTTP(S) URL from external CDN — fetch and re-upload to Storage
+  if (fetchUrl.startsWith('http')) {
+    const resp = await fetch(fetchUrl);
+    if (!resp.ok) throw new Error(`Fetch failed: ${resp.status} ${resp.statusText}`);
+    const blob = await resp.blob();
+    const ext = contentType === 'video' ? 'mp4' : (url.match(/\.(png|jpg|jpeg|webp|gif)/i)?.[1] || 'png');
+    const mime = contentType === 'video' ? 'video/mp4' : `image/${ext}`;
+    const safeName = key.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const path = `${projectId}/${contentType}s/${safeName}.${ext}`;
+    const { error } = await supabase.storage.from('cast-assets').upload(path, blob, {
+      contentType: mime,
+      upsert: true,
+    });
+    if (error) throw error;
+    const { data: { publicUrl } } = supabase.storage.from('cast-assets').getPublicUrl(path);
+    console.log(`[EP04] Mirrored ${contentType} to Storage: ${publicUrl.substring(0, 80)}...`);
+    return publicUrl;
+  }
+
+  // Unknown URL type — return as-is (shouldn't happen)
+  return url;
+}
+
+// Filter out base64 data URIs from a URL bucket — only keep HTTP(S) URLs
+const filterBase64FromBucket = (bucket: Record<string, string>): Record<string, string> => {
+  const clean: Record<string, string> = {};
+  for (const [k, v] of Object.entries(bucket)) {
+    if (v && !isBase64DataUri(v)) {
+      clean[k] = v;
+    } else if (v && isBase64DataUri(v)) {
+      console.warn(`[EP04] Stripped base64 data URI from bucket key "${k}" (${v.length} chars) — should have been uploaded to Storage`);
+    }
+  }
+  return clean;
+};
 
 // Character avatar imports — upgraded to Pixar 3D portraits for visual consistency with scene backgrounds
 import hostAvatar from '@/assets/characters/host-avatar-3d.png';
@@ -96,6 +191,8 @@ interface GeneratedAudio {
   audioUrl: string;
   provider: string;
   voice: string;
+  /** Actual audio duration in seconds (measured from Audio element or API response) */
+  audioDuration?: number;
 }
 
 type LineStatus = 'idle' | 'generating' | 'done' | 'error';
@@ -1060,14 +1157,17 @@ function EP04ProductionInner() {
         console.warn('[EP04] generation_jobs visual restore failed:', e);
       }
 
-      // Keep ALL URLs including external CDN URLs — only filter placeholders
+      // Keep ALL URLs including external CDN URLs — only filter placeholders and base64 data URIs
       // DashScope URLs display fine in <img> tags (no CORS for images)
       // New generations get Supabase Storage URLs from the edge function (server-side mirroring)
+      // Base64 data URIs must NOT survive in DB — they bloat JSONB (1-3MB each!) and cause save timeouts
       const filterPlaceholders = (urls: Record<string, string>): Record<string, string> => {
         const clean: Record<string, string> = {};
         for (const [k, v] of Object.entries(urls)) {
-          if (v && !v.includes('placehold.co')) {
+          if (v && !v.includes('placehold.co') && !isBase64DataUri(v)) {
             clean[k] = v;
+          } else if (v && isBase64DataUri(v)) {
+            console.warn(`[PERSIST RESTORE] Stripped base64 data URI from key "${k}" (${v.length} chars)`);
           }
         }
         return clean;
@@ -1510,9 +1610,25 @@ function EP04ProductionInner() {
       const resolvedVoice = data.voice || voiceConfig.voiceId;
       const actualTokens = data.tokensUsed || Math.ceil(line.text.length / 4);
 
+      // Measure actual audio duration for precise lipsync/assembly timing
+      let audioDuration: number | undefined;
+      if (audioUrl && audioUrl.startsWith('http')) {
+        try {
+          audioDuration = await new Promise<number>((resolve, reject) => {
+            const el = new Audio(audioUrl!);
+            el.addEventListener('loadedmetadata', () => resolve(el.duration));
+            el.addEventListener('error', () => reject(new Error('Audio metadata load failed')));
+            setTimeout(() => reject(new Error('Audio metadata timeout')), 5000);
+          });
+          console.log(`[EP04 TTS] "${key}" actual duration: ${audioDuration.toFixed(1)}s (est: ${line.duration_est}s)`);
+        } catch {
+          // Non-critical — assembly will fall back to duration_est
+        }
+      }
+
       setAudioMap(prev => ({
         ...prev,
-        [key]: { audioUrl: audioUrl!, provider: resolvedProvider, voice: resolvedVoice },
+        [key]: { audioUrl: audioUrl!, provider: resolvedProvider, voice: resolvedVoice, audioDuration },
       }));
       setStatusMap(prev => ({ ...prev, [key]: 'done' }));
 
@@ -1934,7 +2050,12 @@ function EP04ProductionInner() {
       const screenIds = (step.screenIds as string[]) || [];
       for (const sid of screenIds) {
         if (screenshotUrls[sid]) {
-          results[`screen-capture-${sid}`] = screenshotUrls[sid];
+          let scUrl = screenshotUrls[sid];
+          // Mirror local screenshots to Supabase Storage so assembly can access them
+          if (projectId && !isSupabaseStorageUrl(scUrl)) {
+            try { scUrl = await ensureStorageUrl(projectId, `screen-capture-${sid}`, scUrl); } catch { /* keep original */ }
+          }
+          results[`screen-capture-${sid}`] = scUrl;
         } else {
           toast.warning(`Screenshot "${sid}" not captured yet — skipping`);
         }
@@ -1982,6 +2103,9 @@ function EP04ProductionInner() {
           toast.info(`${stepLabel}: enhancing "${sid}"... polling for result`);
           url = await pollVideoTaskResult(data.taskId);
         }
+        if (url && projectId && !isSupabaseStorageUrl(url)) {
+          try { url = await ensureStorageUrl(projectId, `ai-screen-enhance-${sid}`, url, 'video'); } catch { /* keep original */ }
+        }
         if (url) results[`ai-screen-enhance-${sid}`] = url;
         if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       }
@@ -2003,44 +2127,21 @@ function EP04ProductionInner() {
       }
 
       // Find the avatar source image for lipsync
-      // Priority: lipsync-specific avatar > Supabase URL > DashScope CDN > pre-made local asset
-      // For host: use lipsyncPrompt (headshot, no dog) instead of regular avatar (which may show the dog)
-      // Key uses underscore prefix so it's NOT captured by the lipsyncUrls filter (which matches 'lipsync')
-      const lipsyncAvatarKey = `_headshot-source-${character}`;
-      const avatarFromLipsyncGen = results[lipsyncAvatarKey];
+      // Priority: current-run result > saved Supabase avatar > CDN avatar > pre-made local asset
+      // When running lipsync-only regen, results won't have avatar-3d — fall back to saved avatarUrls
       const avatarFromResults = Object.entries(results).find(([k]) => k.includes('avatar-3d') && k.includes(character))?.[1];
+      const avatarFromSaved = Object.entries(existingAvatarUrls).find(([k]) => k.includes(character))?.[1];
       const avatarPreMade = CHARACTER_AVATARS[character];
 
-      // For host character: generate a dedicated lipsync headshot (no dog) if not already done
-      const charConfig = EP04_AVATAR_CONFIG.characters[character as keyof typeof EP04_AVATAR_CONFIG.characters];
-      if (!avatarFromLipsyncGen && charConfig && (charConfig as any).lipsyncPrompt) {
-        console.log(`[EP04 Visual] ${stepLabel}: generating lipsync-specific headshot for "${character}" (no dog)...`);
-        try {
-          await new Promise(r => setTimeout(r, 2000));
-          const { data: lsData, error: lsError } = await supabase.functions.invoke('ai-universal-processor', {
-            body: { action: 'image_generation', prompt: (charConfig as any).lipsyncPrompt, provider: 'alibaba', model: 'wan2.6-t2i', aspectRatio: '1:1', style_intent: 'cinematic' },
-          });
-          if (!lsError && lsData) {
-            const lsUrl = lsData?.url || lsData?.imageUrl || lsData?.result?.url;
-            if (lsUrl) {
-              results[lipsyncAvatarKey] = lsUrl;
-              console.log(`[EP04 Visual] ${stepLabel}: lipsync headshot for "${character}": ${lsUrl.substring(0, 80)}...`);
-            }
-          }
-        } catch (e) {
-          console.warn(`[EP04 Visual] ${stepLabel}: lipsync headshot gen failed for "${character}", using regular avatar`);
-        }
-      }
-
-      // Pick the best available avatar URL
-      const lipsyncSource = results[lipsyncAvatarKey];
       let sourceImage: string | null = null;
-      if (lipsyncSource && lipsyncSource.startsWith('http')) {
-        sourceImage = lipsyncSource; // Lipsync-specific headshot — best for WAN face animation
-      } else if (avatarFromResults && avatarFromResults.startsWith('http') && avatarFromResults.includes('supabase.co')) {
-        sourceImage = avatarFromResults; // AI-generated avatar on Supabase
+      if (avatarFromResults && avatarFromResults.startsWith('http') && avatarFromResults.includes('supabase.co')) {
+        sourceImage = avatarFromResults; // Current-run avatar on Supabase — best
+      } else if (avatarFromSaved && avatarFromSaved.startsWith('http') && avatarFromSaved.includes('supabase.co')) {
+        sourceImage = avatarFromSaved; // Previously saved avatar on Supabase — great for lipsync-only regen
       } else if (avatarFromResults && avatarFromResults.startsWith('http')) {
-        sourceImage = avatarFromResults; // DashScope CDN
+        sourceImage = avatarFromResults; // Current-run DashScope CDN
+      } else if (avatarFromSaved && avatarFromSaved.startsWith('http')) {
+        sourceImage = avatarFromSaved; // Previously saved CDN
       } else if (avatarPreMade) {
         // Pre-made local asset — make it a full URL the edge function can fetch from our app
         sourceImage = avatarPreMade.startsWith('http') ? avatarPreMade : `${window.location.origin}${avatarPreMade}`;
@@ -2136,6 +2237,10 @@ function EP04ProductionInner() {
       if (url) {
         // Per-segment key: avatar-lipsync-allaudin-bridge-0-to-1 vs avatar-lipsync-allaudin-allaudin-emerge
         const resultKey = lipsyncScriptKey ? `avatar-lipsync-${character}-${lipsyncScriptKey}` : `avatar-lipsync-${character}`;
+        // Mirror lipsync video to Supabase Storage (CDN URLs expire)
+        if (projectId && !isSupabaseStorageUrl(url)) {
+          try { url = await ensureStorageUrl(projectId, resultKey, url, 'video'); } catch { /* keep original */ }
+        }
         results[resultKey] = url;
         console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" [${resultKey}] saved: ${url.substring(0, 60)}...`);
       } else {
@@ -2166,7 +2271,10 @@ function EP04ProductionInner() {
         },
       });
       if (error) { toast.error(`${stepLabel} character-interaction failed: ${error.message}`); return; }
-      const url = data?.url || data?.videoUrl;
+      let url = data?.url || data?.videoUrl;
+      if (url && projectId && !isSupabaseStorageUrl(url)) {
+        try { url = await ensureStorageUrl(projectId, `character-interaction-${sceneKey}`, url, 'video'); } catch { /* keep original */ }
+      }
       if (url) results[`character-interaction-${sceneKey}-${Date.now()}`] = url;
       if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       return;
@@ -2189,7 +2297,10 @@ function EP04ProductionInner() {
         },
       });
       if (error) { toast.error(`${stepLabel} narrator-scroll failed: ${error.message}`); return; }
-      const url = data?.url || data?.videoUrl;
+      let url = data?.url || data?.videoUrl;
+      if (url && projectId && !isSupabaseStorageUrl(url)) {
+        try { url = await ensureStorageUrl(projectId, `narrator-scroll-${sceneKey}`, url, 'video'); } catch { /* keep original */ }
+      }
       if (url) results[`narrator-scroll-${sceneKey}-${Date.now()}`] = url;
       if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       return;
@@ -2220,6 +2331,9 @@ function EP04ProductionInner() {
         toast.info(`${stepLabel}: scene-transition generating... polling for result`);
         url = await pollVideoTaskResult(data.taskId);
       }
+      if (url && projectId && !isSupabaseStorageUrl(url)) {
+        try { url = await ensureStorageUrl(projectId, `scene-transition-${sceneKey}`, url, 'video'); } catch { /* keep original */ }
+      }
       if (url) results[`scene-transition-${sceneKey}-${Date.now()}`] = url;
       if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       return;
@@ -2245,7 +2359,13 @@ function EP04ProductionInner() {
         },
       });
       if (error) { toast.error(`${stepLabel} storybook-frame failed: ${error.message}`); return; }
-      const url = data?.url || data?.imageUrl;
+      let url = data?.url || data?.imageUrl;
+      // Ensure URL is on Supabase Storage (handles base64, CDN URLs, etc.)
+      if (url && projectId && !isSupabaseStorageUrl(url)) {
+        try {
+          url = await ensureStorageUrl(projectId, `storybook-frame-${sceneKey}`, url);
+        } catch { console.warn(`[EP04 Visual] ${stepLabel}: storybook-frame mirror failed`); }
+      }
       if (url) results[`storybook-frame-${sceneKey}-${Date.now()}`] = url;
       if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       return;
@@ -2257,7 +2377,14 @@ function EP04ProductionInner() {
       const existingAvatar = CHARACTER_AVATARS[character];
       // Use pre-made avatar UNLESS character is flagged for AI regeneration
       if (existingAvatar && !REGENERATE_AVATAR_VIA_AI.has(character)) {
-        results[`avatar-3d-${character}-${sceneKey}`] = existingAvatar;
+        // Mirror pre-made avatar to Supabase Storage so assembly can access it via HTTP
+        let avatarUrl = existingAvatar;
+        if (projectId && !isSupabaseStorageUrl(existingAvatar)) {
+          try {
+            avatarUrl = await ensureStorageUrl(projectId, `avatar-3d-${character}-${sceneKey}`, existingAvatar);
+          } catch { console.warn(`[EP04 Visual] ${stepLabel}: pre-made avatar mirror failed, using local path`); }
+        }
+        results[`avatar-3d-${character}-${sceneKey}`] = avatarUrl;
         console.log(`[EP04 Visual] ${stepLabel}: using pre-made avatar for "${character}"`);
         return;
       }
@@ -2284,9 +2411,18 @@ function EP04ProductionInner() {
             console.error(`[EP04 Visual] ${stepLabel}: edge function error detail:`, detail, data);
             throw new Error(detail);
           }
-          // Edge function mirrors external URLs to Supabase Storage (CORS-safe, permanent)
-          const url = data?.url || data?.imageUrl || data?.result?.url;
+          // Ensure URL is on Supabase Storage (handles base64, CDN, or relative paths)
+          let url = data?.url || data?.imageUrl || data?.result?.url;
           if (!url) throw new Error('No image URL in response');
+
+          if (projectId && !isSupabaseStorageUrl(url)) {
+            try {
+              url = await ensureStorageUrl(projectId, `avatar-3d-${character}-${sceneKey}`, url);
+            } catch (mirrorErr) {
+              console.warn(`[EP04 Visual] ${stepLabel}: avatar "${character}" mirror to Storage failed:`, mirrorErr);
+              // Keep original URL — it may work for display but won't survive CDN expiry
+            }
+          }
 
           results[`avatar-3d-${character}-${sceneKey}`] = url;
           console.log(`[EP04 Visual] ${stepLabel}: Alibaba avatar for "${character}": ${url.substring(0, 80)}...`);
@@ -2313,7 +2449,14 @@ function EP04ProductionInner() {
     if (stepType === 'kinetic-text') {
       const sceneBg = SCENE_BACKGROUNDS[sceneKey];
       if (sceneBg) {
-        results[`kinetic-text-${sceneKey}-${Date.now()}`] = sceneBg;
+        // Mirror pre-made background to Supabase Storage so assembly can access it via HTTP
+        let bgUrl = sceneBg;
+        if (projectId && !isSupabaseStorageUrl(sceneBg)) {
+          try {
+            bgUrl = await ensureStorageUrl(projectId, `kinetic-text-${sceneKey}`, sceneBg);
+          } catch { console.warn(`[EP04 Visual] ${stepLabel}: scene bg mirror failed, using local path`); }
+        }
+        results[`kinetic-text-${sceneKey}-${Date.now()}`] = bgUrl;
         console.log(`[EP04 Visual] ${stepLabel}: using pre-made scene background as title card`);
         return;
       }
@@ -2466,6 +2609,20 @@ function EP04ProductionInner() {
       url = await pollVideoTaskResult(taskId2);
       if (url) {
         console.log(`[EP04 Visual] ${stepLabel} async poll resolved:`, url.substring(0, 80));
+      }
+    }
+
+    // CRITICAL: Ensure all generated assets are on Supabase Storage (permanent URLs)
+    // Base64 data URIs (1-3MB+) will cause DB JSONB timeouts/size failures
+    // CDN URLs (DashScope, Replicate) expire after ~24h — assembly can't use them
+    const isImageType = stepType.includes('image') || stepType === 'kinetic-text' || stepType === 'motion-graphics';
+    if (url && projectId && !isSupabaseStorageUrl(url)) {
+      const resultKey = `${stepType}-${sceneKey}-${Date.now()}`;
+      try {
+        url = await ensureStorageUrl(projectId, resultKey, url, isImageType ? 'image' : 'video');
+      } catch (mirrorErr) {
+        console.warn(`[EP04 Visual] ${stepLabel}: mirror to Storage failed:`, mirrorErr);
+        if (isBase64DataUri(url)) url = null; // Never store base64 in results
       }
     }
 
@@ -2658,13 +2815,15 @@ function EP04ProductionInner() {
       }
 
       // Persist visual artifacts to DB
+      // SAFETY: Strip any base64 data URIs that slipped through — they'll bloat JSONB and cause save failures
+      const httpOnly = ([, v]: [string, string]) => v && !isBase64DataUri(v);
       console.log(`[PERSIST SAVE] ${sceneKey}: visual production complete, ${Object.keys(results).length} total results:`, Object.keys(results));
       if (projectId) {
         const saveOk = await updateSceneArtifacts(projectId, sceneKey, {
-          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition'))),
-          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame'))),
-          avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d'))),
-          lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_'))),
+          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition')).filter(httpOnly)),
+          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame')).filter(httpOnly)),
+          avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')).filter(httpOnly)),
+          lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_')).filter(httpOnly)),
         });
         if (saveOk) {
           console.log(`[PERSIST SAVE] ${sceneKey}: ✅ DB save confirmed — artifacts will survive refresh`);
@@ -3219,7 +3378,10 @@ function EP04ProductionInner() {
       let sceneDuration = 0;
       let sceneTtsCount = 0;
       for (const k of sceneLines) {
-        sceneDuration += (scriptContentForUI[k]?.duration_est || 5) + 1.5;
+        // Use actual measured TTS duration if available; fall back to estimate
+        const actualDur = audioMap[k]?.audioDuration;
+        const estDur = scriptContentForUI[k]?.duration_est || 5;
+        sceneDuration += (actualDur || estDur) + 1.5;
         if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
       // Add trailing transition duration (~6s bridge narrator + transition visual)
@@ -3242,7 +3404,9 @@ function EP04ProductionInner() {
           let subDuration = 0;
           let subTts = 0;
           for (const k of subLines) {
-            subDuration += (scriptContentForUI[k]?.duration_est || 5) + 1.5;
+            const actualDur = audioMap[k]?.audioDuration;
+            const estDur = scriptContentForUI[k]?.duration_est || 5;
+            subDuration += (actualDur || estDur) + 1.5;
             if (audioMap[k]?.audioUrl) subTts++;
           }
           const subLipsync = Math.ceil(lipsyncCount * subLines.length / sceneLines.length);
@@ -3294,7 +3458,10 @@ function EP04ProductionInner() {
       let sceneDuration = 0;
       let sceneTtsCount = 0;
       for (const k of sceneLines) {
-        sceneDuration += (scriptContentForUI[k]?.duration_est || 5) + 1.5; // +1.5s TTS gap per line
+        // Use actual measured TTS duration if available; fall back to estimate
+        const actualDur = audioMap[k]?.audioDuration;
+        const estDur = scriptContentForUI[k]?.duration_est || 5;
+        sceneDuration += (actualDur || estDur) + 1.5; // +1.5s TTS gap per line
         if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
       sceneDuration = sceneDuration || 30;
@@ -3768,7 +3935,7 @@ function EP04ProductionInner() {
             type: 'video', src: clip.url,
             start: clip.start, duration: clip.duration,
             volume: 0, // Mute — TTS audio is a separate element, lipsync has it baked in
-            'fade-in': 0.3, 'fade-out': 0.3,
+            'fade-in': 0.3, 'fade-out': 1.0, // 1s fade-out hides WAN2.2 loop artifacts at clip end
             'z-index': 10,
           });
         }
@@ -4092,14 +4259,17 @@ function EP04ProductionInner() {
         let dataUriTtsCount = 0;
         for (const k of sceneLines) {
           const line = scriptContentForUI[k];
-          const dur = line?.duration_est || 5;
+          const estDur = line?.duration_est || 5;
+          const actualDur = audioMap[k]?.audioDuration;
+          // Prefer actual measured duration; fall back to estimate + 1s buffer
+          const dur = actualDur ? actualDur : estDur + 1;
           const audioUrl = audioMap[k]?.audioUrl;
           if (audioUrl) {
             if (audioUrl.startsWith('http')) {
               allTtsUrls.push({
                 url: audioUrl,
                 start: cumulativeStart,
-                duration: dur + 1, // +1s buffer so audio isn't cut short
+                duration: dur,
                 voice: line?.voice || 'unknown',
                 key: k,
               });
@@ -4227,17 +4397,21 @@ function EP04ProductionInner() {
             if (charTts) {
               // Use lipsync clip for up to 18s; if TTS is longer, the remaining
               // audio plays as voiceover over background visuals (handled by TTS layer).
-              const clipDuration = Math.min(charTts.duration, 18);
+              // Safety trim: subtract 1s from clip to cut before WAN2.2 loop artifacts
+              // (WAN2.2 sometimes repeats the last word/phrase at the end of generated video).
+              const LIPSYNC_SAFETY_TRIM = 1;
+              const rawClip = Math.min(charTts.duration, LIPSYNC_MAX_DURATION);
+              const clipDuration = Math.max(rawClip - LIPSYNC_SAFETY_TRIM, 2); // min 2s clip
               lipsyncClips.push({
                 url,
                 start: charTts.start,
                 duration: clipDuration,
                 character: charMatch,
               });
-              if (charTts.duration > 18) {
-                console.log(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) → TTS "${charTts.key}" at t=${charTts.start}s (clip=18s, voiceover for remaining ${charTts.duration - 18}s)`);
+              if (charTts.duration > LIPSYNC_MAX_DURATION) {
+                console.log(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) → TTS "${charTts.key}" at t=${charTts.start}s (clip=${clipDuration}s, voiceover for remaining ${(charTts.duration - clipDuration).toFixed(1)}s)`);
               } else {
-                console.log(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) → TTS "${charTts.key}" at t=${charTts.start}s`);
+                console.log(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) → TTS "${charTts.key}" at t=${charTts.start}s (clip=${clipDuration}s, trimmed ${LIPSYNC_SAFETY_TRIM}s for clean end)`);
               }
             } else {
               console.warn(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) — no matching TTS found in scene`);
@@ -5874,7 +6048,12 @@ function EP04ProductionInner() {
                                       </div>
                                       <div className="grid grid-cols-3 gap-1.5">
                                         {cat.entries.map(([key, url]) => (
-                                          <div key={key} className="relative group">
+                                          <div
+                                            key={key}
+                                            className="relative group cursor-pointer"
+                                            onClick={() => { if (url && url.startsWith('http')) window.open(url, '_blank'); }}
+                                            title={`Click to open: ${key}`}
+                                          >
                                             {cat.isVideo ? (
                                               <video
                                                 src={url}
