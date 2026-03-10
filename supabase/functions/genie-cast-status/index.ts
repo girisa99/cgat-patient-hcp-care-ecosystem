@@ -376,40 +376,61 @@ async function checkJson2VideoStatus(projectId: string, apiKey: string): Promise
     }
     
     const data = await response.json();
-    console.log(`📹 JSON2Video status for ${projectId}:`, JSON.stringify(data).substring(0, 200));
-    
+    const dataStr = JSON.stringify(data);
+    console.log(`📹 JSON2Video raw for ${projectId} (${dataStr.length} bytes):`, dataStr.substring(0, 800));
+
     // Handle array response (list of movies for project)
     const movie = Array.isArray(data) ? data[0] : data;
-    
+
     if (!movie) {
+      console.log(`📹 No movie found for ${projectId}, isArray=${Array.isArray(data)}`);
       return { completed: false, failed: false, progress: 0 };
     }
-    
-    const status = movie.status?.toLowerCase() || movie.render_status?.toLowerCase();
-    
-    if (status === 'done' || status === 'completed' || status === 'finished') {
+
+    const status = (movie.status || movie.render_status || '').toLowerCase();
+    const movieUrl = movie.url || movie.movie_url || movie.output_url || movie.download_url;
+    const movieThumb = movie.thumbnail || movie.poster || movie.thumb;
+    const movieDuration = movie.duration || movie.length;
+    const movieProgress = movie.progress ?? movie.percent ?? 0;
+
+    console.log(`📹 Parsed: status="${status}", url=${movieUrl ? 'YES' : 'NO'}, duration=${movieDuration}, progress=${movieProgress}, keys=${Object.keys(movie).join(',')}`);
+
+    // Completed: match any status that means "done"
+    if (status === 'done' || status === 'completed' || status === 'finished' || status === 'ready') {
       return {
         completed: true,
         failed: false,
-        videoUrl: movie.url || movie.movie_url || movie.output_url,
-        thumbnailUrl: movie.thumbnail || movie.poster,
-        duration: movie.duration,
+        videoUrl: movieUrl,
+        thumbnailUrl: movieThumb,
+        duration: movieDuration,
       };
     }
-    
+
+    // Belt-and-suspenders: if URL exists and status isn't explicitly failed, treat as complete
+    if (movieUrl && status !== 'failed' && status !== 'error' && status !== 'rendering' && status !== 'processing' && status !== 'pending') {
+      console.log(`📹 URL present with unexpected status "${status}" — treating as completed`);
+      return {
+        completed: true,
+        failed: false,
+        videoUrl: movieUrl,
+        thumbnailUrl: movieThumb,
+        duration: movieDuration,
+      };
+    }
+
     if (status === 'failed' || status === 'error') {
       return {
         completed: false,
         failed: true,
-        error: movie.error || movie.message || 'Render failed',
+        error: movie.error || movie.message || movie.error_message || 'Render failed',
       };
     }
-    
+
     // Still processing
     return {
       completed: false,
       failed: false,
-      progress: movie.progress || movie.percent || 0,
+      progress: movieProgress,
     };
     
   } catch (error) {

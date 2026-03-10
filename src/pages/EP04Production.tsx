@@ -3614,20 +3614,22 @@ function EP04ProductionInner() {
         }
 
         // If stuck with no progress for 3+ polls AND we have a J2V taskId, poll directly
+        // After 3 polls, ALWAYS use the direct projectId path (more reliable than DB lookup)
         const taskId = assemblyTaskIdRef.current;
         if (pollNoProgressCountRef.current >= 3 && taskId) {
           console.log(`[EP04 Poll] ⚠️ castJobId stuck (${pollNoProgressCountRef.current} polls, 0%). Falling back to projectId=${taskId}`);
           const { data: fallbackData, error: fbError } = await supabase.functions.invoke('genie-cast-status', {
             body: { projectId: taskId },
           });
-          console.log(`[EP04 Poll Fallback] projectId=${taskId}, response:`, JSON.stringify(fallbackData)?.substring(0, 300));
+          console.log(`[EP04 Poll Fallback] projectId=${taskId}, FULL response:`, JSON.stringify(fallbackData));
           if (!fbError && fallbackData) {
-            // projectId path returns { status, videoUrl, thumbnailUrl, progress, error }
+            // projectId path returns { success, status, videoUrl, thumbnailUrl, progress, error }
             resolvedStatus = fallbackData.status;
             resolvedVideoUrl = fallbackData.videoUrl;
             resolvedThumbnailUrl = fallbackData.thumbnailUrl;
             resolvedProgress = fallbackData.progress || 0;
             resolvedError = fallbackData.error;
+            console.log(`[EP04 Poll Fallback] Resolved: status=${resolvedStatus}, videoUrl=${resolvedVideoUrl ? 'YES' : 'NO'}, progress=${resolvedProgress}`);
           }
         }
 
@@ -3785,10 +3787,10 @@ function EP04ProductionInner() {
   // Ken Burns patterns — cycle through for visual variety across images
   const KEN_BURNS_PATTERNS = [
     { zoom: 2, pan: 'left' as const, 'pan-distance': 0.15 },
-    { zoom: -1, pan: 'right' as const, 'pan-distance': 0.1 },
-    { zoom: 3, pan: 'top-left' as const, 'pan-distance': 0.12 },
+    { zoom: 1, pan: 'right' as const, 'pan-distance': 0.1 },
+    { zoom: 2, pan: 'top-left' as const, 'pan-distance': 0.12 },
     { zoom: 1, pan: 'bottom-right' as const, 'pan-distance': 0.08 },
-    { zoom: -2, pan: 'top' as const, 'pan-distance': 0.1 },
+    { zoom: 1, pan: 'top' as const, 'pan-distance': 0.1 },
   ];
 
   // Map storybook transition styles to JSON2Video scene transition presets
@@ -3850,6 +3852,7 @@ function EP04ProductionInner() {
           zoom: 2, pan: 'right', 'pan-distance': 0.08,
           'fade-in': 1.0, 'fade-out': 0.5,
           'z-index': 0,
+          width: 1920, height: 1080,
         });
       }
       // Staggered kinetic text with animation styles
@@ -3946,7 +3949,7 @@ function EP04ProductionInner() {
 
         let currentTime = 0;
 
-        // Play each video at full duration (5-10s each), sequentially, muted
+        // Play each video at full duration (5-10s each), sequentially, muted, FULL FRAME
         for (const videoUrl of videos) {
           const videoDuration = 10; // Alibaba max = 10s, Gemini = 8s; safe upper bound
           const dur = Math.min(videoDuration, sceneDuration - currentTime);
@@ -3956,11 +3959,12 @@ function EP04ProductionInner() {
             start: currentTime, duration: dur,
             volume: 0, 'fade-in': 0.5, 'fade-out': 0.5,
             'z-index': 0,
+            width: 1920, height: 1080, // Full frame
           });
           currentTime += dur;
         }
 
-        // Fill remaining time with images (Ken Burns rotation)
+        // Fill remaining time with images (Ken Burns rotation), FULL FRAME
         const remainingDuration = sceneDuration - currentTime;
         if (images.length > 0 && remainingDuration > 0) {
           const imgInterval = Math.max(8, Math.floor(remainingDuration / images.length));
@@ -3974,6 +3978,7 @@ function EP04ProductionInner() {
                 start, duration: Math.max(1, dur),
                 ...kb, 'fade-in': 0.5, 'fade-out': 0.5,
                 'z-index': 0,
+                width: 1920, height: 1080, // Full frame
               });
             }
           });
@@ -3982,7 +3987,7 @@ function EP04ProductionInner() {
         }
       }
 
-      // Lipsync video layer: z-index 10 so they overlay on background images
+      // Lipsync video layer: z-index 10 so they overlay on background images, FULL FRAME
       // IMPORTANT: volume=0 because lipsync videos have TTS audio baked in
       // (WAN generates video from audio input). TTS is already added separately
       // as type:'audio' elements above, so we mute the lipsync to avoid echo.
@@ -3994,6 +3999,7 @@ function EP04ProductionInner() {
             volume: 0, // Mute — TTS audio is a separate element, lipsync has it baked in
             'fade-in': 0.3, 'fade-out': 1.0, // 1s fade-out hides WAN2.2 loop artifacts at clip end
             'z-index': 10,
+            width: 1920, height: 1080, // Full frame
           });
         }
       });
@@ -4132,17 +4138,18 @@ function EP04ProductionInner() {
       if (sceneDuration > MAX_J2V_SCENE && safeElements.length > 2) {
         const numSubs = Math.ceil(sceneDuration / MAX_J2V_SCENE);
         const subLen = Math.ceil(sceneDuration / numSubs);
-        // Identify music elements (need to be in every sub-scene)
+        // Classify elements: music (looped, in every sub), audio/TTS (start-based), visual (overlap-based)
         const musicElements = safeElements.filter(el => el.type === 'audio' && el.loop != null);
-        const nonMusicElements = safeElements.filter(el => !(el.type === 'audio' && el.loop != null));
+        const ttsElements = safeElements.filter(el => el.type === 'audio' && el.loop == null);
+        const visualElements = safeElements.filter(el => el.type !== 'audio');
 
         for (let s = 0; s < numSubs; s++) {
           const subStart = s * subLen;
           const subEnd = Math.min(subStart + subLen, sceneDuration);
           const subDur = subEnd - subStart;
 
-          // Include elements that overlap with this sub-scene's time range
-          const subElements = nonMusicElements.filter(el => {
+          // VISUAL elements (image, video, text, component): include if they OVERLAP this sub-scene
+          const subVisuals = visualElements.filter(el => {
             const elStart = el.start ?? 0;
             const elEnd = elStart + (el.duration ?? 0);
             return elStart < subEnd && elEnd > subStart;
@@ -4154,10 +4161,23 @@ function EP04ProductionInner() {
             return { ...el, start: newStart, duration: Math.max(0.5, newDur) };
           });
 
-          // Add music to every sub-scene (looped, full sub-scene duration)
-          musicElements.forEach(m => {
-            subElements.push({ ...m, start: 0, duration: subDur });
+          // TTS audio: ONLY include if the element STARTS within this sub-scene.
+          // JSON2Video cannot seek — it always plays audio from file start.
+          // If we carry tail-end TTS into the next sub-scene, it replays from beginning = duplication.
+          const subTts = ttsElements.filter(el => {
+            const elStart = el.start ?? 0;
+            return elStart >= subStart && elStart < subEnd;
+          }).map(el => {
+            const elStart = el.start ?? 0;
+            const newStart = elStart - subStart;
+            // Keep original duration (TTS plays from file start for its full length)
+            return { ...el, start: newStart };
           });
+
+          // Music: in every sub-scene (looped, full sub-scene duration)
+          const subMusic = musicElements.map(m => ({ ...m, start: 0, duration: subDur }));
+
+          const subElements = [...subVisuals, ...subTts, ...subMusic];
 
           scenes.push({
             comment: `${chapter.product || chapter.chapterId} (sub ${s + 1}/${numSubs}, ${Math.round(subDur)}s)`,
@@ -4191,6 +4211,7 @@ function EP04ProductionInner() {
             zoom: 1, pan: 'center', 'pan-distance': 0.05,
             'fade-in': 0.3, 'fade-out': 0.3,
             'z-index': 0,
+            width: 1920, height: 1080,
           });
         }
 
@@ -4237,9 +4258,10 @@ function EP04ProductionInner() {
         closeElements.push({
           type: 'image', src: bookends.closing.backgroundUrl,
           start: 0, duration: dur,
-          zoom: -1, pan: 'left', 'pan-distance': 0.06,
+          zoom: 1, pan: 'left', 'pan-distance': 0.06,
           'fade-in': 0.5, 'fade-out': 1.0,
           'z-index': 0,
+          width: 1920, height: 1080,
         });
       }
       // Staggered closing with animation styles
@@ -4281,6 +4303,27 @@ function EP04ProductionInner() {
         'background-color': '#0f0a1a',
         elements: closeElements,
       });
+    }
+
+    // Safety pass: clamp durations, fix zoom, ensure full-frame sizing
+    for (const scene of scenes) {
+      const sd = scene.duration || 0;
+      for (const el of (scene.elements || [])) {
+        const elStart = el.start ?? 0;
+        // Clamp: element must not exceed scene duration
+        if (elStart + (el.duration ?? 0) > sd) {
+          el.duration = Math.max(0.5, sd - elStart);
+        }
+        // Fix: negative zoom is invalid
+        if (el.zoom != null && el.zoom < 1) {
+          el.zoom = 1;
+        }
+        // Full-frame: ensure all images/videos have explicit sizing (full-hd)
+        if ((el.type === 'image' || el.type === 'video') && !el.width) {
+          el.width = 1920;
+          el.height = 1080;
+        }
+      }
     }
 
     const totalDuration = scenes.reduce((sum, s) => sum + (s.duration || 0), 0);
