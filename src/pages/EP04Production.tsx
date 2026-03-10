@@ -2130,7 +2130,8 @@ function EP04ProductionInner() {
       // Priority: current-run result > saved Supabase avatar > CDN avatar > pre-made local asset
       // When running lipsync-only regen, results won't have avatar-3d — fall back to saved avatarUrls
       const avatarFromResults = Object.entries(results).find(([k]) => k.includes('avatar-3d') && k.includes(character))?.[1];
-      const avatarFromSaved = Object.entries(existingAvatarUrls).find(([k]) => k.includes(character))?.[1];
+      const savedAvatarUrls = sceneProduction[sceneKey]?.avatarUrls || {};
+      const avatarFromSaved = Object.entries(savedAvatarUrls).find(([k]) => k.includes(character))?.[1];
       const avatarPreMade = CHARACTER_AVATARS[character];
 
       let sourceImage: string | null = null;
