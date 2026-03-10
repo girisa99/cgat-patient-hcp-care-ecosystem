@@ -3726,11 +3726,12 @@ function EP04ProductionInner() {
       let lastSpeaker = '';
       allTts.forEach(tts => {
         const speaker = tts.voice || 'unknown';
-        if (speaker !== lastSpeaker && CHARACTER_LOWER_THIRDS[speaker]) {
+        const ltDuration = Math.min(5, sceneDuration - tts.start - 0.5);
+        if (speaker !== lastSpeaker && CHARACTER_LOWER_THIRDS[speaker] && ltDuration > 0.5) {
           const lt = CHARACTER_LOWER_THIRDS[speaker];
           elements.push({
             type: 'component', component: 'basic/050',
-            start: tts.start + 0.5, duration: Math.min(5, sceneDuration - tts.start - 0.5),
+            start: tts.start + 0.5, duration: ltDuration,
             settings: {
               headline: { text: lt.headline, color: lt.barColor },
               lead: { text: lt.lead, color: '#94a3b8' },
@@ -3786,11 +3787,18 @@ function EP04ProductionInner() {
       const nextTransition = transitions.length > chapterIndex ? transitions[chapterIndex] : undefined;
       const j2vTransitionStyle = nextTransition?.j2vTransition;
 
+      // Safety: filter out any elements with invalid duration (<=0) or missing src
+      const safeElements = elements.filter(el => {
+        if (el.duration != null && el.duration <= 0) return false;
+        if ((el.type === 'video' || el.type === 'image' || el.type === 'audio') && !el.src) return false;
+        return true;
+      });
+
       scenes.push({
         comment: `${chapter.product || chapter.chapterId} (${allTts.length} TTS, ${lipsyncClips.length} lipsync, ${kineticTexts.length} kinetic, ${sceneDuration}s)`,
         duration: sceneDuration,
         'background-color': '#1e293b',
-        elements,
+        elements: safeElements,
         ...(j2vTransitionStyle ? { transition: { style: j2vTransitionStyle, duration: 0.5 } } : {}),
       });
 
