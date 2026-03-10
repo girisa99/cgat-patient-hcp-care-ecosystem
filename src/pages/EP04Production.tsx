@@ -5726,11 +5726,23 @@ function EP04ProductionInner() {
                               <Button
                                 size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
                                 onClick={() => {
-                                  // Clear ONLY lipsync data — preserve existing videos/images/avatars
-                                  setSceneProduction(prev => ({
-                                    ...prev,
-                                    [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), lipsyncUrls: {}, visual: 'idle' },
-                                  }));
+                                  // Clear ONLY lipsync entries that are missing/empty — preserve existing successful ones
+                                  setSceneProduction(prev => {
+                                    const existing = prev[sceneKey] || defaultSceneStatus();
+                                    // Keep lipsync entries that have valid Supabase URLs, clear the rest
+                                    const keptLipsync: Record<string, string> = {};
+                                    for (const [k, url] of Object.entries(existing.lipsyncUrls || {})) {
+                                      if (url && url.includes('supabase.co/storage')) {
+                                        keptLipsync[k] = url;
+                                      }
+                                    }
+                                    const clearedCount = Object.keys(existing.lipsyncUrls || {}).length - Object.keys(keptLipsync).length;
+                                    console.log(`[EP04 Regen Lipsync] ${sceneKey}: keeping ${Object.keys(keptLipsync).length} valid, clearing ${clearedCount} missing/expired`);
+                                    return {
+                                      ...prev,
+                                      [sceneKey]: { ...existing, lipsyncUrls: keptLipsync, visual: 'idle' },
+                                    };
+                                  });
                                   startSceneVisualProduction(sceneKey, new Set(['avatar-lipsync']));
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
