@@ -35,7 +35,7 @@ import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
-const EP04_BUILD = 'v2026-03-10-D';
+const EP04_BUILD = 'v2026-03-10-E';
 console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
 
 // Shared helper: detect external CDN URLs that may have expired (~24h TTL)
@@ -2003,17 +2003,43 @@ function EP04ProductionInner() {
       }
 
       // Find the avatar source image for lipsync
-      // Priority: Supabase URL (accessible everywhere) > DashScope CDN (edge function will re-upload)
-      // Pre-made local assets are relative paths — convert to full URL so edge function can fetch
+      // Priority: lipsync-specific avatar > Supabase URL > DashScope CDN > pre-made local asset
+      // For host: use lipsyncPrompt (headshot, no dog) instead of regular avatar (which may show the dog)
+      const lipsyncAvatarKey = `avatar-lipsync-source-${character}`;
+      const avatarFromLipsyncGen = results[lipsyncAvatarKey];
       const avatarFromResults = Object.entries(results).find(([k]) => k.includes('avatar-3d') && k.includes(character))?.[1];
       const avatarPreMade = CHARACTER_AVATARS[character];
 
+      // For host character: generate a dedicated lipsync headshot (no dog) if not already done
+      const charConfig = EP04_AVATAR_CONFIG.characters[character as keyof typeof EP04_AVATAR_CONFIG.characters];
+      if (!avatarFromLipsyncGen && charConfig && (charConfig as any).lipsyncPrompt) {
+        console.log(`[EP04 Visual] ${stepLabel}: generating lipsync-specific headshot for "${character}" (no dog)...`);
+        try {
+          await new Promise(r => setTimeout(r, 2000));
+          const { data: lsData, error: lsError } = await supabase.functions.invoke('ai-universal-processor', {
+            body: { action: 'image_generation', prompt: (charConfig as any).lipsyncPrompt, provider: 'alibaba', model: 'wan2.6-t2i', aspectRatio: '1:1', style_intent: 'cinematic' },
+          });
+          if (!lsError && lsData) {
+            const lsUrl = lsData?.url || lsData?.imageUrl || lsData?.result?.url;
+            if (lsUrl) {
+              results[lipsyncAvatarKey] = lsUrl;
+              console.log(`[EP04 Visual] ${stepLabel}: lipsync headshot for "${character}": ${lsUrl.substring(0, 80)}...`);
+            }
+          }
+        } catch (e) {
+          console.warn(`[EP04 Visual] ${stepLabel}: lipsync headshot gen failed for "${character}", using regular avatar`);
+        }
+      }
+
       // Pick the best available avatar URL
+      const lipsyncSource = results[lipsyncAvatarKey];
       let sourceImage: string | null = null;
-      if (avatarFromResults && avatarFromResults.startsWith('http') && avatarFromResults.includes('supabase.co')) {
-        sourceImage = avatarFromResults; // AI-generated avatar already on Supabase — best
+      if (lipsyncSource && lipsyncSource.startsWith('http')) {
+        sourceImage = lipsyncSource; // Lipsync-specific headshot — best for WAN face animation
+      } else if (avatarFromResults && avatarFromResults.startsWith('http') && avatarFromResults.includes('supabase.co')) {
+        sourceImage = avatarFromResults; // AI-generated avatar on Supabase
       } else if (avatarFromResults && avatarFromResults.startsWith('http')) {
-        sourceImage = avatarFromResults; // DashScope CDN — edge function will re-upload to Supabase
+        sourceImage = avatarFromResults; // DashScope CDN
       } else if (avatarPreMade) {
         // Pre-made local asset — make it a full URL the edge function can fetch from our app
         sourceImage = avatarPreMade.startsWith('http') ? avatarPreMade : `${window.location.origin}${avatarPreMade}`;
