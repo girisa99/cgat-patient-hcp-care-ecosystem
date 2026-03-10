@@ -18,6 +18,22 @@ import { useCallback, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { productionCostAccumulator, type ProjectCostSummary } from '@/services/productionCostAccumulator';
+
+// ── CRITICAL: Strip base64 data URIs before ANY DB write ──────────────
+// Base64 images/videos are 50KB-5MB each. A scene with 5 assets can
+// bloat scene_config JSONB to 10-25MB, exhausting Supabase disk IO
+// budget and making the entire project unreachable.
+function stripBase64FromUrls(urls: Record<string, string>): Record<string, string> {
+  const clean: Record<string, string> = {};
+  for (const [k, v] of Object.entries(urls)) {
+    if (v && typeof v === 'string' && v.startsWith('data:')) {
+      console.warn(`[PERSIST GUARD] Blocked base64 data URI from DB write: key="${k}" (${v.length} chars)`);
+    } else if (v) {
+      clean[k] = v;
+    }
+  }
+  return clean;
+}
 import type { CastJobType } from '@/types/castProjects';
 import type { SceneEnrichmentOutput } from '@/services/production/sceneEnrichmentEngine';
 import type { OrchestrationCheckpoint } from './useCastProductionOrchestrator';
@@ -130,6 +146,12 @@ export function useCastProjectPersistence() {
     // Merge ONLY the specified field into existing config
     const existing = (scene?.scene_config || {}) as Record<string, unknown>;
     const merged = { ...existing, [fieldName]: fieldValue };
+    // SAFETY: Check payload size before writing — reject if > 500KB (likely base64 leak)
+    const payloadSize = JSON.stringify(merged).length;
+    if (payloadSize > 500_000) {
+      console.error(`[PERSIST] BLOCKED: scene_config for ${sceneKey} is ${(payloadSize / 1024).toFixed(0)}KB — likely contains base64 data URIs. Max 500KB.`);
+      return false;
+    }
     // Upsert — creates row if missing, updates if exists
     const { error } = await db.from('cast_project_scenes')
       .upsert({
@@ -591,13 +613,15 @@ export function useCastProjectPersistence() {
       lipsync: Object.keys(artifacts.lipsyncUrls || {}),
     });
     try {
+      // CRITICAL: Strip base64 data URIs BEFORE writing to DB
+      const safeArtifacts = {
+        videoUrls: stripBase64FromUrls(artifacts.videoUrls || {}),
+        imageUrls: stripBase64FromUrls(artifacts.imageUrls || {}),
+        avatarUrls: stripBase64FromUrls(artifacts.avatarUrls || {}),
+        lipsyncUrls: stripBase64FromUrls(artifacts.lipsyncUrls || {}),
+      };
       const ok = await withSceneLock(`${projectId}:${sceneKey}`, () =>
-        updateSceneConfigField(projectId, sceneKey, 'artifacts', {
-          videoUrls: artifacts.videoUrls || {},
-          imageUrls: artifacts.imageUrls || {},
-          avatarUrls: artifacts.avatarUrls || {},
-          lipsyncUrls: artifacts.lipsyncUrls || {},
-        })
+        updateSceneConfigField(projectId, sceneKey, 'artifacts', safeArtifacts)
       );
       if (ok) {
         console.log(`[PERSIST SAVE] ${sceneKey}: ✅ saved ${artifactCount} artifacts successfully`);
