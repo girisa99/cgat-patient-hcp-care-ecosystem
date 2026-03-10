@@ -3374,8 +3374,8 @@ function EP04ProductionInner() {
   // If this produces 20+ parts, that's fine — the concat stitch combines them all.
   // Per-scene rendering (1 scene = 1 part) is the recommended mode.
   const BOOKEND_BUFFER = 22; // 12s opening + 10s closing = 22s reserved for bookends
-  const MAX_PART_DURATION = 300; // 5 minutes max per part — full cinematic content, no compromise
-  const MAX_PART_TTS = 18; // Max TTS audio files per part
+  const MAX_PART_DURATION = 120; // 2 minutes max per part — smaller parts render faster
+  const MAX_PART_TTS = 8; // Max TTS audio files per part — keeps JSON2Video renders reliable
 
   interface AssemblyPart {
     partNumber: number;
@@ -3397,8 +3397,8 @@ function EP04ProductionInner() {
   // Each scene renders independently. Heavy scenes (>15 TTS lines or >180s)
   // are split into sub-parts to prevent JSON2Video render timeouts.
   // Whether we produce 12 or 20 parts, the concat stitch handles them all the same.
-  const MAX_SUB_TTS = 15;
-  const MAX_SUB_DURATION = 180; // 3 minutes
+  const MAX_SUB_TTS = 8;
+  const MAX_SUB_DURATION = 120; // 2 minutes — smaller parts render faster & more reliably
 
   const computePerSceneParts = useCallback((): AssemblyPart[] => {
     const sceneKeys = Array.from(scenes.keys());
