@@ -35,7 +35,7 @@ import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
-const EP04_BUILD = 'v2026-03-10-B';
+const EP04_BUILD = 'v2026-03-10-C';
 console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
 
 // Shared helper: detect external CDN URLs that may have expired (~24h TTL)
@@ -566,10 +566,25 @@ function EP04ProductionInner() {
             console.warn('[EP04 LOAD] getUser failed:', authErr?.message || authErr);
           }
         }
+        // Retry once if both paths failed — Supabase can be slow on first load
+        if (!user) {
+          console.log('[EP04 LOAD] Step 1c: RETRY — waiting 3s then trying getSession again...');
+          await new Promise(r => setTimeout(r, 3000));
+          try {
+            const retryResult = await Promise.race([
+              supabase.auth.getSession(),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+            ]) as any;
+            user = retryResult?.data?.session?.user;
+            if (user) console.log('[EP04 LOAD] Step 1c: retry succeeded!');
+          } catch (e) {
+            console.warn('[EP04 LOAD] Retry also failed:', e);
+          }
+        }
         if (cancelled) return;
 
         if (!user) {
-          console.error('[EP04 LOAD] Auth failed — no user session');
+          console.error('[EP04 LOAD] Auth failed — no user session after retry');
           setProjectLoadError('Not authenticated — please sign in and refresh');
           setProjectLoading(false);
           clearTimeout(timeoutId);
