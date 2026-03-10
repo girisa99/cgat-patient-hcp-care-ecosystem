@@ -35,7 +35,7 @@ import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
-const EP04_BUILD = 'v2026-03-10-F';
+const EP04_BUILD = 'v2026-03-10-G';
 console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
 
 // Shared helper: detect external CDN URLs that may have expired (~24h TTL)
@@ -2082,7 +2082,7 @@ function EP04ProductionInner() {
         console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" processing on Alibaba (${data.model}) — polling...`);
         toast.info(`${stepLabel}: lipsync rendering on Alibaba — polling (free, no cost)...`);
         const taskId = data.alibabaTaskId;
-        const maxPolls = 30; // 30 × 10s = 300s (5 min) max
+        const maxPolls = 60; // 60 × 10s = 600s (10 min) max — WAN lipsync can take 5-8 min
         for (let p = 0; p < maxPolls; p++) {
           await new Promise(r => setTimeout(r, 10000));
           const { data: pollData } = await supabase.functions.invoke('ai-video-generator', {
@@ -5726,10 +5726,10 @@ function EP04ProductionInner() {
                               <Button
                                 size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
                                 onClick={() => {
-                                  // Clear ONLY lipsync + avatar data — preserve existing videos/images
+                                  // Clear ONLY lipsync data — preserve existing videos/images/avatars
                                   setSceneProduction(prev => ({
                                     ...prev,
-                                    [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), lipsyncUrls: {}, avatarUrls: {}, visual: 'idle' },
+                                    [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), lipsyncUrls: {}, visual: 'idle' },
                                   }));
                                   startSceneVisualProduction(sceneKey, new Set(['avatar-lipsync']));
                                 }}
