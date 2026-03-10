@@ -3306,9 +3306,12 @@ function EP04ProductionInner() {
       pollErrorCountRef.current = 0;
       return;
     }
+    console.log(`[EP04 Poll] 🟢 Polling STARTED for assemblyJobId=${assemblyJobId}, taskId fallback=${assemblyTaskIdRef.current}`);
     const MAX_POLLS = 120; // 120 × 10s = 20 minutes max
     const MAX_ERRORS = 5;  // 5 consecutive errors = stop
-    const timer = setInterval(async () => {
+
+    // Polling function — called immediately on first run, then every 10s
+    const doPoll = async () => {
       pollCountRef.current++;
       if (pollCountRef.current > MAX_POLLS) {
         setAssemblyProgress(null);
@@ -3443,7 +3446,11 @@ function EP04ProductionInner() {
           toast.error('Assembly polling failed — check network/console');
         }
       }
-    }, 10000); // Poll every 10 seconds
+    };
+
+    // Fire immediately (don't wait 10s for first poll)
+    doPoll();
+    const timer = setInterval(doPoll, 10000); // Then every 10 seconds
     setAssemblyPollTimer(timer);
     return () => clearInterval(timer);
   }, [assemblyJobId, projectId, totalDuration, scenes, updateFinalAssembly, activePartNumber]);
