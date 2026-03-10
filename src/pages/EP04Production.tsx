@@ -109,7 +109,7 @@ async function ensureStorageUrl(
   projectId: string,
   key: string,
   url: string,
-  contentType: 'image' | 'video' = 'image',
+  contentType: 'image' | 'video' | 'audio' = 'image',
 ): Promise<string> {
   // Already on Supabase Storage — nothing to do
   if (isSupabaseStorageUrl(url)) return url;
@@ -130,8 +130,17 @@ async function ensureStorageUrl(
     const resp = await fetch(fetchUrl);
     if (!resp.ok) throw new Error(`Fetch failed: ${resp.status} ${resp.statusText}`);
     const blob = await resp.blob();
-    const ext = contentType === 'video' ? 'mp4' : (url.match(/\.(png|jpg|jpeg|webp|gif)/i)?.[1] || 'png');
-    const mime = contentType === 'video' ? 'video/mp4' : `image/${ext}`;
+    let ext: string;
+    let mime: string;
+    if (contentType === 'video') {
+      ext = 'mp4'; mime = 'video/mp4';
+    } else if (contentType === 'audio') {
+      ext = url.match(/\.(mp3|wav|ogg|aac|m4a|flac)/i)?.[1] || 'mp3';
+      mime = ext === 'wav' ? 'audio/wav' : ext === 'ogg' ? 'audio/ogg' : 'audio/mpeg';
+    } else {
+      ext = url.match(/\.(png|jpg|jpeg|webp|gif)/i)?.[1] || 'png';
+      mime = `image/${ext}`;
+    }
     const safeName = key.replace(/[^a-zA-Z0-9_-]/g, '_');
     const path = `${projectId}/${contentType}s/${safeName}.${ext}`;
     const { error } = await supabase.storage.from('cast-assets').upload(path, blob, {
@@ -3092,6 +3101,15 @@ function EP04ProductionInner() {
 
         if (!error && data?.audioUrl && !data?.isSilentPlaceholder) {
           musicUrl = data.audioUrl;
+          // Mirror music to Supabase Storage — CDN URLs expire and may have CORS issues
+          if (projectId && !isSupabaseStorageUrl(musicUrl)) {
+            try {
+              musicUrl = await ensureStorageUrl(projectId, `music-${sceneKey}`, musicUrl, 'audio');
+              console.log(`[EP04 Music] ${sceneKey}: mirrored to Storage: ${musicUrl.substring(0, 80)}...`);
+            } catch (mirrorErr) {
+              console.warn(`[EP04 Music] ${sceneKey}: Storage mirror failed, using original URL:`, mirrorErr);
+            }
+          }
         } else if (data?.isSilentPlaceholder) {
           console.warn(`[EP04 Music] ${sceneKey}: got silent placeholder — all providers failed`, {
             debugErrors: data?.debugErrors,
@@ -3116,7 +3134,13 @@ function EP04ProductionInner() {
             setTimeout(() => resolve({ data: null }), 30000)
           );
           const { data } = await Promise.race([sfxPromise, sfxTimeout]);
-          if (data?.audioUrl) sfxUrls.push(data.audioUrl);
+          if (data?.audioUrl) {
+            let sfxUrl = data.audioUrl;
+            if (projectId && !isSupabaseStorageUrl(sfxUrl)) {
+              try { sfxUrl = await ensureStorageUrl(projectId, `sfx-${sceneKey}-${sfxUrls.length}`, sfxUrl, 'audio'); } catch { /* keep original */ }
+            }
+            sfxUrls.push(sfxUrl);
+          }
         } catch (sfxErr) {
           console.warn(`[EP04 Music] SFX failed for ${sceneKey}:`, sfxErr);
         }
