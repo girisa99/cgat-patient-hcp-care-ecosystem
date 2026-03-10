@@ -2132,11 +2132,21 @@ function EP04ProductionInner() {
       }
 
       // Find the avatar source image for lipsync
-      // Priority: current-run result > saved Supabase avatar > CDN avatar > pre-made local asset
+      // Priority: current-run result > saved Supabase avatar (this scene) > cross-scene avatar > CDN avatar > pre-made local asset
       // When running lipsync-only regen, results won't have avatar-3d — fall back to saved avatarUrls
       const avatarFromResults = Object.entries(results).find(([k]) => k.includes('avatar-3d') && k.includes(character))?.[1];
       const savedAvatarUrls = sceneProduction[sceneKey]?.avatarUrls || {};
       const avatarFromSaved = Object.entries(savedAvatarUrls).find(([k]) => k.includes(character))?.[1];
+      // Cross-scene: check OTHER scenes for this character's avatar (e.g., host human from Scene 0)
+      let avatarFromOtherScene: string | null = null;
+      for (const [sk, sp] of Object.entries(sceneProduction)) {
+        if (sk === sceneKey) continue;
+        const match = Object.entries(sp.avatarUrls || {}).find(([k]) => k.includes(character))?.[1];
+        if (match && match.startsWith('http') && match.includes('supabase.co')) {
+          avatarFromOtherScene = match;
+          break;
+        }
+      }
       const avatarPreMade = CHARACTER_AVATARS[character];
 
       let sourceImage: string | null = null;
@@ -2144,6 +2154,9 @@ function EP04ProductionInner() {
         sourceImage = avatarFromResults; // Current-run avatar on Supabase — best
       } else if (avatarFromSaved && avatarFromSaved.startsWith('http') && avatarFromSaved.includes('supabase.co')) {
         sourceImage = avatarFromSaved; // Previously saved avatar on Supabase — great for lipsync-only regen
+      } else if (avatarFromOtherScene) {
+        sourceImage = avatarFromOtherScene; // Cross-scene Supabase avatar (e.g., host human avatar generated in Scene 0)
+        console.log(`[EP04 Visual] ${stepLabel}: using cross-scene avatar for "${character}" lipsync`);
       } else if (avatarFromResults && avatarFromResults.startsWith('http')) {
         sourceImage = avatarFromResults; // Current-run DashScope CDN
       } else if (avatarFromSaved && avatarFromSaved.startsWith('http')) {
@@ -2436,8 +2449,22 @@ function EP04ProductionInner() {
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           console.warn(`[EP04 Visual] ${stepLabel}: avatar generation failed for "${character}": ${msg}`);
-          // Fallback: use pre-made avatar if available
-          if (existingAvatar) {
+          // Fallback chain: cross-scene Supabase avatar > pre-made avatar
+          // Check OTHER scenes for a previously generated avatar of this character (avoids dog fallback for host)
+          let crossSceneAvatar: string | null = null;
+          for (const [sk, sp] of Object.entries(sceneProduction)) {
+            if (sk === sceneKey) continue;
+            const match = Object.entries(sp.avatarUrls || {}).find(([k]) => k.includes(character))?.[1];
+            if (match && match.startsWith('http') && match.includes('supabase.co')) {
+              crossSceneAvatar = match;
+              break;
+            }
+          }
+          if (crossSceneAvatar) {
+            results[`avatar-3d-${character}-${sceneKey}`] = crossSceneAvatar;
+            toast.info(`Avatar "${character}" AI failed — reusing avatar from another scene`);
+            console.log(`[EP04 Visual] ${stepLabel}: cross-scene avatar for "${character}": ${crossSceneAvatar.substring(0, 80)}...`);
+          } else if (existingAvatar) {
             results[`avatar-3d-${character}-${sceneKey}`] = existingAvatar;
             toast.warning(`Avatar "${character}" AI failed — using pre-made fallback`);
             console.log(`[EP04 Visual] ${stepLabel}: falling back to pre-made avatar for "${character}"`);
