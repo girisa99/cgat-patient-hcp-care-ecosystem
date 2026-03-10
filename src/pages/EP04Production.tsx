@@ -3127,6 +3127,8 @@ function EP04ProductionInner() {
 
   const [assemblyJobId, setAssemblyJobId] = useState<string | null>(null);
   const [assemblyPollTimer, setAssemblyPollTimer] = useState<ReturnType<typeof setInterval> | null>(null);
+  const assemblyTaskIdRef = React.useRef<string | null>(null); // JSON2Video project ID fallback
+  const pollNoProgressCountRef = React.useRef(0); // Track consecutive polls with 0% progress
 
   // ─── Multi-Part Assembly ──────────────────────────────────────────────────
   // JSON2Video Professional plan caps at 10 minutes per video.
@@ -3315,11 +3317,54 @@ function EP04ProductionInner() {
         return;
       }
       try {
+        // Primary: poll via castJobId (DB row lookup → provider_job_id → JSON2Video)
         const { data, error: fnError } = await supabase.functions.invoke('genie-cast-status', {
           body: { castJobId: assemblyJobId },
         });
         console.log(`[EP04 Poll #${pollCountRef.current}] castJobId=${assemblyJobId}, response:`, JSON.stringify(data)?.substring(0, 300), fnError ? `ERROR: ${fnError.message}` : '');
-        if (fnError) {
+
+        // ── Fallback: if castJobId poll returns 'processing' with 0% for 3+ polls,
+        // the provider_job_id update likely failed. Use taskId (JSON2Video project ID) directly.
+        let resolvedStatus: string | undefined;
+        let resolvedVideoUrl: string | undefined;
+        let resolvedThumbnailUrl: string | undefined;
+        let resolvedProgress = 0;
+        let resolvedError: string | undefined;
+
+        const jobStatus = data?.job?.status;
+        const jobProgress = data?.job?.progressPercent || 0;
+
+        if (!fnError && jobStatus && jobStatus !== 'completed' && jobStatus !== 'failed' && jobProgress === 0) {
+          pollNoProgressCountRef.current++;
+        } else {
+          pollNoProgressCountRef.current = 0;
+        }
+
+        // If stuck with no progress for 3+ polls AND we have a J2V taskId, poll directly
+        const taskId = assemblyTaskIdRef.current;
+        if (pollNoProgressCountRef.current >= 3 && taskId) {
+          console.log(`[EP04 Poll] ⚠️ castJobId stuck (${pollNoProgressCountRef.current} polls, 0%). Falling back to projectId=${taskId}`);
+          const { data: fallbackData, error: fbError } = await supabase.functions.invoke('genie-cast-status', {
+            body: { projectId: taskId },
+          });
+          console.log(`[EP04 Poll Fallback] projectId=${taskId}, response:`, JSON.stringify(fallbackData)?.substring(0, 300));
+          if (!fbError && fallbackData) {
+            // projectId path returns { status, videoUrl, thumbnailUrl, progress, error }
+            resolvedStatus = fallbackData.status;
+            resolvedVideoUrl = fallbackData.videoUrl;
+            resolvedThumbnailUrl = fallbackData.thumbnailUrl;
+            resolvedProgress = fallbackData.progress || 0;
+            resolvedError = fallbackData.error;
+          }
+        }
+
+        // Use fallback results if available, otherwise use primary
+        const finalStatus = resolvedStatus || jobStatus;
+        const finalVideoUrl = resolvedVideoUrl || data?.job?.outputUrl;
+        const finalProgress = resolvedProgress || jobProgress;
+        const finalError = resolvedError || data?.job?.errorMessage;
+
+        if (fnError && !resolvedStatus) {
           pollErrorCountRef.current++;
           console.error(`[EP04 Assembly] Poll error ${pollErrorCountRef.current}/${MAX_ERRORS}:`, fnError);
           if (pollErrorCountRef.current >= MAX_ERRORS) {
@@ -3330,21 +3375,22 @@ function EP04ProductionInner() {
           return;
         }
         pollErrorCountRef.current = 0; // reset on success
-        const jobStatus = data?.job?.status;
-        if (jobStatus === 'completed') {
-          const videoUrl = data.job.outputUrl;
+
+        if (finalStatus === 'completed' || finalStatus === 'done' || finalStatus === 'finished') {
           setAssemblyJobId(null);
           setAssemblyProgress(null);
+          assemblyTaskIdRef.current = null;
+          pollNoProgressCountRef.current = 0;
 
           // If this was a multi-part assembly, update the specific part
           if (activePartNumber != null) {
             setAssemblyParts(prev => prev.map(p =>
               p.partNumber === activePartNumber
-                ? { ...p, status: 'completed', videoUrl }
+                ? { ...p, status: 'completed', videoUrl: finalVideoUrl }
                 : p
             ));
             setActivePartNumber(null);
-            toast.success(`Part ${activePartNumber} assembled! Video: ${videoUrl?.substring(0, 60)}...`);
+            toast.success(`Part ${activePartNumber} assembled! Video: ${finalVideoUrl?.substring(0, 60)}...`);
 
             // Check if ALL parts are done
             setAssemblyParts(prev => {
@@ -3359,10 +3405,10 @@ function EP04ProductionInner() {
             });
           } else {
             // Full (non-part) assembly completed
-            setFinalVideoUrl(videoUrl);
+            setFinalVideoUrl(finalVideoUrl);
             setProductionPhase('complete');
-            if (projectId && videoUrl) {
-              updateFinalAssembly(projectId, videoUrl, {
+            if (projectId && finalVideoUrl) {
+              updateFinalAssembly(projectId, finalVideoUrl, {
                 totalDuration,
                 sceneCount: Array.from(scenes.keys()).length,
                 resolution: '1920x1080',
@@ -3370,10 +3416,11 @@ function EP04ProductionInner() {
             }
             toast.success('Cinematic movie assembled successfully!');
           }
-        } else if (jobStatus === 'failed') {
-          const errMsg = data.job.errorMessage || 'Unknown error';
+        } else if (finalStatus === 'failed' || finalStatus === 'error') {
+          const errMsg = finalError || 'Unknown error';
           setAssemblyProgress(null);
           setAssemblyJobId(null);
+          assemblyTaskIdRef.current = null;
           if (activePartNumber != null) {
             setAssemblyParts(prev => prev.map(p =>
               p.partNumber === activePartNumber
@@ -3384,9 +3431,8 @@ function EP04ProductionInner() {
           }
           toast.error(`Assembly failed: ${errMsg}`);
         } else {
-          const pct = data?.job?.progressPercent || 0;
           const partLabel = activePartNumber != null ? ` Part ${activePartNumber}` : '';
-          setAssemblyProgress(`Rendering${partLabel}... ${pct}% (poll ${pollCountRef.current})`);
+          setAssemblyProgress(`Rendering${partLabel}... ${finalProgress}% (poll ${pollCountRef.current})`);
         }
       } catch (err) {
         pollErrorCountRef.current++;
@@ -4345,13 +4391,16 @@ function EP04ProductionInner() {
 
       if (data?.generationStatus === 'pending' && (data?.castJobId || data?.taskId)) {
         const pollId = data.castJobId || null;
+        // ALWAYS store taskId as fallback for polling (in case provider_job_id update fails in edge fn)
+        assemblyTaskIdRef.current = data.taskId || null;
+        pollNoProgressCountRef.current = 0;
         if (!pollId) {
-          console.warn(`[EP04 Assembly${partLabel}] ⚠️ No castJobId — DB insert failed. taskId=${data.taskId}. Polling will NOT auto-detect completion. Check JSON2Video dashboard manually.`);
-          toast.warning?.(`Assembly submitted but polling unavailable — check JSON2Video dashboard for taskId: ${data.taskId}`);
+          console.warn(`[EP04 Assembly${partLabel}] ⚠️ No castJobId — DB insert failed. taskId=${data.taskId}. Will poll via taskId fallback.`);
         } else {
-          console.log(`[EP04 Assembly${partLabel}] ✅ Polling with castJobId=${pollId}`);
+          console.log(`[EP04 Assembly${partLabel}] ✅ Polling with castJobId=${pollId}, taskId fallback=${data.taskId}`);
         }
-        setAssemblyJobId(pollId);
+        // Use castJobId if available, otherwise fall back to taskId for polling
+        setAssemblyJobId(pollId || data.taskId);
         setAssemblyProgress(`Rendering${partLabel}... polling for completion`);
         // Track job ID in parts state
         if (partNumber != null) {
