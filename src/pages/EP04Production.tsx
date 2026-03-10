@@ -23,7 +23,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EP04_SCRIPT_CONTENT, EP04_NARRATOR_BRIDGES, type ScriptLine } from '@/config/ep04-script-content';
-import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP, EP04_AVATAR_CONFIG, EP04_SCENE_PIPELINES, EP04_MUSIC_SCORE } from '@/config/ep04-production-config';
+import { EP04_VOICES, EP04_STORYBOOK_TRANSITIONS, EP04_STORYBOOK_BOOKENDS, EP04_CHARACTER_INTERACTIONS, EP04_NARRATOR_SCROLLS, SCRIPT_TO_PIPELINE_MAP, PIPELINE_TO_SCRIPT_MAP, EP04_AVATAR_CONFIG, EP04_SCENE_PIPELINES, EP04_MUSIC_SCORE } from '@/config/ep04-production-config';
 import { EP04_SCENE_SCREENSHOT_MAP, PRODUCT_SCREENS } from '@/components/genie-hub/MultiScreenshotGallery';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -2499,7 +2499,8 @@ function EP04ProductionInner() {
             bgUrl = await ensureStorageUrl(projectId, `kinetic-text-${sceneKey}`, sceneBg);
           } catch { console.warn(`[EP04 Visual] ${stepLabel}: scene bg mirror failed, using local path`); }
         }
-        results[`kinetic-text-${sceneKey}-${Date.now()}`] = bgUrl;
+        const ktIdx = Object.keys(results).filter(k => k.startsWith(`kinetic-text-${sceneKey}`)).length;
+        results[`kinetic-text-${sceneKey}-${ktIdx}`] = bgUrl;
         console.log(`[EP04 Visual] ${stepLabel}: using pre-made scene background as title card`);
         return;
       }
@@ -2673,7 +2674,11 @@ function EP04ProductionInner() {
       toast.warning(`${stepLabel} "${stepType}": generation returned placeholder — provider may be unavailable`);
       console.warn(`[EP04 Visual] ${stepLabel} got placeholder URL:`, url);
     } else if (url) {
-      results[`${stepType}-${sceneKey}-${Date.now()}`] = url;
+      // Deterministic index for kinetic-text keys (matches assembly-phase sort order)
+      const suffix = stepType === 'kinetic-text'
+        ? String(Object.keys(results).filter(k => k.startsWith(`kinetic-text-${sceneKey}`)).length)
+        : String(Date.now());
+      results[`${stepType}-${sceneKey}-${suffix}`] = url;
     } else if (isAsync) {
       toast.warning(`${stepLabel} "${stepType}": still generating — check back later`);
     }
@@ -4227,15 +4232,49 @@ function EP04ProductionInner() {
 
       // ── Map EP04 data → generic CastTimeline interfaces ──
       const isSafeUrl = (u: string | undefined | null): u is string => !!u && u.startsWith('http');
+
+      // Helper: normalize scene ID (transitions mix pipeline + script IDs)
+      // Always resolve to script ID since sceneProduction is keyed by script IDs
+      const toScriptId = (id: string): string => PIPELINE_TO_SCRIPT_MAP[id] || id;
+
+      // ── Collect transition/storybook assets per scene for routing ──
+      // scene-transition videos and storybook-frame images should go to transitions,
+      // NOT into the B-roll pool
+      const transitionAssetsByScene: Record<string, { transitionVideos: string[]; storybookFrames: string[] }> = {};
+      for (const sceneKey of targetSceneKeys) {
+        const status = sceneProduction[sceneKey] || defaultSceneStatus();
+        const transitionVideos: string[] = [];
+        const storybookFrames: string[] = [];
+        // Scene-transition videos from videoUrls
+        for (const [key, url] of Object.entries(status.videoUrls || {})) {
+          if (isSafeUrl(url) && (key.includes('scene-transition') || key.includes('transition'))) {
+            transitionVideos.push(url);
+          }
+        }
+        // Storybook-frame images from imageUrls
+        for (const [key, url] of Object.entries(status.imageUrls || {})) {
+          if (isSafeUrl(url) && (key.includes('storybook-frame') || key.includes('narrator-scroll'))) {
+            storybookFrames.push(url);
+          }
+        }
+        transitionAssetsByScene[sceneKey] = { transitionVideos, storybookFrames };
+      }
+
       const castChapters: CastChapter[] = preBuiltChapters.map(ch => {
         const status = sceneProduction[ch.chapterId] || defaultSceneStatus();
-        // Separate kinetic text images from regular images (by key pattern)
+        const sceneTransAssets = transitionAssetsByScene[ch.chapterId];
+        const transitionVideoSet = new Set(sceneTransAssets?.transitionVideos || []);
+        const storybookFrameSet = new Set(sceneTransAssets?.storybookFrames || []);
+
+        // Separate kinetic text images, storybook frames, and regular images (by key pattern)
         const kineticImageMap: Record<string, string> = {};
         const regularImages: string[] = [];
         for (const [key, url] of Object.entries(status.imageUrls || {})) {
           if (!isSafeUrl(url)) continue;
           if (key.includes('kinetic-text')) {
             kineticImageMap[key] = url;
+          } else if (storybookFrameSet.has(url)) {
+            // Skip — routed to CastTransition.chapterHeaderImageUrl
           } else {
             regularImages.push(url);
           }
@@ -4244,6 +4283,11 @@ function EP04ProductionInner() {
         for (const url of Object.values(status.avatarUrls || {})) {
           if (isSafeUrl(url)) regularImages.push(url);
         }
+
+        // Filter scene-transition videos out of the B-roll video pool
+        const sceneVideos: string[] = ((ch as any).sceneVideos || [])
+          .filter((u: string) => !transitionVideoSet.has(u));
+
         // Match kinetic text entries to their FLUX-generated images (by index order)
         const kineticKeys = Object.keys(kineticImageMap).sort();
         const kineticTexts = (ch.kineticTexts || []).map((kt, idx) => ({
@@ -4256,7 +4300,7 @@ function EP04ProductionInner() {
           duration: ch.duration,
           ttsLines: ch.allTtsUrls,
           lipsyncClips: ch.lipsyncClips || [],
-          videos: (ch as any).sceneVideos || [],
+          videos: sceneVideos,
           images: regularImages,
           musicUrl: ch.musicUrl,
           musicLoop: ch.musicLoop,
@@ -4266,19 +4310,28 @@ function EP04ProductionInner() {
       });
 
       const castTransitions: CastTransition[] = transitions.map(t => {
+        // Normalize transition IDs: transitions mix pipeline + script IDs
+        // sceneProduction and SCENE_TITLES are keyed by script IDs
+        const fromScriptKey = toScriptId(t.from);
+        const toScriptKey = toScriptId(t.to);
+
         // Derive rich chapter title: "Chapter II — The Cast"
-        const toChapterInfo = SCENE_CHAPTERS[t.to];
+        const toChapterInfo = SCENE_CHAPTERS[toScriptKey];
         const chapterTitle = toChapterInfo
           ? `${toChapterInfo.chapter} — ${toChapterInfo.subtitle}`
-          : SCENE_TITLES[t.to] || undefined;
-        // Check sceneProduction for AI-generated transition visuals
-        const toStatus = sceneProduction[t.to] || defaultSceneStatus();
-        const transitionImageKeys = Object.keys(toStatus.imageUrls || {}).filter(k =>
-          k.includes('scene-transition') || k.includes('storybook-frame') || k.includes('transition')
-        );
-        const transitionImageUrl = transitionImageKeys.length > 0
-          ? toStatus.imageUrls[transitionImageKeys[0]]
-          : t.nextSceneVisualUrl; // fallback to next scene's first image
+          : SCENE_TITLES[toScriptKey] || undefined;
+
+        // Route AI-generated transition visuals:
+        // 1. scene-transition videos from the FROM scene (generated as transition-out)
+        const fromTransAssets = transitionAssetsByScene[fromScriptKey];
+        const transitionVideoUrl = fromTransAssets?.transitionVideos?.[0];
+        // 2. storybook-frame images from the TO scene (generated as chapter header)
+        const toTransAssets = transitionAssetsByScene[toScriptKey];
+        const storybookFrameUrl = toTransAssets?.storybookFrames?.[0];
+
+        // Best transition visual: prefer AI transition video > storybook frame > next scene image
+        const transitionImageUrl = transitionVideoUrl || storybookFrameUrl || t.nextSceneVisualUrl;
+
         return {
           from: t.from,
           to: t.to,
@@ -4286,8 +4339,8 @@ function EP04ProductionInner() {
           duration: t.duration,
           bridgeAudioUrl: t.bridgeAudioUrl,
           bridgeDuration: t.bridgeDuration,
-          transitionImageUrl: transitionImageUrl && transitionImageUrl.startsWith('http') ? transitionImageUrl : undefined,
-          chapterHeaderImageUrl: undefined,
+          transitionImageUrl: isSafeUrl(transitionImageUrl) ? transitionImageUrl : undefined,
+          chapterHeaderImageUrl: isSafeUrl(storybookFrameUrl) ? storybookFrameUrl : undefined,
           sfxUrl: undefined,
           chapterTitle,
           j2vTransition: t.j2vTransition || 'fade',

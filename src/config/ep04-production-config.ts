@@ -626,6 +626,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // ── Host reveals the solution to audience ──
     { type: 'tts', voice: 'host', scriptKey: 'solution-reveal' },
     { type: 'tts', voice: 'host', scriptKey: 'solution-standups' },
+    // ── Nova's 200K context flex (scene-4-solution) ──
+    { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-context' },
     // ── Squirrel comic relief ──
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-2' },
