@@ -34,6 +34,10 @@ import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
 import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
 
+// ── Build version — check console to verify you're on latest deploy ──
+const EP04_BUILD = 'v2026-03-10-B';
+console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
+
 // Shared helper: detect external CDN URLs that may have expired (~24h TTL)
 const isExpiredCdnUrl = (url: string): boolean =>
   !!url && !url.includes('supabase.co/storage') && (
