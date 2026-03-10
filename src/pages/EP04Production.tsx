@@ -4090,6 +4090,36 @@ function EP04ProductionInner() {
           .filter(isSafeUrl)
           .filter(u => !lipsyncSet.has(u));
 
+        // ── Detailed asset audit per scene ──
+        const shortUrl = (u: string) => u ? `${u.substring(0, 60)}...` : '(empty)';
+        console.log(`[EP04 Assets] ${sceneKey}:`);
+        console.log(`  📹 Videos (${Object.keys(status.videoUrls || {}).length} total, ${allSceneVideos.length} for bg):`);
+        Object.entries(status.videoUrls || {}).forEach(([k, u]) => {
+          const isLipsync = lipsyncSet.has(u);
+          console.log(`    ${isLipsync ? '🔇' : '✅'} ${k}: ${shortUrl(u)} ${isLipsync ? '(lipsync—separate)' : ''} ${!isHttpUrl(u) ? '⚠️ NOT HTTP' : ''}`);
+        });
+        console.log(`  🖼️ Images (${Object.keys(status.imageUrls || {}).length}):`);
+        Object.entries(status.imageUrls || {}).forEach(([k, u]) => {
+          console.log(`    ${isSafeUrl(u) ? '✅' : '❌'} ${k}: ${shortUrl(u)}`);
+        });
+        console.log(`  👤 Avatars (${Object.keys(status.avatarUrls || {}).length}):`);
+        Object.entries(status.avatarUrls || {}).forEach(([k, u]) => {
+          console.log(`    ${isSafeUrl(u) ? '✅' : '❌'} ${k}: ${shortUrl(u)}`);
+        });
+        console.log(`  🎤 Lipsync (${Object.keys(status.lipsyncUrls || {}).length}):`);
+        Object.entries(status.lipsyncUrls || {}).forEach(([k, u]) => {
+          console.log(`    ${isHttpUrl(u) ? '✅' : '❌'} ${k}: ${shortUrl(u)}`);
+        });
+        console.log(`  🎵 Music: ${status.musicUrl ? shortUrl(status.musicUrl) : '(none)'}`);
+        console.log(`  🔊 SFX: ${(status.sfxUrls || []).length} clips`);
+        (status.sfxUrls || []).forEach((u, i) => u && console.log(`    ${i}: ${shortUrl(u)}`));
+        // Pipeline steps summary (kinetic-text, transitions, etc.)
+        const pipelineSceneKeyAudit = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
+        const configPipelineAudit = EP04_SCENE_PIPELINES[pipelineSceneKeyAudit as keyof typeof EP04_SCENE_PIPELINES];
+        const stepsAudit = Array.isArray(configPipelineAudit) ? configPipelineAudit : [];
+        const stepTypes = stepsAudit.map((s: any) => `${s.type}${s.character ? `(${s.character})` : ''}${s.scriptKey ? `[${s.scriptKey}]` : ''}${s.text ? `:"${s.text.substring(0, 30)}"` : ''}`);
+        console.log(`  📋 Pipeline steps (${stepsAudit.length}): ${stepTypes.join(', ')}`);
+
         // For sub-parts: distribute visuals proportionally across sub-parts.
         // First sub-part gets the first N videos, second gets next N, etc.
         // Images are distributed evenly across all sub-parts.
