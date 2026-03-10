@@ -5756,16 +5756,78 @@ function EP04ProductionInner() {
                           className="border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
                           onClick={async () => {
                             if (!projectId) { toast.error('No project ID'); return; }
-                            toast.info('Repairing storage URLs — checking DB...');
+                            toast.info('Repairing avatars + CDN URLs...');
+                            let fixCount = 0;
+
+                            // Step 1: Cross-scene avatar repair — replace dog/local avatars with Supabase avatars from other scenes
+                            const bestAvatars: Record<string, string> = {};
+                            for (const [, sp] of Object.entries(sceneProduction)) {
+                              for (const [key, url] of Object.entries(sp.avatarUrls || {})) {
+                                if (url && isSupabaseStorageUrl(url)) {
+                                  const charMatch = key.match(/avatar-3d-(\w+)-/);
+                                  if (charMatch && !bestAvatars[charMatch[1]]) {
+                                    bestAvatars[charMatch[1]] = url;
+                                  }
+                                }
+                              }
+                            }
+                            console.log('🔧 Best cross-scene Supabase avatars:', bestAvatars);
+
+                            for (const [sk, sp] of Object.entries(sceneProduction)) {
+                              const avatarUrls = { ...(sp.avatarUrls || {}) };
+                              const imageUrls = { ...(sp.imageUrls || {}) };
+                              let changed = false;
+
+                              // Fix avatars: replace local/dog paths with cross-scene Supabase avatars
+                              for (const [key, url] of Object.entries(avatarUrls)) {
+                                if (!url || isSupabaseStorageUrl(url)) continue;
+                                const charMatch = key.match(/avatar-3d-(\w+)-/);
+                                if (charMatch && bestAvatars[charMatch[1]]) {
+                                  console.log(`🔧 ${sk}: replacing avatar ${key} (local/CDN) → cross-scene Supabase`);
+                                  avatarUrls[key] = bestAvatars[charMatch[1]];
+                                  changed = true;
+                                  fixCount++;
+                                }
+                              }
+
+                              // Fix images: re-upload CDN URLs to Supabase Storage
+                              for (const [key, url] of Object.entries(imageUrls)) {
+                                if (!url || isSupabaseStorageUrl(url) || isBase64DataUri(url)) continue;
+                                if (url.startsWith('http') || url.startsWith('/')) {
+                                  try {
+                                    const newUrl = await ensureStorageUrl(projectId, key, url);
+                                    if (newUrl !== url) {
+                                      imageUrls[key] = newUrl;
+                                      changed = true;
+                                      fixCount++;
+                                      console.log(`🔧 ${sk}: re-uploaded CDN image ${key} → Storage`);
+                                    }
+                                  } catch (err) { console.warn(`🔧 ${sk}: failed to re-upload ${key}:`, err); }
+                                }
+                              }
+
+                              if (changed) {
+                                setSceneProduction(prev => ({
+                                  ...prev,
+                                  [sk]: { ...prev[sk], avatarUrls, imageUrls },
+                                }));
+                                await updateSceneArtifacts(projectId, sk, {
+                                  videoUrls: sp.videoUrls || {},
+                                  imageUrls,
+                                  avatarUrls,
+                                  lipsyncUrls: sp.lipsyncUrls || {},
+                                });
+                              }
+                            }
+
+                            // Step 2: Server-side repair for anything else
                             const { data, error } = await supabase.functions.invoke('ai-video-generator', {
                               body: { action: 'repair_urls', projectId },
                             });
-                            if (error) { toast.error(`Repair failed: ${error.message}`); return; }
-                            console.log('🔧 Repair result:', data);
-                            if (data?.diagnostics) {
-                              console.log('🔧 Diagnostics:\n' + data.diagnostics.join('\n'));
-                            }
-                            toast.success(`Fixed ${data?.fixedCount || 0} URLs, ${data?.expiredExternal || 0} expired external — refreshing...`);
+                            if (error) console.warn('Server repair error:', error.message);
+                            if (data?.diagnostics) console.log('🔧 Server diagnostics:\n' + data.diagnostics.join('\n'));
+
+                            toast.success(`Fixed ${fixCount} avatars/CDN URLs${data?.fixedCount ? ` + ${data.fixedCount} server-side` : ''} — refreshing...`);
                             setTimeout(() => window.location.reload(), 2000);
                           }}
                         >
