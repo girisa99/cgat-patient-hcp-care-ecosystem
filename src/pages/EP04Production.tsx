@@ -1881,17 +1881,22 @@ function EP04ProductionInner() {
       toast.info(`Proceeding with ${doneCount}/${scriptKeys.length} lines (${missingAudio.length} optional lines skipped)`);
     }
 
-    // Update project status in DB
-    if (projectId) {
-      const db = supabase as any;
-      await db.from('cast_projects').update({
-        status: 'visual_production',
-        updated_at: new Date().toISOString(),
-      }).eq('id', projectId);
-    }
-
+    // Advance phase FIRST (don't let DB failure block the UI)
     setProductionPhase('tts_approved');
     toast.success('TTS approved — ready for visual production');
+
+    // Update project status in DB (fire-and-forget — non-blocking)
+    if (projectId) {
+      try {
+        const db = supabase as any;
+        await db.from('cast_projects').update({
+          status: 'visual_production',
+          updated_at: new Date().toISOString(),
+        }).eq('id', projectId);
+      } catch (err) {
+        console.warn('[EP04] DB status update failed (non-critical):', err);
+      }
+    }
   }, [scriptKeys, audioMap, projectId, doneCount, ttsApprovalThreshold]);
 
   // ─── Phase 3: Visual Production (per scene) ───────────────────────────
