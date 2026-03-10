@@ -646,11 +646,17 @@ export function useCastProjectPersistence() {
     musicUrl: string | null,
     sfxUrls: string[],
   ): Promise<boolean> => {
-    console.log(`[PERSIST SAVE] ${sceneKey}: saving music to DB (url=${musicUrl ? 'yes' : 'null'}, sfx=${sfxUrls.length})`);
+    // CRITICAL: Block base64 audio from DB — same guard as artifacts
+    const safeMusicUrl = musicUrl && musicUrl.startsWith('data:') ? null : musicUrl;
+    const safeSfxUrls = sfxUrls.filter(u => !u.startsWith('data:'));
+    if (musicUrl && musicUrl.startsWith('data:')) {
+      console.warn(`[PERSIST GUARD] Blocked base64 music URL from DB write: ${sceneKey} (${musicUrl.length} chars)`);
+    }
+    console.log(`[PERSIST SAVE] ${sceneKey}: saving music to DB (url=${safeMusicUrl ? 'yes' : 'null'}, sfx=${safeSfxUrls.length})`);
     try {
       const ok = await withSceneLock(`${projectId}:${sceneKey}`, () =>
         updateSceneConfigField(projectId, sceneKey, 'generatedMusic', {
-          url: musicUrl, sfxUrls, generatedAt: new Date().toISOString(),
+          url: safeMusicUrl, sfxUrls: safeSfxUrls, generatedAt: new Date().toISOString(),
         })
       );
       return ok;
