@@ -35,7 +35,7 @@ import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
-const EP04_BUILD = 'v2026-03-10-C';
+const EP04_BUILD = 'v2026-03-10-D';
 console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
 
 // Shared helper: detect external CDN URLs that may have expired (~24h TTL)
@@ -3551,12 +3551,12 @@ function EP04ProductionInner() {
   };
 
   // Character info for lower-third speaker identification
+  // Only "cast" characters get lower-thirds — narrators (host, allaudin) don't need them
+  // since their voice is constant throughout the documentary.
   const CHARACTER_LOWER_THIRDS: Record<string, { headline: string; lead: string; barColor: string }> = {
-    host: { headline: 'HOST', lead: 'Product Owner & Narrator', barColor: '#d4a574' },
     atlas: { headline: 'ATLAS', lead: 'Claude Code — Backend Engineer', barColor: '#6366f1' },
     nova: { headline: 'NOVA', lead: 'Lovable — Frontend Developer', barColor: '#10b981' },
     squirrel: { headline: 'SQUIRREL', lead: 'QA Chaos Agent', barColor: '#f97316' },
-    allaudin: { headline: 'ALLAUDIN', lead: 'The Genie — Narrator', barColor: '#8b5cf6' },
   };
 
   // ─── Client-side JSON2Video timeline builder ────────────────────────────
