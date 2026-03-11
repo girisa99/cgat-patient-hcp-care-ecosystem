@@ -2790,8 +2790,7 @@ function EP04ProductionInner() {
           return Object.entries(existingVideoUrls).some(([k, url]) => (k.includes('video') || k.includes('scene-transition')) && k.includes(sKey) && isPermanent(url));
         }
         if (sType === 'static-asset') {
-          const aKey = (step as { assetKey?: string }).assetKey || '';
-          return Object.entries(existingImageUrls).some(([k, url]) => k.includes('static-asset') && k.includes(aKey) && isPermanent(url));
+          return Object.entries(existingImageUrls).some(([k, url]) => k.includes('static-asset') && k.includes(sKey) && isPermanent(url));
         }
         if (sType === 'kinetic-text' || sType === 'motion-graphics' || sType === 'screen-capture' || sType === 'storybook-frame') {
           return Object.entries(existingImageUrls).some(([k, url]) => k.includes(sType.split('-')[0]) && k.includes(sKey) && isPermanent(url));
