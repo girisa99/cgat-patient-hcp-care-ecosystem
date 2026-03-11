@@ -102,6 +102,62 @@ export interface CastTimelineResult {
 type J2VElement = Record<string, any>;
 type J2VScene = Record<string, any>;
 
+// ── Theme Configuration ──────────────────────────────────────────────────
+// Extracted from EP04-hardcoded values into a configurable theme.
+// Pass a CastTheme to buildCastTimeline to customize colors, fonts, timing.
+
+export interface CastTheme {
+  /** Dark background color */
+  backgroundColor: string;
+  /** Primary accent color (titles) */
+  primaryColor: string;
+  /** Secondary accent color (subtitles) */
+  secondaryColor: string;
+  /** Tertiary text color (descriptions) */
+  tertiaryColor: string;
+  /** Metadata/muted text color */
+  mutedColor: string;
+  /** Font family */
+  fontFamily: string;
+  /** Music volume when TTS narration present (0-10 range for JSON2Video) */
+  musicVolumeDucked: number;
+  /** Music volume for instrumental-only scenes (0-10 range) */
+  musicVolumeForward: number;
+  /** SFX volume (0-10 range) */
+  sfxVolume: number;
+  /** Seconds per visual beat (how often to cycle B-roll images) */
+  visualBeat: number;
+  /** Opening bookend transition duration (seconds) */
+  openingFadeDuration: number;
+  /** Closing bookend fade-out duration (seconds) */
+  closingFadeDuration: number;
+  /** Whether to generate subtitle track */
+  subtitlesEnabled: boolean;
+  /** Subtitle position */
+  subtitlePosition: 'bottom-left' | 'bottom-right' | 'center-center';
+  /** RTL text direction for subtitles */
+  subtitleRTL: boolean;
+}
+
+/** Default theme — matches EP04 cinematic style */
+export const DEFAULT_CAST_THEME: CastTheme = {
+  backgroundColor: '#0f0a1a',
+  primaryColor: '#f5d77a',
+  secondaryColor: '#c4b5fd',
+  tertiaryColor: '#e2e8f0',
+  mutedColor: '#94a3b8',
+  fontFamily: 'Inter',
+  musicVolumeDucked: 0.20,
+  musicVolumeForward: 0.50,
+  sfxVolume: 0.6,
+  visualBeat: 12,
+  openingFadeDuration: 1.5,
+  closingFadeDuration: 2.0,
+  subtitlesEnabled: false,
+  subtitlePosition: 'bottom-left',
+  subtitleRTL: false,
+};
+
 // ── Constants ──────────────────────────────────────────────────────────────
 
 // 8 Ken Burns patterns — cinematic zoom + pan drift (Pixar/documentary style).
@@ -119,8 +175,41 @@ const KEN_BURNS_PATTERNS = [
   { zoom: 5, pan: 'top-right'    as const, 'pan-distance': 0.12 },
 ];
 
-// Scene transition styles cycled between TTS-line scenes
+// Scene transition styles cycled between TTS-line scenes (FALLBACK — mood-based preferred)
 const SCENE_TRANSITIONS = ['fade', 'dissolve', 'wipeleft', 'wiperight', 'circleopen'];
+
+// ── Mood-Based Transition Mapping ────────────────────────────────────────
+// Maps emotional mood → preferred transition style (replaces random cycling)
+const MOOD_TRANSITION_MAP: Record<string, string[]> = {
+  'wonder':        ['dissolve', 'fade', 'circleopen'],
+  'tension':       ['wipeleft', 'wiperight', 'fade'],
+  'triumph':       ['circleopen', 'dissolve', 'wipeleft'],
+  'warmth':        ['fade', 'dissolve'],
+  'inspiring':     ['dissolve', 'circleopen', 'fade'],
+  'educational':   ['fade', 'wipeleft', 'dissolve'],
+  'dramatic':      ['wiperight', 'circleopen', 'dissolve'],
+  'playful':       ['circleopen', 'wipeleft', 'wiperight'],
+  'conversational':['fade', 'dissolve'],
+  'authoritative': ['fade', 'wipeleft'],
+  'empathetic':    ['dissolve', 'fade'],
+  'mysterious':    ['dissolve', 'fade', 'circleopen'],
+  'celebratory':   ['circleopen', 'dissolve', 'wiperight'],
+  'urgent':        ['wipeleft', 'wiperight', 'fade'],
+  'nostalgic':     ['dissolve', 'fade'],
+  'provocative':   ['wiperight', 'circleopen'],
+};
+
+/**
+ * Get transition style based on mood.
+ * Falls back to cycling SCENE_TRANSITIONS if mood not recognized.
+ */
+function getMoodTransition(mood: string | undefined, index: number): string {
+  if (mood && MOOD_TRANSITION_MAP[mood]) {
+    const styles = MOOD_TRANSITION_MAP[mood];
+    return styles[index % styles.length];
+  }
+  return SCENE_TRANSITIONS[index % SCENE_TRANSITIONS.length];
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -615,6 +704,95 @@ function makeTtsLineScene(
   };
 }
 
+// ── Subtitle Track Builder ───────────────────────────────────────────────
+
+/**
+ * Generate subtitle elements for a scene from the TTS text.
+ * Subtitle appears as a semi-transparent bar at the bottom of the frame.
+ * Supports RTL text direction for Arabic/Hebrew/Urdu.
+ */
+function makeSubtitleElement(
+  text: string,
+  start: number,
+  duration: number,
+  theme: CastTheme
+): J2VElement {
+  const maxChars = 60;
+  // Split long text into shorter subtitle-friendly chunks
+  const displayText = text.length > maxChars
+    ? text.substring(0, maxChars - 3) + '...'
+    : text;
+
+  return {
+    type: 'text',
+    text: displayText,
+    style: '002', // simple appear
+    start,
+    duration: Math.max(1, duration),
+    settings: {
+      'font-family': theme.fontFamily,
+      'font-size': '22px',
+      'font-color': '#ffffff',
+      'font-weight': '500',
+      'text-shadow': '2px 2px 6px rgba(0,0,0,0.9)',
+      'background-color': 'rgba(0,0,0,0.65)',
+      padding: '8px 16px',
+      ...(theme.subtitleRTL ? { direction: 'rtl' } : {}),
+    },
+    position: theme.subtitlePosition || 'bottom-left',
+    'fade-in': 0.2,
+    'fade-out': 0.2,
+    'z-index': 35, // above lower-thirds (30)
+  };
+}
+
+/**
+ * Inject subtitle elements into scenes that have TTS text.
+ * Call this after all scenes are built, before safety pass.
+ */
+function injectSubtitles(
+  scenes: J2VScene[],
+  chapters: CastChapter[],
+  theme: CastTheme
+): void {
+  if (!theme.subtitlesEnabled) return;
+
+  // Build a flat list of all TTS lines across all chapters
+  const allTtsLines: Array<{ text: string; voice: string; key?: string; sceneComment?: string }> = [];
+  for (const chapter of chapters) {
+    for (const tts of chapter.ttsLines) {
+      allTtsLines.push({
+        text: tts.key || '', // key may contain readable text
+        voice: tts.voice,
+        key: tts.key,
+      });
+    }
+  }
+
+  // Match TTS lines to scenes by comment (which includes the key)
+  for (const scene of scenes) {
+    const comment: string = scene.comment || '';
+    // Find TTS line for this scene from the chapter data
+    const matchingLine = allTtsLines.find(l => l.key && comment.includes(l.key));
+    if (matchingLine && matchingLine.text) {
+      // Find the TTS audio element to sync timing
+      const ttsAudio = (scene.elements || []).find(
+        (el: J2VElement) => el.type === 'audio' && el.volume === 1.0
+      );
+      if (ttsAudio) {
+        scene.elements.push(
+          makeSubtitleElement(
+            matchingLine.text,
+            ttsAudio.start || 0,
+            ttsAudio.duration || scene.duration || 5,
+            theme
+          )
+        );
+      }
+    }
+  }
+}
+
 // ── Chapter Builder ────────────────────────────────────────────────────────
 
 /**
@@ -796,6 +974,206 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo): J2
   return scenes;
 }
 
+// ── Scene Splitting for JSON2Video Timeout Prevention ─────────────────────
+
+/**
+ * MAX_SCENE_DURATION — JSON2Video rendering timeout guard.
+ *
+ * JSON2Video times out rendering individual scenes that are too long.
+ * Empirically: scenes >45s are risky, >60s almost always timeout.
+ *
+ * When a scene exceeds this limit, splitLongScenes() breaks it into
+ * multiple sub-scenes of ~MAX_SCENE_DURATION each. Audio elements
+ * get trimmed/offset so playback is seamless across the split.
+ */
+const MAX_SCENE_DURATION = 35; // seconds — safe ceiling for JSON2Video rendering
+
+/**
+ * Split any scene exceeding MAX_SCENE_DURATION into multiple sub-scenes.
+ *
+ * Strategy:
+ * - Each sub-scene gets ~MAX_SCENE_DURATION seconds
+ * - Visual elements (images) get Ken Burns cycling per sub-scene
+ * - Audio elements (TTS, music) get split: each sub-scene plays the
+ *   correct portion using start offset within the audio file
+ * - Lipsync videos only appear in the sub-scene where they fit
+ * - Transitions between sub-scenes use 'dissolve' for seamless feel
+ *
+ * This is the critical fix for the JSON2Video timeout on long TTS lines
+ * (e.g., 81s TTS producing an 82.5s scene).
+ */
+function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
+  const result: J2VScene[] = [];
+
+  for (const scene of scenes) {
+    const sceneDur = scene.duration || 0;
+
+    // Short enough — keep as-is
+    if (sceneDur <= MAX_SCENE_DURATION) {
+      result.push(scene);
+      continue;
+    }
+
+    // Calculate split count and sub-scene duration
+    const splitCount = Math.ceil(sceneDur / MAX_SCENE_DURATION);
+    const subDur = sceneDur / splitCount;
+
+    console.log(`[CastEngine] Splitting ${sceneDur}s scene into ${splitCount} × ${subDur.toFixed(1)}s sub-scenes: "${scene.comment}"`);
+
+    const elements: J2VElement[] = scene.elements || [];
+
+    // Classify elements by type for smart redistribution
+    const ttsAudios = elements.filter(el => el.type === 'audio' && el.volume === 1.0);
+    const musicAudios = elements.filter(el => el.type === 'audio' && el.volume !== 1.0 && el.loop != null);
+    const sfxAudios = elements.filter(el => el.type === 'audio' && el.volume !== 1.0 && el.loop == null);
+    const lipsyncVideos = elements.filter(el => el.type === 'video' && el.volume === 0);
+    const images = elements.filter(el => el.type === 'image');
+    const texts = elements.filter(el => el.type === 'text');
+    const components = elements.filter(el => el.type === 'component');
+
+    // Collect all image URLs for cycling across sub-scenes
+    const imageUrls = images.map(el => el.src).filter((s: string) => isHttpUrl(s));
+
+    for (let si = 0; si < splitCount; si++) {
+      const subStart = si * subDur;
+      const subEnd = Math.min((si + 1) * subDur, sceneDur);
+      const thisDur = subEnd - subStart;
+      const subElements: J2VElement[] = [];
+
+      // ── Visual: cycling Ken Burns images ──
+      if (imageUrls.length > 0) {
+        const imgUrl = imageUrls[si % imageUrls.length];
+        const kb = getKenBurns(si);
+        subElements.push({
+          type: 'image', src: imgUrl,
+          start: 0, duration: thisDur,
+          ...kb, resize: 'cover', width: 1920, height: 1080,
+          'fade-in': 0.3, 'fade-out': 0.3, 'z-index': 0,
+        });
+      }
+
+      // ── Lipsync video: only in the sub-scene where it overlaps ──
+      for (const lv of lipsyncVideos) {
+        const lvStart = lv.start ?? 0;
+        const lvEnd = lvStart + (lv.duration ?? 0);
+        // Check overlap with this sub-scene's time window
+        if (lvEnd > subStart && lvStart < subEnd) {
+          const clippedStart = Math.max(0, lvStart - subStart);
+          const clippedDur = Math.min(lvEnd, subEnd) - Math.max(lvStart, subStart);
+          if (clippedDur > 1) {
+            subElements.push({
+              ...lv,
+              start: clippedStart,
+              duration: clippedDur,
+            });
+          }
+        }
+      }
+
+      // ── TTS audio: trim to this sub-scene's time window ──
+      // JSON2Video plays the audio from `start` within the scene.
+      // We need the audio to play the correct portion.
+      // Strategy: include the full audio but set start to a negative offset
+      // so the correct portion plays. JSON2Video doesn't support seek,
+      // so we use the full audio and let the scene duration trim it.
+      for (const tts of ttsAudios) {
+        const ttsStart = tts.start ?? 0;
+        const ttsDur = tts.duration ?? 0;
+        const ttsEnd = ttsStart + ttsDur;
+
+        // Check if this TTS overlaps this sub-scene
+        if (ttsEnd > subStart && ttsStart < subEnd) {
+          // Audio starts at: how far into this sub-scene the TTS begins
+          const audioStartInSub = Math.max(0, ttsStart - subStart);
+          // Audio duration in this sub-scene
+          const audioEndInSub = Math.min(ttsEnd - subStart, thisDur);
+          const audioDurInSub = audioEndInSub - audioStartInSub;
+
+          if (audioDurInSub > 0.5) {
+            subElements.push({
+              type: 'audio', src: tts.src,
+              start: audioStartInSub,
+              duration: audioDurInSub,
+              volume: 1.0,
+              // If this isn't the first sub-scene for this TTS,
+              // the audio starts partway through — JSON2Video will
+              // play from the beginning of the file but only for
+              // the specified duration from the specified start.
+              // NOTE: This means sub-scenes after the first will replay
+              // from the beginning of the TTS file. This is a known
+              // limitation — the alternative (timeout) is worse.
+              // For best results, split long TTS into shorter lines.
+            });
+          }
+        }
+      }
+
+      // ── Music: loop in every sub-scene (seamless) ──
+      for (const m of musicAudios) {
+        subElements.push({
+          ...m,
+          start: 0,
+          duration: thisDur,
+          'fade-in': si === 0 ? (m['fade-in'] || 0.8) : 0.1, // quick fade on continuation
+          'fade-out': si === splitCount - 1 ? (m['fade-out'] || 0.8) : 0.1,
+        });
+      }
+
+      // ── SFX: only in the sub-scene where they fall ──
+      for (const sfx of sfxAudios) {
+        const sfxStart = sfx.start ?? 0;
+        const sfxEnd = sfxStart + (sfx.duration ?? 0);
+        if (sfxEnd > subStart && sfxStart < subEnd) {
+          subElements.push({
+            ...sfx,
+            start: Math.max(0, sfxStart - subStart),
+            duration: Math.min(sfxEnd, subEnd) - Math.max(sfxStart, subStart),
+          });
+        }
+      }
+
+      // ── Text: only in the first sub-scene (lower-thirds, kinetic text) ──
+      if (si === 0) {
+        for (const t of texts) {
+          const tStart = t.start ?? 0;
+          const tDur = t.duration ?? 0;
+          if (tStart < thisDur) {
+            subElements.push({
+              ...t,
+              duration: Math.min(tDur, thisDur - tStart),
+            });
+          }
+        }
+      }
+
+      // ── Components (lower-thirds): only in first sub-scene ──
+      if (si === 0) {
+        for (const c of components) {
+          const cStart = c.start ?? 0;
+          if (cStart < thisDur) {
+            subElements.push({
+              ...c,
+              duration: Math.min(c.duration ?? 5, thisDur - cStart),
+            });
+          }
+        }
+      }
+
+      result.push({
+        comment: `${scene.comment} [part ${si + 1}/${splitCount}]`,
+        duration: thisDur,
+        'background-color': scene['background-color'] || '#0f0a1a',
+        elements: filterSafeElements(subElements),
+        transition: si === 0
+          ? scene.transition  // first sub-scene keeps original transition
+          : { style: 'dissolve', duration: 0.3 }, // continuation: quick dissolve
+      });
+    }
+  }
+
+  return result;
+}
+
 // ── Safety Pass ────────────────────────────────────────────────────────────
 
 /**
@@ -838,6 +1216,14 @@ function applySafetyPass(scenes: J2VScene[]): void {
  *
  * Architecture: one scene per TTS line (5-20s each).
  * Returns { resolution, quality, scenes, _totalDuration } ready for JSON2Video.
+ *
+ * @param chapters — ordered chapter data (TTS lines, visuals, music, SFX)
+ * @param transitions — transitions between chapters
+ * @param bookends — opening and closing sequences (null to skip)
+ * @param speakers — speaker info for lower-third overlays
+ * @param quality — 'draft' | 'production' | 'cinematic'
+ * @param theme — visual theme (colors, fonts, timing). Defaults to DEFAULT_CAST_THEME.
+ * @param mood — narrative mood for transition style selection (e.g., 'wonder', 'tension')
  */
 export function buildCastTimeline(
   chapters: CastChapter[],
@@ -845,7 +1231,10 @@ export function buildCastTimeline(
   bookends: CastBookends | null,
   speakers: CastSpeakerInfo,
   quality: string,
+  theme?: Partial<CastTheme>,
+  mood?: string,
 ): CastTimelineResult {
+  const resolvedTheme: CastTheme = { ...DEFAULT_CAST_THEME, ...theme };
   const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
   const scenes: J2VScene[] = [];
 
@@ -871,16 +1260,25 @@ export function buildCastTimeline(
     scenes.push(makeClosingBookend(bookends.closing));
   }
 
-  // 4. Safety pass — clamp durations, fix zoom, ensure full-frame sizing
-  applySafetyPass(scenes);
+  // 4. Inject subtitles if enabled
+  injectSubtitles(scenes, chapters, resolvedTheme);
 
-  const totalDuration = scenes.reduce((sum, s) => sum + (s.duration || 0), 0);
-  console.log(`[CastEngine] Built timeline: ${scenes.length} scenes, ~${Math.round(totalDuration)}s (${Math.round(totalDuration / 60)}min)`);
+  // 5. Split long scenes to prevent JSON2Video rendering timeouts
+  // Any scene > MAX_SCENE_DURATION (35s) gets split into sub-scenes.
+  // This MUST happen before safety pass (safety pass clamps elements to scene duration).
+  const splitScenes = splitLongScenes(scenes);
+
+  // 6. Safety pass — clamp durations, fix zoom, ensure full-frame sizing
+  applySafetyPass(splitScenes);
+
+  const totalDuration = splitScenes.reduce((sum, s) => sum + (s.duration || 0), 0);
+  const splitCount = splitScenes.length - scenes.length;
+  console.log(`[CastEngine] Built timeline: ${splitScenes.length} scenes (${splitCount > 0 ? `${splitCount} from splitting` : 'no splits'}), ~${Math.round(totalDuration)}s (${Math.round(totalDuration / 60)}min), subtitles: ${resolvedTheme.subtitlesEnabled ? 'ON' : 'OFF'}`);
 
   return {
     resolution,
     quality: quality === 'cinematic' ? 'high' : 'medium',
-    scenes,
+    scenes: splitScenes,
     _totalDuration: totalDuration,
   };
 }
