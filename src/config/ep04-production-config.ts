@@ -475,6 +475,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'sfx', prompt: 'Lamp whoosh with magical mist swirl and sparkle chimes' },
   ],
   'scene-1-cold-open': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-0
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter I — The Problem" in golden calligraphy, chaotic office with floating error logs and overwhelmed developers sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     { type: 'kinetic-text', text: '41 tasks. 5 days. 2 AI developers.' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
@@ -499,6 +501,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-1-to-2' },
   ],
   'scene-2-meet-team': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-1
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate chapter header with decorative borders: "Chapter II — The Cast" in elegant serif font with tiny character silhouettes in the marginalia, golden ink on cream parchment', duration: 2 },
     // ── Scene-setting video — the team assembles ──
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar-style 3D animated scene: a cozy home office transforms into a magical podcast studio — dual monitors glow with code, a warm golden retriever wags its tail as a bear wearing wire-frame glasses (Atlas) materializes on the left monitor and an orange fox in a paint-splattered apron (Nova) appears on the right monitor, sparkle particles swirl between the screens, warm lamplight, cinematic depth of field, 8K quality' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
@@ -551,6 +555,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-2-to-3' },
   ],
   'scene-3-governance': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-2
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter II — Origins" in golden calligraphy, timeline scroll with spark of inspiration and blueprint sketches in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── Avatars for full scene ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
@@ -595,6 +601,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-3-to-4' },
   ],
   'scene-4-day1': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-3
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Chapter header: "Chapter III — The Sprint Begins" with a tiny illustrated bear and fox shaking paws in the corner, sprint board sketched in the margins', duration: 2 },
     // ── Host intro: Day 1 overview ──
     { type: 'tts', voice: 'host', scriptKey: 'day1-narration' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
@@ -644,6 +652,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-4-to-5' },
   ],
   'scene-5-day2': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-4
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter III — Governance" in golden calligraphy, territory map with two kingdoms and border markers sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── Governance deep-dive: why guardrails exist ──
     { type: 'tts', voice: 'host', scriptKey: 'governance-intro' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
@@ -707,6 +717,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-6-to-7' },
   ],
   'scene-7-mission-control': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-6
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter IV — Velocity" in golden calligraphy, speed lines and racing charts with sprinting characters sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── Part 1: Velocity Contest — Atlas vs Nova burndown showdown ──
     { type: 'tts', voice: 'host', scriptKey: 'velocity-intro' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-predictability' },
@@ -746,6 +758,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-7-to-8' },
   ],
   'scene-8-dashboard-tour': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-7
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Chapter header: "Chapter V — The Dashboard Tour" with 18 tiny thumbnail sketches arranged as marginalia around the title, each representing a dashboard screen', duration: 2 },
     // ── Full dashboard tour narrative — host introduces, atlas/nova add perspective ──
     { type: 'tts', voice: 'host', scriptKey: 'numbers-intro' },
     { type: 'tts', voice: 'atlas', scriptKey: 'numbers-tour-atlas' },
@@ -781,6 +795,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-8-to-9' },
   ],
   'scene-9-numbers': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-8
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter V — Storms" in golden calligraphy, dark clouds with rain of error messages and lightning bolts sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── Full challenges narrative — vulnerability + thesis moment ──
     { type: 'tts', voice: 'host', scriptKey: 'challenges-intro' },
     { type: 'tts', voice: 'atlas', scriptKey: 'challenges-atlas' },
@@ -810,6 +826,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-9-to-10' },
   ],
   'scene-10-whats-next': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-9
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter VI — Stars" in golden calligraphy, galaxy with constellation map and hopeful dawn sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── MCP vision — host introduces, all 3 characters contribute perspectives ──
     { type: 'tts', voice: 'host', scriptKey: 'whats-next-intro' },
     { type: 'tts', voice: 'atlas', scriptKey: 'whats-next-atlas' },
@@ -835,6 +853,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-10-to-11' },
   ],
   'scene-11-close': [
+    // Chapter title card — generated via FLUX, used as transition background from scene-10
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Final chapter header: "The Last Page... For Now" in warm golden calligraphy, tiny illustrated characters waving from the margins, squirrel holding a tiny "THE END?" sign', duration: 2 },
     // ── Full closing dialogue — emotional sign-off (all 9 script entries) ──
     { type: 'tts', voice: 'host', scriptKey: 'close-takeaway' },
     { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-final' },
