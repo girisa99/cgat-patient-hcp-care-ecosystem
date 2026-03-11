@@ -104,16 +104,18 @@ type J2VScene = Record<string, any>;
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-// 8 expanded Ken Burns patterns for visual variety
+// 8 subtle Ken Burns patterns — professional documentary style (1.05–1.15x zoom)
+// Previous zoom:2 was far too aggressive (2x magnification crops 50% of the image,
+// pushing content off-center). These subtle values keep the full image visible.
 const KEN_BURNS_PATTERNS = [
-  { zoom: 2, pan: 'left'         as const, 'pan-distance': 0.15 },
-  { zoom: 1, pan: 'right'        as const, 'pan-distance': 0.10 },
-  { zoom: 2, pan: 'top-left'     as const, 'pan-distance': 0.12 },
-  { zoom: 1, pan: 'bottom-right' as const, 'pan-distance': 0.08 },
-  { zoom: 1, pan: 'top'          as const, 'pan-distance': 0.10 },
-  { zoom: 2, pan: 'center'       as const, 'pan-distance': 0.06 },
-  { zoom: 1, pan: 'bottom-left'  as const, 'pan-distance': 0.09 },
-  { zoom: 2, pan: 'top-right'    as const, 'pan-distance': 0.11 },
+  { zoom: 1.10, pan: 'left'         as const, 'pan-distance': 0.04 },
+  { zoom: 1.05, pan: 'right'        as const, 'pan-distance': 0.03 },
+  { zoom: 1.12, pan: 'top-left'     as const, 'pan-distance': 0.04 },
+  { zoom: 1.05, pan: 'bottom-right' as const, 'pan-distance': 0.03 },
+  { zoom: 1.08, pan: 'top'          as const, 'pan-distance': 0.03 },
+  { zoom: 1.05, pan: 'center'       as const, 'pan-distance': 0.02 },
+  { zoom: 1.10, pan: 'bottom-left'  as const, 'pan-distance': 0.03 },
+  { zoom: 1.08, pan: 'top-right'    as const, 'pan-distance': 0.04 },
 ];
 
 // Scene transition styles cycled between TTS-line scenes
@@ -157,7 +159,7 @@ function makeOpeningBookend(opening: CastBookends['opening']): J2VScene {
     elements.push({
       type: 'image', src: opening.backgroundUrl,
       start: 0, duration: dur,
-      zoom: 2, pan: 'right', 'pan-distance': 0.08,
+      zoom: 1.10, pan: 'right', 'pan-distance': 0.03,
       resize: 'cover',
       'fade-in': 1.0, 'fade-out': 0.5,
       'z-index': 0,
@@ -298,7 +300,7 @@ function makeKineticImageScene(kt: CastKineticText, kbIdx: number): J2VScene {
     elements.push({
       type: 'image', src: kt.imageUrl,
       start: 0, duration: dur,
-      zoom: 2, pan: 'center', 'pan-distance': 0.05,
+      zoom: 1.08, pan: 'center', 'pan-distance': 0.02,
       resize: 'cover', width: 1920, height: 1080,
       'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
     });
@@ -345,7 +347,7 @@ function makeTransitionScene(t: CastTransition): J2VScene {
       start: 0, duration: dur,
       ...(mediaType === 'video'
         ? { volume: 0 }
-        : { zoom: 2, pan: 'center', 'pan-distance': 0.06 }),
+        : { zoom: 1.08, pan: 'center', 'pan-distance': 0.02 }),
       resize: 'cover', width: 1920, height: 1080,
       'fade-in': 0.3, 'fade-out': 0.3, 'z-index': 0,
     });
@@ -454,13 +456,15 @@ function makeTtsLineScene(
     }
 
     // Lipsync talking head (full-frame, MUTED — TTS audio is separate)
+    // Use 'contain' to prevent character cutoff at edges (cover crops non-16:9 sources).
+    // Dark scene background (#0f0a1a) fills any letterbox gaps seamlessly.
     elements.push({
       type: 'video', src: lipsync.url,
       start: lipsyncStart, duration: lipsyncDur,
       volume: 0, // CRITICAL: lipsync has TTS baked in, TTS is separate audio element
       'fade-in': 0.3, 'fade-out': 1.0, // 1s fade hides WAN2.2 loop artifacts
       'z-index': lipsyncStart > 0 ? 1 : 0,
-      resize: 'cover', width: 1920, height: 1080,
+      resize: 'contain', width: 1920, height: 1080,
     });
 
     // Tail B-roll (if lipsync ends before scene)
