@@ -116,6 +116,17 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true, // Remove old precaches on new SW install
         runtimeCaching: [
           {
+            // All Supabase Storage assets (images, audio, video) — NEVER cache.
+            // Cross-origin opaque responses crash Cache API → ERR_CACHE_OPERATION_NOT_SUPPORTED.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\//i,
+            handler: 'NetworkOnly',
+          },
+          {
+            // Any audio/video file from any origin — NEVER cache.
+            urlPattern: /\.(?:mp4|webm|mov|mp3|wav|ogg|aac|flac|m4a)(?:\?.*)?$/i,
+            handler: 'NetworkOnly',
+          },
+          {
             urlPattern: /^https:\/\/api\..*\/.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -130,7 +141,7 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)(?:\?.*)?$/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'image-cache',
@@ -139,12 +150,6 @@ export default defineConfig(({ mode }) => ({
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               }
             }
-          },
-          {
-            // Video/audio files are too large for Cache API — skip caching entirely.
-            // Prevents ERR_CACHE_OPERATION_NOT_SUPPORTED on Supabase Storage .mp4 URLs.
-            urlPattern: /\.(?:mp4|webm|mov|mp3|wav|ogg)$/,
-            handler: 'NetworkOnly',
           }
         ]
       },

@@ -111,8 +111,32 @@
         }, 500);
       });
 
-      // Unregister stale service workers on localhost to prevent cached content
-      // blocking HMR updates during development.
+      // Force one-time SW purge to flush stale workers that cached audio/video.
+      // Bump SW_VERSION when you need to force another purge.
+      (function() {
+        var SW_VERSION = 2;
+        var key = 'sw-purge-v' + SW_VERSION;
+        if ('serviceWorker' in navigator && !localStorage.getItem(key)) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            registrations.forEach(function(reg) {
+              reg.unregister().then(function() {
+                console.log('[sw-purge] Unregistered stale service worker:', reg.scope);
+              });
+            });
+          });
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              names.forEach(function(name) {
+                caches.delete(name);
+                console.log('[sw-purge] Cleared cache:', name);
+              });
+            });
+          }
+          localStorage.setItem(key, Date.now().toString());
+        }
+      })();
+
+      // Always unregister on localhost for HMR reliability
       if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -122,7 +146,6 @@
               });
             });
           });
-          // Also clear all caches left behind by workbox
           if ('caches' in window) {
             caches.keys().then(function(names) {
               names.forEach(function(name) {
