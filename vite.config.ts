@@ -141,15 +141,10 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: /\.(?:mp4|webm|mp3|wav)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'media-cache',
-              expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
-              }
-            }
+            // Video/audio files are too large for Cache API — skip caching entirely.
+            // Prevents ERR_CACHE_OPERATION_NOT_SUPPORTED on Supabase Storage .mp4 URLs.
+            urlPattern: /\.(?:mp4|webm|mov|mp3|wav|ogg)$/,
+            handler: 'NetworkOnly',
           }
         ]
       },

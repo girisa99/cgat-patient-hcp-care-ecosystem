@@ -1066,6 +1066,22 @@ function EP04ProductionInner() {
 
         console.log(`[PERSIST RESTORE] Found ${dbScenes?.length || 0} scene rows in DB`);
         if (dbScenes) {
+          // One-time cleanup: remove orphan pipeline-ID rows with no production data.
+          // These were created by old pipeline-sync code (since removed) and just add noise.
+          const orphanKeys: string[] = [];
+          for (const row of dbScenes) {
+            const cfg = (row.scene_config || {}) as Record<string, any>;
+            const hasAnything = cfg.artifacts || cfg.generatedMusic || cfg.assembledClipUrl;
+            const isPipelineIdOrphan = !hasAnything && PIPELINE_TO_SCRIPT_MAP[row.scene_key] && PIPELINE_TO_SCRIPT_MAP[row.scene_key] !== row.scene_key;
+            if (isPipelineIdOrphan) orphanKeys.push(row.scene_key);
+          }
+          if (orphanKeys.length > 0) {
+            console.log(`[PERSIST CLEANUP] Removing ${orphanKeys.length} orphan pipeline-ID rows: ${orphanKeys.join(', ')}`);
+            db.from('cast_project_scenes').delete().eq('project_id', projectId).in('scene_key', orphanKeys).then(() => {
+              console.log(`[PERSIST CLEANUP] Done — orphan rows removed`);
+            });
+          }
+
           for (const row of dbScenes) {
             const cfg = (row.scene_config || {}) as Record<string, any>;
             const artifacts = cfg.artifacts as Record<string, Record<string, string>> | undefined;
@@ -1083,8 +1099,8 @@ function EP04ProductionInner() {
             const hasAssembly = !!cfg.assembledClipUrl;
 
             if (!hasArtifacts && !hasMusic && !hasSfx && !hasAssembly) {
-              const configKeys = Object.keys(cfg);
-              console.log(`[PERSIST RESTORE] ${row.scene_key}: no production data in scene_config (keys: ${configKeys.join(', ')})`);
+              // Suppress noise: orphan pipeline-ID rows and transition rows with only config data
+              console.debug(`[PERSIST RESTORE] ${row.scene_key}: no production data — skipping`);
               continue;
             }
 
