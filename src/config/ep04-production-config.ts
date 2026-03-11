@@ -352,7 +352,9 @@ export type ScenePipelineStep =
   | { type: 'scene-transition'; style: 'page-turn' | 'scroll-unroll' | 'iris-wipe' | 'storybook-flip' | 'chapter-card' | 'dissolve-morph'; prompt: string; duration: number }
   | { type: 'storybook-frame'; variant: 'opening' | 'closing' | 'chapter-header'; prompt: string; duration: number }
   | { type: 'character-interaction'; characters: string[]; prompt: string; style?: 'group-shot' | 'duo-argument' | 'standup-circle' | 'farewell-wave' }
-  | { type: 'narrator-scroll'; prompt: string; duration: number; dataContent?: string };
+  | { type: 'narrator-scroll'; prompt: string; duration: number; dataContent?: string }
+  // ─── STATIC ASSET — pre-existing image shown as-is (no AI generation) ──
+  | { type: 'static-asset'; assetKey: string; duration: number; description?: string };
 
 // ─── EP04 MUSIC & SFX SCORE ──────────────────────────────────────────────────
 // Background music beds and sound effects per scene. Generated via ElevenLabs.
@@ -450,6 +452,10 @@ export const EP04_MUSIC_SCORE: Record<string, { music: ScenePipelineStep & { typ
 
 export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-0-title': [
+    // Podcast banner — real thumbnail with Sai Dasika, Claude logo, Lovable logo (no AI generation)
+    { type: 'static-asset', assetKey: 'podcast-banner', duration: 4, description: 'GenieAI Podcast banner — host + Claude + Lovable branding. Also used for teasers & social thumbnails.' },
+    // Title page: full cast portrait — PO (Giridhar), Claude (Atlas), Lovable (Nova)
+    { type: 'storybook-frame', variant: 'opening', prompt: 'Ornate storybook title page: three characters posed on an illustrated parchment spread — CENTER a warm human man (the Product Owner) in earth-tone shirt holding a coffee mug, LEFT a wise bear in wire-frame glasses with a glowing Claude AI terracotta emblem (Atlas), RIGHT an energetic fox in a paint-splattered apron with a glowing Lovable pink heart emblem (Nova), a loyal golden retriever sitting at their feet, decorative gold leaf border with "Beyond AI Hype" in elegant calligraphy at the top, tiny squirrel peeking from the corner, warm lamplight on aged parchment, Pixar-quality illustration, 16:9, 8K', duration: 4 },
     // Segment 1: Allaudin emerges (28s)
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A golden magical lamp on a dark surface, blue-purple mist swirling out from the spout, sparkle particles filling the frame, a small friendly blue-skinned genie with a purple turban and pointed goatee materializing from the mist with a warm smile, Pixar 3D animation style like Disney Genie but original, whimsical not muscular, cinematic volumetric lighting, 8K' },
     { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-emerge' },
@@ -900,6 +906,7 @@ export const EP04_STORYBOOK_TRANSITIONS: {
     from: 'scene-0-title', to: 'scene-1-cold-open', style: 'page-turn',
     steps: [
       { type: 'scene-transition', style: 'page-turn', prompt: 'Storybook page curling from right to left, the illustrated scene of Allaudin\'s lamp dissolves as the page turns to reveal a chaotic office scene, golden light spilling from between pages, paper texture visible, Pixar quality', duration: 3 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter I — The Problem" in golden calligraphy, chaotic office with floating error logs and overwhelmed developers sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
       { type: 'sfx', prompt: 'Heavy paper page turning with a satisfying whoosh', duration: 2 },
     ],
   },
@@ -915,6 +922,7 @@ export const EP04_STORYBOOK_TRANSITIONS: {
     from: 'scene-2-meet-team', to: 'scene-3-origin', style: 'scroll-unroll',
     steps: [
       { type: 'scene-transition', style: 'scroll-unroll', prompt: 'An aged parchment scroll unrolls from top to bottom, covering the current scene and revealing an illustrated timeline beneath — from frustration to creation, hand-drawn style with ink blots, Pixar quality lighting on the scroll texture', duration: 3 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter II — Origins" in golden calligraphy, timeline scroll with spark of inspiration and blueprint sketches in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
       { type: 'sfx', prompt: 'Parchment scroll unrolling with paper crinkle and wooden roller sounds', duration: 2 },
     ],
   },
@@ -930,6 +938,7 @@ export const EP04_STORYBOOK_TRANSITIONS: {
     from: 'scene-4-solution', to: 'scene-5-governance', style: 'page-turn',
     steps: [
       { type: 'scene-transition', style: 'page-turn', prompt: 'Storybook page turning slowly, the illustrated sprint dashboard fades as the page lifts, revealing an illustrated territory map with two kingdoms on the next page, warm golden binding visible at the spine', duration: 3 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter III — Governance" in golden calligraphy, territory map with two kingdoms and border markers sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
       { type: 'sfx', prompt: 'Heavy paper page turning with gentle book spine creak', duration: 2 },
     ],
   },
@@ -944,6 +953,7 @@ export const EP04_STORYBOOK_TRANSITIONS: {
     from: 'scene-6-po-actions', to: 'scene-7-velocity', style: 'scroll-unroll',
     steps: [
       { type: 'scene-transition', style: 'scroll-unroll', prompt: 'A parchment scroll unrolls sideways revealing a hand-drawn velocity chart — one smooth line (Atlas) and one chaotic squiggle (Nova), tiny squirrels running along the chart lines, ink-and-watercolor style on aged paper', duration: 3 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter IV — Velocity" in golden calligraphy, speed lines and racing charts with sprinting characters sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
       { type: 'sfx', prompt: 'Parchment scroll unrolling with quill scratching sound effects', duration: 2 },
     ],
   },
@@ -959,6 +969,7 @@ export const EP04_STORYBOOK_TRANSITIONS: {
     from: 'scene-8-numbers', to: 'scene-9-challenges', style: 'page-turn',
     steps: [
       { type: 'scene-transition', style: 'page-turn', prompt: 'The page turns to reveal a darker-toned illustration — storm clouds over the sprint board, the bear and fox looking concerned, rain of error logs falling like confetti, more somber colors but still Pixar storybook quality', duration: 3 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter V — Storms" in golden calligraphy, dark clouds with rain of error messages and lightning bolts sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
       { type: 'sfx', prompt: 'Page turning with subtle ominous undertone, distant thunder rumble', duration: 2 },
     ],
   },
@@ -966,6 +977,7 @@ export const EP04_STORYBOOK_TRANSITIONS: {
     from: 'scene-9-challenges', to: 'scene-10-whats-next', style: 'dissolve-morph',
     steps: [
       { type: 'scene-transition', style: 'dissolve-morph', prompt: 'The stormy illustration dissolves and morphs — raindrops transforming into stars, dark clouds becoming a bright galaxy, the sprint board transforming into a constellation map of connected services, magical metamorphosis, Pixar quality', duration: 3 },
+      { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter VI — Stars" in golden calligraphy, galaxy with constellation map and hopeful dawn sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
       { type: 'sfx', prompt: 'Magical transformation shimmer with ascending chimes', duration: 2 },
     ],
   },

@@ -388,6 +388,11 @@ const SCENE_BACKGROUNDS: Record<string, string> = {
   'scene-11-close': scene11Bg,
 };
 
+// Static branded assets — real images (not AI-generated), keyed by assetKey from config
+const STATIC_ASSETS: Record<string, string> = {
+  'podcast-banner': ep02Thumbnail,
+};
+
 const SCENE_TITLES: Record<string, string> = {
   'scene-0-title': 'Scene 0 — Title & Welcome',
   'scene-1-problem': 'Scene 1 — The Problem',
@@ -2368,6 +2373,22 @@ function EP04ProductionInner() {
       return;
     }
 
+    // ── static-asset: pre-existing branded image (no AI generation, just mirror to storage) ──
+    if (stepType === 'static-asset') {
+      const assetKey = (step as { assetKey?: string }).assetKey || '';
+      const assetUrl = STATIC_ASSETS[assetKey];
+      if (!assetUrl) { console.warn(`[EP04 Visual] ${stepLabel}: unknown static asset "${assetKey}"`); return; }
+      let finalUrl = assetUrl;
+      if (projectId && !isSupabaseStorageUrl(assetUrl)) {
+        try {
+          finalUrl = await ensureStorageUrl(projectId, `static-asset-${assetKey}-${sceneKey}`, assetUrl);
+        } catch { console.warn(`[EP04 Visual] ${stepLabel}: static-asset mirror failed, using local path`); }
+      }
+      results[`static-asset-${assetKey}-${sceneKey}`] = finalUrl;
+      console.log(`[EP04 Visual] ${stepLabel}: using static asset "${assetKey}" as scene image`);
+      return;
+    }
+
     // ── storybook-frame: static illustration (image generation for chapter headers, powered-by pages) ──
     if (stepType === 'storybook-frame') {
       let jobId: string | null = null;
@@ -2752,6 +2773,10 @@ function EP04ProductionInner() {
         if (sType === 'alibaba-video' || sType === 'video' || sType === 'scene-transition') {
           return Object.entries(existingVideoUrls).some(([k, url]) => (k.includes('video') || k.includes('scene-transition')) && k.includes(sKey) && isPermanent(url));
         }
+        if (sType === 'static-asset') {
+          const aKey = (step as { assetKey?: string }).assetKey || '';
+          return Object.entries(existingImageUrls).some(([k, url]) => k.includes('static-asset') && k.includes(aKey) && isPermanent(url));
+        }
         if (sType === 'kinetic-text' || sType === 'motion-graphics' || sType === 'screen-capture' || sType === 'storybook-frame') {
           return Object.entries(existingImageUrls).some(([k, url]) => k.includes(sType.split('-')[0]) && k.includes(sKey) && isPermanent(url));
         }
@@ -2869,7 +2894,7 @@ function EP04ProductionInner() {
       if (projectId) {
         const saveOk = await updateSceneArtifacts(projectId, sceneKey, {
           videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition')).filter(httpOnly)),
-          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame')).filter(httpOnly)),
+          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset')).filter(httpOnly)),
           avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')).filter(httpOnly)),
           lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_')).filter(httpOnly)),
         });
@@ -2885,7 +2910,7 @@ function EP04ProductionInner() {
 
       // State update — MUST match DB save buckets exactly (no double-counting)
       const savedVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition')));
-      const savedImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame')));
+      const savedImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset')));
       const savedAvatarUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')));
       const savedLipsyncUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync')));
       const totalSaved = Object.keys(savedVideoUrls).length + Object.keys(savedImageUrls).length + Object.keys(savedAvatarUrls).length + Object.keys(savedLipsyncUrls).length;
