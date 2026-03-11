@@ -386,12 +386,11 @@ function makeKineticImageScene(kt: CastKineticText, kbIdx: number): J2VScene {
   const elements: J2VElement[] = [];
 
   if (isHttpUrl(kt.imageUrl)) {
-    // Full-frame kinetic image background with slow zoom
+    // Full-frame kinetic image background with cinematic Ken Burns
     elements.push({
       type: 'image', src: kt.imageUrl,
       start: 0, duration: dur,
-      zoom: 1, pan: 'top', 'pan-distance': 0.02,
-      resize: 'cover', width: 1920, height: 1080,
+      ...kb, resize: 'cover', width: 1920, height: 1080,
       'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
     });
   }
@@ -437,9 +436,9 @@ function makeTransitionScene(t: CastTransition): J2VScene {
       start: 0, duration: dur,
       ...(mediaType === 'video'
         ? { volume: 0 }
-        : { zoom: 1, pan: 'top', 'pan-distance': 0.02 }),
+        : { zoom: 4, pan: 'right', 'pan-distance': 0.10 }),
       resize: 'cover', width: 1920, height: 1080,
-      'fade-in': 0.3, 'fade-out': 0.3, 'z-index': 0,
+      'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
     });
   }
 
@@ -448,6 +447,7 @@ function makeTransitionScene(t: CastTransition): J2VScene {
     elements.push({
       type: 'image', src: t.chapterHeaderImageUrl,
       start: dur * 0.4, duration: dur * 0.6,
+      zoom: 3, pan: 'left', 'pan-distance': 0.08,
       resize: 'cover', width: 1920, height: 1080,
       'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 5,
     });
