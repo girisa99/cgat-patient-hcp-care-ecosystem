@@ -1004,13 +1004,15 @@ const MAX_SCENE_DURATION = 35; // seconds — safe ceiling for JSON2Video render
  * Strategy:
  * - Each sub-scene gets ~MAX_SCENE_DURATION seconds
  * - Visual elements (images) get Ken Burns cycling per sub-scene
- * - Audio elements (TTS, music) get split: each sub-scene plays the
- *   correct portion using start offset within the audio file
- * - Lipsync videos only appear in the sub-scene where they fit
+ * - TTS audio uses JSON2Video's `seek` parameter to fast-forward to the
+ *   correct offset in each sub-scene — narration plays seamlessly across splits
+ * - Lipsync/B-roll videos also use `seek` for correct offset
+ * - Music loops in every sub-scene (seamless)
  * - Transitions between sub-scenes use 'dissolve' for seamless feel
  *
- * This is the critical fix for the JSON2Video timeout on long TTS lines
- * (e.g., 81s TTS producing an 82.5s scene).
+ * The `seek` property (confirmed in JSON2Video API) specifies the time in
+ * seconds at which the audio/video file should fast-forward to. This allows
+ * splitting ANY scene (including TTS narration) without replay or quality loss.
  */
 function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
   const result: J2VScene[] = [];
@@ -1026,32 +1028,20 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
 
     const elements: J2VElement[] = scene.elements || [];
 
-    // CRITICAL: Never split scenes that have TTS audio.
-    // JSON2Video cannot seek into audio files — splitting a TTS scene
-    // causes the voiceover to replay from the beginning in each sub-scene,
-    // producing overlapping/repeating narration.
-    // TTS scenes are the pacing master. If a TTS scene exceeds MAX_SCENE_DURATION,
-    // accept the timeout risk rather than producing broken audio.
-    const hasTtsAudio = elements.some(el => el.type === 'audio' && el.volume === 1.0);
-    if (hasTtsAudio) {
-      console.log(`[CastEngine] Scene ${sceneDur}s has TTS audio — NOT splitting (audio seek not supported): "${scene.comment}"`);
-      result.push(scene);
-      continue;
-    }
-
-    // Only split visual-only scenes (no TTS) — music loops seamlessly, images cycle
     const splitCount = Math.ceil(sceneDur / MAX_SCENE_DURATION);
     const subDur = sceneDur / splitCount;
 
-    console.log(`[CastEngine] Splitting ${sceneDur}s visual-only scene into ${splitCount} × ${subDur.toFixed(1)}s sub-scenes: "${scene.comment}"`);
-
     // Classify elements by type for smart redistribution
+    const ttsAudios = elements.filter(el => el.type === 'audio' && el.volume === 1.0 && el.loop == null);
     const musicAudios = elements.filter(el => el.type === 'audio' && el.loop != null);
-    const sfxAudios = elements.filter(el => el.type === 'audio' && el.loop == null);
+    const sfxAudios = elements.filter(el => el.type === 'audio' && el.loop == null && el.volume !== 1.0);
     const videos = elements.filter(el => el.type === 'video');
     const images = elements.filter(el => el.type === 'image');
     const texts = elements.filter(el => el.type === 'text');
     const components = elements.filter(el => el.type === 'component');
+
+    const hasTts = ttsAudios.length > 0;
+    console.log(`[CastEngine] Splitting ${sceneDur}s scene into ${splitCount} × ${subDur.toFixed(1)}s sub-scenes (TTS: ${hasTts ? 'yes, using seek offsets' : 'no'}): "${scene.comment}"`);
 
     // Collect all image URLs for cycling across sub-scenes
     const imageUrls = images.map(el => el.src).filter((s: string) => isHttpUrl(s));
@@ -1075,15 +1065,46 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
       }
 
       // ── Videos: only in the sub-scene where they overlap ──
+      // For lipsync videos, use seek to jump to the correct offset
       for (const v of videos) {
         const vStart = v.start ?? 0;
-        const vEnd = vStart + (v.duration ?? 0);
+        const vDur = v.duration ?? 0;
+        const vEnd = vStart + vDur;
         if (vEnd > subStart && vStart < subEnd) {
           const clippedStart = Math.max(0, vStart - subStart);
           const clippedDur = Math.min(vEnd, subEnd) - Math.max(vStart, subStart);
           if (clippedDur > 1) {
-            subElements.push({ ...v, start: clippedStart, duration: clippedDur });
+            // Calculate seek offset: how far into the video source to jump
+            const videoSeekOffset = Math.max(0, subStart - vStart);
+            subElements.push({
+              ...v,
+              start: clippedStart,
+              duration: clippedDur,
+              ...(videoSeekOffset > 0 ? { seek: videoSeekOffset } : {}),
+            });
           }
+        }
+      }
+
+      // ── TTS audio: use seek to play correct portion in each sub-scene ──
+      for (const tts of ttsAudios) {
+        const ttsStart = tts.start ?? 0;
+        const ttsDur = tts.duration ?? sceneDur;
+        const ttsEnd = ttsStart + ttsDur;
+        if (ttsEnd > subStart && ttsStart < subEnd) {
+          // Calculate seek offset into the audio file
+          const seekOffset = Math.max(0, subStart - ttsStart);
+          const clippedStart = Math.max(0, ttsStart - subStart);
+          const clippedDur = Math.min(ttsEnd, subEnd) - Math.max(ttsStart, subStart);
+          subElements.push({
+            ...tts,
+            start: clippedStart,
+            duration: clippedDur,
+            seek: seekOffset,
+            // No fade on internal splits — seamless narration continuity
+            'fade-in': si === 0 ? (tts['fade-in'] || 0) : 0,
+            'fade-out': si === splitCount - 1 ? (tts['fade-out'] || 0) : 0,
+          });
         }
       }
 
