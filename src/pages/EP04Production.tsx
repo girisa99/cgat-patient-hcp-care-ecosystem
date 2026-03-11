@@ -3170,6 +3170,7 @@ function EP04ProductionInner() {
             prompt: musicPrompt,
             duration: musicDuration,
             instrumental: true,
+            tier: 'advanced',  // Route to fal.ai Stable Audio when FAL_API_KEY is set
             projectId: projectId || undefined,
             sceneKey: sceneKey,
           },
@@ -3207,8 +3208,8 @@ function EP04ProductionInner() {
       // Generate SFX clips (30s timeout each)
       for (const sfx of sfxList) {
         try {
-          const sfxPromise = supabase.functions.invoke('ai-universal-processor', {
-            body: { action: 'generate_sfx', prompt: sfx.prompt, duration: sfx.duration || 3 },
+          const sfxPromise = supabase.functions.invoke('multi-provider-sfx', {
+            body: { prompt: sfx.prompt, duration: sfx.duration || 3, tier: 'advanced' },
           });
           const sfxTimeout = new Promise<{ data: null }>((resolve) =>
             setTimeout(() => resolve({ data: null }), 30000)
