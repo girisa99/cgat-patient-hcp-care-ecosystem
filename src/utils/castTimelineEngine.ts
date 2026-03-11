@@ -523,55 +523,62 @@ function makeTtsLineScene(
 ): J2VScene {
   const elements: J2VElement[] = [];
 
-  // ── Visual layer (z-index 0-1) ──────────────────────────────────────────
+  // ── Visual layer (z-index 0-2) ──────────────────────────────────────────
   if (lipsync && isHttpUrl(lipsync.url)) {
-    // Visual pacing with lipsync
-    const lipsyncStart = sceneDur <= 10 ? 0 : Math.min(4, sceneDur - lipsync.duration);
-    const lipsyncDur = Math.min(lipsync.duration, sceneDur - lipsyncStart);
+    // === PiP (Picture-in-Picture) Layout ===
+    // B-roll with characters (Nova, Atlas, coffee mug, dog) fills the entire
+    // background. Lipsync talking head overlays as a podcast-style corner window.
+    // This keeps the visual world alive while the host speaks.
+    const VISUAL_BEAT = 12;
+    const lipsyncDur = Math.min(lipsync.duration, sceneDur);
 
-    // Lead-in B-roll (for scenes > 10s with available visual)
-    if (lipsyncStart > 0) {
-      const leadUrl = videoVisual || imageVisual;
-      if (isHttpUrl(leadUrl)) {
-        const leadType = videoVisual ? 'video' : 'image';
-        const kb = getKenBurns(kbIdx);
+    // ── Layer 0: Full-frame B-roll background (cycles for entire scene) ──
+    // Gather all available B-roll images (cast portraits, character shots, etc.)
+    const bgImages = (allImages && allImages.length > 0)
+      ? allImages.filter(u => isHttpUrl(u))
+      : (isHttpUrl(imageVisual) ? [imageVisual] : []);
+
+    if (bgImages.length > 0) {
+      const beatCount = Math.max(1, Math.ceil(sceneDur / VISUAL_BEAT));
+      const beatDur = sceneDur / beatCount;
+      for (let bi = 0; bi < beatCount; bi++) {
+        const img = bgImages[(kbIdx + bi) % bgImages.length];
+        const kb = getKenBurns(kbIdx + bi);
         elements.push({
-          type: leadType, src: leadUrl,
-          start: 0, duration: lipsyncStart + 0.5, // 0.5s overlap for crossfade
-          ...(leadType === 'video' ? { volume: 0 } : kb),
-          resize: 'cover', width: 1920, height: 1080,
-          'fade-in': 0.3, 'fade-out': 0.5, 'z-index': 0,
+          type: 'image', src: img,
+          start: bi * beatDur, duration: beatDur + (bi < beatCount - 1 ? 0.5 : 0),
+          ...kb, resize: 'cover', width: 1920, height: 1080,
+          'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
         });
       }
     }
 
-    // Lipsync talking head — FULL SCREEN, MUTED (TTS audio is separate element)
-    // Use 'cover' for full-screen display. The lipsync video IS the visual for
-    // this time window — it must fill the entire frame, not be letterboxed.
-    // z-index 2 ensures it renders ABOVE any B-roll lead-in/tail images.
+    // ── Layer 1: Video B-roll lead-in (establishing shot, first 4-10s) ──
+    if (isHttpUrl(videoVisual)) {
+      const videoDur = Math.min(10, sceneDur);
+      elements.push({
+        type: 'video', src: videoVisual,
+        start: 0, duration: videoDur,
+        volume: 0, resize: 'cover', width: 1920, height: 1080,
+        'fade-in': 0.5, 'fade-out': 0.8, 'z-index': 1,
+      });
+    }
+
+    // ── Layer 2: Lipsync PiP — podcast-style corner window ──
+    // 640×360 (1/3 frame) bottom-right — large enough for expressions,
+    // small enough to keep the character world visible behind.
+    // Enters with a brief delay after video lead-in for cinematic pacing.
+    const pipDelay = isHttpUrl(videoVisual) ? Math.min(3, sceneDur * 0.15) : 0.5;
+    const pipStart = Math.min(pipDelay, sceneDur - lipsyncDur);
     elements.push({
       type: 'video', src: lipsync.url,
-      start: lipsyncStart, duration: lipsyncDur,
-      volume: 0, // CRITICAL: lipsync has TTS baked in, TTS is separate audio element
-      'fade-in': 0.3, 'fade-out': 1.0, // 1s fade hides WAN2.2 loop artifacts
-      'z-index': 2, // above B-roll (0) and lead-in images (1)
-      resize: 'cover', width: 1920, height: 1080,
+      start: pipStart, duration: Math.min(lipsyncDur, sceneDur - pipStart),
+      volume: 0, // CRITICAL: TTS audio is a separate element
+      'fade-in': 0.5, 'fade-out': 0.8,
+      'z-index': 5, // above all B-roll layers
+      resize: 'cover', width: 640, height: 360,
+      position: 'bottom-right',
     });
-
-    // Tail B-roll (if lipsync ends before scene)
-    const lipsyncEnd = lipsyncStart + lipsyncDur;
-    if (lipsyncEnd < sceneDur - 1) {
-      const tailUrl = tailImageVisual || imageVisual;
-      if (isHttpUrl(tailUrl)) {
-        const kb2 = getKenBurns(kbIdx + 1);
-        elements.push({
-          type: 'image', src: tailUrl,
-          start: lipsyncEnd - 0.5, duration: sceneDur - lipsyncEnd + 0.5,
-          ...kb2, resize: 'cover', width: 1920, height: 1080,
-          'fade-in': 0.5, 'fade-out': 0.3, 'z-index': 0,
-        });
-      }
-    }
   } else {
     // No lipsync — full B-roll with visual cycling for long scenes
     const VISUAL_BEAT = 12; // seconds per visual beat — cinematic pacing (was 15)
