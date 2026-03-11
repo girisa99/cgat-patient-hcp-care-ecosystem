@@ -41,7 +41,7 @@ const GEMINI_REGIONS = [
   'NG', 'KE', 'GH', 'ET', 'TZ', 'UG', 'ZW', 'ZM', 'RW', 'SN', 'CI' // Africa
 ];
 
-type SFXProvider = 'elevenlabs' | 'alibaba' | 'azure' | 'google' | 'modelslab' | 'fal-beatoven';
+type SFXProvider = 'elevenlabs' | 'alibaba' | 'azure' | 'google' | 'modelslab' | 'fal-beatoven' | 'mirelo';
 
 interface SFXRequest {
   prompt: string;
@@ -50,6 +50,10 @@ interface SFXRequest {
   region?: string;
   provider?: SFXProvider;
   tier?: 'standard' | 'advanced' | 'premium';
+  videoUrl?: string;       // When provided, uses Mirelo video-to-audio sync
+  numSamples?: number;     // Mirelo: number of audio samples to generate (2-8)
+  projectId?: string;      // For uploading result to Supabase Storage
+  sceneKey?: string;       // For Storage path naming
 }
 
 interface SFXRouting {
@@ -138,6 +142,87 @@ function selectSFXProvider(region: string, tier: string = 'standard'): SFXRoutin
 // ═══════════════════════════════════════════════════════════════════════════════
 // PROVIDER IMPLEMENTATIONS
 // ═══════════════════════════════════════════════════════════════════════════════
+
+async function generateMireloVideoSync(videoUrl: string, prompt: string, duration: number, numSamples: number = 2): Promise<{ audioUrls: string[]; provider: string }> {
+  const FAL_KEY = Deno.env.get('FAL_API_KEY') || Deno.env.get('FAL_AI_KEY');
+  if (!FAL_KEY) throw new Error('FAL_API_KEY not configured for Mirelo');
+
+  console.log(`🎬 Mirelo SFX v1.5: video-to-audio sync, duration=${duration}s, samples=${numSamples}`);
+  console.log(`   video: ${videoUrl.substring(0, 80)}`);
+  if (prompt) console.log(`   prompt: ${prompt.substring(0, 80)}`);
+
+  // Submit to fal.ai queue
+  const submitResp = await fetch('https://queue.fal.run/mirelo-ai/sfx-v1.5/video-to-audio', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Key ${FAL_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      video_url: videoUrl,
+      text_prompt: prompt || '',
+      duration: Math.min(Math.max(duration, 1), 10),
+      num_samples: Math.min(Math.max(numSamples, 2), 8),
+    }),
+  });
+
+  if (!submitResp.ok) {
+    const errText = await submitResp.text();
+    throw new Error(`Mirelo submit failed (${submitResp.status}): ${errText.substring(0, 200)}`);
+  }
+
+  const submitData = await submitResp.json();
+
+  // Check immediate result
+  if (submitData.audio && Array.isArray(submitData.audio)) {
+    console.log(`✅ Mirelo: immediate result, ${submitData.audio.length} samples`);
+    return {
+      audioUrls: submitData.audio.map((a: { url: string }) => a.url),
+      provider: 'mirelo',
+    };
+  }
+
+  // Queue-based polling
+  const requestId = submitData.request_id;
+  if (!requestId) throw new Error('Mirelo: no request_id in response');
+
+  console.log(`📍 Mirelo queued: ${requestId}, polling...`);
+  for (let attempt = 1; attempt <= 60; attempt++) {
+    await new Promise(r => setTimeout(r, 3000));
+    try {
+      const statusResp = await fetch(`https://queue.fal.run/mirelo-ai/sfx-v1.5/video-to-audio/requests/${requestId}/status`, {
+        headers: { 'Authorization': `Key ${FAL_KEY}` },
+      });
+      if (!statusResp.ok) continue;
+      const statusData = await statusResp.json();
+      console.log(`⏳ Mirelo (${attempt}/60): ${statusData.status}`);
+
+      if (statusData.status === 'COMPLETED') {
+        const resultResp = await fetch(`https://queue.fal.run/mirelo-ai/sfx-v1.5/video-to-audio/requests/${requestId}`, {
+          headers: { 'Authorization': `Key ${FAL_KEY}` },
+        });
+        if (resultResp.ok) {
+          const resultData = await resultResp.json();
+          if (resultData.audio && Array.isArray(resultData.audio)) {
+            console.log(`✅ Mirelo completed: ${resultData.audio.length} audio samples`);
+            return {
+              audioUrls: resultData.audio.map((a: { url: string }) => a.url),
+              provider: 'mirelo',
+            };
+          }
+        }
+        break;
+      }
+      if (statusData.status === 'FAILED') {
+        throw new Error(`Mirelo FAILED: ${statusData.error || 'unknown'}`);
+      }
+    } catch (pollErr) {
+      if (attempt >= 60) throw pollErr;
+      console.warn(`⚠️ Mirelo poll error (${attempt}):`, pollErr);
+    }
+  }
+  throw new Error('Mirelo polling exhausted after 3 minutes');
+}
 
 async function generateFalBeatevenSFX(prompt: string, duration: number): Promise<ArrayBuffer> {
   const FAL_KEY = Deno.env.get('FAL_API_KEY') || Deno.env.get('FAL_AI_KEY');
@@ -376,9 +461,47 @@ serve(async (req) => {
   try {
     const request: SFXRequest = await req.json();
 
+    // ── Mirelo Video-to-Audio Sync (special path) ──
+    // When videoUrl is provided, use Mirelo to generate synced SFX from the video
+    if (request.videoUrl) {
+      console.log(`🎬 Mirelo video-sync mode: ${request.videoUrl.substring(0, 80)}`);
+      try {
+        const mireloResult = await generateMireloVideoSync(
+          request.videoUrl,
+          request.prompt || '',
+          Math.min(request.duration || 10, 10),
+          request.numSamples || 2,
+        );
+        return new Response(
+          JSON.stringify({
+            success: true,
+            audioUrls: mireloResult.audioUrls,
+            audioUrl: mireloResult.audioUrls[0] || undefined,
+            duration: request.duration || 10,
+            provider: 'mirelo',
+            zone: 'fal-mirelo',
+            cost: 0.01,
+            quality: 'premium',
+            mode: 'video-sync',
+            metadata: {
+              promptUsed: request.prompt || '(video-driven)',
+              videoUrl: request.videoUrl,
+              numSamples: request.numSamples || 2,
+              format: 'wav',
+            }
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (mireloErr) {
+        console.warn('⚠️ Mirelo video-sync failed, falling back to text-based SFX:', mireloErr);
+        // Fall through to text-based SFX generation
+      }
+    }
+
+    // ── Text-based SFX generation ──
     if (!request.prompt) {
       return new Response(
-        JSON.stringify({ error: 'Prompt is required' }),
+        JSON.stringify({ error: 'Prompt is required (or provide videoUrl for Mirelo sync)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -390,7 +513,7 @@ serve(async (req) => {
 
     // Get routing decision
     const routing = selectSFXProvider(region, tier);
-    
+
     // Override if provider explicitly specified
     const provider = request.provider || routing.provider;
 
