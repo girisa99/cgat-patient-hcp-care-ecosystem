@@ -439,6 +439,7 @@ function makeTtsLineScene(
   kineticOverlay: CastKineticText | undefined,
   kbIdx: number,
   transitionStyle: string,
+  allImages?: string[],  // full image pool for cycling in long scenes
 ): J2VScene {
   const elements: J2VElement[] = [];
 
@@ -489,7 +490,8 @@ function makeTtsLineScene(
       }
     }
   } else {
-    // No lipsync — full B-roll
+    // No lipsync — full B-roll with visual cycling for long scenes
+    const VISUAL_BEAT = 15; // seconds per visual beat — keeps viewer engaged
     if (isHttpUrl(videoVisual)) {
       const videoDur = Math.min(10, sceneDur);
       elements.push({
@@ -498,24 +500,43 @@ function makeTtsLineScene(
         volume: 0, resize: 'cover', width: 1920, height: 1080,
         'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
       });
-      // Fill remaining with image
-      if (sceneDur > 10 && isHttpUrl(imageVisual)) {
-        const kb = getKenBurns(kbIdx);
-        elements.push({
-          type: 'image', src: imageVisual,
-          start: videoDur - 0.5, duration: sceneDur - videoDur + 0.5,
-          ...kb, resize: 'cover', width: 1920, height: 1080,
-          'fade-in': 0.5, 'fade-out': 0.3, 'z-index': 0,
-        });
+      // Fill remaining time with cycling images (not one static image)
+      const remainStart = videoDur - 0.5;
+      const remainDur = sceneDur - videoDur + 0.5;
+      const cycleImages = (allImages && allImages.length > 1) ? allImages.filter(u => isHttpUrl(u)) : (isHttpUrl(imageVisual) ? [imageVisual] : []);
+      if (cycleImages.length > 0 && remainDur > 0) {
+        const beatCount = Math.max(1, Math.ceil(remainDur / VISUAL_BEAT));
+        const beatDur = remainDur / beatCount;
+        for (let bi = 0; bi < beatCount; bi++) {
+          const img = cycleImages[(kbIdx + bi) % cycleImages.length];
+          const kb = getKenBurns(kbIdx + bi);
+          elements.push({
+            type: 'image', src: img,
+            start: remainStart + bi * beatDur, duration: beatDur + 0.5, // 0.5s overlap for crossfade
+            ...kb, resize: 'cover', width: 1920, height: 1080,
+            'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
+          });
+        }
       }
-    } else if (isHttpUrl(imageVisual)) {
-      const kb = getKenBurns(kbIdx);
-      elements.push({
-        type: 'image', src: imageVisual,
-        start: 0, duration: sceneDur,
-        ...kb, resize: 'cover', width: 1920, height: 1080,
-        'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
-      });
+    } else {
+      // Image-only — cycle through multiple images for long scenes
+      const cycleImages = (allImages && allImages.length > 1 && sceneDur > VISUAL_BEAT)
+        ? allImages.filter(u => isHttpUrl(u))
+        : (isHttpUrl(imageVisual) ? [imageVisual] : []);
+      if (cycleImages.length > 0) {
+        const beatCount = Math.max(1, Math.ceil(sceneDur / VISUAL_BEAT));
+        const beatDur = sceneDur / beatCount;
+        for (let bi = 0; bi < beatCount; bi++) {
+          const img = cycleImages[(kbIdx + bi) % cycleImages.length];
+          const kb = getKenBurns(kbIdx + bi);
+          elements.push({
+            type: 'image', src: img,
+            start: bi * beatDur, duration: beatDur + (bi < beatCount - 1 ? 0.5 : 0), // overlap for crossfade
+            ...kb, resize: 'cover', width: 1920, height: 1080,
+            'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
+          });
+        }
+      }
     }
     // else: no visuals → dark background only (handled by scene background-color)
   }
@@ -767,6 +788,7 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo): J2
       kineticOverlay,
       kbIdx++,
       transStyle,
+      images, // pass full image pool for cycling in long scenes
     ));
   }
 

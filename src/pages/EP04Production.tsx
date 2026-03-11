@@ -3432,7 +3432,14 @@ function EP04ProductionInner() {
   const MAX_SUB_DURATION = 120; // 2 minutes — smaller parts render faster & more reliably
 
   const computePerSceneParts = useCallback((): AssemblyPart[] => {
-    const sceneKeys = Array.from(scenes.keys());
+    // Sort scene keys by scene number (e.g., scene-0, scene-1, ..., scene-11)
+    // The scenes Map insertion order may not match narrative order
+    // (e.g., script entries for scene-7 can appear before scene-5 entries)
+    const sceneKeys = Array.from(scenes.keys()).sort((a, b) => {
+      const numA = parseInt(a.match(/scene-(\d+)/)?.[1] || '99', 10);
+      const numB = parseInt(b.match(/scene-(\d+)/)?.[1] || '99', 10);
+      return numA - numB;
+    });
     const parts: AssemblyPart[] = [];
     let partNum = 1;
 
@@ -3461,8 +3468,13 @@ function EP04ProductionInner() {
       const needsSplit = sceneTtsCount > MAX_SUB_TTS || sceneDuration > MAX_SUB_DURATION;
 
       if (needsSplit && sceneLines.length > 1) {
-        // Split scene into sub-parts of ~MAX_SUB_TTS lines each
-        const subPartSize = MAX_SUB_TTS;
+        // Split scene into sub-parts. For duration-triggered splits with few TTS lines,
+        // use a smaller subPartSize so each part renders under the time limit.
+        // E.g., scene-0-title has 3 TTS but ~140s → needs 2 parts, not 1.
+        const durationParts = Math.ceil(sceneDuration / MAX_SUB_DURATION);
+        const subPartSize = sceneDuration > MAX_SUB_DURATION
+          ? Math.max(1, Math.floor(sceneLines.length / durationParts))
+          : MAX_SUB_TTS;
         for (let i = 0; i < sceneLines.length; i += subPartSize) {
           const subLines = sceneLines.slice(i, i + subPartSize);
           let subDuration = 0;
@@ -3584,7 +3596,7 @@ function EP04ProductionInner() {
       return;
     }
     console.log(`[EP04 Poll] 🟢 Polling STARTED for assemblyJobId=${assemblyJobId}, taskId fallback=${assemblyTaskIdRef.current}`);
-    const MAX_POLLS = 120; // 120 × 10s = 20 minutes max
+    const MAX_POLLS = 60; // 60 × 10s = 10 minutes max
     const MAX_ERRORS = 5;  // 5 consecutive errors = stop
 
     // Polling function — called immediately on first run, then every 10s
@@ -3614,9 +3626,11 @@ function EP04ProductionInner() {
         const jobStatus = data?.job?.status;
         const jobProgress = data?.job?.progressPercent || 0;
 
-        if (!fnError && jobStatus && jobStatus !== 'completed' && jobStatus !== 'failed' && jobProgress === 0) {
+        if (fnError || (!jobStatus) || (jobStatus !== 'completed' && jobStatus !== 'failed' && jobProgress === 0)) {
+          // Stuck: edge fn error, no job status, or processing at 0%
           pollNoProgressCountRef.current++;
-        } else {
+        } else if (jobProgress > 0 || jobStatus === 'completed' || jobStatus === 'failed') {
+          // Real progress or terminal state — reset
           pollNoProgressCountRef.current = 0;
         }
 
@@ -3698,7 +3712,7 @@ function EP04ProductionInner() {
             }
             toast.success('Cinematic movie assembled successfully!');
           }
-        } else if (finalStatus === 'failed' || finalStatus === 'error') {
+        } else if (finalStatus === 'failed' || finalStatus === 'error' || finalStatus === 'cancelled') {
           const errMsg = finalError || 'Unknown error';
           setAssemblyProgress(null);
           setAssemblyJobId(null);
@@ -3755,89 +3769,125 @@ function EP04ProductionInner() {
 
     const timer = setInterval(async () => {
       perScenePollCountRef.current++;
-      if (perScenePollCountRef.current > 120) {
+
+      // Global timeout: 40 polls × 15s = 10 minutes
+      if (perScenePollCountRef.current > 40) {
         setPerScenePolling(false);
         setAssemblyProgress(null);
-        // Mark all still-rendering parts as failed (timeout)
         setAssemblyParts(prev => prev.map(p =>
-          p.status === 'rendering' ? { ...p, status: 'failed', errorMessage: 'Polling timed out after 20 minutes' } : p
+          p.status === 'rendering' ? { ...p, status: 'failed', errorMessage: 'Polling timed out after 10 minutes' } : p
         ));
-        toast.error('Per-scene polling timed out after 20 minutes');
+        toast.error('Per-scene polling timed out after 10 minutes');
         return;
       }
 
       for (const part of renderingParts) {
         try {
-          // Primary: poll via castJobId (DB → provider_job_id → JSON2Video)
           let resolvedStatus: string | undefined;
           let resolvedVideoUrl: string | undefined;
           let resolvedError: string | undefined;
 
-          if (part.jobId) {
-            const { data, error: fnError } = await supabase.functions.invoke('genie-cast-status', {
-              body: { castJobId: part.jobId },
-            });
-            console.log(`[EP04 PerScene Poll #${perScenePollCountRef.current}] part=${part.partNumber}, castJobId=${part.jobId}, response:`, JSON.stringify(data)?.substring(0, 200));
-            if (!fnError && data?.job) {
-              const jobStatus = data.job.status;
-              const jobProgress = data.job.progressPercent || 0;
+          // Always increment stuck counter — reset ONLY on real progress
+          const prevStuck = perSceneStuckCountsRef.current[part.partNumber] || 0;
+          let newStuck = prevStuck + 1; // assume stuck, reset below if progress
 
-              if (jobStatus === 'completed' || jobStatus === 'done' || jobStatus === 'finished') {
-                resolvedStatus = 'completed';
-                resolvedVideoUrl = data.job.outputUrl;
-              } else if (jobStatus === 'failed' || jobStatus === 'error') {
+          // Primary: poll via castJobId (DB → provider_job_id → JSON2Video)
+          if (part.jobId) {
+            try {
+              const { data, error: fnError } = await supabase.functions.invoke('genie-cast-status', {
+                body: { castJobId: part.jobId },
+              });
+              console.log(`[EP04 PerScene Poll #${perScenePollCountRef.current}] part=${part.partNumber}, castJobId=${part.jobId}, response:`, JSON.stringify(data)?.substring(0, 200));
+
+              if (fnError) {
+                console.warn(`[EP04 PerScene] Edge fn error for part ${part.partNumber}:`, fnError);
+                // fnError = stuck poll (counter keeps incrementing)
+              } else if (data?.success === false && data?.error) {
+                // Edge function returned { success: false, error: '...' }
                 resolvedStatus = 'failed';
-                resolvedError = data.job.errorMessage || 'Unknown error';
-              } else if (jobProgress === 0) {
-                // Track stuck polls — provider_job_id update may have failed
-                const stuckCount = (perSceneStuckCountsRef.current[part.partNumber] || 0) + 1;
-                perSceneStuckCountsRef.current[part.partNumber] = stuckCount;
-                console.log(`[EP04 PerScene] Part ${part.partNumber} stuck at 0% (${stuckCount} polls)`);
-              } else {
-                // Has progress — reset stuck counter
-                perSceneStuckCountsRef.current[part.partNumber] = 0;
+                resolvedError = data.error;
+              } else if (data?.job) {
+                const jobStatus = data.job.status;
+                const jobProgress = data.job.progressPercent || 0;
+
+                if (jobStatus === 'completed' || jobStatus === 'done' || jobStatus === 'finished') {
+                  resolvedStatus = 'completed';
+                  resolvedVideoUrl = data.job.outputUrl;
+                } else if (jobStatus === 'failed' || jobStatus === 'error' || jobStatus === 'cancelled') {
+                  resolvedStatus = 'failed';
+                  resolvedError = data.job.errorMessage || 'Render failed';
+                } else if (jobProgress > 0) {
+                  newStuck = 0; // real progress — reset stuck counter
+                }
+                // else: jobProgress === 0 → stuck counter stays incremented
               }
+            } catch (castPollErr) {
+              console.warn(`[EP04 PerScene] castJobId poll threw for part ${part.partNumber}:`, castPollErr);
+              // stuck counter increments (network error = stuck)
             }
           }
 
-          // Fallback: if castJobId stuck for 3+ polls OR no castJobId, poll via taskId (JSON2Video projectId)
-          const stuckCount = perSceneStuckCountsRef.current[part.partNumber] || 0;
+          // Fallback: if stuck for 3+ polls (covers: no provider_job_id, edge fn errors, zero progress)
+          const stuckCount = resolvedStatus ? 0 : newStuck;
           if (!resolvedStatus && part.taskId && (stuckCount >= 3 || !part.jobId)) {
             console.log(`[EP04 PerScene] Part ${part.partNumber}: fallback to taskId=${part.taskId} (stuck=${stuckCount})`);
-            const { data: fbData, error: fbError } = await supabase.functions.invoke('genie-cast-status', {
-              body: { projectId: part.taskId },
-            });
-            console.log(`[EP04 PerScene Fallback] part=${part.partNumber}, taskId=${part.taskId}, response:`, JSON.stringify(fbData)?.substring(0, 200));
-            if (!fbError && fbData) {
-              if (fbData.status === 'completed' || fbData.status === 'done' || fbData.status === 'finished') {
-                resolvedStatus = 'completed';
-                resolvedVideoUrl = fbData.videoUrl;
-              } else if (fbData.status === 'failed' || fbData.status === 'error') {
-                resolvedStatus = 'failed';
-                resolvedError = fbData.error || 'Render failed';
+            try {
+              const { data: fbData, error: fbError } = await supabase.functions.invoke('genie-cast-status', {
+                body: { projectId: part.taskId },
+              });
+              console.log(`[EP04 PerScene Fallback] part=${part.partNumber}, taskId=${part.taskId}, response:`, JSON.stringify(fbData)?.substring(0, 200));
+              if (fbError) {
+                console.warn(`[EP04 PerScene] Fallback edge fn error for part ${part.partNumber}:`, fbError);
+              } else if (fbData) {
+                if (fbData.status === 'completed' || fbData.status === 'done' || fbData.status === 'finished') {
+                  resolvedStatus = 'completed';
+                  resolvedVideoUrl = fbData.videoUrl;
+                } else if (fbData.status === 'failed' || fbData.status === 'error') {
+                  resolvedStatus = 'failed';
+                  resolvedError = fbData.error || 'Render failed';
+                }
               }
+            } catch (fbPollErr) {
+              console.warn(`[EP04 PerScene] Fallback poll threw for part ${part.partNumber}:`, fbPollErr);
             }
           }
+
+          // Per-part timeout: if stuck for 8+ consecutive polls (~2 min), give up
+          if (!resolvedStatus && stuckCount >= 8) {
+            resolvedStatus = 'failed';
+            resolvedError = `Part stuck for ${stuckCount} consecutive polls — marking as failed`;
+            console.warn(`[EP04 PerScene] Part ${part.partNumber} timed out after ${stuckCount} stuck polls`);
+          }
+
+          // Update stuck counter
+          perSceneStuckCountsRef.current[part.partNumber] = resolvedStatus ? 0 : newStuck;
 
           // Apply resolved status
           if (resolvedStatus === 'completed') {
-            perSceneStuckCountsRef.current[part.partNumber] = 0;
             setAssemblyParts(prev => prev.map(p =>
               p.partNumber === part.partNumber ? { ...p, status: 'completed', videoUrl: resolvedVideoUrl || null } : p
             ));
             toast.success(`Scene ${part.partNumber} (${part.sceneKeys[0]}) assembled! URL: ${resolvedVideoUrl?.substring(0, 60)}...`);
           } else if (resolvedStatus === 'failed') {
-            perSceneStuckCountsRef.current[part.partNumber] = 0;
             setAssemblyParts(prev => prev.map(p =>
               p.partNumber === part.partNumber ? { ...p, status: 'failed', errorMessage: resolvedError } : p
             ));
             toast.error(`Scene ${part.partNumber} failed: ${resolvedError}`);
           }
         } catch (err) {
-          console.error(`[EP04 PerScene] Poll error for part ${part.partNumber}:`, err);
+          // Outer catch: increment stuck counter even on unexpected errors
+          const s = (perSceneStuckCountsRef.current[part.partNumber] || 0) + 1;
+          perSceneStuckCountsRef.current[part.partNumber] = s;
+          console.error(`[EP04 PerScene] Poll error for part ${part.partNumber} (stuck=${s}):`, err);
+          if (s >= 8) {
+            setAssemblyParts(prev => prev.map(p =>
+              p.partNumber === part.partNumber ? { ...p, status: 'failed', errorMessage: `Poll error after ${s} attempts` } : p
+            ));
+            toast.error(`Scene ${part.partNumber} failed after ${s} poll errors`);
+          }
         }
       }
-    }, 12000); // Poll every 12 seconds to avoid rate limiting
+    }, 15000); // Poll every 15 seconds
 
     return () => clearInterval(timer);
   }, [perScenePolling, assemblyParts]);
@@ -4214,7 +4264,10 @@ function EP04ProductionInner() {
           const toChapter = toSceneKey ? preBuiltChapters.find(c => c.chapterId === toSceneKey) : undefined;
           return {
             ...t,
-            bridgeAudioUrl: bridgeAudio || undefined,
+            // Bridge audio is NOT passed to transition — bridge TTS already has its own
+            // scene in the chapter (via TRANSITION_TO_SCENE remapping). Passing it here
+            // would cause the bridge audio to play TWICE (in the TTS scene + transition).
+            bridgeAudioUrl: undefined,
             bridgeDuration: bridgeLine?.duration_est || 7,
             nextSceneVisualUrl: (toChapter as any)?.sceneImages?.[0] || undefined,
             j2vTransition: TRANSITION_STYLE_MAP[t.style] || 'fade',
