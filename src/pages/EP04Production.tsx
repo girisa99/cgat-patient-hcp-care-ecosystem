@@ -2407,6 +2407,8 @@ function EP04ProductionInner() {
 
     // ── storybook-frame: static illustration (image generation for chapter headers, powered-by pages) ──
     if (stepType === 'storybook-frame') {
+      const variant = (step.variant as string) || 'opening';
+      console.log(`[EP04 Visual] ${stepLabel}: generating storybook-frame (${variant}) via ai-universal-processor...`);
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
@@ -2414,26 +2416,38 @@ function EP04ProductionInner() {
         });
       }
 
-      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
-        body: {
-          action: 'image_generation',
-          prompt,
-          provider: 'alibaba',
-          model: 'wan2.6-t2i',
-          style_intent: 'cinematic',
-          size: '1280x720',
-        },
-      });
-      if (error) { toast.error(`${stepLabel} storybook-frame failed: ${error.message}`); return; }
-      let url = data?.url || data?.imageUrl;
-      // Ensure URL is on Supabase Storage (handles base64, CDN URLs, etc.)
-      if (url && projectId && !isSupabaseStorageUrl(url)) {
-        try {
-          url = await ensureStorageUrl(projectId, `storybook-frame-${sceneKey}`, url);
-        } catch { console.warn(`[EP04 Visual] ${stepLabel}: storybook-frame mirror failed`); }
+      try {
+        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+          body: {
+            action: 'image_generation',
+            prompt,
+            provider: 'alibaba',
+            model: 'wan2.6-t2i',
+            style_intent: 'cinematic',
+            size: '1280x720',
+          },
+        });
+        if (error) {
+          console.error(`[EP04 Visual] ${stepLabel}: storybook-frame edge error:`, error.message);
+          toast.error(`${stepLabel} storybook-frame failed: ${error.message}`);
+          if (jobId && projectId) await completeGenerationJob(jobId, 0);
+          return;
+        }
+        let url = data?.url || data?.imageUrl;
+        console.log(`[EP04 Visual] ${stepLabel}: storybook-frame response — url=${url ? 'YES' : 'NONE'}`);
+        // Ensure URL is on Supabase Storage (handles base64, CDN URLs, etc.)
+        if (url && projectId && !isSupabaseStorageUrl(url)) {
+          try {
+            url = await ensureStorageUrl(projectId, `storybook-frame-${sceneKey}`, url);
+          } catch { console.warn(`[EP04 Visual] ${stepLabel}: storybook-frame mirror failed`); }
+        }
+        if (url) results[`storybook-frame-${sceneKey}-${Date.now()}`] = url;
+        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      } catch (err: any) {
+        console.error(`[EP04 Visual] ${stepLabel}: storybook-frame threw:`, err?.message || err);
+        toast.error(`${stepLabel} storybook-frame error: ${err?.message || 'unknown'}`);
+        if (jobId && projectId) await completeGenerationJob(jobId, 0);
       }
-      if (url) results[`storybook-frame-${sceneKey}-${Date.now()}`] = url;
-      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
       return;
     }
 
@@ -2874,6 +2888,7 @@ function EP04ProductionInner() {
         // ── Per-step progress toast ──
         visualStepNum++;
         const stepLabel = `${sceneKey}: ${stepType}`;
+        console.log(`[EP04 Visual] ${stepLabel} — starting step ${visualStepNum}/${totalVisualSteps}...`);
         toast.info(`${stepLabel} (step ${visualStepNum}/${totalVisualSteps})...`);
 
         await processVisualStep(step, sceneKey, results, lastTTSByCharacter, stepLabel);
@@ -3434,9 +3449,9 @@ function EP04ProductionInner() {
   }, [audioMap, sceneProduction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [assemblyJobId, setAssemblyJobId] = useState<string | null>(null);
-  const [assemblyPollTimer, setAssemblyPollTimer] = useState<ReturnType<typeof setInterval> | null>(null);
   const assemblyTaskIdRef = React.useRef<string | null>(null); // JSON2Video project ID fallback
   const pollNoProgressCountRef = React.useRef(0); // Track consecutive polls with 0% progress
+  const assemblyCancelledRef = React.useRef(false); // Set true on cancel to abort in-flight polls
 
   // ─── Multi-Part Assembly ──────────────────────────────────────────────────
   // JSON2Video Professional plan caps at 10 minutes per video.
@@ -3632,19 +3647,23 @@ function EP04ProductionInner() {
     if (!assemblyJobId) {
       pollCountRef.current = 0;
       pollErrorCountRef.current = 0;
+      pollNoProgressCountRef.current = 0;
       return;
     }
-    console.log(`[EP04 Poll] 🟢 Polling STARTED for assemblyJobId=${assemblyJobId}, taskId fallback=${assemblyTaskIdRef.current}`);
+    assemblyCancelledRef.current = false; // reset on new job
+    console.log(`[EP04 Poll] Polling STARTED for assemblyJobId=${assemblyJobId}, taskId fallback=${assemblyTaskIdRef.current}`);
     const MAX_POLLS = 60; // 60 × 10s = 10 minutes max
     const MAX_ERRORS = 5;  // 5 consecutive errors = stop
 
     // Polling function — called immediately on first run, then every 10s
     const doPoll = async () => {
+      if (assemblyCancelledRef.current) return; // cancelled — abort
       pollCountRef.current++;
       if (pollCountRef.current > MAX_POLLS) {
         setAssemblyProgress(null);
         setAssemblyJobId(null);
-        toast.error('Assembly polling timed out after 20 minutes — check JSON2Video dashboard');
+        assemblyTaskIdRef.current = null;
+        toast.error('Assembly polling timed out after 10 minutes — check JSON2Video dashboard');
         return;
       }
       try {
@@ -3705,11 +3724,15 @@ function EP04ProductionInner() {
           if (pollErrorCountRef.current >= MAX_ERRORS) {
             setAssemblyProgress(null);
             setAssemblyJobId(null);
+            assemblyTaskIdRef.current = null;
             toast.error('Assembly polling failed repeatedly — check console');
           }
           return;
         }
         pollErrorCountRef.current = 0; // reset on success
+
+        // Check if cancelled while we were polling (in-flight abort)
+        if (assemblyCancelledRef.current) return;
 
         if (finalStatus === 'completed' || finalStatus === 'done' || finalStatus === 'finished') {
           setAssemblyJobId(null);
@@ -3775,6 +3798,7 @@ function EP04ProductionInner() {
         if (pollErrorCountRef.current >= MAX_ERRORS) {
           setAssemblyProgress(null);
           setAssemblyJobId(null);
+          assemblyTaskIdRef.current = null;
           toast.error('Assembly polling failed — check network/console');
         }
       }
@@ -3783,8 +3807,7 @@ function EP04ProductionInner() {
     // Fire immediately (don't wait 10s for first poll)
     doPoll();
     const timer = setInterval(doPoll, 10000); // Then every 10 seconds
-    setAssemblyPollTimer(timer);
-    return () => clearInterval(timer);
+    return () => { clearInterval(timer); assemblyCancelledRef.current = true; };
   }, [assemblyJobId, projectId, totalDuration, scenes, updateFinalAssembly, activePartNumber]);
 
   // ── Per-Scene Parallel Polling: poll ALL parts with status='rendering' ──
@@ -4705,7 +4728,9 @@ function EP04ProductionInner() {
     }
 
     // Start parallel polling for all submitted scenes
+    // CRITICAL: clear assemblyJobId so single-job poll doesn't conflict with per-scene poll
     if (submitted > 0) {
+      setAssemblyJobId(null);
       perScenePollCountRef.current = 0;
       setPerScenePolling(true);
       toast.success(`Submitted ${submitted} scenes for rendering — polling for completion`);
@@ -4855,7 +4880,7 @@ function EP04ProductionInner() {
       concatPollRef.current++;
       if (concatPollRef.current > MAX_POLLS) {
         setConcatStatus('failed');
-        setConcatError('Stitching timed out after 30 minutes');
+        setConcatError('Stitching timed out after 60 minutes');
         setConcatJobId(null);
         toast.error('Stitching timed out — check JSON2Video dashboard');
         return;
@@ -6103,7 +6128,16 @@ function EP04ProductionInner() {
                                 {status.musicUrl && (
                                   <div className="flex items-center gap-2 p-1.5 rounded bg-muted/30 border border-border/20">
                                     <Music className="h-3 w-3 text-violet-400 flex-shrink-0" />
-                                    <audio src={status.musicUrl} controls className="h-6 w-full [&::-webkit-media-controls-panel]:h-6" preload="metadata" />
+                                    <audio
+                                      src={status.musicUrl}
+                                      controls
+                                      className="h-6 w-full [&::-webkit-media-controls-panel]:h-6"
+                                      preload="metadata"
+                                      onError={(e) => {
+                                        const audio = e.currentTarget;
+                                        console.error(`[EP04 Music] ${sceneKey} inline playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl?.substring(0, 100)}`);
+                                      }}
+                                    />
                                   </div>
                                 )}
                               </div>
@@ -6217,7 +6251,15 @@ function EP04ProductionInner() {
                             </div>
                           )}
                           {status?.musicUrl && (
-                            <audio src={status.musicUrl} controls className="w-full mt-2 h-6" />
+                            <audio
+                              src={status.musicUrl}
+                              controls
+                              className="w-full mt-2 h-6"
+                              onError={(e) => {
+                                const audio = e.currentTarget;
+                                console.error(`[EP04 Music] ${sceneKey} playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl?.substring(0, 100)}`);
+                              }}
+                            />
                           )}
                           {/* Per-scene regen button — always visible unless actively generating */}
                           {status?.music !== 'generating' && (
@@ -6278,8 +6320,11 @@ function EP04ProductionInner() {
                           <Loader2 className="h-4 w-4 animate-spin text-primary" />
                           <span className="text-xs text-muted-foreground">{assemblyProgress}</span>
                           <Button size="sm" variant="destructive" onClick={() => {
+                            assemblyCancelledRef.current = true;
+                            assemblyTaskIdRef.current = null;
                             setAssemblyJobId(null);
                             setAssemblyProgress(null);
+                            setPerScenePolling(false);
                             toast.info('Assembly polling cancelled');
                           }}>
                             <XCircle className="h-3 w-3 mr-1" /> Cancel
@@ -6727,9 +6772,12 @@ function EP04ProductionInner() {
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500 flex-shrink-0" />
                             <span className="text-xs text-amber-600 font-medium flex-1">{assemblyProgress}</span>
                             <Button size="sm" variant="destructive" className="h-6 text-[10px] px-2" onClick={() => {
+                              assemblyCancelledRef.current = true;
+                              assemblyTaskIdRef.current = null;
                               setAssemblyJobId(null);
                               setAssemblyProgress(null);
                               setActivePartNumber(null);
+                              setPerScenePolling(false);
                               toast.info('Assembly cancelled');
                             }}>
                               <XCircle className="h-2.5 w-2.5 mr-0.5" /> Cancel
@@ -6865,9 +6913,12 @@ function EP04ProductionInner() {
                                     variant="destructive"
                                     className="h-6 text-[10px] px-2"
                                     onClick={() => {
+                                      assemblyCancelledRef.current = true;
+                                      assemblyTaskIdRef.current = null;
                                       setAssemblyJobId(null);
                                       setAssemblyProgress(null);
                                       setActivePartNumber(null);
+                                      setPerScenePolling(false);
                                       setAssemblyParts(prev => prev.map(p =>
                                         p.partNumber === part.partNumber ? { ...p, status: 'failed', errorMessage: 'Cancelled by user' } : p
                                       ));

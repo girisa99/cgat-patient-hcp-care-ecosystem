@@ -104,18 +104,19 @@ type J2VScene = Record<string, any>;
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-// 8 subtle Ken Burns patterns — professional documentary style (1.05–1.15x zoom)
-// Previous zoom:2 was far too aggressive (2x magnification crops 50% of the image,
-// pushing content off-center). These subtle values keep the full image visible.
+// 8 Ken Burns patterns — gentle pan movement, no magnification.
+// JSON2Video requires zoom to be an INTEGER (1, 2, 3...). zoom:2 was too aggressive
+// (2x magnification crops 50% of the image). zoom:1 keeps full image visible;
+// pan + pan-distance provide gentle directional drift for visual interest.
 const KEN_BURNS_PATTERNS = [
-  { zoom: 1.10, pan: 'left'         as const, 'pan-distance': 0.04 },
-  { zoom: 1.05, pan: 'right'        as const, 'pan-distance': 0.03 },
-  { zoom: 1.12, pan: 'top-left'     as const, 'pan-distance': 0.04 },
-  { zoom: 1.05, pan: 'bottom-right' as const, 'pan-distance': 0.03 },
-  { zoom: 1.08, pan: 'top'          as const, 'pan-distance': 0.03 },
-  { zoom: 1.05, pan: 'center'       as const, 'pan-distance': 0.02 },
-  { zoom: 1.10, pan: 'bottom-left'  as const, 'pan-distance': 0.03 },
-  { zoom: 1.08, pan: 'top-right'    as const, 'pan-distance': 0.04 },
+  { zoom: 1, pan: 'left'         as const, 'pan-distance': 0.04 },
+  { zoom: 1, pan: 'right'        as const, 'pan-distance': 0.03 },
+  { zoom: 1, pan: 'top-left'     as const, 'pan-distance': 0.04 },
+  { zoom: 1, pan: 'bottom-right' as const, 'pan-distance': 0.03 },
+  { zoom: 1, pan: 'top'          as const, 'pan-distance': 0.03 },
+  { zoom: 1, pan: 'top'          as const, 'pan-distance': 0.02 },
+  { zoom: 1, pan: 'bottom-left'  as const, 'pan-distance': 0.03 },
+  { zoom: 1, pan: 'top-right'    as const, 'pan-distance': 0.04 },
 ];
 
 // Scene transition styles cycled between TTS-line scenes
@@ -159,7 +160,7 @@ function makeOpeningBookend(opening: CastBookends['opening']): J2VScene {
     elements.push({
       type: 'image', src: opening.backgroundUrl,
       start: 0, duration: dur,
-      zoom: 1.10, pan: 'right', 'pan-distance': 0.03,
+      zoom: 1, pan: 'right', 'pan-distance': 0.03,
       resize: 'cover',
       'fade-in': 1.0, 'fade-out': 0.5,
       'z-index': 0,
@@ -177,7 +178,7 @@ function makeOpeningBookend(opening: CastBookends['opening']): J2VScene {
         'font-weight': '600', 'letter-spacing': '6px',
         'text-shadow': '2px 2px 8px rgba(0,0,0,0.9)',
       },
-      position: 'center', y: '-15%',
+      position: 'center-center',
       'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 20,
     });
   }
@@ -190,7 +191,7 @@ function makeOpeningBookend(opening: CastBookends['opening']): J2VScene {
         'font-weight': '700',
         'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)',
       },
-      position: 'center',
+      position: 'center-center',
       'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 20,
     });
   }
@@ -202,7 +203,7 @@ function makeOpeningBookend(opening: CastBookends['opening']): J2VScene {
         'font-family': 'Inter', 'font-size': '28px', 'font-color': '#e2e8f0',
         'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)',
       },
-      position: 'center', y: '12%',
+      position: 'center-center',
       'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 20,
     });
   }
@@ -215,7 +216,7 @@ function makeOpeningBookend(opening: CastBookends['opening']): J2VScene {
         'font-weight': '500', 'letter-spacing': '3px',
         'text-shadow': '2px 2px 6px rgba(0,0,0,0.7)',
       },
-      position: 'bottom-center',
+      position: 'bottom-left',
       'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 20,
     });
   }
@@ -253,7 +254,7 @@ function makeClosingBookend(closing: CastBookends['closing']): J2VScene {
       'font-weight': '700',
       'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)',
     },
-    position: 'center', y: '-10%',
+    position: 'center-center',
     'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 20,
   });
   elements.push({
@@ -263,7 +264,7 @@ function makeClosingBookend(closing: CastBookends['closing']): J2VScene {
       'font-family': 'Inter', 'font-size': '28px', 'font-color': '#e2e8f0',
       'text-shadow': '2px 2px 8px rgba(0,0,0,0.8)',
     },
-    position: 'center', y: '5%',
+    position: 'center-center',
     'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 20,
   });
   elements.push({
@@ -274,7 +275,7 @@ function makeClosingBookend(closing: CastBookends['closing']): J2VScene {
       'font-weight': '500', 'letter-spacing': '2px',
       'text-shadow': '2px 2px 6px rgba(0,0,0,0.7)',
     },
-    position: 'bottom-center',
+    position: 'bottom-left',
     'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 20,
   });
 
@@ -300,7 +301,7 @@ function makeKineticImageScene(kt: CastKineticText, kbIdx: number): J2VScene {
     elements.push({
       type: 'image', src: kt.imageUrl,
       start: 0, duration: dur,
-      zoom: 1.08, pan: 'center', 'pan-distance': 0.02,
+      zoom: 1, pan: 'top', 'pan-distance': 0.02,
       resize: 'cover', width: 1920, height: 1080,
       'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
     });
@@ -318,7 +319,7 @@ function makeKineticImageScene(kt: CastKineticText, kbIdx: number): J2VScene {
       'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)',
       'background-color': 'rgba(15,10,26,0.5)', padding: '16px 32px',
     },
-    position: 'center',
+    position: 'center-center',
     'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 20,
   });
 
@@ -347,7 +348,7 @@ function makeTransitionScene(t: CastTransition): J2VScene {
       start: 0, duration: dur,
       ...(mediaType === 'video'
         ? { volume: 0 }
-        : { zoom: 1.08, pan: 'center', 'pan-distance': 0.02 }),
+        : { zoom: 1, pan: 'top', 'pan-distance': 0.02 }),
       resize: 'cover', width: 1920, height: 1080,
       'fade-in': 0.3, 'fade-out': 0.3, 'z-index': 0,
     });
@@ -379,7 +380,7 @@ function makeTransitionScene(t: CastTransition): J2VScene {
       'background-color': 'rgba(15,10,26,0.6)',
       padding: '20px 40px',
     },
-    position: 'center',
+    position: 'center-center',
     'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 25,
   });
 
@@ -598,7 +599,7 @@ function makeTtsLineScene(
         'text-shadow': '3px 3px 12px rgba(0,0,0,0.95)',
         'background-color': 'rgba(15,10,26,0.5)', padding: '12px 24px',
       },
-      position: 'center',
+      position: 'center-center',
       'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 25,
     });
   }
@@ -802,15 +803,22 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo): J2
 function applySafetyPass(scenes: J2VScene[]): void {
   for (const scene of scenes) {
     const sd = scene.duration || 0;
-    for (const el of (scene.elements || [])) {
+    // Filter out elements that start after scene ends
+    scene.elements = (scene.elements || []).filter((el: J2VElement) => {
+      const elStart = el.start ?? 0;
+      if (elStart >= sd) return false; // element starts after scene ends — remove
+      if (el.duration != null && el.duration <= 0) return false; // zero/negative duration
+      return true;
+    });
+    for (const el of scene.elements) {
       const elStart = el.start ?? 0;
       // Clamp: element must not exceed scene duration
       if (elStart + (el.duration ?? 0) > sd) {
         el.duration = Math.max(0.5, sd - elStart);
       }
-      // Fix: zoom < 1 is invalid in JSON2Video
-      if (el.zoom != null && el.zoom < 1) {
-        el.zoom = 1;
+      // JSON2Video requires zoom to be a positive integer (1, 2, 3...)
+      if (el.zoom != null) {
+        el.zoom = Math.max(1, Math.round(el.zoom));
       }
       // Full-frame: ensure all images/videos have explicit sizing
       if ((el.type === 'image' || el.type === 'video') && !el.width) {
