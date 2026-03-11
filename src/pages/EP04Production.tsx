@@ -3425,11 +3425,10 @@ function EP04ProductionInner() {
   const [activePartNumber, setActivePartNumber] = useState<number | null>(null);
 
   // ── Per-Scene Assembly with Smart Splitting ──
-  // Each scene renders independently. Heavy scenes (>15 TTS lines or >180s)
-  // are split into sub-parts to prevent JSON2Video render timeouts.
-  // Whether we produce 12 or 20 parts, the concat stitch handles them all the same.
-  const MAX_SUB_TTS = 8;
-  const MAX_SUB_DURATION = 120; // 2 minutes — smaller parts render faster & more reliably
+  // Each scene renders independently. Only very heavy scenes get split.
+  // Visual cycling (15s beats) handles long durations, so threshold is generous.
+  const MAX_SUB_TTS = 15;
+  const MAX_SUB_DURATION = 300; // 5 minutes — only split truly massive scenes
 
   const computePerSceneParts = useCallback((): AssemblyPart[] => {
     // Sort scene keys by scene number (e.g., scene-0, scene-1, ..., scene-11)
@@ -3464,7 +3463,7 @@ function EP04ProductionInner() {
       const totalElements = sceneTtsCount + lipsyncCount + (hasTrailingTransition ? 1 : 0); // bridge TTS = 1 extra audio
       console.log(`[PerScene] ${sceneKey}: ${sceneTtsCount} TTS + ${lipsyncCount} lipsync + ${hasTrailingTransition ? '1 bridge' : '0 bridge'} = ${totalElements} elements, ~${Math.round(sceneDuration)}s`);
 
-      // Split threshold: >15 TTS or >180s duration
+      // Split threshold: >15 TTS or >300s (5 min) duration
       const needsSplit = sceneTtsCount > MAX_SUB_TTS || sceneDuration > MAX_SUB_DURATION;
 
       if (needsSplit && sceneLines.length > 1) {
