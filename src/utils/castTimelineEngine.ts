@@ -104,19 +104,19 @@ type J2VScene = Record<string, any>;
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-// 8 Ken Burns patterns — gentle pan movement, no magnification.
-// JSON2Video requires zoom to be an INTEGER (1, 2, 3...). zoom:2 was too aggressive
-// (2x magnification crops 50% of the image). zoom:1 keeps full image visible;
-// pan + pan-distance provide gentle directional drift for visual interest.
+// 8 Ken Burns patterns — cinematic zoom + pan drift (Pixar/documentary style).
+// JSON2Video zoom is PERCENTAGE: 1=1%, 5=5%, 10=10% (range: -10 to 10).
+// pan-distance range: 0.01-0.5 (API default: 0.1). We use 0.08-0.12 for visible drift.
+// Combined: subtle 3-5% zoom-in with gentle directional glide across the frame.
 const KEN_BURNS_PATTERNS = [
-  { zoom: 1, pan: 'left'         as const, 'pan-distance': 0.04 },
-  { zoom: 1, pan: 'right'        as const, 'pan-distance': 0.03 },
-  { zoom: 1, pan: 'top-left'     as const, 'pan-distance': 0.04 },
-  { zoom: 1, pan: 'bottom-right' as const, 'pan-distance': 0.03 },
-  { zoom: 1, pan: 'top'          as const, 'pan-distance': 0.03 },
-  { zoom: 1, pan: 'top'          as const, 'pan-distance': 0.02 },
-  { zoom: 1, pan: 'bottom-left'  as const, 'pan-distance': 0.03 },
-  { zoom: 1, pan: 'top-right'    as const, 'pan-distance': 0.04 },
+  { zoom: 3, pan: 'left'         as const, 'pan-distance': 0.12 },
+  { zoom: 4, pan: 'right'        as const, 'pan-distance': 0.10 },
+  { zoom: 3, pan: 'top-left'     as const, 'pan-distance': 0.12 },
+  { zoom: 4, pan: 'bottom-right' as const, 'pan-distance': 0.10 },
+  { zoom: 5, pan: 'top'          as const, 'pan-distance': 0.10 },
+  { zoom: 3, pan: 'bottom'       as const, 'pan-distance': 0.08 },
+  { zoom: 4, pan: 'bottom-left'  as const, 'pan-distance': 0.10 },
+  { zoom: 5, pan: 'top-right'    as const, 'pan-distance': 0.12 },
 ];
 
 // Scene transition styles cycled between TTS-line scenes
@@ -160,9 +160,9 @@ function makeOpeningBookend(opening: CastBookends['opening']): J2VScene {
     elements.push({
       type: 'image', src: opening.backgroundUrl,
       start: 0, duration: dur,
-      zoom: 1, pan: 'right', 'pan-distance': 0.03,
+      zoom: 4, pan: 'right', 'pan-distance': 0.10,
       resize: 'cover',
-      'fade-in': 1.0, 'fade-out': 0.5,
+      'fade-in': 1.5, 'fade-out': 0.8,
       'z-index': 0,
       width: 1920, height: 1080,
     });
@@ -226,7 +226,7 @@ function makeOpeningBookend(opening: CastBookends['opening']): J2VScene {
     duration: dur,
     'background-color': '#0f0a1a',
     elements: filterSafeElements(elements),
-    transition: { style: 'fade', duration: 0.5 },
+    transition: { style: 'fade', duration: 1.5 },
   };
 }
 
@@ -238,9 +238,9 @@ function makeClosingBookend(closing: CastBookends['closing']): J2VScene {
     elements.push({
       type: 'image', src: closing.backgroundUrl,
       start: 0, duration: dur,
-      zoom: 1, pan: 'left', 'pan-distance': 0.06,
+      zoom: 3, pan: 'left', 'pan-distance': 0.10,
       resize: 'cover',
-      'fade-in': 0.5, 'fade-out': 1.0,
+      'fade-in': 0.8, 'fade-out': 2.0,
       'z-index': 0,
       width: 1920, height: 1080,
     });
@@ -393,12 +393,12 @@ function makeTransitionScene(t: CastTransition): J2VScene {
     });
   }
 
-  // Transition SFX
+  // Transition SFX (cinematic punch)
   if (isHttpUrl(t.sfxUrl)) {
     elements.push({
       type: 'audio', src: t.sfxUrl,
       start: 0, duration: Math.min(3, dur),
-      volume: 0.5, 'fade-in': 0.1, 'fade-out': 0.2,
+      volume: 0.6, 'fade-in': 0.05, 'fade-out': 0.8,
     });
   }
 
@@ -407,7 +407,7 @@ function makeTransitionScene(t: CastTransition): J2VScene {
     duration: dur,
     'background-color': '#0f0a1a',
     elements: filterSafeElements(elements),
-    transition: { style: t.j2vTransition || 'fade', duration: 1.0 },
+    transition: { style: t.j2vTransition || 'fade', duration: 1.5 },
   };
 }
 
@@ -484,7 +484,7 @@ function makeTtsLineScene(
     }
   } else {
     // No lipsync — full B-roll with visual cycling for long scenes
-    const VISUAL_BEAT = 15; // seconds per visual beat — keeps viewer engaged
+    const VISUAL_BEAT = 12; // seconds per visual beat — cinematic pacing (was 15)
     if (isHttpUrl(videoVisual)) {
       const videoDur = Math.min(10, sceneDur);
       elements.push({
@@ -543,23 +543,25 @@ function makeTtsLineScene(
     });
   }
 
-  // ── Music (looped, ducked volume) ───────────────────────────────────────
+  // ── Music (looped, adaptive ducking under narration) ────────────────────
   if (music && isHttpUrl(music.url)) {
+    const hasTts = isHttpUrl(tts.url);
+    const musicVolume = hasTts ? 0.20 : 0.50; // duck under narration, forward in instrumental
     elements.push({
       type: 'audio', src: music.url,
       start: 0, duration: sceneDur,
-      volume: 0.25, loop: music.loop ? -1 : 0,
-      'fade-in': 0.5, 'fade-out': 0.5,
+      volume: musicVolume, loop: music.loop ? -1 : 0,
+      'fade-in': 0.8, 'fade-out': 0.8,
     });
   }
 
-  // ── SFX ─────────────────────────────────────────────────────────────────
+  // ── SFX (cinematic punch — fast attack, slow decay) ───────────────────
   sfx.forEach(s => {
     if (isHttpUrl(s.url)) {
       elements.push({
         type: 'audio', src: s.url,
         start: s.start, duration: s.duration,
-        volume: 0.5, 'fade-in': 0.1, 'fade-out': 0.2,
+        volume: 0.6, 'fade-in': 0.05, 'fade-out': 0.8,
       });
     }
   });
@@ -660,8 +662,8 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo): J2
       elements.push({
         type: 'audio', src: musicUrl,
         start: 0, duration: dur,
-        volume: 0.25, loop: musicLoop ? -1 : 0,
-        'fade-in': 0.5, 'fade-out': 0.5,
+        volume: 0.50, loop: musicLoop ? -1 : 0,
+        'fade-in': 0.8, 'fade-out': 0.8,
       });
     }
     scenes.push({
@@ -816,9 +818,9 @@ function applySafetyPass(scenes: J2VScene[]): void {
       if (elStart + (el.duration ?? 0) > sd) {
         el.duration = Math.max(0.5, sd - elStart);
       }
-      // JSON2Video requires zoom to be a positive integer (1, 2, 3...)
+      // JSON2Video zoom is percentage (-10 to 10). Positive = zoom in, negative = zoom out.
       if (el.zoom != null) {
-        el.zoom = Math.max(1, Math.round(el.zoom));
+        el.zoom = Math.max(-10, Math.min(10, Math.round(el.zoom)));
       }
       // Full-frame: ensure all images/videos have explicit sizing
       if ((el.type === 'image' || el.type === 'video') && !el.width) {

@@ -1066,41 +1066,24 @@ function EP04ProductionInner() {
 
         console.log(`[PERSIST RESTORE] Found ${dbScenes?.length || 0} scene rows in DB`);
         if (dbScenes) {
-          // One-time cleanup: remove orphan pipeline-ID rows with no production data.
-          // These were created by old pipeline-sync code (since removed) and just add noise.
-          const orphanKeys: string[] = [];
-          for (const row of dbScenes) {
-            const cfg = (row.scene_config || {}) as Record<string, any>;
-            const hasAnything = cfg.artifacts || cfg.generatedMusic || cfg.assembledClipUrl;
-            const isPipelineIdOrphan = !hasAnything && PIPELINE_TO_SCRIPT_MAP[row.scene_key] && PIPELINE_TO_SCRIPT_MAP[row.scene_key] !== row.scene_key;
-            if (isPipelineIdOrphan) orphanKeys.push(row.scene_key);
-          }
-          if (orphanKeys.length > 0) {
-            console.log(`[PERSIST CLEANUP] Removing ${orphanKeys.length} orphan pipeline-ID rows: ${orphanKeys.join(', ')}`);
-            db.from('cast_project_scenes').delete().eq('project_id', projectId).in('scene_key', orphanKeys).then(() => {
-              console.log(`[PERSIST CLEANUP] Done — orphan rows removed`);
-            });
-          }
-
           for (const row of dbScenes) {
             const cfg = (row.scene_config || {}) as Record<string, any>;
             const artifacts = cfg.artifacts as Record<string, Record<string, string>> | undefined;
             const gm = cfg.generatedMusic as { url?: string; sfxUrls?: string[] } | undefined;
 
-            // Check ALL production data — not just artifacts
+            // Check ALL production data — artifacts checked by key existence (not value truthiness)
             const hasArtifacts = artifacts && (
-              Object.values(artifacts.videoUrls || {}).some(u => u) ||
-              Object.values(artifacts.imageUrls || {}).some(u => u) ||
-              Object.values(artifacts.avatarUrls || {}).some(u => u) ||
-              Object.values(artifacts.lipsyncUrls || {}).some(u => u)
+              Object.keys(artifacts.videoUrls || {}).length > 0 ||
+              Object.keys(artifacts.imageUrls || {}).length > 0 ||
+              Object.keys(artifacts.avatarUrls || {}).length > 0 ||
+              Object.keys(artifacts.lipsyncUrls || {}).length > 0
             );
             const hasMusic = !!(gm?.url);
             const hasSfx = !!(gm?.sfxUrls && gm.sfxUrls.length > 0);
             const hasAssembly = !!cfg.assembledClipUrl;
 
             if (!hasArtifacts && !hasMusic && !hasSfx && !hasAssembly) {
-              // Suppress noise: orphan pipeline-ID rows and transition rows with only config data
-              console.debug(`[PERSIST RESTORE] ${row.scene_key}: no production data — skipping`);
+              console.log(`[PERSIST RESTORE] ${row.scene_key}: no production data — skipping`);
               continue;
             }
 
@@ -1211,7 +1194,7 @@ function EP04ProductionInner() {
         restored[sk].lipsyncUrls = filterPlaceholders(restored[sk].lipsyncUrls);
         const totalUrls = Object.keys(restored[sk].videoUrls).length + Object.keys(restored[sk].imageUrls).length
           + Object.keys(restored[sk].avatarUrls).length + Object.keys(restored[sk].lipsyncUrls).length;
-        if (totalUrls === 0) {
+        if (totalUrls === 0 && !restored[sk].musicUrl && restored[sk].sfxUrls.length === 0 && !restored[sk].assembledClipUrl) {
           restored[sk].visual = 'idle';
         }
       }
@@ -1260,8 +1243,9 @@ function EP04ProductionInner() {
         console.log(`[EP04 Cleanup] ${toastParts.join('. ')}`);
       }
 
-      const restoredCount = Object.keys(restored).filter(sk => restored[sk].visual === 'done').length;
-      if (restoredCount > 0) {
+      const restoredVisualCount = Object.keys(restored).filter(sk => restored[sk].visual === 'done').length;
+      const restoredAnyCount = Object.keys(restored).length;
+      if (restoredAnyCount > 0) {
         setSceneProduction(prev => ({ ...prev, ...restored }));
         // Smart phase advancement:
         //  - ALL scenes have visuals → Phase 3 done → unlock Phase 4 (Music & SFX)
@@ -1270,25 +1254,22 @@ function EP04ProductionInner() {
         const musicCount = Object.values(restored).filter(s => s.music === 'done').length;
         const sfxCount = Object.values(restored).filter(s => s.sfx === 'done').length;
         const assembledCount = Object.values(restored).filter(s => s.assembled === 'done').length;
-        console.log(`[EP04] Restore summary: ${restoredCount} visuals, ${musicCount} music, ${sfxCount} sfx, ${assembledCount} assembled (of ${totalSceneCount} total)`);
+        console.log(`[EP04] Restore summary: ${restoredVisualCount} visuals, ${musicCount} music, ${sfxCount} sfx, ${assembledCount} assembled (of ${totalSceneCount} total, ${restoredAnyCount} scenes with any data)`);
 
         if (assembledCount >= totalSceneCount) {
-          // All scenes assembled → Phase 5 done
           setProductionPhase('complete');
           console.log(`[EP04] All ${assembledCount} scenes assembled — Phase 5 complete`);
         } else if (musicCount >= totalSceneCount) {
-          // All scenes have music → Phase 4 done → unlock Phase 5
           setProductionPhase('assembly');
           console.log(`[EP04] All ${musicCount} scenes have music — advancing to Phase 5 (Assembly)`);
-        } else if (restoredCount >= totalSceneCount) {
-          // All scenes have visuals → Phase 3 done → unlock Phase 4
+        } else if (restoredVisualCount >= totalSceneCount) {
           setProductionPhase('music');
-          console.log(`[EP04] All ${restoredCount}/${totalSceneCount} scenes have visuals — advancing to Phase 4 (Music & SFX)`);
+          console.log(`[EP04] All ${restoredVisualCount}/${totalSceneCount} scenes have visuals — advancing to Phase 4 (Music & SFX)`);
         } else {
           setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
-          console.log(`[EP04] Restored visual artifacts for ${restoredCount}/${totalSceneCount} scenes from DB`);
+          console.log(`[EP04] Restored data for ${restoredAnyCount} scenes (${restoredVisualCount} with visuals) from DB`);
         }
-        const restoreMsg = `Restored ${restoredCount} scene(s) with visual assets${musicCount > 0 ? `, ${musicCount} with music` : ''}`;
+        const restoreMsg = `Restored ${restoredAnyCount} scene(s)${restoredVisualCount > 0 ? ` (${restoredVisualCount} with visuals)` : ''}${musicCount > 0 ? `, ${musicCount} with music` : ''}`;
         toast.success(toastParts.length > 0 ? `${restoreMsg}. ${toastParts.join('. ')}.` : restoreMsg);
 
         // Re-persist Source 2 gap-fill in background — don't block UI
@@ -1321,7 +1302,7 @@ function EP04ProductionInner() {
       // When TTS is approved, status is set to 'visual_production'. This survives
       // page refresh even if no visual artifacts exist yet (e.g. user approved TTS
       // but hasn't clicked "Produce All Visuals" yet).
-      if (restoredCount === 0) {
+      if (restoredVisualCount === 0) {
         try {
           const { data: projRow } = await db
             .from('cast_projects')
@@ -1468,9 +1449,11 @@ function EP04ProductionInner() {
     if (!contentLoaded) return;
     // Don't re-seed if we already restored visual artifacts — the upsert wipes scene_config.artifacts
     // Check BOTH in-memory state AND whether any audio/visual generation jobs exist in DB
-    const hasRestoredAssets = Object.values(sceneProduction).some(s => s.visual === 'done');
+    const hasRestoredAssets = Object.values(sceneProduction).some(s =>
+      s.visual === 'done' || s.music === 'done' || s.sfx === 'done' || s.assembled === 'done'
+    );
     if (hasRestoredAssets) {
-      console.log('[EP04] Skipping auto-seed — visual artifacts already restored from DB');
+      console.log('[EP04] Skipping auto-seed — production data already restored from DB');
       seedAttemptedRef.current = true;
       return;
     }
