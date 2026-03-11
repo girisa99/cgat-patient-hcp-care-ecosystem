@@ -172,7 +172,7 @@ const filterBase64FromBucket = (bucket: Record<string, string>): Record<string, 
 };
 
 // Character avatar imports — upgraded to Pixar 3D portraits for visual consistency with scene backgrounds
-import hostAvatar from '@/assets/characters/host-avatar-3d.png';
+import hostAvatar from '@/assets/characters/host-real-photo.jpg';
 import atlasAvatar from '@/assets/characters/atlas-avatar-3d.png';
 import novaAvatar from '@/assets/characters/nova-avatar-3d.png';
 import squirrelAvatar from '@/assets/characters/squirrel-avatar-3d.png';
@@ -247,9 +247,9 @@ const CHARACTER_AVATARS: Record<string, string> = {
 };
 
 // Characters that should regenerate via AI instead of using pre-made avatars
-// (host avatar PNG only shows the dog — needs AI regeneration to show the human PO)
-// Note: allaudin removed — pre-made genie avatar works well, AI regen hits DashScope rate limits
-const REGENERATE_AVATAR_VIA_AI: Set<string> = new Set(['host']);
+// host: uses real photo (host-real-photo.jpg) for lipsync — WAN2.2 generates talking head from real face
+// allaudin: pre-made genie avatar works well, AI regen hits DashScope rate limits
+const REGENERATE_AVATAR_VIA_AI: Set<string> = new Set([]);
 
 // ─── Context-Aware Animation Engine ─────────────────────────────────────────
 // Parses direction + motion fields to determine mood, energy, and animation style
@@ -1231,6 +1231,17 @@ function EP04ProductionInner() {
           expiredSceneCount++;
         }
       }
+      // Check music URL expiry — expired music URLs should be flagged so user regenerates
+      let expiredMusicCount = 0;
+      for (const sk of Object.keys(restored)) {
+        if (restored[sk].musicUrl && isExpiredCdnUrl(restored[sk].musicUrl!)) {
+          expiredMusicCount++;
+          // Mark music status so Phase 4 UI shows amber "expired" and regen button
+          restored[sk].music = 'done'; // keep 'done' status but UI will detect expired URL
+          console.log(`[EP04 Restore] ${sk}: music URL expired (${restored[sk].musicUrl?.substring(0, 60)}...) — needs regeneration`);
+        }
+      }
+
       // Count scenes with no assets at all
       const allSceneKeys = Object.keys(SCENE_TITLES);
       const notGeneratedCount = allSceneKeys.filter(sk => !restored[sk] || restored[sk].visual !== 'done').length;
@@ -1238,9 +1249,14 @@ function EP04ProductionInner() {
       const toastParts: string[] = [];
       if (totalDupsRemoved > 0) toastParts.push(`Cleaned ${totalDupsRemoved} duplicate(s)`);
       if (expiredSceneCount > 0) toastParts.push(`${expiredSceneCount} scene(s) may have expired CDN URLs`);
+      if (expiredMusicCount > 0) toastParts.push(`${expiredMusicCount} scene(s) have expired music — use "Regen" in Phase 4`);
       if (notGeneratedCount > 0 && notGeneratedCount < allSceneKeys.length) toastParts.push(`${notGeneratedCount} scene(s) not yet generated`);
       if (toastParts.length > 0) {
         console.log(`[EP04 Cleanup] ${toastParts.join('. ')}`);
+        // Show toast for expired music (user action required) but not for dedup (auto-fixed)
+        if (expiredMusicCount > 0) {
+          toast.warning(`${expiredMusicCount} scene(s) have expired music URLs. Use "Regen Music" in Phase 4.`);
+        }
       }
 
       const restoredVisualCount = Object.keys(restored).filter(sk => restored[sk].visual === 'done').length;
@@ -2146,12 +2162,15 @@ function EP04ProductionInner() {
       }
 
       // Find the avatar source image for lipsync
-      // Priority: current-run result > saved Supabase avatar (this scene) > cross-scene avatar > CDN avatar > pre-made local asset
-      // When running lipsync-only regen, results won't have avatar-3d — fall back to saved avatarUrls
+      // Priority depends on whether character uses a real photo (pre-made) or AI-generated avatar:
+      // - Real photo characters (NOT in REGENERATE_AVATAR_VIA_AI): pre-made photo FIRST
+      //   This ensures the real person's face is always used for lipsync, even if old
+      //   AI-generated Pixar avatars exist in saved state from previous runs.
+      // - AI characters (in REGENERATE_AVATAR_VIA_AI): current-run > saved > cross-scene > pre-made
       const avatarFromResults = Object.entries(results).find(([k]) => k.includes('avatar-3d') && k.includes(character))?.[1];
       const savedAvatarUrls = sceneProduction[sceneKey]?.avatarUrls || {};
       const avatarFromSaved = Object.entries(savedAvatarUrls).find(([k]) => k.includes(character))?.[1];
-      // Cross-scene: check OTHER scenes for this character's avatar (e.g., host human from Scene 0)
+      // Cross-scene: check OTHER scenes for this character's avatar
       let avatarFromOtherScene: string | null = null;
       for (const [sk, sp] of Object.entries(sceneProduction)) {
         if (sk === sceneKey) continue;
@@ -2162,27 +2181,44 @@ function EP04ProductionInner() {
         }
       }
       const avatarPreMade = CHARACTER_AVATARS[character];
+      const usesRealPhoto = !REGENERATE_AVATAR_VIA_AI.has(character);
 
       let sourceImage: string | null = null;
-      if (avatarFromResults && avatarFromResults.startsWith('http') && avatarFromResults.includes('supabase.co')) {
+      if (usesRealPhoto && avatarPreMade) {
+        // Real photo character (e.g., host) — ALWAYS use the pre-made photo for lipsync
+        // This ensures the real person's face drives the lipsync, not an old Pixar avatar
+        sourceImage = avatarPreMade.startsWith('http') ? avatarPreMade : `${window.location.origin}${avatarPreMade}`;
+        console.log(`[EP04 Visual] ${stepLabel}: using real photo for "${character}" lipsync`);
+      } else if (avatarFromResults && avatarFromResults.startsWith('http') && avatarFromResults.includes('supabase.co')) {
         sourceImage = avatarFromResults; // Current-run avatar on Supabase — best
       } else if (avatarFromSaved && avatarFromSaved.startsWith('http') && avatarFromSaved.includes('supabase.co')) {
         sourceImage = avatarFromSaved; // Previously saved avatar on Supabase — great for lipsync-only regen
       } else if (avatarFromOtherScene) {
-        sourceImage = avatarFromOtherScene; // Cross-scene Supabase avatar (e.g., host human avatar generated in Scene 0)
+        sourceImage = avatarFromOtherScene; // Cross-scene Supabase avatar
         console.log(`[EP04 Visual] ${stepLabel}: using cross-scene avatar for "${character}" lipsync`);
       } else if (avatarFromResults && avatarFromResults.startsWith('http')) {
         sourceImage = avatarFromResults; // Current-run DashScope CDN
       } else if (avatarFromSaved && avatarFromSaved.startsWith('http')) {
         sourceImage = avatarFromSaved; // Previously saved CDN
       } else if (avatarPreMade) {
-        // Pre-made local asset — make it a full URL the edge function can fetch from our app
         sourceImage = avatarPreMade.startsWith('http') ? avatarPreMade : `${window.location.origin}${avatarPreMade}`;
       }
       if (!sourceImage) {
         toast.warning(`No avatar image for "${character}" lipsync — skipping`);
         return;
       }
+
+      // Ensure sourceImage is on Supabase Storage — edge function can't reach localhost or Vercel static paths
+      if (projectId && !isSupabaseStorageUrl(sourceImage)) {
+        try {
+          sourceImage = await ensureStorageUrl(projectId, `lipsync-source-${character}`, sourceImage);
+          console.log(`[EP04 Visual] ${stepLabel}: uploaded lipsync source to Supabase: ${sourceImage.substring(0, 60)}...`);
+        } catch (uploadErr) {
+          console.warn(`[EP04 Visual] ${stepLabel}: ensureStorageUrl failed for lipsync source — sending original URL`, uploadErr);
+          // Fall through — edge function has its own re-upload logic as backup
+        }
+      }
+
       console.log(`[EP04 Visual] ${stepLabel}: lipsync "${character}" — audio: ${ttsAudioUrl.substring(0, 50)}..., avatar: ${sourceImage.substring(0, 50)}...`);
 
       let jobId: string | null = null;
@@ -3675,10 +3711,10 @@ function EP04ProductionInner() {
           pollNoProgressCountRef.current = 0;
         }
 
-        // If stuck with no progress for 3+ polls AND we have a J2V taskId, poll directly
-        // After 3 polls, ALWAYS use the direct projectId path (more reliable than DB lookup)
+        // If stuck with no progress for 1+ polls AND we have a J2V taskId, poll directly
+        // Don't wait 3 polls (30s) — start fallback immediately to avoid wasted time
         const taskId = assemblyTaskIdRef.current;
-        if (pollNoProgressCountRef.current >= 3 && taskId) {
+        if (pollNoProgressCountRef.current >= 1 && taskId) {
           console.log(`[EP04 Poll] ⚠️ castJobId stuck (${pollNoProgressCountRef.current} polls, 0%). Falling back to projectId=${taskId}`);
           const { data: fallbackData, error: fbError } = await supabase.functions.invoke('genie-cast-status', {
             body: { projectId: taskId },
@@ -3872,9 +3908,10 @@ function EP04ProductionInner() {
             }
           }
 
-          // Fallback: if stuck for 3+ polls (covers: no provider_job_id, edge fn errors, zero progress)
+          // Fallback: if stuck for 1+ polls, immediately try direct projectId polling
+          // Don't wait 3 polls (45s) — JSON2Video renders take 3-5 min, start fallback ASAP
           const stuckCount = resolvedStatus ? 0 : newStuck;
-          if (!resolvedStatus && part.taskId && (stuckCount >= 3 || !part.jobId)) {
+          if (!resolvedStatus && part.taskId && (stuckCount >= 1 || !part.jobId)) {
             console.log(`[EP04 PerScene] Part ${part.partNumber}: fallback to taskId=${part.taskId} (stuck=${stuckCount})`);
             try {
               const { data: fbData, error: fbError } = await supabase.functions.invoke('genie-cast-status', {
@@ -3897,10 +3934,11 @@ function EP04ProductionInner() {
             }
           }
 
-          // Per-part timeout: if stuck for 8+ consecutive polls (~2 min), give up
-          if (!resolvedStatus && stuckCount >= 8) {
+          // Per-part timeout: if stuck for 20+ consecutive polls (~5 min), give up
+          // JSON2Video renders typically take 3-5 min — 8 polls (2 min) was too short
+          if (!resolvedStatus && stuckCount >= 20) {
             resolvedStatus = 'failed';
-            resolvedError = `Part stuck for ${stuckCount} consecutive polls — marking as failed`;
+            resolvedError = `Part stuck for ${stuckCount} consecutive polls (~5 min) — marking as failed`;
             console.warn(`[EP04 PerScene] Part ${part.partNumber} timed out after ${stuckCount} stuck polls`);
           }
 
@@ -4434,9 +4472,14 @@ function EP04ProductionInner() {
             regularImages.push(url);
           }
         }
-        // Add avatar images to regular pool
-        for (const url of Object.values(status.avatarUrls || {})) {
-          if (isSafeUrl(url)) regularImages.push(url);
+        // Only add avatar static images to B-roll if there's NO lipsync for this scene.
+        // When lipsync exists, the avatar video IS the visual — adding the static avatar
+        // PNG to the B-roll pool causes it to bleed through behind the lipsync video.
+        const hasLipsync = (ch.lipsyncClips || []).length > 0;
+        if (!hasLipsync) {
+          for (const url of Object.values(status.avatarUrls || {})) {
+            if (isSafeUrl(url)) regularImages.push(url);
+          }
         }
 
         // Filter scene-transition videos out of the B-roll video pool
@@ -4484,8 +4527,15 @@ function EP04ProductionInner() {
         const toTransAssets = transitionAssetsByScene[toScriptKey];
         const storybookFrameUrl = toTransAssets?.storybookFrames?.[0];
 
-        // Best transition visual: prefer AI transition video > storybook frame > next scene image
-        const transitionImageUrl = transitionVideoUrl || storybookFrameUrl || t.nextSceneVisualUrl;
+        // 3. Fallback: first regular image from the TO scene (better than no visual at all)
+        const toSceneStatus = sceneProduction[toScriptKey] || defaultSceneStatus();
+        const toSceneFirstImage = Object.values(toSceneStatus.imageUrls || {}).find(u => isSafeUrl(u));
+        // 4. Last resort: first image from the FROM scene
+        const fromSceneStatus = sceneProduction[fromScriptKey] || defaultSceneStatus();
+        const fromSceneLastImage = Object.values(fromSceneStatus.imageUrls || {}).find(u => isSafeUrl(u));
+
+        // Best transition visual: prefer AI transition video > storybook frame > next scene image > from scene image
+        const transitionImageUrl = transitionVideoUrl || storybookFrameUrl || t.nextSceneVisualUrl || toSceneFirstImage || fromSceneLastImage;
 
         return {
           from: t.from,
@@ -6108,21 +6158,29 @@ function EP04ProductionInner() {
                                   );
                                 })}
                                 {/* Music audio player if scene has music */}
-                                {status.musicUrl && (
-                                  <div className="flex items-center gap-2 p-1.5 rounded bg-muted/30 border border-border/20">
-                                    <Music className="h-3 w-3 text-violet-400 flex-shrink-0" />
-                                    <audio
-                                      src={status.musicUrl}
-                                      controls
-                                      className="h-6 w-full [&::-webkit-media-controls-panel]:h-6"
-                                      preload="metadata"
-                                      onError={(e) => {
-                                        const audio = e.currentTarget;
-                                        console.error(`[EP04 Music] ${sceneKey} inline playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl?.substring(0, 100)}`);
-                                      }}
-                                    />
-                                  </div>
-                                )}
+                                {status.musicUrl && (() => {
+                                  const musicExpired = isExpiredCdnUrl(status.musicUrl);
+                                  return musicExpired ? (
+                                    <div className="flex items-center gap-2 p-1.5 rounded bg-amber-500/10 border border-amber-500/20">
+                                      <Music className="h-3 w-3 text-amber-500 flex-shrink-0" />
+                                      <span className="text-[10px] text-amber-500">Music URL expired — regenerate in Phase 4</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2 p-1.5 rounded bg-muted/30 border border-border/20">
+                                      <Music className="h-3 w-3 text-violet-400 flex-shrink-0" />
+                                      <audio
+                                        src={status.musicUrl}
+                                        controls
+                                        className="h-6 w-full [&::-webkit-media-controls-panel]:h-6"
+                                        preload="metadata"
+                                        onError={(e) => {
+                                          const audio = e.currentTarget;
+                                          console.error(`[EP04 Music] ${sceneKey} inline playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl?.substring(0, 100)}`);
+                                        }}
+                                      />
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             );
                           })()}
@@ -6233,17 +6291,36 @@ function EP04ProductionInner() {
                               <p className="text-[8px] text-red-500 mt-0.5">Failed</p>
                             </div>
                           )}
-                          {status?.musicUrl && (
-                            <audio
-                              src={status.musicUrl}
-                              controls
-                              className="w-full mt-2 h-6"
-                              onError={(e) => {
-                                const audio = e.currentTarget;
-                                console.error(`[EP04 Music] ${sceneKey} playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl?.substring(0, 100)}`);
-                              }}
-                            />
-                          )}
+                          {status?.musicUrl && (() => {
+                            const musicExpired = isExpiredCdnUrl(status.musicUrl);
+                            return musicExpired ? (
+                              <div className="flex items-center gap-1 mt-1">
+                                <AlertTriangle className="h-2.5 w-2.5 text-amber-500" />
+                                <span className="text-[8px] text-amber-500">URL expired — regenerate</span>
+                              </div>
+                            ) : (
+                              <audio
+                                src={status.musicUrl}
+                                controls
+                                className="w-full mt-2 h-6"
+                                onError={(e) => {
+                                  const audio = e.currentTarget;
+                                  console.error(`[EP04 Music] ${sceneKey} playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl?.substring(0, 100)}`);
+                                  // If playback fails with network error, show user the URL may be expired
+                                  if (audio.error?.code === 2 || audio.error?.code === 4) {
+                                    audio.style.display = 'none';
+                                    const parent = audio.parentElement;
+                                    if (parent && !parent.querySelector('.music-error-badge')) {
+                                      const badge = document.createElement('span');
+                                      badge.className = 'music-error-badge text-[8px] text-amber-500 block mt-1';
+                                      badge.textContent = '⚠️ Cannot play — URL may be expired. Regenerate music.';
+                                      parent.appendChild(badge);
+                                    }
+                                  }
+                                }}
+                              />
+                            );
+                          })()}
                           {/* Per-scene regen button — always visible unless actively generating */}
                           {status?.music !== 'generating' && (
                             <Button

@@ -545,16 +545,17 @@ function makeTtsLineScene(
       }
     }
 
-    // Lipsync talking head (full-frame, MUTED — TTS audio is separate)
-    // Use 'contain' to prevent character cutoff at edges (cover crops non-16:9 sources).
-    // Dark scene background (#0f0a1a) fills any letterbox gaps seamlessly.
+    // Lipsync talking head — FULL SCREEN, MUTED (TTS audio is separate element)
+    // Use 'cover' for full-screen display. The lipsync video IS the visual for
+    // this time window — it must fill the entire frame, not be letterboxed.
+    // z-index 2 ensures it renders ABOVE any B-roll lead-in/tail images.
     elements.push({
       type: 'video', src: lipsync.url,
       start: lipsyncStart, duration: lipsyncDur,
       volume: 0, // CRITICAL: lipsync has TTS baked in, TTS is separate audio element
       'fade-in': 0.3, 'fade-out': 1.0, // 1s fade hides WAN2.2 loop artifacts
-      'z-index': lipsyncStart > 0 ? 1 : 0,
-      resize: 'contain', width: 1920, height: 1080,
+      'z-index': 2, // above B-roll (0) and lead-in images (1)
+      resize: 'cover', width: 1920, height: 1080,
     });
 
     // Tail B-roll (if lipsync ends before scene)
@@ -911,13 +912,22 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo): J2
         imagePoolIdx++;
       }
     } else {
-      // Has lipsync → B-roll for lead-in/tail on longer scenes
-      if (sceneDur > 10 && images.length > 0) {
-        if (isHttpUrl(images[imagePoolIdx % images.length])) {
+      // Has lipsync → B-roll video/images for lead-in (long scenes) and tail (any scene where lipsync ends early)
+      if (sceneDur > 10) {
+        // Also pick a video for lead-in (e.g., lamp/genie establishing shot before lipsync)
+        if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
+          videoVisual = videos[videoPoolIdx++];
+        }
+        // Only consume imageVisual when there's NO video lead-in.
+        // When video IS the lead-in, imageVisual is just a fallback that never renders,
+        // so consuming it wastes a pool slot and causes the next scene to cycle back
+        // to an earlier image (e.g., host scene gets podcast-banner instead of cast-portrait).
+        if (!videoVisual && images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
           imageVisual = images[imagePoolIdx % images.length];
           imagePoolIdx++;
         }
-        if (images.length > 1 && isHttpUrl(images[imagePoolIdx % images.length])) {
+        // Tail image: always pick one for the gap after lipsync ends
+        if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
           tailImageVisual = images[imagePoolIdx % images.length];
           imagePoolIdx++;
         }
@@ -1014,19 +1024,31 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
       continue;
     }
 
-    // Calculate split count and sub-scene duration
+    const elements: J2VElement[] = scene.elements || [];
+
+    // CRITICAL: Never split scenes that have TTS audio.
+    // JSON2Video cannot seek into audio files — splitting a TTS scene
+    // causes the voiceover to replay from the beginning in each sub-scene,
+    // producing overlapping/repeating narration.
+    // TTS scenes are the pacing master. If a TTS scene exceeds MAX_SCENE_DURATION,
+    // accept the timeout risk rather than producing broken audio.
+    const hasTtsAudio = elements.some(el => el.type === 'audio' && el.volume === 1.0);
+    if (hasTtsAudio) {
+      console.log(`[CastEngine] Scene ${sceneDur}s has TTS audio — NOT splitting (audio seek not supported): "${scene.comment}"`);
+      result.push(scene);
+      continue;
+    }
+
+    // Only split visual-only scenes (no TTS) — music loops seamlessly, images cycle
     const splitCount = Math.ceil(sceneDur / MAX_SCENE_DURATION);
     const subDur = sceneDur / splitCount;
 
-    console.log(`[CastEngine] Splitting ${sceneDur}s scene into ${splitCount} × ${subDur.toFixed(1)}s sub-scenes: "${scene.comment}"`);
-
-    const elements: J2VElement[] = scene.elements || [];
+    console.log(`[CastEngine] Splitting ${sceneDur}s visual-only scene into ${splitCount} × ${subDur.toFixed(1)}s sub-scenes: "${scene.comment}"`);
 
     // Classify elements by type for smart redistribution
-    const ttsAudios = elements.filter(el => el.type === 'audio' && el.volume === 1.0);
-    const musicAudios = elements.filter(el => el.type === 'audio' && el.volume !== 1.0 && el.loop != null);
-    const sfxAudios = elements.filter(el => el.type === 'audio' && el.volume !== 1.0 && el.loop == null);
-    const lipsyncVideos = elements.filter(el => el.type === 'video' && el.volume === 0);
+    const musicAudios = elements.filter(el => el.type === 'audio' && el.loop != null);
+    const sfxAudios = elements.filter(el => el.type === 'audio' && el.loop == null);
+    const videos = elements.filter(el => el.type === 'video');
     const images = elements.filter(el => el.type === 'image');
     const texts = elements.filter(el => el.type === 'text');
     const components = elements.filter(el => el.type === 'component');
@@ -1052,58 +1074,15 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
         });
       }
 
-      // ── Lipsync video: only in the sub-scene where it overlaps ──
-      for (const lv of lipsyncVideos) {
-        const lvStart = lv.start ?? 0;
-        const lvEnd = lvStart + (lv.duration ?? 0);
-        // Check overlap with this sub-scene's time window
-        if (lvEnd > subStart && lvStart < subEnd) {
-          const clippedStart = Math.max(0, lvStart - subStart);
-          const clippedDur = Math.min(lvEnd, subEnd) - Math.max(lvStart, subStart);
+      // ── Videos: only in the sub-scene where they overlap ──
+      for (const v of videos) {
+        const vStart = v.start ?? 0;
+        const vEnd = vStart + (v.duration ?? 0);
+        if (vEnd > subStart && vStart < subEnd) {
+          const clippedStart = Math.max(0, vStart - subStart);
+          const clippedDur = Math.min(vEnd, subEnd) - Math.max(vStart, subStart);
           if (clippedDur > 1) {
-            subElements.push({
-              ...lv,
-              start: clippedStart,
-              duration: clippedDur,
-            });
-          }
-        }
-      }
-
-      // ── TTS audio: trim to this sub-scene's time window ──
-      // JSON2Video plays the audio from `start` within the scene.
-      // We need the audio to play the correct portion.
-      // Strategy: include the full audio but set start to a negative offset
-      // so the correct portion plays. JSON2Video doesn't support seek,
-      // so we use the full audio and let the scene duration trim it.
-      for (const tts of ttsAudios) {
-        const ttsStart = tts.start ?? 0;
-        const ttsDur = tts.duration ?? 0;
-        const ttsEnd = ttsStart + ttsDur;
-
-        // Check if this TTS overlaps this sub-scene
-        if (ttsEnd > subStart && ttsStart < subEnd) {
-          // Audio starts at: how far into this sub-scene the TTS begins
-          const audioStartInSub = Math.max(0, ttsStart - subStart);
-          // Audio duration in this sub-scene
-          const audioEndInSub = Math.min(ttsEnd - subStart, thisDur);
-          const audioDurInSub = audioEndInSub - audioStartInSub;
-
-          if (audioDurInSub > 0.5) {
-            subElements.push({
-              type: 'audio', src: tts.src,
-              start: audioStartInSub,
-              duration: audioDurInSub,
-              volume: 1.0,
-              // If this isn't the first sub-scene for this TTS,
-              // the audio starts partway through — JSON2Video will
-              // play from the beginning of the file but only for
-              // the specified duration from the specified start.
-              // NOTE: This means sub-scenes after the first will replay
-              // from the beginning of the TTS file. This is a known
-              // limitation — the alternative (timeout) is worse.
-              // For best results, split long TTS into shorter lines.
-            });
+            subElements.push({ ...v, start: clippedStart, duration: clippedDur });
           }
         }
       }
@@ -1114,7 +1093,7 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
           ...m,
           start: 0,
           duration: thisDur,
-          'fade-in': si === 0 ? (m['fade-in'] || 0.8) : 0.1, // quick fade on continuation
+          'fade-in': si === 0 ? (m['fade-in'] || 0.8) : 0.1,
           'fade-out': si === splitCount - 1 ? (m['fade-out'] || 0.8) : 0.1,
         });
       }
@@ -1132,29 +1111,22 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
         }
       }
 
-      // ── Text: only in the first sub-scene (lower-thirds, kinetic text) ──
+      // ── Text: only in the first sub-scene ──
       if (si === 0) {
         for (const t of texts) {
           const tStart = t.start ?? 0;
-          const tDur = t.duration ?? 0;
           if (tStart < thisDur) {
-            subElements.push({
-              ...t,
-              duration: Math.min(tDur, thisDur - tStart),
-            });
+            subElements.push({ ...t, duration: Math.min(t.duration ?? 5, thisDur - tStart) });
           }
         }
       }
 
-      // ── Components (lower-thirds): only in first sub-scene ──
+      // ── Components: only in first sub-scene ──
       if (si === 0) {
         for (const c of components) {
           const cStart = c.start ?? 0;
           if (cStart < thisDur) {
-            subElements.push({
-              ...c,
-              duration: Math.min(c.duration ?? 5, thisDur - cStart),
-            });
+            subElements.push({ ...c, duration: Math.min(c.duration ?? 5, thisDur - cStart) });
           }
         }
       }
@@ -1165,8 +1137,8 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
         'background-color': scene['background-color'] || '#0f0a1a',
         elements: filterSafeElements(subElements),
         transition: si === 0
-          ? scene.transition  // first sub-scene keeps original transition
-          : { style: 'dissolve', duration: 0.3 }, // continuation: quick dissolve
+          ? scene.transition
+          : { style: 'dissolve', duration: 0.3 },
       });
     }
   }

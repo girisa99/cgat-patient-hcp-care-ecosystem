@@ -41,7 +41,7 @@ serve(async (req) => {
     let castJobId: string | null = null;
     if (castProjectId) {
       try {
-        const { data: job } = await supabase
+        const { data: job, error: insertError } = await supabase
           .from('cast_generation_jobs')
           .insert({
             project_id: castProjectId,
@@ -59,8 +59,13 @@ serve(async (req) => {
           })
           .select('id')
           .single();
+        if (insertError) {
+          console.error('❌ cast_generation_jobs INSERT failed:', insertError.message);
+        }
         if (job) castJobId = job.id;
-      } catch (_) { /* best-effort */ }
+      } catch (dbErr) {
+        console.error('❌ cast_generation_jobs INSERT threw:', dbErr);
+      }
     }
 
     // Forward to JSON2Video
@@ -97,25 +102,40 @@ serve(async (req) => {
     const data = JSON.parse(responseText);
     const projectId = data.project || data.id || data.movie_id;
 
-    // Update job + project status
-    if (castJobId && castProjectId) {
-      try {
-        const isPending = !!projectId;
-        await supabase.from('cast_generation_jobs').update({
-          status: isPending ? 'rendering' : 'completed',
-          output_url: data.url || data.movie_url || data.movie?.url || null,
-          output_thumbnail_url: data.poster || data.thumbnail || data.movie?.poster || null,
-          output_duration_seconds: totalDuration || null,
-          provider_job_id: projectId || null,
-          completed_at: !isPending ? new Date().toISOString() : null,
-        }).eq('id', castJobId);
+    // Update job + project status — CRITICAL: provider_job_id must be saved for polling to work
+    if (castJobId || castProjectId) {
+      const isPending = !!projectId;
+      const jobUpdate = {
+        status: isPending ? 'rendering' : 'completed',
+        output_url: data.url || data.movie_url || data.movie?.url || null,
+        output_thumbnail_url: data.poster || data.thumbnail || data.movie?.poster || null,
+        output_duration_seconds: totalDuration || null,
+        provider_job_id: projectId || null,
+        completed_at: !isPending ? new Date().toISOString() : null,
+      };
 
-        await supabase.from('cast_projects').update({
+      if (castJobId) {
+        // Try up to 2 times to save provider_job_id — without this, polling is broken
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          const { error: updateError } = await supabase.from('cast_generation_jobs')
+            .update(jobUpdate).eq('id', castJobId);
+          if (!updateError) {
+            console.log(`✅ cast_generation_jobs updated: provider_job_id=${projectId} (attempt ${attempt})`);
+            break;
+          }
+          console.error(`❌ cast_generation_jobs UPDATE failed (attempt ${attempt}):`, updateError.message);
+          if (attempt < 2) await new Promise(r => setTimeout(r, 500)); // brief retry delay
+        }
+      }
+
+      if (castProjectId) {
+        const { error: projError } = await supabase.from('cast_projects').update({
           status: isPending ? 'generating' : 'review',
           ...(totalDuration > 0 ? { total_duration_seconds: totalDuration } : {}),
           ...(data.url || data.movie_url ? { final_video_url: data.url || data.movie_url } : {}),
         }).eq('id', castProjectId);
-      } catch (_) { /* best-effort */ }
+        if (projError) console.error('❌ cast_projects UPDATE failed:', projError.message);
+      }
     }
 
     return new Response(JSON.stringify({

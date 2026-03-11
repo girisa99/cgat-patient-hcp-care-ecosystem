@@ -34,12 +34,15 @@ import { composeMusicPrompt, composeSfxPrompts, type MusicComposition } from '@/
 export type CastIndustry =
   | 'healthcare' | 'pharma' | 'tech' | 'finance' | 'education'
   | 'entertainment' | 'food' | 'fashion' | 'real-estate' | 'automotive'
-  | 'travel' | 'fitness' | 'legal' | 'nonprofit' | 'government' | 'general';
+  | 'travel' | 'fitness' | 'legal' | 'nonprofit' | 'government'
+  | 'energy' | 'wedding' | 'events' | 'hospitality' | 'retail'
+  | 'manufacturing' | 'construction' | 'agriculture' | 'media'
+  | 'sports' | 'beauty' | 'insurance' | 'logistics' | 'general';
 
 export type CastFormat =
   | 'documentary' | 'explainer' | 'podcast' | 'social-clip' | 'product-demo'
   | 'training' | 'testimonial' | 'interview' | 'presentation' | 'promo'
-  | 'webcast' | 'tutorial';
+  | 'webcast' | 'tutorial' | 'celebration' | 'event-recap' | 'virtual-tour';
 
 export type CastTone =
   | 'professional' | 'casual' | 'cinematic' | 'educational' | 'dramatic'
@@ -171,6 +174,9 @@ const FORMAT_SCENE_MAP: Record<CastFormat, string[]> = {
   'promo':         ['title-card', 'montage-reel', 'talking-head', 'cta-outro'],
   'webcast':       ['title-card', 'talking-head', 'screen-capture-vo', 'split-screen-debate', 'cta-outro'],
   'tutorial':      ['title-card', 'talking-head', 'screen-capture-vo', 'code-walkthrough', 'cta-outro'],
+  'celebration':   ['title-card', 'montage-reel', 'testimonial', 'b-roll-narration', 'montage-reel', 'cta-outro'],
+  'event-recap':   ['title-card', 'montage-reel', 'talking-head', 'b-roll-narration', 'testimonial', 'data-viz-narrative', 'cta-outro'],
+  'virtual-tour':  ['title-card', 'b-roll-narration', 'talking-head', 'b-roll-narration', 'cta-outro'],
 };
 
 // ─── FORMAT → SCRIPT PURPOSE MAPPING ────────────────────────────────────────
@@ -188,6 +194,9 @@ const FORMAT_PURPOSE_MAP: Record<CastFormat, ScriptPurpose> = {
   'promo':        'promo',
   'webcast':      'webcast',
   'tutorial':     'tutorial',
+  'celebration':  'celebration',
+  'event-recap':  'documentary',
+  'virtual-tour': 'documentary',
 };
 
 // ─── TONE → EMOTIONAL TONE MAPPING ─────────────────────────────────────────
@@ -220,6 +229,9 @@ const FORMAT_TRANSITION_MAP: Record<CastFormat, Array<'fade' | 'dissolve' | 'wip
   'promo':         ['zoom', 'slide', 'cut'],
   'webcast':       ['cut', 'fade'],
   'tutorial':      ['slide', 'fade', 'dissolve'],
+  'celebration':   ['dissolve', 'fade', 'zoom'],
+  'event-recap':   ['dissolve', 'wipe', 'fade'],
+  'virtual-tour':  ['slide', 'dissolve', 'zoom'],
 };
 
 // ─── QUALITY → PROVIDER ROUTING ─────────────────────────────────────────────
@@ -285,6 +297,9 @@ function calculateSceneCount(format: CastFormat, durationTarget: number): number
     'podcast':      40,
     'documentary':  30,
     'webcast':      30,
+    'celebration':  15,
+    'event-recap':  20,
+    'virtual-tour': 25,
   };
 
   const avgDuration = secondsPerScene[format] || 20;
@@ -647,6 +662,7 @@ export function estimateDuration(format: CastFormat, sceneCount: number): number
     'social-clip': 8, 'promo': 12, 'explainer': 20, 'product-demo': 20,
     'training': 25, 'tutorial': 25, 'testimonial': 25, 'presentation': 20,
     'interview': 30, 'podcast': 40, 'documentary': 30, 'webcast': 30,
+    'celebration': 15, 'event-recap': 20, 'virtual-tour': 25,
   };
   return sceneCount * (avgPerScene[format] || 20);
 }

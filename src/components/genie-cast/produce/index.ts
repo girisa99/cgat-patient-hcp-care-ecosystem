@@ -5,3 +5,4 @@
 
 export { ProduceEditStep } from './ProduceEditStep';
 export { ProduceReviewStep } from './ProduceReviewStep';
+export { MusicCustomizer } from './MusicCustomizer';

@@ -38,7 +38,10 @@ export type ScriptPurpose =
   | 'testimonial'      // Spark: customer story
   | 'promo'            // Spark: marketing
   | 'documentary'      // Cast: narrative
-  | 'training';        // Mind: corporate L&D
+  | 'training'         // Mind: corporate L&D
+  | 'celebration'      // Cast: weddings, milestones, birthdays
+  | 'event-recap'      // Cast: conference/event highlights
+  | 'virtual-tour';    // Cast: location/property walkthrough
 
 // ─── CULTURAL & REGIONAL ENRICHMENT ────────────────────────────────────────────
 
