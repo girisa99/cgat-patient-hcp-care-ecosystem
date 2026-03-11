@@ -3451,7 +3451,7 @@ function EP04ProductionInner() {
         // Use actual measured TTS duration if available; fall back to estimate
         const actualDur = audioMap[k]?.audioDuration;
         const estDur = scriptContentForUI[k]?.duration_est || 5;
-        sceneDuration += (actualDur || estDur) + 1.5;
+        sceneDuration += (actualDur || estDur) + 0.5;
         if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
       // Add trailing transition duration (~6s bridge narrator + transition visual)
@@ -3536,7 +3536,7 @@ function EP04ProductionInner() {
         // Use actual measured TTS duration if available; fall back to estimate
         const actualDur = audioMap[k]?.audioDuration;
         const estDur = scriptContentForUI[k]?.duration_est || 5;
-        sceneDuration += (actualDur || estDur) + 1.5; // +1.5s TTS gap per line
+        sceneDuration += (actualDur || estDur) + 0.5; // +1.5s TTS gap per line
         if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
       sceneDuration = sceneDuration || 30;
@@ -4261,6 +4261,10 @@ function EP04ProductionInner() {
           const toSceneIdx = getSceneIndex(t.to);
           const toSceneKey = toSceneIdx ? targetSceneKeys.find(k => getSceneIndex(k) === toSceneIdx) : undefined;
           const toChapter = toSceneKey ? preBuiltChapters.find(c => c.chapterId === toSceneKey) : undefined;
+          // Fallback: use current (source) chapter's image if next chapter not yet generated
+          const fromSceneIdx = getSceneIndex(t.from);
+          const fromSceneKey = fromSceneIdx ? targetSceneKeys.find(k => getSceneIndex(k) === fromSceneIdx) : undefined;
+          const fromChapter = fromSceneKey ? preBuiltChapters.find(c => c.chapterId === fromSceneKey) : undefined;
           return {
             ...t,
             // Bridge audio is NOT passed to transition — bridge TTS already has its own
@@ -4268,7 +4272,7 @@ function EP04ProductionInner() {
             // would cause the bridge audio to play TWICE (in the TTS scene + transition).
             bridgeAudioUrl: undefined,
             bridgeDuration: bridgeLine?.duration_est || 7,
-            nextSceneVisualUrl: (toChapter as any)?.sceneImages?.[0] || undefined,
+            nextSceneVisualUrl: (toChapter as any)?.sceneImages?.[0] || (fromChapter as any)?.sceneImages?.[0] || undefined,
             j2vTransition: TRANSITION_STYLE_MAP[t.style] || 'fade',
           };
         });

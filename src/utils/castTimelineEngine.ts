@@ -361,37 +361,25 @@ function makeTransitionScene(t: CastTransition): J2VScene {
     });
   }
 
-  // Chapter title text
-  if (t.chapterTitle) {
-    elements.push({
-      type: 'text', text: t.chapterTitle,
-      style: '003', // word-by-word
-      start: 0.3, duration: dur - 0.5,
-      settings: {
-        'font-family': 'Inter', 'font-size': '42px', 'font-color': '#f5d77a',
-        'font-weight': '700',
-        'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)',
-      },
-      position: 'center',
-      'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 25,
-    });
-  }
-
-  // Transition style name overlay (fallback when no chapter title)
-  if (!t.chapterTitle) {
-    elements.push({
-      type: 'text', text: t.style.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      style: '003', start: 0.5, duration: dur - 0.5,
-      settings: {
-        'font-family': 'Inter', 'font-size': '36px', 'font-color': '#f5d77a',
-        'font-weight': '600',
-        'text-shadow': '3px 3px 12px rgba(0,0,0,0.95)',
-        'background-color': 'rgba(15,10,26,0.5)', padding: '12px 24px',
-      },
-      position: 'center',
-      'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 20,
-    });
-  }
+  // Chapter title text with dark pill background for readability
+  const titleText = t.chapterTitle
+    || t.style.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  elements.push({
+    type: 'text', text: titleText,
+    style: '003', // word-by-word
+    start: 0.3, duration: dur - 0.5,
+    settings: {
+      'font-family': 'Inter',
+      'font-size': t.chapterTitle ? '42px' : '36px',
+      'font-color': '#f5d77a',
+      'font-weight': '700',
+      'text-shadow': '4px 4px 16px rgba(0,0,0,0.95)',
+      'background-color': 'rgba(15,10,26,0.6)',
+      padding: '20px 40px',
+    },
+    position: 'center',
+    'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 25,
+  });
 
   // Bridge narrator audio
   if (isHttpUrl(t.bridgeAudioUrl)) {
