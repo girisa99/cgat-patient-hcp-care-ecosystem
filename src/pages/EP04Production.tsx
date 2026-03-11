@@ -32,6 +32,13 @@ import { EP04PublishHub } from '@/components/genie-cast/EP04PublishHub';
 import { ContentRepurposingPanel } from '@/components/genie-cast/ContentRepurposingPanel';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
 import { useCastProjectData } from '@/hooks/useCastProjectData';
+import { useQueryClient } from '@tanstack/react-query';
+import { castKeys } from '@/hooks/castQueryKeys';
+import {
+  useEP04ProjectLookup,
+  useRestoredTts,
+  useRestoredSceneProduction,
+} from '@/hooks/useEP04DataRestore';
 import { buildCastTimeline, type CastChapter, type CastTransition, type CastBookends, type CastSpeakerInfo } from '@/utils/castTimelineEngine';
 import { Save, FolderOpen } from 'lucide-react';
 
@@ -614,12 +621,16 @@ function EP04ProductionInner() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const urlProjectId = searchParams.get('projectId');
-  const [autoProjectId, setAutoProjectId] = useState<string | null>(null);
-  const [projectLoadError, setProjectLoadError] = useState<string | null>(null);
-  const [projectLoading, setProjectLoading] = useState(!urlProjectId);
-  const [loadStep, setLoadStep] = useState<string>(''); // diagnostic step
-  const [retryCount, setRetryCount] = useState(0); // triggers effect re-run
-  const projectId = urlProjectId || autoProjectId;
+  const queryClient = useQueryClient();
+
+  // ─── React Query: project lookup (replaces manual useEffect + useState) ──
+  const {
+    projectId: rqProjectId,
+    isLoading: projectLoading,
+    error: projectLoadError,
+    retry: retryProjectLookup,
+  } = useEP04ProjectLookup(urlProjectId);
+  const projectId = rqProjectId;
   const {
     saveProjectContent, loadProjectContent, updateLineTTS,
     trackGenerationJob, completeGenerationJob, fetchTokenBreakdown,
@@ -627,178 +638,9 @@ function EP04ProductionInner() {
     updateSceneArtifacts, updateSceneMusic, updateFinalAssembly,
   } = useCastProjectPersistence();
 
-  // ─── Auto-create cast_projects row if none exists ──────────────────
-  // Uses exact style_intent match to prevent duplicates (not fuzzy title match)
-  const autoCreateAttempted = React.useRef(false);
-  const loadStepRef = React.useRef('');
-  useEffect(() => {
-    if (urlProjectId || autoProjectId) return;
-    // Guard against React strict-mode double-fire, but allow retries
-    if (autoCreateAttempted.current && retryCount === 0) return;
-    autoCreateAttempted.current = true;
-    setProjectLoading(true);
-    setProjectLoadError(null);
-    const updateStep = (step: string) => { loadStepRef.current = step; setLoadStep(step); };
-    updateStep('Checking authentication...');
-
-    // Timeout guard — 20s max (reduced from 45s; better to show retry button quickly)
-    const timeoutId = setTimeout(() => {
-      setProjectLoading(false);
-      setProjectLoadError(`Timed out at step: "${loadStepRef.current || 'authentication check'}". Supabase may be unreachable — check your network or try again.`);
-    }, 20000);
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        // Step 1: Auth check — fast local session, then network validation
-        console.log('[EP04 LOAD] Step 1: checking auth...');
-        let user: any = null;
-        // Fast path: read session from local storage (with timeout)
-        try {
-          const sessionPromise = supabase.auth.getSession();
-          const sessionTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
-          const sessionResult = await Promise.race([sessionPromise, sessionTimeout]) as any;
-          user = sessionResult?.data?.session?.user;
-          if (user) console.log('[EP04 LOAD] Step 1a: got user from session (local)');
-        } catch (e) {
-          console.warn('[EP04 LOAD] getSession failed:', e);
-        }
-        // Slow path: validate with server (only if local session missing)
-        if (!user) {
-          console.log('[EP04 LOAD] Step 1b: trying getUser (network)...');
-          try {
-            const authPromise = supabase.auth.getUser();
-            const authTimeout = new Promise<null>((_, reject) =>
-              setTimeout(() => reject(new Error('Auth check timed out after 8 seconds')), 8000)
-            );
-            const authResult = await Promise.race([authPromise, authTimeout]) as any;
-            user = authResult?.data?.user;
-          } catch (authErr: any) {
-            console.warn('[EP04 LOAD] getUser failed:', authErr?.message || authErr);
-          }
-        }
-        // Retry once if both paths failed — Supabase can be slow on first load
-        if (!user) {
-          console.log('[EP04 LOAD] Step 1c: RETRY — waiting 1s then trying getSession again...');
-          await new Promise(r => setTimeout(r, 1000));
-          try {
-            const retryResult = await Promise.race([
-              supabase.auth.getSession(),
-              new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
-            ]) as any;
-            user = retryResult?.data?.session?.user;
-            if (user) console.log('[EP04 LOAD] Step 1c: retry succeeded!');
-          } catch (e) {
-            console.warn('[EP04 LOAD] Retry also failed:', e);
-          }
-        }
-        if (cancelled) return;
-
-        if (!user) {
-          console.error('[EP04 LOAD] Auth failed — no user session after retry');
-          setProjectLoadError('Not authenticated — please sign in and refresh');
-          setProjectLoading(false);
-          clearTimeout(timeoutId);
-          return;
-        }
-        console.log('[EP04 LOAD] Step 1 done — user:', user.id);
-        updateStep('Looking up EP04 project...');
-
-        const db = supabase as any;
-
-        // Step 2: Look up existing project by style_intent
-        console.log('[EP04 LOAD] Step 2: querying cast_projects by style_intent...');
-        const { data: existing, error: lookupErr } = await db
-          .from('cast_projects')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('style_intent', 'ep04-sprint-documentary')
-          .limit(1)
-          .maybeSingle();
-
-        if (cancelled) return;
-        if (lookupErr) {
-          console.error('[EP04 LOAD] DB lookup error:', lookupErr);
-          setProjectLoadError(`Database query failed: ${lookupErr.message}`);
-          setProjectLoading(false);
-          clearTimeout(timeoutId);
-          return;
-        }
-
-        if (existing?.id) {
-          console.log('[EP04 LOAD] Step 2 done — found project:', existing.id);
-          setAutoProjectId(existing.id);
-          setProjectLoading(false);
-          clearTimeout(timeoutId);
-          return;
-        }
-
-        // Step 3: Fallback — check by title for legacy rows
-        console.log('[EP04 LOAD] Step 3: checking legacy titles...');
-        updateStep('Checking legacy project titles...');
-        const { data: legacyExisting } = await db
-          .from('cast_projects')
-          .select('id')
-          .eq('user_id', user.id)
-          .ilike('title', '%EP04%')
-          .limit(1)
-          .maybeSingle();
-
-        if (cancelled) return;
-
-        if (legacyExisting?.id) {
-          await db.from('cast_projects')
-            .update({ style_intent: 'ep04-sprint-documentary' })
-            .eq('id', legacyExisting.id);
-          setAutoProjectId(legacyExisting.id);
-          setProjectLoading(false);
-          clearTimeout(timeoutId);
-          return;
-        }
-
-        // Step 4: Create new project
-        updateStep('Creating EP04 project...');
-        const { data: created, error } = await db
-          .from('cast_projects')
-          .insert({
-            user_id: user.id,
-            title: 'EP04 — Sprint Documentary',
-            description: 'GenieSuite Sprint Documentary — 12 scenes, 5 voices, ~27 min',
-            status: 'scripted',
-            style_intent: 'ep04-sprint-documentary',
-            quality: 'production',
-            target_regions: ['global'],
-            selected_dialects: ['en-US'],
-          })
-          .select('id')
-          .single();
-
-        if (cancelled) return;
-        if (!error && created) {
-          setAutoProjectId(created.id);
-          console.log('[EP04] Auto-created project:', created.id);
-        } else {
-          console.error('[EP04] Failed to create project row:', error);
-          setProjectLoadError(error?.message || 'Failed to create project — check database');
-        }
-      } catch (err: any) {
-        if (cancelled) return;
-        console.error('[EP04] Project lookup/create error:', err);
-        setProjectLoadError(err.message || 'Failed to load project');
-      } finally {
-        if (!cancelled) {
-          setProjectLoading(false);
-          clearTimeout(timeoutId);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, [urlProjectId, autoProjectId, retryCount]); // retryCount triggers re-run
+  // Project lookup is now handled by useEP04ProjectLookup (React Query)
+  // — see rqProjectId above. Auth, lookup, legacy fallback, and auto-create
+  // are all encapsulated in the hook with 30-min cache.
 
   // ─── DB-driven data (with fallback to config imports) ──────────────
   const dbProject = useCastProjectData(projectId);
@@ -943,514 +785,89 @@ function EP04ProductionInner() {
   const [concatVideoUrl, setConcatVideoUrl] = useState<string | null>(null);
   const [concatError, setConcatError] = useState<string | null>(null);
 
-  // ─── Load persisted TTS audio + production phase on mount ───────────────
-  // Strategy: Try cast_project_script_lines first. If empty (auto-seed wiped TTS),
-  // fall back to cast_generation_jobs which preserves output_url for every completed job.
+  // ─── React Query: TTS + scene restoration (replaces 400-line useEffect) ──
+  // Cache: TTS 15 min, scenes 10 min. Zero DB queries on page refresh within window.
+  const rqTts = useRestoredTts(projectId, scriptContentForUI);
+  const rqScenes = useRestoredSceneProduction(projectId, Object.keys(SCENE_TITLES));
+  const rqContentLoaded = !rqTts.isLoading && !rqScenes.isLoading && !!projectId;
 
+  // ─── Bridge: sync React Query results → existing useState (migration bridge) ──
+  // This effect runs when RQ data changes, keeping the existing render logic intact.
+  // Once all downstream consumers are migrated to read from RQ directly, this can be removed.
+  const rqBridgeApplied = useRef(false);
   useEffect(() => {
-    if (!projectId || contentLoaded) return;
-    (async () => {
-      const db = supabase as any;
-      const restoredAudio: Record<string, GeneratedAudio> = {};
-      const restoredStatus: Record<string, LineStatus> = {};
+    if (!rqContentLoaded) return;
+    // Only apply the bridge once per data load (RQ handles re-fetching)
+    if (rqBridgeApplied.current) return;
+    rqBridgeApplied.current = true;
 
-      // ── Source 1: cast_project_script_lines (primary) ──────────────
-      try {
-        const { data: ttsLines } = await db
-          .from('cast_project_script_lines')
-          .select('line_key, tts_audio_url, tts_provider, tts_voice_id, tts_status')
-          .eq('project_id', projectId)
-          .eq('tts_status', 'generated')
-          .not('tts_audio_url', 'is', null);
+    const staticKeys = new Set(Object.keys(scriptContentForUI));
 
-        if (ttsLines) {
-          for (const line of ttsLines) {
-            restoredAudio[line.line_key] = {
-              audioUrl: line.tts_audio_url,
-              provider: line.tts_provider || 'unknown',
-              voice: line.tts_voice_id || 'unknown',
-            };
-            restoredStatus[line.line_key] = 'done';
+    // Apply TTS data from React Query
+    if (Object.keys(rqTts.audioMap).length > 0) {
+      setAudioMap(rqTts.audioMap);
+      setStatusMap(rqTts.statusMap);
+      const matchCount = Object.keys(rqTts.audioMap).filter(k => staticKeys.has(k)).length;
+      toast.success(`Restored ${matchCount} saved voiceovers`);
+      console.log(`[EP04 RQ Bridge] TTS: ${matchCount} match static config`);
+    }
+
+    // Apply scene production data from React Query
+    const restoredScenes = rqScenes.sceneProduction;
+    if (Object.keys(restoredScenes).length > 0) {
+      setSceneProduction(prev => ({ ...prev, ...restoredScenes }));
+      setProductionPhase(rqScenes.productionPhase);
+
+      const restoredVisualCount = Object.keys(restoredScenes).filter(sk => restoredScenes[sk].visual === 'done').length;
+      const musicCount = Object.values(restoredScenes).filter(s => s.music === 'done').length;
+      const restoreMsg = `Restored ${Object.keys(restoredScenes).length} scene(s)${restoredVisualCount > 0 ? ` (${restoredVisualCount} with visuals)` : ''}${musicCount > 0 ? `, ${musicCount} with music` : ''}`;
+      toast.success(restoreMsg);
+      console.log(`[EP04 RQ Bridge] Scenes: ${restoreMsg}, phase=${rqScenes.productionPhase}`);
+
+      if (rqScenes.expiredMusicCount > 0) {
+        toast.warning(`${rqScenes.expiredMusicCount} scene(s) have expired music URLs. Use "Regen Music" in Phase 4.`);
+      }
+    }
+
+    // Background: re-persist TTS data recovered from generation_jobs fallback
+    const ttsEntries = Object.entries(rqTts.audioMap).filter(([k]) => staticKeys.has(k));
+    if (ttsEntries.length > 0) {
+      (async () => {
+        const BATCH_SIZE = 10;
+        const db = supabase as any;
+        for (let i = 0; i < ttsEntries.length; i += BATCH_SIZE) {
+          const batch = ttsEntries.slice(i, i + BATCH_SIZE);
+          await Promise.allSettled(batch.map(([lineKey, audio]) =>
+            db.from('cast_project_script_lines')
+              .update({
+                tts_audio_url: audio.audioUrl,
+                tts_provider: audio.provider,
+                tts_status: 'generated',
+              })
+              .eq('project_id', projectId)
+              .eq('line_key', lineKey)
+          ));
+          if (i + BATCH_SIZE < ttsEntries.length) {
+            await new Promise(r => setTimeout(r, 100));
           }
         }
-      } catch (err) {
-        console.warn('[EP04] Script lines TTS query failed:', err);
-      }
+        console.log(`[EP04 RQ Bridge] Background TTS re-persist: ${ttsEntries.length} lines`);
+      })();
+    }
 
-      // ── Source 2: cast_generation_jobs (fallback — recovers wiped TTS) ──
-      // If auto-seed overwrote script_lines with null TTS, generation_jobs
-      // still has the output_url from the original generation.
-      try {
-        const { data: jobs } = await db
-          .from('cast_generation_jobs')
-          .select('line_key, output_url, provider')
-          .eq('project_id', projectId)
-          .eq('job_type', 'tts')
-          .eq('status', 'completed')
-          .not('output_url', 'is', null)
-          .not('line_key', 'is', null);
+    setContentLoaded(true);
+  }, [rqContentLoaded, rqTts.audioMap, rqTts.statusMap, rqScenes.sceneProduction, rqScenes.productionPhase, rqScenes.expiredMusicCount, projectId]);
 
-        if (jobs) {
-          for (const job of jobs) {
-            // Only fill gaps — don't overwrite lines already restored from source 1
-            if (!restoredAudio[job.line_key]) {
-              restoredAudio[job.line_key] = {
-                audioUrl: job.output_url,
-                provider: job.provider || 'unknown',
-                voice: 'unknown',
-              };
-              restoredStatus[job.line_key] = 'done';
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('[EP04] Generation jobs TTS query failed:', err);
-      }
+  // ─── Cache invalidation helper — call after any mutation that writes to DB ──
+  const invalidateSceneCache = useCallback(() => {
+    if (!projectId) return;
+    queryClient.invalidateQueries({ queryKey: castKeys.project(projectId).sceneSummaries });
+  }, [projectId, queryClient]);
 
-      // Auto-mark visual-only lines (empty text) as done — they don't need TTS
-      for (const [key, line] of Object.entries(scriptContentForUI)) {
-        if (!line.text || line.text.trim().length === 0) {
-          restoredAudio[key] = { audioUrl: '', provider: 'none', voice: 'visual-only' };
-          restoredStatus[key] = 'done';
-        }
-      }
-
-      // Apply restored TTS — set state immediately, re-persist in background
-      if (Object.keys(restoredAudio).length > 0) {
-        setAudioMap(restoredAudio);
-        setStatusMap(restoredStatus);
-        const staticKeys = new Set(Object.keys(scriptContentForUI));
-        const matchCount = Object.keys(restoredAudio).filter(k => staticKeys.has(k)).length;
-        toast.success(`Restored ${matchCount} saved voiceovers`);
-        console.log(`[EP04] TTS restored: ${matchCount} match static config, ${Object.keys(restoredAudio).length} total from DB`);
-
-        // ── Re-persist recovered TTS back to script_lines (fire-and-forget background) ──
-        // Don't block UI load — this is a repair operation, not required for rendering.
-        const linesToRepair = Object.entries(restoredAudio).filter(([k]) => staticKeys.has(k));
-        if (linesToRepair.length > 0) {
-          (async () => {
-            const BATCH_SIZE = 10;
-            for (let i = 0; i < linesToRepair.length; i += BATCH_SIZE) {
-              const batch = linesToRepair.slice(i, i + BATCH_SIZE);
-              await Promise.allSettled(batch.map(([lineKey, audio]) =>
-                db.from('cast_project_script_lines')
-                  .update({
-                    tts_audio_url: audio.audioUrl,
-                    tts_provider: audio.provider,
-                    tts_status: 'generated',
-                  })
-                  .eq('project_id', projectId)
-                  .eq('line_key', lineKey)
-              ));
-              if (i + BATCH_SIZE < linesToRepair.length) {
-                await new Promise(r => setTimeout(r, 100));
-              }
-            }
-            console.log(`[EP04] Background TTS re-persist complete: ${linesToRepair.length} lines`);
-          })();
-        }
-      }
-
-      // ── Restore visual/music/assembly artifacts ──
-      // (production phase is inferred from restored artifacts below instead of a DB column)
-      // Source 1: scene_config.artifacts (from updateSceneArtifacts)
-      // Source 2 (fallback): cast_generation_jobs output_url (always saved on generation)
-      const restored: Record<string, SceneProductionStatus> = {};
-
-      // Source 1: cast_project_scenes.scene_config.artifacts
-      try {
-        const { data: dbScenes } = await db
-          .from('cast_project_scenes')
-          .select('scene_key, scene_config')
-          .eq('project_id', projectId);
-
-        console.log(`[PERSIST RESTORE] Found ${dbScenes?.length || 0} scene rows in DB`);
-        if (dbScenes) {
-          for (const row of dbScenes) {
-            const cfg = (row.scene_config || {}) as Record<string, any>;
-            const artifacts = cfg.artifacts as Record<string, Record<string, string>> | undefined;
-            const gm = cfg.generatedMusic as { url?: string; sfxUrls?: string[] } | undefined;
-
-            // Check ALL production data — artifacts checked by key existence (not value truthiness)
-            const hasArtifacts = artifacts && (
-              Object.keys(artifacts.videoUrls || {}).length > 0 ||
-              Object.keys(artifacts.imageUrls || {}).length > 0 ||
-              Object.keys(artifacts.avatarUrls || {}).length > 0 ||
-              Object.keys(artifacts.lipsyncUrls || {}).length > 0
-            );
-            const hasMusic = !!(gm?.url);
-            const hasSfx = !!(gm?.sfxUrls && gm.sfxUrls.length > 0);
-            const hasAssembly = !!cfg.assembledClipUrl;
-
-            if (!hasArtifacts && !hasMusic && !hasSfx && !hasAssembly) {
-              console.log(`[PERSIST RESTORE] ${row.scene_key}: no production data — skipping`);
-              continue;
-            }
-
-            const vCount = Object.keys(artifacts?.videoUrls || {}).length;
-            const iCount = Object.keys(artifacts?.imageUrls || {}).length;
-            const aCount = Object.keys(artifacts?.avatarUrls || {}).length;
-            const lCount = Object.keys(artifacts?.lipsyncUrls || {}).length;
-            console.log(`[PERSIST RESTORE] ${row.scene_key}: ${vCount} videos, ${iCount} images, ${aCount} avatars, ${lCount} lipsync, music=${hasMusic}, sfx=${hasSfx}, assembled=${hasAssembly}`);
-
-            restored[row.scene_key] = {
-              visual: hasArtifacts ? 'done' : 'idle',
-              music: hasMusic ? 'done' : 'idle',
-              sfx: hasSfx ? 'done' : 'idle',
-              assembled: hasAssembly ? 'done' : 'idle',
-              videoUrls: artifacts?.videoUrls || {},
-              imageUrls: artifacts?.imageUrls || {},
-              avatarUrls: artifacts?.avatarUrls || {},
-              lipsyncUrls: artifacts?.lipsyncUrls || {},
-              musicUrl: gm?.url || null,
-              sfxUrls: gm?.sfxUrls || [],
-              assembledClipUrl: cfg.assembledClipUrl || null,
-            };
-          }
-        }
-      } catch (e) {
-        console.warn('[PERSIST RESTORE] scene_config artifacts restore FAILED:', e);
-      }
-
-      // Track which scenes came from Source 1 (authoritative) — Source 2 will skip these
-      const source1SceneKeys = new Set<string>(Object.keys(restored));
-
-      // Source 2: cast_generation_jobs — ONLY latest job per (scene_key, job_type)
-      // Used as gap-fill when Source 1 is empty for a scene. ORDER BY DESC so we
-      // see newest first, then deduplicate by (scene_key, job_type) keeping only the first.
-      try {
-        const { data: visualJobs } = await db
-          .from('cast_generation_jobs')
-          .select('scene_key, job_type, output_url')
-          .eq('project_id', projectId)
-          .eq('status', 'completed')
-          .not('output_url', 'is', null)
-          .not('scene_key', 'is', null)
-          .neq('job_type', 'tts')
-          .order('created_at', { ascending: false });
-
-        if (visualJobs) {
-          // Deduplicate: keep only the LATEST job per (scene_key, job_type)
-          const seen = new Set<string>();
-          for (const job of visualJobs) {
-            const sk = job.scene_key;
-            if (!sk || !job.output_url) continue;
-            const dedupeKey = `${sk}::${job.job_type}`;
-            if (seen.has(dedupeKey)) continue; // skip older versions
-            seen.add(dedupeKey);
-
-            // Skip if Source 1 already has this scene (Source 1 is authoritative)
-            if (source1SceneKeys.has(sk)) continue;
-
-            if (!restored[sk]) {
-              restored[sk] = {
-                visual: 'done', music: 'idle', sfx: 'idle', assembled: 'idle',
-                videoUrls: {}, imageUrls: {}, avatarUrls: {}, lipsyncUrls: {},
-                musicUrl: null, sfxUrls: [], assembledClipUrl: null,
-              };
-            }
-            const jt = job.job_type;
-            const url = job.output_url as string;
-            const isImageUrl = /\.(png|jpg|jpeg|webp|gif)(\?|$)/i.test(url);
-            const urlKey = `${jt}-${sk}`;
-            // Also skip if this URL is already present in the bucket
-            const alreadyHasUrl = (bucket: Record<string, string>) =>
-              Object.values(bucket).includes(url);
-            if (jt === 'avatar') {
-              if (!alreadyHasUrl(restored[sk].avatarUrls)) restored[sk].avatarUrls[urlKey] = url;
-            } else if (jt === 'lipsync') {
-              if (!alreadyHasUrl(restored[sk].lipsyncUrls)) restored[sk].lipsyncUrls[urlKey] = url;
-            } else if (jt === 'image' || isImageUrl) {
-              if (!alreadyHasUrl(restored[sk].imageUrls)) restored[sk].imageUrls[urlKey] = url;
-            } else {
-              if (!alreadyHasUrl(restored[sk].videoUrls)) restored[sk].videoUrls[urlKey] = url;
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('[EP04] generation_jobs visual restore failed:', e);
-      }
-
-      // Keep ALL URLs including external CDN URLs — only filter placeholders and base64 data URIs
-      // DashScope URLs display fine in <img> tags (no CORS for images)
-      // New generations get Supabase Storage URLs from the edge function (server-side mirroring)
-      // Base64 data URIs must NOT survive in DB — they bloat JSONB (1-3MB each!) and cause save timeouts
-      const filterPlaceholders = (urls: Record<string, string>): Record<string, string> => {
-        const clean: Record<string, string> = {};
-        for (const [k, v] of Object.entries(urls)) {
-          if (v && !v.includes('placehold.co') && !isBase64DataUri(v)) {
-            clean[k] = v;
-          } else if (v && isBase64DataUri(v)) {
-            console.warn(`[PERSIST RESTORE] Stripped base64 data URI from key "${k}" (${v.length} chars)`);
-          }
-        }
-        return clean;
-      };
-
-      for (const sk of Object.keys(restored)) {
-        restored[sk].videoUrls = filterPlaceholders(restored[sk].videoUrls);
-        restored[sk].imageUrls = filterPlaceholders(restored[sk].imageUrls);
-        restored[sk].avatarUrls = filterPlaceholders(restored[sk].avatarUrls);
-        restored[sk].lipsyncUrls = filterPlaceholders(restored[sk].lipsyncUrls);
-        const totalUrls = Object.keys(restored[sk].videoUrls).length + Object.keys(restored[sk].imageUrls).length
-          + Object.keys(restored[sk].avatarUrls).length + Object.keys(restored[sk].lipsyncUrls).length;
-        if (totalUrls === 0 && !restored[sk].musicUrl && restored[sk].sfxUrls.length === 0 && !restored[sk].assembledClipUrl) {
-          restored[sk].visual = 'idle';
-        }
-      }
-
-      // ── Auto-cleanup: dedup by URL value + detect expired CDN URLs ──
-      let totalDupsRemoved = 0;
-      let expiredSceneCount = 0;
-      const dedupBucket = (bucket: Record<string, string>): Record<string, string> => {
-        const seenUrls = new Set<string>();
-        const clean: Record<string, string> = {};
-        for (const [k, v] of Object.entries(bucket)) {
-          if (!v || seenUrls.has(v)) {
-            totalDupsRemoved++;
-            continue;
-          }
-          seenUrls.add(v);
-          clean[k] = v;
-        }
-        return clean;
-      };
-      for (const sk of Object.keys(restored)) {
-        restored[sk].videoUrls = dedupBucket(restored[sk].videoUrls);
-        restored[sk].imageUrls = dedupBucket(restored[sk].imageUrls);
-        restored[sk].avatarUrls = dedupBucket(restored[sk].avatarUrls);
-        restored[sk].lipsyncUrls = dedupBucket(restored[sk].lipsyncUrls);
-        // Check for expired CDN URLs in this scene
-        const allUrls = [
-          ...Object.values(restored[sk].videoUrls),
-          ...Object.values(restored[sk].imageUrls),
-          ...Object.values(restored[sk].avatarUrls),
-          ...Object.values(restored[sk].lipsyncUrls),
-        ];
-        if (allUrls.some(u => isExpiredCdnUrl(u))) {
-          expiredSceneCount++;
-        }
-      }
-      // Check music URL expiry — expired music URLs should be flagged so user regenerates
-      let expiredMusicCount = 0;
-      for (const sk of Object.keys(restored)) {
-        if (restored[sk].musicUrl && isExpiredCdnUrl(restored[sk].musicUrl!)) {
-          expiredMusicCount++;
-          // Mark music status so Phase 4 UI shows amber "expired" and regen button
-          restored[sk].music = 'done'; // keep 'done' status but UI will detect expired URL
-          console.log(`[EP04 Restore] ${sk}: music URL expired (${restored[sk].musicUrl?.substring(0, 60)}...) — needs regeneration`);
-        }
-      }
-
-      // Count scenes with no assets at all
-      const allSceneKeys = Object.keys(SCENE_TITLES);
-      const notGeneratedCount = allSceneKeys.filter(sk => !restored[sk] || restored[sk].visual !== 'done').length;
-      // Summary toast (silent for dedup, informational for expired/missing)
-      const toastParts: string[] = [];
-      if (totalDupsRemoved > 0) toastParts.push(`Cleaned ${totalDupsRemoved} duplicate(s)`);
-      if (expiredSceneCount > 0) toastParts.push(`${expiredSceneCount} scene(s) may have expired CDN URLs`);
-      if (expiredMusicCount > 0) toastParts.push(`${expiredMusicCount} scene(s) have expired music — use "Regen" in Phase 4`);
-      if (notGeneratedCount > 0 && notGeneratedCount < allSceneKeys.length) toastParts.push(`${notGeneratedCount} scene(s) not yet generated`);
-      if (toastParts.length > 0) {
-        console.log(`[EP04 Cleanup] ${toastParts.join('. ')}`);
-        // Show toast for expired music (user action required) but not for dedup (auto-fixed)
-        if (expiredMusicCount > 0) {
-          toast.warning(`${expiredMusicCount} scene(s) have expired music URLs. Use "Regen Music" in Phase 4.`);
-        }
-      }
-
-      const restoredVisualCount = Object.keys(restored).filter(sk => restored[sk].visual === 'done').length;
-      const restoredAnyCount = Object.keys(restored).length;
-      if (restoredAnyCount > 0) {
-        setSceneProduction(prev => ({ ...prev, ...restored }));
-        // Smart phase advancement:
-        //  - ALL scenes have visuals → Phase 3 done → unlock Phase 4 (Music & SFX)
-        //  - Some scenes have visuals → at least past TTS approval
-        const totalSceneCount = Object.keys(SCENE_TITLES).length;
-        const musicCount = Object.values(restored).filter(s => s.music === 'done').length;
-        const sfxCount = Object.values(restored).filter(s => s.sfx === 'done').length;
-        const assembledCount = Object.values(restored).filter(s => s.assembled === 'done').length;
-        console.log(`[EP04] Restore summary: ${restoredVisualCount} visuals, ${musicCount} music, ${sfxCount} sfx, ${assembledCount} assembled (of ${totalSceneCount} total, ${restoredAnyCount} scenes with any data)`);
-
-        if (assembledCount >= totalSceneCount) {
-          setProductionPhase('complete');
-          console.log(`[EP04] All ${assembledCount} scenes assembled — Phase 5 complete`);
-        } else if (musicCount >= totalSceneCount) {
-          setProductionPhase('assembly');
-          console.log(`[EP04] All ${musicCount} scenes have music — advancing to Phase 5 (Assembly)`);
-        } else if (restoredVisualCount >= totalSceneCount) {
-          setProductionPhase('music');
-          console.log(`[EP04] All ${restoredVisualCount}/${totalSceneCount} scenes have visuals — advancing to Phase 4 (Music & SFX)`);
-        } else {
-          setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
-          console.log(`[EP04] Restored data for ${restoredAnyCount} scenes (${restoredVisualCount} with visuals) from DB`);
-        }
-        const restoreMsg = `Restored ${restoredAnyCount} scene(s)${restoredVisualCount > 0 ? ` (${restoredVisualCount} with visuals)` : ''}${musicCount > 0 ? `, ${musicCount} with music` : ''}`;
-        toast.success(toastParts.length > 0 ? `${restoreMsg}. ${toastParts.join('. ')}.` : restoreMsg);
-
-        // Re-persist Source 2 gap-fill in background — don't block UI
-        const source2OnlyScenes = Object.entries(restored).filter(([sk]) => !source1SceneKeys.has(sk));
-        if (source2OnlyScenes.length > 0) {
-          (async () => {
-            console.log(`[EP04] Background: re-persisting ${source2OnlyScenes.length} Source-2-only scenes`);
-            let repersistOk = 0;
-            for (let i = 0; i < source2OnlyScenes.length; i++) {
-              const [sk, sceneStatus] = source2OnlyScenes[i];
-              try {
-                const ok = await updateSceneArtifacts(projectId, sk, {
-                  videoUrls: sceneStatus.videoUrls,
-                  imageUrls: sceneStatus.imageUrls,
-                  avatarUrls: sceneStatus.avatarUrls,
-                  lipsyncUrls: sceneStatus.lipsyncUrls,
-                });
-                if (ok) repersistOk++;
-              } catch (e) {
-                console.warn(`[EP04] Re-persist ${sk} failed:`, e);
-              }
-              if (i < source2OnlyScenes.length - 1) await new Promise(r => setTimeout(r, 200));
-            }
-            console.log(`[EP04] Background re-persist complete: ${repersistOk}/${source2OnlyScenes.length} gap-fill scenes`);
-          })();
-        }
-      }
-
-      // ── Fallback: check cast_projects.status to restore productionPhase ──
-      // When TTS is approved, status is set to 'visual_production'. This survives
-      // page refresh even if no visual artifacts exist yet (e.g. user approved TTS
-      // but hasn't clicked "Produce All Visuals" yet).
-      if (restoredVisualCount === 0) {
-        try {
-          const { data: projRow } = await db
-            .from('cast_projects')
-            .select('status')
-            .eq('id', projectId)
-            .maybeSingle();
-
-          if (projRow?.status === 'visual_production' || projRow?.status === 'complete') {
-            setProductionPhase(prev => prev === 'tts' ? 'tts_approved' : prev);
-            console.log(`[EP04] Phase restored from project status: ${projRow.status}`);
-          }
-        } catch (e) {
-          console.warn('[EP04] Project status check failed:', e);
-        }
-      }
-
-      setContentLoaded(true);
-
-      // ── Debug: expose DB scene check in browser console ──
-      // Run window.__debugSceneDB() in console to see what's stored in DB
-      (window as any).__debugSceneDB = async () => {
-        const { data } = await supabase
-          .from('cast_project_scenes')
-          .select('scene_key, scene_config')
-          .eq('project_id', projectId);
-        console.table((data || []).map(r => {
-          const cfg = (r.scene_config || {}) as any;
-          const art = cfg.artifacts || {};
-          return {
-            scene_key: r.scene_key,
-            has_artifacts: !!cfg.artifacts,
-            videos: Object.keys(art.videoUrls || {}).length,
-            images: Object.keys(art.imageUrls || {}).length,
-            avatars: Object.keys(art.avatarUrls || {}).length,
-            lipsync: Object.keys(art.lipsyncUrls || {}).length,
-            config_keys: Object.keys(cfg).join(', '),
-          };
-        }));
-        return data;
-      };
-      // Run window.__auditAssets() to check which URLs are active vs expired
-      (window as any).__auditAssets = async () => {
-        const SCENE_KEYS = Object.keys(SCENE_TITLES);
-        console.log(`\n🔍 ASSET AUDIT — checking all URLs across ${SCENE_KEYS.length} scenes...\n`);
-
-        const checkUrl = async (url: string): Promise<'active' | 'expired' | 'data-uri' | 'empty'> => {
-          if (!url) return 'empty';
-          if (!url.startsWith('http')) return 'data-uri';
-          if (url.includes('supabase.co/storage')) return 'active'; // Supabase Storage never expires
-          try {
-            const resp = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
-            // no-cors returns opaque response (status 0) — can't tell if 403
-            // Fall back to heuristic for external CDN
-            if (isExpiredCdnUrl(url)) return 'expired';
-            return 'active';
-          } catch {
-            return 'expired';
-          }
-        };
-
-        const results: any[] = [];
-        let totalActive = 0, totalExpired = 0, totalDataUri = 0, totalEmpty = 0;
-
-        for (const sk of SCENE_KEYS) {
-          const status = sceneProduction[sk];
-          if (!status) {
-            results.push({ scene: sk, category: 'ALL', status: '❌ NO DATA', url: '' });
-            continue;
-          }
-
-          const buckets: Array<{ name: string; urls: Record<string, string> }> = [
-            { name: 'videos', urls: status.videoUrls || {} },
-            { name: 'images', urls: status.imageUrls || {} },
-            { name: 'avatars', urls: status.avatarUrls || {} },
-            { name: 'lipsync', urls: status.lipsyncUrls || {} },
-          ];
-
-          for (const bucket of buckets) {
-            for (const [key, url] of Object.entries(bucket.urls)) {
-              const s = await checkUrl(url);
-              if (s === 'active') totalActive++;
-              else if (s === 'expired') totalExpired++;
-              else if (s === 'data-uri') totalDataUri++;
-              else totalEmpty++;
-              results.push({
-                scene: SCENE_TITLES[sk]?.split(' — ')[1] || sk,
-                category: bucket.name,
-                status: s === 'active' ? '✅ active' : s === 'expired' ? '❌ EXPIRED' : s === 'data-uri' ? '⚠️ data:URI' : '⬜ empty',
-                key: key.substring(0, 40),
-                url: url?.substring(0, 80) || '',
-              });
-            }
-          }
-
-          // Music
-          const musicStatus = await checkUrl(status.musicUrl || '');
-          if (musicStatus === 'active') totalActive++;
-          else if (musicStatus === 'expired') totalExpired++;
-          else if (musicStatus === 'data-uri') totalDataUri++;
-          else totalEmpty++;
-          results.push({
-            scene: SCENE_TITLES[sk]?.split(' — ')[1] || sk,
-            category: 'music',
-            status: musicStatus === 'active' ? '✅ active' : musicStatus === 'expired' ? '❌ EXPIRED' : musicStatus === 'data-uri' ? '⚠️ data:URI' : '⬜ empty/none',
-            key: 'musicUrl',
-            url: status.musicUrl?.substring(0, 80) || '(none)',
-          });
-        }
-
-        // TTS audit
-        let ttsActive = 0, ttsExpired = 0, ttsDataUri = 0, ttsMissing = 0;
-        for (const k of scriptKeys) {
-          const url = audioMap[k]?.audioUrl;
-          if (!url) { ttsMissing++; continue; }
-          if (!url.startsWith('http')) { ttsDataUri++; continue; }
-          if (url.includes('supabase.co/storage')) { ttsActive++; continue; }
-          if (isExpiredCdnUrl(url)) { ttsExpired++; } else { ttsActive++; }
-        }
-
-        console.table(results);
-        console.log(`\n📊 SUMMARY:`);
-        console.log(`   Assets: ✅ ${totalActive} active | ❌ ${totalExpired} expired | ⚠️ ${totalDataUri} data:URI | ⬜ ${totalEmpty} empty`);
-        console.log(`   TTS:    ✅ ${ttsActive} active | ❌ ${ttsExpired} expired | ⚠️ ${ttsDataUri} data:URI | ⬜ ${ttsMissing} missing`);
-        console.log(`\n💡 Expired assets need regeneration. data:URI assets work but won't render in JSON2Video assembly.`);
-
-        // Return structured data for programmatic use
-        return { results, summary: { totalActive, totalExpired, totalDataUri, totalEmpty, ttsActive, ttsExpired, ttsDataUri, ttsMissing } };
-      };
-      console.log('[EP04] Debug: run window.__auditAssets() to check all asset URLs');
-      console.log('[EP04] Debug: run window.__debugSceneDB() to check DB artifacts');
-    })();
-  }, [projectId, contentLoaded, scriptContentForUI]);
+  const invalidateTtsCache = useCallback(() => {
+    if (!projectId) return;
+    queryClient.invalidateQueries({ queryKey: castKeys.project(projectId).ttsLines });
+  }, [projectId, queryClient]);
 
   // ─── Auto-seed DB if projectId present but no DB data ──────────────────
   // GUARDED: only runs ONCE per page load to prevent re-seeding (which wipes TTS data).
@@ -1702,6 +1119,7 @@ function EP04ProductionInner() {
     }
 
     setBatchProgress(null);
+    invalidateTtsCache(); // Refresh React Query TTS cache after batch
     if (success === keys.length) {
       toast.success(`Generated all ${success} voiceovers`);
     } else if (success > 0) {
@@ -1709,7 +1127,7 @@ function EP04ProductionInner() {
     } else {
       toast.error(`All ${keys.length} TTS generations failed — check browser console for error details`);
     }
-  }, [scriptKeys, statusMap, generateLine]);
+  }, [scriptKeys, statusMap, generateLine, invalidateTtsCache]);
 
   // Generate ONLY missing TTS lines for a specific scene (or bridge keys)
   const generateMissingForKeys = useCallback(async (keys: string[]) => {
@@ -2058,6 +1476,7 @@ function EP04ProductionInner() {
         }
 
         setRegenProgress(prev => ({ ...prev, [sceneKey]: 'done' }));
+        invalidateSceneCache(); // Refresh React Query cache
         toast.success(`${sceneKey} regenerated with ${provider}!`);
       } else {
         throw new Error('No video URL returned');
@@ -2067,7 +1486,7 @@ function EP04ProductionInner() {
       setRegenProgress(prev => ({ ...prev, [sceneKey]: 'error' }));
       toast.error(`Regen ${sceneKey} failed: ${err.message}`);
     }
-  }, [sceneProviders, projectId, pollVideoTaskResult, sceneProduction, updateSceneArtifacts]);
+  }, [sceneProviders, projectId, pollVideoTaskResult, sceneProduction, updateSceneArtifacts, invalidateSceneCache]);
 
   // Helper: process a single visual step and return the result URL (or null)
   const processVisualStep = useCallback(async (
@@ -3003,12 +2422,13 @@ function EP04ProductionInner() {
     }
 
     setVisualProgress(null);
+    invalidateSceneCache(); // Refresh React Query cache after batch production
     if (!abortRef.current) {
       toast.success('All visual production complete');
     } else {
       toast.warning('Visual production cancelled');
     }
-  }, [scenes, startSceneVisualProduction]);
+  }, [scenes, startSceneVisualProduction, invalidateSceneCache]);
 
   // ── Parallel regen for selected scenes (runs all at once) ──
   const startParallelSceneRegen = useCallback(async (sceneKeys: string[], forceRegenAll = false) => {
@@ -4973,7 +4393,7 @@ function EP04ProductionInner() {
         <Card className="p-8 text-center max-w-md">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
           <h2 className="text-lg font-semibold mb-2">Loading EP04 Project...</h2>
-          <p className="text-sm text-muted-foreground">{loadStep || 'Connecting to database...'}</p>
+          <p className="text-sm text-muted-foreground">Connecting to database...</p>
         </Card>
       </div>
     );
@@ -4987,12 +4407,7 @@ function EP04ProductionInner() {
           <h2 className="text-lg font-semibold mb-2">Project Load Failed</h2>
           <p className="text-sm text-muted-foreground mb-4">{projectLoadError || 'No project ID found — try refreshing'}</p>
           <div className="flex gap-2 justify-center">
-            <Button onClick={() => {
-              autoCreateAttempted.current = false;
-              setProjectLoadError(null);
-              setAutoProjectId(null);
-              setRetryCount(c => c + 1);
-            }}>
+            <Button onClick={() => retryProjectLookup()}>
               <RefreshCw className="h-4 w-4 mr-1" /> Retry
             </Button>
             <Button variant="outline" onClick={() => navigate(-1)}>
