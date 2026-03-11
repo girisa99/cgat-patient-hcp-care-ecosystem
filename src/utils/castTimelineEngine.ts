@@ -153,7 +153,7 @@ export const DEFAULT_CAST_THEME: CastTheme = {
   visualBeat: 12,
   openingFadeDuration: 1.5,
   closingFadeDuration: 2.0,
-  subtitlesEnabled: false,
+  subtitlesEnabled: true,
   subtitlePosition: 'bottom-left',
   subtitleRTL: false,
 };
@@ -801,7 +801,7 @@ function injectSubtitles(
  * Each TTS line → one scene (5-20s). Kinetic images with FLUX images get
  * dedicated interlude scenes inserted at the right timestamp.
  */
-function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo): J2VScene[] {
+function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, mood?: string): J2VScene[] {
   const scenes: J2VScene[] = [];
   const { ttsLines, lipsyncClips, videos, images, kineticTexts, musicUrl, musicLoop, sfxTimings } = chapter;
 
@@ -953,8 +953,8 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo): J2
       start: Math.max(0, ktOverlay.start - sceneStart), // rebase to scene-relative
     } : undefined;
 
-    // Scene transition style (first scene fades, rest cycle for variety)
-    const transStyle = i === 0 ? 'fade' : SCENE_TRANSITIONS[i % SCENE_TRANSITIONS.length];
+    // Scene transition style — mood-aware when mood provided, else cycles for variety
+    const transStyle = i === 0 ? 'fade' : getMoodTransition(mood, i);
 
     scenes.push(makeTtsLineScene(
       { ...tts, start: 0 }, // rebase TTS to start=0 within scene
@@ -1215,9 +1215,9 @@ export function buildCastTimeline(
     scenes.push(makeOpeningBookend(bookends.opening));
   }
 
-  // 2. Per-chapter scenes + chapter transitions
+  // 2. Per-chapter scenes + chapter transitions (mood drives transition style selection)
   chapters.forEach((chapter, chapterIndex) => {
-    const chapterScenes = buildChapterScenes(chapter, speakers);
+    const chapterScenes = buildChapterScenes(chapter, speakers, mood);
     scenes.push(...chapterScenes);
 
     // Transition after chapter (if exists)

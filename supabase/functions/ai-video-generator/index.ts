@@ -1764,6 +1764,7 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
 
   // Step 2: Ensure source image is accessible from China / any provider
   // Vercel, local, DashScope CDN URLs can't be reached from China endpoint
+  // Also validate dimensions: Alibaba WAN2.2 requires 400px ≤ shortest side, longest side ≤ 7000px
   let sourceImageUrl = request.sourceImage;
   if (sourceImageUrl && !sourceImageUrl.includes('supabase.co/storage')) {
     console.log(`🔄 Avatar sourceImage not on Supabase — re-uploading for China/provider access: ${sourceImageUrl.substring(0, 60)}`);
@@ -1772,9 +1773,48 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
       if (sb) {
         const imgResp = await fetch(sourceImageUrl);
         if (imgResp.ok) {
-          const blob = await imgResp.blob();
+          let blob = await imgResp.blob();
           const ct = imgResp.headers.get('content-type') || 'image/png';
           const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : 'jpg';
+
+          // Check image dimensions — Alibaba requires min 400px, max 7000px per side
+          // We can check by reading the image header (JPEG SOF marker)
+          try {
+            const arrayBuf = await blob.arrayBuffer();
+            const bytes = new Uint8Array(arrayBuf);
+            let w = 0, h = 0;
+            // Quick JPEG dimension check (find SOF0/SOF2 marker: 0xFF 0xC0 or 0xFF 0xC2)
+            if (bytes[0] === 0xFF && bytes[1] === 0xD8) {
+              for (let i = 2; i < bytes.length - 8; i++) {
+                if (bytes[i] === 0xFF && (bytes[i + 1] === 0xC0 || bytes[i + 1] === 0xC2)) {
+                  h = (bytes[i + 5] << 8) | bytes[i + 6];
+                  w = (bytes[i + 7] << 8) | bytes[i + 8];
+                  break;
+                }
+              }
+            }
+            // PNG dimension check (IHDR at offset 16-23)
+            if (bytes[0] === 0x89 && bytes[1] === 0x50) {
+              w = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
+              h = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
+            }
+            if (w > 0 && h > 0) {
+              const minSide = Math.min(w, h);
+              const maxSide = Math.max(w, h);
+              console.log(`📐 Avatar source dimensions: ${w}x${h} (min=${minSide}, max=${maxSide})`);
+              if (minSide < 400) {
+                console.warn(`⚠️ Avatar source too small (${w}x${h}) — Alibaba requires min 400px. Image may be rejected.`);
+              }
+              if (maxSide > 7000) {
+                console.warn(`⚠️ Avatar source too large (${w}x${h}) — Alibaba requires max 7000px. Image may be rejected.`);
+              }
+            }
+            // Reconstruct blob from the array buffer we already read
+            blob = new Blob([arrayBuf], { type: ct });
+          } catch (dimErr) {
+            console.warn('⚠️ Could not check image dimensions:', dimErr);
+          }
+
           const fileName = `cast-avatars/lipsync-source-${Date.now()}.${ext}`;
           const { error: upErr } = await sb.storage.from('cast-assets').upload(fileName, blob, { contentType: ct, upsert: true });
           if (!upErr) {

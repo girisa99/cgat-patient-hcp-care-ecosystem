@@ -41,7 +41,7 @@ const GEMINI_REGIONS = [
   'NG', 'KE', 'GH', 'ET', 'TZ', 'UG', 'ZW', 'ZM', 'RW', 'SN', 'CI' // Africa
 ];
 
-type SFXProvider = 'elevenlabs' | 'alibaba' | 'azure' | 'google' | 'modelslab';
+type SFXProvider = 'elevenlabs' | 'alibaba' | 'azure' | 'google' | 'modelslab' | 'fal-beatoven';
 
 interface SFXRequest {
   prompt: string;
@@ -64,7 +64,19 @@ interface SFXRouting {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function selectSFXProvider(region: string, tier: string = 'standard'): SFXRouting {
-  // Premium tier always uses ElevenLabs
+  const hasFal = !!(Deno.env.get('FAL_API_KEY') || Deno.env.get('FAL_AI_KEY'));
+
+  // Premium/Advanced tier: fal.ai Beatoven SFX (44.1kHz, 3M+ training samples)
+  if ((tier === 'premium' || tier === 'advanced') && hasFal) {
+    return {
+      provider: 'fal-beatoven',
+      cost: 0.005,
+      zone: 'fal-premium',
+      quality: 'premium'
+    };
+  }
+
+  // Premium fallback: ElevenLabs
   if (tier === 'premium') {
     return {
       provider: 'elevenlabs',
@@ -126,6 +138,94 @@ function selectSFXProvider(region: string, tier: string = 'standard'): SFXRoutin
 // ═══════════════════════════════════════════════════════════════════════════════
 // PROVIDER IMPLEMENTATIONS
 // ═══════════════════════════════════════════════════════════════════════════════
+
+async function generateFalBeatevenSFX(prompt: string, duration: number): Promise<ArrayBuffer> {
+  const FAL_KEY = Deno.env.get('FAL_API_KEY') || Deno.env.get('FAL_AI_KEY');
+  if (!FAL_KEY) {
+    console.log('⚠️ FAL_API_KEY not configured, falling back to ElevenLabs SFX');
+    return generateElevenLabsSFX(prompt, duration, 0.3);
+  }
+
+  try {
+    console.log(`🔊 fal.ai Beatoven SFX: "${prompt.substring(0, 80)}..." duration=${duration}s`);
+
+    const submitResp = await fetch('https://queue.fal.run/fal-ai/stable-audio', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: `sound effect: ${prompt}`,
+        seconds_total: Math.min(duration, 30),
+        steps: 50,  // Fewer steps for SFX (faster)
+      }),
+    });
+
+    if (!submitResp.ok) {
+      const errText = await submitResp.text();
+      console.warn(`⚠️ fal.ai SFX submit failed (${submitResp.status}): ${errText.substring(0, 200)}`);
+      return generateElevenLabsSFX(prompt, duration, 0.3);
+    }
+
+    const submitData = await submitResp.json();
+
+    // Immediate result
+    if (submitData.audio_file?.url) {
+      console.log(`✅ fal.ai SFX: immediate result`);
+      const audioResp = await fetch(submitData.audio_file.url);
+      if (audioResp.ok) return audioResp.arrayBuffer();
+    }
+
+    // Queue-based polling
+    const requestId = submitData.request_id;
+    if (!requestId) {
+      console.warn('⚠️ fal.ai SFX: no request_id, falling back to ElevenLabs');
+      return generateElevenLabsSFX(prompt, duration, 0.3);
+    }
+
+    console.log(`📍 fal.ai SFX queued: ${requestId}, polling...`);
+    for (let attempt = 1; attempt <= 30; attempt++) {
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        const statusResp = await fetch(`https://queue.fal.run/fal-ai/stable-audio/requests/${requestId}/status`, {
+          headers: { 'Authorization': `Key ${FAL_KEY}` },
+        });
+        if (!statusResp.ok) continue;
+        const statusData = await statusResp.json();
+        console.log(`⏳ fal.ai SFX (${attempt}/30): ${statusData.status}`);
+
+        if (statusData.status === 'COMPLETED') {
+          const resultResp = await fetch(`https://queue.fal.run/fal-ai/stable-audio/requests/${requestId}`, {
+            headers: { 'Authorization': `Key ${FAL_KEY}` },
+          });
+          if (resultResp.ok) {
+            const resultData = await resultResp.json();
+            const audioUrl = resultData.audio_file?.url;
+            if (audioUrl) {
+              console.log(`✅ fal.ai SFX completed: ${audioUrl.substring(0, 60)}`);
+              const audioResp = await fetch(audioUrl);
+              if (audioResp.ok) return audioResp.arrayBuffer();
+            }
+          }
+          break;
+        }
+        if (statusData.status === 'FAILED') {
+          console.warn(`⚠️ fal.ai SFX FAILED: ${statusData.error || 'unknown'}`);
+          break;
+        }
+      } catch (pollErr) {
+        console.warn(`⚠️ fal.ai SFX poll error (${attempt}):`, pollErr);
+      }
+    }
+
+    console.log('⚠️ fal.ai SFX polling exhausted, falling back to ElevenLabs');
+    return generateElevenLabsSFX(prompt, duration, 0.3);
+  } catch (error) {
+    console.warn('⚠️ fal.ai SFX error, falling back to ElevenLabs:', error);
+    return generateElevenLabsSFX(prompt, duration, 0.3);
+  }
+}
 
 async function generateElevenLabsSFX(prompt: string, duration: number, promptInfluence: number): Promise<ArrayBuffer> {
   const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
@@ -306,6 +406,9 @@ serve(async (req) => {
     let audioBuffer: ArrayBuffer;
 
     switch (provider) {
+      case 'fal-beatoven':
+        audioBuffer = await generateFalBeatevenSFX(request.prompt, duration);
+        break;
       case 'elevenlabs':
         audioBuffer = await generateElevenLabsSFX(request.prompt, duration, promptInfluence);
         break;

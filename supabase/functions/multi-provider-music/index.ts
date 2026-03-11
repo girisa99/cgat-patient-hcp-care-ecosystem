@@ -71,7 +71,7 @@ const SOUTH_ASIA_SEA_AFRICA_REGIONS = [
   'NG', 'KE', 'GH', 'ET', 'TZ', 'UG', 'ZW', 'ZM', 'RW', 'SN', 'CI'
 ];
 
-type MusicProvider = 'elevenlabs' | 'alibaba' | 'modelslab';
+type MusicProvider = 'elevenlabs' | 'alibaba' | 'modelslab' | 'fal-beatoven';
 
 interface MusicRequest {
   prompt: string;
@@ -98,12 +98,10 @@ interface MusicRouting {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function getAvailableMusicProviders(): { id: MusicProvider; available: boolean; priority: number }[] {
-  // ModelsLab (MusicGen) is the only working music provider:
-  // - ElevenLabs: missing_permissions for music_generation
-  // - DashScope: no music generation API on Singapore endpoint
-  // - ModelsLab: has MusicGen model via v6/voice/text2audio
+  // Provider priority: fal.ai Beatoven (best quality) > ModelsLab (reliable) > Alibaba > ElevenLabs (permission issues)
   const hasAlibaba = !!(Deno.env.get('ALIBABA_SINGAPORE_API_KEY') || Deno.env.get('ALIBABA_API_KEY') || Deno.env.get('DASHSCOPE_API_KEY') || Deno.env.get('ALIBABA_CHINA_API_KEY'));
   return [
+    { id: 'fal-beatoven', available: !!(Deno.env.get('FAL_API_KEY') || Deno.env.get('FAL_AI_KEY')), priority: 0 },
     { id: 'modelslab', available: !!Deno.env.get('MODELSLAB_API_KEY'), priority: 1 },
     { id: 'alibaba', available: hasAlibaba, priority: 2 },
     { id: 'elevenlabs', available: !!Deno.env.get('ELEVENLABS_API_KEY'), priority: 3 },
@@ -120,7 +118,19 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
   // Helper to check if provider is available
   const hasProvider = (id: MusicProvider) => providers.some(p => p.id === id);
   
-  // Premium tier: ElevenLabs for highest quality
+  // Premium/Advanced tier: fal.ai Beatoven (44.1kHz, 3M+ training samples)
+  if ((tier === 'premium' || tier === 'advanced') && hasProvider('fal-beatoven')) {
+    console.log(`🎵 ${tier} tier: Routing to fal.ai Beatoven`);
+    return {
+      provider: 'fal-beatoven',
+      cost: 0.025,
+      zone: 'fal-premium',
+      quality: 'premium',
+      maxDuration: 300 // 5 minutes
+    };
+  }
+
+  // Premium tier fallback: ElevenLabs
   if (tier === 'premium' && hasProvider('elevenlabs')) {
     console.log('🎵 Premium tier: Routing to ElevenLabs');
     return {
@@ -198,6 +208,100 @@ function selectMusicProvider(region: string, tier: string = 'standard'): MusicRo
 // ═══════════════════════════════════════════════════════════════════════════════
 // PROVIDER IMPLEMENTATIONS
 // ═══════════════════════════════════════════════════════════════════════════════
+
+async function generateFalBeatevenMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
+  const FAL_KEY = Deno.env.get('FAL_API_KEY') || Deno.env.get('FAL_AI_KEY');
+  if (!FAL_KEY) {
+    console.log('⚠️ FAL_API_KEY not configured, falling back to ModelsLab');
+    return generateModelsLabMusicDirect(prompt, duration);
+  }
+
+  try {
+    console.log(`🎵 fal.ai Beatoven Music: "${prompt.substring(0, 80)}..." duration=${duration}s`);
+
+    // fal.ai queue-based API: submit → poll for result
+    const submitResp = await fetch('https://queue.fal.run/fal-ai/stable-audio', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        seconds_total: Math.min(duration, 300),
+        steps: 100,
+      }),
+    });
+
+    if (!submitResp.ok) {
+      const errText = await submitResp.text();
+      console.warn(`⚠️ fal.ai Beatoven submit failed (${submitResp.status}): ${errText.substring(0, 200)}`);
+      return generateModelsLabMusicDirect(prompt, duration);
+    }
+
+    const submitData = await submitResp.json();
+
+    // Check for immediate result (audio_file in response)
+    if (submitData.audio_file?.url) {
+      console.log(`✅ fal.ai Beatoven: immediate result`);
+      const audioResp = await fetch(submitData.audio_file.url);
+      if (audioResp.ok) return audioResp.arrayBuffer();
+    }
+
+    // Queue-based: poll request_id
+    const requestId = submitData.request_id;
+    if (!requestId) {
+      console.warn('⚠️ fal.ai Beatoven: no request_id or immediate result, falling back');
+      return generateModelsLabMusicDirect(prompt, duration);
+    }
+
+    console.log(`📍 fal.ai Beatoven queued: ${requestId}, polling...`);
+
+    // Poll for completion (max 60 attempts × 3s = 3 min)
+    for (let attempt = 1; attempt <= 60; attempt++) {
+      await new Promise(r => setTimeout(r, 3000));
+
+      try {
+        const statusResp = await fetch(`https://queue.fal.run/fal-ai/stable-audio/requests/${requestId}/status`, {
+          headers: { 'Authorization': `Key ${FAL_KEY}` },
+        });
+
+        if (!statusResp.ok) continue;
+        const statusData = await statusResp.json();
+        console.log(`⏳ fal.ai Beatoven (${attempt}/60): ${statusData.status}`);
+
+        if (statusData.status === 'COMPLETED') {
+          // Fetch the result
+          const resultResp = await fetch(`https://queue.fal.run/fal-ai/stable-audio/requests/${requestId}`, {
+            headers: { 'Authorization': `Key ${FAL_KEY}` },
+          });
+          if (resultResp.ok) {
+            const resultData = await resultResp.json();
+            const audioUrl = resultData.audio_file?.url;
+            if (audioUrl) {
+              console.log(`✅ fal.ai Beatoven completed: ${audioUrl.substring(0, 60)}`);
+              const audioResp = await fetch(audioUrl);
+              if (audioResp.ok) return audioResp.arrayBuffer();
+            }
+          }
+          break;
+        }
+        if (statusData.status === 'FAILED') {
+          console.warn(`⚠️ fal.ai Beatoven FAILED: ${statusData.error || 'unknown'}`);
+          break;
+        }
+      } catch (pollErr) {
+        console.warn(`⚠️ fal.ai poll error (${attempt}):`, pollErr);
+      }
+    }
+
+    console.log('⚠️ fal.ai Beatoven polling exhausted, falling back to ModelsLab');
+    return generateModelsLabMusicDirect(prompt, duration);
+  } catch (error) {
+    console.warn('⚠️ fal.ai Beatoven error, falling back to ModelsLab:', error);
+    return generateModelsLabMusicDirect(prompt, duration);
+  }
+}
 
 async function generateElevenLabsMusic(prompt: string, duration: number): Promise<ArrayBuffer> {
   const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
@@ -597,6 +701,9 @@ serve(async (req) => {
     let audioBuffer: ArrayBuffer;
 
     switch (provider) {
+      case 'fal-beatoven':
+        audioBuffer = await generateFalBeatevenMusic(request.prompt, duration);
+        break;
       case 'elevenlabs':
         audioBuffer = await generateElevenLabsMusic(request.prompt, duration);
         break;
@@ -607,7 +714,7 @@ serve(async (req) => {
         audioBuffer = await generateModelsLabMusic(request.prompt, duration);
         break;
       default:
-        audioBuffer = await generateElevenLabsMusic(request.prompt, duration);
+        audioBuffer = await generateModelsLabMusicDirect(request.prompt, duration);
     }
 
     const isSilentPlaceholder = audioBuffer.byteLength < 60000 && new Uint8Array(audioBuffer).every((b, i) => i < 4 || b === 0);
