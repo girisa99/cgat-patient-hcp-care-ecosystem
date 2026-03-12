@@ -3157,7 +3157,7 @@ function EP04ProductionInner() {
     }
     assemblyCancelledRef.current = false; // reset on new job
     console.log(`[EP04 Poll] Polling STARTED for assemblyJobId=${assemblyJobId}, taskId fallback=${assemblyTaskIdRef.current}`);
-    const MAX_POLLS = 60; // 60 × 10s = 10 minutes max
+    const MAX_POLLS = 180; // 180 × 10s = 30 minutes max (8-scene 2.5min video can take 15-20min)
     const MAX_ERRORS = 5;  // 5 consecutive errors = stop
 
     // Polling function — called immediately on first run, then every 10s
@@ -3168,7 +3168,7 @@ function EP04ProductionInner() {
         setAssemblyProgress(null);
         setAssemblyJobId(null);
         assemblyTaskIdRef.current = null;
-        toast.error('Assembly polling timed out after 10 minutes — check JSON2Video dashboard');
+        toast.error('Assembly polling timed out after 30 minutes — check JSON2Video dashboard');
         return;
       }
       try {
