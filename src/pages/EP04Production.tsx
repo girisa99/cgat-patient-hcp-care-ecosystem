@@ -3197,10 +3197,11 @@ function EP04ProductionInner() {
           pollNoProgressCountRef.current = 0;
         }
 
-        // If stuck with no progress for 1+ polls AND we have a J2V taskId, poll directly
-        // Don't wait 3 polls (30s) — start fallback immediately to avoid wasted time
+        // Fallback: poll J2V directly if stuck OR if primary says "completed" but has no URL
+        // The DB row can show completed (from a prior fallback's write) before output_url commits
         const taskId = assemblyTaskIdRef.current;
-        if (pollNoProgressCountRef.current >= 1 && taskId) {
+        const primaryCompletedNoUrl = (jobStatus === 'completed' || jobStatus === 'done' || jobStatus === 'finished') && !data?.job?.outputUrl;
+        if (taskId && (pollNoProgressCountRef.current >= 1 || primaryCompletedNoUrl)) {
           console.log(`[EP04 Poll] ⚠️ castJobId stuck (${pollNoProgressCountRef.current} polls, 0%). Falling back to projectId=${taskId}`);
           const { data: fallbackData, error: fbError } = await supabase.functions.invoke('genie-cast-status', {
             body: { projectId: taskId },
@@ -3240,6 +3241,15 @@ function EP04ProductionInner() {
         if (assemblyCancelledRef.current) return;
 
         if (finalStatus === 'completed' || finalStatus === 'done' || finalStatus === 'finished') {
+          // Safety: if "completed" but no video URL, keep polling — the URL hasn't propagated yet
+          if (!finalVideoUrl) {
+            console.warn(`[EP04 Poll] Status=${finalStatus} but NO videoUrl — keep polling (poll ${pollCountRef.current})`);
+            const curPartNum0 = pollDepsRef.current.activePartNumber;
+            const partLabel0 = curPartNum0 != null ? ` Part ${curPartNum0}` : '';
+            setAssemblyProgress(`Completed but waiting for URL${partLabel0}... (poll ${pollCountRef.current})`);
+            return; // don't finalize — next poll should get the URL
+          }
+
           setAssemblyJobId(null);
           setAssemblyProgress(null);
           assemblyTaskIdRef.current = null;
