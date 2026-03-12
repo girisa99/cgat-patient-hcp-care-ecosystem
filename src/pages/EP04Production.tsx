@@ -3164,12 +3164,14 @@ function EP04ProductionInner() {
     const doPoll = async () => {
       if (assemblyCancelledRef.current) return; // cancelled — abort
       pollCountRef.current++;
-      if (pollCountRef.current > MAX_POLLS) {
-        setAssemblyProgress(null);
-        setAssemblyJobId(null);
-        assemblyTaskIdRef.current = null;
-        toast.error('Assembly polling timed out after 30 minutes — check JSON2Video dashboard');
-        return;
+      // Never give up — J2V renders can take 20-40min for complex scenes.
+      // Warn at milestones but keep polling until completion or cancellation.
+      if (pollCountRef.current === 60) {
+        toast.info('Still rendering on JSON2Video (10 min)... polling continues');
+      } else if (pollCountRef.current === 180) {
+        toast.info('Still rendering on JSON2Video (30 min)... polling continues');
+      } else if (pollCountRef.current === 360) {
+        toast.warning('Render taking unusually long (60 min) — check JSON2Video dashboard. Polling continues...');
       }
       try {
         // Primary: poll via castJobId (DB row lookup → provider_job_id → JSON2Video)
@@ -3310,7 +3312,8 @@ function EP04ProductionInner() {
         } else {
           const curPartNum3 = pollDepsRef.current.activePartNumber;
           const partLabel = curPartNum3 != null ? ` Part ${curPartNum3}` : '';
-          setAssemblyProgress(`Rendering${partLabel}... ${finalProgress}% (poll ${pollCountRef.current})`);
+          const elapsedMin = Math.round(pollCountRef.current * 10 / 60);
+          setAssemblyProgress(`Rendering${partLabel}... ${finalProgress}% (${elapsedMin}min elapsed, poll ${pollCountRef.current})`);
         }
       } catch (err) {
         pollErrorCountRef.current++;
