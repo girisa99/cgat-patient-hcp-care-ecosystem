@@ -114,7 +114,7 @@
       // Force one-time SW purge to flush stale workers that cached audio/video.
       // Bump SW_VERSION when you need to force another purge.
       (function() {
-        var SW_VERSION = 2;
+        var SW_VERSION = 3;
         var key = 'sw-purge-v' + SW_VERSION;
         if ('serviceWorker' in navigator && !localStorage.getItem(key)) {
           navigator.serviceWorker.getRegistrations().then(function(registrations) {

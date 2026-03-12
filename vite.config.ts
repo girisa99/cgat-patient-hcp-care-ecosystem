@@ -114,18 +114,12 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,      // Force new SW to activate immediately (no stale chunks)
         clientsClaim: true,     // Take control of all clients immediately
         cleanupOutdatedCaches: true, // Remove old precaches on new SW install
+        // IMPORTANT: Do NOT register routes for Supabase Storage or audio/video.
+        // NetworkOnly still intercepts via the SW fetch handler — if the cross-origin
+        // fetch fails inside the SW, workbox throws "no-response" instead of letting
+        // the browser handle it. By not routing these URLs at all, the SW ignores them
+        // and the browser fetches directly (no opaque response issues).
         runtimeCaching: [
-          {
-            // All Supabase Storage assets (images, audio, video) — NEVER cache.
-            // Cross-origin opaque responses crash Cache API → ERR_CACHE_OPERATION_NOT_SUPPORTED.
-            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\//i,
-            handler: 'NetworkOnly',
-          },
-          {
-            // Any audio/video file from any origin — NEVER cache.
-            urlPattern: /\.(?:mp4|webm|mov|mp3|wav|ogg|aac|flac|m4a)(?:\?.*)?$/i,
-            handler: 'NetworkOnly',
-          },
           {
             urlPattern: /^https:\/\/api\..*\/.*/i,
             handler: 'NetworkFirst',
