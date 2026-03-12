@@ -43,8 +43,10 @@ import { buildCastTimeline, type CastChapter, type CastTransition, type CastBook
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
-const EP04_BUILD = 'v2026-03-10-I';
+const EP04_BUILD = 'v2026-03-11-A';
 console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
+// Session-level cache-buster — bypasses corrupted browser disk cache entries
+const MEDIA_CACHE_BUST = `cb=${Date.now()}`;
 
 // Shared helper: detect external CDN URLs that may have expired (~24h TTL)
 const isExpiredCdnUrl = (url: string): boolean =>
@@ -5517,7 +5519,8 @@ function EP04ProductionInner() {
                                           >
                                             {cat.isVideo ? (
                                               <video
-                                                src={url}
+                                                src={`${url}${url.includes('?') ? '&' : '?'}${MEDIA_CACHE_BUST}`}
+                                                crossOrigin="anonymous"
                                                 className="w-full h-24 object-cover rounded border border-border/30 bg-black"
                                                 controls
                                                 muted
@@ -5585,7 +5588,8 @@ function EP04ProductionInner() {
                                     <div className="flex items-center gap-2 p-1.5 rounded bg-muted/30 border border-border/20">
                                       <Music className="h-3 w-3 text-violet-400 flex-shrink-0" />
                                       <audio
-                                        src={status.musicUrl}
+                                        src={`${status.musicUrl}${status.musicUrl.includes('?') ? '&' : '?'}${MEDIA_CACHE_BUST}`}
+                                        crossOrigin="anonymous"
                                         controls
                                         className="h-6 w-full [&::-webkit-media-controls-panel]:h-6"
                                         preload="metadata"
@@ -5716,7 +5720,8 @@ function EP04ProductionInner() {
                               </div>
                             ) : (
                               <audio
-                                src={status.musicUrl}
+                                src={`${status.musicUrl}${status.musicUrl.includes('?') ? '&' : '?'}${MEDIA_CACHE_BUST}`}
+                                crossOrigin="anonymous"
                                 controls
                                 className="w-full mt-2 h-6"
                                 onError={(e) => {
