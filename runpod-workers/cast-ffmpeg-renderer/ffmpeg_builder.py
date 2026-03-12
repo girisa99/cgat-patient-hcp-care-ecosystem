@@ -554,6 +554,20 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
         audio_labels.append(f"[{a_label}]")
         input_idx += 1
 
+    # ── Silent audio source (must be added as input BEFORE filter_complex) ──
+    silent_audio_idx = None
+    if not audio_labels:
+        # No audio tracks — add anullsrc as an input so FFmpeg has audio to map
+        inputs.extend(["-f", "lavfi", "-i",
+                       f"anullsrc=r=48000:cl=stereo:d={scene.duration:.2f}"])
+        silent_audio_idx = input_idx
+        # Trim it to scene duration via filter
+        silent_label = f"sil{scene.index}"
+        filter_parts.append(
+            f"[{input_idx}:a]atrim=duration={scene.duration:.2f},asetpts=PTS-STARTPTS[{silent_label}]"
+        )
+        input_idx += 1
+
     # ── Final audio mix ──
     final_audio = None
     if len(audio_labels) > 1:
@@ -563,6 +577,8 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
         )
     elif len(audio_labels) == 1:
         final_audio = audio_labels[0].strip("[]")
+    elif silent_audio_idx is not None:
+        final_audio = f"sil{scene.index}"
 
     # ── Build final command ──
     filter_complex = ";\n".join(filter_parts)
@@ -577,10 +593,6 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     # Map audio output
     if final_audio:
         cmd.extend(["-map", f"[{final_audio}]"])
-    else:
-        # Generate silent audio track
-        cmd.extend(["-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={scene.duration}"])
-        cmd.extend(["-map", f"{input_idx}:a"])
 
     # Encoding
     cmd.extend(_encoder_args())
