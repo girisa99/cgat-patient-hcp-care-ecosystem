@@ -38,26 +38,21 @@ def _ensure_dir():
 
 
 def _detect_nvenc() -> bool:
-    """Check if h264_nvenc encoder actually works (not just listed)."""
+    """Check if h264_nvenc encoder actually works with a real scene encode.
+    Disabled by default — RunPod serverless GPUs often list NVENC but can't use it.
+    """
     global HWACCEL_AVAILABLE
     if HWACCEL_AVAILABLE is not None:
         return HWACCEL_AVAILABLE
-    try:
-        # Actually try to encode a tiny test frame with NVENC
-        result = subprocess.run(
-            ["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=64x64:d=0.1",
-             "-c:v", "h264_nvenc", "-f", "null", "-"],
-            capture_output=True, text=True, timeout=15,
-        )
-        HWACCEL_AVAILABLE = result.returncode == 0
-    except Exception:
-        HWACCEL_AVAILABLE = False
-    print(f"  [ffmpeg] NVENC test encode: {'OK' if HWACCEL_AVAILABLE else 'FAILED — using libx264'}")
+    # Force libx264 — NVENC is unreliable on RunPod serverless workers
+    # (encoder listed but fails with 'No capable devices found')
+    HWACCEL_AVAILABLE = False
+    print("  [ffmpeg] Using libx264 (NVENC disabled — unreliable on serverless GPUs)")
     return HWACCEL_AVAILABLE
 
 
 def _encoder_args() -> list[str]:
-    """Return encoder flags — NVENC if available, else libx264."""
+    """Return encoder flags — always libx264 for reliability."""
     if _detect_nvenc():
         return ["-c:v", "h264_nvenc", "-preset", "p4", "-b:v", "8M", "-maxrate", "12M", "-bufsize", "16M"]
     return ["-c:v", "libx264", "-preset", "medium", "-crf", "20"]
@@ -611,8 +606,58 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
-            print(f"  [render] Scene {scene.index} FAILED:\n{result.stderr[-1500:]}")
-            return None
+            # If NVENC failed, retry with libx264
+            if "h264_nvenc" in " ".join(cmd) and ("No capable devices" in result.stderr
+                    or "Cannot load" in result.stderr
+                    or "Error while opening encoder" in result.stderr):
+                print(f"  [render] Scene {scene.index} NVENC failed — retrying with libx264...")
+                # Replace NVENC args with libx264
+                cmd_cpu = [arg for arg in cmd]
+                for i, arg in enumerate(cmd_cpu):
+                    if arg == "h264_nvenc":
+                        cmd_cpu[i] = "libx264"
+                    elif arg == "p4":
+                        cmd_cpu[i] = "medium"
+                    elif arg in ("-b:v", "-maxrate", "-bufsize"):
+                        # Remove bitrate args (use CRF instead)
+                        cmd_cpu[i] = "-crf" if arg == "-b:v" else cmd_cpu[i]
+                        if i + 1 < len(cmd_cpu):
+                            cmd_cpu[i + 1] = "20" if arg == "-b:v" else cmd_cpu[i + 1]
+                # Simpler: rebuild encoder args
+                cmd_cpu = []
+                for arg in cmd:
+                    cmd_cpu.append(arg)
+                # Find and replace encoder section
+                final_cmd = []
+                skip_next = False
+                for i, arg in enumerate(cmd):
+                    if skip_next:
+                        skip_next = False
+                        continue
+                    if arg == "h264_nvenc":
+                        final_cmd.append("libx264")
+                    elif arg == "p4" and i > 0 and cmd[i-1] == "-preset":
+                        final_cmd.append("medium")
+                    elif arg in ("-b:v", "-maxrate", "-bufsize") and i + 1 < len(cmd):
+                        if arg == "-b:v":
+                            final_cmd.extend(["-crf", "20"])
+                        # Skip -maxrate and -bufsize entirely
+                        skip_next = True
+                        continue
+                    else:
+                        final_cmd.append(arg)
+
+                result = subprocess.run(final_cmd, capture_output=True, text=True, timeout=300)
+                if result.returncode != 0:
+                    print(f"  [render] Scene {scene.index} FAILED (libx264):\n{result.stderr[-1500:]}")
+                    return None
+                # Mark NVENC as unavailable for future scenes
+                global HWACCEL_AVAILABLE
+                HWACCEL_AVAILABLE = False
+                print(f"  [render] Scene {scene.index} OK with libx264 fallback")
+            else:
+                print(f"  [render] Scene {scene.index} FAILED:\n{result.stderr[-1500:]}")
+                return None
 
         # Verify rendered duration
         actual_dur = get_video_duration(output_path)
