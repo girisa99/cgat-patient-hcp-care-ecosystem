@@ -558,8 +558,8 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     silent_audio_idx = None
     if not audio_labels:
         # No audio tracks — add anullsrc as an input so FFmpeg has audio to map
-        inputs.extend(["-f", "lavfi", "-i",
-                       f"anullsrc=r=48000:cl=stereo:d={scene.duration:.2f}"])
+        # Note: anullsrc generates infinite silence; duration is controlled by atrim filter
+        inputs.extend(["-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo"])
         silent_audio_idx = input_idx
         # Trim it to scene duration via filter
         silent_label = f"sil{scene.index}"
