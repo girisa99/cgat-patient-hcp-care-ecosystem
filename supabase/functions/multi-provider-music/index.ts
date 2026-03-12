@@ -731,22 +731,40 @@ serve(async (req) => {
             buf = await generateModelsLabMusicDirect(request.prompt, duration);
         }
 
-        // Detect silent placeholders — check if >90% of bytes are zero.
-        // Catches MP3 files with valid sync headers (0xFFfb) but all-zero audio frames.
+        // Validate: reject non-audio content (HTML error pages, JSON errors, etc.)
         const bytes = new Uint8Array(buf);
+        const isHtml = bytes.length > 15 && String.fromCharCode(...bytes.slice(0, 15)).includes('<!DOCTYPE') || String.fromCharCode(...bytes.slice(0, 5)) === '<html';
+        const isJson = bytes.length > 1 && bytes[0] === 0x7B; // starts with '{'
+        if (isHtml || isJson) {
+          const preview = String.fromCharCode(...bytes.slice(0, 200));
+          _debugErrors.push(`${tryProvider}: returned ${isHtml ? 'HTML' : 'JSON'} instead of audio (${buf.byteLength} bytes): ${preview.substring(0, 100)}`);
+          console.warn(`⚠️ ${tryProvider} returned ${isHtml ? 'HTML error page' : 'JSON'} instead of audio — trying next provider...`);
+          continue;
+        }
+
+        // Detect silent placeholders — check if >90% of bytes are zero.
         const zeros = bytes.reduce((c, b) => c + (b === 0 ? 1 : 0), 0);
         const zeroPct = bytes.byteLength > 0 ? (zeros / bytes.byteLength) * 100 : 100;
         const isSilent = buf.byteLength < 100000 && zeroPct > 90;
 
-        console.log(`${isSilent ? '⚠️ SILENT' : '✅ Real music'}: ${buf.byteLength} bytes via ${tryProvider}, ${zeroPct.toFixed(1)}% zeros`);
+        // Validate audio magic bytes: MP3 (0xFFfb/ID3), WAV (RIFF), OGG (OggS), FLAC (fLaC)
+        const hasMagic = bytes.length >= 4 && (
+          (bytes[0] === 0xFF && (bytes[1] & 0xE0) === 0xE0) || // MP3 sync
+          (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) || // ID3
+          (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) || // RIFF/WAV
+          (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) || // OggS
+          (bytes[0] === 0x66 && bytes[1] === 0x4C && bytes[2] === 0x61 && bytes[3] === 0x43)    // fLaC
+        );
 
-        if (!isSilent) {
+        console.log(`${isSilent ? '⚠️ SILENT' : '✅ Real music'}: ${buf.byteLength} bytes via ${tryProvider}, ${zeroPct.toFixed(1)}% zeros, magic=${hasMagic}`);
+
+        if (!isSilent && hasMagic) {
           audioBuffer = buf;
           usedProvider = tryProvider;
           break; // Got real music — stop trying
         }
 
-        _debugErrors.push(`${tryProvider}: silent placeholder (${zeroPct.toFixed(0)}% zeros, ${buf.byteLength} bytes)`);
+        _debugErrors.push(`${tryProvider}: ${isSilent ? `silent (${zeroPct.toFixed(0)}% zeros)` : `no audio magic bytes`} (${buf.byteLength} bytes)`);
         console.warn(`⚠️ ${tryProvider} returned silent placeholder — trying next provider...`);
       } catch (providerErr: any) {
         _debugErrors.push(`${tryProvider}: ${providerErr.message}`);
