@@ -30,12 +30,43 @@ Output:
 """
 
 import os
+import sys
 import time
 import shutil
-import runpod
-from asset_downloader import collect_asset_urls, download_all
-from timeline_parser import parse_timeline
-from ffmpeg_builder import render_scene, concatenate_scenes, get_video_duration
+
+print("[CastRenderer] Starting handler.py — importing modules...", flush=True)
+
+try:
+    import runpod
+    print(f"[CastRenderer] runpod {runpod.__version__} loaded", flush=True)
+except Exception as e:
+    print(f"[CastRenderer] FATAL: Failed to import runpod: {e}", flush=True)
+    sys.exit(1)
+
+try:
+    from asset_downloader import collect_asset_urls, download_all
+    print("[CastRenderer] asset_downloader loaded", flush=True)
+except Exception as e:
+    print(f"[CastRenderer] FATAL: Failed to import asset_downloader: {e}", flush=True)
+    sys.exit(1)
+
+try:
+    from timeline_parser import parse_timeline
+    print("[CastRenderer] timeline_parser loaded", flush=True)
+except Exception as e:
+    print(f"[CastRenderer] FATAL: Failed to import timeline_parser: {e}", flush=True)
+    sys.exit(1)
+
+try:
+    from ffmpeg_builder import render_scene, concatenate_scenes, get_video_duration
+    print("[CastRenderer] ffmpeg_builder loaded", flush=True)
+except Exception as e:
+    print(f"[CastRenderer] FATAL: Failed to import ffmpeg_builder: {e}", flush=True)
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
+
+print("[CastRenderer] All modules loaded successfully", flush=True)
 
 
 def handler(job: dict) -> dict:

@@ -25,9 +25,9 @@ try:
         render_kinetic_text_frames,
     )
     PILLOW_AVAILABLE = True
-except ImportError:
+except Exception as e:
     PILLOW_AVAILABLE = False
-    print("  [ffmpeg] WARNING: pillow_renderer not available, falling back to drawtext")
+    print(f"  [ffmpeg] WARNING: pillow_renderer not available ({e}), falling back to drawtext")
 
 OUTPUT_DIR = "/tmp/cast_render"
 HWACCEL_AVAILABLE = None  # lazy-detect
