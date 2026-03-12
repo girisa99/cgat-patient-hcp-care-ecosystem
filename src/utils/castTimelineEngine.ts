@@ -1008,19 +1008,19 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
   return scenes;
 }
 
-// ── Scene Splitting for JSON2Video Timeout Prevention ─────────────────────
+// ── Scene Splitting for Very Long Scenes ──────────────────────────────────
 
 /**
- * MAX_SCENE_DURATION — JSON2Video rendering timeout guard.
+ * MAX_SCENE_DURATION — scene splitting guard.
  *
- * JSON2Video times out rendering individual scenes that are too long.
- * Empirically: scenes >45s are risky, >60s almost always timeout.
+ * RunPod FFmpeg worker can handle scenes of any length, but splitting
+ * very long scenes (>120s) improves Ken Burns variety and visual pacing.
  *
  * When a scene exceeds this limit, splitLongScenes() breaks it into
  * multiple sub-scenes of ~MAX_SCENE_DURATION each. Audio elements
  * get trimmed/offset so playback is seamless across the split.
  */
-const MAX_SCENE_DURATION = 35; // seconds — safe ceiling for JSON2Video rendering
+const MAX_SCENE_DURATION = 120; // seconds — generous limit for RunPod FFmpeg (was 35 for J2V)
 
 /**
  * Split any scene exceeding MAX_SCENE_DURATION into multiple sub-scenes.
@@ -1028,15 +1028,11 @@ const MAX_SCENE_DURATION = 35; // seconds — safe ceiling for JSON2Video render
  * Strategy:
  * - Each sub-scene gets ~MAX_SCENE_DURATION seconds
  * - Visual elements (images) get Ken Burns cycling per sub-scene
- * - TTS audio uses JSON2Video's `seek` parameter to fast-forward to the
- *   correct offset in each sub-scene — narration plays seamlessly across splits
+ * - TTS audio uses `seek` parameter to fast-forward to the correct offset
+ *   in each sub-scene — narration plays seamlessly across splits
  * - Lipsync/B-roll videos also use `seek` for correct offset
  * - Music loops in every sub-scene (seamless)
  * - Transitions between sub-scenes use 'dissolve' for seamless feel
- *
- * The `seek` property (confirmed in JSON2Video API) specifies the time in
- * seconds at which the audio/video file should fast-forward to. This allows
- * splitting ANY scene (including TTS narration) without replay or quality loss.
  */
 function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
   const result: J2VScene[] = [];
@@ -1275,9 +1271,8 @@ export function buildCastTimeline(
   mood?: string,
 ): CastTimelineResult {
   const resolvedTheme: CastTheme = { ...DEFAULT_CAST_THEME, ...theme };
-  // full-hd (1920×1080) causes J2V timeouts on complex scenes (8+ scenes, PiP overlays, 2+ min).
-  // Use hd (1280×720) for production — still sharp, 4× faster render. Cinematic gets full-hd.
-  const resolution = quality === 'cinematic' ? 'full-hd' : 'hd';
+  // RunPod FFmpeg worker handles full-hd without timeout issues.
+  const resolution = 'full-hd';
   const scenes: J2VScene[] = [];
 
   // 1. Opening bookend (Part 1 only)
@@ -1305,8 +1300,8 @@ export function buildCastTimeline(
   // 4. Inject subtitles if enabled
   injectSubtitles(scenes, chapters, resolvedTheme);
 
-  // 5. Split long scenes to prevent JSON2Video rendering timeouts
-  // Any scene > MAX_SCENE_DURATION (35s) gets split into sub-scenes.
+  // 5. Split very long scenes for visual pacing
+  // Any scene > MAX_SCENE_DURATION (120s) gets split into sub-scenes.
   // This MUST happen before safety pass (safety pass clamps elements to scene duration).
   const splitScenes = splitLongScenes(scenes);
 
@@ -1319,7 +1314,7 @@ export function buildCastTimeline(
 
   return {
     resolution,
-    quality: quality === 'cinematic' ? 'high' : 'low',
+    quality: quality === 'cinematic' ? 'high' : 'medium',
     scenes: splitScenes,
     _totalDuration: totalDuration,
   };

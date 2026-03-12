@@ -1,9 +1,8 @@
 /**
  * GENIE CAST STATUS CHECKER
- * 
- * Checks the status of pending JSON2Video jobs and updates the database
- * when videos complete. Called by client-side polling to handle videos
- * that took longer than the edge function timeout.
+ *
+ * Checks the status of pending RunPod rendering jobs and updates the database
+ * when videos complete. Called by client-side polling.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -23,11 +22,12 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    const json2videoApiKey = Deno.env.get('JSON2VIDEO_API_KEY');
-    
-    if (!json2videoApiKey) {
-      throw new Error('JSON2VIDEO_API_KEY not configured');
+
+    const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
+    const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_CAST_ENDPOINT_ID');
+
+    if (!RUNPOD_API_KEY || !RUNPOD_ENDPOINT_ID) {
+      throw new Error('RUNPOD_API_KEY or RUNPOD_CAST_ENDPOINT_ID not configured');
     }
 
     const { videoId, projectId, castJobId } = await req.json();
@@ -68,9 +68,9 @@ serve(async (req) => {
         });
       }
 
-      // Poll the external provider if we have a provider_job_id
-      if (job.provider_job_id && json2videoApiKey) {
-        const providerStatus = await checkJson2VideoStatus(job.provider_job_id, json2videoApiKey);
+      // Poll the RunPod provider if we have a provider_job_id
+      if (job.provider_job_id) {
+        const providerStatus = await checkRunPodStatus(job.provider_job_id, RUNPOD_ENDPOINT_ID, RUNPOD_API_KEY);
 
         if (providerStatus.completed) {
           await supabase.from('cast_generation_jobs').update({
@@ -148,25 +148,24 @@ serve(async (req) => {
       });
     }
 
-    // If specific video ID provided, check just that one
+    // If specific video ID provided, check just that one (landing page videos)
     if (videoId) {
       const { data: video, error } = await supabase
         .from('landing_page_videos')
         .select('*')
         .eq('id', videoId)
         .single();
-      
+
       if (error || !video) {
-        return new Response(JSON.stringify({ 
-          success: false, 
-          error: 'Video not found' 
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Video not found'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 404,
         });
       }
 
-      // If already completed or no project ID, return current status
       if (video.generation_status === 'completed' || !video.render_project_id) {
         return new Response(JSON.stringify({
           success: true,
@@ -181,12 +180,11 @@ serve(async (req) => {
         });
       }
 
-      // Poll JSON2Video for status
-      const status = await checkJson2VideoStatus(video.render_project_id, json2videoApiKey);
-      
+      // Poll RunPod for status
+      const status = await checkRunPodStatus(video.render_project_id, RUNPOD_ENDPOINT_ID, RUNPOD_API_KEY);
+
       if (status.completed) {
-        // Update database with completed video
-        const { error: updateError } = await supabase
+        await supabase
           .from('landing_page_videos')
           .update({
             generation_status: 'completed',
@@ -196,11 +194,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq('id', video.id);
-        
-        if (updateError) {
-          console.error('Failed to update video:', updateError);
-        }
-        
+
         return new Response(JSON.stringify({
           success: true,
           video: {
@@ -213,7 +207,6 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } else if (status.failed) {
-        // Update with error
         await supabase
           .from('landing_page_videos')
           .update({
@@ -222,7 +215,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq('id', video.id);
-        
+
         return new Response(JSON.stringify({
           success: false,
           video: {
@@ -234,8 +227,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      
-      // Still processing
+
       return new Response(JSON.stringify({
         success: true,
         video: {
@@ -247,10 +239,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    
-    // If project ID provided directly (for checking new jobs)
+
+    // If RunPod job ID provided directly (for checking new jobs via taskId fallback)
     if (projectId) {
-      const status = await checkJson2VideoStatus(projectId, json2videoApiKey);
+      const status = await checkRunPodStatus(projectId, RUNPOD_ENDPOINT_ID, RUNPOD_API_KEY);
       return new Response(JSON.stringify({
         success: true,
         status: status.completed ? 'completed' : (status.failed ? 'failed' : 'processing'),
@@ -262,24 +254,24 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    
-    // Check all pending videos
+
+    // Check all pending videos (batch mode)
     const { data: pendingVideos, error: fetchError } = await supabase
       .from('landing_page_videos')
       .select('*')
       .in('generation_status', ['pending', 'processing'])
       .not('render_project_id', 'is', null);
-    
+
     if (fetchError) {
       throw fetchError;
     }
-    
+
     const results = [];
-    
+
     for (const video of pendingVideos || []) {
       try {
-        const status = await checkJson2VideoStatus(video.render_project_id, json2videoApiKey);
-        
+        const status = await checkRunPodStatus(video.render_project_id, RUNPOD_ENDPOINT_ID, RUNPOD_API_KEY);
+
         if (status.completed) {
           await supabase
             .from('landing_page_videos')
@@ -291,7 +283,7 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq('id', video.id);
-          
+
           results.push({
             id: video.id,
             language: video.language_code,
@@ -307,7 +299,7 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq('id', video.id);
-          
+
           results.push({
             id: video.id,
             language: video.language_code,
@@ -332,7 +324,7 @@ serve(async (req) => {
         });
       }
     }
-    
+
     return new Response(JSON.stringify({
       success: true,
       checked: results.length,
@@ -340,7 +332,7 @@ serve(async (req) => {
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-    
+
   } catch (error) {
     console.error('Status check error:', error);
     return new Response(JSON.stringify({
@@ -353,7 +345,7 @@ serve(async (req) => {
   }
 });
 
-async function checkJson2VideoStatus(projectId: string, apiKey: string): Promise<{
+async function checkRunPodStatus(jobId: string, endpointId: string, apiKey: string): Promise<{
   completed: boolean;
   failed: boolean;
   videoUrl?: string;
@@ -363,78 +355,46 @@ async function checkJson2VideoStatus(projectId: string, apiKey: string): Promise
   error?: string;
 }> {
   try {
-    const response = await fetch(`https://api.json2video.com/v2/movies?project=${projectId}`, {
-      method: 'GET',
-      headers: {
-        'x-api-key': apiKey,
-      },
+    const response = await fetch(`https://api.runpod.ai/v2/${endpointId}/status/${jobId}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
     });
-    
+
     if (!response.ok) {
-      console.error(`JSON2Video API error: ${response.status}`);
+      console.error(`RunPod status API error: ${response.status}`);
       return { completed: false, failed: true, error: `API error: ${response.status}` };
     }
-    
+
     const data = await response.json();
-    const dataStr = JSON.stringify(data);
-    console.log(`📹 JSON2Video raw for ${projectId} (${dataStr.length} bytes):`, dataStr.substring(0, 800));
+    console.log(`🚀 RunPod status for ${jobId}: ${data.status}, output keys: ${data.output ? Object.keys(data.output).join(',') : 'none'}`);
 
-    // Handle array response (list of movies for project)
-    const movie = Array.isArray(data) ? data[0] : data;
-
-    if (!movie) {
-      console.log(`📹 No movie found for ${projectId}, isArray=${Array.isArray(data)}`);
-      return { completed: false, failed: false, progress: 0 };
-    }
-
-    const status = (movie.status || movie.render_status || '').toLowerCase();
-    const movieUrl = movie.url || movie.movie_url || movie.output_url || movie.download_url;
-    const movieThumb = movie.thumbnail || movie.poster || movie.thumb;
-    const movieDuration = movie.duration || movie.length;
-    const movieProgress = movie.progress ?? movie.percent ?? 0;
-
-    console.log(`📹 Parsed: status="${status}", url=${movieUrl ? 'YES' : 'NO'}, duration=${movieDuration}, progress=${movieProgress}, keys=${Object.keys(movie).join(',')}`);
-
-    // Completed: match any status that means "done"
-    if (status === 'done' || status === 'completed' || status === 'finished' || status === 'ready') {
+    // RunPod statuses: IN_QUEUE, IN_PROGRESS, COMPLETED, FAILED, CANCELLED, TIMED_OUT
+    if (data.status === 'COMPLETED') {
       return {
         completed: true,
         failed: false,
-        videoUrl: movieUrl,
-        thumbnailUrl: movieThumb,
-        duration: movieDuration,
+        videoUrl: data.output?.videoUrl,
+        thumbnailUrl: data.output?.thumbnailUrl,
+        duration: data.output?.duration,
       };
     }
 
-    // Belt-and-suspenders: if URL exists and status isn't explicitly failed, treat as complete
-    if (movieUrl && status !== 'failed' && status !== 'error' && status !== 'rendering' && status !== 'processing' && status !== 'pending') {
-      console.log(`📹 URL present with unexpected status "${status}" — treating as completed`);
-      return {
-        completed: true,
-        failed: false,
-        videoUrl: movieUrl,
-        thumbnailUrl: movieThumb,
-        duration: movieDuration,
-      };
-    }
-
-    if (status === 'failed' || status === 'error') {
+    if (['FAILED', 'CANCELLED', 'TIMED_OUT'].includes(data.status)) {
       return {
         completed: false,
         failed: true,
-        error: movie.error || movie.message || movie.error_message || 'Render failed',
+        error: data.output?.error || data.error || data.status,
       };
     }
 
-    // Still processing
+    // IN_QUEUE or IN_PROGRESS
     return {
       completed: false,
       failed: false,
-      progress: movieProgress,
+      progress: data.output?.progress || 0,
     };
-    
+
   } catch (error) {
-    console.error('Error checking JSON2Video status:', error);
+    console.error('Error checking RunPod status:', error);
     return {
       completed: false,
       failed: true,

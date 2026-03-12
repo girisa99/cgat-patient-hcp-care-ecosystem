@@ -1,11 +1,14 @@
 /**
  * GENIE CAST TIMELINE SUBMIT
  *
- * Lightweight edge function that receives a pre-built JSON2Video timeline
- * and forwards it to the JSON2Video API.
+ * Receives a pre-built timeline (castTimelineEngine format) and forwards it
+ * to the RunPod Serverless FFmpeg worker for GPU-accelerated rendering.
  *
  * The client builds the timeline locally (browser has unlimited memory),
  * filters out data: URIs to keep payload small (~100KB), and sends it here.
+ *
+ * RunPod async /run returns immediately with a job ID.
+ * Client polls genie-cast-status to check completion.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -37,7 +40,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Track assembly job
+    // Track assembly job in DB
     let castJobId: string | null = null;
     if (castProjectId) {
       try {
@@ -48,7 +51,7 @@ serve(async (req) => {
             job_type: 'assembly',
             language,
             quality,
-            provider: 'json2video',
+            provider: 'runpod-ffmpeg',
             status: 'processing',
             started_at: new Date().toISOString(),
             input_config: {
@@ -68,71 +71,81 @@ serve(async (req) => {
       }
     }
 
-    // Forward to JSON2Video
-    const apiKey = Deno.env.get('JSON2VIDEO_API_KEY');
-    if (!apiKey) {
-      return new Response(JSON.stringify({ success: false, message: 'JSON2VIDEO_API_KEY not configured' }), {
+    // Forward to RunPod Serverless (async /run — returns immediately)
+    const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_CAST_ENDPOINT_ID');
+    const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
+
+    if (!RUNPOD_ENDPOINT_ID || !RUNPOD_API_KEY) {
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'RUNPOD_CAST_ENDPOINT_ID or RUNPOD_API_KEY not configured',
+      }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const response = await fetch('https://api.json2video.com/v2/movies', {
+    const response = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-      body: JSON.stringify(timeline),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RUNPOD_API_KEY}`,
+      },
+      body: JSON.stringify({
+        input: {
+          timeline,
+          supabaseUrl,
+          supabaseServiceKey: supabaseKey,
+          castProjectId: castProjectId || 'unknown',
+        },
+      }),
     });
 
     const responseText = await response.text();
-    console.log(`📹 JSON2Video status: ${response.status}, body (first 500): ${responseText.substring(0, 500)}`);
+    console.log(`🚀 RunPod status: ${response.status}, body: ${responseText.substring(0, 500)}`);
 
     if (!response.ok) {
-      console.error(`JSON2Video API error: ${response.status} - ${responseText}`);
+      console.error(`RunPod API error: ${response.status} - ${responseText}`);
       if (castJobId) {
         await supabase.from('cast_generation_jobs').update({
           status: 'failed',
-          error_message: `JSON2Video ${response.status}: ${responseText.substring(0, 200)}`,
+          error_message: `RunPod ${response.status}: ${responseText.substring(0, 200)}`,
           completed_at: new Date().toISOString(),
         }).eq('id', castJobId);
       }
-      return new Response(JSON.stringify({ success: false, message: `JSON2Video error: ${response.status}` }), {
+      return new Response(JSON.stringify({ success: false, message: `RunPod error: ${response.status}` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const data = JSON.parse(responseText);
-    const projectId = data.project || data.id || data.movie_id;
+    // RunPod /run returns { id: "job-id", status: "IN_QUEUE" }
+    const runpodJobId = data.id;
 
-    // Update job + project status — CRITICAL: provider_job_id must be saved for polling to work
+    // Save RunPod job ID for polling — CRITICAL for genie-cast-status to work
     if (castJobId || castProjectId) {
-      const isPending = !!projectId;
       const jobUpdate = {
-        status: isPending ? 'rendering' : 'completed',
-        output_url: data.url || data.movie_url || data.movie?.url || null,
-        output_thumbnail_url: data.poster || data.thumbnail || data.movie?.poster || null,
+        status: 'rendering',
+        provider_job_id: runpodJobId || null,
         output_duration_seconds: totalDuration || null,
-        provider_job_id: projectId || null,
-        completed_at: !isPending ? new Date().toISOString() : null,
       };
 
       if (castJobId) {
-        // Try up to 2 times to save provider_job_id — without this, polling is broken
         for (let attempt = 1; attempt <= 2; attempt++) {
           const { error: updateError } = await supabase.from('cast_generation_jobs')
             .update(jobUpdate).eq('id', castJobId);
           if (!updateError) {
-            console.log(`✅ cast_generation_jobs updated: provider_job_id=${projectId} (attempt ${attempt})`);
+            console.log(`✅ cast_generation_jobs updated: provider_job_id=${runpodJobId} (attempt ${attempt})`);
             break;
           }
           console.error(`❌ cast_generation_jobs UPDATE failed (attempt ${attempt}):`, updateError.message);
-          if (attempt < 2) await new Promise(r => setTimeout(r, 500)); // brief retry delay
+          if (attempt < 2) await new Promise(r => setTimeout(r, 500));
         }
       }
 
       if (castProjectId) {
         const { error: projError } = await supabase.from('cast_projects').update({
-          status: isPending ? 'generating' : 'review',
+          status: 'generating',
           ...(totalDuration > 0 ? { total_duration_seconds: totalDuration } : {}),
-          ...(data.url || data.movie_url ? { final_video_url: data.url || data.movie_url } : {}),
         }).eq('id', castProjectId);
         if (projError) console.error('❌ cast_projects UPDATE failed:', projError.message);
       }
@@ -140,15 +153,11 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      videoUrl: data.url || data.movie_url || data.movie?.url || undefined,
-      thumbnailUrl: data.poster || data.thumbnail || data.movie?.poster || undefined,
       totalDuration,
-      generationStatus: projectId ? 'pending' : 'completed',
+      generationStatus: 'pending',
       castJobId,
-      taskId: projectId || undefined,
-      message: projectId
-        ? 'Timeline submitted to JSON2Video. Poll genie-cast-status for completion.'
-        : 'Video assembly completed.',
+      taskId: runpodJobId || undefined,
+      message: 'Timeline submitted to RunPod FFmpeg worker. Poll genie-cast-status for completion.',
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

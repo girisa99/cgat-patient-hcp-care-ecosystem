@@ -2941,18 +2941,18 @@ function EP04ProductionInner() {
   }, [audioMap, sceneProduction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [assemblyJobId, setAssemblyJobId] = useState<string | null>(null);
-  const assemblyTaskIdRef = React.useRef<string | null>(null); // JSON2Video project ID fallback
+  const assemblyTaskIdRef = React.useRef<string | null>(null); // RunPod job ID fallback
   const pollNoProgressCountRef = React.useRef(0); // Track consecutive polls with 0% progress
   const assemblyCancelledRef = React.useRef(false); // Set true on cancel to abort in-flight polls
 
   // ─── Multi-Part Assembly ──────────────────────────────────────────────────
-  // JSON2Video Professional plan caps at 10 minutes per video.
+  // RunPod FFmpeg worker — no hard cap, but keep parts reasonable for UX.
   // Keep full cinematic content per part (Ken Burns, lipsync, kinetic text, SFX, transitions).
   // If this produces 20+ parts, that's fine — the concat stitch combines them all.
   // Per-scene rendering (1 scene = 1 part) is the recommended mode.
   const BOOKEND_BUFFER = 22; // 12s opening + 10s closing = 22s reserved for bookends
   const MAX_PART_DURATION = 120; // 2 minutes max per part — smaller parts render faster
-  const MAX_PART_TTS = 8; // Max TTS audio files per part — keeps JSON2Video renders reliable
+  const MAX_PART_TTS = 8; // Max TTS audio files per part — keeps render parts manageable
 
   interface AssemblyPart {
     partNumber: number;
@@ -2960,7 +2960,7 @@ function EP04ProductionInner() {
     estimatedDuration: number;
     ttsCount: number;
     jobId: string | null;       // castJobId (DB row) for polling via genie-cast-status
-    taskId?: string | null;     // JSON2Video project ID — fallback for polling when provider_job_id update fails
+    taskId?: string | null;     // RunPod job ID — fallback for polling when provider_job_id update fails
     status: 'pending' | 'rendering' | 'completed' | 'failed';
     videoUrl: string | null;
     errorMessage?: string;
@@ -2975,7 +2975,7 @@ function EP04ProductionInner() {
   // Each scene renders independently. Only very heavy scenes get split.
   // Visual cycling (15s beats) handles long durations, so threshold is generous.
   const MAX_SUB_TTS = 15;
-  const MAX_SUB_DURATION = 300; // 5 min — splitLongScenes() in castTimelineEngine already caps J2V at 35s per scene
+  const MAX_SUB_DURATION = 600; // 10 min — RunPod has no scene duration limits
 
   const computePerSceneParts = useCallback((): AssemblyPart[] => {
     // Sort scene keys by scene number (e.g., scene-0, scene-1, ..., scene-11)
@@ -3164,24 +3164,24 @@ function EP04ProductionInner() {
     const doPoll = async () => {
       if (assemblyCancelledRef.current) return; // cancelled — abort
       pollCountRef.current++;
-      // Never give up — J2V renders can take 20-40min for complex scenes.
+      // Never give up — GPU renders can take several minutes for complex scenes.
       // Warn at milestones but keep polling until completion or cancellation.
       if (pollCountRef.current === 60) {
-        toast.info('Still rendering on JSON2Video (10 min)... polling continues');
+        toast.info('Still rendering on RunPod (10 min)... polling continues');
       } else if (pollCountRef.current === 180) {
-        toast.info('Still rendering on JSON2Video (30 min)... polling continues');
+        toast.info('Still rendering on RunPod (30 min)... polling continues');
       } else if (pollCountRef.current === 360) {
-        toast.warning('Render taking unusually long (60 min) — check JSON2Video dashboard. Polling continues...');
+        toast.warning('Render taking unusually long (60 min) — check RunPod dashboard. Polling continues...');
       }
       try {
-        // Primary: poll via castJobId (DB row lookup → provider_job_id → JSON2Video)
+        // Primary: poll via castJobId (DB row lookup → provider_job_id → RunPod)
         const { data, error: fnError } = await supabase.functions.invoke('genie-cast-status', {
           body: { castJobId: assemblyJobId },
         });
         console.log(`[EP04 Poll #${pollCountRef.current}] castJobId=${assemblyJobId}, response:`, JSON.stringify(data)?.substring(0, 300), fnError ? `ERROR: ${fnError.message}` : '');
 
         // ── Fallback: if castJobId poll returns 'processing' with 0% for 3+ polls,
-        // the provider_job_id update likely failed. Use taskId (JSON2Video project ID) directly.
+        // the provider_job_id update likely failed. Use taskId (RunPod job ID) directly.
         let resolvedStatus: string | undefined;
         let resolvedVideoUrl: string | undefined;
         let resolvedThumbnailUrl: string | undefined;
@@ -3199,7 +3199,7 @@ function EP04ProductionInner() {
           pollNoProgressCountRef.current = 0;
         }
 
-        // Fallback: poll J2V directly if stuck OR if primary says "completed" but has no URL
+        // Fallback: poll RunPod directly if stuck OR if primary says "completed" but has no URL
         // The DB row can show completed (from a prior fallback's write) before output_url commits
         const taskId = assemblyTaskIdRef.current;
         const primaryCompletedNoUrl = (jobStatus === 'completed' || jobStatus === 'done' || jobStatus === 'finished') && !data?.job?.outputUrl;
@@ -3376,7 +3376,7 @@ function EP04ProductionInner() {
           const prevStuck = perSceneStuckCountsRef.current[part.partNumber] || 0;
           let newStuck = prevStuck + 1; // assume stuck, reset below if progress
 
-          // Primary: poll via castJobId (DB → provider_job_id → JSON2Video)
+          // Primary: poll via castJobId (DB → provider_job_id → RunPod)
           if (part.jobId) {
             try {
               const { data, error: fnError } = await supabase.functions.invoke('genie-cast-status', {
@@ -3413,7 +3413,7 @@ function EP04ProductionInner() {
           }
 
           // Fallback: if stuck for 1+ polls, immediately try direct projectId polling
-          // Don't wait 3 polls (45s) — JSON2Video renders take 3-5 min, start fallback ASAP
+          // Don't wait 3 polls (45s) — GPU renders take 1-3 min, start fallback ASAP
           const stuckCount = resolvedStatus ? 0 : newStuck;
           if (!resolvedStatus && part.taskId && (stuckCount >= 1 || !part.jobId)) {
             console.log(`[EP04 PerScene] Part ${part.partNumber}: fallback to taskId=${part.taskId} (stuck=${stuckCount})`);
@@ -3439,7 +3439,7 @@ function EP04ProductionInner() {
           }
 
           // Per-part timeout: if stuck for 20+ consecutive polls (~5 min), give up
-          // JSON2Video renders typically take 3-5 min — 8 polls (2 min) was too short
+          // GPU renders typically take 1-3 min — keep polling generously
           if (!resolvedStatus && stuckCount >= 20) {
             resolvedStatus = 'failed';
             resolvedError = `Part stuck for ${stuckCount} consecutive polls (~5 min) — marking as failed`;
@@ -3480,7 +3480,7 @@ function EP04ProductionInner() {
   }, [perScenePolling, assemblyParts]);
 
   // ─── Assembly Constants ─────────────────────────────────────────────────
-  // Map storybook transition styles to JSON2Video scene transition presets
+  // Map storybook transition styles to FFmpeg xfade transition presets
   const TRANSITION_STYLE_MAP: Record<string, string> = {
     'page-turn': 'wipeleft',
     'iris-wipe': 'circleopen',
@@ -3499,7 +3499,7 @@ function EP04ProductionInner() {
     squirrel: { headline: 'SQUIRREL', lead: 'QA Chaos Agent', barColor: '#f97316' },
   };
 
-  // ─── OLD buildJson2VideoTimeline DELETED ─────────────────────────────────
+  // ─── OLD buildJson2VideoTimeline DELETED (replaced by castTimelineEngine) ─
   // Replaced by castTimelineEngine.ts — professional per-TTS-line scene architecture.
   // See buildCastTimeline() in src/utils/castTimelineEngine.ts.
   // ── Core assembly function: builds timeline for a subset of scenes ──
@@ -3606,7 +3606,7 @@ function EP04ProductionInner() {
         const isHttpUrl = (u: string) => u && u.startsWith('http');
         // Include all HTTP URLs for assembly — freshly regenerated CDN URLs are valid (~24h TTL).
         // isExpiredCdnUrl is pattern-based (matches all Alibaba/DashScope URLs) and can't tell
-        // fresh from expired. JSON2Video will fetch during render; fresh URLs will work fine.
+        // fresh from expired. RunPod worker will fetch during render; fresh URLs will work fine.
         const isSafeUrl = (u: string) => isHttpUrl(u);
 
         // Collect all scene images — from imageUrls + avatarUrls buckets (trust the source bucket)
@@ -3867,7 +3867,7 @@ function EP04ProductionInner() {
 
       // ── Bookend data: opening only for first part, closing only for last ──
       // Use scene visuals as bookend backgrounds for professional look (LinkedIn/X publishing)
-      // Use images (not videos) for bookend backgrounds — JSON2Video requires image type
+      // Use images (not videos) for bookend backgrounds
       const firstChapterVisual = (preBuiltChapters[0] as any)?.sceneImages?.[0] || preBuiltChapters[0]?.visualUrls?.find((u: string) => u.match(/\.(png|jpg|jpeg|webp|gif)(\?|$)/i));
       const lastChapterVisual = (preBuiltChapters[preBuiltChapters.length - 1] as any)?.sceneImages?.[0] || preBuiltChapters[preBuiltChapters.length - 1]?.visualUrls?.find((u: string) => u.match(/\.(png|jpg|jpeg|webp|gif)(\?|$)/i));
       const bookends = {
@@ -3888,7 +3888,7 @@ function EP04ProductionInner() {
 
       // ── Pre-assembly: upload any data: URI music to Storage ──
       // Music generated before Storage upload fix may be stored as data: URIs.
-      // JSON2Video needs HTTP URLs, so upload them to Supabase Storage first.
+      // RunPod worker needs HTTP URLs, so upload them to Supabase Storage first.
       for (const chapter of preBuiltChapters) {
         if (chapter.musicUrl && !chapter.musicUrl.startsWith('http')) {
           console.log(`[EP04 Assembly${partLabel}] Uploading data: URI music for ${chapter.chapterId} to Storage...`);
@@ -3921,11 +3921,11 @@ function EP04ProductionInner() {
         jobId = await trackGenerationJob({
           projectId, jobType: 'assembly',
           sceneKey: partNumber != null ? `part-${partNumber}` : 'final',
-          provider: 'json2video', estimatedTokens: 5000,
+          provider: 'runpod-ffmpeg', estimatedTokens: 5000,
         });
       }
 
-      setAssemblyProgress(`Building JSON2Video timeline${partLabel}...`);
+      setAssemblyProgress(`Building render timeline${partLabel}...`);
 
       // ── Map EP04 data → generic CastTimeline interfaces ──
       const isSafeUrl = (u: string | undefined | null): u is string => !!u && u.startsWith('http');
@@ -4104,8 +4104,7 @@ function EP04ProductionInner() {
       const { _totalDuration: timelineDuration, ...timelinePayload } = timeline;
       console.log(`[EP04 Assembly${partLabel}] Built timeline: ${timelinePayload.scenes.length} scenes, ~${timelineDuration}s, payload: ${(JSON.stringify(timelinePayload).length / 1024).toFixed(0)}kb`);
 
-      // ── DIAGNOSTIC: dump full timeline for J2V web editor testing ──
-      // Copy from console → paste into https://json2video.com/editor to test directly
+      // ── DIAGNOSTIC: dump full timeline JSON for debugging ──
       console.log(`[EP04 Timeline JSON${partLabel}] ▼▼▼ COPY BELOW ▼▼▼`);
       console.log(JSON.stringify(timelinePayload, null, 2));
       console.log(`[EP04 Timeline JSON${partLabel}] ▲▲▲ COPY ABOVE ▲▲▲`);
@@ -4121,203 +4120,11 @@ function EP04ProductionInner() {
         console.log(`[EP04 Scene ${i}] ${s.duration?.toFixed(1)}s, ${els.length} elements (${Object.entries(types).map(([k, v]) => `${v} ${k}`).join(', ')}), ${urls} remote URLs, comment: "${s.comment}"`);
       });
 
-      setAssemblyProgress(`Submitting timeline${partLabel} to JSON2Video...`);
+      setAssemblyProgress(`Submitting timeline${partLabel} to RunPod FFmpeg worker...`);
 
-      // ── CHUNK-BASED ASSEMBLY ──────────────────────────────────────────────
-      // J2V times out on large timelines even at 4 scenes (~21 remote URLs).
-      // The bottleneck is asset download/setup, not rendering.
-      // 2 scenes per chunk keeps each job lightweight enough to avoid timeout.
-      const MAX_J2V_CHUNK_SCENES = 2;
-      const allScenes = timelinePayload.scenes || [];
-      const needsChunking = allScenes.length > MAX_J2V_CHUNK_SCENES;
-
-      if (needsChunking) {
-        // Split scenes into chunks of max 4 scenes each
-        const chunks: any[][] = [];
-        for (let ci = 0; ci < allScenes.length; ci += MAX_J2V_CHUNK_SCENES) {
-          chunks.push(allScenes.slice(ci, ci + MAX_J2V_CHUNK_SCENES));
-        }
-        console.log(`[EP04 Assembly${partLabel}] Timeline too large (${allScenes.length} scenes). Splitting into ${chunks.length} chunks of max ${MAX_J2V_CHUNK_SCENES} scenes.`);
-
-        // ── Fix chunk boundaries for seamless stitching ──
-        // Strip transition from the first scene of chunk 2+ to avoid "dissolve from black"
-        // at the start of each chunk video. The stitch timeline adds its own dissolve between chunks.
-        for (let ci = 1; ci < chunks.length; ci++) {
-          if (chunks[ci].length > 0 && chunks[ci][0].transition) {
-            chunks[ci][0] = { ...chunks[ci][0], transition: undefined };
-            console.log(`[EP04 Assembly${partLabel}] Stripped transition from chunk ${ci + 1} first scene to avoid dissolve-from-black`);
-          }
-        }
-
-        const chunkVideoUrls: string[] = [];
-        for (const [ci, chunk] of chunks.entries()) {
-          const chunkLabel = `${partLabel} chunk ${ci + 1}/${chunks.length}`;
-          const chunkDuration = chunk.reduce((sum: number, s: any) => sum + (s.duration || 0), 0);
-          const chunkTimeline = { ...timelinePayload, scenes: chunk };
-          const chunkBody = { timeline: chunkTimeline, castProjectId: projectId, language: 'en', quality: 'production' };
-          const chunkSize = JSON.stringify(chunkBody).length;
-
-          console.log(`[EP04 Assembly${chunkLabel}] Submitting: ${chunk.length} scenes, ${chunkDuration.toFixed(0)}s, ${(chunkSize / 1024).toFixed(0)}KB`);
-          setAssemblyProgress(`Rendering${chunkLabel} (${chunk.length} scenes, ${chunkDuration.toFixed(0)}s)...`);
-
-          // Submit this chunk
-          const { data: chunkData, error: chunkError } = await supabase.functions.invoke('genie-cast-timeline-submit', {
-            body: chunkBody,
-          });
-
-          if (chunkError || !chunkData?.success) {
-            const msg = chunkError?.message || chunkData?.message || 'Unknown error';
-            console.error(`[EP04 Assembly${chunkLabel}] Submit failed:`, msg);
-            throw new Error(`Chunk ${ci + 1} submit failed: ${msg}`);
-          }
-
-          console.log(`[EP04 Assembly${chunkLabel}] Response:`, JSON.stringify(chunkData));
-          const chunkCastJobId = chunkData.castJobId;
-          const chunkTaskId = chunkData.taskId;
-
-          if (chunkData.videoUrl) {
-            // Chunk completed synchronously (rare)
-            chunkVideoUrls.push(chunkData.videoUrl);
-            console.log(`[EP04 Assembly${chunkLabel}] ✅ Completed synchronously: ${chunkData.videoUrl}`);
-            continue;
-          }
-
-          // Inline-poll this chunk to completion
-          console.log(`[EP04 Assembly${chunkLabel}] Polling... castJobId=${chunkCastJobId}, taskId=${chunkTaskId}`);
-          let chunkVideoUrl: string | null = null;
-          for (let poll = 1; poll <= 360; poll++) { // 360 × 10s = 60 min max per chunk
-            if (assemblyCancelledRef.current) throw new Error('Cancelled by user');
-            await new Promise(r => setTimeout(r, 10000));
-
-            const elapsedMin = Math.round(poll * 10 / 60);
-            setAssemblyProgress(`Rendering${chunkLabel}... (${elapsedMin}min, poll ${poll})`);
-
-            // Primary poll via castJobId
-            const { data: pollData } = await supabase.functions.invoke('genie-cast-status', {
-              body: { castJobId: chunkCastJobId },
-            });
-
-            let status = pollData?.job?.status;
-            let videoUrl = pollData?.job?.outputUrl;
-            const progress = pollData?.job?.progressPercent || 0;
-
-            // Fallback: poll via taskId if primary stuck
-            if (chunkTaskId && (!status || (status === 'processing' && progress === 0))) {
-              const { data: fbData } = await supabase.functions.invoke('genie-cast-status', {
-                body: { projectId: chunkTaskId },
-              });
-              if (fbData) {
-                status = fbData.status || status;
-                videoUrl = fbData.videoUrl || videoUrl;
-              }
-            }
-
-            if (poll % 10 === 0) {
-              console.log(`[EP04 Poll${chunkLabel} #${poll}] status=${status}, progress=${progress}, videoUrl=${videoUrl ? 'YES' : 'NO'}`);
-            }
-
-            if (status === 'completed' || status === 'done' || status === 'finished') {
-              if (videoUrl) {
-                chunkVideoUrl = videoUrl;
-                break;
-              }
-              // Completed but no URL — keep polling
-            } else if (status === 'failed' || status === 'error') {
-              throw new Error(`Chunk ${ci + 1} render failed: ${pollData?.job?.errorMessage || 'Unknown'}`);
-            }
-          }
-
-          if (!chunkVideoUrl) {
-            throw new Error(`Chunk ${ci + 1} polling exhausted (60 min) — check J2V dashboard`);
-          }
-
-          chunkVideoUrls.push(chunkVideoUrl);
-          console.log(`[EP04 Assembly${chunkLabel}] ✅ Completed: ${chunkVideoUrl}`);
-          toast.success(`Chunk ${ci + 1}/${chunks.length} rendered!`);
-        }
-
-        // All chunks done — concatenate if multiple
-        if (chunkVideoUrls.length === 1) {
-          // Single chunk — use directly as the part video
-          const finalVideoUrl = chunkVideoUrls[0];
-          if (partNumber != null) {
-            setAssemblyParts(prev => prev.map(p =>
-              p.partNumber === partNumber ? { ...p, status: 'completed', videoUrl: finalVideoUrl } : p
-            ));
-            setActivePartNumber(null);
-            toast.success(`Part ${partNumber} assembled!`);
-          } else {
-            setFinalVideoUrl(finalVideoUrl);
-            setProductionPhase('complete');
-            toast.success('Video assembled!');
-          }
-          setAssemblyProgress(null);
-          setAssemblyJobId(null);
-        } else {
-          // Multiple chunks — stitch them together
-          console.log(`[EP04 Assembly${partLabel}] Stitching ${chunkVideoUrls.length} chunks...`);
-          setAssemblyProgress(`Stitching ${chunkVideoUrls.length} chunks${partLabel}...`);
-
-          // Build stitch timeline: each chunk video as a single scene with dissolve between chunks
-          const stitchScenes = chunkVideoUrls.map((url, i) => {
-            const chunkDur = chunks[i].reduce((sum: number, s: any) => sum + (s.duration || 0), 0);
-            return {
-              comment: `chunk-${i + 1}`,
-              duration: chunkDur,
-              'background-color': '#0f0a1a',
-              elements: [{
-                type: 'video', src: url, start: 0,
-                duration: chunkDur,
-                resize: 'cover', width: 1280, height: 720, volume: 1,
-              }],
-              // Smooth dissolve between chunks — hides the cut point
-              ...(i > 0 ? { transition: { style: 'dissolve', duration: 0.5 } } : {}),
-            };
-          });
-          const stitchTimeline = { resolution: timelinePayload.resolution || 'hd', quality: 'low', scenes: stitchScenes };
-          const { data: stitchResult, error: stitchError } = await supabase.functions.invoke('genie-cast-timeline-submit', {
-            body: { timeline: stitchTimeline, castProjectId: projectId, language: 'en', quality: 'production' },
-          });
-
-          if (stitchError || !stitchResult?.success) {
-            throw new Error(`Chunk stitch submit failed: ${stitchError?.message || stitchResult?.message}`);
-          }
-
-          if (stitchResult.videoUrl) {
-            // Stitch completed synchronously
-            const finalUrl = stitchResult.videoUrl;
-            if (partNumber != null) {
-              setAssemblyParts(prev => prev.map(p =>
-                p.partNumber === partNumber ? { ...p, status: 'completed', videoUrl: finalUrl } : p
-              ));
-              setActivePartNumber(null);
-            } else {
-              setFinalVideoUrl(finalUrl);
-              setProductionPhase('complete');
-            }
-            setAssemblyProgress(null);
-            setAssemblyJobId(null);
-            toast.success(`Part ${partNumber ?? ''} assembled (${chunkVideoUrls.length} chunks stitched)!`);
-          } else {
-            // Stitch needs polling — hand off to the existing polling effect
-            const pollId = stitchResult.castJobId || null;
-            assemblyTaskIdRef.current = stitchResult.taskId || null;
-            pollNoProgressCountRef.current = 0;
-            pollCountRef.current = 0;
-            setAssemblyJobId(pollId || stitchResult.taskId);
-            setAssemblyProgress(`Stitching${partLabel}... polling for completion`);
-            if (partNumber != null) {
-              setAssemblyParts(prev => prev.map(p =>
-                p.partNumber === partNumber ? { ...p, jobId: pollId, taskId: stitchResult.taskId || null, status: 'rendering' } : p
-              ));
-            }
-            toast.success(`Chunks rendered! Stitching ${chunkVideoUrls.length} segments...`);
-          }
-        }
-        return; // chunk flow complete — skip single-job path below
-      }
-
-      // ── SINGLE-JOB PATH (≤4 scenes) ──────────────────────────────────────
+      // ── SINGLE-SUBMISSION PATH ──────────────────────────────────────────
+      // RunPod FFmpeg worker handles unlimited scenes in a single job.
+      // No chunking needed — GPU rendering + no timeout issues.
       const assemblyBody = {
         timeline: timelinePayload,
         castProjectId: projectId,
@@ -4368,7 +4175,7 @@ function EP04ProductionInner() {
         // Use castJobId if available, otherwise fall back to taskId for polling
         setAssemblyJobId(pollId || data.taskId);
         setAssemblyProgress(`Rendering${partLabel}... polling for completion`);
-        // Track job ID + taskId (JSON2Video project ID) in parts state
+        // Track job ID + taskId (RunPod job ID) in parts state
         if (partNumber != null) {
           setAssemblyParts(prev => prev.map(p =>
             p.partNumber === partNumber ? { ...p, jobId: pollId, taskId: data.taskId || null, status: 'rendering' } : p
@@ -4496,19 +4303,19 @@ function EP04ProductionInner() {
     }
   }, [assemblyParts, startFinalAssembly]);
 
-  // ─── Reusable Video Stitching (Concat) via JSON2Video ────────────────────
-  // Takes ordered list of MP4 URLs → builds a minimal JSON2Video timeline
+  // ─── Reusable Video Stitching (Concat) via RunPod FFmpeg ─────────────────
+  // Takes ordered list of MP4 URLs → builds a minimal stitching timeline
   // where each URL becomes a video element in its own scene → submits → polls.
   // Reusable for ANY Cast production, not EP04-specific.
 
   /**
-   * Build a minimal JSON2Video "stitching timeline" from ordered video URLs.
+   * Build a minimal "stitching timeline" from ordered video URLs.
    * Each URL becomes a full-screen video element inside its own scene.
-   * JSON2Video renders them sequentially → one combined MP4.
+   * RunPod FFmpeg worker renders them sequentially → one combined MP4.
    *
    * @param videoUrls - Ordered array of Supabase Storage MP4 URLs
    * @param resolution - Output resolution (default: full-hd)
-   * @returns JSON2Video timeline payload ready for genie-cast-timeline-submit
+   * @returns Timeline payload ready for genie-cast-timeline-submit
    */
   const buildStitchingTimeline = useCallback((
     videoUrls: string[],
@@ -4521,7 +4328,7 @@ function EP04ProductionInner() {
         {
           type: 'video',
           src: url,
-          // Let JSON2Video auto-detect duration from the source video
+          // Let FFmpeg auto-detect duration from the source video
           // by NOT specifying duration — it plays the full clip
         },
       ],
@@ -4641,7 +4448,7 @@ function EP04ProductionInner() {
         setConcatStatus('failed');
         setConcatError('Stitching timed out after 60 minutes');
         setConcatJobId(null);
-        toast.error('Stitching timed out — check JSON2Video dashboard');
+        toast.error('Stitching timed out — check RunPod dashboard');
         return;
       }
       try {
@@ -4677,9 +4484,9 @@ function EP04ProductionInner() {
         } else if (jobStatus === 'failed') {
           setConcatJobId(null);
           setConcatStatus('failed');
-          setConcatError(data.job.errorMessage || 'JSON2Video rendering failed');
+          setConcatError(data.job.errorMessage || 'RunPod rendering failed');
           setAssemblyProgress(null);
-          toast.error('Stitching render failed — check JSON2Video dashboard');
+          toast.error('Stitching render failed — check RunPod dashboard');
         }
       } catch (err) {
         console.warn('[Cast Stitching] Poll exception:', err);
@@ -6541,7 +6348,7 @@ function EP04ProductionInner() {
                             : `Multi-Part Assembly (${assemblyParts.length} parts)`}
                         </span>
                         <span className="text-xs text-muted-foreground ml-auto">
-                          {assemblyParts.filter(p => p.status === 'completed').length}/{assemblyParts.length} done | JSON2Video Pro: 10min max
+                          {assemblyParts.filter(p => p.status === 'completed').length}/{assemblyParts.length} done | RunPod GPU rendering
                         </span>
                         {/* Render All button for per-scene mode */}
                         {assemblyParts.every(p => p.sceneKeys.length === 1) && assemblyParts.some(p => p.status === 'pending') && !assemblyProgress && (
@@ -6844,12 +6651,12 @@ function EP04ProductionInner() {
                     </div>
                   )}
 
-                  {/* Assembly pipeline — JSON2Video */}
+                  {/* Assembly pipeline — RunPod FFmpeg */}
                   <div className="space-y-2">
                     {[
                       { label: 'Readiness audit', desc: 'Verify TTS + visuals + music for all 12 scenes' },
                       { label: 'Build timeline', desc: 'Assemble scene chapters with audio + visual layers' },
-                      { label: 'JSON2Video render', desc: 'Cloud-based timeline rendering → cinematic MP4' },
+                      { label: 'RunPod GPU render', desc: 'NVENC hardware-accelerated FFmpeg rendering → cinematic MP4' },
                     ].map(stage => (
                       <div key={stage.label} className="flex items-center gap-3 p-2 rounded-lg bg-muted/20">
                         <Layers className="h-3.5 w-3.5 text-muted-foreground" />
