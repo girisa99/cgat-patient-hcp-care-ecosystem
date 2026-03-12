@@ -51,8 +51,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Purge RunPod workers (force fresh image pull)
+        if: ${{ secrets.RUNPOD_API_KEY != '' && secrets.RUNPOD_ENDPOINT_ID != '' }}
+        run: |
+          echo "Purging RunPod workers to force fresh image pull..."
+          # Scale to 0 to kill cached workers
+          curl -s -X POST "https://api.runpod.ai/v2/${{ secrets.RUNPOD_ENDPOINT_ID }}/purge" \
+            -H "Authorization: Bearer ${{ secrets.RUNPOD_API_KEY }}" \
+            -H "Content-Type: application/json" || true
+          echo "Workers purged — next request will cold-start with new image"
+
       - name: Summary
         run: |
           echo "### Docker Image Pushed" >> $GITHUB_STEP_SUMMARY
           echo "- **Image:** \`${{ secrets.DOCKERHUB_USERNAME }}/cast-ffmpeg-renderer:${{ steps.tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** \`${GITHUB_REF##*/}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Workers:** Purged (will cold-start with new image)" >> $GITHUB_STEP_SUMMARY
