@@ -1275,7 +1275,9 @@ export function buildCastTimeline(
   mood?: string,
 ): CastTimelineResult {
   const resolvedTheme: CastTheme = { ...DEFAULT_CAST_THEME, ...theme };
-  const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
+  // full-hd (1920×1080) causes J2V timeouts on complex scenes (8+ scenes, PiP overlays, 2+ min).
+  // Use hd (1280×720) for production — still sharp, 4× faster render. Cinematic gets full-hd.
+  const resolution = quality === 'cinematic' ? 'full-hd' : 'hd';
   const scenes: J2VScene[] = [];
 
   // 1. Opening bookend (Part 1 only)
@@ -1317,7 +1319,7 @@ export function buildCastTimeline(
 
   return {
     resolution,
-    quality: quality === 'cinematic' ? 'high' : 'medium',
+    quality: quality === 'cinematic' ? 'high' : 'low',
     scenes: splitScenes,
     _totalDuration: totalDuration,
   };
