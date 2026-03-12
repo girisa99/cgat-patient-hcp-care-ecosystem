@@ -4124,9 +4124,10 @@ function EP04ProductionInner() {
       setAssemblyProgress(`Submitting timeline${partLabel} to JSON2Video...`);
 
       // ── CHUNK-BASED ASSEMBLY ──────────────────────────────────────────────
-      // J2V times out on large timelines (>4 scenes / >75s). Split into smaller
-      // chunks, render each separately, then auto-concatenate the results.
-      const MAX_J2V_CHUNK_SCENES = 4;
+      // J2V times out on large timelines even at 4 scenes (~21 remote URLs).
+      // The bottleneck is asset download/setup, not rendering.
+      // 2 scenes per chunk keeps each job lightweight enough to avoid timeout.
+      const MAX_J2V_CHUNK_SCENES = 2;
       const allScenes = timelinePayload.scenes || [];
       const needsChunking = allScenes.length > MAX_J2V_CHUNK_SCENES;
 
