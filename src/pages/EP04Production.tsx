@@ -2561,7 +2561,7 @@ function EP04ProductionInner() {
   const startSceneMusicProduction = useCallback(async (sceneKey: string) => {
     setSceneProduction(prev => ({
       ...prev,
-      [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), music: 'generating' },
+      [sceneKey]: { ...(prev[sceneKey] || defaultSceneStatus()), music: 'generating', musicUrl: null },
     }));
 
     try {
@@ -5520,7 +5520,6 @@ function EP04ProductionInner() {
                                             {cat.isVideo ? (
                                               <video
                                                 src={`${url}${url.includes('?') ? '&' : '?'}${MEDIA_CACHE_BUST}`}
-                                                crossOrigin="anonymous"
                                                 className="w-full h-24 object-cover rounded border border-border/30 bg-black"
                                                 controls
                                                 muted
@@ -5588,14 +5587,14 @@ function EP04ProductionInner() {
                                     <div className="flex items-center gap-2 p-1.5 rounded bg-muted/30 border border-border/20">
                                       <Music className="h-3 w-3 text-violet-400 flex-shrink-0" />
                                       <audio
+                                        key={`${sceneKey}-inline-${status.musicUrl.slice(-20)}`}
                                         src={`${status.musicUrl}${status.musicUrl.includes('?') ? '&' : '?'}${MEDIA_CACHE_BUST}`}
-                                        crossOrigin="anonymous"
                                         controls
                                         className="h-6 w-full [&::-webkit-media-controls-panel]:h-6"
                                         preload="metadata"
                                         onError={(e) => {
                                           const audio = e.currentTarget;
-                                          console.error(`[EP04 Music] ${sceneKey} inline playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl?.substring(0, 100)}`);
+                                          console.error(`[EP04 Music] ${sceneKey} inline playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl}`);
                                         }}
                                       />
                                     </div>
@@ -5720,24 +5719,13 @@ function EP04ProductionInner() {
                               </div>
                             ) : (
                               <audio
+                                key={`${sceneKey}-music-${status.musicUrl.slice(-20)}`}
                                 src={`${status.musicUrl}${status.musicUrl.includes('?') ? '&' : '?'}${MEDIA_CACHE_BUST}`}
-                                crossOrigin="anonymous"
                                 controls
                                 className="w-full mt-2 h-6"
                                 onError={(e) => {
                                   const audio = e.currentTarget;
-                                  console.error(`[EP04 Music] ${sceneKey} playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl?.substring(0, 100)}`);
-                                  // If playback fails with network error, show user the URL may be expired
-                                  if (audio.error?.code === 2 || audio.error?.code === 4) {
-                                    audio.style.display = 'none';
-                                    const parent = audio.parentElement;
-                                    if (parent && !parent.querySelector('.music-error-badge')) {
-                                      const badge = document.createElement('span');
-                                      badge.className = 'music-error-badge text-[8px] text-amber-500 block mt-1';
-                                      badge.textContent = '⚠️ Cannot play — URL may be expired. Regenerate music.';
-                                      parent.appendChild(badge);
-                                    }
-                                  }
+                                  console.error(`[EP04 Music] ${sceneKey} playback error:`, audio.error?.message || 'unknown', `code=${audio.error?.code}`, `src=${status.musicUrl}`);
                                 }}
                               />
                             );
