@@ -5,6 +5,7 @@ on:
     branches: [dev, uat, main]
     paths:
       - 'runpod-workers/cast-ffmpeg-renderer/**'
+      - '.github/workflows/build-cast-ffmpeg-worker.yml'
   workflow_dispatch:  # Manual trigger
 
 jobs:
