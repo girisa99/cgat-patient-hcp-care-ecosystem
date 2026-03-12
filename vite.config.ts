@@ -41,8 +41,13 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
+    // selfDestroying: generates a tiny SW that unregisters itself and clears all caches.
+    // This permanently removes the old workbox SW that was intercepting cross-origin
+    // Supabase Storage audio/video and causing ERR_CACHE_OPERATION_NOT_SUPPORTED.
+    // Manifest still works for PWA installability (Add to Home Screen).
+    // TODO: Re-enable full SW with properly scoped caching once media pipeline is stable.
     VitePWA({
-      registerType: 'autoUpdate',
+      selfDestroying: true,
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'Genie AI - Mind to Media Production Suite',
@@ -108,48 +113,6 @@ export default defineConfig(({ mode }) => ({
           }
         ]
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        maximumFileSizeToCacheInBytes: 25 * 1024 * 1024, // 25 MB limit for large bundles
-        skipWaiting: true,      // Force new SW to activate immediately (no stale chunks)
-        clientsClaim: true,     // Take control of all clients immediately
-        cleanupOutdatedCaches: true, // Remove old precaches on new SW install
-        // IMPORTANT: Do NOT register routes for Supabase Storage or audio/video.
-        // NetworkOnly still intercepts via the SW fetch handler — if the cross-origin
-        // fetch fails inside the SW, workbox throws "no-response" instead of letting
-        // the browser handle it. By not routing these URLs at all, the SW ignores them
-        // and the browser fetches directly (no opaque response issues).
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\..*\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)(?:\?.*)?$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'image-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              }
-            }
-          }
-        ]
-      },
-      devOptions: {
-        enabled: false
-      }
     })
   ].filter(Boolean),
   resolve: {

@@ -2974,8 +2974,8 @@ function EP04ProductionInner() {
   // ── Per-Scene Assembly with Smart Splitting ──
   // Each scene renders independently. Only very heavy scenes get split.
   // Visual cycling (15s beats) handles long durations, so threshold is generous.
-  const MAX_SUB_TTS = 10;
-  const MAX_SUB_DURATION = 90; // 90s — J2V times out on complex timelines >2min; split aggressively
+  const MAX_SUB_TTS = 15;
+  const MAX_SUB_DURATION = 300; // 5 min — splitLongScenes() in castTimelineEngine already caps J2V at 35s per scene
 
   const computePerSceneParts = useCallback((): AssemblyPart[] => {
     // Sort scene keys by scene number (e.g., scene-0, scene-1, ..., scene-11)
@@ -3033,16 +3033,25 @@ function EP04ProductionInner() {
           }
           const subLipsync = Math.ceil(lipsyncCount * subLines.length / sceneLines.length);
           console.log(`[PerScene] ${sceneKey} sub-part ${Math.floor(i / subPartSize) + 1}: ${subTts} TTS, ~${Math.round(subDuration)}s`);
-          parts.push({
-            partNumber: partNum++,
-            sceneKeys: [sceneKey],
-            estimatedDuration: subDuration || 30,
-            ttsCount: subTts + subLipsync,
-            jobId: null,
-            status: 'pending' as const,
-            videoUrl: null,
-            _subPartLineRange: { start: i, end: Math.min(i + subPartSize, sceneLines.length) },
-          });
+          // Merge tiny sub-parts (<5s) into previous part to avoid 0-duration renders
+          const prevPart = parts[parts.length - 1];
+          if (subDuration < 5 && prevPart && prevPart.sceneKeys[0] === sceneKey && prevPart._subPartLineRange) {
+            prevPart._subPartLineRange.end = Math.min(i + subPartSize, sceneLines.length);
+            prevPart.estimatedDuration += subDuration;
+            prevPart.ttsCount += subTts + subLipsync;
+            console.log(`[PerScene] Merged tiny sub-part (~${Math.round(subDuration)}s) into part ${prevPart.partNumber}`);
+          } else {
+            parts.push({
+              partNumber: partNum++,
+              sceneKeys: [sceneKey],
+              estimatedDuration: subDuration || 30,
+              ttsCount: subTts + subLipsync,
+              jobId: null,
+              status: 'pending' as const,
+              videoUrl: null,
+              _subPartLineRange: { start: i, end: Math.min(i + subPartSize, sceneLines.length) },
+            });
+          }
         }
       } else {
         parts.push({
