@@ -1,0 +1,62 @@
+name: Build Cast FFmpeg Worker
+
+on:
+  push:
+    branches: [dev, uat, main]
+    paths:
+      - 'runpod-workers/cast-ffmpeg-renderer/**'
+  workflow_dispatch:  # Manual trigger
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/cast-ffmpeg-renderer
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine tag from branch
+        id: tag
+        run: |
+          BRANCH="${GITHUB_REF##*/}"
+          if [ "$BRANCH" = "main" ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=$BRANCH" >> $GITHUB_OUTPUT
+          fi
+          echo "Branch: $BRANCH -> Tag: $(cat $GITHUB_OUTPUT | grep tag | cut -d= -f2)"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: runpod-workers/cast-ffmpeg-renderer
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.tag }}-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          echo "### Docker Image Pushed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image:** \`${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **SHA tag:** \`${{ env.DOCKER_IMAGE }}:${{ steps.tag.outputs.tag }}-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${GITHUB_REF##*/}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | Docker Tag | RunPod Endpoint |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-----------|-----------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| dev | :dev | Dev endpoint |" >> $GITHUB_STEP_SUMMARY
+          echo "| uat | :uat | UAT endpoint |" >> $GITHUB_STEP_SUMMARY
+          echo "| main | :latest | Production endpoint |" >> $GITHUB_STEP_SUMMARY

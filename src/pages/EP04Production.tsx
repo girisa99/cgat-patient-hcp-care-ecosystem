@@ -3156,7 +3156,7 @@ function EP04ProductionInner() {
       return;
     }
     assemblyCancelledRef.current = false; // reset on new job
-    console.log(`[EP04 Poll] Polling STARTED for assemblyJobId=${assemblyJobId}, taskId fallback=${assemblyTaskIdRef.current}`);
+    console.warn(`[EP04 Poll] 🟢 Polling STARTED for assemblyJobId=${assemblyJobId}, taskId fallback=${assemblyTaskIdRef.current}`);
     const MAX_POLLS = 180; // 180 × 10s = 30 minutes max (8-scene 2.5min video can take 15-20min)
     const MAX_ERRORS = 5;  // 5 consecutive errors = stop
 
@@ -4161,6 +4161,7 @@ function EP04ProductionInner() {
       }
 
       console.log(`[EP04 Assembly${partLabel}] Response:`, JSON.stringify(data));
+      console.warn(`[EP04 Assembly${partLabel}] 🔍 generationStatus=${data?.generationStatus}, castJobId=${data?.castJobId}, taskId=${data?.taskId}, videoUrl=${data?.videoUrl ? 'YES' : 'NO'}`);
 
       if (data?.generationStatus === 'pending' && (data?.castJobId || data?.taskId)) {
         const pollId = data.castJobId || null;
@@ -4173,7 +4174,9 @@ function EP04ProductionInner() {
           console.log(`[EP04 Assembly${partLabel}] ✅ Polling with castJobId=${pollId}, taskId fallback=${data.taskId}`);
         }
         // Use castJobId if available, otherwise fall back to taskId for polling
-        setAssemblyJobId(pollId || data.taskId);
+        const pollJobId = pollId || data.taskId;
+        console.warn(`[EP04 Assembly${partLabel}] 🚀 SETTING assemblyJobId = ${pollJobId} — polling should start NOW`);
+        setAssemblyJobId(pollJobId);
         setAssemblyProgress(`Rendering${partLabel}... polling for completion`);
         // Track job ID + taskId (RunPod job ID) in parts state
         if (partNumber != null) {
