@@ -38,19 +38,21 @@ def _ensure_dir():
 
 
 def _detect_nvenc() -> bool:
-    """Check if h264_nvenc encoder is available."""
+    """Check if h264_nvenc encoder actually works (not just listed)."""
     global HWACCEL_AVAILABLE
     if HWACCEL_AVAILABLE is not None:
         return HWACCEL_AVAILABLE
     try:
+        # Actually try to encode a tiny test frame with NVENC
         result = subprocess.run(
-            ["ffmpeg", "-hide_banner", "-encoders"],
-            capture_output=True, text=True, timeout=10,
+            ["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=64x64:d=0.1",
+             "-c:v", "h264_nvenc", "-f", "null", "-"],
+            capture_output=True, text=True, timeout=15,
         )
-        HWACCEL_AVAILABLE = "h264_nvenc" in result.stdout
+        HWACCEL_AVAILABLE = result.returncode == 0
     except Exception:
         HWACCEL_AVAILABLE = False
-    print(f"  [ffmpeg] NVENC available: {HWACCEL_AVAILABLE}")
+    print(f"  [ffmpeg] NVENC test encode: {'OK' if HWACCEL_AVAILABLE else 'FAILED — using libx264'}")
     return HWACCEL_AVAILABLE
 
 
