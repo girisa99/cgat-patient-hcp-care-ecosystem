@@ -114,7 +114,8 @@ export async function fetchVisualJobsFallback(projectId: string): Promise<Visual
     .not('output_url', 'is', null)
     .not('scene_key', 'is', null)
     .neq('job_type', 'tts')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(200); // Cap results to avoid statement timeout on large tables
 
   if (error) {
     console.warn('[castProjectQueries] fetchVisualJobsFallback error:', error);

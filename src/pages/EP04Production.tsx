@@ -2677,17 +2677,39 @@ function EP04ProductionInner() {
   }, [dbProject, projectId, trackGenerationJob, completeGenerationJob, updateSceneMusic]);
 
   // Copy music from one scene to another (for when all providers fail on a specific scene)
+  // Validates each candidate with a HEAD request to ensure the file is real audio (>100KB)
   const copySceneMusic = useCallback(async (toSceneKey: string) => {
-    // Find the first scene that has a valid music URL
-    const donor = Array.from(scenes.keys()).find(sk =>
+    const candidates = Array.from(scenes.keys()).filter(sk =>
       sk !== toSceneKey && sceneProduction[sk]?.musicUrl && sceneProduction[sk]?.music === 'done'
     );
-    if (!donor || !sceneProduction[donor]?.musicUrl) {
-      toast.error('No scene with valid music to copy from');
+    if (candidates.length === 0) {
+      toast.error('No scene with music to copy from');
       return;
     }
-    const sourceUrl = sceneProduction[donor].musicUrl!;
-    const sourceSfx = sceneProduction[donor].sfxUrls || [];
+    toast.info('Checking for valid music source...');
+    let sourceUrl: string | null = null;
+    let sourceSfx: string[] = [];
+    let donorKey: string | null = null;
+    for (const sk of candidates) {
+      const url = sceneProduction[sk]!.musicUrl!;
+      try {
+        const resp = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+        const size = parseInt(resp.headers.get('content-length') || '0', 10);
+        if (resp.ok && size > 100_000) { // >100KB = real audio (not HTML error page or silent placeholder)
+          sourceUrl = url;
+          sourceSfx = sceneProduction[sk]!.sfxUrls || [];
+          donorKey = sk;
+          break;
+        }
+        console.log(`[CopyMusic] Skipping ${sk}: ${resp.ok ? `too small (${size}b)` : `status ${resp.status}`}`);
+      } catch (err) {
+        console.log(`[CopyMusic] Skipping ${sk}: fetch error`, err);
+      }
+    }
+    if (!sourceUrl || !donorKey) {
+      toast.error('All scenes have corrupt music — use Regen instead');
+      return;
+    }
     // Update React state
     setSceneProduction(prev => ({
       ...prev,
@@ -2695,9 +2717,9 @@ function EP04ProductionInner() {
     }));
     // Persist to DB
     if (projectId) {
-      const ok = await updateSceneMusic(projectId, toSceneKey, sourceUrl, sourceSfx);
+      const ok = await updateSceneMusic(projectId, toSceneKey, sourceUrl!, sourceSfx);
       if (ok) {
-        toast.success(`Copied music from ${SCENE_TITLES[donor]?.split(' — ')[1] || donor} → ${SCENE_TITLES[toSceneKey]?.split(' — ')[1] || toSceneKey}`);
+        toast.success(`Copied music from ${SCENE_TITLES[donorKey]?.split(' — ')[1] || donorKey} → ${SCENE_TITLES[toSceneKey]?.split(' — ')[1] || toSceneKey}`);
       } else {
         toast.error('Copied locally but failed to save to DB');
       }
