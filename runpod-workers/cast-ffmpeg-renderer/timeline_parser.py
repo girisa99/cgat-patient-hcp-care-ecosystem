@@ -143,7 +143,8 @@ def _parse_element(el: dict, url_map: dict[str, str]) -> ElementInstruction:
     text_align = _get_setting(el, "text-align", "textAlign", "center")
     bg_color = _get_setting(el, "background-color", "backgroundColor", "")
     position = _get_setting(el, "position", "", "")
-    letter_spacing = float(_get_setting(el, "letter-spacing", "letterSpacing", 0) or 0)
+    raw_ls = _get_setting(el, "letter-spacing", "letterSpacing", 0) or 0
+    letter_spacing = float(_parse_font_size(raw_ls)) if raw_ls else 0
     text_shadow = _get_setting(el, "text-shadow", "textShadow", "")
 
     # ── Component parsing ──
