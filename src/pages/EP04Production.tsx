@@ -43,7 +43,7 @@ import { buildCastTimeline, type CastChapter, type CastTransition, type CastBook
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
-const EP04_BUILD = 'v2026-03-11-A';
+const EP04_BUILD = 'v2026-03-11-B';
 console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
 // Session-level cache-buster — bypasses corrupted browser disk cache entries
 const MEDIA_CACHE_BUST = `cb=${Date.now()}`;
@@ -2676,6 +2676,34 @@ function EP04ProductionInner() {
     }
   }, [dbProject, projectId, trackGenerationJob, completeGenerationJob, updateSceneMusic]);
 
+  // Copy music from one scene to another (for when all providers fail on a specific scene)
+  const copySceneMusic = useCallback(async (toSceneKey: string) => {
+    // Find the first scene that has a valid music URL
+    const donor = Array.from(scenes.keys()).find(sk =>
+      sk !== toSceneKey && sceneProduction[sk]?.musicUrl && sceneProduction[sk]?.music === 'done'
+    );
+    if (!donor || !sceneProduction[donor]?.musicUrl) {
+      toast.error('No scene with valid music to copy from');
+      return;
+    }
+    const sourceUrl = sceneProduction[donor].musicUrl!;
+    const sourceSfx = sceneProduction[donor].sfxUrls || [];
+    // Update React state
+    setSceneProduction(prev => ({
+      ...prev,
+      [toSceneKey]: { ...(prev[toSceneKey] || defaultSceneStatus()), music: 'done', musicUrl: sourceUrl, sfxUrls: sourceSfx },
+    }));
+    // Persist to DB
+    if (projectId) {
+      const ok = await updateSceneMusic(projectId, toSceneKey, sourceUrl, sourceSfx);
+      if (ok) {
+        toast.success(`Copied music from ${SCENE_TITLES[donor]?.split(' — ')[1] || donor} → ${SCENE_TITLES[toSceneKey]?.split(' — ')[1] || toSceneKey}`);
+      } else {
+        toast.error('Copied locally but failed to save to DB');
+      }
+    }
+  }, [scenes, sceneProduction, projectId, updateSceneMusic]);
+
   const startAllMusicProduction = useCallback(async (skipCompleted = false) => {
     const allSceneKeys = Array.from(scenes.keys());
     // When skipCompleted is true, only regen scenes that failed or have no music
@@ -2924,8 +2952,8 @@ function EP04ProductionInner() {
   // ── Per-Scene Assembly with Smart Splitting ──
   // Each scene renders independently. Only very heavy scenes get split.
   // Visual cycling (15s beats) handles long durations, so threshold is generous.
-  const MAX_SUB_TTS = 15;
-  const MAX_SUB_DURATION = 300; // 5 minutes — only split truly massive scenes
+  const MAX_SUB_TTS = 10;
+  const MAX_SUB_DURATION = 90; // 90s — J2V times out on complex timelines >2min; split aggressively
 
   const computePerSceneParts = useCallback((): AssemblyPart[] => {
     // Sort scene keys by scene number (e.g., scene-0, scene-1, ..., scene-11)
@@ -3085,6 +3113,10 @@ function EP04ProductionInner() {
   // Poll for assembly completion when we have a pending job
   const pollCountRef = React.useRef(0);
   const pollErrorCountRef = React.useRef(0);
+  // Store unstable deps in refs so the polling useEffect only re-fires on assemblyJobId change
+  // (prevents poll counter reset when scenes/totalDuration/updateFinalAssembly change reference)
+  const pollDepsRef = React.useRef({ projectId, totalDuration, scenes, updateFinalAssembly, activePartNumber });
+  pollDepsRef.current = { projectId, totalDuration, scenes, updateFinalAssembly, activePartNumber };
   useEffect(() => {
     if (!assemblyJobId) {
       pollCountRef.current = 0;
@@ -3182,20 +3214,23 @@ function EP04ProductionInner() {
           assemblyTaskIdRef.current = null;
           pollNoProgressCountRef.current = 0;
 
+          // Read latest deps from ref (avoids stale closures AND prevents effect restarts)
+          const { activePartNumber: curPartNum, projectId: curProjId, totalDuration: curDuration, scenes: curScenes, updateFinalAssembly: curUpdateFinal } = pollDepsRef.current;
+
           // If this was a multi-part assembly, update the specific part
-          if (activePartNumber != null) {
+          if (curPartNum != null) {
             setAssemblyParts(prev => prev.map(p =>
-              p.partNumber === activePartNumber
+              p.partNumber === curPartNum
                 ? { ...p, status: 'completed', videoUrl: finalVideoUrl }
                 : p
             ));
             setActivePartNumber(null);
-            toast.success(`Part ${activePartNumber} assembled! Video: ${finalVideoUrl?.substring(0, 60)}...`);
+            toast.success(`Part ${curPartNum} assembled! Video: ${finalVideoUrl?.substring(0, 60)}...`);
 
             // Check if ALL parts are done
             setAssemblyParts(prev => {
               const allDone = prev.every(p =>
-                p.partNumber === activePartNumber ? true : p.status === 'completed'
+                p.partNumber === curPartNum ? true : p.status === 'completed'
               );
               if (allDone) {
                 setProductionPhase('complete');
@@ -3207,10 +3242,10 @@ function EP04ProductionInner() {
             // Full (non-part) assembly completed
             setFinalVideoUrl(finalVideoUrl);
             setProductionPhase('complete');
-            if (projectId && finalVideoUrl) {
-              updateFinalAssembly(projectId, finalVideoUrl, {
-                totalDuration,
-                sceneCount: Array.from(scenes.keys()).length,
+            if (curProjId && finalVideoUrl) {
+              curUpdateFinal(curProjId, finalVideoUrl, {
+                totalDuration: curDuration,
+                sceneCount: Array.from(curScenes.keys()).length,
                 resolution: '1920x1080',
               });
             }
@@ -3221,9 +3256,10 @@ function EP04ProductionInner() {
           setAssemblyProgress(null);
           setAssemblyJobId(null);
           assemblyTaskIdRef.current = null;
-          if (activePartNumber != null) {
+          const curPartNum2 = pollDepsRef.current.activePartNumber;
+          if (curPartNum2 != null) {
             setAssemblyParts(prev => prev.map(p =>
-              p.partNumber === activePartNumber
+              p.partNumber === curPartNum2
                 ? { ...p, status: 'failed', errorMessage: errMsg }
                 : p
             ));
@@ -3231,7 +3267,8 @@ function EP04ProductionInner() {
           }
           toast.error(`Assembly failed: ${errMsg}`);
         } else {
-          const partLabel = activePartNumber != null ? ` Part ${activePartNumber}` : '';
+          const curPartNum3 = pollDepsRef.current.activePartNumber;
+          const partLabel = curPartNum3 != null ? ` Part ${curPartNum3}` : '';
           setAssemblyProgress(`Rendering${partLabel}... ${finalProgress}% (poll ${pollCountRef.current})`);
         }
       } catch (err) {
@@ -3250,7 +3287,7 @@ function EP04ProductionInner() {
     doPoll();
     const timer = setInterval(doPoll, 10000); // Then every 10 seconds
     return () => { clearInterval(timer); assemblyCancelledRef.current = true; };
-  }, [assemblyJobId, projectId, totalDuration, scenes, updateFinalAssembly, activePartNumber]);
+  }, [assemblyJobId]); // Only re-trigger on job ID change — other deps read from pollDepsRef
 
   // ── Per-Scene Parallel Polling: poll ALL parts with status='rendering' ──
   // Track per-part stuck polls (no progress via castJobId → fallback to taskId)
@@ -5732,18 +5769,32 @@ function EP04ProductionInner() {
                           })()}
                           {/* Per-scene regen button — always visible unless actively generating */}
                           {status?.music !== 'generating' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className={cn(
-                                'w-full mt-1 h-5 text-[8px]',
-                                !status?.musicUrl && 'border-amber-500/30 text-amber-500',
+                            <div className="flex gap-1 mt-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className={cn(
+                                  'flex-1 h-5 text-[8px]',
+                                  !status?.musicUrl && 'border-amber-500/30 text-amber-500',
+                                )}
+                                onClick={() => startSceneMusicProduction(sceneKey)}
+                              >
+                                <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                                {status?.musicUrl ? 'Regen' : 'Generate'}
+                              </Button>
+                              {/* Copy music from another scene (fallback when providers fail) */}
+                              {(status?.music === 'error' || !status?.musicUrl) && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-5 text-[8px] border-blue-500/30 text-blue-500 px-1.5"
+                                  onClick={() => copySceneMusic(sceneKey)}
+                                  title="Copy music from a working scene"
+                                >
+                                  Copy
+                                </Button>
                               )}
-                              onClick={() => startSceneMusicProduction(sceneKey)}
-                            >
-                              <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
-                              {status?.musicUrl ? 'Regen' : 'Generate'} Music
-                            </Button>
+                            </div>
                           )}
                         </div>
                       );
