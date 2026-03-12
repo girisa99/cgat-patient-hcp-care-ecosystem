@@ -3935,7 +3935,17 @@ function EP04ProductionInner() {
       // scene-transition videos and storybook-frame images should go to transitions,
       // NOT into the B-roll pool
       const transitionAssetsByScene: Record<string, { transitionVideos: string[]; storybookFrames: string[] }> = {};
-      for (const sceneKey of targetSceneKeys) {
+      // Include all targetSceneKeys PLUS scenes referenced by transitions (the TO scene)
+      // In per-scene mode, targetSceneKeys may only have scene-0-title, but the transition
+      // points to scene-1-problem — we need its storybook-frame for the chapter header
+      const transitionSceneKeys = new Set(targetSceneKeys);
+      for (const t of transitions) {
+        const toKey = toScriptId(t.to);
+        const fromKey = toScriptId(t.from);
+        if (!transitionSceneKeys.has(toKey)) transitionSceneKeys.add(toKey);
+        if (!transitionSceneKeys.has(fromKey)) transitionSceneKeys.add(fromKey);
+      }
+      for (const sceneKey of transitionSceneKeys) {
         const status = sceneProduction[sceneKey] || defaultSceneStatus();
         const transitionVideos: string[] = [];
         const storybookFrames: string[] = [];

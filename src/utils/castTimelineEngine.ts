@@ -574,11 +574,28 @@ function makeTtsLineScene(
       type: 'video', src: lipsync.url,
       start: pipStart, duration: Math.min(lipsyncDur, sceneDur - pipStart),
       volume: 0, // CRITICAL: TTS audio is a separate element
-      'fade-in': 0.5, 'fade-out': 0.8,
+      'fade-in': 0.5, 'fade-out': 1.5,
       'z-index': 5, // above all B-roll layers
       resize: 'cover', width: 640, height: 360,
       position: 'bottom-right',
     });
+
+    // ── Layer 3: Tail visual — fills background after lipsync PiP fades out ──
+    // When the talking head exits, this image provides a strong foreground visual
+    // (above the cycling Ken Burns background) for visual continuity.
+    if (isHttpUrl(tailImageVisual)) {
+      const tailStart = pipStart + lipsyncDur - 0.5; // overlap with PiP fade-out
+      const tailDur = sceneDur - tailStart;
+      if (tailDur > 1) {
+        const kb = getKenBurns(kbIdx + 99); // distinct pattern from background
+        elements.push({
+          type: 'image', src: tailImageVisual,
+          start: tailStart, duration: tailDur,
+          ...kb, resize: 'cover', width: 1920, height: 1080,
+          'fade-in': 1.0, 'fade-out': 0.5, 'z-index': 2, // above Layer 0 bg, below PiP
+        });
+      }
+    }
   } else {
     // No lipsync — full B-roll with visual cycling for long scenes
     const VISUAL_BEAT = 12; // seconds per visual beat — cinematic pacing (was 15)
@@ -1043,15 +1060,19 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
     const musicAudios = elements.filter(el => el.type === 'audio' && el.loop != null);
     const sfxAudios = elements.filter(el => el.type === 'audio' && el.loop == null && el.volume !== 1.0);
     const videos = elements.filter(el => el.type === 'video');
-    const images = elements.filter(el => el.type === 'image');
+    // Split images: background (z-index 0, no position) vs overlay (z-index > 0 or positioned)
+    // Overlays (e.g. tailImageVisual at z-index 2) must be preserved by time-overlap,
+    // not collapsed into the Ken Burns cycling pool
+    const bgImages = elements.filter(el => el.type === 'image' && (!el['z-index'] || el['z-index'] === 0) && !el.position);
+    const overlayImages = elements.filter(el => el.type === 'image' && ((el['z-index'] as number) > 0 || !!el.position));
     const texts = elements.filter(el => el.type === 'text');
     const components = elements.filter(el => el.type === 'component');
 
     const hasTts = ttsAudios.length > 0;
-    console.log(`[CastEngine] Splitting ${sceneDur}s scene into ${splitCount} × ${subDur.toFixed(1)}s sub-scenes (TTS: ${hasTts ? 'yes, using seek offsets' : 'no'}): "${scene.comment}"`);
+    console.log(`[CastEngine] Splitting ${sceneDur}s scene into ${splitCount} × ${subDur.toFixed(1)}s sub-scenes (TTS: ${hasTts ? 'yes, using seek offsets' : 'no'}, overlayImages: ${overlayImages.length}): "${scene.comment}"`);
 
-    // Collect all image URLs for cycling across sub-scenes
-    const imageUrls = images.map(el => el.src).filter((s: string) => isHttpUrl(s));
+    // Collect background image URLs for cycling across sub-scenes (overlays handled separately)
+    const imageUrls = bgImages.map(el => el.src).filter((s: string) => isHttpUrl(s));
 
     for (let si = 0; si < splitCount; si++) {
       const subStart = si * subDur;
@@ -1088,6 +1109,25 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
               start: clippedStart,
               duration: clippedDur,
               ...(videoSeekOffset > 0 ? { seek: videoSeekOffset } : {}),
+            });
+          }
+        }
+      }
+
+      // ── Overlay images: distribute by time-overlap (like videos) ──
+      // Preserves z-index, position, and Ken Burns from the original element
+      for (const ov of overlayImages) {
+        const ovStart = ov.start ?? 0;
+        const ovDur = ov.duration ?? 0;
+        const ovEnd = ovStart + ovDur;
+        if (ovEnd > subStart && ovStart < subEnd) {
+          const clippedStart = Math.max(0, ovStart - subStart);
+          const clippedDur = Math.min(ovEnd, subEnd) - Math.max(ovStart, subStart);
+          if (clippedDur > 1) {
+            subElements.push({
+              ...ov,
+              start: clippedStart,
+              duration: clippedDur,
             });
           }
         }
