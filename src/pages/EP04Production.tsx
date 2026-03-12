@@ -4104,6 +4104,23 @@ function EP04ProductionInner() {
       const { _totalDuration: timelineDuration, ...timelinePayload } = timeline;
       console.log(`[EP04 Assembly${partLabel}] Built timeline: ${timelinePayload.scenes.length} scenes, ~${timelineDuration}s, payload: ${(JSON.stringify(timelinePayload).length / 1024).toFixed(0)}kb`);
 
+      // ── DIAGNOSTIC: dump full timeline for J2V web editor testing ──
+      // Copy from console → paste into https://json2video.com/editor to test directly
+      console.log(`[EP04 Timeline JSON${partLabel}] ▼▼▼ COPY BELOW ▼▼▼`);
+      console.log(JSON.stringify(timelinePayload, null, 2));
+      console.log(`[EP04 Timeline JSON${partLabel}] ▲▲▲ COPY ABOVE ▲▲▲`);
+      // Per-scene element summary
+      (timelinePayload.scenes || []).forEach((s: any, i: number) => {
+        const els = s.elements || [];
+        const types: Record<string, number> = {};
+        let urls = 0;
+        for (const e of els) {
+          types[e.type] = (types[e.type] || 0) + 1;
+          if (e.src && e.src.startsWith('http')) urls++;
+        }
+        console.log(`[EP04 Scene ${i}] ${s.duration?.toFixed(1)}s, ${els.length} elements (${Object.entries(types).map(([k, v]) => `${v} ${k}`).join(', ')}), ${urls} remote URLs, comment: "${s.comment}"`);
+      });
+
       setAssemblyProgress(`Submitting timeline${partLabel} to JSON2Video...`);
 
       const assemblyBody = {
