@@ -4123,6 +4123,185 @@ function EP04ProductionInner() {
 
       setAssemblyProgress(`Submitting timeline${partLabel} to JSON2Video...`);
 
+      // ── CHUNK-BASED ASSEMBLY ──────────────────────────────────────────────
+      // J2V times out on large timelines (>4 scenes / >75s). Split into smaller
+      // chunks, render each separately, then auto-concatenate the results.
+      const MAX_J2V_CHUNK_SCENES = 4;
+      const allScenes = timelinePayload.scenes || [];
+      const needsChunking = allScenes.length > MAX_J2V_CHUNK_SCENES;
+
+      if (needsChunking) {
+        // Split scenes into chunks of max 4 scenes each
+        const chunks: any[][] = [];
+        for (let ci = 0; ci < allScenes.length; ci += MAX_J2V_CHUNK_SCENES) {
+          chunks.push(allScenes.slice(ci, ci + MAX_J2V_CHUNK_SCENES));
+        }
+        console.log(`[EP04 Assembly${partLabel}] Timeline too large (${allScenes.length} scenes). Splitting into ${chunks.length} chunks of max ${MAX_J2V_CHUNK_SCENES} scenes.`);
+
+        const chunkVideoUrls: string[] = [];
+        for (const [ci, chunk] of chunks.entries()) {
+          const chunkLabel = `${partLabel} chunk ${ci + 1}/${chunks.length}`;
+          const chunkDuration = chunk.reduce((sum: number, s: any) => sum + (s.duration || 0), 0);
+          const chunkTimeline = { ...timelinePayload, scenes: chunk };
+          const chunkBody = { timeline: chunkTimeline, castProjectId: projectId, language: 'en', quality: 'production' };
+          const chunkSize = JSON.stringify(chunkBody).length;
+
+          console.log(`[EP04 Assembly${chunkLabel}] Submitting: ${chunk.length} scenes, ${chunkDuration.toFixed(0)}s, ${(chunkSize / 1024).toFixed(0)}KB`);
+          setAssemblyProgress(`Rendering${chunkLabel} (${chunk.length} scenes, ${chunkDuration.toFixed(0)}s)...`);
+
+          // Submit this chunk
+          const { data: chunkData, error: chunkError } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+            body: chunkBody,
+          });
+
+          if (chunkError || !chunkData?.success) {
+            const msg = chunkError?.message || chunkData?.message || 'Unknown error';
+            console.error(`[EP04 Assembly${chunkLabel}] Submit failed:`, msg);
+            throw new Error(`Chunk ${ci + 1} submit failed: ${msg}`);
+          }
+
+          console.log(`[EP04 Assembly${chunkLabel}] Response:`, JSON.stringify(chunkData));
+          const chunkCastJobId = chunkData.castJobId;
+          const chunkTaskId = chunkData.taskId;
+
+          if (chunkData.videoUrl) {
+            // Chunk completed synchronously (rare)
+            chunkVideoUrls.push(chunkData.videoUrl);
+            console.log(`[EP04 Assembly${chunkLabel}] ✅ Completed synchronously: ${chunkData.videoUrl}`);
+            continue;
+          }
+
+          // Inline-poll this chunk to completion
+          console.log(`[EP04 Assembly${chunkLabel}] Polling... castJobId=${chunkCastJobId}, taskId=${chunkTaskId}`);
+          let chunkVideoUrl: string | null = null;
+          for (let poll = 1; poll <= 360; poll++) { // 360 × 10s = 60 min max per chunk
+            if (assemblyCancelledRef.current) throw new Error('Cancelled by user');
+            await new Promise(r => setTimeout(r, 10000));
+
+            const elapsedMin = Math.round(poll * 10 / 60);
+            setAssemblyProgress(`Rendering${chunkLabel}... (${elapsedMin}min, poll ${poll})`);
+
+            // Primary poll via castJobId
+            const { data: pollData } = await supabase.functions.invoke('genie-cast-status', {
+              body: { castJobId: chunkCastJobId },
+            });
+
+            let status = pollData?.job?.status;
+            let videoUrl = pollData?.job?.outputUrl;
+            const progress = pollData?.job?.progressPercent || 0;
+
+            // Fallback: poll via taskId if primary stuck
+            if (chunkTaskId && (!status || (status === 'processing' && progress === 0))) {
+              const { data: fbData } = await supabase.functions.invoke('genie-cast-status', {
+                body: { projectId: chunkTaskId },
+              });
+              if (fbData) {
+                status = fbData.status || status;
+                videoUrl = fbData.videoUrl || videoUrl;
+              }
+            }
+
+            if (poll % 10 === 0) {
+              console.log(`[EP04 Poll${chunkLabel} #${poll}] status=${status}, progress=${progress}, videoUrl=${videoUrl ? 'YES' : 'NO'}`);
+            }
+
+            if (status === 'completed' || status === 'done' || status === 'finished') {
+              if (videoUrl) {
+                chunkVideoUrl = videoUrl;
+                break;
+              }
+              // Completed but no URL — keep polling
+            } else if (status === 'failed' || status === 'error') {
+              throw new Error(`Chunk ${ci + 1} render failed: ${pollData?.job?.errorMessage || 'Unknown'}`);
+            }
+          }
+
+          if (!chunkVideoUrl) {
+            throw new Error(`Chunk ${ci + 1} polling exhausted (60 min) — check J2V dashboard`);
+          }
+
+          chunkVideoUrls.push(chunkVideoUrl);
+          console.log(`[EP04 Assembly${chunkLabel}] ✅ Completed: ${chunkVideoUrl}`);
+          toast.success(`Chunk ${ci + 1}/${chunks.length} rendered!`);
+        }
+
+        // All chunks done — concatenate if multiple
+        if (chunkVideoUrls.length === 1) {
+          // Single chunk — use directly as the part video
+          const finalVideoUrl = chunkVideoUrls[0];
+          if (partNumber != null) {
+            setAssemblyParts(prev => prev.map(p =>
+              p.partNumber === partNumber ? { ...p, status: 'completed', videoUrl: finalVideoUrl } : p
+            ));
+            setActivePartNumber(null);
+            toast.success(`Part ${partNumber} assembled!`);
+          } else {
+            setFinalVideoUrl(finalVideoUrl);
+            setProductionPhase('complete');
+            toast.success('Video assembled!');
+          }
+          setAssemblyProgress(null);
+          setAssemblyJobId(null);
+        } else {
+          // Multiple chunks — stitch them together
+          console.log(`[EP04 Assembly${partLabel}] Stitching ${chunkVideoUrls.length} chunks...`);
+          setAssemblyProgress(`Stitching ${chunkVideoUrls.length} chunks${partLabel}...`);
+
+          // Build a simple stitch timeline: each chunk video as a single scene
+          const stitchScenes = chunkVideoUrls.map((url, i) => ({
+            comment: `chunk-${i + 1}`,
+            duration: chunks[i].reduce((sum: number, s: any) => sum + (s.duration || 0), 0),
+            'background-color': '#0f0a1a',
+            elements: [{
+              type: 'video', src: url, start: 0,
+              duration: chunks[i].reduce((sum: number, s: any) => sum + (s.duration || 0), 0),
+              resize: 'cover', width: 1280, height: 720, volume: 1,
+            }],
+          }));
+          const stitchTimeline = { resolution: timelinePayload.resolution || 'hd', quality: 'low', scenes: stitchScenes };
+          const { data: stitchResult, error: stitchError } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+            body: { timeline: stitchTimeline, castProjectId: projectId, language: 'en', quality: 'production' },
+          });
+
+          if (stitchError || !stitchResult?.success) {
+            throw new Error(`Chunk stitch submit failed: ${stitchError?.message || stitchResult?.message}`);
+          }
+
+          if (stitchResult.videoUrl) {
+            // Stitch completed synchronously
+            const finalUrl = stitchResult.videoUrl;
+            if (partNumber != null) {
+              setAssemblyParts(prev => prev.map(p =>
+                p.partNumber === partNumber ? { ...p, status: 'completed', videoUrl: finalUrl } : p
+              ));
+              setActivePartNumber(null);
+            } else {
+              setFinalVideoUrl(finalUrl);
+              setProductionPhase('complete');
+            }
+            setAssemblyProgress(null);
+            setAssemblyJobId(null);
+            toast.success(`Part ${partNumber ?? ''} assembled (${chunkVideoUrls.length} chunks stitched)!`);
+          } else {
+            // Stitch needs polling — hand off to the existing polling effect
+            const pollId = stitchResult.castJobId || null;
+            assemblyTaskIdRef.current = stitchResult.taskId || null;
+            pollNoProgressCountRef.current = 0;
+            pollCountRef.current = 0;
+            setAssemblyJobId(pollId || stitchResult.taskId);
+            setAssemblyProgress(`Stitching${partLabel}... polling for completion`);
+            if (partNumber != null) {
+              setAssemblyParts(prev => prev.map(p =>
+                p.partNumber === partNumber ? { ...p, jobId: pollId, taskId: stitchResult.taskId || null, status: 'rendering' } : p
+              ));
+            }
+            toast.success(`Chunks rendered! Stitching ${chunkVideoUrls.length} segments...`);
+          }
+        }
+        return; // chunk flow complete — skip single-job path below
+      }
+
+      // ── SINGLE-JOB PATH (≤4 scenes) ──────────────────────────────────────
       const assemblyBody = {
         timeline: timelinePayload,
         castProjectId: projectId,
