@@ -4138,6 +4138,16 @@ function EP04ProductionInner() {
         }
         console.log(`[EP04 Assembly${partLabel}] Timeline too large (${allScenes.length} scenes). Splitting into ${chunks.length} chunks of max ${MAX_J2V_CHUNK_SCENES} scenes.`);
 
+        // ── Fix chunk boundaries for seamless stitching ──
+        // Strip transition from the first scene of chunk 2+ to avoid "dissolve from black"
+        // at the start of each chunk video. The stitch timeline adds its own dissolve between chunks.
+        for (let ci = 1; ci < chunks.length; ci++) {
+          if (chunks[ci].length > 0 && chunks[ci][0].transition) {
+            chunks[ci][0] = { ...chunks[ci][0], transition: undefined };
+            console.log(`[EP04 Assembly${partLabel}] Stripped transition from chunk ${ci + 1} first scene to avoid dissolve-from-black`);
+          }
+        }
+
         const chunkVideoUrls: string[] = [];
         for (const [ci, chunk] of chunks.entries()) {
           const chunkLabel = `${partLabel} chunk ${ci + 1}/${chunks.length}`;
@@ -4247,17 +4257,22 @@ function EP04ProductionInner() {
           console.log(`[EP04 Assembly${partLabel}] Stitching ${chunkVideoUrls.length} chunks...`);
           setAssemblyProgress(`Stitching ${chunkVideoUrls.length} chunks${partLabel}...`);
 
-          // Build a simple stitch timeline: each chunk video as a single scene
-          const stitchScenes = chunkVideoUrls.map((url, i) => ({
-            comment: `chunk-${i + 1}`,
-            duration: chunks[i].reduce((sum: number, s: any) => sum + (s.duration || 0), 0),
-            'background-color': '#0f0a1a',
-            elements: [{
-              type: 'video', src: url, start: 0,
-              duration: chunks[i].reduce((sum: number, s: any) => sum + (s.duration || 0), 0),
-              resize: 'cover', width: 1280, height: 720, volume: 1,
-            }],
-          }));
+          // Build stitch timeline: each chunk video as a single scene with dissolve between chunks
+          const stitchScenes = chunkVideoUrls.map((url, i) => {
+            const chunkDur = chunks[i].reduce((sum: number, s: any) => sum + (s.duration || 0), 0);
+            return {
+              comment: `chunk-${i + 1}`,
+              duration: chunkDur,
+              'background-color': '#0f0a1a',
+              elements: [{
+                type: 'video', src: url, start: 0,
+                duration: chunkDur,
+                resize: 'cover', width: 1280, height: 720, volume: 1,
+              }],
+              // Smooth dissolve between chunks — hides the cut point
+              ...(i > 0 ? { transition: { style: 'dissolve', duration: 0.5 } } : {}),
+            };
+          });
           const stitchTimeline = { resolution: timelinePayload.resolution || 'hd', quality: 'low', scenes: stitchScenes };
           const { data: stitchResult, error: stitchError } = await supabase.functions.invoke('genie-cast-timeline-submit', {
             body: { timeline: stitchTimeline, castProjectId: projectId, language: 'en', quality: 'production' },
