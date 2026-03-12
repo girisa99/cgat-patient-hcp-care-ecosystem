@@ -698,27 +698,67 @@ serve(async (req) => {
       maxDuration: routing.maxDuration
     });
 
-    let audioBuffer: ArrayBuffer;
+    // ── Generate with fallback chain — if primary returns silence, try next provider ──
+    const availableProviders = getAvailableMusicProviders()
+      .filter(p => p.available)
+      .sort((a, b) => a.priority - b.priority)
+      .map(p => p.id);
 
-    switch (provider) {
-      case 'fal-beatoven':
-        audioBuffer = await generateFalBeatevenMusic(request.prompt, duration);
-        break;
-      case 'elevenlabs':
-        audioBuffer = await generateElevenLabsMusic(request.prompt, duration);
-        break;
-      case 'alibaba':
-        audioBuffer = await generateAlibabaMusic(request.prompt, duration);
-        break;
-      case 'modelslab':
-        audioBuffer = await generateModelsLabMusic(request.prompt, duration);
-        break;
-      default:
-        audioBuffer = await generateModelsLabMusicDirect(request.prompt, duration);
+    // Put the selected provider first, then append remaining providers as fallbacks
+    const providerChain = [provider, ...availableProviders.filter(p => p !== provider)];
+
+    let audioBuffer: ArrayBuffer | null = null;
+    let usedProvider = provider;
+
+    for (const tryProvider of providerChain) {
+      try {
+        console.log(`🎵 Trying music provider: ${tryProvider}`);
+        let buf: ArrayBuffer;
+        switch (tryProvider) {
+          case 'fal-beatoven':
+            buf = await generateFalBeatevenMusic(request.prompt, duration);
+            break;
+          case 'elevenlabs':
+            buf = await generateElevenLabsMusic(request.prompt, duration);
+            break;
+          case 'alibaba':
+            buf = await generateAlibabaMusic(request.prompt, duration);
+            break;
+          case 'modelslab':
+            buf = await generateModelsLabMusic(request.prompt, duration);
+            break;
+          default:
+            buf = await generateModelsLabMusicDirect(request.prompt, duration);
+        }
+
+        // Detect silent placeholders — check if >90% of bytes are zero.
+        // Catches MP3 files with valid sync headers (0xFFfb) but all-zero audio frames.
+        const bytes = new Uint8Array(buf);
+        const zeros = bytes.reduce((c, b) => c + (b === 0 ? 1 : 0), 0);
+        const zeroPct = bytes.byteLength > 0 ? (zeros / bytes.byteLength) * 100 : 100;
+        const isSilent = buf.byteLength < 100000 && zeroPct > 90;
+
+        console.log(`${isSilent ? '⚠️ SILENT' : '✅ Real music'}: ${buf.byteLength} bytes via ${tryProvider}, ${zeroPct.toFixed(1)}% zeros`);
+
+        if (!isSilent) {
+          audioBuffer = buf;
+          usedProvider = tryProvider;
+          break; // Got real music — stop trying
+        }
+
+        _debugErrors.push(`${tryProvider}: silent placeholder (${zeroPct.toFixed(0)}% zeros, ${buf.byteLength} bytes)`);
+        console.warn(`⚠️ ${tryProvider} returned silent placeholder — trying next provider...`);
+      } catch (providerErr: any) {
+        _debugErrors.push(`${tryProvider}: ${providerErr.message}`);
+        console.warn(`⚠️ ${tryProvider} failed: ${providerErr.message} — trying next provider...`);
+      }
     }
 
-    const isSilentPlaceholder = audioBuffer.byteLength < 60000 && new Uint8Array(audioBuffer).every((b, i) => i < 4 || b === 0);
-    console.log(`${isSilentPlaceholder ? '⚠️ SILENT PLACEHOLDER' : '✅ Real music'}: ${audioBuffer.byteLength} bytes via ${provider}`);
+    const isSilentPlaceholder = !audioBuffer;
+    if (!audioBuffer) {
+      // All providers failed — generate a minimal silent buffer so we don't crash
+      audioBuffer = new ArrayBuffer(0);
+    }
 
     // Upload to Supabase Storage (service role — no RLS issues)
     // Returns HTTP URL so client never has to deal with data: URIs for music
@@ -738,7 +778,7 @@ serve(async (req) => {
         audioContent: audioBase64,
         audioUrl,
         duration,
-        provider,
+        provider: usedProvider,
         zone: routing.zone,
         cost: routing.cost,
         quality: routing.quality,
