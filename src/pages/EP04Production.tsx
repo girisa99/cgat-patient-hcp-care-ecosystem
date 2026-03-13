@@ -3270,10 +3270,35 @@ function EP04ProductionInner() {
         const jobStatus = data?.job?.status;
         const jobProgress = data?.job?.progressPercent || 0;
 
-        if (fnError || (!jobStatus) || (jobStatus !== 'completed' && jobStatus !== 'failed' && jobProgress === 0)) {
-          // Stuck: edge fn error, no job status, or processing at 0%
+        // ── Direct DB read: worker writes progress_percent directly via REST API.
+        // This bypasses the edge function which may be stale/undeployed.
+        let dbProgress = 0;
+        try {
+          const { data: jobRow } = await supabase
+            .from('cast_generation_jobs')
+            .select('progress_percent, output_metadata, status, output_url')
+            .eq('id', assemblyJobId)
+            .single();
+          if (jobRow) {
+            dbProgress = jobRow.progress_percent || 0;
+            const dbStatusText = jobRow.output_metadata?.status_text || '';
+            if (dbProgress > 0) {
+              console.log(`[EP04 Poll] DB direct: ${dbProgress}%, status=${jobRow.status}, text="${dbStatusText}"`);
+            }
+            // If DB shows completed with URL but edge function hasn't caught up
+            if (jobRow.status === 'completed' && jobRow.output_url) {
+              resolvedStatus = 'completed';
+              resolvedVideoUrl = jobRow.output_url;
+            }
+          }
+        } catch (dbErr) {
+          // RLS may block — fall through to existing logic
+        }
+
+        if (fnError || (!jobStatus) || (jobStatus !== 'completed' && jobStatus !== 'failed' && jobProgress === 0 && dbProgress === 0)) {
+          // Stuck: edge fn error, no job status, or processing at 0% from ALL sources
           pollNoProgressCountRef.current++;
-        } else if (jobProgress > 0 || jobStatus === 'completed' || jobStatus === 'failed') {
+        } else if (jobProgress > 0 || dbProgress > 0 || jobStatus === 'completed' || jobStatus === 'failed') {
           // Real progress or terminal state — reset
           pollNoProgressCountRef.current = 0;
         }
@@ -3281,7 +3306,7 @@ function EP04ProductionInner() {
         // Fallback: poll RunPod directly if stuck OR if primary says "completed" but has no URL
         // The DB row can show completed (from a prior fallback's write) before output_url commits
         const taskId = assemblyTaskIdRef.current;
-        const primaryCompletedNoUrl = (jobStatus === 'completed' || jobStatus === 'done' || jobStatus === 'finished') && !data?.job?.outputUrl;
+        const primaryCompletedNoUrl = (jobStatus === 'completed' || jobStatus === 'done' || jobStatus === 'finished') && !data?.job?.outputUrl && !resolvedVideoUrl;
         if (taskId && (pollNoProgressCountRef.current >= 3 || primaryCompletedNoUrl)) {
           console.log(`[EP04 Poll] ⚠️ castJobId stuck (${pollNoProgressCountRef.current} polls, 0%). Falling back to projectId=${taskId}`);
           const { data: fallbackData, error: fbError } = await supabase.functions.invoke('genie-cast-status', {
@@ -3290,8 +3315,8 @@ function EP04ProductionInner() {
           console.log(`[EP04 Poll Fallback] projectId=${taskId}, FULL response:`, JSON.stringify(fallbackData));
           if (!fbError && fallbackData) {
             // projectId path returns { success, status, videoUrl, thumbnailUrl, progress, error }
-            resolvedStatus = fallbackData.status;
-            resolvedVideoUrl = fallbackData.videoUrl;
+            if (!resolvedStatus) resolvedStatus = fallbackData.status;
+            if (!resolvedVideoUrl) resolvedVideoUrl = fallbackData.videoUrl;
             resolvedThumbnailUrl = fallbackData.thumbnailUrl;
             resolvedProgress = fallbackData.progress || 0;
             resolvedError = fallbackData.error;
@@ -3300,10 +3325,10 @@ function EP04ProductionInner() {
         }
 
         // Use fallback results if available, otherwise use primary
-        // For progress: take the HIGHER value (primary reads from DB where worker writes, fallback reads RunPod API)
+        // For progress: take the HIGHEST value from all 3 sources (edge fn, DB direct, RunPod fallback)
         const finalStatus = resolvedStatus || jobStatus;
         const finalVideoUrl = resolvedVideoUrl || data?.job?.outputUrl;
-        const finalProgress = Math.max(resolvedProgress || 0, jobProgress);
+        const finalProgress = Math.max(resolvedProgress || 0, jobProgress, dbProgress);
         const finalError = resolvedError || data?.job?.errorMessage;
 
         if (fnError && !resolvedStatus) {
