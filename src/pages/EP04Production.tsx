@@ -1185,6 +1185,47 @@ function EP04ProductionInner() {
     generateMissingForKeys(bridgeKeys);
   }, [generateMissingForKeys]);
 
+  // Force-regenerate ALL TTS for a specific character voice (ignores existing audio)
+  const regenerateCharacterTts = useCallback(async (voiceName: string) => {
+    const charKeys = scriptKeys.filter(k => {
+      const line = scriptContentForUI[k];
+      return line?.voice === voiceName && line?.text && line.text.trim().length > 0;
+    });
+    if (charKeys.length === 0) {
+      toast.info(`No TTS lines found for voice "${voiceName}"`);
+      return;
+    }
+    // Clear existing status so generateLine will re-run them
+    setStatusMap(prev => {
+      const updated = { ...prev };
+      charKeys.forEach(k => { updated[k] = 'pending'; });
+      return updated;
+    });
+    setAudioMap(prev => {
+      const updated = { ...prev };
+      charKeys.forEach(k => { delete updated[k]; });
+      return updated;
+    });
+    toast.info(`Regenerating ${charKeys.length} TTS lines for "${voiceName}"...`);
+    abortRef.current = false;
+    setBatchProgress({ current: 0, total: charKeys.length });
+    let success = 0;
+    for (let i = 0; i < charKeys.length; i++) {
+      if (abortRef.current) break;
+      setBatchProgress({ current: i + 1, total: charKeys.length });
+      const ok = await generateLine(charKeys[i]);
+      if (ok) success++;
+      if (i < charKeys.length - 1) await new Promise(r => setTimeout(r, 500));
+    }
+    setBatchProgress(null);
+    invalidateTtsCache();
+    if (success === charKeys.length) {
+      toast.success(`Regenerated all ${success} "${voiceName}" TTS lines`);
+    } else {
+      toast.warning(`Regenerated ${success}/${charKeys.length} "${voiceName}" lines`);
+    }
+  }, [scriptKeys, scriptContentForUI, generateLine, invalidateTtsCache]);
+
   const cancelBatch = useCallback(() => {
     abortRef.current = true;
     setBatchProgress(null);
@@ -5144,6 +5185,28 @@ function EP04ProductionInner() {
                   <div className="p-3 rounded-lg bg-muted/30 text-center">
                     <p className="text-xl font-bold text-foreground">{scenes.size}</p>
                     <p className="text-[10px] text-muted-foreground">Scenes</p>
+                  </div>
+                </div>
+
+                {/* Regenerate by character voice */}
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground mb-2">Regenerate TTS by character (force re-generate all lines for a voice):</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['host', 'atlas', 'nova', 'allaudin', 'squirrel'].map(voice => {
+                      const count = scriptKeys.filter(k => scriptContentForUI[k]?.voice === voice && scriptContentForUI[k]?.text?.trim()).length;
+                      return (
+                        <Button
+                          key={voice}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7"
+                          onClick={() => regenerateCharacterTts(voice)}
+                          disabled={!!batchProgress}
+                        >
+                          {voice.charAt(0).toUpperCase() + voice.slice(1)} ({count})
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
               </CardContent>
