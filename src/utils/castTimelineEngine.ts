@@ -18,6 +18,7 @@ export interface CastTTSLine {
   duration: number;
   voice: string;
   key?: string;
+  text?: string;   // actual dialogue text for subtitles
 }
 
 export interface CastLipsyncClip {
@@ -787,7 +788,7 @@ function injectSubtitles(
   for (const chapter of chapters) {
     for (const tts of chapter.ttsLines) {
       allTtsLines.push({
-        text: tts.key || '', // key may contain readable text
+        text: tts.text || tts.key || '', // prefer actual dialogue text; fall back to key
         voice: tts.voice,
         key: tts.key,
       });

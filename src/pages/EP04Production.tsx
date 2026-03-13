@@ -3152,7 +3152,7 @@ function EP04ProductionInner() {
         // Use actual measured TTS duration if available; fall back to estimate
         const actualDur = audioMap[k]?.audioDuration;
         const estDur = scriptContentForUI[k]?.duration_est || 5;
-        sceneDuration += (actualDur || estDur) + 0.5; // +1.5s TTS gap per line
+        sceneDuration += (actualDur || (estDur + 2)) + 0.3; // +0.3s gap per line, +2s buffer on estimates
         if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
       sceneDuration = sceneDuration || 30;
@@ -3624,20 +3624,19 @@ function EP04ProductionInner() {
           ? allSceneLines.slice(lineRange.start, lineRange.end)
           : allSceneLines;
         let cumulativeStart = 0;
-        const allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string; key: string }> = [];
+        const allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string; key: string; text?: string }> = [];
 
-        // Buffer between TTS lines to prevent voice overlap.
-        // duration_est is an estimate (~150 wpm); actual TTS audio may run longer.
-        // 1.5s gap ensures host/nova/atlas voices don't overlap.
-        const TTS_GAP = 1.5;
+        // Small gap between TTS lines for natural speech pacing.
+        // Actual measured durations are used when available; estimate fallback adds its own buffer.
+        const TTS_GAP = 0.3;
 
         let dataUriTtsCount = 0;
         for (const k of sceneLines) {
           const line = scriptContentForUI[k];
           const estDur = line?.duration_est || 5;
           const actualDur = audioMap[k]?.audioDuration;
-          // Prefer actual measured duration; fall back to estimate + 1s buffer
-          const dur = actualDur ? actualDur : estDur + 1;
+          // Prefer actual measured duration; fall back to estimate + 2s buffer to prevent cutoff
+          const dur = actualDur ? actualDur : estDur + 2;
           const audioUrl = audioMap[k]?.audioUrl;
           if (audioUrl) {
             if (audioUrl.startsWith('http')) {
@@ -3647,6 +3646,7 @@ function EP04ProductionInner() {
                 duration: dur,
                 voice: line?.voice || 'unknown',
                 key: k,
+                text: line?.text || '',
               });
             } else {
               // data: URI — will be filtered by castTimelineEngine (only HTTP URLs pass), warn user
