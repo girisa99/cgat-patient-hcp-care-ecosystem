@@ -1017,26 +1017,45 @@ function EP04ProductionInner() {
         });
       }
 
-      const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
-        body: {
-          text: line.text,
-          languageCode: 'en-US',
-          provider: voiceConfig.provider,
-          voice: voiceConfig.voiceId,
-          tier: 'premium',
-          voiceStyle: {
-            stability: voiceConfig.stability,
-            similarity_boost: voiceConfig.similarityBoost,
-            ...(voiceConfig.rate || voiceConfig.pitch ? {
-              azureProsody: { rate: voiceConfig.rate, pitch: voiceConfig.pitch }
-            } : {}),
+      // Retry with exponential backoff for timeout/transient errors
+      const MAX_RETRIES = 3;
+      let data: any = null;
+      let lastError: any = null;
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        if (attempt > 0) {
+          const backoff = Math.min(2000 * Math.pow(2, attempt - 1), 10000);
+          console.log(`[EP04 TTS] Retry ${attempt}/${MAX_RETRIES} for "${key}" after ${backoff}ms...`);
+          await new Promise(r => setTimeout(r, backoff));
+        }
+        const result = await supabase.functions.invoke('multi-provider-tts', {
+          body: {
+            text: line.text,
+            languageCode: 'en-US',
+            provider: voiceConfig.provider,
+            voice: voiceConfig.voiceId,
+            tier: 'premium',
+            voiceStyle: {
+              stability: voiceConfig.stability,
+              similarity_boost: voiceConfig.similarityBoost,
+              ...(voiceConfig.rate || voiceConfig.pitch ? {
+                azureProsody: { rate: voiceConfig.rate, pitch: voiceConfig.pitch }
+              } : {}),
+            },
           },
-        },
-      });
+        });
+        if (!result.error) {
+          data = result.data;
+          lastError = null;
+          break;
+        }
+        lastError = result.error;
+        const errMsg = result.error?.message || JSON.stringify(result.error);
+        console.warn(`[EP04 TTS] Attempt ${attempt + 1} failed for "${key}": ${errMsg}`);
+      }
 
-      if (error) {
-        toast.error(`TTS edge function error for "${key}": ${error.message || JSON.stringify(error)}`);
-        console.error(`[EP04 TTS] Edge function error:`, error);
+      if (lastError) {
+        toast.error(`TTS failed after ${MAX_RETRIES} attempts for "${key}": ${lastError.message || JSON.stringify(lastError)}`);
+        console.error(`[EP04 TTS] All retries exhausted:`, lastError);
         setStatusMap(prev => ({ ...prev, [key]: 'error' }));
         return false;
       }
