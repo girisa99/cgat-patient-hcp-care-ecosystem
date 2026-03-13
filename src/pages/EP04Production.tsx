@@ -6664,6 +6664,23 @@ function EP04ProductionInner() {
                                     Retry
                                   </Button>
                                 )}
+                                {part.status === 'completed' && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 text-[10px] px-2 border-amber-500/30 text-amber-600"
+                                    disabled={!!assemblyJobId}
+                                    onClick={() => {
+                                      setAssemblyParts(prev => prev.map(p =>
+                                        p.partNumber === part.partNumber ? { ...p, status: 'pending', videoUrl: null } : p
+                                      ));
+                                      startFinalAssembly(part.partNumber);
+                                    }}
+                                  >
+                                    <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                                    Re-assemble
+                                  </Button>
+                                )}
                                 {part.status === 'completed' && part.videoUrl && (
                                   <>
                                     <a
