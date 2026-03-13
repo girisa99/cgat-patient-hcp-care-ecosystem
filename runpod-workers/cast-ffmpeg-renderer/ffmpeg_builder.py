@@ -112,21 +112,22 @@ def _position_to_xy(position: str, text_w_expr: str, text_h_expr: str,
     return (f"(w-{text_w_expr})/2", f"(h-{text_h_expr})/2")
 
 
-def _build_zoompan_filter(elem: ElementInstruction, scene_dur: float,
+def _build_zoompan_filter(elem: ElementInstruction, img_dur: float,
                           width: int, height: int) -> str:
-    """Build zoompan filter string for Ken Burns effect on a still image."""
+    """Build zoompan filter string for Ken Burns effect on a still image.
+    img_dur = duration for THIS image (not the full scene duration)."""
     fps = 30
-    total_frames = int(fps * scene_dur)
+    total_frames = int(fps * img_dur)
 
     # Safety: ensure at least 1 second of frames
     if total_frames < 30:
-        total_frames = int(30 * scene_dur) if scene_dur > 0 else 150
+        total_frames = int(30 * img_dur) if img_dur > 0 else 150
     if total_frames < 30:
         total_frames = 150  # absolute minimum ~5 seconds
 
     zoom_rate = elem.zoom_amount / total_frames  # per-frame zoom rate
-    # Clamp zoom rate for smooth motion
-    zoom_rate = max(0.00005, min(0.002, zoom_rate))
+    # Clamp zoom rate for visible motion (wider range for more dramatic Ken Burns)
+    zoom_rate = max(0.0001, min(0.003, zoom_rate))
 
     # Determine zoom expression
     if elem.zoom_direction == "out":
@@ -336,37 +337,40 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     filter_parts.append(f"{base_label}setpts=PTS-STARTPTS[{current_video}]")
     input_idx += 1
 
-    # ── Primary background image with Ken Burns ──
-    bg_image = None
-    for img in images:
-        if img.width >= width * 0.8 and img.height >= height * 0.8:
-            bg_image = img
-            break
-    if not bg_image and images:
-        bg_image = images[0]
+    # ── Image layers with Ken Burns (time-windowed per image) ──
+    for ii, img in enumerate(images):
+        inputs.extend(["-i", img.local_path])
 
-    if bg_image:
-        inputs.extend(["-i", bg_image.local_path])
-        zp = _build_zoompan_filter(bg_image, scene.duration, width, height)
-        kb_label = f"kb{scene.index}"
+        # Each image gets Ken Burns for ITS duration (not full scene)
+        img_dur = img.duration if img.duration > 0 else scene.duration
+        zp = _build_zoompan_filter(img, img_dur, width, height)
+        kb_label = f"kb{scene.index}_{ii}"
         filter_parts.append(f"[{input_idx}:v]{zp},format=yuva420p[{kb_label}]")
-        # Overlay Ken Burns on base
-        prev = current_video
-        current_video = f"bg{scene.index}"
-        filter_parts.append(f"[{prev}][{kb_label}]overlay=0:0:shortest=1[{current_video}]")
-        input_idx += 1
 
-        # Add fade-in/fade-out to the image
-        if bg_image.fade_in > 0 or bg_image.fade_out > 0:
-            prev = current_video
-            current_video = f"bgf{scene.index}"
-            fade_filters = []
-            if bg_image.fade_in > 0:
-                fade_filters.append(f"fade=t=in:st=0:d={bg_image.fade_in:.2f}")
-            if bg_image.fade_out > 0:
-                out_start = scene.duration - bg_image.fade_out
-                fade_filters.append(f"fade=t=out:st={out_start:.2f}:d={bg_image.fade_out:.2f}")
-            filter_parts.append(f"[{prev}]{','.join(fade_filters)}[{current_video}]")
+        # Fade in/out on the image itself (applied before overlay)
+        fade_label = kb_label
+        if img.fade_in > 0 or img.fade_out > 0:
+            fade_label = f"imgf{scene.index}_{ii}"
+            fades = []
+            if img.fade_in > 0:
+                fades.append(f"fade=t=in:st=0:d={img.fade_in:.2f}:alpha=1")
+            if img.fade_out > 0:
+                out_st = max(0, img_dur - img.fade_out)
+                fades.append(f"fade=t=out:st={out_st:.2f}:d={img.fade_out:.2f}:alpha=1")
+            filter_parts.append(f"[{kb_label}]{','.join(fades)}[{fade_label}]")
+
+        # Time-windowed overlay: only visible during [start, start+duration]
+        enable = ""
+        if img.duration > 0 and len(images) > 1:
+            end_t = img.start + img.duration
+            enable = f":enable='between(t,{img.start:.2f},{end_t:.2f})'"
+
+        prev = current_video
+        current_video = f"img{scene.index}_{ii}"
+        filter_parts.append(
+            f"[{prev}][{fade_label}]overlay=0:0{enable}[{current_video}]"
+        )
+        input_idx += 1
 
     # ── Cinematic post-processing on background ──
     prev = current_video
@@ -441,7 +445,7 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
         prev = current_video
         current_video = f"fr{scene.index}"
         filter_parts.append(
-            f"[{prev}][{frame_label}]overlay=0:0:shortest=1[{current_video}]"
+            f"[{prev}][{frame_label}]overlay=0:0[{current_video}]"
         )
         input_idx += 1
 
@@ -455,7 +459,7 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
             filter_parts.append(f"[{input_idx}:v]format=rgba[{txt_label}]")
 
             enable = ""
-            if txt.duration > 0:
+            if txt.duration > 0.1:
                 end_t = txt.start + txt.duration
                 enable = f":enable='between(t,{txt.start:.2f},{end_t:.2f})'"
 
@@ -482,7 +486,7 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
             filter_parts.append(f"[{input_idx}:v]format=rgba[{comp_label}]")
 
             enable = ""
-            if comp.duration > 0:
+            if comp.duration > 0.1:
                 end_t = comp.start + comp.duration
                 enable = f":enable='between(t,{comp.start:.2f},{end_t:.2f})'"
 
@@ -609,7 +613,7 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     print(f"  [render] filter_complex:\n{fc_preview}")
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
         if result.returncode != 0:
             print(f"  [render] Scene {scene.index} FAILED (exit {result.returncode}):")
             print(f"  [render] stderr:\n{result.stderr[-2000:]}")
