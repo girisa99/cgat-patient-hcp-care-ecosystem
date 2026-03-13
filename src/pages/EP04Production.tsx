@@ -4059,8 +4059,9 @@ function EP04ProductionInner() {
           if (!isSafeUrl(url)) continue;
           if (key.includes('kinetic-text')) {
             kineticImageMap[key] = url;
-          } else if (storybookFrameSet.has(url)) {
+          } else if (storybookFrameSet.has(url) && ch.chapterId !== targetSceneKeys[0]) {
             // Skip — routed to CastTransition.chapterHeaderImageUrl
+            // Exception: first scene (Scene 0) has no incoming transition, so keep its storybook frame as B-roll
           } else {
             regularImages.push(url);
           }
