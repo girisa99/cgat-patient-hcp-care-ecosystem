@@ -56,16 +56,18 @@ export const EP04_VOICES = {
     eqProfile: 'reverb',
     description: 'Atlas (Claude) — backend tech lead, measured, calm engineer',
   },
-  /** Nova (Lovable) = bright, energetic. ElevenLabs Lily — fast delivery, expressive. */
+  /** Nova (Lovable) = bright, energetic. Azure JennyNeural — fast delivery, expressive. Moved from ElevenLabs to balance rate limits. */
   nova: {
-    provider: 'elevenlabs' as const,
-    voiceId: 'pFZP5JQG7iQjIQuC4Bku',  // Lily — bright female, energetic
+    provider: 'azure' as const,
+    voiceId: 'en-US-JennyNeural',  // Jenny — bright female, energetic, natural
     fallbackProvider: 'alibaba' as const,
     fallbackVoice: ALIBABA_FALLBACK_VOICES.nova,
     style: 'energetic',
     stability: 0.35,
     similarityBoost: 0.65,
     speed: 1.1,
+    rate: '+10%',   // Azure prosody: slightly faster delivery matching Nova's energy
+    pitch: '+5%',   // Azure prosody: brighter pitch for energetic character
     eqProfile: 'bright',
     description: 'Nova (Lovable) — frontend dev, fast delivery, energetic',
   },
@@ -82,16 +84,18 @@ export const EP04_VOICES = {
     eqProfile: 'deep-reverb',
     description: 'Allaudin (Genie) — deep British narrator with mystical, theatrical presence',
   },
-  /** Squirrel = high-pitched, chaotic, childish. ElevenLabs Gigi (animation child voice) OR Alibaba longpaopao. */
+  /** Squirrel = high-pitched, chaotic, childish. Azure AnaNeural (child voice). Moved from ElevenLabs to balance rate limits. */
   squirrel: {
-    provider: 'elevenlabs' as const,
-    voiceId: 'jBpfuIE2acCO8z3wKNLl',  // Gigi — childish American, designed for animation
+    provider: 'azure' as const,
+    voiceId: 'en-US-AnaNeural',  // Ana — child voice, animated, designed for young characters
     fallbackProvider: 'alibaba' as const,
     fallbackVoice: ALIBABA_FALLBACK_VOICES.squirrel,
     style: 'chaotic',
     stability: 0.15,
     similarityBoost: 0.4,
     speed: 1.4,
+    rate: '+40%',   // Azure prosody: hyperactive fast delivery
+    pitch: '+15%',  // Azure prosody: high-pitched childish squirrel voice
     eqProfile: 'high-pitch',
     description: 'Squirrel — childish animation voice, hyperactive, chaotic comic relief',
   },

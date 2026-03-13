@@ -1144,8 +1144,8 @@ function EP04ProductionInner() {
       setBatchProgress({ current: i + 1, total: keys.length });
       const ok = await generateLine(keys[i]);
       if (ok) success++;
-      // Rate limit delay
-      if (i < keys.length - 1) await new Promise(r => setTimeout(r, 500));
+      // Rate limit delay — 1.5s between lines to avoid ElevenLabs/Azure rate limits
+      if (i < keys.length - 1) await new Promise(r => setTimeout(r, 1500));
     }
 
     setBatchProgress(null);
@@ -1180,7 +1180,7 @@ function EP04ProductionInner() {
       setBatchProgress({ current: i + 1, total: missing.length });
       const ok = await generateLine(missing[i]);
       if (ok) success++;
-      if (i < missing.length - 1) await new Promise(r => setTimeout(r, 500));
+      if (i < missing.length - 1) await new Promise(r => setTimeout(r, 1500));
     }
     setBatchProgress(null);
     if (success === missing.length) {
@@ -1234,7 +1234,7 @@ function EP04ProductionInner() {
       setBatchProgress({ current: i + 1, total: charKeys.length });
       const ok = await generateLine(charKeys[i]);
       if (ok) success++;
-      if (i < charKeys.length - 1) await new Promise(r => setTimeout(r, 500));
+      if (i < charKeys.length - 1) await new Promise(r => setTimeout(r, 1500));
     }
     setBatchProgress(null);
     invalidateTtsCache();
