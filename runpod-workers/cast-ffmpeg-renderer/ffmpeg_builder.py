@@ -384,12 +384,35 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     # ── Phase 0: Pre-render overlays ──
     overlays = _pre_render_overlays(scene, width, height)
 
-    # Classify elements
-    images = [e for e in scene.elements if e.type == "image" and e.local_path]
-    videos = [e for e in scene.elements if e.type == "video" and e.local_path]
+    # Classify elements (with logging for skipped assets)
+    all_images = [e for e in scene.elements if e.type == "image"]
+    all_videos = [e for e in scene.elements if e.type == "video"]
+    all_audios = [e for e in scene.elements if e.type == "audio"]
+    images = [e for e in all_images if e.local_path]
+    videos = [e for e in all_videos if e.local_path]
+    audios = [e for e in all_audios if e.local_path]
     texts = [(i, e) for i, e in enumerate(scene.elements) if e.type == "text" and e.text]
-    audios = [e for e in scene.elements if e.type == "audio" and e.local_path]
     components = [(i, e) for i, e in enumerate(scene.elements) if e.type == "component"]
+
+    # ── DIAGNOSTIC: Log skipped elements (missing local_path = download failed) ──
+    skipped_images = [e for e in all_images if not e.local_path]
+    skipped_videos = [e for e in all_videos if not e.local_path]
+    skipped_audios = [e for e in all_audios if not e.local_path]
+    if skipped_images or skipped_videos or skipped_audios:
+        print(f"  [render] ⚠️ Scene {scene.index} SKIPPED ELEMENTS (download failed):")
+        for e in skipped_images:
+            print(f"    SKIPPED image: src={e.src[:80]}... (no local_path)")
+        for e in skipped_videos:
+            print(f"    SKIPPED video: src={e.src[:80]}... (no local_path)")
+        for e in skipped_audios:
+            print(f"    SKIPPED audio: src={e.src[:80]}... (no local_path)")
+    if not images and not videos:
+        print(f"  [render] ⚠️ Scene {scene.index} has NO visual assets! "
+              f"(had {len(all_images)} images + {len(all_videos)} videos but ALL skipped)")
+    else:
+        print(f"  [render] Scene {scene.index}: {len(images)}/{len(all_images)} images, "
+              f"{len(videos)}/{len(all_videos)} videos, {len(audios)}/{len(all_audios)} audio, "
+              f"{len(texts)} text, {len(components)} components")
 
     # Build FFmpeg command
     inputs: list[str] = []
@@ -494,7 +517,8 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     cine_filter = _build_cinematic_filter(scene.index, scene.comment)
     filter_parts.append(f"[{prev}]{cine_filter}[{current_video}]")
 
-    # ── PiP video overlays (lipsync, B-roll) with glow border ──
+    # ── Video overlays: FULL-SCREEN B-roll + PiP lipsync ──
+    # Distinguish: B-roll (width >= scene*0.5 = full-screen) vs lipsync (width < scene*0.5 = PiP)
     for vi, vid in enumerate(videos):
         # Apply seek for split-scene video continuation
         if vid.seek > 0:
@@ -503,88 +527,128 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
             inputs.extend(["-i", vid.local_path])
         pip_label = f"pip{scene.index}_{vi}"
 
-        # Scale PiP to specified size — ensure it fits within the frame
-        pip_w = vid.width if vid.width < width else width // 3
-        pip_h = vid.height if vid.height < height else height // 3
-        # Ensure dimensions are even for FFmpeg
-        pip_w = pip_w + (pip_w % 2)
-        pip_h = pip_h + (pip_h % 2)
+        # ── Determine: full-screen B-roll vs PiP lipsync ──
+        is_fullscreen = vid.width >= width * 0.5 and vid.height >= height * 0.5
+        print(f"    [video] Scene {scene.index} vid {vi}: {vid.width}x{vid.height} "
+              f"→ {'FULL-SCREEN' if is_fullscreen else 'PiP'}, pos={vid.position or 'none'}")
 
-        scale = f"scale={pip_w}:{pip_h}:force_original_aspect_ratio=decrease"
+        if is_fullscreen:
+            # ── FULL-SCREEN B-roll: scale to fill entire frame ──
+            # Ensure even dimensions
+            fw = width + (width % 2)
+            fh = height + (height % 2)
+            scale = (f"scale={fw}:{fh}:force_original_aspect_ratio=decrease,"
+                     f"pad={fw}:{fh}:(ow-iw)/2:(oh-ih)/2:color=black")
+            pip_x, pip_y = 0, 0
+            pip_w, pip_h = fw, fh
 
-        # Resolve position field to pixel x,y
-        margin = 30
-        pos = (vid.position or "").lower().strip()
-        if pos in ("bottom-right", "right-bottom"):
-            pip_x = width - pip_w - margin
-            pip_y = height - pip_h - margin
-        elif pos in ("bottom-left", "left-bottom"):
-            pip_x = margin
-            pip_y = height - pip_h - margin
-        elif pos in ("top-right", "right-top"):
-            pip_x = width - pip_w - margin
-            pip_y = margin
-        elif pos in ("top-left", "left-top"):
-            pip_x = margin
-            pip_y = margin
-        elif pos in ("center-center", "center"):
-            pip_x = (width - pip_w) // 2
-            pip_y = (height - pip_h) // 2
-        elif vid.x > 0 or vid.y > 0:
-            pip_x = vid.x
-            pip_y = vid.y
-        else:
-            # Default: bottom-right (standard PiP position)
-            pip_x = width - pip_w - margin
-            pip_y = height - pip_h - margin
+            enable = ""
+            if vid.duration > 0:
+                end_t = vid.start + vid.duration
+                enable = f":enable='between(t,{vid.start:.2f},{end_t:.2f})'"
 
-        # Clamp to frame bounds
-        pip_x = max(margin, min(pip_x, width - pip_w - margin))
-        pip_y = max(margin, min(pip_y, height - pip_h - margin))
+            # Build full-screen chain with fade-in/fade-out
+            vid_chain = f"{scale},format=yuva420p"
+            if vid.fade_in > 0:
+                vid_chain += f",fade=t=in:st=0:d={vid.fade_in:.2f}:alpha=1"
+            if vid.fade_out > 0:
+                vid_dur = vid.duration if vid.duration > 0 else scene.duration
+                out_st = max(0, vid_dur - vid.fade_out)
+                vid_chain += f",fade=t=out:st={out_st:.2f}:d={vid.fade_out:.2f}:alpha=1"
 
-        enable = ""
-        if vid.duration > 0:
-            end_t = vid.start + vid.duration
-            enable = f":enable='between(t,{vid.start:.2f},{end_t:.2f})'"
+            filter_parts.append(f"[{input_idx}:v]{vid_chain}[{pip_label}]")
 
-        # Build scale chain with fade-in/fade-out
-        vid_chain = f"{scale},format=yuva420p"
-        if vid.fade_in > 0:
-            vid_chain += f",fade=t=in:st=0:d={vid.fade_in:.2f}:alpha=1"
-        if vid.fade_out > 0:
-            vid_dur = vid.duration if vid.duration > 0 else scene.duration
-            out_st = max(0, vid_dur - vid.fade_out)
-            vid_chain += f",fade=t=out:st={out_st:.2f}:d={vid.fade_out:.2f}:alpha=1"
-
-        filter_parts.append(f"[{input_idx}:v]{vid_chain}[{pip_label}]")
-
-        # PiP glow border (pre-render with Pillow, overlay behind PiP)
-        if PILLOW_AVAILABLE and pip_w < width * 0.8:
-            glow_path = render_pip_glow_border(
-                pip_width=pip_w, pip_height=pip_h,
-                glow_color="#c4b5fd", glow_size=6,
-                scene_index=scene.index, element_index=vi,
+            # Overlay full-screen at 0,0 (no glow for full-screen)
+            prev = current_video
+            current_video = f"v{scene.index}_{vi}"
+            filter_parts.append(
+                f"[{prev}][{pip_label}]overlay=0:0{enable}[{current_video}]"
             )
-            if glow_path:
-                inputs.extend(["-i", glow_path])
-                glow_label = f"glow{scene.index}_{vi}"
-                glow_pad = 6 * 3  # must match glow_size * 3 in pillow_renderer
-                glow_x = pip_x - glow_pad
-                glow_y = pip_y - glow_pad
-                filter_parts.append(f"[{input_idx + 1}:v]format=rgba[{glow_label}]")
-                prev = current_video
-                current_video = f"gv{scene.index}_{vi}"
-                filter_parts.append(
-                    f"[{prev}][{glow_label}]overlay={glow_x}:{glow_y}{enable}[{current_video}]"
-                )
-                input_idx += 1  # extra input for glow PNG
+            input_idx += 1
 
-        prev = current_video
-        current_video = f"v{scene.index}_{vi}"
-        filter_parts.append(
-            f"[{prev}][{pip_label}]overlay={pip_x}:{pip_y}{enable}[{current_video}]"
-        )
-        input_idx += 1
+        else:
+            # ── PiP lipsync/small video: keep small, position in corner ──
+            pip_w = vid.width if vid.width > 0 else width // 3
+            pip_h = vid.height if vid.height > 0 else height // 3
+            # Ensure dimensions are even for FFmpeg
+            pip_w = pip_w + (pip_w % 2)
+            pip_h = pip_h + (pip_h % 2)
+
+            scale = f"scale={pip_w}:{pip_h}:force_original_aspect_ratio=decrease"
+
+            # Resolve position field to pixel x,y
+            margin = 30
+            pos = (vid.position or "").lower().strip()
+            if pos in ("bottom-right", "right-bottom"):
+                pip_x = width - pip_w - margin
+                pip_y = height - pip_h - margin
+            elif pos in ("bottom-left", "left-bottom"):
+                pip_x = margin
+                pip_y = height - pip_h - margin
+            elif pos in ("top-right", "right-top"):
+                pip_x = width - pip_w - margin
+                pip_y = margin
+            elif pos in ("top-left", "left-top"):
+                pip_x = margin
+                pip_y = margin
+            elif pos in ("center-center", "center"):
+                pip_x = (width - pip_w) // 2
+                pip_y = (height - pip_h) // 2
+            elif vid.x > 0 or vid.y > 0:
+                pip_x = vid.x
+                pip_y = vid.y
+            else:
+                # Default: bottom-right (standard PiP position)
+                pip_x = width - pip_w - margin
+                pip_y = height - pip_h - margin
+
+            # Clamp to frame bounds
+            pip_x = max(margin, min(pip_x, width - pip_w - margin))
+            pip_y = max(margin, min(pip_y, height - pip_h - margin))
+
+            enable = ""
+            if vid.duration > 0:
+                end_t = vid.start + vid.duration
+                enable = f":enable='between(t,{vid.start:.2f},{end_t:.2f})'"
+
+            # Build scale chain with fade-in/fade-out
+            vid_chain = f"{scale},format=yuva420p"
+            if vid.fade_in > 0:
+                vid_chain += f",fade=t=in:st=0:d={vid.fade_in:.2f}:alpha=1"
+            if vid.fade_out > 0:
+                vid_dur = vid.duration if vid.duration > 0 else scene.duration
+                out_st = max(0, vid_dur - vid.fade_out)
+                vid_chain += f",fade=t=out:st={out_st:.2f}:alpha=1"
+
+            filter_parts.append(f"[{input_idx}:v]{vid_chain}[{pip_label}]")
+
+            # PiP glow border (pre-render with Pillow, overlay behind PiP)
+            if PILLOW_AVAILABLE:
+                glow_path = render_pip_glow_border(
+                    pip_width=pip_w, pip_height=pip_h,
+                    glow_color="#c4b5fd", glow_size=6,
+                    scene_index=scene.index, element_index=vi,
+                )
+                if glow_path:
+                    inputs.extend(["-i", glow_path])
+                    glow_label = f"glow{scene.index}_{vi}"
+                    glow_pad = 6 * 3  # must match glow_size * 3 in pillow_renderer
+                    glow_x = pip_x - glow_pad
+                    glow_y = pip_y - glow_pad
+                    filter_parts.append(f"[{input_idx + 1}:v]format=rgba[{glow_label}]")
+                    prev = current_video
+                    current_video = f"gv{scene.index}_{vi}"
+                    filter_parts.append(
+                        f"[{prev}][{glow_label}]overlay={glow_x}:{glow_y}{enable}[{current_video}]"
+                    )
+                    input_idx += 1  # extra input for glow PNG
+
+            prev = current_video
+            current_video = f"v{scene.index}_{vi}"
+            filter_parts.append(
+                f"[{prev}][{pip_label}]overlay={pip_x}:{pip_y}{enable}[{current_video}]"
+            )
+            input_idx += 1
 
     # ── Storybook frame overlay (for transition scenes) ──
     if "storybook_frame" in overlays:
@@ -754,9 +818,11 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     cmd.extend(["-pix_fmt", "yuv420p"])
     cmd.append(output_path)
 
+    fullscreen_vids = sum(1 for v in videos if v.width >= width * 0.5 and v.height >= height * 0.5)
+    pip_vids = len(videos) - fullscreen_vids
     print(f"  [render] Scene {scene.index} ({scene.comment}): {scene.duration:.1f}s, "
-          f"{len(images)} imgs, {len(videos)} vids, {len(texts)} texts, "
-          f"{len(components)} comps, {len(audios)} audio, "
+          f"{len(images)} imgs, {fullscreen_vids} fullscreen-vids, {pip_vids} pip-vids, "
+          f"{len(texts)} texts, {len(components)} comps, {len(audios)} audio, "
           f"{len(overlays)} pillow overlays")
     # Log filter_complex for debugging (truncated)
     fc_preview = filter_complex[:500] + "..." if len(filter_complex) > 500 else filter_complex
