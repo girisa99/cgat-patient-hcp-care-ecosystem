@@ -288,6 +288,7 @@ interface RestoredSceneProductionResult {
   sceneProduction: Record<string, SceneProductionStatus>;
   productionPhase: ProductionPhase;
   expiredMusicCount: number;
+  restoredVideoUrl: string | null;
   isLoading: boolean;
 }
 
@@ -300,12 +301,12 @@ export function useRestoredSceneProduction(
   sceneTitleKeys: string[],
 ): RestoredSceneProductionResult {
   const sceneStorageKey = projectId ? `scenes-${projectId}` : '';
-  type SceneQueryResult = { scenes: Record<string, SceneProductionStatus>; phase: ProductionPhase; expiredMusicCount: number };
+  type SceneQueryResult = { scenes: Record<string, SceneProductionStatus>; phase: ProductionPhase; expiredMusicCount: number; videoUrl: string | null };
   const query = useQuery({
     queryKey: projectId ? castKeys.project(projectId).sceneSummaries : ['cast', 'noop-scenes'],
     queryFn: async (): Promise<SceneQueryResult> => {
       if (!projectId) {
-        return { scenes: {}, phase: 'tts' as ProductionPhase, expiredMusicCount: 0 };
+        return { scenes: {}, phase: 'tts' as ProductionPhase, expiredMusicCount: 0, videoUrl: null };
       }
 
       const restored: Record<string, SceneProductionStatus> = {};
@@ -428,18 +429,25 @@ export function useRestoredSceneProduction(
         phase = 'tts_approved';
       }
 
-      // Fallback: check project status for phase when no visuals exist
+      // Check project status + final video URL from DB
+      const projStatus = await fetchProjectStatus(projectId);
+      const videoUrl = projStatus?.final_video_url || null;
+
       if (restoredVisualCount === 0) {
-        const projStatus = await fetchProjectStatus(projectId);
         if (projStatus?.status === 'visual_production' || projStatus?.status === 'complete') {
           phase = phase === 'tts' ? 'tts_approved' : phase;
         }
       }
+      // If we have a final video URL, ensure phase reflects completion
+      if (videoUrl && phase !== 'complete') {
+        phase = 'complete';
+      }
 
       console.log(`[EP04 RQ] Scene restore: ${Object.keys(restored).length} scenes, ` +
-        `${restoredVisualCount} visuals, ${musicCount} music, ${assembledCount} assembled → phase=${phase}`);
+        `${restoredVisualCount} visuals, ${musicCount} music, ${assembledCount} assembled → phase=${phase}` +
+        `${videoUrl ? `, videoUrl=${videoUrl.substring(0, 60)}...` : ''}`);
 
-      const result: SceneQueryResult = { scenes: restored, phase, expiredMusicCount };
+      const result: SceneQueryResult = { scenes: restored, phase, expiredMusicCount, videoUrl };
       persistToStorage(sceneStorageKey, result);
       return result;
     },
@@ -460,6 +468,7 @@ export function useRestoredSceneProduction(
     sceneProduction: query.data?.scenes || {},
     productionPhase: query.data?.phase || 'tts',
     expiredMusicCount: query.data?.expiredMusicCount || 0,
+    restoredVideoUrl: query.data?.videoUrl || null,
     isLoading: query.isLoading && !query.data, // not loading if we have initialData
   };
 }

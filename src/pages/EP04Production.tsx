@@ -831,6 +831,12 @@ function EP04ProductionInner() {
       }
     }
 
+    // Restore final video URL from DB (survives refresh)
+    if (rqScenes.restoredVideoUrl && !finalVideoUrl) {
+      setFinalVideoUrl(rqScenes.restoredVideoUrl);
+      console.log(`[EP04 RQ Bridge] Restored final video URL from DB: ${rqScenes.restoredVideoUrl.substring(0, 60)}...`);
+    }
+
     // Background: re-persist TTS data recovered from generation_jobs fallback
     const ttsEntries = Object.entries(rqTts.audioMap).filter(([k]) => staticKeys.has(k));
     if (ttsEntries.length > 0) {

@@ -38,6 +38,7 @@ export interface VisualJobRow {
 
 export interface ProjectStatusRow {
   status: string;
+  final_video_url?: string | null;
 }
 
 // ── Fetch functions ─────────────────────────────────────────────────────────
@@ -131,7 +132,7 @@ export async function fetchVisualJobsFallback(projectId: string): Promise<Visual
 export async function fetchProjectStatus(projectId: string): Promise<ProjectStatusRow | null> {
   const { data, error } = await db
     .from('cast_projects')
-    .select('status')
+    .select('status, final_video_url')
     .eq('id', projectId)
     .maybeSingle();
 
