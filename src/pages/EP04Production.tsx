@@ -6773,8 +6773,8 @@ function EP04ProductionInner() {
                     ))}
                   </div>
 
-                  {/* Final video preview + download */}
-                  {finalVideoUrl && (
+                  {/* Final stitched video — only show when ALL parts are concatenated */}
+                  {concatVideoUrl && (
                     <div className="mt-6 space-y-3">
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -6782,7 +6782,7 @@ function EP04ProductionInner() {
                       </div>
                       <div className="rounded-xl overflow-hidden border border-green-500/30">
                         <video
-                          src={finalVideoUrl}
+                          src={concatVideoUrl}
                           controls
                           className="w-full"
                           poster={SCENE_BACKGROUNDS['scene-0-title']}
@@ -6790,16 +6790,55 @@ function EP04ProductionInner() {
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" asChild>
-                          <a href={finalVideoUrl} download="EP04-Sprint-Documentary.mp4">
+                          <a href={concatVideoUrl} download="EP04-Sprint-Documentary.mp4">
                             <Download className="h-3 w-3 mr-1" />
                             Download MP4
                           </a>
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => window.open(finalVideoUrl, '_blank')}>
+                        <Button size="sm" variant="outline" onClick={() => window.open(concatVideoUrl, '_blank')}>
                           <Eye className="h-3 w-3 mr-1" />
                           Open in New Tab
                         </Button>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Latest part video preview — shows most recent completed part */}
+                  {!concatVideoUrl && assemblyParts.some(p => p.status === 'completed' && p.videoUrl) && (
+                    <div className="mt-6 space-y-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Film className="h-5 w-5 text-amber-500" />
+                        <h4 className="text-sm font-bold text-amber-600">
+                          Latest Part ({assemblyParts.filter(p => p.status === 'completed').length}/{assemblyParts.length} parts done)
+                        </h4>
+                      </div>
+                      {(() => {
+                        const latestPart = [...assemblyParts].reverse().find(p => p.status === 'completed' && p.videoUrl);
+                        return latestPart ? (
+                          <>
+                            <div className="rounded-xl overflow-hidden border border-amber-500/30">
+                              <video
+                                src={latestPart.videoUrl!}
+                                controls
+                                className="w-full"
+                                poster={SCENE_BACKGROUNDS['scene-0-title']}
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" asChild variant="outline">
+                                <a href={latestPart.videoUrl!} download={`EP04-Part-${latestPart.partNumber}.mp4`}>
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Part {latestPart.partNumber}
+                                </a>
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => window.open(latestPart.videoUrl!, '_blank')}>
+                                <Eye className="h-3 w-3 mr-1" />
+                                Open in New Tab
+                              </Button>
+                            </div>
+                          </>
+                        ) : null;
+                      })()}
                     </div>
                   )}
                 </CardContent>
@@ -6850,7 +6889,7 @@ function EP04ProductionInner() {
                       </div>
                     </div>
                     <Badge variant="outline" className="text-xs bg-violet-500/10 text-violet-400 border-violet-500/30">
-                      {scenesWithAssets.length} scenes • {finalVideoUrl ? 'Movie ready' : 'Assets available'}
+                      {scenesWithAssets.length} scenes • {concatVideoUrl ? 'Movie ready' : assemblyParts.some(p => p.status === 'completed') ? `${assemblyParts.filter(p => p.status === 'completed').length}/${assemblyParts.length} parts done` : 'Assets available'}
                     </Badge>
                   </div>
 
