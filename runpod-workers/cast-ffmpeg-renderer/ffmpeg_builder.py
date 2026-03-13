@@ -533,11 +533,13 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
             a_filters.append(f"adelay={delay_ms}|{delay_ms}")
         if aud.volume != 1.0:
             a_filters.append(f"volume={aud.volume:.2f}")
-        if aud.duration > 0:
-            a_filters.append(f"atrim=duration={aud.duration + aud.seek:.2f}")
         if aud.loop:
+            # Loop audio to fill scene duration (skip per-element duration trim)
             a_filters.append("aloop=loop=-1:size=2e+09")
             a_filters.append(f"atrim=duration={scene.duration:.2f}")
+        elif aud.duration > 0:
+            # Trim to element duration (seek already handled by earlier atrim)
+            a_filters.append(f"atrim=duration={aud.duration:.2f}")
         # Audio fade-in/fade-out
         if aud.fade_in > 0:
             a_filters.append(f"afade=t=in:st=0:d={aud.fade_in:.2f}")
@@ -602,62 +604,16 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
           f"{len(images)} imgs, {len(videos)} vids, {len(texts)} texts, "
           f"{len(components)} comps, {len(audios)} audio, "
           f"{len(overlays)} pillow overlays")
+    # Log filter_complex for debugging (truncated)
+    fc_preview = filter_complex[:500] + "..." if len(filter_complex) > 500 else filter_complex
+    print(f"  [render] filter_complex:\n{fc_preview}")
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if result.returncode != 0:
-            # If NVENC failed, retry with libx264
-            if "h264_nvenc" in " ".join(cmd) and ("No capable devices" in result.stderr
-                    or "Cannot load" in result.stderr
-                    or "Error while opening encoder" in result.stderr):
-                print(f"  [render] Scene {scene.index} NVENC failed — retrying with libx264...")
-                # Replace NVENC args with libx264
-                cmd_cpu = [arg for arg in cmd]
-                for i, arg in enumerate(cmd_cpu):
-                    if arg == "h264_nvenc":
-                        cmd_cpu[i] = "libx264"
-                    elif arg == "p4":
-                        cmd_cpu[i] = "medium"
-                    elif arg in ("-b:v", "-maxrate", "-bufsize"):
-                        # Remove bitrate args (use CRF instead)
-                        cmd_cpu[i] = "-crf" if arg == "-b:v" else cmd_cpu[i]
-                        if i + 1 < len(cmd_cpu):
-                            cmd_cpu[i + 1] = "20" if arg == "-b:v" else cmd_cpu[i + 1]
-                # Simpler: rebuild encoder args
-                cmd_cpu = []
-                for arg in cmd:
-                    cmd_cpu.append(arg)
-                # Find and replace encoder section
-                final_cmd = []
-                skip_next = False
-                for i, arg in enumerate(cmd):
-                    if skip_next:
-                        skip_next = False
-                        continue
-                    if arg == "h264_nvenc":
-                        final_cmd.append("libx264")
-                    elif arg == "p4" and i > 0 and cmd[i-1] == "-preset":
-                        final_cmd.append("medium")
-                    elif arg in ("-b:v", "-maxrate", "-bufsize") and i + 1 < len(cmd):
-                        if arg == "-b:v":
-                            final_cmd.extend(["-crf", "20"])
-                        # Skip -maxrate and -bufsize entirely
-                        skip_next = True
-                        continue
-                    else:
-                        final_cmd.append(arg)
-
-                result = subprocess.run(final_cmd, capture_output=True, text=True, timeout=300)
-                if result.returncode != 0:
-                    print(f"  [render] Scene {scene.index} FAILED (libx264):\n{result.stderr[-1500:]}")
-                    return None
-                # Mark NVENC as unavailable for future scenes
-                global HWACCEL_AVAILABLE
-                HWACCEL_AVAILABLE = False
-                print(f"  [render] Scene {scene.index} OK with libx264 fallback")
-            else:
-                print(f"  [render] Scene {scene.index} FAILED:\n{result.stderr[-1500:]}")
-                return None
+            print(f"  [render] Scene {scene.index} FAILED (exit {result.returncode}):")
+            print(f"  [render] stderr:\n{result.stderr[-2000:]}")
+            return None
 
         # Verify rendered duration
         actual_dur = get_video_duration(output_path)
