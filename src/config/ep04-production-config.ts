@@ -466,6 +466,19 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'tts', voice: 'host', scriptKey: 'title-welcome' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome' },
+    // Atlas whisper from the shadows (5s) — Chipmunks-style background reaction
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene0-atlas-whisper' },
+    // Nova whisper (5s) — Chipmunks-style background reaction
+    { type: 'tts', voice: 'nova', scriptKey: 'scene0-nova-whisper' },
+    // Host continues welcome (35s)
+    { type: 'tts', voice: 'host', scriptKey: 'title-welcome-2' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome-2' },
+    // Allaudin interjects — Nutcracker narrator commentary (8s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'scene0-allaudin-interject' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'scene0-allaudin-interject' },
+    // Host wraps up welcome (6s)
+    { type: 'tts', voice: 'host', scriptKey: 'title-welcome-3' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome-3' },
     { type: 'kinetic-text', text: 'Beyond AI Hype — Episode 2' },
     // Segment 3: Allaudin bridge narrator (7s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-0-to-1' },
@@ -481,8 +494,19 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A warm human product owner at his home office desk looking stressed but determined, sticky notes everywhere, dual monitors showing text "Claude Code" on left screen and text "Lovable" on right screen with sprint dashboards, his loyal golden retriever sitting beside him looking up adoringly, cozy warm lamplight, coffee mug with "The GenieAI Podcast" text steaming on desk, Pixar 3D animation quality, cinematic depth of field, 8K' },
-    // Segment 1: Host problem intro (55s)
+    // Segment 1: Host problem intro (30s) — split into 3 parts with character reactions
     { type: 'tts', voice: 'host', scriptKey: 'problem-intro' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-intro' },
+    // Atlas reacts from the shadows (6s) — Chipmunks planning voice
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene1-atlas-react-planning' },
+    // Host continues (18s)
+    { type: 'tts', voice: 'host', scriptKey: 'problem-intro-2' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-intro-2' },
+    // Nova outburst (5s) — Alvin energy
+    { type: 'tts', voice: 'nova', scriptKey: 'scene1-nova-react-standup' },
+    // Host wraps up problem intro (25s)
+    { type: 'tts', voice: 'host', scriptKey: 'problem-intro-3' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-intro-3' },
     // Squirrel interruption (10s) — bursts in after host intro
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-1' },
@@ -490,9 +514,20 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // Host reacts to squirrel (5s)
     { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-response-1' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-squirrel-response-1' },
-    // Segment 2: Deeper problem + context loss (55s)
+    // Segment 2: Deeper problem + context loss (25s) — split into 3 parts with reactions
     { type: 'tts', voice: 'host', scriptKey: 'problem-deeper' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-deeper' },
+    // Allaudin materializes with narrator context (8s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'scene1-allaudin-context-loss' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'scene1-allaudin-context-loss' },
+    // Host continues deeper problem (28s)
+    { type: 'tts', voice: 'host', scriptKey: 'problem-deeper-2' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-deeper-2' },
+    // Atlas reacts to 23-min stat (5s)
+    { type: 'tts', voice: 'atlas', scriptKey: 'scene1-atlas-react-data' },
+    // Host wraps up deeper problem (18s)
+    { type: 'tts', voice: 'host', scriptKey: 'problem-deeper-3' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-deeper-3' },
     // Segment 3: Market data & citations (18s)
     { type: 'tts', voice: 'host', scriptKey: 'scene1-market-data' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'scene1-market-data' },
@@ -669,6 +704,12 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-shortest-path' },
     // ── The governance solution: CLAUDE.md, territory rules, enforcement ──
     { type: 'tts', voice: 'host', scriptKey: 'governance-solution' },
+    // Atlas claims territory with pride (6s) — Maui "You're Welcome" energy
+    { type: 'tts', voice: 'atlas', scriptKey: 'governance-atlas-territory' },
+    // Nova claims UI territory (5s) — conspiratorial whisper
+    { type: 'tts', voice: 'nova', scriptKey: 'governance-nova-territory' },
+    // Host continues governance solution (18s)
+    { type: 'tts', voice: 'host', scriptKey: 'governance-solution-2' },
     { type: 'screen-capture', screenIds: ['territory-guardrails'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['territory-guardrails'], scriptContext: 'Territory guardrails showing file ownership boundaries — Atlas owns genie-studio (150+ files), Nova owns landing pages. 12 locked shared files need PO approval. Auto-flagging territory violations.', enhanceMode: 'highlight', focusAreas: ['file-ownership-matrix', 'locked-shared-files', 'territory-violation-flags'] },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-exit' },
@@ -801,6 +842,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'challenges-intro' },
     { type: 'tts', voice: 'atlas', scriptKey: 'challenges-atlas' },
     { type: 'tts', voice: 'nova', scriptKey: 'challenges-nova' },
+    // Allaudin's Moana moment — full theatrical center-stage (25s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'scene9-allaudin-moana-moment' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'scene9-allaudin-moana-moment' },
     // ── Squirrel asks THE question — emotional pivot of the episode ──
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-4' },
     { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-good-question' },
@@ -860,6 +904,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-final' },
     { type: 'tts', voice: 'nova', scriptKey: 'close-nova-final' },
     { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-heard' },
+    // Allaudin grand finale — Nutcracker closing narration (25s)
+    { type: 'tts', voice: 'allaudin', scriptKey: 'close-allaudin-finale' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'close-allaudin-finale' },
     { type: 'tts', voice: 'host', scriptKey: 'close-rationale' },
     { type: 'tts', voice: 'host', scriptKey: 'close-cta' },
     // ── Goodbye round — each character signs off in character ──

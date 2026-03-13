@@ -256,9 +256,12 @@ const CHARACTER_AVATARS: Record<string, string> = {
 };
 
 // Characters that should regenerate via AI instead of using pre-made avatars
-// host: uses real photo (host-real-photo.jpg) for lipsync — WAN2.2 generates talking head from real face
+// host: Scene 0 uses real photo (host-real-photo.jpg), Scene 1+ uses AI-generated (human with coffee mug + dog)
 // allaudin: pre-made genie avatar works well, AI regen hits DashScope rate limits
-const REGENERATE_AVATAR_VIA_AI: Set<string> = new Set([]);
+const REGENERATE_AVATAR_VIA_AI: Set<string> = new Set(['host']);
+
+// Scene 0 always uses the real photo for host — establishes the human creator
+const SCENE0_REAL_PHOTO_CHARACTERS: Record<string, boolean> = { host: true };
 
 // ─── Context-Aware Animation Engine ─────────────────────────────────────────
 // Parses direction + motion fields to determine mood, energy, and animation style
@@ -1608,14 +1611,16 @@ function EP04ProductionInner() {
         }
       }
       const avatarPreMade = CHARACTER_AVATARS[character];
-      const usesRealPhoto = !REGENERATE_AVATAR_VIA_AI.has(character);
+      // Scene 0: host uses real photo for lipsync (establishes human creator)
+      // Scene 1+: host uses AI-generated avatar (coffee mug + dog style)
+      const isScene0Lipsync = sceneKey === 'scene-0-title';
+      const usesRealPhoto = !REGENERATE_AVATAR_VIA_AI.has(character) || (isScene0Lipsync && SCENE0_REAL_PHOTO_CHARACTERS[character]);
 
       let sourceImage: string | null = null;
       if (usesRealPhoto && avatarPreMade) {
-        // Real photo character (e.g., host) — ALWAYS use the pre-made photo for lipsync
-        // This ensures the real person's face drives the lipsync, not an old Pixar avatar
+        // Real photo character (e.g., host Scene 0) — use the pre-made photo for lipsync
         sourceImage = avatarPreMade.startsWith('http') ? avatarPreMade : `${window.location.origin}${avatarPreMade}`;
-        console.log(`[EP04 Visual] ${stepLabel}: using real photo for "${character}" lipsync`);
+        console.log(`[EP04 Visual] ${stepLabel}: using real photo for "${character}" lipsync (Scene 0 override)`);
       } else if (avatarFromResults && avatarFromResults.startsWith('http') && avatarFromResults.includes('supabase.co')) {
         sourceImage = avatarFromResults; // Current-run avatar on Supabase — best
       } else if (avatarFromSaved && avatarFromSaved.startsWith('http') && avatarFromSaved.includes('supabase.co')) {
@@ -1901,8 +1906,12 @@ function EP04ProductionInner() {
     if (stepType === 'avatar-3d') {
       const character = (step.character as string) || 'host';
       const existingAvatar = CHARACTER_AVATARS[character];
-      // Use pre-made avatar UNLESS character is flagged for AI regeneration
-      if (existingAvatar && !REGENERATE_AVATAR_VIA_AI.has(character)) {
+      // Scene 0: ALWAYS use real photo for host (establishes human creator)
+      // Scene 1+: use AI-generated avatar (human with coffee mug + dog from pixarPrompt)
+      const isScene0 = sceneKey === 'scene-0-title';
+      const forcePreMade = isScene0 && SCENE0_REAL_PHOTO_CHARACTERS[character];
+      // Use pre-made avatar UNLESS character is flagged for AI regeneration (and not forced pre-made)
+      if (existingAvatar && (!REGENERATE_AVATAR_VIA_AI.has(character) || forcePreMade)) {
         // Mirror pre-made avatar to Supabase Storage so assembly can access it via HTTP
         let avatarUrl = existingAvatar;
         if (projectId && !isSupabaseStorageUrl(existingAvatar)) {

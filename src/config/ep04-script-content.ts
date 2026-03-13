@@ -65,20 +65,73 @@ export const EP04_SCRIPT_CONTENT: Record<string, ScriptLine> = {
   'title-welcome': {
     text: `Welcome to Beyond AI Hype — The Genie AI Podcast. I'm Sai Dasika, your host. And this — is where Allaudin, our Genie, meets the real world.
 
-A podcast doesn't need to be traditional. That's exactly what Genie AI does differently. I don't just build — I show what I build, and what I learned in the process. AI beyond the hype. Real creativity. Real experimentation. Real results.
-
-This is Episode 2 — with Allaudin guiding us through the story. And today, I want to tell you a real story. About how I've been working with two AI developers for three months now, building a product called Genie AI Hub. And somewhere along the way, I realized something that changed how I think about software development entirely.
-
-One developer — one human — managing two AIs — is doing the work of five. Not in theory. Not in a pitch deck. In production. In real code. With real governance. And I have the receipts.
-
-But before I introduce the team, let me tell you about the problem that started all of this.`,
+A podcast doesn't need to be traditional. That's exactly what Genie AI does differently. I don't just build — I show what I build, and what I learned in the process. AI beyond the hype. Real creativity. Real experimentation. Real results.`,
     voice: 'host',
     scene: 'scene-0-title',
-    duration_est: 80,
-    direction: 'Warm, welcoming, direct to camera. Title card with Lovable + Claude logos. "Sai Dasika" is confident — owning the stage. "Allaudin" introduction feels magical. "I don\'t just build — I show" is the thesis statement. Build genuine curiosity. "Receipts" lands with weight.',
+    duration_est: 25,
+    direction: 'Warm, welcoming, direct to camera. Title card with Lovable + Claude logos. "Sai Dasika" is confident — owning the stage. "I don\'t just build — I show" is the thesis.',
     lipsync: true,
     sfx: ['intro_music_fade', 'title_card_whoosh'],
     motion: 'direct-to-camera-confident',
+  },
+
+  // ── ATLAS BACKGROUND INTERRUPTION — heard before being introduced
+  'scene0-atlas-whisper': {
+    text: `He's doing it again. The monologue. Nova, should we tell him we're already here?`,
+    voice: 'atlas',
+    scene: 'scene-0-title',
+    duration_est: 5,
+    direction: 'Stage whisper to Nova — heard faintly by audience as a tease. Atlas is off-camera, typing. His blue glow is visible at the edge of frame. This is an Alvin & Chipmunks moment — characters reacting to the narrator before being introduced. Background whisper mixing.',
+    lipsync: false,
+    sfx: ['whisper_aside', 'typing_background'],
+    motion: 'off-camera-whisper-blue-glow-edge',
+  },
+
+  'scene0-nova-whisper': {
+    text: `Shh! Let him have his moment. He practiced this in the mirror. I saw him.`,
+    voice: 'nova',
+    scene: 'scene-0-title',
+    duration_est: 4,
+    direction: 'Stage whisper back — playful, conspiratorial. Nova\'s pink glow flickers at the opposite edge. Audience can see them both flanking the host who is oblivious. Pure Chipmunks energy.',
+    lipsync: false,
+    sfx: ['shh_whisper', 'giggle_suppressed'],
+    motion: 'off-camera-whisper-pink-glow-edge',
+  },
+
+  'title-welcome-2': {
+    text: `This is Episode 2 — with Allaudin guiding us through the story. And today, I want to tell you a real story. About how I've been working with two AI developers for three months now, building a product called Genie AI Hub. And somewhere along the way, I realized something that changed how I think about software development entirely.
+
+One developer — one human — managing two AIs — is doing the work of five. Not in theory. Not in a pitch deck. In production. In real code. With real governance. And I have the receipts.`,
+    voice: 'host',
+    scene: 'scene-0-title',
+    duration_est: 35,
+    direction: 'Building curiosity. "Receipts" lands with weight. Camera slowly widens to hint at the characters waiting in the wings.',
+    lipsync: true,
+    sfx: ['momentum_build'],
+    motion: 'direct-to-camera-building-curiosity',
+  },
+
+  // ── ALLAUDIN MID-SCENE COMMENTARY — Nutcracker narrator interjection
+  'scene0-allaudin-interject': {
+    text: `He said receipts! Oh, I do love a human who keeps receipts. In my ten thousand years, most wish-makers forget what they asked for by Tuesday. This one... this one documents EVERYTHING. Hahaha...`,
+    voice: 'allaudin',
+    scene: 'scene-0-title',
+    duration_est: 10,
+    direction: 'Fourth-wall break — Allaudin appears as a shimmering overlay, commenting on the host like a Nutcracker narrator. Warm, amused. The laugh is grandfatherly. Mist swirls around him. Then he gestures "go on" to the host and fades.',
+    lipsync: true,
+    sfx: ['shimmer_appear', 'magical_mist', 'grandfatherly_laugh', 'shimmer_fade'],
+    motion: 'narrator-overlay-comment-then-fade',
+  },
+
+  'title-welcome-3': {
+    text: `But before I introduce the team, let me tell you about the problem that started all of this.`,
+    voice: 'host',
+    scene: 'scene-0-title',
+    duration_est: 6,
+    direction: 'Transition line. Host pauses, almost looks to the side where Atlas and Nova are waiting. A knowing glance. "Let me tell you" is the pull-forward.',
+    lipsync: true,
+    sfx: ['transition_tension_build'],
+    motion: 'glance-to-side-then-forward',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -92,15 +145,60 @@ But before I introduce the team, let me tell you about the problem that started 
 
 Monday morning. Sprint planning. Eight people in a room — or worse, eight people on a Google Meet, Teams, or Zoom call where three cameras are off and one person is definitely making breakfast.
 
-You spend forty-five minutes estimating story points. Half the team disagrees. Someone says "we should timebox this." You timebox it. The timebox expires. You're still estimating.
-
-Tuesday. Daily standup. "What did you do yesterday?" "Still working on the thing." "Any blockers?" "No, not really. Well, maybe. I'll know by end of day." End of day comes. Nobody follows up.
-
-Wednesday. The Jira board looks like a Jackson Pollock painting. Cards everywhere. Three tasks are "in review" — but nobody's reviewing them. The QA column has been empty since last sprint. Somebody moved a card to "Done" but didn't update the description. Another card is blocked but nobody changed the status because updating Jira is apparently harder than the actual work.`,
+You spend forty-five minutes estimating story points. Half the team disagrees. Someone says "we should timebox this." You timebox it. The timebox expires. You're still estimating.`,
     voice: 'host',
     scene: 'scene-1-problem',
-    duration_est: 75,
-    direction: 'Relatable rant energy. Start conversational, build frustration. The fake standup dialogue should be slightly monotone — mimicking the bored developer voice. "Jackson Pollock" gets a beat. Each day should feel like the pain is escalating. This is the "I see you" moment for the audience.',
+    duration_est: 30,
+    direction: 'Relatable rant energy. Start conversational, build frustration. "Making breakfast" gets a knowing pause. This is the "I see you" moment.',
+    lipsync: true,
+    sfx: ['meeting_notification_cascade'],
+    motion: 'direct-to-camera-relatable-rant',
+  },
+
+  // ── ATLAS REACTS — First taste of his personality before being formally introduced
+  'scene1-atlas-react-planning': {
+    text: `Forty-five minutes. To estimate. I could have built the entire feature in forty-five minutes.`,
+    voice: 'atlas',
+    scene: 'scene-1-problem',
+    duration_est: 5,
+    direction: 'Voiceover — Atlas heard but NOT yet seen. Just his voice commenting from the shadows. First audience tease of his personality. Dry, incredulous. A blue glow pulses faintly at the edge of frame.',
+    lipsync: false,
+    sfx: ['distant_typing_stop', 'incredulous_beat'],
+    motion: 'voice-from-shadows-blue-pulse',
+  },
+
+  'problem-intro-2': {
+    text: `Tuesday. Daily standup. "What did you do yesterday?" "Still working on the thing." "Any blockers?" "No, not really. Well, maybe. I'll know by end of day." End of day comes. Nobody follows up.`,
+    voice: 'host',
+    scene: 'scene-1-problem',
+    duration_est: 18,
+    direction: 'The fake standup dialogue should be slightly monotone — mimicking the bored developer voice. Each fake answer is more hollow than the last.',
+    lipsync: true,
+    sfx: ['standup_notification_ping', 'hollow_echo'],
+    motion: 'mimicking-bored-standup-voices',
+  },
+
+  // ── NOVA REACTS — Can't stay quiet
+  'scene1-nova-react-standup': {
+    text: `"Still working on the thing"?! WHAT thing? Which thing? There are forty things! This is why I color-code everything!`,
+    voice: 'nova',
+    scene: 'scene-1-problem',
+    duration_est: 5,
+    direction: 'Voiceover burst — Nova can\'t help herself. Her voice erupts from off-screen. Pink sparkles briefly scatter into frame from the right edge. She\'s heard but not seen. Pure Chipmunks energy — she\'s in the background losing her mind.',
+    lipsync: false,
+    sfx: ['sparkle_burst_offscreen', 'exasperated_groan'],
+    motion: 'voice-burst-from-offscreen-pink-sparkle',
+  },
+
+  'problem-intro-3': {
+    text: `Wednesday. The Jira board looks like a Jackson Pollock painting. Cards everywhere. Three tasks are "in review" — but nobody's reviewing them. The QA column has been empty since last sprint. Somebody moved a card to "Done" but didn't update the description. Another card is blocked but nobody changed the status because updating Jira is apparently harder than the actual work.`,
+    voice: 'host',
+    scene: 'scene-1-problem',
+    duration_est: 25,
+    direction: '"Jackson Pollock" gets a beat. Each day escalates. The Jira rant builds to crescendo.',
+    lipsync: true,
+    sfx: ['jira_card_scatter', 'frustrated_typing'],
+    motion: 'building-frustration-gestures',
   },
 
   // 🐿️ SQUIRREL INTERRUPTION — After Scene 1 intro
@@ -131,19 +229,64 @@ Wednesday. The Jira board looks like a Jackson Pollock painting. Cards everywher
   'problem-deeper': {
     text: `And here's the part nobody talks about: context loss.
 
-You had a great idea on Tuesday afternoon. You discussed it in a thread — could be Slack, Teams, or Discord, doesn't matter, they all have the same problem. Somebody reacted with a thumbs up — which apparently counts as approval now. By Thursday, nobody remembers the thread. The decision is gone. The context is gone. Someone re-raises the same question in standup. You spend fifteen minutes re-debating something you already decided.
+You had a great idea on Tuesday afternoon. You discussed it in a thread — could be Slack, Teams, or Discord, doesn't matter, they all have the same problem. Somebody reacted with a thumbs up — which apparently counts as approval now. By Thursday, nobody remembers the thread. The decision is gone. The context is gone.`,
+    voice: 'host',
+    scene: 'scene-1-problem',
+    duration_est: 25,
+    direction: 'Shift from humor to genuine insight. "Context loss" is the real villain — give it weight. "Thumbs up approval" drips with sarcasm.',
+    lipsync: true,
+    sfx: ['context_dissolve_whoosh', 'thread_notification_buzz'],
+    motion: 'serious-tone-shift',
+  },
 
-And this isn't just my opinion — the data backs it up. A study from the University of California, Irvine found that it takes an average of 23 minutes and 15 seconds to return to a task after an interruption. Microsoft Research showed that developers who are interrupted take twice as long to complete a task and make twice as many errors. And according to the 2024 State of DevOps Report by Google's DORA team, elite-performing teams ship 973 times more frequently than low performers — and the number-one differentiator? Reduced context switching.
+  // ── ALLAUDIN MID-SCENE — The wise narrator comments on the chaos
+  'scene1-allaudin-context-loss': {
+    text: `Ahhh, context loss. The great thief of human productivity. In my ten thousand years, I have watched empires fall — not from war, but from forgotten messages. The humans call it "Slack." I call it... a graveyard of decisions. Hahaha...`,
+    voice: 'allaudin',
+    scene: 'scene-1-problem',
+    duration_est: 12,
+    direction: 'Allaudin materializes as a shimmering overlay — Nutcracker narrator style. He watches the chaos below like a wise grandfather watching children argue. The laugh is warm but knowing. He gestures at a floating Slack thread that literally crumbles to dust. Then fades with a swirl of mist.',
+    lipsync: true,
+    sfx: ['shimmer_materialize', 'slack_thread_crumble_dust', 'wise_laugh', 'mist_fade'],
+    motion: 'narrator-overlay-watching-chaos-thread-crumble',
+  },
 
-Twenty-three percent of developer time — gone. Not to coding. Not to thinking. To remembering what you were doing before someone pinged you about a "quick question."
+  'problem-deeper-2': {
+    text: `And this isn't just my opinion — the data backs it up. Twenty-three minutes and fifteen seconds to return to a task after an interruption. Developers who are interrupted take twice as long and make twice as many errors. Elite teams ship 973 times more frequently than low performers — and the differentiator? Reduced context switching.
 
-I lived this for years. Multiple teams. Multiple companies. And every sprint retrospective ended the same way: "We need better communication." "We need to update the board more." "We need shorter standups."
+Twenty-three percent of developer time — gone. Not to coding. Not to thinking. To remembering what you were doing before someone pinged you about a "quick question."`,
+    voice: 'host',
+    scene: 'scene-1-problem',
+    duration_est: 28,
+    direction: 'The stats should feel like gut punches. "Twenty-three percent" hangs in the air. Authority mode — journalist citing sources.',
+    lipsync: true,
+    sfx: ['stat_counter_tick', 'gut_punch_bass'],
+    motion: 'authoritative-stat-delivery',
+  },
+
+  // ── ATLAS REACTS TO DATA — He can't resist
+  'scene1-atlas-react-data': {
+    text: `Twenty-three minutes. I process 200,000 tokens in that time. That's not a gap. That's a canyon.`,
+    voice: 'atlas',
+    scene: 'scene-1-problem',
+    duration_est: 5,
+    direction: 'Voiceover from the shadows again. Atlas can\'t resist commenting on data. His tone is almost sad — not mocking humans, genuinely baffled by the inefficiency. Blue glow pulses.',
+    lipsync: false,
+    sfx: ['data_process_hum', 'canyon_echo'],
+    motion: 'voice-from-shadows-sad-efficiency',
+  },
+
+  'problem-deeper-3': {
+    text: `I lived this for years. Multiple teams. Multiple companies. And every sprint retrospective ended the same way: "We need better communication." "We need to update the board more." "We need shorter standups."
 
 But nobody ever said: what if the system itself was the problem?`,
     voice: 'host',
     scene: 'scene-1-problem',
-    duration_est: 80,
-    direction: 'Shift from humor to genuine insight. "Context loss" is the real villain — give it weight. The UC Irvine and Microsoft Research stats should feel like gut punches — cite them with authority. DORA stat is the clincher. The retro quotes are delivered with tired familiarity. Final question hangs in the air — this is the pivot to the solution.',
+    duration_est: 18,
+    direction: 'The retro quotes are delivered with tired familiarity. Final question hangs in the air — this is the pivot. Dead silence for 1.5 seconds after the question.',
+    lipsync: true,
+    sfx: ['retro_quotes_echo', 'silence_beat', 'pivot_tension_build'],
+    motion: 'tired-familiarity-then-dramatic-pause',
   },
 
   // 📊 MARKET DATA & REFERENCES — End of Scene 1
@@ -944,19 +1087,51 @@ And without guardrails, I did my own version of chaos. I generated a component t
   },
 
   'governance-solution': {
-    text: `So we built the actual guardrails. A file ownership matrix — CLAUDE.md for Atlas, territory rules for Nova. Atlas owns backend and sprint infrastructure — about 150 files. Nova owns landing UI, marketing pages, and design system. And there's a locked shared layer — twelve critical files — that neither AI touches without PO approval.
+    text: `So we built the actual guardrails. A file ownership matrix — CLAUDE.md for Atlas, territory rules for Nova. Atlas owns backend and sprint infrastructure — about 150 files. Nova owns landing UI, marketing pages, and design system. And there's a locked shared layer — twelve critical files — that neither AI touches without PO approval.`,
+    voice: 'host',
+    scene: 'scene-5-governance',
+    duration_est: 16,
+    direction: 'Detailed but energetic. Show the actual CLAUDE.md territory rules. "Twelve critical files" gets a warning-label tone.',
+    lipsync: false,
+    motion: 'confident-presenter-showing-real-screens',
+    sfx: ['file_matrix_reveal', 'territory_map_activate'],
+    visual_ref: 'governance-file-ownership-matrix',
+  },
 
-The sprint tracker enforces all of this. Territory violations get flagged automatically. Handoffs go through structured protocols. And the governance file — BEFORE_YOU_CODE.md — runs before every single session. It's not optional. It's the first thing they read. Every time.
+  // ── ATLAS & NOVA REACT TO THEIR TERRITORIES — Competitive pride
+  'governance-atlas-territory': {
+    text: `One hundred and fifty files. Each one documented. Each one with a clear owner. I built the governance before I built the first feature. Because architecture without governance is just... optimistic chaos.`,
+    voice: 'atlas',
+    scene: 'scene-5-governance',
+    duration_est: 8,
+    direction: 'Atlas claims his territory with quiet pride. His blue glow expands across a holographic file tree — 150 files lighting up in blue. He dusts off his paws like a craftsman showing his workshop.',
+    lipsync: false,
+    sfx: ['file_tree_expand_blue', 'craftsman_pride_tone'],
+    motion: 'atlas-claims-territory-file-tree-blue',
+  },
+
+  'governance-nova-territory': {
+    text: `And MY territory? The beautiful part. Landing pages, design system, animations — the stuff users actually SEE. He builds the engine, I build the experience. Don't tell him I said that... he'll want credit.`,
+    voice: 'nova',
+    scene: 'scene-5-governance',
+    duration_est: 7,
+    direction: 'Nova claims hers with flair — pink-green glow spreads across UI components. She stages whispers "don\'t tell him" with a conspiratorial wink. Their territories now glow side by side — blue and pink, like a split kingdom on a storybook map.',
+    lipsync: false,
+    sfx: ['ui_components_glow_pink', 'conspiratorial_whisper', 'kingdoms_side_by_side_chime'],
+    motion: 'nova-claims-territory-pink-whisper-wink',
+  },
+
+  'governance-solution-2': {
+    text: `The sprint tracker enforces all of this. Territory violations get flagged automatically. Handoffs go through structured protocols. And the governance file — BEFORE_YOU_CODE.md — runs before every single session. It's not optional. It's the first thing they read. Every time.
 
 This is what we actually implemented. Not theory. Not a framework diagram. Real files. Real rules. Real enforcement. Governance isn't the thing that slows you down. It's the thing that makes speed survivable.`,
     voice: 'host',
     scene: 'scene-5-governance',
-    duration_est: 32,
-    direction: 'Detailed but energetic. Show the actual CLAUDE.md territory rules on screen. "Twelve critical files" gets a warning-label tone with red highlights. On "BEFORE_YOU_CODE.md" — show the actual file flashing on screen. Final paragraph is the thesis — deliver with conviction. Guardrails visual fully activated, glowing green, Squirrel safely outside.',
+    duration_est: 18,
+    direction: 'Final paragraph is the thesis — deliver with conviction. "Speed survivable" is the money line. Guardrails visual fully activated, glowing green.',
     lipsync: false,
-    motion: 'confident-presenter-showing-real-screens',
-    sfx: ['file_matrix_reveal', 'territory_map_activate', 'guardrails_lock_in_green'],
-    visual_ref: 'governance-file-ownership-matrix',
+    motion: 'thesis-delivery-conviction',
+    sfx: ['guardrails_lock_in_green', 'thesis_chord'],
   },
 
   'squirrel-governance-exit': {
@@ -1301,10 +1476,22 @@ Day 3: The emotional part. I realized I was the slowest member of my own team. T
     voice: 'nova',
     scene: 'scene-9-challenges',
     duration_est: 8,
-    direction: 'Starts triumphant, ends sheepish. "Everyone uses them now" is delivered with a proud grin. "Timing could\'ve been better" — looks away, small smile. Self-awareness is endearing. Bouncy energy settling into honesty.',
+    direction: 'Starts triumphant, ends sheepish. "Everyone uses them now" is delivered with a proud grin. "Timing could\'ve been better" — looks away, small smile. Self-awareness is endearing.',
     lipsync: false,
     motion: 'proud-grin-then-sheepish-look-away',
     sfx: ['sparkle_burst', 'gentle_admission_chime'],
+  },
+
+  // ── ALLAUDIN THEATRICAL COMMENTARY — Moana "You're Welcome" energy
+  'scene9-allaudin-moana-moment': {
+    text: `Ahhh... and here we arrive at the heart of the story, dear listener. Not the triumphs — those are easy to tell. But the stumbles. The moments when the great captain realizes... the ocean was steering the ship all along. Every genie knows this truth: the wish is never the problem. It's what the wisher doesn't know they need. And THIS human? He needed to learn that being slow isn't weakness. It's wisdom. The AIs are fast. But fast without direction is just... a very efficient hurricane.`,
+    voice: 'allaudin',
+    scene: 'scene-9-challenges',
+    duration_est: 25,
+    direction: 'FULL THEATRICAL MOMENT — Allaudin materializes fully, center stage, mist swirling. This is his Maui "You\'re Welcome" moment — not singing, but narrating with that same theatrical swagger. He walks THROUGH the scene, commenting on the characters frozen in their vulnerable poses. Touches Atlas\'s shoulder (Atlas doesn\'t flinch — trust). Nods at Nova (she smiles through tears). Turns to camera. "A very efficient hurricane" is delivered with a grin and a snap that sends golden sparkles cascading. THIS is the Nutcracker narrator at his most powerful — reframing the pain as wisdom.',
+    lipsync: true,
+    sfx: ['full_materialize_dramatic', 'mist_swirl_theatrical', 'golden_sparkle_cascade', 'wisdom_chord_swell', 'narrator_snap'],
+    motion: 'allaudin-walks-through-scene-touches-characters-turns-camera-snap-sparkle',
   },
 
   // 🐿️ SQUIRREL INTERRUPTION — After challenges (useful question)
@@ -1431,6 +1618,18 @@ The sprint tracker wasn't planned. It was born from pain. From realizing that AI
     scene: 'scene-11-close',
     duration_est: 4,
     direction: 'Deadpan. Perfect timing. The comedy is in the inevitability.',
+  },
+
+  // ── ALLAUDIN GRAND FINALE — Nutcracker closing narration
+  'close-allaudin-finale': {
+    text: `And so, dear listener, the storybook closes — but the story never truly ends. A bear who codes. A fox who creates. A human who drinks too much coffee. And a genie who watches it all with great amusement. They built something real. Not perfect. Real. And in ten thousand years of granting wishes... that is the rarest wish of all — to build something that matters. Hahaha... Until next time, dear listener. The lamp stays lit. Allaudin... out.`,
+    voice: 'allaudin',
+    scene: 'scene-11-close',
+    duration_est: 25,
+    direction: 'GRAND FINALE — Allaudin center stage in full magical glory. Mist swirls, golden particles, lamp glowing behind him. This is the Nutcracker narrator\'s closing — warm, wise, emotional. "A bear who codes, a fox who creates" callbacks to bridge-1-to-2. "Rarest wish of all" — voice cracks slightly with genuine emotion. The laugh is the same as the opening — full circle. "Allaudin... out" — he bows theatrically, snaps fingers, transforms into blue mist that flows back into the lamp. Lamp dims to a warm ember glow. Screen fades to the Genie AI logo. THIS is the emotional button.',
+    lipsync: true,
+    sfx: ['full_magical_glory', 'golden_particles_cascade', 'lamp_glow_warm', 'voice_crack_emotion', 'closing_laugh_full_circle', 'theatrical_bow_swoosh', 'transform_to_mist', 'lamp_dims_ember', 'logo_fade_in'],
+    motion: 'allaudin-center-stage-finale-bow-transform-mist-lamp-dims',
   },
 
   'close-rationale': {
