@@ -76,7 +76,7 @@ export const EP04_VOICES = {
     fallbackProvider: 'alibaba' as const,
     fallbackVoice: ALIBABA_FALLBACK_VOICES.allaudin,
     style: 'theatrical',
-    stability: 0.35,
+    stability: 0.62,
     similarityBoost: 0.85,
     speed: 0.85,
     eqProfile: 'deep-reverb',
