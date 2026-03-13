@@ -96,6 +96,7 @@ serve(async (req) => {
           supabaseUrl,
           supabaseServiceKey: supabaseKey,
           castProjectId: castProjectId || 'unknown',
+          castJobId: castJobId || null,
         },
       }),
     });

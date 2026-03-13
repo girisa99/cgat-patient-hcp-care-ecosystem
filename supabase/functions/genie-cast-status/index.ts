@@ -120,19 +120,24 @@ serve(async (req) => {
           });
         }
 
-        // Still processing — update progress
-        if (providerStatus.progress) {
-          await supabase.from('cast_generation_jobs').update({
-            progress_percent: providerStatus.progress,
-          }).eq('id', castJobId);
-        }
+        // Still processing — read progress from DB (worker updates it directly)
+        // Re-fetch latest progress from DB since worker may have updated it
+        const { data: freshJob } = await supabase
+          .from('cast_generation_jobs')
+          .select('progress_percent, output_metadata')
+          .eq('id', castJobId)
+          .single();
+
+        const currentProgress = freshJob?.progress_percent || job.progress_percent || 0;
+        const statusText = freshJob?.output_metadata?.status_text || '';
 
         return new Response(JSON.stringify({
           success: true,
           job: {
             id: castJobId,
             status: 'processing',
-            progressPercent: providerStatus.progress || job.progress_percent || 0,
+            progressPercent: currentProgress,
+            statusText,
           },
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

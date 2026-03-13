@@ -32,7 +32,10 @@ Output:
 import os
 import sys
 import time
+import json
 import shutil
+import urllib.request
+import urllib.error
 
 print("[CastRenderer] Starting handler.py — importing modules...", flush=True)
 
@@ -69,6 +72,28 @@ except Exception as e:
 print("[CastRenderer] All modules loaded successfully", flush=True)
 
 
+def _update_progress(cast_job_id: str | None, percent: int, status_text: str,
+                     supabase_url: str, supabase_key: str):
+    """Update progress directly in cast_generation_jobs via Supabase REST API."""
+    if not cast_job_id or not supabase_url or not supabase_key:
+        return
+    try:
+        url = f"{supabase_url}/rest/v1/cast_generation_jobs?id=eq.{cast_job_id}"
+        body = json.dumps({
+            "progress_percent": percent,
+            "output_metadata": {"status_text": status_text},
+        }).encode("utf-8")
+        req = urllib.request.Request(url, data=body, method="PATCH")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("apikey", supabase_key)
+        req.add_header("Authorization", f"Bearer {supabase_key}")
+        req.add_header("Prefer", "return=minimal")
+        urllib.request.urlopen(req, timeout=5)
+        print(f"  [progress] {percent}% — {status_text}", flush=True)
+    except Exception as e:
+        print(f"  [progress] Failed to update ({percent}%): {e}", flush=True)
+
+
 def handler(job: dict) -> dict:
     """RunPod serverless handler entry point."""
     job_input = job.get("input", {})
@@ -76,6 +101,7 @@ def handler(job: dict) -> dict:
     supabase_url = job_input.get("supabaseUrl", "")
     supabase_key = job_input.get("supabaseServiceKey", "")
     cast_project_id = job_input.get("castProjectId", "unknown")
+    cast_job_id = job_input.get("castJobId")
 
     if not timeline or not timeline.get("scenes"):
         return {"error": "Missing or empty timeline"}
@@ -85,15 +111,22 @@ def handler(job: dict) -> dict:
     print(f"[CastRenderer] Starting: {scene_count} scenes, {total_dur:.0f}s, project={cast_project_id}")
     t0 = time.time()
 
+    # Helper to report progress with context
+    def progress(pct: int, text: str):
+        _update_progress(cast_job_id, pct, text, supabase_url, supabase_key)
+
     try:
         # ── 1. Download assets ──
+        progress(5, f"Downloading {len(timeline.get('scenes', []))} scenes worth of assets...")
         print("[CastRenderer] Phase 1: Downloading assets...")
         urls = collect_asset_urls(timeline)
         print(f"  Found {len(urls)} remote URLs to download")
         url_map = download_all(urls)
         print(f"  Downloaded {len(url_map)}/{len(urls)} assets in {time.time() - t0:.1f}s")
+        progress(10, f"Downloaded {len(url_map)}/{len(urls)} assets")
 
         # ── 2. Parse timeline into scene instructions ──
+        progress(12, "Parsing timeline into render instructions...")
         print("[CastRenderer] Phase 2: Parsing timeline...")
         scenes = parse_timeline(timeline, url_map)
 
@@ -109,10 +142,15 @@ def handler(job: dict) -> dict:
             width, height = 1920, 1080
 
         # ── 3. Render each scene (Phase 0 overlay pre-render happens inside) ──
+        progress(15, f"Rendering {len(scenes)} scenes at {width}x{height}...")
         print(f"[CastRenderer] Phase 3: Rendering {len(scenes)} scenes at {width}x{height}...")
         scene_paths: list[str] = []
         failed_scenes: list[int] = []
-        for scene in scenes:
+        for si, scene in enumerate(scenes):
+            # Per-scene progress: 15% to 80% spread across scenes
+            scene_pct = 15 + int((si / len(scenes)) * 65)
+            comment = scene.comment or f"Scene {scene.index}"
+            progress(scene_pct, f"Rendering scene {si + 1}/{len(scenes)}: {comment[:50]}...")
             t_scene = time.time()
             path = render_scene(scene, width, height)
             elapsed = time.time() - t_scene
@@ -136,6 +174,7 @@ def handler(job: dict) -> dict:
               f"(total rendered: {total_rendered:.1f}s)")
 
         # ── 4. Concatenate with transitions ──
+        progress(82, f"Concatenating {len(scene_paths)} scenes with transitions...")
         print("[CastRenderer] Phase 4: Concatenating scenes...")
         t_concat = time.time()
 
@@ -156,6 +195,7 @@ def handler(job: dict) -> dict:
                   f"expected ({total_dur:.1f}s) — possible render issues")
 
         # ── 5. Upload to Supabase Storage ──
+        progress(90, f"Uploading {file_size_mb:.0f}MB video to storage...")
         print("[CastRenderer] Phase 5: Uploading to Supabase Storage...")
         t_upload = time.time()
 
@@ -165,6 +205,7 @@ def handler(job: dict) -> dict:
 
         total_time = time.time() - t0
         video_url = result.get("videoUrl")
+        progress(98, f"Upload complete — finalizing ({total_time:.0f}s total)")
         print(f"[CastRenderer] DONE in {total_time:.1f}s — {video_url or 'NO URL'}")
 
         if not video_url:

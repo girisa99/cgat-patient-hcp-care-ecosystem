@@ -152,7 +152,8 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
           toast.error(`Assembly failed: ${data.job.errorMessage || 'Unknown error'}`);
         } else {
           const pct = data?.job?.progressPercent || 0;
-          setAssemblyProgress(`Rendering video... ${pct}%`);
+          const statusText = data?.job?.statusText || '';
+          setAssemblyProgress(statusText ? `${statusText} (${pct}%)` : `Rendering video... ${pct}%`);
         }
       } catch (err) {
         console.error('[Assembly] Poll error:', err);
