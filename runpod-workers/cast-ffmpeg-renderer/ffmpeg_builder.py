@@ -226,11 +226,58 @@ def _build_drawtext_filter(elem: ElementInstruction, width: int, height: int) ->
     )
 
 
-def _build_cinematic_filter(scene_index: int) -> str:
-    """Build cinematic post-processing filter chain."""
+def _classify_scene(comment: str) -> str:
+    """Classify scene type from comment for mood-aware grading."""
+    c = (comment or "").lower()
+    if ("opening" in c or "bookend" in c) and "closing" not in c:
+        return "opening"
+    if "closing" in c:
+        return "closing"
+    if "transition" in c:
+        return "transition"
+    if "kinetic" in c:
+        return "kinetic"
+    return "narration"
+
+
+def _build_cinematic_filter(scene_index: int, comment: str = "") -> str:
+    """Build per-scene cinematic post-processing with mood-aware grading + vignette."""
+    scene_type = _classify_scene(comment)
+
+    # Per-scene color grading — each type feels visually distinct
+    grading = {
+        "opening": {
+            # Dramatic, high-contrast, cool blue undertone
+            "eq": "eq=contrast=1.12:saturation=1.15:brightness=0.005",
+            "cb": "colorbalance=rs=-0.02:gs=-0.02:bs=0.04:rh=-0.01:gh=-0.01:bh=0.03",
+        },
+        "narration": {
+            # Warm, natural, amber tones — inviting for storytelling
+            "eq": "eq=contrast=1.06:saturation=1.10:brightness=0.01",
+            "cb": "colorbalance=rs=0.03:gs=0.01:bs=-0.02:rh=0.02:gh=0.01:bh=-0.01",
+        },
+        "transition": {
+            # Cool teal, slightly desaturated — visual breath between chapters
+            "eq": "eq=contrast=1.08:saturation=1.05:brightness=0.005",
+            "cb": "colorbalance=rs=-0.01:gs=0.02:bs=0.03:rh=-0.01:gh=0.01:bh=0.02",
+        },
+        "kinetic": {
+            # Vivid, punchy, high saturation — attention-grabbing title card
+            "eq": "eq=contrast=1.10:saturation=1.20:brightness=0.01",
+            "cb": "colorbalance=rs=0.02:gs=0.01:bs=0.01",
+        },
+        "closing": {
+            # Warm golden, emotional — leave a lasting impression
+            "eq": "eq=contrast=1.08:saturation=1.12:brightness=0.01",
+            "cb": "colorbalance=rs=0.04:gs=0.02:bs=-0.03:rh=0.03:gh=0.02:bh=-0.02",
+        },
+    }
+    g = grading.get(scene_type, grading["narration"])
+
     filters = [
-        "eq=contrast=1.05:saturation=1.08:brightness=0.01",
-        "colorbalance=rs=0.02:gs=-0.01:bs=-0.02",
+        g["eq"],
+        g["cb"],
+        "vignette=PI/5",  # cinematic dark edges
     ]
     return ",".join(filters)
 
@@ -402,8 +449,14 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
                 f"[{prev}][{src_label}]overlay=0:0[{current_video}]"
             )
         else:
-            # Multiple images: xfade chain into a slideshow
+            # Multiple images: xfade chain into a slideshow with varied transitions
             CROSSFADE = 0.5  # seconds between images
+            # Cycle through cinematic xfade styles for visual variety
+            XFADE_STYLES = [
+                "fade", "dissolve", "wipeleft", "wiperight",
+                "slideright", "slideleft", "circleopen",
+                "fadeblack", "smoothleft", "smoothright",
+            ]
             current_label = f"[{img_kb_labels[0]}]"
             cumulative_dur = img_durations[0]
 
@@ -416,11 +469,14 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
                 if offset < 0.1:
                     offset = 0.1
 
+                # Cycle through transition styles based on scene+image index
+                xfade_style = XFADE_STYLES[(scene.index + ii) % len(XFADE_STYLES)]
+
                 is_last = ii == len(images) - 1
                 out_label = f"[imgs{scene.index}]" if is_last else f"[xfi{scene.index}_{ii}]"
                 filter_parts.append(
                     f"{current_label}[{img_kb_labels[ii]}]"
-                    f"xfade=transition=fade:duration={cf:.2f}:offset={offset:.2f}{out_label}"
+                    f"xfade=transition={xfade_style}:duration={cf:.2f}:offset={offset:.2f}{out_label}"
                 )
                 current_label = out_label
                 cumulative_dur = offset + next_dur
@@ -435,7 +491,7 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     # ── Cinematic post-processing on background ──
     prev = current_video
     current_video = f"cin{scene.index}"
-    cine_filter = _build_cinematic_filter(scene.index)
+    cine_filter = _build_cinematic_filter(scene.index, scene.comment)
     filter_parts.append(f"[{prev}]{cine_filter}[{current_video}]")
 
     # ── PiP video overlays (lipsync, B-roll) with glow border ──
