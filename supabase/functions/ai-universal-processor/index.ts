@@ -355,15 +355,15 @@ serve(async (req) => {
     // IMAGE GENERATION ACTION (Gemini Direct API)
     // ============================================
     if (action === 'image_generation') {
-      const { style_intent: imgStyleIntent, region: imgRegion } = requestBody as any;
-      console.log(`[UniversalAI] Image generation via shared module - Style: ${imgStyleIntent || style || 'default'}, Provider: ${provider || 'auto'}`);
+      const { style_intent: imgStyleIntent, region: imgRegion, ref_image_url: refImageUrl } = requestBody as any;
+      console.log(`[UniversalAI] Image generation via shared module - Style: ${imgStyleIntent || style || 'default'}, Provider: ${provider || 'auto'}${refImageUrl ? ', ref_image: yes' : ''}`);
 
       try {
         const imageResult = await generateImageWithRouting(
           prompt,
           imgStyleIntent || style || undefined,
           provider || undefined,
-          { model, aspectRatio, style, size: aspectRatio ? undefined : '1024x1024' }
+          { model, aspectRatio, style, size: aspectRatio ? undefined : '1024x1024', ref_image_url: refImageUrl }
         );
 
         // Mirror external URLs to Supabase Storage (CORS-safe, permanent)

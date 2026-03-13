@@ -1978,8 +1978,12 @@ function EP04ProductionInner() {
         try {
           // Wait 3s to avoid DashScope rate limiting if a video request just ran
           await new Promise(r => setTimeout(r, 3000));
+          // For host character: pass real selfie as reference image for image-to-image generation
+          const refImageUrl = (character === 'host' && CHARACTER_AVATARS.host)
+            ? await ensureStorageUrl(projectId || 'default', `avatar-ref-${character}`, CHARACTER_AVATARS.host)
+            : undefined;
           const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
-            body: { action: 'image_generation', prompt: avatarPrompt, provider: 'alibaba', model: 'wan2.6-t2i', aspectRatio: '1:1', style_intent: 'cinematic' },
+            body: { action: 'image_generation', prompt: avatarPrompt, provider: 'alibaba', model: 'wan2.6-t2i', aspectRatio: '1:1', style_intent: 'cinematic', ...(refImageUrl && { ref_image_url: refImageUrl }) },
           });
           if (error) {
             // Try to extract detailed error from response body

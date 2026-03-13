@@ -304,9 +304,17 @@ async function generateWithAlibaba(prompt: string, options: ImageGenOptions): Pr
     ? '/api/v1/services/aigc/multimodal-generation/generation'
     : '/api/v1/services/aigc/text2image/image-synthesis';
 
+  // Build message content — include reference image for image-to-image when provided
+  const messageContent: Array<Record<string, string>> = [];
+  if (options.ref_image_url && isWan26) {
+    messageContent.push({ image: options.ref_image_url });
+    console.log(`[Alibaba-Image] Using reference image for i2i: ${options.ref_image_url.substring(0, 80)}...`);
+  }
+  messageContent.push({ text: prompt });
+
   const body = isWan26 ? {
     model: 'wan2.6-t2i',
-    input: { messages: [{ role: 'user', content: [{ text: prompt }] }] },
+    input: { messages: [{ role: 'user', content: messageContent }] },
     parameters: { size, n: 1 },
   } : {
     model, input: { prompt },
