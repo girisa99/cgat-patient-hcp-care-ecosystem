@@ -1,19 +1,20 @@
 """
 Upload final rendered video + thumbnail to Supabase Storage.
-Returns public URL (or signed URL if bucket is not public).
+Uses direct HTTP with generous timeout (5 min) for large files.
 """
 
 import os
+import time
 import subprocess
-from supabase import create_client
+import httpx
 
 
-def generate_thumbnail(video_path: str, output_path: str, time: float = 2.0):
+def generate_thumbnail(video_path: str, output_path: str, time_sec: float = 2.0):
     """Extract a single frame from the video as a JPEG thumbnail."""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     cmd = [
         "ffmpeg", "-y",
-        "-ss", str(time),
+        "-ss", str(time_sec),
         "-i", video_path,
         "-frames:v", "1",
         "-q:v", "2",
@@ -31,61 +32,51 @@ def upload_to_supabase(
     storage_path: str,
     content_type: str = "video/mp4",
 ) -> str | None:
-    """Upload a file to Supabase Storage and return its URL."""
-    client = create_client(supabase_url, supabase_key)
-
+    """Upload a file to Supabase Storage via direct HTTP (bypasses SDK timeout)."""
     with open(file_path, "rb") as f:
         data = f.read()
 
     file_size_mb = len(data) / (1024 * 1024)
     print(f"  [upload] Uploading {file_size_mb:.1f}MB to {bucket}/{storage_path}")
 
-    # Upload (upsert to overwrite if exists)
-    try:
-        client.storage.from_(bucket).upload(
-            path=storage_path,
-            file=data,
-            file_options={"content-type": content_type, "upsert": "true"},
-        )
-    except Exception as e:
-        print(f"  [upload] Upload error: {e}")
-        # Try removing first then uploading (some versions don't support upsert)
+    url = f"{supabase_url}/storage/v1/object/{bucket}/{storage_path}"
+    headers = {
+        "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": content_type,
+        "x-upsert": "true",
+    }
+
+    # 5-minute timeout — plenty for 100MB+ over decent bandwidth
+    timeout = httpx.Timeout(300.0, connect=30.0)
+    max_retries = 3
+
+    for attempt in range(1, max_retries + 1):
         try:
-            client.storage.from_(bucket).remove([storage_path])
-        except Exception:
-            pass
-        client.storage.from_(bucket).upload(
-            path=storage_path,
-            file=data,
-            file_options={"content-type": content_type},
-        )
+            t0 = time.time()
+            with httpx.Client(timeout=timeout) as client:
+                resp = client.post(url, content=data, headers=headers)
 
-    # Try public URL first (works if bucket has public access enabled)
-    try:
-        public_url = client.storage.from_(bucket).get_public_url(storage_path)
-        if public_url and isinstance(public_url, str) and public_url.startswith("http"):
-            print(f"  [upload] Public URL: {public_url[:100]}")
-            return public_url
-    except Exception as e:
-        print(f"  [upload] get_public_url failed: {e}")
+            elapsed = time.time() - t0
+            if resp.status_code in (200, 201):
+                speed = file_size_mb / elapsed if elapsed > 0 else 0
+                print(f"  [upload] OK ({resp.status_code}) in {elapsed:.1f}s ({speed:.1f} MB/s)")
+                break
+            else:
+                print(f"  [upload] HTTP {resp.status_code}: {resp.text[:200]} (attempt {attempt})")
+                if attempt < max_retries:
+                    time.sleep(2 * attempt)
+        except Exception as e:
+            print(f"  [upload] Attempt {attempt} error: {e}")
+            if attempt < max_retries:
+                time.sleep(2 * attempt)
+            else:
+                print(f"  [upload] All {max_retries} attempts failed")
+                # Fall through to URL construction anyway
 
-    # Fallback: signed URL with 7-day expiry
-    try:
-        signed = client.storage.from_(bucket).create_signed_url(storage_path, 604800)  # 7 days
-        if signed and isinstance(signed, dict):
-            url = signed.get("signedURL") or signed.get("signedUrl") or signed.get("signed_url")
-            if url:
-                print(f"  [upload] Signed URL: {url[:100]}")
-                return url
-        elif isinstance(signed, str) and signed.startswith("http"):
-            return signed
-    except Exception as e:
-        print(f"  [upload] create_signed_url failed: {e}")
-
-    # Last resort: construct URL manually
-    url = f"{supabase_url}/storage/v1/object/public/{bucket}/{storage_path}"
-    print(f"  [upload] Constructed URL: {url}")
-    return url
+    # Return public URL
+    public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{storage_path}"
+    print(f"  [upload] URL: {public_url[:120]}")
+    return public_url
 
 
 def upload_final_video(
