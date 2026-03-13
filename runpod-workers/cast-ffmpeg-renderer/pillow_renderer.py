@@ -214,10 +214,23 @@ def render_text_overlay(
     if y_override >= 0:
         block_y = y_override
 
-    # ── Render shadow on separate layer, blur it, then composite text ──
+    # ── Stroke/outline for crisp readability over any background ──
+    stroke_w = max(2, font_size // 18)  # 2-4px depending on font size
+    stroke_col = (0, 0, 0, 240)         # near-opaque black outline
+
+    # ── Render 3-layer compositing: glow → shadow → outlined text ──
+
+    # Layer 1: Colored glow halo (soft, wide, eye-catching)
+    glow_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow_layer)
+    # Gold glow for warm cinematic feel
+    glow_col = (255, 220, 120, 90)
+
+    # Layer 2: Dark shadow (sharper, closer)
     shadow_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     shadow_draw = ImageDraw.Draw(shadow_layer)
 
+    # Layer 3: Main text with stroke outline
     text_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     text_draw = ImageDraw.Draw(text_layer)
 
@@ -233,7 +246,7 @@ def render_text_overlay(
             fill=bg_rgba,
         )
 
-    # Draw each line
+    # Draw each line across all 3 layers
     cur_y = block_y
     for i, line in enumerate(wrapped_lines):
         if not line.strip():
@@ -247,21 +260,29 @@ def render_text_overlay(
         else:
             line_x = block_x
 
-        # Draw shadow text (offset, will be blurred later)
-        shadow_draw.text((line_x + sdx, cur_y + sdy), line, font=font, fill=scolor)
-        # Extra shadow copies for thickness
-        shadow_draw.text((line_x + sdx + 1, cur_y + sdy + 1), line, font=font, fill=scolor)
+        # Glow: thick stroke in accent color (will be blurred)
+        glow_draw.text((line_x, cur_y), line, font=font, fill=glow_col,
+                       stroke_width=stroke_w + 6, stroke_fill=glow_col)
 
-        # Draw main text on text layer
-        text_draw.text((line_x, cur_y), line, font=font, fill=color)
+        # Shadow: offset text for depth (will be blurred)
+        shadow_draw.text((line_x + sdx, cur_y + sdy), line, font=font, fill=scolor,
+                         stroke_width=stroke_w, stroke_fill=scolor)
+        shadow_draw.text((line_x + sdx + 1, cur_y + sdy + 1), line, font=font, fill=scolor,
+                         stroke_width=stroke_w, stroke_fill=scolor)
+
+        # Main text: crisp with black outline stroke
+        text_draw.text((line_x, cur_y), line, font=font, fill=color,
+                       stroke_width=stroke_w, stroke_fill=stroke_col)
 
         cur_y += line_heights[i] + line_spacing
 
-    # Apply Gaussian blur to shadow layer for soft drop shadow
+    # Blur glow (wide + soft) and shadow (tighter)
+    glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=max(16, sblur * 2)))
     shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=sblur))
 
-    # Composite: shadow behind text
+    # Composite: glow → shadow → outlined text
     img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    img = Image.alpha_composite(img, glow_layer)
     img = Image.alpha_composite(img, shadow_layer)
     img = Image.alpha_composite(img, text_layer)
 
@@ -323,11 +344,13 @@ def render_lower_third(
     headline_x = lt_x + accent_width + padding
     headline_y = lt_y + 14 if lead else lt_y + (lt_height - 32) // 2
 
-    # Shadow
-    draw.text((headline_x + 1, headline_y + 1), headline,
-              font=headline_font, fill=(0, 0, 0, 160))
+    # Shadow + outline for headline
+    draw.text((headline_x + 2, headline_y + 2), headline,
+              font=headline_font, fill=(0, 0, 0, 200),
+              stroke_width=1, stroke_fill=(0, 0, 0, 200))
     draw.text((headline_x, headline_y), headline,
-              font=headline_font, fill=headline_color)
+              font=headline_font, fill=headline_color,
+              stroke_width=1, stroke_fill=(0, 0, 0, 180))
 
     # Lead/subtitle text
     if lead:
@@ -335,9 +358,11 @@ def render_lower_third(
         lead_color = _hex_to_rgba("#cccccc")
         lead_y = headline_y + 40
         draw.text((headline_x + 1, lead_y + 1), lead,
-                  font=lead_font, fill=(0, 0, 0, 120))
+                  font=lead_font, fill=(0, 0, 0, 160),
+                  stroke_width=1, stroke_fill=(0, 0, 0, 160))
         draw.text((headline_x, lead_y), lead,
-                  font=lead_font, fill=lead_color)
+                  font=lead_font, fill=lead_color,
+                  stroke_width=1, stroke_fill=(0, 0, 0, 120))
 
     img.save(out_path, "PNG")
     print(f"    [pillow] Lower-third -> {out_path} (headline: {headline[:30]})")
@@ -483,6 +508,38 @@ def render_kinetic_text_frames(
     color = _hex_to_rgba(font_color)
     shadow_color = (0, 0, 0, 160)
 
+    stroke_w = max(2, font_size // 18)
+    stroke_col = (0, 0, 0, 240)
+    glow_col = (255, 220, 120, 80)
+
+    def _draw_styled_text(draw_obj, img_obj, tx, ty, txt):
+        """Draw text with glow + shadow + outline on a single frame."""
+        # Glow layer
+        glow_lyr = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        glow_d = ImageDraw.Draw(glow_lyr)
+        glow_d.text((tx, ty), txt, font=font, fill=glow_col,
+                    stroke_width=stroke_w + 6, stroke_fill=glow_col)
+        glow_lyr = glow_lyr.filter(ImageFilter.GaussianBlur(radius=14))
+
+        # Shadow layer
+        shd_lyr = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        shd_d = ImageDraw.Draw(shd_lyr)
+        shd_d.text((tx + 3, ty + 3), txt, font=font, fill=shadow_color,
+                   stroke_width=stroke_w, stroke_fill=shadow_color)
+        shd_lyr = shd_lyr.filter(ImageFilter.GaussianBlur(radius=6))
+
+        # Composite glow + shadow onto frame
+        img_obj = Image.alpha_composite(img_obj, glow_lyr)
+        img_obj = Image.alpha_composite(img_obj, shd_lyr)
+
+        # Main text with outline
+        txt_lyr = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        txt_d = ImageDraw.Draw(txt_lyr)
+        txt_d.text((tx, ty), txt, font=font, fill=color,
+                   stroke_width=stroke_w, stroke_fill=stroke_col)
+        img_obj = Image.alpha_composite(img_obj, txt_lyr)
+        return img_obj
+
     if style == "003":
         # Word-by-word reveal
         frames_per_word = max(1, total_frames // len(words))
@@ -500,11 +557,7 @@ def render_kinetic_text_frames(
                 bbox = draw.textbbox((0, 0), visible_text, font=font)
                 tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
                 tx, ty = resolve_position(position, tw, th, width, height)
-
-                # Shadow
-                draw.text((tx + 2, ty + 2), visible_text, font=font, fill=shadow_color)
-                # Main text
-                draw.text((tx, ty), visible_text, font=font, fill=color)
+                img = _draw_styled_text(draw, img, tx, ty, visible_text)
 
             img.save(os.path.join(frame_dir, f"frame_{frame_num:05d}.png"), "PNG")
 
@@ -515,8 +568,7 @@ def render_kinetic_text_frames(
         bbox = draw.textbbox((0, 0), text, font=font)
         tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
         tx, ty = resolve_position(position, tw, th, width, height)
-        draw.text((tx + 2, ty + 2), text, font=font, fill=shadow_color)
-        draw.text((tx, ty), text, font=font, fill=color)
+        img = _draw_styled_text(draw, img, tx, ty, text)
         # Save as single PNG — FFmpeg will handle fade
         single_path = os.path.join(OVERLAY_DIR, f"text_{scene_index:03d}_{element_index:02d}.png")
         img.save(single_path, "PNG")

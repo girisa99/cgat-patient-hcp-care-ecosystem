@@ -360,9 +360,9 @@ def _pre_render_overlays(scene: SceneInstruction, width: int, height: int) -> di
                 if path:
                     overlays[ei] = path
 
-    # Storybook frame for transition scenes
+    # Storybook frame — decorative gilded border overlay on every scene
     comment = (scene.comment or "").lower()
-    if "transition" in comment or "storybook" in comment:
+    if True:  # render on all scenes for consistent cinematic branding
         frame_path = render_storybook_frame(
             width=width, height=height,
             scene_index=scene.index,
