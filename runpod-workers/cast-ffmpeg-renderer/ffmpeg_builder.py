@@ -721,19 +721,20 @@ def concatenate_scenes(
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
         if result.returncode != 0:
             print(f"  [concat] xfade FAILED:\n{result.stderr[-1500:]}")
-            # Fallback: simple concat demuxer (no transitions)
+            # Fallback: fast concat (no transitions, no re-encoding)
             return _fallback_concat(scene_paths, output_path)
         final_dur = get_video_duration(output_path)
         print(f"  [concat] OK -> {output_path} ({final_dur:.1f}s)")
         return output_path
     except subprocess.TimeoutExpired:
-        print(f"  [concat] TIMED OUT (600s)")
-        return None
+        print(f"  [concat] xfade TIMED OUT — falling back to fast concat")
+        return _fallback_concat(scene_paths, output_path)
 
 
 def _fallback_concat(scene_paths: list[str], output_path: str) -> str | None:
-    """Fallback: use concat demuxer (no transitions) if xfade fails."""
-    print("  [concat] Falling back to simple concat demuxer...")
+    """Fallback: use concat demuxer with stream copy (no re-encoding = near-instant).
+    All scenes are already encoded with same codec/resolution, so -c copy is safe."""
+    print("  [concat] Using fast concat (stream copy, no re-encoding)...")
     concat_file = os.path.join(OUTPUT_DIR, "concat.txt")
     with open(concat_file, "w") as f:
         for p in scene_paths:
@@ -742,18 +743,28 @@ def _fallback_concat(scene_paths: list[str], output_path: str) -> str | None:
     cmd = [
         "ffmpeg", "-y",
         "-f", "concat", "-safe", "0", "-i", concat_file,
+        "-c", "copy",  # stream copy = no re-encoding = instant
     ]
-    cmd.extend(_encoder_args())
-    cmd.extend(["-c:a", "aac", "-b:a", "192k"])
     cmd.append(output_path)
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if result.returncode != 0:
-            print(f"  [fallback concat] FAILED:\n{result.stderr[-1000:]}")
-            return None
+            print(f"  [fast concat] stream copy FAILED — retrying with re-encode...")
+            # If stream copy fails (codec mismatch), re-encode as last resort
+            cmd2 = [
+                "ffmpeg", "-y",
+                "-f", "concat", "-safe", "0", "-i", concat_file,
+            ]
+            cmd2.extend(_encoder_args())
+            cmd2.extend(["-c:a", "aac", "-b:a", "192k"])
+            cmd2.append(output_path)
+            result = subprocess.run(cmd2, capture_output=True, text=True, timeout=300)
+            if result.returncode != 0:
+                print(f"  [fallback concat] FAILED:\n{result.stderr[-1000:]}")
+                return None
         final_dur = get_video_duration(output_path)
-        print(f"  [fallback concat] OK -> {output_path} ({final_dur:.1f}s)")
+        print(f"  [concat] OK -> {output_path} ({final_dur:.1f}s)")
         return output_path
     except subprocess.TimeoutExpired:
         return None
