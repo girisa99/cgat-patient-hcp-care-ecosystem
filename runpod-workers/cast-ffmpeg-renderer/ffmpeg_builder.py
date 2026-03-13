@@ -337,40 +337,64 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     filter_parts.append(f"{base_label}setpts=PTS-STARTPTS[{current_video}]")
     input_idx += 1
 
-    # ── Image layers with Ken Burns (time-windowed per image) ──
-    for ii, img in enumerate(images):
-        inputs.extend(["-i", img.local_path])
+    # ── Image layers with Ken Burns ──
+    # Strategy: zoompan each image for its duration, then xfade-chain into a
+    # single slideshow stream, and overlay that once on the base.
+    # (Previous overlay+enable approach failed because zoompan frames are
+    #  consumed while the overlay is disabled, leaving no frames when it enables.)
+    if images:
+        # Add all images as inputs and build zoompan for each
+        img_kb_labels: list[str] = []
+        img_durations: list[float] = []
+        for ii, img in enumerate(images):
+            inputs.extend(["-i", img.local_path])
+            img_dur = img.duration if img.duration > 0 else (
+                scene.duration if len(images) == 1 else scene.duration / len(images)
+            )
+            img_durations.append(img_dur)
+            zp = _build_zoompan_filter(img, img_dur, width, height)
+            kb_label = f"kb{scene.index}_{ii}"
+            filter_parts.append(f"[{input_idx}:v]{zp},format=yuv420p[{kb_label}]")
+            img_kb_labels.append(kb_label)
+            input_idx += 1
 
-        # Each image gets Ken Burns for ITS duration (not full scene)
-        img_dur = img.duration if img.duration > 0 else scene.duration
-        zp = _build_zoompan_filter(img, img_dur, width, height)
-        kb_label = f"kb{scene.index}_{ii}"
-        filter_parts.append(f"[{input_idx}:v]{zp},format=yuva420p[{kb_label}]")
+        if len(images) == 1:
+            # Single image: overlay directly on base
+            prev = current_video
+            current_video = f"img{scene.index}"
+            filter_parts.append(
+                f"[{prev}][{img_kb_labels[0]}]overlay=0:0[{current_video}]"
+            )
+        else:
+            # Multiple images: xfade chain into a slideshow
+            CROSSFADE = 0.5  # seconds between images
+            current_label = f"[{img_kb_labels[0]}]"
+            cumulative_dur = img_durations[0]
 
-        # Fade in/out on the image itself (applied before overlay)
-        fade_label = kb_label
-        if img.fade_in > 0 or img.fade_out > 0:
-            fade_label = f"imgf{scene.index}_{ii}"
-            fades = []
-            if img.fade_in > 0:
-                fades.append(f"fade=t=in:st=0:d={img.fade_in:.2f}:alpha=1")
-            if img.fade_out > 0:
-                out_st = max(0, img_dur - img.fade_out)
-                fades.append(f"fade=t=out:st={out_st:.2f}:d={img.fade_out:.2f}:alpha=1")
-            filter_parts.append(f"[{kb_label}]{','.join(fades)}[{fade_label}]")
+            for ii in range(1, len(images)):
+                next_dur = img_durations[ii]
+                # Clamp crossfade to 40% of shorter adjacent clip
+                cf = min(CROSSFADE, cumulative_dur * 0.4, next_dur * 0.4)
+                cf = max(0.2, cf)
+                offset = cumulative_dur - cf
+                if offset < 0.1:
+                    offset = 0.1
 
-        # Time-windowed overlay: only visible during [start, start+duration]
-        enable = ""
-        if img.duration > 0 and len(images) > 1:
-            end_t = img.start + img.duration
-            enable = f":enable='between(t,{img.start:.2f},{end_t:.2f})'"
+                is_last = ii == len(images) - 1
+                out_label = f"[imgs{scene.index}]" if is_last else f"[xfi{scene.index}_{ii}]"
+                filter_parts.append(
+                    f"{current_label}[{img_kb_labels[ii]}]"
+                    f"xfade=transition=fade:duration={cf:.2f}:offset={offset:.2f}{out_label}"
+                )
+                current_label = out_label
+                cumulative_dur = offset + next_dur
 
-        prev = current_video
-        current_video = f"img{scene.index}_{ii}"
-        filter_parts.append(
-            f"[{prev}][{fade_label}]overlay=0:0{enable}[{current_video}]"
-        )
-        input_idx += 1
+            # Overlay slideshow on base (eof_action=pass shows base if slideshow ends early)
+            prev = current_video
+            current_video = f"img{scene.index}"
+            filter_parts.append(
+                f"[{prev}][imgs{scene.index}]overlay=0:0:eof_action=pass[{current_video}]"
+            )
 
     # ── Cinematic post-processing on background ──
     prev = current_video
