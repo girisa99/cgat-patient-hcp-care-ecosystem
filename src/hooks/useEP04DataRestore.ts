@@ -438,10 +438,6 @@ export function useRestoredSceneProduction(
           phase = phase === 'tts' ? 'tts_approved' : phase;
         }
       }
-      // If we have a final video URL, ensure phase reflects completion
-      if (videoUrl && phase !== 'complete') {
-        phase = 'complete';
-      }
 
       console.log(`[EP04 RQ] Scene restore: ${Object.keys(restored).length} scenes, ` +
         `${restoredVisualCount} visuals, ${musicCount} music, ${assembledCount} assembled → phase=${phase}` +
