@@ -3282,7 +3282,7 @@ function EP04ProductionInner() {
         // The DB row can show completed (from a prior fallback's write) before output_url commits
         const taskId = assemblyTaskIdRef.current;
         const primaryCompletedNoUrl = (jobStatus === 'completed' || jobStatus === 'done' || jobStatus === 'finished') && !data?.job?.outputUrl;
-        if (taskId && (pollNoProgressCountRef.current >= 1 || primaryCompletedNoUrl)) {
+        if (taskId && (pollNoProgressCountRef.current >= 3 || primaryCompletedNoUrl)) {
           console.log(`[EP04 Poll] ⚠️ castJobId stuck (${pollNoProgressCountRef.current} polls, 0%). Falling back to projectId=${taskId}`);
           const { data: fallbackData, error: fbError } = await supabase.functions.invoke('genie-cast-status', {
             body: { projectId: taskId },
@@ -3300,9 +3300,10 @@ function EP04ProductionInner() {
         }
 
         // Use fallback results if available, otherwise use primary
+        // For progress: take the HIGHER value (primary reads from DB where worker writes, fallback reads RunPod API)
         const finalStatus = resolvedStatus || jobStatus;
         const finalVideoUrl = resolvedVideoUrl || data?.job?.outputUrl;
-        const finalProgress = resolvedProgress || jobProgress;
+        const finalProgress = Math.max(resolvedProgress || 0, jobProgress);
         const finalError = resolvedError || data?.job?.errorMessage;
 
         if (fnError && !resolvedStatus) {
