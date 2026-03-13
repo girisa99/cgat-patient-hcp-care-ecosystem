@@ -69,10 +69,10 @@ export const EP04_VOICES = {
     eqProfile: 'bright',
     description: 'Nova (Lovable) — frontend dev, fast delivery, energetic',
   },
-  /** Allaudin (Genie) = deep, theatrical, magical. ElevenLabs Clyde (war-vet gravelly) OR Alibaba longshu. */
+  /** Allaudin (Genie) = deep, theatrical, magical. ElevenLabs Daniel (deep British narrator) OR Alibaba longshu. */
   allaudin: {
     provider: 'elevenlabs' as const,
-    voiceId: '2EiwWnXFnvU5JabPnv8n',  // Clyde — deep, gravelly, theatrical (video game character voice)
+    voiceId: 'onwK4e9ZLuTAKqWW03F9',  // Daniel — deep British, refined, Nutcracker narrator presence
     fallbackProvider: 'alibaba' as const,
     fallbackVoice: ALIBABA_FALLBACK_VOICES.allaudin,
     style: 'theatrical',
@@ -80,7 +80,7 @@ export const EP04_VOICES = {
     similarityBoost: 0.85,
     speed: 0.85,
     eqProfile: 'deep-reverb',
-    description: 'Allaudin (Genie) — deep, gravelly, theatrical narrator with mystical presence',
+    description: 'Allaudin (Genie) — deep British narrator with mystical, theatrical presence',
   },
   /** Squirrel = high-pitched, chaotic, childish. ElevenLabs Gigi (animation child voice) OR Alibaba longpaopao. */
   squirrel: {
