@@ -117,6 +117,8 @@ def _build_zoompan_filter(elem: ElementInstruction, img_dur: float,
     """Build zoompan filter string for Ken Burns effect on a still image.
     img_dur = duration for THIS image (not the full scene duration)."""
     fps = 30
+    # Guard: ensure positive duration
+    img_dur = max(0.5, img_dur)
     total_frames = int(fps * img_dur)
 
     # Safety: ensure at least 1 second of frames
@@ -125,17 +127,19 @@ def _build_zoompan_filter(elem: ElementInstruction, img_dur: float,
     if total_frames < 30:
         total_frames = 150  # absolute minimum ~5 seconds
 
-    zoom_rate = elem.zoom_amount / total_frames  # per-frame zoom rate
+    # Guard: ensure zoom_amount is positive and sensible
+    zoom_amount = max(0.01, min(0.5, elem.zoom_amount or 0.03))
+    zoom_rate = zoom_amount / total_frames  # per-frame zoom rate
     # Clamp zoom rate for visible motion (wider range for more dramatic Ken Burns)
     zoom_rate = max(0.0001, min(0.003, zoom_rate))
 
     # Determine zoom expression
     if elem.zoom_direction == "out":
-        max_zoom = 1.0 + elem.zoom_amount
+        max_zoom = 1.0 + zoom_amount
         z_expr = f"if(eq(on,1),{max_zoom:.4f},max(1.0001,zoom-{zoom_rate:.6f}))"
     else:
         # Default: zoom in
-        max_zoom = 1.0 + elem.zoom_amount
+        max_zoom = 1.0 + zoom_amount
         z_expr = f"if(eq(on,1),1.0001,min({max_zoom:.4f},zoom+{zoom_rate:.6f}))"
 
     # Center the zoom by default
@@ -143,8 +147,9 @@ def _build_zoompan_filter(elem: ElementInstruction, img_dur: float,
     y_expr = "(ih-ih/zoom)/2"
 
     # Add pan direction — supports compound directions (top-left, bottom-right, etc.)
-    pan_px = max(1, int(elem.pan_distance * width / total_frames))
-    pan = elem.pan_direction.lower().strip()
+    pan_dist = max(0, min(1.0, elem.pan_distance or 0.1))
+    pan_px = max(1, min(10, int(pan_dist * width / total_frames)))
+    pan = (elem.pan_direction or "").lower().strip()
 
     # Parse compound direction into horizontal + vertical components
     has_left = "left" in pan
@@ -239,6 +244,23 @@ def _pre_render_overlays(scene: SceneInstruction, width: int, height: int) -> di
     if not PILLOW_AVAILABLE:
         return overlays
 
+    # ── Compute vertical stacking for center-center texts ──
+    # Multiple texts at center-center would overlap; distribute them vertically
+    center_texts = [
+        (ei, elem) for ei, elem in enumerate(scene.elements)
+        if elem.type == "text" and elem.text
+        and (elem.position or "").lower().strip() in ("center-center", "center", "")
+    ]
+    y_overrides: dict[int, int] = {}
+    if len(center_texts) > 1:
+        # Stack: calculate total height of all center texts, then distribute
+        total_h = sum(int(elem.font_size * 1.6) for _, elem in center_texts)
+        start_y = max(60, (height - total_h) // 2)
+        cur_y = start_y
+        for ei, elem in center_texts:
+            y_overrides[ei] = cur_y
+            cur_y += int(elem.font_size * 1.6)  # line height ~1.6x font size
+
     for ei, elem in enumerate(scene.elements):
         if elem.type == "text" and elem.text:
             path = render_text_overlay(
@@ -256,6 +278,7 @@ def _pre_render_overlays(scene: SceneInstruction, width: int, height: int) -> di
                 text_shadow=elem.text_shadow,
                 scene_index=scene.index,
                 element_index=ei,
+                y_override=y_overrides.get(ei, -1),
             )
             if path:
                 overlays[ei] = path
@@ -359,11 +382,24 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
             input_idx += 1
 
         if len(images) == 1:
-            # Single image: overlay directly on base
+            # Single image: apply fade-in/fade-out, then overlay on base
+            img0 = images[0]
+            src_label = img_kb_labels[0]
+            if img0.fade_in > 0 or img0.fade_out > 0:
+                fade_label = f"imgf{scene.index}"
+                fades = []
+                if img0.fade_in > 0:
+                    fades.append(f"fade=t=in:st=0:d={img0.fade_in:.2f}")
+                if img0.fade_out > 0:
+                    out_st = max(0, img_durations[0] - img0.fade_out)
+                    fades.append(f"fade=t=out:st={out_st:.2f}:d={img0.fade_out:.2f}")
+                filter_parts.append(f"[{src_label}]{','.join(fades)}[{fade_label}]")
+                src_label = fade_label
+
             prev = current_video
             current_video = f"img{scene.index}"
             filter_parts.append(
-                f"[{prev}][{img_kb_labels[0]}]overlay=0:0[{current_video}]"
+                f"[{prev}][{src_label}]overlay=0:0[{current_video}]"
             )
         else:
             # Multiple images: xfade chain into a slideshow
@@ -404,7 +440,11 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
 
     # ── PiP video overlays (lipsync, B-roll) with glow border ──
     for vi, vid in enumerate(videos):
-        inputs.extend(["-i", vid.local_path])
+        # Apply seek for split-scene video continuation
+        if vid.seek > 0:
+            inputs.extend(["-ss", f"{vid.seek:.2f}", "-i", vid.local_path])
+        else:
+            inputs.extend(["-i", vid.local_path])
         pip_label = f"pip{scene.index}_{vi}"
 
         # Scale PiP to specified size — ensure it fits within the frame
@@ -435,7 +475,6 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
             pip_x = (width - pip_w) // 2
             pip_y = (height - pip_h) // 2
         elif vid.x > 0 or vid.y > 0:
-            # Use explicit x,y if provided
             pip_x = vid.x
             pip_y = vid.y
         else:
@@ -452,7 +491,38 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
             end_t = vid.start + vid.duration
             enable = f":enable='between(t,{vid.start:.2f},{end_t:.2f})'"
 
-        filter_parts.append(f"[{input_idx}:v]{scale},format=yuva420p[{pip_label}]")
+        # Build scale chain with fade-in/fade-out
+        vid_chain = f"{scale},format=yuva420p"
+        if vid.fade_in > 0:
+            vid_chain += f",fade=t=in:st=0:d={vid.fade_in:.2f}:alpha=1"
+        if vid.fade_out > 0:
+            vid_dur = vid.duration if vid.duration > 0 else scene.duration
+            out_st = max(0, vid_dur - vid.fade_out)
+            vid_chain += f",fade=t=out:st={out_st:.2f}:d={vid.fade_out:.2f}:alpha=1"
+
+        filter_parts.append(f"[{input_idx}:v]{vid_chain}[{pip_label}]")
+
+        # PiP glow border (pre-render with Pillow, overlay behind PiP)
+        if PILLOW_AVAILABLE and pip_w < width * 0.8:
+            glow_path = render_pip_glow_border(
+                pip_width=pip_w, pip_height=pip_h,
+                glow_color="#c4b5fd", glow_size=6,
+                scene_index=scene.index, element_index=vi,
+            )
+            if glow_path:
+                inputs.extend(["-i", glow_path])
+                glow_label = f"glow{scene.index}_{vi}"
+                glow_pad = 6 * 3  # must match glow_size * 3 in pillow_renderer
+                glow_x = pip_x - glow_pad
+                glow_y = pip_y - glow_pad
+                filter_parts.append(f"[{input_idx + 1}:v]format=rgba[{glow_label}]")
+                prev = current_video
+                current_video = f"gv{scene.index}_{vi}"
+                filter_parts.append(
+                    f"[{prev}][{glow_label}]overlay={glow_x}:{glow_y}{enable}[{current_video}]"
+                )
+                input_idx += 1  # extra input for glow PNG
+
         prev = current_video
         current_video = f"v{scene.index}_{vi}"
         filter_parts.append(

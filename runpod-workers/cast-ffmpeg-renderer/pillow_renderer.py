@@ -12,6 +12,7 @@ Provides commercial-grade text rendering with:
 """
 
 import os
+import re
 import math
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -111,6 +112,26 @@ def resolve_position(position: str, text_w: int, text_h: int,
         return ((canvas_w - text_w) // 2, (canvas_h - text_h) // 2)
 
 
+def _parse_text_shadow(css_shadow: str) -> tuple[int, int, int, tuple]:
+    """Parse CSS text-shadow: '4px 4px 16px rgba(0,0,0,0.95)' -> (dx, dy, blur, color)."""
+    if not css_shadow:
+        return (3, 3, 8, (0, 0, 0, 180))  # sensible default
+    # Extract px values
+    px_vals = re.findall(r'([\d.]+)px', css_shadow)
+    dx = int(float(px_vals[0])) if len(px_vals) > 0 else 3
+    dy = int(float(px_vals[1])) if len(px_vals) > 1 else 3
+    blur = int(float(px_vals[2])) if len(px_vals) > 2 else 8
+    # Extract rgba color
+    rgba_match = re.search(r'rgba?\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+))?\s*\)', css_shadow)
+    if rgba_match:
+        r, g, b = int(float(rgba_match.group(1))), int(float(rgba_match.group(2))), int(float(rgba_match.group(3)))
+        a = int(float(rgba_match.group(4) or 1.0) * 255)
+        color = (r, g, b, a)
+    else:
+        color = (0, 0, 0, 180)
+    return (dx, dy, blur, color)
+
+
 def render_text_overlay(
     text: str,
     width: int = 1920,
@@ -126,10 +147,12 @@ def render_text_overlay(
     text_shadow: str = "",
     scene_index: int = 0,
     element_index: int = 0,
+    y_override: int = -1,
 ) -> str | None:
     """
     Render text as a transparent PNG overlay with professional styling.
     Returns path to the PNG file.
+    y_override: explicit Y position (used for vertical stacking of center-center texts).
     """
     if not text or not text.strip():
         return None
@@ -137,17 +160,22 @@ def render_text_overlay(
     _ensure_dir()
     out_path = os.path.join(OVERLAY_DIR, f"text_{scene_index:03d}_{element_index:02d}.png")
 
-    # Create transparent canvas
-    img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
     font = _find_font(font_family, font_weight, font_size)
     color = _hex_to_rgba(font_color)
 
-    # Measure text (handle multi-line)
-    lines = text.split("\n") if "\n" in text else [text]
+    # Parse shadow from CSS or use font-size-based defaults
+    sdx, sdy, sblur, scolor = _parse_text_shadow(text_shadow)
+    # Scale shadow offset to at least be visible at video resolution
+    sdx = max(sdx, font_size // 15)
+    sdy = max(sdy, font_size // 15)
+    sblur = max(sblur, font_size // 8)
 
-    # Wrap long lines
+    # ── Measure text (handle multi-line + word wrap) ──
+    # Use a temp image for measurement
+    tmp = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+    tmp_draw = ImageDraw.Draw(tmp)
+
+    lines = text.split("\n") if "\n" in text else [text]
     max_text_width = int(width * 0.85)
     wrapped_lines = []
     for line in lines:
@@ -158,7 +186,7 @@ def render_text_overlay(
         current = words[0]
         for word in words[1:]:
             test = current + " " + word
-            bbox = draw.textbbox((0, 0), test, font=font)
+            bbox = tmp_draw.textbbox((0, 0), test, font=font)
             if bbox[2] - bbox[0] > max_text_width:
                 wrapped_lines.append(current)
                 current = word
@@ -166,7 +194,6 @@ def render_text_overlay(
                 current = test
         wrapped_lines.append(current)
 
-    # Calculate total text block size
     line_heights = []
     line_widths = []
     line_spacing = int(font_size * 0.3)
@@ -175,7 +202,7 @@ def render_text_overlay(
             line_heights.append(int(font_size * 0.5))
             line_widths.append(0)
             continue
-        bbox = draw.textbbox((0, 0), line, font=font)
+        bbox = tmp_draw.textbbox((0, 0), line, font=font)
         line_heights.append(bbox[3] - bbox[1])
         line_widths.append(bbox[2] - bbox[0])
 
@@ -184,15 +211,23 @@ def render_text_overlay(
 
     # Position the text block
     block_x, block_y = resolve_position(position, max_line_w, total_text_h, width, height)
+    if y_override >= 0:
+        block_y = y_override
 
-    # Draw background pill/box if specified
+    # ── Render shadow on separate layer, blur it, then composite text ──
+    shadow_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    shadow_draw = ImageDraw.Draw(shadow_layer)
+
+    text_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    text_draw = ImageDraw.Draw(text_layer)
+
+    # Draw background pill/box if specified (on text layer)
     if background_color:
         bg_rgba = _hex_to_rgba(background_color, 180)
         pad = 20
         rx, ry = block_x - pad, block_y - pad
         rw, rh = max_line_w + pad * 2, total_text_h + pad * 2
-        # Rounded rectangle
-        draw.rounded_rectangle(
+        text_draw.rounded_rectangle(
             [rx, ry, rx + rw, ry + rh],
             radius=12,
             fill=bg_rgba,
@@ -205,7 +240,6 @@ def render_text_overlay(
             cur_y += line_heights[i] + line_spacing
             continue
 
-        # Horizontal alignment within block
         if text_align == "center":
             line_x = block_x + (max_line_w - line_widths[i]) // 2
         elif text_align == "right":
@@ -213,34 +247,27 @@ def render_text_overlay(
         else:
             line_x = block_x
 
-        # Text shadow (offset shadow for depth)
-        shadow_offset = max(2, font_size // 20)
-        shadow_blur = max(3, font_size // 12)
-        # Draw shadow layer
-        shadow_color = (0, 0, 0, 160)
-        for dx in range(-1, 2):
-            for dy in range(-1, 2):
-                if dx == 0 and dy == 0:
-                    continue
-                draw.text(
-                    (line_x + dx * shadow_offset, cur_y + dy * shadow_offset),
-                    line, font=font, fill=shadow_color,
-                )
-        # Extra shadow below for "lifted" effect
-        draw.text(
-            (line_x + shadow_offset, cur_y + shadow_offset + 1),
-            line, font=font, fill=(0, 0, 0, 120),
-        )
+        # Draw shadow text (offset, will be blurred later)
+        shadow_draw.text((line_x + sdx, cur_y + sdy), line, font=font, fill=scolor)
+        # Extra shadow copies for thickness
+        shadow_draw.text((line_x + sdx + 1, cur_y + sdy + 1), line, font=font, fill=scolor)
 
-        # Main text
-        draw.text((line_x, cur_y), line, font=font, fill=color)
+        # Draw main text on text layer
+        text_draw.text((line_x, cur_y), line, font=font, fill=color)
 
         cur_y += line_heights[i] + line_spacing
 
-    # Apply slight blur to shadows (makes them softer)
-    # We do this by compositing: render shadow separately, blur, then overlay text
+    # Apply Gaussian blur to shadow layer for soft drop shadow
+    shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=sblur))
+
+    # Composite: shadow behind text
+    img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    img = Image.alpha_composite(img, shadow_layer)
+    img = Image.alpha_composite(img, text_layer)
+
     img.save(out_path, "PNG")
-    print(f"    [pillow] Text overlay -> {out_path} ({len(wrapped_lines)} lines, {font_size}px)")
+    print(f"    [pillow] Text overlay -> {out_path} ({len(wrapped_lines)} lines, "
+          f"{font_size}px, shadow={sdx}/{sdy}/{sblur})")
     return out_path
 
 
