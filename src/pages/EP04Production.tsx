@@ -3508,13 +3508,19 @@ function EP04ProductionInner() {
   // Track per-part stuck polls (no progress via castJobId → fallback to taskId)
   const perSceneStuckCountsRef = React.useRef<Record<number, number>>({});
 
+  // Ref to read current assemblyParts inside interval callback without stale closures
+  const assemblyPartsRef = React.useRef(assemblyParts);
+  assemblyPartsRef.current = assemblyParts;
+
   useEffect(() => {
     if (!perScenePolling) return;
-    const renderingParts = assemblyParts.filter(p => p.status === 'rendering' && (p.jobId || p.taskId));
+    // Read from ref to avoid stale closure — effect only depends on perScenePolling
+    const currentParts = assemblyPartsRef.current;
+    const renderingParts = currentParts.filter(p => p.status === 'rendering' && (p.jobId || p.taskId));
     if (renderingParts.length === 0) {
       setPerScenePolling(false);
-      const completedCount = assemblyParts.filter(p => p.status === 'completed').length;
-      if (completedCount === assemblyParts.length && assemblyParts.length > 0) {
+      const completedCount = currentParts.filter(p => p.status === 'completed').length;
+      if (completedCount === currentParts.length && currentParts.length > 0) {
         toast.success(`All ${completedCount} scenes assembled!`);
         setAssemblyProgress(null);
       }
@@ -3537,7 +3543,14 @@ function EP04ProductionInner() {
         return;
       }
 
-      for (const part of renderingParts) {
+      // Read FRESH parts from ref — avoid stale closure overwriting completed parts
+      const freshParts = assemblyPartsRef.current.filter(p => p.status === 'rendering' && (p.jobId || p.taskId));
+      if (freshParts.length === 0) {
+        setPerScenePolling(false);
+        return;
+      }
+
+      for (const part of freshParts) {
         try {
           let resolvedStatus: string | undefined;
           let resolvedVideoUrl: string | undefined;
@@ -3651,7 +3664,8 @@ function EP04ProductionInner() {
     }, 15000); // Poll every 15 seconds
 
     return () => clearInterval(timer);
-  }, [perScenePolling, assemblyParts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perScenePolling]); // assemblyParts intentionally excluded — read from assemblyPartsRef to avoid stale closures
 
   // ─── Assembly Constants ─────────────────────────────────────────────────
   // Map storybook transition styles to FFmpeg xfade transition presets
