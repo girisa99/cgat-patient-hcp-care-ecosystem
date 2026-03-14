@@ -1,5 +1,5 @@
 """
-RunPod Serverless Handler — Cast FFmpeg Renderer  (v2.1 — upload timeout fix)
+RunPod Serverless Handler — Cast FFmpeg Renderer  (v2.2 — part-specific uploads)
 
 Receives a castTimelineEngine timeline JSON, renders each scene with FFmpeg
 (using NVENC hardware encoding on L4 GPU), concatenates with xfade transitions,
@@ -102,13 +102,15 @@ def handler(job: dict) -> dict:
     supabase_key = job_input.get("supabaseServiceKey", "")
     cast_project_id = job_input.get("castProjectId", "unknown")
     cast_job_id = job_input.get("castJobId")
+    part_number = job_input.get("partNumber")
 
     if not timeline or not timeline.get("scenes"):
         return {"error": "Missing or empty timeline"}
 
     scene_count = len(timeline["scenes"])
     total_dur = sum(s.get("duration", 0) for s in timeline["scenes"])
-    print(f"[CastRenderer] Starting: {scene_count} scenes, {total_dur:.0f}s, project={cast_project_id}")
+    part_label = f", part={part_number}" if part_number else ""
+    print(f"[CastRenderer] Starting: {scene_count} scenes, {total_dur:.0f}s, project={cast_project_id}{part_label}")
     t0 = time.time()
 
     # Helper to report progress with context
@@ -200,7 +202,7 @@ def handler(job: dict) -> dict:
         t_upload = time.time()
 
         from supabase_uploader import upload_final_video
-        result = upload_final_video(final_path, cast_project_id, supabase_url, supabase_key)
+        result = upload_final_video(final_path, cast_project_id, supabase_url, supabase_key, part_number=part_number)
         print(f"  Upload done in {time.time() - t_upload:.1f}s")
 
         total_time = time.time() - t0

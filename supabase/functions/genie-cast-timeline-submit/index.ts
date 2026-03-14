@@ -25,7 +25,7 @@ serve(async (req) => {
   }
 
   try {
-    const { timeline, castProjectId = null, language = 'en', quality = 'production' } = await req.json();
+    const { timeline, castProjectId = null, language = 'en', quality = 'production', partNumber = null } = await req.json();
 
     if (!timeline || !timeline.scenes || timeline.scenes.length === 0) {
       return new Response(JSON.stringify({ success: false, message: 'Missing or empty timeline' }), {
@@ -97,6 +97,7 @@ serve(async (req) => {
           supabaseServiceKey: supabaseKey,
           castProjectId: castProjectId || 'unknown',
           castJobId: castJobId || null,
+          ...(partNumber != null ? { partNumber } : {}),
         },
       }),
     });

@@ -4287,6 +4287,7 @@ function EP04ProductionInner() {
         castProjectId: projectId,
         language: 'en',
         quality: 'production',
+        ...(partNumber != null ? { partNumber } : {}),
       };
       const payloadSize = JSON.stringify(assemblyBody).length;
       console.log(`[EP04 Assembly${partLabel}] Sending: ${timelinePayload.scenes.length} scenes, ${(payloadSize / 1024).toFixed(0)}KB`);
