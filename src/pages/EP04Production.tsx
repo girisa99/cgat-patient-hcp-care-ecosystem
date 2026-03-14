@@ -3068,6 +3068,9 @@ function EP04ProductionInner() {
 
   const [assemblyParts, setAssemblyParts] = useState<AssemblyPart[]>([]);
   const [activePartNumber, setActivePartNumber] = useState<number | null>(null);
+  // Bulletproof mapping: jobId → partNumber. Prevents race conditions where
+  // activePartNumber state goes stale between part completions.
+  const jobToPartMapRef = React.useRef<Record<string, number>>({});
 
   // ── Restore completed assembly parts from DB on page load ──
   useEffect(() => {
@@ -3429,11 +3432,13 @@ function EP04ProductionInner() {
           pollNoProgressCountRef.current = 0;
 
           // Read latest deps from ref (avoids stale closures AND prevents effect restarts)
-          const { activePartNumber: curPartNum, projectId: curProjId, totalDuration: curDuration, scenes: curScenes, updateFinalAssembly: curUpdateFinal } = pollDepsRef.current;
+          const { projectId: curProjId, totalDuration: curDuration, scenes: curScenes, updateFinalAssembly: curUpdateFinal } = pollDepsRef.current;
+          // Use bulletproof jobId→partNumber mapping (not activePartNumber state which can go stale)
+          const curPartNum = jobToPartMapRef.current[assemblyJobId] ?? pollDepsRef.current.activePartNumber ?? null;
 
           // If this was a multi-part assembly, update the specific part
           if (curPartNum != null) {
-            console.warn(`[EP04 Poll WRITE] Writing videoUrl to part ${curPartNum}: ${finalVideoUrl?.substring(0, 80)}`);
+            console.warn(`[EP04 Poll WRITE] Writing videoUrl to part ${curPartNum} (jobId=${assemblyJobId}): ${finalVideoUrl?.substring(0, 80)}`);
             setAssemblyParts(prev => {
               console.warn(`[EP04 Poll WRITE] prev state:`, prev.map(p => `P${p.partNumber}:${p.status}:${p.videoUrl?.substring(0, 40) || 'null'}`));
               return prev.map(p =>
@@ -3474,7 +3479,7 @@ function EP04ProductionInner() {
           setAssemblyProgress(null);
           setAssemblyJobId(null);
           assemblyTaskIdRef.current = null;
-          const curPartNum2 = pollDepsRef.current.activePartNumber;
+          const curPartNum2 = jobToPartMapRef.current[assemblyJobId] ?? pollDepsRef.current.activePartNumber ?? null;
           if (curPartNum2 != null) {
             setAssemblyParts(prev => prev.map(p =>
               p.partNumber === curPartNum2
@@ -4392,6 +4397,11 @@ function EP04ProductionInner() {
         }
         // Use castJobId if available, otherwise fall back to taskId for polling
         const pollJobId = pollId || data.taskId;
+        // Map jobId → partNumber so polling completion knows which part to update
+        // (bulletproof — doesn't depend on activePartNumber state timing)
+        if (pollJobId && partNumber != null) {
+          jobToPartMapRef.current[pollJobId] = partNumber;
+        }
         console.warn(`[EP04 Assembly${partLabel}] 🚀 SETTING assemblyJobId = ${pollJobId} — polling should start NOW`);
         setAssemblyJobId(pollJobId);
         setAssemblyProgress(`Rendering${partLabel}... polling for completion`);
