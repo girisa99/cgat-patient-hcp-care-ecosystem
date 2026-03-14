@@ -569,13 +569,13 @@ function makeTtsLineScene(
     // 640×360 (1/3 frame) bottom-right — large enough for expressions,
     // small enough to keep the character world visible behind.
     // Enters with a brief delay after video lead-in for cinematic pacing.
-    // Scene duration is already guaranteed >= lipsyncDur + 1.0s margin,
-    // so we use full lipsync duration (no clipping).
+    // Clip lipsync PiP to fit within scene bounds — if lipsync is longer than the
+    // scene gap, it gets trimmed (remaining audio plays as voiceover over B-roll).
     const pipDelay = isHttpUrl(videoVisual) ? Math.min(3, sceneDur * 0.15) : 0.5;
     const pipStart = Math.min(pipDelay, sceneDur - lipsyncDur);
     elements.push({
       type: 'video', src: lipsync.url,
-      start: pipStart, duration: lipsyncDur,
+      start: pipStart, duration: Math.min(lipsyncDur, sceneDur - pipStart),
       volume: 0, // CRITICAL: TTS audio is a separate element
       'fade-in': 0.5, 'fade-out': 1.5,
       'z-index': 5, // above all B-roll layers
@@ -913,7 +913,14 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
       kiIdx++;
     }
 
-    // Find lipsync FIRST (need duration for scene sizing)
+    // Scene duration: gap between TTS lines (original timing from EP04Production).
+    // Do NOT inflate beyond the gap — inflating causes chapter scenes to exceed
+    // the chapter's planned duration, misaligning everything downstream.
+    // The FFmpeg worker's server-side duration extension (Fix 5) handles edge cases
+    // where TTS audio slightly exceeds the gap.
+    const sceneDur = Math.max(2, sceneEnd - sceneStart);
+
+    // Find lipsync for this TTS line (match by character + timing within 2s)
     // Track used clips to prevent same clip matching two adjacent TTS lines
     const lipsyncIdx = lipsyncClips.findIndex((c, idx) =>
       !usedLipsyncIndices.has(idx) &&
@@ -922,14 +929,6 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
     );
     const lipsync = lipsyncIdx >= 0 ? lipsyncClips[lipsyncIdx] : undefined;
     if (lipsyncIdx >= 0) usedLipsyncIndices.add(lipsyncIdx);
-
-    // Scene duration: floor to protect TTS audio and lipsync from truncation.
-    // gap = time until next TTS line, audioDur = TTS audio + 0.5s margin,
-    // lipsyncNeeded = lipsync duration + 1.0s margin (for fade-out).
-    const gapDur = sceneEnd - sceneStart;
-    const audioDur = tts.duration + 0.5;
-    const lipsyncNeeded = lipsync ? lipsync.duration + 1.0 : 0;
-    const sceneDur = Math.max(2, gapDur, audioDur, lipsyncNeeded);
 
     // Pick visuals from pool
     let videoVisual: string | undefined;
