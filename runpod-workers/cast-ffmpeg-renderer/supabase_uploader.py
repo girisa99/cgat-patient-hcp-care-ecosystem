@@ -1,12 +1,18 @@
 """
 Upload final rendered video + thumbnail to Supabase Storage.
-Uses direct HTTP POST (not SDK) for reliable timeout control on large files.
+Uses TUS resumable upload for large files (>50MB) and direct HTTP POST for small files.
 """
 
 import os
 import time
+import base64
 import subprocess
 import httpx
+
+
+# ── Threshold: files above this use TUS resumable upload ──
+TUS_THRESHOLD_MB = 50
+TUS_CHUNK_SIZE = 6 * 1024 * 1024  # 6MB per chunk
 
 
 def generate_thumbnail(video_path: str, output_path: str, time_sec: float = 2.0):
@@ -24,33 +30,136 @@ def generate_thumbnail(video_path: str, output_path: str, time_sec: float = 2.0)
     return output_path if os.path.exists(output_path) else None
 
 
-def upload_to_supabase(
+def _upload_tus(
     file_path: str,
     supabase_url: str,
     supabase_key: str,
     bucket: str,
     storage_path: str,
-    content_type: str = "video/mp4",
+    content_type: str,
 ) -> str | None:
-    """Upload a file to Supabase Storage via direct HTTP POST."""
+    """Upload via TUS resumable protocol (6MB chunks). Works for any file size."""
+    file_size = os.path.getsize(file_path)
+    file_size_mb = file_size / (1024 * 1024)
+    print(f"  [upload-tus] Starting TUS upload: {file_size_mb:.1f}MB in {TUS_CHUNK_SIZE // (1024*1024)}MB chunks", flush=True)
+
+    # Step 1: Create TUS upload session
+    metadata = (
+        f"bucketName {base64.b64encode(bucket.encode()).decode()},"
+        f"objectName {base64.b64encode(storage_path.encode()).decode()},"
+        f"contentType {base64.b64encode(content_type.encode()).decode()}"
+    )
+
+    try:
+        with httpx.Client(timeout=httpx.Timeout(30.0)) as hc:
+            resp = hc.post(
+                f"{supabase_url}/storage/v1/upload/resumable",
+                headers={
+                    "Authorization": f"Bearer {supabase_key}",
+                    "x-upsert": "true",
+                    "Upload-Length": str(file_size),
+                    "Tus-Resumable": "1.0.0",
+                    "Upload-Metadata": metadata,
+                },
+                content=b"",
+            )
+        print(f"  [upload-tus] Create session: HTTP {resp.status_code}", flush=True)
+        if resp.status_code not in (200, 201):
+            print(f"  [upload-tus] Create FAILED: {resp.text[:300]}", flush=True)
+            return None
+    except Exception as e:
+        print(f"  [upload-tus] Create session ERROR: {type(e).__name__}: {e}", flush=True)
+        return None
+
+    upload_url = resp.headers.get("Location")
+    if not upload_url:
+        print(f"  [upload-tus] No Location header in response", flush=True)
+        return None
+
+    print(f"  [upload-tus] Session created, uploading chunks...", flush=True)
+
+    # Step 2: Upload file in chunks via PATCH
+    offset = 0
+    t0 = time.time()
     with open(file_path, "rb") as f:
-        data = f.read()
+        chunk_num = 0
+        while offset < file_size:
+            chunk = f.read(TUS_CHUNK_SIZE)
+            chunk_len = len(chunk)
+            chunk_num += 1
 
+            for retry in range(3):
+                try:
+                    with httpx.Client(timeout=httpx.Timeout(120.0, connect=30.0)) as hc:
+                        patch_resp = hc.patch(
+                            upload_url,
+                            headers={
+                                "Authorization": f"Bearer {supabase_key}",
+                                "Content-Type": "application/offset+octet-stream",
+                                "Upload-Offset": str(offset),
+                                "Tus-Resumable": "1.0.0",
+                            },
+                            content=chunk,
+                        )
+
+                    if patch_resp.status_code in (200, 204):
+                        offset += chunk_len
+                        pct = int(offset / file_size * 100)
+                        elapsed = time.time() - t0
+                        speed = (offset / (1024 * 1024)) / elapsed if elapsed > 0 else 0
+                        print(f"  [upload-tus] Chunk {chunk_num}: {pct}% ({offset}/{file_size}) {speed:.1f} MB/s", flush=True)
+                        break
+                    else:
+                        print(f"  [upload-tus] Chunk {chunk_num} retry {retry+1}: HTTP {patch_resp.status_code} — {patch_resp.text[:200]}", flush=True)
+                        if retry < 2:
+                            time.sleep(2)
+                except Exception as e:
+                    print(f"  [upload-tus] Chunk {chunk_num} retry {retry+1} ERROR: {type(e).__name__}: {e}", flush=True)
+                    if retry < 2:
+                        time.sleep(2)
+            else:
+                # All 3 retries failed for this chunk
+                print(f"  [upload-tus] FAILED at chunk {chunk_num} (offset {offset})", flush=True)
+                return None
+
+    elapsed = time.time() - t0
+    speed = file_size_mb / elapsed if elapsed > 0 else 0
+    print(f"  [upload-tus] COMPLETE in {elapsed:.1f}s ({speed:.1f} MB/s)", flush=True)
+
+    public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{storage_path}"
+
+    # Verify
+    try:
+        with httpx.Client(timeout=httpx.Timeout(10.0)) as hc:
+            head = hc.head(public_url)
+        cl = head.headers.get("content-length", "?")
+        print(f"  [upload-tus] VERIFIED: HTTP {head.status_code}, size={cl}", flush=True)
+    except Exception as ve:
+        print(f"  [upload-tus] Verify skipped: {ve}", flush=True)
+
+    return public_url
+
+
+def _upload_direct(
+    file_path: str,
+    data: bytes,
+    supabase_url: str,
+    supabase_key: str,
+    bucket: str,
+    storage_path: str,
+    content_type: str,
+) -> str | None:
+    """Upload via direct HTTP POST (for small files <50MB)."""
     file_size_mb = len(data) / (1024 * 1024)
-    print(f"  [upload] Uploading {file_size_mb:.1f}MB to {bucket}/{storage_path}", flush=True)
-
     upload_url = f"{supabase_url}/storage/v1/object/{bucket}/{storage_path}"
     public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{storage_path}"
 
-    # Scale timeout with file size: 60s base + 3s per MB (155MB → ~8 min)
     timeout_secs = max(120, 60 + int(file_size_mb * 3))
-    print(f"  [upload] Timeout: {timeout_secs}s for {file_size_mb:.0f}MB", flush=True)
+    print(f"  [upload] Direct POST: {file_size_mb:.1f}MB, timeout={timeout_secs}s", flush=True)
 
     max_retries = 3
-
     for attempt in range(1, max_retries + 1):
         try:
-            # Remove existing file first (avoids "already exists" errors)
             if attempt > 1:
                 try:
                     with httpx.Client(timeout=httpx.Timeout(10.0)) as hc:
@@ -89,7 +198,6 @@ def upload_to_supabase(
                 speed = file_size_mb / elapsed if elapsed > 0 else 0
                 print(f"  [upload] OK in {elapsed:.1f}s ({speed:.1f} MB/s)", flush=True)
 
-                # Verify upload
                 try:
                     with httpx.Client(timeout=httpx.Timeout(10.0)) as hc:
                         head = hc.head(public_url)
@@ -99,6 +207,11 @@ def upload_to_supabase(
                     print(f"  [upload] Verify skipped: {ve}", flush=True)
 
                 return public_url
+
+            # If 413, suggest TUS
+            if resp.status_code == 400 and "413" in resp.text:
+                print(f"  [upload] 413 Payload too large — will fall back to TUS", flush=True)
+                return None
 
             print(f"  [upload] FAILED: HTTP {resp.status_code}", flush=True)
 
@@ -110,6 +223,45 @@ def upload_to_supabase(
             print(f"  [upload] ERROR after {elapsed:.1f}s: {type(e).__name__}: {e}", flush=True)
 
     print(f"  [upload] ALL {max_retries} attempts FAILED for {storage_path}", flush=True)
+    return None
+
+
+def upload_to_supabase(
+    file_path: str,
+    supabase_url: str,
+    supabase_key: str,
+    bucket: str,
+    storage_path: str,
+    content_type: str = "video/mp4",
+) -> str | None:
+    """Upload a file to Supabase Storage. Uses TUS for large files, direct POST for small."""
+    file_size = os.path.getsize(file_path)
+    file_size_mb = file_size / (1024 * 1024)
+    print(f"  [upload] Uploading {file_size_mb:.1f}MB to {bucket}/{storage_path}", flush=True)
+
+    # Large files: use TUS resumable upload (bypasses single-request size limits)
+    if file_size_mb >= TUS_THRESHOLD_MB:
+        print(f"  [upload] File >= {TUS_THRESHOLD_MB}MB — using TUS resumable upload", flush=True)
+        url = _upload_tus(file_path, supabase_url, supabase_key, bucket, storage_path, content_type)
+        if url:
+            return url
+        print(f"  [upload] TUS failed — trying direct POST as fallback", flush=True)
+
+    # Small files or TUS fallback: direct POST
+    with open(file_path, "rb") as f:
+        data = f.read()
+    url = _upload_direct(file_path, data, supabase_url, supabase_key, bucket, storage_path, content_type)
+    if url:
+        return url
+
+    # Last resort for small files that hit 413: try TUS
+    if file_size_mb < TUS_THRESHOLD_MB:
+        print(f"  [upload] Direct POST failed — trying TUS as last resort", flush=True)
+        url = _upload_tus(file_path, supabase_url, supabase_key, bucket, storage_path, content_type)
+        if url:
+            return url
+
+    print(f"  [upload] ALL methods FAILED for {storage_path}", flush=True)
     return None
 
 
