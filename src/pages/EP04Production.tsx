@@ -3061,6 +3061,46 @@ function EP04ProductionInner() {
   const [assemblyParts, setAssemblyParts] = useState<AssemblyPart[]>([]);
   const [activePartNumber, setActivePartNumber] = useState<number | null>(null);
 
+  // ── Restore completed assembly parts from DB on page load ──
+  useEffect(() => {
+    if (!projectId) return;
+    (async () => {
+      try {
+        const { data: jobs } = await supabase
+          .from('cast_generation_jobs')
+          .select('id, status, output_url, output_thumbnail_url, scene_key, input_config, progress_percent')
+          .eq('project_id', projectId)
+          .eq('job_type', 'assembly')
+          .order('created_at', { ascending: true });
+        if (!jobs || jobs.length === 0) return;
+
+        // Find completed assembly jobs with video URLs
+        const completedJobs = jobs.filter(j => j.status === 'completed' && j.output_url);
+        if (completedJobs.length === 0) return;
+
+        console.log(`[EP04 Restore] Found ${completedJobs.length} completed assembly job(s)`);
+
+        setAssemblyParts(prev => {
+          // Only restore if parts haven't been set yet (avoid overwriting active state)
+          if (prev.length > 0) return prev;
+
+          // Build parts from completed jobs
+          const parts = computePerSceneParts();
+          return parts.map((p, idx) => {
+            // Match by part number — jobs are in order
+            const matchingJob = completedJobs[idx];
+            if (matchingJob) {
+              return { ...p, status: 'completed' as const, videoUrl: matchingJob.output_url, jobId: matchingJob.id };
+            }
+            return p;
+          });
+        });
+      } catch (err) {
+        console.warn('[EP04 Restore] Failed to restore assembly parts:', err);
+      }
+    })();
+  }, [projectId]);
+
   // ── Per-Scene Assembly with Smart Splitting ──
   // Each scene renders independently. Only very heavy scenes get split.
   // Visual cycling (15s beats) handles long durations, so threshold is generous.
