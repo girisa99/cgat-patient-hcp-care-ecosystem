@@ -3433,11 +3433,15 @@ function EP04ProductionInner() {
 
           // If this was a multi-part assembly, update the specific part
           if (curPartNum != null) {
-            setAssemblyParts(prev => prev.map(p =>
-              p.partNumber === curPartNum
-                ? { ...p, status: 'completed', videoUrl: finalVideoUrl, thumbnailUrl: finalThumbnailUrl || null }
-                : p
-            ));
+            console.warn(`[EP04 Poll WRITE] Writing videoUrl to part ${curPartNum}: ${finalVideoUrl?.substring(0, 80)}`);
+            setAssemblyParts(prev => {
+              console.warn(`[EP04 Poll WRITE] prev state:`, prev.map(p => `P${p.partNumber}:${p.status}:${p.videoUrl?.substring(0, 40) || 'null'}`));
+              return prev.map(p =>
+                p.partNumber === curPartNum
+                  ? { ...p, status: 'completed', videoUrl: finalVideoUrl, thumbnailUrl: finalThumbnailUrl || null }
+                  : p
+              );
+            });
             setActivePartNumber(null);
             toast.success(`Part ${curPartNum} assembled! Video: ${finalVideoUrl?.substring(0, 60)}...`);
 
@@ -3638,9 +3642,13 @@ function EP04ProductionInner() {
 
           // Apply resolved status
           if (resolvedStatus === 'completed') {
-            setAssemblyParts(prev => prev.map(p =>
-              p.partNumber === part.partNumber ? { ...p, status: 'completed', videoUrl: resolvedVideoUrl || null, thumbnailUrl: resolvedThumbnailUrl || null } : p
-            ));
+            console.warn(`[EP04 PerScene WRITE] Writing videoUrl to part ${part.partNumber}: ${resolvedVideoUrl?.substring(0, 80)}`);
+            setAssemblyParts(prev => {
+              console.warn(`[EP04 PerScene WRITE] prev state:`, prev.map(p => `P${p.partNumber}:${p.status}:${p.videoUrl?.substring(0, 40) || 'null'}`));
+              return prev.map(p =>
+                p.partNumber === part.partNumber ? { ...p, status: 'completed', videoUrl: resolvedVideoUrl || null, thumbnailUrl: resolvedThumbnailUrl || null } : p
+              );
+            });
             toast.success(`Scene ${part.partNumber} (${part.sceneKeys[0]}) assembled! URL: ${resolvedVideoUrl?.substring(0, 60)}...`);
           } else if (resolvedStatus === 'failed') {
             setAssemblyParts(prev => prev.map(p =>
@@ -6777,9 +6785,13 @@ function EP04ProductionInner() {
                                     className="h-6 text-[10px] px-2 border-amber-500/30 text-amber-600"
                                     disabled={!!assemblyJobId}
                                     onClick={() => {
-                                      setAssemblyParts(prev => prev.map(p =>
-                                        p.partNumber === part.partNumber ? { ...p, status: 'pending', videoUrl: null } : p
-                                      ));
+                                      console.warn(`[EP04 Re-assemble] Resetting part ${part.partNumber} to pending (was: ${part.videoUrl?.substring(0, 60)})`);
+                                      setAssemblyParts(prev => {
+                                        console.warn(`[EP04 Re-assemble] prev state:`, prev.map(p => `P${p.partNumber}:${p.status}:${p.videoUrl?.substring(0, 40) || 'null'}`));
+                                        return prev.map(p =>
+                                          p.partNumber === part.partNumber ? { ...p, status: 'pending', videoUrl: null } : p
+                                        );
+                                      });
                                       startFinalAssembly(part.partNumber);
                                     }}
                                   >
