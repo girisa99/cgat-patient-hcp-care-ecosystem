@@ -84,23 +84,48 @@ serve(async (req) => {
       });
     }
 
-    const response = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RUNPOD_API_KEY}`,
-      },
-      body: JSON.stringify({
-        input: {
-          timeline,
-          supabaseUrl,
-          supabaseServiceKey: supabaseKey,
-          castProjectId: castProjectId || 'unknown',
-          castJobId: castJobId || null,
-          ...(partNumber != null ? { partNumber } : {}),
+    // 15-second timeout on RunPod /run call — prevents edge function from hanging
+    const runController = new AbortController();
+    const runTimeout = setTimeout(() => runController.abort(), 15000);
+
+    let response: Response;
+    try {
+      response = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${RUNPOD_API_KEY}`,
         },
-      }),
-    });
+        signal: runController.signal,
+        body: JSON.stringify({
+          input: {
+            timeline,
+            supabaseUrl,
+            supabaseServiceKey: supabaseKey,
+            castProjectId: castProjectId || 'unknown',
+            castJobId: castJobId || null,
+            ...(partNumber != null ? { partNumber } : {}),
+          },
+        }),
+      });
+    } catch (fetchErr) {
+      clearTimeout(runTimeout);
+      const isTimeout = fetchErr instanceof DOMException && fetchErr.name === 'AbortError';
+      const errMsg = isTimeout ? 'RunPod API timed out after 15s' : String(fetchErr);
+      console.error(`❌ RunPod fetch failed: ${errMsg}`);
+      if (castJobId) {
+        await supabase.from('cast_generation_jobs').update({
+          status: 'failed',
+          error_message: errMsg,
+          completed_at: new Date().toISOString(),
+        }).eq('id', castJobId);
+      }
+      return new Response(JSON.stringify({ success: false, message: errMsg }), {
+        status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } finally {
+      clearTimeout(runTimeout);
+    }
 
     const responseText = await response.text();
     console.log(`🚀 RunPod status: ${response.status}, body: ${responseText.substring(0, 500)}`);

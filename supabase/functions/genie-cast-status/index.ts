@@ -80,6 +80,11 @@ serve(async (req) => {
             output_duration_seconds: providerStatus.duration || null,
             progress_percent: 100,
             completed_at: new Date().toISOString(),
+            output_metadata: {
+              worker_version: providerStatus.workerVersion || null,
+              output_file_size_bytes: providerStatus.fileSizeBytes || null,
+              status_text: 'Completed',
+            },
           }).eq('id', castJobId);
 
           // Update parent cast project
@@ -358,11 +363,28 @@ async function checkRunPodStatus(jobId: string, endpointId: string, apiKey: stri
   duration?: number;
   progress?: number;
   error?: string;
+  workerVersion?: string;
+  fileSizeBytes?: number;
 }> {
   try {
-    const response = await fetch(`https://api.runpod.ai/v2/${endpointId}/status/${jobId}`, {
-      headers: { 'Authorization': `Bearer ${apiKey}` },
-    });
+    // 10-second timeout on RunPod status check — prevents edge function from hanging
+    const statusController = new AbortController();
+    const statusTimeout = setTimeout(() => statusController.abort(), 10000);
+
+    let response: Response;
+    try {
+      response = await fetch(`https://api.runpod.ai/v2/${endpointId}/status/${jobId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+        signal: statusController.signal,
+      });
+    } catch (fetchErr) {
+      clearTimeout(statusTimeout);
+      const isTimeout = fetchErr instanceof DOMException && fetchErr.name === 'AbortError';
+      console.error(`RunPod status fetch failed: ${isTimeout ? 'timed out after 10s' : fetchErr}`);
+      return { completed: false, failed: false, error: isTimeout ? 'Status check timed out' : String(fetchErr) };
+    } finally {
+      clearTimeout(statusTimeout);
+    }
 
     if (!response.ok) {
       console.error(`RunPod status API error: ${response.status}`);
@@ -374,12 +396,24 @@ async function checkRunPodStatus(jobId: string, endpointId: string, apiKey: stri
 
     // RunPod statuses: IN_QUEUE, IN_PROGRESS, COMPLETED, FAILED, CANCELLED, TIMED_OUT
     if (data.status === 'COMPLETED') {
+      const videoUrl = data.output?.videoUrl;
+      // Validate: if RunPod says COMPLETED but no valid URL, treat as failed
+      if (!videoUrl || !videoUrl.startsWith('http')) {
+        console.error(`RunPod COMPLETED but invalid videoUrl: ${videoUrl}`);
+        return {
+          completed: false,
+          failed: true,
+          error: `Render completed but upload failed (no valid video URL). File size: ${data.output?.fileSizeBytes || 'unknown'} bytes`,
+        };
+      }
       return {
         completed: true,
         failed: false,
-        videoUrl: data.output?.videoUrl,
+        videoUrl,
         thumbnailUrl: data.output?.thumbnailUrl,
         duration: data.output?.duration,
+        workerVersion: data.output?.workerVersion,
+        fileSizeBytes: data.output?.fileSizeBytes,
       };
     }
 

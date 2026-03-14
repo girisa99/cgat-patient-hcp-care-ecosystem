@@ -1,13 +1,17 @@
 """
 Parallel asset downloader — fetches images/videos/audio from Supabase Storage URLs.
+Includes retry with exponential backoff to prevent black-frame scenes from transient errors.
 """
 
 import os
+import time
 import hashlib
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 DOWNLOAD_DIR = "/tmp/cast_assets"
+MAX_RETRIES = 3
+BACKOFF_SECONDS = [2, 4, 8]  # exponential backoff delays
 
 
 def _ensure_dir():
@@ -25,16 +29,28 @@ def _url_to_path(url: str, ext: str = "") -> str:
 
 
 def download_one(url: str, ext: str = "") -> str:
-    """Download a single URL to a local file. Returns local path."""
+    """Download a single URL to a local file with retry + exponential backoff.
+    Returns local path."""
     local_path = _url_to_path(url, ext)
     if os.path.exists(local_path) and os.path.getsize(local_path) > 0:
         return local_path  # already downloaded (idempotent)
 
-    resp = requests.get(url, timeout=120)
-    resp.raise_for_status()
-    with open(local_path, "wb") as f:
-        f.write(resp.content)
-    return local_path
+    last_error = None
+    for attempt in range(MAX_RETRIES):
+        try:
+            resp = requests.get(url, timeout=120)
+            resp.raise_for_status()
+            with open(local_path, "wb") as f:
+                f.write(resp.content)
+            return local_path
+        except Exception as e:
+            last_error = e
+            if attempt < MAX_RETRIES - 1:
+                delay = BACKOFF_SECONDS[attempt]
+                print(f"  [download] Retry {attempt + 1}/{MAX_RETRIES} for {url[:60]}... "
+                      f"(waiting {delay}s): {e}")
+                time.sleep(delay)
+    raise last_error  # type: ignore — guaranteed to be set after loop
 
 
 def download_all(urls: list[str]) -> dict[str, str]:

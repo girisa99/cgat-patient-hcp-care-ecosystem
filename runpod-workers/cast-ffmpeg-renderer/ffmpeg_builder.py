@@ -51,11 +51,14 @@ def _detect_nvenc() -> bool:
     return HWACCEL_AVAILABLE
 
 
-def _encoder_args() -> list[str]:
-    """Return encoder flags — always libx264 for reliability."""
+def _encoder_args(crf: int = 28) -> list[str]:
+    """Return encoder flags — always libx264 for reliability.
+    CRF 28 (up from 20) reduces file size ~60% while keeping acceptable quality.
+    maxrate cap prevents bitrate spikes on complex scenes."""
     if _detect_nvenc():
-        return ["-c:v", "h264_nvenc", "-preset", "p4", "-b:v", "8M", "-maxrate", "12M", "-bufsize", "16M"]
-    return ["-c:v", "libx264", "-preset", "medium", "-crf", "20"]
+        return ["-c:v", "h264_nvenc", "-preset", "p4", "-b:v", "4M", "-maxrate", "6M", "-bufsize", "8M"]
+    return ["-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
+            "-maxrate", "4M", "-bufsize", "8M"]
 
 
 def _hex_to_ffmpeg_color(hex_color: str) -> str:

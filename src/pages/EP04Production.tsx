@@ -3034,6 +3034,7 @@ function EP04ProductionInner() {
   const assemblyTaskIdRef = React.useRef<string | null>(null); // RunPod job ID fallback
   const pollNoProgressCountRef = React.useRef(0); // Track consecutive polls with 0% progress
   const assemblyCancelledRef = React.useRef(false); // Set true on cancel to abort in-flight polls
+  const assemblySubmittingRef = React.useRef(false); // Dedup guard — prevents double-click double-submit
 
   // ─── Multi-Part Assembly ──────────────────────────────────────────────────
   // RunPod FFmpeg worker — no hard cap, but keep parts reasonable for UX.
@@ -3288,21 +3289,26 @@ function EP04ProductionInner() {
     }
     assemblyCancelledRef.current = false; // reset on new job
     console.warn(`[EP04 Poll] 🟢 Polling STARTED for assemblyJobId=${assemblyJobId}, taskId fallback=${assemblyTaskIdRef.current}`);
-    const MAX_POLLS = 180; // 180 × 10s = 30 minutes max (8-scene 2.5min video can take 15-20min)
+    const MAX_POLLS = 720; // 720 × 10s = 2 hours absolute hard stop (safety net)
     const MAX_ERRORS = 5;  // 5 consecutive errors = stop
 
     // Polling function — called immediately on first run, then every 10s
     const doPoll = async () => {
       if (assemblyCancelledRef.current) return; // cancelled — abort
       pollCountRef.current++;
-      // Never give up — GPU renders can take several minutes for complex scenes.
-      // Warn at milestones but keep polling until completion or cancellation.
+      // Warn at milestones, hard stop at 2 hours
       if (pollCountRef.current === 60) {
         toast.info('Still rendering on RunPod (10 min)... polling continues');
       } else if (pollCountRef.current === 180) {
         toast.info('Still rendering on RunPod (30 min)... polling continues');
       } else if (pollCountRef.current === 360) {
         toast.warning('Render taking unusually long (60 min) — check RunPod dashboard. Polling continues...');
+      } else if (pollCountRef.current >= MAX_POLLS) {
+        console.error(`[EP04 Poll] HARD STOP at ${MAX_POLLS} polls (2 hours) — aborting`);
+        setAssemblyProgress(null);
+        setAssemblyJobId(null);
+        toast.error('Assembly timed out after 2 hours — check RunPod dashboard');
+        return;
       }
       try {
         // Primary: poll via castJobId (DB row lookup → provider_job_id → RunPod)
@@ -3668,6 +3674,14 @@ function EP04ProductionInner() {
   // partNumber=null means full assembly (for plans with higher limits)
   // partNumber=1..N means assemble only that part's scenes
   const startFinalAssembly = useCallback(async (partNumber?: number) => {
+    // Dedup guard — prevent double-click from submitting two RunPod jobs
+    if (assemblySubmittingRef.current) {
+      console.log('[assembly] Blocked duplicate submission (already submitting)');
+      return;
+    }
+    assemblySubmittingRef.current = true;
+
+    try {
     // Step 0: Run readiness audit
     const readiness = getAssemblyReadiness();
     setAssemblyReadiness(readiness);
@@ -4398,6 +4412,9 @@ function EP04ProductionInner() {
         setActivePartNumber(null);
       }
       toast.error(`Assembly${partLabel} failed: ${err.message}`);
+    }
+    } finally {
+      assemblySubmittingRef.current = false;
     }
   }, [scenes, sceneProduction, scriptKeys, scriptContentForUI, audioMap, projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly, totalDuration, getAssemblyReadiness, computePartBoundaries]);
 

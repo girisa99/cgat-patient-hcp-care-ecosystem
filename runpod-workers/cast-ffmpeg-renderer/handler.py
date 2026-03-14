@@ -1,5 +1,5 @@
 """
-RunPod Serverless Handler — Cast FFmpeg Renderer  (v2.2 — part-specific uploads)
+RunPod Serverless Handler — Cast FFmpeg Renderer  (v2.3 — production resilience)
 
 Receives a castTimelineEngine timeline JSON, renders each scene with FFmpeg
 (using NVENC hardware encoding on L4 GPU), concatenates with xfade transitions,
@@ -34,8 +34,12 @@ import sys
 import time
 import json
 import shutil
+import subprocess
 import urllib.request
 import urllib.error
+
+WORKER_VERSION = "2.3"
+MAX_FILE_SIZE_MB = 80  # Re-encode if output exceeds this
 
 print("[CastRenderer] Starting handler.py — importing modules...", flush=True)
 
@@ -92,6 +96,73 @@ def _update_progress(cast_job_id: str | None, percent: int, status_text: str,
         print(f"  [progress] {percent}% — {status_text}", flush=True)
     except Exception as e:
         print(f"  [progress] Failed to update ({percent}%): {e}", flush=True)
+
+
+def _adaptive_reencode(video_path: str, duration: float) -> str:
+    """Re-encode video if it exceeds MAX_FILE_SIZE_MB.
+    Uses target bitrate to fit under the limit. Returns (possibly new) path."""
+    file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
+    if file_size_mb <= MAX_FILE_SIZE_MB:
+        return video_path
+
+    # Calculate target bitrate to hit ~75MB (leave headroom)
+    target_mb = MAX_FILE_SIZE_MB * 0.93  # 93% of limit for safety margin
+    target_bitrate_kbps = int(target_mb * 8 * 1024 / max(1, duration))
+    # Floor at 500 kbps for watchable quality
+    target_bitrate_kbps = max(500, target_bitrate_kbps)
+
+    reencoded_path = video_path.replace(".mp4", "_reenc.mp4")
+    print(f"  [reencode] {file_size_mb:.0f}MB exceeds {MAX_FILE_SIZE_MB}MB → "
+          f"re-encoding at {target_bitrate_kbps}kbps (target: {target_mb:.0f}MB)")
+
+    cmd = [
+        "ffmpeg", "-y", "-i", video_path,
+        "-c:v", "libx264", "-preset", "medium",
+        "-b:v", f"{target_bitrate_kbps}k",
+        "-maxrate", f"{int(target_bitrate_kbps * 1.5)}k",
+        "-bufsize", f"{target_bitrate_kbps * 2}k",
+        "-c:a", "aac", "-b:a", "128k",
+        "-pix_fmt", "yuv420p",
+        reencoded_path,
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        if result.returncode != 0:
+            print(f"  [reencode] FAILED — keeping original: {result.stderr[-500:]}")
+            return video_path
+        new_size_mb = os.path.getsize(reencoded_path) / (1024 * 1024)
+        print(f"  [reencode] OK: {file_size_mb:.0f}MB → {new_size_mb:.0f}MB")
+        # Replace original with re-encoded version
+        os.replace(reencoded_path, video_path)
+        return video_path
+    except subprocess.TimeoutExpired:
+        print(f"  [reencode] TIMED OUT — keeping original")
+        return video_path
+
+
+def _write_file_size_to_db(cast_job_id: str, file_size_bytes: int,
+                           supabase_url: str, supabase_key: str):
+    """Write file size to DB BEFORE upload attempt (for 413 diagnosis)."""
+    if not cast_job_id or not supabase_url or not supabase_key:
+        return
+    try:
+        url = f"{supabase_url}/rest/v1/cast_generation_jobs?id=eq.{cast_job_id}"
+        body = json.dumps({
+            "output_metadata": {
+                "status_text": "Uploading...",
+                "output_file_size_bytes": file_size_bytes,
+                "worker_version": WORKER_VERSION,
+            },
+        }).encode("utf-8")
+        req = urllib.request.Request(url, data=body, method="PATCH")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("apikey", supabase_key)
+        req.add_header("Authorization", f"Bearer {supabase_key}")
+        req.add_header("Prefer", "return=minimal")
+        urllib.request.urlopen(req, timeout=5)
+        print(f"  [pre-upload] File size {file_size_bytes} bytes written to DB")
+    except Exception as e:
+        print(f"  [pre-upload] Failed to write file size: {e}")
 
 
 def handler(job: dict) -> dict:
@@ -196,6 +267,15 @@ def handler(job: dict) -> dict:
             print(f"  WARNING: Final video ({duration:.1f}s) is much shorter than "
                   f"expected ({total_dur:.1f}s) — possible render issues")
 
+        # ── 4b. Adaptive re-encode if file too large for upload ──
+        final_path = _adaptive_reencode(final_path, duration)
+        file_size_mb = os.path.getsize(final_path) / (1024 * 1024)
+        duration = get_video_duration(final_path)  # refresh in case re-encoded
+
+        # ── 4c. Write file size to DB BEFORE upload (for 413 diagnosis) ──
+        file_size_bytes = os.path.getsize(final_path)
+        _write_file_size_to_db(cast_job_id, file_size_bytes, supabase_url, supabase_key)
+
         # ── 5. Upload to Supabase Storage ──
         progress(90, f"Uploading {file_size_mb:.0f}MB video to storage...")
         print("[CastRenderer] Phase 5: Uploading to Supabase Storage...")
@@ -225,6 +305,8 @@ def handler(job: dict) -> dict:
             "scenesTotal": len(scenes),
             "scenesFailed": len(failed_scenes),
             "fileSizeMB": round(file_size_mb, 1),
+            "fileSizeBytes": file_size_bytes,
+            "workerVersion": WORKER_VERSION,
         }
 
     except Exception as e:
