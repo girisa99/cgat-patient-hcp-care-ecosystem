@@ -526,76 +526,37 @@ function makeTtsLineScene(
 
   // ── Visual layer (z-index 0-2) ──────────────────────────────────────────
   if (lipsync && isHttpUrl(lipsync.url)) {
-    // === PiP (Picture-in-Picture) Layout ===
-    // B-roll with characters (Nova, Atlas, coffee mug, dog) fills the entire
-    // background. Lipsync talking head overlays as a podcast-style corner window.
-    // This keeps the visual world alive while the host speaks.
-    const VISUAL_BEAT = 12;
+    // === Full-Screen Lipsync Layout ===
+    // Lipsync video fills the entire frame (1920x1080). No PiP overlay —
+    // avoids clipping issues when lipsync duration exceeds the scene gap.
+    // TTS audio plays as a separate element (lipsync video is muted).
     const lipsyncDur = Math.min(lipsync.duration, sceneDur);
 
-    // ── Layer 0: Full-frame B-roll background (cycles for entire scene) ──
-    // Gather all available B-roll images (cast portraits, character shots, etc.)
-    const bgImages = (allImages && allImages.length > 0)
-      ? allImages.filter(u => isHttpUrl(u))
-      : (isHttpUrl(imageVisual) ? [imageVisual] : []);
-
-    if (bgImages.length > 0) {
-      const beatCount = Math.max(1, Math.ceil(sceneDur / VISUAL_BEAT));
-      const beatDur = sceneDur / beatCount;
-      for (let bi = 0; bi < beatCount; bi++) {
-        const img = bgImages[(kbIdx + bi) % bgImages.length];
-        const kb = getKenBurns(kbIdx + bi);
-        elements.push({
-          type: 'image', src: img,
-          start: bi * beatDur, duration: beatDur + (bi < beatCount - 1 ? 0.5 : 0),
-          ...kb, resize: 'cover', width: 1920, height: 1080,
-          'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
-        });
-      }
-    }
-
-    // ── Layer 1: Video B-roll lead-in (establishing shot, first 4-10s) ──
-    if (isHttpUrl(videoVisual)) {
-      const videoDur = Math.min(10, sceneDur);
-      elements.push({
-        type: 'video', src: videoVisual,
-        start: 0, duration: videoDur,
-        volume: 0, resize: 'cover', width: 1920, height: 1080,
-        'fade-in': 0.5, 'fade-out': 0.8, 'z-index': 1,
-      });
-    }
-
-    // ── Layer 2: Lipsync PiP — podcast-style corner window ──
-    // 640×360 (1/3 frame) bottom-right — large enough for expressions,
-    // small enough to keep the character world visible behind.
-    // Enters with a brief delay after video lead-in for cinematic pacing.
-    // Clip lipsync PiP to fit within scene bounds — if lipsync is longer than the
-    // scene gap, it gets trimmed (remaining audio plays as voiceover over B-roll).
-    const pipDelay = isHttpUrl(videoVisual) ? Math.min(3, sceneDur * 0.15) : 0.5;
-    const pipStart = Math.min(pipDelay, sceneDur - lipsyncDur);
+    // ── Layer 0: Lipsync full-screen — the primary visual ──
     elements.push({
       type: 'video', src: lipsync.url,
-      start: pipStart, duration: Math.min(lipsyncDur, sceneDur - pipStart),
+      start: 0, duration: lipsyncDur,
       volume: 0, // CRITICAL: TTS audio is a separate element
-      'fade-in': 0.5, 'fade-out': 1.5,
-      'z-index': 5, // above all B-roll layers
-      resize: 'cover', width: 640, height: 360,
-      position: 'bottom-right',
+      'fade-in': 0.3, 'fade-out': 0.8,
+      'z-index': 1,
+      resize: 'cover', width: 1920, height: 1080,
     });
 
-    // ── Layer 3: Tail visual — fills background after lipsync PiP fades out ──
-    // When the talking head exits, this image provides a strong foreground visual
-    // (above the cycling Ken Burns background) for visual continuity.
-    if (isHttpUrl(tailImageVisual)) {
-      const tailStart = pipStart + lipsyncDur - 0.5; // overlap with PiP fade-out
+    // ── Layer 1: B-roll image fills remaining time after lipsync ends ──
+    if (lipsyncDur < sceneDur - 0.5) {
+      const tailStart = lipsyncDur - 0.3; // slight overlap for smooth transition
       const tailDur = sceneDur - tailStart;
-      if (tailDur > 1) {
-        const kb = getKenBurns(kbIdx + 99); // distinct pattern from background
+      const tailImg = isHttpUrl(tailImageVisual) ? tailImageVisual
+        : isHttpUrl(imageVisual) ? imageVisual
+        : (allImages && allImages.length > 0) ? allImages.find(u => isHttpUrl(u))
+        : undefined;
+      if (tailImg) {
+        const kb = getKenBurns(kbIdx);
         elements.push({
-          type: 'image', src: tailImageVisual,
+          type: 'image', src: tailImg,
           start: tailStart, duration: tailDur,
           ...kb, resize: 'cover', width: 1920, height: 1080,
-          'fade-in': 1.0, 'fade-out': 0.5, 'z-index': 2, // above Layer 0 bg, below PiP
+          'fade-in': 0.8, 'fade-out': 0.5, 'z-index': 0,
         });
       }
     }
