@@ -394,8 +394,8 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
             print(f"  [render] Extending scene {scene.index}: "
                   f"{scene.duration:.1f}s → {elem_end + 0.5:.1f}s (TTS audio protection)")
             scene.duration = elem_end + 0.5
-        # Lipsync PiP (small video, width < 800px)
-        elif elem.type == "video" and elem.width < 800 and elem_end > scene.duration + 0.3:
+        # Lipsync video (muted video overlay — volume=0, any size)
+        elif elem.type == "video" and elem.volume == 0 and elem_end > scene.duration + 0.3:
             print(f"  [render] Extending scene {scene.index}: "
                   f"{scene.duration:.1f}s → {elem_end + 0.5:.1f}s (lipsync protection)")
             scene.duration = elem_end + 0.5

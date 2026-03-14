@@ -1322,7 +1322,7 @@ export function buildCastTimeline(
   splitScenes.forEach((s, i) => {
     const els = s.elements || [];
     const audioCount = els.filter((e: any) => e.type === 'audio' && (e.volume ?? 1) >= 0.9).length;
-    const lipsyncCount = els.filter((e: any) => e.type === 'video' && (e.width ?? 1920) < 800).length;
+    const lipsyncCount = els.filter((e: any) => e.type === 'video' && e.volume === 0).length;
     const trans = s.transition;
     const transInfo = trans ? ` → ${(trans as any).style || 'fade'}(${(trans as any).duration || 0}s)` : '';
     console.log(`  [manifest] scene ${i}: ${(s.duration || 0).toFixed(1)}s, ${audioCount} TTS, ${lipsyncCount} lipsync${transInfo} | ${s.comment || ''}`);
