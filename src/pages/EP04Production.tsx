@@ -3340,15 +3340,21 @@ function EP04ProductionInner() {
         // ── Direct DB read: worker writes progress_percent directly via REST API.
         // This bypasses the edge function which may be stale/undeployed.
         let dbProgress = 0;
+        let dbStatusText = '';
         try {
+          // Try castJobId first (UUID in cast_generation_jobs)
+          // assemblyJobId might be a RunPod taskId if castJobId was null
+          const castJobId = Object.keys(jobToPartMapRef.current).length > 0
+            ? assemblyJobId  // if we have a mapping, assemblyJobId should be castJobId
+            : assemblyJobId;
           const { data: jobRow } = await supabase
             .from('cast_generation_jobs')
             .select('progress_percent, output_metadata, status, output_url')
-            .eq('id', assemblyJobId)
+            .eq('id', castJobId)
             .single();
           if (jobRow) {
             dbProgress = jobRow.progress_percent || 0;
-            const dbStatusText = jobRow.output_metadata?.status_text || '';
+            dbStatusText = (jobRow.output_metadata as any)?.status_text || '';
             if (dbProgress > 0) {
               console.log(`[EP04 Poll] DB direct: ${dbProgress}%, status=${jobRow.status}, text="${dbStatusText}"`);
             }
@@ -3360,7 +3366,7 @@ function EP04ProductionInner() {
             }
           }
         } catch (dbErr) {
-          // RLS may block — fall through to existing logic
+          // RLS may block or assemblyJobId is a RunPod taskId not a UUID — fall through
         }
 
         if (fnError || (!jobStatus) || (jobStatus !== 'completed' && jobStatus !== 'failed' && jobProgress === 0 && dbProgress === 0)) {
@@ -3490,10 +3496,12 @@ function EP04ProductionInner() {
           }
           toast.error(`Assembly failed: ${errMsg}`);
         } else {
-          const curPartNum3 = pollDepsRef.current.activePartNumber;
+          const curPartNum3 = jobToPartMapRef.current[assemblyJobId] ?? pollDepsRef.current.activePartNumber ?? null;
           const partLabel = curPartNum3 != null ? ` Part ${curPartNum3}` : '';
           const elapsedMin = Math.round(pollCountRef.current * 10 / 60);
-          setAssemblyProgress(`Rendering${partLabel}... ${finalProgress}% (${elapsedMin}min elapsed, poll ${pollCountRef.current})`);
+          // Show worker's status text if available (e.g., "Rendering scene 3/5: Problem...")
+          const statusDetail = dbStatusText ? ` — ${dbStatusText}` : '';
+          setAssemblyProgress(`Rendering${partLabel}... ${finalProgress}%${statusDetail} (${elapsedMin}min, poll ${pollCountRef.current})`);
         }
       } catch (err) {
         pollErrorCountRef.current++;
