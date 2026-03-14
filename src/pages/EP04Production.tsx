@@ -1906,13 +1906,24 @@ function EP04ProductionInner() {
       const assetUrl = STATIC_ASSETS[assetKey];
       if (!assetUrl) { console.warn(`[EP04 Visual] ${stepLabel}: unknown static asset "${assetKey}"`); return; }
       let finalUrl = assetUrl;
-      if (projectId && !isSupabaseStorageUrl(assetUrl)) {
-        try {
-          finalUrl = await ensureStorageUrl(projectId, `static-asset-${assetKey}-${sceneKey}`, assetUrl);
-        } catch { console.warn(`[EP04 Visual] ${stepLabel}: static-asset mirror failed, using local path`); }
+      // Static assets are local Vite paths (/assets/...) — MUST upload to Supabase Storage
+      // so the RunPod worker can download them. Without this, isSafeUrl filters them out.
+      if (projectId) {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            finalUrl = await ensureStorageUrl(projectId, `static-asset-${assetKey}-${sceneKey}`, finalUrl);
+            break;
+          } catch (e) {
+            console.warn(`[EP04 Visual] ${stepLabel}: static-asset upload attempt ${attempt + 1} failed:`, e);
+            if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
+          }
+        }
+      }
+      if (!finalUrl.startsWith('http')) {
+        console.error(`[EP04 Visual] ${stepLabel}: static-asset "${assetKey}" URL is NOT http — worker won't be able to download it: ${finalUrl.substring(0, 80)}`);
       }
       results[`static-asset-${assetKey}-${sceneKey}`] = finalUrl;
-      console.log(`[EP04 Visual] ${stepLabel}: using static asset "${assetKey}" as scene image`);
+      console.log(`[EP04 Visual] ${stepLabel}: using static asset "${assetKey}" → ${finalUrl.substring(0, 80)}`);
       return;
     }
 
