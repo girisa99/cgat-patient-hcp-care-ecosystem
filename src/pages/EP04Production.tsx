@@ -3053,6 +3053,7 @@ function EP04ProductionInner() {
     taskId?: string | null;     // RunPod job ID — fallback for polling when provider_job_id update fails
     status: 'pending' | 'rendering' | 'completed' | 'failed';
     videoUrl: string | null;
+    thumbnailUrl?: string | null;
     errorMessage?: string;
     /** When a scene is split into sub-parts, this tracks which TTS lines belong to this sub-part */
     _subPartLineRange?: { start: number; end: number };
@@ -3090,7 +3091,7 @@ function EP04ProductionInner() {
             // Match by part number — jobs are in order
             const matchingJob = completedJobs[idx];
             if (matchingJob) {
-              return { ...p, status: 'completed' as const, videoUrl: matchingJob.output_url, jobId: matchingJob.id };
+              return { ...p, status: 'completed' as const, videoUrl: matchingJob.output_url, thumbnailUrl: matchingJob.output_thumbnail_url || null, jobId: matchingJob.id };
             }
             return p;
           });
@@ -3340,6 +3341,7 @@ function EP04ProductionInner() {
             if (jobRow.status === 'completed' && jobRow.output_url) {
               resolvedStatus = 'completed';
               resolvedVideoUrl = jobRow.output_url;
+              if (jobRow.output_thumbnail_url) resolvedThumbnailUrl = jobRow.output_thumbnail_url;
             }
           }
         } catch (dbErr) {
@@ -3379,6 +3381,7 @@ function EP04ProductionInner() {
         // For progress: take the HIGHEST value from all 3 sources (edge fn, DB direct, RunPod fallback)
         const finalStatus = resolvedStatus || jobStatus;
         const finalVideoUrl = resolvedVideoUrl || data?.job?.outputUrl;
+        const finalThumbnailUrl = resolvedThumbnailUrl || data?.job?.thumbnailUrl;
         const finalProgress = Math.max(resolvedProgress || 0, jobProgress, dbProgress);
         const finalError = resolvedError || data?.job?.errorMessage;
 
@@ -3420,7 +3423,7 @@ function EP04ProductionInner() {
           if (curPartNum != null) {
             setAssemblyParts(prev => prev.map(p =>
               p.partNumber === curPartNum
-                ? { ...p, status: 'completed', videoUrl: finalVideoUrl }
+                ? { ...p, status: 'completed', videoUrl: finalVideoUrl, thumbnailUrl: finalThumbnailUrl || null }
                 : p
             ));
             setActivePartNumber(null);
@@ -3526,6 +3529,7 @@ function EP04ProductionInner() {
         try {
           let resolvedStatus: string | undefined;
           let resolvedVideoUrl: string | undefined;
+          let resolvedThumbnailUrl: string | undefined;
           let resolvedError: string | undefined;
 
           // Always increment stuck counter — reset ONLY on real progress
@@ -3554,6 +3558,7 @@ function EP04ProductionInner() {
                 if (jobStatus === 'completed' || jobStatus === 'done' || jobStatus === 'finished') {
                   resolvedStatus = 'completed';
                   resolvedVideoUrl = data.job.outputUrl;
+                  resolvedThumbnailUrl = data.job.thumbnailUrl;
                 } else if (jobStatus === 'failed' || jobStatus === 'error' || jobStatus === 'cancelled') {
                   resolvedStatus = 'failed';
                   resolvedError = data.job.errorMessage || 'Render failed';
@@ -3584,6 +3589,7 @@ function EP04ProductionInner() {
                 if (fbData.status === 'completed' || fbData.status === 'done' || fbData.status === 'finished') {
                   resolvedStatus = 'completed';
                   resolvedVideoUrl = fbData.videoUrl;
+                  resolvedThumbnailUrl = fbData.thumbnailUrl;
                 } else if (fbData.status === 'failed' || fbData.status === 'error') {
                   resolvedStatus = 'failed';
                   resolvedError = fbData.error || 'Render failed';
@@ -3608,7 +3614,7 @@ function EP04ProductionInner() {
           // Apply resolved status
           if (resolvedStatus === 'completed') {
             setAssemblyParts(prev => prev.map(p =>
-              p.partNumber === part.partNumber ? { ...p, status: 'completed', videoUrl: resolvedVideoUrl || null } : p
+              p.partNumber === part.partNumber ? { ...p, status: 'completed', videoUrl: resolvedVideoUrl || null, thumbnailUrl: resolvedThumbnailUrl || null } : p
             ));
             toast.success(`Scene ${part.partNumber} (${part.sceneKeys[0]}) assembled! URL: ${resolvedVideoUrl?.substring(0, 60)}...`);
           } else if (resolvedStatus === 'failed') {
@@ -6772,6 +6778,7 @@ function EP04ProductionInner() {
                                     controls
                                     className="w-full rounded-lg border max-h-[200px]"
                                     preload="metadata"
+                                    {...(part.thumbnailUrl ? { poster: part.thumbnailUrl } : {})}
                                   />
                                 </div>
                               )}
