@@ -1085,7 +1085,9 @@ function EP04ProductionInner() {
 
       const resolvedProvider = data.provider || voiceConfig.provider;
       const resolvedVoice = data.voice || voiceConfig.voiceId;
-      const actualTokens = data.tokensUsed || Math.ceil(line.text.length / 4);
+      // TTS cost = per character, not per token. Edge function returns charCount.
+      // Pass charCount as "tokens" — productionCostAccumulator uses per-1K-char rates for TTS providers.
+      const actualTokens = data.charCount || data.tokensUsed || line.text.length;
 
       // Measure actual audio duration for precise lipsync/assembly timing
       let audioDuration: number | undefined;
@@ -1118,7 +1120,7 @@ function EP04ProductionInner() {
           tts_status: 'generated',
         });
         if (jobId) {
-          completeGenerationJob(jobId, actualTokens, audioUrl);
+          completeGenerationJob(jobId, actualTokens, audioUrl, resolvedProvider);
         }
       }
       return true;
@@ -1608,7 +1610,7 @@ function EP04ProductionInner() {
         let jobId: string | null = null;
         if (projectId) {
           jobId = await trackGenerationJob({
-            projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+            projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 1,
           });
         }
 
@@ -1632,7 +1634,7 @@ function EP04ProductionInner() {
           try { url = await ensureStorageUrl(projectId, `ai-screen-enhance-${sid}`, url, 'video'); } catch { /* keep original */ }
         }
         if (url) results[`ai-screen-enhance-${sid}`] = url;
-        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba');
       }
       return;
     }
@@ -1716,7 +1718,7 @@ function EP04ProductionInner() {
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
-          projectId, jobType: 'avatar', sceneKey, provider: (step.provider as string) || 'alibaba-wan2.2', estimatedTokens: 500,
+          projectId, jobType: 'avatar', sceneKey, provider: (step.provider as string) || 'alibaba-wan2.2', estimatedTokens: 1,
         });
       }
 
@@ -1808,8 +1810,9 @@ function EP04ProductionInner() {
         console.warn(`[EP04 Visual] ${stepLabel}: lipsync "${character}" returned no URL`, data);
       }
       // Pass actual provider for accurate cost calc (alibaba=free vs replicate=$4/run)
+      // Pass 1 as token count — cost table rates are per-unit for video providers
       const actualProvider = data?.provider || (data?.replicatePredictionId ? 'replicate' : 'alibaba');
-      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url, actualProvider);
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, actualProvider);
       return;
     }
 
@@ -1818,7 +1821,7 @@ function EP04ProductionInner() {
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
-          projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+          projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 1,
         });
       }
 
@@ -1837,7 +1840,7 @@ function EP04ProductionInner() {
         try { url = await ensureStorageUrl(projectId, `character-interaction-${sceneKey}`, url, 'video'); } catch { /* keep original */ }
       }
       if (url) results[`character-interaction-${sceneKey}-${Date.now()}`] = url;
-      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba');
       return;
     }
 
@@ -1846,7 +1849,7 @@ function EP04ProductionInner() {
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
-          projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+          projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 1,
         });
       }
 
@@ -1863,7 +1866,7 @@ function EP04ProductionInner() {
         try { url = await ensureStorageUrl(projectId, `narrator-scroll-${sceneKey}`, url, 'video'); } catch { /* keep original */ }
       }
       if (url) results[`narrator-scroll-${sceneKey}-${Date.now()}`] = url;
-      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba');
       return;
     }
 
@@ -1872,7 +1875,7 @@ function EP04ProductionInner() {
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
-          projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+          projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 1,
         });
       }
 
@@ -1896,7 +1899,7 @@ function EP04ProductionInner() {
         try { url = await ensureStorageUrl(projectId, `scene-transition-${sceneKey}`, url, 'video'); } catch { /* keep original */ }
       }
       if (url) results[`scene-transition-${sceneKey}-${Date.now()}`] = url;
-      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+      if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba');
       return;
     }
 
@@ -1934,7 +1937,7 @@ function EP04ProductionInner() {
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
-          projectId, jobType: 'image', sceneKey, provider: 'alibaba', estimatedTokens: 500,
+          projectId, jobType: 'image', sceneKey, provider: 'alibaba', estimatedTokens: 1,
         });
       }
 
@@ -1964,7 +1967,7 @@ function EP04ProductionInner() {
           } catch { console.warn(`[EP04 Visual] ${stepLabel}: storybook-frame mirror failed`); }
         }
         if (url) results[`storybook-frame-${sceneKey}-${Date.now()}`] = url;
-        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba-image');
       } catch (err: any) {
         console.error(`[EP04 Visual] ${stepLabel}: storybook-frame threw:`, err?.message || err);
         toast.error(`${stepLabel} storybook-frame error: ${err?.message || 'unknown'}`);
@@ -2003,7 +2006,7 @@ function EP04ProductionInner() {
         console.log(`[EP04 Visual] ${stepLabel}: generating avatar for "${character}" via Alibaba wan2.6-t2i`);
         let jobId: string | null = null;
         if (projectId) {
-          jobId = await trackGenerationJob({ projectId, jobType: 'avatar', sceneKey, provider: 'alibaba', estimatedTokens: 500 });
+          jobId = await trackGenerationJob({ projectId, jobType: 'avatar', sceneKey, provider: 'alibaba', estimatedTokens: 1 });
         }
         try {
           // Wait 3s to avoid DashScope rate limiting if a video request just ran
@@ -2036,7 +2039,7 @@ function EP04ProductionInner() {
 
           results[`avatar-3d-${character}-${sceneKey}`] = url;
           console.log(`[EP04 Visual] ${stepLabel}: Alibaba avatar for "${character}": ${url.substring(0, 80)}...`);
-          if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, url);
+          if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba-image');
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           console.warn(`[EP04 Visual] ${stepLabel}: avatar generation failed for "${character}": ${msg}`);
@@ -2149,7 +2152,7 @@ function EP04ProductionInner() {
         jobType: stepType.includes('video') ? 'video' : stepType.includes('avatar') ? 'avatar' : 'image',
         sceneKey,
         provider: (step.provider as string) || 'alibaba',
-        estimatedTokens: 500,
+        estimatedTokens: 1,
       });
     }
 
@@ -2263,7 +2266,10 @@ function EP04ProductionInner() {
     } else if (isAsync) {
       toast.warning(`${stepLabel} "${stepType}": still generating — check back later`);
     }
-    if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 500, isPlaceholder ? null : url);
+    // Use actual provider from edge function response for accurate cost attribution.
+    // Pass 1 as token count — cost table rates are per-unit for image/video providers.
+    const actualProvider = data?.provider || (step.provider as string) || 'alibaba';
+    if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, isPlaceholder ? null : url, actualProvider);
   }, [projectId, screenshotUrls, scenes, scriptContentForUI, trackGenerationJob, completeGenerationJob]);
 
   const startSceneVisualProduction = useCallback(async (sceneKey: string, onlyTypes?: Set<string>, forceRegenAll = false) => {
@@ -2713,7 +2719,7 @@ function EP04ProductionInner() {
         }
 
         if (jobId && projectId) {
-          await completeGenerationJob(jobId, data?.tokensUsed || 1000, musicUrl || undefined);
+          await completeGenerationJob(jobId, data?.tokensUsed || 1, musicUrl || undefined, data?.provider || 'suno');
         }
       }
 
@@ -4097,7 +4103,7 @@ function EP04ProductionInner() {
         jobId = await trackGenerationJob({
           projectId, jobType: 'assembly',
           sceneKey: partNumber != null ? `part-${partNumber}` : 'final',
-          provider: 'runpod-ffmpeg', estimatedTokens: 5000,
+          provider: 'runpod-ffmpeg', estimatedTokens: 1,
         });
       }
 
@@ -4277,6 +4283,17 @@ function EP04ProductionInner() {
         })
       );
 
+      // ── DIAGNOSTIC: Transition-Chapter alignment (before buildCastTimeline) ──
+      console.log(`[EP04 Transition-Chapter Alignment${partLabel}]`);
+      castChapters.forEach((ch, ci) => {
+        const matched = castTransitions.find(t => t.from === ch.id);
+        const byIndex = castTransitions[ci];
+        const idMatch = matched ? `✓ ID-match: from="${matched.from}" to="${matched.to}"` : '(no transition)';
+        const indexMatch = byIndex ? `idx[${ci}]: from="${byIndex.from}"` : `idx[${ci}]: undefined`;
+        const mismatch = byIndex && matched && byIndex.from !== matched.from ? ' ⚠️ INDEX MISMATCH' : '';
+        console.log(`  chapter[${ci}] id="${ch.id}" — ${idMatch} | ${indexMatch}${mismatch}`);
+      });
+
       const timeline = buildCastTimeline(castChapters, castTransitions, castBookends, castSpeakers, 'production');
       const { _totalDuration: timelineDuration, ...timelinePayload } = timeline;
       console.log(`[EP04 Assembly${partLabel}] Built timeline: ${timelinePayload.scenes.length} scenes, ~${timelineDuration}s, payload: ${(JSON.stringify(timelinePayload).length / 1024).toFixed(0)}kb`);
@@ -4400,7 +4417,7 @@ function EP04ProductionInner() {
       });
 
       if (jobId && projectId) {
-        await completeGenerationJob(jobId, data?.tokensUsed || 5000, data?.videoUrl);
+        await completeGenerationJob(jobId, data?.tokensUsed || 1, data?.videoUrl, 'runpod-ffmpeg');
       }
     } catch (err: any) {
       console.error(`[EP04 Assembly${partLabel}] Failed:`, err);

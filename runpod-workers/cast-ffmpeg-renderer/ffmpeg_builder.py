@@ -51,14 +51,14 @@ def _detect_nvenc() -> bool:
     return HWACCEL_AVAILABLE
 
 
-def _encoder_args(crf: int = 28) -> list[str]:
+def _encoder_args(crf: int = 23) -> list[str]:
     """Return encoder flags — always libx264 for reliability.
-    CRF 28 (up from 20) reduces file size ~60% while keeping acceptable quality.
-    maxrate cap prevents bitrate spikes on complex scenes."""
+    CRF 23 with maxrate 6M: ~40% smaller than CRF 20, visually transparent.
+    The adaptive re-encode safety net still handles files >80MB."""
     if _detect_nvenc():
         return ["-c:v", "h264_nvenc", "-preset", "p4", "-b:v", "4M", "-maxrate", "6M", "-bufsize", "8M"]
     return ["-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
-            "-maxrate", "4M", "-bufsize", "8M"]
+            "-maxrate", "6M", "-bufsize", "10M"]
 
 
 def _hex_to_ffmpeg_color(hex_color: str) -> str:
@@ -383,6 +383,28 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     """
     _ensure_dir()
     output_path = os.path.join(OUTPUT_DIR, f"scene_{scene.index:03d}.mp4")
+
+    # ── Defense-in-depth: extend scene duration to fit audio/lipsync elements ──
+    # Even if castTimelineEngine calculates wrong durations, we protect against
+    # truncated TTS audio and clipped lipsync on the server side.
+    for elem in scene.elements:
+        elem_end = elem.start + elem.duration
+        # TTS audio (volume >= 0.9 = narration, not music/SFX)
+        if elem.type == "audio" and elem.volume >= 0.9 and elem_end > scene.duration + 0.3:
+            print(f"  [render] Extending scene {scene.index}: "
+                  f"{scene.duration:.1f}s → {elem_end + 0.5:.1f}s (TTS audio protection)")
+            scene.duration = elem_end + 0.5
+        # Lipsync PiP (small video, width < 800px)
+        elif elem.type == "video" and elem.width < 800 and elem_end > scene.duration + 0.3:
+            print(f"  [render] Extending scene {scene.index}: "
+                  f"{scene.duration:.1f}s → {elem_end + 0.5:.1f}s (lipsync protection)")
+            scene.duration = elem_end + 0.5
+
+    # After duration extension, stretch background images to fill the new duration
+    # so Ken Burns doesn't freeze before the scene ends (showing dark base color).
+    for elem in scene.elements:
+        if elem.type == "image" and elem.start == 0 and elem.duration < scene.duration:
+            elem.duration = scene.duration
 
     # ── Phase 0: Pre-render overlays ──
     overlays = _pre_render_overlays(scene, width, height)

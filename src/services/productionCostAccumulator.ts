@@ -55,21 +55,58 @@ export interface ProjectCostSummary {
 
 // ============================================================================
 // TOKEN → COST CONVERSION (approximate, per-provider)
+//
+// For TTS providers, "tokens" = characters (EP04Production passes charCount).
+// For image/video providers, "tokens" = 1 per generation (EP04 passes 1).
+// For LLM providers, "tokens" = actual input+output tokens.
 // ============================================================================
 
 const COST_PER_1K_TOKENS: Record<string, number> = {
-  openai: 0.03,       // GPT-4o ~$0.03/1K tokens
-  anthropic: 0.025,   // Claude ~$0.025/1K tokens
-  google: 0.02,       // Gemini ~$0.02/1K tokens
-  elevenlabs: 0.05,   // ElevenLabs ~$0.05/1K chars (mapped to tokens)
-  azure: 0.03,        // Azure TTS ~$0.03/1K chars
-  alibaba: 0.001,     // DashScope lipsync/video = FREE tier; image gen ~$0.001/1K
-  replicate: 8.00,    // Replicate omni-human = $4/run → use 500 tokens = $8/1K (so 500 tokens → $4)
-  suno: 0.10,         // Suno music gen = ~$0.10/song on Pro plan
-  assembly: 0.01,     // Assembly AI audio = ~$0.01/min
-  default: 0.025,
+  // ── LLM text providers (rate per 1K tokens) ──
+  openai: 0.01,        // GPT-4o: $0.0025/1K input + $0.01/1K output (blended ~$0.01)
+  anthropic: 0.015,    // Claude Sonnet: $0.003/1K in + $0.015/1K out (blended)
+  google: 0.005,       // Gemini 2.0 Flash: $0.001/1K in + $0.004/1K out
+  deepseek: 0.002,     // DeepSeek-chat: $0.001/1K in + $0.002/1K out
+
+  // ── TTS providers (rate per 1K characters) ──
+  elevenlabs: 0.30,    // ElevenLabs Starter: ~$0.30/1K chars ($22/mo for 100K chars)
+  azure: 0.016,        // Azure Neural TTS: $16/1M chars = $0.016/1K chars
+  'google-tts': 0.016, // Google Cloud TTS Neural2: $16/1M chars
+  'alibaba-tts': 0.004,// Alibaba Qwen3-TTS: mostly free tier, ~$0.004/1K
+
+  // ── Image generation (rate per 1 image, passed as 1 "token") ──
+  'alibaba-image': 0,  // DashScope wan2.6-t2i: FREE tier
+  modelslab: 13,       // ModelsLab FLUX: ~$0.013/image → $13/1K (1 token = 1 image)
+  huggingface: 0,      // HuggingFace Pro: free with subscription
+  'gemini-image': 2,   // Gemini image gen: ~$0.002/image
+  'openai-image': 40,  // DALL-E 3: ~$0.04/image
+  'vertex-imagen': 4,  // Vertex Imagen 3: ~$0.004/image
+
+  // ── Video generation (rate per 1 video, passed as 1 "token") ──
+  alibaba: 0,          // DashScope video/lipsync: FREE tier
+  replicate: 4050,     // Replicate omni-human: $4.05/run → $4050/1K (1 token = 1 run)
+  sora2api: 200,       // Sora2API: ~$0.20/video
+  'modelslab-video': 50,// ModelsLab AnimateDiff: ~$0.05/video
+  'modelslab-lipsync': 80,// ModelsLab lipsync: ~$0.08/run
+
+  // ── Music/SFX (rate per 1 generation) ──
+  suno: 50,            // Suno Pro: $0.048/song ($24/mo ÷ 500 songs) → $50/1K
+
+  // ── Assembly/rendering (rate per 1 render job) ──
+  'runpod-ffmpeg': 90, // RunPod L4: ~$0.09 per 5-min render ($0.00031/s)
+  json2video: 66,      // JSON2Video Growth: $0.066/min → ~$0.66/10min video → $66/1K
+  assembly: 10,        // Assembly AI: ~$0.01/min
+
+  default: 0.01,
 };
 
+/**
+ * Convert token/unit count to USD cost.
+ *
+ * For TTS: pass charCount as tokens, provider='elevenlabs'|'azure' → per-char cost.
+ * For image/video: pass 1 as tokens, provider='modelslab'|'replicate' → per-unit cost.
+ * For LLM: pass actual token count, provider='openai'|'anthropic' → per-token cost.
+ */
 function tokensToCost(tokens: number, provider?: string): number {
   const rate = COST_PER_1K_TOKENS[provider || 'default'] || COST_PER_1K_TOKENS.default;
   return Math.round((tokens / 1000) * rate * 10000) / 10000;

@@ -246,6 +246,31 @@ def handler(job: dict) -> dict:
         print(f"  {len(scene_paths)}/{len(scenes)} scenes rendered in {time.time() - t0:.1f}s "
               f"(total rendered: {total_rendered:.1f}s)")
 
+        # ── RENDER MANIFEST: log expected vs actual duration per scene ──
+        print(f"  ═══ RENDER MANIFEST ({len(scenes)} scenes) ═══")
+        render_manifest = []
+        rendered_idx = 0
+        for si, scene in enumerate(scenes):
+            if scene.index in failed_scenes:
+                actual = 0
+            else:
+                actual = get_video_duration(scene_paths[rendered_idx]) if rendered_idx < len(scene_paths) else 0
+                rendered_idx += 1
+            delta = actual - scene.duration if actual > 0 else 0
+            status = "FAILED" if scene.index in failed_scenes else ("OK" if abs(delta) < 1.0 else ("SHORT" if delta < 0 else "LONG"))
+            entry = {
+                "index": scene.index,
+                "expected": round(scene.duration, 1),
+                "actual": round(actual, 1),
+                "delta": round(delta, 1),
+                "status": status,
+                "comment": (scene.comment or "")[:60],
+            }
+            render_manifest.append(entry)
+            flag = " ⚠️" if status != "OK" else ""
+            print(f"    scene {scene.index}: expected={scene.duration:.1f}s actual={actual:.1f}s "
+                  f"Δ={delta:+.1f}s [{status}]{flag} | {scene.comment or ''}")
+
         # ── 4. Concatenate with transitions ──
         progress(82, f"Concatenating {len(scene_paths)} scenes with transitions...")
         print("[CastRenderer] Phase 4: Concatenating scenes...")
@@ -307,6 +332,7 @@ def handler(job: dict) -> dict:
             "fileSizeMB": round(file_size_mb, 1),
             "fileSizeBytes": file_size_bytes,
             "workerVersion": WORKER_VERSION,
+            "renderManifest": render_manifest,
         }
 
     except Exception as e:

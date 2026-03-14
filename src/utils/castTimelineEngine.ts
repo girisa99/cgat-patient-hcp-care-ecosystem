@@ -569,11 +569,13 @@ function makeTtsLineScene(
     // 640×360 (1/3 frame) bottom-right — large enough for expressions,
     // small enough to keep the character world visible behind.
     // Enters with a brief delay after video lead-in for cinematic pacing.
+    // Scene duration is already guaranteed >= lipsyncDur + 1.0s margin,
+    // so we use full lipsync duration (no clipping).
     const pipDelay = isHttpUrl(videoVisual) ? Math.min(3, sceneDur * 0.15) : 0.5;
     const pipStart = Math.min(pipDelay, sceneDur - lipsyncDur);
     elements.push({
       type: 'video', src: lipsync.url,
-      start: pipStart, duration: Math.min(lipsyncDur, sceneDur - pipStart),
+      start: pipStart, duration: lipsyncDur,
       volume: 0, // CRITICAL: TTS audio is a separate element
       'fade-in': 0.5, 'fade-out': 1.5,
       'z-index': 5, // above all B-roll layers
@@ -904,7 +906,6 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
     const nextTts = ttsLines[i + 1];
     const sceneStart = tts.start;
     const sceneEnd = nextTts ? nextTts.start : chapter.duration;
-    const sceneDur = Math.max(2, sceneEnd - sceneStart);
 
     // Insert kinetic image interlude scenes that fall before this TTS line
     while (kiIdx < kineticWithImages.length && kineticWithImages[kiIdx].start <= sceneStart + 1) {
@@ -912,7 +913,7 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
       kiIdx++;
     }
 
-    // Find lipsync for this TTS line (match by character + timing within 2s)
+    // Find lipsync FIRST (need duration for scene sizing)
     // Track used clips to prevent same clip matching two adjacent TTS lines
     const lipsyncIdx = lipsyncClips.findIndex((c, idx) =>
       !usedLipsyncIndices.has(idx) &&
@@ -921,6 +922,14 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
     );
     const lipsync = lipsyncIdx >= 0 ? lipsyncClips[lipsyncIdx] : undefined;
     if (lipsyncIdx >= 0) usedLipsyncIndices.add(lipsyncIdx);
+
+    // Scene duration: floor to protect TTS audio and lipsync from truncation.
+    // gap = time until next TTS line, audioDur = TTS audio + 0.5s margin,
+    // lipsyncNeeded = lipsync duration + 1.0s margin (for fade-out).
+    const gapDur = sceneEnd - sceneStart;
+    const audioDur = tts.duration + 0.5;
+    const lipsyncNeeded = lipsync ? lipsync.duration + 1.0 : 0;
+    const sceneDur = Math.max(2, gapDur, audioDur, lipsyncNeeded);
 
     // Pick visuals from pool
     let videoVisual: string | undefined;
@@ -1282,12 +1291,14 @@ export function buildCastTimeline(
   }
 
   // 2. Per-chapter scenes + chapter transitions (mood drives transition style selection)
-  chapters.forEach((chapter, chapterIndex) => {
+  //    Match transitions by chapter ID (not array index) — in multi-part mode,
+  //    filtered transition arrays may not align 1:1 with chapter indices.
+  chapters.forEach((chapter) => {
     const chapterScenes = buildChapterScenes(chapter, speakers, mood);
     scenes.push(...chapterScenes);
 
-    // Transition after chapter (if exists)
-    const transition = transitions[chapterIndex];
+    // Transition after chapter: match by chapter ID (transition.from === chapter.id)
+    const transition = transitions.find(t => t.from === chapter.id);
     if (transition) {
       scenes.push(makeTransitionScene(transition));
     }
@@ -1312,6 +1323,28 @@ export function buildCastTimeline(
   const totalDuration = splitScenes.reduce((sum, s) => sum + (s.duration || 0), 0);
   const splitCount = splitScenes.length - scenes.length;
   console.log(`[CastEngine] Built timeline: ${splitScenes.length} scenes (${splitCount > 0 ? `${splitCount} from splitting` : 'no splits'}), ~${Math.round(totalDuration)}s (${Math.round(totalDuration / 60)}min), subtitles: ${resolvedTheme.subtitlesEnabled ? 'ON' : 'OFF'}`);
+
+  // ── TIMELINE MANIFEST: 1:1 mapping verification ──
+  // Each scene logs its chapter ID, duration, audio/lipsync count, and transition info.
+  console.log(`[CastEngine] ═══ TIMELINE MANIFEST (${splitScenes.length} scenes) ═══`);
+  splitScenes.forEach((s, i) => {
+    const els = s.elements || [];
+    const audioCount = els.filter((e: any) => e.type === 'audio' && (e.volume ?? 1) >= 0.9).length;
+    const lipsyncCount = els.filter((e: any) => e.type === 'video' && (e.width ?? 1920) < 800).length;
+    const trans = s.transition;
+    const transInfo = trans ? ` → ${(trans as any).style || 'fade'}(${(trans as any).duration || 0}s)` : '';
+    console.log(`  [manifest] scene ${i}: ${(s.duration || 0).toFixed(1)}s, ${audioCount} TTS, ${lipsyncCount} lipsync${transInfo} | ${s.comment || ''}`);
+  });
+  // Log transition-chapter alignment
+  console.log(`[CastEngine] ═══ Transition-Chapter Alignment ═══`);
+  chapters.forEach((ch) => {
+    const matched = transitions.find(t => t.from === ch.id);
+    if (matched) {
+      console.log(`  [align] chapter "${ch.id}" → transition from="${matched.from}" to="${matched.to}" ✓`);
+    } else {
+      console.log(`  [align] chapter "${ch.id}" → no transition (last chapter or missing)`);
+    }
+  });
 
   return {
     resolution,
