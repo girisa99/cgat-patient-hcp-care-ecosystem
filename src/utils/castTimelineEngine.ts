@@ -527,36 +527,68 @@ function makeTtsLineScene(
   // ── Visual layer (z-index 0-2) ──────────────────────────────────────────
   if (lipsync && isHttpUrl(lipsync.url)) {
     // === Full-Screen Lipsync Layout ===
-    // Lipsync video fills the entire frame (1920x1080). No PiP overlay —
-    // avoids clipping issues when lipsync duration exceeds the scene gap.
-    // TTS audio plays as a separate element (lipsync video is muted).
+    // Lead-in B-roll → full-screen lipsync → tail B-roll.
+    // Lipsync fills the entire frame (1920x1080) — no PiP clipping issues.
+    // Storybook images, avatars, and establishing shots still appear as
+    // lead-in and tail segments for visual variety.
+    const VISUAL_BEAT = 12;
     const lipsyncDur = Math.min(lipsync.duration, sceneDur);
 
-    // ── Layer 0: Lipsync full-screen — the primary visual ──
+    // ── Layer 0: B-roll background — cycling Ken Burns behind everything ──
+    const bgImages = (allImages && allImages.length > 0)
+      ? allImages.filter(u => isHttpUrl(u))
+      : (isHttpUrl(imageVisual) ? [imageVisual] : []);
+
+    if (bgImages.length > 0) {
+      const beatCount = Math.max(1, Math.ceil(sceneDur / VISUAL_BEAT));
+      const beatDur = sceneDur / beatCount;
+      for (let bi = 0; bi < beatCount; bi++) {
+        const img = bgImages[(kbIdx + bi) % bgImages.length];
+        const kb = getKenBurns(kbIdx + bi);
+        elements.push({
+          type: 'image', src: img,
+          start: bi * beatDur, duration: beatDur + (bi < beatCount - 1 ? 0.5 : 0),
+          ...kb, resize: 'cover', width: 1920, height: 1080,
+          'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
+        });
+      }
+    }
+
+    // ── Layer 1: Video B-roll lead-in (establishing shot, first 4-10s) ──
+    if (isHttpUrl(videoVisual)) {
+      const videoDur = Math.min(10, sceneDur);
+      elements.push({
+        type: 'video', src: videoVisual,
+        start: 0, duration: videoDur,
+        volume: 0, resize: 'cover', width: 1920, height: 1080,
+        'fade-in': 0.5, 'fade-out': 0.8, 'z-index': 1,
+      });
+    }
+
+    // ── Layer 2: Lipsync full-screen (replaces PiP — no clipping) ──
+    // Enters after brief lead-in for cinematic pacing.
+    const lipsyncDelay = isHttpUrl(videoVisual) ? Math.min(3, sceneDur * 0.15) : 0.3;
+    const lipsyncStart = Math.min(lipsyncDelay, Math.max(0, sceneDur - lipsyncDur));
     elements.push({
       type: 'video', src: lipsync.url,
-      start: 0, duration: lipsyncDur,
+      start: lipsyncStart, duration: lipsyncDur,
       volume: 0, // CRITICAL: TTS audio is a separate element
       'fade-in': 0.3, 'fade-out': 0.8,
-      'z-index': 1,
+      'z-index': 2, // above B-roll and establishing shot
       resize: 'cover', width: 1920, height: 1080,
     });
 
-    // ── Layer 1: B-roll image fills remaining time after lipsync ends ──
-    if (lipsyncDur < sceneDur - 0.5) {
-      const tailStart = lipsyncDur - 0.3; // slight overlap for smooth transition
+    // ── Layer 3: Tail visual — fills after lipsync ends ──
+    if (isHttpUrl(tailImageVisual)) {
+      const tailStart = lipsyncStart + lipsyncDur - 0.5;
       const tailDur = sceneDur - tailStart;
-      const tailImg = isHttpUrl(tailImageVisual) ? tailImageVisual
-        : isHttpUrl(imageVisual) ? imageVisual
-        : (allImages && allImages.length > 0) ? allImages.find(u => isHttpUrl(u))
-        : undefined;
-      if (tailImg) {
-        const kb = getKenBurns(kbIdx);
+      if (tailDur > 1) {
+        const kb = getKenBurns(kbIdx + 99);
         elements.push({
-          type: 'image', src: tailImg,
+          type: 'image', src: tailImageVisual,
           start: tailStart, duration: tailDur,
           ...kb, resize: 'cover', width: 1920, height: 1080,
-          'fade-in': 0.8, 'fade-out': 0.5, 'z-index': 0,
+          'fade-in': 1.0, 'fade-out': 0.5, 'z-index': 2,
         });
       }
     }
