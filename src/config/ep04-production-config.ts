@@ -195,8 +195,8 @@ export const EP04_AVATAR_CONFIG = {
       props: ['magical lamp', 'swirling blue mist', 'golden sparkle particles'],
       motionStyle: 'theatrical',         // Grand gestures, emerges from lamp, mist swirls
       audioProfile: EP04_VOICES.allaudin,
-      // --- PIXAR-STYLE PROMPT: A friendly whimsical genie (NOT muscular, NOT He-Man) ---
-      pixarPrompt: 'CLOSE-UP portrait of a small friendly GENIE with blue-purple skin, Pixar 3D animation style, a wrapped purple turban with a golden gem, neat pointed black goatee, large warm brown eyes, pointy ears, a mischievous but kind smile, lean and whimsical build (NOT muscular), wearing golden wrist cuffs and a jeweled necklace, emerging from golden magical mist, deep purple and gold color palette, warm magical glow behind him, Pixar subsurface scattering on skin, stylized proportions, 8K cinematic portrait render',
+      // --- PIXAR-STYLE PROMPT: A friendly whimsical genie (NOT muscular, NOT He-Man, NOT an animal) ---
+      pixarPrompt: 'Pixar 3D animated CLOSE-UP portrait of a small friendly MALE HUMANOID GENIE character with smooth blue-purple SKIN (human-like skin, NOT fur, NOT an animal), a large wrapped purple silk turban with a shining golden gem in the center, a neat pointed black goatee beard on his chin, large warm expressive brown HUMAN eyes, small pointed ears, a charming mischievous grin, lean whimsical build like Aladdin Genie but smaller and slimmer, wearing ornate golden wrist cuffs and a jeweled gold necklace, wispy blue magical smoke curling around his lower body, deep purple and gold color palette, warm magical golden glow behind him, Pixar subsurface scattering on skin, 8K cinematic portrait render',
       // --- DISNEY-STYLE PROMPT: Painted magical narrator ---
       disneyPrompt: 'Disney 2D animation style character portrait: a charming small blue-skinned genie with a purple turban and golden gem, pointed goatee, big expressive warm eyes, friendly mischievous grin, lean whimsical build, golden accessories, emerging from painted magical mist and sparkles, hand-painted watercolor style with visible brushstrokes, deep purple and gold palette, classic Disney warmth and magic',
       sceneCompanions: [
@@ -461,8 +461,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
   'scene-0-title': [
     // Podcast banner — real thumbnail with Sai Dasika, Claude logo, Lovable logo (no AI generation)
     { type: 'static-asset', assetKey: 'podcast-banner', duration: 4, description: 'GenieAI Podcast banner — host + Claude + Lovable branding. Also used for teasers & social thumbnails.' },
-    // Title page: full cast portrait — PO (Giridhar), Claude (Atlas), Lovable (Nova)
-    { type: 'storybook-frame', variant: 'opening', prompt: 'Ornate storybook title page: three characters posed on an illustrated parchment spread — CENTER a warm human man (the Product Owner) in earth-tone shirt holding a coffee mug, LEFT a wise bear in wire-frame glasses with a glowing Claude AI terracotta emblem (Atlas), RIGHT an energetic fox in a paint-splattered apron with a glowing Lovable pink heart emblem (Nova), a loyal golden retriever sitting at their feet, decorative gold leaf border with "Beyond AI Hype" in elegant calligraphy at the top, tiny squirrel peeking from the corner, warm lamplight on aged parchment, Pixar-quality illustration, 16:9, 8K', duration: 4 },
+    // Title page: ornate storybook cover (keep simple — wan2.6-t2i struggles with multi-character compositions)
+    { type: 'storybook-frame', variant: 'opening', prompt: 'Ornate storybook title page on aged golden parchment, "Beyond AI Hype" written in elegant gold calligraphy at the top center, decorative gold leaf border with intricate vine and scroll patterns, a glowing magical lamp in the center emitting blue-purple sparkle mist, warm lamplight illuminating the page edges, aged leather binding visible on the left spine, Pixar-quality illustration, warm cinematic lighting, 16:9, 8K', duration: 4 },
     // Segment 1: Allaudin emerges (28s)
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A golden magical lamp on a dark surface, blue-purple mist swirling out from the spout, sparkle particles filling the frame, a small friendly blue-skinned genie with a purple turban and pointed goatee materializing from the mist with a warm smile, Pixar 3D animation style like Disney Genie but original, whimsical not muscular, cinematic volumetric lighting, 8K' },
     { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-emerge' },
@@ -475,14 +475,21 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome' },
     // Atlas whisper from the shadows (5s) — Chipmunks-style background reaction
     { type: 'tts', voice: 'atlas', scriptKey: 'scene0-atlas-whisper' },
+    // B-roll: Atlas peek — the bear analyst lurking behind a monitor
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a wise blue-violet bear with wire-frame glasses peeking out from behind a large glowing computer monitor, only the top half of his face visible with analytical eyes studying the scene, one paw resting on the monitor edge, dark tech lab background with blue-purple ambient glow, dramatic peek-around-corner composition, cinematic lighting, 8K' },
     // Nova whisper (5s) — Chipmunks-style background reaction
     { type: 'tts', voice: 'nova', scriptKey: 'scene0-nova-whisper' },
-    // Host continues welcome (35s)
+    // B-roll: Nova peek — the fox artist curiously peering from behind a canvas
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: an orange-copper fox with bright curious eyes and a paint-splattered apron peering out from behind a large canvas, digital paintbrush in one paw, colorful paint splatters and floating UI component mockups behind her, magenta-pink ambient glow, playful curious expression, warm studio lighting, 8K' },
+    // Host continues welcome (35s) — needs visual coverage for this long segment
+    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Pixar 3D illustration: a warm cozy podcast studio setup — a confident South Asian man in a deep blue-purple casual shirt sitting behind a professional desk with two large monitors, one showing "Claude Code" interface and the other showing "Lovable" interface, a golden retriever sleeping contentedly at his feet, warm lamplight creating a professional yet inviting atmosphere, the text "The GenieAI Podcast" visible on a coffee mug, dual-screen home office, cinematic warm lighting, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'title-welcome-2' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome-2' },
     // Allaudin interjects — Nutcracker narrator commentary (8s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'scene0-allaudin-interject' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'scene0-allaudin-interject' },
+    // B-roll: Allaudin narrator moment — genie floating with magical mist
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a small blue-purple skinned humanoid genie character floating in mid-air surrounded by swirling golden magical mist and sparkle particles, wearing a purple turban with a golden gem, arms outstretched theatrically like a narrator presenting a story, a golden magical lamp glowing below him, deep purple and gold dramatic lighting, whimsical fairy-tale atmosphere, 8K' },
     // Host wraps up welcome (6s)
     { type: 'tts', voice: 'host', scriptKey: 'title-welcome-3' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome-3' },
@@ -515,7 +522,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a massive Jira-style Kanban board stretching beyond the screen edges, columns labeled BACKLOG TO-DO IN-PROGRESS REVIEW BLOCKED, the BLOCKED column overflowing with red task cards cascading onto the floor, a tiny frustrated human figure standing at the base looking up at the towering board, post-it notes raining down like confetti, neon glow on dark tech background, cinematic scale, 8K' },
     // Nova outburst (5s) — Alvin energy
     { type: 'tts', voice: 'nova', scriptKey: 'scene1-nova-react-standup' },
-    // Host wraps up problem intro (25s)
+    // Host wraps up problem intro (25s) — long segment, add visual
+    // B-roll: Blocked PRs and failed deployments — the reality of solo sprints
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a wall of holographic screens all showing red ERROR and BLOCKED warnings, pull request notifications piling up with red X marks, a deployment pipeline visualization with multiple failed stages glowing red, a frustrated human developer with head in hands at the bottom of the frame, dark tech environment with harsh red-amber warning glow, dramatic scale showing overwhelm, cinematic lighting, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'problem-intro-3' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-intro-3' },
     // Squirrel interruption (10s) — bursts in after host intro
@@ -528,6 +537,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-response-1' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-squirrel-response-1' },
     // Segment 2: Deeper problem + context loss (25s) — split into 3 parts with reactions
+    // B-roll: Deeper reflection — host contemplating the systemic problem
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a thoughtful human product owner leaning back in an office chair with a pensive expression, the room around him filled with floating holographic charts showing declining velocity metrics and rising bug counts, a coffee mug half-empty on the desk, warm golden lamp casting long shadows, the golden retriever looking up with concerned eyes, cinematic moody warm lighting, reflective atmosphere, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'problem-deeper' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-deeper' },
     // Allaudin materializes with narrator context (8s)
@@ -545,9 +556,13 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // Host wraps up deeper problem (18s)
     { type: 'tts', voice: 'host', scriptKey: 'problem-deeper-3' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-deeper-3' },
-    // Segment 3: Market data & citations (18s)
+    // Segment 3: Market data & citations (18s) — industry references need visual
+    // B-roll: Industry research infographic — McKinsey, Gartner, and AI adoption stats
+    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Clean professional infographic illustration: a dark tech dashboard background with three floating data cards — LEFT card shows a pie chart labeled "McKinsey: 23 min context switch cost" in amber, CENTER card shows a rising bar chart labeled "Gartner: 80% AI adoption by 2026" in teal-blue, RIGHT card shows a line graph labeled "Developer Productivity Gap" in magenta. Small citation logos at the bottom of each card. Glowing neon data visualization style, clean modern corporate design, dark background with warm accent colors, 16:9, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'scene1-market-data' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'scene1-market-data' },
+    // B-roll: Bridge visual — transition from problem to solution, story continues
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a magical golden lamp sitting on a desk surrounded by scattered papers and task cards, faint blue-purple mist beginning to swirl out of the spout as if something magical is about to happen, a ray of golden light cutting through the darkness of the chaotic office, hopeful cinematic transition moment, warm atmospheric lighting, 8K' },
     // Bridge narrator: scene 1 → scene 2 (7s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-1-to-2' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-1-to-2' },
