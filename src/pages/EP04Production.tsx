@@ -1947,18 +1947,31 @@ function EP04ProductionInner() {
       }
 
       try {
-        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
-          body: {
-            action: 'image_generation',
-            prompt,
-            provider: 'alibaba',
-            model: 'wan2.6-t2i',
-            style_intent: 'cinematic',
-            size: '1280x720',
-          },
-        });
+        // Retry with exponential backoff for storybook-frame generation
+        let data: Record<string, unknown> | null = null;
+        let error: { message: string } | null = null;
+        const sbBody = {
+          action: 'image_generation',
+          prompt,
+          provider: 'alibaba',
+          model: 'wan2.6-t2i',
+          style_intent: 'cinematic',
+          size: '1280x720',
+        };
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) {
+            const backoffMs = attempt === 1 ? 5000 : 15000;
+            console.log(`[EP04 Visual] ${stepLabel}: storybook-frame retry ${attempt}/2 after ${backoffMs / 1000}s...`);
+            await new Promise(r => setTimeout(r, backoffMs));
+          }
+          const result = await supabase.functions.invoke('ai-universal-processor', { body: sbBody });
+          data = result.data;
+          error = result.error;
+          if (!error) break;
+          console.warn(`[EP04 Visual] ${stepLabel}: storybook-frame attempt ${attempt + 1} failed: ${error.message}`);
+        }
         if (error) {
-          console.error(`[EP04 Visual] ${stepLabel}: storybook-frame edge error:`, error.message);
+          console.error(`[EP04 Visual] ${stepLabel}: storybook-frame failed after 3 attempts:`, error.message);
           toast.error(`${stepLabel} storybook-frame failed: ${error.message}`);
           if (jobId && projectId) await completeGenerationJob(jobId, 0);
           return;
@@ -2020,14 +2033,26 @@ function EP04ProductionInner() {
           const refImageUrl = (character === 'host' && CHARACTER_AVATARS.host)
             ? await ensureStorageUrl(projectId || 'default', `avatar-ref-${character}`, CHARACTER_AVATARS.host)
             : undefined;
-          const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
-            body: { action: 'image_generation', prompt: avatarPrompt, provider: 'alibaba', model: 'wan2.6-t2i', aspectRatio: '1:1', style_intent: 'cinematic', ...(refImageUrl && { ref_image_url: refImageUrl }) },
-          });
+          // Retry with exponential backoff for avatar generation
+          const avatarBody = { action: 'image_generation', prompt: avatarPrompt, provider: 'alibaba', model: 'wan2.6-t2i', aspectRatio: '1:1', style_intent: 'cinematic', ...(refImageUrl && { ref_image_url: refImageUrl }) };
+          let data: Record<string, unknown> | null = null;
+          let error: { message: string } | null = null;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            if (attempt > 0) {
+              const backoffMs = attempt === 1 ? 5000 : 15000;
+              console.log(`[EP04 Visual] ${stepLabel}: avatar retry ${attempt}/2 after ${backoffMs / 1000}s...`);
+              await new Promise(r => setTimeout(r, backoffMs));
+            }
+            const result = await supabase.functions.invoke('ai-universal-processor', { body: avatarBody });
+            data = result.data;
+            error = result.error;
+            if (!error) break;
+            console.warn(`[EP04 Visual] ${stepLabel}: avatar attempt ${attempt + 1} failed: ${error.message}`);
+          }
           if (error) {
-            // Try to extract detailed error from response body
             const detail = data?.error || error.message || 'Unknown error';
-            console.error(`[EP04 Visual] ${stepLabel}: edge function error detail:`, detail, data);
-            throw new Error(detail);
+            console.error(`[EP04 Visual] ${stepLabel}: avatar failed after 3 attempts:`, detail, data);
+            throw new Error(String(detail));
           }
           // Ensure URL is on Supabase Storage (handles base64, CDN, or relative paths)
           let url = data?.url || data?.imageUrl || data?.result?.url;
@@ -2327,10 +2352,27 @@ function EP04ProductionInner() {
     }
 
     console.log(`[EP04 Visual] ${stepLabel} → ${edgeFn} body:`, JSON.stringify(body).slice(0, 300));
-    const { data, error } = await supabase.functions.invoke(edgeFn, { body });
+
+    // Retry with exponential backoff — edge functions can fail due to rate limits (429),
+    // DashScope throttling, or transient network errors. Max 3 attempts: 0s, 5s, 15s delay.
+    let data: Record<string, unknown> | null = null;
+    let error: { message: string } | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        const backoffMs = attempt === 1 ? 5000 : 15000;
+        console.log(`[EP04 Visual] ${stepLabel}: retry ${attempt}/2 after ${backoffMs / 1000}s backoff...`);
+        toast.info(`${stepLabel}: retrying (attempt ${attempt + 1}/3)...`);
+        await new Promise(r => setTimeout(r, backoffMs));
+      }
+      const result = await supabase.functions.invoke(edgeFn, { body });
+      data = result.data;
+      error = result.error;
+      if (!error) break; // Success — stop retrying
+      console.warn(`[EP04 Visual] ${stepLabel}: attempt ${attempt + 1} failed: ${error.message}`);
+    }
 
     if (error) {
-      toast.error(`${stepLabel} "${stepType}" failed: ${error.message}`);
+      toast.error(`${stepLabel} "${stepType}" failed after 3 attempts: ${error.message}`);
       return;
     }
 
@@ -2543,8 +2585,8 @@ function EP04ProductionInner() {
 
         await processVisualStep(step, sceneKey, results, lastTTSByCharacter, stepLabel);
 
-        // ── Change 7: Rate limiting between steps (1s) ──
-        if (i < pipelineSteps.length - 1) await new Promise(r => setTimeout(r, 1000));
+        // ── Rate limiting between steps (3s) — prevents DashScope/edge function throttling ──
+        if (i < pipelineSteps.length - 1) await new Promise(r => setTimeout(r, 3000));
       }
 
       // ── Change 6: Process Character Interactions for this scene ──
@@ -2564,7 +2606,7 @@ function EP04ProductionInner() {
         const extraType = (extraStep.type as string) || 'unknown';
         toast.info(`${sceneKey}: ${extraType} (extra ${j + 1}/${extraSteps.length})...`);
         await processVisualStep(extraStep, sceneKey, results, lastTTSByCharacter, `${sceneKey}: ${extraType}`);
-        await new Promise(r => setTimeout(r, 1000)); // rate limit
+        await new Promise(r => setTimeout(r, 3000)); // rate limit
       }
 
       // Persist visual artifacts to DB
@@ -2582,18 +2624,14 @@ function EP04ProductionInner() {
       const newAvatarUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')).filter(httpOnly));
       const newLipsyncUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_')).filter(httpOnly));
 
-      // Merge: existing assets + new results
-      // When onlyTypes is set: clear merge base for regenerated type categories so old entries don't persist
-      const IMAGE_REGEN_TYPES = new Set(['alibaba-image', 'storybook-frame', 'screen-capture', 'ai-screen-enhance', 'kinetic-text', 'motion-graphics', 'static-asset']);
-      const VIDEO_REGEN_TYPES = new Set(['alibaba-video', 'character-interaction', 'character-motion', 'character-animate-3d', 'narrator-scroll', 'scene-transition']);
-      const regenImages = onlyTypes && [...onlyTypes].some(t => IMAGE_REGEN_TYPES.has(t));
-      const regenVideos = onlyTypes && [...onlyTypes].some(t => VIDEO_REGEN_TYPES.has(t));
-      const regenAvatars = onlyTypes && onlyTypes.has('avatar-3d');
-      const regenLipsync = onlyTypes && onlyTypes.has('avatar-lipsync');
-      const mergedVideoUrls = { ...(regenVideos ? {} : existingStatus.videoUrls), ...newVideoUrls };
-      const mergedImageUrls = { ...(regenImages ? {} : existingStatus.imageUrls), ...newImageUrls };
-      const mergedAvatarUrls = { ...(regenAvatars ? {} : existingStatus.avatarUrls), ...newAvatarUrls };
-      const mergedLipsyncUrls = { ...(regenLipsync ? {} : existingStatus.lipsyncUrls), ...newLipsyncUrls };
+      // Merge: ALWAYS overlay new results on top of existing — NEVER wipe merge base.
+      // If generation fails (edge function error, rate limit, timeout), old assets are preserved.
+      // New results overwrite old by matching key (e.g. alibaba-image-scene-0-title-000).
+      // Worst case on partial failure: mix of old + new images, which is far better than losing everything.
+      const mergedVideoUrls = { ...existingStatus.videoUrls, ...newVideoUrls };
+      const mergedImageUrls = { ...existingStatus.imageUrls, ...newImageUrls };
+      const mergedAvatarUrls = { ...existingStatus.avatarUrls, ...newAvatarUrls };
+      const mergedLipsyncUrls = { ...existingStatus.lipsyncUrls, ...newLipsyncUrls };
 
       if (projectId) {
         const saveOk = await updateSceneArtifacts(projectId, sceneKey, {
