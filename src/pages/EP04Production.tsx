@@ -2678,15 +2678,15 @@ function EP04ProductionInner() {
     }
   }, [scenes, startSceneVisualProduction]);
 
-  // ─── Generate New Images Only (all scenes) ──────────────────────────────
-  // Runs only alibaba-image + storybook-frame steps across all scenes.
-  // hasExistingAsset() automatically skips already-generated images.
+  // ─── Generate New Images + Videos (all scenes) ─────────────────────────
+  // Runs alibaba-image, alibaba-video, storybook-frame, and body animation steps.
+  // hasExistingAsset() automatically skips already-generated assets.
   const startAllNewImagesProduction = useCallback(async () => {
     abortRef.current = false;
     const sceneKeys = Array.from(scenes.keys());
     setProductionPhase('visual');
     setVisualProgress({ current: 0, total: sceneKeys.length });
-    const imageFilter = new Set(['alibaba-image', 'storybook-frame']);
+    const imageFilter = new Set(['alibaba-image', 'alibaba-video', 'storybook-frame', 'character-motion', 'character-animate-3d']);
 
     for (let i = 0; i < sceneKeys.length; i++) {
       if (abortRef.current) break;
@@ -5667,7 +5667,7 @@ function EP04ProductionInner() {
                             disabled={scenesWithPipeline.length === 0}
                           >
                             <ImageIcon className="h-3 w-3 mr-1" />
-                            Generate New Images
+                            Generate New Images + Videos
                           </Button>
                         </div>
                       )}
@@ -5941,11 +5941,11 @@ function EP04ProductionInner() {
                                 <Mic className="h-3 w-3 mr-1" />
                                 Regen Lipsync
                               </Button>
-                              {/* Generate New Images Only — runs only alibaba-image steps, skips existing */}
+                              {/* Generate New Images + Videos — runs image, video, and body animation steps, skips existing */}
                               <Button
                                 size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-green-500/30 text-green-600 hover:bg-green-500/10"
                                 onClick={() => {
-                                  startSceneVisualProduction(sceneKey, new Set(['alibaba-image', 'storybook-frame']));
+                                  startSceneVisualProduction(sceneKey, new Set(['alibaba-image', 'alibaba-video', 'storybook-frame', 'character-motion', 'character-animate-3d']));
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >
