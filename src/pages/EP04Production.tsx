@@ -2493,10 +2493,17 @@ function EP04ProductionInner() {
         return;
       }
 
-      // Carry forward ALL existing assets into results so they're preserved in the final save
-      Object.assign(results, existingVideoUrls, existingImageUrls);
-      for (const [k, v] of Object.entries(existingAvatarUrls)) { if (v) results[k] = v; }
-      for (const [k, v] of Object.entries(existingLipsyncUrls)) { if (v) results[k] = v; }
+      // Carry forward existing assets into results so they're preserved in the final save
+      // When onlyTypes is set: DON'T carry forward types being regenerated (prevents old+new accumulation)
+      const shouldCarryForward = (key: string): boolean => {
+        if (!onlyTypes) return true;
+        for (const t of onlyTypes) { if (key.includes(t)) return false; }
+        return true;
+      };
+      for (const [k, v] of Object.entries(existingVideoUrls)) { if (shouldCarryForward(k)) results[k] = v; }
+      for (const [k, v] of Object.entries(existingImageUrls)) { if (shouldCarryForward(k)) results[k] = v; }
+      for (const [k, v] of Object.entries(existingAvatarUrls)) { if (v && shouldCarryForward(k)) results[k] = v; }
+      for (const [k, v] of Object.entries(existingLipsyncUrls)) { if (v && shouldCarryForward(k)) results[k] = v; }
 
       for (let i = 0; i < pipelineSteps.length; i++) {
         if (abortRef.current) break;
@@ -2569,17 +2576,24 @@ function EP04ProductionInner() {
       // previously generated assets (videos, lipsync, etc.), so `results` only contains
       // the CURRENT run's output. Replacing videoUrls/imageUrls with only current results
       // would WIPE all previously generated assets that were skipped.
-      const existingStatus = forceRegenAll ? defaultSceneStatus() : (sceneProduction[sceneKey] || defaultSceneStatus());
+      const existingStatus = (forceRegenAll && !onlyTypes) ? defaultSceneStatus() : (sceneProduction[sceneKey] || defaultSceneStatus());
       const newVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition')).filter(httpOnly));
       const newImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ).filter(httpOnly));
       const newAvatarUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')).filter(httpOnly));
       const newLipsyncUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_')).filter(httpOnly));
 
-      // Merge: existing assets + new results (new keys overwrite same-named existing keys)
-      const mergedVideoUrls = { ...existingStatus.videoUrls, ...newVideoUrls };
-      const mergedImageUrls = { ...existingStatus.imageUrls, ...newImageUrls };
-      const mergedAvatarUrls = { ...existingStatus.avatarUrls, ...newAvatarUrls };
-      const mergedLipsyncUrls = { ...existingStatus.lipsyncUrls, ...newLipsyncUrls };
+      // Merge: existing assets + new results
+      // When onlyTypes is set: clear merge base for regenerated type categories so old entries don't persist
+      const IMAGE_REGEN_TYPES = new Set(['alibaba-image', 'storybook-frame', 'screen-capture', 'ai-screen-enhance', 'kinetic-text', 'motion-graphics', 'static-asset']);
+      const VIDEO_REGEN_TYPES = new Set(['alibaba-video', 'character-interaction', 'character-motion', 'character-animate-3d', 'narrator-scroll', 'scene-transition']);
+      const regenImages = onlyTypes && [...onlyTypes].some(t => IMAGE_REGEN_TYPES.has(t));
+      const regenVideos = onlyTypes && [...onlyTypes].some(t => VIDEO_REGEN_TYPES.has(t));
+      const regenAvatars = onlyTypes && onlyTypes.has('avatar-3d');
+      const regenLipsync = onlyTypes && onlyTypes.has('avatar-lipsync');
+      const mergedVideoUrls = { ...(regenVideos ? {} : existingStatus.videoUrls), ...newVideoUrls };
+      const mergedImageUrls = { ...(regenImages ? {} : existingStatus.imageUrls), ...newImageUrls };
+      const mergedAvatarUrls = { ...(regenAvatars ? {} : existingStatus.avatarUrls), ...newAvatarUrls };
+      const mergedLipsyncUrls = { ...(regenLipsync ? {} : existingStatus.lipsyncUrls), ...newLipsyncUrls };
 
       if (projectId) {
         const saveOk = await updateSceneArtifacts(projectId, sceneKey, {
@@ -6036,6 +6050,17 @@ function EP04ProductionInner() {
                               >
                                 <Mic className="h-3 w-3 mr-1" />
                                 Regen Lipsync
+                              </Button>
+                              {/* Regenerate Images & Avatars — preserves existing videos + lipsync */}
+                              <Button
+                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-cyan-500/30 text-cyan-600 hover:bg-cyan-500/10"
+                                onClick={() => {
+                                  startSceneVisualProduction(sceneKey, new Set(['alibaba-image', 'storybook-frame', 'static-asset', 'kinetic-text', 'avatar-3d', 'motion-graphics']));
+                                }}
+                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                              >
+                                <ImageIcon className="h-3 w-3 mr-1" />
+                                Regen Images
                               </Button>
                               {/* Generate New Videos + Body Animation — preserves existing images */}
                               <Button
