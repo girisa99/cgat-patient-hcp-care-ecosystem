@@ -824,6 +824,7 @@ function injectSubtitles(
 function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, mood?: string): J2VScene[] {
   const scenes: J2VScene[] = [];
   const { ttsLines, lipsyncClips, videos, images, kineticTexts, musicUrl, musicLoop, sfxTimings } = chapter;
+  console.log(`[CastTimeline] buildChapterScenes "${chapter.id}": ${videos.length} videos, ${images.length} images, ${ttsLines.length} TTS, ${lipsyncClips.length} lipsync`);
 
   // No TTS → single visual scene
   if (ttsLines.length === 0) {

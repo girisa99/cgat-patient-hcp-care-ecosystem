@@ -4428,26 +4428,25 @@ function EP04ProductionInner() {
         const transitionVideoSet = new Set(sceneTransAssets?.transitionVideos || []);
         const storybookFrameSet = new Set(sceneTransAssets?.storybookFrames || []);
 
-        // Separate kinetic text images, storybook frames, and regular images (by key pattern)
+        // Build kinetic image map (needs keys for index-matching to kineticTexts)
         const kineticImageMap: Record<string, string> = {};
-        const regularImages: string[] = [];
         for (const [key, url] of Object.entries(status.imageUrls || {})) {
-          if (!isSafeUrl(url)) continue;
-          if (key.includes('kinetic-text')) {
+          if (isSafeUrl(url) && key.includes('kinetic-text')) {
             kineticImageMap[key] = url;
-          } else if (storybookFrameSet.has(url) && ch.chapterId !== targetSceneKeys[0]) {
-            // Skip — routed to CastTransition.chapterHeaderImageUrl
-            // Exception: first scene (Scene 0) has no incoming transition, so keep its storybook frame as B-roll
-          } else {
-            regularImages.push(url);
           }
         }
-        // Always add avatar images to B-roll — lipsync is now full-screen (z-index 2),
-        // so avatar images in the background (z-index 0) provide visual variety before
-        // and after the lipsync clip without bleed-through.
-        for (const url of Object.values(status.avatarUrls || {})) {
-          if (isSafeUrl(url)) regularImages.push(url);
-        }
+        // Build URL sets for filtering
+        const kineticUrlSet = new Set(Object.values(kineticImageMap));
+
+        // Use pipeline-ordered images from preBuiltChapter (ch.sceneImages already
+        // includes imageUrls + avatarUrls in correct pipeline config order).
+        // Filter out kinetic-text and storybook-frame URLs that are routed elsewhere.
+        const pipelineOrderedImages: string[] = (ch as any).sceneImages || [];
+        const regularImages: string[] = pipelineOrderedImages.filter((url: string) => {
+          if (kineticUrlSet.has(url)) return false;
+          if (storybookFrameSet.has(url) && ch.chapterId !== targetSceneKeys[0]) return false;
+          return true;
+        });
 
         // Filter scene-transition videos out of the B-roll video pool
         const sceneVideos: string[] = ((ch as any).sceneVideos || [])
@@ -4459,6 +4458,21 @@ function EP04ProductionInner() {
           ...kt,
           imageUrl: idx < kineticKeys.length ? kineticImageMap[kineticKeys[idx]] : undefined,
         }));
+        // ── Video/Image diagnostic trace ──
+        const preBuiltVideoCount = ((ch as any).sceneVideos || []).length;
+        const transFilteredCount = preBuiltVideoCount - sceneVideos.length;
+        console.log(`[EP04 CastChapter] ${ch.chapterId}:`,
+          `videos: ${sceneVideos.length} (${preBuiltVideoCount} pre-built, ${transFilteredCount} filtered as transitions)`,
+          `images: ${regularImages.length} (${pipelineOrderedImages.length} pipeline-ordered, ${kineticUrlSet.size} kinetic, ${storybookFrameSet.size} storybook)`,
+          `lipsync: ${(ch.lipsyncClips || []).length}`,
+          `tts: ${ch.allTtsUrls.length}`);
+        if (sceneVideos.length > 0) {
+          sceneVideos.forEach((u: string, i: number) => console.log(`  📹 video[${i}]: ${u.substring(0, 80)}...`));
+        }
+        if ((ch.lipsyncClips || []).length > 0) {
+          (ch.lipsyncClips || []).forEach((c: any) => console.log(`  🎭 lipsync: ${c.character} at t=${c.start}s (${c.duration}s) — ${c.url.substring(0, 80)}...`));
+        }
+
         return {
           id: ch.chapterId,
           title: ch.product,
