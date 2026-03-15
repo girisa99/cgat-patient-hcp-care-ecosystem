@@ -3124,7 +3124,14 @@ function EP04ProductionInner() {
         const completedJobs = jobs.filter(j => j.status === 'completed' && j.output_url);
         if (completedJobs.length === 0) return;
 
-        console.log(`[EP04 Restore] Found ${completedJobs.length} completed assembly job(s)`);
+        console.log(`[EP04 Restore] Found ${completedJobs.length} completed assembly job(s):`,
+          completedJobs.map(j => `${j.id.substring(0, 8)}: ${j.output_url?.substring(j.output_url.lastIndexOf('/') + 1)}`));
+
+        // Extract part number from storage URL (e.g., ".../part2.mp4" → 2)
+        const getPartFromUrl = (url: string): number | null => {
+          const match = url?.match(/part(\d+)\.mp4/);
+          return match ? parseInt(match[1], 10) : null;
+        };
 
         setAssemblyParts(prev => {
           // Only restore if parts haven't been set yet (avoid overwriting active state)
@@ -3132,10 +3139,13 @@ function EP04ProductionInner() {
 
           // Build parts from completed jobs
           const parts = computePerSceneParts();
-          return parts.map((p, idx) => {
-            // Match by part number — jobs are in order
-            const matchingJob = completedJobs[idx];
+          return parts.map((p) => {
+            // Match by part number extracted from URL — NOT by array index!
+            // The storage path is always {projectId}/part{N}.mp4 (set by RunPod worker)
+            // Use the LATEST completed job for each part (last in created_at order)
+            const matchingJob = [...completedJobs].reverse().find(j => getPartFromUrl(j.output_url) === p.partNumber);
             if (matchingJob) {
+              console.log(`[EP04 Restore] Part ${p.partNumber} → ${matchingJob.output_url?.substring(matchingJob.output_url.lastIndexOf('/') + 1)} (job ${matchingJob.id.substring(0, 8)})`);
               return { ...p, status: 'completed' as const, videoUrl: matchingJob.output_url, thumbnailUrl: matchingJob.output_thumbnail_url || null, jobId: matchingJob.id };
             }
             return p;
