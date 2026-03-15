@@ -1839,7 +1839,7 @@ function EP04ProductionInner() {
       if (url && projectId && !isSupabaseStorageUrl(url)) {
         try { url = await ensureStorageUrl(projectId, `character-interaction-${sceneKey}`, url, 'video'); } catch { /* keep original */ }
       }
-      if (url) results[`character-interaction-${sceneKey}-${Date.now()}`] = url;
+      if (url) results[`character-interaction-${sceneKey}-${String(Object.keys(results).filter(k => k.startsWith(`character-interaction-${sceneKey}`)).length).padStart(3, '0')}`] = url;
       if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba');
       return;
     }
@@ -1865,7 +1865,7 @@ function EP04ProductionInner() {
       if (url && projectId && !isSupabaseStorageUrl(url)) {
         try { url = await ensureStorageUrl(projectId, `narrator-scroll-${sceneKey}`, url, 'video'); } catch { /* keep original */ }
       }
-      if (url) results[`narrator-scroll-${sceneKey}-${Date.now()}`] = url;
+      if (url) results[`narrator-scroll-${sceneKey}-${String(Object.keys(results).filter(k => k.startsWith(`narrator-scroll-${sceneKey}`)).length).padStart(3, '0')}`] = url;
       if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba');
       return;
     }
@@ -1898,7 +1898,7 @@ function EP04ProductionInner() {
       if (url && projectId && !isSupabaseStorageUrl(url)) {
         try { url = await ensureStorageUrl(projectId, `scene-transition-${sceneKey}`, url, 'video'); } catch { /* keep original */ }
       }
-      if (url) results[`scene-transition-${sceneKey}-${Date.now()}`] = url;
+      if (url) results[`scene-transition-${sceneKey}-${String(Object.keys(results).filter(k => k.startsWith(`scene-transition-${sceneKey}`)).length).padStart(3, '0')}`] = url;
       if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba');
       return;
     }
@@ -1966,7 +1966,7 @@ function EP04ProductionInner() {
             url = await ensureStorageUrl(projectId, `storybook-frame-${sceneKey}`, url);
           } catch { console.warn(`[EP04 Visual] ${stepLabel}: storybook-frame mirror failed`); }
         }
-        if (url) results[`storybook-frame-${sceneKey}-${Date.now()}`] = url;
+        if (url) results[`storybook-frame-${sceneKey}-${String(Object.keys(results).filter(k => k.startsWith(`storybook-frame-${sceneKey}`)).length).padStart(3, '0')}`] = url;
         if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba-image');
       } catch (err: any) {
         console.error(`[EP04 Visual] ${stepLabel}: storybook-frame threw:`, err?.message || err);
@@ -2134,13 +2134,14 @@ function EP04ProductionInner() {
         motionUrl = await pollVideoTaskResult(motionTaskId);
       }
       // Mirror to Storage
+      const motionIdx = String(Object.keys(results).filter(k => k.startsWith(`character-motion-${sceneKey}`)).length).padStart(3, '0');
       if (motionUrl && projectId && !isSupabaseStorageUrl(motionUrl)) {
         try {
-          motionUrl = await ensureStorageUrl(projectId, `character-motion-${sceneKey}-${Date.now()}`, motionUrl, 'video');
+          motionUrl = await ensureStorageUrl(projectId, `character-motion-${sceneKey}-${motionIdx}`, motionUrl, 'video');
         } catch (e) { console.warn(`[EP04 Visual] motion mirror failed:`, e); }
       }
       if (motionUrl) {
-        results[`character-motion-${sceneKey}-${Date.now()}`] = motionUrl;
+        results[`character-motion-${sceneKey}-${motionIdx}`] = motionUrl;
       }
       return;
     }
@@ -2180,16 +2181,17 @@ function EP04ProductionInner() {
       }
       // animate3d returns animationUrl (FBX/GLB) — store for potential browser-side rendering
       const animUrl = anim3dData?.animationUrl || anim3dData?.modelUrl || null;
+      const animIdx = String(Object.keys(results).filter(k => k.startsWith(`character-animate-3d-${sceneKey}`)).length).padStart(3, '0');
       if (animUrl && projectId && !isSupabaseStorageUrl(animUrl)) {
         try {
-          const stored = await ensureStorageUrl(projectId, `animate3d-${sceneKey}-${character}-${Date.now()}`, animUrl, 'video');
-          results[`character-animate-3d-${sceneKey}-${Date.now()}`] = stored;
+          const stored = await ensureStorageUrl(projectId, `animate3d-${sceneKey}-${character}-${animIdx}`, animUrl, 'video');
+          results[`character-animate-3d-${sceneKey}-${animIdx}`] = stored;
         } catch (e) {
           console.warn(`[EP04 Visual] animate3d mirror failed:`, e);
-          if (animUrl) results[`character-animate-3d-${sceneKey}-${Date.now()}`] = animUrl;
+          if (animUrl) results[`character-animate-3d-${sceneKey}-${animIdx}`] = animUrl;
         }
       } else if (animUrl) {
-        results[`character-animate-3d-${sceneKey}-${Date.now()}`] = animUrl;
+        results[`character-animate-3d-${sceneKey}-${animIdx}`] = animUrl;
       }
       return;
     }
@@ -2346,8 +2348,10 @@ function EP04ProductionInner() {
     // Base64 data URIs (1-3MB+) will cause DB JSONB timeouts/size failures
     // CDN URLs (DashScope, Replicate) expire after ~24h — assembly can't use them
     const isImageType = stepType.includes('image') || stepType === 'kinetic-text' || stepType === 'motion-graphics';
+    // Deterministic counter: count existing entries of this type for this scene
+    const stepCounter = String(Object.keys(results).filter(k => k.startsWith(`${stepType}-${sceneKey}`)).length).padStart(3, '0');
     if (url && projectId && !isSupabaseStorageUrl(url)) {
-      const resultKey = `${stepType}-${sceneKey}-${Date.now()}`;
+      const resultKey = `${stepType}-${sceneKey}-${stepCounter}`;
       try {
         url = await ensureStorageUrl(projectId, resultKey, url, isImageType ? 'image' : 'video');
       } catch (mirrorErr) {
@@ -2360,11 +2364,7 @@ function EP04ProductionInner() {
       toast.warning(`${stepLabel} "${stepType}": generation returned placeholder — provider may be unavailable`);
       console.warn(`[EP04 Visual] ${stepLabel} got placeholder URL:`, url);
     } else if (url) {
-      // Deterministic index for kinetic-text keys (matches assembly-phase sort order)
-      const suffix = stepType === 'kinetic-text'
-        ? String(Object.keys(results).filter(k => k.startsWith(`kinetic-text-${sceneKey}`)).length)
-        : String(Date.now());
-      results[`${stepType}-${sceneKey}-${suffix}`] = url;
+      results[`${stepType}-${sceneKey}-${stepCounter}`] = url;
     } else if (isAsync) {
       toast.warning(`${stepLabel} "${stepType}": still generating — check back later`);
     }
@@ -4001,27 +4001,80 @@ function EP04ProductionInner() {
         // fresh from expired. RunPod worker will fetch during render; fresh URLs will work fine.
         const isSafeUrl = (u: string) => isHttpUrl(u);
 
-        // Collect all scene images — from imageUrls + avatarUrls buckets
-        // CRITICAL: Sort by key to maintain pipeline step order (keys contain timestamps
-        // from sequential generation — earlier pipeline steps = earlier timestamps).
-        const sortByKey = (entries: [string, string][]) =>
-          entries.sort(([a], [b]) => {
-            // Extract numeric timestamp suffix from keys like "alibaba-image-scene-X-1710512345"
-            const tsA = parseInt(a.split('-').pop() || '0', 10) || 0;
-            const tsB = parseInt(b.split('-').pop() || '0', 10) || 0;
-            return tsA - tsB;
-          });
-        const allImageVisuals: string[] = [
-          ...sortByKey(Object.entries(status.imageUrls || {})).map(([, u]) => u).filter(isSafeUrl),
-          ...sortByKey(Object.entries(status.avatarUrls || {})).map(([, u]) => u).filter(isSafeUrl),
-        ];
+        // ── Pipeline-config-ordered assembly ──
+        // Walk EP04_SCENE_PIPELINES steps in declared order and match each to its
+        // result entry by step-type prefix + scene key. This guarantees visuals
+        // appear in the same sequence the pipeline config declares, regardless of
+        // result key suffixes (timestamps, counters, etc.).
+        const IMAGE_STEP_TYPES = new Set([
+          'alibaba-image', 'storybook-frame', 'screen-capture', 'ai-screen-enhance',
+          'kinetic-text', 'motion-graphics', 'static-asset', 'avatar-3d',
+        ]);
+        const VIDEO_STEP_TYPES = new Set([
+          'alibaba-video', 'character-interaction', 'character-motion',
+          'character-animate-3d', 'narrator-scroll', 'scene-transition',
+        ]);
 
-        // Collect all non-lipsync scene videos — sorted by key timestamp for correct ordering
+        const orderByPipelineConfig = (
+          entries: [string, string][],
+          sKey: string,
+          stepTypeFilter: Set<string>,
+        ): string[] => {
+          const pKey = SCRIPT_TO_PIPELINE_MAP[sKey] || sKey;
+          const pipeline = EP04_SCENE_PIPELINES[pKey as keyof typeof EP04_SCENE_PIPELINES];
+          if (!pipeline || !Array.isArray(pipeline)) return entries.map(([, u]) => u);
+
+          const ordered: string[] = [];
+          const consumed = new Set<string>();
+
+          for (const step of pipeline) {
+            const sType = (step as Record<string, unknown>).type as string;
+            if (!stepTypeFilter.has(sType)) continue;
+
+            // Find first unconsumed entry matching this step
+            const match = entries.find(([key]) => {
+              if (consumed.has(key)) return false;
+              if (sType === 'avatar-3d') {
+                const character = (step as Record<string, unknown>).character as string || '';
+                return key.includes('avatar-3d') && key.includes(character);
+              }
+              if (sType === 'screen-capture') {
+                return key.includes('screen-capture') && key.includes(sKey);
+              }
+              if (sType === 'alibaba-image') {
+                // Match keys that contain the step type prefix; exclude ai-screen-enhance
+                return key.includes('alibaba-image') && key.includes(sKey);
+              }
+              // Generic: key contains step type AND scene key
+              return key.includes(sType) && key.includes(sKey);
+            });
+
+            if (match) {
+              consumed.add(match[0]);
+              ordered.push(match[1]);
+            }
+          }
+
+          // Append unmatched entries at end (backward compat with old/extra data)
+          for (const [key, url] of entries) {
+            if (!consumed.has(key)) ordered.push(url);
+          }
+
+          return ordered;
+        };
+
+        // Collect all scene images + avatars — ordered by pipeline config step sequence
+        const allImageEntries: [string, string][] = [
+          ...Object.entries(status.imageUrls || {}),
+          ...Object.entries(status.avatarUrls || {}),
+        ].filter(([, u]) => isSafeUrl(u));
+        const allImageVisuals: string[] = orderByPipelineConfig(allImageEntries, sceneKey, IMAGE_STEP_TYPES);
+
+        // Collect all non-lipsync scene videos — ordered by pipeline config step sequence
         const lipsyncSet = new Set(Object.values(status.lipsyncUrls || {}));
-        const allSceneVideos: string[] = sortByKey(Object.entries(status.videoUrls || {}))
-          .map(([, u]) => u)
-          .filter(isSafeUrl)
-          .filter(u => !lipsyncSet.has(u));
+        const allVideoEntries: [string, string][] = Object.entries(status.videoUrls || {})
+          .filter(([, u]) => isSafeUrl(u) && !lipsyncSet.has(u));
+        const allSceneVideos: string[] = orderByPipelineConfig(allVideoEntries, sceneKey, VIDEO_STEP_TYPES);
 
         // ── Detailed asset audit per scene ──
         const shortUrl = (u: string) => u ? `${u.substring(0, 60)}...` : '(empty)';
