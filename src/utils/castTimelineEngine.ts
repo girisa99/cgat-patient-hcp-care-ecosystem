@@ -566,9 +566,9 @@ function makeTtsLineScene(
     }
 
     // ── Layer 2: Lipsync full-screen (replaces PiP — no clipping) ──
-    // Enters after brief lead-in for cinematic pacing.
-    const lipsyncDelay = isHttpUrl(videoVisual) ? Math.min(3, sceneDur * 0.15) : 0.3;
-    const lipsyncStart = Math.min(lipsyncDelay, Math.max(0, sceneDur - lipsyncDur));
+    // Must start at same time as TTS audio (t=0) to keep lips synced.
+    // Any delay causes visible mouth-vs-voice desync.
+    const lipsyncStart = 0;
     elements.push({
       type: 'video', src: lipsync.url,
       start: lipsyncStart, duration: lipsyncDur,
@@ -580,7 +580,7 @@ function makeTtsLineScene(
 
     // ── Layer 3: Tail visual — fills after lipsync ends ──
     if (isHttpUrl(tailImageVisual)) {
-      const tailStart = lipsyncStart + lipsyncDur - 0.5;
+      const tailStart = lipsyncStart + lipsyncDur - 1.0; // overlap by 1s to cover safety trim gap
       const tailDur = sceneDur - tailStart;
       if (tailDur > 1) {
         const kb = getKenBurns(kbIdx + 99);

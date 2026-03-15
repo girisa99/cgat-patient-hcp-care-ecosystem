@@ -56,6 +56,8 @@ class ElementInstruction:
     # Component (lower-third)
     component_type: str = ""    # e.g. "basic/050"
     component_settings: dict = field(default_factory=dict)
+    # Z-ordering (higher = on top)
+    z_index: int = 0
 
 
 @dataclass
@@ -207,6 +209,8 @@ def _parse_element(el: dict, url_map: dict[str, str]) -> ElementInstruction:
         # Component
         component_type=component_type,
         component_settings=component_settings,
+        # Z-ordering
+        z_index=int(el.get("z-index", el.get("zIndex", 0))),
     )
 
     # Resolve URL to local path

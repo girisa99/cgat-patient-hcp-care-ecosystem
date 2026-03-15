@@ -3174,7 +3174,7 @@ function EP04ProductionInner() {
         // Use actual measured TTS duration if available; fall back to estimate
         const actualDur = audioMap[k]?.audioDuration;
         const estDur = scriptContentForUI[k]?.duration_est || 5;
-        sceneDuration += (actualDur || estDur) + 0.5;
+        sceneDuration += (actualDur || (estDur + 2)) + 1.5; // must match TTS_GAP + estimate buffer
         if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
       // Add trailing transition duration (~6s bridge narrator + transition visual)
@@ -3204,7 +3204,7 @@ function EP04ProductionInner() {
           for (const k of subLines) {
             const actualDur = audioMap[k]?.audioDuration;
             const estDur = scriptContentForUI[k]?.duration_est || 5;
-            subDuration += (actualDur || estDur) + 1.5;
+            subDuration += (actualDur || (estDur + 2)) + 1.5; // must match TTS_GAP + estimate buffer
             if (audioMap[k]?.audioUrl) subTts++;
           }
           const subLipsync = Math.ceil(lipsyncCount * subLines.length / sceneLines.length);
@@ -3268,7 +3268,7 @@ function EP04ProductionInner() {
         // Use actual measured TTS duration if available; fall back to estimate
         const actualDur = audioMap[k]?.audioDuration;
         const estDur = scriptContentForUI[k]?.duration_est || 5;
-        sceneDuration += (actualDur || (estDur + 2)) + 0.3; // +0.3s gap per line, +2s buffer on estimates
+        sceneDuration += (actualDur || (estDur + 2)) + 1.5; // +1.5s gap (must match TTS_GAP in startFinalAssembly)
         if (audioMap[k]?.audioUrl) sceneTtsCount++;
       }
       sceneDuration = sceneDuration || 30;
@@ -3840,12 +3840,15 @@ function EP04ProductionInner() {
                 key: k,
                 text: line?.text || '',
               });
+              cumulativeStart += dur + TTS_GAP;
             } else {
               // data: URI — will be filtered by castTimelineEngine (only HTTP URLs pass), warn user
               dataUriTtsCount++;
+              // Don't advance cumulativeStart for unusable audio — prevents phantom gaps
             }
+          } else {
+            // No audio at all for this line — don't create timeline gap
           }
-          cumulativeStart += dur + TTS_GAP;
         }
         if (dataUriTtsCount > 0) {
           console.warn(`[EP04 Assembly] ${sceneKey}: ${dataUriTtsCount} TTS lines have data: URIs (not uploaded to Storage) — these will be SILENT in the video`);

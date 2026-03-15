@@ -414,7 +414,7 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
     all_videos = [e for e in scene.elements if e.type == "video"]
     all_audios = [e for e in scene.elements if e.type == "audio"]
     images = [e for e in all_images if e.local_path]
-    videos = [e for e in all_videos if e.local_path]
+    videos = sorted([e for e in all_videos if e.local_path], key=lambda v: v.z_index)
     audios = [e for e in all_audios if e.local_path]
     texts = [(i, e) for i, e in enumerate(scene.elements) if e.type == "text" and e.text]
     components = [(i, e) for i, e in enumerate(scene.elements) if e.type == "component"]
