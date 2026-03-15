@@ -516,7 +516,7 @@ serve(async (req) => {
     if (type === 'avatar' || type === 'lipsync') {
       console.log(`🎭 Generating ${type} with ${provider !== 'auto' ? provider : 'auto-selected'} provider`);
       console.log(`   Priority Rendering: ${priorityRendering}, Full Body: ${fullBody}`);
-      
+
       const avatarResult = await generateAvatarOrLipSync({
         type,
         sourceImage: sourceImage || referenceImage,
@@ -529,11 +529,29 @@ serve(async (req) => {
         fullBody,
         priorityRendering,
       });
-      
+
       return new Response(JSON.stringify({
         success: true,
         ...avatarResult,
         type,
+        timestamp: new Date().toISOString()
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle motion transfer (wan2.2-animate: character image + reference motion video)
+    if (type === 'avatar-motion' || type === 'motion-transfer') {
+      console.log(`🏃 Generating motion transfer with wan2.2-animate`);
+      const motionResult = await generateMotionTransfer({
+        sourceImage: sourceImage || referenceImage,
+        referenceVideo: body.referenceVideo,
+        prompt: prompt || '',
+      });
+      return new Response(JSON.stringify({
+        success: true,
+        ...motionResult,
+        type: 'avatar-motion',
         timestamp: new Date().toISOString()
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -666,9 +684,10 @@ interface VisemeData {
 }
 
 interface AvatarRequest {
-  type: 'avatar' | 'lipsync';
+  type: 'avatar' | 'lipsync' | 'avatar-motion';
   sourceImage?: string;
   audioUrl?: string;
+  referenceVideo?: string;
   script?: string;
   language?: string;
   voiceId?: string;
@@ -709,6 +728,7 @@ const VISUAL_TYPE_ROUTING_MATRIX: Record<string, VisualTypeRouting> = {
   'avatar': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'], specialCapabilities: ['face_tracking'] },
   'avatar_lipsync': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'], specialCapabilities: ['audio_sync'] },
   'avatar_fullbody': { primaryProvider: 'alibaba', fallbackProviders: [], specialCapabilities: ['omniavatar'] },
+  'avatar_motion': { primaryProvider: 'alibaba', fallbackProviders: [], specialCapabilities: ['motion_transfer', 'wan2.2-animate'] },
   'talking_head': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
   'presenter': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
   'spokesperson': { primaryProvider: 'alibaba', fallbackProviders: ['modelslab'] },
@@ -1902,6 +1922,137 @@ async function generateAvatarWithAlibaba(request: AvatarRequest, fullBody = fals
     // Fallback: Alibaba → Replicate (omni-human → fabric-1.0)
     return await generateLipSyncWithReplicate(request);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOTION TRANSFER — wan2.2-animate (character image + reference motion video)
+// ═══════════════════════════════════════════════════════════════════════════════
+async function generateMotionTransfer(request: {
+  sourceImage?: string;
+  referenceVideo?: string;
+  prompt?: string;
+}): Promise<{
+  videoUrl: string;
+  alibabaTaskId?: string;
+  provider: string;
+  model: string;
+}> {
+  if (!request.sourceImage) throw new Error('sourceImage is required for motion transfer');
+  if (!request.referenceVideo) throw new Error('referenceVideo is required for motion transfer');
+
+  const chinaApiKey = Deno.env.get('ALIBABA_CHINA_API_KEY');
+  const intlApiKey = Deno.env.get('ALIBABA_API_KEY');
+  if (!chinaApiKey && !intlApiKey) throw new Error('ALIBABA_API_KEY or ALIBABA_CHINA_API_KEY is not configured');
+
+  const useChina = !!chinaApiKey;
+  const apiKey = chinaApiKey || intlApiKey!;
+
+  console.log(`🏃 Motion transfer: wan2.2-animate`);
+  console.log(`   Source image: ${request.sourceImage.substring(0, 60)}`);
+  console.log(`   Reference video: ${request.referenceVideo.substring(0, 60)}`);
+
+  // Re-upload source image to Supabase if needed (same as avatar handler)
+  let sourceImageUrl = request.sourceImage;
+  if (sourceImageUrl && !sourceImageUrl.includes('supabase.co/storage')) {
+    try {
+      const sb = getSupabaseAdmin();
+      if (sb) {
+        const imgResp = await fetch(sourceImageUrl);
+        if (imgResp.ok) {
+          const blob = await imgResp.blob();
+          const ct = imgResp.headers.get('content-type') || 'image/png';
+          const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : 'jpg';
+          const fileName = `cast-avatars/motion-source-${Date.now()}.${ext}`;
+          const { error: upErr } = await sb.storage.from('cast-assets').upload(fileName, blob, { contentType: ct, upsert: true });
+          if (!upErr) {
+            const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+            sourceImageUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${fileName}`;
+            console.log(`✅ Re-uploaded motion source to Supabase: ${sourceImageUrl.substring(0, 80)}`);
+          }
+        }
+      }
+    } catch (e) { console.warn('⚠️ Motion source re-upload failed:', e); }
+  }
+
+  // Re-upload reference video to Supabase if needed
+  let referenceVideoUrl = request.referenceVideo;
+  if (referenceVideoUrl && !referenceVideoUrl.includes('supabase.co/storage')) {
+    try {
+      const sb = getSupabaseAdmin();
+      if (sb) {
+        const vidResp = await fetch(referenceVideoUrl);
+        if (vidResp.ok) {
+          const blob = await vidResp.blob();
+          const fileName = `cast-motion-refs/motion-ref-${Date.now()}.mp4`;
+          const { error: upErr } = await sb.storage.from('cast-assets').upload(fileName, blob, { contentType: 'video/mp4', upsert: true });
+          if (!upErr) {
+            const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+            referenceVideoUrl = `${supabaseUrl}/storage/v1/object/public/cast-assets/${fileName}`;
+            console.log(`✅ Re-uploaded motion reference to Supabase: ${referenceVideoUrl.substring(0, 80)}`);
+          }
+        }
+      }
+    } catch (e) { console.warn('⚠️ Motion reference re-upload failed:', e); }
+  }
+
+  const baseUrl = useChina
+    ? 'https://dashscope.aliyuncs.com/api/v1'
+    : 'https://dashscope-intl.aliyuncs.com/api/v1';
+  const endpoint = `${baseUrl}/services/aigc/video-generation/video-synthesis`;
+
+  const requestBody = {
+    model: 'wan2.2-animate',
+    input: {
+      image_url: sourceImageUrl,
+      video_url: referenceVideoUrl,
+    },
+    parameters: {
+      size: '1280*720',
+    }
+  };
+
+  const headers: Record<string, string> = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  };
+  if (useChina) {
+    headers['X-DashScope-Async'] = 'enable';
+  }
+
+  console.log(`🏃 Submitting motion transfer to ${endpoint}`);
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.warn(`Motion transfer API error (${response.status}):`, errorText);
+    throw new Error(`Motion transfer API error: ${response.status} — ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log('🏃 Motion transfer response keys:', Object.keys(data.output || {}));
+
+  if (data.output?.task_id) {
+    console.log(`🏃 Motion transfer task submitted: ${data.output.task_id}`);
+    return {
+      videoUrl: '',
+      alibabaTaskId: data.output.task_id,
+      provider: 'alibaba',
+      model: 'wan2.2-animate',
+    };
+  }
+
+  const rawVideoUrl = data.output?.video_url;
+  const videoUrl = rawVideoUrl ? await reuploadToStorage(rawVideoUrl, 'motion-transfer') : rawVideoUrl;
+
+  return {
+    videoUrl,
+    provider: 'alibaba',
+    model: 'wan2.2-animate',
+  };
 }
 
 // Replicate multi-model lipsync (official models, supports long audio)

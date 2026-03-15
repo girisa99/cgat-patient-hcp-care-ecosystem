@@ -316,11 +316,11 @@ def render_lower_third(
     draw = ImageDraw.Draw(img)
 
     # Lower-third dimensions
-    lt_height = 120 if lead else 80
+    lt_height = 150 if lead else 100
     lt_y = int(height * 0.78)
     lt_x = 60
     lt_width = min(int(width * 0.65), 1200)
-    accent_width = 6
+    accent_width = 10
     padding = 24
 
     # Background bar with transparency
@@ -339,10 +339,10 @@ def render_lower_third(
     )
 
     # Headline text
-    headline_font = _find_font("Inter", "bold", 32)
+    headline_font = _find_font("Inter", "bold", 44)
     headline_color = _hex_to_rgba("#FFFFFF")
     headline_x = lt_x + accent_width + padding
-    headline_y = lt_y + 14 if lead else lt_y + (lt_height - 32) // 2
+    headline_y = lt_y + 16 if lead else lt_y + (lt_height - 44) // 2
 
     # Shadow + outline for headline
     draw.text((headline_x + 2, headline_y + 2), headline,
@@ -354,9 +354,9 @@ def render_lower_third(
 
     # Lead/subtitle text
     if lead:
-        lead_font = _find_font("Inter", "regular", 22)
+        lead_font = _find_font("Inter", "regular", 28)
         lead_color = _hex_to_rgba("#cccccc")
-        lead_y = headline_y + 40
+        lead_y = headline_y + 52
         draw.text((headline_x + 1, lead_y + 1), lead,
                   font=lead_font, fill=(0, 0, 0, 160),
                   stroke_width=1, stroke_fill=(0, 0, 0, 160))

@@ -358,7 +358,10 @@ export type ScenePipelineStep =
   | { type: 'character-interaction'; characters: string[]; prompt: string; style?: 'group-shot' | 'duo-argument' | 'standup-circle' | 'farewell-wave' }
   | { type: 'narrator-scroll'; prompt: string; duration: number; dataContent?: string }
   // ─── STATIC ASSET — pre-existing image shown as-is (no AI generation) ──
-  | { type: 'static-asset'; assetKey: string; duration: number; description?: string };
+  | { type: 'static-asset'; assetKey: string; duration: number; description?: string }
+  // ─── BODY ANIMATION PIPELINE STEP TYPES ───────────────────────────────
+  | { type: 'character-motion'; character: string; motionRef: string; prompt: string; duration: number }
+  | { type: 'character-animate-3d'; character: string; animationType: 'idle' | 'walk' | 'run' | 'talk' | 'custom'; prompt: string; duration: number };
 
 // ─── EP04 MUSIC & SFX SCORE ──────────────────────────────────────────────────
 // Background music beds and sound effects per scene. Generated via ElevenLabs.
@@ -554,6 +557,10 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate chapter header with decorative borders: "Chapter II — The Cast" in elegant serif font with tiny character silhouettes in the marginalia, golden ink on cream parchment', duration: 2 },
     // ── Scene-setting video — the team assembles ──
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar-style 3D animated scene: a cozy home office transforms into a magical podcast studio — dual monitors glow with code, a warm golden retriever wags its tail as a bear wearing wire-frame glasses (Atlas) materializes on the left monitor and an orange fox in a paint-splattered apron (Nova) appears on the right monitor, sparkle particles swirl between the screens, warm lamplight, cinematic depth of field, 8K quality' },
+    // ── Body action: Host coding furiously (Option B — T2V) ──
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: a focused human product owner typing at blazing speed on a glowing mechanical keyboard, fingers flying across keys with motion blur, coffee cups multiplying on the desk — one empty, two half-full, three stacked precariously. Dual monitors show scrolling code and sprint dashboards. Golden retriever watches with head tilted. Warm lamplight, steam rising from fresh coffee, dramatic close-up of hands then pull back to reveal the chaos, cinematic quality, 8K' },
+    // ── Body animation: Atlas walking in (Option C — Animate3D) ──
+    { type: 'character-animate-3d', character: 'atlas', animationType: 'walk', prompt: 'Atlas the bear walking confidently into the podcast studio, wire-frame glasses glinting', duration: 5 },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
@@ -848,6 +855,14 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // ── Videos: burndown scroll comedy + standup comparison ──
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: bear character (Atlas) unrolls a pristine white scroll showing a perfectly straight burndown chart line descending at 45 degrees, each data point labeled Day 1-5 with precise margins. Then fox character (Nova) yanks out a MASSIVE crumpled paint-splattered scroll that extends off the table, her chart line zigzags wildly with sticky notes, doodles, dark-mode toggles, and scope-creep annotations everywhere. Bear reaches for his ruler, fox slaps his paw away — comedic timing, warm studio lighting' },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup meeting with people talking over each other and sticky notes flying. RIGHT side shows calm AI-powered async standup with organized data flowing smoothly on a dashboard, cinematic quality, warm lighting' },
+    // ── Body action: Atlas presenting at podium ──
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: Atlas the bear standing confidently at a sleek podium, wearing wire-frame glasses, gesturing at a floating holographic burndown chart with a laser pointer in his paw. His posture is formal and measured — one paw on the podium, the other sweeping across data points. The chart responds to his gestures with glowing highlights. Dark mission-control room with blue ambient lighting, multiple screens in the background, cinematic quality, 8K' },
+    // ── Body action: Nova presenting chaotically ──
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: Nova the fox juggling multiple floating charts, papers, and sticky notes in the air with frantic energy — her paint-splattered apron swishing as she spins between presentations. She tosses a pie chart over her shoulder, catches a bar graph mid-air, somehow everything lands perfectly in a neat stack. Her tail swishes triumphantly at the end. Warm studio lighting with chaotic-but-lovable energy, comedic timing, cinematic quality, 8K' },
+    // ── Motion transfer: Atlas presenting with gestures (Option A — wan2.2-animate) ──
+    { type: 'character-motion', character: 'atlas', motionRef: 'motion-presenting', prompt: 'Atlas the bear presenting formally at a podium with measured hand gestures', duration: 5 },
+    // ── Body animation: Nova running with papers (Option C — Animate3D) ──
+    { type: 'character-animate-3d', character: 'nova', animationType: 'run', prompt: 'Nova the fox sprinting across the mission control room clutching a stack of papers', duration: 5 },
     // ── Kinetic text: velocity stats ──
     { type: 'kinetic-text', text: 'ATLAS: 85% velocity. Straight-line burndown. NOVA: 110% velocity. "Things that are in scope... now." SCOPE CREEP ≠ MALICIOUS. It\'s a dev who fixes something in 90 seconds and believes she helped.' },
     // Bridge narrator: scene 7 → scene 8 (6s)
@@ -1001,6 +1016,14 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'kinetic-text', text: 'EXPLORE: genieaiexperimentationhub.tech | SUBSCRIBE: YouTube @GenieAIPodcast | CONNECT: LinkedIn — Genie AI Suite | Beyond AI Hype — we bring it to life.' },
     { type: 'narrator-scroll', prompt: 'Final scroll revealing the complete AI provider stack used to produce this episode: "Voice: ElevenLabs + Azure Neural + Alibaba CosyVoice | Video: Alibaba Wan2.6 T2V/I2V | Lipsync: Alibaba Wan2.2 S2V | Images: Alibaba Wanx + FLUX Merged | 3D: Meshy | Motion: ModelsLab AnimateDiff | Assembly: JSON2Video | Orchestration: GenieCast" — golden ink on aged paper, each provider name illuminates as the scroll passes', duration: 8, dataContent: 'Voice: ElevenLabs + Azure Neural + CosyVoice | Video: Wan2.6 | Lipsync: Wan2.2 | Images: Wanx + FLUX | 3D: Meshy | Motion: ModelsLab | Assembly: JSON2Video | Orchestration: GenieCast' },
     { type: 'sfx', prompt: 'Orchestral crescendo resolving into a warm music box chime, the sound of a book page turning, and a final magical sparkle', duration: 5 },
+    // ── Body action: Group theatrical bow ──
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: all four characters taking theatrical bows in a row on a sunlit stage — Atlas the bear gives a deep formal bow with one paw across his chest, Nova the fox does an exaggerated curtsy with her paint-splattered apron fanning out, the human host waves warmly at camera, and Squirrel attempts a bow but topples forward comically and catches itself on Atlas shoulder. Golden confetti falls from above, warm spotlight lighting, audience of woodland creatures applauding, cinematic quality, 8K' },
+    // ── Body action: Genie lamp return ──
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: Allaudin the blue genie floating above a golden ornate lamp, arms spread wide in a grand theatrical farewell gesture. He begins dissolving into sparkling blue-purple mist from his feet upward, the mist spiraling in an elegant vortex back into the lamp spout. The lamp glows warmly as the last wisps of magic settle. A single golden sparkle lingers in the air then fades. Dark mystical background with volumetric god rays, cinematic quality, emotional farewell moment, 8K' },
+    // ── Motion transfer: Host formal bow farewell (Option A — wan2.2-animate) ──
+    { type: 'character-motion', character: 'host', motionRef: 'motion-formal-bow', prompt: 'Sai the host taking a graceful formal bow farewell to the audience', duration: 5 },
+    // ── Body animation: Group idle → talk (Option C — Animate3D) ──
+    { type: 'character-animate-3d', character: 'atlas', animationType: 'talk', prompt: 'All characters standing together, Atlas gesturing as he speaks to the group in farewell', duration: 5 },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'End card: four animated characters (bear Atlas, fox Nova, human host, squirrel perched on shoulder) standing together in a sunlit forest-tech hub, golden retriever at their feet, woodland creatures gathered around, text "Two AIs, One Sprint, Zero Standup Meetings" floating above in holographic letters, cinematic Pixar quality, warm golden hour lighting, 8K' },
   ],
 };

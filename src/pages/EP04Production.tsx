@@ -2092,6 +2092,108 @@ function EP04ProductionInner() {
       console.warn(`[EP04 Visual] No pre-made background for "${sceneKey}" — generating kinetic text via AI`);
     }
 
+    // ── Character motion transfer (Option A — wan2.2-animate) ──
+    if (stepType === 'character-motion') {
+      const character = (step as Record<string, unknown>).character as string || 'host';
+      const motionRef = (step as Record<string, unknown>).motionRef as string || '';
+      const motionPrompt = prompt || `${character} performing motion`;
+
+      // Resolve character avatar image
+      const avatarUrl = CHARACTER_AVATARS[character];
+      if (!avatarUrl) {
+        console.warn(`[EP04 Visual] ${stepLabel}: no avatar for character "${character}" — skipping motion transfer`);
+        return;
+      }
+      // Resolve reference motion video from Supabase Storage
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      const motionVideoUrl = motionRef.startsWith('http')
+        ? motionRef
+        : `${supabaseUrl}/storage/v1/object/public/cast-assets/cast-motion-refs/${motionRef}.mp4`;
+
+      // Convert local avatar path to full URL for edge function
+      const fullAvatarUrl = avatarUrl.startsWith('/') ? `${window.location.origin}${avatarUrl}` : avatarUrl;
+
+      console.log(`[EP04 Visual] ${stepLabel}: motion transfer — character=${character}, motionRef=${motionRef}`);
+      const { data: motionData, error: motionErr } = await supabase.functions.invoke('ai-video-generator', {
+        body: {
+          type: 'avatar-motion',
+          sourceImage: fullAvatarUrl,
+          referenceVideo: motionVideoUrl,
+          prompt: motionPrompt,
+        },
+      });
+      if (motionErr) {
+        toast.error(`${stepLabel} motion transfer failed: ${motionErr.message}`);
+        return;
+      }
+      let motionUrl = motionData?.videoUrl || null;
+      const motionTaskId = motionData?.alibabaTaskId;
+      // Poll if async
+      if (motionTaskId && !motionUrl) {
+        toast.info(`${stepLabel}: motion transfer generating... polling`);
+        motionUrl = await pollVideoTaskResult(motionTaskId);
+      }
+      // Mirror to Storage
+      if (motionUrl && projectId && !isSupabaseStorageUrl(motionUrl)) {
+        try {
+          motionUrl = await ensureStorageUrl(projectId, `character-motion-${sceneKey}-${Date.now()}`, motionUrl, 'video');
+        } catch (e) { console.warn(`[EP04 Visual] motion mirror failed:`, e); }
+      }
+      if (motionUrl) {
+        results[`character-motion-${sceneKey}-${Date.now()}`] = motionUrl;
+      }
+      return;
+    }
+
+    // ── Character animate-3D (Option C — animate3d via alibaba-3d-generator) ──
+    if (stepType === 'character-animate-3d') {
+      const character = (step as Record<string, unknown>).character as string || 'atlas';
+      const animationType = (step as Record<string, unknown>).animationType as string || 'idle';
+      const animDuration = (step as Record<string, unknown>).duration as number || 5;
+
+      // Find existing 3D model URL from previous avatar-3d results for this character
+      const model3dKey = Object.keys(results).find(k =>
+        k.startsWith('avatar-3d-') && k.includes(character)
+      );
+      const model3dUrl = model3dKey ? results[model3dKey] : null;
+
+      if (!model3dUrl || typeof model3dUrl !== 'string') {
+        console.warn(`[EP04 Visual] ${stepLabel}: no 3D model found for "${character}" — skipping animate3d`);
+        toast.warning(`${stepLabel}: no 3D model for ${character} — generate avatar-3d first`);
+        return;
+      }
+
+      console.log(`[EP04 Visual] ${stepLabel}: animate3d — character=${character}, animation=${animationType}`);
+      const { data: anim3dData, error: anim3dErr } = await supabase.functions.invoke('alibaba-3d-generator', {
+        body: {
+          model: 'animate3d',
+          sourceModel: model3dUrl,
+          animationType,
+          animationDuration: animDuration,
+          prompt: prompt || `${character} ${animationType} animation`,
+          fps: 24,
+        },
+      });
+      if (anim3dErr) {
+        toast.error(`${stepLabel} animate3d failed: ${anim3dErr.message}`);
+        return;
+      }
+      // animate3d returns animationUrl (FBX/GLB) — store for potential browser-side rendering
+      const animUrl = anim3dData?.animationUrl || anim3dData?.modelUrl || null;
+      if (animUrl && projectId && !isSupabaseStorageUrl(animUrl)) {
+        try {
+          const stored = await ensureStorageUrl(projectId, `animate3d-${sceneKey}-${character}-${Date.now()}`, animUrl, 'video');
+          results[`character-animate-3d-${sceneKey}-${Date.now()}`] = stored;
+        } catch (e) {
+          console.warn(`[EP04 Visual] animate3d mirror failed:`, e);
+          if (animUrl) results[`character-animate-3d-${sceneKey}-${Date.now()}`] = animUrl;
+        }
+      } else if (animUrl) {
+        results[`character-animate-3d-${sceneKey}-${Date.now()}`] = animUrl;
+      }
+      return;
+    }
+
     // ── Standard step routing for steps that DO need AI generation ──
     let action = 'image_generation';
     let edgeFn = 'ai-universal-processor';
@@ -3770,11 +3872,11 @@ function EP04ProductionInner() {
   };
 
   // Character info for lower-third speaker identification
-  // Only "cast" characters get lower-thirds — narrators (host, allaudin) don't need them
-  // since their voice is constant throughout the documentary.
   const CHARACTER_LOWER_THIRDS: Record<string, { headline: string; lead: string; barColor: string }> = {
-    atlas: { headline: 'ATLAS', lead: 'Claude Code — Backend Engineer', barColor: '#6366f1' },
-    nova: { headline: 'NOVA', lead: 'Lovable — Frontend Developer', barColor: '#10b981' },
+    atlas: { headline: 'ATLAS (Claude)', lead: 'Backend Tech Lead — Claude Code', barColor: '#6366f1' },
+    nova: { headline: 'NOVA (Lovable)', lead: 'Frontend Developer — Lovable', barColor: '#10b981' },
+    host: { headline: 'SAI DASIKA', lead: 'Product Owner — GenieAI Suite', barColor: '#f5d77a' },
+    allaudin: { headline: 'ALLAUDIN', lead: 'The Genie Narrator', barColor: '#8b5cf6' },
     squirrel: { headline: 'SQUIRREL', lead: 'QA Chaos Agent', barColor: '#f97316' },
   };
 
