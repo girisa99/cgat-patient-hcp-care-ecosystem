@@ -2170,11 +2170,11 @@ function EP04ProductionInner() {
       body.model = 'wan2.6-t2i';
       body.size = '1280x720';
     }
-    // alibaba-image: route to Alibaba wan2.6-t2i (replaces deprecated wanx-v2.1)
+    // alibaba-image: route to Alibaba image gen (default wan2.6-t2i, supports flux-merged for portraits)
     if (stepType === 'alibaba-image') {
       body.style_intent = 'cinematic';
       body.provider = 'alibaba';
-      body.model = 'wan2.6-t2i';
+      body.model = (step as Record<string, unknown>).model || 'wan2.6-t2i';
       body.size = '1280x720';
     }
     // Pass type + model for alibaba-video through ai-video-generator
@@ -2573,6 +2573,31 @@ function EP04ProductionInner() {
       toast.success('All lipsync production complete');
     } else {
       toast.warning('Lipsync production cancelled');
+    }
+  }, [scenes, startSceneVisualProduction]);
+
+  // ─── Generate New Images Only (all scenes) ──────────────────────────────
+  // Runs only alibaba-image + storybook-frame steps across all scenes.
+  // hasExistingAsset() automatically skips already-generated images.
+  const startAllNewImagesProduction = useCallback(async () => {
+    abortRef.current = false;
+    const sceneKeys = Array.from(scenes.keys());
+    setProductionPhase('visual');
+    setVisualProgress({ current: 0, total: sceneKeys.length });
+    const imageFilter = new Set(['alibaba-image', 'storybook-frame']);
+
+    for (let i = 0; i < sceneKeys.length; i++) {
+      if (abortRef.current) break;
+      setVisualProgress({ current: i + 1, total: sceneKeys.length });
+      await startSceneVisualProduction(sceneKeys[i], imageFilter);
+      if (i < sceneKeys.length - 1) await new Promise(r => setTimeout(r, 2000));
+    }
+
+    setVisualProgress(null);
+    if (!abortRef.current) {
+      toast.success('All new images generated');
+    } else {
+      toast.warning('Image generation cancelled');
     }
   }, [scenes, startSceneVisualProduction]);
 
@@ -5533,6 +5558,15 @@ function EP04ProductionInner() {
                             <Mic className="h-3 w-3 mr-1" />
                             Regen All Lipsync
                           </Button>
+                          <Button
+                            size="sm" variant="outline"
+                            className="border-green-500/30 text-green-600 hover:bg-green-500/10"
+                            onClick={startAllNewImagesProduction}
+                            disabled={scenesWithPipeline.length === 0}
+                          >
+                            <ImageIcon className="h-3 w-3 mr-1" />
+                            Generate New Images
+                          </Button>
                         </div>
                       )}
                       {(
@@ -5804,6 +5838,17 @@ function EP04ProductionInner() {
                               >
                                 <Mic className="h-3 w-3 mr-1" />
                                 Regen Lipsync
+                              </Button>
+                              {/* Generate New Images Only — runs only alibaba-image steps, skips existing */}
+                              <Button
+                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-green-500/30 text-green-600 hover:bg-green-500/10"
+                                onClick={() => {
+                                  startSceneVisualProduction(sceneKey, new Set(['alibaba-image', 'storybook-frame']));
+                                }}
+                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                              >
+                                <ImageIcon className="h-3 w-3 mr-1" />
+                                New Images
                               </Button>
                             </div>
                           )}
