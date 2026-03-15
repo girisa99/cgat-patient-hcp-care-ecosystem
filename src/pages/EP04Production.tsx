@@ -4001,15 +4001,25 @@ function EP04ProductionInner() {
         // fresh from expired. RunPod worker will fetch during render; fresh URLs will work fine.
         const isSafeUrl = (u: string) => isHttpUrl(u);
 
-        // Collect all scene images — from imageUrls + avatarUrls buckets (trust the source bucket)
+        // Collect all scene images — from imageUrls + avatarUrls buckets
+        // CRITICAL: Sort by key to maintain pipeline step order (keys contain timestamps
+        // from sequential generation — earlier pipeline steps = earlier timestamps).
+        const sortByKey = (entries: [string, string][]) =>
+          entries.sort(([a], [b]) => {
+            // Extract numeric timestamp suffix from keys like "alibaba-image-scene-X-1710512345"
+            const tsA = parseInt(a.split('-').pop() || '0', 10) || 0;
+            const tsB = parseInt(b.split('-').pop() || '0', 10) || 0;
+            return tsA - tsB;
+          });
         const allImageVisuals: string[] = [
-          ...Object.values(status.imageUrls || {}).filter(isSafeUrl),
-          ...Object.values(status.avatarUrls || {}).filter(isSafeUrl),
+          ...sortByKey(Object.entries(status.imageUrls || {})).map(([, u]) => u).filter(isSafeUrl),
+          ...sortByKey(Object.entries(status.avatarUrls || {})).map(([, u]) => u).filter(isSafeUrl),
         ];
 
-        // Collect all non-lipsync scene videos — from videoUrls bucket (trust the source bucket)
+        // Collect all non-lipsync scene videos — sorted by key timestamp for correct ordering
         const lipsyncSet = new Set(Object.values(status.lipsyncUrls || {}));
-        const allSceneVideos: string[] = Object.values(status.videoUrls || {})
+        const allSceneVideos: string[] = sortByKey(Object.entries(status.videoUrls || {}))
+          .map(([, u]) => u)
           .filter(isSafeUrl)
           .filter(u => !lipsyncSet.has(u));
 
