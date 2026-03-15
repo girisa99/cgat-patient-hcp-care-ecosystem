@@ -860,7 +860,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // ── Body action: Nova presenting chaotically ──
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: Nova the fox juggling multiple floating charts, papers, and sticky notes in the air with frantic energy — her paint-splattered apron swishing as she spins between presentations. She tosses a pie chart over her shoulder, catches a bar graph mid-air, somehow everything lands perfectly in a neat stack. Her tail swishes triumphantly at the end. Warm studio lighting with chaotic-but-lovable energy, comedic timing, cinematic quality, 8K' },
     // ── Motion transfer: Atlas presenting with gestures (Option A — wan2.2-animate) ──
-    { type: 'character-motion', character: 'atlas', motionRef: 'motion-presenting', prompt: 'Atlas the bear presenting formally at a podium with measured hand gestures', duration: 5 },
+    { type: 'character-motion', character: 'atlas', motionRef: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/cast-assets/cast-production/wan-36485c74-ba14-4bca-b900-6671c3335c9f-1773583502898.mp4', prompt: 'Atlas the bear presenting formally at a podium with measured hand gestures', duration: 5 },
     // ── Body animation: Nova running with papers (Option C — Animate3D) ──
     { type: 'character-animate-3d', character: 'nova', animationType: 'run', prompt: 'Nova the fox sprinting across the mission control room clutching a stack of papers', duration: 5 },
     // ── Kinetic text: velocity stats ──
@@ -1021,7 +1021,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // ── Body action: Genie lamp return ──
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: Allaudin the blue genie floating above a golden ornate lamp, arms spread wide in a grand theatrical farewell gesture. He begins dissolving into sparkling blue-purple mist from his feet upward, the mist spiraling in an elegant vortex back into the lamp spout. The lamp glows warmly as the last wisps of magic settle. A single golden sparkle lingers in the air then fades. Dark mystical background with volumetric god rays, cinematic quality, emotional farewell moment, 8K' },
     // ── Motion transfer: Host formal bow farewell (Option A — wan2.2-animate) ──
-    { type: 'character-motion', character: 'host', motionRef: 'motion-formal-bow', prompt: 'Sai the host taking a graceful formal bow farewell to the audience', duration: 5 },
+    { type: 'character-motion', character: 'host', motionRef: 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/cast-assets/cast-production/wan-74f32e73-a2ea-4246-993f-0021c4fc2e4e-1773583555725.mp4', prompt: 'Sai the host taking a graceful formal bow farewell to the audience', duration: 5 },
     // ── Body animation: Group idle → talk (Option C — Animate3D) ──
     { type: 'character-animate-3d', character: 'atlas', animationType: 'talk', prompt: 'All characters standing together, Atlas gesturing as he speaks to the group in farewell', duration: 5 },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'End card: four animated characters (bear Atlas, fox Nova, human host, squirrel perched on shoulder) standing together in a sunlit forest-tech hub, golden retriever at their feet, woodland creatures gathered around, text "Two AIs, One Sprint, Zero Standup Meetings" floating above in holographic letters, cinematic Pixar quality, warm golden hour lighting, 8K' },
