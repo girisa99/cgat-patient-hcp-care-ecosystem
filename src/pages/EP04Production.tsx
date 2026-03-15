@@ -2678,15 +2678,15 @@ function EP04ProductionInner() {
     }
   }, [scenes, startSceneVisualProduction]);
 
-  // ─── Generate New Images + Videos (all scenes) ─────────────────────────
-  // Runs alibaba-image, alibaba-video, storybook-frame, and body animation steps.
+  // ─── Generate New Body Animation + Videos (all scenes) ──────────────────
+  // Runs ONLY new video and body animation steps — preserves existing images.
   // hasExistingAsset() automatically skips already-generated assets.
   const startAllNewImagesProduction = useCallback(async () => {
     abortRef.current = false;
     const sceneKeys = Array.from(scenes.keys());
     setProductionPhase('visual');
     setVisualProgress({ current: 0, total: sceneKeys.length });
-    const imageFilter = new Set(['alibaba-image', 'alibaba-video', 'storybook-frame', 'character-motion', 'character-animate-3d']);
+    const imageFilter = new Set(['alibaba-video', 'character-motion', 'character-animate-3d']);
 
     for (let i = 0; i < sceneKeys.length; i++) {
       if (abortRef.current) break;
@@ -5667,7 +5667,7 @@ function EP04ProductionInner() {
                             disabled={scenesWithPipeline.length === 0}
                           >
                             <ImageIcon className="h-3 w-3 mr-1" />
-                            Generate New Images + Videos
+                            Generate New Videos
                           </Button>
                         </div>
                       )}
@@ -5941,16 +5941,16 @@ function EP04ProductionInner() {
                                 <Mic className="h-3 w-3 mr-1" />
                                 Regen Lipsync
                               </Button>
-                              {/* Generate New Images + Videos — runs image, video, and body animation steps, skips existing */}
+                              {/* Generate New Videos + Body Animation — preserves existing images */}
                               <Button
                                 size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-green-500/30 text-green-600 hover:bg-green-500/10"
                                 onClick={() => {
-                                  startSceneVisualProduction(sceneKey, new Set(['alibaba-image', 'alibaba-video', 'storybook-frame', 'character-motion', 'character-animate-3d']));
+                                  startSceneVisualProduction(sceneKey, new Set(['alibaba-video', 'character-motion', 'character-animate-3d']));
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >
                                 <ImageIcon className="h-3 w-3 mr-1" />
-                                New Images
+                                New Videos
                               </Button>
                             </div>
                           )}
