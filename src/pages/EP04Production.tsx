@@ -2561,8 +2561,8 @@ function EP04ProductionInner() {
       console.log(`[PERSIST SAVE] ${sceneKey}: visual production complete, ${Object.keys(results).length} total results:`, Object.keys(results));
       if (projectId) {
         const saveOk = await updateSceneArtifacts(projectId, sceneKey, {
-          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition')).filter(httpOnly)),
-          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset')).filter(httpOnly)),
+          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition')).filter(httpOnly)),
+          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ).filter(httpOnly)),
           avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')).filter(httpOnly)),
           lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_')).filter(httpOnly)),
         });
@@ -2577,8 +2577,8 @@ function EP04ProductionInner() {
       }
 
       // State update — MUST match DB save buckets exactly (no double-counting)
-      const savedVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('narrator-scroll') || k.includes('scene-transition')));
-      const savedImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('image') || k.includes('kinetic') || k.includes('motion') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset')));
+      const savedVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition')));
+      const savedImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ));
       const savedAvatarUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')));
       const savedLipsyncUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync')));
       const totalSaved = Object.keys(savedVideoUrls).length + Object.keys(savedImageUrls).length + Object.keys(savedAvatarUrls).length + Object.keys(savedLipsyncUrls).length;
