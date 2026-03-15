@@ -1528,23 +1528,28 @@ function EP04ProductionInner() {
         }
 
         // Update scene production state with new video URL
+        // Key format includes scene key + type so orderByPipelineConfig can match it
+        const regenVideoKey = `alibaba-video-${sceneKey}-regen`;
         setSceneProduction(prev => {
           const current = prev[sceneKey] || defaultSceneStatus();
           return {
             ...prev,
             [sceneKey]: {
               ...current,
-              videoUrls: { ...current.videoUrls, [`${provider}-establishing`]: videoUrl! },
+              videoUrls: { ...current.videoUrls, [regenVideoKey]: videoUrl! },
               visual: 'done',
             },
           };
         });
 
-        // Persist to DB
+        // Persist to DB — MUST include ALL existing artifact buckets to avoid wiping them
         if (projectId) {
           const status = sceneProduction[sceneKey] || defaultSceneStatus();
           await updateSceneArtifacts(projectId, sceneKey, {
-            videoUrls: { ...status.videoUrls, [`${provider}-establishing`]: videoUrl },
+            videoUrls: { ...status.videoUrls, [regenVideoKey]: videoUrl },
+            imageUrls: status.imageUrls,
+            avatarUrls: status.avatarUrls,
+            lipsyncUrls: status.lipsyncUrls,
           });
         }
 
@@ -2559,12 +2564,29 @@ function EP04ProductionInner() {
       // SAFETY: Strip any base64 data URIs that slipped through — they'll bloat JSONB and cause save failures
       const httpOnly = ([, v]: [string, string]) => v && !isBase64DataUri(v);
       console.log(`[PERSIST SAVE] ${sceneKey}: visual production complete, ${Object.keys(results).length} total results:`, Object.keys(results));
+
+      // CRITICAL: MERGE new results with existing assets — smart regeneration skips
+      // previously generated assets (videos, lipsync, etc.), so `results` only contains
+      // the CURRENT run's output. Replacing videoUrls/imageUrls with only current results
+      // would WIPE all previously generated assets that were skipped.
+      const existingStatus = forceRegenAll ? defaultSceneStatus() : (sceneProduction[sceneKey] || defaultSceneStatus());
+      const newVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition')).filter(httpOnly));
+      const newImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ).filter(httpOnly));
+      const newAvatarUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')).filter(httpOnly));
+      const newLipsyncUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_')).filter(httpOnly));
+
+      // Merge: existing assets + new results (new keys overwrite same-named existing keys)
+      const mergedVideoUrls = { ...existingStatus.videoUrls, ...newVideoUrls };
+      const mergedImageUrls = { ...existingStatus.imageUrls, ...newImageUrls };
+      const mergedAvatarUrls = { ...existingStatus.avatarUrls, ...newAvatarUrls };
+      const mergedLipsyncUrls = { ...existingStatus.lipsyncUrls, ...newLipsyncUrls };
+
       if (projectId) {
         const saveOk = await updateSceneArtifacts(projectId, sceneKey, {
-          videoUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition')).filter(httpOnly)),
-          imageUrls: Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ).filter(httpOnly)),
-          avatarUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')).filter(httpOnly)),
-          lipsyncUrls: Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_')).filter(httpOnly)),
+          videoUrls: mergedVideoUrls,
+          imageUrls: mergedImageUrls,
+          avatarUrls: mergedAvatarUrls,
+          lipsyncUrls: mergedLipsyncUrls,
         });
         if (saveOk) {
           console.log(`[PERSIST SAVE] ${sceneKey}: ✅ DB save confirmed — artifacts will survive refresh`);
@@ -2576,22 +2598,19 @@ function EP04ProductionInner() {
         console.warn(`[PERSIST SAVE] ${sceneKey}: ⚠️ No projectId — artifacts NOT saved to DB!`);
       }
 
-      // State update — MUST match DB save buckets exactly (no double-counting)
-      const savedVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition')));
-      const savedImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ));
-      const savedAvatarUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')));
-      const savedLipsyncUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync')));
-      const totalSaved = Object.keys(savedVideoUrls).length + Object.keys(savedImageUrls).length + Object.keys(savedAvatarUrls).length + Object.keys(savedLipsyncUrls).length;
-      console.log(`[EP04] ${sceneKey}: state update — ${Object.keys(savedVideoUrls).length} videos, ${Object.keys(savedImageUrls).length} images, ${Object.keys(savedAvatarUrls).length} avatars, ${Object.keys(savedLipsyncUrls).length} lipsync = ${totalSaved} total`);
+      // State update — uses same merged buckets as DB save
+      const totalMerged = Object.keys(mergedVideoUrls).length + Object.keys(mergedImageUrls).length + Object.keys(mergedAvatarUrls).length + Object.keys(mergedLipsyncUrls).length;
+      const totalNew = Object.keys(newVideoUrls).length + Object.keys(newImageUrls).length + Object.keys(newAvatarUrls).length + Object.keys(newLipsyncUrls).length;
+      console.log(`[EP04] ${sceneKey}: state update — ${totalNew} new + ${totalMerged - totalNew} existing = ${totalMerged} total (${Object.keys(mergedVideoUrls).length}v ${Object.keys(mergedImageUrls).length}i ${Object.keys(mergedAvatarUrls).length}a ${Object.keys(mergedLipsyncUrls).length}l)`);
       setSceneProduction(prev => ({
         ...prev,
         [sceneKey]: {
           ...(prev[sceneKey] || defaultSceneStatus()),
           visual: 'done',
-          videoUrls: savedVideoUrls,
-          imageUrls: savedImageUrls,
-          avatarUrls: savedAvatarUrls,
-          lipsyncUrls: savedLipsyncUrls,
+          videoUrls: mergedVideoUrls,
+          imageUrls: mergedImageUrls,
+          avatarUrls: mergedAvatarUrls,
+          lipsyncUrls: mergedLipsyncUrls,
         },
       }));
 
