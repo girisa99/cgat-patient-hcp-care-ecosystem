@@ -3785,7 +3785,7 @@ function EP04ProductionInner() {
 
         // Small gap between TTS lines for natural speech pacing.
         // Actual measured durations are used when available; estimate fallback adds its own buffer.
-        const TTS_GAP = 0.3;
+        const TTS_GAP = 1.5;
 
         let dataUriTtsCount = 0;
         for (const k of sceneLines) {
@@ -4048,8 +4048,8 @@ function EP04ProductionInner() {
           const fromIdx = getSceneIndex(t.from);
           const toIdx = getSceneIndex(t.to);
           if (!fromIdx || !toIdx) return false;
-          // Multi-part: both from and to must be in this part
-          if (!isPerSceneMode) return targetSceneIndices.has(fromIdx) && targetSceneIndices.has(toIdx);
+          // Multi-part: include if from OR to is in this part (trailing transition from last scene)
+          if (!isPerSceneMode) return targetSceneIndices.has(fromIdx) || targetSceneIndices.has(toIdx);
           // Per-scene: include transition that starts from this scene (trailing transition)
           return targetSceneIndices.has(fromIdx);
         })
@@ -4204,14 +4204,11 @@ function EP04ProductionInner() {
             regularImages.push(url);
           }
         }
-        // Only add avatar static images to B-roll if there's NO lipsync for this scene.
-        // When lipsync exists, the avatar video IS the visual — adding the static avatar
-        // PNG to the B-roll pool causes it to bleed through behind the lipsync video.
-        const hasLipsync = (ch.lipsyncClips || []).length > 0;
-        if (!hasLipsync) {
-          for (const url of Object.values(status.avatarUrls || {})) {
-            if (isSafeUrl(url)) regularImages.push(url);
-          }
+        // Always add avatar images to B-roll — lipsync is now full-screen (z-index 2),
+        // so avatar images in the background (z-index 0) provide visual variety before
+        // and after the lipsync clip without bleed-through.
+        for (const url of Object.values(status.avatarUrls || {})) {
+          if (isSafeUrl(url)) regularImages.push(url);
         }
 
         // Filter scene-transition videos out of the B-roll video pool

@@ -938,25 +938,20 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
         imagePoolIdx++;
       }
     } else {
-      // Has lipsync → B-roll video/images for lead-in (long scenes) and tail (any scene where lipsync ends early)
-      if (sceneDur > 10) {
-        // Also pick a video for lead-in (e.g., lamp/genie establishing shot before lipsync)
-        if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
-          videoVisual = videos[videoPoolIdx++];
-        }
-        // Only consume imageVisual when there's NO video lead-in.
-        // When video IS the lead-in, imageVisual is just a fallback that never renders,
-        // so consuming it wastes a pool slot and causes the next scene to cycle back
-        // to an earlier image (e.g., host scene gets podcast-banner instead of cast-portrait).
-        if (!videoVisual && images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
-          imageVisual = images[imagePoolIdx % images.length];
-          imagePoolIdx++;
-        }
-        // Tail image: always pick one for the gap after lipsync ends
-        if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
-          tailImageVisual = images[imagePoolIdx % images.length];
-          imagePoolIdx++;
-        }
+      // Has lipsync → pick B-roll for background, lead-in, and tail (ALL scene sizes).
+      // Lipsync is full-screen (z-index 2) so B-roll at z-index 0 only shows
+      // before lipsync starts and after it ends — no bleed-through.
+      if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
+        videoVisual = videos[videoPoolIdx++];
+      }
+      if (!videoVisual && images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
+        imageVisual = images[imagePoolIdx % images.length];
+        imagePoolIdx++;
+      }
+      // Tail image: fills after lipsync ends
+      if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
+        tailImageVisual = images[imagePoolIdx % images.length];
+        imagePoolIdx++;
       }
     }
 
@@ -1230,8 +1225,13 @@ function applySafetyPass(scenes: J2VScene[]): void {
     });
     for (const el of scene.elements) {
       const elStart = el.start ?? 0;
-      // Clamp: element must not exceed scene duration
-      if (elStart + (el.duration ?? 0) > sd) {
+      // Skip lipsync videos from clamping — they are full-screen (volume=0)
+      // and the server-side worker extends scene duration to fit them.
+      const isLipsyncVideo = el.type === 'video' && (el as any).volume === 0;
+      // Skip primary TTS audio (volume >= 0.9) from clamping — gap-based timing
+      // already ensures correct placement; clamping clips speech mid-word.
+      const isPrimaryTts = el.type === 'audio' && ((el as any).volume ?? 1) >= 0.9;
+      if (!isLipsyncVideo && !isPrimaryTts && elStart + (el.duration ?? 0) > sd) {
         el.duration = Math.max(0.5, sd - elStart);
       }
       // JSON2Video zoom is percentage (-10 to 10). Positive = zoom in, negative = zoom out.
