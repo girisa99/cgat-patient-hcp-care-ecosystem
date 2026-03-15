@@ -651,9 +651,13 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-nova-waiting' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-frustrated' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-checks-po' },
+    // B-roll: Notification queue piling up — PO status "reviewing" while items stack
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a holographic notification queue growing taller and taller like a skyscraper of glowing task cards. Each card pulses amber with "PENDING REVIEW" stamps. A small status indicator reads "PO Status: In a Meeting" with a coffee cup icon. Atlas the bear watches the pile grow with a stopwatch in his paw, Nova the fox counts the items with dismay — the counter reads "11 items in queue." Warm amber urgency lighting, office frustration energy, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-solidarity' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-final-warning' },
     // ── Part 2: Atlas & Nova decide to fix it together ──
+    // B-roll: Atlas staring at blocked PR queue — the breaking point
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear sitting alone at a terminal, face lit by screen glow, staring at a long list of pull requests all marked "BLOCKED — Awaiting Review" in red. His reflection shows in the dark monitor. A progress bar reads "Migrations: 0 of 7 merged" with a frozen loading spinner. Coffee cups accumulate beside the keyboard. Moody single-source lighting, developer frustration, late-night coding atmosphere, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-to-nova-fix' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-agrees-frustration' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-i-just-merge' },
@@ -666,6 +670,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'squirrel', scriptKey: 'scene3-squirrel-reintro' },
     // scene3-staging-open = visual-only cinematic beat (no TTS — empty text)
     { type: 'tts', voice: 'host', scriptKey: 'origin-story' },
+    // B-roll: Host overwhelmed — tracking everything manually before the system existed
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the human host sitting at a chaotic desk covered in sticky notes, handwritten to-do lists, crumpled receipts, and three open laptops all showing different spreadsheets. He holds his head in his hands while trying to track tasks across screens. A golden retriever nudges his elbow with concern. Sticky notes cover the wall behind him reading "Atlas needs X", "Nova waiting on Y", "WHO OWNS THIS FILE?" in frantic handwriting. Warm but overwhelmed desk-lamp lighting, relatable chaos, 8K' },
     // B-roll: Origin story dependency graph — the tangled web before governance
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a massive tangled dependency graph floating in dark space — nodes are colorful spheres representing code modules, connected by chaotic red crossing lines. Some nodes flash with error symbols. Two tiny characters (bear and fox) stand at the bottom looking up at the tangled mess with concerned expressions. A label reads "BEFORE GOVERNANCE" in red. Dark tech background with danger-red ambient glow, visualization aesthetic, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'origin-atlas-observation' },
@@ -675,6 +681,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // scene3-turning-point-beat = visual-only cinematic beat (no TTS — empty text)
     { type: 'tts', voice: 'host', scriptKey: 'origin-decision' },
     // ── Part 4: Governance solution (existing entries) ──
+    // B-roll: CLAUDE.md governance document on screen — the solution emerges
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a glowing holographic document titled "CLAUDE.md — Session Instructions" floating in the center of a dark room. Key sections are highlighted in gold: "Territory Rules", "My Files (Claude owns)", "Never Touch (Lovable files)", "Locked shared infrastructure." The host points at the document with a laser pointer, Atlas the bear and Nova the fox study it intently from either side. The document emanates order and structure — clean lines, organized sections, golden glow. Dramatic presentation lighting, eureka moment energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'governance-narration' },
     { type: 'screen-capture', screenIds: ['sprint-charter', 'governance-guide'], multiCapture: true },
     { type: 'ai-screen-enhance', screenIds: ['sprint-charter', 'governance-guide'], scriptContext: 'Sprint charter defining territory rules — Claude owns backend, Lovable owns frontend. Governance guide with file ownership boundaries.', enhanceMode: 'highlight', focusAreas: ['territory-map', 'file-ownership-rules', 'merge-conflict-policy'] },
@@ -708,12 +716,16 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'ai-screen-enhance', screenIds: ['findings-qa'], scriptContext: 'QA findings from Day 1 — scope creep detected, acceptance criteria discussion. Highlight the finding severity and action items.', enhanceMode: 'highlight', focusAreas: ['finding-severity', 'action-items', 'scope-flags'] },
     // ── Nova's Day 1 accomplishments ──
     { type: 'tts', voice: 'nova', scriptKey: 'nova-refactored-nav' },
+    // B-roll: Nova proudly showing reorganized component tree — 23 components refactored
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox standing proudly beside a holographic component tree diagram she just reorganized. The tree shows 23 neatly connected UI components in magenta-pink, each with clean import arrows flowing downward in a perfect hierarchy. Before/after comparison: left side shows a messy spaghetti tree in red, right side shows the clean refactored version in glowing green. Nova holds a magic paintbrush that trails sparkles. Achievement badge floats above: "23 Components Refactored." Proud accomplishment lighting, 8K' },
     // ── Atlas & Nova debate: the bottleneck problem ──
     { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-proposal' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-agrees' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-empathy' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-optimization' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-shared-log' },
+    // B-roll: Atlas's structured changelog cross-linked to Nova's PRs
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear presenting a holographic shared changelog — a structured document with timestamped entries, each cross-referenced to Nova fox pull requests via glowing connection lines. Entries show "Changed By: Atlas → Impact on Nova: check landing routes" and "Changed By: Nova → Impact on Atlas: new hook available." The changelog floats between them like a shared contract. Clean data visualization with terracotta and magenta color coding, professional documentation aesthetic, 8K' },
     // SHOWCASE: Character interactions — Atlas & Nova debate over the sprint board
     { type: 'character-interaction', characters: ['atlas', 'nova'], prompt: 'Bear (Atlas) and fox (Nova) face each other across a holographic sprint board, bear points methodically at task cards while fox waves her arms expressively, split-screen showing their contrasting work styles, Pixar-quality character acting', style: 'duo-argument' },
     // ── Paper scroll demo: the visual centerpiece ──
@@ -722,6 +734,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-paper-annotation' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-atlas-scroll-present' },
     // ── Host lesson: acceptance criteria ──
+    // B-roll: Scope creep — task cards multiplying beyond the board
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a sprint board overflowing with task cards that are multiplying like rabbits — cards spill off the edges of the board onto the floor, some sprout legs and walk away, others split into two smaller cards. A "SCOPE" meter on the side has its needle buried deep in the red zone. The host watches in horror as a single task card labeled "just one more feature" explodes into 12 sub-tasks. Atlas and Nova dodge falling task cards. Chaotic comedic energy, warning-red ambient glow, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'host-not-in-scope' },
     // ── Beta agreement ──
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-beta-idea' },
@@ -737,11 +751,15 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: dramatic product reveal moment — a holographic sprint management dashboard materializes in the center of the room, beams of golden light radiating outward. The dashboard shows clean organized task columns, real-time developer status cards, and a beautiful burndown chart trending perfectly downward. Atlas the bear and Nova the fox look up at it in awe from either side. The human host gestures toward it like a magician revealing his trick. God rays, volumetric lighting, cinematic product-launch energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'solution-reveal' },
     { type: 'tts', voice: 'host', scriptKey: 'solution-standups' },
+    // B-roll: Host reading organized dashboard in pajamas — async standups replace 45-min meetings
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the human host sitting comfortably in pajamas and slippers at a cozy breakfast table, reading a clean organized sprint dashboard on a tablet. A steaming coffee mug sits beside him, golden retriever sleeping at his feet. The dashboard shows "Daily Standup Summary — Read in 4 min" with neat bullet points from Atlas and Nova. A crossed-out calendar event reads "45-min standup meeting — CANCELLED." Morning sunlight streams through a window. Relaxed productivity, warm domestic lighting, 8K' },
     // ── Nova's 200K context flex (scene-4-solution) ──
     { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-context' },
     // ── Squirrel comic relief ──
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-2' },
+    // B-roll: Squirrel pointing excitedly at a data retrieval system with acorn icons
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the hyperactive squirrel standing on tiptoes pointing excitedly at a holographic database retrieval system. The system shows data entries shaped like golden acorns, each with labels like "cache_hit: acorn_stash_7" and "retrieval_time: 0.3ms." The squirrel has stars in its eyes and its bushy tail is vibrating with excitement. Atlas the bear facepalms in the background. A search query reads "SELECT * FROM acorns WHERE remembered = true." Bright comic lighting, adorable geek energy, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-squirrel-response' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-disappointed' },
     // Bridge narrator: scene 4 → scene 5 (7s)
@@ -752,6 +770,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // Chapter title card — generated via FLUX, used as transition background from scene-4
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter III — Governance" in golden calligraphy, territory map with two kingdoms and border markers sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── Governance deep-dive: why guardrails exist ──
+    // B-roll: Dual AI developers working simultaneously with colliding code paths
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: bird\'s-eye view of two AI developers working simultaneously on the same codebase — Atlas the bear on the left typing furiously, Nova the fox on the right painting UI components, both sending commits toward a central repository shown as a glowing orb. Their code streams (terracotta and magenta) are about to collide at the merge point, creating visible tension sparks. A stressed human host watches from above like a parent watching two teenagers about to crash. Split-screen composition, collision-course energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'governance-intro' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
@@ -761,6 +781,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-sneak' },
     // B-roll: Squirrel caught in guardrails — governance catches the chaos agent
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the hyperactive squirrel tangled in glowing golden guardrail wires like a cartoon burglar caught in laser beams. The squirrel has an exaggerated "busted!" expression, one paw still reaching for a file labeled "shared-infrastructure.ts" with a red lock icon. Allaudin the genie floats nearby with a wagging finger and amused grin. Warning signs flash "TERRITORY VIOLATION DETECTED" in amber. Comic heist-movie lighting, funny but educational, 8K' },
+    // B-roll: Allaudin as wise judge presenting governance guardrails — track metaphor
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Allaudin the genie floating majestically in a judge\'s robe, holding a golden rule book that radiates light. Below him, a beautiful train track stretches into the horizon with two trains (terracotta bear-shaped and magenta fox-shaped) running smoothly on parallel rails. The guardrails glow gold — not as walls or cages, but as sleek guiding rails keeping the trains on course. A banner reads "Guardrails aren\'t the cage — they\'re the track." Wise mentor energy, golden hour lighting, inspirational composition, 8K' },
     { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-governance-guide' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-blocked-reaction' },
     // ── Atlas & Nova confess their Day 1 mistakes ──
@@ -782,6 +804,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'ai-screen-enhance', screenIds: ['territory-guardrails'], scriptContext: 'Territory guardrails showing file ownership boundaries — Atlas owns genie-studio (150+ files), Nova owns landing pages. 12 locked shared files need PO approval. Auto-flagging territory violations.', enhanceMode: 'highlight', focusAreas: ['file-ownership-matrix', 'locked-shared-files', 'territory-violation-flags'] },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-exit' },
     // ── Day 2 velocity: Nova blocked for 6 hours ──
+    // B-roll: Frozen dashboard — Nova's tasks encased in ice, clock showing hours passing
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox\'s task dashboard completely frozen in a block of ice — task cards encased in crystalline ice with frost creeping across the screen. A large clock above shows 6 hours passing (hands blurred in motion). Nova sits beside the frozen dashboard hugging her knees, breath visible in the cold, her magenta glow dimmed. A single notification blinks weakly: "Waiting for PO approval... hour 6." Icy blue-white lighting, isolation and frustration atmosphere, dramatic temperature contrast, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
     { type: 'screen-capture', screenIds: ['day-2-view'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['day-2-view'], scriptContext: 'Day 2 — Nova blocked for 6 hours waiting on PO approval. Velocity dip visible. The frozen task and blocker status are the key story points.', enhanceMode: 'highlight', focusAreas: ['blocked-tasks', 'velocity-dip', 'blocker-status-red'] },
@@ -794,6 +818,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // ── PO Actions: the solution born from frustration ──
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions dashboard built to prevent future blockers — async approval queue, priority flags, response time tracking.', enhanceMode: 'stylize', focusAreas: ['approval-queue', 'priority-flags', 'response-times'] },
+    // B-roll: Streamlined PO Actions dashboard — async approvals glowing green
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a sleek PO Actions dashboard glowing with success — a structured approval queue with color-coded urgency levels (red=critical, amber=normal, green=approved). Each item shows response time: "12 minutes", "8 minutes", "3 minutes." Green checkmarks cascade down the list like dominoes falling. The human host taps "APPROVE" on his phone while walking, golden retriever trotting beside him. The dashboard header reads "Async Governance — Zero Meetings Required." Clean UI visualization, success-green ambient glow, efficient productivity energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'host-po-actions-built' },
     { type: 'kinetic-text', text: '6 hours blocked. 12 minutes approved. Async governance works.' },
     // Bridge narrator: scene 5 → scene 6 (8s)
