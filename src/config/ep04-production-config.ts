@@ -347,7 +347,7 @@ export type ScenePipelineStep =
   | { type: 'avatar-3d'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; style?: 'pixar-3d' | 'disney-2d' | 'hybrid-2.5d' }
   | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab'; scriptKey?: string }
   | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v'; prompt: string; referenceImage?: string }
-  | { type: 'alibaba-image'; model: 'flux-merged' | 'wan2.6-t2i' | 'wanx-v2.1' | 'qwen-image-max'; prompt: string }
+  | { type: 'alibaba-image'; model: 'wan2.6-t2i' | 'wanx-v2.1' | 'qwen-image-max'; prompt: string }
   | { type: 'music'; prompt: string; duration: number; style?: string }
   | { type: 'sfx'; prompt: string; duration?: number }
   | { type: 'motion-graphics'; content: string }
@@ -469,7 +469,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'allaudin-emerge' },
     // Segment 2: Claude + Lovable title card → Host welcome (60s)
-    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Pixar 3D animated podcast thumbnail with the full cast: CENTER a warm human man host in earth-tone shirt holding a coffee mug labeled "The GenieAI Podcast", his loyal golden retriever sitting beside him looking up adoringly, LEFT Atlas the wise bear (blue-violet fur, wire-frame glasses, Claude AI terracotta logo glowing behind him on deep blue background), RIGHT Nova the creative fox (orange-copper fur, paint-splattered apron, Lovable pink heart logo glowing behind her on magenta-green background), BOTTOM-LEFT a tiny hyperactive squirrel (golden-brown fur, oversized acorn) peeking in mischievously, golden sparkle particles connecting all characters, bottom banner "Beyond AI Hype — The GenieAI Podcast", Pixar quality 3D render, warm cinematic lighting, group portrait composition, 16:9, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D animated podcast thumbnail with the full cast: CENTER a warm human man host in earth-tone shirt holding a coffee mug labeled "The GenieAI Podcast", his loyal golden retriever sitting beside him looking up adoringly, LEFT Atlas the wise bear (blue-violet fur, wire-frame glasses, Claude AI terracotta logo glowing behind him on deep blue background), RIGHT Nova the creative fox (orange-copper fur, paint-splattered apron, Lovable pink heart logo glowing behind her on magenta-green background), BOTTOM-LEFT a tiny hyperactive squirrel (golden-brown fur, oversized acorn) peeking in mischievously, golden sparkle particles connecting all characters, bottom banner "Beyond AI Hype — The GenieAI Podcast", Pixar quality 3D render, warm cinematic lighting, group portrait composition, 16:9, 8K' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'tts', voice: 'host', scriptKey: 'title-welcome' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome' },
@@ -482,7 +482,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // B-roll: Nova peek — the fox artist curiously peering from behind a canvas
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: an orange-copper fox with bright curious eyes and a paint-splattered apron peering out from behind a large canvas, digital paintbrush in one paw, colorful paint splatters and floating UI component mockups behind her, magenta-pink ambient glow, playful curious expression, warm studio lighting, 8K' },
     // Host continues welcome (35s) — needs visual coverage for this long segment
-    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Pixar 3D illustration: a warm cozy podcast studio setup — a confident South Asian man in a deep blue-purple casual shirt sitting behind a professional desk with two large monitors, one showing "Claude Code" interface and the other showing "Lovable" interface, a golden retriever sleeping contentedly at his feet, warm lamplight creating a professional yet inviting atmosphere, the text "The GenieAI Podcast" visible on a coffee mug, dual-screen home office, cinematic warm lighting, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a warm cozy podcast studio setup — a confident South Asian man in a deep blue-purple casual shirt sitting behind a professional desk with two large monitors, one showing "Claude Code" interface and the other showing "Lovable" interface, a golden retriever sleeping contentedly at his feet, warm lamplight creating a professional yet inviting atmosphere, the text "The GenieAI Podcast" visible on a coffee mug, dual-screen home office, cinematic warm lighting, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'title-welcome-2' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'title-welcome-2' },
     // Allaudin interjects — Nutcracker narrator commentary (8s)
@@ -558,7 +558,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'problem-deeper-3' },
     // Segment 3: Market data & citations (18s) — industry references need visual
     // B-roll: Industry research infographic — McKinsey, Gartner, and AI adoption stats
-    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Clean professional infographic illustration: a dark tech dashboard background with three floating data cards — LEFT card shows a pie chart labeled "McKinsey: 23 min context switch cost" in amber, CENTER card shows a rising bar chart labeled "Gartner: 80% AI adoption by 2026" in teal-blue, RIGHT card shows a line graph labeled "Developer Productivity Gap" in magenta. Small citation logos at the bottom of each card. Glowing neon data visualization style, clean modern corporate design, dark background with warm accent colors, 16:9, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Clean professional infographic illustration: a dark tech dashboard background with three floating data cards — LEFT card shows a pie chart labeled "McKinsey: 23 min context switch cost" in amber, CENTER card shows a rising bar chart labeled "Gartner: 80% AI adoption by 2026" in teal-blue, RIGHT card shows a line graph labeled "Developer Productivity Gap" in magenta. Small citation logos at the bottom of each card. Glowing neon data visualization style, clean modern corporate design, dark background with warm accent colors, 16:9, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'scene1-market-data' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'scene1-market-data' },
     // B-roll: Bridge visual — transition from problem to solution, story continues
@@ -588,7 +588,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'atlas-intro-host' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'atlas-intro-host' },
     // B-roll: Atlas spotlight — measured engineer character portrait (FLUX for better face detail)
-    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Pixar 3D character portrait: Atlas the wise bear — blue-violet fur, wire-frame glasses perched on nose, wearing a subtle engineer vest with pocket protector and tiny wrench, Claude AI terracotta emblem glowing softly on his chest. He stands confidently with arms crossed in front of a holographic code editor showing clean TypeScript. Background: dark tech lab with blue-purple ambient glow, server racks, and a perfectly organized desk. Dramatic side lighting, cinematic portrait composition, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D character portrait: Atlas the wise bear — blue-violet fur, wire-frame glasses perched on nose, wearing a subtle engineer vest with pocket protector and tiny wrench, Claude AI terracotta emblem glowing softly on his chest. He stands confidently with arms crossed in front of a holographic code editor showing clean TypeScript. Background: dark tech lab with blue-purple ambient glow, server racks, and a perfectly organized desk. Dramatic side lighting, cinematic portrait composition, 8K' },
     // Atlas self-intro (22s)
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-self-intro' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-self-intro' },
@@ -602,7 +602,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'nova-intro-host' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'nova-intro-host' },
     // B-roll: Nova spotlight — energetic creative character portrait (FLUX for better face detail)
-    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Pixar 3D character portrait: Nova the creative fox — orange-copper fur with paint splatter highlights, wearing a paint-splattered apron over a hoodie, Lovable pink heart emblem glowing on her chest. She grins widely with a digital paintbrush in one paw and a React component diagram floating beside her. Background: colorful creative studio with floating UI component mockups, CSS color swatches, and animation keyframes. Magenta-pink ambient glow, energetic composition with slight motion blur on her tail, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D character portrait: Nova the creative fox — orange-copper fur with paint splatter highlights, wearing a paint-splattered apron over a hoodie, Lovable pink heart emblem glowing on her chest. She grins widely with a digital paintbrush in one paw and a React component diagram floating beside her. Background: colorful creative studio with floating UI component mockups, CSS color swatches, and animation keyframes. Magenta-pink ambient glow, energetic composition with slight motion blur on her tail, 8K' },
     // Nova self-intro (25s)
     { type: 'tts', voice: 'nova', scriptKey: 'nova-self-intro' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-self-intro' },
@@ -624,7 +624,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'nova', scriptKey: 'nova-shy-flattery' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-shy-flattery' },
     // B-roll: Nova blushing moment — vulnerable emotional beat (FLUX for face detail)
-    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Pixar 3D emotional close-up: Nova the fox looking away shyly with a gentle blush visible through her orange-copper fur, ears slightly flattened in endearing embarrassment, one paw nervously fidgeting with her paint-splattered apron. Atlas the bear watches from the background with a kind approving nod, wire-frame glasses catching warm lamplight. Soft bokeh background of the podcast studio, intimate emotional lighting with warm golden tones, cinematic close-up, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D emotional close-up: Nova the fox looking away shyly with a gentle blush visible through her orange-copper fur, ears slightly flattened in endearing embarrassment, one paw nervously fidgeting with her paint-splattered apron. Atlas the bear watches from the background with a kind approving nod, wire-frame glasses catching warm lamplight. Soft bokeh background of the podcast studio, intimate emotional lighting with warm golden tones, cinematic close-up, 8K' },
     // Atlas acknowledges (7s)
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-nova-acknowledgment' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-nova-acknowledgment' },
@@ -934,7 +934,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'allaudin', scriptKey: 'scene9-allaudin-moana-moment' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'scene9-allaudin-moana-moment' },
     // B-roll: Allaudin Moana moment — theatrical center-stage magical declaration (FLUX for character detail)
-    { type: 'alibaba-image', model: 'flux-merged', prompt: 'Pixar 3D illustration: Allaudin the small blue-skinned genie standing center stage in a dramatic spotlight, arms spread wide in a theatrical declaration pose, purple turban flowing with magical energy, golden sparkle particles swirling around him in a vortex pattern. Behind him, a magical projection shows the sprint journey as a storybook timeline — from chaos to order. The other characters (bear, fox, human, squirrel, golden retriever) watch from the audience in warm lamplight, eyes wide with emotion. Broadway musical finale energy, volumetric god rays, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Allaudin the small blue-skinned genie standing center stage in a dramatic spotlight, arms spread wide in a theatrical declaration pose, purple turban flowing with magical energy, golden sparkle particles swirling around him in a vortex pattern. Behind him, a magical projection shows the sprint journey as a storybook timeline — from chaos to order. The other characters (bear, fox, human, squirrel, golden retriever) watch from the audience in warm lamplight, eyes wide with emotion. Broadway musical finale energy, volumetric god rays, 8K' },
     // ── Squirrel asks THE question — emotional pivot of the episode ──
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-4' },
     { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-good-question' },
