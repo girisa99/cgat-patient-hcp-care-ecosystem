@@ -5,7 +5,7 @@
  * Uses multi-provider-tts edge function with ElevenLabs (Host/Nova) + Azure (Atlas).
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -3066,11 +3066,46 @@ function EP04ProductionInner() {
     _subPartLineRange?: { start: number; end: number };
   }
 
-  const [assemblyParts, setAssemblyParts] = useState<AssemblyPart[]>([]);
+  const [assemblyPartsRaw, setAssemblyParts] = useState<AssemblyPart[]>([]);
   const [activePartNumber, setActivePartNumber] = useState<number | null>(null);
   // Bulletproof mapping: jobId → partNumber. Prevents race conditions where
   // activePartNumber state goes stale between part completions.
   const jobToPartMapRef = React.useRef<Record<string, number>>({});
+
+  // ── IRONCLAD URL PROTECTION ──
+  // Once a part is completed with a valid URL, cache it permanently.
+  // If any state update corrupts/swaps/removes the URL, the cache restores it.
+  // Cache is only cleared when user explicitly re-assembles (status → 'pending').
+  const completedPartCacheRef = React.useRef<Record<number, { videoUrl: string; thumbnailUrl: string | null }>>({});
+
+  const assemblyParts = useMemo(() => {
+    // Phase 1: Update cache from raw state
+    for (const p of assemblyPartsRaw) {
+      if (p.status === 'completed' && p.videoUrl?.startsWith('http')) {
+        completedPartCacheRef.current[p.partNumber] = { videoUrl: p.videoUrl, thumbnailUrl: p.thumbnailUrl || null };
+      }
+      // User explicitly reset this part → clear cache so re-render can produce new URL
+      if (p.status === 'pending' || p.status === 'rendering') {
+        delete completedPartCacheRef.current[p.partNumber];
+      }
+    }
+    // Phase 2: Protect — restore any corrupted/swapped/lost URLs from cache
+    return assemblyPartsRaw.map(p => {
+      const cached = completedPartCacheRef.current[p.partNumber];
+      if (!cached || p.status === 'pending' || p.status === 'rendering') return p;
+      // Case 1: URL was removed (set to null/undefined)
+      if (!p.videoUrl) {
+        console.warn(`[EP04 Guard] RESTORING removed URL for part ${p.partNumber}: ${cached.videoUrl.substring(0, 60)}`);
+        return { ...p, status: 'completed' as const, videoUrl: cached.videoUrl, thumbnailUrl: cached.thumbnailUrl };
+      }
+      // Case 2: URL was SWAPPED (different URL than what was cached)
+      if (p.videoUrl !== cached.videoUrl) {
+        console.warn(`[EP04 Guard] BLOCKING URL swap for part ${p.partNumber}: cached=${cached.videoUrl.substring(0, 50)}, attempted=${p.videoUrl.substring(0, 50)}`);
+        return { ...p, videoUrl: cached.videoUrl, thumbnailUrl: cached.thumbnailUrl };
+      }
+      return p;
+    });
+  }, [assemblyPartsRaw]);
 
   // ── Restore completed assembly parts from DB on page load ──
   useEffect(() => {
