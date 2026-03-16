@@ -2380,6 +2380,13 @@ function EP04ProductionInner() {
       const result = await supabase.functions.invoke(edgeFn, { body });
       data = result.data;
       error = result.error;
+      // Handle edge function 200 with success:false in body (DashScope errors that
+      // don't cause HTTP 500 but still indicate failure)
+      if (!error && data && data.success === false && !data.asyncGeneration) {
+        const bodyError = data.error || data.message || 'Edge function returned success:false';
+        console.warn(`[EP04 Visual] ${stepLabel}: edge fn returned 200 but success=false: ${bodyError}`);
+        error = { message: bodyError };
+      }
       if (!error) break; // Success — stop retrying
       console.warn(`[EP04 Visual] ${stepLabel}: attempt ${attempt + 1} failed: ${error.message}`);
     }
@@ -2495,11 +2502,23 @@ function EP04ProductionInner() {
         console.log(`[EP04 Visual] ${sceneKey}: forceRegenAll — ignoring all existing assets`);
       }
 
+      // Track how many times each step type has been checked so far (for multi-step matching)
+      const stepTypeCheckCount: Record<string, number> = {};
+
       const hasExistingAsset = (sType: string, sKey: string, character?: string, scriptKey?: string): boolean => {
         // Only trust permanent Supabase URLs — external CDN URLs expire
         const isPermanent = (url: string) => url && url.includes('supabase.co/storage');
         if (sType === 'alibaba-video' || sType === 'video' || sType === 'scene-transition') {
-          return Object.entries(existingVideoUrls).some(([k, url]) => (k.includes('video') || k.includes('scene-transition')) && k.includes(sKey) && isPermanent(url));
+          // Count how many PERMANENT video entries exist for this scene + type
+          const typeKey = sType === 'scene-transition' ? 'scene-transition' : 'video';
+          const existingCount = Object.entries(existingVideoUrls)
+            .filter(([k, url]) => k.includes(typeKey) && k.includes(sKey) && isPermanent(url)).length;
+          // Track which Nth step of this type we're checking (0-indexed)
+          const checkKey = `${sType}:${sKey}`;
+          const nthCheck = stepTypeCheckCount[checkKey] || 0;
+          stepTypeCheckCount[checkKey] = nthCheck + 1;
+          // Only skip if we have MORE existing entries than the current step index
+          return nthCheck < existingCount;
         }
         if (sType === 'static-asset') {
           return Object.entries(existingImageUrls).some(([k, url]) => k.includes('static-asset') && k.includes(sKey) && isPermanent(url));
