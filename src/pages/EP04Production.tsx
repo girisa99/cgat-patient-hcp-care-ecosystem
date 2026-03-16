@@ -2189,41 +2189,56 @@ function EP04ProductionInner() {
       return;
     }
 
-    // ── Character animate-3D (Option C — animate3d via alibaba-3d-generator) ──
+    // ── Character animate-3D (Option C) ──
+    // avatar-3d generates 2D portraits (PNG), NOT 3D model files (GLB/FBX).
+    // DashScope animate3d API requires a real 3D model → always fails with 2D input.
+    // Fallback: generate a text-to-video of the character animation via ai-video-generator.
     if (stepType === 'character-animate-3d') {
       const character = (step as Record<string, unknown>).character as string || 'atlas';
       const animationType = (step as Record<string, unknown>).animationType as string || 'idle';
       const animDuration = (step as Record<string, unknown>).duration as number || 5;
 
-      // Find existing 3D model URL from previous avatar-3d results for this character
-      const model3dKey = Object.keys(results).find(k =>
+      // Find existing avatar image to use as reference for i2v
+      const avatarKey = Object.keys(results).find(k =>
         k.startsWith('avatar-3d-') && k.includes(character)
       );
-      const model3dUrl = model3dKey ? results[model3dKey] : null;
+      const avatarUrl = avatarKey ? results[avatarKey] : null;
 
-      if (!model3dUrl || typeof model3dUrl !== 'string') {
-        console.warn(`[EP04 Visual] ${stepLabel}: no 3D model found for "${character}" — skipping animate3d`);
-        toast.warning(`${stepLabel}: no 3D model for ${character} — generate avatar-3d first`);
+      // Generate character animation as text-to-video (or image-to-video if avatar exists)
+      const animPrompt = prompt || `Pixar 3D animated ${character} character ${animationType} animation, cinematic quality, 8K`;
+      console.log(`[EP04 Visual] ${stepLabel}: animate3d → fallback to t2v — character=${character}, animation=${animationType}${avatarUrl ? ', with avatar ref' : ''}`);
+
+      const animBody: Record<string, unknown> = {
+        type: 'video',
+        action: 'generate_video',
+        prompt: animPrompt,
+        model: 'wan2.6-t2v',
+        provider: 'alibaba',
+        duration: animDuration,
+        aspectRatio: '16:9',
+      };
+      // If avatar image exists, use it as reference for image-to-video (better likeness)
+      if (avatarUrl && typeof avatarUrl === 'string' && avatarUrl.startsWith('http')) {
+        animBody.referenceImage = avatarUrl;
+        animBody.model = 'wan2.6-i2v';
+      }
+
+      const { data: animData, error: animErr } = await supabase.functions.invoke('ai-video-generator', { body: animBody });
+      if (animErr) {
+        console.warn(`[EP04 Visual] ${stepLabel}: animate3d t2v failed: ${animErr.message}`);
+        toast.warning(`${stepLabel}: character animation failed — will use B-roll images instead`);
         return;
       }
 
-      console.log(`[EP04 Visual] ${stepLabel}: animate3d — character=${character}, animation=${animationType}`);
-      const { data: anim3dData, error: anim3dErr } = await supabase.functions.invoke('alibaba-3d-generator', {
-        body: {
-          model: 'animate3d',
-          sourceModel: model3dUrl,
-          animationType,
-          animationDuration: animDuration,
-          prompt: prompt || `${character} ${animationType} animation`,
-          fps: 24,
-        },
-      });
-      if (anim3dErr) {
-        toast.error(`${stepLabel} animate3d failed: ${anim3dErr.message}`);
-        return;
+      let animUrl = animData?.videoUrl || null;
+      const animTaskId = animData?.taskId;
+
+      // Poll for async result if needed
+      if (!animUrl && animTaskId) {
+        toast.info(`${stepLabel}: character animation rendering... polling`);
+        animUrl = await pollVideoTaskResult(animTaskId);
       }
-      // animate3d returns animationUrl (FBX/GLB) — store for potential browser-side rendering
-      const animUrl = anim3dData?.animationUrl || anim3dData?.modelUrl || null;
+
       const animIdx = String(Object.keys(results).filter(k => k.startsWith(`character-animate-3d-${sceneKey}`)).length).padStart(3, '0');
       if (animUrl && projectId && !isSupabaseStorageUrl(animUrl)) {
         try {
@@ -2235,6 +2250,11 @@ function EP04ProductionInner() {
         }
       } else if (animUrl) {
         results[`character-animate-3d-${sceneKey}-${animIdx}`] = animUrl;
+      }
+      if (animUrl) {
+        console.log(`[EP04 Visual] ${stepLabel}: character animation generated: ${animUrl.substring(0, 80)}...`);
+      } else {
+        toast.warning(`${stepLabel}: character animation timed out — assembly will use B-roll images`);
       }
       return;
     }
