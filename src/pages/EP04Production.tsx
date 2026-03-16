@@ -2140,6 +2140,19 @@ function EP04ProductionInner() {
         ? motionRef
         : `${supabaseUrl}/storage/v1/object/public/cast-assets/cast-motion-refs/${motionRef}.mp4`;
 
+      // Validate motion reference video exists before calling edge function
+      try {
+        const checkResp = await fetch(motionVideoUrl, { method: 'HEAD' });
+        if (!checkResp.ok) {
+          console.warn(`[EP04 Visual] ${stepLabel}: motion ref "${motionRef}" not found in Storage (${checkResp.status}) — skipping`);
+          toast.warning(`${stepLabel}: motion reference "${motionRef}" not uploaded to Storage — skipping`);
+          return;
+        }
+      } catch {
+        console.warn(`[EP04 Visual] ${stepLabel}: cannot reach motion ref URL — skipping`);
+        return;
+      }
+
       // Convert local avatar path to full URL for edge function
       const fullAvatarUrl = avatarUrl.startsWith('/') ? `${window.location.origin}${avatarUrl}` : avatarUrl;
 

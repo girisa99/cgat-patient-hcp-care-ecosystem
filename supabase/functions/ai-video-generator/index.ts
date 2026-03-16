@@ -1995,6 +1995,29 @@ async function generateMotionTransfer(request: {
     } catch (e) { console.warn('⚠️ Motion reference re-upload failed:', e); }
   }
 
+  // Validate that both URLs are actually accessible before calling DashScope
+  // Non-existent Supabase Storage URLs (e.g. cast-motion-refs/busy-coding-ref.mp4)
+  // would cause DashScope to fail with an opaque error.
+  const validateUrl = async (url: string, label: string): Promise<boolean> => {
+    try {
+      const resp = await fetch(url, { method: 'HEAD' });
+      if (!resp.ok) {
+        console.warn(`⚠️ ${label} URL not accessible (${resp.status}): ${url.substring(0, 100)}`);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.warn(`⚠️ ${label} URL fetch failed: ${e}`);
+      return false;
+    }
+  };
+  const srcOk = await validateUrl(sourceImageUrl, 'sourceImage');
+  const refOk = await validateUrl(referenceVideoUrl, 'referenceVideo');
+  if (!srcOk || !refOk) {
+    const missing = [!srcOk && 'sourceImage', !refOk && 'referenceVideo'].filter(Boolean).join(', ');
+    throw new Error(`Motion transfer: ${missing} URL(s) not accessible. Upload the asset to Storage first.`);
+  }
+
   const baseUrl = useChina
     ? 'https://dashscope.aliyuncs.com/api/v1'
     : 'https://dashscope-intl.aliyuncs.com/api/v1';
