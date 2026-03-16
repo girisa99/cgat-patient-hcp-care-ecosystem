@@ -7178,6 +7178,23 @@ function EP04ProductionInner() {
                           const partMusicTotal = partMusicHttp + partMusicData;
                           const isActive = activePartNumber === part.partNumber;
 
+                          // Pick best B-roll image as thumbnail (skip kinetic-text, avatar-3d)
+                          const bestThumb = (() => {
+                            for (const sk of part.sceneKeys) {
+                              const s = sceneProduction[sk];
+                              // Prefer storybook-frame (chapter header) first
+                              for (const [k, u] of Object.entries(s?.imageUrls || {})) {
+                                if (k.includes('storybook-frame') && (u as string)?.startsWith('http')) return u as string;
+                              }
+                              // Then first alibaba-image
+                              for (const [k, u] of Object.entries(s?.imageUrls || {})) {
+                                if (k.includes('alibaba-image') && !k.includes('kinetic') && (u as string)?.startsWith('http')) return u as string;
+                              }
+                            }
+                            return null;
+                          })();
+                          const posterUrl = part.thumbnailUrl || bestThumb;
+
                           return (
                             <div key={part.partNumber} className={cn(
                               'p-3 rounded-lg border transition-all',
@@ -7249,6 +7266,13 @@ function EP04ProductionInner() {
                                   ~{Math.round(part.estimatedDuration / 60)}min
                                 </span>
                               </div>
+
+                              {/* Thumbnail preview */}
+                              {posterUrl && (
+                                <div className="mb-2 rounded overflow-hidden border border-muted/30 max-h-[80px]">
+                                  <img src={posterUrl} alt={`Part ${part.partNumber} preview`} className="w-full h-[80px] object-cover" loading="lazy" />
+                                </div>
+                              )}
 
                               {/* Rendering progress for active part */}
                               {part.status === 'rendering' && isActive && assemblyProgress && (
@@ -7364,7 +7388,7 @@ function EP04ProductionInner() {
                                     controls
                                     className="w-full rounded-lg border max-h-[200px]"
                                     preload="metadata"
-                                    {...(part.thumbnailUrl ? { poster: part.thumbnailUrl } : {})}
+                                    {...(posterUrl ? { poster: posterUrl } : {})}
                                   />
                                 </div>
                               )}
