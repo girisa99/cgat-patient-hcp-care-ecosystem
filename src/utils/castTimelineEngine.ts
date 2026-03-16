@@ -625,7 +625,7 @@ function makeTtsLineScene(
         : (isHttpUrl(tailImageVisual) ? [tailImageVisual] : []);
 
       if (tailImages.length > 1) {
-        // Multiple images → cycle with Ken Burns beats
+        // Multiple images → cycle with Ken Burns beats at z2 (above background)
         const beatCount = Math.max(1, Math.ceil(tailDur / VISUAL_BEAT));
         const beatDur = tailDur / beatCount;
         for (let bi = 0; bi < beatCount; bi++) {
@@ -638,8 +638,8 @@ function makeTtsLineScene(
             'fade-in': 0.8, 'fade-out': 0.5, 'z-index': 2,
           });
         }
-      } else if (tailImages.length === 1) {
-        // Single image → static with Ken Burns
+      } else if (tailImages.length === 1 && tailDur <= 20) {
+        // Short tail with single image → static with Ken Burns (OK for brief sections)
         const kb = getKenBurns(kbIdx + 99);
         elements.push({
           type: 'image', src: tailImages[0],
@@ -648,6 +648,9 @@ function makeTtsLineScene(
           'fade-in': 1.0, 'fade-out': 0.5, 'z-index': 2,
         });
       }
+      // Long tail with single image: SKIP z2 tail — let the z0 background cycling
+      // (Layer 0, already placed above) show through. This prevents a single static
+      // image blocking the cycling B-roll for 90+ seconds.
     }
   } else {
     // No lipsync — full B-roll with visual cycling for long scenes
