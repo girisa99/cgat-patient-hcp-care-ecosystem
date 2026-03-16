@@ -554,20 +554,22 @@ function makeTtsLineScene(
       }
     }
 
-    // ── Layer 1: Video B-roll lead-in (establishing shot, first 4-10s) ──
+    // ── Layer 1: Video B-roll lead-in (establishing shot, first 5-8s) ──
+    // z-index 3 (ABOVE lipsync) so the establishing shot is visible before
+    // the speaker appears. Fades out to reveal the lipsync underneath.
+    const VIDEO_LEAD_IN = isHttpUrl(videoVisual) ? Math.min(8, sceneDur * 0.3) : 0;
     if (isHttpUrl(videoVisual)) {
-      const videoDur = Math.min(10, sceneDur);
       elements.push({
         type: 'video', src: videoVisual,
-        start: 0, duration: videoDur,
+        start: 0, duration: VIDEO_LEAD_IN,
         volume: 0, resize: 'cover', width: 1920, height: 1080,
-        'fade-in': 0.5, 'fade-out': 0.8, 'z-index': 1,
+        'fade-in': 0.3, 'fade-out': 1.2, 'z-index': 3, // ABOVE lipsync — establishing shot
       });
     }
 
     // ── Layer 2: Lipsync full-screen (replaces PiP — no clipping) ──
-    // Must start at same time as TTS audio (t=0) to keep lips synced.
-    // Any delay causes visible mouth-vs-voice desync.
+    // Starts at t=0 to stay synced with TTS audio, but video lead-in
+    // covers it for the first few seconds (z-index 3 > 2).
     const lipsyncStart = 0;
     elements.push({
       type: 'video', src: lipsync.url,
@@ -622,8 +624,8 @@ function makeTtsLineScene(
         }
       }
     } else {
-      // Image-only — cycle through multiple images for long scenes
-      const cycleImages = (allImages && allImages.length > 1 && sceneDur > VISUAL_BEAT)
+      // Image-only — cycle through images. Use full pool for any multi-image scene.
+      const cycleImages = (allImages && allImages.length > 1)
         ? allImages.filter(u => isHttpUrl(u))
         : (isHttpUrl(imageVisual) ? [imageVisual] : []);
       if (cycleImages.length > 0) {
@@ -930,7 +932,7 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
     let tailImageVisual: string | undefined;
 
     if (!lipsync) {
-      // No lipsync → use B-roll for entire scene
+      // No lipsync → use B-roll for entire scene (video lead-in + image cycling)
       if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
         videoVisual = videos[videoPoolIdx++];
       }
@@ -939,17 +941,14 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
         imagePoolIdx++;
       }
     } else {
-      // Has lipsync → pick B-roll for background, lead-in, and tail (ALL scene sizes).
-      // Lipsync is full-screen (z-index 2) so B-roll at z-index 0 only shows
-      // before lipsync starts and after it ends — no bleed-through.
+      // Has lipsync → lipsync is full-screen (z-index 2), so only pick:
+      // 1. Video for establishing shot lead-in (z-index 3, above lipsync)
+      // 2. Tail image for after lipsync ends
+      // DON'T consume from image pool for background (it's invisible behind lipsync)
       if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
         videoVisual = videos[videoPoolIdx++];
       }
-      if (!videoVisual && images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
-        imageVisual = images[imagePoolIdx % images.length];
-        imagePoolIdx++;
-      }
-      // Tail image: fills after lipsync ends
+      // Tail image: fills after lipsync ends — use next image from pool
       if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
         tailImageVisual = images[imagePoolIdx % images.length];
         imagePoolIdx++;
