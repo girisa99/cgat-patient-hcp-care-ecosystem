@@ -6194,7 +6194,7 @@ function EP04ProductionInner() {
                               )}
                             </div>
                           )}
-                          {!phase3Done && status?.visual !== 'done' && (
+                          {(!phase3Done || status?.visual === 'idle') && status?.visual !== 'done' && (
                             <Button
                               size="sm" variant="outline" className="w-full h-7 text-[10px]"
                               onClick={() => startSceneVisualProduction(sceneKey)}
