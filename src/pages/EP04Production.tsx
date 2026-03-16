@@ -4604,11 +4604,18 @@ function EP04ProductionInner() {
         // ── Video/Image diagnostic trace ──
         const preBuiltVideoCount = ((ch as any).sceneVideos || []).length;
         const transFilteredCount = preBuiltVideoCount - sceneVideos.length;
+        const rawImageUrlCount = Object.keys(status.imageUrls || {}).length;
         console.log(`[EP04 CastChapter] ${ch.chapterId}:`,
           `videos: ${sceneVideos.length} (${preBuiltVideoCount} pre-built, ${transFilteredCount} filtered as transitions)`,
-          `images: ${regularImages.length} (${pipelineOrderedImages.length} pipeline-ordered, ${kineticUrlSet.size} kinetic, ${storybookFrameSet.size} storybook)`,
+          `images: ${regularImages.length} of ${rawImageUrlCount} raw (${pipelineOrderedImages.length} pipeline-ordered, ${kineticUrlSet.size} kinetic, ${storybookFrameSet.size} storybook)`,
           `lipsync: ${(ch.lipsyncClips || []).length}`,
           `tts: ${ch.allTtsUrls.length}`);
+        // Surface-level warning when images are too sparse for the scene duration
+        const sceneTotalDur = ch.allTtsUrls.reduce((s: number, t: any) => s + (t.duration || 5), 0);
+        if (regularImages.length < 3 && sceneTotalDur > 60) {
+          console.warn(`[EP04 WARNING] ${ch.chapterId}: Only ${regularImages.length} images for ${Math.round(sceneTotalDur)}s of audio! Need at least 5+ images for visual variety. Regenerate scene images.`);
+          toast.warning(`${ch.chapterId}: Only ${regularImages.length} image(s) for ${Math.round(sceneTotalDur)}s — visuals will be repetitive. Regenerate images first.`);
+        }
         if (sceneVideos.length > 0) {
           sceneVideos.forEach((u: string, i: number) => console.log(`  📹 video[${i}]: ${u.substring(0, 80)}...`));
         }

@@ -620,7 +620,7 @@ function makeTtsLineScene(
     const tailStart = lipsyncStart + lipsyncDur - 1.0; // overlap by 1s to cover safety trim gap
     const tailDur = sceneDur - tailStart;
     if (tailDur > 1) {
-      const tailImages = (allImages && allImages.length > 1)
+      const tailImages = (allImages && allImages.length > 0)
         ? allImages.filter(u => isHttpUrl(u))
         : (isHttpUrl(tailImageVisual) ? [tailImageVisual] : []);
 
@@ -666,7 +666,7 @@ function makeTtsLineScene(
       // Fill remaining time with cycling images (not one static image)
       const remainStart = videoDur - 0.5;
       const remainDur = sceneDur - videoDur + 0.5;
-      const cycleImages = (allImages && allImages.length > 1) ? allImages.filter(u => isHttpUrl(u)) : (isHttpUrl(imageVisual) ? [imageVisual] : []);
+      const cycleImages = (allImages && allImages.length > 0) ? allImages.filter(u => isHttpUrl(u)) : (isHttpUrl(imageVisual) ? [imageVisual] : []);
       if (cycleImages.length > 0 && remainDur > 0) {
         const beatCount = Math.max(1, Math.ceil(remainDur / VISUAL_BEAT));
         const beatDur = remainDur / beatCount;
@@ -683,7 +683,7 @@ function makeTtsLineScene(
       }
     } else {
       // Image-only — cycle through images. Use full pool for any multi-image scene.
-      const cycleImages = (allImages && allImages.length > 1)
+      const cycleImages = (allImages && allImages.length > 0)
         ? allImages.filter(u => isHttpUrl(u))
         : (isHttpUrl(imageVisual) ? [imageVisual] : []);
       if (cycleImages.length > 0) {
