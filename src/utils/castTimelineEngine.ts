@@ -554,10 +554,12 @@ function makeTtsLineScene(
       }
     }
 
-    // ── Layer 1: Video B-roll lead-in (establishing shot, first 5-8s) ──
+    // ── Layer 1: Video B-roll lead-in (establishing shot) ──
     // z-index 3 (ABOVE lipsync) so the establishing shot is visible before
     // the speaker appears. Fades out to reveal the lipsync underneath.
-    const VIDEO_LEAD_IN = isHttpUrl(videoVisual) ? Math.min(8, sceneDur * 0.3) : 0;
+    // Allow up to 15s or 40% of scene — gives cinematic establishing shots
+    // room to breathe before cutting to the speaker.
+    const VIDEO_LEAD_IN = isHttpUrl(videoVisual) ? Math.min(15, sceneDur * 0.4) : 0;
     if (isHttpUrl(videoVisual)) {
       elements.push({
         type: 'video', src: videoVisual,
@@ -598,7 +600,7 @@ function makeTtsLineScene(
     // No lipsync — full B-roll with visual cycling for long scenes
     const VISUAL_BEAT = 12; // seconds per visual beat — cinematic pacing (was 15)
     if (isHttpUrl(videoVisual)) {
-      const videoDur = Math.min(10, sceneDur);
+      const videoDur = Math.min(15, sceneDur); // allow establishing videos to play longer
       elements.push({
         type: 'video', src: videoVisual,
         start: 0, duration: videoDur,

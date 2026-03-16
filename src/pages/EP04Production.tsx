@@ -4035,8 +4035,10 @@ function EP04ProductionInner() {
           const line = scriptContentForUI[k];
           const estDur = line?.duration_est || 5;
           const actualDur = audioMap[k]?.audioDuration;
-          // Prefer actual measured duration; fall back to estimate + 2s buffer to prevent cutoff
-          const dur = actualDur ? actualDur : estDur + 2;
+          // Prefer actual measured duration + 1.5s breathing room so voices don't rush or
+          // cut off (audio codec can decode slightly longer than measured metadata duration).
+          // Fallback: estimate + 2s buffer for unmeasured lines.
+          const dur = actualDur ? (actualDur + 1.5) : estDur + 2;
           const audioUrl = audioMap[k]?.audioUrl;
           if (audioUrl) {
             if (audioUrl.startsWith('http')) {

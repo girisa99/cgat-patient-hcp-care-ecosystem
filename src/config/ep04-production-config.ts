@@ -561,6 +561,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Clean professional infographic illustration: a dark tech dashboard background with three floating data cards — LEFT card shows a pie chart labeled "McKinsey: 23 min context switch cost" in amber, CENTER card shows a rising bar chart labeled "Gartner: 80% AI adoption by 2026" in teal-blue, RIGHT card shows a line graph labeled "Developer Productivity Gap" in magenta. Small citation logos at the bottom of each card. Glowing neon data visualization style, clean modern corporate design, dark background with warm accent colors, 16:9, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'scene1-market-data' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'scene1-market-data' },
+    // Citation overlay: research sources referenced in market-data monologue
+    { type: 'kinetic-text', text: '📎 Gloria Mark, UC Irvine — The Cost of Interrupted Work\n📎 Microsoft Research — The SPACE of Developer Productivity\n📎 DORA 2024 — State of DevOps Report\n📎 McKinsey — Unleashing Developer Productivity with GenAI' },
     // B-roll: Bridge visual — transition from problem to solution, story continues
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a magical golden lamp sitting on a desk surrounded by scattered papers and task cards, faint blue-purple mist beginning to swirl out of the spout as if something magical is about to happen, a ray of golden light cutting through the darkness of the chaotic office, hopeful cinematic transition moment, warm atmospheric lighting, 8K' },
     // Bridge narrator: scene 1 → scene 2 (7s)
