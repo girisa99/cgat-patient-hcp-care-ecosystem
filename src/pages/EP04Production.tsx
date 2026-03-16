@@ -4638,11 +4638,16 @@ function EP04ProductionInner() {
           let currentCount = 0;
           let ttsHit = false;
 
+          let preFirstTtsCount = 0; // images before the first TTS step
           for (const step of pipeSteps) {
             const sType = (step as any).type as string;
             if (sType === 'tts' && ttsKeys.has((step as any).scriptKey)) {
               if (ttsHit) {
                 imgCountPerTts.push(currentCount);
+                currentCount = 0;
+              } else {
+                // First TTS hit — include pre-TTS images (e.g., storybook-frame)
+                preFirstTtsCount = currentCount;
                 currentCount = 0;
               }
               ttsHit = true;
@@ -4652,6 +4657,8 @@ function EP04ProductionInner() {
           }
           // Push final group (last TTS's trailing images)
           if (ttsHit) imgCountPerTts.push(currentCount);
+          // Add pre-TTS images to the first group (storybook-frame belongs with intro TTS)
+          if (imgCountPerTts.length > 0) imgCountPerTts[0] += preFirstTtsCount;
 
           // Slice regularImages into per-TTS groups
           const totalExpected = imgCountPerTts.reduce((s, c) => s + c, 0);

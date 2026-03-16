@@ -1013,6 +1013,12 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
       if (useSemanticImages) {
         imageVisual = ttsImageGroup[0];
         sceneImages = ttsImageGroup;
+        // For long scenes (>30s) with sparse images, supplement from full pool
+        if (sceneDur > 30 && ttsImageGroup.length < 3 && images.length > ttsImageGroup.length) {
+          const existingSet = new Set(ttsImageGroup);
+          const extras = images.filter(u => isHttpUrl(u) && !existingSet.has(u));
+          if (extras.length > 0) sceneImages = [...ttsImageGroup, ...extras];
+        }
       } else if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
         imageVisual = images[imagePoolIdx % images.length];
         imagePoolIdx++;
@@ -1030,6 +1036,13 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
       if (useSemanticImages) {
         tailImageVisual = ttsImageGroup[0];
         sceneImages = ttsImageGroup;
+        // For long scenes (>30s) with sparse images (<3), supplement from full pool
+        // so the 92s tail after lipsync doesn't show a single static image
+        if (sceneDur > 30 && ttsImageGroup.length < 3 && images.length > ttsImageGroup.length) {
+          const existingSet = new Set(ttsImageGroup);
+          const extras = images.filter(u => isHttpUrl(u) && !existingSet.has(u));
+          if (extras.length > 0) sceneImages = [...ttsImageGroup, ...extras];
+        }
       } else if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
         tailImageVisual = images[imagePoolIdx % images.length];
         imagePoolIdx++;
