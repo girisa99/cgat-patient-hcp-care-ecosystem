@@ -4577,6 +4577,65 @@ function EP04ProductionInner() {
           (ch.lipsyncClips || []).forEach((c: any) => console.log(`  🎭 lipsync: ${c.character} at t=${c.start}s (${c.duration}s) — ${c.url.substring(0, 80)}...`));
         }
 
+        // ── Build per-TTS-line image groups from pipeline config ──
+        // Walk pipeline steps in order. Images placed after a TTS step belong to
+        // that TTS line's visual group. This ensures a 110s monologue gets its 5
+        // B-roll images cycling, while Atlas's portrait only shows during his intro.
+        const perTtsImages: string[][] = [];
+        {
+          const pSceneKey = SCRIPT_TO_PIPELINE_MAP[ch.chapterId] || ch.chapterId;
+          const pSteps = EP04_SCENE_PIPELINES[pSceneKey as keyof typeof EP04_SCENE_PIPELINES];
+          const pipeSteps = Array.isArray(pSteps) ? pSteps : [];
+
+          // Image types that survive into regularImages pool
+          const poolImgTypes = new Set(['alibaba-image', 'screen-capture', 'motion-graphics', 'static-asset']);
+          if (ch.chapterId === targetSceneKeys[0]) poolImgTypes.add('storybook-frame');
+
+          // TTS scriptKeys in this part (handles sub-parts correctly)
+          const ttsKeys = new Set(ch.allTtsUrls.map((t: any) => t.key));
+
+          // Count images between consecutive TTS steps
+          const imgCountPerTts: number[] = [];
+          let currentCount = 0;
+          let ttsHit = false;
+
+          for (const step of pipeSteps) {
+            const sType = (step as any).type as string;
+            if (sType === 'tts' && ttsKeys.has((step as any).scriptKey)) {
+              if (ttsHit) {
+                imgCountPerTts.push(currentCount);
+                currentCount = 0;
+              }
+              ttsHit = true;
+            } else if (poolImgTypes.has(sType)) {
+              currentCount++;
+            }
+          }
+          // Push final group (last TTS's trailing images)
+          if (ttsHit) imgCountPerTts.push(currentCount);
+
+          // Slice regularImages into per-TTS groups
+          const totalExpected = imgCountPerTts.reduce((s, c) => s + c, 0);
+          if (totalExpected <= regularImages.length && imgCountPerTts.length > 0) {
+            let offset = 0;
+            for (const count of imgCountPerTts) {
+              perTtsImages.push(regularImages.slice(offset, offset + count));
+              offset += count;
+            }
+            // Append any unmatched images (extra results) to last group
+            if (offset < regularImages.length && perTtsImages.length > 0) {
+              perTtsImages[perTtsImages.length - 1].push(...regularImages.slice(offset));
+            }
+            // Pad with empty arrays for TTS lines beyond pipeline steps
+            while (perTtsImages.length < ch.allTtsUrls.length) {
+              perTtsImages.push([]);
+            }
+          }
+
+          console.log(`[EP04 PerTTS] ${ch.chapterId}: ${perTtsImages.length} groups →`,
+            perTtsImages.map((g, idx) => `TTS#${idx}:${g.length}img`).join(', '));
+        }
+
         return {
           id: ch.chapterId,
           title: ch.product,
@@ -4585,6 +4644,7 @@ function EP04ProductionInner() {
           lipsyncClips: ch.lipsyncClips || [],
           videos: sceneVideos,
           images: regularImages,
+          perTtsImages: perTtsImages.length > 0 ? perTtsImages : undefined,
           musicUrl: ch.musicUrl,
           musicLoop: ch.musicLoop,
           sfxTimings: ch.sfxTimings,

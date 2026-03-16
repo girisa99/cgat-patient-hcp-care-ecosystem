@@ -44,6 +44,7 @@ export interface CastChapter {
   lipsyncClips: CastLipsyncClip[];
   videos: string[];            // B-roll video URLs (non-lipsync)
   images: string[];            // B-roll image URLs (non-kinetic, including avatars)
+  perTtsImages?: string[][];   // per-TTS-line image groups from pipeline config (semantic mapping)
   musicUrl?: string;
   musicLoop?: boolean;
   sfxTimings?: Array<{ url: string; start: number; duration: number }>;
@@ -584,14 +585,35 @@ function makeTtsLineScene(
       resize: 'cover', width: 1920, height: 1080,
     });
 
-    // ── Layer 3: Tail visual — fills after lipsync ends ──
-    if (isHttpUrl(tailImageVisual)) {
-      const tailStart = lipsyncStart + lipsyncDur - 1.0; // overlap by 1s to cover safety trim gap
-      const tailDur = sceneDur - tailStart;
-      if (tailDur > 1) {
+    // ── Layer 3: Tail visuals — fills after lipsync ends ──
+    // Cycle through per-TTS images (if multiple) for long post-lipsync sections.
+    // E.g. a 110s monologue with 18s lipsync → 92s of cycling B-roll images.
+    const tailStart = lipsyncStart + lipsyncDur - 1.0; // overlap by 1s to cover safety trim gap
+    const tailDur = sceneDur - tailStart;
+    if (tailDur > 1) {
+      const tailImages = (allImages && allImages.length > 1)
+        ? allImages.filter(u => isHttpUrl(u))
+        : (isHttpUrl(tailImageVisual) ? [tailImageVisual] : []);
+
+      if (tailImages.length > 1) {
+        // Multiple images → cycle with Ken Burns beats
+        const beatCount = Math.max(1, Math.ceil(tailDur / VISUAL_BEAT));
+        const beatDur = tailDur / beatCount;
+        for (let bi = 0; bi < beatCount; bi++) {
+          const img = tailImages[bi % tailImages.length];
+          const kb = getKenBurns(kbIdx + 90 + bi);
+          elements.push({
+            type: 'image', src: img,
+            start: tailStart + bi * beatDur, duration: beatDur + (bi < beatCount - 1 ? 0.5 : 0),
+            ...kb, resize: 'cover', width: 1920, height: 1080,
+            'fade-in': 0.8, 'fade-out': 0.5, 'z-index': 2,
+          });
+        }
+      } else if (tailImages.length === 1) {
+        // Single image → static with Ken Burns
         const kb = getKenBurns(kbIdx + 99);
         elements.push({
-          type: 'image', src: tailImageVisual,
+          type: 'image', src: tailImages[0],
           start: tailStart, duration: tailDur,
           ...kb, resize: 'cover', width: 1920, height: 1080,
           'fade-in': 1.0, 'fade-out': 0.5, 'z-index': 2,
@@ -891,6 +913,13 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
   let kbIdx = 0;
   let lastSpeaker = '';
 
+  // Per-TTS-line image groups from pipeline config (semantic mapping).
+  // When available, each TTS line gets only the images placed after it in the
+  // pipeline config — so the 110s monologue gets its 5 B-roll images cycling,
+  // and Atlas's portrait only appears during Atlas's introduction.
+  const perTtsImages = chapter.perTtsImages;
+  const hasSemanticMapping = perTtsImages && perTtsImages.length > 0;
+
   // Separate kinetic texts: those with images → dedicated scenes, text-only → overlays
   const kineticWithImages = (kineticTexts || [])
     .filter(kt => isHttpUrl(kt.imageUrl))
@@ -933,32 +962,51 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
     const lipsync = lipsyncIdx >= 0 ? lipsyncClips[lipsyncIdx] : undefined;
     if (lipsyncIdx >= 0) usedLipsyncIndices.add(lipsyncIdx);
 
-    // Pick visuals from pool
+    // ── Pick visuals — semantic per-TTS mapping when available ──
+    // Per-TTS images: each TTS line gets ONLY the images placed after it in the
+    // pipeline config. This ensures Atlas's portrait shows during Atlas's intro,
+    // not consumed early by a prior monologue.
+    const ttsImageGroup = hasSemanticMapping && perTtsImages![i]
+      ? perTtsImages![i].filter(u => isHttpUrl(u))
+      : [];
+    const useSemanticImages = ttsImageGroup.length > 0;
+
     let videoVisual: string | undefined;
     let imageVisual: string | undefined;
     let tailImageVisual: string | undefined;
+    let sceneImages: string[]; // images for cycling within this scene
 
     if (!lipsync) {
       // No lipsync → use B-roll for entire scene (video lead-in + image cycling)
       if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
         videoVisual = videos[videoPoolIdx++];
       }
-      if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
+      if (useSemanticImages) {
+        imageVisual = ttsImageGroup[0];
+        sceneImages = ttsImageGroup;
+      } else if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
         imageVisual = images[imagePoolIdx % images.length];
         imagePoolIdx++;
+        sceneImages = images;
+      } else {
+        sceneImages = images;
       }
     } else {
       // Has lipsync → lipsync is full-screen (z-index 2), so only pick:
       // 1. Video for establishing shot lead-in (z-index 3, above lipsync)
-      // 2. Tail image for after lipsync ends
-      // DON'T consume from image pool for background (it's invisible behind lipsync)
+      // 2. Tail images for after lipsync ends (cycling if multiple)
       if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
         videoVisual = videos[videoPoolIdx++];
       }
-      // Tail image: fills after lipsync ends — use next image from pool
-      if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
+      if (useSemanticImages) {
+        tailImageVisual = ttsImageGroup[0];
+        sceneImages = ttsImageGroup;
+      } else if (images.length > 0 && isHttpUrl(images[imagePoolIdx % images.length])) {
         tailImageVisual = images[imagePoolIdx % images.length];
         imagePoolIdx++;
+        sceneImages = images;
+      } else {
+        sceneImages = images;
       }
     }
 
@@ -999,7 +1047,7 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
       kineticOverlay,
       kbIdx++,
       transStyle,
-      images, // pass full image pool for cycling in long scenes
+      sceneImages, // per-TTS images for cycling (semantic) or full pool (fallback)
     ));
   }
 
