@@ -18,7 +18,7 @@ export const ACTIVE_MODELS = {
   // Image generation
   image: {
     alibaba:     'wan2.6-t2i',
-    gemini:      'gemini-2.5-flash-preview-image-generation',
+    gemini:      'gemini-2.5-flash-image',
     vertexImagen:'imagen-3.0-generate-002',
     openai:      'gpt-image-1',
     openaiDalle: 'dall-e-3',
