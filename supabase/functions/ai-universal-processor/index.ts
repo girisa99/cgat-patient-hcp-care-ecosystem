@@ -228,7 +228,7 @@ serve(async (req) => {
 
   try {
     const requestBody = await req.json() as AIRequest;
-    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 4000, action, imageGeneration, aspectRatio, style, context } = requestBody;
+    const { provider, model, prompt, systemPrompt, temperature = 0.7, maxTokens = 4000, action, imageGeneration, aspectRatio, style, context, size: requestSize } = requestBody;
 
     // Input validation — prevent abuse with oversized prompts
     if (prompt && typeof prompt === 'string' && prompt.length > MAX_PROMPT_LENGTH) {
@@ -363,7 +363,7 @@ serve(async (req) => {
           prompt,
           imgStyleIntent || style || undefined,
           provider || undefined,
-          { model, aspectRatio, style, size: aspectRatio ? undefined : '1024x1024', ref_image_url: refImageUrl }
+          { model, aspectRatio, style, size: requestSize || (aspectRatio ? undefined : '1024x1024'), ref_image_url: refImageUrl }
         );
 
         // Mirror external URLs to Supabase Storage (CORS-safe, permanent)

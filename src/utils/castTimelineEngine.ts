@@ -557,28 +557,30 @@ function makeTtsLineScene(
     // ── Layer 1: Video B-roll lead-in (establishing shot) ──
     // z-index 3 (ABOVE lipsync) so the establishing shot is visible before
     // the speaker appears. Fades out to reveal the lipsync underneath.
-    // Allow up to 15s or 40% of scene — gives cinematic establishing shots
-    // room to breathe before cutting to the speaker.
-    const VIDEO_LEAD_IN = isHttpUrl(videoVisual) ? Math.min(15, sceneDur * 0.4) : 0;
+    // CRITICAL: Keep lead-in SHORT when lipsync exists — max 25% of lipsync
+    // duration so the speaker is visible for at least 75% of their screen time.
+    // Without this cap, a 15s lead-in covers a 16s lipsync almost entirely.
+    const maxLeadIn = Math.min(5, lipsyncDur * 0.25);
+    const VIDEO_LEAD_IN = isHttpUrl(videoVisual) ? Math.min(maxLeadIn, sceneDur * 0.2) : 0;
     if (isHttpUrl(videoVisual)) {
       elements.push({
         type: 'video', src: videoVisual,
         start: 0, duration: VIDEO_LEAD_IN,
         volume: 0, resize: 'cover', width: 1920, height: 1080,
-        'fade-in': 0.3, 'fade-out': 1.2, 'z-index': 3, // ABOVE lipsync — establishing shot
+        'fade-in': 0.3, 'fade-out': 0.8, 'z-index': 3, // ABOVE lipsync — brief establishing shot
       });
     }
 
-    // ── Layer 2: Lipsync full-screen (replaces PiP — no clipping) ──
-    // Starts at t=0 to stay synced with TTS audio, but video lead-in
-    // covers it for the first few seconds (z-index 3 > 2).
+    // ── Layer 2: Lipsync full-screen ──
+    // Starts at t=0 to stay synced with TTS audio. Video lead-in covers
+    // it briefly (z-index 3 > 2) then fades out to reveal the speaker.
     const lipsyncStart = 0;
     elements.push({
       type: 'video', src: lipsync.url,
       start: lipsyncStart, duration: lipsyncDur,
       volume: 0, // CRITICAL: TTS audio is a separate element
       'fade-in': 0.3, 'fade-out': 0.8,
-      'z-index': 2, // above B-roll and establishing shot
+      'z-index': 2, // above B-roll (z0), below establishing shot (z3)
       resize: 'cover', width: 1920, height: 1080,
     });
 
