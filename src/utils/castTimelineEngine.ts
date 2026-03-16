@@ -647,10 +647,13 @@ function makeTtsLineScene(
   }
 
   // ── TTS audio ───────────────────────────────────────────────────────────
+  // Use full scene duration window — prevents TTS cutoff when actualDur
+  // underestimates or when estimate fallback (estDur + 2) is too short.
+  // Audio file naturally stops at EOF; sceneDur just sets the max window.
   if (isHttpUrl(tts.url)) {
     elements.push({
       type: 'audio', src: tts.url,
-      start: 0, duration: tts.duration,
+      start: 0, duration: sceneDur,
       volume: 1.0,
     });
   }

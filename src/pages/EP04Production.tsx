@@ -4134,10 +4134,13 @@ function EP04ProductionInner() {
           return ordered;
         };
 
-        // Collect all scene images + avatars — ordered by pipeline config step sequence
+        // Collect scene images for B-roll — EXCLUDE avatars and kinetic-text backgrounds.
+        // Avatars are headshots used for lipsync generation, not cinematic B-roll.
+        // Kinetic-text backgrounds are handled as dedicated interlude scenes (not pool images).
         const allImageEntries: [string, string][] = [
-          ...Object.entries(status.imageUrls || {}),
-          ...Object.entries(status.avatarUrls || {}),
+          ...Object.entries(status.imageUrls || {}).filter(([k]) =>
+            !k.includes('kinetic-text') && !k.includes('avatar-3d')
+          ),
         ].filter(([, u]) => isSafeUrl(u));
         const allImageVisuals: string[] = orderByPipelineConfig(allImageEntries, sceneKey, IMAGE_STEP_TYPES);
 
@@ -4294,6 +4297,17 @@ function EP04ProductionInner() {
             });
           }
         }
+
+        // ── Attach kinetic-text images from imageUrls bucket ──
+        // Kinetic-text backgrounds are stored with keys like "kinetic-text-scene-0-..."
+        // Match them to kineticTexts entries in order for dedicated interlude scenes.
+        const kineticImageEntries = Object.entries(status.imageUrls || {})
+          .filter(([k, u]) => k.includes('kinetic-text') && isSafeUrl(u as string));
+        kineticTexts.forEach((kt, idx) => {
+          if (idx < kineticImageEntries.length) {
+            (kt as any).imageUrl = kineticImageEntries[idx][1];
+          }
+        });
 
         // ── Compute SFX timings aligned to TTS narrative beats ──
         const sfxRawUrls = status.sfxUrls || [];
