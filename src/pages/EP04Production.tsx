@@ -4669,6 +4669,31 @@ function EP04ProductionInner() {
             while (perTtsImages.length < ch.allTtsUrls.length) {
               perTtsImages.push([]);
             }
+
+            // ── Carry-forward: fill empty groups with last image from nearest non-empty group ──
+            // TTS lines with 0 images (short reactions like "host-atlas-reaction")
+            // should inherit the previous speaker's B-roll for visual continuity,
+            // NOT fall back to random pool images (storybook-frame during a reaction = wrong).
+            for (let gi = 0; gi < perTtsImages.length; gi++) {
+              if (perTtsImages[gi].length === 0) {
+                // Look backward for nearest non-empty group
+                for (let bi = gi - 1; bi >= 0; bi--) {
+                  if (perTtsImages[bi].length > 0) {
+                    perTtsImages[gi] = [perTtsImages[bi][perTtsImages[bi].length - 1]];
+                    break;
+                  }
+                }
+                // If still empty (no preceding images), look forward
+                if (perTtsImages[gi].length === 0) {
+                  for (let fi = gi + 1; fi < perTtsImages.length; fi++) {
+                    if (perTtsImages[fi].length > 0) {
+                      perTtsImages[gi] = [perTtsImages[fi][0]];
+                      break;
+                    }
+                  }
+                }
+              }
+            }
           }
 
           console.log(`[EP04 PerTTS] ${ch.chapterId}: ${perTtsImages.length} groups →`,

@@ -558,17 +558,16 @@ function makeTtsLineScene(
     // ── Layer 1: Video B-roll lead-in (establishing shot) ──
     // z-index 3 (ABOVE lipsync) so the establishing shot is visible before
     // the speaker appears. Fades out to reveal the lipsync underneath.
-    // CRITICAL: Keep lead-in SHORT when lipsync exists — max 25% of lipsync
-    // duration so the speaker is visible for at least 75% of their screen time.
-    // Without this cap, a 15s lead-in covers a 16s lipsync almost entirely.
-    const maxLeadIn = Math.min(5, lipsyncDur * 0.25);
+    // Allow up to 8s for establishing shots (40% of lipsync) so the viewer
+    // sees the cinematic B-roll video prominently before the speaker appears.
+    const maxLeadIn = Math.min(8, lipsyncDur * 0.4);
     const VIDEO_LEAD_IN = isHttpUrl(videoVisual) ? Math.min(maxLeadIn, sceneDur * 0.2) : 0;
     if (isHttpUrl(videoVisual)) {
       elements.push({
         type: 'video', src: videoVisual,
         start: 0, duration: VIDEO_LEAD_IN,
         volume: 0, resize: 'cover', width: 1920, height: 1080,
-        'fade-in': 0.3, 'fade-out': 0.8, 'z-index': 3, // ABOVE lipsync — brief establishing shot
+        'fade-in': 0.3, 'fade-out': 0.8, 'z-index': 3, // ABOVE lipsync — establishing shot
       });
     }
 
@@ -584,6 +583,36 @@ function makeTtsLineScene(
       'z-index': 2, // above B-roll (z0), below establishing shot (z3)
       resize: 'cover', width: 1920, height: 1080,
     });
+
+    // ── Layer 2b: B-roll cutaway beats during lipsync (documentary-style) ──
+    // For scenes > 15s with images, insert brief (4s) image cutaways at z3
+    // (above lipsync) during the talking head section. This creates a visual
+    // rhythm — speaker → B-roll → speaker → B-roll — like documentary films.
+    // Without this, long scenes show ONLY the talking head during lipsync
+    // (images at z0 are covered), then abruptly switch to images in the tail.
+    const cutawayImages = (allImages && allImages.length > 0)
+      ? allImages.filter(u => isHttpUrl(u))
+      : [];
+    const cutawayWindow = lipsyncDur - VIDEO_LEAD_IN - 2;
+    if (cutawayImages.length > 0 && cutawayWindow > 6 && sceneDur > 12) {
+      const CUTAWAY_DUR = 4;       // each cutaway shows for 4s
+      const CUTAWAY_GAP = 4;       // 4s of talking head between cutaways
+      const CUTAWAY_CYCLE = CUTAWAY_DUR + CUTAWAY_GAP;
+      let cutawayTime = VIDEO_LEAD_IN + CUTAWAY_GAP;
+      let cutawayImgIdx = 0;
+      while (cutawayTime + CUTAWAY_DUR < lipsyncDur - 1) {
+        const img = cutawayImages[cutawayImgIdx % cutawayImages.length];
+        const kb = getKenBurns(kbIdx + 50 + cutawayImgIdx);
+        elements.push({
+          type: 'image', src: img,
+          start: cutawayTime, duration: CUTAWAY_DUR,
+          ...kb, resize: 'cover', width: 1920, height: 1080,
+          'fade-in': 0.6, 'fade-out': 0.6, 'z-index': 3,
+        });
+        cutawayTime += CUTAWAY_CYCLE;
+        cutawayImgIdx++;
+      }
+    }
 
     // ── Layer 3: Tail visuals — fills after lipsync ends ──
     // Cycle through per-TTS images (if multiple) for long post-lipsync sections.
