@@ -4281,9 +4281,12 @@ function EP04ProductionInner() {
             if (ttsEntry) lastPipelineTtsStart = ttsEntry.start;
           } else if (step.type === 'kinetic-text') {
             const text = (step as any).text as string;
+            // When kinetic text appears BEFORE any TTS in pipeline (lastPipelineTtsStart=0),
+            // place at t=0 so the interlude scene precedes the first spoken line.
+            // When it appears AFTER a TTS line, offset by 2s from that line's start.
             const ktStart = lastPipelineTtsStart > 0
               ? Math.min(lastPipelineTtsStart + 2, sceneDuration - 7)
-              : 5;
+              : 0;
             // Impact texts (short, dramatic) get jumping style; longer ones get word-by-word
             const isImpact = text.length < 80 && (
               text.includes('→') || text.includes('NOBODY') || text.includes('tasks.') ||
