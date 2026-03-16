@@ -579,11 +579,20 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
-    // Host intro transition (55s) — confessional journey
+    // Host intro transition (110s) — confessional journey — needs rich B-roll for long monologue
     { type: 'tts', voice: 'host', scriptKey: 'intro-transition' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'intro-transition' },
+    // B-roll: AI tool exploration montage — host's experimentation journey
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a human developer at a glowing desk with multiple holographic screens showing different AI tool logos and interfaces — Cursor IDE with code completion, Claude chat with architectural diagrams, Lovable with component previews, Bolt with rapid prototyping. Tools orbiting like planets around the developer. Each screen shows a different color palette (blue, terracotta, pink, green). Warm home office with scattered coffee cups, golden retriever sleeping underneath. Experimentation and discovery energy, cinematic lighting, 8K' },
+    // B-roll: One human, Two AIs — the breakthrough moment
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D dramatic illustration: a lone human figure standing at the center of a glowing triangle — LEFT vertex shows Atlas the blue-violet bear materializing from code particles, RIGHT vertex shows Nova the orange fox materializing from pink design sparkles. Golden connecting lines form between all three. Text overlay concept: "1 HUMAN + 2 AIs" floating above in holographic gold. Dark cinematic background with warm spotlight on the trio, scale and ambition energy, 8K' },
+    // B-roll: Vercel + Supabase infrastructure visual
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D tech illustration: a beautiful cloud infrastructure visualization — Vercel deployment pipeline shown as a sleek rocketship launching from a code editor, Supabase database shown as a glowing green vault with data streams flowing in and out, connected by golden API pipelines. Small Pixar-style characters (bear and fox) maintaining the infrastructure. Clean dark tech aesthetic with green and blue accent lighting, professional cinematic composition, 8K' },
+    // B-roll: Closing laptop — rest and velocity
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D emotional illustration: a warm sunset scene through a home office window. A human figure gently closes a laptop lid with a satisfied smile. On the screen before closing: a green "All Tests Passing" dashboard with zero blockers. A golden retriever lifts its head from a nap. Coffee mug with steam. The room glows with warm golden light. Peace and rest energy — the velocity that includes wellbeing. Cinematic depth of field, intimate moment, 8K' },
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
-    { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO actions dashboard — host introduces the sprint context before revealing Atlas and Nova. Focus on action items and team assignments.', enhanceMode: 'highlight', focusAreas: ['action-items', 'team-assignments', 'sprint-context'] },
+    // B-roll: Pixar-styled PO dashboard — cinematic version of the sprint context screenshot
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a stylized product owner dashboard floating holographically in a cozy office. The dashboard shows action items as glowing cards with status indicators — 5 green completed, 3 amber in-progress, 2 red blocked. Team assignments visible: "Atlas: Backend" in blue, "Nova: Frontend" in pink. Sprint velocity chart trending upward. Clean modern dark UI aesthetic with warm accent colors, professional data visualization in 3D, 8K' },
     // Host introduces Atlas (30s)
     { type: 'tts', voice: 'host', scriptKey: 'atlas-intro-host' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'atlas-intro-host' },
@@ -592,6 +601,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // Atlas self-intro (22s)
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-self-intro' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-self-intro' },
+    // B-roll: Atlas coding environment — holographic code editor and infrastructure
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the wise bear standing before a massive holographic code editor, TypeScript code scrolling rapidly in blue-white text. Behind him: server racks with blinking lights, database schema diagrams floating mid-air, a migration file counter showing "847 lines" in amber. His wire-frame glasses reflect the code. Blue-violet ambient glow, organized and precise engineering lab aesthetic, cinematic depth of field, 8K' },
     // Host reacts to Atlas (3s)
     { type: 'tts', voice: 'host', scriptKey: 'host-atlas-reaction' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-atlas-reaction' },
@@ -631,6 +642,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // Nova shy recovery (8s) — emotional transition out of scene 2
     { type: 'tts', voice: 'nova', scriptKey: 'nova-shy-recovery' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-shy-recovery' },
+    // B-roll: The team partnership — three characters ready for the sprint
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D wide-angle illustration: the complete podcast studio — warm lamplight casting long shadows. Host sits center with laptop, Atlas the bear stands left with holographic backend diagrams, Nova the fox sits right with floating UI components. A golden retriever sleeps between them. Tiny squirrel perches on a bookshelf above. Fireflies drift through the warm air. The scene radiates partnership and readiness — a team about to build something remarkable. Cinematic golden-hour lighting, 8K' },
     // Bridge narrator: scene 2 → scene 3 (8s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-2-to-3' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-2-to-3' },

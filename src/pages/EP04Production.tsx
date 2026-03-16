@@ -2619,8 +2619,8 @@ function EP04ProductionInner() {
       // the CURRENT run's output. Replacing videoUrls/imageUrls with only current results
       // would WIPE all previously generated assets that were skipped.
       const existingStatus = (forceRegenAll && !onlyTypes) ? defaultSceneStatus() : (sceneProduction[sceneKey] || defaultSceneStatus());
-      const newVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition')).filter(httpOnly));
-      const newImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ).filter(httpOnly));
+      const newVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition') || k.includes('ai-screen-enhance')).filter(httpOnly));
+      const newImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ).filter(httpOnly));
       const newAvatarUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')).filter(httpOnly));
       const newLipsyncUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_')).filter(httpOnly));
 
@@ -4078,12 +4078,13 @@ function EP04ProductionInner() {
         // appear in the same sequence the pipeline config declares, regardless of
         // result key suffixes (timestamps, counters, etc.).
         const IMAGE_STEP_TYPES = new Set([
-          'alibaba-image', 'storybook-frame', 'screen-capture', 'ai-screen-enhance',
+          'alibaba-image', 'storybook-frame', 'screen-capture',
           'kinetic-text', 'motion-graphics', 'static-asset', 'avatar-3d',
         ]);
         const VIDEO_STEP_TYPES = new Set([
           'alibaba-video', 'character-interaction', 'character-motion',
           'character-animate-3d', 'narrator-scroll', 'scene-transition',
+          'ai-screen-enhance',
         ]);
 
         const orderByPipelineConfig = (
