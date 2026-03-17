@@ -131,10 +131,11 @@ def _build_zoompan_filter(elem: ElementInstruction, img_dur: float,
         total_frames = 150  # absolute minimum ~5 seconds
 
     # Guard: ensure zoom_amount is positive and sensible
-    zoom_amount = max(0.01, min(0.5, elem.zoom_amount or 0.03))
+    # Professional Ken Burns: 15-25% zoom. Values 3-5 were too subtle.
+    zoom_amount = max(0.05, min(0.5, elem.zoom_amount or 0.18))
     zoom_rate = zoom_amount / total_frames  # per-frame zoom rate
-    # Clamp zoom rate for visible motion (wider range for more dramatic Ken Burns)
-    zoom_rate = max(0.0001, min(0.003, zoom_rate))
+    # Clamp zoom rate — allow up to 0.005 for dramatic motion on short clips
+    zoom_rate = max(0.0002, min(0.005, zoom_rate))
 
     # Determine zoom expression
     if elem.zoom_direction == "out":
@@ -149,9 +150,10 @@ def _build_zoompan_filter(elem: ElementInstruction, img_dur: float,
     x_expr = "(iw-iw/zoom)/2"
     y_expr = "(ih-ih/zoom)/2"
 
-    # Add pan direction — supports compound directions (top-left, bottom-right, etc.)
-    pan_dist = max(0, min(1.0, elem.pan_distance or 0.1))
-    pan_px = max(1, min(10, int(pan_dist * width / total_frames)))
+    # Pan direction — distribute pan evenly across all frames for smooth motion
+    # With higher zoom (18-25%), there's more headroom for visible panning
+    pan_dist = max(0, min(1.0, elem.pan_distance or 0.18))
+    pan_px = max(1, min(15, int(pan_dist * width / total_frames)))
     pan = (elem.pan_direction or "").lower().strip()
 
     # Parse compound direction into horizontal + vertical components

@@ -167,14 +167,14 @@ export const DEFAULT_CAST_THEME: CastTheme = {
 // pan-distance range: 0.01-0.5 (API default: 0.1). We use 0.08-0.12 for visible drift.
 // Combined: subtle 3-5% zoom-in with gentle directional glide across the frame.
 const KEN_BURNS_PATTERNS = [
-  { zoom: 3, pan: 'left'         as const, 'pan-distance': 0.12 },
-  { zoom: 4, pan: 'right'        as const, 'pan-distance': 0.10 },
-  { zoom: 3, pan: 'top-left'     as const, 'pan-distance': 0.12 },
-  { zoom: 4, pan: 'bottom-right' as const, 'pan-distance': 0.10 },
-  { zoom: 5, pan: 'top'          as const, 'pan-distance': 0.10 },
-  { zoom: 3, pan: 'bottom'       as const, 'pan-distance': 0.08 },
-  { zoom: 4, pan: 'bottom-left'  as const, 'pan-distance': 0.10 },
-  { zoom: 5, pan: 'top-right'    as const, 'pan-distance': 0.12 },
+  { zoom: 18, pan: 'left'         as const, 'pan-distance': 0.20 },
+  { zoom: 22, pan: 'right'        as const, 'pan-distance': 0.18 },
+  { zoom: 18, pan: 'top-left'     as const, 'pan-distance': 0.22 },
+  { zoom: 22, pan: 'bottom-right' as const, 'pan-distance': 0.18 },
+  { zoom: 25, pan: 'top'          as const, 'pan-distance': 0.15 },
+  { zoom: 18, pan: 'bottom'       as const, 'pan-distance': 0.15 },
+  { zoom: 22, pan: 'bottom-left'  as const, 'pan-distance': 0.20 },
+  { zoom: 25, pan: 'top-right'    as const, 'pan-distance': 0.22 },
 ];
 
 // Scene transition styles cycled between TTS-line scenes (FALLBACK — mood-based preferred)
