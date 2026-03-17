@@ -43,7 +43,7 @@ import { buildCastTimeline, type CastChapter, type CastTransition, type CastBook
 import { Save, FolderOpen } from 'lucide-react';
 
 // ── Build version — check console to verify you're on latest deploy ──
-const EP04_BUILD = 'v2026-03-11-B';
+const EP04_BUILD = 'v2026-03-17-A';
 console.log(`%c[EP04] Build ${EP04_BUILD} loaded`, 'color: #22c55e; font-weight: bold; font-size: 14px;');
 // Session-level cache-buster — bypasses corrupted browser disk cache entries
 const MEDIA_CACHE_BUST = `cb=${Date.now()}`;
