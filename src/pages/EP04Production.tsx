@@ -1595,9 +1595,9 @@ function EP04ProductionInner() {
       return;
     }
 
-    // ── ai-screen-enhance: route through ai-video-generator with referenceImage ──
-    // ai-universal-processor has no image-to-image support; ai-video-generator
-    // accepts referenceImage and passes it to Alibaba WAN i2v for enhancement.
+    // ── ai-screen-enhance: I2I enhancement via ai-universal-processor ──
+    // Routes through image_generation with ref_image_url to produce a full-res
+    // enhanced screenshot (NOT a video clip). Results flow into imageUrls.
     if (stepType === 'ai-screen-enhance') {
       const screenIds = (step.screenIds as string[]) || [];
       const enhanceMode = (step.enhanceMode as string) || 'highlight';
@@ -1615,28 +1615,31 @@ function EP04ProductionInner() {
         let jobId: string | null = null;
         if (projectId) {
           jobId = await trackGenerationJob({
-            projectId, jobType: 'video', sceneKey, provider: 'alibaba', estimatedTokens: 1,
+            projectId, jobType: 'image', sceneKey, provider: 'alibaba', estimatedTokens: 1,
           });
         }
 
-        const { data, error } = await supabase.functions.invoke('ai-video-generator', {
+        const enhancePrompt = `High-resolution cinematic screenshot of a software dashboard. ${enhanceMode} mode: ${scriptContext}. Focus areas: ${focusAreas.join(', ') || 'full screen'}. Clean, sharp, professional UI with clear text and data visualizations. 1920x1080 resolution.`;
+
+        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
-            type: 'video',
-            prompt: `${enhanceMode} mode: ${scriptContext}. Focus: ${focusAreas.join(', ') || 'auto'}`,
-            referenceImage: sourceUrl,
-            model: 'wan2.6-i2v',
-            duration: 3,
+            action: 'image_generation',
+            prompt: enhancePrompt,
+            ref_image_url: sourceUrl,
+            provider: 'alibaba',
+            model: 'wan2.6-t2i',
+            width: 1920,
+            height: 1080,
           },
         });
         if (error) { toast.error(`${stepLabel} enhance "${sid}" failed: ${error.message}`); continue; }
-        let url = data?.url || data?.videoUrl || data?.imageUrl;
-        // WAN i2v is always async — poll for result
+        let url = data?.url || data?.imageUrl || data?.videoUrl;
         if (!url && data?.asyncGeneration && data?.taskId) {
           toast.info(`${stepLabel}: enhancing "${sid}"... polling for result`);
           url = await pollVideoTaskResult(data.taskId);
         }
         if (url && projectId && !isSupabaseStorageUrl(url)) {
-          try { url = await ensureStorageUrl(projectId, `ai-screen-enhance-${sid}`, url, 'video'); } catch { /* keep original */ }
+          try { url = await ensureStorageUrl(projectId, `ai-screen-enhance-${sid}`, url, 'image'); } catch { /* keep original */ }
         }
         if (url) results[`ai-screen-enhance-${sid}`] = url;
         if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba');
@@ -2671,8 +2674,8 @@ function EP04ProductionInner() {
       // the CURRENT run's output. Replacing videoUrls/imageUrls with only current results
       // would WIPE all previously generated assets that were skipped.
       const existingStatus = (forceRegenAll && !onlyTypes) ? defaultSceneStatus() : (sceneProduction[sceneKey] || defaultSceneStatus());
-      const newVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition') || k.includes('ai-screen-enhance')).filter(httpOnly));
-      const newImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ).filter(httpOnly));
+      const newVideoUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('video') || k.includes('character-interaction') || k.includes('character-motion') || k.includes('character-animate-3d') || k.includes('narrator-scroll') || k.includes('scene-transition')).filter(httpOnly));
+      const newImageUrls = Object.fromEntries(Object.entries(results).filter(([k]) => (k.includes('image') || k.includes('kinetic') || k.includes('screen-capture') || k.includes('ai-screen-enhance') || k.includes('storybook-frame') || k.includes('static-asset') || (k.includes('motion') && !k.includes('character-motion'))) ).filter(httpOnly));
       const newAvatarUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('avatar-3d')).filter(httpOnly));
       const newLipsyncUrls = Object.fromEntries(Object.entries(results).filter(([k]) => k.includes('lipsync') && !k.startsWith('_')).filter(httpOnly));
 
@@ -4132,13 +4135,12 @@ function EP04ProductionInner() {
         // appear in the same sequence the pipeline config declares, regardless of
         // result key suffixes (timestamps, counters, etc.).
         const IMAGE_STEP_TYPES = new Set([
-          'alibaba-image', 'storybook-frame', 'screen-capture',
+          'alibaba-image', 'storybook-frame', 'screen-capture', 'ai-screen-enhance',
           'kinetic-text', 'motion-graphics', 'static-asset', 'avatar-3d',
         ]);
         const VIDEO_STEP_TYPES = new Set([
           'alibaba-video', 'character-interaction', 'character-motion',
           'character-animate-3d', 'narrator-scroll', 'scene-transition',
-          'ai-screen-enhance',
         ]);
 
         const orderByPipelineConfig = (
@@ -4634,7 +4636,7 @@ function EP04ProductionInner() {
           const pipeSteps = Array.isArray(pSteps) ? pSteps : [];
 
           // Image types that survive into regularImages pool
-          const poolImgTypes = new Set(['alibaba-image', 'screen-capture', 'motion-graphics', 'static-asset']);
+          const poolImgTypes = new Set(['alibaba-image', 'screen-capture', 'ai-screen-enhance', 'motion-graphics', 'static-asset']);
           if (ch.chapterId === targetSceneKeys[0]) poolImgTypes.add('storybook-frame');
 
           // TTS scriptKeys in this part (handles sub-parts correctly)
@@ -4752,6 +4754,14 @@ function EP04ProductionInner() {
             perTtsImages.map((g, idx) => `TTS#${idx}:${g.length}img(${Math.round(ttsLineDurations[idx] || 0)}s)`).join(', '));
         }
 
+        // Collect screenshot-enhanced URLs for gentle Ken Burns
+        const screenshotUrls: string[] = [];
+        for (const [key, url] of Object.entries(status.imageUrls || {})) {
+          if (isHttpUrl(url) && (key.includes('ai-screen-enhance') || key.includes('screen-capture'))) {
+            screenshotUrls.push(url);
+          }
+        }
+
         return {
           id: ch.chapterId,
           title: ch.product,
@@ -4765,6 +4775,7 @@ function EP04ProductionInner() {
           musicLoop: ch.musicLoop,
           sfxTimings: ch.sfxTimings,
           kineticTexts,
+          screenshotUrls,
         };
       });
 

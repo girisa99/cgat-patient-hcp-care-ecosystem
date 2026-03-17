@@ -49,6 +49,7 @@ export interface CastChapter {
   musicLoop?: boolean;
   sfxTimings?: Array<{ url: string; start: number; duration: number }>;
   kineticTexts?: CastKineticText[];
+  screenshotUrls?: string[];   // URLs that are enhanced screenshots (get gentle Ken Burns)
 }
 
 export interface CastTransition {
@@ -229,6 +230,21 @@ function isHttpUrl(url: string | undefined | null): url is string {
 
 function getKenBurns(idx: number) {
   return KEN_BURNS_PATTERNS[idx % KEN_BURNS_PATTERNS.length];
+}
+
+// Screenshot-specific Ken Burns — minimal zoom (5-8%) to keep text readable.
+// UI screenshots have data, charts, text — heavy zoom makes them illegible.
+const SCREENSHOT_KB_PATTERNS = [
+  { zoom: 5, pan: 'left'          as const, 'pan-distance': 0.08 },
+  { zoom: 6, pan: 'right'         as const, 'pan-distance': 0.06 },
+  { zoom: 5, pan: 'top'           as const, 'pan-distance': 0.08 },
+  { zoom: 8, pan: 'bottom'        as const, 'pan-distance': 0.06 },
+  { zoom: 6, pan: 'top-left'      as const, 'pan-distance': 0.08 },
+  { zoom: 5, pan: 'bottom-right'  as const, 'pan-distance': 0.06 },
+];
+
+function getScreenshotKenBurns(idx: number) {
+  return SCREENSHOT_KB_PATTERNS[idx % SCREENSHOT_KB_PATTERNS.length];
 }
 
 /** Filter out elements with invalid duration or missing src */
@@ -522,6 +538,7 @@ function makeTtsLineScene(
   kbIdx: number,
   transitionStyle: string,
   allImages?: string[],  // full image pool for cycling in long scenes
+  screenshotUrlSet?: Set<string>,  // screenshot URLs get gentle Ken Burns
 ): J2VScene {
   const elements: J2VElement[] = [];
 
@@ -560,7 +577,7 @@ function makeTtsLineScene(
       const beatDur = sceneDur / beatCount;
       for (let bi = 0; bi < beatCount; bi++) {
         const img = bgImages[(kbIdx + bi) % bgImages.length];
-        const kb = getKenBurns(kbIdx + bi);
+        const kb = screenshotUrlSet?.has(img) ? getScreenshotKenBurns(kbIdx + bi) : getKenBurns(kbIdx + bi);
         elements.push({
           type: 'image', src: img,
           start: bi * beatDur, duration: beatDur + (bi < beatCount - 1 ? 0.5 : 0),
@@ -621,7 +638,7 @@ function makeTtsLineScene(
         const beatDur = remainDur / beatCount;
         for (let bi = 0; bi < beatCount; bi++) {
           const img = cycleImages[(kbIdx + bi) % cycleImages.length];
-          const kb = getKenBurns(kbIdx + bi);
+          const kb = screenshotUrlSet?.has(img) ? getScreenshotKenBurns(kbIdx + bi) : getKenBurns(kbIdx + bi);
           elements.push({
             type: 'image', src: img,
             start: remainStart + bi * beatDur, duration: beatDur + 0.5, // 0.5s overlap for crossfade
@@ -640,7 +657,7 @@ function makeTtsLineScene(
         const beatDur = sceneDur / beatCount;
         for (let bi = 0; bi < beatCount; bi++) {
           const img = cycleImages[(kbIdx + bi) % cycleImages.length];
-          const kb = getKenBurns(kbIdx + bi);
+          const kb = screenshotUrlSet?.has(img) ? getScreenshotKenBurns(kbIdx + bi) : getKenBurns(kbIdx + bi);
           elements.push({
             type: 'image', src: img,
             start: bi * beatDur, duration: beatDur + (bi < beatCount - 1 ? 0.5 : 0), // overlap for crossfade
@@ -836,7 +853,8 @@ function injectSubtitles(
 function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, mood?: string): J2VScene[] {
   const scenes: J2VScene[] = [];
   const { ttsLines, lipsyncClips, videos, images, kineticTexts, musicUrl, musicLoop, sfxTimings } = chapter;
-  console.log(`[CastTimeline] buildChapterScenes "${chapter.id}": ${videos.length} videos, ${images.length} images, ${ttsLines.length} TTS, ${lipsyncClips.length} lipsync`);
+  const screenshotUrlSet = new Set(chapter.screenshotUrls || []);
+  console.log(`[CastTimeline] buildChapterScenes "${chapter.id}": ${videos.length} videos, ${images.length} images, ${ttsLines.length} TTS, ${lipsyncClips.length} lipsync, ${screenshotUrlSet.size} screenshots`);
 
   // No TTS → single visual scene
   if (ttsLines.length === 0) {
@@ -850,7 +868,7 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
         'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
       });
     } else if (images.length > 0 && isHttpUrl(images[0])) {
-      const kb = getKenBurns(0);
+      const kb = screenshotUrlSet.has(images[0]) ? getScreenshotKenBurns(0) : getKenBurns(0);
       elements.push({
         type: 'image', src: images[0],
         start: 0, duration: dur,
@@ -1049,6 +1067,7 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
       kbIdx++,
       transStyle,
       sceneImages, // per-TTS images for cycling (semantic) or full pool (fallback)
+      screenshotUrlSet,
     ));
   }
 
