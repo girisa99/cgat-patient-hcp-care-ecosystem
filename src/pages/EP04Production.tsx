@@ -6264,27 +6264,24 @@ function EP04ProductionInner() {
                           )}
                           {/* Regenerate buttons for completed/errored scenes */}
                           {(status?.visual === 'done' || status?.visual === 'error') && (
-                            <div className="flex gap-1 mt-1">
-                              {/* Regen All — clears ALL state and regenerates everything with latest prompts */}
+                            <div className="flex flex-col gap-1 mt-1">
+                              {/* Row 1: Regen All + Lipsync + Images */}
+                              <div className="flex gap-1">
                               <Button
-                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                                size="sm" variant="outline" className="flex-1 h-6 text-[9px] px-1 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
                                 onClick={() => {
-                                  // Pass forceRegenAll=true to bypass smart-skip entirely (fixes async state race)
                                   startSceneVisualProduction(sceneKey, undefined, true);
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >
-                                <Film className="h-3 w-3 mr-1" />
-                                Regen All
+                                <Film className="h-2.5 w-2.5 mr-0.5" />
+                                All
                               </Button>
-                              {/* Regenerate Lipsync Only — clears lipsync URLs, re-runs avatar-lipsync steps */}
                               <Button
-                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
+                                size="sm" variant="outline" className="flex-1 h-6 text-[9px] px-1 border-purple-500/30 text-purple-600 hover:bg-purple-500/10"
                                 onClick={() => {
-                                  // Clear ONLY lipsync entries that are missing/empty — preserve existing successful ones
                                   setSceneProduction(prev => {
                                     const existing = prev[sceneKey] || defaultSceneStatus();
-                                    // Keep lipsync entries that have valid Supabase URLs, clear the rest
                                     const keptLipsync: Record<string, string> = {};
                                     for (const [k, url] of Object.entries(existing.lipsyncUrls || {})) {
                                       if (url && url.includes('supabase.co/storage')) {
@@ -6302,42 +6299,43 @@ function EP04ProductionInner() {
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >
-                                <Mic className="h-3 w-3 mr-1" />
-                                Regen Lipsync
+                                <Mic className="h-2.5 w-2.5 mr-0.5" />
+                                Lipsync
                               </Button>
-                              {/* Regenerate Images & Avatars — preserves existing videos + lipsync */}
                               <Button
-                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-cyan-500/30 text-cyan-600 hover:bg-cyan-500/10"
+                                size="sm" variant="outline" className="flex-1 h-6 text-[9px] px-1 border-cyan-500/30 text-cyan-600 hover:bg-cyan-500/10"
                                 onClick={() => {
                                   startSceneVisualProduction(sceneKey, new Set(['alibaba-image', 'storybook-frame', 'static-asset', 'kinetic-text', 'avatar-3d', 'motion-graphics', 'ai-screen-enhance', 'screen-capture']));
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >
-                                <ImageIcon className="h-3 w-3 mr-1" />
-                                Regen Images
+                                <ImageIcon className="h-2.5 w-2.5 mr-0.5" />
+                                Images
                               </Button>
-                              {/* Regenerate I2I Screenshots Only — re-enhances screen captures */}
+                              </div>
+                              {/* Row 2: I2I + Videos */}
+                              <div className="flex gap-1">
                               <Button
-                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
+                                size="sm" variant="outline" className="flex-1 h-6 text-[9px] px-1 border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
                                 onClick={() => {
                                   startSceneVisualProduction(sceneKey, new Set(['ai-screen-enhance', 'screen-capture']));
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >
-                                <ImageIcon className="h-3 w-3 mr-1" />
-                                Regen I2I
+                                <ImageIcon className="h-2.5 w-2.5 mr-0.5" />
+                                I2I
                               </Button>
-                              {/* Generate New Videos + Body Animation — preserves existing images */}
                               <Button
-                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-green-500/30 text-green-600 hover:bg-green-500/10"
+                                size="sm" variant="outline" className="flex-1 h-6 text-[9px] px-1 border-green-500/30 text-green-600 hover:bg-green-500/10"
                                 onClick={() => {
                                   startSceneVisualProduction(sceneKey, new Set(['alibaba-video', 'character-motion', 'character-animate-3d']));
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >
-                                <ImageIcon className="h-3 w-3 mr-1" />
-                                New Videos
+                                <Film className="h-2.5 w-2.5 mr-0.5" />
+                                Videos
                               </Button>
+                              </div>
                             </div>
                           )}
 
