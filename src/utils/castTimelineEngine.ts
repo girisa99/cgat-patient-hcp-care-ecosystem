@@ -1149,15 +1149,26 @@ function splitLongScenes(scenes: J2VScene[]): J2VScene[] {
       const subElements: J2VElement[] = [];
 
       // ── Visual: cycling Ken Burns images ──
+      // Distribute ALL images across each sub-scene with beat-based cycling,
+      // matching the pattern used in makeTtsLineScene. Each sub-scene gets
+      // a slideshow of images cycling every VISUAL_BEAT seconds — NOT a
+      // single static image. The kbIdx offset ensures visual variety across
+      // sub-scenes (sub-scene 2 starts at a different Ken Burns pattern).
       if (imageUrls.length > 0) {
-        const imgUrl = imageUrls[si % imageUrls.length];
-        const kb = getKenBurns(si);
-        subElements.push({
-          type: 'image', src: imgUrl,
-          start: 0, duration: thisDur,
-          ...kb, resize: 'cover', width: 1920, height: 1080,
-          'fade-in': 0.3, 'fade-out': 0.3, 'z-index': 0,
-        });
+        const VISUAL_BEAT = 12;
+        const beatCount = Math.max(1, Math.ceil(thisDur / VISUAL_BEAT));
+        const beatDur = thisDur / beatCount;
+        const kbOffset = si * beatCount; // offset Ken Burns index per sub-scene
+        for (let bi = 0; bi < beatCount; bi++) {
+          const img = imageUrls[(kbOffset + bi) % imageUrls.length];
+          const kb = getKenBurns(kbOffset + bi);
+          subElements.push({
+            type: 'image', src: img,
+            start: bi * beatDur, duration: beatDur + (bi < beatCount - 1 ? 0.5 : 0),
+            ...kb, resize: 'cover', width: 1920, height: 1080,
+            'fade-in': 0.5, 'fade-out': 0.5, 'z-index': 0,
+          });
+        }
       }
 
       // ── Videos: only in the sub-scene where they overlap ──

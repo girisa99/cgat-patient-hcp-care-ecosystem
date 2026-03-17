@@ -4722,31 +4722,27 @@ function EP04ProductionInner() {
           for (let gi = 0; gi < perTtsImages.length; gi++) {
             const dur = ttsLineDurations[gi] || 0;
             const minImages = dur > 60 ? 4 : dur > 30 ? 3 : dur > 15 ? 2 : 1;
-            if (perTtsImages[gi].length < minImages && regularImages.length > perTtsImages[gi].length) {
+            if (perTtsImages[gi].length < minImages && regularImages.length > 0) {
               const existingSet = new Set(perTtsImages[gi]);
               const extras = regularImages.filter(u => !existingSet.has(u));
               const needed = minImages - perTtsImages[gi].length;
-              perTtsImages[gi].push(...extras.slice(0, needed));
+              if (extras.length >= needed) {
+                perTtsImages[gi].push(...extras.slice(0, needed));
+              } else {
+                // Not enough unique extras — cycle through full pool
+                perTtsImages[gi] = [...regularImages];
+              }
             }
           }
 
-          // ── Carry-forward: fill empty groups from nearest non-empty group ──
+          // ── Carry-forward: fill empty groups from the FULL image pool ──
+          // Previous version only carried 1 image from nearest neighbor → no cycling.
+          // Now: empty groups get the ENTIRE regularImages pool so the timeline engine
+          // can cycle through all available visuals during that TTS line.
           for (let gi = 0; gi < perTtsImages.length; gi++) {
-            if (perTtsImages[gi].length === 0) {
-              for (let bi = gi - 1; bi >= 0; bi--) {
-                if (perTtsImages[bi].length > 0) {
-                  perTtsImages[gi] = [perTtsImages[bi][perTtsImages[bi].length - 1]];
-                  break;
-                }
-              }
-              if (perTtsImages[gi].length === 0) {
-                for (let fi = gi + 1; fi < perTtsImages.length; fi++) {
-                  if (perTtsImages[fi].length > 0) {
-                    perTtsImages[gi] = [perTtsImages[fi][0]];
-                    break;
-                  }
-                }
-              }
+            if (perTtsImages[gi].length === 0 && regularImages.length > 0) {
+              // Give the full pool — timeline engine will cycle with Ken Burns
+              perTtsImages[gi] = [...regularImages];
             }
           }
 
