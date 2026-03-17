@@ -6309,12 +6309,23 @@ function EP04ProductionInner() {
                               <Button
                                 size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-cyan-500/30 text-cyan-600 hover:bg-cyan-500/10"
                                 onClick={() => {
-                                  startSceneVisualProduction(sceneKey, new Set(['alibaba-image', 'storybook-frame', 'static-asset', 'kinetic-text', 'avatar-3d', 'motion-graphics']));
+                                  startSceneVisualProduction(sceneKey, new Set(['alibaba-image', 'storybook-frame', 'static-asset', 'kinetic-text', 'avatar-3d', 'motion-graphics', 'ai-screen-enhance', 'screen-capture']));
                                 }}
                                 disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
                               >
                                 <ImageIcon className="h-3 w-3 mr-1" />
                                 Regen Images
+                              </Button>
+                              {/* Regenerate I2I Screenshots Only — re-enhances screen captures */}
+                              <Button
+                                size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
+                                onClick={() => {
+                                  startSceneVisualProduction(sceneKey, new Set(['ai-screen-enhance', 'screen-capture']));
+                                }}
+                                disabled={status?.visual === 'generating' || pipelineSteps.length === 0}
+                              >
+                                <ImageIcon className="h-3 w-3 mr-1" />
+                                Regen I2I
                               </Button>
                               {/* Generate New Videos + Body Animation — preserves existing images */}
                               <Button
