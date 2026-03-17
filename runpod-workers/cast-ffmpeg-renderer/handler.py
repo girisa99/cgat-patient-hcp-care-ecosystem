@@ -38,7 +38,7 @@ import subprocess
 import urllib.request
 import urllib.error
 
-WORKER_VERSION = "2.3"
+WORKER_VERSION = "2.4"
 MAX_FILE_SIZE_MB = 80  # Re-encode if output exceeds this
 
 print("[CastRenderer] Starting handler.py — importing modules...", flush=True)

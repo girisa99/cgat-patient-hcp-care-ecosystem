@@ -400,11 +400,17 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
                   f"{scene.duration:.1f}s → {elem_end + 0.5:.1f}s (lipsync protection)")
             scene.duration = elem_end + 0.5
 
-    # After duration extension, stretch background images to fill the new duration
+    # After duration extension, stretch background image to fill the new duration
     # so Ken Burns doesn't freeze before the scene ends (showing dark base color).
-    for elem in scene.elements:
-        if elem.type == "image" and elem.start == 0 and elem.duration < scene.duration:
-            elem.duration = scene.duration
+    # ONLY for single-image scenes — multi-image scenes use xfade slideshow
+    # where each image must keep its individual duration for correct cycling.
+    image_count = sum(1 for e in scene.elements if e.type == "image")
+    if image_count <= 1:
+        for elem in scene.elements:
+            if elem.type == "image" and elem.start == 0 and elem.duration < scene.duration:
+                elem.duration = scene.duration
+    else:
+        print(f"  [render] Scene {scene.index}: {image_count} images — keeping individual durations for slideshow")
 
     # ── Phase 0: Pre-render overlays ──
     overlays = _pre_render_overlays(scene, width, height)
