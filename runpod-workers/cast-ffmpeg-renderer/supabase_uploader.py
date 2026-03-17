@@ -291,11 +291,19 @@ def upload_final_video(
     if not video_url:
         print("  [upload] ERROR: Video upload FAILED!", flush=True)
 
-    # Generate + upload thumbnail
+    # Generate + upload thumbnail — pick a representative frame (15% into video)
+    # Default 2s grabs chapter headers; 15% gets actual content
     thumb_path = "/tmp/cast_overlays/thumbnail.jpg"
     os.makedirs("/tmp/cast_overlays", exist_ok=True)
     thumb_url = None
-    if generate_thumbnail(video_path, thumb_path):
+    try:
+        from ffmpeg_builder import get_video_duration
+        vid_dur = get_video_duration(video_path)
+        thumb_time = max(5.0, min(60.0, vid_dur * 0.15))
+    except Exception:
+        thumb_time = 10.0
+    print(f"  [thumbnail] Extracting frame at t={thumb_time:.1f}s", flush=True)
+    if generate_thumbnail(video_path, thumb_path, time_sec=thumb_time):
         thumb_url = upload_to_supabase(
             thumb_path, supabase_url, supabase_key,
             bucket, thumb_storage_path, "image/jpeg",
