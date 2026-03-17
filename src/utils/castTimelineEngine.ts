@@ -57,6 +57,7 @@ export interface CastChapter {
   videos: string[];            // B-roll video URLs (non-lipsync)
   images: string[];            // B-roll image URLs (non-kinetic, including avatars)
   perTtsImages?: string[][];   // per-TTS-line image groups from pipeline config (semantic mapping)
+  perTtsVideos?: string[][];   // per-TTS-line video groups from pipeline config (semantic mapping)
   musicUrl?: string;
   musicLoop?: boolean;
   sfxTimings?: Array<{ url: string; start: number; duration: number }>;
@@ -849,6 +850,8 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, pro
 
   const perTtsImages = chapter.perTtsImages;
   const hasSemanticMapping = perTtsImages && perTtsImages.length > 0;
+  const perTtsVideos = chapter.perTtsVideos;
+  const hasVideoMapping = perTtsVideos && perTtsVideos.length > 0;
 
   const kineticWithImages = (kineticTexts || [])
     .filter(kt => isHttpUrl(kt.imageUrl))
@@ -894,10 +897,20 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, pro
     let tailImageVisual: string | undefined;
     let sceneImages: string[];
 
-    if (!lipsync) {
-      if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
-        videoVisual = videos[videoPoolIdx++];
+    // ── Pick video: semantic per-TTS mapping when available, else sequential pool ──
+    const pickVideo = (): string | undefined => {
+      if (hasVideoMapping && perTtsVideos![i]) {
+        const vids = perTtsVideos![i].filter(u => isHttpUrl(u));
+        if (vids.length > 0) return vids[0]; // first video for this TTS line
       }
+      if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
+        return videos[videoPoolIdx++];
+      }
+      return undefined;
+    };
+
+    if (!lipsync) {
+      videoVisual = pickVideo();
       if (useSemanticImages) {
         imageVisual = ttsImageGroup[0];
         sceneImages = ttsImageGroup;
@@ -914,9 +927,7 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, pro
         sceneImages = images;
       }
     } else {
-      if (videoPoolIdx < videos.length && isHttpUrl(videos[videoPoolIdx])) {
-        videoVisual = videos[videoPoolIdx++];
-      }
+      videoVisual = pickVideo();
       if (useSemanticImages) {
         tailImageVisual = ttsImageGroup[0];
         sceneImages = ttsImageGroup;
