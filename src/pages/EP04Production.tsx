@@ -4667,51 +4667,89 @@ function EP04ProductionInner() {
           // Add pre-TTS images to the first group (storybook-frame belongs with intro TTS)
           if (imgCountPerTts.length > 0) imgCountPerTts[0] += preFirstTtsCount;
 
-          // Slice regularImages into per-TTS groups
+          // ── PRODUCTION FIX (2026-03-16): Always build perTtsImages ──
+          // Previous code skipped this entirely when totalExpected > regularImages.length
+          // (i.e., when even 1 image failed to generate). Now we ALWAYS distribute,
+          // handling mismatches gracefully with proportional allocation.
           const totalExpected = imgCountPerTts.reduce((s, c) => s + c, 0);
-          if (totalExpected <= regularImages.length && imgCountPerTts.length > 0) {
-            let offset = 0;
-            for (const count of imgCountPerTts) {
-              perTtsImages.push(regularImages.slice(offset, offset + count));
-              offset += count;
-            }
-            // Append any unmatched images (extra results) to last group
-            if (offset < regularImages.length && perTtsImages.length > 0) {
-              perTtsImages[perTtsImages.length - 1].push(...regularImages.slice(offset));
-            }
-            // Pad with empty arrays for TTS lines beyond pipeline steps
-            while (perTtsImages.length < ch.allTtsUrls.length) {
-              perTtsImages.push([]);
-            }
 
-            // ── Carry-forward: fill empty groups with last image from nearest non-empty group ──
-            // TTS lines with 0 images (short reactions like "host-atlas-reaction")
-            // should inherit the previous speaker's B-roll for visual continuity,
-            // NOT fall back to random pool images (storybook-frame during a reaction = wrong).
-            for (let gi = 0; gi < perTtsImages.length; gi++) {
-              if (perTtsImages[gi].length === 0) {
-                // Look backward for nearest non-empty group
-                for (let bi = gi - 1; bi >= 0; bi--) {
-                  if (perTtsImages[bi].length > 0) {
-                    perTtsImages[gi] = [perTtsImages[bi][perTtsImages[bi].length - 1]];
-                    break;
-                  }
+          if (imgCountPerTts.length > 0 && regularImages.length > 0) {
+            if (totalExpected <= regularImages.length) {
+              // Exact match or surplus — slice as planned
+              let offset = 0;
+              for (const count of imgCountPerTts) {
+                perTtsImages.push(regularImages.slice(offset, offset + count));
+                offset += count;
+              }
+              // Append extras to last group
+              if (offset < regularImages.length && perTtsImages.length > 0) {
+                perTtsImages[perTtsImages.length - 1].push(...regularImages.slice(offset));
+              }
+            } else {
+              // Fewer images than expected — distribute proportionally (never skip!)
+              console.warn(`[EP04 PerTTS] ${ch.chapterId}: ${regularImages.length} images < ${totalExpected} expected — distributing proportionally`);
+              let offset = 0;
+              for (const count of imgCountPerTts) {
+                const share = totalExpected > 0
+                  ? Math.max(0, Math.round(count / totalExpected * regularImages.length))
+                  : 0;
+                const actual = Math.min(share, regularImages.length - offset);
+                perTtsImages.push(regularImages.slice(offset, offset + actual));
+                offset += actual;
+              }
+              // Give any remaining to first group (usually the longest monologue)
+              if (offset < regularImages.length && perTtsImages.length > 0) {
+                perTtsImages[0].push(...regularImages.slice(offset));
+              }
+            }
+          }
+
+          // Pad to match TTS line count
+          while (perTtsImages.length < ch.allTtsUrls.length) {
+            perTtsImages.push([]);
+          }
+
+          // ── Minimum cycling guarantee ──
+          // Ensure every TTS line with duration > 15s has at least 2 images.
+          // Lines > 60s need at least 4. This prevents ANY scene from showing
+          // a single static image for extended periods.
+          const ttsLineDurations = ch.allTtsUrls.map((t: any, i: number, arr: any[]) => {
+            const next = arr[i + 1];
+            return next ? (next.start - t.start) : Math.max(t.duration || 5, ch.duration - t.start);
+          });
+          for (let gi = 0; gi < perTtsImages.length; gi++) {
+            const dur = ttsLineDurations[gi] || 0;
+            const minImages = dur > 60 ? 4 : dur > 30 ? 3 : dur > 15 ? 2 : 1;
+            if (perTtsImages[gi].length < minImages && regularImages.length > perTtsImages[gi].length) {
+              const existingSet = new Set(perTtsImages[gi]);
+              const extras = regularImages.filter(u => !existingSet.has(u));
+              const needed = minImages - perTtsImages[gi].length;
+              perTtsImages[gi].push(...extras.slice(0, needed));
+            }
+          }
+
+          // ── Carry-forward: fill empty groups from nearest non-empty group ──
+          for (let gi = 0; gi < perTtsImages.length; gi++) {
+            if (perTtsImages[gi].length === 0) {
+              for (let bi = gi - 1; bi >= 0; bi--) {
+                if (perTtsImages[bi].length > 0) {
+                  perTtsImages[gi] = [perTtsImages[bi][perTtsImages[bi].length - 1]];
+                  break;
                 }
-                // If still empty (no preceding images), look forward
-                if (perTtsImages[gi].length === 0) {
-                  for (let fi = gi + 1; fi < perTtsImages.length; fi++) {
-                    if (perTtsImages[fi].length > 0) {
-                      perTtsImages[gi] = [perTtsImages[fi][0]];
-                      break;
-                    }
+              }
+              if (perTtsImages[gi].length === 0) {
+                for (let fi = gi + 1; fi < perTtsImages.length; fi++) {
+                  if (perTtsImages[fi].length > 0) {
+                    perTtsImages[gi] = [perTtsImages[fi][0]];
+                    break;
                   }
                 }
               }
             }
           }
 
-          console.log(`[EP04 PerTTS] ${ch.chapterId}: ${perTtsImages.length} groups →`,
-            perTtsImages.map((g, idx) => `TTS#${idx}:${g.length}img`).join(', '));
+          console.log(`[EP04 PerTTS] ${ch.chapterId}: ${perTtsImages.length} groups (${totalExpected} expected, ${regularImages.length} available) →`,
+            perTtsImages.map((g, idx) => `TTS#${idx}:${g.length}img(${Math.round(ttsLineDurations[idx] || 0)}s)`).join(', '));
         }
 
         return {

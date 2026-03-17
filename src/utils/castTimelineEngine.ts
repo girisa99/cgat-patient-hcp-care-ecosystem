@@ -528,14 +528,29 @@ function makeTtsLineScene(
   // ── Visual layer (z-index 0-2) ──────────────────────────────────────────
   if (lipsync && isHttpUrl(lipsync.url)) {
     // === Full-Screen Lipsync Layout ===
-    // Lead-in B-roll → full-screen lipsync → tail B-roll.
-    // Lipsync fills the entire frame (1920x1080) — no PiP clipping issues.
-    // Storybook images, avatars, and establishing shots still appear as
-    // lead-in and tail segments for visual variety.
+    //
+    // RENDERER ALIGNMENT (production fix 2026-03-16):
+    // The RunPod FFmpeg renderer treats ALL images as a FLAT sequential slideshow
+    // (xfade chain). It IGNORES z-index and start/duration for images.
+    // Videos ARE properly time-windowed via FFmpeg enable='between(t,start,end)'.
+    //
+    // Composite order (renderer):
+    //   1. Color base
+    //   2. Image slideshow (ALL images xfaded sequentially)
+    //   3. Videos overlaid on top (sorted by z-index, time-windowed)
+    //
+    // So we create:
+    //   - Images: flat cycling slideshow covering FULL scene duration (visible after lipsync ends)
+    //   - Lipsync video: overlaid on top, time-windowed to lipsyncDur (covers images during talking head)
+    //   - Video lead-in: overlaid above lipsync, time-windowed (establishing shot)
+    //
     const VISUAL_BEAT = 12;
     const lipsyncDur = Math.min(lipsync.duration, sceneDur);
 
-    // ── Layer 0: B-roll background — cycling Ken Burns behind everything ──
+    // ── Image slideshow: cycling Ken Burns covering full scene ──
+    // During lipsync (0 → lipsyncDur): images play underneath, hidden by lipsync video overlay.
+    // After lipsync ends: images are the visible visual, cycling every VISUAL_BEAT seconds.
+    // Renderer xfades images sequentially — total slideshow duration must >= sceneDur.
     const bgImages = (allImages && allImages.length > 0)
       ? allImages.filter(u => isHttpUrl(u))
       : (isHttpUrl(imageVisual) ? [imageVisual] : []);
@@ -555,11 +570,8 @@ function makeTtsLineScene(
       }
     }
 
-    // ── Layer 1: Video B-roll lead-in (establishing shot) ──
-    // z-index 3 (ABOVE lipsync) so the establishing shot is visible before
-    // the speaker appears. Fades out to reveal the lipsync underneath.
-    // Allow up to 8s for establishing shots (40% of lipsync) so the viewer
-    // sees the cinematic B-roll video prominently before the speaker appears.
+    // ── Video lead-in (establishing shot) ──
+    // z-index 3 (ABOVE lipsync) — properly time-windowed by renderer.
     const maxLeadIn = Math.min(8, lipsyncDur * 0.4);
     const VIDEO_LEAD_IN = isHttpUrl(videoVisual) ? Math.min(maxLeadIn, sceneDur * 0.2) : 0;
     if (isHttpUrl(videoVisual)) {
@@ -567,91 +579,28 @@ function makeTtsLineScene(
         type: 'video', src: videoVisual,
         start: 0, duration: VIDEO_LEAD_IN,
         volume: 0, resize: 'cover', width: 1920, height: 1080,
-        'fade-in': 0.3, 'fade-out': 0.8, 'z-index': 3, // ABOVE lipsync — establishing shot
+        'fade-in': 0.3, 'fade-out': 0.8, 'z-index': 3,
       });
     }
 
-    // ── Layer 2: Lipsync full-screen ──
-    // Starts at t=0 to stay synced with TTS audio. Video lead-in covers
-    // it briefly (z-index 3 > 2) then fades out to reveal the speaker.
-    const lipsyncStart = 0;
+    // ── Lipsync full-screen ──
+    // z-index 2 — renderer time-windows via enable filter.
+    // Covers image slideshow during talking head, then fades out to reveal cycling images.
     elements.push({
       type: 'video', src: lipsync.url,
-      start: lipsyncStart, duration: lipsyncDur,
-      volume: 0, // CRITICAL: TTS audio is a separate element
+      start: 0, duration: lipsyncDur,
+      volume: 0,
       'fade-in': 0.3, 'fade-out': 0.8,
-      'z-index': 2, // above B-roll (z0), below establishing shot (z3)
+      'z-index': 2,
       resize: 'cover', width: 1920, height: 1080,
     });
 
-    // ── Layer 2b: B-roll cutaway beats during lipsync (documentary-style) ──
-    // For scenes > 15s with images, insert brief (4s) image cutaways at z3
-    // (above lipsync) during the talking head section. This creates a visual
-    // rhythm — speaker → B-roll → speaker → B-roll — like documentary films.
-    // Without this, long scenes show ONLY the talking head during lipsync
-    // (images at z0 are covered), then abruptly switch to images in the tail.
-    const cutawayImages = (allImages && allImages.length > 0)
-      ? allImages.filter(u => isHttpUrl(u))
-      : [];
-    const cutawayWindow = lipsyncDur - VIDEO_LEAD_IN - 2;
-    if (cutawayImages.length > 0 && cutawayWindow > 6 && sceneDur > 12) {
-      const CUTAWAY_DUR = 4;       // each cutaway shows for 4s
-      const CUTAWAY_GAP = 4;       // 4s of talking head between cutaways
-      const CUTAWAY_CYCLE = CUTAWAY_DUR + CUTAWAY_GAP;
-      let cutawayTime = VIDEO_LEAD_IN + CUTAWAY_GAP;
-      let cutawayImgIdx = 0;
-      while (cutawayTime + CUTAWAY_DUR < lipsyncDur - 1) {
-        const img = cutawayImages[cutawayImgIdx % cutawayImages.length];
-        const kb = getKenBurns(kbIdx + 50 + cutawayImgIdx);
-        elements.push({
-          type: 'image', src: img,
-          start: cutawayTime, duration: CUTAWAY_DUR,
-          ...kb, resize: 'cover', width: 1920, height: 1080,
-          'fade-in': 0.6, 'fade-out': 0.6, 'z-index': 3,
-        });
-        cutawayTime += CUTAWAY_CYCLE;
-        cutawayImgIdx++;
-      }
-    }
-
-    // ── Layer 3: Tail visuals — fills after lipsync ends ──
-    // Cycle through per-TTS images (if multiple) for long post-lipsync sections.
-    // E.g. a 110s monologue with 18s lipsync → 92s of cycling B-roll images.
-    const tailStart = lipsyncStart + lipsyncDur - 1.0; // overlap by 1s to cover safety trim gap
-    const tailDur = sceneDur - tailStart;
-    if (tailDur > 1) {
-      const tailImages = (allImages && allImages.length > 0)
-        ? allImages.filter(u => isHttpUrl(u))
-        : (isHttpUrl(tailImageVisual) ? [tailImageVisual] : []);
-
-      if (tailImages.length > 1) {
-        // Multiple images → cycle with Ken Burns beats at z2 (above background)
-        const beatCount = Math.max(1, Math.ceil(tailDur / VISUAL_BEAT));
-        const beatDur = tailDur / beatCount;
-        for (let bi = 0; bi < beatCount; bi++) {
-          const img = tailImages[bi % tailImages.length];
-          const kb = getKenBurns(kbIdx + 90 + bi);
-          elements.push({
-            type: 'image', src: img,
-            start: tailStart + bi * beatDur, duration: beatDur + (bi < beatCount - 1 ? 0.5 : 0),
-            ...kb, resize: 'cover', width: 1920, height: 1080,
-            'fade-in': 0.8, 'fade-out': 0.5, 'z-index': 2,
-          });
-        }
-      } else if (tailImages.length === 1 && tailDur <= 20) {
-        // Short tail with single image → static with Ken Burns (OK for brief sections)
-        const kb = getKenBurns(kbIdx + 99);
-        elements.push({
-          type: 'image', src: tailImages[0],
-          start: tailStart, duration: tailDur,
-          ...kb, resize: 'cover', width: 1920, height: 1080,
-          'fade-in': 1.0, 'fade-out': 0.5, 'z-index': 2,
-        });
-      }
-      // Long tail with single image: SKIP z2 tail — let the z0 background cycling
-      // (Layer 0, already placed above) show through. This prevents a single static
-      // image blocking the cycling B-roll for 90+ seconds.
-    }
+    // NOTE: Cutaway beats and tail image layers REMOVED (2026-03-16).
+    // The FFmpeg renderer chains ALL images into one sequential slideshow —
+    // z-index and start/duration are ignored for images. Adding cutaway/tail
+    // images extended the slideshow beyond scene duration, wasting image slots
+    // and never rendering. The flat background cycling above is sufficient:
+    // it covers the full scene, cycling images are visible after lipsync ends.
   } else {
     // No lipsync — full B-roll with visual cycling for long scenes
     const VISUAL_BEAT = 12; // seconds per visual beat — cinematic pacing (was 15)
@@ -1076,6 +1025,13 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, moo
 
     // Scene transition style — mood-aware when mood provided, else cycles for variety
     const transStyle = i === 0 ? 'fade' : getMoodTransition(mood, i);
+
+    // ── Production diagnostic: verify image count per TTS line ──
+    const uniqueSceneImgs = new Set(sceneImages.filter(u => isHttpUrl(u)));
+    if (sceneDur > 20 && uniqueSceneImgs.size < 2) {
+      console.error(`[CAST TIMELINE] CRITICAL: TTS#${i} "${tts.voice}:${tts.key}" (${Math.round(sceneDur)}s) has only ${uniqueSceneImgs.size} unique image(s) — will appear static!`);
+    }
+    console.log(`[CAST TIMELINE] TTS#${i} "${tts.voice}:${tts.key}" dur=${Math.round(sceneDur)}s: ${sceneImages.length} images (${uniqueSceneImgs.size} unique), lipsync=${!!lipsync}, video=${!!videoVisual}`);
 
     scenes.push(makeTtsLineScene(
       { ...tts, start: 0 }, // rebase TTS to start=0 within scene
