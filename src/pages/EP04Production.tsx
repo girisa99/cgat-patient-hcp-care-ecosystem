@@ -4757,7 +4757,7 @@ function EP04ProductionInner() {
         // Collect screenshot-enhanced URLs for gentle Ken Burns
         const screenshotUrls: string[] = [];
         for (const [key, url] of Object.entries(status.imageUrls || {})) {
-          if (isHttpUrl(url) && (key.includes('ai-screen-enhance') || key.includes('screen-capture'))) {
+          if (url?.startsWith('http') && (key.includes('ai-screen-enhance') || key.includes('screen-capture'))) {
             screenshotUrls.push(url);
           }
         }
