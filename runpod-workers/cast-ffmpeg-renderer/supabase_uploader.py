@@ -265,6 +265,38 @@ def upload_to_supabase(
     return None
 
 
+def upload_clip(
+    file_path: str,
+    cast_project_id: str,
+    clip_id: str,
+    supabase_url: str,
+    supabase_key: str,
+    content_type: str = "video/mp4",
+) -> str | None:
+    """
+    Upload a clip/artifact with a friendly, human-readable storage path.
+    URL pattern: cast-assets/{projectId}/clips/{clip_id}.ext
+    Display in UI: just '{clip_id}.ext' (truncate base URL)
+    """
+    bucket = "cast-assets"
+    # Determine extension from content type
+    ext_map = {
+        "video/mp4": "mp4",
+        "image/jpeg": "jpg",
+        "image/gif": "gif",
+        "audio/mpeg": "mp3",
+        "audio/wav": "wav",
+        "image/png": "png",
+    }
+    ext = ext_map.get(content_type, "mp4")
+    storage_path = f"{cast_project_id}/clips/{clip_id}.{ext}"
+
+    return upload_to_supabase(
+        file_path, supabase_url, supabase_key,
+        bucket, storage_path, content_type,
+    )
+
+
 def upload_final_video(
     video_path: str,
     cast_project_id: str,

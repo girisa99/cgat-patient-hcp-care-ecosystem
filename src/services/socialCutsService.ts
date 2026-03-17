@@ -311,38 +311,156 @@ class SocialCutsService {
   }
 
   /**
-   * Export cut with platform-specific settings
+   * Extract clips from a rendered video via RunPod FFmpeg worker.
+   * Dispatches 'extract_clips' action to the cast-ffmpeg-renderer.
+   */
+  async extractClipsViaRunPod(
+    sourceVideoUrl: string,
+    clips: Array<{ id: string; start: number; end: number; label: string }>,
+    castProjectId: string,
+  ): Promise<Array<{ id: string; clipUrl: string; thumbnailUrl?: string; duration: number }>> {
+    console.log(`[SocialCuts] Dispatching extract_clips to RunPod: ${clips.length} clips`);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+        body: {
+          action: 'extract_clips',
+          sourceVideoUrl,
+          clips,
+          castProjectId,
+        },
+      });
+
+      if (error) {
+        console.error('[SocialCuts] extract_clips error:', error);
+        return [];
+      }
+
+      console.log(`[SocialCuts] extract_clips result: ${data?.clips?.length || 0} clips`);
+      return data?.clips || [];
+    } catch (e) {
+      console.error('[SocialCuts] extract_clips failed:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Resize a clip for a specific social platform via RunPod FFmpeg worker.
+   */
+  async resizeForPlatform(
+    sourceVideoUrl: string,
+    platform: string,
+    castProjectId: string,
+  ): Promise<{ outputUrl: string; platform: string; width: number; height: number } | null> {
+    console.log(`[SocialCuts] Dispatching platform_resize to RunPod: ${platform}`);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+        body: {
+          action: 'platform_resize',
+          sourceVideoUrl,
+          platform,
+          castProjectId,
+        },
+      });
+
+      if (error) {
+        console.error('[SocialCuts] platform_resize error:', error);
+        return null;
+      }
+
+      return data || null;
+    } catch (e) {
+      console.error('[SocialCuts] platform_resize failed:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Burn captions into a video via RunPod FFmpeg worker.
+   */
+  async burnCaptions(
+    sourceVideoUrl: string,
+    srtContent: string,
+    castProjectId: string,
+    style: 'modern' | 'classic' | 'minimal' | 'kinetic' = 'modern',
+  ): Promise<string | null> {
+    console.log(`[SocialCuts] Dispatching burn_captions to RunPod: style=${style}`);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+        body: {
+          action: 'burn_captions',
+          sourceVideoUrl,
+          captions: srtContent,
+          style,
+          castProjectId,
+        },
+      });
+
+      if (error) {
+        console.error('[SocialCuts] burn_captions error:', error);
+        return null;
+      }
+
+      return data?.outputUrl || null;
+    } catch (e) {
+      console.error('[SocialCuts] burn_captions failed:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Export cut with platform-specific settings via RunPod.
+   * Now dispatches to the actual FFmpeg worker instead of returning mock data.
    */
   async exportCut(
     cut: SocialCut,
     outputSettings?: { quality?: 'low' | 'medium' | 'high'; addWatermark?: boolean }
   ): Promise<{ url: string; format: string }> {
-    // Would integrate with video processing service
     console.log(`[SocialCuts] Exporting cut ${cut.id} for ${cut.platform}`);
-    
+
+    // If the cut already has a video_url, use platform_resize on it
+    if (cut.video_url) {
+      const result = await this.resizeForPlatform(
+        cut.video_url,
+        cut.platform.replace('_reels', '').replace('_shorts', ''),
+        cut.source_content_id,
+      );
+      if (result?.outputUrl) {
+        return { url: result.outputUrl, format: 'mp4' };
+      }
+    }
+
+    // Fallback: return the source URL as-is
     return {
-      url: `exported_${cut.platform}_${cut.id}.mp4`,
+      url: cut.video_url || `exported_${cut.platform}_${cut.id}.mp4`,
       format: 'mp4',
     };
   }
 
   /**
-   * Batch export cuts
+   * Batch export cuts via RunPod
    */
   async batchExport(
     cuts: SocialCut[],
     outputSettings?: { quality?: 'low' | 'medium' | 'high' }
   ): Promise<{ success: number; failed: number; exports: { cut_id: string; url: string }[] }> {
     const exports: { cut_id: string; url: string }[] = [];
-    
+    let failed = 0;
+
     for (const cut of cuts) {
-      const result = await this.exportCut(cut, outputSettings);
-      exports.push({ cut_id: cut.id, url: result.url });
+      try {
+        const result = await this.exportCut(cut, outputSettings);
+        exports.push({ cut_id: cut.id, url: result.url });
+      } catch {
+        failed++;
+      }
     }
 
     return {
       success: exports.length,
-      failed: 0,
+      failed,
       exports,
     };
   }
