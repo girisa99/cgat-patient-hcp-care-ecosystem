@@ -4714,6 +4714,13 @@ function EP04ProductionInner() {
           if (ch.chapterId === targetSceneKeys[0]) poolImgTypes.add('storybook-frame');
           const poolVidTypes = new Set(['alibaba-video', 'character-interaction', 'character-motion', 'character-animate-3d', 'narrator-scroll']);
 
+          // Build set of screenIds that have enhanced versions (for dedup counting)
+          const enhancedScreenIds = new Set(
+            Object.keys(status.imageUrls || {})
+              .filter(k => k.startsWith('ai-screen-enhance-'))
+              .map(k => k.replace('ai-screen-enhance-', ''))
+          );
+
           // TTS scriptKeys in this part (handles sub-parts correctly)
           const ttsKeys = new Set(ch.allTtsUrls.map((t: any) => t.key));
 
