@@ -7411,6 +7411,12 @@ function EP04ProductionInner() {
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-xs font-bold">
                                   Part {part.partNumber}/{assemblyParts.length}
+                                  {' · '}
+                                  {part.sceneKeys.map(k => {
+                                    const m = k.match(/scene-(\d+)/);
+                                    return m ? `S${m[1]}` : k;
+                                  }).join('+')}
+                                  {part._subPartLineRange && <span className="text-violet-500 font-normal"> (sub)</span>}
                                   {part.partNumber === 1 && ' (+ Opening)'}
                                   {part.partNumber === assemblyParts.length && ' (+ Closing)'}
                                 </span>
