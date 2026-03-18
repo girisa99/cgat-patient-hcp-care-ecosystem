@@ -1577,7 +1577,7 @@ function EP04ProductionInner() {
     const stepType = (step.type as string) || 'image';
     const prompt = (step.prompt as string) || `Generate ${stepType} for ${sceneKey}`;
 
-    // ── screen-capture: use pre-loaded screenshot URLs (no edge call) ──
+    // ── screen-capture: use pre-loaded screenshot URLs, fallback to AI generation ──
     if (stepType === 'screen-capture') {
       const screenIds = (step.screenIds as string[]) || [];
       for (const sid of screenIds) {
@@ -1589,15 +1589,37 @@ function EP04ProductionInner() {
           }
           results[`screen-capture-${sid}`] = scUrl;
         } else {
-          toast.warning(`Screenshot "${sid}" not captured yet — skipping`);
+          // FALLBACK: Generate AI dashboard image when screenshot file is missing from Storage
+          const readableName = sid.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          const fallbackPrompt = `Professional software dashboard screenshot: "${readableName}" panel of a Sprint Management Tracker. Dark-themed modern UI with data visualizations, task cards, status indicators, charts, and metrics tables. Sharp, clean, cinematic quality at 16:9 aspect ratio. Style: production-grade SaaS application screenshot.`;
+          console.warn(`[EP04] Screenshot "${sid}" not in Storage — generating AI fallback`);
+          toast.info(`Generating AI fallback for missing screenshot "${sid}"…`);
+          try {
+            const { data: fbData, error: fbErr } = await supabase.functions.invoke('ai-universal-processor', {
+              body: { action: 'image_generation', prompt: fallbackPrompt, provider: 'alibaba', model: 'wan2.6-t2i', size: '1280*720' },
+            });
+            let fbUrl = fbData?.url || fbData?.imageUrl || null;
+            if (fbErr || !fbUrl) {
+              console.warn(`[EP04] AI fallback for "${sid}" also failed — step will be missing`);
+              toast.warning(`Screenshot "${sid}" not available — skipping`);
+              continue;
+            }
+            if (fbUrl && projectId && !isSupabaseStorageUrl(fbUrl)) {
+              try { fbUrl = await ensureStorageUrl(projectId, `screen-capture-${sid}`, fbUrl, 'image'); } catch { /* keep */ }
+            }
+            results[`screen-capture-${sid}`] = fbUrl;
+          } catch (genErr) {
+            console.warn(`[EP04] AI fallback generation error for "${sid}":`, genErr);
+            toast.warning(`Screenshot "${sid}" not available — skipping`);
+          }
         }
       }
       return;
     }
 
-    // ── ai-screen-enhance: I2I enhancement via ai-universal-processor ──
-    // Routes through image_generation with ref_image_url to produce a full-res
-    // enhanced screenshot (NOT a video clip). Results flow into imageUrls.
+    // ── ai-screen-enhance: GPT-image-1 Edit enhancement via ai-universal-processor ──
+    // Uses image_enhance action with gpt-image-1 to preserve original UI while upscaling.
+    // CRITICAL FALLBACK: On any failure, use original screenshot (NOT blank).
     if (stepType === 'ai-screen-enhance') {
       const screenIds = (step.screenIds as string[]) || [];
       const enhanceMode = (step.enhanceMode as string) || 'highlight';
@@ -1606,7 +1628,17 @@ function EP04ProductionInner() {
 
       for (const sid of screenIds) {
         let sourceUrl = screenshotUrls[sid];
-        if (!sourceUrl) { toast.warning(`Screenshot "${sid}" not captured — skipping enhance`); continue; }
+        if (!sourceUrl) {
+          // Check if screen-capture fallback generated an image for this sid
+          const fallbackKey = `screen-capture-${sid}`;
+          if (results[fallbackKey]) {
+            sourceUrl = results[fallbackKey];
+            console.log(`[EP04] Using screen-capture fallback for enhance "${sid}"`);
+          } else {
+            toast.warning(`Screenshot "${sid}" not captured — skipping enhance`);
+            continue;
+          }
+        }
         // Convert local Vite asset paths to full URLs for edge function access
         if (sourceUrl.startsWith('/') && !sourceUrl.startsWith('//')) {
           sourceUrl = `${window.location.origin}${sourceUrl}`;
@@ -1615,34 +1647,37 @@ function EP04ProductionInner() {
         let jobId: string | null = null;
         if (projectId) {
           jobId = await trackGenerationJob({
-            projectId, jobType: 'image', sceneKey, provider: 'alibaba', estimatedTokens: 1,
+            projectId, jobType: 'image', sceneKey, provider: 'openai', estimatedTokens: 1,
           });
         }
 
-        const enhancePrompt = `High-resolution cinematic screenshot of a software dashboard. ${enhanceMode} mode: ${scriptContext}. Focus areas: ${focusAreas.join(', ') || 'full screen'}. Clean, sharp, professional UI with clear text and data visualizations. 1920x1080 resolution.`;
+        const enhancePrompt = `Enhance this software dashboard screenshot to cinematic quality. Preserve ALL original UI elements exactly as shown — text, buttons, charts, layout. ${enhanceMode} mode: ${scriptContext}. Focus areas: ${focusAreas.join(', ') || 'full screen'}. Upscale to sharp, professional quality with clean text and crisp data visualizations.`;
 
         const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
           body: {
-            action: 'image_generation',
+            action: 'image_enhance',
             prompt: enhancePrompt,
             ref_image_url: sourceUrl,
-            provider: 'alibaba',
-            model: 'wan2.6-t2i',
-            width: 1920,
-            height: 1080,
+            provider: 'openai',
+            size: '1536x1024',
           },
         });
-        if (error) { toast.error(`${stepLabel} enhance "${sid}" failed: ${error.message}`); continue; }
-        let url = data?.url || data?.imageUrl || data?.videoUrl;
-        if (!url && data?.asyncGeneration && data?.taskId) {
-          toast.info(`${stepLabel}: enhancing "${sid}"... polling for result`);
-          url = await pollVideoTaskResult(data.taskId);
+
+        let url: string | null = null;
+        if (error || !data?.url && !data?.imageUrl) {
+          // CRITICAL FALLBACK: use original screenshot instead of blank
+          console.warn(`[EP04] ai-screen-enhance "${sid}" failed (${error?.message || 'no URL returned'}), using original screenshot as fallback`);
+          url = data?.fallbackUrl || sourceUrl;
+          toast.warning(`Enhancement for "${sid}" failed — using original screenshot`);
+        } else {
+          url = data?.url || data?.imageUrl;
         }
+
         if (url && projectId && !isSupabaseStorageUrl(url)) {
           try { url = await ensureStorageUrl(projectId, `ai-screen-enhance-${sid}`, url, 'image'); } catch { /* keep original */ }
         }
         if (url) results[`ai-screen-enhance-${sid}`] = url;
-        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'alibaba');
+        if (jobId && projectId) await completeGenerationJob(jobId, data?.tokensUsed || 1, url, data?.provider || 'openai');
       }
       return;
     }
@@ -3390,8 +3425,19 @@ function EP04ProductionInner() {
           // Only restore if parts haven't been set yet (avoid overwriting active state)
           if (prev.length > 0) return prev;
 
-          // Build parts from completed jobs
-          const parts = computePerSceneParts();
+          // Detect which assembly mode was used by checking max part number in completed URLs
+          const completedPartNums = completedJobs
+            .map(j => getPartFromUrl(j.output_url))
+            .filter((n): n is number => n !== null);
+          const maxPartNum = completedPartNums.length > 0 ? Math.max(...completedPartNums) : 0;
+          const totalScenes = Array.from(scenes.keys()).length;
+
+          // If max completed part <= ~5 and less than total scenes, it was multi-part mode
+          // If max completed part matches scene count, it was per-scene mode
+          const wasMultiPart = maxPartNum > 0 && maxPartNum < totalScenes && maxPartNum <= 8;
+          console.log(`[EP04 Restore] Detected mode: ${wasMultiPart ? 'multi-part' : 'per-scene'} (maxPart=${maxPartNum}, scenes=${totalScenes})`);
+
+          const parts = wasMultiPart ? computePartBoundaries() : computePerSceneParts();
           return parts.map((p) => {
             // Match by part number extracted from URL — NOT by array index!
             // The storage path is always {projectId}/part{N}.mp4 (set by RunPod worker)
@@ -4159,15 +4205,29 @@ function EP04ProductionInner() {
             const sType = (step as Record<string, unknown>).type as string;
             if (!stepTypeFilter.has(sType)) continue;
 
+            // screen-capture and ai-screen-enhance: match by screenId from step's screenIds[]
+            // Each screenId produces its own result entry, so iterate all screenIds
+            if (sType === 'screen-capture' || sType === 'ai-screen-enhance') {
+              const screenIds = (step as Record<string, unknown>).screenIds as string[] || [];
+              for (const sid of screenIds) {
+                const match = entries.find(([key]) => {
+                  if (consumed.has(key)) return false;
+                  return key.includes(sType) && key.includes(sid);
+                });
+                if (match) {
+                  consumed.add(match[0]);
+                  ordered.push(match[1]);
+                }
+              }
+              continue;
+            }
+
             // Find first unconsumed entry matching this step
             const match = entries.find(([key]) => {
               if (consumed.has(key)) return false;
               if (sType === 'avatar-3d') {
                 const character = (step as Record<string, unknown>).character as string || '';
                 return key.includes('avatar-3d') && key.includes(character);
-              }
-              if (sType === 'screen-capture') {
-                return key.includes('screen-capture') && key.includes(sKey);
               }
               if (sType === 'alibaba-image') {
                 // Match keys that contain the step type prefix; exclude ai-screen-enhance
@@ -4194,10 +4254,23 @@ function EP04ProductionInner() {
         // Collect scene images for B-roll — EXCLUDE avatars and kinetic-text backgrounds.
         // Avatars are headshots used for lipsync generation, not cinematic B-roll.
         // Kinetic-text backgrounds are handled as dedicated interlude scenes (not pool images).
+        // DEDUP: When ai-screen-enhance-{sid} exists, skip raw screen-capture-{sid}
+        // so each screenshot appears exactly ONCE in the pool (prefer enhanced).
+        const enhancedScreenIds = new Set(
+          Object.keys(status.imageUrls || {})
+            .filter(k => k.startsWith('ai-screen-enhance-'))
+            .map(k => k.replace('ai-screen-enhance-', ''))
+        );
         const allImageEntries: [string, string][] = [
-          ...Object.entries(status.imageUrls || {}).filter(([k]) =>
-            !k.includes('kinetic-text') && !k.includes('avatar-3d')
-          ),
+          ...Object.entries(status.imageUrls || {}).filter(([k]) => {
+            if (k.includes('kinetic-text') || k.includes('avatar-3d')) return false;
+            // Skip raw screen-capture if enhanced version exists for this screenId
+            if (k.startsWith('screen-capture-')) {
+              const sid = k.replace('screen-capture-', '');
+              if (enhancedScreenIds.has(sid)) return false;
+            }
+            return true;
+          }),
         ].filter(([, u]) => isSafeUrl(u));
         const allImageVisuals: string[] = orderByPipelineConfig(allImageEntries, sceneKey, IMAGE_STEP_TYPES);
 
@@ -4669,7 +4742,18 @@ function EP04ProductionInner() {
               }
               ttsHit = true;
             } else if (poolImgTypes.has(sType)) {
-              currentImgCount++;
+              // Multi-screen steps produce N results (one per screenId), not 1
+              // After dedup: screen-capture only counts screenIds WITHOUT enhanced versions
+              // ai-screen-enhance counts all its screenIds (they stay in the pool)
+              if (sType === 'screen-capture') {
+                const sids = ((step as any).screenIds as string[]) || ['_'];
+                currentImgCount += sids.filter(sid => !enhancedScreenIds.has(sid)).length;
+              } else if (sType === 'ai-screen-enhance') {
+                const sids = ((step as any).screenIds as string[]) || ['_'];
+                currentImgCount += sids.length;
+              } else {
+                currentImgCount++;
+              }
             } else if (poolVidTypes.has(sType)) {
               currentVidCount++;
             }
@@ -4783,11 +4867,23 @@ function EP04ProductionInner() {
             perTtsImages.map((g, idx) => `TTS#${idx}:${g.length}img+${(perTtsVideos[idx] || []).length}vid(${Math.round(ttsLineDurations[idx] || 0)}s)`).join(', '));
         }
 
-        // Collect screenshot-enhanced URLs for gentle Ken Burns
+        // Collect screenshot URLs for gentle Ken Burns — prefer enhanced, dedup by screenId
         const screenshotUrls: string[] = [];
-        for (const [key, url] of Object.entries(status.imageUrls || {})) {
-          if (url?.startsWith('http') && (key.includes('ai-screen-enhance') || key.includes('screen-capture'))) {
-            screenshotUrls.push(url);
+        {
+          const enhancedMap = new Map<string, string>(); // screenId → enhanced URL
+          const rawMap = new Map<string, string>();      // screenId → raw URL
+          for (const [key, url] of Object.entries(status.imageUrls || {})) {
+            if (!url?.startsWith('http')) continue;
+            if (key.startsWith('ai-screen-enhance-')) {
+              enhancedMap.set(key.replace('ai-screen-enhance-', ''), url);
+            } else if (key.startsWith('screen-capture-')) {
+              rawMap.set(key.replace('screen-capture-', ''), url);
+            }
+          }
+          // Use enhanced if available, else raw — each screenId appears once
+          const allScreenIds = new Set([...enhancedMap.keys(), ...rawMap.keys()]);
+          for (const sid of allScreenIds) {
+            screenshotUrls.push(enhancedMap.get(sid) || rawMap.get(sid)!);
           }
         }
 

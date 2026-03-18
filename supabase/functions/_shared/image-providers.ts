@@ -522,6 +522,71 @@ async function generateWithReplicate(prompt: string, options: ImageGenOptions): 
 // DEEPSEEK (Technical diagrams, CJK specialist)
 // ============================================================================
 
+// ============================================================================
+// IMAGE ENHANCEMENT (GPT-image-1 Edit — preserves source content)
+// ============================================================================
+
+/**
+ * Enhance a screenshot using OpenAI's gpt-image-1 /v1/images/edits endpoint.
+ * Downloads the source image, sends it as the base image for editing.
+ * The edit prompt instructs the model to preserve all UI elements while upscaling quality.
+ * Falls back gracefully — returns original URL on any failure.
+ */
+export async function enhanceImageWithOpenAI(
+  sourceUrl: string,
+  prompt: string,
+  options: { size?: string } = {}
+): Promise<{ imageUrl: string; provider: string; model: string }> {
+  const apiKey = keys.openai();
+  if (!apiKey) throw new Error('OpenAI key missing for image enhancement');
+
+  // Download source image
+  const imgResp = await fetch(sourceUrl);
+  if (!imgResp.ok) throw new Error(`Failed to download source image: ${imgResp.status}`);
+  const imgBlob = await imgResp.blob();
+
+  // Build multipart form data for /v1/images/edits
+  const formData = new FormData();
+  formData.append('image', imgBlob, 'screenshot.png');
+  formData.append('prompt', prompt);
+  formData.append('model', 'gpt-image-1');
+  formData.append('size', options.size || '1536x1024');
+  formData.append('quality', 'high');
+
+  const resp = await fetch('https://api.openai.com/v1/images/edits', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}` },
+    body: formData,
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`OpenAI image edit failed: ${resp.status} - ${errText}`);
+  }
+
+  const data = await resp.json();
+  // gpt-image-1 returns b64_json by default
+  if (data.data?.[0]?.b64_json) {
+    return {
+      imageUrl: `data:image/png;base64,${data.data[0].b64_json}`,
+      provider: 'openai',
+      model: 'gpt-image-1',
+    };
+  }
+  if (data.data?.[0]?.url) {
+    return {
+      imageUrl: data.data[0].url,
+      provider: 'openai',
+      model: 'gpt-image-1',
+    };
+  }
+  throw new Error('No image returned from OpenAI image edit');
+}
+
+// ============================================================================
+// DEEPSEEK (Technical diagrams, CJK specialist)
+// ============================================================================
+
 async function generateWithDeepSeek(prompt: string, options: ImageGenOptions): Promise<string> {
   const apiKey = keys.deepseek();
   if (!apiKey) throw new Error('DeepSeek key missing');

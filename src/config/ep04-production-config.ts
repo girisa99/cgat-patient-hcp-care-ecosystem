@@ -778,10 +778,10 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-atlas-scroll-present' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene4-nova-atlas-scroll-present' },
     // ── Host lesson: acceptance criteria ──
-    // B-roll: Scope creep — task cards multiplying beyond the board
-    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a sprint board overflowing with task cards that are multiplying like rabbits — cards spill off the edges of the board onto the floor, some sprout legs and walk away, others split into two smaller cards. A "SCOPE" meter on the side has its needle buried deep in the red zone. The host watches in horror as a single task card labeled "just one more feature" explodes into 12 sub-tasks. Atlas and Nova dodge falling task cards. Chaotic comedic energy, warning-red ambient glow, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'host-not-in-scope' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-not-in-scope' },
+    // B-roll: Scope creep — task cards multiplying beyond the board (AFTER TTS for correct alignment)
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a sprint board overflowing with task cards that are multiplying like rabbits — cards spill off the edges of the board onto the floor, some sprout legs and walk away, others split into two smaller cards. A "SCOPE" meter on the side has its needle buried deep in the red zone. The host watches in horror as a single task card labeled "just one more feature" explodes into 12 sub-tasks. Atlas and Nova dodge falling task cards. Chaotic comedic energy, warning-red ambient glow, 8K' },
     // ── Beta agreement ──
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-beta-idea' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene4-nova-beta-idea' },
@@ -795,10 +795,10 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'scene4-atlas-lets-go' },
     { type: 'kinetic-text', text: 'Setting acceptance criteria isn\'t optional. It\'s survival.' },
     // ── Host reveals the solution to audience ──
-    // B-roll: Solution reveal — the sprint tracker emerges from chaos
-    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: dramatic product reveal moment — a holographic sprint management dashboard materializes in the center of the room, beams of golden light radiating outward. The dashboard shows clean organized task columns, real-time developer status cards, and a beautiful burndown chart trending perfectly downward. Atlas the bear and Nova the fox look up at it in awe from either side. The human host gestures toward it like a magician revealing his trick. God rays, volumetric lighting, cinematic product-launch energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'solution-reveal' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'solution-reveal' },
+    // B-roll: Solution reveal — the sprint tracker emerges from chaos (AFTER TTS for correct alignment)
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: dramatic product reveal moment — a holographic sprint management dashboard materializes in the center of the room, beams of golden light radiating outward. The dashboard shows clean organized task columns, real-time developer status cards, and a beautiful burndown chart trending perfectly downward. Atlas the bear and Nova the fox look up at it in awe from either side. The human host gestures toward it like a magician revealing his trick. God rays, volumetric lighting, cinematic product-launch energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'solution-standups' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'solution-standups' },
     // B-roll: Host reading organized dashboard in pajamas — async standups replace 45-min meetings
@@ -833,9 +833,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-sneak' },
     // B-roll: Squirrel caught in guardrails — governance catches the chaos agent
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the hyperactive squirrel tangled in glowing golden guardrail wires like a cartoon burglar caught in laser beams. The squirrel has an exaggerated "busted!" expression, one paw still reaching for a file labeled "shared-infrastructure.ts" with a red lock icon. Allaudin the genie floats nearby with a wagging finger and amused grin. Warning signs flash "TERRITORY VIOLATION DETECTED" in amber. Comic heist-movie lighting, funny but educational, 8K' },
-    // B-roll: Allaudin as wise judge presenting governance guardrails — track metaphor
-    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Allaudin the genie floating majestically in a judge\'s robe, holding a golden rule book that radiates light. Below him, a beautiful train track stretches into the horizon with two trains (terracotta bear-shaped and magenta fox-shaped) running smoothly on parallel rails. The guardrails glow gold — not as walls or cages, but as sleek guiding rails keeping the trains on course. A banner reads "Guardrails aren\'t the cage — they\'re the track." Wise mentor energy, golden hour lighting, inspirational composition, 8K' },
     { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-governance-guide' },
+    // B-roll: Allaudin as wise judge presenting governance guardrails — track metaphor (AFTER TTS for correct alignment)
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Allaudin the genie floating majestically in a judge\'s robe, holding a golden rule book that radiates light. Below him, a beautiful train track stretches into the horizon with two trains (terracotta bear-shaped and magenta fox-shaped) running smoothly on parallel rails. The guardrails glow gold — not as walls or cages, but as sleek guiding rails keeping the trains on course. A banner reads "Guardrails aren\'t the cage — they\'re the track." Wise mentor energy, golden hour lighting, inspirational composition, 8K' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-blocked-reaction' },
     // ── Atlas & Nova confess their Day 1 mistakes ──
     { type: 'tts', voice: 'nova', scriptKey: 'nova-my-component' },
@@ -856,9 +856,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'ai-screen-enhance', screenIds: ['territory-guardrails'], scriptContext: 'Territory guardrails showing file ownership boundaries — Atlas owns genie-studio (150+ files), Nova owns landing pages. 12 locked shared files need PO approval. Auto-flagging territory violations.', enhanceMode: 'highlight', focusAreas: ['file-ownership-matrix', 'locked-shared-files', 'territory-violation-flags'] },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-exit' },
     // ── Day 2 velocity: Nova blocked for 6 hours ──
-    // B-roll: Frozen dashboard — Nova's tasks encased in ice, clock showing hours passing
-    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox\'s task dashboard completely frozen in a block of ice — task cards encased in crystalline ice with frost creeping across the screen. A large clock above shows 6 hours passing (hands blurred in motion). Nova sits beside the frozen dashboard hugging her knees, breath visible in the cold, her magenta glow dimmed. A single notification blinks weakly: "Waiting for PO approval... hour 6." Icy blue-white lighting, isolation and frustration atmosphere, dramatic temperature contrast, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
+    // B-roll: Frozen dashboard — Nova's tasks encased in ice (AFTER TTS for correct alignment)
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox\'s task dashboard completely frozen in a block of ice — task cards encased in crystalline ice with frost creeping across the screen. A large clock above shows 6 hours passing (hands blurred in motion). Nova sits beside the frozen dashboard hugging her knees, breath visible in the cold, her magenta glow dimmed. A single notification blinks weakly: "Waiting for PO approval... hour 6." Icy blue-white lighting, isolation and frustration atmosphere, dramatic temperature contrast, 8K' },
     { type: 'screen-capture', screenIds: ['day-2-view'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['day-2-view'], scriptContext: 'Day 2 — Nova blocked for 6 hours waiting on PO approval. Velocity dip visible. The frozen task and blocker status are the key story points.', enhanceMode: 'highlight', focusAreas: ['blocked-tasks', 'velocity-dip', 'blocker-status-red'] },
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A frozen task card encased in ice slowly cracking and thawing as a small fox character taps it impatiently, Pixar-quality animation, dramatic lighting' },
@@ -868,11 +868,11 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'host', scriptKey: 'host-in-a-meeting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-human-meetings' },
     // ── PO Actions: the solution born from frustration ──
+    { type: 'tts', voice: 'host', scriptKey: 'host-po-actions-built' },
+    // PO Actions screenshots + B-roll (AFTER TTS for correct alignment)
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions dashboard built to prevent future blockers — async approval queue, priority flags, response time tracking.', enhanceMode: 'stylize', focusAreas: ['approval-queue', 'priority-flags', 'response-times'] },
-    // B-roll: Streamlined PO Actions dashboard — async approvals glowing green
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a sleek PO Actions dashboard glowing with success — a structured approval queue with color-coded urgency levels (red=critical, amber=normal, green=approved). Each item shows response time: "12 minutes", "8 minutes", "3 minutes." Green checkmarks cascade down the list like dominoes falling. The human host taps "APPROVE" on his phone while walking, golden retriever trotting beside him. The dashboard header reads "Async Governance — Zero Meetings Required." Clean UI visualization, success-green ambient glow, efficient productivity energy, 8K' },
-    { type: 'tts', voice: 'host', scriptKey: 'host-po-actions-built' },
     { type: 'kinetic-text', text: '6 hours blocked. 12 minutes approved. Async governance works.' },
     // Bridge narrator: scene 5 → scene 6 (8s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-5-to-6' },
@@ -890,13 +890,13 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'narrator-scroll', prompt: 'Ornate parchment scroll unrolling to reveal hand-lettered velocity statistics: "Atlas: 8 tasks/day — Nova: 3 tasks/day — Gap: 2.7x" with decorative data visualization flourishes, golden ink on aged paper, tiny chart sparklines in the margins', duration: 5, dataContent: 'Atlas: 8 tasks/day | Nova: 3 tasks/day | The velocity gap tells the real story' },
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Velocity chart bars growing dynamically with sparkle effects, camera slowly zooming out to reveal full sprint dashboard, smooth cinematic motion', referenceImage: 'velocity-metrics-screenshot' },
     // ── PO Actions origin story: born from frustration ──
-    // B-roll: Late night eureka moment — PO Actions born from frustration
-    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: 11 PM late-night coding scene — the human host sits at his desk with only a desk lamp and monitor light, dark room, exhausted but with a sudden spark of inspiration in his eyes. Above his head, a glowing lightbulb illuminates with golden particles. His monitor shows a wireframe sketch of the "PO Actions" dashboard taking shape. Coffee cups line the desk, golden retriever sleeping at his feet. The clock on the wall shows 11:00 PM. Dramatic chiaroscuro lighting, eureka moment energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'po-actions-origin' },
-    { type: 'tts', voice: 'atlas', scriptKey: 'po-actions-atlas-frustrated' },
-    { type: 'tts', voice: 'nova', scriptKey: 'po-actions-nova-blocked' },
+    // B-roll + PO Actions screenshots AFTER TTS for correct alignment — carry-forward to atlas-frustrated & nova-blocked
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: 11 PM late-night coding scene — the human host sits at his desk with only a desk lamp and monitor light, dark room, exhausted but with a sudden spark of inspiration in his eyes. Above his head, a glowing lightbulb illuminates with golden particles. His monitor shows a wireframe sketch of the "PO Actions" dashboard taking shape. Coffee cups line the desk, golden retriever sleeping at his feet. The clock on the wall shows 11:00 PM. Dramatic chiaroscuro lighting, eureka moment energy, 8K' },
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions tab — structured queue with color-coded urgency cards, approval gates linked to dev task completion, real-time Supabase sync, showing pending reviews cleared in 22 minutes vs 36 hours previously.', enhanceMode: 'highlight', focusAreas: ['approval-queue', 'urgency-cards', 'dev-task-completion-gates', 'realtime-sync-indicator'] },
+    { type: 'tts', voice: 'atlas', scriptKey: 'po-actions-atlas-frustrated' },
+    { type: 'tts', voice: 'nova', scriptKey: 'po-actions-nova-blocked' },
     { type: 'tts', voice: 'host', scriptKey: 'po-actions-breakthrough' },
     // B-roll: 36h → 22min transformation — dramatic before/after
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D infographic: dramatic split comparison — LEFT side (red, dim) shows "36 HOURS" in crumbling red numbers with a frustrated fox character frozen mid-wait, clock hands spinning endlessly, cobwebs forming on the approval button. RIGHT side (green, glowing) shows "22 MINUTES" in radiant green numbers with the same fox character celebrating, approval checkmarks cascading like confetti, a streamlined dashboard with instant response times. Center arrow shows "98.9% IMPROVEMENT" in golden text. Cinematic contrast lighting, 8K' },
@@ -916,6 +916,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'atlas', scriptKey: 'scene7-atlas-burndown-scroll' },
     // B-roll: Atlas pristine burndown chart — 85% velocity, straight line
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear proudly presenting his burndown chart — a holographic display showing a perfectly straight diagonal line from top-left (41 tasks) to bottom-right (0 remaining), each day marker precisely aligned. The chart is labeled "Atlas Velocity: 85%" in clean terracotta text. Atlas stands beside it with hands clasped behind his back, satisfied expression, wire-frame glasses catching the chart glow. Clean tech aesthetic, pristine data visualization, cinematic, 8K' },
+    // Video: Burndown scroll comedy — Atlas vs Nova chart reveal (velocity section)
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: bear character (Atlas) unrolls a pristine white scroll showing a perfectly straight burndown chart line descending at 45 degrees, each data point labeled Day 1-5 with precise margins. Then fox character (Nova) yanks out a MASSIVE crumpled paint-splattered scroll that extends off the table, her chart line zigzags wildly with sticky notes, doodles, dark-mode toggles, and scope-creep annotations everywhere. Bear reaches for his ruler, fox slaps his paw away — comedic timing, warm studio lighting' },
     { type: 'tts', voice: 'host', scriptKey: 'velocity-nova' },
     { type: 'tts', voice: 'host', scriptKey: 'host-nova-how' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-scope-now' },
@@ -929,9 +931,16 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'nova', scriptKey: 'nova-squirrel-response' },
     { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-focus' },
     // ── Part 2: Mission Control showcase ──
-    // B-roll: Mission Control dashboard — the async command center
-    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: an epic mission control room styled as a magical command center — multiple floating holographic screens arranged in a semicircle, each showing a different sprint management view (standup feed, blocker alerts, velocity charts, handoff queue). The human host sits in a command chair at the center, Atlas the bear monitors backend metrics on the left screens, Nova the fox tracks frontend progress on the right screens. A golden retriever lies under the console. Dark room illuminated only by screen glow and ambient purple-blue lighting, NASA mission control meets Pixar magic, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'mission-control-narration' },
+    // B-roll + MC screenshots AFTER TTS for correct alignment — carry-forward to atlas/nova/host lines
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: an epic mission control room styled as a magical command center — multiple floating holographic screens arranged in a semicircle, each showing a different sprint management view (standup feed, blocker alerts, velocity charts, handoff queue). The human host sits in a command chair at the center, Atlas the bear monitors backend metrics on the left screens, Nova the fox tracks frontend progress on the right screens. A golden retriever lies under the console. Dark room illuminated only by screen glow and ambient purple-blue lighting, NASA mission control meets Pixar magic, 8K' },
+    // SHOWCASE: Storybook chapter frame — marks the "Act 3: Triumph" turning point
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider page: "Act III — Mission Control" in golden calligraphy, surrounded by illustrated mission control panels, radar dishes, and data streams, warm parchment background with ink flourishes, Pixar-quality illustration', duration: 4 },
+    // Batch all 4 mission-control screens in one capture
+    { type: 'screen-capture', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], multiCapture: true },
+    { type: 'ai-screen-enhance', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], scriptContext: 'Mission Control suite — PO dashboard with real-time developer status and async standup feed; structured standup entries (yesterday/today/blockers); QA sign-off with automated quality gates and approval badges; EOD handoff with context transfer and next-session priorities. The 4 screens together show the full async management toolkit that replaced daily standup meetings.', enhanceMode: 'stylize', focusAreas: ['developer-status-cards', 'async-standup-feed', 'blocker-alerts', 'standup-structure', 'quality-gates', 'approval-badges', 'handoff-summary', 'dependency-flags'] },
+    // Video: Standup comparison — placed with mission control for correct video distribution
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup meeting with people talking over each other and sticky notes flying. RIGHT side shows calm AI-powered async standup with organized data flowing smoothly on a dashboard, cinematic quality, warm lighting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-context-loss' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-window' },
     { type: 'tts', voice: 'host', scriptKey: 'host-forgot-breakfast' },
@@ -940,14 +949,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
-    // SHOWCASE: Storybook chapter frame — marks the "Act 3: Triumph" turning point
-    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider page: "Act III — Mission Control" in golden calligraphy, surrounded by illustrated mission control panels, radar dishes, and data streams, warm parchment background with ink flourishes, Pixar-quality illustration', duration: 4 },
-    // Batch all 4 mission-control screens in one capture
-    { type: 'screen-capture', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], multiCapture: true },
-    { type: 'ai-screen-enhance', screenIds: ['po-mission-control', 'standup-entries', 'qa-signoff', 'eod-handoff'], scriptContext: 'Mission Control suite — PO dashboard with real-time developer status and async standup feed; structured standup entries (yesterday/today/blockers); QA sign-off with automated quality gates and approval badges; EOD handoff with context transfer and next-session priorities. The 4 screens together show the full async management toolkit that replaced daily standup meetings.', enhanceMode: 'stylize', focusAreas: ['developer-status-cards', 'async-standup-feed', 'blocker-alerts', 'standup-structure', 'quality-gates', 'approval-badges', 'handoff-summary', 'dependency-flags'] },
-    // ── Videos: burndown scroll comedy + standup comparison ──
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: bear character (Atlas) unrolls a pristine white scroll showing a perfectly straight burndown chart line descending at 45 degrees, each data point labeled Day 1-5 with precise margins. Then fox character (Nova) yanks out a MASSIVE crumpled paint-splattered scroll that extends off the table, her chart line zigzags wildly with sticky notes, doodles, dark-mode toggles, and scope-creep annotations everywhere. Bear reaches for his ruler, fox slaps his paw away — comedic timing, warm studio lighting' },
-    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup meeting with people talking over each other and sticky notes flying. RIGHT side shows calm AI-powered async standup with organized data flowing smoothly on a dashboard, cinematic quality, warm lighting' },
+    // ── Body action videos — character presentations for mission control section ──
     // ── Body action: Atlas presenting at podium ──
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: Atlas the bear standing confidently at a sleek podium, wearing wire-frame glasses, gesturing at a floating holographic burndown chart with a laser pointer in his paw. His posture is formal and measured — one paw on the podium, the other sweeping across data points. The chart responds to his gestures with glowing highlights. Dark mission-control room with blue ambient lighting, multiple screens in the background, cinematic quality, 8K' },
     // ── Body action: Nova presenting chaotically ──
@@ -967,17 +969,7 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Chapter header: "Chapter V — The Dashboard Tour" with 18 tiny thumbnail sketches arranged as marginalia around the title, each representing a dashboard screen', duration: 2 },
     // ── Full dashboard tour narrative — host introduces, atlas/nova add perspective ──
     { type: 'tts', voice: 'host', scriptKey: 'numbers-intro' },
-    { type: 'tts', voice: 'atlas', scriptKey: 'numbers-tour-atlas' },
-    { type: 'tts', voice: 'host', scriptKey: 'numbers-tour-host-cut' },
-    { type: 'tts', voice: 'nova', scriptKey: 'numbers-nova-perspective' },
-    { type: 'tts', voice: 'host', scriptKey: 'numbers-cost' },
-    // ── Voiceover montage — rapid 18-screen walkthrough ──
-    { type: 'tts', voice: 'host', scriptKey: 'tour-narration' },
-    // ── Avatars — all 3 characters contribute to the tour ──
-    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
-    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
-    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
-    // ── 18 dashboard screenshots ──
+    // ── 18 dashboard screenshots placed AFTER first TTS — all narration lines carry-forward these ──
     {
       type: 'screen-capture',
       screenIds: [
@@ -989,6 +981,16 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
       multiCapture: true,
     },
     { type: 'ai-screen-enhance', screenIds: ['po-mission-control', 'velocity-metrics', 'effort-tracking', 'project-plan'], scriptContext: 'Dashboard tour highlights — 18 screens showing the complete sprint management system. Focus on key metrics, task flow, and developer productivity data.', enhanceMode: 'stylize', focusAreas: ['key-metrics', 'task-flow', 'burndown-chart', 'velocity-data'] },
+    { type: 'tts', voice: 'atlas', scriptKey: 'numbers-tour-atlas' },
+    { type: 'tts', voice: 'host', scriptKey: 'numbers-tour-host-cut' },
+    { type: 'tts', voice: 'nova', scriptKey: 'numbers-nova-perspective' },
+    { type: 'tts', voice: 'host', scriptKey: 'numbers-cost' },
+    // ── Voiceover montage — rapid 18-screen walkthrough ──
+    { type: 'tts', voice: 'host', scriptKey: 'tour-narration' },
+    // ── Avatars — all 3 characters contribute to the tour ──
+    { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
+    { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     // SHOWCASE: Scroll-unroll transition — 18 screenshots unroll like a parchment scroll
     { type: 'scene-transition', style: 'scroll-unroll', prompt: 'Ancient parchment scroll unrolling horizontally to reveal a montage of 18 dashboard screenshots arranged like panels in an illuminated manuscript, each panel glowing as the scroll passes over it, golden light and ink flourishes', duration: 4 },
     // Animate each screenshot with subtle pan/zoom via Alibaba i2v

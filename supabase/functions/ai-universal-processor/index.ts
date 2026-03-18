@@ -352,6 +352,56 @@ serve(async (req) => {
     }
 
     // ============================================
+    // IMAGE ENHANCE ACTION (GPT-image-1 Edit — preserves source screenshot)
+    // ============================================
+    if (action === 'image_enhance') {
+      const { ref_image_url: sourceUrl, size: enhanceSize } = requestBody as any;
+      console.log(`[UniversalAI] Image enhancement via GPT-image-1 edit — source: ${sourceUrl?.substring(0, 80)}...`);
+
+      if (!sourceUrl) {
+        return new Response(JSON.stringify({
+          error: 'image_enhance requires ref_image_url (source screenshot URL)',
+          timestamp: new Date().toISOString(),
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      try {
+        const { enhanceImageWithOpenAI } = await import('../_shared/image-providers.ts');
+        const result = await enhanceImageWithOpenAI(sourceUrl, prompt, { size: enhanceSize });
+
+        // Mirror to Supabase Storage for permanent, CORS-safe access
+        const finalUrl = await mirrorImageToStorage(result.imageUrl, authenticatedUserId);
+
+        return new Response(JSON.stringify({
+          content: finalUrl,
+          imageUrl: finalUrl,
+          url: finalUrl,
+          isImage: true,
+          provider: result.provider,
+          model: result.model,
+          timestamp: new Date().toISOString(),
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (enhErr) {
+        console.error(`[UniversalAI] Image enhancement failed:`, enhErr);
+        return new Response(JSON.stringify({
+          error: `Image enhancement failed: ${enhErr instanceof Error ? enhErr.message : String(enhErr)}`,
+          // Return original source URL as fallback so caller can use it
+          fallbackUrl: sourceUrl,
+          provider: 'openai',
+          timestamp: new Date().toISOString(),
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // ============================================
     // IMAGE GENERATION ACTION (Gemini Direct API)
     // ============================================
     if (action === 'image_generation') {
