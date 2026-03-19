@@ -5231,19 +5231,19 @@ function EP04ProductionInner() {
    * @param resolution - Output resolution (default: full-hd)
    * @returns Timeline payload ready for genie-cast-timeline-submit
    */
+  // buildStitchingTimeline kept as fallback — but primary path now uses stitch_parts action
   const buildStitchingTimeline = useCallback((
     videoUrls: string[],
     resolution: string = 'full-hd'
   ): Record<string, any> => {
     const scenes = videoUrls.map((url, idx) => ({
       comment: `Segment ${idx + 1} of ${videoUrls.length}`,
-      transition: idx > 0 ? { style: 'fade', duration: 0.3 } : undefined,
+      // No inter-part transitions — parts already have their own scene transitions baked in.
+      // Adding fade here forces xfade re-encoding which defeats stream-copy concat.
       elements: [
         {
           type: 'video',
           src: url,
-          // Let FFmpeg auto-detect duration from the source video
-          // by NOT specifying duration — it plays the full clip
         },
       ],
     }));
@@ -5278,27 +5278,26 @@ function EP04ProductionInner() {
       return;
     }
 
-    console.log(`[Cast Stitching] Starting concat of ${orderedUrls.length} parts:`, orderedUrls.map(u => u.substring(0, 60)));
+    console.log(`[Cast Stitching] Starting stitch_parts of ${orderedUrls.length} parts:`, orderedUrls.map(u => u.substring(0, 60)));
 
     setConcatStatus('submitting');
     setConcatError(null);
     setConcatVideoUrl(null);
 
     try {
-      const timeline = buildStitchingTimeline(orderedUrls);
+      // Use stitch_parts action — fast concat via stream copy (no re-encoding)
       const assemblyBody = {
-        timeline,
+        action: 'stitch_parts',
+        videoUrls: orderedUrls,
         castProjectId: projectId,
-        language: 'en',
-        quality: 'production',
       };
 
       const payloadSize = JSON.stringify(assemblyBody).length;
-      console.log(`[Cast Stitching] Submitting: ${timeline.scenes.length} segments, ${(payloadSize / 1024).toFixed(0)}KB`);
+      console.log(`[Cast Stitching] Submitting stitch_parts: ${orderedUrls.length} parts, ${(payloadSize / 1024).toFixed(0)}KB`);
 
       // PAYLOAD GUARD: Stitch payload should be tiny (just video URLs) — reject if suspiciously large
       if (payloadSize > 100 * 1024) {
-        throw new Error(`Stitch payload unexpectedly large (${(payloadSize / 1024).toFixed(0)}KB) — should be <100KB for URL-only timeline`);
+        throw new Error(`Stitch payload unexpectedly large (${(payloadSize / 1024).toFixed(0)}KB) — should be <100KB for URL-only payload`);
       }
 
       const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
@@ -7881,7 +7880,7 @@ function EP04ProductionInner() {
                             <CardContent className="p-4 space-y-3">
                               <div className="flex items-center gap-3">
                                 <img
-                                  src={SCENE_BACKGROUNDS[sceneKey]}
+                                  src={Object.values(sceneProduction[sceneKey]?.imageUrls || {})[0] || SCENE_BACKGROUNDS[sceneKey]}
                                   alt={sceneKey}
                                   className="h-10 w-16 object-cover rounded border border-border/30"
                                 />
@@ -7956,12 +7955,28 @@ function EP04ProductionInner() {
                         sessionTitle="EP04 — Sprint Documentary"
                         productionArtifacts={finalVideoUrl ? {
                           assembledVideoUrl: finalVideoUrl,
-                          sceneVideoUrls: sceneKeys
-                            .map(sk => sceneProduction[sk]?.assembledClipUrl)
-                            .filter((url): url is string => !!url),
+                          sceneVideoUrls: [
+                            // Per-scene assembled clips
+                            ...sceneKeys
+                              .map(sk => sceneProduction[sk]?.assembledClipUrl)
+                              .filter((url): url is string => !!url),
+                            // Per-scene individual video assets (fallback)
+                            ...Object.values(sceneProduction)
+                              .flatMap(s => Object.values(s.videoUrls || {}))
+                              .filter((url): url is string => !!url && url.startsWith('http')),
+                          ],
                           audioUrl: null,
                           captionFiles: [],
-                          thumbnailUrls: [],
+                          thumbnailUrls: [
+                            // Assembly part thumbnails (from RunPod render)
+                            ...assemblyParts
+                              .filter(p => p.thumbnailUrl)
+                              .map(p => p.thumbnailUrl!),
+                            // First image from each scene's generated assets (fallback)
+                            ...Object.values(sceneProduction)
+                              .map(s => Object.values(s.imageUrls || {})[0])
+                              .filter((url): url is string => !!url),
+                          ].slice(0, 12),
                           exportPresets: [],
                           speakerTracks: [],
                         } : undefined}
@@ -7974,12 +7989,24 @@ function EP04ProductionInner() {
                         sessionTitle="EP04 — Sprint Documentary"
                         productionArtifacts={finalVideoUrl ? {
                           assembledVideoUrl: finalVideoUrl,
-                          sceneVideoUrls: sceneKeys
-                            .map(sk => sceneProduction[sk]?.assembledClipUrl)
-                            .filter((url): url is string => !!url),
+                          sceneVideoUrls: [
+                            ...sceneKeys
+                              .map(sk => sceneProduction[sk]?.assembledClipUrl)
+                              .filter((url): url is string => !!url),
+                            ...Object.values(sceneProduction)
+                              .flatMap(s => Object.values(s.videoUrls || {}))
+                              .filter((url): url is string => !!url && url.startsWith('http')),
+                          ],
                           audioUrl: null,
                           captionFiles: [],
-                          thumbnailUrls: [],
+                          thumbnailUrls: [
+                            ...assemblyParts
+                              .filter(p => p.thumbnailUrl)
+                              .map(p => p.thumbnailUrl!),
+                            ...Object.values(sceneProduction)
+                              .map(s => Object.values(s.imageUrls || {})[0])
+                              .filter((url): url is string => !!url),
+                          ].slice(0, 12),
                           exportPresets: [],
                           speakerTracks: [],
                         } : undefined}

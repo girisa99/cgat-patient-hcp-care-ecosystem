@@ -1005,9 +1005,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // Chapter title card — generated via FLUX, used as transition background from scene-8
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter V — Storms" in golden calligraphy, dark clouds with rain of error messages and lightning bolts sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── Full challenges narrative — vulnerability + thesis moment ──
+    { type: 'tts', voice: 'host', scriptKey: 'challenges-intro' },
     // B-roll: Context-switching cost — the hidden tax on developer productivity
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D infographic: dramatic visualization of context-switching overhead — a developer shown as a tiny figure standing at a crossroads with 5 different project paths branching out, each path labeled with a different task. Above, a burning hourglass shows "LOST: 4.2 hours/day" in red. Brain scan visualization shows fragmented thought patterns vs unified focus. LEFT: chaotic multi-tasking (gray, dim), RIGHT: focused single-tasking (green, bright). Clean data visualization with emotional impact, 8K' },
-    { type: 'tts', voice: 'host', scriptKey: 'challenges-intro' },
     { type: 'tts', voice: 'atlas', scriptKey: 'challenges-atlas' },
     { type: 'tts', voice: 'nova', scriptKey: 'challenges-nova' },
     // Allaudin's Moana moment — full theatrical center-stage (25s)
@@ -1070,9 +1070,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // Chapter title card — generated via FLUX, used as transition background from scene-10
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Final chapter header: "The Last Page... For Now" in warm golden calligraphy, tiny illustrated characters waving from the margins, squirrel holding a tiny "THE END?" sign', duration: 2 },
     // ── Full closing dialogue — emotional sign-off (all 9 script entries) ──
+    { type: 'tts', voice: 'host', scriptKey: 'close-takeaway' },
     // B-roll: Meta-moment — the team reflects on the journey
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: warm sunset scene — the full team sits together on a hilltop overlooking a tech-forest landscape. The human host sits center with his golden retriever, Atlas the bear sits to the left polishing his glasses reflectively, Nova the fox sits to the right with her tail curled around her contentedly, the squirrel naps on Atlas shoulder. Behind them, a holographic display shows "41/41 TASKS COMPLETE" fading into the sunset. Warm golden hour lighting, nostalgic reflection energy, widescreen cinematic composition, 8K' },
-    { type: 'tts', voice: 'host', scriptKey: 'close-takeaway' },
     { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-final' },
     { type: 'tts', voice: 'nova', scriptKey: 'close-nova-final' },
     { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-heard' },

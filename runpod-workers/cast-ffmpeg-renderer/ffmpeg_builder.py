@@ -57,7 +57,7 @@ def _encoder_args(crf: int = 23) -> list[str]:
     The adaptive re-encode safety net still handles files >80MB."""
     if _detect_nvenc():
         return ["-c:v", "h264_nvenc", "-preset", "p4", "-b:v", "4M", "-maxrate", "6M", "-bufsize", "8M"]
-    return ["-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
+    return ["-c:v", "libx264", "-preset", "fast", "-crf", str(crf),
             "-maxrate", "6M", "-bufsize", "10M"]
 
 
@@ -1034,3 +1034,303 @@ def get_video_duration(path: str) -> float:
         return float(result.stdout.strip())
     except Exception:
         return 0.0
+
+
+# ── Broadcast-Quality Part Stitching ──────────────────────────────────────────
+
+import re
+
+
+def validate_part(path: str) -> dict:
+    """Probe a part video for resolution, duration, codec, and detect black frames
+    at boundaries (first/last 3s only — avoids scanning full video)."""
+    info = {
+        "valid": False, "width": 0, "height": 0, "duration": 0.0,
+        "codec": "", "black_trim_start": 0.0, "black_trim_end": 0.0, "error": None,
+    }
+
+    # ── Probe basic info ──
+    try:
+        probe = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-select_streams", "v:0",
+             "-show_entries", "stream=width,height,codec_name,duration",
+             "-show_entries", "format=duration",
+             "-of", "json", path],
+            capture_output=True, text=True, timeout=15,
+        )
+        import json as _json
+        data = _json.loads(probe.stdout)
+        stream = data.get("streams", [{}])[0]
+        fmt = data.get("format", {})
+
+        info["width"] = int(stream.get("width", 0))
+        info["height"] = int(stream.get("height", 0))
+        info["codec"] = stream.get("codec_name", "")
+        # Duration: prefer format-level (more reliable), then stream-level
+        dur = float(fmt.get("duration", 0) or stream.get("duration", 0) or 0)
+        info["duration"] = dur
+    except Exception as e:
+        info["error"] = f"Probe failed: {e}"
+        return info
+
+    if info["duration"] <= 0 or info["width"] == 0:
+        info["error"] = f"Invalid: duration={info['duration']}, width={info['width']}"
+        return info
+
+    if info["codec"] not in ("h264", "hevc", "vp9", "av1"):
+        info["error"] = f"Unsupported codec: {info['codec']}"
+        return info
+
+    # ── Black frame detection on first 3s ──
+    try:
+        cmd_start = [
+            "ffmpeg", "-y", "-i", path,
+            "-t", "3",
+            "-vf", "blackdetect=d=0.04:pix_th=0.10",
+            "-an", "-f", "null", "-",
+        ]
+        res = subprocess.run(cmd_start, capture_output=True, text=True, timeout=15)
+        # Parse: [blackdetect @ ...] black_start:0 black_end:0.12 black_duration:0.12
+        for m in re.finditer(r"black_start:([\d.]+)\s+black_end:([\d.]+)", res.stderr):
+            bs, be = float(m.group(1)), float(m.group(2))
+            if bs < 0.1:  # only care about black frames starting at/near 0
+                info["black_trim_start"] = max(info["black_trim_start"], be)
+    except Exception:
+        pass  # non-fatal
+
+    # ── Black frame detection on last 3s ──
+    try:
+        tail_start = max(0, info["duration"] - 3)
+        cmd_end = [
+            "ffmpeg", "-y", "-ss", f"{tail_start:.2f}", "-i", path,
+            "-vf", "blackdetect=d=0.04:pix_th=0.10",
+            "-an", "-f", "null", "-",
+        ]
+        res = subprocess.run(cmd_end, capture_output=True, text=True, timeout=15)
+        for m in re.finditer(r"black_start:([\d.]+)\s+black_end:([\d.]+)", res.stderr):
+            bs_rel, be_rel = float(m.group(1)), float(m.group(2))
+            abs_end = tail_start + be_rel
+            # If black extends to end of video (within 0.1s tolerance)
+            if abs(abs_end - info["duration"]) < 0.15:
+                trim_from = tail_start + bs_rel
+                info["black_trim_end"] = info["duration"] - trim_from
+    except Exception:
+        pass  # non-fatal
+
+    info["valid"] = True
+    return info
+
+
+def normalize_part_resolution(path: str, target_w: int, target_h: int) -> str:
+    """Re-encode a part to match target resolution if it differs. Replaces file in-place."""
+    # Quick probe to check current resolution
+    try:
+        probe = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-select_streams", "v:0",
+             "-show_entries", "stream=width,height",
+             "-of", "csv=p=0", path],
+            capture_output=True, text=True, timeout=10,
+        )
+        w, h = [int(x) for x in probe.stdout.strip().split(",")]
+        if w == target_w and h == target_h:
+            return path  # already correct — no-op
+    except Exception:
+        return path  # can't probe → skip normalization
+
+    print(f"  [normalize] {os.path.basename(path)}: {w}x{h} → {target_w}x{target_h}")
+    out_path = path + ".norm.mp4"
+    cmd = ["ffmpeg", "-y", "-i", path]
+    cmd.extend([
+        "-vf", f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease,"
+               f"pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:color=black",
+    ])
+    cmd.extend(_encoder_args())
+    cmd.extend(["-c:a", "copy", "-pix_fmt", "yuv420p", out_path])
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        if result.returncode == 0:
+            os.replace(out_path, path)
+            return path
+        print(f"  [normalize] FAILED: {result.stderr[-300:]}")
+    except subprocess.TimeoutExpired:
+        print(f"  [normalize] TIMED OUT")
+    # cleanup temp on failure
+    if os.path.exists(out_path):
+        os.remove(out_path)
+    return path
+
+
+def trim_black_frames(path: str, trim_start: float, trim_end: float, duration: float) -> str:
+    """Stream-copy trim of black frames from part boundaries. Replaces in-place.
+    Only trims if > 0.05s to avoid unnecessary work."""
+    if trim_start < 0.05 and trim_end < 0.05:
+        return path  # nothing to trim
+
+    new_start = trim_start if trim_start >= 0.05 else 0.0
+    new_dur = duration - new_start - (trim_end if trim_end >= 0.05 else 0.0)
+    if new_dur < 0.5:
+        return path  # would trim too much
+
+    print(f"  [trim] {os.path.basename(path)}: start={new_start:.2f}s, "
+          f"end_trim={trim_end:.2f}s → {new_dur:.1f}s")
+
+    out_path = path + ".trim.mp4"
+    cmd = ["ffmpeg", "-y"]
+    if new_start > 0:
+        cmd.extend(["-ss", f"{new_start:.3f}"])
+    cmd.extend(["-i", path, "-t", f"{new_dur:.3f}", "-c", "copy", out_path])
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if result.returncode == 0:
+            os.replace(out_path, path)
+            return path
+        print(f"  [trim] stream copy failed: {result.stderr[-200:]}")
+    except subprocess.TimeoutExpired:
+        print(f"  [trim] TIMED OUT")
+    if os.path.exists(out_path):
+        os.remove(out_path)
+    return path
+
+
+def stitch_parts_xfade(
+    part_paths: list[str],
+    transition_dur: float = 0.75,
+    loudnorm: bool = True,
+    output_path: str = "/tmp/cast_stitch/stitched_final.mp4",
+) -> str | None:
+    """Stitch parts with xfade dissolve transitions and audio crossfade.
+    Follows the same pattern as concatenate_scenes() (lines 884-984).
+    Appends single-pass loudnorm on the final audio stream."""
+    if not part_paths:
+        return None
+    if len(part_paths) == 1:
+        import shutil as _shutil
+        _shutil.copy2(part_paths[0], output_path)
+        return output_path
+
+    # ── Probe actual durations ──
+    durations: list[float] = []
+    for p in part_paths:
+        d = get_video_duration(p)
+        if d <= 0:
+            print(f"  [xfade] WARNING: cannot probe {os.path.basename(p)}, skipping")
+            return None  # can't build xfade without known durations
+        durations.append(d)
+
+    total_input = sum(durations)
+    print(f"  [xfade] {len(part_paths)} parts, total input: {total_input:.1f}s, "
+          f"transition: {transition_dur:.2f}s")
+
+    # ── Build inputs ──
+    inputs: list[str] = []
+    for p in part_paths:
+        inputs.extend(["-i", p])
+
+    # ── Build xfade + acrossfade filter chains ──
+    filter_parts = []
+    current_v = "[0:v]"
+    current_a = "[0:a]"
+    cumulative_dur = durations[0]
+
+    for i in range(1, len(part_paths)):
+        # Clamp transition to 45% of shorter adjacent segment
+        max_trans = min(cumulative_dur, durations[i]) * 0.45
+        td = min(transition_dur, max_trans)
+        td = max(0.3, td)  # floor at 0.3s
+
+        offset = cumulative_dur - td
+        if offset < 0.1:
+            offset = 0.1
+
+        is_last = (i == len(part_paths) - 1)
+        v_out = "[vout]" if is_last else f"[xf{i}]"
+        a_out_label = f"[af{i}]"  # always intermediate for audio
+
+        filter_parts.append(
+            f"{current_v}[{i}:v]xfade=transition=fade"
+            f":duration={td:.2f}:offset={offset:.2f}{v_out}"
+        )
+        current_v = v_out
+
+        filter_parts.append(
+            f"{current_a}[{i}:a]acrossfade=d={td:.2f}:c1=tri:c2=tri{a_out_label}"
+        )
+        current_a = a_out_label
+
+        cumulative_dur = offset + durations[i]
+
+    # ── Loudnorm on final audio ──
+    if loudnorm:
+        filter_parts.append(
+            f"{current_a}loudnorm=I=-16:TP=-1.5:LRA=11[aout]"
+        )
+        audio_map = "[aout]"
+    else:
+        # Rename last audio label to [aout]
+        last_a = filter_parts[-1]
+        filter_parts[-1] = last_a.rsplit("]", 1)[0] + "][aout]" if not last_a.endswith("[aout]") else last_a
+        # Actually let's just map current_a directly
+        audio_map = current_a
+
+    filter_complex = ";\n".join(filter_parts)
+
+    cmd = ["ffmpeg", "-y"]
+    cmd.extend(inputs)
+    cmd.extend(["-filter_complex", filter_complex])
+    cmd.extend(["-map", "[vout]", "-map", audio_map])
+    cmd.extend(_encoder_args(crf=23))
+    cmd.extend(["-c:a", "aac", "-b:a", "192k", "-ar", "48000"])
+    cmd.extend(["-pix_fmt", "yuv420p"])
+    cmd.append(output_path)
+
+    timeout = min(3600, int(total_input / 2 + 300))
+    print(f"  [xfade] Running FFmpeg (timeout={timeout}s)...")
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        if result.returncode != 0:
+            print(f"  [xfade] FAILED:\n{result.stderr[-1500:]}")
+            return None
+        final_dur = get_video_duration(output_path)
+        print(f"  [xfade] OK: {final_dur:.1f}s output")
+        return output_path
+    except subprocess.TimeoutExpired:
+        print(f"  [xfade] TIMED OUT ({timeout}s)")
+        return None
+
+
+def stitch_parts_batched(
+    part_paths: list[str],
+    transition_dur: float = 0.75,
+    loudnorm: bool = True,
+    output_path: str = "/tmp/cast_stitch/stitched_final.mp4",
+    batch_size: int = 12,
+) -> str | None:
+    """For >batch_size parts: split into groups, xfade each batch, then xfade the batch outputs.
+    Avoids FFmpeg filter graph complexity limits with 25+ inputs."""
+    if len(part_paths) <= batch_size:
+        return stitch_parts_xfade(part_paths, transition_dur, loudnorm, output_path)
+
+    print(f"  [batched] {len(part_paths)} parts → batches of {batch_size}")
+    batch_dir = os.path.join(os.path.dirname(output_path), "batches")
+    os.makedirs(batch_dir, exist_ok=True)
+
+    batch_outputs = []
+    for batch_idx in range(0, len(part_paths), batch_size):
+        batch = part_paths[batch_idx:batch_idx + batch_size]
+        batch_label = f"batch_{batch_idx // batch_size}"
+        batch_out = os.path.join(batch_dir, f"{batch_label}.mp4")
+        print(f"  [batched] {batch_label}: {len(batch)} parts")
+
+        # Don't apply loudnorm on intermediate batches — only on final
+        result = stitch_parts_xfade(batch, transition_dur, loudnorm=False, output_path=batch_out)
+        if not result:
+            print(f"  [batched] {batch_label} FAILED")
+            return None
+        batch_outputs.append(result)
+
+    # ── Final stitch of batch outputs ──
+    print(f"  [batched] Final stitch of {len(batch_outputs)} batch outputs...")
+    return stitch_parts_xfade(batch_outputs, transition_dur, loudnorm, output_path)

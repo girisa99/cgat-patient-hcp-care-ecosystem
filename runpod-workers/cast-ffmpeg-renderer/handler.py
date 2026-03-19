@@ -59,7 +59,11 @@ except Exception as e:
     sys.exit(1)
 
 try:
-    from ffmpeg_builder import render_scene, concatenate_scenes, get_video_duration
+    from ffmpeg_builder import (
+        render_scene, concatenate_scenes, get_video_duration,
+        validate_part, normalize_part_resolution, trim_black_frames,
+        stitch_parts_batched, stitch_parts_xfade,
+    )
     print("[CastRenderer] ffmpeg_builder loaded", flush=True)
 except Exception as e:
     print(f"[CastRenderer] FATAL: Failed to import ffmpeg_builder: {e}", flush=True)
@@ -682,6 +686,322 @@ def handle_render(job_input: dict) -> dict:
         return {"error": str(e)}
 
 
+# ── Stitch Parts — Fast Concat of Pre-Rendered Part Videos ────────────────────
+
+def handle_stitch_parts(job_input: dict) -> dict:
+    """
+    Broadcast-quality part stitching pipeline — 8 stages.
+    Produces smooth dissolve transitions, audio crossfade, loudnorm,
+    black-frame trimming, and resolution normalization.
+
+    Input:
+      videoUrls: list[str]          — Ordered Supabase Storage URLs of rendered parts
+      castProjectId: str            — Project ID for upload path
+      castJobId: str | None         — Job ID for progress updates
+      supabaseUrl: str              — Supabase URL for upload
+      supabaseServiceKey: str       — Supabase service key
+      transitionDuration: float     — Dissolve duration (default 0.75s)
+      enableLoudnorm: bool          — Audio normalization (default true)
+    """
+    import traceback
+    from collections import Counter
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    video_urls = job_input.get("videoUrls", [])
+    cast_project_id = job_input.get("castProjectId", "unknown")
+    cast_job_id = job_input.get("castJobId")
+    supabase_url = job_input.get("supabaseUrl", "")
+    supabase_key = job_input.get("supabaseServiceKey", "")
+    transition_dur = float(job_input.get("transitionDuration", 0.75))
+    enable_loudnorm = bool(job_input.get("enableLoudnorm", True))
+
+    if len(video_urls) < 2:
+        return {"error": f"stitch_parts requires at least 2 video URLs, got {len(video_urls)}"}
+
+    def progress(pct, msg):
+        _update_progress(cast_job_id, pct, msg, supabase_url, supabase_key)
+
+    t0 = time.time()
+    stitch_dir = "/tmp/cast_stitch"
+    os.makedirs(stitch_dir, exist_ok=True)
+
+    # Diagnostics
+    validation_report = []
+    parts_skipped = 0
+    resolution_normalized = False
+    black_frames_trimmed = 0
+    stitch_method = "xfade"
+
+    try:
+        # ═══ Stage 1 (5%): Disk space check ═══
+        progress(5, "Checking disk space...")
+        free_mb = shutil.disk_usage("/tmp").free / (1024 * 1024)
+        needed_mb = len(video_urls) * 60 * 2.5  # avg 60MB/part × 2.5 headroom
+        print(f"[StitchParts] Disk check: {free_mb:.0f}MB free, need {needed_mb:.0f}MB")
+        if free_mb < needed_mb:
+            return {"error": f"Insufficient disk: {free_mb:.0f}MB free, need {needed_mb:.0f}MB "
+                    f"for {len(video_urls)} parts"}
+
+        # ═══ Stage 2 (8%): URL pre-flight validation ═══
+        progress(8, f"Validating {len(video_urls)} part URLs...")
+        print(f"[StitchParts] Pre-checking {len(video_urls)} URLs...")
+        bad_urls = []
+        for i, url in enumerate(video_urls):
+            try:
+                req = urllib.request.Request(url, method="HEAD",
+                                            headers={"User-Agent": "CastRenderer/3.0"})
+                resp = urllib.request.urlopen(req, timeout=10)
+                if resp.status not in (200, 206):
+                    bad_urls.append((i, f"HTTP {resp.status}"))
+            except Exception as e:
+                bad_urls.append((i, str(e)[:80]))
+        if bad_urls:
+            details = "; ".join([f"part {i}: {err}" for i, err in bad_urls])
+            return {"error": f"URL pre-check failed for {len(bad_urls)} parts: {details}"}
+        print(f"  [precheck] All {len(video_urls)} URLs accessible")
+
+        # ═══ Stage 3 (10-30%): Download parts (parallel) ═══
+        progress(10, f"Downloading {len(video_urls)} parts...")
+        print(f"[StitchParts] Downloading {len(video_urls)} part videos...")
+
+        def download_part(idx_url):
+            idx, url = idx_url
+            local_path = os.path.join(stitch_dir, f"part_{idx:03d}.mp4")
+            for attempt in range(3):
+                try:
+                    req = urllib.request.Request(url, headers={"User-Agent": "CastRenderer/3.0"})
+                    with urllib.request.urlopen(req, timeout=120) as resp:
+                        with open(local_path, "wb") as f:
+                            while True:
+                                chunk = resp.read(1024 * 1024)  # 1MB chunks
+                                if not chunk:
+                                    break
+                                f.write(chunk)
+                    size_mb = os.path.getsize(local_path) / (1024 * 1024)
+                    print(f"  [download] Part {idx}: {size_mb:.1f}MB")
+                    return idx, local_path
+                except Exception as e:
+                    print(f"  [download] Part {idx} attempt {attempt + 1} failed: {e}")
+                    if attempt == 2:
+                        raise
+                    time.sleep(2 ** attempt)
+            return idx, None
+
+        part_paths = {}
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futures = {pool.submit(download_part, (i, url)): i for i, url in enumerate(video_urls)}
+            for future in as_completed(futures):
+                idx, path = future.result()
+                if path:
+                    part_paths[idx] = path
+
+        if len(part_paths) != len(video_urls):
+            missing = [i for i in range(len(video_urls)) if i not in part_paths]
+            return {"error": f"Failed to download parts: {missing}"}
+
+        ordered_paths = [part_paths[i] for i in range(len(video_urls))]
+        dl_time = time.time() - t0
+        print(f"  [download] All {len(ordered_paths)} parts downloaded in {dl_time:.1f}s")
+        progress(30, f"Downloaded {len(ordered_paths)} parts in {dl_time:.0f}s")
+
+        # ═══ Stage 4 (32-38%): Validate parts ═══
+        progress(32, "Validating parts (resolution, codec, black frames)...")
+        print("[StitchParts] Validating parts...")
+
+        part_infos = []
+        valid_paths = []
+        for i, path in enumerate(ordered_paths):
+            info = validate_part(path)
+            info["index"] = i
+            part_infos.append(info)
+            validation_report.append({
+                "part": i,
+                "valid": info["valid"],
+                "width": info["width"],
+                "height": info["height"],
+                "duration": round(info["duration"], 1),
+                "codec": info["codec"],
+                "blackStart": round(info["black_trim_start"], 2),
+                "blackEnd": round(info["black_trim_end"], 2),
+                "error": info.get("error"),
+            })
+            if info["valid"]:
+                valid_paths.append(path)
+                print(f"  [validate] Part {i}: {info['width']}x{info['height']} "
+                      f"{info['codec']} {info['duration']:.1f}s "
+                      f"black=[{info['black_trim_start']:.2f}s, {info['black_trim_end']:.2f}s]")
+            else:
+                parts_skipped += 1
+                print(f"  [validate] Part {i}: INVALID — {info.get('error', 'unknown')}")
+
+        progress(38, f"Validated {len(valid_paths)}/{len(ordered_paths)} parts")
+
+        if len(valid_paths) < 2:
+            return {"error": f"Only {len(valid_paths)} valid parts — need at least 2 to stitch"}
+
+        valid_infos = [info for info in part_infos if info["valid"]]
+
+        # ═══ Stage 5 (40-45%): Normalize resolution ═══
+        progress(40, "Normalizing resolution...")
+        resolutions = Counter((info["width"], info["height"]) for info in valid_infos)
+        target_w, target_h = resolutions.most_common(1)[0][0]
+        needs_normalize = any(
+            (info["width"], info["height"]) != (target_w, target_h) for info in valid_infos
+        )
+
+        if needs_normalize:
+            resolution_normalized = True
+            print(f"  [normalize] Target: {target_w}x{target_h} "
+                  f"(majority {resolutions.most_common(1)[0][1]}/{len(valid_infos)})")
+            for info in valid_infos:
+                if (info["width"], info["height"]) != (target_w, target_h):
+                    idx = info["index"]
+                    normalize_part_resolution(valid_paths[valid_infos.index(info)],
+                                              target_w, target_h)
+            progress(45, "Resolution normalized")
+        else:
+            print(f"  [normalize] All parts already {target_w}x{target_h} — skipping")
+
+        # ═══ Stage 6 (48-52%): Trim black frames ═══
+        progress(48, "Trimming black frames from boundaries...")
+        for info in valid_infos:
+            if info["black_trim_start"] >= 0.05 or info["black_trim_end"] >= 0.05:
+                idx_in_valid = valid_infos.index(info)
+                trim_black_frames(
+                    valid_paths[idx_in_valid],
+                    info["black_trim_start"],
+                    info["black_trim_end"],
+                    info["duration"],
+                )
+                black_frames_trimmed += 1
+        progress(52, f"Trimmed {black_frames_trimmed} parts")
+        if black_frames_trimmed:
+            print(f"  [trim] Trimmed black frames from {black_frames_trimmed} parts")
+        else:
+            print(f"  [trim] No black frames detected — skipping")
+
+        # ═══ Stage 7 (55-82%): Xfade stitch with fallback chain ═══
+        progress(55, f"Stitching {len(valid_paths)} parts with dissolve transitions...")
+        print(f"[StitchParts] Stitching {len(valid_paths)} parts "
+              f"(transition={transition_dur:.2f}s, loudnorm={enable_loudnorm})...")
+        t_stitch = time.time()
+
+        output_path = os.path.join(stitch_dir, "stitched_final.mp4")
+
+        # Level 1: xfade with loudnorm (best quality)
+        stitch_result = stitch_parts_batched(
+            valid_paths, transition_dur, enable_loudnorm, output_path,
+        )
+
+        if not stitch_result:
+            # Level 2: Re-encode concat without transitions (consistent codec)
+            stitch_method = "re_encode_fallback"
+            progress(65, "Xfade failed — falling back to re-encode concat...")
+            print("  [stitch] xfade failed — trying re-encode concat fallback")
+
+            concat_file = os.path.join(stitch_dir, "concat.txt")
+            with open(concat_file, "w") as f:
+                for p in valid_paths:
+                    f.write(f"file '{p}'\n")
+
+            from ffmpeg_builder import _encoder_args
+            cmd_reencode = [
+                "ffmpeg", "-y",
+                "-f", "concat", "-safe", "0", "-i", concat_file,
+            ]
+            cmd_reencode.extend(_encoder_args())
+            cmd_reencode.extend(["-c:a", "aac", "-b:a", "192k", "-ar", "48000"])
+            cmd_reencode.extend(["-pix_fmt", "yuv420p"])
+            cmd_reencode.append(output_path)
+
+            result = subprocess.run(cmd_reencode, capture_output=True, text=True, timeout=1200)
+
+            if result.returncode != 0:
+                # Level 3: Stream-copy concat (last resort)
+                stitch_method = "stream_copy_fallback"
+                progress(72, "Re-encode failed — falling back to stream copy...")
+                print("  [stitch] re-encode failed — trying stream copy as last resort")
+
+                cmd_copy = [
+                    "ffmpeg", "-y",
+                    "-f", "concat", "-safe", "0", "-i", concat_file,
+                    "-c", "copy", output_path,
+                ]
+                result = subprocess.run(cmd_copy, capture_output=True, text=True, timeout=300)
+                if result.returncode != 0:
+                    return {"error": f"All stitch methods failed. "
+                            f"Last error: {result.stderr[-500:]}"}
+
+        stitch_time = time.time() - t_stitch
+        progress(82, f"Stitch done in {stitch_time:.0f}s")
+        print(f"  [stitch] Done in {stitch_time:.1f}s (method: {stitch_method})")
+
+        # ═══ Stage 8 (84-86%): Verify output — NO adaptive re-encode ═══
+        progress(84, "Verifying stitched video...")
+        duration = get_video_duration(output_path)
+        file_size_bytes = os.path.getsize(output_path)
+        file_size_mb = file_size_bytes / (1024 * 1024)
+        print(f"  [verify] Final: {duration:.1f}s, {file_size_mb:.1f}MB")
+
+        if duration < 1.0:
+            return {"error": f"Stitched video too short: {duration:.1f}s"}
+
+        # NOTE: No _adaptive_reencode() — stitched movies are intentionally large (200-800MB)
+
+        # Write file size to DB before upload
+        _write_file_size_to_db(cast_job_id, file_size_bytes, supabase_url, supabase_key)
+        progress(86, f"Verified: {duration:.0f}s, {file_size_mb:.0f}MB")
+
+        # ═══ Stage 9 (88-98%): Upload to Supabase Storage ═══
+        progress(88, f"Uploading {file_size_mb:.0f}MB stitched video...")
+        print(f"[StitchParts] Uploading {file_size_mb:.1f}MB...")
+        t_upload = time.time()
+
+        from supabase_uploader import upload_final_video
+        upload_result = upload_final_video(
+            output_path, cast_project_id, supabase_url, supabase_key,
+            part_number=None,  # None = "final" path
+        )
+        upload_time = time.time() - t_upload
+        print(f"  [upload] Done in {upload_time:.1f}s")
+
+        # ═══ Done ═══
+        total_time = time.time() - t0
+        video_url = upload_result.get("videoUrl")
+        progress(98, f"Stitch complete — {total_time:.0f}s total")
+        print(f"[StitchParts] DONE in {total_time:.1f}s — {video_url or 'NO URL'}")
+
+        return {
+            "videoUrl": video_url,
+            "thumbnailUrl": upload_result.get("thumbnailUrl"),
+            "duration": duration,
+            "renderTime": round(total_time, 1),
+            "fileSizeMB": round(file_size_mb, 1),
+            "fileSizeBytes": file_size_bytes,
+            "partsStitched": len(video_urls),
+            "partsValidated": len(valid_paths),
+            "partsSkipped": parts_skipped,
+            "resolutionNormalized": resolution_normalized,
+            "blackFramesTrimmed": black_frames_trimmed,
+            "audioNormalized": enable_loudnorm and stitch_method == "xfade",
+            "concatTime": round(stitch_time, 1),
+            "downloadTime": round(dl_time, 1),
+            "uploadTime": round(upload_time, 1),
+            "workerVersion": WORKER_VERSION,
+            "method": stitch_method,
+            "validationReport": validation_report,
+        }
+
+    except subprocess.TimeoutExpired:
+        return {"error": "Stitch operation timed out"}
+    except Exception as e:
+        print(f"[StitchParts] ERROR: {e}")
+        print(traceback.format_exc())
+        return {"error": str(e)}
+    finally:
+        shutil.rmtree(stitch_dir, ignore_errors=True)
+
+
 # ── Main Handler — Action Dispatcher ──────────────────────────────────────────
 
 def handler(job: dict) -> dict:
@@ -709,6 +1029,8 @@ def handler(job: dict) -> dict:
         return handle_generate_thumbnails(job_input)
     elif action == "inject_metadata":
         return handle_inject_metadata(job_input)
+    elif action == "stitch_parts":
+        return handle_stitch_parts(job_input)
     else:
         return {"error": f"Unknown action: {action}"}
 

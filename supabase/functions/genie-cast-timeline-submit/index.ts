@@ -25,8 +25,142 @@ serve(async (req) => {
   }
 
   try {
-    const { timeline, castProjectId = null, language = 'en', quality = 'production', partNumber = null } = await req.json();
+    const body = await req.json();
+    const { action, timeline, castProjectId = null, language = 'en', quality = 'production', partNumber = null } = body;
 
+    // ── Fast path: stitch_parts action (concat pre-rendered parts, no timeline needed) ──
+    if (action === 'stitch_parts') {
+      const { videoUrls } = body;
+      if (!videoUrls || !Array.isArray(videoUrls) || videoUrls.length < 2) {
+        return new Response(JSON.stringify({ success: false, message: 'stitch_parts requires videoUrls array with >= 2 URLs' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log(`🔗 stitch_parts: ${videoUrls.length} parts for project ${castProjectId}`);
+
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      // Track stitch job in DB
+      let castJobId: string | null = null;
+      if (castProjectId) {
+        try {
+          const { data: job, error: insertError } = await supabase
+            .from('cast_generation_jobs')
+            .insert({
+              project_id: castProjectId,
+              job_type: 'assembly',
+              language: 'en',
+              quality: 'production',
+              provider: 'runpod-ffmpeg',
+              status: 'processing',
+              started_at: new Date().toISOString(),
+              input_config: {
+                mode: 'stitch_parts',
+                partCount: videoUrls.length,
+              },
+            })
+            .select('id')
+            .single();
+          if (insertError) console.error('❌ stitch job INSERT failed:', insertError.message);
+          if (job) castJobId = job.id;
+        } catch (dbErr) {
+          console.error('❌ stitch job INSERT threw:', dbErr);
+        }
+      }
+
+      // Forward to RunPod
+      const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_CAST_ENDPOINT_ID');
+      const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
+
+      if (!RUNPOD_ENDPOINT_ID || !RUNPOD_API_KEY) {
+        return new Response(JSON.stringify({ success: false, message: 'RunPod not configured' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const runController = new AbortController();
+      const runTimeout = setTimeout(() => runController.abort(), 15000);
+
+      let response: Response;
+      try {
+        response = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${RUNPOD_API_KEY}`,
+          },
+          signal: runController.signal,
+          body: JSON.stringify({
+            input: {
+              action: 'stitch_parts',
+              videoUrls,
+              castProjectId: castProjectId || 'unknown',
+              castJobId: castJobId || null,
+              supabaseUrl,
+              supabaseServiceKey: supabaseKey,
+              transitionDuration: body.transitionDuration ?? 0.75,
+              enableLoudnorm: body.enableLoudnorm ?? true,
+            },
+          }),
+        });
+      } catch (fetchErr) {
+        clearTimeout(runTimeout);
+        const isTimeout = fetchErr instanceof DOMException && fetchErr.name === 'AbortError';
+        const errMsg = isTimeout ? 'RunPod API timed out after 15s' : String(fetchErr);
+        if (castJobId) {
+          await supabase.from('cast_generation_jobs').update({
+            status: 'failed', error_message: errMsg, completed_at: new Date().toISOString(),
+          }).eq('id', castJobId);
+        }
+        return new Response(JSON.stringify({ success: false, message: errMsg }), {
+          status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } finally {
+        clearTimeout(runTimeout);
+      }
+
+      const responseText = await response.text();
+      console.log(`🚀 RunPod stitch status: ${response.status}, body: ${responseText.substring(0, 500)}`);
+
+      if (!response.ok) {
+        if (castJobId) {
+          await supabase.from('cast_generation_jobs').update({
+            status: 'failed', error_message: `RunPod ${response.status}: ${responseText.substring(0, 200)}`,
+            completed_at: new Date().toISOString(),
+          }).eq('id', castJobId);
+        }
+        return new Response(JSON.stringify({ success: false, message: `RunPod error: ${response.status}` }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const runpodData = JSON.parse(responseText);
+      const runpodJobId = runpodData.id;
+
+      // Save RunPod job ID for polling
+      if (castJobId) {
+        await supabase.from('cast_generation_jobs').update({
+          status: 'rendering', provider_job_id: runpodJobId || null,
+        }).eq('id', castJobId);
+      }
+      if (castProjectId) {
+        await supabase.from('cast_projects').update({ status: 'generating' }).eq('id', castProjectId);
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        castJobId,
+        taskId: runpodJobId || undefined,
+        message: 'stitch_parts submitted to RunPod. Poll genie-cast-status for completion.',
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ── Standard timeline path ──
     if (!timeline || !timeline.scenes || timeline.scenes.length === 0) {
       return new Response(JSON.stringify({ success: false, message: 'Missing or empty timeline' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },

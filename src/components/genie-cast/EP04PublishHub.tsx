@@ -231,16 +231,22 @@ function PlatformCard({ platform, selected, result, onToggle, onConnect, isConne
 function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: string[] }) {
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
+  const [thumbnailResults, setThumbnailResults] = useState<string[]>([]);
 
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      // Call auto-thumbnail-generator edge function for real thumbnails
-      const videoUrl = sessionThumbnails?.[0]; // Use existing thumbnail or video frame
+      // Use first session thumbnail/image as source for thumbnail generation
+      const videoUrl = sessionThumbnails?.[0];
       if (videoUrl) {
-        await supabase.functions.invoke('auto-thumbnail-generator', {
+        const { data, error } = await supabase.functions.invoke('auto-thumbnail-generator', {
           body: { videoUrl, count: 3, style: 'engagement' },
         });
+        if (error) throw error;
+        // Capture generated URLs from response
+        const urls: string[] = data?.thumbnails?.map((t: { url: string }) => t.url)
+          || (data?.thumbnailUrl ? [data.thumbnailUrl] : []);
+        if (urls.length > 0) setThumbnailResults(urls);
       }
       setGenerated(true);
       toast.success('Thumbnail pack ready — 3 variants generated');
@@ -251,8 +257,19 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
     }
   };
 
-  const handleDownload = (thumbId: string) => {
-    toast.info(`Downloading ${thumbId}…`);
+  const handleDownload = (thumbId: string, index: number) => {
+    // Use generated URL if available, otherwise fall back to session thumbnail
+    const url = thumbnailResults[index] || sessionThumbnails?.[index];
+    if (url) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `thumbnail-${thumbId}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      toast.error('Thumbnail not yet generated');
+    }
   };
 
   return (
@@ -273,12 +290,18 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
               key={thumb.id}
               className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20"
             >
-              {/* Placeholder thumbnail preview */}
+              {/* Thumbnail preview — show generated image or placeholder */}
               <div className="w-24 h-14 rounded-md bg-gradient-to-br from-primary/30 via-violet-500/20 to-pink-500/30 border border-border/40 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
-                <Film className="w-6 h-6 text-primary/60" />
-                <div className="absolute bottom-1 left-1 right-1 text-[8px] text-center text-primary/80 font-bold leading-tight">
-                  {thumb.text}
-                </div>
+                {(thumbnailResults[i] || sessionThumbnails?.[i]) ? (
+                  <img src={thumbnailResults[i] || sessionThumbnails[i]} alt={`Variant ${i + 1}`} className="w-full h-full object-cover" />
+                ) : (
+                  <>
+                    <Film className="w-6 h-6 text-primary/60" />
+                    <div className="absolute bottom-1 left-1 right-1 text-[8px] text-center text-primary/80 font-bold leading-tight">
+                      {thumb.text}
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-medium mb-0.5">Variant {i + 1}</div>
@@ -292,7 +315,7 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs"
-                      onClick={() => handleDownload(`${thumb.id}-youtube`)}
+                      onClick={() => handleDownload(`${thumb.id}-youtube`, i)}
                     >
                       <Download className="w-3 h-3 mr-1" />
                       YT
@@ -301,7 +324,7 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs"
-                      onClick={() => handleDownload(`${thumb.id}-linkedin`)}
+                      onClick={() => handleDownload(`${thumb.id}-linkedin`, i)}
                     >
                       <Download className="w-3 h-3 mr-1" />
                       LI
@@ -336,7 +359,19 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
               size="sm"
               variant="outline"
               className="gap-2"
-              onClick={() => toast.info('Downloading all 9 thumbnails (3 variants × 3 platforms)…')}
+              onClick={() => {
+                const allUrls = [...thumbnailResults, ...sessionThumbnails].filter(Boolean);
+                if (allUrls.length === 0) { toast.error('No thumbnails available'); return; }
+                allUrls.forEach((url, idx) => {
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `thumbnail-${idx + 1}.jpg`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                });
+                toast.success(`Downloading ${allUrls.length} thumbnails…`);
+              }}
             >
               <Download className="w-4 h-4" />
               Download All (9)
@@ -388,6 +423,7 @@ function TeaserClipsSection({ dbClips }: { dbClips?: SocialClipData[] }) {
   const [selectedClips, setSelectedClips] = useState<string[]>([]);
   const [generatingClips, setGeneratingClips] = useState<string[]>([]);
   const [readyClips, setReadyClips] = useState<string[]>([]);
+  const [clipUrls, setClipUrls] = useState<Record<string, string>>({});
   const [expandedClip, setExpandedClip] = useState<string | null>(null);
 
   const toggleClip = (id: string) => {
@@ -398,7 +434,7 @@ function TeaserClipsSection({ dbClips }: { dbClips?: SocialClipData[] }) {
     setGeneratingClips(p => [...p, clipId]);
     try {
       const clip = effectiveClips.find(c => c.id === clipId);
-      await supabase.functions.invoke('magic-clips-generator', {
+      const { data, error } = await supabase.functions.invoke('magic-clips-generator', {
         body: {
           sourceVideoUrl: clip?.videoUrl || '',
           platforms: clip?.platforms || ['youtube_shorts', 'linkedin', 'tiktok', 'instagram', 'twitter'],
@@ -408,6 +444,12 @@ function TeaserClipsSection({ dbClips }: { dbClips?: SocialClipData[] }) {
           language: 'en',
         },
       });
+      if (error) throw error;
+      // Extract clip URL from response
+      const clipUrl = data?.clips?.[0]?.clipUrl || data?.outputUrl || data?.url || '';
+      if (clipUrl) {
+        setClipUrls(prev => ({ ...prev, [clipId]: clipUrl }));
+      }
       setReadyClips(p => [...p, clipId]);
       toast.success(`Clip ready: ${clipId}`);
     } catch {
@@ -515,7 +557,19 @@ function TeaserClipsSection({ dbClips }: { dbClips?: SocialClipData[] }) {
                                 size="sm"
                                 variant="outline"
                                 className="h-6 text-[10px] px-2"
-                                onClick={() => toast.info(`Downloading ${clip.id}…`)}
+                                onClick={() => {
+                                  const url = clipUrls[clip.id];
+                                  if (url) {
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `${clip.id}.mp4`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                  } else {
+                                    toast.error('Clip URL not available — try regenerating');
+                                  }
+                                }}
                               >
                                 <Download className="w-3 h-3 mr-1" />
                                 MP4
@@ -576,7 +630,19 @@ function TeaserClipsSection({ dbClips }: { dbClips?: SocialClipData[] }) {
               size="sm"
               variant="outline"
               className="gap-2 text-xs"
-              onClick={() => toast.info('Downloading all ready clips…')}
+              onClick={() => {
+                const available = readyClips.filter(id => clipUrls[id]);
+                if (available.length === 0) { toast.error('No clip URLs available'); return; }
+                available.forEach(id => {
+                  const a = document.createElement('a');
+                  a.href = clipUrls[id];
+                  a.download = `${id}.mp4`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                });
+                toast.success(`Downloading ${available.length} clips…`);
+              }}
             >
               <Download className="w-3.5 h-3.5" />
               Download Ready ({readyClips.length})
@@ -601,7 +667,7 @@ function TeaserClipsSection({ dbClips }: { dbClips?: SocialClipData[] }) {
 // DOWNLOAD SECTION
 // ──────────────────────────────────────────────────────────────────────────────
 
-function DownloadSection() {
+function DownloadSection({ videoUrl, castProjectId }: { videoUrl?: string; castProjectId?: string }) {
   const dlManager = useStreamingDownload();
   const downloads = [
     { presetId: 'mp4_4k', label: 'Full Video (MP4 · 4K)', icon: Video, size: '~2.4 GB', quality: 'cinematic' },
@@ -611,18 +677,53 @@ function DownloadSection() {
     { presetId: 'thumbnail_zip', label: 'Thumbnail Pack (ZIP · all variants)', icon: ImageIcon, size: '~18 MB', quality: 'images' },
   ];
 
-  const handleDownload = (presetId: string, label: string) => {
+  const handleDownload = async (presetId: string, label: string) => {
     const preset = VIDEO_DOWNLOAD_PRESETS.find(p => p.id === presetId);
     if (!preset) return;
-    // In production: URL would come from assembled video storage
-    // For now, show preparing toast and queue the download
-    toast.info(`Preparing ${label}…`);
+
+    if (!videoUrl) {
+      toast.error('No video available — complete assembly first');
+      return;
+    }
+
     const filename = `genie-cast-${presetId.replace(/_/g, '-')}.${preset.format}`;
-    dlManager.startDownload(
-      `/api/production/download/${presetId}`, // Production endpoint
-      presetId,
-      filename,
-    );
+
+    // Source 1080p MP4 — download directly (no transcoding needed)
+    if (presetId === 'mp4_1080p') {
+      dlManager.startDownload(videoUrl, presetId, filename);
+      return;
+    }
+
+    // Transcoded formats — invoke RunPod post-production via edge function
+    if (['mp4_4k', 'mp4_720p', 'webm_1080p', 'mov_4k'].includes(presetId)) {
+      toast.info(`Transcoding to ${label}… This may take a few minutes.`);
+      const { data } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+        body: { action: 'platform_resize', sourceVideoUrl: videoUrl, preset: presetId, castProjectId },
+      });
+      if (data?.videoUrl) {
+        dlManager.startDownload(data.videoUrl, presetId, filename);
+      } else {
+        toast.error(`Transcoding failed for ${label}`);
+      }
+      return;
+    }
+
+    // Audio extraction
+    if (['audio_mp3', 'audio_wav'].includes(presetId)) {
+      toast.info(`Extracting audio…`);
+      const { data } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+        body: { action: 'extract_audio', sourceVideoUrl: videoUrl, format: preset.format },
+      });
+      if (data?.audioUrl) {
+        dlManager.startDownload(data.audioUrl, presetId, filename);
+      } else {
+        toast.error('Audio extraction failed');
+      }
+      return;
+    }
+
+    // Default: direct download of source
+    dlManager.startDownload(videoUrl, presetId, filename);
   };
 
   return (
@@ -1102,7 +1203,7 @@ export function EP04PublishHub({
 
         {/* DOWNLOAD TAB */}
         <TabsContent value="download" className="mt-4">
-          <DownloadSection />
+          <DownloadSection videoUrl={sessionVideoUrl} castProjectId={projectId || undefined} />
         </TabsContent>
       </Tabs>
     </div>
