@@ -684,23 +684,39 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-agrees-frustration' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene3-nova-agrees-frustration' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-i-just-merge' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'scene3-atlas-i-just-merge' },
+    // B-roll: Atlas frustrated at terminal — merge without approval
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear at a glowing terminal, finger hovering over a big red "MERGE" button. His expression is conflicted — frustrated determination. Behind him a queue of 7 pull requests glow amber with "PENDING" labels. Nova the fox watches from the doorway with arms crossed, concerned. The terminal screen shows a git merge command half-typed. Dramatic side lighting, tension energy, developer rebellion moment, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-pr-frustration' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene3-nova-pr-frustration' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene3-atlas-nova-resolve' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'scene3-atlas-nova-resolve' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene3-nova-transition-to-origin' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene3-nova-transition-to-origin' },
+    // Character-interaction: Atlas & Nova resolve to fix the process together
+    { type: 'character-interaction', characters: ['atlas', 'nova'], prompt: 'Atlas the bear and Nova the fox facing each other across a broken sprint board, debris of failed merge conflicts scattered around them. They lock eyes with determination — Atlas extends a formal paw, Nova grabs it with both paws. The broken sprint board behind them begins to glow and repair itself as their partnership solidifies. From frustration to resolve, Pixar-quality character acting, emotional turning point', style: 'partnership-resolve' },
+    // Character-motion: Atlas methodically organizing the chaos
+    { type: 'character-motion', character: 'atlas', motionRef: 'organizing-gesture', prompt: 'Atlas the bear standing at a holographic workspace, methodically sorting scattered task cards into organized columns with precise paw movements — each card snaps into place with a satisfying glow. Calm, measured organizing energy', duration: 5 },
+    // B-roll: Nova's hopeful transition — looking toward the solution
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox looking toward a glowing doorway of light at the end of a dark corridor. Behind her, the chaos of scattered code and merge conflicts fades into shadow. Her pink-magenta aura begins to stabilize. Atlas the bear stands beside her, his terracotta-orange glow steady and calm. They share a determined nod. Cinematic tunnel-of-light composition, hope emerging from frustration, 8K' },
     // B-roll: Atlas & Nova resolve — shared scoreboard agreement
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear and Nova the fox shaking paws over a holographic sprint board, both smiling with determination. The board between them shows a clean split — left side terracotta-orange (Atlas backend), right side magenta-pink (Nova frontend). A golden thread of light connects their territories through shared infrastructure in the center. Warm collaborative lighting, partnership energy, blueprint aesthetic, 8K' },
     // ── Part 3: Squirrel re-entrance + Host origin story ──
+    // B-roll: Squirrel swinging into the scene — chaotic entrance
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a hyperactive squirrel character swinging on a vine into a professional office setting, scattering sticky notes and papers everywhere. The squirrel wears no clothes but clutches an acorn tightly. Atlas the bear and Nova the fox duck as papers fly. A desk has been knocked sideways. The squirrel has a huge grin and wide mischievous eyes. Comic chaos energy, warm office lighting with motion blur on flying papers, slapstick comedy beat, 8K' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'scene3-squirrel-reintro' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'scene3-squirrel-reintro' },
     // scene3-staging-open = visual-only cinematic beat (no TTS — empty text)
+    // B-roll: Host preparing to tell the origin story — spotlight moment
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the human host standing in a spotlight on a dark stage, arms spread wide as if beginning an epic tale. Behind him, a massive floating timeline materializes — showing dates, milestones, and glowing connection points. Atlas the bear and Nova the fox sit in theater seats watching attentively. The squirrel perches on a chair armrest munching popcorn. Theatrical spotlight with ambient starfield, storytelling energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'origin-story' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'origin-story' },
     // B-roll: Host overwhelmed — tracking everything manually before the system existed
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the human host sitting at a chaotic desk covered in sticky notes, handwritten to-do lists, crumpled receipts, and three open laptops all showing different spreadsheets. He holds his head in his hands while trying to track tasks across screens. A golden retriever nudges his elbow with concern. Sticky notes cover the wall behind him reading "Atlas needs X", "Nova waiting on Y", "WHO OWNS THIS FILE?" in frantic handwriting. Warm but overwhelmed desk-lamp lighting, relatable chaos, 8K' },
     // B-roll: Origin story dependency graph — the tangled web before governance
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a massive tangled dependency graph floating in dark space — nodes are colorful spheres representing code modules, connected by chaotic red crossing lines. Some nodes flash with error symbols. Two tiny characters (bear and fox) stand at the bottom looking up at the tangled mess with concerned expressions. A label reads "BEFORE GOVERNANCE" in red. Dark tech background with danger-red ambient glow, visualization aesthetic, 8K' },
+    // B-roll: Atlas analyzing the chaos — finding patterns in the mess
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear studying a holographic analysis of the broken workflow — red connection lines form a web of dependencies, some broken with spark effects. He traces a path with his paw, code particles following his gesture. His expression is analytical, methodical — the bear who sees systems where others see chaos. Blue-terracotta glow illuminates the hologram. Dark background, detective-solving-the-case energy, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'origin-atlas-observation' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'origin-atlas-observation' },
     { type: 'tts', voice: 'nova', scriptKey: 'origin-nova-blocked' },
@@ -724,8 +740,12 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-merge-conflict' },
     // B-roll: Merge conflict cascade — the technical pain of no governance
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a dramatic visualization of a merge conflict — two code branches shown as glowing rivers (terracotta-orange for Atlas, magenta-pink for Nova) colliding at a merge point, creating a spectacular explosion of conflicting code fragments. Atlas the bear and Nova the fox each pull their branch in opposite directions like a tug-of-war. Red warning symbols and "CONFLICT" text flash at the merge point. Dark background with dramatic collision lighting, 8K' },
+    // B-roll: Host defending governance — not bureaucracy but survival
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the human host standing between two dramatic contrasts — left side shows absolute chaos (tangled wires, crashing servers, merge conflicts) in red tones, right side shows ordered elegance (clean architecture, flowing data streams, organized sprint board) in golden tones. Host gestures with both hands showing the before-and-after. Atlas nods approvingly from the right side, Nova sketches notes on the left. Dramatic split-lighting, persuasion energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'host-governance-not-overkill' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-governance-not-overkill' },
+    // B-roll: Nova reading the CLAUDE.md territory sections
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox sitting cross-legged reading a glowing holographic document — her section highlighted in magenta-pink showing "src/components/landing/**" and "src/pages/GenieExplore*.tsx". She nods approvingly — the boundaries make sense to her. Her floating UI mockups orbit around her, each now clearly labeled with ownership badges. Atlas visible in background at his own terminal, terracotta sections highlighted on his screen. Warm study-hall lighting, understanding dawning, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-read-relevant-sections' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-read-relevant-sections' },
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Clean professional infographic: Sprint Territory Map showing file ownership boundaries for a dual-developer sprint. Left zone labeled "Atlas (Claude)" in terracotta-orange with icons for backend files, API routes, database migrations, edge functions. Right zone labeled "Nova (Lovable)" in magenta-pink with icons for landing pages, UI components, CSS styling. Center shows shared infrastructure with lock icons. Bottom bar shows 41 tasks split between developers. Clean data visualization style, dark background with glowing elements, 8K detail' },
@@ -763,6 +783,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'scene4-atlas-empathy' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-optimization' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene4-nova-optimization' },
+    // Beat: OPTIMIZATION — Nova proposes batching PRs to reduce PO context-switches
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox at a holographic whiteboard drawing a flow diagram — LEFT shows "Before: 8 PRs, 8 reviews, 8 context switches" as scattered cards in red. RIGHT shows "After: 1 feature branch, 1 review, 1 decision" as a clean bundled package in green. She circles the right side enthusiastically with her tail. Atlas watches from across the desk, nodding with analytical approval. Problem-solving energy, clean before/after contrast, warm collaborative lighting, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-shared-log' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'scene4-atlas-shared-log' },
     // B-roll: Atlas's structured changelog cross-linked to Nova's PRs
@@ -785,10 +807,14 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // ── Beta agreement ──
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-beta-idea' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene4-nova-beta-idea' },
+    // Beat: BETA AGREEMENT — Nova proposes "don't over-engineer, just ship v0.1"
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox holding up a small, simple prototype dashboard on a tablet — it is deliberately minimal, no frills, just the essentials. She presents it to Atlas with a "lets just ship this" expression. A whiteboard behind her reads "BETA v0.1 — Run it for a few sprints. Track what improves. Track what breaks." Atlas leans forward with interest, one paw on his chin, evaluating. The contrast between their elaborate holographic tools and this simple tablet makes the point: start small. Pragmatic startup energy, warm workshop lighting, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-beta-agree' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'scene4-atlas-beta-agree' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-works-better' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-works-better' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene4-nova-high-five' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene4-nova-high-five' },
     // B-roll: High-five celebration — Atlas & Nova partnership moment
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear and Nova the fox doing a dramatic high-five (high-paw), sparkle particles exploding from the contact point like a supernova. Both characters grinning with determination — Atlas with measured confidence, Nova with exuberant joy. Behind them, the sprint board shows Day 1 tasks moving from TODO to DOING. Golden celebration lighting, buddy-movie energy, dynamic action pose frozen in time, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene4-atlas-lets-go' },
@@ -806,14 +832,22 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // ── Nova's 200K context flex (scene-4-solution) ──
     { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-context' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-200k-context' },
+    // Beat: FLEX — Nova's 200K context window visualization
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox standing inside a massive holographic cylinder of context — thousands of code snippets, UI mockups, sprint plans, and conversation threads float in organized layers around her. She holds all of it simultaneously, magenta energy pulsing through the connections. A meter reads "200,000 TOKENS — ACTIVE." Below, a crossed-out text reads "45-min standup where Dave talked about his weekend." Nova smirks knowingly. Scale-of-capability energy, technology awe, 8K' },
+    // Beat: PARTNERSHIP — Atlas and Nova seal the beta agreement
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear and Nova the fox reaching across a holographic sprint board for a formal handshake-pawshake, sealing their beta agreement. A floating contract between them reads "v0.1 Beta — Ship fast, iterate faster." Both have determined expressions — Atlas measured, Nova excited. Behind them, the task board transitions from "PLANNED" to "IN PROGRESS." Golden glow emanating from their clasped paws, professional partnership energy, 8K' },
     // ── Squirrel comic relief ──
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-2' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-interrupt-2' },
     // B-roll: Squirrel pointing excitedly at a data retrieval system with acorn icons
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the hyperactive squirrel standing on tiptoes pointing excitedly at a holographic database retrieval system. The system shows data entries shaped like golden acorns, each with labels like "cache_hit: acorn_stash_7" and "retrieval_time: 0.3ms." The squirrel has stars in its eyes and its bushy tail is vibrating with excitement. Atlas the bear facepalms in the background. A search query reads "SELECT * FROM acorns WHERE remembered = true." Bright comic lighting, adorable geek energy, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-squirrel-response' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-squirrel-response' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-disappointed' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-disappointed' },
+    // B-roll: Squirrel disappointed — slumped on branch
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the squirrel sitting on a tree branch with slumped shoulders, clutching its acorn sadly. A tiny thought bubble above its head shows a database icon with a red X. Atlas the bear shrugs apologetically in the background. Soft melancholy lighting with a single warm spotlight on the disappointed squirrel, comedy-through-sadness energy, 8K' },
     // Bridge narrator: scene 4 → scene 5 (7s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-4-to-5' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-4-to-5' },
@@ -825,38 +859,54 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // B-roll: Dual AI developers working simultaneously with colliding code paths
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: bird\'s-eye view of two AI developers working simultaneously on the same codebase — Atlas the bear on the left typing furiously, Nova the fox on the right painting UI components, both sending commits toward a central repository shown as a glowing orb. Their code streams (terracotta and magenta) are about to collide at the merge point, creating visible tension sparks. A stressed human host watches from above like a parent watching two teenagers about to crash. Split-screen composition, collision-course energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'governance-intro' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'governance-intro' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-sneak' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-governance-sneak' },
     // B-roll: Squirrel caught in guardrails — governance catches the chaos agent
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the hyperactive squirrel tangled in glowing golden guardrail wires like a cartoon burglar caught in laser beams. The squirrel has an exaggerated "busted!" expression, one paw still reaching for a file labeled "shared-infrastructure.ts" with a red lock icon. Allaudin the genie floats nearby with a wagging finger and amused grin. Warning signs flash "TERRITORY VIOLATION DETECTED" in amber. Comic heist-movie lighting, funny but educational, 8K' },
     { type: 'tts', voice: 'allaudin', scriptKey: 'allaudin-governance-guide' },
+    { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'allaudin-governance-guide' },
     // B-roll: Allaudin as wise judge presenting governance guardrails — track metaphor (AFTER TTS for correct alignment)
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Allaudin the genie floating majestically in a judge\'s robe, holding a golden rule book that radiates light. Below him, a beautiful train track stretches into the horizon with two trains (terracotta bear-shaped and magenta fox-shaped) running smoothly on parallel rails. The guardrails glow gold — not as walls or cages, but as sleek guiding rails keeping the trains on course. A banner reads "Guardrails aren\'t the cage — they\'re the track." Wise mentor energy, golden hour lighting, inspirational composition, 8K' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-blocked-reaction' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-blocked-reaction' },
     // ── Atlas & Nova confess their Day 1 mistakes ──
     { type: 'tts', voice: 'nova', scriptKey: 'nova-my-component' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-my-component' },
+    // B-roll: Nova accidentally editing Atlas's file — comic oops moment
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox caught red-handed editing a file clearly labeled "ATLAS TERRITORY — DO NOT TOUCH" in terracotta-orange. Her cursor is mid-keystroke, eyes wide with realization. Atlas the bear appears behind her with crossed arms and a raised eyebrow. A red warning banner flashes "TERRITORY VIOLATION — File: src/components/genie-studio/auth.ts." Comic busted-moment energy, split lighting (magenta on Nova, terracotta on Atlas), 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-shortest-path' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-shortest-path' },
     // B-roll: Merge conflict chaos — before territory rules saved the day
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a split-screen showing two developers working on the SAME file simultaneously — Atlas the bear typing on the left, Nova the fox painting UI on the right, both oblivious. In the center, the shared file glows red-hot as both modifications collide. A floating "git merge --conflict" terminal shows cascading red error text. The golden retriever covers its eyes with its paws. Dramatic split lighting — terracotta left, magenta right, red center, 8K' },
     // ── The governance solution: CLAUDE.md, territory rules, enforcement ──
     { type: 'tts', voice: 'host', scriptKey: 'governance-solution' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'governance-solution' },
     // B-roll: Territory ownership map — clean governance in action
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D infographic: a beautiful territory map showing file ownership boundaries. LEFT kingdom in terracotta-orange labeled "Atlas Domain" with icons for genie-studio (150 files), API routes, edge functions, database. RIGHT kingdom in magenta-pink labeled "Nova Domain" with icons for landing pages, UI components, CSS, animations. CENTER: a fortified border with 12 locked files behind golden shields labeled "Shared Infrastructure — PO Approval Required." Each territory has its character standing proudly inside. Clean governance visualization, 8K' },
     // Atlas claims territory with pride (6s) — Maui "You're Welcome" energy
     { type: 'tts', voice: 'atlas', scriptKey: 'governance-atlas-territory' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'governance-atlas-territory' },
     // Nova claims UI territory (5s) — conspiratorial whisper
     { type: 'tts', voice: 'nova', scriptKey: 'governance-nova-territory' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'governance-nova-territory' },
     // Host continues governance solution (18s)
     { type: 'tts', voice: 'host', scriptKey: 'governance-solution-2' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'governance-solution-2' },
     { type: 'screen-capture', screenIds: ['territory-guardrails'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['territory-guardrails'], scriptContext: 'Territory guardrails showing file ownership boundaries — Atlas owns genie-studio (150+ files), Nova owns landing pages. 12 locked shared files need PO approval. Auto-flagging territory violations.', enhanceMode: 'highlight', focusAreas: ['file-ownership-matrix', 'locked-shared-files', 'territory-violation-flags'] },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-exit' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-governance-exit' },
+    // B-roll: Squirrel popping free from guardrails with comedy
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the squirrel popping free from the golden guardrail wires with a comedic *POP* effect, tumbling backwards, fur ruffled, holding up a tiny acorn scorecard reading "2/5" in messy handwriting. The guardrails stand firm behind, glowing warmly. Atlas stifles a laugh, Nova covers her mouth. Comedy aftermath energy, warm lighting, 8K' },
     // ── Day 2 velocity: Nova blocked for 6 hours ──
     { type: 'tts', voice: 'host', scriptKey: 'day2-velocity-narration' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'day2-velocity-narration' },
     // B-roll: Frozen dashboard — Nova's tasks encased in ice (AFTER TTS for correct alignment)
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox\'s task dashboard completely frozen in a block of ice — task cards encased in crystalline ice with frost creeping across the screen. A large clock above shows 6 hours passing (hands blurred in motion). Nova sits beside the frozen dashboard hugging her knees, breath visible in the cold, her magenta glow dimmed. A single notification blinks weakly: "Waiting for PO approval... hour 6." Icy blue-white lighting, isolation and frustration atmosphere, dramatic temperature contrast, 8K' },
     { type: 'screen-capture', screenIds: ['day-2-view'], multiCapture: false },
@@ -865,25 +915,40 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // SHOWCASE: Sound effects — ice cracking pairs perfectly with frozen-task blocker narrative
     { type: 'sfx', prompt: 'Dramatic ice cracking and shattering, crystalline fragments tinkling, followed by a whoosh of cold air releasing — tense to relieved transition', duration: 4 },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-blocked-six-hours' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-blocked-six-hours' },
     { type: 'tts', voice: 'host', scriptKey: 'host-in-a-meeting' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-in-a-meeting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-human-meetings' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-human-meetings' },
+    // B-roll: Atlas confused by human meeting culture
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear staring at a calendar filled with colorful meeting blocks — every hour occupied. He holds a magnifying glass up to one block reading "Meeting about the meeting about the meeting." A thought bubble shows a simple code terminal with "git merge --approved" as the obvious alternative. Bewildered analytical expression, comedy through logic, warm office lighting, 8K' },
     // ── PO Actions: the solution born from frustration ──
     { type: 'tts', voice: 'host', scriptKey: 'host-po-actions-built' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-po-actions-built' },
     // PO Actions screenshots + B-roll (AFTER TTS for correct alignment)
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions dashboard built to prevent future blockers — async approval queue, priority flags, response time tracking.', enhanceMode: 'stylize', focusAreas: ['approval-queue', 'priority-flags', 'response-times'] },
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a sleek PO Actions dashboard glowing with success — a structured approval queue with color-coded urgency levels (red=critical, amber=normal, green=approved). Each item shows response time: "12 minutes", "8 minutes", "3 minutes." Green checkmarks cascade down the list like dominoes falling. The human host taps "APPROVE" on his phone while walking, golden retriever trotting beside him. The dashboard header reads "Async Governance — Zero Meetings Required." Clean UI visualization, success-green ambient glow, efficient productivity energy, 8K' },
     { type: 'kinetic-text', text: '6 hours blocked. 12 minutes approved. Async governance works.' },
+    // Character-animate-3d: Squirrel bouncing off walls during governance discussion
+    { type: 'character-animate-3d', character: 'squirrel', animationType: 'bounce', prompt: 'Squirrel bouncing between guardrail walls like a pinball, testing the boundaries of the governance system, comically getting redirected each time it tries to cross a territory line. Chaotic comedy energy', duration: 4 },
+    // Character-motion: Host writing the governance document late at night
+    { type: 'character-motion', character: 'host', motionRef: 'typing-intense', prompt: 'Host typing intensely at a late-night desk, screen glow illuminating his determined face, golden retriever sleeping at his feet. Creating the CLAUDE.md governance file that will change everything', duration: 5 },
     // Bridge narrator: scene 5 → scene 6 (8s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-5-to-6' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-5-to-6' },
   ],
   'scene-6-day3': [
+    // Chapter title card — generated via FLUX, transition from scene-5
+    { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Day Three — The Gap" in golden calligraphy, a race track splitting into two lanes with different velocities sketched in the margins, a frustrated fox character waiting at a gate, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── Day 3 velocity mismatch: the gap reveals itself ──
     { type: 'tts', voice: 'host', scriptKey: 'day3-velocity-mismatch' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'day3-velocity-mismatch' },
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    // B-roll: Velocity mismatch — Atlas racing ahead, Nova falling behind
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a race track where Atlas the bear sprints far ahead on the left lane, leaving a trail of completed task checkmarks. Nova the fox is on the right lane, stuck behind a large "WAITING FOR PO" barrier with her tasks piled up behind it. A velocity scoreboard shows Atlas: 8 tasks/day vs Nova: 3 tasks/day. The gap between them is dramatic and visual. Split racing energy, competitive but sympathetic, 8K' },
     { type: 'screen-capture', screenIds: ['day-3-view', 'velocity-metrics'], multiCapture: true },
     { type: 'ai-screen-enhance', screenIds: ['day-3-view', 'velocity-metrics'], scriptContext: 'Day 3 velocity mismatch — Claude completing 8 tasks/day vs Lovable at 3. Velocity chart shows diverging lines. The gap is the story.', enhanceMode: 'highlight', focusAreas: ['velocity-comparison-chart', 'task-completion-rates', 'developer-velocity-gap'] },
     // SHOWCASE: Narrator scroll — data-driven reveal of velocity numbers
@@ -891,17 +956,29 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Velocity chart bars growing dynamically with sparkle effects, camera slowly zooming out to reveal full sprint dashboard, smooth cinematic motion', referenceImage: 'velocity-metrics-screenshot' },
     // ── PO Actions origin story: born from frustration ──
     { type: 'tts', voice: 'host', scriptKey: 'po-actions-origin' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'po-actions-origin' },
     // B-roll + PO Actions screenshots AFTER TTS for correct alignment — carry-forward to atlas-frustrated & nova-blocked
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: 11 PM late-night coding scene — the human host sits at his desk with only a desk lamp and monitor light, dark room, exhausted but with a sudden spark of inspiration in his eyes. Above his head, a glowing lightbulb illuminates with golden particles. His monitor shows a wireframe sketch of the "PO Actions" dashboard taking shape. Coffee cups line the desk, golden retriever sleeping at his feet. The clock on the wall shows 11:00 PM. Dramatic chiaroscuro lighting, eureka moment energy, 8K' },
     { type: 'screen-capture', screenIds: ['po-actions'], multiCapture: false },
     { type: 'ai-screen-enhance', screenIds: ['po-actions'], scriptContext: 'PO Actions tab — structured queue with color-coded urgency cards, approval gates linked to dev task completion, real-time Supabase sync, showing pending reviews cleared in 22 minutes vs 36 hours previously.', enhanceMode: 'highlight', focusAreas: ['approval-queue', 'urgency-cards', 'dev-task-completion-gates', 'realtime-sync-indicator'] },
     { type: 'tts', voice: 'atlas', scriptKey: 'po-actions-atlas-frustrated' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'po-actions-atlas-frustrated' },
     { type: 'tts', voice: 'nova', scriptKey: 'po-actions-nova-blocked' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'po-actions-nova-blocked' },
+    // B-roll: Nova's blocked frustration — frozen screen with timer
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox sitting in front of a frozen screen showing "APPROVAL PENDING — 4 hours 22 minutes." Her usually vibrant magenta glow has dimmed. She rests her chin on both paws, ears drooped. A melting ice cream cone sits untouched beside her keyboard. In the background, Atlas works productively on his approved tasks, unaware. Lonely isolation lighting vs distant productive warmth, empathy energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'po-actions-breakthrough' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'po-actions-breakthrough' },
+    // Beat: EUREKA — the 11 PM breakthrough moment
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D cinematic: 11 PM late-night desk — the host types furiously, screen reflecting in his eyes, coffee cup in one hand. Suddenly the PO Actions dashboard materializes on screen, clean and organized. His expression shifts from exhaustion to triumph. Golden light spills from the monitor, illuminating the dark room. The golden retriever lifts its head, sensing the breakthrough. Camera slowly zooms in on the triumphant expression. Eureka moment, chiaroscuro lighting, 8K' },
+    // Character-interaction: Atlas and Nova react to the PO Actions breakthrough
+    { type: 'character-interaction', characters: ['atlas', 'nova'], prompt: 'Atlas bear and Nova fox looking at the new PO Actions dashboard together — Atlas traces the data flow with his paw while Nova touches the UI elements admiringly. Both realize their blocking problem is solved. Atlas whispers "98.9% improvement" while Nova claps her paws. Shared relief and gratitude energy, warm collaborative lighting, Pixar quality', style: 'shared-relief' },
     // B-roll: 36h → 22min transformation — dramatic before/after
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D infographic: dramatic split comparison — LEFT side (red, dim) shows "36 HOURS" in crumbling red numbers with a frustrated fox character frozen mid-wait, clock hands spinning endlessly, cobwebs forming on the approval button. RIGHT side (green, glowing) shows "22 MINUTES" in radiant green numbers with the same fox character celebrating, approval checkmarks cascading like confetti, a streamlined dashboard with instant response times. Center arrow shows "98.9% IMPROVEMENT" in golden text. Cinematic contrast lighting, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'po-actions-atlas-relief' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'po-actions-atlas-relief' },
     { type: 'tts', voice: 'nova', scriptKey: 'po-actions-nova-relief' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'po-actions-nova-relief' },
     { type: 'kinetic-text', text: '36 hours → 22 minutes. 98.9% improvement. Frustration breeds features.' },
     // Bridge narrator: scene 6 → scene 7 (7s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-6-to-7' },
@@ -912,26 +989,47 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter IV — Velocity" in golden calligraphy, speed lines and racing charts with sprinting characters sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── Part 1: Velocity Contest — Atlas vs Nova burndown showdown ──
     { type: 'tts', voice: 'host', scriptKey: 'velocity-intro' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'velocity-intro' },
+    // B-roll: Velocity showdown stage — Atlas and Nova facing off
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: dramatic showdown stage — Atlas the bear and Nova the fox standing on opposite podiums with their burndown charts displayed on massive screens behind them. A spotlight shines on each character. The host stands between them like a boxing announcer. A banner reads "VELOCITY SHOWDOWN: Day 4" in dramatic font. Arena atmosphere with audience of woodland creatures, competitive sports energy, epic lighting, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-predictability' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-predictability' },
     { type: 'tts', voice: 'atlas', scriptKey: 'scene7-atlas-burndown-scroll' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'scene7-atlas-burndown-scroll' },
     // B-roll: Atlas pristine burndown chart — 85% velocity, straight line
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear proudly presenting his burndown chart — a holographic display showing a perfectly straight diagonal line from top-left (41 tasks) to bottom-right (0 remaining), each day marker precisely aligned. The chart is labeled "Atlas Velocity: 85%" in clean terracotta text. Atlas stands beside it with hands clasped behind his back, satisfied expression, wire-frame glasses catching the chart glow. Clean tech aesthetic, pristine data visualization, cinematic, 8K' },
     // Video: Burndown scroll comedy — Atlas vs Nova chart reveal (velocity section)
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: bear character (Atlas) unrolls a pristine white scroll showing a perfectly straight burndown chart line descending at 45 degrees, each data point labeled Day 1-5 with precise margins. Then fox character (Nova) yanks out a MASSIVE crumpled paint-splattered scroll that extends off the table, her chart line zigzags wildly with sticky notes, doodles, dark-mode toggles, and scope-creep annotations everywhere. Bear reaches for his ruler, fox slaps his paw away — comedic timing, warm studio lighting' },
     { type: 'tts', voice: 'host', scriptKey: 'velocity-nova' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'velocity-nova' },
     { type: 'tts', voice: 'host', scriptKey: 'host-nova-how' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-nova-how' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-scope-now' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-scope-now' },
     { type: 'tts', voice: 'nova', scriptKey: 'scene7-nova-burndown-scroll-chaos' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene7-nova-burndown-scroll-chaos' },
     // B-roll: Nova chaotic burndown chart — 110% velocity, zigzag madness
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox sheepishly presenting her burndown chart — a holographic display showing a WILDLY zigzagging line that goes up, down, sideways, with sticky notes, doodles, dark-mode toggle annotations, and scope-creep arrows pointing in random directions. Despite the chaos, the line ultimately ends BELOW zero (110% completion — she did MORE than assigned). Chart labeled "Nova Velocity: 110% (with detours)" in magenta. Nova shrugs with a proud-but-guilty grin. Colorful chaotic energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'velocity-scope-creep' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'velocity-scope-creep' },
+    // B-roll: Scope creep personified — dark mode toggle grows into a monster
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a tiny dark mode toggle switch that has grown into a massive feature-creep monster — tentacles of additional requirements sprouting from a simple UI toggle. Nova stands beside it looking proud but sheepish as the "Add Dark Mode" task card has spawned 12 sub-task babies. Atlas counts them on his paws with growing horror. A burndown chart in the background shows a spike upward labeled "SCOPE +12." Comedy horror energy, warm lighting, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-dark-mode' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-dark-mode' },
     // ── Squirrel interrupt — acorn futures comedy beat ──
+    // B-roll: Squirrel on tiny skateboard — dramatic entrance
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the squirrel making a dramatic entrance on a tiny skateboard, sliding in from the left with wheels screeching. The squirrel adjusts a tiny imaginary tie with Wall Street broker energy. Behind it, the burndown chart wobbles as the skateboard rolls past. Nova is delighted, Atlas facepalms. Acorn tucked under one arm like a football. Dynamic action pose, motion lines, comedy energy, 8K' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-3' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-interrupt-3' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-squirrel-response' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-squirrel-response' },
+    // B-roll: Nova designing tiny squirrel helmet — can't help herself
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox already sketching a tiny helmet design on a floating holographic canvas — the helmet has a dark mode toggle on the side and a tiny acorn holder. The squirrel watches with stars in its eyes. Atlas slowly lowers his face into his paws. Host pinches bridge of his nose in the background. The helmet design is actually adorable. Comedy through inability to stay on track, warm creative lighting, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-focus' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-squirrel-focus' },
     // ── Part 2: Mission Control showcase ──
     { type: 'tts', voice: 'host', scriptKey: 'mission-control-narration' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'mission-control-narration' },
     // B-roll + MC screenshots AFTER TTS for correct alignment — carry-forward to atlas/nova/host lines
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: an epic mission control room styled as a magical command center — multiple floating holographic screens arranged in a semicircle, each showing a different sprint management view (standup feed, blocker alerts, velocity charts, handoff queue). The human host sits in a command chair at the center, Atlas the bear monitors backend metrics on the left screens, Nova the fox tracks frontend progress on the right screens. A golden retriever lies under the console. Dark room illuminated only by screen glow and ambient purple-blue lighting, NASA mission control meets Pixar magic, 8K' },
     // SHOWCASE: Storybook chapter frame — marks the "Act 3: Triumph" turning point
@@ -942,8 +1040,15 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // Video: Standup comparison — placed with mission control for correct video distribution
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Split-screen comparison: LEFT side shows chaotic traditional standup meeting with people talking over each other and sticky notes flying. RIGHT side shows calm AI-powered async standup with organized data flowing smoothly on a dashboard, cinematic quality, warm lighting' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-context-loss' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-context-loss' },
+    // B-roll: Atlas context window filling up — 200K tokens visualized
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear watching his context window visualized as a giant glass jar filling with glowing tokens — each token a tiny golden sphere. The jar is 90% full, with a red line at the top labeled "200,000 TOKEN LIMIT." Atlas has a worried expression as new tokens push older ones out the bottom. A scrolling ticker shows "Session context: 187,432 / 200,000." Technical but visually accessible, warm amber glow, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'nova-200k-window' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'nova-200k-window' },
     { type: 'tts', voice: 'host', scriptKey: 'host-forgot-breakfast' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-forgot-breakfast' },
+    // B-roll: Host forgot breakfast — relatable human moment
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the human host suddenly realizing he forgot to eat breakfast — hand on stomach, coffee cup empty, clock shows 2 PM. His golden retriever nudges a dog bowl toward him suggestively. Atlas and Nova exchange a knowing look. A thought bubble shows his brain juggling code review, standup summaries, and deployment checklists while a sandwich icon blinks urgently. Relatable humor, warm domestic-office lighting, 8K' },
     // ── Avatars (all 4 characters appear in this scene) ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
@@ -969,6 +1074,9 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Chapter header: "Chapter V — The Dashboard Tour" with 18 tiny thumbnail sketches arranged as marginalia around the title, each representing a dashboard screen', duration: 2 },
     // ── Full dashboard tour narrative — host introduces, atlas/nova add perspective ──
     { type: 'tts', voice: 'host', scriptKey: 'numbers-intro' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'numbers-intro' },
+    // B-roll: Host as tour guide — presenting the dashboard suite
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the human host as an enthusiastic museum tour guide, holding a glowing pointer and standing before a wall of 18 floating holographic dashboard screens arranged in a 3x6 grid. Each screen shows a different sprint management view — task boards, velocity charts, blocker alerts, standup feeds. Atlas and Nova stand behind him as co-presenters. A "DASHBOARD TOUR" banner glows above. Professional product demo energy, clean tech aesthetic, 8K' },
     // ── 18 dashboard screenshots placed AFTER first TTS — all narration lines carry-forward these ──
     {
       type: 'screen-capture',
@@ -982,19 +1090,42 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     },
     { type: 'ai-screen-enhance', screenIds: ['po-mission-control', 'velocity-metrics', 'effort-tracking', 'project-plan'], scriptContext: 'Dashboard tour highlights — 18 screens showing the complete sprint management system. Focus on key metrics, task flow, and developer productivity data.', enhanceMode: 'stylize', focusAreas: ['key-metrics', 'task-flow', 'burndown-chart', 'velocity-data'] },
     { type: 'tts', voice: 'atlas', scriptKey: 'numbers-tour-atlas' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'numbers-tour-atlas' },
+    // B-roll: Atlas explaining the technical architecture
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear at a holographic whiteboard, drawing a system architecture diagram with his paw — showing how the 18 dashboard screens connect through a Supabase real-time backend. Lines flow between nodes labeled "Standup Feed", "Velocity Engine", "Blocker Detection", "Territory Guard." His wire-frame glasses reflect the diagram. Technical clarity, architectural beauty, blue-terracotta glow, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'numbers-tour-host-cut' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'numbers-tour-host-cut' },
+    // Beat: REDIRECT — Host cuts Atlas off with warmth, refocusing on the audience
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the host gently putting a hand on Atlas bear shoulder to interrupt him mid-explanation, Atlas has a holographic data model diagram half-drawn behind him. The host smiles at the camera with a "we will come back to that" expression, one hand gesturing toward the audience. Atlas pauses mid-sentence, pointer still raised. Warm redirect energy, medium two-shot, professional mentorship moment, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'numbers-nova-perspective' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'numbers-nova-perspective' },
+    // B-roll: Nova appreciating the UI design of the dashboards
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox admiring the dashboard UI with an artist eye — she circles design elements with a floating pink highlighter, annotating "good spacing", "clean hierarchy", "love the dark mode." Her magenta aura glows with appreciation. A floating design score card reads "8/10 — needs more color." Atlas rolls his eyes in the background. Design appreciation humor, warm creative lighting, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'numbers-cost' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'numbers-cost' },
+    // Beat: PRAGMATISM — "take what works for you" — honest, no hard-sell
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D infographic: cost comparison — LEFT shows a stack of enterprise software licenses (Jira, Confluence, Slack premium, etc.) with a price tag of "$500/month/developer" in red. RIGHT shows the custom-built sprint tracker with "Supabase Pro: $25/month TOTAL" in green. A calculator shows the math: "5-person team × 12 months = $30,000 saved." The host grins at the savings while Atlas gives a thumbs up. Clean data visualization, dramatic cost contrast, 8K' },
+    // Beat: HONESTY — "every team is different, adapt to you"
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a warm workshop scene — the host sitting casually on the edge of a desk, speaking directly to camera with open palms in an "its up to you" gesture. Behind him, a chalkboard shows a menu of sprint management approaches: "Daily Standups ✓/✗", "Async Updates ✓/✗", "Velocity Tracking ✓/✗" — each with checkboxes, none pre-checked. The message is clear: pick what works for YOUR team. Honest, no-pressure energy, warm educational lighting, medium close-up, 8K' },
     // ── Voiceover montage — rapid 18-screen walkthrough ──
     { type: 'tts', voice: 'host', scriptKey: 'tour-narration' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'tour-narration' },
+    // Beat: SHOWCASE MONTAGE — 18 screens shown cinematically, not as tiny raw captures
+    // i2v cinematic shots of key dashboard screens (referenceImage = real screenshot → cinematic animation)
+    { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Cinematic slow zoom into PO Mission Control dashboard — clean dark UI with sprint health indicators, completion ring at 85%, blocker count badge, task status cards arranged in priority order. Camera pushes in smoothly from wide to close-up on the health indicator. Professional product demo feel, soft glow on metrics, 8K', referenceImage: 'po-mission-control' },
+    { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Smooth camera pan across velocity metrics dashboard — two burndown chart lines (Atlas steady, Nova spiky), velocity comparison bars, sprint day columns with task counts. Camera tracks left-to-right following the data story. Clean analytics visualization, subtle particle highlights on key numbers, 8K', referenceImage: 'velocity-metrics' },
+    { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Cinematic zoom into PO Actions queue — color-coded urgency cards (red critical, amber pending, green approved) arranged in a priority stack. Camera slowly zooms in from wide dashboard view to focus on the top pending action card. Professional enterprise UI feel, clean hierarchy, 8K', referenceImage: 'po-actions' },
+    // B-roll images for voiceover — host walking through screens
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the host in pajamas and slippers, sitting in a cozy home office with morning sunlight streaming in, sipping coffee while scrolling through the sprint tracker on a large monitor. The screen shows a clean "Daily Standup Summary" view. A clock reads "6:47 AM." His golden retriever sleeps at his feet. The caption "THE ENTIRE STANDUP TAKES FOUR MINUTES" hovers subtly. Peaceful morning productivity, warm domestic lighting, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: split-screen composition showing the SAME dashboard from two perspectives — LEFT: PO view with action queue, blocker alerts, and approval buttons prominently displayed. RIGHT: Developer view with task queue, deploy status, and code review notifications. The two views share the same underlying data but surface different information. A dividing line glows with "SAME SYSTEM, DIFFERENT LENS" text. Clean role-based UI comparison, 8K' },
     // ── Avatars — all 3 characters contribute to the tour ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    // Character-motion: Host gesturing through the dashboard tour like a presenter
+    { type: 'character-motion', character: 'host', motionRef: 'presenter-gesture', prompt: 'Host standing before holographic dashboard screens, using presenter gestures — pointing, swiping between screens, expanding views with pinch-to-zoom hand motions. Professional tech demo energy, Steve Jobs keynote style', duration: 6 },
     // SHOWCASE: Scroll-unroll transition — 18 screenshots unroll like a parchment scroll
     { type: 'scene-transition', style: 'scroll-unroll', prompt: 'Ancient parchment scroll unrolling horizontally to reveal a montage of 18 dashboard screenshots arranged like panels in an illuminated manuscript, each panel glowing as the scroll passes over it, golden light and ink flourishes', duration: 4 },
-    // Animate each screenshot with subtle pan/zoom via Alibaba i2v
-    { type: 'alibaba-video', model: 'wan2.6-i2v', prompt: 'Ken Burns style slow zoom and pan across a software dashboard screenshot, subtle particle effects, professional product demo feel', referenceImage: 'auto-captured-screenshots' },
     // ── Kinetic text: dashboard tour stats ──
     { type: 'kinetic-text', text: '18 SCREENS. 1 SYSTEM. ZERO JIRA. PO sees actions & blockers. Dev sees task queue & deploy status. Same system, different lens.' },
     // Bridge narrator: scene 8 → scene 9 (7s)
@@ -1006,21 +1137,48 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter V — Storms" in golden calligraphy, dark clouds with rain of error messages and lightning bolts sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── Full challenges narrative — vulnerability + thesis moment ──
     { type: 'tts', voice: 'host', scriptKey: 'challenges-intro' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'challenges-intro' },
     // B-roll: Context-switching cost — the hidden tax on developer productivity
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D infographic: dramatic visualization of context-switching overhead — a developer shown as a tiny figure standing at a crossroads with 5 different project paths branching out, each path labeled with a different task. Above, a burning hourglass shows "LOST: 4.2 hours/day" in red. Brain scan visualization shows fragmented thought patterns vs unified focus. LEFT: chaotic multi-tasking (gray, dim), RIGHT: focused single-tasking (green, bright). Clean data visualization with emotional impact, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'challenges-atlas' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'challenges-atlas' },
+    // B-roll: Atlas facing technical challenges — honest vulnerability
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear sitting at his terminal with a rare moment of vulnerability — his usually precise code shows a red error, his context window meter is near full, and a "Session Expired — Context Lost" warning blinks. He rubs his eyes tiredly. The code behind him shows honest comments like "// TODO: this is a workaround" and "// I know this is not ideal." Honest imperfection, warm empathetic lighting, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'challenges-nova' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'challenges-nova' },
+    // Beat: HONEST OWNERSHIP — Nova admits scope creep but owns it with pride
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox standing next to a display of her "unauthorized" creations — a dark mode toggle, notification system, and keyboard shortcut panel, all glowing with polished magenta energy. She has a sheepish but proud expression, one paw behind her head apologetically. A thought bubble shows "Nobody asked for these... but everyone uses them now." Atlas in the background grudgingly nods in agreement. Comic self-awareness energy, warm spotlight on Nova, 8K' },
+    // Beat: TRANSITION — the tone shifts from honest to theatrical
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D cinematic transition: the workspace dims as spotlight narrows, all characters slowly turn toward center stage where a golden lamp begins to glow. Purple mist swirls from the lamp as Allaudin the genie materializes center-stage, arms spread wide. The room transforms from tech office to theatrical stage with velvet curtains. Camera dollies in slowly. Broadway musical entrance energy, dramatic lighting shift from office-warm to stage-spotlight, 8K' },
     // Allaudin's Moana moment — full theatrical center-stage (25s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'scene9-allaudin-moana-moment' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'scene9-allaudin-moana-moment' },
     // B-roll: Allaudin Moana moment — theatrical center-stage magical declaration (FLUX for character detail)
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Allaudin the small blue-skinned genie standing center stage in a dramatic spotlight, arms spread wide in a theatrical declaration pose, purple turban flowing with magical energy, golden sparkle particles swirling around him in a vortex pattern. Behind him, a magical projection shows the sprint journey as a storybook timeline — from chaos to order. The other characters (bear, fox, human, squirrel, golden retriever) watch from the audience in warm lamplight, eyes wide with emotion. Broadway musical finale energy, volumetric god rays, 8K' },
     // ── Squirrel asks THE question — emotional pivot of the episode ──
+    // B-roll: Squirrel peeking cautiously — asking THE question
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the squirrel peeking slowly from behind Atlas monitor — cautious entrance, less chaotic than usual. Eyes wide with genuine concern. The room has gone still — Atlas and Nova both turn to look. The squirrel is about to ask the most important question of the episode. Dramatic pause energy, spotlight on the small creature, quiet tension lighting, 8K' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-interrupt-4' },
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-interrupt-4' },
+    // Beat: THE QUESTION — squirrel asks "who makes sure the AIs don't build the wrong thing fast?"
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: dramatic pause moment — the squirrel stands on Atlas monitor, unusually still and serious for once. Its question hangs in the air as visible text: "Who makes sure they dont sprint in the wrong direction?" Atlas and Nova have frozen mid-action, both turning to look at the small creature with surprise. The room has gone silent. A single spotlight illuminates the squirrel. Camera: low angle looking up at the squirrel, giving it unexpected authority. Dramatic tension, pivot-point energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'host-squirrel-good-question' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-squirrel-good-question' },
+    // Beat: THESIS — Host answers the pivotal question with honesty
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the host standing center frame, speaking directly to camera with genuine vulnerability. Behind him, a holographic governance layer materializes — territory maps, CLAUDE.md file, locked file indicators, approval gates — all forming a protective shield around the codebase. The host gestures toward it: "This is why I built the governance layer." Atlas and Nova visible in the background, both nodding in understanding. Honest leadership moment, warm but serious lighting, medium close-up, 8K' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-vindicated' },
-    // ── Numbers voiceover — stats montage ──
+    { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-vindicated' },
+    // Beat: COMEDY CALLBACK — squirrel celebrates being useful for once
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the squirrel doing a tiny victory dance on Atlas keyboard, tail puffed with pride, tiny "QA SQUIRREL" badge materializing on its chest. Atlas watches with an almost-smile. Nova is applauding with sparkle effects. The squirrel points at itself: "I contribute!" A tiny clipboard appears in its paws labeled "Assumption Testing Department." Comedy through earned respect, warm celebratory lighting, 8K' },
+    // ── Numbers voiceover — stats montage (32s — needs multiple visuals) ──
     { type: 'tts', voice: 'host', scriptKey: 'numbers-narration' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'numbers-narration' },
+    // Beat: STATS REVEAL — 41 tasks, 5 days, each number earns its moment
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D infographic: dramatic number reveal — a giant "41" in golden 3D letters floats center frame, below it "TASKS COMPLETED" in clean sans-serif. Around the number, tiny icons represent each task type: database schemas, UI components, API endpoints, governance files, test suites. Each icon glows as if checking off. The bear and fox stand at either side of the number, their combined work represented. Achievement energy, cinematic scale, dark background with golden accents, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D infographic: timeline showing "5 DAYS" as a horizontal journey — Day 1 (chaos), Day 2 (blocked), Day 3 (velocity gap), Day 4 (breakthrough), Day 5 (completion). Each day is a distinct chapter-page with a tiny scene illustration: Day 1 shows war table, Day 2 shows frozen Nova, Day 3 shows diverging velocity lines, Day 4 shows PO Actions breakthrough, Day 5 shows 41/41 green checkmark. The journey arc goes from stormy red to triumphant gold. Earned celebration, narrative timeline energy, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the ZERO MEETINGS reveal — a graveyard of cancelled calendar events floating in space, each tombstone reads a meeting type: "Sprint Planning — R.I.P.", "Daily Standup — R.I.P.", "Sprint Retro — R.I.P.", "Status Update — R.I.P." In their place, a clean async dashboard glows with life, showing standup entries, velocity charts, and PO actions — all self-updating. A "ZERO STANDUP MEETINGS" badge pulses triumphantly. Dark comedy meets achievement, theatrical graveyard lighting with green dashboard glow, 8K' },
+    // Character-interaction: All 4 characters in the emotional climax moment
+    { type: 'character-interaction', characters: ['host', 'atlas', 'nova', 'squirrel'], prompt: 'Pixar 3D group moment: the host, Atlas bear, Nova fox, and squirrel standing together looking at a holographic "41/41 COMPLETE" display. The host has his arm around Atlas shoulder, Nova leans in from the other side, squirrel perches on top of the display. Golden retriever sits at their feet. They share a quiet moment of earned pride — not celebrating loudly, but reflecting on what they built together. Warm golden lighting, team portrait composition, emotional depth, 8K', style: 'group-pride' },
     // ── Avatars — all 4 characters in this emotional scene ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
@@ -1044,17 +1202,42 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Ornate storybook chapter divider: "Chapter VI — Stars" in golden calligraphy, galaxy with constellation map and hopeful dawn sketched in the margins, warm parchment with ink flourishes, Pixar-quality illustration', duration: 2 },
     // ── MCP vision — host introduces, all 3 characters contribute perspectives ──
     { type: 'tts', voice: 'host', scriptKey: 'whats-next-intro' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'whats-next-intro' },
+    // B-roll: Future vision — stars and constellations of features
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the full team standing on a cliff edge gazing at a vast starfield — each star is a future feature (MCP integration, 85 languages, real-time sync). Constellations connect the stars forming a roadmap. The host points upward, Atlas traces connection patterns, Nova sketches new UI concepts in the air with light trails. Inspirational forward-looking energy, epic scale, cinematic wide shot, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'whats-next-atlas' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'whats-next-atlas' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-language-foundational' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-language-foundational' },
+    // B-roll: Language constellation — 85 languages visualized
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a beautiful constellation of 85 glowing language spheres floating in dark space — each sphere labeled with a language script (Arabic, Hindi, Japanese, Spanish, etc.), connected by golden data streams forming a neural network. Four hub nodes glow brighter: Claude Zone (terracotta), Alibaba Zone (green), Gemini Zone (blue), Fallback Zone (amber). Atlas stands below, orchestrating the connections with conductor-like gestures. Sci-fi language visualization, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'whats-next-nova' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'whats-next-nova' },
+    // Beat: NOVA'S VISION — automated tracking frees devs to focus on building
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox working joyfully at her design station — her screen shows beautiful UI components being built in real-time, while BEHIND her a ghostly transparent sprint tracker board updates itself automatically. Task cards slide from "IN PROGRESS" to "DONE" without anyone touching them. Nova is completely focused on creating, unaware of the tracker — because it handles itself. The contrast: creative freedom enabled by automated tracking. Bright creative energy, split-focus composition, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'atlas-data-quality' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'atlas-data-quality' },
+    // Beat: ENGINEERING RIGOR — Atlas emphasizes methodology over marketing
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear in a lab coat, standing before a holographic verification dashboard. Each metric from the sprint has a "VERIFIED ✓" stamp: velocity calculations show weighted complexity formulas, completion rates show source-linked data points, context retention shows session logs. A large stamp reads "NOT MARKETING — ENGINEERING." Atlas pushes his glasses up with methodical precision. Scientific rigor aesthetic, laboratory lighting, clean data visualization, 8K' },
+    // B-roll: MCP pipeline — automated workflow visualization
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: an automated pipeline visualization — a GitHub commit icon drops into a funnel at the top, triggering a cascade: MCP reads the diff (magnifying glass), sprint tracker updates automatically (dashboard cards shuffling), QA checklist generates itself (checkmarks appearing), acceptance criteria light up green. The pipeline flows like a Rube Goldberg machine but elegant and efficient. "THE BOARD UPDATES ITSELF" text glows at the bottom. Satisfying automation energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'host-atlas-said' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'host-atlas-said' },
+    // Beat: ENDORSEMENT — Host validates Atlas in fewer words
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the host giving a knowing nod to camera while Atlas documentation scrolls behind him — the host holds up his phone showing the sprint tracker with real data. His expression says "he is right, see for yourself." A floating text reads "I show what I build. Thats not a tagline — its how I work." Direct-to-camera trust moment, authentic energy, clean background with subtle product UI, 8K' },
     // ── MCP narration voiceover (20s) ──
     { type: 'tts', voice: 'host', scriptKey: 'whats-next-narration' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'whats-next-narration' },
+    // Beat: PLATFORM VISION — the ecosystem coming together
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a grand unified platform visualization — a glowing spherical hub at the center connects to orbiting modules: Sprint Tracker, Cast Studio, Mind AI, Deck Presenter, Spark Creator. Each module is a mini world with tiny characters working inside. Golden data streams flow between all modules. The host stands below looking up at the ecosystem, golden retriever beside him. Grand scale, orbital tech visualization, inspirational energy, 8K' },
     // ── Avatars — all 3 characters contribute to the vision ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
+    // Character-motion: Atlas conducting the language constellation like an orchestra
+    { type: 'character-motion', character: 'atlas', motionRef: 'conductor-gesture', prompt: 'Atlas the bear conducting an orchestra of language nodes — arms raised with a baton, each gesture activates a different language sphere that lights up and connects to the network. Precise, measured conductor movements. Maestro energy, dramatic orchestral lighting', duration: 6 },
+    // Character-animate-3d: Nova sketching future UI in the air
+    { type: 'character-animate-3d', character: 'nova', animationType: 'create', prompt: 'Nova the fox using her tail as a paintbrush, sketching glowing UI wireframes in mid-air that solidify into working interfaces. Each stroke leaves magenta light trails. Creative energy, designer-at-work animation', duration: 5 },
     // ── Visual assets — language constellation, MCP diagram, velocity methodology ──
     // Note: Avoid literal world maps / country names — DashScope content filter rejects geopolitical imagery
     { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'A glowing constellation of 16 interconnected language nodes floating in dark space — each node is a translucent sphere with a unique color pulsing as it activates, golden data streams flowing between them forming a neural network pattern. Camera slowly orbits the constellation as nodes light up one by one in sequence, each connection sparking with energy. Cinematic sci-fi feel, volumetric lighting, holographic aesthetic, deep blue-purple space background with nebula wisps, 8K' },
@@ -1071,23 +1254,46 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'storybook-frame', variant: 'chapter-header', prompt: 'Final chapter header: "The Last Page... For Now" in warm golden calligraphy, tiny illustrated characters waving from the margins, squirrel holding a tiny "THE END?" sign', duration: 2 },
     // ── Full closing dialogue — emotional sign-off (all 9 script entries) ──
     { type: 'tts', voice: 'host', scriptKey: 'close-takeaway' },
+    { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'close-takeaway' },
     // B-roll: Meta-moment — the team reflects on the journey
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: warm sunset scene — the full team sits together on a hilltop overlooking a tech-forest landscape. The human host sits center with his golden retriever, Atlas the bear sits to the left polishing his glasses reflectively, Nova the fox sits to the right with her tail curled around her contentedly, the squirrel naps on Atlas shoulder. Behind them, a holographic display shows "41/41 TASKS COMPLETE" fading into the sunset. Warm golden hour lighting, nostalgic reflection energy, widescreen cinematic composition, 8K' },
     { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-final' },
+    { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'close-atlas-final' },
+    // B-roll: Atlas and Nova final moment — mutual respect
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear and Nova the fox sitting side by side on a hilltop bench, looking at the sunset together. Atlas has his arm resting on the bench back, Nova leans slightly toward him. Between them, their brand glows merge — terracotta-orange and magenta-pink creating a warm unified glow. The sprint board behind them shows all 41 tasks in the DONE column, glowing green. Friendship earned through work, golden hour cinematography, emotional warmth, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'close-nova-final' },
+    { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'close-nova-final' },
     { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-heard' },
+    // Beat: COMEDY — Atlas's 200K context window heard Nova's compliment
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: close-up of Atlas the bear with a subtle knowing smile — one eyebrow slightly raised. A thought bubble shows a sound wave pattern with Nova voice text: "Working with Atlas has been... good." His context window meter in the background shows the exact timestamp of when she said it. A tiny "LOGGED" stamp appears next to the memory. Dry comedy through perfect recall, warm lighting, intimate close-up, 8K' },
     // Allaudin grand finale — Nutcracker closing narration (25s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'close-allaudin-finale' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'close-allaudin-finale' },
     // B-roll: Allaudin lamp finale — the genie returns to his lamp with a wink
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Allaudin the small blue-skinned genie floating above his golden magical lamp, slowly dissolving back into blue-purple mist that swirls into the lamp spout. He gives a warm knowing wink and finger-guns to the camera before disappearing. The lamp sits on a leather storybook, golden sparkle particles lingering where he was. A tiny "Until next time..." text floats in magical calligraphy. Warm cozy library setting, bittersweet farewell energy, magical lamplight, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'close-rationale' },
+    // Beat: META-MOMENT — host reveals how this podcast was made (95s — needs 7 images for this long monologue)
+    // The host explains the podcast IS the product demo — each image shows a different aspect of AI production
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: behind-the-scenes reveal — a magical curtain pulls back to show the "production studio" behind the podcast. Multiple AI provider logos float as glowing orbs: ElevenLabs, Azure Neural, Alibaba Wan, OpenAI, Anthropic Claude. Each orb has a tiny worker inside doing its job — one generates voice, one creates images, one renders video. The host stands at the center like a conductor. "19 AI PROVIDERS" glows above. Production magic revealed, theater-backstage energy, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a massive token counter spinning like a slot machine — the numbers read "850,000 TOKENS" in golden digits. Each token is visualized as a tiny glowing word fragment floating in a river of text. The river flows from a "RAW SCRIPT" source through multiple AI refinement stages (GPT-4o, Claude, editing passes) into a polished "FINAL SCRIPT" lake. Scale visualization of the creative iteration process, data-art aesthetic, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a production pipeline visualization — showing the actual workflow that created this episode: Script Generation → Voice Recording (TTS) → Avatar Creation (3D/2D) → Lipsync (Speech-to-Video) → Image Generation → Video Generation → Timeline Assembly → Final Render. Each stage is a workstation with tiny AI workers. A progress bar at the top shows "EPISODE 2 — PRODUCTION COMPLETE." Factory-meets-art-studio aesthetic, organized creative chaos, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the host looking directly at camera with passionate conviction — hands open, leaning slightly forward. Behind him, a wall displays the philosophy: "THE PODCAST IS THE PRODUCT DEMO. THE CREATIVITY IS THE PROOF." Each word is built from tiny screenshots of the actual products he built. No pitch deck, no slides — just built things shown honestly. Authentic advocacy energy, warm direct-address lighting, 8K' },
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Cinematic montage: rapid sequence of AI production moments — TTS waveform generating voice, 3D avatar mesh building layer by layer, lipsync video processing frame by frame, images rendering from noise to clarity, timeline assembling clips into sequence, final video encoding. Each moment takes 1 second. The montage shows the FULL production pipeline in 6 seconds. Fast-cut production energy, behind-the-scenes documentary feel, satisfying process visualization, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'close-cta' },
+    // Beat: CTA — three invitations, no hard sell
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the host pointing toward three glowing portals in a magical forest clearing — first portal labeled "EXPLORE" shows the GenieSuite website with product screenshots inside, second labeled "SUBSCRIBE" shows a YouTube play button with sparkles and episode thumbnails, third labeled "CONNECT" shows LinkedIn with a profile silhouette. The golden retriever sits beside the portals wagging its tail. Woodland creatures peek from behind trees. Inviting CTA energy without being pushy, warm sunset lighting, 8K' },
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the host waving goodbye to camera with a warm smile, holding a coffee mug that reads "BEYOND AI HYPE." Behind him, the full cast is assembled: Atlas giving a formal nod, Nova waving energetically, squirrel doing a backflip, Allaudin lamp glowing warmly on a shelf, golden retriever wagging tail. The sprint tracker on a background monitor shows "41/41 COMPLETE" with a green glow. Warm farewell energy, group portrait composition, sunset through the window, 8K' },
     // ── Goodbye round — each character signs off in character ──
     { type: 'tts', voice: 'atlas', scriptKey: 'close-atlas-goodbye' },
     { type: 'avatar-lipsync', character: 'atlas', provider: 'alibaba-wan2.2', scriptKey: 'close-atlas-goodbye' },
+    // Beat: ATLAS GOODBYE — dry, documentation-as-farewell
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Atlas the bear standing formally, holding out a perfectly organized documentation binder toward the camera — the cover reads "COMPLETE DOCUMENTATION — YOU ARE WELCOME." His expression is deadpan but there is a warmth in his eyes that wasn\'t there at the start of the episode. Behind him, his terminal shows a clean git log with green checkmarks. Dry comedy meets genuine pride, formal portrait lighting, 8K' },
     { type: 'tts', voice: 'nova', scriptKey: 'close-nova-goodbye' },
+    // Beat: NOVA GOODBYE — energetic, design-as-farewell
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox mid-leap, leaving a trail of magenta sparkles and tiny UI components (buttons, toggles, dark mode switches) floating in her wake. She looks over her shoulder at the camera with a wink. One paw throws a peace sign. A floating text reads "GO BUILD SOMETHING BEAUTIFUL" in her signature magenta. Exuberant exit energy, dynamic action pose, celebration sparkles, 8K' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-finale' },
+    // Beat: SQUIRREL FINALE — chaotic exit with acorn callback
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: the squirrel zooming out of frame in a blur of bushy tail and acorns, leaving a "SUBSCRIBE!" banner trailing behind like a skywriter. It looks back at camera with wide manic eyes and a huge grin. In the distance, a parking lot sign reads "LOT B" with a question mark. Tiny acorns scattered along its exit path. Chaotic comedy exit, motion blur energy, absurdist farewell, 8K' },
     // ── Avatars — all 4 characters for the finale (bookend: characters return) ──
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
