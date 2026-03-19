@@ -7432,7 +7432,21 @@ function EP04ProductionInner() {
                             <Zap className="h-2.5 w-2.5 mr-0.5" /> Render All ({assemblyParts.filter(p => p.status === 'pending').length})
                           </Button>
                         )}
-                        {/* Re-render & Auto-Stitch button — visible when some parts are completed */}
+                        {/* Re-assemble All & Stitch — reset ALL parts and rebuild entire movie */}
+                        {assemblyParts.length >= 2 && assemblyParts.some(p => p.status === 'completed') && !assemblyProgress && concatStatus === 'idle' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[10px] px-3 border-emerald-500/30 text-emerald-600"
+                            onClick={() => {
+                              const allPartNumbers = assemblyParts.map(p => p.partNumber);
+                              startReRenderAndStitch(allPartNumbers);
+                            }}
+                          >
+                            <Zap className="h-2.5 w-2.5 mr-0.5" /> Re-assemble All & Stitch ({assemblyParts.length})
+                          </Button>
+                        )}
+                        {/* Re-render selected & Auto-Stitch — pick specific parts to redo */}
                         {assemblyParts.length >= 2 && assemblyParts.some(p => p.status === 'completed') && !assemblyProgress && concatStatus === 'idle' && (
                           <Button
                             size="sm"
@@ -7447,7 +7461,7 @@ function EP04ProductionInner() {
                               }
                             }}
                           >
-                            <Film className="h-2.5 w-2.5 mr-0.5" /> Re-render & Stitch
+                            <Film className="h-2.5 w-2.5 mr-0.5" /> Re-render Selected & Stitch
                           </Button>
                         )}
                       </div>
