@@ -4861,8 +4861,20 @@ function EP04ProductionInner() {
                   }
                 }
               }
-              // Use neighbor's images (maintains context); last resort: first image only
-              perTtsImages[gi] = neighborImages ? [...neighborImages] : [regularImages[0]];
+              // Use neighbor's images (maintains context); last resort: cycle from all available images
+              if (neighborImages) {
+                perTtsImages[gi] = [...neighborImages];
+              } else if (regularImages.length > 0) {
+                perTtsImages[gi] = [regularImages[gi % regularImages.length]];
+              } else {
+                // All regularImages empty — use ANY HTTP image from this scene (screenshots, storybook, enhanced)
+                const anySceneImgs = Object.values(status.imageUrls || {}).filter((u: string) => u && u.startsWith('http'));
+                if (anySceneImgs.length > 0) {
+                  perTtsImages[gi] = [anySceneImgs[gi % anySceneImgs.length] as string];
+                  console.warn(`[EP04 PerTTS] FALLBACK: TTS#${gi} in ${ch.chapterId} — used scene-level image fallback (${anySceneImgs.length} available)`);
+                }
+                // If still empty, castTimelineEngine will handle via chapter pool fallback
+              }
             }
           }
 

@@ -561,15 +561,25 @@ function makeTtsLineScene(
     }
   };
 
+  // ── Resolve available images — guarantee at least 1 to prevent black screens ──
+  const resolveImages = (): string[] => {
+    if (allImages && allImages.length > 0) {
+      const httpImgs = allImages.filter(u => isHttpUrl(u));
+      if (httpImgs.length > 0) return httpImgs;
+    }
+    if (isHttpUrl(imageVisual)) return [imageVisual];
+    // FALLBACK: no images at all — log critical warning
+    console.error(`[CAST TIMELINE] BLACK SCREEN PREVENTED: TTS "${tts.key}" (${Math.round(sceneDur)}s) has zero images — scene will have no visual background`);
+    return [];
+  };
+  const safeImages = resolveImages();
+
   // ── Visual layer (z-index 0-2) ──
   if (lipsync && isHttpUrl(lipsync.url)) {
     const lipsyncDur = Math.min(lipsync.duration, sceneDur);
 
     // Background image slideshow (visible after lipsync ends)
-    const bgImages = (allImages && allImages.length > 0)
-      ? allImages.filter(u => isHttpUrl(u))
-      : (isHttpUrl(imageVisual) ? [imageVisual] : []);
-    addImageSlideshow(bgImages, 0, sceneDur, kbIdx);
+    addImageSlideshow(safeImages, 0, sceneDur, kbIdx);
 
     // Video lead-in (establishing shot, z-index 3 above lipsync)
     const maxLeadIn = Math.min(timing.videoLeadInMax, lipsyncDur * timing.videoLeadInRatio);
@@ -607,16 +617,10 @@ function makeTtsLineScene(
       // Fill remaining with cycling images
       const remainStart = videoDur - timing.crossfadeOverlap;
       const remainDur = sceneDur - videoDur + timing.crossfadeOverlap;
-      const cycleImages = (allImages && allImages.length > 0)
-        ? allImages.filter(u => isHttpUrl(u))
-        : (isHttpUrl(imageVisual) ? [imageVisual] : []);
-      if (remainDur > 0) addImageSlideshow(cycleImages, remainStart, remainDur, kbIdx);
+      if (remainDur > 0) addImageSlideshow(safeImages, remainStart, remainDur, kbIdx);
     } else {
       // Image-only — cycle through pool
-      const cycleImages = (allImages && allImages.length > 0)
-        ? allImages.filter(u => isHttpUrl(u))
-        : (isHttpUrl(imageVisual) ? [imageVisual] : []);
-      addImageSlideshow(cycleImages, 0, sceneDur, kbIdx);
+      addImageSlideshow(safeImages, 0, sceneDur, kbIdx);
     }
   }
 
@@ -942,6 +946,22 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, pro
         sceneImages = images;
       } else {
         sceneImages = images;
+      }
+    }
+
+    // ── FALLBACK: Guarantee sceneImages is never empty ──
+    // If no images matched this TTS line, inherit from full chapter pool
+    const httpSceneImages = sceneImages.filter(u => isHttpUrl(u));
+    if (httpSceneImages.length === 0) {
+      const chapterPool = images.filter(u => isHttpUrl(u));
+      if (chapterPool.length > 0) {
+        sceneImages = chapterPool;
+        if (!imageVisual && !tailImageVisual) {
+          const fallbackImg = chapterPool[imagePoolIdx % chapterPool.length];
+          if (!lipsync) imageVisual = fallbackImg;
+          else tailImageVisual = fallbackImg;
+        }
+        console.warn(`[CAST TIMELINE] FALLBACK: TTS#${i} "${tts.voice}:${tts.key}" had zero images — inherited ${chapterPool.length} from chapter pool`);
       }
     }
 
