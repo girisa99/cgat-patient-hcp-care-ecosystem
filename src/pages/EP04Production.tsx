@@ -790,6 +790,12 @@ function EP04ProductionInner() {
   const [concatVideoUrl, setConcatVideoUrl] = useState<string | null>(null);
   const [concatError, setConcatError] = useState<string | null>(null);
 
+  // ─── Re-render & Auto-Stitch state ────────────────────────────────────────
+  const autoStitchAfterRender = useRef(false);
+  const startConcatStitchRef = useRef<(() => void) | null>(null);
+  const [reRenderSelectMode, setReRenderSelectMode] = useState(false);
+  const [reRenderSelected, setReRenderSelected] = useState<Set<number>>(new Set());
+
   // ─── React Query: TTS + scene restoration (replaces 400-line useEffect) ──
   // Cache: TTS 15 min, scenes 10 min. Zero DB queries on page refresh within window.
   const rqTts = useRestoredTts(projectId, scriptContentForUI);
@@ -3884,6 +3890,12 @@ function EP04ProductionInner() {
       if (completedCount === currentParts.length && currentParts.length > 0) {
         toast.success(`All ${completedCount} scenes assembled!`);
         setAssemblyProgress(null);
+        // Auto-trigger stitch if Re-render & Stitch flow is active
+        if (autoStitchAfterRender.current) {
+          autoStitchAfterRender.current = false;
+          toast.info('All parts ready — auto-stitching into final video...');
+          setTimeout(() => startConcatStitchRef.current?.(), 1000);
+        }
       }
       return;
     }
@@ -5217,6 +5229,28 @@ function EP04ProductionInner() {
     }
   }, [assemblyParts, startFinalAssembly]);
 
+  // ─── Re-render selected parts & auto-stitch when all complete ────────────
+  const startReRenderAndStitch = useCallback(async (partNumbers: number[]) => {
+    if (partNumbers.length === 0) {
+      toast.info('No parts selected for re-rendering');
+      return;
+    }
+    // Reset selected parts to pending + clear their videoUrl
+    setAssemblyParts(prev => prev.map(p =>
+      partNumbers.includes(p.partNumber)
+        ? { ...p, status: 'pending' as const, videoUrl: null, errorMessage: undefined }
+        : p
+    ));
+    // Set auto-stitch flag BEFORE starting renders
+    autoStitchAfterRender.current = true;
+    setConcatStatus('idle');
+    setConcatVideoUrl(null);
+    setConcatError(null);
+    // Small delay for state to flush, then fire all pending parts
+    await new Promise(r => setTimeout(r, 300));
+    startAllPerSceneAssembly();
+  }, [startAllPerSceneAssembly]);
+
   // ─── Reusable Video Stitching (Concat) via RunPod FFmpeg ─────────────────
   // Takes ordered list of MP4 URLs → builds a minimal stitching timeline
   // where each URL becomes a video element in its own scene → submits → polls.
@@ -5346,6 +5380,9 @@ function EP04ProductionInner() {
       toast.error(`Stitching failed: ${err.message?.substring(0, 100)}`);
     }
   }, [assemblyParts, buildStitchingTimeline, projectId, supabase]);
+
+  // Keep ref in sync so polling effect can call startConcatStitch without stale closure
+  startConcatStitchRef.current = startConcatStitch;
 
   // Poll for concat job completion
   const concatPollRef = useRef(0);
@@ -7331,6 +7368,24 @@ function EP04ProductionInner() {
                             <Zap className="h-2.5 w-2.5 mr-0.5" /> Render All ({assemblyParts.filter(p => p.status === 'pending').length})
                           </Button>
                         )}
+                        {/* Re-render & Auto-Stitch button — visible when some parts are completed */}
+                        {assemblyParts.length >= 2 && assemblyParts.some(p => p.status === 'completed') && !assemblyProgress && concatStatus === 'idle' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-[10px] px-3 border-violet-500/30 text-violet-600"
+                            onClick={() => {
+                              const failedParts = assemblyParts.filter(p => p.status === 'failed').map(p => p.partNumber);
+                              if (failedParts.length > 0) {
+                                startReRenderAndStitch(failedParts);
+                              } else {
+                                setReRenderSelectMode(prev => !prev);
+                              }
+                            }}
+                          >
+                            <Film className="h-2.5 w-2.5 mr-0.5" /> Re-render & Stitch
+                          </Button>
+                        )}
                       </div>
 
                       {/* Live assembly status bar */}
@@ -7538,6 +7593,19 @@ function EP04ProductionInner() {
                                     Retry
                                   </Button>
                                 )}
+                                {reRenderSelectMode && part.status === 'completed' && (
+                                  <input type="checkbox"
+                                    className="h-3 w-3 accent-violet-500"
+                                    checked={reRenderSelected.has(part.partNumber)}
+                                    onChange={(e) => {
+                                      setReRenderSelected(prev => {
+                                        const next = new Set(prev);
+                                        e.target.checked ? next.add(part.partNumber) : next.delete(part.partNumber);
+                                        return next;
+                                      });
+                                    }}
+                                  />
+                                )}
                                 {part.status === 'completed' && (
                                   <Button
                                     size="sm"
@@ -7606,6 +7674,28 @@ function EP04ProductionInner() {
                           );
                         })}
                       </div>
+
+                      {/* Re-render selection mode action bar */}
+                      {reRenderSelectMode && (
+                        <div className="mt-2 p-2 rounded-lg bg-violet-500/10 border border-violet-500/30 flex items-center gap-2">
+                          <span className="text-xs text-violet-600">
+                            {reRenderSelected.size} part{reRenderSelected.size !== 1 ? 's' : ''} selected
+                          </span>
+                          <Button size="sm" className="h-6 text-[10px] px-3 bg-violet-600 text-white hover:bg-violet-700"
+                            disabled={reRenderSelected.size === 0}
+                            onClick={() => {
+                              setReRenderSelectMode(false);
+                              startReRenderAndStitch([...reRenderSelected]);
+                              setReRenderSelected(new Set());
+                            }}>
+                            <Film className="h-2.5 w-2.5 mr-0.5" /> Re-render & Auto-Stitch
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2"
+                            onClick={() => { setReRenderSelectMode(false); setReRenderSelected(new Set()); }}>
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
 
                       {/* All parts complete — Stitch into final video */}
                       {assemblyParts.every(p => p.status === 'completed') && (
