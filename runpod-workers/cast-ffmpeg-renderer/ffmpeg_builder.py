@@ -315,23 +315,42 @@ def _pre_render_overlays(scene: SceneInstruction, width: int, height: int) -> di
 
     for ei, elem in enumerate(scene.elements):
         if elem.type == "text" and elem.text:
-            path = render_text_overlay(
-                text=elem.text,
-                width=width,
-                height=height,
-                font_family=elem.font_family,
-                font_size=elem.font_size,
-                font_color=elem.font_color,
-                font_weight=elem.font_weight,
-                position=elem.position,
-                text_align=elem.text_align,
-                background_color=elem.background_color,
-                letter_spacing=elem.letter_spacing,
-                text_shadow=elem.text_shadow,
-                scene_index=scene.index,
-                element_index=ei,
-                y_override=y_overrides.get(ei, -1),
-            )
+            path = None
+            # Route to kinetic renderer for animated text styles (word-by-word, jumping)
+            if elem.style in ("003", "005"):
+                path = render_kinetic_text_frames(
+                    text=elem.text,
+                    width=width,
+                    height=height,
+                    font_family=elem.font_family,
+                    font_size=elem.font_size,
+                    font_color=elem.font_color,
+                    font_weight=elem.font_weight,
+                    position=elem.position,
+                    style=elem.style,
+                    duration=max(elem.duration, 3.0),
+                    scene_index=scene.index,
+                    element_index=ei,
+                )
+            # Fallback to static overlay (default for non-kinetic styles or if kinetic failed)
+            if not path:
+                path = render_text_overlay(
+                    text=elem.text,
+                    width=width,
+                    height=height,
+                    font_family=elem.font_family,
+                    font_size=elem.font_size,
+                    font_color=elem.font_color,
+                    font_weight=elem.font_weight,
+                    position=elem.position,
+                    text_align=elem.text_align,
+                    background_color=elem.background_color,
+                    letter_spacing=elem.letter_spacing,
+                    text_shadow=elem.text_shadow,
+                    scene_index=scene.index,
+                    element_index=ei,
+                    y_override=y_overrides.get(ei, -1),
+                )
             if path:
                 overlays[ei] = path
 
@@ -696,26 +715,48 @@ def render_scene(scene: SceneInstruction, width: int = 1920, height: int = 1080)
         )
         input_idx += 1
 
-    # ── Text overlays (Pillow PNG or fallback drawtext) ──
+    # ── Text overlays (kinetic .mov, Pillow PNG, or fallback drawtext) ──
     for ti, (ei, txt) in enumerate(texts):
         if ei in overlays:
-            # Use pre-rendered Pillow PNG
-            png_path = overlays[ei]
-            inputs.extend(["-i", png_path])
-            txt_label = f"tpng{scene.index}_{ti}"
-            filter_parts.append(f"[{input_idx}:v]format=rgba[{txt_label}]")
+            overlay_path = overlays[ei]
+            is_kinetic = overlay_path.endswith('.mov')
+            txt_dur = txt.duration if txt.duration > 0.1 else 5.0
+            fade_d = 0.3
 
-            enable = ""
-            if txt.duration > 0.1:
-                end_t = txt.start + txt.duration
-                enable = f":enable='between(t,{txt.start:.2f},{end_t:.2f})'"
+            if is_kinetic:
+                # Kinetic text video overlay (ProRes 4444 with alpha channel)
+                inputs.extend(["-i", overlay_path])
+                txt_label = f"tkin{scene.index}_{ti}"
+                fade_out_st = max(0, txt_dur - fade_d)
+                filter_parts.append(
+                    f"[{input_idx}:v]format=rgba,"
+                    f"fade=t=in:d={fade_d}:alpha=1,"
+                    f"fade=t=out:st={fade_out_st:.2f}:d={fade_d}:alpha=1,"
+                    f"setpts=PTS-STARTPTS+{txt.start:.2f}/TB[{txt_label}]"
+                )
+                prev = current_video
+                current_video = f"t{scene.index}_{ti}"
+                filter_parts.append(
+                    f"[{prev}][{txt_label}]overlay=0:0:eof_action=pass[{current_video}]"
+                )
+                input_idx += 1
+            else:
+                # Static PNG overlay
+                inputs.extend(["-i", overlay_path])
+                txt_label = f"tpng{scene.index}_{ti}"
+                filter_parts.append(f"[{input_idx}:v]format=rgba[{txt_label}]")
 
-            prev = current_video
-            current_video = f"t{scene.index}_{ti}"
-            filter_parts.append(
-                f"[{prev}][{txt_label}]overlay=0:0{enable}[{current_video}]"
-            )
-            input_idx += 1
+                enable = ""
+                if txt.duration > 0.1:
+                    end_t = txt.start + txt.duration
+                    enable = f":enable='between(t,{txt.start:.2f},{end_t:.2f})'"
+
+                prev = current_video
+                current_video = f"t{scene.index}_{ti}"
+                filter_parts.append(
+                    f"[{prev}][{txt_label}]overlay=0:0{enable}[{current_video}]"
+                )
+                input_idx += 1
         else:
             # Fallback: drawtext filter
             dt = _build_drawtext_filter(txt, width, height)

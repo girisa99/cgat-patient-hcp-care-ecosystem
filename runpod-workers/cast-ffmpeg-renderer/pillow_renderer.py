@@ -78,6 +78,31 @@ def _hex_to_rgba(hex_color: str, alpha: int = 255) -> tuple:
     return (255, 255, 255, alpha)
 
 
+def _derive_glow_color(font_color: str) -> tuple:
+    """Derive a vibrant glow color from the font color for cinematic text effect."""
+    r, g, b, _ = _hex_to_rgba(font_color)
+    # White/near-white text → warm gold glow (default cinematic)
+    if r > 200 and g > 200 and b > 200:
+        return (255, 215, 100, 120)
+    # Warm colors (red, orange, amber) → hot amber glow
+    if r > 180 and g < 160 and b < 120:
+        return (255, 170, 60, 120)
+    # Cool colors (blue, cyan) → electric blue glow
+    if b > 180 and r < 140:
+        return (80, 180, 255, 120)
+    # Purple/magenta → violet glow
+    if r > 160 and b > 180 and g < 140:
+        return (180, 120, 255, 120)
+    # Green → emerald glow
+    if g > 180 and r < 160 and b < 160:
+        return (80, 255, 160, 120)
+    # Yellow/gold → intensified gold glow
+    if r > 200 and g > 180 and b < 100:
+        return (255, 220, 60, 130)
+    # Default: saturated version of font color
+    return (min(255, r + 80), min(255, g + 80), min(255, b + 80), 120)
+
+
 def resolve_position(position: str, text_w: int, text_h: int,
                      canvas_w: int, canvas_h: int,
                      margin: int = 60) -> tuple[int, int]:
@@ -223,8 +248,8 @@ def render_text_overlay(
     # Layer 1: Colored glow halo (soft, wide, eye-catching)
     glow_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     glow_draw = ImageDraw.Draw(glow_layer)
-    # Gold glow for warm cinematic feel
-    glow_col = (255, 220, 120, 90)
+    # Color-adaptive glow — matches font color for vibrant cinematic look
+    glow_col = _derive_glow_color(font_color)
 
     # Layer 2: Dark shadow (sharper, closer)
     shadow_layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
@@ -510,7 +535,7 @@ def render_kinetic_text_frames(
 
     stroke_w = max(2, font_size // 18)
     stroke_col = (0, 0, 0, 240)
-    glow_col = (255, 220, 120, 80)
+    glow_col = _derive_glow_color(font_color)
 
     def _draw_styled_text(draw_obj, img_obj, tx, ty, txt):
         """Draw text with glow + shadow + outline on a single frame."""
