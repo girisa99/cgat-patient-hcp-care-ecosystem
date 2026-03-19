@@ -327,7 +327,7 @@ export const PROFILE_CINEMATIC_DARK: CastProfile = {
     sceneFadeOut: 0.5,
     lipsyncTolerance: 0.5,
     minSceneDuration: 2,
-    maxSceneDuration: 120,
+    maxSceneDuration: 55,
     ttsPadding: 2,
     lowerThirdDuration: 5,
     lowerThirdDelay: 0.5,
