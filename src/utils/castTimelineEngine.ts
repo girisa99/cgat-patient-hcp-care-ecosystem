@@ -888,7 +888,15 @@ function buildChapterScenes(chapter: CastChapter, speakers: CastSpeakerInfo, pro
       Math.abs(c.start - tts.start) < timing.lipsyncTolerance
     );
     const lipsync = lipsyncIdx >= 0 ? lipsyncClips[lipsyncIdx] : undefined;
-    if (lipsyncIdx >= 0) usedLipsyncIndices.add(lipsyncIdx);
+    if (lipsyncIdx >= 0) {
+      usedLipsyncIndices.add(lipsyncIdx);
+    } else {
+      // Check if there's a lipsync for this character but timing didn't match
+      const sameCharLipsync = lipsyncClips.filter((c, idx) => !usedLipsyncIndices.has(idx) && c.character === tts.voice);
+      if (sameCharLipsync.length > 0) {
+        console.warn(`[CAST TIMELINE] Lipsync MISS: TTS#${i} "${tts.voice}:${tts.key}" at t=${tts.start.toFixed(1)}s — found ${sameCharLipsync.length} ${tts.voice} clip(s) but timing off: [${sameCharLipsync.map(c => `t=${c.start.toFixed(1)}s(Δ${Math.abs(c.start - tts.start).toFixed(1)}s)`).join(', ')}] (tolerance: ${timing.lipsyncTolerance}s)`);
+      }
+    }
 
     // ── Pick visuals — semantic per-TTS mapping when available ──
     const ttsImageGroup = hasSemanticMapping && perTtsImages![i]

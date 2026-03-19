@@ -4131,11 +4131,44 @@ function EP04ProductionInner() {
         const status = sceneProduction[sceneKey] || defaultSceneStatus();
         const sceneTitle = SCENE_TITLES[sceneKey] || sceneKey;
 
-        // Filter scene lines to sub-part range if applicable
-        const allSceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
+        // ── Reorder TTS lines by PIPELINE step order (not file declaration order) ──
+        // Object.keys(scriptContentForUI) follows TS file order, but scenes 7-11 have
+        // lines declared out-of-order in the file. The pipeline config defines the correct
+        // narrative sequence. Also includes bridge narrator lines (e.g., bridge-7-to-8)
+        // which have scene:'transition-X-to-Y' in script but belong to this scene's pipeline.
+        const pipelineKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
+        const pipelineStepsRaw = EP04_SCENE_PIPELINES[pipelineKey as keyof typeof EP04_SCENE_PIPELINES];
+        const pipelineTtsOrder: string[] = [];
+        const bridgeScriptKeys: string[] = [];
+        if (Array.isArray(pipelineStepsRaw)) {
+          for (const step of pipelineStepsRaw) {
+            if (step.type === 'tts' && (step as any).scriptKey) {
+              pipelineTtsOrder.push((step as any).scriptKey as string);
+              const sk = (step as any).scriptKey as string;
+              if (sk.startsWith('bridge-') && scriptContentForUI[sk] && scriptContentForUI[sk].scene !== sceneKey) {
+                bridgeScriptKeys.push(sk);
+              }
+            }
+          }
+        }
+
+        // Start with pipeline-ordered keys, then append any scene lines not in the pipeline
+        const fileOrderSceneLines = scriptKeys.filter(k => scriptContentForUI[k]?.scene === sceneKey);
+        const pipelineOrderedLines = pipelineTtsOrder.filter(k =>
+          fileOrderSceneLines.includes(k) || bridgeScriptKeys.includes(k)
+        );
+        // Append any lines that exist in the scene but aren't referenced in the pipeline
+        const pipelineSet = new Set(pipelineOrderedLines);
+        const extraLines = fileOrderSceneLines.filter(k => !pipelineSet.has(k));
+        const allSceneLinesOrdered = [...pipelineOrderedLines, ...extraLines];
+
+        if (pipelineOrderedLines.length > 0 && pipelineOrderedLines.length !== fileOrderSceneLines.length + bridgeScriptKeys.length) {
+          console.warn(`[EP04 Assembly] ${sceneKey}: Pipeline has ${pipelineTtsOrder.length} TTS steps, matched ${pipelineOrderedLines.length}, file has ${fileOrderSceneLines.length} + ${bridgeScriptKeys.length} bridges. ${extraLines.length} extra lines appended.`);
+        }
+
         const sceneLines = lineRange
-          ? allSceneLines.slice(lineRange.start, lineRange.end)
-          : allSceneLines;
+          ? allSceneLinesOrdered.slice(lineRange.start, lineRange.end)
+          : allSceneLinesOrdered;
         let cumulativeStart = 0;
         const allTtsUrls: Array<{ url: string; start: number; duration: number; voice: string; key: string; text?: string }> = [];
 
@@ -4176,6 +4209,20 @@ function EP04ProductionInner() {
         if (dataUriTtsCount > 0) {
           console.warn(`[EP04 Assembly] ${sceneKey}: ${dataUriTtsCount} TTS lines have data: URIs (not uploaded to Storage) — these will be SILENT in the video`);
         }
+
+        // ── TTS Assembly Diagnostic ──
+        const missingTts = sceneLines.filter(k => !audioMap[k]?.audioUrl);
+        const dataUriTts = sceneLines.filter(k => audioMap[k]?.audioUrl && !audioMap[k].audioUrl.startsWith('http'));
+        console.log(`[EP04 TTS Audit] ${sceneKey}: ${sceneLines.length} lines → ${allTtsUrls.length} HTTP TTS, ${dataUriTts.length} data:URI (silent), ${missingTts.length} missing`);
+        if (missingTts.length > 0) {
+          console.error(`[EP04 TTS Audit] MISSING TTS for ${sceneKey}:`, missingTts.join(', '));
+        }
+        if (bridgeScriptKeys.length > 0) {
+          console.log(`[EP04 TTS Audit] ${sceneKey}: included ${bridgeScriptKeys.length} bridge narrator lines:`, bridgeScriptKeys.join(', '));
+        }
+        allTtsUrls.forEach((t, idx) => {
+          console.log(`  [TTS#${idx}] ${t.voice}:${t.key} start=${t.start.toFixed(1)}s dur=${t.duration.toFixed(1)}s url=${t.url.substring(0, 60)}`);
+        });
 
         const sceneDuration = cumulativeStart || 30;
 
@@ -4400,10 +4447,15 @@ function EP04ProductionInner() {
                 console.log(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) → TTS "${charTts.key}" at t=${charTts.start}s (clip=${clipDuration}s, trimmed ${LIPSYNC_SAFETY_TRIM}s for clean end)`);
               }
             } else {
-              console.warn(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}) — no matching TTS found in scene`);
+              console.warn(`[EP04 Assembly] Lipsync: "${charMatch}" (key: ${lipsyncKey}, scriptKey: ${scriptKey}) — no matching TTS found in scene. Available ${charMatch} TTS: [${allTtsUrls.filter(t => t.voice === charMatch).map(t => t.key).join(', ')}]`);
             }
           }
         }
+        // ── Lipsync matching diagnostic ──
+        console.log(`[EP04 Lipsync Audit] ${sceneKey}: ${Object.keys(status?.lipsyncUrls || {}).length} lipsync entries → ${lipsyncClips.length} matched clips`);
+        lipsyncClips.forEach((lc, idx) => {
+          console.log(`  [LS#${idx}] ${lc.character} start=${lc.start.toFixed(1)}s dur=${lc.duration.toFixed(1)}s url=${lc.url.substring(0, 60)}`);
+        });
 
         const pipelineSceneKey = SCRIPT_TO_PIPELINE_MAP[sceneKey] || sceneKey;
         const pipeline = EP04_SCENE_PIPELINES[pipelineSceneKey as keyof typeof EP04_SCENE_PIPELINES];
