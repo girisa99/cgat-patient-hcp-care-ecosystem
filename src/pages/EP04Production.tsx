@@ -4334,9 +4334,14 @@ function EP04ProductionInner() {
           }
 
           // Append unmatched entries at end (backward compat with old/extra data)
+          let unmatchedCount = 0;
           for (const [key, url] of entries) {
-            if (!consumed.has(key)) ordered.push(url);
+            if (!consumed.has(key)) { ordered.push(url); unmatchedCount++; }
           }
+          // ── Ordering diagnostic ──
+          console.log(`[EP04 orderByPipeline] ${sKey}: ${entries.length} entries → ${ordered.length} ordered (${consumed.size} matched, ${unmatchedCount} unmatched)`);
+          console.log(`  DB keys: [${entries.map(([k]) => k).join(', ')}]`);
+          ordered.forEach((url, idx) => console.log(`  ordered[${idx}]: ${url.substring(url.lastIndexOf('/') + 1, url.lastIndexOf('/') + 50)}`));
 
           return ordered;
         };
@@ -4992,6 +4997,14 @@ function EP04ProductionInner() {
 
           console.log(`[EP04 PerTTS] ${ch.chapterId}: ${perTtsImages.length} img groups (${totalExpectedImgs} expected, ${regularImages.length} available), ${perTtsVideos.filter(v => v.length > 0).length} vid groups (${totalExpectedVids} expected, ${sceneVideos.length} available) →`,
             perTtsImages.map((g, idx) => `TTS#${idx}:${g.length}img+${(perTtsVideos[idx] || []).length}vid(${Math.round(ttsLineDurations[idx] || 0)}s)`).join(', '));
+          // ── DETAILED per-TTS image assignment diagnostic ──
+          perTtsImages.forEach((group, idx) => {
+            const ttsLine = ch.allTtsUrls[idx];
+            const voice = ttsLine?.voice || '?';
+            const key = ttsLine?.key || '?';
+            const urlSnippets = group.map((u: string) => u ? u.substring(u.lastIndexOf('/') + 1, u.lastIndexOf('/') + 40) : 'null').join(', ');
+            console.log(`  [PerTTS#${idx}] ${voice}:${key} → ${group.length} imgs: [${urlSnippets}]`);
+          });
         }
 
         // Collect screenshot URLs for gentle Ken Burns — prefer enhanced, dedup by screenId
