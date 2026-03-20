@@ -695,8 +695,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'scene3-nova-transition-to-origin' },
     // Character-interaction: Atlas & Nova resolve to fix the process together
     { type: 'character-interaction', characters: ['atlas', 'nova'], provider: 'alibaba', prompt: 'Atlas the bear and Nova the fox facing each other across a broken sprint board, debris of failed merge conflicts scattered around them. They lock eyes with determination — Atlas extends a formal paw, Nova grabs it with both paws. The broken sprint board behind them begins to glow and repair itself as their partnership solidifies. From frustration to resolve, Pixar-quality character acting, emotional turning point', style: 'partnership-resolve' },
-    // Character-motion: Atlas methodically organizing the chaos
-    { type: 'character-motion', character: 'atlas', motionRef: 'organizing-gesture', prompt: 'Atlas the bear standing at a holographic workspace, methodically sorting scattered task cards into organized columns with precise paw movements — each card snaps into place with a satisfying glow. Calm, measured organizing energy', duration: 5 },
+    // Atlas organizing chaos — converted from character-motion (no motion ref available)
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: a large bear character standing at a holographic workspace, methodically sorting scattered glowing task cards into organized columns with precise paw movements — each card snaps into place with a satisfying golden glow. The workspace transforms from chaos to order. Calm measured energy, warm cinematic lighting, smooth animation' },
     // B-roll: Nova's hopeful transition — looking toward the solution
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: Nova the fox looking toward a glowing doorway of light at the end of a dark corridor. Behind her, the chaos of scattered code and merge conflicts fades into shadow. Her pink-magenta aura begins to stabilize. Atlas the bear stands beside her, his terracotta-orange glow steady and calm. They share a determined nod. Cinematic tunnel-of-light composition, hope emerging from frustration, 8K' },
     // B-roll: Atlas & Nova resolve — shared scoreboard agreement
@@ -932,8 +932,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'kinetic-text', text: '6 hours blocked. 12 minutes approved. Async governance works.' },
     // Character-animate-3d: Squirrel bouncing off walls during governance discussion
     { type: 'character-animate-3d', character: 'squirrel', animationType: 'bounce', prompt: 'Squirrel bouncing between guardrail walls like a pinball, testing the boundaries of the governance system, comically getting redirected each time it tries to cross a territory line. Chaotic comedy energy', duration: 4 },
-    // Character-motion: Host writing the governance document late at night
-    { type: 'character-motion', character: 'host', motionRef: 'typing-intense', prompt: 'Host typing intensely at a late-night desk, screen glow illuminating his determined face, golden retriever sleeping at his feet. Creating the CLAUDE.md governance file that will change everything', duration: 5 },
+    // Host writing governance doc — converted from character-motion (no motion ref available)
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Cinematic 3D animation: a man typing intensely at a late-night desk, monitor screen glow illuminating his determined face, golden retriever sleeping at his feet. Code and document text scrolls on screen as he creates a governance file. Camera slowly pushes in on his focused expression. Warm desk-lamp lighting in dark room, dramatic coding atmosphere, smooth animation' },
     // Bridge narrator: scene 5 → scene 6 (8s)
     { type: 'tts', voice: 'allaudin', scriptKey: 'bridge-5-to-6' },
     { type: 'avatar-lipsync', character: 'allaudin', provider: 'alibaba-wan2.2', scriptKey: 'bridge-5-to-6' },
@@ -1122,8 +1122,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
-    // Character-motion: Host gesturing through the dashboard tour like a presenter
-    { type: 'character-motion', character: 'host', motionRef: 'presenter-gesture', prompt: 'Host standing before holographic dashboard screens, using presenter gestures — pointing, swiping between screens, expanding views with pinch-to-zoom hand motions. Professional tech demo energy, Steve Jobs keynote style', duration: 6 },
+    // Host presenter gestures — converted from character-motion (no motion ref available)
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Cinematic 3D animation: a man standing before large holographic dashboard screens, using confident presenter gestures — pointing at data visualizations, swiping between screens, expanding chart views with hand motions. Professional tech demo energy, keynote presentation style, dramatic stage lighting, smooth camera movement' },
     // SHOWCASE: Scroll-unroll transition — 18 screenshots unroll like a parchment scroll
     { type: 'scene-transition', style: 'scroll-unroll', prompt: 'Ancient parchment scroll unrolling horizontally to reveal a montage of 18 dashboard screenshots arranged like panels in an illuminated manuscript, each panel glowing as the scroll passes over it, golden light and ink flourishes', duration: 4 },
     // ── Kinetic text: dashboard tour stats ──
@@ -1234,8 +1234,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'host', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'atlas', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
-    // Character-motion: Atlas conducting the language constellation like an orchestra
-    { type: 'character-motion', character: 'atlas', motionRef: 'conductor-gesture', prompt: 'Atlas the bear conducting an orchestra of language nodes — arms raised with a baton, each gesture activates a different language sphere that lights up and connects to the network. Precise, measured conductor movements. Maestro energy, dramatic orchestral lighting', duration: 6 },
+    // Atlas conducting language constellation — converted from character-motion (no motion ref available)
+    { type: 'alibaba-video', model: 'wan2.6-t2v', prompt: 'Pixar 3D animation: a large bear character conducting an orchestra of floating language spheres — arms raised with a glowing baton, each sweeping gesture activates a different language node that lights up and connects to the network with light beams. Precise measured conductor movements. Maestro energy, dramatic orchestral lighting, cinematic camera orbit' },
     // Character-animate-3d: Nova sketching future UI in the air
     { type: 'character-animate-3d', character: 'nova', animationType: 'create', prompt: 'Nova the fox using her tail as a paintbrush, sketching glowing UI wireframes in mid-air that solidify into working interfaces. Each stroke leaves magenta light trails. Creative energy, designer-at-work animation', duration: 5 },
     // ── Visual assets — language constellation, MCP diagram, velocity methodology ──
