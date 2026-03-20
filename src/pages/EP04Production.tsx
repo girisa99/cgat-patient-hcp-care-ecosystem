@@ -1874,11 +1874,12 @@ function EP04ProductionInner() {
         });
       }
 
+      const vidProvider = (step as Record<string, unknown>).provider as string || 'alibaba';
       const { data, error } = await supabase.functions.invoke('ai-video-generator', {
         body: {
           type: 'scene',
-          action: 'generate_video',
           prompt,
+          provider: vidProvider,
           style: step.style || 'group-shot',
           characters: step.characters || [],
         },
