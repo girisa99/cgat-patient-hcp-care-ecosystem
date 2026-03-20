@@ -2585,6 +2585,15 @@ function EP04ProductionInner() {
           // Only skip if we have MORE existing entries than the current step index
           return nthCheck < existingCount;
         }
+        if (sType === 'alibaba-image') {
+          // Counter-based: Nth alibaba-image step matches if we have N+ permanent entries
+          const existingCount = Object.entries(existingImageUrls)
+            .filter(([k, url]) => k.includes('alibaba-image') && k.includes(sKey) && isPermanent(url)).length;
+          const checkKey = `${sType}:${sKey}`;
+          const nthCheck = stepTypeCheckCount[checkKey] || 0;
+          stepTypeCheckCount[checkKey] = nthCheck + 1;
+          return nthCheck < existingCount;
+        }
         if (sType === 'static-asset') {
           return Object.entries(existingImageUrls).some(([k, url]) => k.includes('static-asset') && k.includes(sKey) && isPermanent(url));
         }
@@ -4261,6 +4270,31 @@ function EP04ProductionInner() {
           const ordered: string[] = [];
           const consumed = new Set<string>();
 
+          // ── Pre-consume stale accumulated entries (2026-03-20) ──
+          // When images are regenerated without forceRegenAll, old entries (000-014)
+          // and new entries (015-029) coexist in DB. Pipeline has N steps but entries
+          // has 2N+ items. Pre-consume the OLDEST excess entries so pipeline steps
+          // match the NEWEST (most recently generated) images.
+          const preConsumeExcess = (typePrefix: string) => {
+            const typeEntries = entries.filter(([k]) => k.includes(typePrefix) && k.includes(sKey));
+            const typeSteps = pipeline.filter(s =>
+              stepTypeFilter.has((s as Record<string, unknown>).type as string) &&
+              (s as Record<string, unknown>).type === typePrefix
+            ).length;
+            const excess = typeEntries.length - typeSteps;
+            if (excess > 0) {
+              // Sort by key (alphabetical = counter order), consume the oldest
+              const sorted = [...typeEntries].sort((a, b) => a[0].localeCompare(b[0]));
+              for (let ei = 0; ei < excess; ei++) {
+                consumed.add(sorted[ei][0]);
+              }
+              console.log(`[EP04 orderByPipeline] ${sKey}: ${typePrefix} has ${typeEntries.length} entries but ${typeSteps} steps — pre-consumed ${excess} oldest (stale) entries`);
+            }
+          };
+          preConsumeExcess('alibaba-image');
+          preConsumeExcess('alibaba-video');
+          preConsumeExcess('storybook-frame');
+
           for (const step of pipeline) {
             const sType = (step as Record<string, unknown>).type as string;
             if (!stepTypeFilter.has(sType)) continue;
@@ -4288,10 +4322,6 @@ function EP04ProductionInner() {
               if (sType === 'avatar-3d') {
                 const character = (step as Record<string, unknown>).character as string || '';
                 return key.includes('avatar-3d') && key.includes(character);
-              }
-              if (sType === 'alibaba-image') {
-                // Match keys that contain the step type prefix; exclude ai-screen-enhance
-                return key.includes('alibaba-image') && key.includes(sKey);
               }
               // Generic: key contains step type AND scene key
               return key.includes(sType) && key.includes(sKey);
@@ -4375,10 +4405,10 @@ function EP04ProductionInner() {
         // Images are distributed evenly across all sub-parts.
         let sceneVideos = allSceneVideos;
         let imageVisuals = allImageVisuals;
-        if (lineRange && allSceneLines.length > 0) {
-          const subPartFraction = (lineRange.end - lineRange.start) / allSceneLines.length;
+        if (lineRange && allSceneLinesOrdered.length > 0) {
+          const subPartFraction = (lineRange.end - lineRange.start) / allSceneLinesOrdered.length;
           const subPartIndex = Math.floor(lineRange.start / (lineRange.end - lineRange.start || 1));
-          const totalSubParts = Math.ceil(allSceneLines.length / (lineRange.end - lineRange.start));
+          const totalSubParts = Math.ceil(allSceneLinesOrdered.length / (lineRange.end - lineRange.start));
 
           // Distribute videos: sub-part N gets video N (if available)
           const videosPerPart = Math.max(1, Math.ceil(allSceneVideos.length / totalSubParts));
@@ -4405,6 +4435,7 @@ function EP04ProductionInner() {
         // so we must align it to THAT exact TTS entry's start time.
         const KNOWN_CHARACTERS = ['host', 'atlas', 'nova', 'squirrel', 'allaudin'];
         const lipsyncClips: Array<{ url: string; start: number; duration: number; character: string }> = [];
+        const consumedTtsForLipsync = new Set<string>(); // prevent multiple lipsync clips targeting same TTS
         if (status?.lipsyncUrls) {
           for (const [lipsyncKey, url] of Object.entries(status.lipsyncUrls)) {
             if (!url || !isHttpUrl(url)) continue;
@@ -4420,15 +4451,27 @@ function EP04ProductionInner() {
 
             // Match to the specific TTS line:
             // 1. If scriptKey exists, find TTS with matching key (exact alignment)
-            // 2. Otherwise, find first TTS line for this character (fallback)
+            // 2. Otherwise, find first UNUSED TTS line for this character (prevents overlap)
             let charTts = scriptKey
-              ? allTtsUrls.find(t => t.voice === charMatch && t.key === scriptKey)
+              ? allTtsUrls.find(t => t.voice === charMatch && t.key === scriptKey && !consumedTtsForLipsync.has(t.key))
               : null;
             if (!charTts) {
+              // Fallback: try scriptKey without consumed check (allow sharing if necessary)
+              charTts = scriptKey
+                ? allTtsUrls.find(t => t.voice === charMatch && t.key === scriptKey)
+                : null;
+            }
+            if (!charTts) {
+              // Final fallback: first UNUSED TTS line for this character
+              charTts = allTtsUrls.find(t => t.voice === charMatch && !consumedTtsForLipsync.has(t.key));
+            }
+            if (!charTts) {
+              // Last resort: any TTS line for this character (allow sharing)
               charTts = allTtsUrls.find(t => t.voice === charMatch);
             }
 
             if (charTts) {
+              consumedTtsForLipsync.add(charTts.key); // mark this TTS line as consumed
               // Use lipsync clip for up to 18s; if TTS is longer, the remaining
               // audio plays as voiceover over background visuals (handled by TTS layer).
               // Safety trim: subtract 1s from clip to cut before WAN2.2 loop artifacts

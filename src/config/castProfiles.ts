@@ -325,7 +325,7 @@ export const PROFILE_CINEMATIC_DARK: CastProfile = {
     crossfadeOverlap: 0.5,
     sceneFadeIn: 0.5,
     sceneFadeOut: 0.5,
-    lipsyncTolerance: 0.5,
+    lipsyncTolerance: 2.0,
     minSceneDuration: 2,
     maxSceneDuration: 55,
     ttsPadding: 2,
@@ -527,7 +527,7 @@ export const PROFILE_CORPORATE_CLEAN: CastProfile = {
   timing: {
     ...PROFILE_CINEMATIC_DARK.timing,
     visualBeat: 10,
-    lipsyncTolerance: 0.5,
+    lipsyncTolerance: 2.0,
   },
 
   audio: {
@@ -599,7 +599,7 @@ export const PROFILE_SOCIAL_VIBRANT: CastProfile = {
     crossfadeOverlap: 0.3,
     sceneFadeIn: 0.3,
     sceneFadeOut: 0.3,
-    lipsyncTolerance: 0.5,
+    lipsyncTolerance: 2.0,
   },
 
   audio: {

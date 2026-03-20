@@ -865,6 +865,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'avatar-3d', character: 'nova', style: 'disney-2d' },
     { type: 'avatar-3d', character: 'squirrel', style: 'pixar-3d' },
     { type: 'avatar-3d', character: 'allaudin', style: 'pixar-3d' },
+    // B-roll: Governance overview — rules floating in the air like a constitution
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a holographic constitution floating in mid-air in a grand council chamber — golden text on translucent parchment reads "GOVERNANCE RULES" with subsections glowing: "Territory Boundaries", "Merge Approval Protocol", "Shared Infrastructure Lock." Atlas the bear and Nova the fox sit at opposite ends of a long table, studying the document from their sides. Allaudin the genie hovers above as arbiter. Grand chamber lighting with golden document glow, legislative energy, 8K' },
     { type: 'tts', voice: 'squirrel', scriptKey: 'squirrel-governance-sneak' },
     { type: 'avatar-lipsync', character: 'squirrel', provider: 'alibaba-wan2.2', scriptKey: 'squirrel-governance-sneak' },
     // B-roll: Squirrel caught in guardrails — governance catches the chaos agent
@@ -885,6 +887,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     // B-roll: Merge conflict chaos — before territory rules saved the day
     { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a split-screen showing two developers working on the SAME file simultaneously — Atlas the bear typing on the left, Nova the fox painting UI on the right, both oblivious. In the center, the shared file glows red-hot as both modifications collide. A floating "git merge --conflict" terminal shows cascading red error text. The golden retriever covers its eyes with its paws. Dramatic split lighting — terracotta left, magenta right, red center, 8K' },
     // ── The governance solution: CLAUDE.md, territory rules, enforcement ──
+    // B-roll: CLAUDE.md file glowing — the governance answer
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a glowing file icon labeled "CLAUDE.md" hovering above a desk, radiating structured golden light in all directions. The file shows organized sections: "Session Start Routine", "Territory Rules", "EOD Routine." Around it, tangled code spaghetti on the desk transforms into clean organized streams flowing into the file. The host sits behind the desk with a "eureka" expression, pen still in hand. Golden document glow illuminating dark office, solution-found energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'governance-solution' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'governance-solution' },
     // B-roll: Territory ownership map — clean governance in action
@@ -896,6 +900,8 @@ export const EP04_SCENE_PIPELINES: Record<string, ScenePipelineStep[]> = {
     { type: 'tts', voice: 'nova', scriptKey: 'governance-nova-territory' },
     { type: 'avatar-lipsync', character: 'nova', provider: 'alibaba-wan2.2', scriptKey: 'governance-nova-territory' },
     // Host continues governance solution (18s)
+    // B-roll: Morning routine — auto-triggered session instructions running like clockwork
+    { type: 'alibaba-image', model: 'wan2.6-t2i', prompt: 'Pixar 3D illustration: a morning alarm clock showing 9:00 AM triggering a cascade of automated governance checks — holographic checklists floating in sequence: "Read Shared Changelog ✓", "Check Partner Standup ✓", "Verify Dependencies ✓", "Build Check ✓", "Git Sync ✓." Atlas the bear follows the sequence methodically, each check turning green as he completes it. Nova the fox has her own parallel checklist running simultaneously. Clean automation visualization, fresh morning light, productivities energy, 8K' },
     { type: 'tts', voice: 'host', scriptKey: 'governance-solution-2' },
     { type: 'avatar-lipsync', character: 'host', provider: 'alibaba-wan2.2', scriptKey: 'governance-solution-2' },
     { type: 'screen-capture', screenIds: ['territory-guardrails'], multiCapture: false },
