@@ -2015,8 +2015,21 @@ function EP04ProductionInner() {
           if (!error) break;
           console.warn(`[EP04 Visual] ${stepLabel}: storybook-frame attempt ${attempt + 1} failed: ${error.message}`);
         }
+        // Storybook-frame calls alibaba directly (not via generateImageWithRouting).
+        // Fallback: try gpt-image-1 if all 3 alibaba attempts failed.
         if (error) {
-          console.error(`[EP04 Visual] ${stepLabel}: storybook-frame failed after 3 attempts:`, error.message);
+          console.warn(`[EP04 Visual] ${stepLabel}: storybook-frame alibaba failed — trying gpt-image-1...`);
+          const fbResult = await supabase.functions.invoke('ai-universal-processor', {
+            body: { action: 'image_generation', prompt, provider: 'openai', model: 'gpt-image-1', size: '1536x1024', quality: 'medium' },
+          });
+          if (!fbResult.error && fbResult.data && fbResult.data.success !== false) {
+            data = fbResult.data;
+            error = null;
+            console.log(`[EP04 Visual] ${stepLabel}: storybook-frame gpt-image-1 fallback succeeded`);
+          }
+        }
+        if (error) {
+          console.error(`[EP04 Visual] ${stepLabel}: storybook-frame failed after all attempts:`, error.message);
           toast.error(`${stepLabel} storybook-frame failed: ${error.message}`);
           if (jobId && projectId) await completeGenerationJob(jobId, 0);
           return;
@@ -2094,9 +2107,21 @@ function EP04ProductionInner() {
             if (!error) break;
             console.warn(`[EP04 Visual] ${stepLabel}: avatar attempt ${attempt + 1} failed: ${error.message}`);
           }
+          // Avatar uses alibaba directly. Fallback: try gpt-image-1 if alibaba fails.
+          if (error) {
+            console.warn(`[EP04 Visual] ${stepLabel}: avatar alibaba failed — trying gpt-image-1...`);
+            const fbResult = await supabase.functions.invoke('ai-universal-processor', {
+              body: { action: 'image_generation', prompt: avatarPrompt, provider: 'openai', model: 'gpt-image-1', size: '1024x1024', quality: 'medium' },
+            });
+            if (!fbResult.error && fbResult.data && fbResult.data.success !== false) {
+              data = fbResult.data;
+              error = null;
+              console.log(`[EP04 Visual] ${stepLabel}: avatar gpt-image-1 fallback succeeded`);
+            }
+          }
           if (error) {
             const detail = data?.error || error.message || 'Unknown error';
-            console.error(`[EP04 Visual] ${stepLabel}: avatar failed after 3 attempts:`, detail, data);
+            console.error(`[EP04 Visual] ${stepLabel}: avatar failed after all attempts:`, detail, data);
             throw new Error(String(detail));
           }
           // Ensure URL is on Supabase Storage (handles base64, CDN, or relative paths)
@@ -2456,8 +2481,28 @@ function EP04ProductionInner() {
       console.warn(`[EP04 Visual] ${stepLabel}: attempt ${attempt + 1} failed: ${error.message}`);
     }
 
+    // ── LAST-RESORT FALLBACK: explicit gpt-image-1 ──
+    // The edge function generateImageWithRouting already tries a 4-provider chain:
+    //   alibaba → gemini (banana) → modelslab → openai (dall-e-3)
+    // Each of our 3 client retries invokes that full chain = 12 provider attempts.
+    // If ALL failed, try gpt-image-1 directly (different model than the chain's dall-e-3).
+    const isImageFallbackEligible = error && (stepType === 'alibaba-image' || stepType === 'motion-graphics' || stepType === 'kinetic-text');
+    if (isImageFallbackEligible) {
+      console.warn(`[EP04 Visual] ${stepLabel}: 4-provider chain failed 3x — last resort gpt-image-1...`);
+      toast.info(`${stepLabel}: trying last-resort OpenAI gpt-image-1...`);
+      const fbResult = await supabase.functions.invoke('ai-universal-processor', {
+        body: { action: 'image_generation', prompt: body.prompt || prompt, provider: 'openai', model: 'gpt-image-1', size: '1536x1024', quality: 'medium' },
+      });
+      if (!fbResult.error && fbResult.data && fbResult.data.success !== false) {
+        data = fbResult.data;
+        error = null;
+        console.log(`[EP04 Visual] ${stepLabel}: gpt-image-1 last-resort succeeded`);
+        toast.success(`${stepLabel}: gpt-image-1 fallback succeeded`);
+      }
+    }
+
     if (error) {
-      toast.error(`${stepLabel} "${stepType}" failed after 3 attempts: ${error.message}`);
+      toast.error(`${stepLabel} "${stepType}" failed after all attempts: ${error.message}`);
       return;
     }
 
