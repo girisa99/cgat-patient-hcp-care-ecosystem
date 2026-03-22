@@ -7920,8 +7920,22 @@ function EP04ProductionInner() {
                           )}
                           {concatStatus === 'rendering' && (
                             <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              Rendering final video... {assemblyProgress || ''}
+                              <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
+                              <span className="flex-1">Rendering final video... {assemblyProgress || ''}</span>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-6 text-[10px] px-2 flex-shrink-0"
+                                onClick={() => {
+                                  setConcatJobId(null);
+                                  setConcatStatus('idle');
+                                  setConcatError(null);
+                                  setAssemblyProgress(null);
+                                  toast.info('Stitching cancelled — you can re-stitch anytime');
+                                }}
+                              >
+                                <XCircle className="h-2.5 w-2.5 mr-0.5" /> Cancel
+                              </Button>
                             </div>
                           )}
                           {concatStatus === 'failed' && (
@@ -7939,10 +7953,26 @@ function EP04ProductionInner() {
                                 <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
                                 <span className="text-xs font-semibold text-green-600">Final Video Ready</span>
                               </div>
-                              <a href={concatVideoUrl} target="_blank" rel="noopener noreferrer"
-                                className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
-                                <Download className="h-2.5 w-2.5" /> Download Final Video
-                              </a>
+                              <div className="flex items-center gap-2 mt-1">
+                                <a href={concatVideoUrl} target="_blank" rel="noopener noreferrer"
+                                  className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
+                                  <Download className="h-2.5 w-2.5" /> Download Final Video
+                                </a>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 text-[10px] px-2 border-amber-500/30 text-amber-600"
+                                  onClick={() => {
+                                    setConcatStatus('idle');
+                                    setConcatVideoUrl(null);
+                                    setConcatError(null);
+                                    setFinalVideoUrl(null);
+                                    toast.info('Ready to re-stitch — click the stitch button');
+                                  }}
+                                >
+                                  <RefreshCw className="h-2.5 w-2.5 mr-0.5" /> Re-stitch
+                                </Button>
+                              </div>
                             </div>
                           )}
 
