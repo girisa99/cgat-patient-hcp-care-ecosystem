@@ -38,88 +38,114 @@ def _upload_tus(
     storage_path: str,
     content_type: str,
 ) -> str | None:
-    """Upload via TUS resumable protocol (6MB chunks). Works for any file size."""
+    """Upload via TUS resumable protocol. Dynamic chunk sizing + connection reuse."""
     file_size = os.path.getsize(file_path)
     file_size_mb = file_size / (1024 * 1024)
-    print(f"  [upload-tus] Starting TUS upload: {file_size_mb:.1f}MB in {TUS_CHUNK_SIZE // (1024*1024)}MB chunks", flush=True)
 
-    # Step 1: Create TUS upload session
+    # Dynamic chunk size: fewer chunks for large files = fewer failure points
+    if file_size > 200 * 1024 * 1024:       # >200MB: 25MB chunks
+        chunk_size = 25 * 1024 * 1024
+    elif file_size > 100 * 1024 * 1024:      # >100MB: 12MB chunks
+        chunk_size = 12 * 1024 * 1024
+    else:
+        chunk_size = TUS_CHUNK_SIZE           # default 6MB
+
+    total_chunks = (file_size + chunk_size - 1) // chunk_size
+    print(f"  [upload-tus] Starting TUS upload: {file_size_mb:.1f}MB in ~{total_chunks} chunks "
+          f"({chunk_size // (1024*1024)}MB each)", flush=True)
+
+    # Step 1: Create TUS upload session (with retry)
     metadata = (
         f"bucketName {base64.b64encode(bucket.encode()).decode()},"
         f"objectName {base64.b64encode(storage_path.encode()).decode()},"
         f"contentType {base64.b64encode(content_type.encode()).decode()}"
     )
 
-    try:
-        with httpx.Client(timeout=httpx.Timeout(30.0)) as hc:
-            resp = hc.post(
-                f"{supabase_url}/storage/v1/upload/resumable",
-                headers={
-                    "Authorization": f"Bearer {supabase_key}",
-                    "x-upsert": "true",
-                    "Upload-Length": str(file_size),
-                    "Tus-Resumable": "1.0.0",
-                    "Upload-Metadata": metadata,
-                },
-                content=b"",
-            )
-        print(f"  [upload-tus] Create session: HTTP {resp.status_code}", flush=True)
-        if resp.status_code not in (200, 201):
-            print(f"  [upload-tus] Create FAILED: {resp.text[:300]}", flush=True)
-            return None
-    except Exception as e:
-        print(f"  [upload-tus] Create session ERROR: {type(e).__name__}: {e}", flush=True)
-        return None
+    upload_url = None
+    for session_attempt in range(3):
+        try:
+            with httpx.Client(timeout=httpx.Timeout(30.0)) as hc:
+                resp = hc.post(
+                    f"{supabase_url}/storage/v1/upload/resumable",
+                    headers={
+                        "Authorization": f"Bearer {supabase_key}",
+                        "x-upsert": "true",
+                        "Upload-Length": str(file_size),
+                        "Tus-Resumable": "1.0.0",
+                        "Upload-Metadata": metadata,
+                    },
+                    content=b"",
+                )
+            print(f"  [upload-tus] Create session attempt {session_attempt+1}: HTTP {resp.status_code}", flush=True)
+            if resp.status_code in (200, 201):
+                upload_url = resp.headers.get("Location")
+                if upload_url:
+                    break
+                print(f"  [upload-tus] No Location header in response", flush=True)
+            else:
+                print(f"  [upload-tus] Create FAILED: {resp.text[:300]}", flush=True)
+        except Exception as e:
+            print(f"  [upload-tus] Create session attempt {session_attempt+1} ERROR: {type(e).__name__}: {e}", flush=True)
+        if session_attempt < 2:
+            time.sleep(3 * (session_attempt + 1))
 
-    upload_url = resp.headers.get("Location")
     if not upload_url:
-        print(f"  [upload-tus] No Location header in response", flush=True)
+        print(f"  [upload-tus] All session create attempts failed", flush=True)
         return None
 
-    print(f"  [upload-tus] Session created, uploading chunks...", flush=True)
+    print(f"  [upload-tus] Session created, uploading {total_chunks} chunks...", flush=True)
 
-    # Step 2: Upload file in chunks via PATCH
+    # Step 2: Upload file in chunks via PATCH — reuse single HTTP client
     offset = 0
     t0 = time.time()
-    with open(file_path, "rb") as f:
+    # Per-chunk timeout scales with chunk size: at least 120s, up to 300s for 25MB chunks
+    per_chunk_timeout = max(120.0, chunk_size / (1024 * 1024) * 12.0)
+
+    with open(file_path, "rb") as f, \
+         httpx.Client(timeout=httpx.Timeout(per_chunk_timeout, connect=30.0)) as hc:
         chunk_num = 0
         while offset < file_size:
-            chunk = f.read(TUS_CHUNK_SIZE)
+            chunk = f.read(chunk_size)
             chunk_len = len(chunk)
             chunk_num += 1
 
-            for retry in range(3):
+            for retry in range(5):  # 5 retries per chunk (up from 3)
                 try:
-                    with httpx.Client(timeout=httpx.Timeout(120.0, connect=30.0)) as hc:
-                        patch_resp = hc.patch(
-                            upload_url,
-                            headers={
-                                "Authorization": f"Bearer {supabase_key}",
-                                "Content-Type": "application/offset+octet-stream",
-                                "Upload-Offset": str(offset),
-                                "Tus-Resumable": "1.0.0",
-                            },
-                            content=chunk,
-                        )
+                    patch_resp = hc.patch(
+                        upload_url,
+                        headers={
+                            "Authorization": f"Bearer {supabase_key}",
+                            "Content-Type": "application/offset+octet-stream",
+                            "Upload-Offset": str(offset),
+                            "Tus-Resumable": "1.0.0",
+                        },
+                        content=chunk,
+                    )
 
                     if patch_resp.status_code in (200, 204):
                         offset += chunk_len
                         pct = int(offset / file_size * 100)
                         elapsed = time.time() - t0
                         speed = (offset / (1024 * 1024)) / elapsed if elapsed > 0 else 0
-                        print(f"  [upload-tus] Chunk {chunk_num}: {pct}% ({offset}/{file_size}) {speed:.1f} MB/s", flush=True)
+                        # Log every chunk for small uploads, every 5th for large
+                        if total_chunks <= 30 or chunk_num % 5 == 0 or pct >= 100:
+                            print(f"  [upload-tus] Chunk {chunk_num}/{total_chunks}: "
+                                  f"{pct}% ({speed:.1f} MB/s)", flush=True)
                         break
                     else:
-                        print(f"  [upload-tus] Chunk {chunk_num} retry {retry+1}: HTTP {patch_resp.status_code} — {patch_resp.text[:200]}", flush=True)
-                        if retry < 2:
-                            time.sleep(2)
+                        print(f"  [upload-tus] Chunk {chunk_num} retry {retry+1}: "
+                              f"HTTP {patch_resp.status_code} — {patch_resp.text[:200]}", flush=True)
+                        if retry < 4:
+                            time.sleep(2 * (retry + 1))  # Exponential: 2s, 4s, 6s, 8s
                 except Exception as e:
-                    print(f"  [upload-tus] Chunk {chunk_num} retry {retry+1} ERROR: {type(e).__name__}: {e}", flush=True)
-                    if retry < 2:
-                        time.sleep(2)
+                    print(f"  [upload-tus] Chunk {chunk_num} retry {retry+1} ERROR: "
+                          f"{type(e).__name__}: {e}", flush=True)
+                    if retry < 4:
+                        time.sleep(2 * (retry + 1))
             else:
-                # All 3 retries failed for this chunk
-                print(f"  [upload-tus] FAILED at chunk {chunk_num} (offset {offset})", flush=True)
+                # All 5 retries failed for this chunk
+                print(f"  [upload-tus] FAILED at chunk {chunk_num}/{total_chunks} "
+                      f"(offset {offset})", flush=True)
                 return None
 
     elapsed = time.time() - t0
@@ -128,14 +154,18 @@ def _upload_tus(
 
     public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{storage_path}"
 
-    # Verify
-    try:
-        with httpx.Client(timeout=httpx.Timeout(10.0)) as hc:
-            head = hc.head(public_url)
-        cl = head.headers.get("content-length", "?")
-        print(f"  [upload-tus] VERIFIED: HTTP {head.status_code}, size={cl}", flush=True)
-    except Exception as ve:
-        print(f"  [upload-tus] Verify skipped: {ve}", flush=True)
+    # Verify upload with retry
+    for v in range(3):
+        try:
+            with httpx.Client(timeout=httpx.Timeout(15.0)) as hc:
+                head = hc.head(public_url)
+            cl = head.headers.get("content-length", "?")
+            print(f"  [upload-tus] VERIFIED: HTTP {head.status_code}, size={cl}", flush=True)
+            break
+        except Exception as ve:
+            print(f"  [upload-tus] Verify attempt {v+1}: {ve}", flush=True)
+            if v < 2:
+                time.sleep(2)
 
     return public_url
 

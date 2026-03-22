@@ -946,13 +946,47 @@ def handle_stitch_parts(job_input: dict) -> dict:
         if duration < 1.0:
             return {"error": f"Stitched video too short: {duration:.1f}s"}
 
-        # NOTE: No _adaptive_reencode() — stitched movies are intentionally large (200-800MB)
+        # Compress stitched video if very large (>500MB) to improve upload reliability
+        STITCH_COMPRESS_THRESHOLD_MB = 500
+        if file_size_mb > STITCH_COMPRESS_THRESHOLD_MB:
+            target_bitrate_kbps = int(STITCH_COMPRESS_THRESHOLD_MB * 0.90 * 8 * 1024 / max(1, duration))
+            target_bitrate_kbps = max(1500, target_bitrate_kbps)
+            compressed_path = output_path.replace(".mp4", "_comp.mp4")
+            progress(85, f"Compressing {file_size_mb:.0f}MB for upload...")
+            print(f"  [compress] {file_size_mb:.0f}MB > {STITCH_COMPRESS_THRESHOLD_MB}MB — "
+                  f"re-encoding at {target_bitrate_kbps}kbps")
+
+            cmd_compress = [
+                "ffmpeg", "-y", "-i", output_path,
+                "-c:v", "libx264", "-preset", "fast",
+                "-b:v", f"{target_bitrate_kbps}k",
+                "-maxrate", f"{int(target_bitrate_kbps * 1.5)}k",
+                "-bufsize", f"{target_bitrate_kbps * 2}k",
+                "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+                "-pix_fmt", "yuv420p",
+                compressed_path,
+            ]
+            try:
+                result = subprocess.run(cmd_compress, capture_output=True, text=True, timeout=1800)
+                if result.returncode == 0 and os.path.exists(compressed_path):
+                    new_size_mb = os.path.getsize(compressed_path) / (1024 * 1024)
+                    print(f"  [compress] OK: {file_size_mb:.0f}MB → {new_size_mb:.0f}MB")
+                    os.replace(compressed_path, output_path)
+                    file_size_bytes = os.path.getsize(output_path)
+                    file_size_mb = file_size_bytes / (1024 * 1024)
+                else:
+                    print(f"  [compress] FAILED — uploading uncompressed. "
+                          f"stderr: {result.stderr[-500:] if result.stderr else 'none'}")
+            except subprocess.TimeoutExpired:
+                print(f"  [compress] TIMED OUT — uploading uncompressed")
+            except Exception as ce:
+                print(f"  [compress] ERROR: {ce} — uploading uncompressed")
 
         # Write file size to DB before upload
         _write_file_size_to_db(cast_job_id, file_size_bytes, supabase_url, supabase_key)
         progress(86, f"Verified: {duration:.0f}s, {file_size_mb:.0f}MB")
 
-        # ═══ Stage 9 (88-98%): Upload to Supabase Storage ═══
+        # ═══ Stage 9 (88-98%): Upload to Supabase Storage (with retry) ═══
         progress(88, f"Uploading {file_size_mb:.0f}MB stitched video...")
         print(f"[StitchParts] Uploading {file_size_mb:.1f}MB...")
         t_upload = time.time()
@@ -962,6 +996,17 @@ def handle_stitch_parts(job_input: dict) -> dict:
             output_path, cast_project_id, supabase_url, supabase_key,
             part_number=None,  # None = "final" path
         )
+
+        # Retry upload once if first attempt failed (transient network issues)
+        if not upload_result.get("videoUrl"):
+            progress(93, f"Upload failed — retrying in 5s...")
+            print(f"  [upload] First attempt failed — retrying after 5s...", flush=True)
+            time.sleep(5)
+            upload_result = upload_final_video(
+                output_path, cast_project_id, supabase_url, supabase_key,
+                part_number=None,
+            )
+
         upload_time = time.time() - t_upload
         print(f"  [upload] Done in {upload_time:.1f}s")
 
