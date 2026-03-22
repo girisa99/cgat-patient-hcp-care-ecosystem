@@ -1389,8 +1389,8 @@ function EP04ProductionInner() {
 
   // ─── Stats (computed, used by phases + render) ─────────────────────────
 
-  const doneCount = scriptKeys.filter(k => statusMap[k] === 'done').length;
-  const totalDuration = scriptKeys.reduce((sum, k) => sum + scriptContentForUI[k].duration_est, 0);
+  const doneCount = useMemo(() => scriptKeys.filter(k => statusMap[k] === 'done').length, [scriptKeys, statusMap]);
+  const totalDuration = useMemo(() => scriptKeys.reduce((sum, k) => sum + scriptContentForUI[k].duration_est, 0), [scriptKeys, scriptContentForUI]);
 
   // ─── Phase 2: Approve All TTS ───────────────────────────────────────────
   // Allow approval when >= 90% lines have audio (some narrator bridges are optional)
@@ -3377,12 +3377,16 @@ function EP04ProductionInner() {
   const [assemblyReadiness, setAssemblyReadiness] = useState<ReturnType<typeof getAssemblyReadiness> | null>(null);
 
   // Auto-refresh readiness when audioMap or sceneProduction changes (e.g. after regen)
+  // Use a ref to track the previous dependency fingerprint and avoid re-render storms
+  const readinessDepsFingerprintRef = useRef('');
   useEffect(() => {
-    if (assemblyReadiness) {
-      // Debounce: wait for state to settle after batch operations
-      const t = setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 500);
-      return () => clearTimeout(t);
-    }
+    if (!assemblyReadiness) return;
+    // Fingerprint: count of done audio + done scenes — avoids deep comparison
+    const fp = `${Object.values(audioMap).filter(a => a?.audioUrl).length}-${Object.values(sceneProduction).filter(s => s?.visual === 'done').length}`;
+    if (fp === readinessDepsFingerprintRef.current) return; // no real change
+    readinessDepsFingerprintRef.current = fp;
+    const t = setTimeout(() => setAssemblyReadiness(getAssemblyReadiness()), 500);
+    return () => clearTimeout(t);
   }, [audioMap, sceneProduction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [assemblyJobId, setAssemblyJobId] = useState<string | null>(null);
@@ -3455,6 +3459,13 @@ function EP04ProductionInner() {
       return p;
     });
   }, [assemblyPartsRaw]);
+
+  // ── Memoized assembly derived values (avoid 10+ .filter/.every/.some in JSX) ──
+  const assemblyCompletedCount = useMemo(() => assemblyParts.filter(p => p.status === 'completed').length, [assemblyParts]);
+  const assemblyPendingCount = useMemo(() => assemblyParts.filter(p => p.status === 'pending').length, [assemblyParts]);
+  const assemblyAllCompleted = useMemo(() => assemblyParts.length > 0 && assemblyCompletedCount === assemblyParts.length, [assemblyParts.length, assemblyCompletedCount]);
+  const assemblyIsPerScene = useMemo(() => assemblyParts.every(p => p.sceneKeys.length === 1), [assemblyParts]);
+  const assemblyHasSomeCompleted = useMemo(() => assemblyParts.some(p => p.status === 'completed'), [assemblyParts]);
 
   // ── Restore completed assembly parts from DB on page load ──
   useEffect(() => {
@@ -5589,11 +5600,12 @@ function EP04ProductionInner() {
           setAssemblyProgress(null);
           setProductionPhase('complete');
           if (projectId && videoUrl) {
+            const currentParts = assemblyPartsRef.current;
             updateFinalAssembly(projectId, videoUrl, {
-              totalDuration: assemblyParts.reduce((s, p) => s + p.estimatedDuration, 0),
-              sceneCount: assemblyParts.reduce((s, p) => s + p.sceneKeys.length, 0),
+              totalDuration: currentParts.reduce((s, p) => s + p.estimatedDuration, 0),
+              sceneCount: currentParts.reduce((s, p) => s + p.sceneKeys.length, 0),
               resolution: '1920x1080',
-              stitchedFromParts: assemblyParts.length,
+              stitchedFromParts: currentParts.length,
             });
           }
           toast.success('Final cinematic video stitched successfully!');
@@ -5610,7 +5622,8 @@ function EP04ProductionInner() {
     }, 10000);
 
     return () => clearInterval(timer);
-  }, [concatJobId, concatStatus, supabase, projectId, assemblyParts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [concatJobId, concatStatus, supabase, projectId]); // assemblyParts intentionally excluded — read from assemblyPartsRef
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
@@ -6811,7 +6824,7 @@ function EP04ProductionInner() {
                                                 className="w-full h-24 object-cover rounded border border-border/30 bg-black"
                                                 controls
                                                 muted
-                                                preload="metadata"
+                                                preload="none"
                                                 onError={(e) => {
                                                   const el = e.currentTarget;
                                                   el.style.display = 'none';
@@ -7515,27 +7528,27 @@ function EP04ProductionInner() {
                   {assemblyParts.length > 0 && (
                     <div className="mb-4 p-3 rounded-lg border border-blue-500/30 bg-blue-500/[0.03]">
                       <div className="flex items-center gap-2 mb-3">
-                        {assemblyParts.every(p => p.sceneKeys.length === 1) ? (
+                        {assemblyIsPerScene ? (
                           <Film className="h-4 w-4 text-violet-500" />
                         ) : (
                           <Layers className="h-4 w-4 text-blue-500" />
                         )}
                         <span className="text-sm font-semibold">
-                          {assemblyParts.every(p => p.sceneKeys.length === 1)
+                          {assemblyIsPerScene
                             ? `Per-Scene Assembly (${assemblyParts.length} scenes)`
                             : `Multi-Part Assembly (${assemblyParts.length} parts)`}
                         </span>
                         <span className="text-xs text-muted-foreground ml-auto">
-                          {assemblyParts.filter(p => p.status === 'completed').length}/{assemblyParts.length} done | RunPod GPU rendering
+                          {assemblyCompletedCount}/{assemblyParts.length} done | RunPod GPU rendering
                         </span>
                         {/* Render All button for per-scene mode */}
-                        {assemblyParts.every(p => p.sceneKeys.length === 1) && assemblyParts.some(p => p.status === 'pending') && !assemblyProgress && (
+                        {assemblyIsPerScene && assemblyPendingCount > 0 && !assemblyProgress && (
                           <Button size="sm" variant="default" className="h-6 text-[10px] px-3" onClick={startAllPerSceneAssembly}>
-                            <Zap className="h-2.5 w-2.5 mr-0.5" /> Render All ({assemblyParts.filter(p => p.status === 'pending').length})
+                            <Zap className="h-2.5 w-2.5 mr-0.5" /> Render All ({assemblyPendingCount})
                           </Button>
                         )}
                         {/* Re-assemble All & Stitch — reset ALL parts and rebuild entire movie */}
-                        {assemblyParts.length >= 2 && assemblyParts.some(p => p.status === 'completed') && !assemblyProgress && concatStatus === 'idle' && (
+                        {assemblyParts.length >= 2 && assemblyHasSomeCompleted && !assemblyProgress && concatStatus === 'idle' && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -7549,7 +7562,7 @@ function EP04ProductionInner() {
                           </Button>
                         )}
                         {/* Re-render selected & Auto-Stitch — pick specific parts to redo */}
-                        {assemblyParts.length >= 2 && assemblyParts.some(p => p.status === 'completed') && !assemblyProgress && concatStatus === 'idle' && (
+                        {assemblyParts.length >= 2 && assemblyHasSomeCompleted && !assemblyProgress && concatStatus === 'idle' && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -7838,14 +7851,14 @@ function EP04ProductionInner() {
                                 )}
                               </div>
 
-                              {/* Inline video player */}
+                              {/* Inline video player — preload="none" to avoid N concurrent metadata fetches */}
                               {part.status === 'completed' && part.videoUrl && (
                                 <div id={`part-video-${part.partNumber}`} style={{ display: 'none' }} className="mt-2">
                                   <video
                                     src={part.videoUrl}
                                     controls
                                     className="w-full rounded-lg border max-h-[200px]"
-                                    preload="metadata"
+                                    preload="none"
                                     {...(posterUrl ? { poster: posterUrl } : {})}
                                   />
                                 </div>
@@ -7878,7 +7891,7 @@ function EP04ProductionInner() {
                       )}
 
                       {/* All parts complete — Stitch into final video */}
-                      {assemblyParts.every(p => p.status === 'completed') && (
+                      {assemblyAllCompleted && (
                         <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
                           <p className="text-xs text-green-600 font-semibold mb-2">
                             All {assemblyParts.length} parts rendered successfully!
@@ -8166,7 +8179,7 @@ function EP04ProductionInner() {
                               {/* Assembled scene clip */}
                               {s.assembledClipUrl && (
                                 <div className="rounded-lg overflow-hidden border border-green-500/20">
-                                  <video src={s.assembledClipUrl} controls className="w-full" preload="metadata" />
+                                  <video src={s.assembledClipUrl} controls className="w-full" preload="none" />
                                 </div>
                               )}
 
@@ -8180,7 +8193,7 @@ function EP04ProductionInner() {
                                         className="w-full h-28 object-cover rounded border border-border/30 bg-black"
                                         controls
                                         muted
-                                        preload="metadata"
+                                        preload="none"
                                       />
                                     ) : (
                                       <img
