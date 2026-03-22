@@ -201,6 +201,8 @@ interface RestoredTtsResult {
   audioMap: Record<string, GeneratedAudio>;
   statusMap: Record<string, LineStatus>;
   isLoading: boolean;
+  /** Keys that came from fallback (cast_generation_jobs) — only these need re-persist */
+  fallbackKeys: Set<string>;
 }
 
 /**
@@ -219,6 +221,7 @@ export function useRestoredTts(
 
       const restoredAudio: Record<string, GeneratedAudio> = {};
       const restoredStatus: Record<string, LineStatus> = {};
+      const fbKeys: string[] = [];
 
       // Source 1: cast_project_script_lines (primary)
       const ttsLines = await fetchTtsLines(projectId);
@@ -241,6 +244,7 @@ export function useRestoredTts(
             voice: 'unknown',
           };
           restoredStatus[job.line_key] = 'done';
+          fbKeys.push(job.line_key);
         }
       }
 
@@ -254,8 +258,8 @@ export function useRestoredTts(
         }
       }
 
-      console.log(`[EP04 RQ] TTS restored: ${Object.keys(restoredAudio).length} entries`);
-      const result = { audio: restoredAudio, status: restoredStatus };
+      console.log(`[EP04 RQ] TTS restored: ${Object.keys(restoredAudio).length} entries (${fbKeys.length} from fallback)`);
+      const result = { audio: restoredAudio, status: restoredStatus, fbKeys };
       persistToStorage(storageKey, result);
       return result;
     },
@@ -277,6 +281,7 @@ export function useRestoredTts(
     audioMap: query.data?.audio || {},
     statusMap: query.data?.status || {},
     isLoading: query.isLoading && !query.data, // not loading if we have initialData
+    fallbackKeys: new Set(query.data?.fbKeys || []),
   };
 }
 

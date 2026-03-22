@@ -846,14 +846,16 @@ function EP04ProductionInner() {
       console.log(`[EP04 RQ Bridge] Restored final video URL from DB: ${rqScenes.restoredVideoUrl.substring(0, 60)}...`);
     }
 
-    // Background: re-persist TTS data recovered from generation_jobs fallback
-    const ttsEntries = Object.entries(rqTts.audioMap).filter(([k]) => staticKeys.has(k));
-    if (ttsEntries.length > 0) {
+    // Background: re-persist ONLY fallback TTS entries (from cast_generation_jobs → cast_project_script_lines)
+    // Primary entries already exist in cast_project_script_lines — re-writing them is redundant
+    const fallbackEntries = Object.entries(rqTts.audioMap)
+      .filter(([k]) => staticKeys.has(k) && rqTts.fallbackKeys.has(k));
+    if (fallbackEntries.length > 0) {
       (async () => {
         const BATCH_SIZE = 10;
         const db = supabase as any;
-        for (let i = 0; i < ttsEntries.length; i += BATCH_SIZE) {
-          const batch = ttsEntries.slice(i, i + BATCH_SIZE);
+        for (let i = 0; i < fallbackEntries.length; i += BATCH_SIZE) {
+          const batch = fallbackEntries.slice(i, i + BATCH_SIZE);
           await Promise.allSettled(batch.map(([lineKey, audio]) =>
             db.from('cast_project_script_lines')
               .update({
@@ -864,12 +866,14 @@ function EP04ProductionInner() {
               .eq('project_id', projectId)
               .eq('line_key', lineKey)
           ));
-          if (i + BATCH_SIZE < ttsEntries.length) {
+          if (i + BATCH_SIZE < fallbackEntries.length) {
             await new Promise(r => setTimeout(r, 100));
           }
         }
-        console.log(`[EP04 RQ Bridge] Background TTS re-persist: ${ttsEntries.length} lines`);
+        console.log(`[EP04 RQ Bridge] Background TTS re-persist: ${fallbackEntries.length} fallback lines (skipped ${Object.keys(rqTts.audioMap).length - fallbackEntries.length} primary)`);
       })();
+    } else {
+      console.log(`[EP04 RQ Bridge] TTS re-persist: skipped — all ${Object.keys(rqTts.audioMap).length} entries already in primary table`);
     }
 
     setContentLoaded(true);
