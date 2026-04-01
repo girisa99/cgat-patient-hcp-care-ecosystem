@@ -17,7 +17,7 @@ ON storage.objects FOR SELECT
 USING (bucket_id = 'cast-renders');
 
 -- Service role upload (only RunPod worker uploads via service key)
-CREATE POLICY "Service role upload for cast renders"
+CREATE POLICY "Upload for cast renders"
 ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'cast-renders'
@@ -25,7 +25,7 @@ WITH CHECK (
 );
 
 -- Allow updates (upsert for re-renders)
-CREATE POLICY "Service role update for cast renders"
+CREATE POLICY "Update for cast renders"
 ON storage.objects FOR UPDATE
 USING (
   bucket_id = 'cast-renders'
@@ -33,7 +33,7 @@ USING (
 );
 
 -- Allow deletes (cleanup old renders)
-CREATE POLICY "Service role delete for cast renders"
+CREATE POLICY "Delete for cast renders"
 ON storage.objects FOR DELETE
 USING (
   bucket_id = 'cast-renders'
