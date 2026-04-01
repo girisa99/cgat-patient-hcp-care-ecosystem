@@ -32,7 +32,19 @@ import subprocess
 import urllib.request
 import urllib.error
 
-WORKER_VERSION = "3.0"
+WORKER_VERSION = "3.1"
+
+# ── Configurable timeouts (seconds) — override via env vars ──
+TIMEOUT_DOWNLOAD_PART = int(os.environ.get("TIMEOUT_DOWNLOAD_PART", 120))
+TIMEOUT_FFMPEG_REENCODE = int(os.environ.get("TIMEOUT_FFMPEG_REENCODE", 3600))
+TIMEOUT_FFMPEG_STREAMCOPY = int(os.environ.get("TIMEOUT_FFMPEG_STREAMCOPY", 300))
+TIMEOUT_COMPRESS_PASS1 = int(os.environ.get("TIMEOUT_COMPRESS_PASS1", 1800))
+TIMEOUT_COMPRESS_PASS2 = int(os.environ.get("TIMEOUT_COMPRESS_PASS2", 2400))
+TIMEOUT_COMPRESS_CRF = int(os.environ.get("TIMEOUT_COMPRESS_CRF", 1800))
+
+# ── Compression settings ──
+STITCH_COMPRESS_THRESHOLD_MB = int(os.environ.get("STITCH_COMPRESS_THRESHOLD_MB", 250))
+COMPRESS_BITRATE_FLOOR_KBPS = int(os.environ.get("COMPRESS_BITRATE_FLOOR_KBPS", 800))
 MAX_FILE_SIZE_MB = 80  # Re-encode if output exceeds this
 
 print("[CastRenderer] Starting handler.py — importing modules...", flush=True)
@@ -660,7 +672,7 @@ def handle_render(job_input: dict) -> dict:
         print(f"[CastRenderer] DONE in {total_time:.1f}s — {video_url or 'NO URL'}")
 
         if not video_url:
-            print("  ERROR: No video URL from upload — check Supabase bucket 'cast-assets' is public")
+            print("  ERROR: No video URL from upload — check Supabase storage bucket is public")
 
         _cleanup()
 
@@ -770,7 +782,7 @@ def handle_stitch_parts(job_input: dict) -> dict:
             for attempt in range(3):
                 try:
                     req = urllib.request.Request(url, headers={"User-Agent": "CastRenderer/3.0"})
-                    with urllib.request.urlopen(req, timeout=120) as resp:
+                    with urllib.request.urlopen(req, timeout=TIMEOUT_DOWNLOAD_PART) as resp:
                         with open(local_path, "wb") as f:
                             while True:
                                 chunk = resp.read(1024 * 1024)  # 1MB chunks
@@ -914,7 +926,7 @@ def handle_stitch_parts(job_input: dict) -> dict:
             cmd_reencode.extend(["-pix_fmt", "yuv420p"])
             cmd_reencode.append(output_path)
 
-            result = subprocess.run(cmd_reencode, capture_output=True, text=True, timeout=3600)
+            result = subprocess.run(cmd_reencode, capture_output=True, text=True, timeout=TIMEOUT_FFMPEG_REENCODE)
 
             if result.returncode != 0:
                 # Level 3: Stream-copy concat (last resort)
@@ -927,7 +939,7 @@ def handle_stitch_parts(job_input: dict) -> dict:
                     "-f", "concat", "-safe", "0", "-i", concat_file,
                     "-c", "copy", output_path,
                 ]
-                result = subprocess.run(cmd_copy, capture_output=True, text=True, timeout=300)
+                result = subprocess.run(cmd_copy, capture_output=True, text=True, timeout=TIMEOUT_FFMPEG_STREAMCOPY)
                 if result.returncode != 0:
                     return {"error": f"All stitch methods failed. "
                             f"Last error: {result.stderr[-500:]}"}
@@ -949,13 +961,11 @@ def handle_stitch_parts(job_input: dict) -> dict:
         # Compress stitched video if large (>250MB) to improve upload reliability.
         # Uses two-pass encoding to hit target size WITHOUT quality loss —
         # pass 1 analyzes complexity, pass 2 distributes bits optimally.
-        STITCH_COMPRESS_THRESHOLD_MB = 250
         if file_size_mb > STITCH_COMPRESS_THRESHOLD_MB:
-            # Target: 90% of threshold to leave headroom (225MB)
+            # Target: 90% of threshold to leave headroom
             target_size_mb = STITCH_COMPRESS_THRESHOLD_MB * 0.90
             target_bitrate_kbps = int(target_size_mb * 8 * 1024 / max(1, duration))
-            # Floor at 800kbps — still good quality at 720p for web delivery
-            target_bitrate_kbps = max(800, target_bitrate_kbps)
+            target_bitrate_kbps = max(COMPRESS_BITRATE_FLOOR_KBPS, target_bitrate_kbps)
             compressed_path = output_path.replace(".mp4", "_comp.mp4")
             passlog_path = os.path.join(stitch_dir, "ffmpeg2pass")
             progress(85, f"Compressing {file_size_mb:.0f}MB via two-pass for upload...")
@@ -976,7 +986,7 @@ def handle_stitch_parts(job_input: dict) -> dict:
                 ]
                 progress(86, "Two-pass: analyzing (pass 1/2)...")
                 print(f"  [compress] Pass 1: analyzing...", flush=True)
-                result1 = subprocess.run(cmd_pass1, capture_output=True, text=True, timeout=1800)
+                result1 = subprocess.run(cmd_pass1, capture_output=True, text=True, timeout=TIMEOUT_COMPRESS_PASS1)
                 if result1.returncode != 0:
                     raise RuntimeError(f"Pass 1 failed: {result1.stderr[-500:]}")
 
@@ -994,7 +1004,7 @@ def handle_stitch_parts(job_input: dict) -> dict:
                 ]
                 progress(87, "Two-pass: encoding (pass 2/2)...")
                 print(f"  [compress] Pass 2: encoding...", flush=True)
-                result2 = subprocess.run(cmd_pass2, capture_output=True, text=True, timeout=2400)
+                result2 = subprocess.run(cmd_pass2, capture_output=True, text=True, timeout=TIMEOUT_COMPRESS_PASS2)
 
                 if result2.returncode == 0 and os.path.exists(compressed_path):
                     new_size_mb = os.path.getsize(compressed_path) / (1024 * 1024)
@@ -1023,14 +1033,14 @@ def handle_stitch_parts(job_input: dict) -> dict:
                 cmd_crf = [
                     "ffmpeg", "-y", "-i", output_path,
                     "-c:v", "libx264", "-preset", "medium", "-crf", "30",
-                    "-maxrate", f"{max(800, target_bitrate_kbps)}k",
-                    "-bufsize", f"{max(800, target_bitrate_kbps) * 2}k",
+                    "-maxrate", f"{max(COMPRESS_BITRATE_FLOOR_KBPS, target_bitrate_kbps)}k",
+                    "-bufsize", f"{max(COMPRESS_BITRATE_FLOOR_KBPS, target_bitrate_kbps) * 2}k",
                     "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
                     "-pix_fmt", "yuv420p",
                     crf_path,
                 ]
                 try:
-                    crf_result = subprocess.run(cmd_crf, capture_output=True, text=True, timeout=1800)
+                    crf_result = subprocess.run(cmd_crf, capture_output=True, text=True, timeout=TIMEOUT_COMPRESS_CRF)
                     if crf_result.returncode == 0 and os.path.exists(crf_path):
                         new_size_mb = os.path.getsize(crf_path) / (1024 * 1024)
                         print(f"  [compress] CRF fallback OK: {file_size_mb:.0f}MB → {new_size_mb:.0f}MB")

@@ -10,6 +10,10 @@ import subprocess
 import httpx
 
 
+# ── Storage bucket names (configurable via env vars) ──
+BUCKET_PARTS = os.environ.get("CAST_BUCKET_PARTS", "cast-assets")
+BUCKET_RENDERS = os.environ.get("CAST_BUCKET_RENDERS", "cast-renders")
+
 # ── Threshold: files above this use TUS resumable upload ──
 TUS_THRESHOLD_MB = 50
 TUS_CHUNK_SIZE = 6 * 1024 * 1024  # 6MB per chunk
@@ -324,7 +328,7 @@ def upload_clip(
     URL pattern: cast-assets/{projectId}/clips/{clip_id}.ext
     Display in UI: just '{clip_id}.ext' (truncate base URL)
     """
-    bucket = "cast-assets"
+    bucket = BUCKET_PARTS
     # Determine extension from content type
     ext_map = {
         "video/mp4": "mp4",
@@ -354,9 +358,9 @@ def upload_final_video(
     Upload the final video + thumbnail to Supabase Storage.
     Returns { videoUrl, thumbnailUrl }.
     """
-    # Individual parts → cast-assets (≤100MB each)
-    # Final stitched render → cast-renders (up to 2GB, dedicated bucket)
-    bucket = "cast-assets" if part_number is not None else "cast-renders"
+    # Individual parts → BUCKET_PARTS (clips/assets)
+    # Final stitched render → BUCKET_RENDERS (no size limit)
+    bucket = BUCKET_PARTS if part_number is not None else BUCKET_RENDERS
     suffix = f"part{part_number}" if part_number else "final"
     video_storage_path = f"{cast_project_id}/{suffix}.mp4"
     thumb_storage_path = f"{cast_project_id}/{suffix}_thumb.jpg"
