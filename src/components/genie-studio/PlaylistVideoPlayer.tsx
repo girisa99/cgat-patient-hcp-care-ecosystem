@@ -112,6 +112,7 @@ export function PlaylistVideoPlayer({
         <video
           ref={videoRef}
           src={currentPart.videoUrl}
+          controls
           onLoadedMetadata={handleLoadedMetadata}
           onEnded={handleEnded}
           onTimeUpdate={handleTimeUpdate}
