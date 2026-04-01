@@ -43,12 +43,15 @@ def _upload_tus(
     file_size_mb = file_size / (1024 * 1024)
 
     # Dynamic chunk size: fewer chunks for large files = fewer failure points
-    if file_size > 200 * 1024 * 1024:       # >200MB: 25MB chunks
+    # For a 600MB file: 50MB chunks = 12 requests vs 25MB = 24 requests
+    if file_size > 400 * 1024 * 1024:       # >400MB: 50MB chunks
+        chunk_size = 50 * 1024 * 1024
+    elif file_size > 200 * 1024 * 1024:     # >200MB: 25MB chunks
         chunk_size = 25 * 1024 * 1024
-    elif file_size > 100 * 1024 * 1024:      # >100MB: 12MB chunks
+    elif file_size > 100 * 1024 * 1024:     # >100MB: 12MB chunks
         chunk_size = 12 * 1024 * 1024
     else:
-        chunk_size = TUS_CHUNK_SIZE           # default 6MB
+        chunk_size = TUS_CHUNK_SIZE          # default 6MB
 
     total_chunks = (file_size + chunk_size - 1) // chunk_size
     print(f"  [upload-tus] Starting TUS upload: {file_size_mb:.1f}MB in ~{total_chunks} chunks "

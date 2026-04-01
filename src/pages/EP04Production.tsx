@@ -5572,12 +5572,12 @@ function EP04ProductionInner() {
       concatPollRef.current = 0;
       return;
     }
-    const MAX_POLLS = 360; // 360 × 10s = 60 minutes (full-length documentary stitch needs headroom)
+    const MAX_POLLS = 720; // 720 × 10s = 120 minutes (41min+ videos need stitch + two-pass compress + upload)
     const timer = setInterval(async () => {
       concatPollRef.current++;
       if (concatPollRef.current > MAX_POLLS) {
         setConcatStatus('failed');
-        setConcatError('Stitching timed out after 60 minutes');
+        setConcatError('Stitching timed out after 120 minutes');
         setConcatJobId(null);
         toast.error('Stitching timed out — check RunPod dashboard');
         return;

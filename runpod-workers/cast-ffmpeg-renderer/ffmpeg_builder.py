@@ -61,6 +61,16 @@ def _encoder_args(crf: int = 23) -> list[str]:
             "-maxrate", "6M", "-bufsize", "10M"]
 
 
+def _stitch_encoder_args() -> list[str]:
+    """Encoder flags optimized for stitching: same CRF quality but 'medium' preset
+    for better compression efficiency. Medium preset produces ~15-20% smaller files
+    at the same CRF compared to 'fast', with no quality loss — just slower encoding."""
+    if _detect_nvenc():
+        return ["-c:v", "h264_nvenc", "-preset", "p4", "-b:v", "4M", "-maxrate", "6M", "-bufsize", "8M"]
+    return ["-c:v", "libx264", "-preset", "medium", "-crf", "23",
+            "-maxrate", "6M", "-bufsize", "10M"]
+
+
 def _hex_to_ffmpeg_color(hex_color: str) -> str:
     """Convert #RRGGBB to FFmpeg color format."""
     c = hex_color.lstrip("#")
@@ -1321,13 +1331,14 @@ def stitch_parts_xfade(
     cmd.extend(inputs)
     cmd.extend(["-filter_complex", filter_complex])
     cmd.extend(["-map", "[vout]", "-map", audio_map])
-    cmd.extend(_encoder_args(crf=23))
+    cmd.extend(_stitch_encoder_args())
     cmd.extend(["-c:a", "aac", "-b:a", "192k", "-ar", "48000"])
     cmd.extend(["-pix_fmt", "yuv420p"])
     cmd.append(output_path)
 
-    timeout = min(3600, int(total_input / 2 + 300))
-    print(f"  [xfade] Running FFmpeg (timeout={timeout}s)...")
+    # Medium preset needs ~1.5-2x realtime; add 300s buffer for filter graph setup
+    timeout = min(5400, int(total_input * 2 + 300))
+    print(f"  [xfade] Running FFmpeg (timeout={timeout}s, preset=medium)...")
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)

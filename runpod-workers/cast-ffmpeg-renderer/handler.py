@@ -904,17 +904,17 @@ def handle_stitch_parts(job_input: dict) -> dict:
                 for p in valid_paths:
                     f.write(f"file '{p}'\n")
 
-            from ffmpeg_builder import _encoder_args
+            from ffmpeg_builder import _stitch_encoder_args
             cmd_reencode = [
                 "ffmpeg", "-y",
                 "-f", "concat", "-safe", "0", "-i", concat_file,
             ]
-            cmd_reencode.extend(_encoder_args())
+            cmd_reencode.extend(_stitch_encoder_args())
             cmd_reencode.extend(["-c:a", "aac", "-b:a", "192k", "-ar", "48000"])
             cmd_reencode.extend(["-pix_fmt", "yuv420p"])
             cmd_reencode.append(output_path)
 
-            result = subprocess.run(cmd_reencode, capture_output=True, text=True, timeout=1200)
+            result = subprocess.run(cmd_reencode, capture_output=True, text=True, timeout=3600)
 
             if result.returncode != 0:
                 # Level 3: Stream-copy concat (last resort)
@@ -946,37 +946,65 @@ def handle_stitch_parts(job_input: dict) -> dict:
         if duration < 1.0:
             return {"error": f"Stitched video too short: {duration:.1f}s"}
 
-        # Compress stitched video if very large (>500MB) to improve upload reliability
-        STITCH_COMPRESS_THRESHOLD_MB = 500
+        # Compress stitched video if large (>350MB) to improve upload reliability.
+        # Uses two-pass encoding to hit target size WITHOUT quality loss —
+        # pass 1 analyzes complexity, pass 2 distributes bits optimally.
+        STITCH_COMPRESS_THRESHOLD_MB = 350
         if file_size_mb > STITCH_COMPRESS_THRESHOLD_MB:
+            # Target: 90% of threshold to leave headroom
             target_bitrate_kbps = int(STITCH_COMPRESS_THRESHOLD_MB * 0.90 * 8 * 1024 / max(1, duration))
-            target_bitrate_kbps = max(1500, target_bitrate_kbps)
+            target_bitrate_kbps = max(2000, target_bitrate_kbps)
             compressed_path = output_path.replace(".mp4", "_comp.mp4")
-            progress(85, f"Compressing {file_size_mb:.0f}MB for upload...")
+            passlog_path = os.path.join(stitch_dir, "ffmpeg2pass")
+            progress(85, f"Compressing {file_size_mb:.0f}MB via two-pass for upload...")
             print(f"  [compress] {file_size_mb:.0f}MB > {STITCH_COMPRESS_THRESHOLD_MB}MB — "
-                  f"re-encoding at {target_bitrate_kbps}kbps")
+                  f"two-pass at {target_bitrate_kbps}kbps (target ~{STITCH_COMPRESS_THRESHOLD_MB * 0.90:.0f}MB)")
 
-            cmd_compress = [
-                "ffmpeg", "-y", "-i", output_path,
-                "-c:v", "libx264", "-preset", "fast",
-                "-b:v", f"{target_bitrate_kbps}k",
-                "-maxrate", f"{int(target_bitrate_kbps * 1.5)}k",
-                "-bufsize", f"{target_bitrate_kbps * 2}k",
-                "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
-                "-pix_fmt", "yuv420p",
-                compressed_path,
-            ]
             try:
-                result = subprocess.run(cmd_compress, capture_output=True, text=True, timeout=1800)
-                if result.returncode == 0 and os.path.exists(compressed_path):
+                # Pass 1: Analyze — writes stats to passlog, output discarded
+                cmd_pass1 = [
+                    "ffmpeg", "-y", "-i", output_path,
+                    "-c:v", "libx264", "-preset", "medium",
+                    "-b:v", f"{target_bitrate_kbps}k",
+                    "-maxrate", f"{int(target_bitrate_kbps * 1.5)}k",
+                    "-bufsize", f"{target_bitrate_kbps * 2}k",
+                    "-pass", "1", "-passlogfile", passlog_path,
+                    "-an", "-pix_fmt", "yuv420p",
+                    "-f", "null", "/dev/null",
+                ]
+                progress(86, "Two-pass: analyzing (pass 1/2)...")
+                print(f"  [compress] Pass 1: analyzing...", flush=True)
+                result1 = subprocess.run(cmd_pass1, capture_output=True, text=True, timeout=1800)
+                if result1.returncode != 0:
+                    raise RuntimeError(f"Pass 1 failed: {result1.stderr[-500:]}")
+
+                # Pass 2: Encode using pass 1 stats for optimal bit distribution
+                cmd_pass2 = [
+                    "ffmpeg", "-y", "-i", output_path,
+                    "-c:v", "libx264", "-preset", "medium",
+                    "-b:v", f"{target_bitrate_kbps}k",
+                    "-maxrate", f"{int(target_bitrate_kbps * 1.5)}k",
+                    "-bufsize", f"{target_bitrate_kbps * 2}k",
+                    "-pass", "2", "-passlogfile", passlog_path,
+                    "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+                    "-pix_fmt", "yuv420p",
+                    compressed_path,
+                ]
+                progress(87, "Two-pass: encoding (pass 2/2)...")
+                print(f"  [compress] Pass 2: encoding...", flush=True)
+                result2 = subprocess.run(cmd_pass2, capture_output=True, text=True, timeout=2400)
+
+                if result2.returncode == 0 and os.path.exists(compressed_path):
                     new_size_mb = os.path.getsize(compressed_path) / (1024 * 1024)
-                    print(f"  [compress] OK: {file_size_mb:.0f}MB → {new_size_mb:.0f}MB")
+                    saving_pct = (1 - new_size_mb / file_size_mb) * 100
+                    print(f"  [compress] OK: {file_size_mb:.0f}MB → {new_size_mb:.0f}MB "
+                          f"({saving_pct:.0f}% smaller, two-pass)")
                     os.replace(compressed_path, output_path)
                     file_size_bytes = os.path.getsize(output_path)
                     file_size_mb = file_size_bytes / (1024 * 1024)
                 else:
-                    print(f"  [compress] FAILED — uploading uncompressed. "
-                          f"stderr: {result.stderr[-500:] if result.stderr else 'none'}")
+                    print(f"  [compress] Pass 2 FAILED — uploading uncompressed. "
+                          f"stderr: {result2.stderr[-500:] if result2.stderr else 'none'}")
             except subprocess.TimeoutExpired:
                 print(f"  [compress] TIMED OUT — uploading uncompressed")
             except Exception as ce:
