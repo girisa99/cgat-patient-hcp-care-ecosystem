@@ -1,15 +1,15 @@
 -- Production bucket for final rendered videos (stitched from 12+ parts)
 -- Separate from cast-assets (100MB per-file, for individual parts/clips)
--- to keep storage clean and enforce appropriate limits per use case.
+-- No file size limit — renders can be any length/resolution.
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'cast-renders',
   'cast-renders',
   true,
-  2147483648, -- 2GB max per file (full-length rendered videos)
+  NULL, -- no limit
   ARRAY['video/mp4', 'video/webm', 'image/jpeg']
 )
-ON CONFLICT (id) DO UPDATE SET file_size_limit = 2147483648;
+ON CONFLICT (id) DO UPDATE SET file_size_limit = NULL;
 
 -- Public read access (rendered videos are shared/downloaded)
 CREATE POLICY "Public read access for cast renders"
