@@ -354,8 +354,9 @@ def upload_final_video(
     Upload the final video + thumbnail to Supabase Storage.
     Returns { videoUrl, thumbnailUrl }.
     """
-    bucket = "cast-assets"
-    # Use part-specific path to avoid overwriting other parts
+    # Individual parts → cast-assets (≤100MB each)
+    # Final stitched render → cast-renders (up to 2GB, dedicated bucket)
+    bucket = "cast-assets" if part_number is not None else "cast-renders"
     suffix = f"part{part_number}" if part_number else "final"
     video_storage_path = f"{cast_project_id}/{suffix}.mp4"
     thumb_storage_path = f"{cast_project_id}/{suffix}_thumb.jpg"
