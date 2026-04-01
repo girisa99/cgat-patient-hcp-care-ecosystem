@@ -272,12 +272,25 @@ def upload_to_supabase(
     file_size_mb = file_size / (1024 * 1024)
     print(f"  [upload] Uploading {file_size_mb:.1f}MB to {bucket}/{storage_path}", flush=True)
 
-    # Large files: use TUS resumable upload (bypasses single-request size limits)
+    # Large files (>=50MB): use TUS resumable upload with multiple retry attempts
     if file_size_mb >= TUS_THRESHOLD_MB:
-        print(f"  [upload] File >= {TUS_THRESHOLD_MB}MB — using TUS resumable upload", flush=True)
-        url = _upload_tus(file_path, supabase_url, supabase_key, bucket, storage_path, content_type)
-        if url:
-            return url
+        # Try TUS up to 3 times with increasing delay between attempts
+        for tus_attempt in range(3):
+            if tus_attempt > 0:
+                delay = 5 * tus_attempt
+                print(f"  [upload] TUS attempt {tus_attempt + 1}/3 after {delay}s delay...", flush=True)
+                time.sleep(delay)
+            url = _upload_tus(file_path, supabase_url, supabase_key, bucket, storage_path, content_type)
+            if url:
+                return url
+            print(f"  [upload] TUS attempt {tus_attempt + 1}/3 failed", flush=True)
+
+        # For large files, don't try direct POST (will OOM or 413)
+        if file_size_mb > 100:
+            print(f"  [upload] ALL 3 TUS attempts FAILED for {file_size_mb:.0f}MB file", flush=True)
+            return None
+
+        # Only try direct POST as fallback for files <100MB
         print(f"  [upload] TUS failed — trying direct POST as fallback", flush=True)
 
     # Small files or TUS fallback: direct POST
