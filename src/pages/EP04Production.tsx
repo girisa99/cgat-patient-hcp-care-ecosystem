@@ -7901,119 +7901,83 @@ function EP04ProductionInner() {
                           <div className="flex items-center gap-1.5 mb-2">
                             <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
                             <p className="text-xs text-green-600 font-semibold">
-                              All {assemblyParts.length} parts rendered — use the player above to watch the full movie!
+                              All {assemblyParts.length} parts rendered successfully — production ready
                             </p>
                           </div>
 
-                          {/* Save as final (marks project complete using first part URL as reference) */}
-                          {!finalVideoUrl && (
+                          {/* Render final single MP4 */}
+                          {concatStatus === 'idle' && !concatVideoUrl && (
                             <Button
                               size="sm"
-                              className="w-full mb-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs"
-                              onClick={async () => {
-                                const firstPartUrl = assemblyParts.find(p => p.videoUrl)?.videoUrl;
-                                if (firstPartUrl && projectId) {
-                                  const success = await updateFinalAssembly(projectId, firstPartUrl, {
-                                    totalDuration: totalDuration || 0,
-                                    sceneCount: scenes.length,
-                                    resolution: '1920x1080',
-                                  });
-                                  if (success) {
-                                    setFinalVideoUrl(firstPartUrl);
-                                    toast.success('Project marked as complete!');
-                                  }
-                                }
-                              }}
+                              onClick={startConcatStitch}
+                              className="w-full mb-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs"
                             >
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                              Mark Project Complete
+                              <Film className="h-3.5 w-3.5 mr-1.5" />
+                              Render Final Video — Merge {assemblyParts.length} Parts with Crossfade
                             </Button>
                           )}
-
-                          {/* Advanced: Server-side stitch into single MP4 (optional) */}
-                          <details className="mt-1">
-                            <summary className="text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
-                              Advanced: Stitch into single MP4 file (optional)
-                            </summary>
-                            <div className="mt-2 p-2 rounded bg-muted/30">
-                              <p className="text-[10px] text-muted-foreground mb-2">
-                                Merges all parts into one downloadable file. This may take several minutes and requires server processing.
-                              </p>
-                              {concatStatus === 'idle' && !concatVideoUrl && (
+                          {concatStatus === 'submitting' && (
+                            <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Submitting render job...
+                            </div>
+                          )}
+                          {concatStatus === 'rendering' && (
+                            <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
+                              <span className="flex-1">Rendering final video... {assemblyProgress || ''}</span>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-6 text-[10px] px-2 flex-shrink-0"
+                                onClick={() => {
+                                  setConcatJobId(null);
+                                  setConcatStatus('idle');
+                                  setConcatError(null);
+                                  setAssemblyProgress(null);
+                                  toast.info('Render cancelled');
+                                }}
+                              >
+                                <XCircle className="h-2.5 w-2.5 mr-0.5" /> Cancel
+                              </Button>
+                            </div>
+                          )}
+                          {concatStatus === 'failed' && (
+                            <div className="mb-2">
+                              <p className="text-xs text-red-500 mb-1">{concatError}</p>
+                              <Button size="sm" variant="outline" onClick={() => { setConcatStatus('idle'); setConcatError(null); }}
+                                className="text-[10px]">
+                                Retry Render
+                              </Button>
+                            </div>
+                          )}
+                          {concatStatus === 'completed' && concatVideoUrl && (
+                            <div className="mb-2 p-2 rounded bg-green-500/10 border border-green-500/30">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                <span className="text-xs font-semibold text-green-600">Final Video Rendered</span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <a href={concatVideoUrl} target="_blank" rel="noopener noreferrer"
+                                  className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
+                                  <Download className="h-2.5 w-2.5" /> Download Final MP4
+                                </a>
                                 <Button
                                   size="sm"
-                                  onClick={startConcatStitch}
-                                  className="w-full mb-2 text-xs"
                                   variant="outline"
+                                  className="h-6 text-[10px] px-2 border-amber-500/30 text-amber-600"
+                                  onClick={() => {
+                                    setConcatStatus('idle');
+                                    setConcatVideoUrl(null);
+                                    setConcatError(null);
+                                    toast.info('Ready to re-render');
+                                  }}
                                 >
-                                  <Film className="h-3.5 w-3.5 mr-1.5" />
-                                  Stitch {assemblyParts.length} Parts into Single MP4
+                                  <RefreshCw className="h-2.5 w-2.5 mr-0.5" /> Re-render
                                 </Button>
-                              )}
-                              {concatStatus === 'submitting' && (
-                                <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  Submitting stitching timeline...
-                                </div>
-                              )}
-                              {concatStatus === 'rendering' && (
-                                <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
-                                  <span className="flex-1">Rendering final video... {assemblyProgress || ''}</span>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="h-6 text-[10px] px-2 flex-shrink-0"
-                                    onClick={() => {
-                                      setConcatJobId(null);
-                                      setConcatStatus('idle');
-                                      setConcatError(null);
-                                      setAssemblyProgress(null);
-                                      toast.info('Stitching cancelled');
-                                    }}
-                                  >
-                                    <XCircle className="h-2.5 w-2.5 mr-0.5" /> Cancel
-                                  </Button>
-                                </div>
-                              )}
-                              {concatStatus === 'failed' && (
-                                <div className="mb-2">
-                                  <p className="text-xs text-red-500 mb-1">Stitching failed: {concatError}</p>
-                                  <Button size="sm" variant="outline" onClick={() => { setConcatStatus('idle'); setConcatError(null); }}
-                                    className="text-[10px]">
-                                    Retry
-                                  </Button>
-                                </div>
-                              )}
-                              {concatStatus === 'completed' && concatVideoUrl && (
-                                <div className="mb-2 p-2 rounded bg-green-500/10 border border-green-500/30">
-                                  <div className="flex items-center gap-1.5 mb-1">
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                                    <span className="text-xs font-semibold text-green-600">Single MP4 Ready</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <a href={concatVideoUrl} target="_blank" rel="noopener noreferrer"
-                                      className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
-                                      <Download className="h-2.5 w-2.5" /> Download Single MP4
-                                    </a>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-6 text-[10px] px-2 border-amber-500/30 text-amber-600"
-                                      onClick={() => {
-                                        setConcatStatus('idle');
-                                        setConcatVideoUrl(null);
-                                        setConcatError(null);
-                                        toast.info('Ready to re-stitch');
-                                      }}
-                                    >
-                                      <RefreshCw className="h-2.5 w-2.5 mr-0.5" /> Re-stitch
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
+                              </div>
                             </div>
-                          </details>
+                          )}
                         </div>
                       )}
                     </div>
@@ -8043,13 +8007,13 @@ function EP04ProductionInner() {
                         {assemblyAllCompleted ? (
                           <>
                             <CheckCircle2 className="h-5 w-5 text-green-500" />
-                            <h4 className="text-sm font-bold text-green-600">Cinematic Movie Ready</h4>
+                            <h4 className="text-sm font-bold text-green-600">Final Production — All {assemblyParts.length} Parts Complete</h4>
                           </>
                         ) : (
                           <>
                             <Film className="h-5 w-5 text-amber-500" />
                             <h4 className="text-sm font-bold text-amber-600">
-                              Preview ({assemblyParts.filter(p => p.status === 'completed').length}/{assemblyParts.length} parts done)
+                              Production Preview — {assemblyParts.filter(p => p.status === 'completed').length} of {assemblyParts.length} Parts Rendered
                             </h4>
                           </>
                         )}
@@ -8063,7 +8027,7 @@ function EP04ProductionInner() {
                             thumbnailUrl: p.thumbnailUrl,
                             estimatedDuration: p.estimatedDuration,
                           }))}
-                        onPlaybackComplete={() => toast.success('Full documentary playback complete!')}
+                        onPlaybackComplete={() => toast.success('Full production playback complete')}
                       />
                       {/* If a stitched single-file version exists, offer download */}
                       {concatVideoUrl && (
@@ -8161,7 +8125,7 @@ function EP04ProductionInner() {
                             <CardContent className="p-4 space-y-3">
                               <div className="flex items-center gap-2">
                                 <Clapperboard className="h-4 w-4 text-green-500" />
-                                <h4 className="text-sm font-bold text-green-600">Final Movie</h4>
+                                <h4 className="text-sm font-bold text-green-600">Final Production</h4>
                               </div>
                               {completedParts.length > 0 ? (
                                 <PlaylistVideoPlayer
