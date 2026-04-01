@@ -41,6 +41,7 @@ import {
 } from '@/hooks/useEP04DataRestore';
 import { buildCastTimeline, type CastChapter, type CastTransition, type CastBookends, type CastSpeakerInfo } from '@/utils/castTimelineEngine';
 import { Save, FolderOpen } from 'lucide-react';
+import { PlaylistVideoPlayer } from '@/components/genie-studio/PlaylistVideoPlayer';
 
 // ── Build version — check console to verify you're on latest deploy ──
 const EP04_BUILD = 'v2026-03-17-A';
@@ -7897,97 +7898,120 @@ function EP04ProductionInner() {
                       {/* All parts complete — Stitch into final video */}
                       {assemblyAllCompleted && (
                         <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-                          <p className="text-xs text-green-600 font-semibold mb-2">
-                            All {assemblyParts.length} parts rendered successfully!
-                          </p>
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                            <p className="text-xs text-green-600 font-semibold">
+                              All {assemblyParts.length} parts rendered — use the player above to watch the full movie!
+                            </p>
+                          </div>
 
-                          {/* Stitch button + status */}
-                          {concatStatus === 'idle' && !concatVideoUrl && (
+                          {/* Save as final (marks project complete using first part URL as reference) */}
+                          {!finalVideoUrl && (
                             <Button
                               size="sm"
-                              onClick={startConcatStitch}
-                              className="w-full mb-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs"
+                              className="w-full mb-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs"
+                              onClick={async () => {
+                                const firstPartUrl = assemblyParts.find(p => p.videoUrl)?.videoUrl;
+                                if (firstPartUrl && projectId) {
+                                  const success = await updateFinalAssembly(projectId, firstPartUrl, {
+                                    totalDuration: totalDuration || 0,
+                                    sceneCount: scenes.length,
+                                    resolution: '1920x1080',
+                                  });
+                                  if (success) {
+                                    setFinalVideoUrl(firstPartUrl);
+                                    toast.success('Project marked as complete!');
+                                  }
+                                }
+                              }}
                             >
-                              <Film className="h-3.5 w-3.5 mr-1.5" />
-                              Stitch All {assemblyParts.length} Parts into Final Video
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                              Mark Project Complete
                             </Button>
                           )}
-                          {concatStatus === 'submitting' && (
-                            <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              Submitting stitching timeline...
-                            </div>
-                          )}
-                          {concatStatus === 'rendering' && (
-                            <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
-                              <span className="flex-1">Rendering final video... {assemblyProgress || ''}</span>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="h-6 text-[10px] px-2 flex-shrink-0"
-                                onClick={() => {
-                                  setConcatJobId(null);
-                                  setConcatStatus('idle');
-                                  setConcatError(null);
-                                  setAssemblyProgress(null);
-                                  toast.info('Stitching cancelled — you can re-stitch anytime');
-                                }}
-                              >
-                                <XCircle className="h-2.5 w-2.5 mr-0.5" /> Cancel
-                              </Button>
-                            </div>
-                          )}
-                          {concatStatus === 'failed' && (
-                            <div className="mb-2">
-                              <p className="text-xs text-red-500 mb-1">Stitching failed: {concatError}</p>
-                              <Button size="sm" variant="outline" onClick={() => { setConcatStatus('idle'); setConcatError(null); }}
-                                className="text-[10px]">
-                                Retry
-                              </Button>
-                            </div>
-                          )}
-                          {concatStatus === 'completed' && concatVideoUrl && (
-                            <div className="mb-2 p-2 rounded bg-green-500/10 border border-green-500/30">
-                              <div className="flex items-center gap-1.5 mb-1">
-                                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                                <span className="text-xs font-semibold text-green-600">Final Video Ready</span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <a href={concatVideoUrl} target="_blank" rel="noopener noreferrer"
-                                  className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
-                                  <Download className="h-2.5 w-2.5" /> Download Final Video
-                                </a>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-6 text-[10px] px-2 border-amber-500/30 text-amber-600"
-                                  onClick={() => {
-                                    setConcatStatus('idle');
-                                    setConcatVideoUrl(null);
-                                    setConcatError(null);
-                                    setFinalVideoUrl(null);
-                                    toast.info('Ready to re-stitch — click the stitch button');
-                                  }}
-                                >
-                                  <RefreshCw className="h-2.5 w-2.5 mr-0.5" /> Re-stitch
-                                </Button>
-                              </div>
-                            </div>
-                          )}
 
-                          {/* Individual part downloads (always available) */}
+                          {/* Advanced: Server-side stitch into single MP4 (optional) */}
                           <details className="mt-1">
                             <summary className="text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
-                              Individual part downloads
+                              Advanced: Stitch into single MP4 file (optional)
                             </summary>
-                            <div className="mt-1 flex flex-wrap gap-2">
-                              {assemblyParts.map(p => p.videoUrl && (
-                                <a key={p.partNumber} href={p.videoUrl} target="_blank" rel="noopener noreferrer"
-                                  className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
-                                  <Download className="h-2.5 w-2.5" /> Part {p.partNumber}
-                                </a>
-                              ))}
+                            <div className="mt-2 p-2 rounded bg-muted/30">
+                              <p className="text-[10px] text-muted-foreground mb-2">
+                                Merges all parts into one downloadable file. This may take several minutes and requires server processing.
+                              </p>
+                              {concatStatus === 'idle' && !concatVideoUrl && (
+                                <Button
+                                  size="sm"
+                                  onClick={startConcatStitch}
+                                  className="w-full mb-2 text-xs"
+                                  variant="outline"
+                                >
+                                  <Film className="h-3.5 w-3.5 mr-1.5" />
+                                  Stitch {assemblyParts.length} Parts into Single MP4
+                                </Button>
+                              )}
+                              {concatStatus === 'submitting' && (
+                                <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  Submitting stitching timeline...
+                                </div>
+                              )}
+                              {concatStatus === 'rendering' && (
+                                <div className="flex items-center gap-2 mb-2 text-xs text-amber-500">
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
+                                  <span className="flex-1">Rendering final video... {assemblyProgress || ''}</span>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-6 text-[10px] px-2 flex-shrink-0"
+                                    onClick={() => {
+                                      setConcatJobId(null);
+                                      setConcatStatus('idle');
+                                      setConcatError(null);
+                                      setAssemblyProgress(null);
+                                      toast.info('Stitching cancelled');
+                                    }}
+                                  >
+                                    <XCircle className="h-2.5 w-2.5 mr-0.5" /> Cancel
+                                  </Button>
+                                </div>
+                              )}
+                              {concatStatus === 'failed' && (
+                                <div className="mb-2">
+                                  <p className="text-xs text-red-500 mb-1">Stitching failed: {concatError}</p>
+                                  <Button size="sm" variant="outline" onClick={() => { setConcatStatus('idle'); setConcatError(null); }}
+                                    className="text-[10px]">
+                                    Retry
+                                  </Button>
+                                </div>
+                              )}
+                              {concatStatus === 'completed' && concatVideoUrl && (
+                                <div className="mb-2 p-2 rounded bg-green-500/10 border border-green-500/30">
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                    <span className="text-xs font-semibold text-green-600">Single MP4 Ready</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <a href={concatVideoUrl} target="_blank" rel="noopener noreferrer"
+                                      className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
+                                      <Download className="h-2.5 w-2.5" /> Download Single MP4
+                                    </a>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-6 text-[10px] px-2 border-amber-500/30 text-amber-600"
+                                      onClick={() => {
+                                        setConcatStatus('idle');
+                                        setConcatVideoUrl(null);
+                                        setConcatError(null);
+                                        toast.info('Ready to re-stitch');
+                                      }}
+                                    >
+                                      <RefreshCw className="h-2.5 w-2.5 mr-0.5" /> Re-stitch
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </details>
                         </div>
@@ -8012,72 +8036,50 @@ function EP04ProductionInner() {
                     ))}
                   </div>
 
-                  {/* Final stitched video — only show when ALL parts are concatenated */}
-                  {concatVideoUrl && (
+                  {/* Playlist player — plays all completed parts sequentially (no stitching needed) */}
+                  {assemblyParts.some(p => p.status === 'completed' && p.videoUrl) && (
                     <div className="mt-6 space-y-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        <h4 className="text-sm font-bold text-green-600">Cinematic Movie Ready</h4>
-                      </div>
-                      <div className="rounded-xl overflow-hidden border border-green-500/30">
-                        <video
-                          src={concatVideoUrl}
-                          controls
-                          className="w-full"
-                          poster={SCENE_BACKGROUNDS['scene-0-title']}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" asChild>
-                          <a href={concatVideoUrl} download="EP04-Sprint-Documentary.mp4">
-                            <Download className="h-3 w-3 mr-1" />
-                            Download MP4
-                          </a>
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => window.open(concatVideoUrl, '_blank')}>
-                          <Eye className="h-3 w-3 mr-1" />
-                          Open in New Tab
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Latest part video preview — shows most recent completed part */}
-                  {!concatVideoUrl && assemblyParts.some(p => p.status === 'completed' && p.videoUrl) && (
-                    <div className="mt-6 space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Film className="h-5 w-5 text-amber-500" />
-                        <h4 className="text-sm font-bold text-amber-600">
-                          Latest Part ({assemblyParts.filter(p => p.status === 'completed').length}/{assemblyParts.length} parts done)
-                        </h4>
-                      </div>
-                      {(() => {
-                        const latestPart = [...assemblyParts].reverse().find(p => p.status === 'completed' && p.videoUrl);
-                        return latestPart ? (
+                        {assemblyAllCompleted ? (
                           <>
-                            <div className="rounded-xl overflow-hidden border border-amber-500/30">
-                              <video
-                                src={latestPart.videoUrl!}
-                                controls
-                                className="w-full"
-                                poster={SCENE_BACKGROUNDS['scene-0-title']}
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" asChild variant="outline">
-                                <a href={latestPart.videoUrl!} download={`EP04-Part-${latestPart.partNumber}.mp4`}>
-                                  <Download className="h-3 w-3 mr-1" />
-                                  Part {latestPart.partNumber}
-                                </a>
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => window.open(latestPart.videoUrl!, '_blank')}>
-                                <Eye className="h-3 w-3 mr-1" />
-                                Open in New Tab
-                              </Button>
-                            </div>
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            <h4 className="text-sm font-bold text-green-600">Cinematic Movie Ready</h4>
                           </>
-                        ) : null;
-                      })()}
+                        ) : (
+                          <>
+                            <Film className="h-5 w-5 text-amber-500" />
+                            <h4 className="text-sm font-bold text-amber-600">
+                              Preview ({assemblyParts.filter(p => p.status === 'completed').length}/{assemblyParts.length} parts done)
+                            </h4>
+                          </>
+                        )}
+                      </div>
+                      <PlaylistVideoPlayer
+                        parts={assemblyParts
+                          .filter(p => p.status === 'completed' && p.videoUrl)
+                          .map(p => ({
+                            partNumber: p.partNumber,
+                            videoUrl: p.videoUrl!,
+                            thumbnailUrl: p.thumbnailUrl,
+                            estimatedDuration: p.estimatedDuration,
+                          }))}
+                        onPlaybackComplete={() => toast.success('Full documentary playback complete!')}
+                      />
+                      {/* If a stitched single-file version exists, offer download */}
+                      {concatVideoUrl && (
+                        <div className="flex gap-2">
+                          <Button size="sm" asChild>
+                            <a href={concatVideoUrl} download="EP04-Sprint-Documentary.mp4">
+                              <Download className="h-3 w-3 mr-1" />
+                              Download Single MP4
+                            </a>
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => window.open(concatVideoUrl, '_blank')}>
+                            <Eye className="h-3 w-3 mr-1" />
+                            Open in New Tab
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -8150,37 +8152,49 @@ function EP04ProductionInner() {
 
                     {/* ── Tab 1: Gallery ── */}
                     <TabsContent value="gallery" className="space-y-4">
-                      {/* Final assembled movie */}
-                      {finalVideoUrl && (
-                        <Card className="border-green-500/30 bg-green-500/[0.02]">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex items-center gap-2">
-                              <Clapperboard className="h-4 w-4 text-green-500" />
-                              <h4 className="text-sm font-bold text-green-600">Final Movie</h4>
-                            </div>
-                            <div className="rounded-xl overflow-hidden border border-green-500/30">
-                              <video
-                                src={finalVideoUrl}
-                                controls
-                                className="w-full"
-                                poster={SCENE_BACKGROUNDS['scene-0-title']}
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" asChild>
-                                <a href={finalVideoUrl} download="EP04-Sprint-Documentary.mp4">
-                                  <Download className="h-3 w-3 mr-1" />
-                                  Download MP4
-                                </a>
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => window.open(finalVideoUrl, '_blank')}>
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                Open in New Tab
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
+                      {/* Final movie — playlist player or single-file fallback */}
+                      {(() => {
+                        const completedParts = assemblyParts.filter(p => p.status === 'completed' && p.videoUrl);
+                        if (completedParts.length === 0 && !finalVideoUrl) return null;
+                        return (
+                          <Card className="border-green-500/30 bg-green-500/[0.02]">
+                            <CardContent className="p-4 space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Clapperboard className="h-4 w-4 text-green-500" />
+                                <h4 className="text-sm font-bold text-green-600">Final Movie</h4>
+                              </div>
+                              {completedParts.length > 0 ? (
+                                <PlaylistVideoPlayer
+                                  parts={completedParts.map(p => ({
+                                    partNumber: p.partNumber,
+                                    videoUrl: p.videoUrl!,
+                                    thumbnailUrl: p.thumbnailUrl,
+                                    estimatedDuration: p.estimatedDuration,
+                                  }))}
+                                />
+                              ) : finalVideoUrl ? (
+                                <div className="rounded-xl overflow-hidden border border-green-500/30">
+                                  <video src={finalVideoUrl} controls className="w-full" poster={SCENE_BACKGROUNDS['scene-0-title']} />
+                                </div>
+                              ) : null}
+                              {finalVideoUrl && (
+                                <div className="flex gap-2">
+                                  <Button size="sm" asChild>
+                                    <a href={finalVideoUrl} download="EP04-Sprint-Documentary.mp4">
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Download MP4
+                                    </a>
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => window.open(finalVideoUrl, '_blank')}>
+                                    <ExternalLink className="h-3 w-3 mr-1" />
+                                    Open in New Tab
+                                  </Button>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })()}
 
                       {/* Per-scene asset sections */}
                       {scenesWithAssets.map(sceneKey => {
