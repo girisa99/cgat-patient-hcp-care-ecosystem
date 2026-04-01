@@ -948,7 +948,7 @@ def handle_stitch_parts(job_input: dict) -> dict:
         progress(82, f"Stitch done in {stitch_time:.0f}s")
         print(f"  [stitch] Done in {stitch_time:.1f}s (method: {stitch_method})")
 
-        # ═══ Stage 8 (84-86%): Verify output — NO adaptive re-encode ═══
+        # ═══ Stage 8 (84-86%): Verify output ═══
         progress(84, "Verifying stitched video...")
         duration = get_video_duration(output_path)
         file_size_bytes = os.path.getsize(output_path)
@@ -958,99 +958,10 @@ def handle_stitch_parts(job_input: dict) -> dict:
         if duration < 1.0:
             return {"error": f"Stitched video too short: {duration:.1f}s"}
 
-        # Compress stitched video if large (>250MB) to improve upload reliability.
-        # Uses two-pass encoding to hit target size WITHOUT quality loss —
-        # pass 1 analyzes complexity, pass 2 distributes bits optimally.
-        if file_size_mb > STITCH_COMPRESS_THRESHOLD_MB:
-            # Target: 90% of threshold to leave headroom
-            target_size_mb = STITCH_COMPRESS_THRESHOLD_MB * 0.90
-            target_bitrate_kbps = int(target_size_mb * 8 * 1024 / max(1, duration))
-            target_bitrate_kbps = max(COMPRESS_BITRATE_FLOOR_KBPS, target_bitrate_kbps)
-            compressed_path = output_path.replace(".mp4", "_comp.mp4")
-            passlog_path = os.path.join(stitch_dir, "ffmpeg2pass")
-            progress(85, f"Compressing {file_size_mb:.0f}MB via two-pass for upload...")
-            print(f"  [compress] {file_size_mb:.0f}MB > {STITCH_COMPRESS_THRESHOLD_MB}MB — "
-                  f"two-pass at {target_bitrate_kbps}kbps (target ~{target_size_mb:.0f}MB)")
-
-            try:
-                # Pass 1: Analyze — writes stats to passlog, output discarded
-                cmd_pass1 = [
-                    "ffmpeg", "-y", "-i", output_path,
-                    "-c:v", "libx264", "-preset", "medium",
-                    "-b:v", f"{target_bitrate_kbps}k",
-                    "-maxrate", f"{int(target_bitrate_kbps * 1.5)}k",
-                    "-bufsize", f"{target_bitrate_kbps * 2}k",
-                    "-pass", "1", "-passlogfile", passlog_path,
-                    "-an", "-pix_fmt", "yuv420p",
-                    "-f", "null", "/dev/null",
-                ]
-                progress(86, "Two-pass: analyzing (pass 1/2)...")
-                print(f"  [compress] Pass 1: analyzing...", flush=True)
-                result1 = subprocess.run(cmd_pass1, capture_output=True, text=True, timeout=TIMEOUT_COMPRESS_PASS1)
-                if result1.returncode != 0:
-                    raise RuntimeError(f"Pass 1 failed: {result1.stderr[-500:]}")
-
-                # Pass 2: Encode using pass 1 stats for optimal bit distribution
-                cmd_pass2 = [
-                    "ffmpeg", "-y", "-i", output_path,
-                    "-c:v", "libx264", "-preset", "medium",
-                    "-b:v", f"{target_bitrate_kbps}k",
-                    "-maxrate", f"{int(target_bitrate_kbps * 1.5)}k",
-                    "-bufsize", f"{target_bitrate_kbps * 2}k",
-                    "-pass", "2", "-passlogfile", passlog_path,
-                    "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
-                    "-pix_fmt", "yuv420p",
-                    compressed_path,
-                ]
-                progress(87, "Two-pass: encoding (pass 2/2)...")
-                print(f"  [compress] Pass 2: encoding...", flush=True)
-                result2 = subprocess.run(cmd_pass2, capture_output=True, text=True, timeout=TIMEOUT_COMPRESS_PASS2)
-
-                if result2.returncode == 0 and os.path.exists(compressed_path):
-                    new_size_mb = os.path.getsize(compressed_path) / (1024 * 1024)
-                    saving_pct = (1 - new_size_mb / file_size_mb) * 100
-                    print(f"  [compress] OK: {file_size_mb:.0f}MB → {new_size_mb:.0f}MB "
-                          f"({saving_pct:.0f}% smaller, two-pass)")
-                    os.replace(compressed_path, output_path)
-                    file_size_bytes = os.path.getsize(output_path)
-                    file_size_mb = file_size_bytes / (1024 * 1024)
-                else:
-                    print(f"  [compress] Pass 2 FAILED — trying CRF fallback. "
-                          f"stderr: {result2.stderr[-500:] if result2.stderr else 'none'}")
-                    raise RuntimeError("two-pass failed, try CRF fallback")
-            except subprocess.TimeoutExpired:
-                print(f"  [compress] Two-pass TIMED OUT — trying CRF fallback")
-                # Fall through to CRF fallback below
-            except Exception as ce:
-                print(f"  [compress] Two-pass error: {ce}")
-
-            # CRF fallback: if two-pass failed OR file still too big, use aggressive CRF
-            if not os.path.exists(compressed_path) or \
-               os.path.getsize(output_path) / (1024 * 1024) > STITCH_COMPRESS_THRESHOLD_MB:
-                crf_path = output_path.replace(".mp4", "_crf.mp4")
-                print(f"  [compress] CRF fallback: encoding at CRF 30 preset medium...", flush=True)
-                progress(87, "CRF fallback compression...")
-                cmd_crf = [
-                    "ffmpeg", "-y", "-i", output_path,
-                    "-c:v", "libx264", "-preset", "medium", "-crf", "30",
-                    "-maxrate", f"{max(COMPRESS_BITRATE_FLOOR_KBPS, target_bitrate_kbps)}k",
-                    "-bufsize", f"{max(COMPRESS_BITRATE_FLOOR_KBPS, target_bitrate_kbps) * 2}k",
-                    "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
-                    "-pix_fmt", "yuv420p",
-                    crf_path,
-                ]
-                try:
-                    crf_result = subprocess.run(cmd_crf, capture_output=True, text=True, timeout=TIMEOUT_COMPRESS_CRF)
-                    if crf_result.returncode == 0 and os.path.exists(crf_path):
-                        new_size_mb = os.path.getsize(crf_path) / (1024 * 1024)
-                        print(f"  [compress] CRF fallback OK: {file_size_mb:.0f}MB → {new_size_mb:.0f}MB")
-                        os.replace(crf_path, output_path)
-                        file_size_bytes = os.path.getsize(output_path)
-                        file_size_mb = file_size_bytes / (1024 * 1024)
-                    else:
-                        print(f"  [compress] CRF fallback FAILED — uploading as-is")
-                except Exception as crf_err:
-                    print(f"  [compress] CRF fallback error: {crf_err} — uploading as-is")
+        # No compression — cast-renders bucket has no file size limit.
+        # Skipping two-pass/CRF re-encode saves 10-15 minutes of processing
+        # and avoids RunPod execution timeout on long videos.
+        print(f"  [verify] Uploading as-is ({file_size_mb:.0f}MB) — no compression needed")
 
         # Write file size to DB before upload
         _write_file_size_to_db(cast_job_id, file_size_bytes, supabase_url, supabase_key)
