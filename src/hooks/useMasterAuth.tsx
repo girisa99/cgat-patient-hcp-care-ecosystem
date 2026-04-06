@@ -4,7 +4,7 @@
  * Consolidates all authentication functionality across the application
  * Version: master-auth-v3.0.0 - Local Session Storage integration
  */
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthStateManager } from '@/utils/auth/authStateManager';
@@ -185,14 +185,14 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Optimized role checking function using new DB function
-  const hasAnyRole = async (roleNames: string[]) => {
+  const hasAnyRole = useCallback(async (roleNames: string[]) => {
     if (!user?.id) return false;
-    
+
     try {
       const { data, error } = await supabase
-        .rpc('user_has_any_role', { 
-          check_user_id: user.id, 
-          role_names: roleNames 
+        .rpc('user_has_any_role', {
+          check_user_id: user.id,
+          role_names: roleNames
         });
 
       if (error) {
@@ -205,17 +205,17 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('❌ Role check failed:', err);
       return false;
     }
-  };
+  }, [user?.id]);
 
-  const refreshAuth = async (userId?: string) => {
+  const refreshAuth = useCallback(async (userId?: string) => {
     const targetUserId = userId || user?.id;
     if (targetUserId) {
       await fetchUserProfile(targetUserId);
       await fetchUserRoles(targetUserId);
     }
-  };
+  }, [user?.id]);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     console.log('🔐 Signing in user:', email);
     setIsLoading(true);
     setError(null);
@@ -239,9 +239,9 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string) => {
     console.log('🔐 Signing up user:', email);
     setIsLoading(true);
     setError(null);
@@ -268,9 +268,9 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     console.log('🔐 Signing out user using AuthStateManager');
     setIsLoading(true);
     setError(null);
@@ -286,9 +286,9 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     console.log('🔐 Resetting password for:', email);
     setError(null);
 
@@ -308,9 +308,11 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
       setError('Password reset failed');
       return { error: err };
     }
-  };
+  }, []);
 
-  const contextValue: AuthContextType = {
+  // Memoize context value — prevents ALL consumers from re-rendering on every provider state change
+  // Only propagates when actual values change (not just function reference identity)
+  const contextValue = useMemo<AuthContextType>(() => ({
     user,
     session,
     profile,
@@ -324,7 +326,7 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
     resetPassword,
     refreshAuth,
     hasAnyRole,
-  };
+  }), [user, session, profile, userRoles, isLoading, isAuthenticated, error, signIn, signUp, signOut, resetPassword, refreshAuth, hasAnyRole]);
 
   return (
     <AuthContext.Provider value={contextValue}>
