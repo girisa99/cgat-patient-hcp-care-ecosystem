@@ -3976,12 +3976,12 @@ function EP04ProductionInner() {
     const timer = setInterval(async () => {
       perScenePollCountRef.current++;
 
-      // Global timeout: 40 polls × 15s = 10 minutes
-      if (perScenePollCountRef.current > 40) {
+      // Global timeout: 80 polls × 15s = 20 minutes (allows for RunPod cold start + render + upload)
+      if (perScenePollCountRef.current > 80) {
         setPerScenePolling(false);
         setAssemblyProgress(null);
         setAssemblyParts(prev => prev.map(p =>
-          p.status === 'rendering' ? { ...p, status: 'failed', errorMessage: 'Polling timed out after 10 minutes' } : p
+          p.status === 'rendering' ? { ...p, status: 'failed', errorMessage: 'Polling timed out after 20 minutes' } : p
         ));
         toast.error('Per-scene polling timed out after 10 minutes');
         return;
@@ -4069,11 +4069,11 @@ function EP04ProductionInner() {
             }
           }
 
-          // Per-part timeout: if stuck for 20+ consecutive polls (~5 min), give up
-          // GPU renders typically take 1-3 min — keep polling generously
-          if (!resolvedStatus && stuckCount >= 20) {
+          // Per-part timeout: if stuck for 40+ consecutive polls (~10 min), give up
+          // RunPod cold start can take 2-5 min before any progress, then render 1-3 min + upload 1-2 min
+          if (!resolvedStatus && stuckCount >= 40) {
             resolvedStatus = 'failed';
-            resolvedError = `Part stuck for ${stuckCount} consecutive polls (~5 min) — marking as failed`;
+            resolvedError = `Part stuck for ${stuckCount} consecutive polls (~10 min) — marking as failed`;
             console.warn(`[EP04 PerScene] Part ${part.partNumber} timed out after ${stuckCount} stuck polls`);
           }
 
@@ -4101,7 +4101,7 @@ function EP04ProductionInner() {
           const s = (perSceneStuckCountsRef.current[part.partNumber] || 0) + 1;
           perSceneStuckCountsRef.current[part.partNumber] = s;
           console.error(`[EP04 PerScene] Poll error for part ${part.partNumber} (stuck=${s}):`, err);
-          if (s >= 8) {
+          if (s >= 15) {
             setAssemblyParts(prev => prev.map(p =>
               p.partNumber === part.partNumber ? { ...p, status: 'failed', errorMessage: `Poll error after ${s} attempts` } : p
             ));

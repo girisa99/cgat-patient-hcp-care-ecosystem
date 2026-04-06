@@ -197,7 +197,7 @@ def _download_source_video(url: str, work_dir: str) -> str | None:
     t0 = time.time()
     try:
         import httpx
-        with httpx.Client(timeout=httpx.Timeout(300.0, connect=30.0)) as client:
+        with httpx.Client(timeout=httpx.Timeout(600.0, connect=30.0)) as client:
             with client.stream("GET", url) as resp:
                 resp.raise_for_status()
                 with open(local_path, "wb") as f:
@@ -748,7 +748,9 @@ def handle_stitch_parts(job_input: dict) -> dict:
         # ═══ Stage 1 (5%): Disk space check ═══
         progress(5, "Checking disk space...")
         free_mb = shutil.disk_usage("/tmp").free / (1024 * 1024)
-        needed_mb = len(video_urls) * 60 * 2.5  # avg 60MB/part × 2.5 headroom
+        # Peak disk: input parts + batch intermediates + final output + overhead
+        # avg 60MB/part × 4 covers: original + batch + final + safety margin
+        needed_mb = len(video_urls) * 60 * 4
         print(f"[StitchParts] Disk check: {free_mb:.0f}MB free, need {needed_mb:.0f}MB")
         if free_mb < needed_mb:
             return {"error": f"Insufficient disk: {free_mb:.0f}MB free, need {needed_mb:.0f}MB "
