@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto \
     fonts-noto-cjk \
     wget \
+    curl \
     unzip \
     xz-utils \
     && rm -rf /var/lib/apt/lists/*
