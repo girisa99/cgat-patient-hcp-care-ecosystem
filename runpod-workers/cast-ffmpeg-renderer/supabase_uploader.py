@@ -47,8 +47,10 @@ def _upload_tus(
     file_size_mb = file_size / (1024 * 1024)
 
     # Dynamic chunk size: fewer chunks for large files = fewer failure points
-    # For a 600MB file: 50MB chunks = 12 requests vs 25MB = 24 requests
-    if file_size > 400 * 1024 * 1024:       # >400MB: 50MB chunks
+    # 2.4GB at 50MB = 48 chunks (too many failure points); at 100MB = 24 chunks
+    if file_size > 1024 * 1024 * 1024:      # >1GB: 100MB chunks
+        chunk_size = 100 * 1024 * 1024
+    elif file_size > 400 * 1024 * 1024:     # >400MB: 50MB chunks
         chunk_size = 50 * 1024 * 1024
     elif file_size > 200 * 1024 * 1024:     # >200MB: 25MB chunks
         chunk_size = 25 * 1024 * 1024
@@ -105,7 +107,7 @@ def _upload_tus(
     # Step 2: Upload file in chunks via PATCH — reuse single HTTP client
     offset = 0
     t0 = time.time()
-    # Per-chunk timeout scales with chunk size: at least 120s, up to 300s for 25MB chunks
+    # Per-chunk timeout scales with chunk size: at least 120s, up to 1200s for 100MB chunks
     per_chunk_timeout = max(120.0, chunk_size / (1024 * 1024) * 12.0)
 
     with open(file_path, "rb") as f, \

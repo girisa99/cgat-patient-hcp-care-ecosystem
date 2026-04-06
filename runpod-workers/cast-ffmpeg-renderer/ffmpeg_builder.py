@@ -62,14 +62,14 @@ def _encoder_args(crf: int = 23) -> list[str]:
 
 
 def _stitch_encoder_args() -> list[str]:
-    """Encoder flags optimized for stitching speed: ultrafast preset with CRF 20
-    to compensate for efficiency penalty. Ultrafast is 3-5x faster than medium,
-    critical for 50+ min videos that would otherwise timeout. Quality loss is
-    minimal on re-encode of already-encoded CRF 23 source."""
+    """Encoder flags balancing stitch speed vs file size for upload reliability.
+    veryfast is ~2-3x faster than medium but produces ~60% smaller files than ultrafast.
+    CRF 23 = standard quality. For 50-min video: ~800MB vs 2.4GB (ultrafast CRF 20).
+    Keeps upload under 1GB — critical for TUS reliability on Supabase."""
     if _detect_nvenc():
         return ["-c:v", "h264_nvenc", "-preset", "p4", "-b:v", "4M", "-maxrate", "6M", "-bufsize", "8M"]
-    return ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "20",
-            "-maxrate", "8M", "-bufsize", "12M"]
+    return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+            "-maxrate", "6M", "-bufsize", "8M"]
 
 
 def _hex_to_ffmpeg_color(hex_color: str) -> str:
@@ -1337,7 +1337,7 @@ def stitch_parts_xfade(
     cmd.extend(["-pix_fmt", "yuv420p"])
     cmd.append(output_path)
 
-    # Ultrafast preset runs ~1-2x realtime; allow 3x input + 5 min buffer (max 2h)
+    # veryfast preset runs ~0.8-1.5x realtime; allow 3x input + 5 min buffer (max 2h)
     timeout = min(7200, int(total_input * 3 + 300))
     print(f"  [xfade] Running FFmpeg (timeout={timeout}s, {len(part_paths)} inputs, {total_input:.0f}s)...")
 
