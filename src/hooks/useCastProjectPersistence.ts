@@ -687,7 +687,7 @@ export function useCastProjectPersistence() {
         .update({
           final_video_url: finalVideoUrl,
           production_stage: 'complete',
-          production_metadata: metadata || null,
+          metadata: metadata ? { production: metadata } : null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', projectId);
@@ -713,7 +713,7 @@ export function useCastProjectPersistence() {
       const { error } = await db
         .from('cast_projects')
         .update({
-          production_metadata: { orchestrationCheckpoint: checkpoint },
+          metadata: { orchestrationCheckpoint: checkpoint },
           updated_at: new Date().toISOString(),
         })
         .eq('id', projectId);
@@ -732,11 +732,11 @@ export function useCastProjectPersistence() {
     try {
       const { data, error } = await db
         .from('cast_projects')
-        .select('production_metadata')
+        .select('metadata')
         .eq('id', projectId)
         .single();
       if (error) throw error;
-      const checkpoint = data?.production_metadata?.orchestrationCheckpoint as OrchestrationCheckpoint | undefined;
+      const checkpoint = (data?.metadata as any)?.orchestrationCheckpoint as OrchestrationCheckpoint | undefined;
       if (!checkpoint || checkpoint.version !== 1) return null;
       return checkpoint;
     } catch (err: any) {

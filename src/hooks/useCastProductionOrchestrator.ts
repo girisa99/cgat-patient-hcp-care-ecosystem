@@ -1042,7 +1042,7 @@ export function useCastProductionOrchestrator(config: ProductionOrchestratorConf
       const { error } = await db
         .from('cast_projects')
         .update({
-          production_metadata: { orchestrationCheckpoint: checkpoint },
+          metadata: { orchestrationCheckpoint: checkpoint },
           updated_at: new Date().toISOString(),
         })
         .eq('id', config.projectId);
@@ -1057,12 +1057,12 @@ export function useCastProductionOrchestrator(config: ProductionOrchestratorConf
     try {
       const { data, error } = await db
         .from('cast_projects')
-        .select('production_metadata')
+        .select('metadata')
         .eq('id', projectId)
         .single();
       if (error) throw error;
 
-      const checkpoint = data?.production_metadata?.orchestrationCheckpoint as OrchestrationCheckpoint | undefined;
+      const checkpoint = (data?.metadata as any)?.orchestrationCheckpoint as OrchestrationCheckpoint | undefined;
       if (!checkpoint || checkpoint.version !== 1) return false;
 
       // Validate config hash
