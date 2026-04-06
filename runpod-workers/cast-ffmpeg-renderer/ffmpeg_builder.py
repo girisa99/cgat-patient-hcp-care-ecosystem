@@ -62,13 +62,14 @@ def _encoder_args(crf: int = 23) -> list[str]:
 
 
 def _stitch_encoder_args() -> list[str]:
-    """Encoder flags optimized for stitching: same CRF quality but 'medium' preset
-    for better compression efficiency. Medium preset produces ~15-20% smaller files
-    at the same CRF compared to 'fast', with no quality loss — just slower encoding."""
+    """Encoder flags optimized for stitching speed: ultrafast preset with CRF 20
+    to compensate for efficiency penalty. Ultrafast is 3-5x faster than medium,
+    critical for 50+ min videos that would otherwise timeout. Quality loss is
+    minimal on re-encode of already-encoded CRF 23 source."""
     if _detect_nvenc():
         return ["-c:v", "h264_nvenc", "-preset", "p4", "-b:v", "4M", "-maxrate", "6M", "-bufsize", "8M"]
-    return ["-c:v", "libx264", "-preset", "medium", "-crf", "23",
-            "-maxrate", "6M", "-bufsize", "10M"]
+    return ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "20",
+            "-maxrate", "8M", "-bufsize", "12M"]
 
 
 def _hex_to_ffmpeg_color(hex_color: str) -> str:
@@ -1336,9 +1337,9 @@ def stitch_parts_xfade(
     cmd.extend(["-pix_fmt", "yuv420p"])
     cmd.append(output_path)
 
-    # Medium preset needs ~1.5-2x realtime; add 300s buffer for filter graph setup
-    timeout = min(5400, int(total_input * 2 + 300))
-    print(f"  [xfade] Running FFmpeg (timeout={timeout}s, preset=medium)...")
+    # Ultrafast preset runs ~1-2x realtime; allow 3x input + 5 min buffer (max 2h)
+    timeout = min(7200, int(total_input * 3 + 300))
+    print(f"  [xfade] Running FFmpeg (timeout={timeout}s, {len(part_paths)} inputs, {total_input:.0f}s)...")
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
@@ -1358,10 +1359,11 @@ def stitch_parts_batched(
     transition_dur: float = 0.75,
     loudnorm: bool = True,
     output_path: str = "/tmp/cast_stitch/stitched_final.mp4",
-    batch_size: int = 12,
+    batch_size: int = 6,
 ) -> str | None:
     """For >batch_size parts: split into groups, xfade each batch, then xfade the batch outputs.
-    Avoids FFmpeg filter graph complexity limits with 25+ inputs."""
+    Avoids FFmpeg filter graph complexity limits and timeout issues with many inputs.
+    Default batch_size=6 keeps each batch under ~20 min for reliable CPU encoding."""
     if len(part_paths) <= batch_size:
         return stitch_parts_xfade(part_paths, transition_dur, loudnorm, output_path)
 
