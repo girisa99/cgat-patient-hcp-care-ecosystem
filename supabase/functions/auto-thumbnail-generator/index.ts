@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,7 +20,6 @@ interface ThumbnailRequest {
     fontFamily?: string;
     overlayText?: string;
   };
-  // Framework-aware generation fields
   audienceSegment?: string;
   productId?: string;
   productName?: string;
@@ -37,8 +37,6 @@ serve(async (req) => {
 
   try {
     const request: ThumbnailRequest = await req.json();
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_API_KEY');
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     console.log(`🖼️ Thumbnail Request:`, {
       action: request.action,
@@ -46,37 +44,24 @@ serve(async (req) => {
       hasVideo: !!request.videoUrl,
       title: request.title?.substring(0, 50),
       audience: request.audienceSegment,
-      product: request.productId,
       framework: request.frameworkType,
     });
-
-    const apiKey = GEMINI_API_KEY || LOVABLE_API_KEY;
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: 'No AI API key configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     let result;
 
     switch (request.action) {
       case 'generate':
-        result = await generateThumbnail(apiKey, request);
+        result = await generateThumbnail(req, request);
         break;
-
       case 'framework_generate':
-        result = await generateFrameworkThumbnail(apiKey, request);
+        result = await generateFrameworkThumbnail(req, request);
         break;
-
       case 'analyze':
-        result = await analyzeForThumbnail(apiKey, request);
+        result = await analyzeForThumbnail(req, request);
         break;
-
       case 'extract_frame':
         result = await extractBestFrame(request);
         break;
-
       default:
         throw new Error(`Unknown action: ${request.action}`);
     }
@@ -89,7 +74,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Thumbnail generation error:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
         success: false
       }),
@@ -99,10 +84,59 @@ serve(async (req) => {
 });
 
 // ============================================================================
+// Delegate to ai-universal-processor for image generation
+// Uses all configured AI providers (Gemini, DALL-E, Stability, FLUX, etc.)
+// ============================================================================
+
+async function callUniversalImageGen(req: Request, prompt: string, style?: string): Promise<string> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  const sb = createClient(supabaseUrl, supabaseKey);
+  const { data, error } = await sb.functions.invoke('ai-universal-processor', {
+    body: {
+      action: 'image_generation',
+      prompt,
+      style_intent: style || 'professional',
+      aspectRatio: '16:9',
+      size: '1280x720',
+    },
+  });
+
+  if (error) throw new Error(`Image generation failed: ${error.message}`);
+  const url = data?.imageUrl || data?.url || data?.content || '';
+  if (!url || !url.startsWith('http')) {
+    throw new Error('No valid image URL returned from AI provider');
+  }
+  return url;
+}
+
+// Delegate to ai-universal-processor for text generation (analysis)
+async function callUniversalText(req: Request, systemPrompt: string, userPrompt: string): Promise<string> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  const sb = createClient(supabaseUrl, supabaseKey);
+  const { data, error } = await sb.functions.invoke('ai-universal-processor', {
+    body: {
+      action: 'chat',
+      prompt: userPrompt,
+      systemPrompt,
+      provider: 'gemini',
+      model: 'gemini-2.5-flash',
+      maxTokens: 2000,
+    },
+  });
+
+  if (error) throw new Error(`Text generation failed: ${error.message}`);
+  return data?.content || '';
+}
+
+// ============================================================================
 // Standard Thumbnail Generation
 // ============================================================================
 
-async function generateThumbnail(apiKey: string, request: ThumbnailRequest): Promise<{
+async function generateThumbnail(req: Request, request: ThumbnailRequest): Promise<{
   thumbnailUrl: string;
   prompt: string;
   style: string;
@@ -118,49 +152,27 @@ async function generateThumbnail(apiKey: string, request: ThumbnailRequest): Pro
   };
 
   const basePrompt = stylePrompts[request.style || 'youtube'];
-  const contentPrompt = request.title 
+  const contentPrompt = request.title
     ? `Content theme: "${request.title}". ${request.description || ''}`
     : '';
-  
+
   const fullPrompt = `${basePrompt}. ${contentPrompt}. High quality, professional design, attention-grabbing.`;
 
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-image',
-      messages: [{ role: 'user', content: fullPrompt }],
-      modalities: ['image', 'text'],
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`AI generation error: ${error}`);
-  }
-
-  const data = await response.json();
-  const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url 
-    || data.choices?.[0]?.message?.content;
-
-  const dimensions = getDimensions(request.style);
+  const thumbnailUrl = await callUniversalImageGen(req, fullPrompt, request.style);
 
   return {
-    thumbnailUrl: imageData || `generated_thumbnail_${Date.now()}.png`,
+    thumbnailUrl,
     prompt: fullPrompt,
     style: request.style || 'youtube',
-    dimensions,
+    dimensions: getDimensions(request.style),
   };
 }
 
 // ============================================================================
-// Framework-Aware Thumbnail Generation (NEW)
+// Framework-Aware Thumbnail Generation
 // ============================================================================
 
-async function generateFrameworkThumbnail(apiKey: string, request: ThumbnailRequest): Promise<{
+async function generateFrameworkThumbnail(req: Request, request: ThumbnailRequest): Promise<{
   thumbnailUrl: string;
   prompt: string;
   style: string;
@@ -172,7 +184,6 @@ async function generateFrameworkThumbnail(apiKey: string, request: ThumbnailRequ
     messagingTier: string;
   };
 }> {
-  // Build framework-aware prompt
   const audienceStyles: Record<string, string> = {
     healthcare: 'clean clinical aesthetic, trust badges, compliance indicators, blue/white palette, medical professional imagery',
     enterprise_marketing: 'corporate premium, data visualization, team collaboration, dark professional theme, authority indicators',
@@ -221,35 +232,13 @@ async function generateFrameworkThumbnail(apiKey: string, request: ThumbnailRequ
 
   console.log(`🎨 Framework thumbnail prompt (${audience}/${framework}):`, fullPrompt.substring(0, 200));
 
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-image',
-      messages: [{ role: 'user', content: fullPrompt }],
-      modalities: ['image', 'text'],
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Framework thumbnail generation error: ${error}`);
-  }
-
-  const data = await response.json();
-  const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url 
-    || data.choices?.[0]?.message?.content;
-
-  const dimensions = getDimensions(request.style);
+  const thumbnailUrl = await callUniversalImageGen(req, fullPrompt, 'marketing');
 
   return {
-    thumbnailUrl: imageData || `framework_thumbnail_${Date.now()}.png`,
+    thumbnailUrl,
     prompt: fullPrompt,
     style: request.style || 'youtube',
-    dimensions,
+    dimensions: getDimensions(request.style),
     frameworkContext: {
       audience,
       product: request.productId || 'studio',
@@ -260,77 +249,48 @@ async function generateFrameworkThumbnail(apiKey: string, request: ThumbnailRequ
 }
 
 // ============================================================================
-// Content Analysis
+// Content Analysis (text-only — uses LLM, not image gen)
 // ============================================================================
 
-async function analyzeForThumbnail(apiKey: string, request: ThumbnailRequest): Promise<{
+async function analyzeForThumbnail(req: Request, request: ThumbnailRequest): Promise<{
   suggestions: Array<{ timestamp: number; score: number; reason: string }>;
   recommendedStyle: string;
   colorPalette: string[];
 }> {
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-3-flash-preview',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert at analyzing video content and suggesting optimal thumbnail moments. Return JSON with timestamp suggestions, scores, and style recommendations.'
-        },
-        {
-          role: 'user',
-          content: `Analyze this content for thumbnail creation:
+  try {
+    const systemPrompt = 'You are an expert at analyzing video content and suggesting optimal thumbnail moments. Return valid JSON only, no markdown fences.';
+    const userPrompt = `Analyze this content for thumbnail creation:
 Title: ${request.title || 'Untitled'}
 Description: ${request.description || 'No description'}
 Style: ${request.style || 'general'}
 Audience: ${request.audienceSegment || 'general'}
 
-Provide thumbnail suggestions in JSON format with: suggestions (array with timestamp, score 0-100, reason), recommendedStyle, colorPalette (array of hex colors).`
-        }
-      ]
-    }),
-  });
+Return JSON: { "suggestions": [{"timestamp": number, "score": 0-100, "reason": string}], "recommendedStyle": string, "colorPalette": ["#hex", ...] }`;
 
-  if (!response.ok) {
-    return {
-      suggestions: [
-        { timestamp: 0, score: 70, reason: 'Opening frame - establishes context' },
-        { timestamp: 15, score: 85, reason: 'Key moment - high engagement potential' },
-        { timestamp: 30, score: 75, reason: 'Action shot - dynamic content' }
-      ],
-      recommendedStyle: request.style || 'youtube',
-      colorPalette: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7']
-    };
-  }
+    const raw = await callUniversalText(req, systemPrompt, userPrompt);
+    const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
 
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
-
-  try {
-    const parsed = JSON.parse(content);
     return {
       suggestions: parsed.suggestions || [],
       recommendedStyle: parsed.recommendedStyle || request.style || 'youtube',
-      colorPalette: parsed.colorPalette || ['#FF6B6B', '#4ECDC4', '#45B7D1']
+      colorPalette: parsed.colorPalette || ['#FF6B6B', '#4ECDC4', '#45B7D1'],
     };
   } catch {
     return {
       suggestions: [
-        { timestamp: 0, score: 70, reason: 'Opening frame' },
-        { timestamp: 15, score: 85, reason: 'Key moment' }
+        { timestamp: 0, score: 70, reason: 'Opening frame — establishes context' },
+        { timestamp: 15, score: 85, reason: 'Key moment — high engagement potential' },
+        { timestamp: 30, score: 75, reason: 'Action shot — dynamic content' },
       ],
       recommendedStyle: request.style || 'youtube',
-      colorPalette: ['#FF6B6B', '#4ECDC4', '#45B7D1']
+      colorPalette: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'],
     };
   }
 }
 
 // ============================================================================
-// Frame Extraction
+// Frame Extraction (no AI — just URL with timestamp)
 // ============================================================================
 
 async function extractBestFrame(request: ThumbnailRequest): Promise<{
@@ -341,7 +301,7 @@ async function extractBestFrame(request: ThumbnailRequest): Promise<{
   return {
     frameUrl: request.videoUrl ? `${request.videoUrl}#t=${request.frameTimestamp || 0}` : '',
     timestamp: request.frameTimestamp || 0,
-    quality: 95
+    quality: 95,
   };
 }
 
