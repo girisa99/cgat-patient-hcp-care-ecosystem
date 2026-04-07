@@ -228,27 +228,49 @@ function PlatformCard({ platform, selected, result, onToggle, onConnect, isConne
 // THUMBNAIL PACK
 // ──────────────────────────────────────────────────────────────────────────────
 
-function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: string[] }) {
+function ThumbnailPackSection({ sessionThumbnails = [], videoUrl }: { sessionThumbnails?: string[]; videoUrl?: string }) {
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [thumbnailResults, setThumbnailResults] = useState<string[]>([]);
+  const [genError, setGenError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     setGenerating(true);
+    setGenError(null);
     try {
-      // Use first session thumbnail/image as source for thumbnail generation
-      const videoUrl = sessionThumbnails?.[0];
-      if (videoUrl) {
-        const { data, error } = await supabase.functions.invoke('auto-thumbnail-generator', {
-          body: { action: 'generate', videoUrl, style: 'youtube', title: 'Genie Cast Video' },
-        });
-        if (error) throw error;
-        const urls: string[] = data?.thumbnailUrl ? [data.thumbnailUrl] : [];
-        if (urls.length > 0) setThumbnailResults(urls);
+      const sourceUrl = videoUrl || sessionThumbnails?.[0];
+      if (!sourceUrl) {
+        toast.error('No video available — complete assembly first');
+        return;
+      }
+      // Generate 3 style variants in parallel
+      const styles: Array<'youtube' | 'tiktok' | 'instagram'> = ['youtube', 'tiktok', 'instagram'];
+      const results = await Promise.allSettled(
+        styles.map(style =>
+          supabase.functions.invoke('auto-thumbnail-generator', {
+            body: { action: 'generate', videoUrl: sourceUrl, style, title: 'Genie Cast Video' },
+          })
+        )
+      );
+      const urls: string[] = [];
+      for (const r of results) {
+        if (r.status === 'fulfilled' && !r.value.error) {
+          const url = r.value.data?.thumbnailUrl;
+          // Only use real URLs, not placeholder filenames
+          if (url && url.startsWith('http')) urls.push(url);
+        }
+      }
+      if (urls.length > 0) {
+        setThumbnailResults(urls);
+        toast.success(`${urls.length} thumbnail variant(s) generated`);
+      } else {
+        setGenError('Thumbnail API returned no valid URLs — Gemini API key may not be configured');
+        toast.error('No valid thumbnails returned');
       }
       setGenerated(true);
-      toast.success('Thumbnail pack ready — 3 variants generated');
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setGenError(msg);
       toast.error('Thumbnail generation failed');
     } finally {
       setGenerating(false);
@@ -358,7 +380,7 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
               variant="outline"
               className="gap-2"
               onClick={() => {
-                const allUrls = [...thumbnailResults, ...sessionThumbnails].filter(Boolean);
+                const allUrls = [...thumbnailResults, ...sessionThumbnails].filter(u => u && u.startsWith('http'));
                 if (allUrls.length === 0) { toast.error('No thumbnails available'); return; }
                 allUrls.forEach((url, idx) => {
                   const a = document.createElement('a');
@@ -372,10 +394,27 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
               }}
             >
               <Download className="w-4 h-4" />
-              Download All (9)
+              Download All ({thumbnailResults.length || sessionThumbnails.length || 0})
             </Button>
           )}
         </div>
+
+        {/* Generated thumbnails gallery */}
+        {thumbnailResults.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            {thumbnailResults.map((url, i) => (
+              <div key={i} className="rounded-lg overflow-hidden border border-primary/20 aspect-video">
+                <img src={url} alt={`Generated thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {genError && (
+          <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40">
+            <p className="text-[10px] text-amber-600 dark:text-amber-400">{genError}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -428,6 +467,8 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipD
     setSelectedClips(p => p.includes(id) ? p.filter(c => c !== id) : [...p, id]);
   };
 
+  const [clipErrors, setClipErrors] = useState<Record<string, string>>({});
+
   const handleGenerateClip = async (clipId: string) => {
     const clip = effectiveClips.find(c => c.id === clipId);
     if (!sourceVideoUrl && !clip?.videoUrl) {
@@ -435,6 +476,7 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipD
       return;
     }
     setGeneratingClips(p => [...p, clipId]);
+    setClipErrors(prev => { const n = { ...prev }; delete n[clipId]; return n; });
     try {
       const { data, error } = await supabase.functions.invoke('magic-clips-generator', {
         body: {
@@ -447,14 +489,43 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipD
         },
       });
       if (error) throw error;
-      // Extract clip URL from response
-      const clipUrl = data?.clips?.[0]?.clipUrl || data?.outputUrl || data?.url || '';
-      if (clipUrl) {
-        setClipUrls(prev => ({ ...prev, [clipId]: clipUrl }));
+
+      // Check if the generation actually succeeded
+      if (data?.success === false) {
+        const errMsg = data?.error || data?.message || 'Generation service unavailable';
+        setClipErrors(prev => ({ ...prev, [clipId]: errMsg }));
+        toast.error(`Clip ${clipId}: ${errMsg}`);
+        return;
       }
-      setReadyClips(p => [...p, clipId]);
-      toast.success(`Clip ready: ${clipId}`);
-    } catch {
+
+      // Extract clip URL from response — handle multiple response shapes
+      const firstClip = data?.clips?.[0];
+      const clipUrl = firstClip?.clipUrl || data?.outputUrl || data?.url || '';
+      const clipStatus = firstClip?.status;
+
+      if (clipStatus === 'pending' || clipStatus === 'processing') {
+        setClipErrors(prev => ({ ...prev, [clipId]: 'Clip queued for processing — check back shortly' }));
+        toast.info(`Clip ${clipId} is processing — may take up to 60 seconds`);
+        return;
+      }
+      if (clipStatus === 'failed') {
+        const errMsg = firstClip?.error || 'Clip generation failed on server';
+        setClipErrors(prev => ({ ...prev, [clipId]: errMsg }));
+        toast.error(`Clip ${clipId}: ${errMsg}`);
+        return;
+      }
+
+      if (clipUrl && clipUrl.startsWith('http')) {
+        setClipUrls(prev => ({ ...prev, [clipId]: clipUrl }));
+        setReadyClips(p => [...p, clipId]);
+        toast.success(`Clip ready: ${clipId}`);
+      } else {
+        setClipErrors(prev => ({ ...prev, [clipId]: 'No clip URL returned — API key may not be configured' }));
+        toast.error(`Clip ${clipId}: No URL returned`);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setClipErrors(prev => ({ ...prev, [clipId]: msg }));
       toast.error(`Clip generation failed: ${clipId}`);
     } finally {
       setGeneratingClips(p => p.filter(c => c !== clipId));
@@ -555,33 +626,63 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipD
                                 <CheckCircle className="w-2.5 h-2.5 mr-1" />
                                 Ready
                               </Badge>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 text-[10px] px-2"
-                                onClick={() => {
-                                  const url = clipUrls[clip.id];
-                                  if (url) {
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `${clip.id}.mp4`;
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    document.body.removeChild(a);
-                                  } else {
-                                    toast.error('Clip URL not available — try regenerating');
-                                  }
-                                }}
-                              >
-                                <Download className="w-3 h-3 mr-1" />
-                                MP4
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 text-[10px] px-2"
+                                  onClick={() => {
+                                    const url = clipUrls[clip.id];
+                                    if (url) window.open(url, '_blank');
+                                    else toast.error('Clip URL not available');
+                                  }}
+                                >
+                                  <Play className="w-3 h-3 mr-1" />
+                                  Watch
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 text-[10px] px-2"
+                                  onClick={() => {
+                                    const url = clipUrls[clip.id];
+                                    if (url) {
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = `${clip.id}.mp4`;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                    } else {
+                                      toast.error('Clip URL not available — try regenerating');
+                                    }
+                                  }}
+                                >
+                                  <Download className="w-3 h-3 mr-1" />
+                                  MP4
+                                </Button>
+                              </div>
                             </>
                           ) : isGenerating ? (
                             <Badge variant="outline" className="text-[10px] text-primary border-primary/40 animate-pulse px-2 py-0.5">
                               <Loader2 className="w-2.5 h-2.5 mr-1 animate-spin" />
                               Cutting…
                             </Badge>
+                          ) : clipErrors[clip.id] ? (
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="destructive" className="text-[10px] px-2 py-0.5">
+                                <AlertCircle className="w-2.5 h-2.5 mr-1" />
+                                Failed
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-[10px] px-2 gap-1"
+                                onClick={() => handleGenerateClip(clip.id)}
+                              >
+                                <RefreshCw className="w-3 h-3" /> Retry
+                              </Button>
+                            </div>
                           ) : (
                             <Button
                               size="sm"
@@ -595,6 +696,20 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipD
                           )}
                         </div>
                       </div>
+
+                      {/* Clip video preview */}
+                      {isReady && clipUrls[clip.id] && (
+                        <div className="ml-9 mt-1 mb-2 rounded-lg overflow-hidden border border-primary/20">
+                          <video src={clipUrls[clip.id]} controls className="w-full max-h-[200px]" preload="metadata" />
+                        </div>
+                      )}
+
+                      {/* Error details */}
+                      {clipErrors[clip.id] && !isReady && (
+                        <div className="ml-9 mt-1 mb-2 p-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40">
+                          <p className="text-[10px] text-red-600 dark:text-red-400">{clipErrors[clip.id]}</p>
+                        </div>
+                      )}
 
                       {/* Per-platform messaging preview */}
                       {isExpanded && (
@@ -1103,17 +1218,22 @@ function SmartShortsSection({ sourceVideoUrl }: { sourceVideoUrl?: string }) {
             </div>
           )}
           {generated.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {generated.map((g, i) => (
-                <div key={g.id || i} className="flex items-center gap-3 p-2 rounded-lg border bg-muted/30">
-                  <Play className="w-4 h-4 text-primary shrink-0" />
-                  <span className="text-xs flex-1">Short #{i + 1} · {g.duration}s</span>
-                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={() => window.open(g.url, '_blank')}>
-                    <ExternalLink className="w-3 h-3" /> Watch
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" asChild>
-                    <a href={g.url} download><Download className="w-3 h-3" /> Save</a>
-                  </Button>
+                <div key={g.id || i} className="rounded-lg border bg-muted/30 overflow-hidden">
+                  <div className="flex items-center gap-3 p-2">
+                    <Play className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-xs flex-1">Short #{i + 1} · {g.duration}s</span>
+                    <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={() => window.open(g.url, '_blank')}>
+                      <ExternalLink className="w-3 h-3" /> Watch
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" asChild>
+                      <a href={g.url} download><Download className="w-3 h-3" /> Save</a>
+                    </Button>
+                  </div>
+                  {g.url && g.url.startsWith('http') && (
+                    <video src={g.url} controls className="w-full max-h-[300px]" preload="metadata" />
+                  )}
                 </div>
               ))}
             </div>
@@ -1567,7 +1687,7 @@ export function EP04PublishHub({
 
         {/* THUMBNAILS TAB */}
         <TabsContent value="thumbnails" className="mt-4">
-          <ThumbnailPackSection sessionThumbnails={sessionThumbnails} />
+          <ThumbnailPackSection sessionThumbnails={sessionThumbnails} videoUrl={sessionVideoUrl} />
         </TabsContent>
 
         {/* DOWNLOAD TAB */}
