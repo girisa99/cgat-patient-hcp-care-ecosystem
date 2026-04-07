@@ -174,15 +174,19 @@ def probe_video_info(video_path: str) -> dict:
 
 # ── Core Post-Production Functions ────────────────────────────────────────────
 
-def extract_clips(video_path: str, clips: list, work_dir: str) -> list:
+def extract_clips(video_path: str, clips: list, work_dir: str,
+                   enable_loudnorm: bool = False) -> list:
     """
     Extract multiple clips from a source video.
-    Uses stream copy (no re-encoding) for instant, lossless extraction.
+    Uses stream copy (no re-encoding) by default for instant, lossless extraction.
+    When enable_loudnorm=True, copies video but re-encodes audio with loudnorm
+    (EBU R128) + high-pass filter to reduce background noise.
 
     Args:
         video_path: Path to source video
         clips: List of { "id": str, "start": float, "end": float, "label": str }
         work_dir: Working directory for output files
+        enable_loudnorm: Apply audio normalization (re-encodes audio only)
 
     Returns:
         List of { "id": str, "clipPath": str, "thumbnailPath": str, "duration": float, "fileSizeMB": float }
@@ -200,18 +204,33 @@ def extract_clips(video_path: str, clips: list, work_dir: str) -> list:
         clip_path = os.path.join(work_dir, f"{clip_id}.mp4")
         thumb_path = os.path.join(work_dir, f"{clip_id}_thumb.jpg")
 
-        print(f"  [extract] Clip '{clip_id}': {start:.1f}s → {end:.1f}s ({duration:.1f}s)", flush=True)
+        mode_label = "loudnorm" if enable_loudnorm else "stream-copy"
+        print(f"  [extract] Clip '{clip_id}': {start:.1f}s → {end:.1f}s ({duration:.1f}s) [{mode_label}]", flush=True)
 
-        # Extract clip — stream copy (no re-encoding = instant)
-        ok = _run_ffmpeg([
-            "ffmpeg", "-y",
-            "-ss", f"{start:.3f}",
-            "-i", video_path,
-            "-t", f"{duration:.3f}",
-            "-c", "copy",
-            "-movflags", "+faststart",
-            clip_path,
-        ], timeout=60, label=f"clip-{clip_id}")
+        if enable_loudnorm:
+            # Copy video, re-encode audio with loudnorm + highpass to reduce noise
+            ok = _run_ffmpeg([
+                "ffmpeg", "-y",
+                "-ss", f"{start:.3f}",
+                "-i", video_path,
+                "-t", f"{duration:.3f}",
+                "-c:v", "copy",
+                "-af", "highpass=f=80,loudnorm=I=-16:TP=-1.5:LRA=11",
+                "-c:a", "aac", "-b:a", "192k",
+                "-movflags", "+faststart",
+                clip_path,
+            ], timeout=120, label=f"clip-{clip_id}")
+        else:
+            # Extract clip — stream copy (no re-encoding = instant)
+            ok = _run_ffmpeg([
+                "ffmpeg", "-y",
+                "-ss", f"{start:.3f}",
+                "-i", video_path,
+                "-t", f"{duration:.3f}",
+                "-c", "copy",
+                "-movflags", "+faststart",
+                clip_path,
+            ], timeout=60, label=f"clip-{clip_id}")
 
         if not ok or not os.path.exists(clip_path):
             print(f"  [extract] FAILED for '{clip_id}'", flush=True)

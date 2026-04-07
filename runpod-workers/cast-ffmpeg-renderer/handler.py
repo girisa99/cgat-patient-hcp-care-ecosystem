@@ -236,6 +236,7 @@ def handle_extract_clips(job_input: dict) -> dict:
     cast_project_id = job_input.get("castProjectId", "unknown")
     supabase_url = job_input.get("supabaseUrl", "")
     supabase_key = job_input.get("supabaseServiceKey", "")
+    enable_loudnorm = job_input.get("enableLoudnorm", False)
 
     if not source_url or not clips:
         return {"error": "Missing sourceVideoUrl or clips"}
@@ -245,7 +246,8 @@ def handle_extract_clips(job_input: dict) -> dict:
     if not video_path:
         return {"error": "Failed to download source video"}
 
-    results = extract_clips(video_path, clips, os.path.join(work_dir, "clips"))
+    results = extract_clips(video_path, clips, os.path.join(work_dir, "clips"),
+                            enable_loudnorm=enable_loudnorm)
 
     # Upload each clip + thumbnail to Supabase
     from supabase_uploader import upload_clip

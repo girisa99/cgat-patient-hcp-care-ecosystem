@@ -1906,7 +1906,7 @@ export const EP04_SOCIAL_CLIPS: SocialClip[] = [
     category: 'character',
     theme: 'entertainment',
     sourceScenes: ['scene-1-cold-open', 'scene-3-governance', 'scene-4-day1', 'scene-5-day2', 'scene-6-day3', 'scene-9-numbers', 'scene-11-close'],
-    timestamp: 'various',
+    timestamp: '1:00–2:00',   // Best squirrel interruption from cold open (compilation clips must use single best segment)
     duration: 60,
     hook: 'Every time the Squirrel interrupted the sprint... 🐿️',
     cta: 'Meet the full team — Atlas, Nova, Host, Squirrel & Allaudin',
@@ -1926,7 +1926,7 @@ export const EP04_SOCIAL_CLIPS: SocialClip[] = [
     category: 'character',
     theme: 'entertainment',
     sourceScenes: ['scene-4-day1', 'scene-5-day2', 'scene-6-day3', 'scene-11-close'],
-    timestamp: 'various',
+    timestamp: '6:00–6:30',   // Atlas "documented my satisfaction" moment from Day 1
     duration: 30,
     hook: '"I documented my satisfaction in the changelog." — Atlas',
     cta: 'Atlas has more deadpan moments — watch the full ep',
@@ -1946,7 +1946,7 @@ export const EP04_SOCIAL_CLIPS: SocialClip[] = [
     category: 'character',
     theme: 'entertainment',
     sourceScenes: ['scene-6-day3', 'scene-9-numbers', 'scene-11-close'],
-    timestamp: 'various',
+    timestamp: '12:00–12:30', // Nova "dark mode is a human right" moment from Day 3
     duration: 30,
     hook: '"Dark mode is a human right. I will die on this hill. Figuratively." — Nova',
     cta: 'Nova\'s hot takes — full episode',

@@ -45,6 +45,8 @@ interface MagicClipsRequest {
   highlightTimestamps?: { start: number; end: number }[];
   addCaptions?: boolean;
   language?: string;
+  /** Apply loudnorm + highpass filter to reduce background noise (re-encodes audio) */
+  enableLoudnorm?: boolean;
 }
 
 serve(async (req) => {
@@ -61,6 +63,7 @@ serve(async (req) => {
       platforms = [],
       mode = 'auto',
       highlightTimestamps,
+      enableLoudnorm = false,
     } = body;
 
     if (!sourceVideoUrl) {
@@ -114,6 +117,7 @@ serve(async (req) => {
         action: 'extract_clips',
         sourceVideoUrl,
         clips: extractClips,
+        enableLoudnorm: enableLoudnorm,
         castProjectId: projectTag,
         supabaseUrl,
         supabaseServiceKey,

@@ -558,6 +558,7 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClip
           castProjectId: castProjectId || undefined,
           clips: [{ id: clipId, start, end, label: clip?.hook || clipId }],
           mode: 'batch',
+          enableLoudnorm: true,
         },
       });
       if (error) throw error;
@@ -612,6 +613,7 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClip
           castProjectId: castProjectId || undefined,
           clips: allClipParams,
           mode: 'batch',
+          enableLoudnorm: true,
         },
       });
       if (error) throw error;
@@ -1283,6 +1285,7 @@ function SmartShortsSection({ sourceVideoUrl, castProjectId }: { sourceVideoUrl?
           castProjectId: castProjectId || undefined,
           clips: clipParams,
           mode: 'batch',
+          enableLoudnorm: true,
         },
       });
       if (error) throw error;
