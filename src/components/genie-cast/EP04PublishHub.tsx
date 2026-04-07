@@ -106,6 +106,44 @@ interface PublishResult {
 // PLATFORM CARD
 // ──────────────────────────────────────────────────────────────────────────────
 
+// Content format definitions per platform
+const PLATFORM_CONTENT_FORMATS: Record<string, { id: string; label: string; description: string; icon: string }[]> = {
+  youtube: [
+    { id: 'video', label: 'Full Video', description: 'Long-form video upload with SEO description', icon: '🎬' },
+    { id: 'shorts', label: 'YouTube Shorts', description: 'Vertical short-form clips (< 60s)', icon: '⚡' },
+    { id: 'description', label: 'SEO Description', description: 'AI-optimized description with timestamps & keywords', icon: '📝' },
+  ],
+  linkedin: [
+    { id: 'video', label: 'Video Post', description: 'Native video post in feed', icon: '🎥' },
+    { id: 'article', label: 'LinkedIn Article', description: '600-800 word thought-leadership article with video embed', icon: '📰' },
+    { id: 'post', label: 'Short Post', description: '200-300 word feed post with video link', icon: '💬' },
+    { id: 'newsletter', label: 'Newsletter', description: 'LinkedIn Newsletter issue with embedded video', icon: '📧' },
+  ],
+  twitter: [
+    { id: 'video', label: 'Video Tweet', description: 'Single tweet with video attachment', icon: '🎥' },
+    { id: 'thread', label: 'Tweet Thread', description: '5-tweet thread with key insights + video', icon: '🧵' },
+    { id: 'spaces', label: 'Spaces Promo', description: 'Promotional tweet for X Spaces discussion', icon: '🎙️' },
+  ],
+  instagram: [
+    { id: 'reels', label: 'Instagram Reels', description: 'Vertical short-form video with caption', icon: '🎞️' },
+    { id: 'post', label: 'Feed Post', description: 'Square/landscape video with caption & hashtags', icon: '📸' },
+    { id: 'stories', label: 'Stories', description: 'Vertical story clips with swipe-up link', icon: '⏳' },
+    { id: 'carousel', label: 'Carousel', description: 'Multi-slide carousel with key takeaways', icon: '🎠' },
+  ],
+  tiktok: [
+    { id: 'video', label: 'TikTok Video', description: 'Vertical video with trending caption', icon: '🎵' },
+    { id: 'series', label: 'Series', description: 'Multi-part series with cliffhanger hooks', icon: '📺' },
+  ],
+  facebook: [
+    { id: 'video', label: 'Video Post', description: 'Native video post', icon: '🎥' },
+    { id: 'reels', label: 'Facebook Reels', description: 'Short-form vertical video', icon: '🎞️' },
+    { id: 'article', label: 'Instant Article', description: 'Long-form article with embedded video', icon: '📰' },
+  ],
+  threads: [
+    { id: 'post', label: 'Thread Post', description: 'Short post with video link', icon: '💬' },
+  ],
+};
+
 interface PlatformCardProps {
   platform: Platform;
   selected: boolean;
@@ -113,11 +151,14 @@ interface PlatformCardProps {
   onToggle: (id: string) => void;
   onConnect?: (id: string) => void;
   isConnecting?: boolean;
+  selectedFormats?: string[];
+  onFormatToggle?: (platformId: string, formatId: string) => void;
 }
 
-function PlatformCard({ platform, selected, result, onToggle, onConnect, isConnecting }: PlatformCardProps) {
+function PlatformCard({ platform, selected, result, onToggle, onConnect, isConnecting, selectedFormats = [], onFormatToggle }: PlatformCardProps) {
   const Icon = platform.icon;
   const isConnected = platform.connected;
+  const formats = PLATFORM_CONTENT_FORMATS[platform.id] || [{ id: 'video', label: 'Video', description: 'Native video post', icon: '🎥' }];
   const statusColors: Record<PublishStatus, string> = {
     idle: '',
     pending: 'border-amber-500/40',
@@ -129,14 +170,13 @@ function PlatformCard({ platform, selected, result, onToggle, onConnect, isConne
   return (
     <div
       className={cn(
-        'relative rounded-xl border-2 p-4 cursor-pointer transition-all select-none',
+        'relative rounded-xl border-2 p-4 transition-all select-none',
         selected && isConnected
           ? 'border-primary/60 bg-primary/5'
           : 'border-border/40 bg-card/50 hover:border-border',
         result && statusColors[result.status],
         !isConnected && 'opacity-70',
       )}
-      onClick={() => onToggle(platform.id)}
     >
       {/* Connected badge */}
       <div className="absolute top-2.5 right-2.5">
@@ -164,7 +204,7 @@ function PlatformCard({ platform, selected, result, onToggle, onConnect, isConne
         )}
       </div>
 
-      <div className="flex items-start gap-3 pr-20">
+      <div className="flex items-start gap-3 pr-20 cursor-pointer" onClick={() => onToggle(platform.id)}>
         <div className={cn(
           'p-2 rounded-lg border mt-0.5',
           selected && isConnected ? 'border-primary/40 bg-primary/10' : 'border-border/40 bg-muted/30',
@@ -174,16 +214,37 @@ function PlatformCard({ platform, selected, result, onToggle, onConnect, isConne
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-sm mb-0.5">{platform.name}</div>
           <div className="text-xs text-muted-foreground leading-tight">{platform.description}</div>
-          <div className="flex gap-1 mt-2 flex-wrap">
-            {platform.supportsShorts && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">Shorts</Badge>
-            )}
-            {platform.supportsArticle && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">Article</Badge>
-            )}
-          </div>
         </div>
       </div>
+
+      {/* Content format options — shown when platform is selected */}
+      {selected && (
+        <div className="mt-3 pt-3 border-t border-border/30 space-y-1.5">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">Content Formats</div>
+          {formats.map(fmt => {
+            const isActive = selectedFormats.includes(fmt.id);
+            return (
+              <div
+                key={fmt.id}
+                className={cn(
+                  'flex items-center gap-2.5 p-2 rounded-lg border cursor-pointer transition-all',
+                  isActive
+                    ? 'border-primary/40 bg-primary/5'
+                    : 'border-transparent hover:border-border/40 hover:bg-muted/20',
+                )}
+                onClick={() => onFormatToggle?.(platform.id, fmt.id)}
+              >
+                <Checkbox checked={isActive} className="pointer-events-none" />
+                <span className="text-sm">{fmt.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-medium">{fmt.label}</div>
+                  <div className="text-[10px] text-muted-foreground">{fmt.description}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Upload progress */}
       {result && result.status === 'uploading' && (
@@ -1290,6 +1351,22 @@ export function EP04PublishHub({
   const [publishTab, setPublishTab] = useState('platforms');
   const [isEnhancingDesc, setIsEnhancingDesc] = useState(false);
 
+  // Per-platform content format selections (e.g., { youtube: ['video', 'shorts', 'description'], linkedin: ['article', 'post'] })
+  const [platformFormats, setPlatformFormats] = useState<Record<string, string[]>>(() => {
+    // Default: select 'video' format for all platforms
+    const defaults: Record<string, string[]> = {};
+    defaultPlatforms.forEach(p => { defaults[p] = ['video']; });
+    return defaults;
+  });
+
+  const handleFormatToggle = useCallback((platformId: string, formatId: string) => {
+    setPlatformFormats(prev => {
+      const current = prev[platformId] || [];
+      const next = current.includes(formatId) ? current.filter(f => f !== formatId) : [...current, formatId];
+      return { ...prev, [platformId]: next };
+    });
+  }, []);
+
   // Derive session context for display
   const hasSessionContext = !!(sessionTitle || productionArtifacts);
   const sessionVideoUrl = productionArtifacts?.assembledVideoUrl;
@@ -1499,10 +1576,14 @@ export function EP04PublishHub({
 
       {/* Tabs */}
       <Tabs value={publishTab} onValueChange={setPublishTab}>
-        <TabsList className="w-full grid grid-cols-4">
+        <TabsList className="w-full grid grid-cols-5">
           <TabsTrigger value="platforms" className="text-xs gap-1.5">
             <Share2 className="w-3.5 h-3.5" />
             Publish
+          </TabsTrigger>
+          <TabsTrigger value="content" className="text-xs gap-1.5">
+            <FileText className="w-3.5 h-3.5" />
+            Content
           </TabsTrigger>
           <TabsTrigger value="clips" className="text-xs gap-1.5">
             <Scissors className="w-3.5 h-3.5" />
@@ -1597,6 +1678,8 @@ export function EP04PublishHub({
                   onToggle={togglePlatform}
                   onConnect={handleConnect}
                   isConnecting={oauth.isConnecting === platform.id}
+                  selectedFormats={platformFormats[platform.id] || []}
+                  onFormatToggle={handleFormatToggle}
                 />
               ))}
             </div>
@@ -1606,7 +1689,12 @@ export function EP04PublishHub({
           <div className="flex items-center justify-between">
             <div className="text-xs text-muted-foreground">
               {selectedPlatforms.length > 0
-                ? `Publishing to: ${selectedPlatforms.map(id => PLATFORMS.find(p => p.id === id)?.name).filter(Boolean).join(', ')}`
+                ? `Publishing to: ${selectedPlatforms.map(id => {
+                    const name = PLATFORMS.find(p => p.id === id)?.name;
+                    const fmts = platformFormats[id] || [];
+                    const fmtLabels = fmts.map(f => (PLATFORM_CONTENT_FORMATS[id] || []).find(x => x.id === f)?.label).filter(Boolean);
+                    return fmtLabels.length > 0 ? `${name} (${fmtLabels.join(', ')})` : name;
+                  }).filter(Boolean).join(' · ')}`
                 : 'No platforms selected'}
             </div>
             <Button
@@ -1678,11 +1766,64 @@ export function EP04PublishHub({
           </AnimatePresence>
         </TabsContent>
 
+        {/* CONTENT TAB — AI-generated articles, descriptions, threads, captions */}
+        <TabsContent value="content" className="mt-4 space-y-4">
+          {/* Selected format summary */}
+          {Object.entries(platformFormats).some(([, fmts]) => fmts.length > 0) && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-primary" />
+                  Selected Content Formats
+                </CardTitle>
+                <CardDescription className="text-xs">Content will be generated for these formats when you click "Generate" below</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(platformFormats).map(([platformId, fmts]) => {
+                    const platform = PLATFORMS.find(p => p.id === platformId);
+                    if (!platform || fmts.length === 0) return null;
+                    const allFormats = PLATFORM_CONTENT_FORMATS[platformId] || [];
+                    return fmts.map(fmtId => {
+                      const fmt = allFormats.find(f => f.id === fmtId);
+                      if (!fmt) return null;
+                      return (
+                        <Badge key={`${platformId}-${fmtId}`} variant="outline" className="text-xs gap-1 px-2 py-1">
+                          <span>{fmt.icon}</span>
+                          <span className="font-medium">{platform.name}</span>
+                          <span className="text-muted-foreground">· {fmt.label}</span>
+                        </Badge>
+                      );
+                    });
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* AI Social Copy Generator */}
+          <SocialCopySection sessionTitle={publishTitle} sessionDescription={publishDescription} videoUrl={sessionVideoUrl} />
+
+          {/* Quick content tips */}
+          <Card className="border-border/30">
+            <CardContent className="p-4">
+              <div className="text-xs font-medium mb-2">Platform Best Practices</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+                <div className="flex gap-2"><span>📰</span><span><b>LinkedIn Article:</b> 600-800 words, thought-leadership, 3-4 sections with subheads</span></div>
+                <div className="flex gap-2"><span>📝</span><span><b>YouTube SEO:</b> Hook paragraph, timestamps, 15+ keywords, links section</span></div>
+                <div className="flex gap-2"><span>🧵</span><span><b>Twitter Thread:</b> 5 tweets, first is hook (&lt;280 chars), last is CTA with link</span></div>
+                <div className="flex gap-2"><span>📸</span><span><b>Instagram:</b> Storytelling hook, 20 hashtags, line breaks for readability</span></div>
+                <div className="flex gap-2"><span>🎵</span><span><b>TikTok:</b> Under 150 chars, hook-first, trending format</span></div>
+                <div className="flex gap-2"><span>📧</span><span><b>Newsletter:</b> Subject line + preview text + 3 key takeaways + CTA</span></div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* CLIPS TAB */}
         <TabsContent value="clips" className="mt-4 space-y-4">
           <TeaserClipsSection dbClips={dbProject.isSeeded ? dbProject.socialClips : undefined} sourceVideoUrl={sessionVideoUrl} />
           <SmartShortsSection sourceVideoUrl={sessionVideoUrl} />
-          <SocialCopySection sessionTitle={publishTitle} sessionDescription={publishDescription} videoUrl={sessionVideoUrl} />
         </TabsContent>
 
         {/* THUMBNAILS TAB */}
