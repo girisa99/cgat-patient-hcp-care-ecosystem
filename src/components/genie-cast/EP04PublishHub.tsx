@@ -240,12 +240,10 @@ function ThumbnailPackSection({ sessionThumbnails = [] }: { sessionThumbnails?: 
       const videoUrl = sessionThumbnails?.[0];
       if (videoUrl) {
         const { data, error } = await supabase.functions.invoke('auto-thumbnail-generator', {
-          body: { videoUrl, count: 3, style: 'engagement' },
+          body: { action: 'generate', videoUrl, style: 'youtube', title: 'Genie Cast Video' },
         });
         if (error) throw error;
-        // Capture generated URLs from response
-        const urls: string[] = data?.thumbnails?.map((t: { url: string }) => t.url)
-          || (data?.thumbnailUrl ? [data.thumbnailUrl] : []);
+        const urls: string[] = data?.thumbnailUrl ? [data.thumbnailUrl] : [];
         if (urls.length > 0) setThumbnailResults(urls);
       }
       setGenerated(true);
@@ -398,7 +396,7 @@ const CATEGORY_LABELS: Record<ClipCategory, { label: string; emoji: string; desc
 
 const CATEGORY_ORDER: ClipCategory[] = ['curiosity', 'pain_point', 'data_proof', 'democratization', 'character', 'teaser'];
 
-function TeaserClipsSection({ dbClips }: { dbClips?: SocialClipData[] }) {
+function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipData[]; sourceVideoUrl?: string }) {
   // Use DB-sourced clips when available, otherwise fall back to config
   const effectiveClips: SocialClip[] = React.useMemo(() => {
     if (dbClips && dbClips.length > 0) {
@@ -431,12 +429,16 @@ function TeaserClipsSection({ dbClips }: { dbClips?: SocialClipData[] }) {
   };
 
   const handleGenerateClip = async (clipId: string) => {
+    const clip = effectiveClips.find(c => c.id === clipId);
+    if (!sourceVideoUrl && !clip?.videoUrl) {
+      toast.error('No video available — complete assembly first');
+      return;
+    }
     setGeneratingClips(p => [...p, clipId]);
     try {
-      const clip = effectiveClips.find(c => c.id === clipId);
       const { data, error } = await supabase.functions.invoke('magic-clips-generator', {
         body: {
-          sourceVideoUrl: clip?.videoUrl || '',
+          sourceVideoUrl: clip?.videoUrl || sourceVideoUrl || '',
           platforms: clip?.platforms || ['youtube_shorts', 'linkedin', 'tiktok', 'instagram', 'twitter'],
           mode: 'manual',
           addCaptions: true,
@@ -820,6 +822,309 @@ function DownloadSection({ videoUrl, castProjectId }: { videoUrl?: string; castP
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// SOCIAL COPY SECTION — AI-generated platform-specific writeups
+// ──────────────────────────────────────────────────────────────────────────────
+
+interface SocialCopyItem { platform: string; format: string; text: string; hashtags: string[] }
+
+type AIProvider = 'claude' | 'gpt' | 'gemini';
+const AI_PROVIDERS: { id: AIProvider; label: string; model: string; provider: string }[] = [
+  { id: 'claude', label: 'Claude', model: 'claude-sonnet-4-20250514', provider: 'claude' },
+  { id: 'gpt', label: 'GPT-4o', model: 'gpt-4o', provider: 'openai' },
+  { id: 'gemini', label: 'Gemini', model: 'gemini-2.5-flash', provider: 'gemini' },
+];
+
+function SocialCopySection({ sessionTitle, sessionDescription, videoUrl }: { sessionTitle?: string; sessionDescription?: string; videoUrl?: string }) {
+  const [copies, setCopies] = useState<SocialCopyItem[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedAI, setSelectedAI] = useState<AIProvider>('claude');
+  const [expandedPlatform, setExpandedPlatform] = useState<string | null>(null);
+
+  const videoLink = videoUrl || '[VIDEO_URL]';
+
+  const PROMPT = `Generate comprehensive social media publish content for a video.
+Title: "${sessionTitle || 'Untitled'}"
+Description: ${sessionDescription || 'N/A'}
+Video URL: ${videoLink}
+
+Return a JSON array with exactly 6 objects (one per platform). Each object: { "platform": string, "format": string, "text": string, "hashtags": string[] }
+
+1. LinkedIn Article (format: "article") — 600-800 word professional thought-leadership article. Include a compelling headline, 3-4 sections with subheadings, data points, insights, and a CTA linking to the video. Embed the video URL naturally in the text.
+
+2. YouTube Description (format: "description") — 300-400 word SEO-optimized description. Include: hook paragraph, key takeaways with timestamps (00:00 format), links section, about section, and 15+ SEO keywords naturally woven in. Include video URL for cross-promotion.
+
+3. Twitter/X Thread (format: "thread") — 5-tweet thread. First tweet is the hook (under 280 chars). Tweets 2-4 deliver key insights. Tweet 5 is CTA with video link. Separate each tweet with "---". Use the video URL in the last tweet.
+
+4. Instagram Caption (format: "caption") — 150-200 word engaging caption with emoji, line breaks for readability, storytelling hook, value proposition, and CTA. Add 20 hashtags.
+
+5. TikTok Caption (format: "caption") — Under 150 characters, hook-first, trending format. Include video URL.
+
+6. LinkedIn Post (format: "post") — 200-300 word short-form post for feed. Professional but engaging. Include the video URL. Different from the article — this is a quick-read teaser.
+
+Return ONLY the JSON array, no markdown fences.`;
+
+  const handleGenerate = async () => {
+    if (!sessionTitle && !sessionDescription) { toast.error('Add a title or description first'); return; }
+    setIsGenerating(true);
+    try {
+      let raw = '';
+      if (selectedAI === 'claude') {
+        const { data, error } = await supabase.functions.invoke('chat-with-claude', {
+          body: {
+            messages: [
+              { role: 'system', content: 'You are an expert social media strategist and copywriter. Return valid JSON only.' },
+              { role: 'user', content: PROMPT },
+            ],
+            max_tokens: 6000,
+          },
+        });
+        if (error) throw error;
+        raw = data?.content || '';
+      } else {
+        const providerCfg = AI_PROVIDERS.find(p => p.id === selectedAI)!;
+        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+          body: {
+            provider: providerCfg.provider,
+            model: providerCfg.model,
+            prompt: PROMPT,
+            systemPrompt: 'You are an expert social media strategist and copywriter. Return valid JSON only.',
+            maxTokens: 6000,
+          },
+        });
+        if (error) throw error;
+        raw = data?.content || '';
+      }
+      const parsed: SocialCopyItem[] = JSON.parse(raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
+      setCopies(parsed);
+      toast.success(`Social copy generated via ${AI_PROVIDERS.find(p => p.id === selectedAI)?.label} — ${parsed.length} platforms`);
+    } catch (e) {
+      toast.error(`Failed to generate copy: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, platform: string) => {
+    navigator.clipboard.writeText(`${text}\n\n${copies.find(c => c.platform === platform)?.hashtags.map(h => `#${h}`).join(' ') || ''}`);
+    toast.success(`${platform} copy copied`);
+  };
+
+  const copyAll = () => {
+    const all = copies.map(c => `=== ${c.platform} (${c.format}) ===\n\n${c.text}\n\n${c.hashtags.map(h => `#${h}`).join(' ')}`).join('\n\n' + '─'.repeat(50) + '\n\n');
+    navigator.clipboard.writeText(all);
+    toast.success('Full publish package copied');
+  };
+
+  const formatBadgeColor = (format: string) => {
+    switch (format) {
+      case 'article': return 'bg-blue-500/20 text-blue-400 border-blue-500/40';
+      case 'description': return 'bg-red-500/20 text-red-400 border-red-500/40';
+      case 'thread': return 'bg-sky-500/20 text-sky-400 border-sky-500/40';
+      case 'caption': return 'bg-pink-500/20 text-pink-400 border-pink-500/40';
+      case 'post': return 'bg-blue-600/20 text-blue-300 border-blue-600/40';
+      default: return '';
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              Social Copy & Articles
+            </CardTitle>
+            <CardDescription className="text-xs">AI-generated writeups — LinkedIn articles, YouTube SEO, Twitter threads, captions</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-md border border-border/40 overflow-hidden">
+              {AI_PROVIDERS.map(p => (
+                <button key={p.id} onClick={() => setSelectedAI(p.id)} className={cn('px-2 py-1 text-[10px] font-medium transition-colors', selectedAI === p.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50 text-muted-foreground')}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <Button size="sm" variant="outline" onClick={handleGenerate} disabled={isGenerating} className="gap-2 text-xs">
+              {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {copies.length ? 'Regenerate' : 'Generate'}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      {copies.length > 0 && (
+        <CardContent className="space-y-3">
+          <div className="flex justify-end">
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={copyAll}>
+              <Copy className="w-3 h-3" /> Copy All
+            </Button>
+          </div>
+          {copies.map((c) => {
+            const isExpanded = expandedPlatform === c.platform;
+            const preview = c.text.length > 200 ? c.text.slice(0, 200) + '…' : c.text;
+            return (
+              <div key={c.platform} className="rounded-lg border bg-muted/30 overflow-hidden">
+                <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setExpandedPlatform(isExpanded ? null : c.platform)}>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">{c.platform}</Badge>
+                    <Badge className={cn('text-[10px] border px-1.5 py-0', formatBadgeColor(c.format))}>{c.format}</Badge>
+                    <span className="text-[10px] text-muted-foreground">{c.text.split(/\s+/).length} words</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={(e) => { e.stopPropagation(); copyToClipboard(c.text, c.platform); }}>
+                      <Copy className="w-3 h-3" /> Copy
+                    </Button>
+                    <RefreshCw className={cn('w-3 h-3 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
+                  </div>
+                </div>
+                {!isExpanded && (
+                  <div className="px-3 pb-3">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">{preview}</p>
+                  </div>
+                )}
+                {isExpanded && (
+                  <div className="px-3 pb-3 space-y-2 border-t border-border/30 pt-2">
+                    <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">{c.text}</p>
+                    {c.hashtags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {c.hashtags.map(h => <Badge key={h} variant="secondary" className="text-[10px]">#{h}</Badge>)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SMART SHORTS SECTION — AI-analyzed highlight clips via shorts-generator
+// ──────────────────────────────────────────────────────────────────────────────
+
+interface ShortSuggestion { id: string; type: string; start: number; end: number; duration: number; score: number; caption: string }
+interface GeneratedShort { id: string; url: string; thumbnailUrl?: string; duration: number }
+
+function SmartShortsSection({ sourceVideoUrl }: { sourceVideoUrl?: string }) {
+  const [suggestions, setSuggestions] = useState<ShortSuggestion[]>([]);
+  const [generated, setGenerated] = useState<GeneratedShort[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleAnalyze = async () => {
+    if (!sourceVideoUrl) { toast.error('No video available — complete assembly first'); return; }
+    setIsAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('shorts-generator', {
+        body: { action: 'analyze', sourceVideoUrl, platform: 'all' },
+      });
+      if (error) throw error;
+      const clips = data?.suggestedClips || data?.suggestions || data?.clips || [];
+      setSuggestions(clips.map((c: Record<string, unknown>, i: number) => ({
+        id: (c.id as string) || `short-${i}`,
+        type: (c.type as string) || 'highlight',
+        start: (c.startTime as number) || (c.start as number) || 0,
+        end: (c.endTime as number) || (c.end as number) || 0,
+        duration: (c.duration as number) || 0,
+        score: (c.score as number) || (c.viralPotential as number) || 0,
+        caption: (c.suggestedCaption as string) || (c.caption as string) || (c.transcript as string) || '',
+      })));
+      toast.success(`Found ${clips.length} potential shorts`);
+    } catch {
+      toast.error('Video analysis failed');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!sourceVideoUrl || suggestions.length === 0) return;
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('shorts-generator', {
+        body: { action: 'generate', sourceVideoUrl, platform: 'all', clips: suggestions },
+      });
+      if (error) throw error;
+      const shorts = data?.generatedClips || data?.shorts || data?.clips || [];
+      setGenerated(shorts.map((s: Record<string, unknown>, i: number) => ({
+        id: (s.id as string) || `gen-${i}`,
+        url: (s.outputUrl as string) || (s.url as string) || '',
+        thumbnailUrl: s.thumbnailUrl as string | undefined,
+        duration: (s.duration as number) || 0,
+      })));
+      toast.success(`Generated ${shorts.length} shorts`);
+    } catch {
+      toast.error('Shorts generation failed');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Zap className="w-4 h-4 text-primary" />
+              Smart Shorts
+            </CardTitle>
+            <CardDescription className="text-xs">AI-detected highlight moments → vertical Shorts/Reels</CardDescription>
+          </div>
+          <div className="flex gap-2">
+            {suggestions.length > 0 && (
+              <Button size="sm" variant="default" onClick={handleGenerate} disabled={isGenerating} className="gap-2 text-xs">
+                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
+                Generate ({suggestions.length})
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={handleAnalyze} disabled={isAnalyzing} className="gap-2 text-xs">
+              {isAnalyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              Analyze Video
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      {(suggestions.length > 0 || generated.length > 0) && (
+        <CardContent className="space-y-3">
+          {suggestions.length > 0 && generated.length === 0 && (
+            <div className="space-y-2">
+              {suggestions.map((s, i) => (
+                <div key={s.id || i} className="flex items-center gap-3 p-2 rounded-lg border bg-muted/30">
+                  <Badge variant="outline" className="text-[10px] shrink-0">{s.type}</Badge>
+                  <span className="text-xs flex-1 truncate">{s.caption}</span>
+                  <span className="text-[10px] text-muted-foreground">{s.duration}s</span>
+                  <Badge className="text-[10px]">{Math.round(s.score * 100)}%</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+          {generated.length > 0 && (
+            <div className="space-y-2">
+              {generated.map((g, i) => (
+                <div key={g.id || i} className="flex items-center gap-3 p-2 rounded-lg border bg-muted/30">
+                  <Play className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-xs flex-1">Short #{i + 1} · {g.duration}s</span>
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={() => window.open(g.url, '_blank')}>
+                    <ExternalLink className="w-3 h-3" /> Watch
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" asChild>
+                    <a href={g.url} download><Download className="w-3 h-3" /> Save</a>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -863,6 +1168,7 @@ export function EP04PublishHub({
   const [publishResults, setPublishResults] = useState<Record<string, PublishResult>>({});
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishTab, setPublishTab] = useState('platforms');
+  const [isEnhancingDesc, setIsEnhancingDesc] = useState(false);
 
   // Derive session context for display
   const hasSessionContext = !!(sessionTitle || productionArtifacts);
@@ -886,6 +1192,29 @@ export function EP04PublishHub({
     const url = sessionVideoUrl || 'https://youtu.be/ep04-demo-link';
     navigator.clipboard.writeText(url);
     toast.success('Link copied to clipboard');
+  };
+
+  const handleEnhanceDescription = async () => {
+    if (!publishDescription.trim()) { toast.error('Write a description first'); return; }
+    setIsEnhancingDesc(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('chat-with-claude', {
+        body: {
+          messages: [
+            { role: 'system', content: 'You are a social media copywriter specializing in video content optimization.' },
+            { role: 'user', content: `Rewrite this video description for maximum SEO and engagement on YouTube/LinkedIn. Keep it under 300 words, add relevant keywords, include a compelling hook, and end with a clear CTA. Return ONLY the rewritten description, no explanation.\n\nOriginal:\n${publishDescription}` },
+          ],
+        },
+      });
+      if (error) throw error;
+      const enhanced = data?.content;
+      if (enhanced) { setPublishDescription(enhanced); toast.success('Description enhanced'); }
+      else throw new Error('No response from AI');
+    } catch {
+      toast.error('Failed to enhance description');
+    } finally {
+      setIsEnhancingDesc(false);
+    }
   };
 
   const handlePublish = async () => {
@@ -919,19 +1248,24 @@ export function EP04PublishHub({
         const { data, error } = await supabase.functions.invoke('social-publish', {
           body: {
             platform: platformId,
-            videoUrl,
-            title: publishTitle || sessionTitle || 'Genie Cast Video',
-            description: publishDescription || sessionDescription || '',
-            thumbnailUrl: sessionThumbnails?.[0] || undefined,
+            contentType: 'video',
+            mediaUrl: videoUrl,
+            caption: publishDescription || sessionDescription || publishTitle || 'Check out this video!',
+            metadata: {
+              title: publishTitle || sessionTitle || 'Genie Cast Video',
+              description: publishDescription || sessionDescription || '',
+              thumbnailUrl: sessionThumbnails?.[0] || undefined,
+              visibility: 'public',
+            },
             hashtags: [],
-            region: selectedRegion || 'global',
           },
         });
 
         if (error) throw error;
 
-        const publishUrl = data?.url || data?.postUrl || data?.videoUrl;
-        const success = data?.success !== false;
+        const publishUrl = data?.postUrl || data?.url || data?.videoUrl;
+        const needsConnection = data?.metadata?.requiresConnection === true;
+        const success = data?.success !== false && !needsConnection;
 
         setPublishResults(p => ({
           ...p,
@@ -1066,6 +1400,33 @@ export function EP04PublishHub({
 
         {/* PLATFORMS TAB */}
         <TabsContent value="platforms" className="space-y-5 mt-4">
+          {/* Video preview */}
+          {sessionVideoUrl ? (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Video className="w-4 h-4 text-primary" />
+                  Video Preview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-xl overflow-hidden border border-border/40">
+                  <video src={sessionVideoUrl} controls className="w-full max-h-[360px]" />
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardContent className="p-4 flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-600">No video available</p>
+                  <p className="text-xs text-muted-foreground">Complete assembly in the PRODUCE phase to enable publishing, clips, and downloads.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Metadata */}
           <Card>
             <CardHeader className="pb-2">
@@ -1081,7 +1442,13 @@ export function EP04PublishHub({
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Description</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-muted-foreground">Description</label>
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={handleEnhanceDescription} disabled={isEnhancingDesc}>
+                    {isEnhancingDesc ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    Enhance with AI
+                  </Button>
+                </div>
                 <Textarea
                   value={publishDescription}
                   onChange={e => setPublishDescription(e.target.value)}
@@ -1192,8 +1559,10 @@ export function EP04PublishHub({
         </TabsContent>
 
         {/* CLIPS TAB */}
-        <TabsContent value="clips" className="mt-4">
-          <TeaserClipsSection dbClips={dbProject.isSeeded ? dbProject.socialClips : undefined} />
+        <TabsContent value="clips" className="mt-4 space-y-4">
+          <TeaserClipsSection dbClips={dbProject.isSeeded ? dbProject.socialClips : undefined} sourceVideoUrl={sessionVideoUrl} />
+          <SmartShortsSection sourceVideoUrl={sessionVideoUrl} />
+          <SocialCopySection sessionTitle={publishTitle} sessionDescription={publishDescription} videoUrl={sessionVideoUrl} />
         </TabsContent>
 
         {/* THUMBNAILS TAB */}

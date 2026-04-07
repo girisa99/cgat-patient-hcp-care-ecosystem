@@ -1320,10 +1320,7 @@ def stitch_parts_xfade(
         )
         audio_map = "[aout]"
     else:
-        # Rename last audio label to [aout]
-        last_a = filter_parts[-1]
-        filter_parts[-1] = last_a.rsplit("]", 1)[0] + "][aout]" if not last_a.endswith("[aout]") else last_a
-        # Actually let's just map current_a directly
+        # Map the last audio crossfade output directly (no rename needed)
         audio_map = current_a
 
     filter_complex = ";\n".join(filter_parts)

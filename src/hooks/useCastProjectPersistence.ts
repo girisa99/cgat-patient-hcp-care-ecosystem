@@ -674,7 +674,7 @@ export function useCastProjectPersistence() {
   const updateFinalAssembly = useCallback(async (
     projectId: string,
     finalVideoUrl: string,
-    metadata?: {
+    productionMeta?: {
       totalDuration?: number;
       sceneCount?: number;
       resolution?: string;
@@ -682,14 +682,28 @@ export function useCastProjectPersistence() {
     },
   ): Promise<boolean> => {
     try {
+      // First fetch existing metadata so we merge instead of overwrite
+      const updatePayload: Record<string, unknown> = {
+        final_video_url: finalVideoUrl,
+        current_stage: 'complete',
+        status: 'completed',
+        updated_at: new Date().toISOString(),
+      };
+
+      if (productionMeta) {
+        // Fetch existing metadata to merge
+        const { data: existing } = await db
+          .from('cast_projects')
+          .select('metadata')
+          .eq('id', projectId)
+          .single();
+        const existingMeta = (existing?.metadata as Record<string, unknown>) || {};
+        updatePayload.metadata = { ...existingMeta, production: productionMeta };
+      }
+
       const { error } = await db
         .from('cast_projects')
-        .update({
-          final_video_url: finalVideoUrl,
-          production_stage: 'complete',
-          metadata: metadata ? { production: metadata } : null,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', projectId);
       if (error) throw error;
       toast.success('Final assembly saved to project');

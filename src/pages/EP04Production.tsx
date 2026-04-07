@@ -844,6 +844,8 @@ function EP04ProductionInner() {
     // Restore final video URL from DB (survives refresh)
     if (rqScenes.restoredVideoUrl && !finalVideoUrl) {
       setFinalVideoUrl(rqScenes.restoredVideoUrl);
+      setConcatVideoUrl(rqScenes.restoredVideoUrl);
+      setConcatStatus('completed');
       console.log(`[EP04 RQ Bridge] Restored final video URL from DB: ${rqScenes.restoredVideoUrl.substring(0, 60)}...`);
     }
 
@@ -3961,9 +3963,9 @@ function EP04ProductionInner() {
       if (completedCount === currentParts.length && currentParts.length > 0) {
         toast.success(`All ${completedCount} scenes assembled!`);
         setAssemblyProgress(null);
-        // Auto-trigger stitch if Re-render & Stitch flow is active
-        if (autoStitchAfterRender.current) {
-          autoStitchAfterRender.current = false;
+        autoStitchAfterRender.current = false;
+        // Auto-trigger stitch when all parts complete and no stitched video exists yet
+        if (!concatVideoUrl && !finalVideoUrl && concatStatus === 'idle') {
           toast.info('All parts ready — auto-stitching into final video...');
           setTimeout(() => startConcatStitchRef.current?.(), 1000);
         }
@@ -5538,12 +5540,12 @@ function EP04ProductionInner() {
         setFinalVideoUrl(data.videoUrl);
         setProductionPhase('complete');
         if (projectId && data.videoUrl) {
-          updateFinalAssembly(projectId, data.videoUrl, {
+          const saved = await updateFinalAssembly(projectId, data.videoUrl, {
             totalDuration: assemblyParts.reduce((s, p) => s + p.estimatedDuration, 0),
             sceneCount: assemblyParts.reduce((s, p) => s + p.sceneKeys.length, 0),
             resolution: '1920x1080',
-            stitchedFromParts: assemblyParts.length,
           });
+          if (!saved) console.error('[Cast Stitching] CRITICAL: failed to save final_video_url to DB — URL will be lost on refresh');
         }
         toast.success('Video stitched successfully!');
       } else if (data?.castJobId || data?.taskId) {
@@ -5606,12 +5608,12 @@ function EP04ProductionInner() {
           setProductionPhase('complete');
           if (projectId && videoUrl) {
             const currentParts = assemblyPartsRef.current;
-            updateFinalAssembly(projectId, videoUrl, {
+            const saved = await updateFinalAssembly(projectId, videoUrl, {
               totalDuration: currentParts.reduce((s, p) => s + p.estimatedDuration, 0),
               sceneCount: currentParts.reduce((s, p) => s + p.sceneKeys.length, 0),
               resolution: '1920x1080',
-              stitchedFromParts: currentParts.length,
             });
+            if (!saved) console.error('[Cast Stitching] CRITICAL: failed to save final_video_url to DB — URL will be lost on refresh');
           }
           toast.success('Final cinematic video stitched successfully!');
         } else if (jobStatus === 'failed') {
@@ -7952,29 +7954,35 @@ function EP04ProductionInner() {
                             </div>
                           )}
                           {concatStatus === 'completed' && concatVideoUrl && (
-                            <div className="mb-2 p-2 rounded bg-green-500/10 border border-green-500/30">
-                              <div className="flex items-center gap-1.5 mb-1">
-                                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                                <span className="text-xs font-semibold text-green-600">Final Video Rendered</span>
+                            <div className="mb-2 space-y-2">
+                              <div className="p-2 rounded bg-green-500/10 border border-green-500/30">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                  <span className="text-xs font-semibold text-green-600">Final Video Rendered — Single Stitched MP4</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <a href={concatVideoUrl} target="_blank" rel="noopener noreferrer"
+                                    className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
+                                    <Download className="h-2.5 w-2.5" /> Download Final MP4
+                                  </a>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 text-[10px] px-2 border-amber-500/30 text-amber-600"
+                                    onClick={() => {
+                                      setConcatStatus('idle');
+                                      setConcatVideoUrl(null);
+                                      setConcatError(null);
+                                      toast.info('Ready to re-render');
+                                    }}
+                                  >
+                                    <RefreshCw className="h-2.5 w-2.5 mr-0.5" /> Re-render
+                                  </Button>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <a href={concatVideoUrl} target="_blank" rel="noopener noreferrer"
-                                  className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5">
-                                  <Download className="h-2.5 w-2.5" /> Download Final MP4
-                                </a>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-6 text-[10px] px-2 border-amber-500/30 text-amber-600"
-                                  onClick={() => {
-                                    setConcatStatus('idle');
-                                    setConcatVideoUrl(null);
-                                    setConcatError(null);
-                                    toast.info('Ready to re-render');
-                                  }}
-                                >
-                                  <RefreshCw className="h-2.5 w-2.5 mr-0.5" /> Re-render
-                                </Button>
+                              {/* Stitched video player */}
+                              <div className="rounded-xl overflow-hidden border border-green-500/30">
+                                <video src={concatVideoUrl} controls className="w-full" playsInline preload="auto" />
                               </div>
                             </div>
                           )}
@@ -8029,19 +8037,28 @@ function EP04ProductionInner() {
                           }))}
                         onPlaybackComplete={() => toast.success('Full production playback complete')}
                       />
-                      {/* If a stitched single-file version exists, offer download */}
-                      {concatVideoUrl && (
-                        <div className="flex gap-2">
-                          <Button size="sm" asChild>
-                            <a href={concatVideoUrl} download="EP04-Sprint-Documentary.mp4">
-                              <Download className="h-3 w-3 mr-1" />
-                              Download Single MP4
-                            </a>
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => window.open(concatVideoUrl, '_blank')}>
-                            <Eye className="h-3 w-3 mr-1" />
-                            Open in New Tab
-                          </Button>
+                      {/* If a stitched single-file version exists, show player + download */}
+                      {(concatVideoUrl || finalVideoUrl) && (
+                        <div className="space-y-3 mt-3">
+                          <div className="flex items-center gap-2">
+                            <Clapperboard className="h-4 w-4 text-green-500" />
+                            <h4 className="text-sm font-bold text-green-600">Stitched Final Video</h4>
+                          </div>
+                          <div className="rounded-xl overflow-hidden border border-green-500/30">
+                            <video src={(concatVideoUrl || finalVideoUrl)!} controls className="w-full" playsInline preload="auto" />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" asChild>
+                              <a href={(concatVideoUrl || finalVideoUrl)!} download="EP04-Sprint-Documentary.mp4">
+                                <Download className="h-3 w-3 mr-1" />
+                                Download Single MP4
+                              </a>
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => window.open((concatVideoUrl || finalVideoUrl)!, '_blank')}>
+                              <Eye className="h-3 w-3 mr-1" />
+                              Open in New Tab
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -8116,47 +8133,67 @@ function EP04ProductionInner() {
 
                     {/* ── Tab 1: Gallery ── */}
                     <TabsContent value="gallery" className="space-y-4">
-                      {/* Final movie — playlist player or single-file fallback */}
+                      {/* Final stitched video — single MP4 (highest priority) */}
                       {(() => {
+                        const stitchedUrl = finalVideoUrl || concatVideoUrl || null;
                         const completedParts = assemblyParts.filter(p => p.status === 'completed' && p.videoUrl);
-                        if (completedParts.length === 0 && !finalVideoUrl) return null;
+
+                        if (!stitchedUrl && completedParts.length === 0) return null;
+
                         return (
-                          <Card className="border-green-500/30 bg-green-500/[0.02]">
-                            <CardContent className="p-4 space-y-3">
-                              <div className="flex items-center gap-2">
-                                <Clapperboard className="h-4 w-4 text-green-500" />
-                                <h4 className="text-sm font-bold text-green-600">Final Production</h4>
-                              </div>
-                              {completedParts.length > 0 ? (
-                                <PlaylistVideoPlayer
-                                  parts={completedParts.map(p => ({
-                                    partNumber: p.partNumber,
-                                    videoUrl: p.videoUrl!,
-                                    thumbnailUrl: p.thumbnailUrl,
-                                    estimatedDuration: p.estimatedDuration,
-                                  }))}
-                                />
-                              ) : finalVideoUrl ? (
-                                <div className="rounded-xl overflow-hidden border border-green-500/30">
-                                  <video src={finalVideoUrl} controls className="w-full" poster={SCENE_BACKGROUNDS['scene-0-title']} />
-                                </div>
-                              ) : null}
-                              {finalVideoUrl && (
-                                <div className="flex gap-2">
-                                  <Button size="sm" asChild>
-                                    <a href={finalVideoUrl} download="EP04-Sprint-Documentary.mp4">
-                                      <Download className="h-3 w-3 mr-1" />
-                                      Download MP4
-                                    </a>
-                                  </Button>
-                                  <Button size="sm" variant="outline" onClick={() => window.open(finalVideoUrl, '_blank')}>
-                                    <ExternalLink className="h-3 w-3 mr-1" />
-                                    Open in New Tab
-                                  </Button>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
+                          <>
+                            {/* Stitched single-file video (when available) */}
+                            {stitchedUrl && (
+                              <Card className="border-green-500/30 bg-green-500/[0.02]">
+                                <CardContent className="p-4 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Clapperboard className="h-4 w-4 text-green-500" />
+                                    <h4 className="text-sm font-bold text-green-600">Final Production — Full Video</h4>
+                                    <span className="text-[10px] text-muted-foreground ml-auto">
+                                      {completedParts.length} parts stitched into single MP4
+                                    </span>
+                                  </div>
+                                  <div className="rounded-xl overflow-hidden border border-green-500/30">
+                                    <video src={stitchedUrl} controls className="w-full" playsInline preload="auto" poster={SCENE_BACKGROUNDS['scene-0-title']} />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button size="sm" asChild>
+                                      <a href={stitchedUrl} download="EP04-Sprint-Documentary.mp4">
+                                        <Download className="h-3 w-3 mr-1" />
+                                        Download MP4
+                                      </a>
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => window.open(stitchedUrl, '_blank')}>
+                                      <ExternalLink className="h-3 w-3 mr-1" />
+                                      Open in New Tab
+                                    </Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+
+                            {/* Individual parts playlist (always shown when parts exist) */}
+                            {completedParts.length > 0 && (
+                              <Card className="border-border/50">
+                                <CardContent className="p-4 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Film className="h-4 w-4 text-muted-foreground" />
+                                    <h4 className="text-sm font-medium text-muted-foreground">
+                                      {stitchedUrl ? 'Individual Parts' : 'Production Parts'} — {completedParts.length} segments
+                                    </h4>
+                                  </div>
+                                  <PlaylistVideoPlayer
+                                    parts={completedParts.map(p => ({
+                                      partNumber: p.partNumber,
+                                      videoUrl: p.videoUrl!,
+                                      thumbnailUrl: p.thumbnailUrl,
+                                      estimatedDuration: p.estimatedDuration,
+                                    }))}
+                                  />
+                                </CardContent>
+                              </Card>
+                            )}
+                          </>
                         );
                       })()}
 
@@ -8248,33 +8285,35 @@ function EP04ProductionInner() {
                     <TabsContent value="publish">
                       <EP04PublishHub
                         sessionTitle="EP04 — Sprint Documentary"
-                        productionArtifacts={finalVideoUrl ? {
-                          assembledVideoUrl: finalVideoUrl,
-                          sceneVideoUrls: [
-                            // Per-scene assembled clips
-                            ...sceneKeys
-                              .map(sk => sceneProduction[sk]?.assembledClipUrl)
-                              .filter((url): url is string => !!url),
-                            // Per-scene individual video assets (fallback)
-                            ...Object.values(sceneProduction)
-                              .flatMap(s => Object.values(s.videoUrls || {}))
-                              .filter((url): url is string => !!url && url.startsWith('http')),
-                          ],
-                          audioUrl: null,
-                          captionFiles: [],
-                          thumbnailUrls: [
-                            // Assembly part thumbnails (from RunPod render)
-                            ...assemblyParts
-                              .filter(p => p.thumbnailUrl)
-                              .map(p => p.thumbnailUrl!),
-                            // First image from each scene's generated assets (fallback)
-                            ...Object.values(sceneProduction)
-                              .map(s => Object.values(s.imageUrls || {})[0])
-                              .filter((url): url is string => !!url),
-                          ].slice(0, 12),
-                          exportPresets: [],
-                          speakerTracks: [],
-                        } : undefined}
+                        productionArtifacts={(() => {
+                          const bestVideoUrl = finalVideoUrl || concatVideoUrl
+                            || assemblyParts.find(p => p.status === 'completed' && p.videoUrl)?.videoUrl
+                            || null;
+                          if (!bestVideoUrl) return undefined;
+                          return {
+                            assembledVideoUrl: bestVideoUrl,
+                            sceneVideoUrls: [
+                              ...sceneKeys
+                                .map(sk => sceneProduction[sk]?.assembledClipUrl)
+                                .filter((url): url is string => !!url),
+                              ...Object.values(sceneProduction)
+                                .flatMap(s => Object.values(s.videoUrls || {}))
+                                .filter((url): url is string => !!url && url.startsWith('http')),
+                            ],
+                            audioUrl: null,
+                            captionFiles: [],
+                            thumbnailUrls: [
+                              ...assemblyParts
+                                .filter(p => p.thumbnailUrl)
+                                .map(p => p.thumbnailUrl!),
+                              ...Object.values(sceneProduction)
+                                .map(s => Object.values(s.imageUrls || {})[0])
+                                .filter((url): url is string => !!url),
+                            ].slice(0, 12),
+                            exportPresets: [],
+                            speakerTracks: [],
+                          };
+                        })()}
                       />
                     </TabsContent>
 
@@ -8282,29 +8321,35 @@ function EP04ProductionInner() {
                     <TabsContent value="repurpose">
                       <ContentRepurposingPanel
                         sessionTitle="EP04 — Sprint Documentary"
-                        productionArtifacts={finalVideoUrl ? {
-                          assembledVideoUrl: finalVideoUrl,
-                          sceneVideoUrls: [
-                            ...sceneKeys
-                              .map(sk => sceneProduction[sk]?.assembledClipUrl)
-                              .filter((url): url is string => !!url),
-                            ...Object.values(sceneProduction)
-                              .flatMap(s => Object.values(s.videoUrls || {}))
-                              .filter((url): url is string => !!url && url.startsWith('http')),
-                          ],
-                          audioUrl: null,
-                          captionFiles: [],
-                          thumbnailUrls: [
-                            ...assemblyParts
-                              .filter(p => p.thumbnailUrl)
-                              .map(p => p.thumbnailUrl!),
-                            ...Object.values(sceneProduction)
-                              .map(s => Object.values(s.imageUrls || {})[0])
-                              .filter((url): url is string => !!url),
-                          ].slice(0, 12),
-                          exportPresets: [],
-                          speakerTracks: [],
-                        } : undefined}
+                        productionArtifacts={(() => {
+                          const bestVideoUrl = finalVideoUrl || concatVideoUrl
+                            || assemblyParts.find(p => p.status === 'completed' && p.videoUrl)?.videoUrl
+                            || null;
+                          if (!bestVideoUrl) return undefined;
+                          return {
+                            assembledVideoUrl: bestVideoUrl,
+                            sceneVideoUrls: [
+                              ...sceneKeys
+                                .map(sk => sceneProduction[sk]?.assembledClipUrl)
+                                .filter((url): url is string => !!url),
+                              ...Object.values(sceneProduction)
+                                .flatMap(s => Object.values(s.videoUrls || {}))
+                                .filter((url): url is string => !!url && url.startsWith('http')),
+                            ],
+                            audioUrl: null,
+                            captionFiles: [],
+                            thumbnailUrls: [
+                              ...assemblyParts
+                                .filter(p => p.thumbnailUrl)
+                                .map(p => p.thumbnailUrl!),
+                              ...Object.values(sceneProduction)
+                                .map(s => Object.values(s.imageUrls || {})[0])
+                                .filter((url): url is string => !!url),
+                            ].slice(0, 12),
+                            exportPresets: [],
+                            speakerTracks: [],
+                          };
+                        })()}
                       />
                     </TabsContent>
                   </Tabs>
