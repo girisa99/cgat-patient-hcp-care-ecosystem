@@ -496,7 +496,18 @@ const CATEGORY_LABELS: Record<ClipCategory, { label: string; emoji: string; desc
 
 const CATEGORY_ORDER: ClipCategory[] = ['curiosity', 'pain_point', 'data_proof', 'democratization', 'character', 'teaser'];
 
-function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipData[]; sourceVideoUrl?: string }) {
+/** Parse timestamp string like "0:00–0:30" or "14:30–15:00" into start/end seconds */
+function parseClipTimestamp(ts: string): { start: number; end: number } {
+  const parts = ts.split('–');
+  if (parts.length !== 2) return { start: 0, end: 30 };
+  const toSec = (t: string) => {
+    const segs = t.trim().split(':').map(Number);
+    return (segs[0] || 0) * 60 + (segs[1] || 0);
+  };
+  return { start: toSec(parts[0]), end: toSec(parts[1]) };
+}
+
+function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClips?: SocialClipData[]; sourceVideoUrl?: string; castProjectId?: string }) {
   // Use DB-sourced clips when available, otherwise fall back to config
   const effectiveClips: SocialClip[] = React.useMemo(() => {
     if (dbClips && dbClips.length > 0) {
@@ -539,19 +550,18 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipD
     setGeneratingClips(p => [...p, clipId]);
     setClipErrors(prev => { const n = { ...prev }; delete n[clipId]; return n; });
     try {
+      const { start, end } = parseClipTimestamp(clip?.timestamp || '0:00–0:30');
+
       const { data, error } = await supabase.functions.invoke('magic-clips-generator', {
         body: {
           sourceVideoUrl: clip?.videoUrl || sourceVideoUrl || '',
-          platforms: clip?.platforms || ['youtube_shorts', 'linkedin', 'tiktok', 'instagram', 'twitter'],
-          mode: 'manual',
-          addCaptions: true,
-          captionStyle: clip?.captionStyle || 'subtitle',
-          language: 'en',
+          castProjectId: castProjectId || undefined,
+          clips: [{ id: clipId, start, end, label: clip?.hook || clipId }],
+          mode: 'batch',
         },
       });
       if (error) throw error;
 
-      // Check if the generation actually succeeded
       if (data?.success === false) {
         const errMsg = data?.error || data?.message || 'Generation service unavailable';
         setClipErrors(prev => ({ ...prev, [clipId]: errMsg }));
@@ -559,29 +569,16 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipD
         return;
       }
 
-      // Extract clip URL from response — handle multiple response shapes
-      const firstClip = data?.clips?.[0];
-      const clipUrl = firstClip?.clipUrl || data?.outputUrl || data?.url || '';
-      const clipStatus = firstClip?.status;
-
-      if (clipStatus === 'pending' || clipStatus === 'processing') {
-        setClipErrors(prev => ({ ...prev, [clipId]: 'Clip queued for processing — check back shortly' }));
-        toast.info(`Clip ${clipId} is processing — may take up to 60 seconds`);
-        return;
-      }
-      if (clipStatus === 'failed') {
-        const errMsg = firstClip?.error || 'Clip generation failed on server';
-        setClipErrors(prev => ({ ...prev, [clipId]: errMsg }));
-        toast.error(`Clip ${clipId}: ${errMsg}`);
-        return;
-      }
+      // Find matching clip in results
+      const resultClip = data?.clips?.find((c: any) => c.platformId === clipId) || data?.clips?.[0];
+      const clipUrl = resultClip?.clipUrl || '';
 
       if (clipUrl && clipUrl.startsWith('http')) {
         setClipUrls(prev => ({ ...prev, [clipId]: clipUrl }));
-        setReadyClips(p => [...p, clipId]);
+        setReadyClips(p => p.includes(clipId) ? p : [...p, clipId]);
         toast.success(`Clip ready: ${clipId}`);
       } else {
-        setClipErrors(prev => ({ ...prev, [clipId]: 'No clip URL returned — API key may not be configured' }));
+        setClipErrors(prev => ({ ...prev, [clipId]: resultClip?.error || 'No clip URL returned' }));
         toast.error(`Clip ${clipId}: No URL returned`);
       }
     } catch (err) {
@@ -594,8 +591,60 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl }: { dbClips?: SocialClipD
   };
 
   const handleGenerateAll = async () => {
-    for (const clip of effectiveClips) {
-      await handleGenerateClip(clip.id);
+    if (!sourceVideoUrl) {
+      toast.error('No video available — complete assembly first');
+      return;
+    }
+
+    // Batch all clips into one RunPod extract_clips job
+    const allClipParams = effectiveClips.map(clip => {
+      const { start, end } = parseClipTimestamp(clip.timestamp);
+      return { id: clip.id, start, end, label: clip.hook || clip.id };
+    });
+
+    setGeneratingClips(effectiveClips.map(c => c.id));
+    setClipErrors({});
+
+    try {
+      const { data, error } = await supabase.functions.invoke('magic-clips-generator', {
+        body: {
+          sourceVideoUrl,
+          castProjectId: castProjectId || undefined,
+          clips: allClipParams,
+          mode: 'batch',
+        },
+      });
+      if (error) throw error;
+
+      if (data?.success === false && (!data?.clips || data.clips.length === 0)) {
+        const errMsg = data?.error || 'Batch clip generation failed';
+        toast.error(errMsg);
+        effectiveClips.forEach(c => setClipErrors(prev => ({ ...prev, [c.id]: errMsg })));
+        return;
+      }
+
+      // Map results back to clip IDs
+      const resultClips: Array<{ platformId: string; clipUrl: string; error?: string }> = data?.clips || [];
+      let successCount = 0;
+
+      for (const rc of resultClips) {
+        const clipId = rc.platformId;
+        if (rc.clipUrl && rc.clipUrl.startsWith('http')) {
+          setClipUrls(prev => ({ ...prev, [clipId]: rc.clipUrl }));
+          setReadyClips(p => p.includes(clipId) ? p : [...p, clipId]);
+          successCount++;
+        } else {
+          setClipErrors(prev => ({ ...prev, [clipId]: rc.error || 'No URL returned' }));
+        }
+      }
+
+      toast.success(`${successCount}/${effectiveClips.length} clips extracted via RunPod`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`Batch generation failed: ${msg}`);
+      effectiveClips.forEach(c => setClipErrors(prev => ({ ...prev, [c.id]: msg })));
+    } finally {
+      setGeneratingClips([]);
     }
   };
 
@@ -1184,7 +1233,7 @@ Return ONLY the JSON array, no markdown fences.`;
 interface ShortSuggestion { id: string; type: string; start: number; end: number; duration: number; score: number; caption: string }
 interface GeneratedShort { id: string; url: string; thumbnailUrl?: string; duration: number }
 
-function SmartShortsSection({ sourceVideoUrl }: { sourceVideoUrl?: string }) {
+function SmartShortsSection({ sourceVideoUrl, castProjectId }: { sourceVideoUrl?: string; castProjectId?: string }) {
   const [suggestions, setSuggestions] = useState<ShortSuggestion[]>([]);
   const [generated, setGenerated] = useState<GeneratedShort[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -1220,18 +1269,34 @@ function SmartShortsSection({ sourceVideoUrl }: { sourceVideoUrl?: string }) {
     if (!sourceVideoUrl || suggestions.length === 0) return;
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('shorts-generator', {
-        body: { action: 'generate', sourceVideoUrl, platform: 'all', clips: suggestions },
+      // Call magic-clips-generator directly (→ RunPod FFmpeg) instead of chaining through shorts-generator
+      const clipParams = suggestions.map(s => ({
+        id: s.id,
+        start: s.start,
+        end: s.end,
+        label: s.caption || `Short ${s.id}`,
+      }));
+
+      const { data, error } = await supabase.functions.invoke('magic-clips-generator', {
+        body: {
+          sourceVideoUrl,
+          castProjectId: castProjectId || undefined,
+          clips: clipParams,
+          mode: 'batch',
+        },
       });
       if (error) throw error;
-      const shorts = data?.generatedClips || data?.shorts || data?.clips || [];
-      setGenerated(shorts.map((s: Record<string, unknown>, i: number) => ({
-        id: (s.id as string) || `gen-${i}`,
-        url: (s.outputUrl as string) || (s.url as string) || '',
-        thumbnailUrl: s.thumbnailUrl as string | undefined,
-        duration: (s.duration as number) || 0,
+
+      const resultClips = data?.clips || [];
+      setGenerated(resultClips.map((c: Record<string, unknown>, i: number) => ({
+        id: (c.platformId as string) || (c.id as string) || `gen-${i}`,
+        url: (c.clipUrl as string) || '',
+        thumbnailUrl: c.thumbnailUrl as string | undefined,
+        duration: (c.duration as number) || 0,
       })));
-      toast.success(`Generated ${shorts.length} shorts`);
+
+      const successCount = resultClips.filter((c: any) => c.clipUrl && (c.clipUrl as string).startsWith('http')).length;
+      toast.success(`Generated ${successCount}/${suggestions.length} shorts via RunPod`);
     } catch {
       toast.error('Shorts generation failed');
     } finally {
@@ -1273,7 +1338,7 @@ function SmartShortsSection({ sourceVideoUrl }: { sourceVideoUrl?: string }) {
                   <Badge variant="outline" className="text-[10px] shrink-0">{s.type}</Badge>
                   <span className="text-xs flex-1 truncate">{s.caption}</span>
                   <span className="text-[10px] text-muted-foreground">{s.duration}s</span>
-                  <Badge className="text-[10px]">{Math.round(s.score * 100)}%</Badge>
+                  <Badge className="text-[10px]">{s.score > 1 ? s.score : Math.round(s.score * 100)}%</Badge>
                 </div>
               ))}
             </div>
@@ -1822,8 +1887,8 @@ export function EP04PublishHub({
 
         {/* CLIPS TAB */}
         <TabsContent value="clips" className="mt-4 space-y-4">
-          <TeaserClipsSection dbClips={dbProject.isSeeded ? dbProject.socialClips : undefined} sourceVideoUrl={sessionVideoUrl} />
-          <SmartShortsSection sourceVideoUrl={sessionVideoUrl} />
+          <TeaserClipsSection dbClips={dbProject.isSeeded ? dbProject.socialClips : undefined} sourceVideoUrl={sessionVideoUrl} castProjectId={projectId || undefined} />
+          <SmartShortsSection sourceVideoUrl={sessionVideoUrl} castProjectId={projectId || undefined} />
         </TabsContent>
 
         {/* THUMBNAILS TAB */}

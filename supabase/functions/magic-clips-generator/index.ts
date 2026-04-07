@@ -1,11 +1,11 @@
 /**
- * MAGIC CLIPS GENERATOR
- * 
- * AI-powered short-form clip generation for platform-specific publishing
- * - Analyzes source video for key moments
- * - Generates optimized clips for each platform
- * - Handles aspect ratio, duration, and format requirements
- * 
+ * MAGIC CLIPS GENERATOR — RunPod FFmpeg Edition
+ *
+ * Extracts clips from source video via RunPod FFmpeg worker (stream copy = fast, lossless).
+ * Supports individual clip and batch extraction.
+ *
+ * Flow: Frontend → magic-clips-generator → RunPod (extract_clips) → Supabase Storage URLs
+ *
  * Platforms: YouTube Shorts, TikTok, Instagram Reels, LinkedIn, Twitter/X, Facebook
  */
 
@@ -17,110 +17,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Platform specifications
+// Platform specifications for reference / future platform_resize
 const PLATFORM_SPECS: Record<string, {
   name: string;
   maxDuration: number;
   aspectRatio: string;
   width: number;
   height: number;
-  format: string;
-  maxFileSize: number; // MB
 }> = {
-  'youtube_shorts': {
-    name: 'YouTube Shorts',
-    maxDuration: 60,
-    aspectRatio: '9:16',
-    width: 1080,
-    height: 1920,
-    format: 'mp4',
-    maxFileSize: 60,
-  },
-  'tiktok': {
-    name: 'TikTok',
-    maxDuration: 60,
-    aspectRatio: '9:16',
-    width: 1080,
-    height: 1920,
-    format: 'mp4',
-    maxFileSize: 75,
-  },
-  'instagram_reels': {
-    name: 'Instagram Reels',
-    maxDuration: 90,
-    aspectRatio: '9:16',
-    width: 1080,
-    height: 1920,
-    format: 'mp4',
-    maxFileSize: 250,
-  },
-  'linkedin': {
-    name: 'LinkedIn',
-    maxDuration: 30,
-    aspectRatio: '16:9',
-    width: 1920,
-    height: 1080,
-    format: 'mp4',
-    maxFileSize: 200,
-  },
-  'twitter': {
-    name: 'Twitter/X',
-    maxDuration: 140,
-    aspectRatio: '16:9',
-    width: 1920,
-    height: 1080,
-    format: 'mp4',
-    maxFileSize: 512,
-  },
-  'facebook': {
-    name: 'Facebook',
-    maxDuration: 120,
-    aspectRatio: '16:9',
-    width: 1920,
-    height: 1080,
-    format: 'mp4',
-    maxFileSize: 1000,
-  },
-};
-
-// Recommended clip durations for maximum engagement
-const ENGAGEMENT_DURATIONS: Record<string, number> = {
-  'youtube_shorts': 30,  // 15-30s performs best
-  'tiktok': 21,           // 15-21s for algorithm boost
-  'instagram_reels': 15,  // 7-15s for maximum retention
-  'linkedin': 30,         // 30s for professional content
-  'twitter': 45,          // 30-45s for engagement
-  'facebook': 60,         // 60s for stories
+  'youtube_shorts': { name: 'YouTube Shorts', maxDuration: 60, aspectRatio: '9:16', width: 1080, height: 1920 },
+  'tiktok':         { name: 'TikTok',         maxDuration: 60, aspectRatio: '9:16', width: 1080, height: 1920 },
+  'instagram_reels':{ name: 'Instagram Reels', maxDuration: 90, aspectRatio: '9:16', width: 1080, height: 1920 },
+  'instagram':      { name: 'Instagram',       maxDuration: 90, aspectRatio: '9:16', width: 1080, height: 1920 },
+  'linkedin':       { name: 'LinkedIn',        maxDuration: 30, aspectRatio: '16:9', width: 1920, height: 1080 },
+  'twitter':        { name: 'Twitter/X',       maxDuration: 140,aspectRatio: '16:9', width: 1920, height: 1080 },
+  'facebook':       { name: 'Facebook',        maxDuration: 120,aspectRatio: '16:9', width: 1920, height: 1080 },
 };
 
 interface MagicClipsRequest {
   sourceVideoUrl: string;
-  sourceVideoId?: string;
-  platforms: string[]; // Platform IDs from PLATFORM_SPECS
-  mode: 'auto' | 'highlights' | 'manual';
+  castProjectId?: string;
+  /** Array of clips to extract with start/end seconds */
+  clips?: Array<{ id: string; start: number; end: number; label?: string }>;
+  /** Legacy: platform list (used if no clips array provided) */
+  platforms?: string[];
+  mode?: 'auto' | 'highlights' | 'manual' | 'batch';
   highlightTimestamps?: { start: number; end: number }[];
   addCaptions?: boolean;
   language?: string;
-}
-
-interface ClipResult {
-  platformId: string;
-  platformName: string;
-  clipUrl?: string;
-  thumbnailUrl?: string;
-  duration: number;
-  aspectRatio: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  error?: string;
-}
-
-interface MagicClipsResult {
-  success: boolean;
-  sourceVideoId?: string;
-  clips: ClipResult[];
-  totalClips: number;
-  completedClips: number;
-  message: string;
 }
 
 serve(async (req) => {
@@ -130,142 +54,191 @@ serve(async (req) => {
 
   try {
     const body: MagicClipsRequest = await req.json();
-    const { 
-      sourceVideoUrl, 
-      sourceVideoId,
-      platforms, 
+    const {
+      sourceVideoUrl,
+      castProjectId,
+      clips,
+      platforms = [],
       mode = 'auto',
       highlightTimestamps,
-      addCaptions = false,
-      language = 'en',
     } = body;
 
-    if (!sourceVideoUrl || !platforms || platforms.length === 0) {
-      throw new Error('sourceVideoUrl and platforms are required');
+    if (!sourceVideoUrl) {
+      throw new Error('sourceVideoUrl is required');
     }
 
-    console.log(`✨ Magic Clips: Generating ${platforms.length} clips from source video`);
-    console.log(`   Mode: ${mode}, Captions: ${addCaptions}, Language: ${language}`);
-
+    const runpodEndpointId = Deno.env.get('RUNPOD_CAST_ENDPOINT_ID');
+    const runpodApiKey = Deno.env.get('RUNPOD_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    const clips: ClipResult[] = [];
-    let completedCount = 0;
-
-    for (const platformId of platforms) {
-      const spec = PLATFORM_SPECS[platformId];
-      if (!spec) {
-        clips.push({
-          platformId,
-          platformName: platformId,
-          duration: 0,
-          aspectRatio: 'unknown',
-          status: 'failed',
-          error: `Unknown platform: ${platformId}`,
-        });
-        continue;
-      }
-
-      console.log(`📹 Generating ${spec.name} clip (${spec.aspectRatio}, ${ENGAGEMENT_DURATIONS[platformId]}s)`);
-
-      try {
-        // Determine clip parameters
-        const clipDuration = ENGAGEMENT_DURATIONS[platformId] || spec.maxDuration;
-        
-        // In auto mode, AI analyzes video for best segments
-        // In highlights mode, use user-provided timestamps
-        // In manual mode, use first N seconds
-        let clipStart = 0;
-        let clipEnd = clipDuration;
-        
-        if (mode === 'highlights' && highlightTimestamps?.length) {
-          // Use the first highlight that fits the platform duration
-          const validHighlight = highlightTimestamps.find(
-            h => (h.end - h.start) <= spec.maxDuration
-          );
-          if (validHighlight) {
-            clipStart = validHighlight.start;
-            clipEnd = validHighlight.end;
-          }
-        } else if (mode === 'auto') {
-          // AI would analyze video for key moments here
-          // For now, use intelligent defaults based on platform
-          clipStart = platformId.includes('tiktok') || platformId.includes('reels') ? 5 : 0;
-          clipEnd = clipStart + clipDuration;
-        }
-
-        // Generate the clip via JSON2Video
-        const clipResult = await generatePlatformClip(
-          sourceVideoUrl,
-          platformId,
-          spec,
-          clipStart,
-          clipEnd,
-          addCaptions,
-          language
-        );
-
-        if (clipResult.success) {
-          clips.push({
-            platformId,
-            platformName: spec.name,
-            clipUrl: clipResult.clipUrl,
-            thumbnailUrl: clipResult.thumbnailUrl,
-            duration: clipEnd - clipStart,
-            aspectRatio: spec.aspectRatio,
-            status: 'completed',
-          });
-          completedCount++;
-        } else {
-          clips.push({
-            platformId,
-            platformName: spec.name,
-            duration: clipEnd - clipStart,
-            aspectRatio: spec.aspectRatio,
-            status: 'pending',
-            error: clipResult.error,
-          });
-        }
-
-      } catch (err) {
-        console.error(`Clip generation failed for ${platformId}:`, err);
-        clips.push({
-          platformId,
-          platformName: spec.name,
-          duration: 0,
-          aspectRatio: spec.aspectRatio,
-          status: 'failed',
-          error: err instanceof Error ? err.message : 'Generation failed',
-        });
-      }
+    if (!runpodEndpointId || !runpodApiKey) {
+      throw new Error('RunPod not configured — set RUNPOD_CAST_ENDPOINT_ID and RUNPOD_API_KEY');
     }
 
-    // Save clips to database if source video ID provided
-    if (sourceVideoId) {
-      await saveMagicClips(supabase, sourceVideoId, clips);
+    // ── Build clips array for extraction ──────────────────────────────────
+    let extractClips: Array<{ id: string; start: number; end: number; label: string }> = [];
+
+    if (clips && clips.length > 0) {
+      // Batch / individual mode — clips provided with start/end seconds
+      extractClips = clips.map(c => ({
+        id: c.id,
+        start: c.start,
+        end: c.end,
+        label: c.label || c.id,
+      }));
+    } else if (highlightTimestamps && highlightTimestamps.length > 0) {
+      // Highlights mode — timestamps provided
+      extractClips = highlightTimestamps.map((h, i) => ({
+        id: `clip_${i + 1}`,
+        start: h.start,
+        end: h.end,
+        label: `Highlight ${i + 1}`,
+      }));
+    } else {
+      // Auto/manual mode — extract one clip from the beginning
+      const maxDur = platforms.length > 0
+        ? Math.min(...platforms.map(p => PLATFORM_SPECS[p]?.maxDuration || 30))
+        : 30;
+      extractClips = [{ id: 'clip_auto', start: 0, end: maxDur, label: 'Auto clip' }];
     }
 
-    // Track credit consumption
-    await trackMagicClipsCredits(supabase, clips);
+    console.log(`✨ Magic Clips: Extracting ${extractClips.length} clips via RunPod FFmpeg`);
+    console.log(`   Source: ${sourceVideoUrl.substring(0, 80)}…`);
 
-    const result: MagicClipsResult = {
-      success: completedCount > 0,
-      sourceVideoId,
-      clips,
-      totalClips: platforms.length,
-      completedClips: completedCount,
-      message: completedCount === platforms.length
-        ? `All ${completedCount} clips generated successfully!`
-        : `${completedCount}/${platforms.length} clips generated. Some are pending external processing.`,
+    // ── Submit extract_clips job to RunPod ─────────────────────────────────
+    const projectTag = castProjectId || `magic_${Date.now()}`;
+
+    const runpodPayload = {
+      input: {
+        action: 'extract_clips',
+        sourceVideoUrl,
+        clips: extractClips,
+        castProjectId: projectTag,
+        supabaseUrl,
+        supabaseServiceKey,
+      },
     };
 
-    console.log(`✅ Magic Clips complete: ${completedCount}/${platforms.length}`);
+    const submitResponse = await fetch(
+      `https://api.runpod.ai/v2/${runpodEndpointId}/run`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${runpodApiKey}`,
+        },
+        body: JSON.stringify(runpodPayload),
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    if (!submitResponse.ok) {
+      const errText = await submitResponse.text();
+      throw new Error(`RunPod submit failed (${submitResponse.status}): ${errText}`);
+    }
+
+    const submitData = await submitResponse.json();
+    const jobId = submitData.id;
+
+    if (!jobId) {
+      throw new Error('RunPod returned no job ID');
+    }
+
+    console.log(`📋 RunPod job submitted: ${jobId}`);
+
+    // ── Poll for completion ────────────────────────────────────────────────
+    // Stream copy is fast (~1-2 seconds per clip), but account for cold start + upload
+    const maxAttempts = 60; // 120 seconds max (60 × 2s)
+    const pollIntervalMs = 2000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+
+      try {
+        const statusResponse = await fetch(
+          `https://api.runpod.ai/v2/${runpodEndpointId}/status/${jobId}`,
+          {
+            headers: { 'Authorization': `Bearer ${runpodApiKey}` },
+            signal: AbortSignal.timeout(10_000),
+          },
+        );
+
+        if (!statusResponse.ok) continue;
+
+        const statusData = await statusResponse.json();
+        const status = statusData.status;
+
+        if (attempt % 5 === 0) {
+          console.log(`   Poll ${attempt + 1}/${maxAttempts}: ${status}`);
+        }
+
+        if (status === 'COMPLETED') {
+          const output = statusData.output;
+
+          if (output?.error) {
+            throw new Error(`RunPod worker error: ${output.error}`);
+          }
+
+          // Map RunPod output to response format
+          const resultClips = (output?.clips || []).map((c: any) => ({
+            platformId: c.id,
+            platformName: c.label || c.id,
+            clipUrl: c.clipUrl || '',
+            thumbnailUrl: c.thumbnailUrl || '',
+            duration: c.duration || 0,
+            aspectRatio: '16:9', // Source aspect ratio; resize happens at publish time
+            status: c.clipUrl ? 'completed' as const : 'failed' as const,
+            fileSizeMB: c.fileSizeMB || 0,
+          }));
+
+          const completedCount = resultClips.filter((c: any) => c.status === 'completed').length;
+          console.log(`✅ Magic Clips complete: ${completedCount}/${resultClips.length}`);
+
+          // Track credit consumption
+          if (completedCount > 0) {
+            await trackCredits(supabaseUrl, supabaseServiceKey, resultClips);
+          }
+
+          return new Response(
+            JSON.stringify({
+              success: completedCount > 0,
+              clips: resultClips,
+              totalClips: resultClips.length,
+              completedClips: completedCount,
+              jobId,
+              message: `${completedCount}/${resultClips.length} clips extracted via RunPod FFmpeg`,
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          );
+        }
+
+        if (status === 'FAILED' || status === 'CANCELLED' || status === 'TIMED_OUT') {
+          throw new Error(`RunPod job ${status}: ${statusData.error || statusData.output?.error || 'No details'}`);
+        }
+
+        // IN_QUEUE or IN_PROGRESS — keep polling
+      } catch (pollErr) {
+        // Network blip during poll — continue unless it's a thrown Error from above
+        if (pollErr instanceof Error && pollErr.message.startsWith('RunPod')) {
+          throw pollErr;
+        }
+        console.warn(`   Poll ${attempt + 1} network error:`, pollErr);
+      }
+    }
+
+    // ── Timeout ────────────────────────────────────────────────────────────
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Clip extraction timed out — the RunPod job may still be processing',
+        jobId,
+        clips: [],
+        totalClips: extractClips.length,
+        completedClips: 0,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
 
   } catch (error) {
     console.error('Magic Clips error:', error);
@@ -274,252 +247,45 @@ serve(async (req) => {
         success: false,
         error: error instanceof Error ? error.message : 'Magic Clips generation failed',
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });
 
-/**
- * Generate a platform-specific clip using JSON2Video
- */
-async function generatePlatformClip(
-  sourceVideoUrl: string,
-  platformId: string,
-  spec: typeof PLATFORM_SPECS[string],
-  startTime: number,
-  endTime: number,
-  addCaptions: boolean,
-  language: string
-): Promise<{ success: boolean; clipUrl?: string; thumbnailUrl?: string; error?: string }> {
-  const apiKey = Deno.env.get('JSON2VIDEO_API_KEY');
-  
-  if (!apiKey) {
-    console.log(`⚠️ JSON2VIDEO_API_KEY not configured - clip marked as pending`);
-    return { 
-      success: false, 
-      error: 'Video processing service not configured. Clip will be generated manually.' 
-    };
-  }
+// ──────────────────────────────────────────────────────────────────────────────
+// Credit tracking
+// ──────────────────────────────────────────────────────────────────────────────
 
+async function trackCredits(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  clips: Array<{ status: string; duration: number; platformId: string }>,
+): Promise<void> {
   try {
-    // Build JSON2Video request for clip extraction + transformation
-    const movieConfig = {
-      resolution: `${spec.width}x${spec.height}`,
-      quality: 'high',
-      fps: 30,
-      scenes: [
-        {
-          comment: `${spec.name} clip - ${endTime - startTime}s`,
-          duration: endTime - startTime,
-          elements: [
-            {
-              type: 'video',
-              src: sourceVideoUrl,
-              start: startTime,
-              duration: endTime - startTime,
-              // Crop/scale to target aspect ratio
-              scale: spec.aspectRatio === '9:16' ? 'cover-vertical' : 'cover',
-              position: 'center',
-            },
-          ],
-        },
-      ],
-    };
+    const completed = clips.filter(c => c.status === 'completed');
+    if (completed.length === 0) return;
 
-    // Add captions overlay if requested
-    if (addCaptions) {
-      (movieConfig.scenes[0].elements as any[]).push({
-        type: 'subtitles',
-        src: 'auto', // Auto-generate from audio
-        language,
-        style: {
-          font: 'Inter',
-          size: 24,
-          color: '#ffffff',
-          background: 'rgba(0,0,0,0.7)',
-          position: 'bottom',
-        },
-      });
-    }
+    const totalDuration = completed.reduce((sum, c) => sum + (c.duration || 0), 0);
+    const creditsUsed = Math.ceil(totalDuration / 15); // 1 credit per 15s of output
 
-    // Add platform-specific branding
-    (movieConfig.scenes[0].elements as any[]).push({
-      type: 'text',
-      text: 'Genie Suite',
-      font: 'Inter',
-      size: 16,
-      color: '#ffffff',
-      position: { x: 20, y: 20 },
-      duration: endTime - startTime,
-      opacity: 0.7,
-    });
-
-    const response = await fetch('https://api.json2video.com/v2/movies', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+    const sb = createClient(supabaseUrl, supabaseServiceKey);
+    const { error } = await sb.from('ai_credit_transactions').insert({
+      transaction_type: 'debit',
+      credits_amount: -creditsUsed,
+      feature_used: 'magic_clips',
+      description: `Magic Clips for ${completed.length} clip(s)`,
+      feature_metadata: {
+        clips_count: completed.length,
+        total_duration: totalDuration,
+        clips: completed.map(c => c.platformId),
+        provider: 'runpod_ffmpeg',
+        pipeline: 'magic-clips-generator',
       },
-      body: JSON.stringify(movieConfig),
+      created_at: new Date().toISOString(),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`JSON2Video clip error: ${response.status} - ${errorText}`);
-      return { success: false, error: `API error: ${response.status}` };
-    }
-
-    const data = await response.json();
-    
-    // Check for immediate result or pending job
-    if (data.url) {
-      return {
-        success: true,
-        clipUrl: data.url,
-        thumbnailUrl: data.poster || data.thumbnail,
-      };
-    }
-
-    if (data.project) {
-      // Poll for result (simplified - in production use webhook)
-      const result = await pollJSON2VideoResult(data.project, apiKey);
-      return result;
-    }
-
-    return { success: false, error: 'Unexpected response from video API' };
-
-  } catch (err) {
-    console.error('Platform clip generation error:', err);
-    return { 
-      success: false, 
-      error: err instanceof Error ? err.message : 'Generation failed' 
-    };
-  }
-}
-
-/**
- * Poll JSON2Video for job completion
- */
-async function pollJSON2VideoResult(
-  projectId: string,
-  apiKey: string,
-  maxAttempts = 30,
-  intervalMs = 2000
-): Promise<{ success: boolean; clipUrl?: string; thumbnailUrl?: string; error?: string }> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    await new Promise(resolve => setTimeout(resolve, intervalMs));
-
-    try {
-      const response = await fetch(`https://api.json2video.com/v2/movies/${projectId}`, {
-        headers: { 'x-api-key': apiKey },
-      });
-
-      if (!response.ok) continue;
-
-      const data = await response.json();
-
-      if (data.status === 'done' && data.url) {
-        return {
-          success: true,
-          clipUrl: data.url,
-          thumbnailUrl: data.poster || data.thumbnail,
-        };
-      }
-
-      if (data.status === 'error') {
-        return { success: false, error: data.error || 'Render failed' };
-      }
-
-      // Still processing, continue polling
-      console.log(`   Polling attempt ${attempt + 1}/${maxAttempts}: ${data.status}`);
-
-    } catch (err) {
-      console.error('Polling error:', err);
-    }
-  }
-
-  return { success: false, error: 'Timeout waiting for clip generation' };
-}
-
-/**
- * Save generated clips to database
- */
-async function saveMagicClips(
-  supabase: any,
-  sourceVideoId: string,
-  clips: ClipResult[]
-): Promise<void> {
-  try {
-    // Update the source video's metadata with magic clips info
-    const clipsSummary = clips.map(c => ({
-      platform: c.platformId,
-      url: c.clipUrl,
-      status: c.status,
-      duration: c.duration,
-    }));
-
-    // Store clips as metadata on the source video (JSON column)
-    console.log(`📝 Saving ${clipsSummary.length} magic clips for video ${sourceVideoId}`);
-
-    const { error: updateError } = await supabase
-      .from('landing_page_videos')
-      .update({
-        metadata: {
-          magic_clips: clipsSummary,
-          magic_clips_generated_at: new Date().toISOString(),
-        },
-      })
-      .eq('id', sourceVideoId);
-
-    if (updateError) {
-      console.warn(`⚠️ Could not save clips metadata: ${updateError.message}`);
-    }
-
-  } catch (err) {
-    console.error('Failed to save magic clips:', err);
-  }
-}
-
-/**
- * Track credit consumption for magic clips generation
- */
-async function trackMagicClipsCredits(
-  supabase: any,
-  clips: ClipResult[]
-): Promise<void> {
-  try {
-    const completedClips = clips.filter(c => c.status === 'completed');
-    if (completedClips.length === 0) return;
-
-    // Calculate credits: 1 credit per 15 seconds of output video
-    const totalDuration = completedClips.reduce((sum, c) => sum + c.duration, 0);
-    const creditsUsed = Math.ceil(totalDuration / 15);
-
-    const { error } = await supabase
-      .from('ai_credit_transactions')
-      .insert({
-        transaction_type: 'debit',
-        credits_amount: -creditsUsed,
-        feature_used: 'magic_clips',
-        description: `Magic Clips for ${completedClips.length} platform(s)`,
-        feature_metadata: {
-          clips_count: completedClips.length,
-          total_duration: totalDuration,
-          platforms: completedClips.map(c => c.platformId),
-          provider: 'json2video',
-          pipeline: 'magic-clips-generator',
-        },
-        created_at: new Date().toISOString(),
-      });
-
-    if (error) {
-      console.error('Credit tracking failed:', error.message);
-    } else {
-      console.log(`💳 Tracked ${creditsUsed} credits for ${completedClips.length} magic clips`);
-    }
+    if (error) console.error('Credit tracking failed:', error.message);
+    else console.log(`💳 Tracked ${creditsUsed} credits for ${completed.length} magic clips`);
   } catch (err) {
     console.error('Credit tracking error:', err);
   }
