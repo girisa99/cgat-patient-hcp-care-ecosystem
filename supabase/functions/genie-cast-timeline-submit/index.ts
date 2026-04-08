@@ -160,6 +160,122 @@ serve(async (req) => {
       });
     }
 
+    // ── Thumbnail extraction via RunPod FFmpeg ──
+    if (action === 'generate_thumbnails') {
+      const { sourceVideoUrl, timestamps = [10, 30, 60], sizes, castProjectId: thumbProjectId } = body;
+      if (!sourceVideoUrl) {
+        return new Response(JSON.stringify({ success: false, message: 'generate_thumbnails requires sourceVideoUrl' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log(`🖼️ generate_thumbnails: ${timestamps.length} timestamps for project ${thumbProjectId || 'unknown'}`);
+
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_CAST_ENDPOINT_ID');
+      const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
+
+      if (!RUNPOD_ENDPOINT_ID || !RUNPOD_API_KEY) {
+        return new Response(JSON.stringify({ success: false, message: 'RunPod not configured' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Submit to RunPod (async /run)
+      const runController = new AbortController();
+      const runTimeout = setTimeout(() => runController.abort(), 15000);
+
+      let runpodResponse: Response;
+      try {
+        runpodResponse = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${RUNPOD_API_KEY}`,
+          },
+          signal: runController.signal,
+          body: JSON.stringify({
+            input: {
+              action: 'generate_thumbnails',
+              sourceVideoUrl,
+              timestamps,
+              sizes: sizes || [
+                { label: 'youtube', w: 1280, h: 720 },
+                { label: 'linkedin', w: 1200, h: 627 },
+                { label: 'tiktok', w: 1080, h: 1920 },
+              ],
+              castProjectId: thumbProjectId || 'unknown',
+              supabaseUrl,
+              supabaseServiceKey: supabaseKey,
+            },
+          }),
+        });
+      } catch (fetchErr) {
+        clearTimeout(runTimeout);
+        const errMsg = fetchErr instanceof DOMException && fetchErr.name === 'AbortError'
+          ? 'RunPod API timed out after 15s' : String(fetchErr);
+        return new Response(JSON.stringify({ success: false, message: errMsg }), {
+          status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } finally {
+        clearTimeout(runTimeout);
+      }
+
+      const runText = await runpodResponse.text();
+      if (!runpodResponse.ok) {
+        return new Response(JSON.stringify({ success: false, message: `RunPod error: ${runpodResponse.status}` }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const runData = JSON.parse(runText);
+      const jobId = runData.id;
+
+      // Poll for completion (max 30 attempts × 2s = 60s)
+      let thumbnails: Array<{ timestamp: number; label: string; thumbnailUrl: string; w: number; h: number }> = [];
+      for (let attempt = 0; attempt < 30; attempt++) {
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+          const statusRes = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/status/${jobId}`, {
+            headers: { 'Authorization': `Bearer ${RUNPOD_API_KEY}` },
+          });
+          const statusData = await statusRes.json();
+
+          if (statusData.status === 'COMPLETED') {
+            const output = statusData.output || {};
+            thumbnails = output.thumbnails || [];
+            console.log(`✅ generate_thumbnails done: ${thumbnails.length} thumbnails`);
+            break;
+          }
+          if (statusData.status === 'FAILED') {
+            const errMsg = statusData.error || 'RunPod job failed';
+            return new Response(JSON.stringify({ success: false, message: errMsg }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          // IN_QUEUE or IN_PROGRESS — keep polling
+        } catch {
+          // Network blip — continue polling
+        }
+      }
+
+      if (thumbnails.length === 0) {
+        return new Response(JSON.stringify({ success: false, message: 'Thumbnail generation timed out (60s)' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        thumbnails,
+        totalThumbnails: thumbnails.length,
+        message: `Generated ${thumbnails.length} thumbnails via RunPod FFmpeg`,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // ── Standard timeline path ──
     if (!timeline || !timeline.scenes || timeline.scenes.length === 0) {
       return new Response(JSON.stringify({ success: false, message: 'Missing or empty timeline' }), {

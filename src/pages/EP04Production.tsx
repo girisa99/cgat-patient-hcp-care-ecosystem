@@ -7652,7 +7652,11 @@ function EP04ProductionInner() {
                             }
                             return null;
                           })();
-                          const posterUrl = part.thumbnailUrl || bestThumb;
+                          // Derive thumbnail from video URL: part1.mp4 → part1_thumb.jpg
+                          const derivedThumb = part.videoUrl?.includes('.mp4')
+                            ? part.videoUrl.replace('.mp4', '_thumb.jpg')
+                            : null;
+                          const posterUrl = part.thumbnailUrl || derivedThumb || bestThumb;
 
                           return (
                             <div key={part.partNumber} className={cn(
@@ -8032,7 +8036,7 @@ function EP04ProductionInner() {
                           .map(p => ({
                             partNumber: p.partNumber,
                             videoUrl: p.videoUrl!,
-                            thumbnailUrl: p.thumbnailUrl,
+                            thumbnailUrl: p.thumbnailUrl || (p.videoUrl?.includes('.mp4') ? p.videoUrl.replace('.mp4', '_thumb.jpg') : undefined),
                             estimatedDuration: p.estimatedDuration,
                           }))}
                         onPlaybackComplete={() => toast.success('Full production playback complete')}
@@ -8186,7 +8190,7 @@ function EP04ProductionInner() {
                                     parts={completedParts.map(p => ({
                                       partNumber: p.partNumber,
                                       videoUrl: p.videoUrl!,
-                                      thumbnailUrl: p.thumbnailUrl,
+                                      thumbnailUrl: p.thumbnailUrl || (p.videoUrl?.includes('.mp4') ? p.videoUrl.replace('.mp4', '_thumb.jpg') : undefined),
                                       estimatedDuration: p.estimatedDuration,
                                     }))}
                                   />
@@ -8304,8 +8308,9 @@ function EP04ProductionInner() {
                             captionFiles: [],
                             thumbnailUrls: [
                               ...assemblyParts
-                                .filter(p => p.thumbnailUrl)
-                                .map(p => p.thumbnailUrl!),
+                                .filter(p => p.thumbnailUrl || p.videoUrl)
+                                .map(p => p.thumbnailUrl || (p.videoUrl?.includes('.mp4') ? p.videoUrl.replace('.mp4', '_thumb.jpg') : null))
+                                .filter((url): url is string => !!url),
                               ...Object.values(sceneProduction)
                                 .map(s => Object.values(s.imageUrls || {})[0])
                                 .filter((url): url is string => !!url),
@@ -8340,8 +8345,9 @@ function EP04ProductionInner() {
                             captionFiles: [],
                             thumbnailUrls: [
                               ...assemblyParts
-                                .filter(p => p.thumbnailUrl)
-                                .map(p => p.thumbnailUrl!),
+                                .filter(p => p.thumbnailUrl || p.videoUrl)
+                                .map(p => p.thumbnailUrl || (p.videoUrl?.includes('.mp4') ? p.videoUrl.replace('.mp4', '_thumb.jpg') : null))
+                                .filter((url): url is string => !!url),
                               ...Object.values(sceneProduction)
                                 .map(s => Object.values(s.imageUrls || {})[0])
                                 .filter((url): url is string => !!url),

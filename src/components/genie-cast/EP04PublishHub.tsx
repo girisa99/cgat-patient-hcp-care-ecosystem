@@ -101,6 +101,49 @@ async function savePublishHubCache(projectId: string, patch: Partial<PublishHubC
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// UTILITY FUNCTIONS
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** Derive thumbnail URL from a video URL — storage naming is deterministic:
+ *  part1.mp4 → part1_thumb.jpg, final.mp4 → final_thumb.jpg */
+function deriveThumbnailUrl(videoUrl: string): string | null {
+  if (!videoUrl || !videoUrl.includes('.mp4')) return null;
+  return videoUrl.replace('.mp4', '_thumb.jpg');
+}
+
+/** Extract friendly filename from a Supabase Storage URL or any URL */
+function extractFilename(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const segments = pathname.split('/').filter(Boolean);
+    return segments[segments.length - 1] || url;
+  } catch {
+    return url;
+  }
+}
+
+/** Get share-via-intent URL for platforms that support web sharing */
+function getShareIntentUrl(platformId: string, videoUrl: string, title: string, description: string): string | null {
+  const text = `${title}\n\n${description}`.trim();
+  const encodedUrl = encodeURIComponent(videoUrl);
+  const encodedText = encodeURIComponent(text);
+
+  switch (platformId) {
+    case 'linkedin':
+      return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+    case 'twitter':
+      return `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodedUrl}`;
+    case 'facebook':
+      return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`;
+    case 'threads':
+      return `https://www.threads.net/intent/post?text=${encodedText}%20${encodedUrl}`;
+    // youtube, tiktok, instagram require OAuth upload — no intent URL
+    default:
+      return null;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // SESSION PROPS — connects PRODUCE → PUBLISH
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -214,8 +257,8 @@ function PlatformCard({ platform, selected, result, onToggle, onConnect, isConne
     <div
       className={cn(
         'relative rounded-xl border-2 p-4 transition-all select-none',
-        selected && isConnected
-          ? 'border-primary/60 bg-primary/5'
+        selected
+          ? isConnected ? 'border-primary/60 bg-primary/5' : 'border-amber-500/40 bg-amber-500/5'
           : 'border-border/40 bg-card/50 hover:border-border',
         result && statusColors[result.status],
         !isConnected && 'opacity-70',
@@ -347,9 +390,16 @@ function ThumbnailPackSection({ sessionThumbnails = [], videoUrl, castProjectId 
       if (cache?.thumbnailResults?.length) {
         setThumbnailResults(cache.thumbnailResults);
         setGenerated(true);
+      } else if (sessionThumbnails.length > 0) {
+        // Bootstrap from session/DB thumbnails (e.g. cast_projects.thumbnail_url)
+        const validUrls = sessionThumbnails.filter(u => u && u.startsWith('http'));
+        if (validUrls.length > 0) {
+          setThumbnailResults(validUrls);
+          setGenerated(true);
+        }
       }
     });
-  }, [castProjectId]);
+  }, [castProjectId, sessionThumbnails]);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -360,29 +410,47 @@ function ThumbnailPackSection({ sessionThumbnails = [], videoUrl, castProjectId 
         toast.error('No video available — complete assembly first');
         return;
       }
-      // Generate 3 style variants in parallel
-      const styles: Array<'youtube' | 'tiktok' | 'instagram'> = ['youtube', 'tiktok', 'instagram'];
-      const results = await Promise.allSettled(
-        styles.map(style =>
-          supabase.functions.invoke('auto-thumbnail-generator', {
-            body: { action: 'generate', videoUrl: sourceUrl, style, title: 'Genie Cast Video' },
-          })
-        )
-      );
+      // Extract real video frames via RunPod FFmpeg (replaces AI image generation)
+      const { data, error } = await supabase.functions.invoke('genie-cast-timeline-submit', {
+        body: {
+          action: 'generate_thumbnails',
+          sourceVideoUrl: sourceUrl,
+          timestamps: [10, 30, 60],
+          sizes: [
+            { label: 'youtube', w: 1280, h: 720 },
+            { label: 'linkedin', w: 1200, h: 627 },
+            { label: 'tiktok', w: 1080, h: 1920 },
+          ],
+          castProjectId,
+        },
+      });
+      if (error) throw error;
+
+      if (data?.success === false) {
+        setGenError(data?.message || 'Thumbnail generation failed');
+        toast.error(data?.message || 'No thumbnails returned');
+        setGenerated(true);
+        return;
+      }
+
+      // Group thumbnails by timestamp — each timestamp yields one URL per size label
+      const thumbs: Array<{ timestamp: number; label: string; thumbnailUrl: string }> = data?.thumbnails || [];
+      // Collect unique URLs (prefer youtube-sized frames for the gallery)
       const urls: string[] = [];
-      for (const r of results) {
-        if (r.status === 'fulfilled' && !r.value.error) {
-          const url = r.value.data?.thumbnailUrl;
-          // Only use real URLs, not placeholder filenames
-          if (url && url.startsWith('http')) urls.push(url);
+      const seen = new Set<number>();
+      for (const t of thumbs) {
+        if (t.thumbnailUrl && t.thumbnailUrl.startsWith('http') && !seen.has(t.timestamp)) {
+          urls.push(t.thumbnailUrl);
+          seen.add(t.timestamp);
         }
       }
+
       if (urls.length > 0) {
         setThumbnailResults(urls);
         if (castProjectId) savePublishHubCache(castProjectId, { thumbnailResults: urls });
-        toast.success(`${urls.length} thumbnail variant(s) generated`);
+        toast.success(`${urls.length} thumbnail(s) extracted from video frames`);
       } else {
-        setGenError('Thumbnail API returned no valid URLs — Gemini API key may not be configured');
+        setGenError('RunPod returned no valid thumbnail URLs');
         toast.error('No valid thumbnails returned');
       }
       setGenerated(true);
@@ -927,8 +995,19 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClip
                         <div className="ml-9 mt-1 mb-2 p-3 rounded-lg border border-border/30 bg-muted/5 space-y-3">
                           {clipUrls[clip.id] && (
                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground pb-1 border-b border-border/20">
-                              <ExternalLink className="w-3 h-3" />
-                              <span>Clip URL: <a href={clipUrls[clip.id]} target="_blank" rel="noreferrer" className="text-primary underline break-all">{clipUrls[clip.id].substring(0, 60)}…</a></span>
+                              <Film className="w-3 h-3" />
+                              <span className="flex-1 truncate font-medium text-foreground/80">{extractFilename(clipUrls[clip.id])}</span>
+                              <Button
+                                size="sm" variant="ghost" className="h-5 px-1.5 text-[9px] gap-0.5"
+                                onClick={() => { navigator.clipboard.writeText(clipUrls[clip.id]); toast.success('Clip URL copied'); }}
+                              >
+                                <Copy className="w-2.5 h-2.5" /> Copy URL
+                              </Button>
+                              <a href={clipUrls[clip.id]} target="_blank" rel="noreferrer">
+                                <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[9px] gap-0.5" asChild>
+                                  <span><ExternalLink className="w-2.5 h-2.5" /> Open</span>
+                                </Button>
+                              </a>
                             </div>
                           )}
                           {Object.entries(clip.messaging).map(([platform, msg]) => {
@@ -1126,15 +1205,27 @@ function DownloadSection({ videoUrl, castProjectId }: { videoUrl?: string; castP
                       Pause
                     </Button>
                   ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => handleDownload(item.presetId, item.label)}
-                    >
-                      <Download className="w-3 h-3" />
-                      Download
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => handleDownload(item.presetId, item.label)}
+                      >
+                        <Download className="w-3 h-3" />
+                        Download
+                      </Button>
+                      {item.presetId === 'mp4_1080p' && videoUrl && (
+                        <a href={videoUrl} download={`genie-cast-1080p.mp4`} className="inline-flex">
+                          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" asChild>
+                            <span>
+                              <ExternalLink className="w-3 h-3" />
+                              Direct
+                            </span>
+                          </Button>
+                        </a>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -1166,6 +1257,39 @@ function DownloadSection({ videoUrl, castProjectId }: { videoUrl?: string; castP
             ))}
           </div>
         )}
+
+        {/* Source video URL info */}
+        <div className="mt-3 pt-3 border-t">
+          {videoUrl ? (
+            <div className="flex items-center gap-2 text-[10px]">
+              <Video className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="text-muted-foreground truncate flex-1" title={videoUrl}>
+                Source: <span className="font-medium text-foreground/80">{extractFilename(videoUrl)}</span>
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1.5 text-[9px] gap-0.5"
+                onClick={() => { navigator.clipboard.writeText(videoUrl); toast.success('Video URL copied'); }}
+              >
+                <Copy className="w-2.5 h-2.5" /> Copy URL
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1.5 text-[9px] gap-0.5"
+                onClick={() => window.open(videoUrl, '_blank')}
+              >
+                <ExternalLink className="w-2.5 h-2.5" /> Open
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-[10px] text-amber-600 dark:text-amber-400">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>Complete PRODUCE phase first to enable downloads</span>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -1402,8 +1526,19 @@ Return ONLY the JSON array, no markdown fences.`;
                   )}
                   {videoUrl && isExpanded && (
                     <div className="flex items-center gap-2 pt-1 text-[10px] text-muted-foreground">
-                      <ExternalLink className="w-3 h-3" />
-                      <span>Video URL: <a href={videoUrl} target="_blank" rel="noreferrer" className="text-primary underline break-all">{videoUrl.substring(0, 80)}…</a></span>
+                      <Video className="w-3 h-3" />
+                      <span className="truncate flex-1 font-medium text-foreground/80">{extractFilename(videoUrl)}</span>
+                      <Button
+                        size="sm" variant="ghost" className="h-5 px-1.5 text-[9px] gap-0.5"
+                        onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(videoUrl); toast.success('Video URL copied'); }}
+                      >
+                        <Copy className="w-2.5 h-2.5" /> Copy URL
+                      </Button>
+                      <a href={videoUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>
+                        <Button size="sm" variant="ghost" className="h-5 px-1.5 text-[9px] gap-0.5" asChild>
+                          <span><ExternalLink className="w-2.5 h-2.5" /> Open</span>
+                        </Button>
+                      </a>
                     </div>
                   )}
                 </div>
@@ -1596,6 +1731,25 @@ export function EP04PublishHub({
   const projectId = searchParams.get('projectId');
   const dbProject = useCastProjectData(projectId);
 
+  // ─── DB fallback for video URL and thumbnail (survives page refresh) ──
+  const [dbVideoUrl, setDbVideoUrl] = useState<string | null>(null);
+  const [dbThumbnailUrl, setDbThumbnailUrl] = useState<string | null>(null);
+  const dbFallbackLoaded = useRef(false);
+
+  useEffect(() => {
+    if (!projectId || dbFallbackLoaded.current) return;
+    dbFallbackLoaded.current = true;
+    supabase
+      .from('cast_projects')
+      .select('final_video_url, thumbnail_url')
+      .eq('id', projectId)
+      .single()
+      .then(({ data }) => {
+        if (data?.final_video_url) setDbVideoUrl(data.final_video_url);
+        if (data?.thumbnail_url) setDbThumbnailUrl(data.thumbnail_url);
+      });
+  }, [projectId]);
+
   // OAuth connect handler — triggers platform OAuth flow
   const handleConnect = useCallback(async (platformId: string) => {
     const oauthPlatform = platformId as OAuthPlatform;
@@ -1635,16 +1789,32 @@ export function EP04PublishHub({
     });
   }, []);
 
-  // Derive session context for display
-  const hasSessionContext = !!(sessionTitle || productionArtifacts);
-  const sessionVideoUrl = productionArtifacts?.assembledVideoUrl;
-  const sessionThumbnails = productionArtifacts?.thumbnailUrls || [];
+  // Derive session context for display — with DB + storage fallbacks for page-refresh resilience
+  const hasSessionContext = !!(sessionTitle || productionArtifacts || dbVideoUrl);
+  const sessionVideoUrl = productionArtifacts?.assembledVideoUrl || dbVideoUrl || null;
+  const sessionThumbnails = (() => {
+    // Priority 1: productionArtifacts from parent component (live session)
+    if (productionArtifacts?.thumbnailUrls?.length) return productionArtifacts.thumbnailUrls;
+    // Priority 2: DB field (cast_projects.thumbnail_url, set by genie-cast-status)
+    if (dbThumbnailUrl) return [dbThumbnailUrl];
+    // Priority 3: Derive from video URL (storage naming: final.mp4 → final_thumb.jpg)
+    const videoSrc = productionArtifacts?.assembledVideoUrl || dbVideoUrl;
+    if (videoSrc) {
+      const derived = deriveThumbnailUrl(videoSrc);
+      if (derived) return [derived];
+    }
+    return [];
+  })();
 
   const togglePlatform = useCallback((id: string) => {
     const platform = PLATFORMS.find(p => p.id === id);
     if (!platform?.connected) {
-      toast.info(`Connect your ${platform?.name} account to enable publishing`);
-      return;
+      const intentUrl = getShareIntentUrl(id, '', '', '');
+      if (intentUrl) {
+        toast.info(`${platform?.name} not connected — "Share via Link" will be available after publish`);
+      } else {
+        toast.info(`${platform?.name} requires OAuth connection for publishing`);
+      }
     }
     setSelectedPlatforms(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
@@ -1654,9 +1824,11 @@ export function EP04PublishHub({
   }, [PLATFORMS, lsCast]);
 
   const copyLink = () => {
-    const url = sessionVideoUrl || 'https://youtu.be/ep04-demo-link';
-    navigator.clipboard.writeText(url);
-    toast.success('Link copied to clipboard');
+    const shareUrl = projectId
+      ? `${window.location.origin}/genie-cast/share/${projectId}`
+      : sessionVideoUrl || 'https://youtu.be/ep04-demo-link';
+    navigator.clipboard.writeText(shareUrl);
+    toast.success('Share link copied to clipboard');
   };
 
   const handleEnhanceDescription = async () => {
@@ -1702,8 +1874,45 @@ export function EP04PublishHub({
     });
     setPublishResults(initial);
 
-    // Publish to each platform via social-publish edge function
+    // Publish to each platform — connected via API, unconnected via share intent
     for (const platformId of selectedPlatforms) {
+      const platform = PLATFORMS.find(p => p.id === platformId);
+      const isConnected = platform?.connected;
+
+      // Unconnected platform — generate share intent URL instead of calling API
+      if (!isConnected) {
+        const intentUrl = getShareIntentUrl(platformId, videoUrl, publishTitle, publishDescription);
+        if (intentUrl) {
+          setPublishResults(p => ({
+            ...p,
+            [platformId]: {
+              platformId,
+              status: 'failed',
+              progress: 100,
+              url: intentUrl,
+              error: 'Not connected — use Share via Link',
+            },
+          }));
+          lsCast.capturePublishAction({
+            platform: platformId,
+            success: false,
+            publishType: 'immediate',
+            errorMessage: 'Share via intent link (not connected)',
+          });
+        } else {
+          setPublishResults(p => ({
+            ...p,
+            [platformId]: {
+              platformId,
+              status: 'failed',
+              progress: 100,
+              error: `${platform?.name} requires OAuth connection for publishing`,
+            },
+          }));
+        }
+        continue;
+      }
+
       setPublishResults(p => ({
         ...p,
         [platformId]: { ...p[platformId], status: 'uploading', progress: 30 },
@@ -1731,6 +1940,22 @@ export function EP04PublishHub({
         const publishUrl = data?.postUrl || data?.url || data?.videoUrl;
         const needsConnection = data?.metadata?.requiresConnection === true;
         const success = data?.success !== false && !needsConnection;
+
+        // If API says "requires connection", generate share intent as fallback
+        if (!success && needsConnection) {
+          const intentUrl = getShareIntentUrl(platformId, videoUrl, publishTitle, publishDescription);
+          setPublishResults(p => ({
+            ...p,
+            [platformId]: {
+              ...p[platformId],
+              status: 'failed',
+              progress: 100,
+              url: intentUrl || undefined,
+              error: 'Not connected — use Share via Link',
+            },
+          }));
+          continue;
+        }
 
         setPublishResults(p => ({
           ...p,
@@ -2014,7 +2239,15 @@ export function EP04PublishHub({
                             Published
                           </Badge>
                         )}
-                        {result.status === 'failed' && (
+                        {result.status === 'failed' && result.url && (
+                          <a href={result.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-amber-500/40 text-amber-500 hover:bg-amber-500/10">
+                              <ExternalLink className="w-3 h-3" />
+                              Share via Link
+                            </Button>
+                          </a>
+                        )}
+                        {result.status === 'failed' && !result.url && (
                           <Badge variant="destructive" className="text-xs">
                             <AlertCircle className="w-3 h-3 mr-1" />
                             Failed
