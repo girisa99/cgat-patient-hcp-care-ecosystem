@@ -104,13 +104,6 @@ async function savePublishHubCache(projectId: string, patch: Partial<PublishHubC
 // UTILITY FUNCTIONS
 // ──────────────────────────────────────────────────────────────────────────────
 
-/** Derive thumbnail URL from a video URL — storage naming is deterministic:
- *  part1.mp4 → part1_thumb.jpg, final.mp4 → final_thumb.jpg */
-function deriveThumbnailUrl(videoUrl: string): string | null {
-  if (!videoUrl || !videoUrl.includes('.mp4')) return null;
-  return videoUrl.replace('.mp4', '_thumb.jpg');
-}
-
 /** Extract friendly filename from a Supabase Storage URL or any URL */
 function extractFilename(url: string): string {
   try {
@@ -1792,17 +1785,50 @@ export function EP04PublishHub({
   // Derive session context for display — with DB + storage fallbacks for page-refresh resilience
   const hasSessionContext = !!(sessionTitle || productionArtifacts || dbVideoUrl);
   const sessionVideoUrl = productionArtifacts?.assembledVideoUrl || dbVideoUrl || null;
+
+  // Dynamic thumbnail discovery from Supabase Storage (no hardcoded naming)
+  const [discoveredThumbnails, setDiscoveredThumbnails] = useState<string[]>([]);
+  const thumbnailDiscoveryRef = useRef(false);
+  useEffect(() => {
+    if (thumbnailDiscoveryRef.current || !projectId) return;
+    // Only run discovery if we don't already have thumbnails from props or DB
+    const hasThumbs = (productionArtifacts?.thumbnailUrls?.length ?? 0) > 0 || !!dbThumbnailUrl;
+    if (hasThumbs) return;
+    thumbnailDiscoveryRef.current = true;
+    (async () => {
+      try {
+        const [partsListing, rendersListing] = await Promise.all([
+          supabase.storage.from('cast-assets').list(projectId, { limit: 200 }),
+          supabase.storage.from('cast-renders').list(projectId, { limit: 200 }),
+        ]);
+        const allFiles = [
+          ...(partsListing.data || []).map(f => ({ ...f, bucket: 'cast-assets' })),
+          ...(rendersListing.data || []).map(f => ({ ...f, bucket: 'cast-renders' })),
+        ];
+        const thumbFiles = allFiles.filter(f =>
+          f.name.endsWith('_thumb.jpg') || f.name.endsWith('_thumb.png') || f.name.endsWith('_thumb.jpeg')
+        );
+        if (thumbFiles.length > 0) {
+          const urls = thumbFiles.map(f => {
+            const { data: { publicUrl } } = supabase.storage.from(f.bucket).getPublicUrl(`${projectId}/${f.name}`);
+            return publicUrl;
+          });
+          console.log(`[PublishHub Thumbnail Discovery] Found ${urls.length} thumbnails from storage`);
+          setDiscoveredThumbnails(urls);
+        }
+      } catch (err) {
+        console.warn('[PublishHub Thumbnail Discovery] Storage listing failed:', err);
+      }
+    })();
+  }, [projectId, productionArtifacts, dbThumbnailUrl, supabase]);
+
   const sessionThumbnails = (() => {
     // Priority 1: productionArtifacts from parent component (live session)
     if (productionArtifacts?.thumbnailUrls?.length) return productionArtifacts.thumbnailUrls;
     // Priority 2: DB field (cast_projects.thumbnail_url, set by genie-cast-status)
     if (dbThumbnailUrl) return [dbThumbnailUrl];
-    // Priority 3: Derive from video URL (storage naming: final.mp4 → final_thumb.jpg)
-    const videoSrc = productionArtifacts?.assembledVideoUrl || dbVideoUrl;
-    if (videoSrc) {
-      const derived = deriveThumbnailUrl(videoSrc);
-      if (derived) return [derived];
-    }
+    // Priority 3: Dynamic storage discovery (lists actual files in storage buckets)
+    if (discoveredThumbnails.length > 0) return discoveredThumbnails;
     return [];
   })();
 

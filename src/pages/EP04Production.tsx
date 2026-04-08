@@ -789,6 +789,7 @@ function EP04ProductionInner() {
   const [concatStatus, setConcatStatus] = useState<'idle' | 'submitting' | 'rendering' | 'completed' | 'failed'>('idle');
   const [concatJobId, setConcatJobId] = useState<string | null>(null);
   const [concatVideoUrl, setConcatVideoUrl] = useState<string | null>(null);
+  const [concatThumbnailUrl, setConcatThumbnailUrl] = useState<string | null>(null);
   const [concatError, setConcatError] = useState<string | null>(null);
 
   // ─── Re-render & Auto-Stitch state ────────────────────────────────────────
@@ -847,6 +848,12 @@ function EP04ProductionInner() {
       setConcatVideoUrl(rqScenes.restoredVideoUrl);
       setConcatStatus('completed');
       console.log(`[EP04 RQ Bridge] Restored final video URL from DB: ${rqScenes.restoredVideoUrl.substring(0, 60)}...`);
+    }
+
+    // Restore final thumbnail URL from DB
+    if (rqScenes.restoredThumbnailUrl && !concatThumbnailUrl) {
+      setConcatThumbnailUrl(rqScenes.restoredThumbnailUrl);
+      console.log(`[EP04 RQ Bridge] Restored thumbnail URL from DB: ${rqScenes.restoredThumbnailUrl.substring(0, 60)}...`);
     }
 
     // Background: re-persist ONLY fallback TTS entries (from cast_generation_jobs → cast_project_script_lines)
@@ -3535,6 +3542,71 @@ function EP04ProductionInner() {
     })();
   }, [projectId]);
 
+  // ── Dynamic thumbnail discovery from Supabase Storage ──
+  // If DB has null output_thumbnail_url for completed parts, list storage files to find them
+  const thumbnailDiscoveryDone = useRef(false);
+  useEffect(() => {
+    if (!projectId || thumbnailDiscoveryDone.current) return;
+    // Only run once assemblyParts are populated (after restore)
+    const parts = assemblyPartsRaw;
+    if (parts.length === 0) return;
+    const partsNeedingThumbnails = parts.filter(p => p.videoUrl && !p.thumbnailUrl);
+    if (partsNeedingThumbnails.length === 0) {
+      thumbnailDiscoveryDone.current = true;
+      return;
+    }
+    thumbnailDiscoveryDone.current = true;
+    (async () => {
+      try {
+        // List files in both storage buckets for this project
+        const [partsListing, rendersListing] = await Promise.all([
+          supabase.storage.from('cast-assets').list(projectId, { limit: 200 }),
+          supabase.storage.from('cast-renders').list(projectId, { limit: 200 }),
+        ]);
+        const allFiles = [
+          ...(partsListing.data || []).map(f => ({ ...f, bucket: 'cast-assets' })),
+          ...(rendersListing.data || []).map(f => ({ ...f, bucket: 'cast-renders' })),
+        ];
+        const thumbFiles = allFiles.filter(f =>
+          f.name.endsWith('_thumb.jpg') || f.name.endsWith('_thumb.png') || f.name.endsWith('_thumb.jpeg')
+        );
+        if (thumbFiles.length === 0) return;
+
+        console.log(`[EP04 Thumbnail Discovery] Found ${thumbFiles.length} thumbnail files in storage:`, thumbFiles.map(f => f.name));
+
+        // Build a map: video filename base → thumbnail public URL
+        const thumbMap = new Map<string, string>();
+        for (const tf of thumbFiles) {
+          // e.g., "part1_thumb.jpg" → base "part1"
+          const base = tf.name.replace(/_thumb\.(jpg|jpeg|png)$/, '');
+          const { data: { publicUrl } } = supabase.storage.from(tf.bucket).getPublicUrl(`${projectId}/${tf.name}`);
+          thumbMap.set(base, publicUrl);
+        }
+
+        // Match each part's video filename to its thumbnail
+        setAssemblyParts(prev => prev.map(p => {
+          if (p.thumbnailUrl || !p.videoUrl) return p;
+          const videoFilename = p.videoUrl.split('/').pop() || '';
+          const videoBase = videoFilename.replace(/\.[^.]+$/, ''); // "part1.mp4" → "part1"
+          const discoveredThumb = thumbMap.get(videoBase);
+          if (discoveredThumb) {
+            console.log(`[EP04 Thumbnail Discovery] Part ${p.partNumber} → ${discoveredThumb.split('/').pop()}`);
+            return { ...p, thumbnailUrl: discoveredThumb };
+          }
+          return p;
+        }));
+
+        // Also discover final video thumbnail
+        const finalThumb = thumbMap.get('final');
+        if (finalThumb && !concatThumbnailUrl) {
+          setConcatThumbnailUrl(finalThumb);
+        }
+      } catch (err) {
+        console.warn('[EP04 Thumbnail Discovery] Storage listing failed:', err);
+      }
+    })();
+  }, [projectId, assemblyPartsRaw, concatThumbnailUrl, supabase]);
+
   // ── Per-Scene Assembly with Smart Splitting ──
   // Each scene renders independently. Only very heavy scenes get split.
   // Visual cycling (15s beats) handles long durations, so threshold is generous.
@@ -3772,7 +3844,7 @@ function EP04ProductionInner() {
             : assemblyJobId;
           const { data: jobRow } = await supabase
             .from('cast_generation_jobs')
-            .select('progress_percent, output_metadata, status, output_url')
+            .select('progress_percent, output_metadata, status, output_url, output_thumbnail_url')
             .eq('id', castJobId)
             .single();
           if (jobRow) {
@@ -5600,9 +5672,11 @@ function EP04ProductionInner() {
         }
         if (jobStatus === 'completed') {
           const videoUrl = data.job.outputUrl;
+          const thumbUrl = data.job.thumbnailUrl || null;
           setConcatJobId(null);
           setConcatStatus('completed');
           setConcatVideoUrl(videoUrl);
+          setConcatThumbnailUrl(thumbUrl);
           setFinalVideoUrl(videoUrl);
           setAssemblyProgress(null);
           setProductionPhase('complete');
@@ -7652,11 +7726,7 @@ function EP04ProductionInner() {
                             }
                             return null;
                           })();
-                          // Derive thumbnail from video URL: part1.mp4 → part1_thumb.jpg
-                          const derivedThumb = part.videoUrl?.includes('.mp4')
-                            ? part.videoUrl.replace('.mp4', '_thumb.jpg')
-                            : null;
-                          const posterUrl = part.thumbnailUrl || derivedThumb || bestThumb;
+                          const posterUrl = part.thumbnailUrl || bestThumb;
 
                           return (
                             <div key={part.partNumber} className={cn(
@@ -8036,7 +8106,7 @@ function EP04ProductionInner() {
                           .map(p => ({
                             partNumber: p.partNumber,
                             videoUrl: p.videoUrl!,
-                            thumbnailUrl: p.thumbnailUrl || (p.videoUrl?.includes('.mp4') ? p.videoUrl.replace('.mp4', '_thumb.jpg') : undefined),
+                            thumbnailUrl: p.thumbnailUrl || undefined,
                             estimatedDuration: p.estimatedDuration,
                           }))}
                         onPlaybackComplete={() => toast.success('Full production playback complete')}
@@ -8049,7 +8119,7 @@ function EP04ProductionInner() {
                             <h4 className="text-sm font-bold text-green-600">Stitched Final Video</h4>
                           </div>
                           <div className="rounded-xl overflow-hidden border border-green-500/30">
-                            <video src={(concatVideoUrl || finalVideoUrl)!} controls className="w-full" playsInline preload="auto" />
+                            <video src={(concatVideoUrl || finalVideoUrl)!} poster={concatThumbnailUrl || undefined} controls className="w-full" playsInline preload="auto" />
                           </div>
                           <div className="flex gap-2">
                             <Button size="sm" asChild>
@@ -8190,7 +8260,7 @@ function EP04ProductionInner() {
                                     parts={completedParts.map(p => ({
                                       partNumber: p.partNumber,
                                       videoUrl: p.videoUrl!,
-                                      thumbnailUrl: p.thumbnailUrl || (p.videoUrl?.includes('.mp4') ? p.videoUrl.replace('.mp4', '_thumb.jpg') : undefined),
+                                      thumbnailUrl: p.thumbnailUrl || undefined,
                                       estimatedDuration: p.estimatedDuration,
                                     }))}
                                   />
@@ -8307,10 +8377,11 @@ function EP04ProductionInner() {
                             audioUrl: null,
                             captionFiles: [],
                             thumbnailUrls: [
+                              ...(concatThumbnailUrl ? [concatThumbnailUrl] : []),
                               ...assemblyParts
-                                .filter(p => p.thumbnailUrl || p.videoUrl)
-                                .map(p => p.thumbnailUrl || (p.videoUrl?.includes('.mp4') ? p.videoUrl.replace('.mp4', '_thumb.jpg') : null))
-                                .filter((url): url is string => !!url),
+                                .filter(p => p.thumbnailUrl)
+                                .map(p => p.thumbnailUrl!)
+                                .filter(Boolean),
                               ...Object.values(sceneProduction)
                                 .map(s => Object.values(s.imageUrls || {})[0])
                                 .filter((url): url is string => !!url),
@@ -8344,10 +8415,11 @@ function EP04ProductionInner() {
                             audioUrl: null,
                             captionFiles: [],
                             thumbnailUrls: [
+                              ...(concatThumbnailUrl ? [concatThumbnailUrl] : []),
                               ...assemblyParts
-                                .filter(p => p.thumbnailUrl || p.videoUrl)
-                                .map(p => p.thumbnailUrl || (p.videoUrl?.includes('.mp4') ? p.videoUrl.replace('.mp4', '_thumb.jpg') : null))
-                                .filter((url): url is string => !!url),
+                                .filter(p => p.thumbnailUrl)
+                                .map(p => p.thumbnailUrl!)
+                                .filter(Boolean),
                               ...Object.values(sceneProduction)
                                 .map(s => Object.values(s.imageUrls || {})[0])
                                 .filter((url): url is string => !!url),

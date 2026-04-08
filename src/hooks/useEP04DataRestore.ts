@@ -294,6 +294,7 @@ interface RestoredSceneProductionResult {
   productionPhase: ProductionPhase;
   expiredMusicCount: number;
   restoredVideoUrl: string | null;
+  restoredThumbnailUrl: string | null;
   isLoading: boolean;
 }
 
@@ -306,12 +307,12 @@ export function useRestoredSceneProduction(
   sceneTitleKeys: string[],
 ): RestoredSceneProductionResult {
   const sceneStorageKey = projectId ? `scenes-${projectId}` : '';
-  type SceneQueryResult = { scenes: Record<string, SceneProductionStatus>; phase: ProductionPhase; expiredMusicCount: number; videoUrl: string | null };
+  type SceneQueryResult = { scenes: Record<string, SceneProductionStatus>; phase: ProductionPhase; expiredMusicCount: number; videoUrl: string | null; thumbnailUrl: string | null };
   const query = useQuery({
     queryKey: projectId ? castKeys.project(projectId).sceneSummaries : ['cast', 'noop-scenes'],
     queryFn: async (): Promise<SceneQueryResult> => {
       if (!projectId) {
-        return { scenes: {}, phase: 'tts' as ProductionPhase, expiredMusicCount: 0, videoUrl: null };
+        return { scenes: {}, phase: 'tts' as ProductionPhase, expiredMusicCount: 0, videoUrl: null, thumbnailUrl: null };
       }
 
       const restored: Record<string, SceneProductionStatus> = {};
@@ -437,6 +438,7 @@ export function useRestoredSceneProduction(
       // Check project status + final video URL from DB
       const projStatus = await fetchProjectStatus(projectId);
       const videoUrl = projStatus?.final_video_url || null;
+      const thumbnailUrl = projStatus?.thumbnail_url || null;
 
       if (restoredVisualCount === 0) {
         if (projStatus?.status === 'visual_production' || projStatus?.status === 'complete') {
@@ -448,7 +450,7 @@ export function useRestoredSceneProduction(
         `${restoredVisualCount} visuals, ${musicCount} music, ${assembledCount} assembled → phase=${phase}` +
         `${videoUrl ? `, videoUrl=${videoUrl.substring(0, 60)}...` : ''}`);
 
-      const result: SceneQueryResult = { scenes: restored, phase, expiredMusicCount, videoUrl };
+      const result: SceneQueryResult = { scenes: restored, phase, expiredMusicCount, videoUrl, thumbnailUrl };
       persistToStorage(sceneStorageKey, result);
       return result;
     },
@@ -470,6 +472,7 @@ export function useRestoredSceneProduction(
     productionPhase: query.data?.phase || 'tts',
     expiredMusicCount: query.data?.expiredMusicCount || 0,
     restoredVideoUrl: query.data?.videoUrl || null,
+    restoredThumbnailUrl: query.data?.thumbnailUrl || null,
     isLoading: query.isLoading && !query.data, // not loading if we have initialData
   };
 }
