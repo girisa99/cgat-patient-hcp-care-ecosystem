@@ -13,7 +13,7 @@
  * - Direct download (MP4 + MP3)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,49 @@ import { useStreamingDownload, VIDEO_DOWNLOAD_PRESETS, type DownloadJob } from '
 import type { ProductionArtifacts } from '@/hooks/useGenieCastSession';
 import { supabase } from '@/integrations/supabase/client';
 import { useCastProjectData, type SocialClipData } from '@/hooks/useCastProjectData';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// PUBLISH HUB PERSISTENCE — save/load generated artifacts to cast_projects.metadata
+// ──────────────────────────────────────────────────────────────────────────────
+
+interface PublishHubCache {
+  clipUrls?: Record<string, string>;
+  readyClips?: string[];
+  thumbnailResults?: string[];
+  generatedShorts?: Array<{ id: string; url: string; thumbnailUrl?: string; duration: number }>;
+  socialCopies?: Array<{ platform: string; format: string; text: string; hashtags: string[] }>;
+  savedAt?: string;
+}
+
+async function loadPublishHubCache(projectId: string): Promise<PublishHubCache | null> {
+  try {
+    const { data } = await supabase
+      .from('cast_projects')
+      .select('metadata')
+      .eq('id', projectId)
+      .single();
+    return (data?.metadata as Record<string, unknown>)?.publishHub as PublishHubCache || null;
+  } catch { return null; }
+}
+
+async function savePublishHubCache(projectId: string, patch: Partial<PublishHubCache>): Promise<void> {
+  try {
+    const { data: existing } = await supabase
+      .from('cast_projects')
+      .select('metadata')
+      .eq('id', projectId)
+      .single();
+    const meta = (existing?.metadata as Record<string, unknown>) || {};
+    const prev = (meta.publishHub as PublishHubCache) || {};
+    const merged = { ...prev, ...patch, savedAt: new Date().toISOString() };
+    await supabase
+      .from('cast_projects')
+      .update({ metadata: { ...meta, publishHub: merged } })
+      .eq('id', projectId);
+  } catch (e) {
+    console.warn('[PublishHub] Cache save failed:', e);
+  }
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // SESSION PROPS — connects PRODUCE → PUBLISH
@@ -289,11 +332,24 @@ function PlatformCard({ platform, selected, result, onToggle, onConnect, isConne
 // THUMBNAIL PACK
 // ──────────────────────────────────────────────────────────────────────────────
 
-function ThumbnailPackSection({ sessionThumbnails = [], videoUrl }: { sessionThumbnails?: string[]; videoUrl?: string }) {
+function ThumbnailPackSection({ sessionThumbnails = [], videoUrl, castProjectId }: { sessionThumbnails?: string[]; videoUrl?: string; castProjectId?: string }) {
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [thumbnailResults, setThumbnailResults] = useState<string[]>([]);
   const [genError, setGenError] = useState<string | null>(null);
+  const thumbCacheLoaded = useRef(false);
+
+  // Load cached thumbnails from DB on mount
+  useEffect(() => {
+    if (!castProjectId || thumbCacheLoaded.current) return;
+    thumbCacheLoaded.current = true;
+    loadPublishHubCache(castProjectId).then(cache => {
+      if (cache?.thumbnailResults?.length) {
+        setThumbnailResults(cache.thumbnailResults);
+        setGenerated(true);
+      }
+    });
+  }, [castProjectId]);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -323,6 +379,7 @@ function ThumbnailPackSection({ sessionThumbnails = [], videoUrl }: { sessionThu
       }
       if (urls.length > 0) {
         setThumbnailResults(urls);
+        if (castProjectId) savePublishHubCache(castProjectId, { thumbnailResults: urls });
         toast.success(`${urls.length} thumbnail variant(s) generated`);
       } else {
         setGenError('Thumbnail API returned no valid URLs — Gemini API key may not be configured');
@@ -534,6 +591,25 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClip
   const [readyClips, setReadyClips] = useState<string[]>([]);
   const [clipUrls, setClipUrls] = useState<Record<string, string>>({});
   const [expandedClip, setExpandedClip] = useState<string | null>(null);
+  const cacheLoaded = useRef(false);
+
+  // Load cached clip URLs from DB on mount
+  useEffect(() => {
+    if (!castProjectId || cacheLoaded.current) return;
+    cacheLoaded.current = true;
+    loadPublishHubCache(castProjectId).then(cache => {
+      if (cache?.clipUrls && Object.keys(cache.clipUrls).length > 0) {
+        setClipUrls(cache.clipUrls);
+        setReadyClips(cache.readyClips || Object.keys(cache.clipUrls));
+      }
+    });
+  }, [castProjectId]);
+
+  // Save clip URLs to DB after generation
+  const persistClips = useCallback((urls: Record<string, string>, ready: string[]) => {
+    if (!castProjectId) return;
+    savePublishHubCache(castProjectId, { clipUrls: urls, readyClips: ready });
+  }, [castProjectId]);
 
   const toggleClip = (id: string) => {
     setSelectedClips(p => p.includes(id) ? p.filter(c => c !== id) : [...p, id]);
@@ -575,8 +651,11 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClip
       const clipUrl = resultClip?.clipUrl || '';
 
       if (clipUrl && clipUrl.startsWith('http')) {
-        setClipUrls(prev => ({ ...prev, [clipId]: clipUrl }));
-        setReadyClips(p => p.includes(clipId) ? p : [...p, clipId]);
+        const newUrls = { ...clipUrls, [clipId]: clipUrl };
+        const newReady = readyClips.includes(clipId) ? readyClips : [...readyClips, clipId];
+        setClipUrls(newUrls);
+        setReadyClips(newReady);
+        persistClips(newUrls, newReady);
         toast.success(`Clip ready: ${clipId}`);
       } else {
         setClipErrors(prev => ({ ...prev, [clipId]: resultClip?.error || 'No clip URL returned' }));
@@ -628,18 +707,23 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClip
       // Map results back to clip IDs
       const resultClips: Array<{ platformId: string; clipUrl: string; error?: string }> = data?.clips || [];
       let successCount = 0;
+      const batchUrls: Record<string, string> = { ...clipUrls };
+      const batchReady: string[] = [...readyClips];
 
       for (const rc of resultClips) {
         const clipId = rc.platformId;
         if (rc.clipUrl && rc.clipUrl.startsWith('http')) {
-          setClipUrls(prev => ({ ...prev, [clipId]: rc.clipUrl }));
-          setReadyClips(p => p.includes(clipId) ? p : [...p, clipId]);
+          batchUrls[clipId] = rc.clipUrl;
+          if (!batchReady.includes(clipId)) batchReady.push(clipId);
           successCount++;
         } else {
           setClipErrors(prev => ({ ...prev, [clipId]: rc.error || 'No URL returned' }));
         }
       }
 
+      setClipUrls(batchUrls);
+      setReadyClips(batchReady);
+      if (successCount > 0) persistClips(batchUrls, batchReady);
       toast.success(`${successCount}/${effectiveClips.length} clips extracted via RunPod`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
@@ -710,25 +794,40 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClip
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                              {clip.id.split('-')[0]}
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-semibold">
+                              {clip.id}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">{clip.duration}s</span>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                              {clip.timestamp} · {clip.duration}s
+                            </Badge>
                             {clip.platforms.map(p => (
                               <Badge key={p} variant="outline" className="text-[9px] px-1 py-0 text-muted-foreground">
                                 {p.replace('youtube_shorts', 'YT').replace('linkedin', 'LI').replace('tiktok', 'TT').replace('instagram', 'IG').replace('twitter', 'X')}
                               </Badge>
                             ))}
                           </div>
-                          <p className="text-xs leading-relaxed text-foreground/90 italic">
-                            "{clip.hook}"
+                          <p className="text-xs leading-relaxed text-foreground/90 font-medium">
+                            {clip.hook}
                           </p>
-                          {/* Per-platform messaging preview toggle */}
+                          {clip.cta && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              CTA: {clip.cta}
+                            </p>
+                          )}
+                          {clip.hashtags && clip.hashtags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {clip.hashtags.slice(0, 5).map(h => (
+                                <span key={h} className="text-[9px] text-primary/70">{h}</span>
+                              ))}
+                              {clip.hashtags.length > 5 && <span className="text-[9px] text-muted-foreground">+{clip.hashtags.length - 5}</span>}
+                            </div>
+                          )}
+                          {/* Per-platform messaging toggle */}
                           <button
                             onClick={() => setExpandedClip(isExpanded ? null : clip.id)}
                             className="text-[10px] text-primary hover:underline mt-1"
                           >
-                            {isExpanded ? 'Hide messaging' : 'Show per-platform messaging'}
+                            {isExpanded ? 'Hide platform details' : 'Show platform details'}
                           </button>
                         </div>
                         <div className="flex flex-col gap-1.5 flex-shrink-0">
@@ -823,26 +922,50 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClip
                         </div>
                       )}
 
-                      {/* Per-platform messaging preview */}
+                      {/* Per-platform messaging — expanded details with copy buttons */}
                       {isExpanded && (
-                        <div className="ml-9 mt-1 mb-2 p-3 rounded-lg border border-border/30 bg-muted/5 space-y-2">
-                          {Object.entries(clip.messaging).map(([platform, msg]) => (
-                            <div key={platform} className="space-y-0.5">
-                              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                {platform}
-                              </div>
-                              <p className="text-[11px] text-foreground/80 whitespace-pre-line leading-relaxed">
-                                {'text' in msg ? msg.text : 'caption' in msg ? msg.caption : 'title' in msg ? `${msg.title}\n${msg.description}` : ''}
-                              </p>
-                              {'hashtags' in msg && (msg as { hashtags?: string[] }).hashtags && (
-                                <div className="flex gap-1 flex-wrap">
-                                  {((msg as { hashtags: string[] }).hashtags).map(h => (
-                                    <span key={h} className="text-[9px] text-primary/70">{h}</span>
-                                  ))}
-                                </div>
-                              )}
+                        <div className="ml-9 mt-1 mb-2 p-3 rounded-lg border border-border/30 bg-muted/5 space-y-3">
+                          {clipUrls[clip.id] && (
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground pb-1 border-b border-border/20">
+                              <ExternalLink className="w-3 h-3" />
+                              <span>Clip URL: <a href={clipUrls[clip.id]} target="_blank" rel="noreferrer" className="text-primary underline break-all">{clipUrls[clip.id].substring(0, 60)}…</a></span>
                             </div>
-                          ))}
+                          )}
+                          {Object.entries(clip.messaging).map(([platform, msg]) => {
+                            const msgText = 'text' in msg ? msg.text : 'caption' in msg ? msg.caption : 'title' in msg ? `${msg.title}\n${msg.description}` : '';
+                            const msgHashtags = 'hashtags' in msg ? (msg as { hashtags?: string[] }).hashtags : undefined;
+                            return (
+                              <div key={platform} className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    {platform}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-5 px-1.5 text-[9px] gap-0.5"
+                                    onClick={() => {
+                                      const full = `${msgText}${msgHashtags?.length ? '\n\n' + msgHashtags.join(' ') : ''}`;
+                                      navigator.clipboard.writeText(full);
+                                      toast.success(`${platform} copy copied`);
+                                    }}
+                                  >
+                                    <Copy className="w-2.5 h-2.5" /> Copy
+                                  </Button>
+                                </div>
+                                <p className="text-[11px] text-foreground/80 whitespace-pre-line leading-relaxed">
+                                  {msgText}
+                                </p>
+                                {msgHashtags && msgHashtags.length > 0 && (
+                                  <div className="flex gap-1 flex-wrap">
+                                    {msgHashtags.map(h => (
+                                      <span key={h} className="text-[9px] text-primary/70">{h}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1061,11 +1184,21 @@ const AI_PROVIDERS: { id: AIProvider; label: string; model: string; provider: st
   { id: 'gemini', label: 'Gemini', model: 'gemini-2.5-flash', provider: 'gemini' },
 ];
 
-function SocialCopySection({ sessionTitle, sessionDescription, videoUrl }: { sessionTitle?: string; sessionDescription?: string; videoUrl?: string }) {
+function SocialCopySection({ sessionTitle, sessionDescription, videoUrl, castProjectId }: { sessionTitle?: string; sessionDescription?: string; videoUrl?: string; castProjectId?: string }) {
   const [copies, setCopies] = useState<SocialCopyItem[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedAI, setSelectedAI] = useState<AIProvider>('claude');
   const [expandedPlatform, setExpandedPlatform] = useState<string | null>(null);
+  const copyCacheLoaded = useRef(false);
+
+  // Load cached social copies from DB on mount
+  useEffect(() => {
+    if (!castProjectId || copyCacheLoaded.current) return;
+    copyCacheLoaded.current = true;
+    loadPublishHubCache(castProjectId).then(cache => {
+      if (cache?.socialCopies?.length) setCopies(cache.socialCopies);
+    });
+  }, [castProjectId]);
 
   const videoLink = videoUrl || '[VIDEO_URL]';
 
@@ -1123,6 +1256,7 @@ Return ONLY the JSON array, no markdown fences.`;
       }
       const parsed: SocialCopyItem[] = JSON.parse(raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
       setCopies(parsed);
+      if (castProjectId) savePublishHubCache(castProjectId, { socialCopies: parsed });
       toast.success(`Social copy generated via ${AI_PROVIDERS.find(p => p.id === selectedAI)?.label} — ${parsed.length} platforms`);
     } catch (e) {
       toast.error(`Failed to generate copy: ${e instanceof Error ? e.message : 'Unknown error'}`);
@@ -1153,6 +1287,44 @@ Return ONLY the JSON array, no markdown fences.`;
     }
   };
 
+  const downloadPlatformCopy = (c: SocialCopyItem) => {
+    const fullText = `${c.text}\n\n${c.hashtags.length > 0 ? c.hashtags.map(h => `#${h}`).join(' ') : ''}`;
+    const blob = new Blob([fullText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${c.platform.toLowerCase().replace(/[\s/]+/g, '-')}-${c.format}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAll = () => {
+    const all = copies.map(c => `${'═'.repeat(60)}\n${c.platform.toUpperCase()} — ${c.format.toUpperCase()}\n${'═'.repeat(60)}\n\n${c.text}\n\n${c.hashtags.length > 0 ? 'HASHTAGS: ' + c.hashtags.map(h => `#${h}`).join(' ') : ''}`).join('\n\n\n');
+    const blob = new Blob([all], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'social-copy-all-platforms.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const platformIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case 'linkedin': return '💼';
+      case 'youtube': return '▶️';
+      case 'twitter/x': case 'twitter': return '🐦';
+      case 'instagram': return '📸';
+      case 'tiktok': return '🎵';
+      case 'facebook': return '📘';
+      default: return '📝';
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -1180,45 +1352,61 @@ Return ONLY the JSON array, no markdown fences.`;
         </div>
       </CardHeader>
       {copies.length > 0 && (
-        <CardContent className="space-y-3">
-          <div className="flex justify-end">
+        <CardContent className="space-y-4">
+          <div className="flex justify-end gap-2">
             <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={copyAll}>
               <Copy className="w-3 h-3" /> Copy All
+            </Button>
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={downloadAll}>
+              <Download className="w-3 h-3" /> Download All
             </Button>
           </div>
           {copies.map((c) => {
             const isExpanded = expandedPlatform === c.platform;
-            const preview = c.text.length > 200 ? c.text.slice(0, 200) + '…' : c.text;
+            const wordCount = c.text.split(/\s+/).length;
+            const charCount = c.text.length;
             return (
               <div key={c.platform} className="rounded-lg border bg-muted/30 overflow-hidden">
+                {/* Header — always visible */}
                 <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setExpandedPlatform(isExpanded ? null : c.platform)}>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{c.platform}</Badge>
+                    <span className="text-sm">{platformIcon(c.platform)}</span>
+                    <Badge variant="outline" className="text-xs font-semibold">{c.platform}</Badge>
                     <Badge className={cn('text-[10px] border px-1.5 py-0', formatBadgeColor(c.format))}>{c.format}</Badge>
-                    <span className="text-[10px] text-muted-foreground">{c.text.split(/\s+/).length} words</span>
+                    <span className="text-[10px] text-muted-foreground">{wordCount} words · {charCount} chars</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={(e) => { e.stopPropagation(); copyToClipboard(c.text, c.platform); }}>
                       <Copy className="w-3 h-3" /> Copy
                     </Button>
+                    <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" onClick={(e) => { e.stopPropagation(); downloadPlatformCopy(c); }}>
+                      <Download className="w-3 h-3" /> .txt
+                    </Button>
                     <RefreshCw className={cn('w-3 h-3 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
                   </div>
                 </div>
-                {!isExpanded && (
-                  <div className="px-3 pb-3">
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">{preview}</p>
-                  </div>
-                )}
-                {isExpanded && (
-                  <div className="px-3 pb-3 space-y-2 border-t border-border/30 pt-2">
-                    <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">{c.text}</p>
-                    {c.hashtags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {c.hashtags.map(h => <Badge key={h} variant="secondary" className="text-[10px]">#{h}</Badge>)}
-                      </div>
-                    )}
-                  </div>
-                )}
+
+                {/* Content — always shown, full text when expanded */}
+                <div className="px-3 pb-3 space-y-2">
+                  {isExpanded ? (
+                    <div className="border-t border-border/30 pt-2">
+                      <div className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed prose prose-sm dark:prose-invert max-w-none">{c.text}</div>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-3">{c.text}</p>
+                  )}
+                  {c.hashtags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {c.hashtags.map(h => <Badge key={h} variant="secondary" className="text-[10px]">#{h}</Badge>)}
+                    </div>
+                  )}
+                  {videoUrl && isExpanded && (
+                    <div className="flex items-center gap-2 pt-1 text-[10px] text-muted-foreground">
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Video URL: <a href={videoUrl} target="_blank" rel="noreferrer" className="text-primary underline break-all">{videoUrl.substring(0, 80)}…</a></span>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -1240,6 +1428,16 @@ function SmartShortsSection({ sourceVideoUrl, castProjectId }: { sourceVideoUrl?
   const [generated, setGenerated] = useState<GeneratedShort[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const shortsCacheLoaded = useRef(false);
+
+  // Load cached shorts from DB on mount
+  useEffect(() => {
+    if (!castProjectId || shortsCacheLoaded.current) return;
+    shortsCacheLoaded.current = true;
+    loadPublishHubCache(castProjectId).then(cache => {
+      if (cache?.generatedShorts?.length) setGenerated(cache.generatedShorts);
+    });
+  }, [castProjectId]);
 
   const handleAnalyze = async () => {
     if (!sourceVideoUrl) { toast.error('No video available — complete assembly first'); return; }
@@ -1291,12 +1489,14 @@ function SmartShortsSection({ sourceVideoUrl, castProjectId }: { sourceVideoUrl?
       if (error) throw error;
 
       const resultClips = data?.clips || [];
-      setGenerated(resultClips.map((c: Record<string, unknown>, i: number) => ({
+      const shorts = resultClips.map((c: Record<string, unknown>, i: number) => ({
         id: (c.platformId as string) || (c.id as string) || `gen-${i}`,
         url: (c.clipUrl as string) || '',
         thumbnailUrl: c.thumbnailUrl as string | undefined,
         duration: (c.duration as number) || 0,
-      })));
+      }));
+      setGenerated(shorts);
+      if (castProjectId && shorts.length > 0) savePublishHubCache(castProjectId, { generatedShorts: shorts });
 
       const successCount = resultClips.filter((c: any) => c.clipUrl && (c.clipUrl as string).startsWith('http')).length;
       toast.success(`Generated ${successCount}/${suggestions.length} shorts via RunPod`);
@@ -1870,7 +2070,7 @@ export function EP04PublishHub({
           )}
 
           {/* AI Social Copy Generator */}
-          <SocialCopySection sessionTitle={publishTitle} sessionDescription={publishDescription} videoUrl={sessionVideoUrl} />
+          <SocialCopySection sessionTitle={publishTitle} sessionDescription={publishDescription} videoUrl={sessionVideoUrl} castProjectId={projectId || undefined} />
 
           {/* Quick content tips */}
           <Card className="border-border/30">
@@ -1896,7 +2096,7 @@ export function EP04PublishHub({
 
         {/* THUMBNAILS TAB */}
         <TabsContent value="thumbnails" className="mt-4">
-          <ThumbnailPackSection sessionThumbnails={sessionThumbnails} videoUrl={sessionVideoUrl} />
+          <ThumbnailPackSection sessionThumbnails={sessionThumbnails} videoUrl={sessionVideoUrl} castProjectId={projectId || undefined} />
         </TabsContent>
 
         {/* DOWNLOAD TAB */}
