@@ -25,6 +25,7 @@ import type {
 } from '@/config/universal-script-schema';
 import { getScriptTemplate, scaleTemplateToDuration, type ScriptTemplate, type ScriptTemplateBeat } from '@/config/scriptTemplates';
 import type { CastProjectConfig, GeneratedPipeline } from './projectPipelineGenerator';
+import { supabase } from '@/integrations/supabase/client';
 
 // ─── SCRIPT GENERATION INPUT ────────────────────────────────────────────────
 
@@ -310,4 +311,248 @@ export function validateScript(
   }
 
   return { valid: issues.length === 0, issues };
+}
+
+// ─── AI SCRIPT CONTENT GENERATION ───────────────────────────────────────────
+
+/**
+ * Parse AI response into per-line dialogue text.
+ *
+ * Expected AI response format:
+ * ```
+ * SCENE: scene-0-hook
+ * [speaker-1] Welcome to today's session on insulin management...
+ * [speaker-2] That's right. Let me walk you through the key concepts...
+ *
+ * SCENE: scene-1-problem
+ * [speaker-1] One of the biggest challenges patients face...
+ * ```
+ *
+ * Falls back to line-by-line splitting if structured format not detected.
+ */
+function parseScriptResponse(
+  response: string,
+  manifest: UniversalEpisodeManifest,
+): Record<string, string> {
+  const lineTexts: Record<string, string> = {};
+  const allLineKeys = Object.keys(manifest.scriptLines);
+
+  // Try structured parsing: SCENE headers + [speaker] lines
+  const sceneBlocks = response.split(/^SCENE:\s*/m).filter(Boolean);
+
+  if (sceneBlocks.length > 1) {
+    let globalLineIndex = 0;
+
+    for (const block of sceneBlocks) {
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+      // First line might be scene ID
+      const sceneHeader = lines[0];
+
+      // Find matching scene
+      const matchedScene = manifest.scenes.find(s =>
+        sceneHeader.includes(s.id) || sceneHeader.toLowerCase().includes(s.title.toLowerCase())
+      );
+      const sceneLineKeys = matchedScene?.scriptKeys || [];
+
+      // Parse dialogue lines (with or without [speaker] tags)
+      const dialogueLines = lines.slice(1).filter(l =>
+        !l.startsWith('---') && !l.startsWith('===') && l.length > 5
+      );
+
+      for (let i = 0; i < dialogueLines.length; i++) {
+        // Strip [speaker] tag if present
+        let text = dialogueLines[i].replace(/^\[[\w-]+\]\s*/, '');
+        // Strip visual directions in brackets at start
+        text = text.replace(/^\[.*?\]\s*/, '');
+
+        const targetKey = sceneLineKeys[i] || allLineKeys[globalLineIndex];
+        if (targetKey) {
+          lineTexts[targetKey] = text;
+        }
+        globalLineIndex++;
+      }
+
+      // If scene had fewer dialogue lines than expected, advance index
+      if (dialogueLines.length < sceneLineKeys.length) {
+        globalLineIndex += sceneLineKeys.length - dialogueLines.length;
+      }
+    }
+  } else {
+    // Fallback: split by non-empty lines, assign sequentially
+    const lines = response
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 10 && !l.startsWith('#') && !l.startsWith('SCENE') && !l.startsWith('---'));
+
+    for (let i = 0; i < Math.min(lines.length, allLineKeys.length); i++) {
+      let text = lines[i];
+      text = text.replace(/^\[[\w-]+\]\s*/, '');
+      text = text.replace(/^\d+\.\s*/, '');
+      text = text.replace(/^\[.*?\]\s*/, '');
+      lineTexts[allLineKeys[i]] = text;
+    }
+  }
+
+  return lineTexts;
+}
+
+/**
+ * Generate actual dialogue content for a script structure using AI.
+ *
+ * Takes a manifest with empty script line text fields and fills them
+ * with AI-generated dialogue via the ai-universal-processor edge function.
+ *
+ * @param input - Script generation input (prompt, config, characters)
+ * @param manifest - Script structure with empty text fields to fill
+ * @returns Updated manifest with dialogue text filled in, or null on failure
+ */
+export async function generateScriptContent(
+  input: ScriptGenerationInput,
+  manifest: UniversalEpisodeManifest,
+): Promise<{ manifest: UniversalEpisodeManifest; tokensUsed: number } | null> {
+  const { prompt, projectConfig, characters } = input;
+
+  // Build a detailed prompt that includes the exact structure to fill
+  const sceneStructure = manifest.scenes.map(scene => {
+    const sceneLines = scene.scriptKeys.map(key => {
+      const line = manifest.scriptLines[key];
+      return `  [${line?.voice || 'narrator'}] {${key}} — ${line?.direction || ''}`;
+    }).join('\n');
+
+    return `SCENE: ${scene.id} — "${scene.title}" (${scene.durationEst}s)
+${sceneLines}`;
+  }).join('\n\n');
+
+  const characterList = characters
+    .map(c => `- ${c.key}: ${c.name} (${c.role}) — ${c.motionStyle || 'natural'} delivery`)
+    .join('\n');
+
+  const systemPrompt = `You are a professional scriptwriter for video production. Write natural, engaging dialogue that sounds conversational (not corporate-speak). Each line should be 1-3 sentences, optimized for text-to-speech at ~150 words per minute.
+
+OUTPUT FORMAT: For each scene, write dialogue lines preceded by the scene header. Use exactly this format:
+
+SCENE: <scene-id>
+[<speaker-key>] The dialogue text for this line...
+[<speaker-key>] The next dialogue line...
+
+Write EXACTLY the number of lines shown in the structure below. Each {line-key} placeholder needs ONE line of dialogue.`;
+
+  const userPrompt = `Generate a ${projectConfig.format} script about: ${prompt}
+
+INDUSTRY: ${projectConfig.industry}
+AUDIENCE: ${projectConfig.targetAudience}
+TONE: ${projectConfig.tone}
+DURATION: ${projectConfig.durationTarget} seconds
+LANGUAGE: ${projectConfig.baseLanguage}
+
+CHARACTERS:
+${characterList}
+
+STRUCTURE TO FILL (write exactly one dialogue line per placeholder):
+${sceneStructure}
+
+Write engaging, natural dialogue for each line. Match the emotional tone and purpose described in each direction. Total word count should be approximately ${Math.round(projectConfig.durationTarget * 150 / 60)} words (150 WPM × ${projectConfig.durationTarget}s).`;
+
+  // L42: 3× retry with exponential backoff + 60s timeout per attempt
+  const SCRIPT_RETRY_BACKOFFS = [0, 3000, 10000]; // 0s, 3s, 10s
+  const SCRIPT_TIMEOUT_MS = 60000; // 60s
+
+  let responseText: string | null = null;
+  let data: Record<string, unknown> | null = null;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      const backoff = SCRIPT_RETRY_BACKOFFS[attempt] || 10000;
+      console.log(`[ScriptGen] Retry ${attempt + 1}/3 after ${backoff / 1000}s`);
+      await new Promise(r => setTimeout(r, backoff));
+    }
+
+    try {
+      const invokePromise = supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          action: 'chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.7,
+          maxTokens: 4000,
+        },
+      });
+      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>(resolve =>
+        setTimeout(() => resolve({ data: null, error: { message: `Script generation timed out after ${SCRIPT_TIMEOUT_MS / 1000}s` } }), SCRIPT_TIMEOUT_MS)
+      );
+      const result = await Promise.race([invokePromise, timeoutPromise]);
+
+      if (result.error) {
+        const msg = result.error?.message || '';
+        const isTransient = /timeout|timed out|5\d\d|rate.?limit|ECONNRESET/i.test(msg);
+        if (isTransient) {
+          console.warn(`[ScriptGen] Transient error (attempt ${attempt + 1}):`, msg);
+          continue;
+        }
+        console.error('[ScriptGen] Non-transient error:', msg);
+        return null;
+      }
+
+      data = result.data as Record<string, unknown>;
+      responseText = ((data?.text || data?.content || data?.message || '') as string);
+
+      if (responseText && responseText.length >= 50) {
+        break; // Success
+      }
+
+      console.warn(`[ScriptGen] Too-short response (attempt ${attempt + 1}): ${responseText?.length || 0} chars`);
+      responseText = null;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.warn(`[ScriptGen] Exception (attempt ${attempt + 1}):`, msg);
+      if (attempt === 2) return null;
+    }
+  }
+
+  try {
+    if (!responseText || responseText.length < 50) {
+      console.error('[ScriptGen] Failed to get valid AI response after 3 attempts');
+      return null;
+    }
+
+    // Parse response into per-line texts
+    const lineTexts = parseScriptResponse(responseText, manifest);
+    const filledCount = Object.keys(lineTexts).length;
+    const totalLines = Object.keys(manifest.scriptLines).length;
+
+    console.log(`[ScriptGen] Filled ${filledCount}/${totalLines} lines from AI response`);
+
+    if (filledCount === 0) {
+      console.error('[ScriptGen] Failed to parse any lines from AI response');
+      return null;
+    }
+
+    // Validation: warn if less than 50% of lines were filled (partial success)
+    const fillRatio = filledCount / totalLines;
+    if (fillRatio < 0.5) {
+      console.warn(`[ScriptGen] Low fill ratio: ${(fillRatio * 100).toFixed(0)}% — AI response may not match template structure`);
+    }
+
+    // Merge AI-generated text into the manifest
+    const updatedScriptLines = { ...manifest.scriptLines };
+    for (const [key, text] of Object.entries(lineTexts)) {
+      if (updatedScriptLines[key]) {
+        updatedScriptLines[key] = { ...updatedScriptLines[key], text };
+      }
+    }
+
+    const updatedManifest: UniversalEpisodeManifest = {
+      ...manifest,
+      scriptLines: updatedScriptLines,
+    };
+
+    const tokensUsed = (data?.tokensUsed as number) || Math.round(responseText!.length / 4);
+
+    return { manifest: updatedManifest, tokensUsed };
+  } catch (err) {
+    console.error('[ScriptGen] generateScriptContent failed:', err);
+    return null;
+  }
 }

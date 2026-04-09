@@ -759,6 +759,31 @@ export function useCastProjectPersistence() {
     }
   }, []);
 
+  // ── H5: Per-user job concurrency check ──────────────────────────────────
+  // Prevents users from launching too many concurrent generation jobs.
+  const MAX_CONCURRENT_JOBS = 3;
+
+  const checkConcurrencyLimit = useCallback(async (projectId: string): Promise<{ allowed: boolean; activeCount: number }> => {
+    try {
+      const { count, error } = await db
+        .from('cast_generation_jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', projectId)
+        .in('status', ['processing', 'rendering', 'pending']);
+
+      if (error) {
+        console.warn('[Persistence] Concurrency check failed:', error);
+        return { allowed: true, activeCount: 0 }; // Fail open on error
+      }
+
+      const activeCount = count || 0;
+      return { allowed: activeCount < MAX_CONCURRENT_JOBS, activeCount };
+    } catch (err) {
+      console.warn('[Persistence] Concurrency check error:', err);
+      return { allowed: true, activeCount: 0 };
+    }
+  }, []);
+
   return {
     // State
     isSaving,
@@ -788,5 +813,8 @@ export function useCastProjectPersistence() {
     fetchTokenBreakdown,
     trackGenerationJob,
     completeGenerationJob,
+
+    // Concurrency control (H5)
+    checkConcurrencyLimit,
   };
 }

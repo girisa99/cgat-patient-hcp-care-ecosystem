@@ -34,6 +34,7 @@ import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
 import { useCastProjectData } from '@/hooks/useCastProjectData';
 import { useQueryClient } from '@tanstack/react-query';
 import { castKeys } from '@/hooks/castQueryKeys';
+import { isBase64DataUri, isSupabaseStorageUrl } from '@/constants/castCdnProviders';
 import {
   useEP04ProjectLookup,
   useRestoredTts,
@@ -106,13 +107,7 @@ async function uploadBase64ImageToStorage(
   return publicUrl;
 }
 
-// Check if a value is a base64 data URI (not a proper HTTP URL)
-const isBase64DataUri = (url: string): boolean =>
-  typeof url === 'string' && url.startsWith('data:');
-
-// Check if URL is already on Supabase Storage (permanent, never expires)
-const isSupabaseStorageUrl = (url: string): boolean =>
-  typeof url === 'string' && url.includes('supabase.co/storage');
+// isBase64DataUri and isSupabaseStorageUrl imported from @/constants/castCdnProviders (single source of truth)
 
 // Ensure a URL is on Supabase Storage — mirrors base64, CDN, or local assets
 // Returns: permanent Supabase Storage URL, or original URL if mirroring fails

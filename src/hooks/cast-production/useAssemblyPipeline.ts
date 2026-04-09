@@ -13,12 +13,16 @@
  * - ALWAYS set timeout on edge function calls (60s)
  * - ALWAYS provide cancel button (via abort flag)
  * - ALWAYS re-upload final video to Supabase Storage (CDN URLs expire)
+ * - ALWAYS guard against duplicate assembly submissions (re-entry guard)
+ * - ALWAYS cap polling at MAX_POLL_COUNT to prevent infinite loops
+ * - ALWAYS warn user if re-upload fails (video URL will expire)
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
+import { CAST_STORAGE, CAST_POLLING, CAST_DEFAULTS, DEFAULT_RESOLUTION, type CastResolution } from '@/config/castProductionConfig';
 import type { GeneratedAudio } from './useTtsGeneration';
 import type { SceneProductionStatus } from './useVisualGeneration';
 
@@ -63,6 +67,7 @@ export interface AssemblyPipelineResult {
     bookends: BookendData | null,
     quality?: string,
     projectTitle?: string,
+    resolution?: CastResolution,
   ) => Promise<void>;
   cancelAssembly: () => void;
   setFinalVideoUrl: (url: string | null) => void;
@@ -70,33 +75,56 @@ export interface AssemblyPipelineResult {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-const isHttpUrl = (u: string) => u && u.startsWith('http');
+/** Strict HTTP URL check — rejects data: URIs, empty strings, and non-http URLs */
+const isHttpUrl = (u: string): boolean =>
+  typeof u === 'string' && u.length > 0 && u.startsWith('http') && !u.startsWith('data:');
 
 function filterDataUris(urls: Record<string, string>): Record<string, string> {
   return Object.fromEntries(Object.entries(urls).filter(([_, v]) => isHttpUrl(v)));
 }
 
+/** Calculate assembly timeout: base 60s + 5s per scene (L16: long videos need more time) */
+function getAssemblyTimeout(sceneCount: number): number {
+  return Math.max(60000, 60000 + sceneCount * 5000);
+}
+
+/** Max polls before giving up (from centralized config) */
+const MAX_POLL_COUNT = CAST_POLLING.MAX_ASSEMBLY_POLLS;
+
+/** Re-upload CDN URL to Supabase Storage with 2× retry */
 async function reUploadToStorage(cdnUrl: string, storagePath: string): Promise<string | null> {
-  try {
-    const response = await fetch(cdnUrl);
-    if (!response.ok) return null;
-    const blob = await response.blob();
+  const MAX_ATTEMPTS = 2;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      if (attempt > 0) {
+        console.log(`[Assembly] Re-upload retry ${attempt + 1}/${MAX_ATTEMPTS}`);
+        await new Promise(r => setTimeout(r, 3000));
+      }
 
-    const { error } = await supabase.storage
-      .from('cast-assets')
-      .upload(storagePath, blob, { contentType: blob.type || 'video/mp4', upsert: true });
+      const response = await fetch(cdnUrl);
+      if (!response.ok) {
+        console.warn(`[Assembly] Re-upload fetch failed: ${response.status}`);
+        continue;
+      }
+      const blob = await response.blob();
 
-    if (error) {
-      console.warn('[Assembly] Re-upload failed:', error);
-      return null;
+      const { error } = await supabase.storage
+        .from(CAST_STORAGE.ASSETS_BUCKET)
+        .upload(storagePath, blob, { contentType: blob.type || 'video/mp4', upsert: true });
+
+      if (error) {
+        console.warn('[Assembly] Re-upload storage error:', error);
+        continue;
+      }
+
+      const { data: publicData } = supabase.storage.from(CAST_STORAGE.ASSETS_BUCKET).getPublicUrl(storagePath);
+      return publicData?.publicUrl || null;
+    } catch (err) {
+      console.warn(`[Assembly] Re-upload error (attempt ${attempt + 1}):`, err);
     }
-
-    const { data: publicData } = supabase.storage.from('cast-assets').getPublicUrl(storagePath);
-    return publicData?.publicUrl || null;
-  } catch (err) {
-    console.warn('[Assembly] Re-upload error:', err);
-    return null;
   }
+  console.warn('[Assembly] Re-upload failed after all attempts');
+  return null;
 }
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
@@ -110,11 +138,31 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
 
   const { updateFinalAssembly, trackGenerationJob, completeGenerationJob } = useCastProjectPersistence();
 
-  // ─── Poll for assembly completion ─────────────────────────────────────
+  // ─── Poll for assembly completion (capped at MAX_POLL_COUNT) ──────────
+
+  const pollCountRef = useRef(0);
 
   useEffect(() => {
-    if (!assemblyJobId) return;
+    if (!assemblyJobId) {
+      pollCountRef.current = 0;
+      return;
+    }
+    pollCountRef.current = 0;
+
     const timer = setInterval(async () => {
+      pollCountRef.current++;
+
+      // C3: Cap polling to prevent infinite loop (300 × 10s = 50 min)
+      if (pollCountRef.current > MAX_POLL_COUNT) {
+        console.error(`[Assembly] Polling timed out after ${MAX_POLL_COUNT} attempts (${Math.round(MAX_POLL_COUNT * 10 / 60)} min)`);
+        setAssemblyProgress(null);
+        setAssemblyJobId(null);
+        setIsAssembling(false);
+        toast.error('Assembly timed out — the rendering job may still be running. Check back later or contact support.');
+        clearInterval(timer);
+        return;
+      }
+
       try {
         const { data } = await supabase.functions.invoke('genie-cast-status', {
           body: { castJobId: assemblyJobId },
@@ -130,6 +178,10 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
             if (reUploaded) {
               permanentUrl = reUploaded;
               console.log(`[Assembly] Re-uploaded to permanent URL: ${permanentUrl}`);
+            } else {
+              // H4: Warn user that video URL will expire
+              console.error('[Assembly] Re-upload to permanent storage FAILED — using CDN URL that expires in 24-48h');
+              toast.warning('Video saved but permanent storage failed — download your video now, the URL may expire in 24-48 hours.');
             }
           }
 
@@ -141,7 +193,7 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
           if (projectId && permanentUrl) {
             await updateFinalAssembly(projectId, permanentUrl, {
               totalDuration: data.job.duration || 0,
-              resolution: '1920x1080',
+              resolution,
             });
           }
           toast.success('Video assembled successfully!');
@@ -153,7 +205,8 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
         } else {
           const pct = data?.job?.progressPercent || 0;
           const statusText = data?.job?.statusText || '';
-          setAssemblyProgress(statusText ? `${statusText} (${pct}%)` : `Rendering video... ${pct}%`);
+          const pollInfo = `(poll ${pollCountRef.current}/${MAX_POLL_COUNT})`;
+          setAssemblyProgress(statusText ? `${statusText} (${pct}%) ${pollInfo}` : `Rendering video... ${pct}% ${pollInfo}`);
         }
       } catch (err) {
         console.error('[Assembly] Poll error:', err);
@@ -173,7 +226,14 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
     bookends: BookendData | null,
     quality: string = 'production',
     projectTitle?: string,
+    resolution: CastResolution = DEFAULT_RESOLUTION,
   ) => {
+    // C2: Re-entry guard — prevent duplicate assembly submissions
+    if (isAssembling || assemblyJobId) {
+      toast.warning('Assembly already in progress — please wait or cancel the current job first.');
+      return;
+    }
+
     abortRef.current = false;
     setIsAssembling(true);
     setAssemblyProgress('Preparing scene data for assembly...');
@@ -192,9 +252,10 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
 
         for (const line of scene.scriptLines) {
           const dur = line.durationEst || 5;
-          if (audioMap[line.key]?.audioUrl && isHttpUrl(audioMap[line.key].audioUrl)) {
+          const ttsUrl = audioMap[line.key]?.audioUrl;
+          if (ttsUrl && isHttpUrl(ttsUrl)) {
             allTtsUrls.push({
-              url: audioMap[line.key].audioUrl,
+              url: ttsUrl,
               start: cumulativeStart,
               duration: dur,
               voice: line.characterKey,
@@ -203,7 +264,7 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
           cumulativeStart += dur;
         }
 
-        const sceneDuration = cumulativeStart || 30;
+        const sceneDuration = cumulativeStart || CAST_DEFAULTS.SCENE_DURATION;
 
         // CRITICAL: Filter data: URIs from all visual URLs
         const filteredVideoUrls = filterDataUris(status.videoUrls || {});
@@ -220,7 +281,7 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
 
         // Music loop detection
         const musicStep = (scene.pipeline || []).find(s => s.type === 'music');
-        const musicDuration = musicStep?.duration || 30;
+        const musicDuration = musicStep?.duration || CAST_DEFAULTS.MUSIC_LOOP_DURATION;
         const musicLoop = status.musicUrl ? musicDuration < sceneDuration : false;
 
         return {
@@ -237,11 +298,11 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
       });
 
       // ── SAFETY GUARD: Log + check payload size ──
-      const sceneData = { chapters, transitions, bookends, quality, castProjectId: projectId, projectTitle };
+      const sceneData = { chapters, transitions, bookends, quality, castProjectId: projectId, projectTitle, resolution };
       const payloadKb = Math.round(JSON.stringify(sceneData).length / 1024);
       console.log(`[Assembly] ${chapters.length} scenes, payload: ${payloadKb}kb`);
 
-      if (payloadKb > 5000) {
+      if (payloadKb > Math.round(CAST_STORAGE.PAYLOAD_MAX_BYTES / 1024)) {
         toast.error(`Payload too large (${payloadKb}kb). Likely contains embedded images — check for data: URIs.`);
         setIsAssembling(false);
         setAssemblyProgress(null);
@@ -258,9 +319,11 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
 
       setAssemblyProgress('Sending to timeline builder...');
 
-      // ── Call edge function with timeout ──
+      // ── Call edge function with scalable timeout (L16) ──
+      const timeoutMs = getAssemblyTimeout(scenes.length);
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      console.log(`[Assembly] Timeout set to ${timeoutMs / 1000}s for ${scenes.length} scenes`);
 
       try {
         const { data, error } = await supabase.functions.invoke('genie-cast-timeline-builder', {
@@ -305,7 +368,7 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
             await updateFinalAssembly(projectId, permanentUrl, {
               totalDuration: data.totalDuration,
               sceneCount: scenes.length,
-              resolution: '1920x1080',
+              resolution,
             });
           }
           toast.success('Video assembled successfully!');
@@ -325,7 +388,7 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
       setIsAssembling(false);
       toast.error(`Assembly failed: ${err.message}`);
     }
-  }, [projectId, trackGenerationJob, completeGenerationJob, updateFinalAssembly]);
+  }, [projectId, isAssembling, assemblyJobId, trackGenerationJob, completeGenerationJob, updateFinalAssembly]);
 
   const cancelAssembly = useCallback(() => {
     abortRef.current = true;

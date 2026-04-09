@@ -10,6 +10,47 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCastProjectPersistence } from '@/hooks/useCastProjectPersistence';
+import { CAST_STORAGE } from '@/config/castProductionConfig';
+
+// ─── Retry Helper (L42: 3× retry with exponential backoff) ─────────────────
+
+const TTS_RETRY_BACKOFFS = [0, 2000, 6000]; // 0s, 2s, 6s (fast for TTS)
+const TTS_TIMEOUT_MS = 30000; // 30s per TTS call
+
+async function invokeTtsWithRetry(
+  body: Record<string, unknown>,
+  lineKey: string,
+  maxAttempts = 3,
+): Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      const backoff = TTS_RETRY_BACKOFFS[attempt] || 6000;
+      console.log(`[TTS] Retry ${attempt + 1}/${maxAttempts} for "${lineKey}" after ${backoff / 1000}s`);
+      await new Promise(r => setTimeout(r, backoff));
+    }
+
+    try {
+      const invokePromise = supabase.functions.invoke('multi-provider-tts', { body });
+      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>(resolve =>
+        setTimeout(() => resolve({ data: null, error: { message: `TTS timed out after ${TTS_TIMEOUT_MS / 1000}s` } }), TTS_TIMEOUT_MS)
+      );
+      const result = await Promise.race([invokePromise, timeoutPromise]);
+
+      if (!result.error) return result as { data: Record<string, unknown>; error: null };
+
+      const msg = result.error?.message || '';
+      const isTransient = /timeout|timed out|5\d\d|rate.?limit|ECONNRESET|fetch.?failed/i.test(msg);
+      if (!isTransient) return result as { data: null; error: { message: string } };
+
+      console.warn(`[TTS] Transient error for "${lineKey}" (attempt ${attempt + 1}):`, msg);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.warn(`[TTS] Exception for "${lineKey}" (attempt ${attempt + 1}):`, msg);
+      if (attempt === maxAttempts - 1) return { data: null, error: { message: msg } };
+    }
+  }
+  return { data: null, error: { message: `TTS failed after ${maxAttempts} attempts for "${lineKey}"` } };
+}
 
 // ─── Upload base64 TTS audio to Supabase Storage ────────────────────────────
 async function uploadTtsToStorage(
@@ -23,13 +64,13 @@ async function uploadTtsToStorage(
   const blob = new Blob([bytes], { type: 'audio/mpeg' });
 
   const path = `${projectId}/tts/${lineKey}.mp3`;
-  const { error } = await supabase.storage.from('cast-assets').upload(path, blob, {
+  const { error } = await supabase.storage.from(CAST_STORAGE.ASSETS_BUCKET).upload(path, blob, {
     contentType: 'audio/mpeg',
     upsert: true,
   });
   if (error) throw error;
 
-  const { data: { publicUrl } } = supabase.storage.from('cast-assets').getPublicUrl(path);
+  const { data: { publicUrl } } = supabase.storage.from(CAST_STORAGE.ASSETS_BUCKET).getPublicUrl(path);
   return publicUrl;
 }
 
@@ -150,8 +191,9 @@ export function useTtsGeneration(
         });
       }
 
-      const { data, error } = await supabase.functions.invoke('multi-provider-tts', {
-        body: {
+      // L42: TTS with 30s timeout + 3× retry with backoff
+      const { data, error } = await invokeTtsWithRetry(
+        {
           text: line.text,
           languageCode: language,
           provider: voiceConfig.provider,
@@ -165,10 +207,11 @@ export function useTtsGeneration(
             } : {}),
           },
         },
-      });
+        key,
+      );
 
       if (error) {
-        console.error(`[TTS] Edge function error for "${key}":`, error);
+        console.error(`[TTS] Error for "${key}":`, error);
         toast.error(`TTS error for "${key}": ${error.message}`);
         setStatusMap(prev => ({ ...prev, [key]: 'error' }));
         return false;
@@ -180,19 +223,22 @@ export function useTtsGeneration(
         return false;
       }
 
-      // Upload base64 audio to Supabase Storage instead of storing as data URI
-      let audioUrl = data.audioUrl; // Use URL if provider already returns one
+      // Upload base64 audio to Supabase Storage — NEVER store data URIs (L1: data URIs = MBs)
+      let audioUrl = data.audioUrl as string | undefined;
       if (!audioUrl && data.audioContent) {
         if (projectId) {
           try {
-            audioUrl = await uploadTtsToStorage(projectId, key, data.audioContent);
+            audioUrl = await uploadTtsToStorage(projectId, key, data.audioContent as string);
           } catch (uploadErr) {
-            console.warn(`[TTS] Storage upload failed for "${key}", falling back to data URI:`, uploadErr);
-            audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+            console.error(`[TTS] Storage upload failed for "${key}" — cannot use data URI fallback:`, uploadErr);
+            setStatusMap(prev => ({ ...prev, [key]: 'error' }));
+            return false;
           }
         } else {
-          // No projectId — can't build a storage path, use data URI as fallback
-          audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+          // No projectId — can't build a storage path; fail gracefully
+          console.error(`[TTS] No projectId and no audioUrl for "${key}" — cannot persist audio`);
+          setStatusMap(prev => ({ ...prev, [key]: 'error' }));
+          return false;
         }
       }
 
@@ -237,8 +283,8 @@ export function useTtsGeneration(
       setBatchProgress({ current: i + 1, total: keys.length });
       const ok = await generateLine(keys[i]);
       if (ok) success++;
-      // Rate limit delay between API calls
-      if (i < keys.length - 1) await new Promise(r => setTimeout(r, 500));
+      // L30: 1.5s minimum between TTS API calls to prevent provider rate limits
+      if (i < keys.length - 1) await new Promise(r => setTimeout(r, 1500));
     }
 
     setBatchProgress(null);

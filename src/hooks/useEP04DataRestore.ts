@@ -15,6 +15,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { castKeys } from './castQueryKeys';
+import { isBase64DataUri, needsCdnReUpload } from '@/constants/castCdnProviders';
 import {
   fetchTtsLines,
   fetchTtsJobsFallback,
@@ -80,13 +81,8 @@ export interface SceneProductionStatus {
 
 // ── Helpers (extracted from EP04Production) ─────────────────────────────────
 
-const isBase64DataUri = (url: string): boolean =>
-  typeof url === 'string' && url.startsWith('data:');
-
-const isExpiredCdnUrl = (url: string): boolean =>
-  !!url && !url.includes('supabase.co/storage') && (
-    url.includes('oss-cn-beijing') || url.includes('replicate.delivery') || url.includes('dashscope')
-  );
+// isBase64DataUri and needsCdnReUpload imported from @/constants/castCdnProviders (single source of truth)
+// Replaces local needsCdnReUpload which only checked 3 domains — shared constant checks 12+ providers
 
 const filterPlaceholders = (urls: Record<string, string>): Record<string, string> => {
   const clean: Record<string, string> = {};
@@ -412,7 +408,7 @@ export function useRestoredSceneProduction(
       // Detect expired music URLs
       let expiredMusicCount = 0;
       for (const sk of Object.keys(restored)) {
-        if (restored[sk].musicUrl && isExpiredCdnUrl(restored[sk].musicUrl!)) {
+        if (restored[sk].musicUrl && needsCdnReUpload(restored[sk].musicUrl!)) {
           expiredMusicCount++;
           restored[sk].music = 'done'; // UI will detect expired URL
         }

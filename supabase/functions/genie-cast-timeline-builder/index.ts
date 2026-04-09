@@ -63,14 +63,31 @@ interface Bookends {
   closing: { duration: number; title?: string };
 }
 
+/** Map CastResolution pixel dimensions to JSON2Video resolution names */
+function mapResolution(userRes?: string, quality?: string): string {
+  if (userRes) {
+    const pixelMap: Record<string, string> = {
+      '3840x2160': '4k',
+      '1920x1080': 'full-hd',
+      '1280x720': 'hd',
+      '1080x1920': 'full-hd', // portrait — JSON2Video handles via aspect ratio
+      '1080x1080': 'full-hd', // square — JSON2Video handles via aspect ratio
+    };
+    if (pixelMap[userRes]) return pixelMap[userRes];
+  }
+  // Fallback: derive from quality
+  return quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
+}
+
 function buildTimeline(
   chapters: Chapter[],
   transitions: Transition[],
   bookends: Bookends | null,
   quality: string,
   projectTitle?: string,
+  userResolution?: string,
 ) {
-  const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
+  const resolution = mapResolution(userResolution, quality);
   const scenes: Array<Record<string, unknown>> = [];
 
   // ── Opening bookend ──
@@ -254,7 +271,7 @@ serve(async (req) => {
     const {
       chapters, transitions = [], bookends = null,
       quality = 'production', castProjectId = null,
-      language = 'en', projectTitle,
+      language = 'en', projectTitle, resolution: userResolution,
     } = await req.json();
 
     if (!chapters || !Array.isArray(chapters) || chapters.length === 0) {
@@ -276,7 +293,7 @@ serve(async (req) => {
     }
 
     // ── Build timeline server-side ──
-    const timeline = buildTimeline(chapters, transitions, bookends, quality, projectTitle);
+    const timeline = buildTimeline(chapters, transitions, bookends, quality, projectTitle, userResolution);
     const totalDuration = timeline.scenes.reduce((sum, s) => sum + ((s.duration as number) || 0), 0);
 
     // ── Safety guard 2: Log and check payload size ──

@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Play, Pause, Square, Loader2, CheckCircle2, AlertCircle,
   Mic, Film, Music, Clapperboard, Download, RefreshCw, ArrowLeft,
-  Zap, XCircle,
+  Zap, XCircle, Wand2, Image,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +47,12 @@ import {
 import type { VoiceConfig, ScriptLineData, VisualGenerationConfig, MusicSfxConfig, AssemblySceneData } from '@/hooks/cast-production';
 import { seedProjectFromTemplate, isProjectSeeded, type ProjectTemplate } from '@/utils/seedProjectFromTemplate';
 
+// Credit enforcement
+import { useAICredits } from '@/hooks/useAICredits';
+
+// Content moderation (M1)
+import { complianceCheckService } from '@/services/complianceCheckService';
+
 // Pipeline overhaul: config-driven generation
 import {
   generateProjectPipeline,
@@ -59,7 +65,10 @@ import {
 } from '@/services/cast/projectPipelineGenerator';
 import { composeMusicPrompt, composeSfxPrompts } from '@/config/musicAutoComposer';
 import { getScriptTemplate, scaleTemplateToDuration } from '@/config/scriptTemplates';
-import { generateScriptStructure, buildScriptGenerationPrompt, type ScriptGenerationInput } from '@/services/cast/scriptAutoGenerator';
+import { generateScriptStructure, buildScriptGenerationPrompt, generateScriptContent, type ScriptGenerationInput } from '@/services/cast/scriptAutoGenerator';
+
+// Centralized config + consent gates (M3 resolution, M6 GDPR/HIPAA)
+import { CAST_RESOLUTIONS, DEFAULT_RESOLUTION, CAST_LIMITS, requiresConsentGate, getConsentTypes, type CastResolution } from '@/config/castProductionConfig';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -110,6 +119,13 @@ export default function CastProductionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // M3: User-configurable output resolution
+  const [outputResolution, setOutputResolution] = useState<CastResolution>(DEFAULT_RESOLUTION);
+
+  // M6: GDPR/HIPAA consent tracking (industry-driven)
+  const [consentAcknowledged, setConsentAcknowledged] = useState<Record<string, boolean>>({});
+  const [projectIndustry, setProjectIndustry] = useState<string>('general');
+
   // Load project data from DB
   useEffect(() => {
     if (!projectId) {
@@ -126,14 +142,16 @@ export default function CastProductionPage() {
     (async () => {
       try {
         // Load project metadata (lean query — no JSONB)
+        // Security: RLS policy on cast_projects enforces auth.uid() = user_id
+        // This query will return null if the user doesn't own the project (RLS blocks it)
         const { data: project } = await supabase
           .from('cast_projects')
-          .select('id, title, status, quality, selected_dialects, target_regions')
+          .select('id, title, status, quality, selected_dialects, target_regions, content_type, style_intent')
           .eq('id', projectId)
           .maybeSingle();
 
         if (!project) {
-          setLoadError('Project not found');
+          setLoadError('Project not found or access denied');
           setIsLoading(false);
           clearTimeout(loadTimeout);
           return;
@@ -143,6 +161,12 @@ export default function CastProductionPage() {
         const dialects = project.selected_dialects as string[] | null;
         if (dialects && dialects.length > 0) {
           setProjectLanguage(dialects[0]);
+        }
+        // M6: Extract industry from style_intent (format: "industry-format-auto")
+        const styleIntent = (project as any).style_intent as string | null;
+        if (styleIntent) {
+          const industry = styleIntent.split('-')[0];
+          if (industry) setProjectIndustry(industry);
         }
 
         // Load characters, scenes (metadata only), and script lines in parallel
@@ -245,6 +269,27 @@ export default function CastProductionPage() {
   const musicSfx = useMusicSfxGeneration(projectId || null);
   const assembly = useAssemblyPipeline(projectId || null);
 
+  // Credit enforcement — pre-flight checks before expensive operations
+  const { canAfford, useCredits, getFeatureCost } = useAICredits();
+
+  // H5: Per-user concurrency limit (max 3 concurrent jobs)
+  const MAX_CONCURRENT_JOBS = 3;
+  const checkConcurrency = useCallback(async (): Promise<boolean> => {
+    if (!projectId) return true;
+    try {
+      const { count } = await supabase
+        .from('cast_generation_jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', projectId)
+        .in('status', ['processing', 'rendering', 'pending']);
+      if ((count || 0) >= MAX_CONCURRENT_JOBS) {
+        toast.error(`Too many concurrent jobs (${count}/${MAX_CONCURRENT_JOBS}). Wait for current jobs to finish.`);
+        return false;
+      }
+      return true;
+    } catch { return true; } // Fail open
+  }, [projectId]);
+
   // Restore TTS from DB on load
   useEffect(() => {
     if (projectId && scriptLineData.length > 0) {
@@ -268,6 +313,16 @@ export default function CastProductionPage() {
   }, [tts.doneCount, tts.totalCount, projectId, phaseManager]);
 
   const startVisuals = useCallback(async () => {
+    // H5: Concurrency check
+    if (!(await checkConcurrency())) return;
+
+    // Credit pre-flight: check balance for visual generation (avatar cost per scene)
+    const avatarCost = getFeatureCost('avatar_generation');
+    if (avatarCost && !canAfford('avatar_generation', scenes.length)) {
+      toast.error(`Insufficient credits for visual generation (${scenes.length} scenes × ${avatarCost.credits_per_unit} credits)`);
+      return;
+    }
+
     const configs: VisualGenerationConfig[] = scenes.map(s => ({
       sceneKey: s.scene_key,
       sceneTitle: s.title,
@@ -276,10 +331,29 @@ export default function CastProductionPage() {
     }));
     phaseManager.setPhase('visual');
     await visual.startAllVisualProduction(configs, tts.audioMap);
+
+    // H3: Deduct credits only for SUCCESSFUL visual generations (proportional billing)
+    if (avatarCost) {
+      const successCount = Object.values(visual.sceneProduction).filter(s => s.visual === 'done').length;
+      if (successCount > 0) {
+        await useCredits('avatar_generation', successCount, { projectId, phase: 'visual', total: scenes.length, succeeded: successCount });
+      }
+    }
+
     phaseManager.setPhase('music');
-  }, [scenes, tts.audioMap, visual, phaseManager]);
+  }, [scenes, tts.audioMap, visual, phaseManager, canAfford, useCredits, getFeatureCost, projectId, checkConcurrency]);
 
   const startMusic = useCallback(async () => {
+    // H5: Concurrency check
+    if (!(await checkConcurrency())) return;
+
+    // Credit pre-flight: music_generation cost per scene
+    if (!canAfford('music_generation', scenes.length)) {
+      const cost = getFeatureCost('music_generation');
+      toast.error(`Insufficient credits for music generation (${scenes.length} scenes × ${cost?.credits_per_unit || 10} credits)`);
+      return;
+    }
+
     const configs: MusicSfxConfig[] = scenes.map(s => ({
       sceneKey: s.scene_key,
       sceneTitle: s.title,
@@ -287,11 +361,53 @@ export default function CastProductionPage() {
       musicDuration: (s.scene_config?.musicConfig as any)?.duration || 30,
       sfxList: (s.scene_config?.sfxConfig as any[]) || [],
     }));
-    await musicSfx.startAllMusicProduction(configs, visual.setSceneProduction);
+    await musicSfx.startAllMusicProduction(configs, visual.setSceneProduction, visual.sceneProduction);
+
+    // H3: Deduct credits only for SUCCESSFUL music generations (proportional billing)
+    const musicSuccessCount = Object.values(visual.sceneProduction).filter(s => s.music === 'done').length;
+    if (musicSuccessCount > 0) {
+      await useCredits('music_generation', musicSuccessCount, { projectId, phase: 'music', total: scenes.length, succeeded: musicSuccessCount });
+    }
+
     phaseManager.setPhase('assembly');
-  }, [scenes, musicSfx, visual.setSceneProduction, phaseManager]);
+  }, [scenes, musicSfx, visual.setSceneProduction, phaseManager, canAfford, useCredits, getFeatureCost, projectId, checkConcurrency, visual.sceneProduction]);
 
   const startAssemblyPhase = useCallback(async () => {
+    // M6: GDPR/HIPAA consent gate — block assembly for regulated industries without consent
+    if (requiresConsentGate(projectIndustry)) {
+      const requiredTypes = getConsentTypes(projectIndustry);
+      const missingConsent = requiredTypes.filter(t => !consentAcknowledged[t]);
+      if (missingConsent.length > 0) {
+        toast.error(`Regulatory consent required before assembly: ${missingConsent.join(', ')}. Please acknowledge the disclaimers above.`);
+        return;
+      }
+    }
+
+    // M1: Content moderation pre-flight — check script text for compliance issues
+    const allDialogue = scriptLineData.map(l => l.text).filter(Boolean).join('\n');
+    if (allDialogue.length > 20) {
+      try {
+        const complianceResult = await complianceCheckService.checkContent(
+          projectId || 'unknown',
+          'text',
+          allDialogue,
+        );
+        if (complianceResult.status === 'failed') {
+          const criticalIssues = complianceResult.checks_performed
+            .flatMap(c => c.issues)
+            .filter(i => i.severity === 'critical')
+            .map(i => i.description);
+          toast.error(`Content blocked: ${criticalIssues.join('; ')}`);
+          return;
+        }
+        if (complianceResult.status === 'flagged') {
+          toast.warning('Content flagged for review — proceeding with caution. Check compliance before publishing.');
+        }
+      } catch (err) {
+        console.warn('[CastProduction] Compliance check failed, proceeding:', err);
+      }
+    }
+
     const assemblyScenes: AssemblySceneData[] = scenes.map(s => ({
       sceneKey: s.scene_key,
       sceneTitle: s.title,
@@ -323,8 +439,9 @@ export default function CastProductionPage() {
       null, // bookends — loaded from template if available
       'production',
       projectTitle,
+      outputResolution, // M3: User-configurable resolution
     );
-  }, [scenes, scriptLinesByScene, scriptLineData, visual.sceneProduction, tts.audioMap, assembly, projectTitle]);
+  }, [scenes, scriptLinesByScene, scriptLineData, visual.sceneProduction, tts.audioMap, assembly, projectTitle, outputResolution, projectIndustry, consentAcknowledged]);
 
   // ─── Pipeline Auto-Setup ─────────────────────────────────────────────
   // When a project has no scenes yet, show the auto-setup wizard that
@@ -343,6 +460,8 @@ export default function CastProductionPage() {
   });
   const [setupPrompt, setSetupPrompt] = useState('');
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+  const [scriptGenProgress, setScriptGenProgress] = useState<string | null>(null);
 
   const handleAutoSetup = useCallback(async () => {
     if (!projectId || !setupPrompt.trim()) {
@@ -420,6 +539,52 @@ export default function CastProductionPage() {
           }, [])
         ).map(([_, line]) => line as any),
       };
+
+      // ── AI Script Content Generation ──────────────────────────────────
+      // Credit pre-flight for script generation
+      if (!canAfford('script_generation', 1)) {
+        const cost = getFeatureCost('script_generation');
+        toast.warning(`Insufficient credits for AI script generation (${cost?.credits_per_unit || 5} credits) — proceeding with empty dialogue`);
+      }
+      setScriptGenProgress('Generating script structure...');
+      const scriptInput: ScriptGenerationInput = {
+        prompt: setupPrompt,
+        projectConfig: config,
+        pipeline,
+        characters: pipeline.suggestedCharacters,
+        context: {
+          brandIndustry: config.industry,
+        },
+      };
+
+      const scriptStructure = generateScriptStructure(scriptInput);
+
+      setScriptGenProgress('AI is writing dialogue...');
+      setIsGeneratingScript(true);
+      try {
+        const aiResult = await generateScriptContent(scriptInput, scriptStructure.manifest);
+        if (aiResult) {
+          // Fill template script lines with AI-generated dialogue
+          const aiLines = aiResult.manifest.scriptLines;
+          for (const tl of template.scriptLines) {
+            const aiLine = aiLines[(tl as any).key];
+            if (aiLine?.text) {
+              (tl as any).text = aiLine.text;
+            }
+          }
+          // Deduct script generation credits
+          await useCredits('script_generation', 1, { projectId, phase: 'script' });
+          toast.success(`AI generated ${Object.values(aiLines).filter(l => l.text).length} dialogue lines`);
+        } else {
+          toast.warning('AI script generation returned empty — you can edit dialogue manually after setup');
+        }
+      } catch (err) {
+        console.warn('[CastProduction] AI script generation failed, proceeding with empty lines:', err);
+        toast.warning('AI script generation failed — proceeding with empty dialogue (edit manually)');
+      } finally {
+        setIsGeneratingScript(false);
+        setScriptGenProgress(null);
+      }
 
       await seedProjectFromTemplate(projectId, template);
 
@@ -599,7 +764,39 @@ export default function CastProductionPage() {
                     <option value="cinematic">Cinematic (highest quality)</option>
                   </select>
                 </div>
+
+                {/* M3: Output Resolution */}
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Output Resolution</label>
+                  <select
+                    className="w-full p-2 rounded-lg border bg-background text-sm"
+                    value={outputResolution}
+                    onChange={e => setOutputResolution(e.target.value as CastResolution)}
+                  >
+                    {Object.entries(CAST_RESOLUTIONS).map(([key, r]) => (
+                      <option key={key} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
+
+              {/* M6: GDPR/HIPAA Consent Gate */}
+              {requiresConsentGate(setupConfig.industry || 'general') && (
+                <div className="mb-6 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                  <h3 className="text-sm font-semibold mb-2 text-amber-600">Regulatory Compliance Required</h3>
+                  {getConsentTypes(setupConfig.industry || 'general').map(consentType => (
+                    <label key={consentType} className="flex items-center gap-2 text-xs mb-1">
+                      <input
+                        type="checkbox"
+                        checked={!!consentAcknowledged[consentType]}
+                        onChange={e => setConsentAcknowledged(prev => ({ ...prev, [consentType]: e.target.checked }))}
+                        className="rounded"
+                      />
+                      I acknowledge {consentType.replace(/_/g, ' ')} requirements for {setupConfig.industry} content
+                    </label>
+                  ))}
+                </div>
+              )}
 
               {/* Template Preview */}
               {setupConfig.format && (
@@ -624,15 +821,24 @@ export default function CastProductionPage() {
                 </div>
               )}
 
+              {scriptGenProgress && (
+                <div className="mb-4 p-3 rounded-lg border bg-blue-500/5 border-blue-500/20">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                    <span>{scriptGenProgress}</span>
+                  </div>
+                </div>
+              )}
+
               <Button
                 className="w-full"
                 onClick={handleAutoSetup}
-                disabled={isSeeding || !setupPrompt.trim()}
+                disabled={isSeeding || isGeneratingScript || !setupPrompt.trim()}
               >
-                {isSeeding ? (
-                  <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Setting up pipeline...</>
+                {isSeeding || isGeneratingScript ? (
+                  <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> {isGeneratingScript ? 'Generating script...' : 'Setting up pipeline...'}</>
                 ) : (
-                  <><Zap className="h-4 w-4 mr-1" /> Generate Production Pipeline</>
+                  <><Wand2 className="h-4 w-4 mr-1" /> Generate Production Pipeline + Script</>
                 )}
               </Button>
             </CardContent>
@@ -654,7 +860,7 @@ export default function CastProductionPage() {
             <div>
               <h1 className="text-lg font-bold">{projectTitle}</h1>
               <p className="text-xs text-muted-foreground">
-                {characters.length} characters | {scenes.length} scenes | {scriptLines.length} lines
+                {characters.length} characters | {scenes.length} scenes | {scriptLines.length} lines | {outputResolution}
               </p>
             </div>
           </div>
@@ -791,11 +997,32 @@ export default function CastProductionPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">Visual Production</h2>
-                  <Button onClick={startVisuals}>
-                    <Film className="h-4 w-4 mr-1" /> Generate All Visuals
-                  </Button>
+                  <div>
+                    <h2 className="text-xl font-bold">Visual Production</h2>
+                    {visual.visualProgress && (
+                      <p className="text-sm text-muted-foreground">
+                        Scene {visual.visualProgress.current}/{visual.visualProgress.total}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    {visual.visualProgress ? (
+                      <Button variant="destructive" size="sm" onClick={visual.cancelProduction}>
+                        <XCircle className="h-4 w-4 mr-1" /> Cancel
+                      </Button>
+                    ) : (
+                      <Button onClick={startVisuals}>
+                        <Film className="h-4 w-4 mr-1" /> Generate All Visuals
+                      </Button>
+                    )}
+                  </div>
                 </div>
+                {visual.visualProgress && (
+                  <Progress
+                    value={(visual.visualProgress.current / visual.visualProgress.total) * 100}
+                    className="mb-4"
+                  />
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {scenes.map(scene => {
                     const status = visual.sceneProduction[scene.scene_key];
@@ -871,8 +1098,13 @@ export default function CastProductionPage() {
                     />
                     <div className="flex gap-2 justify-center">
                       <Button variant="outline" asChild>
-                        <a href={assembly.finalVideoUrl} download target="_blank" rel="noopener noreferrer">
-                          <Download className="h-4 w-4 mr-1" /> Download
+                        <a
+                          href={assembly.finalVideoUrl}
+                          download={`${projectTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Download className="h-4 w-4 mr-1" /> Download {projectTitle}
                         </a>
                       </Button>
                     </div>
