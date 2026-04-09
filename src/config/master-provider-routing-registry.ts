@@ -104,7 +104,7 @@ export const INTEGRATED_PROVIDERS = {
   video_generation: ['vertex_veo3', 'sora2', 'alibaba_wan26', 'alibaba_wan22', 'modelslab', 'replicate', 'deepseek'],
   
   // Video Assembly/Stitching (Composition layer - NOT AI generation)
-  video_assembly: ['json2video', 'cloud_run_gpu'],
+  video_assembly: ['runpod_ffmpeg', 'cloud_run_gpu'],
   
   // Image Generation
   image: ['gemini_3_pro', 'vertex_imagen3', 'banana_nano', 'modelslab_flux', 'modelslab_sdxl', 'stability_sdxl', 'openai_dalle'],
@@ -131,22 +131,22 @@ export const INTEGRATED_PROVIDERS = {
   translation: ['deepl', 'alibaba_qwen_mt', 'azure_translator', 'google_translate', 'aws_translate'],
 } as const;
 
-// Total unique providers count (including JSON2Video)
+// Total unique providers count (including RunPod FFmpeg)
 export const TOTAL_PROVIDER_COUNT = 19;
 
 // ============================================
 // VIDEO ASSEMBLY ROUTING (Composition Layer)
 // ============================================
 /**
- * JSON2Video is the video ASSEMBLY provider (stitching TTS + visuals)
+ * RunPod FFmpeg is the video ASSEMBLY provider (stitching TTS + visuals)
  * NOT a video GENERATION provider (AI content creation)
- * 
- * Phase 1: JSON2Video Professional Plan (current)
- * Phase 2: Cloud Run GPU infrastructure (future cost reduction)
+ *
+ * Primary: RunPod Serverless FFmpeg worker (current)
+ * Fallback: Cloud Run GPU infrastructure (future cost reduction)
  */
 export const VIDEO_ASSEMBLY_ROUTING = {
   timeline_stitching: {
-    primary: 'json2video',
+    primary: 'runpod-ffmpeg',
     fallback: 'cloud_run_gpu',
     features: ['tts_audio_sync', 'screenshot_composition', 'transition_effects', 'multi_language_output'],
   },

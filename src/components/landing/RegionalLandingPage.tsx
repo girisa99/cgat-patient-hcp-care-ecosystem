@@ -263,7 +263,7 @@ import deepgramLogo from '@/assets/logos/providers/deepgram.png';
 import deepseekLogo from '@/assets/logos/providers/deepseek.png';
 import gcpLogo from '@/assets/logos/providers/gcp-official.png';
 import replicateLogo from '@/assets/logos/providers/replicate.png';
-import json2videoLogo from '@/assets/logos/providers/json2video.png';
+import runpodLogo from '@/assets/logos/providers/runpod.png';
 import supabaseLogo from '@/assets/logos/providers/supabase.svg';
 
 const PROVIDER_SHOWCASE = [
@@ -280,7 +280,7 @@ const PROVIDER_SHOWCASE = [
   { label: 'Deepgram', logo: deepgramLogo, capability: 'STT Nova 2' },
   { label: 'DeepSeek', logo: deepseekLogo, capability: 'Reasoning' },
   { label: 'Replicate', logo: replicateLogo, capability: 'Open Models' },
-  { label: 'JSON2Video', logo: json2videoLogo, capability: 'Assembly' },
+  { label: 'RunPod FFmpeg', logo: runpodLogo, capability: 'Assembly' },
   { label: 'Supabase', logo: supabaseLogo, capability: 'Backend AI' },
 ];
 

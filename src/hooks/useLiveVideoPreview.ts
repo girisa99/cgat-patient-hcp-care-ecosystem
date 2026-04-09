@@ -8,7 +8,7 @@
  * - Progress tracking per scene and overall
  * - Provider routing based on style intent and region
  * - Thumbnail generation for quick previews
- * - Video assembly preview with JSON2Video
+ * - Video assembly preview with RunPod FFmpeg
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';

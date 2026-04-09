@@ -1,12 +1,12 @@
 /**
  * GENIE CAST TIMELINE BUILDER
  *
- * Lightweight edge function (~250 lines) that:
+ * Lightweight edge function that:
  * 1. Receives scene chapters, transitions, bookends, quality
- * 2. Builds JSON2Video timeline SERVER-SIDE
+ * 2. Builds rendering timeline SERVER-SIDE
  * 3. Validates no data: URIs (defense in depth)
  * 4. Logs payload size before forwarding
- * 5. Forwards completed timeline to JSON2Video API
+ * 5. Submits timeline to RunPod FFmpeg worker for rendering
  * 6. Creates/updates cast_generation_jobs row
  * 7. Returns { success, taskId, castJobId }
  *
@@ -15,6 +15,7 @@
  * - Global reach: low-powered devices in 16 regions get consistent results
  * - Security: API keys stay server-side
  * - Edge distribution: Deno Deploy (34+ global regions)
+ * - RunPod async /run returns immediately; client polls genie-cast-status
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -32,8 +33,8 @@ function errorResponse(status: number, message: string) {
 }
 
 // ─── Timeline Builder ────────────────────────────────────────────────────────
-// Ported from buildJson2VideoTimeline in EP04Production.tsx.
 // Generic: works for any Cast project type (video, podcast, educational, UGC).
+// Timeline format consumed by RunPod FFmpeg worker (cast-ffmpeg-renderer).
 
 interface TtsEntry { url: string; start: number; duration: number; voice: string }
 interface Chapter {
@@ -63,15 +64,15 @@ interface Bookends {
   closing: { duration: number; title?: string };
 }
 
-/** Map CastResolution pixel dimensions to JSON2Video resolution names */
+/** Map CastResolution pixel dimensions to FFmpeg resolution presets */
 function mapResolution(userRes?: string, quality?: string): string {
   if (userRes) {
     const pixelMap: Record<string, string> = {
       '3840x2160': '4k',
       '1920x1080': 'full-hd',
       '1280x720': 'hd',
-      '1080x1920': 'full-hd', // portrait — JSON2Video handles via aspect ratio
-      '1080x1080': 'full-hd', // square — JSON2Video handles via aspect ratio
+      '1080x1920': 'full-hd', // portrait — FFmpeg handles via aspect ratio
+      '1080x1080': 'full-hd', // square — FFmpeg handles via aspect ratio
     };
     if (pixelMap[userRes]) return pixelMap[userRes];
   }
@@ -320,7 +321,7 @@ serve(async (req) => {
             project_id: castProjectId,
             job_type: 'assembly',
             language, quality,
-            provider: 'json2video',
+            provider: 'runpod-ffmpeg',
             status: 'processing',
             started_at: new Date().toISOString(),
             input_config: {
@@ -337,68 +338,100 @@ serve(async (req) => {
       } catch (_) { /* best-effort job tracking */ }
     }
 
-    // ── Forward to JSON2Video ──
-    const apiKey = Deno.env.get('JSON2VIDEO_API_KEY');
-    if (!apiKey) {
-      return errorResponse(500, 'JSON2VIDEO_API_KEY not configured');
+    // ── Submit to RunPod FFmpeg worker (async /run — returns immediately) ──
+    const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_CAST_ENDPOINT_ID');
+    const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
+
+    if (!RUNPOD_ENDPOINT_ID || !RUNPOD_API_KEY) {
+      return errorResponse(500, 'RUNPOD_CAST_ENDPOINT_ID or RUNPOD_API_KEY not configured');
     }
 
-    const response = await fetch('https://api.json2video.com/v2/movies', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-      body: payloadStr,
-    });
+    // 15s timeout on RunPod /run call — prevents edge function from hanging
+    const runController = new AbortController();
+    const runTimeout = setTimeout(() => runController.abort(), 15000);
 
-    const responseText = await response.text();
-    console.log(`[Timeline Builder] JSON2Video ${response.status}: ${responseText.substring(0, 500)}`);
-
-    if (!response.ok) {
-      console.error(`JSON2Video API error: ${response.status} - ${responseText}`);
+    let response: Response;
+    try {
+      response = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${RUNPOD_API_KEY}`,
+        },
+        signal: runController.signal,
+        body: JSON.stringify({
+          input: {
+            timeline,
+            supabaseUrl,
+            supabaseServiceKey: supabaseKey,
+            castProjectId: castProjectId || 'unknown',
+            castJobId: castJobId || null,
+          },
+        }),
+      });
+    } catch (fetchErr: unknown) {
+      clearTimeout(runTimeout);
+      const isTimeout = fetchErr instanceof DOMException && fetchErr.name === 'AbortError';
+      const errMsg = isTimeout ? 'RunPod API timed out after 15s' : String(fetchErr);
+      console.error(`[Timeline Builder] RunPod fetch failed: ${errMsg}`);
       if (castJobId) {
         await supabase.from('cast_generation_jobs').update({
           status: 'failed',
-          error_message: `JSON2Video ${response.status}: ${responseText.substring(0, 200)}`,
+          error_message: errMsg,
           completed_at: new Date().toISOString(),
         }).eq('id', castJobId);
       }
-      return errorResponse(502, `JSON2Video error: ${response.status}`);
+      return errorResponse(504, errMsg);
+    } finally {
+      clearTimeout(runTimeout);
+    }
+
+    const responseText = await response.text();
+    console.log(`[Timeline Builder] RunPod ${response.status}: ${responseText.substring(0, 500)}`);
+
+    if (!response.ok) {
+      console.error(`RunPod API error: ${response.status} - ${responseText}`);
+      if (castJobId) {
+        await supabase.from('cast_generation_jobs').update({
+          status: 'failed',
+          error_message: `RunPod ${response.status}: ${responseText.substring(0, 200)}`,
+          completed_at: new Date().toISOString(),
+        }).eq('id', castJobId);
+      }
+      return errorResponse(502, `RunPod error: ${response.status}`);
     }
 
     const data = JSON.parse(responseText);
-    const j2vProjectId = data.project || data.id || data.movie_id;
+    // RunPod /run returns { id: "job-id", status: "IN_QUEUE" }
+    const runpodJobId = data.id;
 
     // ── Update job + project status ──
-    if (castJobId && castProjectId) {
+    if (castJobId || castProjectId) {
       try {
-        const isPending = !!j2vProjectId;
-        await supabase.from('cast_generation_jobs').update({
-          status: isPending ? 'rendering' : 'completed',
-          output_url: data.url || data.movie_url || data.movie?.url || null,
-          output_thumbnail_url: data.poster || data.thumbnail || data.movie?.poster || null,
-          output_duration_seconds: totalDuration || null,
-          provider_job_id: j2vProjectId || null,
-          completed_at: !isPending ? new Date().toISOString() : null,
-        }).eq('id', castJobId);
+        if (castJobId) {
+          await supabase.from('cast_generation_jobs').update({
+            status: 'rendering',
+            provider_job_id: runpodJobId || null,
+            output_duration_seconds: totalDuration || null,
+          }).eq('id', castJobId);
+        }
 
-        await supabase.from('cast_projects').update({
-          status: isPending ? 'generating' : 'review',
-          ...(totalDuration > 0 ? { total_duration_seconds: totalDuration } : {}),
-          ...(data.url || data.movie_url ? { final_video_url: data.url || data.movie_url } : {}),
-        }).eq('id', castProjectId);
+        if (castProjectId) {
+          await supabase.from('cast_projects').update({
+            status: 'generating',
+            ...(totalDuration > 0 ? { total_duration_seconds: totalDuration } : {}),
+          }).eq('id', castProjectId);
+        }
       } catch (_) { /* best-effort */ }
     }
 
     return new Response(JSON.stringify({
       success: true,
-      videoUrl: data.url || data.movie_url || data.movie?.url || undefined,
-      thumbnailUrl: data.poster || data.thumbnail || data.movie?.poster || undefined,
       totalDuration,
-      generationStatus: j2vProjectId ? 'pending' : 'completed',
+      generationStatus: 'pending',
       castJobId,
-      taskId: j2vProjectId || undefined,
-      message: j2vProjectId
-        ? 'Timeline built and submitted. Poll genie-cast-status for completion.'
-        : 'Video assembly completed.',
+      taskId: runpodJobId || undefined,
+      message: 'Timeline built and submitted to RunPod FFmpeg. Poll genie-cast-status for completion.',
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

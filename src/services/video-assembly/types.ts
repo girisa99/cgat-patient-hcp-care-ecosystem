@@ -334,7 +334,7 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxRetries: 3,
   retryDelay: 2000,
   backoffMultiplier: 1.5,
-  fallbackProviders: ['json2video', 'replicate', 'modelslab'],
+  fallbackProviders: ['runpod-ffmpeg', 'replicate', 'modelslab'],
 };
 
 // ============================================================================

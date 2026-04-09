@@ -602,10 +602,10 @@ export const VISUAL_FEATURES: VisualFeatureItem[] = [
   { id: 'anime-style', name: 'Anime Style', category: 'animation', providers: ['modelslab-anime'], tier: 'pro', compatibleOutputs: ['video-mp4', 'presentation'] },
   { id: 'image-to-life', name: 'Image to Life', category: 'animation', providers: ['alibaba-wan2.6-i2v'], tier: 'pro', compatibleOutputs: ['video-mp4'] },
   { id: '3d-explainer', name: '3D Explainer', category: '3d', providers: ['meshy-ai', 'modelslab'], tier: 'enterprise', compatibleOutputs: ['video-mp4', '3d-presentation'] },
-  { id: 'chapter-navigation', name: 'Chapter Navigation', category: 'interactive', providers: ['json2video'], tier: 'pro', compatibleOutputs: ['video-mp4', 'interactive-web'] },
-  { id: 'quiz-overlay', name: 'Quiz Overlay', category: 'interactive', providers: ['json2video', 'custom'], tier: 'pro', compatibleOutputs: ['video-mp4', 'interactive-web'] },
-  { id: 'cta-video', name: 'CTA Video', category: 'interactive', providers: ['modelslab', 'json2video'], tier: 'pro', compatibleOutputs: ['video-mp4', 'presentation'] },
-  { id: 'progress-tracker', name: 'Progress Tracker', category: 'interactive', providers: ['json2video'], tier: 'pro', compatibleOutputs: ['video-mp4', 'interactive-web'] },
+  { id: 'chapter-navigation', name: 'Chapter Navigation', category: 'interactive', providers: ['runpod-ffmpeg'], tier: 'pro', compatibleOutputs: ['video-mp4', 'interactive-web'] },
+  { id: 'quiz-overlay', name: 'Quiz Overlay', category: 'interactive', providers: ['runpod-ffmpeg', 'custom'], tier: 'pro', compatibleOutputs: ['video-mp4', 'interactive-web'] },
+  { id: 'cta-video', name: 'CTA Video', category: 'interactive', providers: ['modelslab', 'runpod-ffmpeg'], tier: 'pro', compatibleOutputs: ['video-mp4', 'presentation'] },
+  { id: 'progress-tracker', name: 'Progress Tracker', category: 'interactive', providers: ['runpod-ffmpeg'], tier: 'pro', compatibleOutputs: ['video-mp4', 'interactive-web'] },
 ];
 
 // ==========================================

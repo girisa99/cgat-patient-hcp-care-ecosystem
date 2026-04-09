@@ -4204,7 +4204,7 @@ function EP04ProductionInner() {
     squirrel: { headline: 'SQUIRREL', lead: 'QA Chaos Agent', barColor: '#f97316' },
   };
 
-  // ─── OLD buildJson2VideoTimeline DELETED (replaced by castTimelineEngine) ─
+  // ─── OLD buildTimeline DELETED (replaced by castTimelineEngine) ─
   // Replaced by castTimelineEngine.ts — professional per-TTS-line scene architecture.
   // See buildCastTimeline() in src/utils/castTimelineEngine.ts.
   // ── Core assembly function: builds timeline for a subset of scenes ──
@@ -4777,7 +4777,7 @@ function EP04ProductionInner() {
             bridgeAudioUrl: undefined,
             bridgeDuration: bridgeLine?.duration_est || 7,
             nextSceneVisualUrl: (toChapter as any)?.sceneImages?.[0] || (fromChapter as any)?.sceneImages?.[0] || undefined,
-            j2vTransition: TRANSITION_STYLE_MAP[t.style] || 'fade',
+            renderTransition: TRANSITION_STYLE_MAP[t.style] || 'fade',
           };
         });
 
@@ -5216,7 +5216,7 @@ function EP04ProductionInner() {
           chapterHeaderImageUrl: isSafeUrl(storybookFrameUrl) ? storybookFrameUrl : undefined,
           sfxUrl: undefined,
           chapterTitle,
-          j2vTransition: t.j2vTransition || 'fade',
+          renderTransition: t.renderTransition || 'fade',
         };
       });
 

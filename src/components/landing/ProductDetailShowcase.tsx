@@ -155,7 +155,7 @@ const PRODUCT_EXTENDED: Record<string, {
       { icon: <Sparkles className="h-4 w-4" />, title: 'Avatar + Lip-Sync', detail: 'Real-time voice-to-video with AI avatar lip synchronization in any language' },
     ],
     coreCapabilities: ['Podcast Recording', 'Video Recording', 'Trim & Crop', 'Stitch Clips', 'Add Audio/TTS', 'Background Music', 'STT Transcription', 'Multi-track Editing', 'Dubbing', 'Lip-sync', 'Avatar Video'],
-    aiProviders: ['Google Veo 3', 'Alibaba Wan', 'JSON2Video', 'Azure Neural', 'Deepgram'],
+    aiProviders: ['Google Veo 3', 'Alibaba Wan', 'RunPod FFmpeg', 'Azure Neural', 'Deepgram'],
     regionalHighlights: [
       { region: 'NAM', flag: '🇺🇸', useCase: 'Compliant training videos with AI avatars' },
       { region: 'Europe', flag: '🇪🇺', useCase: 'GDPR-compliant video production in 25 EU languages' },
@@ -236,7 +236,7 @@ const PRODUCT_EXTENDED: Record<string, {
       { icon: <Rocket className="h-4 w-4" />, title: 'Timezone-Aware Scheduling', detail: 'Automated publishing optimized for peak engagement in each region' },
     ],
     coreCapabilities: ['Multi-platform Publishing', '14-Region Localization', 'Automated Scheduling', 'YouTube Distribution', 'LinkedIn Publishing', 'TikTok Optimization', 'Instagram Reels', 'X/Twitter Posts', 'Blog Integration', 'Analytics Dashboard'],
-    aiProviders: ['JSON2Video', 'Azure Neural', 'DeepL', 'Claude'],
+    aiProviders: ['RunPod FFmpeg', 'Azure Neural', 'DeepL', 'Claude'],
     regionalHighlights: [
       { region: 'NAM', flag: '🇺🇸', useCase: 'Multi-platform social media campaigns at scale' },
       { region: 'Europe', flag: '🇪🇺', useCase: 'EU-compliant distribution with GDPR metadata' },

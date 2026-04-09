@@ -372,7 +372,7 @@ export function LiveGenerationPreview({
     projectId,
     assembly: {
       format: 'video',
-      maxSegmentDuration: 1800, // 30 min JSON2Video limit
+      maxSegmentDuration: 1800, // 30 min per segment
       resolution: '1080p',
       transitions: 'fade',
     },

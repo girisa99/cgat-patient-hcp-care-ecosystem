@@ -13,7 +13,7 @@
 // ── Ken Burns Pattern ────────────────────────────────────────────────────────
 
 export interface KenBurnsPattern {
-  zoom: number;        // percentage (1-25). JSON2Video: 1=1%, 10=10%
+  zoom: number;        // percentage (1-25). FFmpeg: 1=1%, 10=10%
   pan: 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   panDistance: number;  // 0.01-0.5 (API default 0.1)
 }

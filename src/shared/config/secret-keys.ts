@@ -52,11 +52,11 @@ export const AI_PROVIDER_KEYS = {
   // Also hosts CivitAI community models
   MODELSLAB: 'MODELSLAB_API_KEY',
   
-  // JSON2Video - Timeline-based video assembly and editing
-  // Role: Render tier for API-only access (no UI editor needed)
-  // Phase 1: Video stitching for Genie Cast
-  // Phase 2: Will be complemented by Cloud Run GPU for heavy processing
-  JSON2VIDEO: 'JSON2VIDEO_API_KEY',
+  // RunPod FFmpeg - GPU-accelerated video assembly and editing
+  // Role: Serverless FFmpeg worker for timeline-based rendering
+  // Primary: Video stitching, assembly, thumbnail extraction for Genie Cast
+  RUNPOD: 'RUNPOD_API_KEY',
+  RUNPOD_CAST_ENDPOINT: 'RUNPOD_CAST_ENDPOINT_ID',
   
   // Translation Keys
   MICROSOFT_TRANSLATE: 'MICROSOFT_TRANSLATE_API_KEY',

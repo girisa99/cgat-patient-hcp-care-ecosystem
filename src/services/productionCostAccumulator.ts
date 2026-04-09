@@ -94,7 +94,7 @@ const COST_PER_1K_TOKENS: Record<string, number> = {
 
   // ── Assembly/rendering (rate per 1 render job) ──
   'runpod-ffmpeg': 90, // RunPod L4: ~$0.09 per 5-min render ($0.00031/s)
-  json2video: 66,      // JSON2Video Growth: $0.066/min → ~$0.66/10min video → $66/1K
+  // json2video removed — all assembly now via runpod-ffmpeg above
   assembly: 10,        // Assembly AI: ~$0.01/min
 
   default: 0.01,

@@ -2821,7 +2821,7 @@ export const PIPELINE_CHAINS: Record<string, PipelineChain> = {
       ATOMIC_STEPS.music_generate,            // Ceremonial music (shehnai, oud, organ, etc.)
       ATOMIC_STEPS.sfx_generate,              // Bells, fireworks, applause
       ATOMIC_STEPS.caption_generate,
-      ATOMIC_STEPS.json2video_assemble,       // Final video assembly
+      ATOMIC_STEPS.runpod_ffmpeg_assemble,     // Final video assembly
       ATOMIC_STEPS.shorts_extract,            // Social clips
       ATOMIC_STEPS.thumbnail_generate,
       ATOMIC_STEPS.session_checkpoint,

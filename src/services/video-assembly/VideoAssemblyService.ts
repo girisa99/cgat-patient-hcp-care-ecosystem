@@ -202,7 +202,7 @@ class VideoAssemblyService {
     breakdown.push({
       component: 'video_assembly',
       credits: assemblyCost,
-      provider: 'json2video',
+      provider: 'runpod-ffmpeg',
       quantity: totalDuration,
       unitCost: ASSEMBLY_COST_PER_MINUTE * qualityMultiplier,
     });
@@ -237,7 +237,7 @@ class VideoAssemblyService {
     breakdown.push({
       component: 'rendering',
       credits: renderingCost,
-      provider: 'json2video',
+      provider: 'runpod-ffmpeg',
       quantity: 1,
       unitCost: renderingCost,
     });

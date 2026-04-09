@@ -49,7 +49,7 @@ import replicateLogo from '@/assets/logos/providers/replicate.png';
 import supabaseLogo from '@/assets/logos/providers/supabase.svg';
 import gcpLogo from '@/assets/logos/providers/gcp-official.png';
 import deepgramLogo from '@/assets/logos/providers/deepgram.webp';
-import json2videoLogo from '@/assets/logos/providers/json2video.png';
+import runpodLogo from '@/assets/logos/providers/runpod.png';
 
 // ============================================
 // CONSTANTS & DATA
@@ -179,7 +179,7 @@ const AI_PROVIDERS = [
   { name: 'Meshy AI', logo: meshyLogo, use: 'Primary 3D — Text/Image to 3D, VR/AR', color: 'from-green-500 to-emerald-500' },
   { name: 'ModelsLab', logo: modelslabLogo, use: 'FLUX Images, AnimateDiff, 3D Fallback', color: 'from-violet-500 to-purple-500' },
   { name: 'Replicate', logo: replicateLogo, use: 'Open-Source Models, Universal Fallback', color: 'from-gray-600 to-slate-700' },
-  { name: 'JSON2Video', logo: json2videoLogo, use: 'Video Assembly — Timeline Stitching', color: 'from-indigo-500 to-blue-500' },
+  { name: 'RunPod FFmpeg', logo: runpodLogo, use: 'GPU Video Assembly — Timeline Stitching', color: 'from-indigo-500 to-blue-500' },
   { name: 'Gemini', logo: geminiLogo, use: 'India/SEA/Africa LLM, 1M Context', color: 'from-blue-500 to-indigo-500' },
   { name: 'Supabase', logo: supabaseLogo, use: 'Auth, Database, 153+ Edge Functions', color: 'from-green-600 to-teal-500' },
 ];

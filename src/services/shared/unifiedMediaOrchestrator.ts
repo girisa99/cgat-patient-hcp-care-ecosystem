@@ -1,11 +1,11 @@
 /**
  * Unified Media Orchestrator
- * 
+ *
  * Coordinates all media generation across the Genie ecosystem:
- * - JSON2Video (Phase 1): Video assembly and stitching
+ * - RunPod FFmpeg (Primary): Video assembly and stitching
  * - Cloud Run GPU (Phase 2): Avatar, 3D, VR/AR heavy processing
  * - Edge Functions: TTS, routing, quotas
- * 
+ *
  * @see docs/architecture/UNIFIED_MEDIA_INFRASTRUCTURE.md
  */
 
@@ -16,7 +16,7 @@ import { GlobalTier, getProviderTier, filterProvidersByTier, getTierConfig } fro
 // =============================================================================
 
 export type MediaType = 'video-assembly' | 'avatar' | '3d' | 'vr-ar' | 'tts';
-export type ProcessingPhase = 'phase1-json2video' | 'phase2-cloudrun' | 'edge-function';
+export type ProcessingPhase = 'phase1-runpod-ffmpeg' | 'phase2-cloudrun' | 'edge-function';
 
 export interface MediaJobConfig {
   type: MediaType;
@@ -57,12 +57,12 @@ export interface MediaJobResult {
 // =============================================================================
 
 export const MEDIA_PROVIDERS = {
-  // Phase 1 - JSON2Video (Active)
-  'json2video': {
-    phase: 'phase1-json2video' as ProcessingPhase,
+  // Primary - RunPod FFmpeg (Active)
+  'runpod-ffmpeg': {
+    phase: 'phase1-runpod-ffmpeg' as ProcessingPhase,
     capabilities: ['video-assembly', 'timeline-edit', 'transitions', 'audio-overlay'],
-    maxDuration: 600, // 10 minutes
-    costPerMinute: 0.05,
+    maxDuration: 7200, // 120 minutes (RunPod has no hard duration limit)
+    costPerMinute: 0.02,
     active: true,
   },
   
@@ -92,7 +92,7 @@ export const MEDIA_PROVIDERS = {
     phase: 'phase2-cloudrun' as ProcessingPhase,
     capabilities: ['video-assembly', 'custom-edit'],
     costPerMinute: 0.02,
-    active: false, // Future replacement for JSON2Video
+    active: false, // Future alternative to RunPod FFmpeg
   },
 };
 
@@ -111,19 +111,19 @@ export const TIER_QUOTAS = {
     videoMinutes: 10,
     avatarMinutes: 0,
     threeDMinutes: 0,
-    features: ['json2video-720p', 'basic-transitions'],
+    features: ['runpod-ffmpeg-720p', 'basic-transitions'],
   },
   pro: {
     videoMinutes: 60,
     avatarMinutes: 10,
     threeDMinutes: 5,
-    features: ['json2video-1080p', 'avatar-preset', 'basic-3d'],
+    features: ['runpod-ffmpeg-1080p', 'avatar-preset', 'basic-3d'],
   },
   business: {
     videoMinutes: 300,
     avatarMinutes: 60,
     threeDMinutes: 30,
-    features: ['json2video-4k', 'avatar-custom', 'meshy-full', 'advanced-transitions'],
+    features: ['runpod-ffmpeg-4k', 'avatar-custom', 'meshy-full', 'advanced-transitions'],
   },
   enterprise: {
     videoMinutes: -1, // Unlimited
@@ -165,12 +165,12 @@ class UnifiedMediaOrchestrator {
   getProvider(config: MediaJobConfig): { provider: string; phase: ProcessingPhase } {
     const { type, tier, isInternal } = config;
     
-    // Video assembly always uses JSON2Video in Phase 1
+    // Video assembly uses RunPod FFmpeg
     if (type === 'video-assembly') {
       const quality = this.getQualityFromTier(tier);
       return {
-        provider: `json2video-${quality === '4k' ? '4k' : quality === '1080p' ? 'hd' : 'standard'}`,
-        phase: 'phase1-json2video',
+        provider: `runpod-ffmpeg-${quality === '4k' ? '4k' : quality === '1080p' ? 'hd' : 'standard'}`,
+        phase: 'phase1-runpod-ffmpeg',
       };
     }
     
@@ -199,8 +199,8 @@ class UnifiedMediaOrchestrator {
   estimateCost(config: MediaJobConfig, durationMinutes: number): number {
     const { provider } = this.getProvider(config);
     
-    if (provider.startsWith('json2video')) {
-      return durationMinutes * MEDIA_PROVIDERS.json2video.costPerMinute;
+    if (provider.startsWith('runpod-ffmpeg')) {
+      return durationMinutes * MEDIA_PROVIDERS['runpod-ffmpeg'].costPerMinute;
     }
     
     // Add other provider costs as Phase 2 activates
@@ -234,12 +234,12 @@ class UnifiedMediaOrchestrator {
   }
 
   /**
-   * Build JSON2Video timeline payload
+   * Build render timeline payload for RunPod FFmpeg
    */
-  buildJSON2VideoPayload(config: MediaJobConfig): object {
+  buildRenderTimelinePayload(config: MediaJobConfig): object {
     const { assets, output } = config;
-    
-    // Convert assets to JSON2Video timeline format
+
+    // Convert assets to timeline format
     const scenes: any[] = [];
     let currentTime = 0;
     

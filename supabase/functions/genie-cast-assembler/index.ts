@@ -244,7 +244,7 @@ serve(async (req) => {
       castProjectId = null as string | null,
       // ─── STITCH-ONLY MODE ───────────────────────────────────────────────
       // When mode='stitch-only', skip TTS/visual generation entirely.
-      // Accept pre-generated scene chapters and go straight to JSON2Video assembly.
+      // Accept pre-generated scene chapters and go straight to RunPod FFmpeg assembly.
       mode = 'full' as string,
       preBuiltChapters = null as ChapterResult[] | null,
       // Layered timeline data from EP04Production Phase 5
@@ -254,13 +254,13 @@ serve(async (req) => {
       }> | null,
       bookends = null as { opening: { duration: number }; closing: { duration: number } } | null,
       // ─── SUBMIT-TIMELINE MODE ─────────────────────────────────────────────
-      // When mode='submit-timeline', the client sends a pre-built JSON2Video timeline.
-      // We just forward it to JSON2Video — no stitchLayeredTimeline call, minimal memory.
+      // When mode='submit-timeline', the client sends a pre-built timeline.
+      // We forward it to RunPod FFmpeg — no stitchLayeredTimeline call, minimal memory.
       timeline = null as { resolution: string; quality: string; scenes: any[] } | null,
     } = await req.json();
 
     // ═══════════════════════════════════════════════════════════════════════
-    // SUBMIT-TIMELINE MODE — client built the JSON2Video timeline, we just forward it
+    // SUBMIT-TIMELINE MODE — client built the timeline, we forward to RunPod FFmpeg
     // Avoids OOM crash on large timelines (300+ elements, 36-min docs)
     // ═══════════════════════════════════════════════════════════════════════
     if (mode === 'submit-timeline' && timeline && timeline.scenes && timeline.scenes.length > 0) {
@@ -283,7 +283,7 @@ serve(async (req) => {
               job_type: 'assembly',
               language,
               quality,
-              provider: 'json2video',
+              provider: 'runpod-ffmpeg',
               status: 'processing',
               started_at: new Date().toISOString(),
               input_config: {
@@ -298,85 +298,113 @@ serve(async (req) => {
         } catch (_) { /* best-effort */ }
       }
 
-      // Forward timeline to JSON2Video
-      const apiKey = Deno.env.get('JSON2VIDEO_API_KEY');
-      if (!apiKey) {
-        return new Response(JSON.stringify({ success: false, message: 'JSON2VIDEO_API_KEY not configured' }), {
+      // Forward timeline to RunPod FFmpeg worker
+      const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_CAST_ENDPOINT_ID');
+      const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
+
+      if (!RUNPOD_ENDPOINT_ID || !RUNPOD_API_KEY) {
+        return new Response(JSON.stringify({ success: false, message: 'RUNPOD_CAST_ENDPOINT_ID or RUNPOD_API_KEY not configured' }), {
           status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
       try {
-        const response = await fetch('https://api.json2video.com/v2/movies', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-          body: JSON.stringify(timeline),
-        });
+        const runController = new AbortController();
+        const runTimeout = setTimeout(() => runController.abort(), 15000);
 
-        const responseText = await response.text();
-        console.log(`📹 JSON2Video response status: ${response.status}`);
-        console.log(`📹 JSON2Video response (first 500): ${responseText.substring(0, 500)}`);
-
-        if (!response.ok) {
-          console.error(`JSON2Video API error: ${response.status} - ${responseText}`);
+        let response: Response;
+        try {
+          response = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${RUNPOD_API_KEY}`,
+            },
+            signal: runController.signal,
+            body: JSON.stringify({
+              input: {
+                timeline,
+                supabaseUrl,
+                supabaseServiceKey: supabaseKey,
+                castProjectId: castProjectId || 'unknown',
+                castJobId: castJobId || null,
+              },
+            }),
+          });
+        } catch (fetchErr: unknown) {
+          clearTimeout(runTimeout);
+          const isTimeout = fetchErr instanceof DOMException && fetchErr.name === 'AbortError';
+          const errMsg = isTimeout ? 'RunPod API timed out after 15s' : String(fetchErr);
           if (castJobId) {
             await supabase.from('cast_generation_jobs').update({
-              status: 'failed', error_message: `JSON2Video ${response.status}: ${responseText.substring(0, 200)}`,
+              status: 'failed', error_message: errMsg, completed_at: new Date().toISOString(),
+            }).eq('id', castJobId);
+          }
+          return new Response(JSON.stringify({ success: false, message: errMsg }), {
+            status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } finally {
+          clearTimeout(runTimeout);
+        }
+
+        const responseText = await response.text();
+        console.log(`🚀 RunPod response status: ${response.status}`);
+        console.log(`🚀 RunPod response (first 500): ${responseText.substring(0, 500)}`);
+
+        if (!response.ok) {
+          console.error(`RunPod API error: ${response.status} - ${responseText}`);
+          if (castJobId) {
+            await supabase.from('cast_generation_jobs').update({
+              status: 'failed', error_message: `RunPod ${response.status}: ${responseText.substring(0, 200)}`,
               completed_at: new Date().toISOString(),
             }).eq('id', castJobId);
           }
-          return new Response(JSON.stringify({ success: false, message: `JSON2Video error: ${response.status}` }), {
+          return new Response(JSON.stringify({ success: false, message: `RunPod error: ${response.status}` }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
 
         const data = JSON.parse(responseText);
-        const projectId = data.project || data.id || data.movie_id;
+        const runpodJobId = data.id;
 
         // Update job + project status
-        if (castJobId && castProjectId) {
+        if (castJobId || castProjectId) {
           try {
-            const isPending = !!projectId;
-            await supabase.from('cast_generation_jobs').update({
-              status: isPending ? 'rendering' : 'completed',
-              output_url: data.url || data.movie_url || data.movie?.url || null,
-              output_thumbnail_url: data.poster || data.thumbnail || data.movie?.poster || null,
-              output_duration_seconds: totalDuration || null,
-              provider_job_id: projectId || null,
-              completed_at: !isPending ? new Date().toISOString() : null,
-            }).eq('id', castJobId);
-
-            await supabase.from('cast_projects').update({
-              status: isPending ? 'generating' : 'review',
-              ...(totalDuration > 0 ? { total_duration_seconds: totalDuration } : {}),
-              ...(data.url || data.movie_url ? { final_video_url: data.url || data.movie_url } : {}),
-            }).eq('id', castProjectId);
+            if (castJobId) {
+              await supabase.from('cast_generation_jobs').update({
+                status: 'rendering',
+                provider_job_id: runpodJobId || null,
+                output_duration_seconds: totalDuration || null,
+              }).eq('id', castJobId);
+            }
+            if (castProjectId) {
+              await supabase.from('cast_projects').update({
+                status: 'generating',
+                ...(totalDuration > 0 ? { total_duration_seconds: totalDuration } : {}),
+              }).eq('id', castProjectId);
+            }
           } catch (_) { /* best-effort */ }
         }
 
         return new Response(JSON.stringify({
           success: true,
-          videoUrl: data.url || data.movie_url || data.movie?.url || undefined,
-          thumbnailUrl: data.poster || data.thumbnail || data.movie?.poster || undefined,
           totalDuration,
-          generationStatus: projectId ? 'pending' : 'completed',
+          generationStatus: 'pending',
           castJobId,
-          taskId: projectId || undefined,
-          message: projectId
-            ? 'Timeline submitted to JSON2Video. Poll genie-cast-status for completion.'
-            : 'Video assembly completed.',
+          taskId: runpodJobId || undefined,
+          message: 'Timeline submitted to RunPod FFmpeg. Poll genie-cast-status for completion.',
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } catch (err) {
-        console.error('submit-timeline JSON2Video error:', err);
+        console.error('submit-timeline RunPod error:', err);
         if (castJobId) {
           await supabase.from('cast_generation_jobs').update({
             status: 'failed', error_message: String(err),
             completed_at: new Date().toISOString(),
           }).eq('id', castJobId);
         }
-        return new Response(JSON.stringify({ success: false, message: `JSON2Video submission failed: ${err}` }), {
+        return new Response(JSON.stringify({ success: false, message: `RunPod submission failed: ${err}` }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -390,7 +418,7 @@ serve(async (req) => {
     if (mode === 'stitch-only' && preBuiltChapters && preBuiltChapters.length > 0) {
       // Detect if chapters carry layered audio data (allTtsUrls array)
       const hasLayeredAudio = preBuiltChapters.some((c: any) => c.allTtsUrls && c.allTtsUrls.length > 0);
-      console.log(`🎬 STITCH-ONLY mode — assembling ${preBuiltChapters.length} pre-built scenes via JSON2Video`);
+      console.log(`🎬 STITCH-ONLY mode — assembling ${preBuiltChapters.length} pre-built scenes via RunPod FFmpeg`);
       console.log(`   Layered audio: ${hasLayeredAudio ? 'YES' : 'NO (legacy single-audio)'}`);
       console.log(`   Transitions: ${transitions?.length || 0}, Bookends: ${bookends ? 'yes' : 'no'}`);
 
@@ -409,7 +437,7 @@ serve(async (req) => {
               job_type: 'assembly',
               language,
               quality,
-              provider: 'json2video',
+              provider: 'runpod-ffmpeg',
               status: 'processing',
               started_at: new Date().toISOString(),
               input_config: {
@@ -448,7 +476,7 @@ serve(async (req) => {
         assemblyResult = await stitchChaptersToVideo(
           preBuiltChapters,
           language,
-          'json2video',
+          'runpod-ffmpeg',
           quality
         );
       }
@@ -485,7 +513,7 @@ serve(async (req) => {
         castJobId,
         taskId: assemblyResult.taskId,
         message: assemblyResult.pendingGeneration
-          ? 'Assembly submitted to JSON2Video. Poll genie-cast-status for completion.'
+          ? 'Assembly submitted to RunPod FFmpeg. Poll genie-cast-status for completion.'
           : 'Video assembly completed.',
         chapters: preBuiltChapters.map(c => ({ id: c.chapterId, product: c.product, success: c.success })),
       }), {
@@ -854,7 +882,7 @@ serve(async (req) => {
       totalCharacters: totalCharactersUsed,
       totalDuration,
       fullProductionMode,
-      assemblyProvider: assemblyResult.success ? 'json2video' : null,
+      assemblyProvider: assemblyResult.success ? 'runpod-ffmpeg' : null,
     });
 
     // Build production mode features list
@@ -904,7 +932,7 @@ serve(async (req) => {
       message: hasDeferred 
         ? `TTS audio generated successfully. Heavy assets (${deferredFeatures.join(', ')}) are deferred to avoid timeout - video will use screenshots only.`
         : (assemblyResult.pendingGeneration 
-          ? 'TTS audio generated. Video assembly in progress via JSON2Video.'
+          ? 'TTS audio generated. Video assembly in progress via RunPod FFmpeg.'
           : 'Video generation completed successfully.'),
     };
 
@@ -1049,7 +1077,7 @@ async function generateChapterAudio(
   console.log(`   TTS result for ${chapterId}: hasUrl=${!!audioUrl}, urlIsHttp=${audioUrl?.startsWith('http')}, hasBase64=${!!audioBase64}, base64Len=${audioBase64?.length || 0}`);
 
   // CRITICAL: Check if audioUrl is a valid HTTP URL, not a data URI
-  // JSON2Video REQUIRES http(s):// URLs - data URIs won't work
+  // RunPod FFmpeg REQUIRES http(s):// URLs - data URIs won't work
   const hasValidHttpUrl = audioUrl && audioUrl.startsWith('http');
   
   // If we don't have a valid HTTP URL but have base64, upload to storage
@@ -1965,13 +1993,8 @@ function getEducationalScript(chapterId: string, _baseScript: string): string {
 }
 
 /**
- * Stitch all chapter audio/visuals into one continuous video
- * PRIMARY: JSON2Video (Render tier) for timeline-based stitching
- * FALLBACK: Replicate/ModelsLab for video generation
- */
-/**
- * Layered timeline assembly for EP04 cinematic movie.
- * Builds a JSON2Video timeline with:
+ * Layered timeline assembly for cinematic movie.
+ * Builds a rendering timeline with:
  * - Per-TTS-line audio elements with sequential start offsets (master clock)
  * - Visual elements aligned to TTS durations
  * - Music looped at original speed (volume 0.3) when shorter than scene
@@ -1980,6 +2003,7 @@ function getEducationalScript(chapterId: string, _baseScript: string): string {
  * - Opening/closing bookend segments
  *
  * CORE SYNC PRINCIPLE: TTS audio = master clock. Nothing sped up or slowed down.
+ * Submits to RunPod FFmpeg worker for rendering.
  */
 async function stitchLayeredTimeline(
   chapters: any[],
@@ -1988,10 +2012,11 @@ async function stitchLayeredTimeline(
   language: string,
   quality: string,
 ): Promise<{ success: boolean; videoUrl?: string; thumbnailUrl?: string; pendingGeneration: boolean; taskId?: string }> {
-  const apiKey = Deno.env.get('JSON2VIDEO_API_KEY');
-  if (!apiKey) {
-    console.log('⚠️ JSON2VIDEO_API_KEY not configured — falling back to legacy stitch');
-    return stitchChaptersToVideo(chapters, language, 'json2video', quality);
+  const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_CAST_ENDPOINT_ID');
+  const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
+  if (!RUNPOD_ENDPOINT_ID || !RUNPOD_API_KEY) {
+    console.log('⚠️ RunPod not configured — falling back to legacy stitch');
+    return stitchChaptersToVideo(chapters, language, 'runpod-ffmpeg', quality);
   }
 
   const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
@@ -2148,48 +2173,66 @@ async function stitchLayeredTimeline(
   }
 
   const totalDuration = scenes.reduce((sum, s) => sum + (s.duration || 0), 0);
-  console.log(`📹 Built layered JSON2Video timeline: ${scenes.length} scenes, ${totalDuration}s total`);
+  console.log(`📹 Built layered timeline: ${scenes.length} scenes, ${totalDuration}s total`);
 
-  // Submit to JSON2Video
+  // Submit to RunPod FFmpeg worker
   const timeline = { resolution, quality: quality === 'cinematic' ? 'high' : 'medium', scenes };
 
   try {
-    const response = await fetch('https://api.json2video.com/v2/movies', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-      body: JSON.stringify(timeline),
-    });
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    const runController = new AbortController();
+    const runTimeout = setTimeout(() => runController.abort(), 15000);
+
+    let response: Response;
+    try {
+      response = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${RUNPOD_API_KEY}`,
+        },
+        signal: runController.signal,
+        body: JSON.stringify({
+          input: {
+            timeline,
+            supabaseUrl,
+            supabaseServiceKey: supabaseKey,
+            castProjectId: 'layered-assembly',
+          },
+        }),
+      });
+    } catch (fetchErr: unknown) {
+      clearTimeout(runTimeout);
+      const errMsg = fetchErr instanceof DOMException && fetchErr.name === 'AbortError'
+        ? 'RunPod API timed out after 15s' : String(fetchErr);
+      console.error(`RunPod layered assembly fetch failed: ${errMsg}`);
+      return { success: false, pendingGeneration: false };
+    } finally {
+      clearTimeout(runTimeout);
+    }
 
     const responseText = await response.text();
-    console.log(`📹 JSON2Video response status: ${response.status}`);
-    console.log(`📹 JSON2Video response (first 1000): ${responseText.substring(0, 1000)}`);
+    console.log(`🚀 RunPod layered status: ${response.status}, body: ${responseText.substring(0, 500)}`);
 
     if (!response.ok) {
-      console.error(`JSON2Video API error: ${response.status} - ${responseText}`);
+      console.error(`RunPod API error: ${response.status} - ${responseText}`);
       return { success: false, pendingGeneration: false };
     }
 
     const data = JSON.parse(responseText);
-    const projectId = data.project || data.id || data.movie_id;
+    const runpodJobId = data.id;
 
-    if (projectId) {
-      console.log(`📹 JSON2Video layered job created: ${projectId}`);
-      return { success: true, pendingGeneration: true, taskId: projectId };
+    if (runpodJobId) {
+      console.log(`🚀 RunPod layered job created: ${runpodJobId}`);
+      return { success: true, pendingGeneration: true, taskId: runpodJobId };
     }
 
-    if (data.url || data.movie_url || data.movie?.url) {
-      return {
-        success: true,
-        videoUrl: data.url || data.movie_url || data.movie?.url,
-        thumbnailUrl: data.poster || data.thumbnail || data.movie?.poster,
-        pendingGeneration: false,
-      };
-    }
-
-    console.error(`⚠️ JSON2Video layered: unexpected response`, data);
+    console.error(`⚠️ RunPod layered: unexpected response`, data);
     return { success: false, pendingGeneration: false };
   } catch (err) {
-    console.error('JSON2Video layered assembly error:', err);
+    console.error('RunPod layered assembly error:', err);
     return { success: false, pendingGeneration: false };
   }
 }
@@ -2219,23 +2262,23 @@ async function stitchChaptersToVideo(
   console.log(`   Audio files: ${audioUrls.length} (unique: ${uniqueAudioUrls.length}), Visual files: ${visualUrls.length}`);
   console.log(`   Screenshots per chapter:`, successfulChapters.map(c => `${c.chapterId}: ${c.visualUrls?.length || 1}`).join(', '));
 
-  // === PHASE 1: JSON2VIDEO (PRIMARY - Timeline Assembly) ===
-  const json2videoResult = await tryJSON2VideoAssembly(
-    successfulChapters, 
-    audioUrls, 
-    visualUrls, 
-    language, 
+  // === PHASE 1: RUNPOD FFMPEG (PRIMARY - Timeline Assembly) ===
+  const runpodResult = await tryRunPodAssembly(
+    successfulChapters,
+    audioUrls,
+    visualUrls,
+    language,
     quality,
-    isUnifiedAudio  // Pass unified audio flag
+    isUnifiedAudio
   );
-  if (json2videoResult.success) {
-    console.log(`✅ Video assembled via JSON2Video: ${json2videoResult.videoUrl}`);
+  if (runpodResult.success) {
+    console.log(`✅ Video assembled via RunPod FFmpeg: ${runpodResult.videoUrl}`);
     return {
       success: true,
-      videoUrl: json2videoResult.videoUrl,
-      thumbnailUrl: json2videoResult.thumbnailUrl,
-      pendingGeneration: json2videoResult.pending || false,
-      taskId: json2videoResult.taskId,
+      videoUrl: runpodResult.videoUrl,
+      thumbnailUrl: runpodResult.thumbnailUrl,
+      pendingGeneration: runpodResult.pending || false,
+      taskId: runpodResult.taskId,
     };
   }
 
@@ -2289,72 +2332,94 @@ async function stitchChaptersToVideo(
 }
 
 // ================================
-// JSON2VIDEO INTEGRATION (Phase 1)
+// RUNPOD FFMPEG INTEGRATION (Primary Assembly)
 // ================================
 
 /**
- * JSON2Video API for timeline-based video assembly
- * - Precise frame-by-frame timeline control
+ * RunPod FFmpeg worker for timeline-based video assembly
+ * - Precise frame-by-frame timeline control via FFmpeg
  * - Synchronizes TTS audio with product screenshots
  * - Supports text overlays, transitions, and effects
- * 
- * @see https://json2video.com/docs/api/
+ * - Async job submission — client polls genie-cast-status
  */
-async function tryJSON2VideoAssembly(
+async function tryRunPodAssembly(
   chapters: ChapterResult[],
   audioUrls: string[],
   visualUrls: string[],
   language: string,
   quality: string,
-  isUnifiedAudio: boolean = false  // NEW: Flag for unified audio mode
+  isUnifiedAudio: boolean = false
 ): Promise<{ success: boolean; videoUrl?: string; thumbnailUrl?: string; pending?: boolean; taskId?: string }> {
-  const apiKey = Deno.env.get('JSON2VIDEO_API_KEY');
-  if (!apiKey) {
-    console.log('⚠️ JSON2VIDEO_API_KEY not configured - skipping JSON2Video assembly');
+  const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_CAST_ENDPOINT_ID');
+  const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
+  if (!RUNPOD_ENDPOINT_ID || !RUNPOD_API_KEY) {
+    console.log('⚠️ RunPod not configured - skipping RunPod assembly');
     return { success: false };
   }
 
   try {
-    console.log(`🎥 Starting JSON2Video timeline assembly for ${language}`);
-    console.log(`   API Key present: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`);
-    
-    // CRITICAL: Filter out any data: URIs - JSON2Video requires HTTP URLs only
+    console.log(`🎥 Starting RunPod FFmpeg timeline assembly for ${language}`);
+
+    // CRITICAL: Filter out any data: URIs — RunPod requires HTTP URLs only
     const validAudioUrls = audioUrls.filter(url => url && url.startsWith('http'));
     const validVisualUrls = visualUrls.filter(url => url && url.startsWith('http'));
-    
+
     console.log(`   Audio URLs (valid HTTP): ${validAudioUrls.length}/${audioUrls.length}`);
     console.log(`   Visual URLs (valid HTTP): ${validVisualUrls.length}/${visualUrls.length}`);
-    
-    // Log any base64 URLs that were filtered out
+
     const base64AudioCount = audioUrls.filter(url => url && url.startsWith('data:')).length;
     if (base64AudioCount > 0) {
       console.warn(`   ⚠️ ${base64AudioCount} audio files are base64 (filtered out) - check storage upload`);
     }
 
-    // Build timeline from chapters - using only valid URLs
-    const timeline = buildJSON2VideoTimeline(chapters, validAudioUrls, validVisualUrls, language, quality, isUnifiedAudio);
-    
-    // Log full payload for debugging
-    const payloadStr = JSON.stringify(timeline, null, 2);
-    console.log(`📋 JSON2Video Request Payload (first 2000 chars):\n${payloadStr.substring(0, 2000)}`);
+    // Build timeline from chapters
+    const timeline = buildRenderTimeline(chapters, validAudioUrls, validVisualUrls, language, quality, isUnifiedAudio);
+
+    const payloadStr = JSON.stringify(timeline);
+    console.log(`📋 RunPod Request Payload (first 2000 chars):\n${payloadStr.substring(0, 2000)}`);
     console.log(`   Total scenes: ${(timeline as any).scenes?.length || 0}`);
 
-    // Call JSON2Video Render API
-    const response = await fetch('https://api.json2video.com/v2/movies', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify(timeline),
-    });
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Submit to RunPod (async /run — returns immediately)
+    const runController = new AbortController();
+    const runTimeout = setTimeout(() => runController.abort(), 15000);
+
+    let response: Response;
+    try {
+      response = await fetch(`https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${RUNPOD_API_KEY}`,
+        },
+        signal: runController.signal,
+        body: JSON.stringify({
+          input: {
+            timeline,
+            supabaseUrl,
+            supabaseServiceKey: supabaseKey,
+            castProjectId: 'assembler-legacy',
+          },
+        }),
+      });
+    } catch (fetchErr: unknown) {
+      clearTimeout(runTimeout);
+      const errMsg = fetchErr instanceof DOMException && fetchErr.name === 'AbortError'
+        ? 'RunPod API timed out after 15s' : String(fetchErr);
+      console.error(`RunPod assembly fetch failed: ${errMsg}`);
+      return { success: false };
+    } finally {
+      clearTimeout(runTimeout);
+    }
 
     const responseText = await response.text();
-    console.log(`📹 JSON2Video response status: ${response.status}`);
-    console.log(`📹 JSON2Video full response: ${responseText}`);
+    console.log(`🚀 RunPod response status: ${response.status}`);
+    console.log(`🚀 RunPod response: ${responseText.substring(0, 500)}`);
 
     if (!response.ok) {
-      console.error(`JSON2Video API error: ${response.status} - ${responseText}`);
+      console.error(`RunPod API error: ${response.status} - ${responseText}`);
       return { success: false };
     }
 
@@ -2362,143 +2427,88 @@ async function tryJSON2VideoAssembly(
     try {
       data = JSON.parse(responseText);
     } catch (parseErr) {
-      console.error('Failed to parse JSON2Video response:', parseErr);
+      console.error('Failed to parse RunPod response:', parseErr);
       return { success: false };
     }
 
-    // JSON2Video v2 returns { success: true, project: "xxx" } on successful job creation
-    const projectId = data.project || data.id || data.movie_id || data.movie?.id;
-    
-    if (projectId) {
-      console.log(`📹 JSON2Video job created: ${projectId}`);
-      // CRITICAL FIX: Return immediately with pending status instead of blocking poll
-      // This prevents edge function timeout - client will poll genie-cast-status instead
-      console.log(`⏳ Returning immediately with pending status - client will poll for completion`);
+    // RunPod /run returns { id: "job-id", status: "IN_QUEUE" }
+    const runpodJobId = data.id;
+
+    if (runpodJobId) {
+      console.log(`🚀 RunPod job created: ${runpodJobId}`);
+      console.log(`⏳ Returning immediately with pending status - client will poll genie-cast-status`);
       return {
         success: true,
         pending: true,
-        taskId: projectId,
-        videoUrl: undefined, // Will be populated when client polls status
+        taskId: runpodJobId,
+        videoUrl: undefined,
         thumbnailUrl: undefined,
       };
     }
 
-    // If immediate output available (synchronous render - rare)
-    if (data.url || data.movie_url || data.movie?.url) {
-      return {
-        success: true,
-        videoUrl: data.url || data.movie_url || data.movie?.url,
-        thumbnailUrl: data.poster || data.thumbnail || data.movie?.poster,
-        pending: false,
-      };
-    }
-
-    // No project ID means issue with API key or plan
-    if (data.success === true && !projectId) {
-      console.error(`⚠️ JSON2Video: success=true but no project ID returned.`);
-      console.error(`   Possible causes:`);
-      console.error(`   1. API key is for Free tier (no Render API access)`);
-      console.error(`   2. Account quota exhausted`);
-      console.error(`   3. API key misconfigured`);
-      console.error(`   Full response: ${JSON.stringify(data)}`);
-      console.error(`   Please verify Professional plan at json2video.com/account`);
-      return { success: false };
-    }
-
-    // Error in response
     if (data.error || data.message) {
-      console.error(`JSON2Video API error: ${data.error || data.message}`);
+      console.error(`RunPod API error: ${data.error || data.message}`);
       return { success: false };
     }
 
-    console.log(`⚠️ JSON2Video returned unexpected response format`);
+    console.log(`⚠️ RunPod returned unexpected response format`);
     return { success: false };
   } catch (error) {
-    console.error('JSON2Video assembly error:', error);
+    console.error('RunPod assembly error:', error);
     return { success: false };
   }
 }
 
 /**
- * Build JSON2Video timeline from chapter data
- * Uses JSON2Video v2 API format with "scenes" structure
+ * Build rendering timeline from chapter data
+ * Uses scenes/elements structure consumed by RunPod FFmpeg worker
  * Supports UNIFIED AUDIO mode for seamless playback (no breaks between chapters)
- * @see https://json2video.com/docs/v2/api-reference/json-syntax/
  */
-function buildJSON2VideoTimeline(
+function buildRenderTimeline(
   chapters: ChapterResult[],
   audioUrls: string[],
-  visualUrls: string[], // All visuals flattened
+  visualUrls: string[],
   language: string,
   quality: string,
-  isUnifiedAudio: boolean = false  // NEW: Flag for unified audio mode
+  isUnifiedAudio: boolean = false
 ): object {
-  // Resolution options: sd, hd, full-hd, 4k, instagram-story, instagram-post, etc.
   const resolution = quality === 'cinematic' ? '4k' : quality === 'production' ? 'full-hd' : 'hd';
-  
-  // Calculate total duration for unified audio
+
   const totalDuration = chapters.reduce((sum, c) => sum + c.duration, 0);
-  
-  // Get unified audio URL (same for all chapters in unified mode)
   const unifiedAudioUrl = isUnifiedAudio && audioUrls.length > 0 ? audioUrls[0] : null;
 
-  // Build scenes array from chapters - each chapter can have multiple screenshots
   const scenes: any[] = [];
-  let isFirstScene = true; // Track if this is the first scene (for unified audio placement)
-  
+  let isFirstScene = true;
+
   chapters.forEach((chapter, chapterIndex) => {
-    const audioUrl = isUnifiedAudio ? null : (audioUrls[chapterIndex] || null); // Per-chapter audio (non-unified mode only)
+    const audioUrl = isUnifiedAudio ? null : (audioUrls[chapterIndex] || null);
     const chapterVisuals = chapter.visualUrls || (chapter.visualUrl ? [chapter.visualUrl] : []);
-    
-    // If we have multiple screenshots, create sub-scenes for each
+
     if (chapterVisuals.length > 1) {
       const durationPerVisual = Math.floor(chapter.duration / chapterVisuals.length);
-      
+
       chapterVisuals.forEach((visualUrl, visualIndex) => {
         const elements: any[] = [];
         const isFirstVisual = visualIndex === 0;
-        
-        // Background image element
-        elements.push({
-          type: 'image',
-          src: visualUrl,
-          duration: durationPerVisual,
-        });
 
-        // UNIFIED AUDIO: Add audio only to the FIRST scene of the entire video
+        elements.push({ type: 'image', src: visualUrl, duration: durationPerVisual });
+
         if (isUnifiedAudio && isFirstScene && unifiedAudioUrl) {
-          elements.push({
-            type: 'audio',
-            src: unifiedAudioUrl,
-            duration: totalDuration, // Full video duration
-            volume: 1.0,
-          });
+          elements.push({ type: 'audio', src: unifiedAudioUrl, duration: totalDuration, volume: 1.0 });
           isFirstScene = false;
         }
-        
-        // PER-CHAPTER AUDIO: Add audio to first visual of each chapter
+
         if (!isUnifiedAudio && isFirstVisual && audioUrl) {
-          elements.push({
-            type: 'audio',
-            src: audioUrl,
-            duration: chapter.duration, // Full chapter duration
-          });
+          elements.push({ type: 'audio', src: audioUrl, duration: chapter.duration });
         }
 
-        // Text overlay for product name (first visual only)
         if (isFirstVisual) {
           elements.push({
-            type: 'text',
-            text: chapter.product,
+            type: 'text', text: chapter.product,
             duration: Math.min(5, durationPerVisual),
-            settings: {
-              'font-family': 'Inter',
-              'font-size': '48px',
-              'font-color': '#ffffff',
-              'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)',
-            },
-            position: 'bottom-left',
-            start: 0,
+            settings: { 'font-family': 'Inter', 'font-size': '48px', 'font-color': '#ffffff',
+              'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)' },
+            position: 'bottom-left', start: 0,
           });
         }
 
@@ -2510,52 +2520,28 @@ function buildJSON2VideoTimeline(
         });
       });
     } else {
-      // Single visual (or logo fallback)
       const elements: any[] = [];
       const visualUrl = chapterVisuals[0] || null;
 
-      // Background image element
       if (visualUrl) {
-        elements.push({
-          type: 'image',
-          src: visualUrl,
-          duration: chapter.duration,
-        });
+        elements.push({ type: 'image', src: visualUrl, duration: chapter.duration });
       }
 
-      // UNIFIED AUDIO: Add audio only to the FIRST scene
       if (isUnifiedAudio && isFirstScene && unifiedAudioUrl) {
-        elements.push({
-          type: 'audio',
-          src: unifiedAudioUrl,
-          duration: totalDuration, // Full video duration
-          volume: 1.0,
-        });
+        elements.push({ type: 'audio', src: unifiedAudioUrl, duration: totalDuration, volume: 1.0 });
         isFirstScene = false;
       }
-      
-      // PER-CHAPTER AUDIO: Add audio to each chapter
+
       if (!isUnifiedAudio && audioUrl) {
-        elements.push({
-          type: 'audio',
-          src: audioUrl,
-          duration: chapter.duration,
-        });
+        elements.push({ type: 'audio', src: audioUrl, duration: chapter.duration });
       }
 
-      // Text overlay for product name
       elements.push({
-        type: 'text',
-        text: chapter.product,
+        type: 'text', text: chapter.product,
         duration: Math.min(5, chapter.duration),
-        settings: {
-          'font-family': 'Inter',
-          'font-size': '48px',
-          'font-color': '#ffffff',
-          'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)',
-        },
-        position: 'bottom-left',
-        start: 0,
+        settings: { 'font-family': 'Inter', 'font-size': '48px', 'font-color': '#ffffff',
+          'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)' },
+        position: 'bottom-left', start: 0,
       });
 
       scenes.push({
@@ -2567,73 +2553,12 @@ function buildJSON2VideoTimeline(
     }
   });
 
-  console.log(`📹 Built JSON2Video timeline: ${scenes.length} scenes, ${isUnifiedAudio ? 'unified' : 'per-chapter'} audio, total ${totalDuration}s`);
+  console.log(`📹 Built render timeline: ${scenes.length} scenes, ${isUnifiedAudio ? 'unified' : 'per-chapter'} audio, total ${totalDuration}s`);
 
-  // Complete movie structure per JSON2Video v2 spec
   return {
     resolution,
     quality: quality === 'cinematic' ? 'high' : 'medium',
     scenes,
-  };
-}
-
-/**
- * Poll JSON2Video for job completion
- */
-async function pollJSON2VideoResult(
-  projectId: string,
-  apiKey: string
-): Promise<{ success: boolean; videoUrl?: string; thumbnailUrl?: string; pending?: boolean; taskId?: string }> {
-  const maxAttempts = 24; // ~2 minutes with 5s intervals (videos can take time)
-
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise(r => setTimeout(r, 5000));
-
-    try {
-      // Correct endpoint: GET with query param, not path param
-      const response = await fetch(`https://api.json2video.com/v2/movies?project=${projectId}`, {
-        method: 'GET',
-        headers: {
-          'x-api-key': apiKey,
-        },
-      });
-
-      if (!response.ok) {
-        console.error(`JSON2Video polling error: ${response.status}`);
-        continue;
-      }
-
-      const data = await response.json();
-      const movieData = data.movie || data;
-      console.log(`   JSON2Video poll ${i + 1}/${maxAttempts}: status=${movieData.status || data.status}`);
-
-      // Check movie object (v2 API returns { success, movie: {...} })
-      if (movieData.status === 'done' && movieData.url) {
-        return {
-          success: true,
-          videoUrl: movieData.url,
-          thumbnailUrl: movieData.poster || movieData.thumbnail,
-          pending: false,
-        };
-      }
-
-      if (movieData.status === 'error' || movieData.status === 'failed') {
-        console.error('JSON2Video job failed:', movieData.error || movieData.message || data.message);
-        return { success: false };
-      }
-
-      // Still processing, continue polling
-    } catch (error) {
-      console.error('JSON2Video polling error:', error);
-    }
-  }
-
-  // Timeout - return as pending for background processing
-  console.log(`⏳ JSON2Video job ${projectId} still processing - marking as pending`);
-  return {
-    success: true,
-    pending: true,
-    taskId: projectId,
   };
 }
 
@@ -2992,7 +2917,7 @@ async function generateThumbnail(
   // Fallback: Use default Genie Suite branding thumbnail
   const fallbackThumbnail = 'https://ithspbabhmdntioslfqe.supabase.co/storage/v1/object/public/landing-videos/thumbnails/genie-studio-default.jpg';
   
-  // In Phase 2: Generate dynamic thumbnail via JSON2Video still frame or AI image generation
+  // In Phase 2: Generate dynamic thumbnail via RunPod FFmpeg frame extraction or AI image generation
   // For now, return fallback
   return fallbackThumbnail;
 }

@@ -76,7 +76,7 @@ export interface CastTransition {
   chapterHeaderImageUrl?: string; // AI-generated storybook frame
   sfxUrl?: string;
   chapterTitle?: string;
-  j2vTransition: string;          // JSON2Video transition preset
+  renderTransition: string;       // FFmpeg xfade transition preset
 }
 
 export interface CastBookends {
@@ -507,7 +507,7 @@ function makeTransitionScene(t: CastTransition, profile: CastProfile): J2VScene 
     duration: dur,
     'background-color': colors.background,
     elements: filterSafeElements(elements),
-    transition: { style: t.j2vTransition || 'fade', duration: profile.transitions.chapterTransitionDuration },
+    transition: { style: t.renderTransition || 'fade', duration: profile.transitions.chapterTransitionDuration },
   };
 }
 

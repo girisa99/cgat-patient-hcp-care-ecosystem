@@ -64,10 +64,10 @@ export const PROVIDER_TIERS: Record<string, GlobalTier> = {
   'runway-gen3': 'premium',
   'openai-sora': 'premium',
   
-  // Video Assembly (JSON2Video - Phase 1)
-  'json2video-standard': 'standard',
-  'json2video-hd': 'advanced',
-  'json2video-4k': 'premium',
+  // Video Assembly (RunPod FFmpeg)
+  'runpod-ffmpeg-standard': 'standard',
+  'runpod-ffmpeg-hd': 'advanced',
+  'runpod-ffmpeg-4k': 'premium',
   
   // Voice
   'google-tts': 'standard',

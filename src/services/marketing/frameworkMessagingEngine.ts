@@ -654,7 +654,7 @@ class FrameworkMessagingEngine {
       tts: 'Azure Neural',
       video: 'Vertex Veo 3',
       image: 'Gemini 3 Pro',
-      assembly: 'JSON2Video',
+      assembly: 'RunPod FFmpeg',
     };
   }
 

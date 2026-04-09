@@ -11,7 +11,7 @@
  * - Rate-limited async job pools per provider type
  * - Pause / Resume / Cancel controls
  * - Checkpoint persistence (save/load from DB)
- * - Segmented assembly for >30 min content (JSON2Video 30 min limit)
+ * - Segmented assembly for >30 min content (multi-part rendering)
  * - Per-step-type progress tracking
  */
 
@@ -49,7 +49,7 @@ export interface ProductionOrchestratorConfig {
   /** Assembly output config */
   assembly?: {
     format: 'video' | 'audio' | 'slideshow' | 'pptx';
-    maxSegmentDuration?: number; // default 1800s (30 min JSON2Video limit)
+    maxSegmentDuration?: number; // default 1800s (30 min per segment)
     resolution?: '720p' | '1080p' | '4k';
     transitions?: 'none' | 'fade' | 'slide' | 'zoom';
   };

@@ -313,7 +313,7 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
-          projectId, jobType: 'assembly', sceneKey: 'final', provider: 'json2video', estimatedTokens: 5000,
+          projectId, jobType: 'assembly', sceneKey: 'final', provider: 'runpod-ffmpeg', estimatedTokens: 5000,
         });
       }
 

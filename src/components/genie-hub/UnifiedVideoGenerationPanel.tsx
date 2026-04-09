@@ -854,11 +854,11 @@ export const UnifiedVideoGenerationPanel: React.FC = () => {
                 >
                   <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-warning animate-pulse" />
-                    <span className="font-medium text-warning">TTS Audio Generated - JSON2Video Assembly In Progress</span>
+                    <span className="font-medium text-warning">TTS Audio Generated - Video Assembly In Progress</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Text-to-Speech audio has been generated for all {currentVideo.chapters.filter(c => c.success).length} chapters. 
-                    JSON2Video is now assembling the final video with synchronized audio and visuals.
+                    Text-to-Speech audio has been generated for all {currentVideo.chapters.filter(c => c.success).length} chapters.
+                    RunPod FFmpeg is now assembling the final video with synchronized audio and visuals.
                   </p>
                   <div className="flex items-center gap-2 text-xs text-primary bg-primary/5 p-2 rounded">
                     {isPolling || isCheckingStatus ? (

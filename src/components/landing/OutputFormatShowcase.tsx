@@ -75,7 +75,7 @@ const FORMAT_CARDS = [
     icon: Share2,
     title: 'Social',
     subFormats: ['Instagram Reel', 'LinkedIn Post', 'TikTok'],
-    pipeline: 'ModelsLab + JSON2Video',
+    pipeline: 'ModelsLab + RunPod FFmpeg',
     gradient: 'from-pink-500/80 to-rose-600/80',
     emoji: '📱',
   },

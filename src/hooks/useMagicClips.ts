@@ -7,7 +7,7 @@
  * Features:
  * - Auto-generates 15s/30s/60s clips per platform
  * - Supports all major social platforms (YouTube, LinkedIn, TikTok, Instagram, Facebook, X)
- * - Integrates with JSON2Video for timeline-based editing
+ * - Integrates with RunPod FFmpeg for timeline-based editing
  * - Tracks credit consumption per generation
  */
 
