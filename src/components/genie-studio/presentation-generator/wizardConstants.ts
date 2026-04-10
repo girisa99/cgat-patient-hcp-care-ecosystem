@@ -560,7 +560,7 @@ export function getRecommendedProviders(
     reason: 'Balanced quality and speed',
     confidence: 85,
     alternativeTextModels: ['openai/gpt-5-mini', 'google/gemini-2.5-flash'],
-    alternativeImageModels: ['stable-diffusion-xl', 'dall-e-3'],
+    alternativeImageModels: ['stable-diffusion-xl', 'gpt-image-1'],
   };
 
   // Healthcare/Pharma/Biotech
@@ -574,8 +574,8 @@ export function getRecommendedProviders(
       videoModel: 'runway',
       reason: 'High accuracy for medical content with compliance focus',
       confidence: 92,
-      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-3.5-sonnet'],
-      alternativeImageModels: ['dall-e-3', 'modelslab-realvision'],
+      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-sonnet-4-6'],
+      alternativeImageModels: ['gpt-image-1', 'modelslab-realvision'],
     };
   }
 
@@ -600,13 +600,13 @@ export function getRecommendedProviders(
       ['banking', 'insurance', 'investment', 'fintech', 'crypto'].includes(segment)) {
     recommendation = {
       textModel: 'openai/gpt-5',
-      imageModel: 'dall-e-3',
+      imageModel: 'gpt-image-1',
       voiceModel: 'elevenlabs-multilingual',
       translationModel: 'deepl',
       videoModel: 'runway',
       reason: 'Precision for financial data and regulatory content',
       confidence: 90,
-      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-3.5-sonnet'],
+      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-sonnet-4-6'],
       alternativeImageModels: ['flux-pro', 'stable-diffusion-xl'],
     };
   }
@@ -615,13 +615,13 @@ export function getRecommendedProviders(
   if (['startup'].includes(industry) || collateralType === 'investor-pitch') {
     recommendation = {
       textModel: 'openai/gpt-5',
-      imageModel: 'dall-e-3',
+      imageModel: 'gpt-image-1',
       voiceModel: 'elevenlabs-multilingual',
       translationModel: 'deepl',
       videoModel: 'runway',
       reason: 'Optimized for persuasive business content and investor engagement',
       confidence: 91,
-      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-3.5-sonnet'],
+      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-sonnet-4-6'],
       alternativeImageModels: ['flux-pro', 'midjourney'],
     };
   }
@@ -638,7 +638,7 @@ export function getRecommendedProviders(
       reason: 'Latest models for tech-savvy audiences',
       confidence: 89,
       alternativeTextModels: ['openai/gpt-5', 'google/gemini-2.5-pro'],
-      alternativeImageModels: ['dall-e-3', 'stable-diffusion-xl'],
+      alternativeImageModels: ['gpt-image-1', 'stable-diffusion-xl'],
     };
   }
 
@@ -663,13 +663,13 @@ export function getRecommendedProviders(
       ['strategy', 'management'].includes(segment)) {
     recommendation = {
       textModel: 'openai/gpt-5',
-      imageModel: 'dall-e-3',
+      imageModel: 'gpt-image-1',
       voiceModel: 'elevenlabs-multilingual',
       translationModel: 'deepl',
       videoModel: 'runway',
       reason: 'Professional consulting frameworks with polished output',
       confidence: 92,
-      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-3.5-sonnet'],
+      alternativeTextModels: ['google/gemini-2.5-pro', 'anthropic/claude-sonnet-4-6'],
       alternativeImageModels: ['flux-pro', 'modelslab-realvision'],
     };
   }
@@ -686,7 +686,7 @@ export function getRecommendedProviders(
       reason: 'Visually stunning content for travel and hospitality',
       confidence: 88,
       alternativeTextModels: ['openai/gpt-5-mini', 'google/gemini-2.5-flash'],
-      alternativeImageModels: ['dall-e-3', 'stable-diffusion-xl'],
+      alternativeImageModels: ['gpt-image-1', 'stable-diffusion-xl'],
     };
   }
 
@@ -700,14 +700,14 @@ export function getRecommendedProviders(
       videoModel: 'modelslab-video',
       reason: 'Research-grade accuracy with data visualization focus',
       confidence: 90,
-      alternativeTextModels: ['openai/gpt-5', 'anthropic/claude-3.5-sonnet'],
-      alternativeImageModels: ['stable-diffusion-xl', 'dall-e-3'],
+      alternativeTextModels: ['openai/gpt-5', 'anthropic/claude-sonnet-4-6'],
+      alternativeImageModels: ['stable-diffusion-xl', 'gpt-image-1'],
     };
   }
 
   // Visual content types
   if (['infographic-deck', 'product-showcase', 'portfolio'].includes(collateralType)) {
-    recommendation.imageModel = 'dall-e-3';
+    recommendation.imageModel = 'gpt-image-1';
     recommendation.alternativeImageModels = ['flux-pro', 'midjourney', 'stable-diffusion-xl'];
     recommendation.reason += ' + Premium image generation';
     recommendation.confidence = Math.min(recommendation.confidence + 3, 95);
@@ -761,7 +761,7 @@ export const AI_MODELS = {
   image: [
     { id: 'flux-pro', name: 'Flux Pro', provider: 'Black Forest', tier: 'premium', recommended: true },
     { id: 'flux-schnell', name: 'Flux Schnell', provider: 'Black Forest', tier: 'standard' },
-    { id: 'dall-e-3', name: 'DALL-E 3', provider: 'OpenAI', tier: 'premium' },
+    { id: 'gpt-image-1', name: 'GPT Image 1', provider: 'OpenAI', tier: 'premium' },
     { id: 'stable-diffusion-xl', name: 'Stable Diffusion XL', provider: 'Stability AI', tier: 'standard' },
     { id: 'modelslab-realvision', name: 'RealVision', provider: 'ModelsLab', tier: 'standard' },
   ],

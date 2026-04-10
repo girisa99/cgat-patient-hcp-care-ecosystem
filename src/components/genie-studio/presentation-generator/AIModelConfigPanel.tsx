@@ -34,7 +34,7 @@ const TEXT_PROVIDERS = [
   { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', short: 'Gemini Pro' },
   { id: 'openai/gpt-5', name: 'GPT-5', short: 'GPT-5' },
   { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', short: 'GPT-5 Mini' },
-  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', short: 'Claude 3.5' },
+  { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', short: 'Claude 4.6' },
   { id: 'deepseek/deepseek-chat', name: 'DeepSeek', short: 'DeepSeek' },
   { id: 'alibaba/qwen-2.5', name: 'Qwen 2.5', short: 'Qwen 2.5' },
 ];
@@ -43,7 +43,7 @@ const IMAGE_PROVIDERS = [
   { id: 'modelslab', name: 'ModelsLab', short: 'ModelsLab' },
   { id: 'flux-pro', name: 'Flux Pro', short: 'Flux Pro' },
   { id: 'flux-schnell', name: 'Flux Schnell', short: 'Flux Fast' },
-  { id: 'dall-e-3', name: 'DALL-E 3', short: 'DALL-E 3' },
+  { id: 'gpt-image-1', name: 'GPT Image 1', short: 'GPT Image 1' },
   { id: 'stability', name: 'Stability AI', short: 'Stability' },
   { id: 'stock', name: 'Stock Images', short: 'Stock' },
 ];
@@ -97,8 +97,8 @@ export const AIModelConfigPanel: React.FC<AIModelConfigPanelProps> = ({
     let reasoning = 'Gemini 3 Flash provides excellent speed and quality for general content generation.';
     
     if (['healthcare', 'pharma', 'legal'].includes(industry)) {
-      text = 'claude-3-5-sonnet';
-      reasoning = `Claude 3.5 excels at ${industry} domain with nuanced, accurate content.`;
+      text = 'claude-sonnet-4-6';
+      reasoning = `Claude 4.6 excels at ${industry} domain with nuanced, accurate content.`;
     } else if (['consulting'].includes(industry)) {
       text = 'openai/gpt-5';
       reasoning = 'GPT-5 delivers premium strategic and business consulting content.';

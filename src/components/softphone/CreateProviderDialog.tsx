@@ -118,7 +118,7 @@ export const CreateProviderDialog = ({ open, onOpenChange }: CreateProviderDialo
       elevenlabs: {
         configuration: JSON.stringify({ 
           api_key: '', 
-          model_id: 'eleven_monolingual_v1', 
+          model_id: 'eleven_multilingual_v2', 
           voice_id: 'alloy' 
         }, null, 2),
         capabilities: JSON.stringify({ 

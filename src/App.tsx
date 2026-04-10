@@ -8,6 +8,7 @@ import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { PageLoading } from '@/components/ui/LoadingStates';
 import { initializeStabilityFramework } from '@/utils/framework/init';
+import { initializeFromDB as initModelRegistry } from '@/config/provider-version-registry';
 import { AppLayoutWithEnrollment } from '@/components/layout/AppLayoutWithEnrollment';
 import { StabilityProvider } from '@/components/stability/StabilityProvider';
 import { AccessibilityProvider } from '@/components/genie-studio/AccessibilityEnhancements';
@@ -104,6 +105,11 @@ const PublicDocumentPresentation = React.lazy(() => import('@/pages/PublicDocume
 const AppContent = () => {
   console.log('🎯 AppContent rendering...');
   const { isAuthenticated, isLoading, userRoles } = useMasterAuth();
+
+  // Initialize AI model registry from DB on first render
+  useEffect(() => {
+    initModelRegistry().catch(() => {/* silently falls back to hardcoded */});
+  }, []);
   const location = window.location.pathname;
   
   // Check if this is a Genie Suite route or public landing route

@@ -48,7 +48,7 @@ export const NodeConfigurationTester: React.FC = () => {
       icon: Bot,
       parameters: [
         { name: 'name', type: 'string', value: '', required: true, description: 'Agent name' },
-        { name: 'model', type: 'select', value: 'gpt-4o-mini', options: ['gpt-4o-mini', 'claude-3.5-sonnet', 'gemini-2.5-flash'], description: 'AI model' },
+        { name: 'model', type: 'select', value: 'gpt-4o-mini', options: ['gpt-4o-mini', 'claude-sonnet-4-6', 'gemini-2.5-flash'], description: 'AI model' },
         { name: 'system_prompt', type: 'textarea', value: '', description: 'System instructions' },
         { name: 'temperature', type: 'number', value: 0.7, description: 'Response creativity (0-2)' },
         { name: 'max_tokens', type: 'number', value: 1000, description: 'Maximum response length' },
@@ -61,7 +61,7 @@ export const NodeConfigurationTester: React.FC = () => {
       icon: Users,
       parameters: [
         { name: 'team_name', type: 'string', value: '', required: true, description: 'Team name' },
-        { name: 'coordinator_model', type: 'select', value: 'gpt-4o', options: ['gpt-4o', 'claude-3.5-sonnet'], description: 'Coordinator AI model' },
+        { name: 'coordinator_model', type: 'select', value: 'gpt-4o', options: ['gpt-4o', 'claude-sonnet-4-6'], description: 'Coordinator AI model' },
         { name: 'team_size', type: 'number', value: 3, description: 'Number of agents in team' },
         { name: 'collaboration_mode', type: 'select', value: 'sequential', options: ['sequential', 'parallel', 'hierarchical'], description: 'How agents work together' },
         { name: 'consensus_required', type: 'boolean', value: false, description: 'Require agreement between agents' },

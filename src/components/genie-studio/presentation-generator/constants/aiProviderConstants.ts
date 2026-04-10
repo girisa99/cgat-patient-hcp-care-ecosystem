@@ -64,8 +64,8 @@ export const TEXT_PROVIDERS: AIProviderOption[] = [
     capabilities: ['fast', 'multimodal'],
   },
   {
-    id: 'claude-opus-4-5',
-    name: 'Anthropic Claude Opus 4.5',
+    id: 'claude-opus-4-6',
+    name: 'Anthropic Claude Opus 4.6',
     shortName: 'Claude Opus',
     icon: '🧠',
     description: 'Deep reasoning & safety',
@@ -75,8 +75,8 @@ export const TEXT_PROVIDERS: AIProviderOption[] = [
     capabilities: ['reasoning', 'safety', 'analysis'],
   },
   {
-    id: 'claude-sonnet-4-5',
-    name: 'Anthropic Claude Sonnet 4.5',
+    id: 'claude-sonnet-4-6',
+    name: 'Anthropic Claude Sonnet 4.6',
     shortName: 'Claude Sonnet',
     icon: '📝',
     description: 'Fast & capable',
@@ -135,9 +135,9 @@ export const IMAGE_PROVIDERS: AIProviderOption[] = [
     recommended: true,
   },
   {
-    id: 'dall-e-3',
-    name: 'OpenAI DALL-E 3',
-    shortName: 'DALL-E 3',
+    id: 'gpt-image-1',
+    name: 'OpenAI GPT Image 1',
+    shortName: 'GPT Image 1',
     icon: '🖼️',
     description: 'Creative & detailed',
     tier: 'tier-1',
@@ -373,7 +373,7 @@ export const TRANSLATION_PROVIDERS: AIProviderOption[] = [
 
 // Agent types with their supported providers
 export const AGENT_PROVIDER_MAP: Record<string, AIProviderOption[]> = {
-  coordinator: TEXT_PROVIDERS.filter(p => ['gemini-3-flash', 'gpt-5', 'claude-opus-4-5'].includes(p.id)),
+  coordinator: TEXT_PROVIDERS.filter(p => ['gemini-3-flash', 'gpt-5', 'claude-opus-4-6'].includes(p.id)),
   slide_generator: TEXT_PROVIDERS,
   image_generator: IMAGE_PROVIDERS,
   translator: TRANSLATION_PROVIDERS,

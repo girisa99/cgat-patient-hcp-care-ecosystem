@@ -160,7 +160,7 @@ export function getAIProviders(): Record<string, AIProviderConfig> {
     },
     claude: {
       name: 'Anthropic Claude',
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5',
       apiKey: claudeKey,
       available: !!claudeKey,
       tier: 'fallback',

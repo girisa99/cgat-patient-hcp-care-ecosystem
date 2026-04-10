@@ -80,7 +80,7 @@ const NODE_SCHEMAS: Record<string, NodeSchema> = {
         options: [
           { value: 'gpt-4o', label: 'GPT-4 Omni' },
           { value: 'gpt-4o-mini', label: 'GPT-4 Omni Mini' },
-          { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet' },
+          { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
           { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' }
         ]
       },
@@ -209,7 +209,7 @@ const NODE_SCHEMAS: Record<string, NodeSchema> = {
         category: 'ai',
         options: [
           { value: 'gpt-4o', label: 'GPT-4 Omni' },
-          { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet' }
+          { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' }
         ]
       },
       {

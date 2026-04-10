@@ -47,7 +47,7 @@ function getUniversalAIConfig(): { apiKey: string; provider: 'gemini' | 'openai'
   // Try Claude
   const claudeKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('CLAUDE_API_KEY');
   if (claudeKey) {
-    return { apiKey: claudeKey, provider: 'claude', model: 'claude-3-5-haiku-20241022' };
+    return { apiKey: claudeKey, provider: 'claude', model: 'claude-haiku-4-5' };
   }
   
   return null;

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { resolveModel, resolveModelSync } from '../_shared/dynamic-model-resolver.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,7 +34,7 @@ function moderatePrompt(prompt: string): { isAllowed: boolean; reason?: string }
  * 
  * Supported providers/models:
  * - lovable (default): gemini-nano-banana, gemini-3-pro-image (via Lovable AI Gateway)
- * - openai: dall-e-3, dall-e-2
+ * - openai: gpt-image-1
  * - stability: stable-diffusion-xl, stable-diffusion-3
  * - google: imagen-3 (direct Google API)
  * 
@@ -45,9 +46,8 @@ const UNIVERSAL_AI_MODELS = {
   // Lovable AI Gateway image models (nano banana = gemini flash image)
   'gemini-nano-banana': { gateway: 'lovable', model: 'google/gemini-2.5-flash-image-preview' },
   'gemini-3-pro-image': { gateway: 'lovable', model: 'google/gemini-3-pro-image-preview' },
-  // OpenAI DALL-E models
-  'dall-e-3': { gateway: 'openai', model: 'dall-e-3' },
-  'dall-e-2': { gateway: 'openai', model: 'dall-e-2' },
+  // OpenAI image models
+  'gpt-image-1': { gateway: 'openai', model: 'gpt-image-1' },
   // Stability AI models
   'stable-diffusion-xl': { gateway: 'stability', model: 'stable-diffusion-xl-1024-v1-0' },
   'stable-diffusion-3': { gateway: 'stability', model: 'sd3-large' },

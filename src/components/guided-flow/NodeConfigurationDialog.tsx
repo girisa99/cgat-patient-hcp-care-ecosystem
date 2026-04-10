@@ -234,7 +234,7 @@ export const NodeConfigurationDialog: React.FC<NodeConfigurationDialogProps> = (
             <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
             <SelectItem value="gpt-4o">GPT-4o</SelectItem>
             <SelectItem value="claude-haiku-4-5">Claude Haiku 4.5</SelectItem>
-            <SelectItem value="claude-sonnet-4-5">Claude Sonnet 4.5</SelectItem>
+            <SelectItem value="claude-sonnet-4-6">Claude Sonnet 4.6</SelectItem>
           </SelectContent>
         </Select>
       </div>

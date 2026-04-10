@@ -122,8 +122,8 @@ export const AgentStatusDashboard: React.FC = () => {
           averageResponseTime: 850
         },
         {
-          id: 'claude-sonnet-4-5',
-          name: 'Claude Sonnet 4.5',
+          id: 'claude-sonnet-4-6',
+          name: 'Claude Sonnet 4.6',
           provider: 'Anthropic',
           status: 'active',
           tokensUsed: 89000,

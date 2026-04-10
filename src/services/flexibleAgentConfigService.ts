@@ -20,6 +20,7 @@ import {
   TRANSLATION_PROVIDERS,
   AIProviderOption,
 } from '@/components/genie-studio/presentation-generator/constants/aiProviderConstants';
+import { resolveModelId, getActiveModel } from '@/config/provider-version-registry';
 
 // ============================================
 // TYPES & INTERFACES
@@ -260,30 +261,30 @@ const INDUSTRY_PROVIDER_ROUTING: Record<string, {
   reason: string;
 }> = {
   // Healthcare
-  'healthcare': { textProvider: 'claude-opus-4-5', imageProvider: 'dall-e-3', reason: 'Medical accuracy & compliance' },
-  'pharma': { textProvider: 'claude-opus-4-5', imageProvider: 'dall-e-3', reason: 'Regulatory precision' },
+  'healthcare': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Medical accuracy & compliance' },
+  'pharma': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Regulatory precision' },
   'biotech': { textProvider: 'gemini-2.5-pro', imageProvider: 'stability-sdxl', reason: 'Scientific visualization' },
   
   // Finance & Legal
-  'finance': { textProvider: 'claude-opus-4-5', imageProvider: 'dall-e-3', reason: 'Compliance & accuracy' },
-  'banking': { textProvider: 'azure-gpt-4o', imageProvider: 'dall-e-3', reason: 'Enterprise security' },
-  'legal': { textProvider: 'claude-opus-4-5', imageProvider: 'dall-e-3', reason: 'Legal precision' },
-  'insurance': { textProvider: 'claude-sonnet-4-5', imageProvider: 'modelslab-flux', reason: 'Policy accuracy' },
+  'finance': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Compliance & accuracy' },
+  'banking': { textProvider: 'azure-gpt-4o', imageProvider: 'gpt-image-1', reason: 'Enterprise security' },
+  'legal': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Legal precision' },
+  'insurance': { textProvider: 'claude-sonnet-4-6', imageProvider: 'modelslab-flux', reason: 'Policy accuracy' },
   
   // Technology
   'technology': { textProvider: 'gemini-3-flash', imageProvider: 'modelslab-flux', reason: 'Fast & innovative' },
   'saas': { textProvider: 'deepseek-v3', imageProvider: 'modelslab-flux', reason: 'Technical depth' },
-  'cybersecurity': { textProvider: 'claude-opus-4-5', imageProvider: 'stability-sdxl', reason: 'Security focus' },
+  'cybersecurity': { textProvider: 'claude-opus-4-6', imageProvider: 'stability-sdxl', reason: 'Security focus' },
   'ai-ml': { textProvider: 'gemini-2.5-pro', imageProvider: 'modelslab-flux', reason: 'AI expertise' },
   
   // Creative & Marketing
   'marketing': { textProvider: 'gemini-3-flash', imageProvider: 'modelslab-flux', reason: 'Creative & fast' },
-  'advertising': { textProvider: 'gpt-5', imageProvider: 'dall-e-3', reason: 'Creative excellence' },
+  'advertising': { textProvider: 'gpt-5', imageProvider: 'gpt-image-1', reason: 'Creative excellence' },
   'media': { textProvider: 'gemini-3-flash', imageProvider: 'modelslab-flux', reason: 'Visual storytelling' },
   
   // Consulting
-  'consulting': { textProvider: 'claude-opus-4-5', imageProvider: 'dall-e-3', reason: 'Strategic depth' },
-  'strategy': { textProvider: 'claude-opus-4-5', imageProvider: 'stability-sdxl', reason: 'Analytical precision' },
+  'consulting': { textProvider: 'claude-opus-4-6', imageProvider: 'gpt-image-1', reason: 'Strategic depth' },
+  'strategy': { textProvider: 'claude-opus-4-6', imageProvider: 'stability-sdxl', reason: 'Analytical precision' },
   
   // Education & Non-Profit
   'education': { textProvider: 'gemini-2.5-pro', imageProvider: 'modelslab-realvis', reason: 'Educational clarity' },
@@ -350,10 +351,10 @@ const FRAMEWORK_PROVIDER_ROUTING: Record<string, {
   
   // ==================== INDUSTRY FRAMEWORKS ====================
   // Healthcare
-  'patient-journey': { visualProvider: 'dall-e-3', chartType: 'journey', a2aRecommended: true, agents: ['image_generator', 'content_analyzer', 'enhancer'], reason: 'Care pathway' },
-  'value-based-care': { visualProvider: 'dall-e-3', chartType: 'value-flow', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Outcome focus' },
-  'care-model': { visualProvider: 'dall-e-3', chartType: 'canvas', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Care model canvas' },
-  'hipaa-compliance': { visualProvider: 'dall-e-3', chartType: 'checklist', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'], reason: 'HIPAA visual' },
+  'patient-journey': { visualProvider: 'gpt-image-1', chartType: 'journey', a2aRecommended: true, agents: ['image_generator', 'content_analyzer', 'enhancer'], reason: 'Care pathway' },
+  'value-based-care': { visualProvider: 'gpt-image-1', chartType: 'value-flow', a2aRecommended: true, agents: ['image_generator', 'enhancer'], reason: 'Outcome focus' },
+  'care-model': { visualProvider: 'gpt-image-1', chartType: 'canvas', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Care model canvas' },
+  'hipaa-compliance': { visualProvider: 'gpt-image-1', chartType: 'checklist', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'], reason: 'HIPAA visual' },
   
   // FinTech
   'risk-assessment': { visualProvider: 'stability-sdxl', chartType: 'heatmap', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'], reason: 'Risk matrix' },
@@ -413,9 +414,9 @@ const OUTPUT_SUBOPTION_PROVIDER_ROUTING: Record<string, {
   'pdf-export': { primaryProvider: 'jspdf', models: ['jspdf', 'pdfmake'], a2aRequired: false, tier: 1, agents: ['slide_generator'], reason: 'Static PDF generation' },
   'pptx-export': { primaryProvider: 'pptxgenjs', models: ['pptxgenjs'], a2aRequired: false, tier: 1, agents: ['slide_generator'], reason: 'PowerPoint export' },
   'docx-export': { primaryProvider: 'docx', models: ['docx'], a2aRequired: false, tier: 1, agents: ['slide_generator'], reason: 'Word export' },
-  '2d-static': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: false, tier: 1, agents: ['image_generator'], reason: 'High-quality static images' },
+  '2d-static': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'gpt-image-1'], a2aRequired: false, tier: 1, agents: ['image_generator'], reason: 'High-quality static images' },
   'print-ready': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'midjourney-v6'], a2aRequired: false, tier: 1, agents: ['image_generator', 'enhancer'], reason: 'Print-optimized output' },
-  'infographic': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: false, tier: 1, agents: ['image_generator'], reason: 'Infographic images' },
+  'infographic': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'gpt-image-1'], a2aRequired: false, tier: 1, agents: ['image_generator'], reason: 'Infographic images' },
   
   // Animated Tier (Tier 2)
   '2d-animated': { primaryProvider: 'modelslab-animatediff', models: ['animatediff-v2', 'framer-motion'], a2aRequired: true, tier: 2, agents: ['image_generator', 'animation_generator'], reason: 'CSS/Framer animations' },
@@ -424,7 +425,7 @@ const OUTPUT_SUBOPTION_PROVIDER_ROUTING: Record<string, {
   'video-outro': { primaryProvider: 'modelslab-video', models: ['animatediff-v2', 'pika-labs'], a2aRequired: true, tier: 2, agents: ['video_generator'], reason: 'Outro animation' },
   '3d-static': { primaryProvider: 'modelslab-3d', models: ['meshy-ai', 'triposr', 'shap-e'], a2aRequired: true, tier: 2, agents: ['mesh_generator', 'image_generator'], reason: 'Static 3D scenes' },
   'web-embed': { primaryProvider: 'react', models: ['react', 'vue'], a2aRequired: false, tier: 2, agents: ['interactive_generator'], reason: 'Embeddable widgets' },
-  'social-media': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'dall-e-3'], a2aRequired: true, tier: 2, agents: ['image_generator', 'video_generator'], reason: 'Platform-optimized formats' },
+  'social-media': { primaryProvider: 'modelslab-flux', models: ['flux-pro', 'gpt-image-1'], a2aRequired: true, tier: 2, agents: ['image_generator', 'video_generator'], reason: 'Platform-optimized formats' },
   'gif-animated': { primaryProvider: 'modelslab-animatediff', models: ['animatediff-v2'], a2aRequired: true, tier: 2, agents: ['animation_generator'], reason: 'GIF export' },
   'lottie-animation': { primaryProvider: 'lottie', models: ['lottie', 'rive'], a2aRequired: true, tier: 2, agents: ['animation_generator'], reason: 'Lottie export' },
   
@@ -523,15 +524,15 @@ const CONTENT_TYPE_A2A_ROUTING: Record<string, {
   reason: string;
 }> = {
   // Narrative
-  'storytelling': { primaryProvider: 'claude-opus-4-5', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['customer-journey'], reason: 'Narrative arc' },
-  'case-study': { primaryProvider: 'claude-opus-4-5', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['value-chain'], reason: 'Case analysis' },
-  'customer-journey': { primaryProvider: 'claude-sonnet-4-5', a2aRequired: true, tier: 2, agents: ['content_generator', 'image_generator', 'content_analyzer'], suggestedFrameworks: ['patient-journey', 'customer-lifecycle'], reason: 'Journey mapping' },
+  'storytelling': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['customer-journey'], reason: 'Narrative arc' },
+  'case-study': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['value-chain'], reason: 'Case analysis' },
+  'customer-journey': { primaryProvider: 'claude-sonnet-4-6', a2aRequired: true, tier: 2, agents: ['content_generator', 'image_generator', 'content_analyzer'], suggestedFrameworks: ['patient-journey', 'customer-lifecycle'], reason: 'Journey mapping' },
   
   // Business
-  'investor-pitch': { primaryProvider: 'claude-opus-4-5', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['growth-share-matrix', 'saas-metrics'], reason: 'Investment narrative' },
+  'investor-pitch': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['growth-share-matrix', 'saas-metrics'], reason: 'Investment narrative' },
   'sales-deck': { primaryProvider: 'gemini-3-flash', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator'], suggestedFrameworks: ['swot', 'competitive-analysis'], reason: 'Sales persuasion' },
   'quarterly-review': { primaryProvider: 'gemini-3-flash', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['balanced-scorecard', 'okr'], reason: 'Performance review' },
-  'board-presentation': { primaryProvider: 'claude-opus-4-5', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer'], suggestedFrameworks: ['tier1-strategy', 'three-horizons'], reason: 'Executive summary' },
+  'board-presentation': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer'], suggestedFrameworks: ['tier1-strategy', 'three-horizons'], reason: 'Executive summary' },
   
   // Training
   'training-module': { primaryProvider: 'gemini-2.5-pro', a2aRequired: true, tier: 2, agents: ['content_generator', 'enhancer', 'image_generator', 'interactive_generator'], suggestedFrameworks: ['design-thinking'], reason: 'Educational content' },
@@ -539,9 +540,9 @@ const CONTENT_TYPE_A2A_ROUTING: Record<string, {
   'workshop': { primaryProvider: 'gemini-2.5-pro', a2aRequired: true, tier: 2, agents: ['content_generator', 'interactive_generator', 'content_analyzer'], suggestedFrameworks: ['design-thinking', 'scrum'], reason: 'Workshop materials' },
   
   // Research
-  'research-report': { primaryProvider: 'claude-opus-4-5', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'content_analyzer', 'enhancer'], suggestedFrameworks: ['pestle', 'porter-five'], reason: 'Research depth' },
+  'research-report': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'content_analyzer', 'enhancer'], suggestedFrameworks: ['pestle', 'porter-five'], reason: 'Research depth' },
   'market-analysis': { primaryProvider: 'gemini-2.5-pro', a2aRequired: true, tier: 2, agents: ['content_generator', 'content_analyzer', 'image_generator'], suggestedFrameworks: ['porter-five', 'competitive-analysis'], reason: 'Market insights' },
-  'whitepaper': { primaryProvider: 'claude-opus-4-5', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'content_analyzer'], suggestedFrameworks: ['value-chain', 'pestle'], reason: 'Technical depth' },
+  'whitepaper': { primaryProvider: 'claude-opus-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'enhancer', 'content_analyzer'], suggestedFrameworks: ['value-chain', 'pestle'], reason: 'Technical depth' },
   
   // Visual
   'infographic-deck': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer', 'content_analyzer'], suggestedFrameworks: ['swot'], reason: 'Visual focus' },
@@ -549,8 +550,8 @@ const CONTENT_TYPE_A2A_ROUTING: Record<string, {
   'portfolio': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer', 'slide_generator'], suggestedFrameworks: [], reason: 'Portfolio showcase' },
   
   // Video
-  'video-script': { primaryProvider: 'claude-sonnet-4-5', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'voiceover', 'video_generator'], suggestedFrameworks: [], reason: 'Video narrative' },
-  'explainer-video': { primaryProvider: 'claude-sonnet-4-5', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'video_generator', 'voiceover', 'animation_generator'], suggestedFrameworks: ['design-thinking'], reason: 'Explainer content' },
+  'video-script': { primaryProvider: 'claude-sonnet-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'voiceover', 'video_generator'], suggestedFrameworks: [], reason: 'Video narrative' },
+  'explainer-video': { primaryProvider: 'claude-sonnet-4-6', a2aRequired: true, tier: 3, agents: ['coordinator', 'content_generator', 'video_generator', 'voiceover', 'animation_generator'], suggestedFrameworks: ['design-thinking'], reason: 'Explainer content' },
   'product-demo': { primaryProvider: 'gemini-3-flash', a2aRequired: true, tier: 3, agents: ['coordinator', 'video_generator', 'voiceover', 'screen_recorder'], suggestedFrameworks: ['product-led'], reason: 'Demo flow' },
 };
 
@@ -582,7 +583,7 @@ const DESIGN_TEMPLATE_A2A_ROUTING: Record<string, {
   'business': { primaryProvider: 'stability-sdxl', a2aRequired: false, tier: 1, agents: ['image_generator', 'slide_generator'], visualStyle: 'corporate', reason: 'Business standard' },
   'creative': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer'], visualStyle: 'artistic', reason: 'Creative freedom' },
   'minimal': { primaryProvider: 'modelslab-flux', a2aRequired: false, tier: 1, agents: ['slide_generator'], visualStyle: 'clean-minimal', reason: 'Minimal design' },
-  'healthcare': { primaryProvider: 'dall-e-3', a2aRequired: true, tier: 2, agents: ['image_generator', 'compliance_checker'], visualStyle: 'medical-compliant', reason: 'Healthcare compliance' },
+  'healthcare': { primaryProvider: 'gpt-image-1', a2aRequired: true, tier: 2, agents: ['image_generator', 'compliance_checker'], visualStyle: 'medical-compliant', reason: 'Healthcare compliance' },
   'tech': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'enhancer'], visualStyle: 'modern-tech', reason: 'Tech aesthetic' },
   'education': { primaryProvider: 'modelslab-flux', a2aRequired: true, tier: 2, agents: ['image_generator', 'interactive_generator'], visualStyle: 'educational', reason: 'Learning focus' },
 };
@@ -642,12 +643,12 @@ const FRAMEWORK_CATEGORY_ROUTING: Record<string, {
   'agile': { visualProvider: 'gemini-imagen', layoutType: 'sprint', a2aRecommended: false, agents: ['image_generator'] },
   
   // Industry-Specific (Expanded)
-  'healthcare': { visualProvider: 'dall-e-3', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker', 'enhancer'] },
+  'healthcare': { visualProvider: 'gpt-image-1', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker', 'enhancer'] },
   'fintech': { visualProvider: 'stability-sdxl', layoutType: 'secure', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'] },
   'saas': { visualProvider: 'modelslab-flux', layoutType: 'metric', a2aRecommended: false, agents: ['image_generator'] },
   'retail': { visualProvider: 'modelslab-flux', layoutType: 'visual', a2aRecommended: false, agents: ['image_generator'] },
   'manufacturing': { visualProvider: 'stability-sdxl', layoutType: 'process', a2aRecommended: true, agents: ['image_generator', 'content_analyzer'] },
-  'pharma': { visualProvider: 'dall-e-3', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker', 'enhancer'] },
+  'pharma': { visualProvider: 'gpt-image-1', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker', 'enhancer'] },
   'legal': { visualProvider: 'stability-sdxl', layoutType: 'compliant', a2aRecommended: true, agents: ['image_generator', 'compliance_checker'] },
   'consulting': { visualProvider: 'stability-sdxl', layoutType: 'executive', a2aRecommended: true, agents: ['image_generator', 'enhancer', 'content_analyzer'] },
   'education': { visualProvider: 'modelslab-flux', layoutType: 'educational', a2aRecommended: true, agents: ['image_generator', 'interactive_generator'] },
@@ -799,11 +800,11 @@ const LANGUAGE_PROVIDER_ROUTING: Record<string, {
   'ko': { textProvider: 'qwen-max', translationProvider: 'qwen-mt', voiceProvider: 'google-tts', reason: 'Korean optimization' },
   
   // European Languages
-  'de': { textProvider: 'claude-sonnet-4-5', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'German precision' },
-  'fr': { textProvider: 'claude-sonnet-4-5', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'French nuance' },
-  'es': { textProvider: 'claude-sonnet-4-5', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'Spanish fluency' },
-  'it': { textProvider: 'claude-sonnet-4-5', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'Italian style' },
-  'pt': { textProvider: 'claude-sonnet-4-5', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'Portuguese variants' },
+  'de': { textProvider: 'claude-sonnet-4-6', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'German precision' },
+  'fr': { textProvider: 'claude-sonnet-4-6', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'French nuance' },
+  'es': { textProvider: 'claude-sonnet-4-6', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'Spanish fluency' },
+  'it': { textProvider: 'claude-sonnet-4-6', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'Italian style' },
+  'pt': { textProvider: 'claude-sonnet-4-6', translationProvider: 'deepl', voiceProvider: 'elevenlabs', reason: 'Portuguese variants' },
   
   // RTL Languages
   'ar': { textProvider: 'azure-gpt-4o', translationProvider: 'azure-translator', voiceProvider: 'azure-neural', reason: 'Arabic RTL support' },
@@ -967,7 +968,7 @@ class FlexibleAgentConfigService {
           reason = industryRouting.reason;
         }
         model = this.getModelForProvider(provider, 'text');
-        fallbacks = ['gemini-3-flash', 'gpt-5', 'claude-sonnet-4-5'];
+        fallbacks = ['gemini-3-flash', 'gpt-5', 'claude-sonnet-4-6'];
         break;
         
       case AGENT_TYPES.IMAGE_GENERATOR:
@@ -985,7 +986,7 @@ class FlexibleAgentConfigService {
           reason = outputRouting.reason;
         }
         model = this.getModelForProvider(provider, 'image');
-        fallbacks = ['modelslab-flux', 'dall-e-3', 'stability-sdxl'];
+        fallbacks = ['modelslab-flux', 'gpt-image-1', 'stability-sdxl'];
         break;
         
       case AGENT_TYPES.TRANSLATOR:
@@ -1008,8 +1009,8 @@ class FlexibleAgentConfigService {
         
       case AGENT_TYPES.ENHANCER:
         // Enhancement - prefer Claude for nuanced rewriting
-        provider = 'claude-opus-4-5';
-        model = 'claude-opus-4-5-20251101';
+        provider = 'claude-opus-4-6';
+        model = 'claude-opus-4-6';
         reason = 'Superior rewriting & enhancement';
         fallbacks = ['gemini-2.5-pro', 'gpt-5'];
         break;
@@ -1019,14 +1020,14 @@ class FlexibleAgentConfigService {
         provider = 'gemini-3-flash';
         model = 'gemini-3-flash';
         reason = 'Fast quality analysis';
-        fallbacks = ['claude-sonnet-4-5', 'gpt-5-mini'];
+        fallbacks = ['claude-sonnet-4-6', 'gpt-5-mini'];
         break;
         
       default:
         provider = 'gemini-3-flash';
         model = 'gemini-3-flash';
         reason = 'Universal default';
-        fallbacks = ['gpt-5', 'claude-sonnet-4-5'];
+        fallbacks = ['gpt-5', 'claude-sonnet-4-6'];
     }
     
     // Apply quality vs speed preference
@@ -1132,15 +1133,15 @@ class FlexibleAgentConfigService {
       'gemini-2.5-pro': 'gemini-2.5-pro-preview',
       'gpt-5': 'gpt-5',
       'gpt-5-mini': 'gpt-5-mini',
-      'claude-opus-4-5': 'claude-opus-4-5-20251101',
-      'claude-sonnet-4-5': 'claude-sonnet-4-5-20250929',
+      'claude-opus-4-6': 'claude-opus-4-6',
+      'claude-sonnet-4-6': 'claude-sonnet-4-6',
       'deepseek-v3': 'deepseek-chat',
       'qwen-max': 'qwen-max',
       'azure-gpt-4o': 'gpt-4o',
       
       // Image
       'modelslab-flux': 'flux-pro',
-      'dall-e-3': 'dall-e-3',
+      'gpt-image-1': 'gpt-image-1',
       'stability-sdxl': 'stable-diffusion-xl-1024-v1-0',
       'gemini-imagen': 'imagen-3',
       'modelslab-realvis': 'realvis-xl-v4',

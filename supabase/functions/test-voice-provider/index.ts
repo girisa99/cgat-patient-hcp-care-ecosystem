@@ -230,7 +230,7 @@ async function testClaudeProvider(provider: VoiceProvider) {
     message: 'Claude AI Voice Orchestrator is working correctly',
     details: {
       orchestration: true,
-      models: ['claude-3-5-sonnet', 'claude-haiku-4-5'],
+      models: ['claude-sonnet-4-6', 'claude-haiku-4-5'],
       conversation_management: true,
       context_understanding: true,
       latency: '180ms'

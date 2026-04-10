@@ -401,7 +401,7 @@ export const IMAGE_MASTER_ROUTING = {
     tertiary: 'banana_nano',
     fallback: 'modelslab_flux',
     last_resort: 'openai_dalle',
-    models: ['gemini-3.0-pro', 'imagen-3.0', 'gemini-2.5-flash', 'flux-pro', 'dall-e-3'],
+    models: ['gemini-3.0-pro', 'imagen-3.0', 'gemini-2.5-flash', 'flux-pro', 'gpt-image-1'],
   },
   image_to_image: {
     primary: 'vertex_imagen3',
@@ -417,7 +417,7 @@ export const IMAGE_MASTER_ROUTING = {
     tertiary: 'banana_nano',
     fallback: 'huggingface_flux',
     last_resort: 'openai_dalle',
-    models: ['gemini-3.0-pro', 'imagen-3.0', 'gemini-2.5-flash', 'flux-schnell', 'dall-e-3'],
+    models: ['gemini-3.0-pro', 'imagen-3.0', 'gemini-2.5-flash', 'flux-schnell', 'gpt-image-1'],
   },
 } as const;
 

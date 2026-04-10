@@ -52,11 +52,11 @@ const PROVIDER_MODEL_MAP: Record<string, { provider: ImageProvider; model: strin
   vertex_imagen3:  { provider: 'vertex_imagen',  model: 'imagen-3.0-generate-001' },
   alibaba_wanx:    { provider: 'alibaba',        model: 'wanx-v1' },
   modelslab_flux:  { provider: 'modelslab',       model: 'flux-schnell' },
-  openai_dalle:    { provider: 'openai',          model: 'dall-e-3' },
+  openai_dalle:    { provider: 'openai',          model: 'gpt-image-1' },
   banana_nano:     { provider: 'gemini',          model: 'gemini-2.5-flash' },
 };
 
-const LAST_RESORT = { provider: 'openai' as ImageProvider, model: 'dall-e-3' };
+const LAST_RESORT = { provider: 'openai' as ImageProvider, model: 'gpt-image-1' };
 
 /** Map subregion code (NAM_US, CJK_JP, etc.) to ISO country code for zone lookup */
 const SUBREGION_TO_COUNTRY: Record<string, string> = {

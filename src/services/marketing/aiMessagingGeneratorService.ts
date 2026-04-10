@@ -387,7 +387,7 @@ function getMessagingProvider(regionCode?: string): { provider: string; model: s
     if (config.regions.some(r => regionCode.toUpperCase().includes(r.toUpperCase()))) {
       switch (config.primaryLLM) {
         case 'claude':
-          return { provider: 'claude', model: 'claude-sonnet-4-20250514' };
+          return { provider: 'claude', model: 'claude-sonnet-4-6' };
         case 'alibaba':
           return { provider: 'alibaba', model: 'qwen-max' };
         case 'gemini':

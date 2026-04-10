@@ -60,8 +60,8 @@ interface EnhancedModelSelectorProps {
 const ENHANCED_AI_MODELS: AIModel[] = [
   // Large Language Models
   {
-    id: 'claude-3-5-sonnet',
-    name: 'Claude 3.5 Sonnet',
+    id: 'claude-sonnet-4-6',
+    name: 'Claude Sonnet 4.6',
     provider: 'Anthropic',
     type: 'large',
     capabilities: ['reasoning', 'analysis', 'writing', 'coding'],

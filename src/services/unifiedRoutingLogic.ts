@@ -98,7 +98,7 @@ export function selectLLM(region: string, taskType: TaskType = 'general'): LLMRo
   if (taskType === 'code' || taskType === 'structured') {
     return {
       primary: 'deepseek-v3',
-      fallback: 'claude-3-5-sonnet',
+      fallback: 'claude-sonnet-4-6',
       cost: 0.00028,
       zone: 'deepseek',
       qualityRating: 4,
@@ -109,7 +109,7 @@ export function selectLLM(region: string, taskType: TaskType = 'general'): LLMRo
   // CLAUDE ZONE: English, European, LatAm - Best for business/professional tone
   if (CLAUDE_REGIONS.includes(region)) {
     return {
-      primary: 'claude-3-5-sonnet',
+      primary: 'claude-sonnet-4-6',
       fallback: 'gpt-4o',
       cost: 0.015,
       zone: 'claude',
@@ -134,7 +134,7 @@ export function selectLLM(region: string, taskType: TaskType = 'general'): LLMRo
   if (GPT4_ARABIC_REGIONS.includes(region)) {
     return {
       primary: 'gpt-4o',
-      fallback: 'claude-3-5-sonnet',
+      fallback: 'claude-sonnet-4-6',
       cost: 0.015,
       zone: 'gpt4',
       qualityRating: 4,
@@ -157,7 +157,7 @@ export function selectLLM(region: string, taskType: TaskType = 'general'): LLMRo
   // DEFAULT FALLBACK
   return {
     primary: 'gpt-4o',
-    fallback: 'claude-3-5-sonnet',
+    fallback: 'claude-sonnet-4-6',
     cost: 0.015,
     zone: 'fallback',
     qualityRating: 5,
@@ -603,7 +603,7 @@ export function getAllZoneConfigurations() {
     claudeZone: {
       name: 'Claude Zone',
       regions: CLAUDE_REGIONS,
-      primaryLLM: 'claude-3-5-sonnet',
+      primaryLLM: 'claude-sonnet-4-6',
       cost: 0.015,
       languages: ['EN', 'DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'PL', 'PT-BR', 'ES-419']
     },

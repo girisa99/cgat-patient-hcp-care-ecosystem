@@ -469,7 +469,7 @@ export const PIPELINE_PROVIDERS: PipelineProviderConfig[] = [
     name: 'DALL-E',
     capabilities: ['text_to_image', 'image_to_image', 'image_style_transfer'],
     models: [
-      { id: 'dall-e-3', name: 'DALL-E 3', tier: 'production', costPerToken: 0.04, avgGenerationTime: 15,
+      { id: 'gpt-image-1', name: 'GPT Image 1', tier: 'production', costPerToken: 0.04, avgGenerationTime: 15,
         maxResolution: { width: 1024, height: 1792 }, supportedStyles: ['photorealistic', 'illustration', 'digital_art'] },
     ],
     regionAvailability: ['*'],

@@ -184,7 +184,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     qualityScore: 95,
     speedScore: 85,
     strengths: ['GPT-4o/o3', 'Whisper STT', 'DALL-E 3', 'Sora 2', 'Function calling'],
-    models: ['gpt-4o', 'gpt-4o-mini', 'o3', 'o4-mini', 'whisper-1', 'tts-1-hd', 'dall-e-3', 'sora-2.0-turbo'],
+    models: ['gpt-4o', 'gpt-4o-mini', 'o3', 'o4-mini', 'whisper-1', 'tts-1-hd', 'gpt-image-1', 'sora-2.0-turbo'],
     wiredToGenieCast: true,
   },
   {
@@ -199,7 +199,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     qualityScore: 96,
     speedScore: 80,
     strengths: ['Best for nuance', '200k context', 'Literary translation', 'Safety'],
-    models: ['claude-sonnet-4', 'claude-opus-4', 'claude-3-5-sonnet'],
+    models: ['claude-sonnet-4', 'claude-opus-4', 'claude-sonnet-4-6'],
     wiredToGenieCast: true,
   },
   {
@@ -458,7 +458,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     qualityScore: 93,
     speedScore: 80,
     strengths: ['Excellent text rendering', 'High quality', 'Prompt refinement', 'Inpainting', 'Outpainting'],
-    models: ['dall-e-3', 'gpt-image-1'],
+    models: ['gpt-image-1', 'gpt-image-1'],
     wiredToGenieCast: true,
   },
 
@@ -567,7 +567,7 @@ export const MASTER_AI_PROVIDERS: AIProviderEntry[] = [
     qualityScore: 82,
     speedScore: 95,
     strengths: ['Ultra fast', 'Low cost', 'Good for classification', 'Quick tasks'],
-    models: ['claude-3-5-haiku', 'claude-haiku-4-5'],
+    models: ['claude-haiku-4-5', 'claude-haiku-4-5'],
     wiredToGenieCast: true,
   },
   {

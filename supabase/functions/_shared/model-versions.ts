@@ -1,18 +1,22 @@
 /**
  * SERVER-SIDE MODEL VERSION REGISTRY
  *
- * Single source of truth for model versions used in edge functions.
- * Mirrors the active models from the client-side provider-version-registry.ts
- * so that model updates happen in ONE place per environment.
+ * Hardcoded fallback for model versions used in edge functions.
+ * DB-driven resolution via dynamic-model-resolver.ts is the PRIMARY source.
+ * These values are used ONLY when the DB is unreachable.
  *
- * When a model is updated:
- *   1. Update the client-side registry: src/config/provider-version-registry.ts
- *   2. Update this file to match
+ * To update models: UPDATE ai_model_registry in the database.
+ * These hardcoded values should be periodically synced with DB state.
  *
  * Imported by: style-intent-routing.ts, image-providers.ts, video-providers.ts
  */
 
-// ─── ACTIVE MODEL IDS ─────────────────────────────────────────────────────
+import { resolveModel, getActiveModelFromDB, warmModelCache } from './dynamic-model-resolver.ts';
+
+// Re-export resolver functions for consumers
+export { resolveModel, getActiveModelFromDB, warmModelCache };
+
+// ─── ACTIVE MODEL IDS (hardcoded fallback) ─────────────────────────────────
 
 export const ACTIVE_MODELS = {
   // Image generation
@@ -21,7 +25,7 @@ export const ACTIVE_MODELS = {
     gemini:      'gemini-2.5-flash-image',
     vertexImagen:'imagen-3.0-generate-002',
     openai:      'gpt-image-1',
-    openaiDalle: 'dall-e-3',
+    openaiDalle: 'gpt-image-1',
     flux:        'flux',
     fluxSchnell: 'black-forest-labs/FLUX.1-schnell',
     replicateFlux: 'black-forest-labs/flux-schnell',
@@ -109,5 +113,56 @@ export function getDefaultVideoModelFromRegistry(provider: string): string {
     case 'sora-2':           return ACTIVE_MODELS.video.sora;
     case 'modelslab-animate': return ACTIVE_MODELS.video.animateDiff;
     default:                 return ACTIVE_MODELS.video.alibabaT2V;
+  }
+}
+
+// ─── DB-DRIVEN HELPERS ────────────────────────────────────────────────────
+
+/**
+ * Get the default image model for a provider — DB-driven with hardcoded fallback.
+ */
+export async function getImageModelDynamic(provider: string): Promise<string> {
+  const dbModel = await getActiveModelFromDB(provider, 'text-to-image');
+  if (dbModel) return dbModel;
+  return getDefaultImageModelFromRegistry(provider);
+}
+
+/**
+ * Get the default video model for a provider — DB-driven with hardcoded fallback.
+ */
+export async function getVideoModelDynamic(provider: string): Promise<string> {
+  const dbModel = await getActiveModelFromDB(provider, 'text-to-video');
+  if (dbModel) return dbModel;
+  return getDefaultVideoModelFromRegistry(provider);
+}
+
+/**
+ * Get the default LLM model for a provider — DB-driven with hardcoded fallback.
+ */
+export async function getLLMModelDynamic(provider: string): Promise<string> {
+  const dbModel = await getActiveModelFromDB(provider, 'llm');
+  if (dbModel) return dbModel;
+  // Hardcoded fallback
+  switch (provider) {
+    case 'anthropic': return 'claude-sonnet-4-6';
+    case 'openai':    return ACTIVE_MODELS.llm.gpt4o;
+    case 'gemini':    return ACTIVE_MODELS.llm.geminiPro;
+    case 'alibaba':   return ACTIVE_MODELS.llm.qwenMax;
+    case 'deepseek':  return 'deepseek-chat';
+    default:          return ACTIVE_MODELS.llm.gpt4o;
+  }
+}
+
+/**
+ * Get the default TTS model for a provider — DB-driven with hardcoded fallback.
+ */
+export async function getTTSModelDynamic(provider: string): Promise<string> {
+  const dbModel = await getActiveModelFromDB(provider, 'tts');
+  if (dbModel) return dbModel;
+  switch (provider) {
+    case 'elevenlabs': return ACTIVE_MODELS.tts.elevenlabsV2;
+    case 'alibaba':    return ACTIVE_MODELS.tts.cosyvoiceFlash;
+    case 'openai':     return ACTIVE_MODELS.tts.openaiTTS;
+    default:           return ACTIVE_MODELS.tts.elevenlabsV2;
   }
 }

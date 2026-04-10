@@ -4,12 +4,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Zap, Image as ImageIcon, Palette, Video, Film } from 'lucide-react';
 
-export type ImageModelType = 
+export type ImageModelType =
   | 'auto'
   | 'gemini-nano-banana'
   | 'gemini-3-pro-image'
-  | 'dall-e-3'
-  | 'dall-e-2'
   | 'gpt-image-1'
   | 'claude-image'
   | 'flux-schnell'
@@ -72,24 +70,6 @@ const IMAGE_MODELS: ImageModel[] = [
     speed: 'medium',
     quality: 'premium',
     icon: <Sparkles className="h-4 w-4 text-blue-500" />
-  },
-  {
-    id: 'dall-e-3',
-    name: 'DALL-E 3',
-    provider: 'OpenAI',
-    description: 'High-quality artistic images with great prompt understanding',
-    speed: 'medium',
-    quality: 'premium',
-    icon: <Palette className="h-4 w-4 text-green-500" />
-  },
-  {
-    id: 'dall-e-2',
-    name: 'DALL-E 2',
-    provider: 'OpenAI',
-    description: 'Classic DALL-E with reliable performance',
-    speed: 'fast',
-    quality: 'high',
-    icon: <ImageIcon className="h-4 w-4 text-green-400" />
   },
   {
     id: 'gpt-image-1',

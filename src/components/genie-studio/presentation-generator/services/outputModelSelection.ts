@@ -75,7 +75,7 @@ const IMAGE_MODEL_OPTIONS: ModelOption[] = [
   
   // Tier 2 - Advanced
   { id: 'flux-pro', name: 'Flux Pro', provider: 'Black Forest Labs', tier: 2, costMultiplier: 2.0, qualityScore: 88, speedScore: 75, isAvailable: true, requiredSecretKey: 'FLUX_API_KEY', capabilities: ['photorealistic', 'text-rendering', 'composition'] },
-  { id: 'dall-e-3', name: 'DALL-E 3', provider: 'OpenAI', tier: 2, costMultiplier: 2.5, qualityScore: 90, speedScore: 70, isAvailable: true, requiredSecretKey: 'OPENAI_API_KEY', capabilities: ['creative', 'text-in-image', 'composition'] },
+  { id: 'gpt-image-1', name: 'GPT Image 1', provider: 'OpenAI', tier: 2, costMultiplier: 2.5, qualityScore: 90, speedScore: 70, isAvailable: true, requiredSecretKey: 'OPENAI_API_KEY', capabilities: ['creative', 'text-in-image', 'composition'] },
   { id: 'modelslab-flux', name: 'ModelsLab Flux', provider: 'ModelsLab', tier: 2, costMultiplier: 1.8, qualityScore: 85, speedScore: 80, isAvailable: true, requiredSecretKey: 'MODELSLAB_API_KEY', capabilities: ['artistic', 'styles'] },
   { id: 'ideogram-v2', name: 'Ideogram v2', provider: 'Ideogram', tier: 2, costMultiplier: 2.0, qualityScore: 92, speedScore: 65, isAvailable: true, requiredSecretKey: 'IDEOGRAM_API_KEY', capabilities: ['text-rendering', 'typography', 'logos'] },
   

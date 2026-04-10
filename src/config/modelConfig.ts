@@ -60,28 +60,28 @@ export const MODEL_REGISTRY: Record<string, ModelInfo> = {
     speed: 'slow',
     context_window: 200000
   },
-  'claude-opus-4-1-20250805': {
-    id: 'claude-opus-4-1-20250805',
+  'claude-opus-4-6': {
+    id: 'claude-opus-4-6',
     name: 'Claude Opus 4.1',
     provider: 'claude',
     category: 'llm',
     description: 'Most capable Claude model with exceptional reasoning',
     capabilities: ['text', 'reasoning', 'analysis', 'writing'],
     available: true,
-    fallbackModels: ['claude-sonnet-4-20250514'],
+    fallbackModels: ['claude-sonnet-4-6'],
     pricing: 'high',
     speed: 'medium',
     context_window: 200000
   },
-  'claude-sonnet-4-20250514': {
-    id: 'claude-sonnet-4-20250514',
+  'claude-sonnet-4-6': {
+    id: 'claude-sonnet-4-6',
     name: 'Claude Sonnet 4',
     provider: 'claude',
     category: 'llm',
     description: 'High-performance Claude model with efficiency',
     capabilities: ['text', 'reasoning', 'analysis', 'writing'],
     available: true,
-    fallbackModels: ['claude-3-5-sonnet-20241022'],
+    fallbackModels: ['claude-sonnet-4-6'],
     pricing: 'medium',
     speed: 'fast',
     context_window: 200000
@@ -127,8 +127,8 @@ export const MODEL_REGISTRY: Record<string, ModelInfo> = {
     speed: 'fast',
     context_window: 64000
   },
-  'claude-3-5-haiku-20241022': {
-    id: 'claude-3-5-haiku-20241022',
+  'claude-haiku-4-5': {
+    id: 'claude-haiku-4-5',
     name: 'Claude 3.5 Haiku',
     provider: 'claude',
     category: 'small',

@@ -239,9 +239,9 @@ const MODEL_REGISTRY: Record<string, {
     qualityScore: 90,
     tier: 'premium' as const
   }),
-  'anthropic/claude-3-haiku': Object.freeze({
+  'anthropic/claude-haiku-4-5': Object.freeze({
     provider: 'claude',
-    displayName: 'Claude 3 Haiku',
+    displayName: 'Claude Haiku 4.5',
     strengths: ['classification', 'summarization', 'conversational'] as QueryIntent[],
     costPerInputToken: 0.000003,
     costPerOutputToken: 0.000006,

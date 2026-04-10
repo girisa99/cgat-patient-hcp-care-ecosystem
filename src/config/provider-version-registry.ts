@@ -2,25 +2,27 @@
  * PROVIDER VERSION REGISTRY
  *
  * Single source of truth for ALL provider model versions.
- * Every other file imports from here — model updates happen in ONE place.
+ * Now DB-driven: on app startup, initializeFromDB() loads ai_model_registry
+ * and rebuilds PROVIDER_VERSIONS + ALIAS_MAP from the database.
+ *
+ * Hardcoded PROVIDER_VERSIONS below serve ONLY as unreachable-DB fallbacks.
  *
  * When a provider launches a new model:
- *   1. Call registerNewRelease() with the new model info
- *   2. Old model auto-deprecated, sunset date set
- *   3. All consumers calling getActiveModel() automatically get the new version
+ *   1. UPDATE ai_model_registry in DB (one SQL statement)
+ *   2. Within 5 minutes, all consumers automatically get the new version
+ *   3. Zero code changes. Zero deploys.
  *
  * @example
- *   // Get current active model for a capability
  *   getActiveModel('meshy', 'text-to-3d')    // → 'meshy-6'
- *   getActiveModel('alibaba', 'text-to-video') // → 'wan2.6-t2v'
- *
- *   // Check for upcoming migrations
- *   getSunsetWarnings()  // → [{ modelId: 'meshy-4', sunsetDate: '2026-03-20', ... }]
+ *   resolveModelId('claude-3-5-sonnet')       // → 'claude-sonnet-4-6'
+ *   resolveModelId('dall-e-3')                // → 'gpt-image-1'
  */
+
+import { supabase } from '@/integrations/supabase/client';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
-export type ProviderModelStatus = 'active' | 'deprecated' | 'sunset' | 'preview';
+export type ProviderModelStatus = 'active' | 'deprecated' | 'sunset' | 'preview' | 'retired';
 
 export interface ProviderModelVersion {
   /** Provider identifier (meshy, alibaba, gemini, elevenlabs, openai, etc.) */
@@ -254,7 +256,8 @@ export const PROVIDER_VERSIONS: Record<string, ProviderModelVersion[]> = {
       apiEndpoint: 'multi-provider-tts',
     },
     {
-      providerId: 'openai', modelId: 'dall-e-3', version: '3.0', status: 'active',
+      providerId: 'openai', modelId: 'dall-e-3', version: '3.0', status: 'deprecated',
+      replacedBy: 'gpt-image-1', sunsetDate: '2025-05-12',
       capabilities: ['text-to-image'],
       apiEndpoint: 'ai-image-generator',
     },
@@ -468,4 +471,244 @@ export function getAllModelsForProvider(providerId: string): ProviderModelVersio
  */
 export function getModelEndpoint(modelId: string): string | undefined {
   return getModelVersion(modelId)?.apiEndpoint;
+}
+
+// ─── DB-DRIVEN DYNAMIC RESOLUTION ──────────────────────────────────────────
+
+/** Alias map: old/retired model ID → current canonical model_id */
+const ALIAS_MAP = new Map<string, string>();
+
+/** model_id → full DB row for fast lookup */
+const MODEL_DB_MAP = new Map<string, {
+  model_id: string;
+  model_alias: string[];
+  display_name: string;
+  provider: string;
+  capabilities: string[];
+  status: string;
+  replaced_by: string | null;
+  sunset_date: string | null;
+  quality_tier: string;
+  speed_tier: string;
+  api_endpoint: string | null;
+  supports_vision: boolean;
+  supports_function_calling: boolean;
+  meta: Record<string, unknown>;
+}>();
+
+let _dbInitialized = false;
+let _dbInitPromise: Promise<void> | null = null;
+
+/**
+ * Initialize the registry from ai_model_registry DB table.
+ * Call once on app startup (App.tsx). Safe to call multiple times.
+ *
+ * Rebuilds PROVIDER_VERSIONS + ALIAS_MAP from DB data.
+ * If DB is unreachable, keeps hardcoded fallbacks silently.
+ */
+export async function initializeFromDB(): Promise<void> {
+  // Deduplicate concurrent calls
+  if (_dbInitPromise) return _dbInitPromise;
+
+  _dbInitPromise = _doInitializeFromDB();
+  try {
+    await _dbInitPromise;
+  } finally {
+    _dbInitPromise = null;
+  }
+}
+
+async function _doInitializeFromDB(): Promise<void> {
+  try {
+    const { data, error } = await supabase
+      .from('ai_model_registry')
+      .select('*');
+
+    if (error || !data || data.length === 0) {
+      console.warn('[ModelRegistry] DB load failed, using hardcoded fallbacks:', error?.message);
+      _seedHardcodedAliases();
+      return;
+    }
+
+    // Clear and rebuild
+    ALIAS_MAP.clear();
+    MODEL_DB_MAP.clear();
+
+    // Group by provider for PROVIDER_VERSIONS rebuild
+    const byProvider: Record<string, ProviderModelVersion[]> = {};
+
+    for (const row of data) {
+      // Build MODEL_DB_MAP
+      MODEL_DB_MAP.set(row.model_id, row);
+
+      // Build ALIAS_MAP
+      for (const alias of (row.model_alias ?? [])) {
+        ALIAS_MAP.set(alias, row.model_id);
+      }
+
+      // Map DB status to ProviderModelStatus
+      const status: ProviderModelStatus = (
+        row.status === 'retired' ? 'sunset' :
+        (row.status as ProviderModelStatus)
+      );
+
+      // Add to provider group
+      if (!byProvider[row.provider]) byProvider[row.provider] = [];
+      byProvider[row.provider].push({
+        providerId: row.provider,
+        modelId: row.model_id,
+        version: '1.0', // DB doesn't track semantic version separately
+        status,
+        sunsetDate: row.sunset_date ?? undefined,
+        replacedBy: row.replaced_by ?? undefined,
+        capabilities: row.capabilities ?? [],
+        apiEndpoint: row.api_endpoint ?? undefined,
+        meta: {
+          ...(row.meta ?? {}),
+          displayName: row.display_name,
+          qualityTier: row.quality_tier,
+          speedTier: row.speed_tier,
+          supportsVision: row.supports_vision,
+          supportsFunctionCalling: row.supports_function_calling,
+        },
+      });
+    }
+
+    // Overwrite PROVIDER_VERSIONS with DB data
+    for (const [provider, models] of Object.entries(byProvider)) {
+      PROVIDER_VERSIONS[provider] = models;
+    }
+
+    _dbInitialized = true;
+    console.log(`[ModelRegistry] Loaded ${data.length} models from DB (${Object.keys(byProvider).length} providers)`);
+  } catch (err) {
+    console.warn('[ModelRegistry] DB init exception, using hardcoded fallbacks:', err);
+    _seedHardcodedAliases();
+  }
+}
+
+/** Seed ALIAS_MAP from hardcoded known aliases when DB is unavailable */
+function _seedHardcodedAliases(): void {
+  const aliases: Record<string, string> = {
+    'claude-3-5-sonnet-20241022': 'claude-sonnet-4-6',
+    'claude-3-5-sonnet': 'claude-sonnet-4-6',
+    'claude-sonnet-latest': 'claude-sonnet-4-6',
+    'claude-sonnet-4-20250514': 'claude-sonnet-4-6',
+    'claude-3-5-haiku-20241022': 'claude-haiku-4-5',
+    'claude-3-5-haiku': 'claude-haiku-4-5',
+    'claude-haiku-latest': 'claude-haiku-4-5',
+    'claude-opus-4-1-20250805': 'claude-opus-4-6',
+    'claude-opus-latest': 'claude-opus-4-6',
+    'dall-e-3': 'gpt-image-1',
+    'dall-e-2': 'gpt-image-1',
+    'gemini-1.5-pro': 'gemini-2.5-pro',
+    'gemini-1.5-flash': 'gemini-2.5-flash',
+    'gemini-pro': 'gemini-2.5-pro',
+    'eleven_monolingual_v1': 'eleven_multilingual_v2',
+    'eleven_multilingual_v1': 'eleven_multilingual_v2',
+    'nova-2': 'nova-3',
+    'meshy-4': 'meshy-6',
+    'wan2.1-t2v': 'wan2.6-t2v',
+    'wan2.1-i2v': 'wan2.6-i2v',
+  };
+  for (const [alias, canonical] of Object.entries(aliases)) {
+    ALIAS_MAP.set(alias, canonical);
+  }
+}
+
+/**
+ * Resolve any model ID (including old/retired aliases) to the current canonical model.
+ *
+ * Resolution order:
+ * 1. Direct match in MODEL_DB_MAP → active? return. Retired? follow replaced_by.
+ * 2. Alias match in ALIAS_MAP → return canonical.
+ * 3. Check hardcoded PROVIDER_VERSIONS via migrateModelId().
+ * 4. Pass through unchanged.
+ *
+ * @example resolveModelId('claude-3-5-sonnet-20241022') → 'claude-sonnet-4-6'
+ * @example resolveModelId('dall-e-3') → 'gpt-image-1'
+ * @example resolveModelId('gpt-4o') → 'gpt-4o' (already active)
+ */
+export function resolveModelId(modelIdOrAlias: string): string {
+  // 1. DB map direct match
+  const dbEntry = MODEL_DB_MAP.get(modelIdOrAlias);
+  if (dbEntry) {
+    if (dbEntry.status === 'active' || dbEntry.status === 'preview') {
+      return dbEntry.model_id;
+    }
+    if (dbEntry.replaced_by) {
+      return _followChain(dbEntry.replaced_by, 5);
+    }
+    return dbEntry.model_id;
+  }
+
+  // 2. Alias map
+  const aliasTarget = ALIAS_MAP.get(modelIdOrAlias);
+  if (aliasTarget) return aliasTarget;
+
+  // 3. Hardcoded migration
+  const migrated = migrateModelId(modelIdOrAlias);
+  if (migrated !== modelIdOrAlias) return migrated;
+
+  // 4. Pass through
+  return modelIdOrAlias;
+}
+
+function _followChain(modelId: string, maxHops: number): string {
+  if (maxHops <= 0) return modelId;
+  const entry = MODEL_DB_MAP.get(modelId);
+  if (!entry) return modelId;
+  if (entry.status === 'active' || entry.status === 'preview') return entry.model_id;
+  if (entry.replaced_by) return _followChain(entry.replaced_by, maxHops - 1);
+  return modelId;
+}
+
+/**
+ * Get all active models for a given capability, with display info for UI.
+ * Returns from DB cache if available, otherwise from hardcoded registry.
+ */
+export function getModelsForCapability(capability: string): Array<{
+  modelId: string;
+  displayName: string;
+  provider: string;
+  qualityTier: string;
+  speedTier: string;
+}> {
+  if (MODEL_DB_MAP.size > 0) {
+    const results: Array<{ modelId: string; displayName: string; provider: string; qualityTier: string; speedTier: string }> = [];
+    for (const entry of MODEL_DB_MAP.values()) {
+      if ((entry.status === 'active' || entry.status === 'preview') && entry.capabilities.includes(capability)) {
+        results.push({
+          modelId: entry.model_id,
+          displayName: entry.display_name,
+          provider: entry.provider,
+          qualityTier: entry.quality_tier,
+          speedTier: entry.speed_tier,
+        });
+      }
+    }
+    return results;
+  }
+
+  // Fallback to hardcoded
+  const results: Array<{ modelId: string; displayName: string; provider: string; qualityTier: string; speedTier: string }> = [];
+  for (const models of Object.values(PROVIDER_VERSIONS)) {
+    for (const m of models) {
+      if (m.status === 'active' && m.capabilities.includes(capability)) {
+        results.push({
+          modelId: m.modelId,
+          displayName: m.modelId,
+          provider: m.providerId,
+          qualityTier: (m.meta?.qualityTier as string) ?? 'standard',
+          speedTier: (m.meta?.speedTier as string) ?? 'medium',
+        });
+      }
+    }
+  }
+  return results;
+}
+
+/** Whether DB initialization has completed successfully */
+export function isDBInitialized(): boolean {
+  return _dbInitialized;
 }

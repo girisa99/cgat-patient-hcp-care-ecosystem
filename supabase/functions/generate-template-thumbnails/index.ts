@@ -3,7 +3,7 @@
  * 
  * Uses existing edge functions:
  * - modelslab-media (FLUX, SDXL, Midjourney-style)
- * - ai-image-generator (OpenAI DALL-E, HuggingFace FLUX, Replicate)
+ * - ai-image-generator (OpenAI gpt-image-1, HuggingFace FLUX, Replicate)
  * - gemini-generate-image (Google Gemini/Imagen)
  * - alibaba-3d-generator (Alibaba Wanx)
  * 
@@ -15,6 +15,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { resolveModel, resolveModelSync } from '../_shared/dynamic-model-resolver.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,7 +41,7 @@ const INTERNAL_PROVIDERS = {
   },
   openai_dalle: {
     id: 'openai_dalle',
-    name: 'OpenAI DALL-E 3',
+    name: 'OpenAI gpt-image-1',
     tier: 2,
     regions: ['western', 'global'],
     costPerUnit: 0.04,
@@ -168,7 +169,7 @@ async function generateWithModelsLab(prompt: string, model: string = 'flux-schne
   }
 }
 
-// Generate with OpenAI DALL-E
+// Generate with OpenAI gpt-image-1
 async function generateWithOpenAI(prompt: string): Promise<{ url: string | null; provider: string }> {
   const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
   if (!OPENAI_API_KEY) {
@@ -177,7 +178,7 @@ async function generateWithOpenAI(prompt: string): Promise<{ url: string | null;
   }
 
   try {
-    console.log('🎨 Generating with OpenAI DALL-E 3');
+    console.log('🎨 Generating with OpenAI gpt-image-1');
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -185,12 +186,11 @@ async function generateWithOpenAI(prompt: string): Promise<{ url: string | null;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'dall-e-3',
+        model: 'gpt-image-1',
         prompt: prompt,
         n: 1,
         size: '1792x1024',
-        quality: 'standard',
-        response_format: 'url',
+        quality: 'high',
       }),
     });
 

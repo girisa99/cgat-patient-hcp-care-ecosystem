@@ -83,7 +83,7 @@ export const AI_PROVIDERS: AIProvider[] = [
   { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', shortName: 'Gemini Pro', category: 'text', confidenceScore: 94, ranking: 2, costTier: 'medium', speedTier: 'medium', qualityTier: 'premium', bestFor: ['complex-reasoning', 'multimodal', 'research'] },
   { id: 'openai/gpt-5', name: 'GPT-5', shortName: 'GPT-5', category: 'text', confidenceScore: 96, ranking: 1, costTier: 'high', speedTier: 'medium', qualityTier: 'premium', bestFor: ['consulting', 'strategic', 'creative-writing'] },
   { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', shortName: 'GPT-5 Mini', category: 'text', confidenceScore: 88, ranking: 3, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['drafts', 'simple-tasks', 'high-volume'] },
-  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', shortName: 'Claude 3.5', category: 'text', confidenceScore: 93, ranking: 2, costTier: 'medium', speedTier: 'medium', qualityTier: 'premium', bestFor: ['healthcare', 'legal', 'compliance', 'nuanced-writing'] },
+  { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', shortName: 'Claude 4.6', category: 'text', confidenceScore: 93, ranking: 2, costTier: 'medium', speedTier: 'medium', qualityTier: 'premium', bestFor: ['healthcare', 'legal', 'compliance', 'nuanced-writing'] },
   { id: 'deepseek/deepseek-chat', name: 'DeepSeek', shortName: 'DeepSeek', category: 'text', confidenceScore: 85, ranking: 4, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['code', 'technical', 'cost-effective'] },
   { id: 'alibaba/qwen-2.5', name: 'Qwen 2.5', shortName: 'Qwen 2.5', category: 'text', confidenceScore: 87, ranking: 3, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['asian-languages', 'chinese', 'japanese', 'korean'] },
   
@@ -91,7 +91,7 @@ export const AI_PROVIDERS: AIProvider[] = [
   { id: 'modelslab', name: 'ModelsLab', shortName: 'ModelsLab', category: 'image', confidenceScore: 92, ranking: 1, costTier: 'medium', speedTier: 'medium', qualityTier: 'premium', bestFor: ['photorealistic', 'product-shots', 'diverse-styles'] },
   { id: 'flux-pro', name: 'Flux Pro', shortName: 'Flux Pro', category: 'image', confidenceScore: 90, ranking: 2, costTier: 'medium', speedTier: 'medium', qualityTier: 'premium', bestFor: ['professional', 'business', 'clean-design'] },
   { id: 'flux-schnell', name: 'Flux Schnell', shortName: 'Flux Fast', category: 'image', confidenceScore: 82, ranking: 3, costTier: 'low', speedTier: 'fast', qualityTier: 'standard', bestFor: ['drafts', 'iterations', 'speed-priority'] },
-  { id: 'dall-e-3', name: 'DALL-E 3', shortName: 'DALL-E 3', category: 'image', confidenceScore: 88, ranking: 2, costTier: 'high', speedTier: 'slow', qualityTier: 'premium', bestFor: ['creative', 'artistic', 'unique-styles'] },
+  { id: 'gpt-image-1', name: 'GPT Image 1', shortName: 'GPT Image', category: 'image', confidenceScore: 88, ranking: 2, costTier: 'high', speedTier: 'slow', qualityTier: 'premium', bestFor: ['creative', 'artistic', 'unique-styles'] },
   { id: 'stability', name: 'Stability AI', shortName: 'Stability', category: 'image', confidenceScore: 85, ranking: 3, costTier: 'medium', speedTier: 'medium', qualityTier: 'standard', bestFor: ['landscapes', 'textures', 'backgrounds'] },
   { id: 'stock', name: 'Stock Images', shortName: 'Stock', category: 'image', confidenceScore: 75, ranking: 5, costTier: 'low', speedTier: 'fast', qualityTier: 'basic', bestFor: ['quick-placeholder', 'generic', 'licensed'] },
   
@@ -103,7 +103,7 @@ export const AI_PROVIDERS: AIProvider[] = [
   { id: 'aws-polly', name: 'AWS Polly', shortName: 'Polly', category: 'voice', confidenceScore: 80, ranking: 4, costTier: 'low', speedTier: 'fast', qualityTier: 'basic', bestFor: ['cost-effective', 'aws-ecosystem', 'high-volume'] },
   
   // STT Models (NEW)
-  { id: 'deepgram-nova-2', name: 'Deepgram Nova 2', shortName: 'Deepgram', category: 'voice', confidenceScore: 98, ranking: 1, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['real-time-stt', 'streaming', 'low-latency', 'accuracy'] },
+  { id: 'deepgram-nova-3', name: 'Deepgram Nova 3', shortName: 'Deepgram', category: 'voice', confidenceScore: 98, ranking: 1, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['real-time-stt', 'streaming', 'low-latency', 'accuracy'] },
   
   // Music Models (NEW)
   { id: 'elevenlabs-music', name: 'ElevenLabs Music', shortName: 'ElevenLabs', category: 'voice', confidenceScore: 94, ranking: 1, costTier: 'medium', speedTier: 'fast', qualityTier: 'premium', bestFor: ['music-generation', 'sfx', 'voice-clone'] },
@@ -136,7 +136,7 @@ export const getRecommendedAIConfig = (
   let reasoning = 'Default high-performance model';
   
   if (['healthcare', 'pharma', 'biotech', 'medical', 'legal'].some(i => industryLower.includes(i))) {
-    textModel = 'claude-3-5-sonnet';
+    textModel = 'claude-sonnet-4-6';
     textConfidence = 94;
     reasoning = 'Claude excels at nuanced, compliance-sensitive content';
   } else if (['consulting', 'strategy', 'management'].some(i => industryLower.includes(i))) {

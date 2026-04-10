@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Claude Code — personal overrides (shared config is committed)
+CLAUDE.local.md
+.claude/settings.local.json
+
 # Environment variables - NEVER commit secrets
 .env
 .env.*

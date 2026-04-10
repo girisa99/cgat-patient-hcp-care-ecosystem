@@ -96,8 +96,8 @@ export const ConnectorSwapManager: React.FC<ConnectorSwapManagerProps> = ({
         requirements: { api_key: true, subscription: true, rate_limits: '5K RPM' }
       },
       {
-        id: 'claude-3-5-sonnet',
-        name: 'Claude 3.5 Sonnet',
+        id: 'claude-sonnet-4-6',
+        name: 'Claude Sonnet 4.6',
         type: 'ai_model',
         provider: 'Anthropic',
         capabilities: ['text', 'reasoning', 'analysis', 'coding'],
@@ -161,11 +161,11 @@ export const ConnectorSwapManager: React.FC<ConnectorSwapManagerProps> = ({
         }
 
         // If handling complex healthcare scenarios
-        if ((node.data?.categories as string[])?.includes('healthcare') && !currentConnectors.includes('claude-3-5-sonnet')) {
+        if ((node.data?.categories as string[])?.includes('healthcare') && !currentConnectors.includes('claude-sonnet-4-6')) {
           recommendations.push({
             id: 'healthcare-optimization',
             fromConnector: currentConnectors[0] || 'gpt-4o-mini',
-            toConnector: 'claude-3-5-sonnet',
+            toConnector: 'claude-sonnet-4-6',
             reason: 'Claude excels at medical reasoning and analysis tasks',
             impact: { performance: 10, cost: -10, complexity: 2 },
             confidence: 0.8,

@@ -10,6 +10,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { resolveModel, resolveModelSync } from '../_shared/dynamic-model-resolver.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -329,7 +330,7 @@ async function generateWithOpenAI(prompt: string): Promise<{ url: string | null;
   }
 
   try {
-    console.log('🔄 Trying OpenAI DALL-E 3...');
+    console.log('🔄 Trying OpenAI gpt-image-1...');
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -337,12 +338,11 @@ async function generateWithOpenAI(prompt: string): Promise<{ url: string | null;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'dall-e-3',
+        model: 'gpt-image-1',
         prompt,
         n: 1,
         size: '1792x1024',
-        quality: 'standard',
-        response_format: 'url', // We'll download and re-upload to storage
+        quality: 'high',
       }),
     });
 
@@ -694,7 +694,7 @@ async function pollAlibabaTask(apiKey: string, taskId: string, providerName: str
 // PRIMARY: Gemini 3 Pro / Vertex Imagen3 / Banana Nano (via Lovable Gateway)
 // SECONDARY: Alibaba Wanx / ModelsLab FLUX / DeepSeek
 // FALLBACK: Gemini 2.5 / Replicate SDXL / HuggingFace FLUX
-// LAST RESORT: OpenAI DALL-E (expensive, use only if all else fails)
+// LAST RESORT: OpenAI gpt-image-1 (expensive, use only if all else fails)
 // ============================================
 const REGIONAL_PRIORITY: Record<string, string[]> = {
   // Claude Zone (Western/Europe/LATAM) - Gemini 3 first, then Vertex, then fallbacks

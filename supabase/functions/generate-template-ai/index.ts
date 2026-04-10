@@ -296,7 +296,7 @@ async function callClaude(prompt: string, apiKey: string): Promise<string | null
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-haiku-4-5',
         max_tokens: 2000,
         messages: [
           { role: 'user', content: `${TEMPLATE_GENERATION_PROMPT}\n\nUser request: ${prompt}` }

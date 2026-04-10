@@ -37,24 +37,24 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   const modelCategories = {
     llm: {
       openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16'],
-      claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022'],
+      claude: ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-sonnet-4-6'],
       gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-pro']
     },
     small: {
       openai: ['gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4o-mini'],
-      claude: ['claude-3-5-haiku-20241022'],
+      claude: ['claude-haiku-4-5'],
       gemini: ['gemini-2.5-flash'],
       specialized: ['biomed-llama-7b', 'clinical-bert', 'pubmed-gpt', 'pharma-t5', 'biotech-mistral-7b']
     },
     vision: {
       openai: ['gpt-4o', 'o4-mini-2025-04-16'],
-      claude: ['claude-3-5-sonnet-20241022'],
+      claude: ['claude-sonnet-4-6'],
       gemini: ['gemini-2.5-pro', 'gemini-2.5-flash'],
       healthcare: ['medical-imaging-vision', 'radiology-ai-vision', 'pathology-vision-pro']
     },
     image: {
       gemini: ['gemini-nano-banana', 'gemini-3-pro-image', 'google/gemini-2.5-flash-image-preview', 'google/gemini-3-pro-image-preview'],
-      openai: ['dall-e-3', 'dall-e-2'],
+      openai: ['gpt-image-1'],
       stability: ['stable-diffusion-xl', 'stable-diffusion-3'],
       huggingface: ['flux-schnell', 'flux-dev']
     },
@@ -73,7 +73,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
       name: 'OpenAI',
       models: [...modelCategories.llm.openai, ...modelCategories.small.openai, ...modelCategories.vision.openai, ...modelCategories.image.openai],
       capabilities: ['text', 'vision', 'reasoning', 'image-generation'],
-      description: 'OpenAI GPT models - LLM, Small, Vision, and DALL-E image generation'
+      description: 'OpenAI GPT models - LLM, Small, Vision, and GPT Image generation'
     },
     {
       id: 'claude',
@@ -121,7 +121,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   const getDefaultModel = (provider: UniversalAIProviderType): string => {
     switch (provider) {
       case 'openai': return 'gpt-4o-mini';
-      case 'claude': return 'claude-3-5-haiku-20241022';
+      case 'claude': return 'claude-haiku-4-5';
       case 'gemini': return 'gemini-2.5-flash';
       case 'alibaba': return 'qwen-turbo';
       case 'deepseek': return 'deepseek-chat';

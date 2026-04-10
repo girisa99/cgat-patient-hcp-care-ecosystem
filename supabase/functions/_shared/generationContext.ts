@@ -1,7 +1,7 @@
 /**
  * Shared Generation Context Types for A2A Orchestration
  * Used across all edge functions to ensure consistent context handling
- * 
+ *
  * COMPLETE ROUTING FOR:
  * - Content Type Categories (6) + Content Types (18) with multi-select
  * - Framework Categories (10) + Frameworks (49+) with multi-select
@@ -11,6 +11,8 @@
  * - Translation/Multi-Language separate routing
  * - TRANSFORMATION PIPELINES (20+): text-to-image, image-to-video, ppt-to-video, etc.
  */
+
+import { resolveModel, resolveModelSync } from './dynamic-model-resolver.ts';
 
 // ============================================
 // TIER LEVELS
@@ -799,7 +801,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     pipeline: 'text-to-image',
     stages: [
       { stage: 1, name: 'Prompt Enhancement', inputType: 'text', outputType: 'text', agent: 'prompt-enhancer', provider: 'openai', models: ['gpt-4o'] },
-      { stage: 2, name: 'Image Generation', inputType: 'text', outputType: 'image', agent: 'image-generator', provider: 'modelslab', models: ['flux-pro', 'dall-e-3', 'imagen-3'] },
+      { stage: 2, name: 'Image Generation', inputType: 'text', outputType: 'image', agent: 'image-generator', provider: 'modelslab', models: ['flux-pro', 'gpt-image-1', 'imagen-3'] },
     ],
     a2aRequired: false,
     tier: 'starter',
@@ -1128,7 +1130,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     pipeline: 'voice-to-video',
     stages: [
       { stage: 1, name: 'Speech-to-Text', inputType: 'voice', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper', 'deepgram'] },
-      { stage: 2, name: 'Storyboard Generation', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'openai', models: ['dall-e-3'] },
+      { stage: 2, name: 'Storyboard Generation', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'openai', models: ['gpt-image-1'] },
       { stage: 3, name: 'Video Composition', inputType: 'image', outputType: 'video', agent: 'video-composer', provider: 'modelslab', models: ['animatediff-v2'] },
     ],
     a2aRequired: true,
@@ -1685,7 +1687,7 @@ export const TRANSFORMATION_PIPELINE_ROUTING: Record<TransformationPipeline, Tra
     stages: [
       { stage: 1, name: 'Voice Recording', inputType: 'voice', outputType: 'audio', agent: 'voice-recorder', provider: 'browser', models: ['web-audio-api'] },
       { stage: 2, name: 'Speech-to-Text', inputType: 'audio', outputType: 'text', agent: 'stt-agent', provider: 'azure', models: ['whisper'] },
-      { stage: 3, name: 'Storyboard', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'openai', models: ['dall-e-3'] },
+      { stage: 3, name: 'Storyboard', inputType: 'text', outputType: 'image', agent: 'storyboard-agent', provider: 'openai', models: ['gpt-image-1'] },
       { stage: 4, name: 'Video Assembly', inputType: 'image', outputType: 'video', agent: 'video-composer', provider: 'modelslab', models: ['animatediff-v2'] },
     ],
     a2aRequired: true,

@@ -55,11 +55,11 @@ interface LLMRoute {
 
 const REGION_LLM_ROUTING: Record<string, LLMRoute> = {
   // Claude Zone
-  nam:            { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
-  europe:         { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
-  latam:          { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
-  oceania:        { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
-  turkey:         { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  nam:            { provider: 'anthropic', model: 'claude-sonnet-4-6', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  europe:         { provider: 'anthropic', model: 'claude-sonnet-4-6', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  latam:          { provider: 'anthropic', model: 'claude-sonnet-4-6', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  oceania:        { provider: 'anthropic', model: 'claude-sonnet-4-6', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
+  turkey:         { provider: 'anthropic', model: 'claude-sonnet-4-6', fallbackProviders: ['openai', 'gemini', 'deepseek'] },
   // Alibaba Zone
   mena:           { provider: 'alibaba', model: 'qwen-max', fallbackProviders: ['deepseek', 'anthropic', 'openai'] },
   cjk:            { provider: 'alibaba', model: 'qwen-max', fallbackProviders: ['deepseek', 'anthropic', 'openai'] },
@@ -311,7 +311,7 @@ async function callAnthropic(prompt: string): Promise<string | null> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 500, temperature: 0.7, messages: [{ role: "user", content: prompt }] }),
+    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 500, temperature: 0.7, messages: [{ role: "user", content: prompt }] }),
   });
   if (!response.ok) { const err = await response.text(); console.error(`[transcreation] Anthropic error ${response.status}:`, err.slice(0, 200)); return null; }
   const data = await response.json();
@@ -399,7 +399,7 @@ async function generateTranscreation(
     if (rawContent) {
       const result = parseTranscreationResponse(rawContent);
       if (result && result.content) {
-        const model = provider === 'anthropic' ? 'claude-sonnet-4-20250514'
+        const model = provider === 'anthropic' ? 'claude-sonnet-4-6'
           : provider === 'openai' ? 'gpt-4o'
           : provider === 'gemini' ? 'gemini-2.5-pro'
           : provider === 'deepseek' ? 'deepseek-v3'

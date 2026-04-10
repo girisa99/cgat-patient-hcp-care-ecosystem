@@ -489,7 +489,7 @@ export function PresentationWizard({
     // Tier 2 - Premium
     { id: 'flux-pro', name: 'Flux Pro', styles: ['photorealistic', 'artistic'], tier: 2 },
     { id: 'flux-schnell', name: 'Flux Schnell', styles: ['fast', 'artistic'], tier: 2 },
-    { id: 'dall-e-3', name: 'DALL-E 3', styles: ['text-rendering', 'infographic'], tier: 2 },
+    { id: 'gpt-image-1', name: 'GPT Image 1', styles: ['text-rendering', 'infographic'], tier: 2 },
     { id: 'stability', name: 'Stability AI', styles: ['artistic', 'abstract', 'controlnet'], tier: 2 },
     // Tier 3 - Budget/Regional
     { id: 'alibaba-wanx', name: 'Alibaba Wanx', styles: ['asian-aesthetics', 'low-cost'], tier: 3 },
@@ -685,7 +685,7 @@ export function PresentationWizard({
     { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', description: 'Fast & balanced' },
     { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'High quality' },
     { id: 'openai/gpt-5', name: 'GPT-5', description: 'Premium reasoning' },
-    { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', description: 'Nuanced & creative' },
+    { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', description: 'Nuanced & creative' },
   ];
 
   // Initialize session

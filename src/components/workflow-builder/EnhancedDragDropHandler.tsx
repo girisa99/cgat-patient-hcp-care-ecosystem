@@ -99,7 +99,7 @@ export const useEnhancedDragDropHandler = ({
   const getModelsForCategory = (category: string): string[] => {
     switch (category) {
       case 'ai-agents':
-        return ['gpt-4o-mini', 'claude-3.5-sonnet', 'gemini-2.5-flash', 'gpt-4o'];
+        return ['gpt-4o-mini', 'claude-sonnet-4-6', 'gemini-2.5-flash', 'gpt-4o'];
       case 'integrations':
         return ['REST', 'GraphQL', 'SOAP', 'gRPC'];
       case 'data-processing':

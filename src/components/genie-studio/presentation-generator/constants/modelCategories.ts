@@ -60,8 +60,8 @@ export const IMAGE_MODELS: ModelConfig[] = [
   
   // Tier 2 - Advanced (Balanced)
   {
-    id: 'dall-e-3',
-    name: 'DALL-E 3',
+    id: 'gpt-image-1',
+    name: 'GPT Image 1',
     provider: 'OpenAI',
     tier: 2,
     description: 'High-quality artistic images with great prompt following',
@@ -886,7 +886,7 @@ export const TEXT_MODELS: ModelConfig[] = [
   },
   {
     id: 'claude-haiku',
-    name: 'Claude 3.5 Haiku',
+    name: 'Claude Haiku 4.5',
     provider: 'Anthropic',
     tier: 1,
     description: 'Fast and intelligent responses',
@@ -910,7 +910,7 @@ export const TEXT_MODELS: ModelConfig[] = [
   },
   {
     id: 'claude-sonnet',
-    name: 'Claude 3.5 Sonnet',
+    name: 'Claude Sonnet 4.6',
     provider: 'Anthropic',
     tier: 2,
     description: 'Balanced intelligence and speed',

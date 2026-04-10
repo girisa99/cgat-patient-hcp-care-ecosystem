@@ -97,8 +97,7 @@ export const IMAGE_MODEL_OPTIONS = [
   { id: 'auto', name: 'Auto', description: 'AI selects best model' },
   { id: 'google/gemini-2.5-flash-image', name: 'Gemini Flash Image', description: 'Fast image generation' },
   { id: 'google/gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image', description: 'High quality images' },
-  { id: 'dall-e-3', name: 'DALL-E 3', description: 'OpenAI image generation' },
-  { id: 'dall-e-2', name: 'DALL-E 2', description: 'Fast OpenAI images' },
+  { id: 'gpt-image-1', name: 'GPT Image 1', description: 'Latest OpenAI image model' },
 ];
 
 // Voice models for voiceover agent - Expanded with all providers

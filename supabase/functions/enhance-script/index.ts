@@ -20,7 +20,7 @@ const PROVIDERS = {
   },
   claude: {
     name: "Anthropic Claude",
-    model: "claude-3-5-haiku-20241022",
+    model: "claude-haiku-4-5",
     getApiKey: () => Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("CLAUDE_API_KEY"),
   },
 };

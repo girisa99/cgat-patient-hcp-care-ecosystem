@@ -1,3 +1,5 @@
+import { resolveModelId, getActiveModel } from '@/config/provider-version-registry';
+
 /**
  * CENTRALIZED REGIONAL ROUTING REGISTRY
  * Single source of truth for all LLM, TTS, voice, language, and zone mappings across 82+ regions.
@@ -39,9 +41,9 @@ export interface LLMRoute {
  * Fallback chains ensure automatic escalation if primary unavailable
  */
 export const REGION_LLM_ROUTING: Record<string, LLMRoute> = {
-   'latam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
-   'eu': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
-   'nam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
+   'latam': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → deepseek → gemini' },
+   'eu': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → deepseek → gemini' },
+   'nam': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → gemini → deepseek' },
    'mena': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
    'india': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
    'sea': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'claude → openai/gpt-4o → deepseek' },
@@ -50,8 +52,8 @@ export const REGION_LLM_ROUTING: Record<string, LLMRoute> = {
    'pakistan': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
    'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
    // P0: Oceania & Turkey
-   'oceania': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
-   'turkey': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
+   'oceania': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → gemini → deepseek' },
+   'turkey': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → deepseek → gemini' },
    // P1: Extended Caribbean & Eastern Europe
    'caribbean': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
    'eastern_europe': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → deepseek → gemini' },

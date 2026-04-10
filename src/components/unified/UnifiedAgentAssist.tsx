@@ -431,7 +431,7 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
         const lower = title.toLowerCase();
         const category = lower.includes('agent') ? 'ai-agents' : (lower.includes('vector') || lower.includes('loader') || lower.includes('api')) ? 'integrations' : 'data-processing';
         const icon = lower.includes('agent') ? 'bot' : lower.includes('api') ? 'globe' : 'database';
-        const models = category === 'ai-agents' ? ['gpt-4o-mini','claude-3.5-sonnet','gemini-2.5-flash'] : ['Standard'];
+        const models = category === 'ai-agents' ? ['gpt-4o-mini','claude-sonnet-4-6','gemini-2.5-flash'] : ['Standard'];
         const tools = category === 'ai-agents' ? ['Prompt','Memory','Tools'] : ['Connector','Mapper'];
         return {
           id: `step-${i + 1}`,

@@ -86,8 +86,8 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     // Adjust suggestions based on template type
     if (selectedTemplate) {
       if (selectedTemplate.template_type === 'healthcare' || selectedTemplate.name?.toLowerCase().includes('healthcare')) {
-        suggestions.medical = 'claude-3-5-sonnet-20241022';
-        suggestions.chat = 'claude-3-5-sonnet-20241022';
+        suggestions.medical = 'claude-sonnet-4-6';
+        suggestions.chat = 'claude-sonnet-4-6';
       } else if (selectedTemplate.template_type === 'code' || selectedTemplate.name?.toLowerCase().includes('code')) {
         suggestions.code = 'gpt-4o-mini';
         suggestions.chat = 'gpt-4o-mini';

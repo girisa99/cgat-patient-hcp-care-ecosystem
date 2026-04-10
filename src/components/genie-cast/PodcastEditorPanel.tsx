@@ -106,7 +106,7 @@ async function generateDialogueScript(
       body: {
         action: 'generate_script',
         provider: 'claude',
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         prompt: `Generate a ${style} podcast dialogue about: "${topic}"
 
 Speakers: ${speakerList}

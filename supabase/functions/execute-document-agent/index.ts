@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { resolveModel, resolveModelSync } from '../_shared/dynamic-model-resolver.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,21 +29,21 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
   // Clinical agents → Claude (best for clinical reasoning, medical terminology)
   'clinical-review': {
     provider: 'claude',
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     fallbackProvider: 'gemini',
     fallbackModel: 'gemini-2.5-flash',
     systemPrompt: 'You are an expert clinical pharmacist with 20 years of experience. Provide evidence-based clinical assessments.'
   },
   'drug-interaction': {
     provider: 'claude',
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     fallbackProvider: 'gemini',
     fallbackModel: 'gemini-2.5-flash',
     systemPrompt: 'You are an expert pharmacist specialized in drug-drug interactions and medication safety.'
   },
   'medication-reconciliation': {
     provider: 'claude',
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     fallbackProvider: 'openai',
     fallbackModel: 'gpt-4o-mini',
     systemPrompt: 'You are a clinical pharmacist specializing in medication reconciliation and patient safety.'
@@ -53,49 +54,49 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
     provider: 'gemini',
     model: 'gemini-2.5-flash',
     fallbackProvider: 'claude',
-    fallbackModel: 'claude-3-5-haiku-20241022',
+    fallbackModel: 'claude-haiku-4-5',
     systemPrompt: 'You are an experienced radiologist assistant. Provide structured, actionable radiology assessments.'
   },
   'ct-analysis': {
     provider: 'gemini',
-    model: 'gemini-1.5-pro',
+    model: 'gemini-2.5-pro',
     fallbackProvider: 'claude',
-    fallbackModel: 'claude-3-5-haiku-20241022',
+    fallbackModel: 'claude-haiku-4-5',
     systemPrompt: 'You are a CT imaging specialist. Analyze CT scan findings with clinical precision.'
   },
   'mri-analysis': {
     provider: 'gemini',
-    model: 'gemini-1.5-pro',
+    model: 'gemini-2.5-pro',
     fallbackProvider: 'claude',
-    fallbackModel: 'claude-3-5-haiku-20241022',
+    fallbackModel: 'claude-haiku-4-5',
     systemPrompt: 'You are an MRI imaging specialist. Analyze MRI findings with attention to soft tissue detail.'
   },
   'ultrasound-analysis': {
     provider: 'gemini',
     model: 'gemini-2.5-flash',
     fallbackProvider: 'claude',
-    fallbackModel: 'claude-3-5-haiku-20241022',
+    fallbackModel: 'claude-haiku-4-5',
     systemPrompt: 'You are an ultrasound specialist. Provide structured sonographic assessments.'
   },
   'mammogram-analysis': {
     provider: 'gemini',
-    model: 'gemini-1.5-pro',
+    model: 'gemini-2.5-pro',
     fallbackProvider: 'claude',
-    fallbackModel: 'claude-3-5-haiku-20241022',
+    fallbackModel: 'claude-haiku-4-5',
     systemPrompt: 'You are a breast imaging specialist. Analyze mammographic findings using BI-RADS criteria.'
   },
   
   // Lab agents → Claude (clinical interpretation)
   'critical-value-alert': {
     provider: 'claude',
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     fallbackProvider: 'openai',
     fallbackModel: 'gpt-4o-mini',
     systemPrompt: 'You are an expert clinical laboratory scientist specializing in result interpretation and critical value identification.'
   },
   'trend-analysis': {
     provider: 'claude',
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     fallbackProvider: 'openai',
     fallbackModel: 'gpt-4o-mini',
     systemPrompt: 'You are a clinical pathologist analyzing laboratory trends and patterns.'
@@ -106,7 +107,7 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
     provider: 'gemini',
     model: 'gemini-2.5-flash',
     fallbackProvider: 'claude',
-    fallbackModel: 'claude-3-5-haiku-20241022',
+    fallbackModel: 'claude-haiku-4-5',
     systemPrompt: 'You are a healthcare AI assistant. Provide accurate, evidence-based analysis.'
   }
 };
@@ -115,8 +116,8 @@ const AGENT_MODEL_ROUTING: Record<string, ModelRoutingConfig> = {
 // NOTE: Use actual API model IDs (not prefixed) - the processor handles routing
 const PROVIDER_MODELS: Record<AIProvider, { primary: string; fallback: string }> = {
   'openai': { primary: 'gpt-4o', fallback: 'gpt-4o-mini' }, // Use stable OpenAI models
-  'claude': { primary: 'claude-3-5-haiku-20241022', fallback: 'claude-3-5-sonnet-20241022' },
-  'gemini': { primary: 'gemini-2.5-flash', fallback: 'gemini-1.5-flash' }
+  'claude': { primary: 'claude-haiku-4-5', fallback: 'claude-sonnet-4-6' },
+  'gemini': { primary: 'gemini-2.5-flash', fallback: 'gemini-2.5-flash' }
 };
 
 function getModelRouting(agentId: string, preferredProvider?: AIProvider): ModelRoutingConfig {
@@ -136,7 +137,7 @@ function getModelRouting(agentId: string, preferredProvider?: AIProvider): Model
         : (preferredProvider === 'claude' ? 'gemini' : 'claude'),
       fallbackModel: baseRouting.fallbackProvider !== preferredProvider
         ? baseRouting.fallbackModel
-        : (preferredProvider === 'claude' ? 'gemini-2.5-flash' : 'claude-3-5-haiku-20241022')
+        : (preferredProvider === 'claude' ? 'gemini-2.5-flash' : 'claude-haiku-4-5')
     };
   }
   

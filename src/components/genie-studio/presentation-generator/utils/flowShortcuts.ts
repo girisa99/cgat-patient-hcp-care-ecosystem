@@ -31,7 +31,7 @@ export const FLOW_SHORTCUTS: FlowShortcut[] = [
     autoConfig: {
       template: 'mckinsey',
       tones: ['professional', 'analytical'],
-      aiModel: 'claude-3-5-sonnet'
+      aiModel: 'claude-sonnet-4-6'
     }
   },
   {
@@ -55,7 +55,7 @@ export const FLOW_SHORTCUTS: FlowShortcut[] = [
     autoConfig: {
       template: 'bain',
       tones: ['results-oriented', 'customer-focused'],
-      aiModel: 'claude-3-5-sonnet'
+      aiModel: 'claude-sonnet-4-6'
     }
   },
   {

@@ -61,8 +61,8 @@ interface AgentActionsContentProps {
 // AI Model database simulation
 const AI_MODELS: AIModel[] = [
   {
-    id: 'claude-3-5-sonnet',
-    name: 'Claude 3.5 Sonnet',
+    id: 'claude-sonnet-4-6',
+    name: 'Claude Sonnet 4.6',
     provider: 'Anthropic',
     capabilities: ['reasoning', 'analysis', 'writing', 'coding'],
     description: 'Advanced reasoning and analysis for complex healthcare scenarios',

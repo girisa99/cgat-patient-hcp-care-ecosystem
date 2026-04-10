@@ -65,7 +65,7 @@ const TEXT_PROVIDERS = [
   // Tier 2 - Specialized
   { id: 'anthropic/claude-opus-4', name: 'Claude Opus 4', short: 'Claude Opus', tier: 2, description: 'Best for nuance, 200k context' },
   { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', short: 'Claude Sonnet', tier: 2, description: 'Balanced Claude quality' },
-  { id: 'anthropic/claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', short: 'Claude 3.5', tier: 2, description: 'Compliance-sensitive content' },
+  { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', short: 'Claude 4.6', tier: 2, description: 'Compliance-sensitive content' },
   { id: 'deepseek/deepseek-chat', name: 'DeepSeek Chat', short: 'DeepSeek', tier: 3, description: 'Best for Chinese, low cost' },
   { id: 'deepseek/deepseek-coder', name: 'DeepSeek Coder', short: 'DeepSeek Code', tier: 3, description: 'Technical/code content' },
   // Tier 3 - Alibaba/Azure/HuggingFace
@@ -79,7 +79,7 @@ const TEXT_PROVIDERS = [
 const IMAGE_PROVIDERS = [
   // Tier 1 - Primary (Direct API Integration - NO Lovable AI)
   { id: 'gemini-imagen', name: 'Gemini Imagen 3', short: 'Gemini Image', tier: 1, description: 'Fast (Direct Google API)' },
-  { id: 'dall-e-3', name: 'OpenAI DALL-E 3', short: 'DALL-E 3', tier: 1, description: 'Excellent text rendering' },
+  { id: 'gpt-image-1', name: 'OpenAI GPT Image 1', short: 'GPT Image 1', tier: 1, description: 'Excellent text rendering' },
   { id: 'modelslab', name: 'ModelsLab Hub', short: 'ModelsLab', tier: 1, description: 'Multi-model hub for Image/Video/3D' },
   { id: 'modelslab-realvision', name: 'ModelsLab RealVision', short: 'RealVision', tier: 1, description: 'Photorealistic images' },
   { id: 'modelslab-video', name: 'ModelsLab Video', short: 'ModelsLab Video', tier: 1, description: 'Video generation' },

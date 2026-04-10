@@ -84,7 +84,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     name: '2D Static Slides',
     description: 'Standard high-quality slides with images, charts, infographics',
     icon: 'Image',
-    providers: ['modelslab', 'modelslab-realvision', 'modelslab-civitai', 'flux-pro', 'dall-e-3', 'gemini-image', 'gemini-3-pro-image', 'stability', 'alibaba-wanx'],
+    providers: ['modelslab', 'modelslab-realvision', 'modelslab-civitai', 'flux-pro', 'gpt-image-1', 'gemini-image', 'gemini-3-pro-image', 'stability', 'alibaba-wanx'],
     capabilities: ['PNG export', 'SVG overlay', 'Print-ready', 'Text rendering'],
     tier: 1
   },
@@ -242,7 +242,7 @@ export const OUTPUT_SLIDE_TEMPLATES: OutputSlideTemplate[] = [
       { type: 'cta', role: 'closer', order: 8, isRequired: false },
     ],
     capabilities: ['PNG export', 'SVG overlay', 'Print-ready', 'PDF export', 'PPTX export'],
-    providers: ['modelslab', 'flux-pro', 'dall-e-3', 'gemini-image', 'stability'],
+    providers: ['modelslab', 'flux-pro', 'gpt-image-1', 'gemini-image', 'stability'],
     renderSettings: {
       resolution: { width: 1920, height: 1080 },
       format: 'png',

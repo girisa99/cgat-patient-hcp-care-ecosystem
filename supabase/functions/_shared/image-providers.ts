@@ -10,6 +10,7 @@
 
 import { type ImageProvider, resolveImageProviderOrder, getDefaultImageModel } from './style-intent-routing.ts';
 import { ACTIVE_MODELS } from './model-versions.ts';
+import { resolveModel, resolveModelSync } from './dynamic-model-resolver.ts';
 
 // ============================================================================
 // API KEY ACCESSORS
@@ -253,8 +254,10 @@ async function generateWithOpenAI(prompt: string, options: ImageGenOptions): Pro
   const apiKey = keys.openai();
   if (!apiKey) throw new Error('OpenAI key missing');
   // Only use passed model if it's an OpenAI model; otherwise use default
+  // Resolve any retired dall-e model IDs to current gpt-image-1
   const isOpenAIModel = options.model && (options.model.startsWith('dall-e') || options.model.startsWith('gpt-image'));
-  const model = isOpenAIModel ? options.model! : ACTIVE_MODELS.image.openai;
+  const rawModel = isOpenAIModel ? options.model! : ACTIVE_MODELS.image.openai;
+  const model = resolveModelSync(rawModel);
 
   const body: any = { model, prompt, n: 1, size: options.size || '1024x1024' };
   if (model === 'gpt-image-1') {
@@ -262,7 +265,6 @@ async function generateWithOpenAI(prompt: string, options: ImageGenOptions): Pro
     body.output_format = options.output_format || 'png';
   } else {
     body.response_format = 'url';
-    if (model === 'dall-e-3') body.quality = options.quality === 'high' ? 'hd' : 'standard';
   }
 
   const resp = await fetch('https://api.openai.com/v1/images/generations', {

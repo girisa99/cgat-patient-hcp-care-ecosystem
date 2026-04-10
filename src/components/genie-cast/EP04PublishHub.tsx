@@ -1296,7 +1296,7 @@ interface SocialCopyItem { platform: string; format: string; text: string; hasht
 
 type AIProvider = 'claude' | 'gpt' | 'gemini';
 const AI_PROVIDERS: { id: AIProvider; label: string; model: string; provider: string }[] = [
-  { id: 'claude', label: 'Claude', model: 'claude-sonnet-4-20250514', provider: 'claude' },
+  { id: 'claude', label: 'Claude', model: 'claude-sonnet-4-6', provider: 'claude' },
   { id: 'gpt', label: 'GPT-4o', model: 'gpt-4o', provider: 'openai' },
   { id: 'gemini', label: 'Gemini', model: 'gemini-2.5-flash', provider: 'gemini' },
 ];

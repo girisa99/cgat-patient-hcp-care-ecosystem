@@ -110,8 +110,8 @@ const TEXT_MODELS: ModelOption[] = [
   { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openai', tier: 'balanced', description: 'Balanced excellence', quality: 94, speed: 82, cost: 60, isConfigured: true },
   { id: 'openai/gpt-5', name: 'GPT-5', provider: 'openai', tier: 'premium', description: 'Top reasoning', quality: 98, speed: 78, cost: 45, isConfigured: true },
   // Claude
-  { id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku', provider: 'claude', tier: 'fast', description: 'Quick responses', quality: 85, speed: 92, cost: 85, isConfigured: true },
-  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'claude', tier: 'balanced', description: 'Excellent writing', quality: 96, speed: 82, cost: 55, isConfigured: true },
+  { id: 'anthropic/claude-haiku-4-5', name: 'Claude Haiku 4.5', provider: 'claude', tier: 'fast', description: 'Quick responses', quality: 85, speed: 92, cost: 85, isConfigured: true },
+  { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', provider: 'claude', tier: 'balanced', description: 'Excellent writing', quality: 96, speed: 82, cost: 55, isConfigured: true },
   { id: 'anthropic/claude-3-opus', name: 'Claude 3 Opus', provider: 'claude', tier: 'premium', description: 'Best reasoning', quality: 98, speed: 70, cost: 40, isConfigured: true },
   // DeepSeek
   { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3', provider: 'deepseek', tier: 'balanced', description: 'Cost-efficient', quality: 88, speed: 85, cost: 90, isConfigured: true },
@@ -123,8 +123,7 @@ const IMAGE_MODELS: ModelOption[] = [
   { id: 'google/gemini-2.5-flash-image-preview', name: 'Gemini Flash Image', provider: 'gemini', tier: 'fast', description: 'Quick generation', quality: 85, speed: 88, cost: 70, isConfigured: true },
   { id: 'google/gemini-3-pro-image-preview', name: 'Gemini Pro Image', provider: 'gemini', tier: 'premium', description: 'Premium quality', quality: 92, speed: 75, cost: 55, isConfigured: true },
   // OpenAI
-  { id: 'openai/dall-e-3', name: 'DALL-E 3', provider: 'openai', tier: 'premium', description: 'Best for concepts', quality: 95, speed: 70, cost: 50, isConfigured: true },
-  { id: 'openai/dall-e-2', name: 'DALL-E 2', provider: 'openai', tier: 'balanced', description: 'Faster generation', quality: 85, speed: 85, cost: 70, isConfigured: true },
+  { id: 'openai/gpt-image-1', name: 'GPT Image 1', provider: 'openai', tier: 'premium', description: 'Latest OpenAI image model', quality: 95, speed: 80, cost: 60, isConfigured: true },
   // Stability
   { id: 'stability/stable-diffusion-xl', name: 'Stable Diffusion XL', provider: 'stability', tier: 'balanced', description: 'Versatile styles', quality: 92, speed: 75, cost: 65, isConfigured: true },
   { id: 'stability/stable-diffusion-3', name: 'Stable Diffusion 3', provider: 'stability', tier: 'premium', description: 'Latest quality', quality: 95, speed: 70, cost: 55, isConfigured: true },

@@ -138,8 +138,8 @@ export const DynamicNodeConfiguration: React.FC<DynamicNodeConfigurationProps> =
             <SelectContent>
               <SelectItem value="gpt-4o">GPT-4o</SelectItem>
               <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-              <SelectItem value="claude-opus-4-5">Claude Opus 4.5</SelectItem>
-              <SelectItem value="claude-sonnet-4-5">Claude Sonnet 4.5</SelectItem>
+              <SelectItem value="claude-opus-4-6">Claude Opus 4.6</SelectItem>
+              <SelectItem value="claude-sonnet-4-6">Claude Sonnet 4.6</SelectItem>
               <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro</SelectItem>
             </SelectContent>
           </Select>

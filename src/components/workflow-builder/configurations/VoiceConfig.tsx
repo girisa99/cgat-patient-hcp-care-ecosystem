@@ -90,8 +90,6 @@ export const VoiceConfig: React.FC<VoiceConfigProps> = ({
                   )}
                   {configuration.ttsProvider === 'elevenlabs' && (
                     <>
-                      <SelectItem value="eleven_monolingual_v1">🗣️ Monolingual v1</SelectItem>
-                      <SelectItem value="eleven_multilingual_v1">🌍 Multilingual v1</SelectItem>
                       <SelectItem value="eleven_multilingual_v2">🌎 Multilingual v2</SelectItem>
                     </>
                   )}

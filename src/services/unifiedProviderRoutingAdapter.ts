@@ -12,8 +12,10 @@
  * RTL Support: Automatic layout direction detection for Arabic, Hebrew, Persian, Urdu
  */
 
-import { 
-  COMPLETE_LANGUAGE_MATRIX, 
+import { resolveModelId } from '@/config/provider-version-registry';
+
+import {
+  COMPLETE_LANGUAGE_MATRIX,
   getProviderForLanguage as getCompetitiveProviderEntry,
   isCompetitiveMoatLanguage,
   getCompetitorGapBadge,
@@ -109,19 +111,19 @@ export interface FallbackChain {
 
 const LLM_PROVIDER_MAP: Record<string, { primary: string; fallback: string; zone: LLMZone; quality: number }> = {
   // CLAUDE ZONE: US, UK, EU, Brazil, Israel, South Africa
-  'en': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'en-US': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'en-GB': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'de': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'fr': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'es': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'it': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'pt-BR': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'pt-PT': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'nl': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'pl': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'ru': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
-  'he': { primary: 'claude-3-5-sonnet', fallback: 'gpt-4o', zone: 'claude', quality: 4 },
+  'en': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'en-US': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'en-GB': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'de': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'fr': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'es': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'it': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'pt-BR': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'pt-PT': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'nl': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'pl': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'ru': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 5 },
+  'he': { primary: 'claude-sonnet-4-6', fallback: 'gpt-4o', zone: 'claude', quality: 4 },
   
   // ALIBABA ZONE: CJK, Arabic
   'ja': { primary: 'qwen-max', fallback: 'gpt-4o', zone: 'alibaba', quality: 5 },
@@ -379,7 +381,7 @@ export function getUnifiedProviderRouting(languageCode: string): UnifiedProvider
   
   // Get LLM provider from zone mapping
   const llmConfig = LLM_PROVIDER_MAP[languageCode] || LLM_PROVIDER_MAP[baseCode] || 
-    { primary: 'gpt-4o', fallback: 'claude-3-5-sonnet', zone: 'fallback' as LLMZone, quality: 4 };
+    { primary: 'gpt-4o', fallback: 'claude-sonnet-4-6', zone: 'fallback' as LLMZone, quality: 4 };
   
   // Get TTS provider
   const ttsConfig = TTS_PROVIDER_MAP[languageCode] || TTS_PROVIDER_MAP[baseCode] || 

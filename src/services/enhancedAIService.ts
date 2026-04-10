@@ -4,6 +4,7 @@
  * and advanced error handling and response optimization
  */
 import { supabase } from '@/integrations/supabase/client';
+import { resolveModelId, getActiveModel } from '@/config/provider-version-registry';
 import { featureIntegrationEngine, ProcessingRequest } from './featureIntegrationEngine';
 
 // Re-export type from central location
@@ -215,7 +216,7 @@ export class EnhancedAIService {
   private getDefaultModel(provider: string): string {
     const defaultModels = {
       'openai': 'gpt-4o-mini',
-      'claude': 'claude-3-5-haiku-20241022',
+      'claude': 'claude-haiku-4-5',
       'gemini': 'gemini-2.5-pro'
     };
     return defaultModels[provider as keyof typeof defaultModels] || 'gpt-4o-mini';
@@ -284,7 +285,7 @@ export class EnhancedAIService {
         priority: 2,
         available: this.providerHealth.get('claude') || false,
         lastChecked: this.lastHealthCheck.toISOString(),
-        models: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022'],
+        models: ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
         capabilities: ['text', 'vision', 'analysis']
       },
       {

@@ -97,12 +97,12 @@ export const USE_CASE_SCREEN_CONFIGS: Record<string, ScreenModeConfig> = {
 const MODEL_CATEGORIES = {
   llm: {
     openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16'],
-    claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514'],
+    claude: ['claude-opus-4-6', 'claude-sonnet-4-6'],
     gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-pro'],
   },
   small: {
     openai: ['gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4o-mini'],
-    claude: ['claude-3-5-haiku-20241022'],
+    claude: ['claude-haiku-4-5'],
     gemini: ['gemini-2.5-flash'],
   },
   healthcare: {
@@ -157,7 +157,7 @@ class UnifiedAIConnector {
   private getDefaultModel(provider: 'openai' | 'claude' | 'gemini'): string {
     switch (provider) {
       case 'openai': return 'gpt-4o-mini';
-      case 'claude': return 'claude-3-5-haiku-20241022';
+      case 'claude': return 'claude-haiku-4-5';
       case 'gemini': return 'gemini-2.5-flash';
       default: return 'gpt-4o-mini';
     }
@@ -397,7 +397,7 @@ User Query: ${request.prompt}`;
       case 'treatment_center_onboarding':
       case 'manufacturing_onboarding':
         recommendations.push(
-          { provider: 'claude', model: 'claude-3-5-haiku-20241022', reason: 'Strong document analysis' },
+          { provider: 'claude', model: 'claude-haiku-4-5', reason: 'Strong document analysis' },
           { provider: 'gemini', model: 'gemini-2.5-pro', reason: 'Large context for complex docs' },
         );
         break;

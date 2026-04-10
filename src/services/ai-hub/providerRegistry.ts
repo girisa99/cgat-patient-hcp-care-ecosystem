@@ -122,7 +122,7 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         costPerUnit: 0.0001,
       },
       image_gen: {
-        models: ['dall-e-3', 'dall-e-2', 'gpt-image-1'],
+        models: ['gpt-image-1'],
         strengths: ['Excellent text rendering', 'High quality', 'Prompt refinement'],
         weaknesses: ['Expensive', 'No editing API'],
         priority: 2,
@@ -164,14 +164,14 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
     status: 'active',
     capabilityDetails: {
       llm: {
-        models: ['claude-opus-4', 'claude-sonnet-4', 'claude-3-5-sonnet', 'claude-3-5-haiku'],
+        models: ['claude-opus-4', 'claude-sonnet-4', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
         strengths: ['Best for nuance', 'Long context (200k)', 'Instruction following', 'Safety'],
         weaknesses: ['Higher cost', 'No function calling (tools instead)'],
         priority: 2,
         costPerUnit: 0.00003,
       },
       translation: {
-        models: ['claude-3-5-sonnet', 'claude-sonnet-4'],
+        models: ['claude-sonnet-4-6', 'claude-sonnet-4'],
         strengths: ['Literary translation', 'European languages', 'Preserves tone/style', 'Nuanced'],
         weaknesses: ['Slower', 'Higher cost than dedicated services'],
         supportedLanguages: ['en', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'ru', 'ja', 'ko', 'zh'],
@@ -180,14 +180,14 @@ export const AI_PROVIDER_REGISTRY: Record<AIProviderKey, AIProviderDefinition> =
         notes: 'Excellent for literary, marketing, and nuanced translations',
       },
       vision: {
-        models: ['claude-3-5-sonnet', 'claude-sonnet-4'],
+        models: ['claude-sonnet-4-6', 'claude-sonnet-4'],
         strengths: ['Detailed analysis', 'Document understanding', 'Chart reading'],
         weaknesses: ['No OCR-specific mode'],
         priority: 2,
         costPerUnit: 0.00003,
       },
       nlp: {
-        models: ['claude-3-5-sonnet'],
+        models: ['claude-sonnet-4-6'],
         strengths: ['Nuanced understanding', 'Complex entity extraction'],
         weaknesses: ['Cost'],
         priority: 1,

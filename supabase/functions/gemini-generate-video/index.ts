@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { resolveModel, resolveModelSync } from '../_shared/dynamic-model-resolver.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -644,11 +645,11 @@ async function generateImageFallback(prompt: string, aspectRatio: string): Promi
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'dall-e-3',
+          model: 'gpt-image-1',
           prompt: `Cinematic movie still: ${prompt}. Professional quality, ${aspectRatio} aspect ratio.`,
           n: 1,
           size: aspectRatio === '16:9' ? '1792x1024' : '1024x1024',
-          quality: 'hd'
+          quality: 'high'
         }),
       });
 

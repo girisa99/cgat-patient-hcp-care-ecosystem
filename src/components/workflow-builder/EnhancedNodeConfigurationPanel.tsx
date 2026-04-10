@@ -557,7 +557,7 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                             <SelectContent>
                               <SelectItem value="gpt-4o">OpenAI GPT-4o</SelectItem>
                               <SelectItem value="gpt-4o-mini">OpenAI GPT-4o Mini</SelectItem>
-                              <SelectItem value="claude-sonnet-4-5">Claude Sonnet 4.5</SelectItem>
+                              <SelectItem value="claude-sonnet-4-6">Claude Sonnet 4.6</SelectItem>
                               <SelectItem value="claude-haiku-4-5">Claude Haiku 4.5</SelectItem>
                               <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro</SelectItem>
                               <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>

@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { resolveModelId, getActiveModel } from '@/config/provider-version-registry';
 import type { ScriptSegment, AIEnhancementType, TTSOptions } from '@/components/genie-studio/segmented-editor/types';
 
 // ============= Types =============
@@ -410,7 +411,7 @@ Return as JSON:
   const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
     body: {
       provider,
-      model: provider === 'gemini' ? 'gemini-2.5-flash' : provider === 'openai' ? 'gpt-4o' : 'claude-3-5-haiku-20241022',
+      model: provider === 'gemini' ? 'gemini-2.5-flash' : provider === 'openai' ? 'gpt-4o' : 'claude-haiku-4-5',
       prompt,
       systemPrompt: `You are an expert scriptwriter for ${outputFormat.replace('_', ' ')}s. Create engaging, well-structured content that maintains audience attention throughout. Return only valid JSON, no markdown.`,
       temperature: 0.7,

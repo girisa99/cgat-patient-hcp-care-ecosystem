@@ -47,14 +47,14 @@ export const PROVIDER_TIERS: Record<string, GlobalTier> = {
   'gemini-flash': 'standard',
   'gemini-pro': 'advanced',
   'gpt-4o': 'premium',
-  'claude-opus-4-5': 'premium',
+  'claude-opus-4-6': 'premium',
   'deepseek-v3': 'standard',
   
   // Image
   'stability-core': 'standard',
   'flux-schnell': 'standard',
   'flux-pro': 'advanced',
-  'dall-e-3': 'advanced',
+  'gpt-image-1': 'advanced',
   'midjourney-v6': 'premium',
   'modelslab-realvision': 'advanced',
   

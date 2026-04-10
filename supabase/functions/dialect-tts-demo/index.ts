@@ -208,7 +208,7 @@ async function transcreateWithClaude(text: string, langName: string): Promise<st
       method: 'POST',
       headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1024,
         messages: [{ role: 'user', content: `Transcreate the following English text into ${langName}. Use natural, culturally appropriate language — this is for TTS so it must sound natural when spoken aloud. Adapt idioms, references, and tone for the target culture. Return ONLY the transcreated text.\n\nText: ${text}` }],
       }),

@@ -504,17 +504,17 @@ Requirements:
         default: 'gemini-2.5-flash'
       },
       openai: {
-        static: 'dall-e-3',
-        thumbnail: 'dall-e-3',
-        infographic: 'dall-e-3',
+        static: 'gpt-image-1',
+        thumbnail: 'gpt-image-1',
+        infographic: 'gpt-image-1',
         avatar: 'gpt-4o',
         video: 'gpt-4o',
         default: 'gpt-4o'
       },
       claude: {
-        ppt: 'claude-3-5-sonnet-20241022',
-        slides: 'claude-3-5-sonnet-20241022',
-        default: 'claude-3-5-sonnet-20241022'
+        ppt: 'claude-sonnet-4-6',
+        slides: 'claude-sonnet-4-6',
+        default: 'claude-sonnet-4-6'
       },
       modelslab: {
         '3d': 'text-to-3d',

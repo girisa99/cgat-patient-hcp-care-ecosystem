@@ -191,7 +191,7 @@ export const ENGINE_TEMPLATES = {
     name: 'Manufacturing Onboarding Engine',
     engine_type: 'hybrid' as const,
     provider: 'claude',
-    model_identifier: 'claude-3-5-haiku-20241022',
+    model_identifier: 'claude-haiku-4-5',
     configuration: {
       temperature: 0.4,
       max_tokens: 2500,

@@ -96,7 +96,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     requiredCapabilities: ['high-res-image'],
     audioRequired: false,
     recommendedProviders: {
-      image: ['flux-pro', 'dall-e-3'],
+      image: ['flux-pro', 'gpt-image-1'],
     },
   },
   {
@@ -128,7 +128,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     requiredCapabilities: ['video-render', 'audio-sync'],
     audioRequired: true,
     recommendedProviders: {
-      image: ['flux-pro', 'dall-e-3'],
+      image: ['flux-pro', 'gpt-image-1'],
       video: ['modelslab-animatediff', 'pika-labs'],
       voice: ['elevenlabs', 'azure-neural'],
     },
@@ -160,7 +160,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     requiredCapabilities: ['motion-graphics', 'audio-sync'],
     audioRequired: true,
     recommendedProviders: {
-      image: ['dall-e-3', 'flux-pro'],
+      image: ['gpt-image-1', 'flux-pro'],
       video: ['modelslab-animatediff'],
       voice: ['openai-tts', 'azure-neural'],
     },
@@ -216,7 +216,7 @@ export const OUTPUT_TYPE_CONFIGS: OutputTypeConfig[] = [
     requiredCapabilities: ['web-render', 'interactivity'],
     audioRequired: false,
     recommendedProviders: {
-      image: ['dall-e-3', 'flux-pro'],
+      image: ['gpt-image-1', 'flux-pro'],
     },
   },
 ];

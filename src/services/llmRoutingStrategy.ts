@@ -1,8 +1,10 @@
 /**
  * LLM Regional Routing Strategy
- * 
+ *
  * Based on the 5-Zone Intelligent LLM Routing from:
  * "INTELLIGENT LLM ROUTING: Your Differentiation Strategy"
+ *
+ * Model IDs resolved via provider-version-registry for forward-compatibility.
  * 
  * Competitors use ONE LLM for everything. We use the BEST LLM for each region/task.
  * 
@@ -15,6 +17,8 @@
  *
  * ⚠️ KEY FINDING (AraBench): Qwen struggles with Arabic — Arabic zone uses GPT-4o as primary LLM
  */
+
+import { resolveModelId, getActiveModel } from '@/config/provider-version-registry';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -47,8 +51,8 @@ export interface RegionRoute {
 export const PROVIDER_COSTS = {
   llm: {
     // Tier 3 - Premium
-    'claude-3-5-sonnet': { cost: 15, unit: '1M tokens', tier: 'premium' },
-    'claude-opus-4-5': { cost: 30, unit: '1M tokens', tier: 'premium' },
+    'claude-sonnet-4-6': { cost: 15, unit: '1M tokens', tier: 'premium' },
+    'claude-opus-4-6': { cost: 30, unit: '1M tokens', tier: 'premium' },
     'gpt-4o': { cost: 15, unit: '1M tokens', tier: 'premium' },
     'gpt-5': { cost: 25, unit: '1M tokens', tier: 'premium' },
     
@@ -95,41 +99,41 @@ export const COMPLETE_ROUTING_TABLE: RegionRoute[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   
   // Americas
-  { region: 'US/Canada', countryCode: 'US', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Claude reasoning + ElevenLabs quality' } },
-  { region: 'US/Canada', countryCode: 'CA', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Claude reasoning + ElevenLabs quality' } },
+  { region: 'US/Canada', countryCode: 'US', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Claude reasoning + ElevenLabs quality' } },
+  { region: 'US/Canada', countryCode: 'CA', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Claude reasoning + ElevenLabs quality' } },
   
   // UK/Commonwealth
-  { region: 'UK/Ireland', countryCode: 'GB', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Claude handles British English nuances' } },
-  { region: 'UK/Ireland', countryCode: 'IE', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Claude handles British English nuances' } },
-  { region: 'Australia/NZ', countryCode: 'AU', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Same as UK' } },
-  { region: 'Australia/NZ', countryCode: 'NZ', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Same as UK' } },
+  { region: 'UK/Ireland', countryCode: 'GB', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Claude handles British English nuances' } },
+  { region: 'UK/Ireland', countryCode: 'IE', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Claude handles British English nuances' } },
+  { region: 'Australia/NZ', countryCode: 'AU', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Same as UK' } },
+  { region: 'Australia/NZ', countryCode: 'NZ', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Premium quality', reason: 'Same as UK' } },
   
   // Western Europe (⭐ = Regional LLM specialist gives MOAT)
-  { region: 'Germany', countryCode: 'DE', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: '⭐ Best formal German', reason: 'Claude excels at German formal register' } },
-  { region: 'France', countryCode: 'FR', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: '⭐ Best French nuance', reason: 'Claude best for French nuance' } },
-  { region: 'Spain', countryCode: 'ES', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'ES-ES distinction', reason: 'DeepL best Spanish translation' } },
-  { region: 'Italy', countryCode: 'IT', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Business Italian', reason: 'Claude + DeepL = best Italian' } },
-  { region: 'Netherlands', countryCode: 'NL', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'DeepL best Dutch', reason: 'DeepL founded in Germany, best Dutch' } },
-  { region: 'Belgium', countryCode: 'BE', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'DeepL best Dutch/French', reason: 'Claude + DeepL' } },
-  { region: 'Austria', countryCode: 'AT', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'German formal', reason: 'Claude excels at German' } },
-  { region: 'Switzerland', countryCode: 'CH', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Multilingual', reason: 'Claude + DeepL for DE/FR/IT' } },
+  { region: 'Germany', countryCode: 'DE', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: '⭐ Best formal German', reason: 'Claude excels at German formal register' } },
+  { region: 'France', countryCode: 'FR', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: '⭐ Best French nuance', reason: 'Claude best for French nuance' } },
+  { region: 'Spain', countryCode: 'ES', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'ES-ES distinction', reason: 'DeepL best Spanish translation' } },
+  { region: 'Italy', countryCode: 'IT', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Business Italian', reason: 'Claude + DeepL = best Italian' } },
+  { region: 'Netherlands', countryCode: 'NL', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'DeepL best Dutch', reason: 'DeepL founded in Germany, best Dutch' } },
+  { region: 'Belgium', countryCode: 'BE', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'DeepL best Dutch/French', reason: 'Claude + DeepL' } },
+  { region: 'Austria', countryCode: 'AT', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'German formal', reason: 'Claude excels at German' } },
+  { region: 'Switzerland', countryCode: 'CH', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Multilingual', reason: 'Claude + DeepL for DE/FR/IT' } },
   
   // Eastern Europe
-  { region: 'Poland', countryCode: 'PL', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Polish grammar', reason: 'DeepL strong on Polish' } },
-  { region: 'Russia', countryCode: 'RU', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Russian quality', reason: 'DeepL + Claude' } },
-  { region: 'Portugal', countryCode: 'PT', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'PT-PT distinction', reason: 'PT-PT distinction' } },
+  { region: 'Poland', countryCode: 'PL', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Polish grammar', reason: 'DeepL strong on Polish' } },
+  { region: 'Russia', countryCode: 'RU', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Russian quality', reason: 'DeepL + Claude' } },
+  { region: 'Portugal', countryCode: 'PT', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'PT-PT distinction', reason: 'PT-PT distinction' } },
   
   // Latin America (⭐ = Regional specialist)
-  { region: 'Brazil', countryCode: 'BR', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: '⭐ PT-BR specific', reason: 'PT-BR specific, Claude understands' } },
-  { region: 'Mexico', countryCode: 'MX', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'MX Spanish', reason: 'Latin American Spanish' } },
-  { region: 'Argentina', countryCode: 'AR', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Rioplatense', reason: 'Rioplatense Spanish' } },
-  { region: 'Colombia', countryCode: 'CO', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Colombian Spanish', reason: 'Colombian Spanish' } },
-  { region: 'Chile', countryCode: 'CL', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Chilean Spanish', reason: 'Chilean Spanish' } },
-  { region: 'Peru', countryCode: 'PE', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Peruvian Spanish', reason: 'Peruvian Spanish' } },
+  { region: 'Brazil', countryCode: 'BR', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: '⭐ PT-BR specific', reason: 'PT-BR specific, Claude understands' } },
+  { region: 'Mexico', countryCode: 'MX', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'MX Spanish', reason: 'Latin American Spanish' } },
+  { region: 'Argentina', countryCode: 'AR', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Rioplatense', reason: 'Rioplatense Spanish' } },
+  { region: 'Colombia', countryCode: 'CO', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Colombian Spanish', reason: 'Colombian Spanish' } },
+  { region: 'Chile', countryCode: 'CL', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Chilean Spanish', reason: 'Chilean Spanish' } },
+  { region: 'Peru', countryCode: 'PE', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'elevenlabs', stt: 'whisper', translation: 'deepl', rtl: false, moat: 'Peruvian Spanish', reason: 'Peruvian Spanish' } },
   
   // Israel & South Africa (Claude Zone)
-  { region: 'Israel', countryCode: 'IL', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'azure-translator', rtl: true, moat: 'Hebrew RTL', reason: 'Claude good Hebrew + RTL' } },
-  { region: 'South Africa', countryCode: 'ZA', zone: 'claude', config: { llm: 'claude-3-5-sonnet', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Zulu/Xhosa', reason: 'English + Zulu/Xhosa' } },
+  { region: 'Israel', countryCode: 'IL', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'azure-translator', rtl: true, moat: 'Hebrew RTL', reason: 'Claude good Hebrew + RTL' } },
+  { region: 'South Africa', countryCode: 'ZA', zone: 'claude', config: { llm: 'claude-sonnet-4-6', llmFallback: 'gpt-4o', tts: 'azure-neural', stt: 'whisper', translation: 'google-translate', rtl: false, moat: 'Zulu/Xhosa', reason: 'English + Zulu/Xhosa' } },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ALIBABA ZONE: Japan, Korea, China, HK, Taiwan (CJK ONLY)
@@ -200,7 +204,7 @@ export const COMPLETE_ROUTING_TABLE: RegionRoute[] = [
 export const ZONE_SUMMARY = {
   claude: {
     name: 'Claude Zone',
-    llm: 'claude-3-5-sonnet',
+    llm: 'claude-sonnet-4-6',
     regions: ['US', 'UK', 'EU', 'Brazil', 'Israel', 'South Africa'],
     providers: 'Claude + ElevenLabs + DeepL',
     color: 'bg-blue-500',
@@ -330,7 +334,7 @@ export function getLLMRouteByCountry(countryCode: string): RegionRoute | null {
     zone: 'fallback',
     config: {
       llm: 'gpt-4o',
-      llmFallback: 'claude-3-5-sonnet',
+      llmFallback: 'claude-sonnet-4-6',
       tts: 'azure-neural',
       stt: 'whisper',
       translation: 'google-translate',
@@ -374,7 +378,7 @@ export function selectLLM(region: string): { llm: string; fallback: string } {
   }
 
   // Fallback for unmapped countries
-  return { llm: 'gpt-4o', fallback: 'claude-3-5-sonnet' };
+  return { llm: 'gpt-4o', fallback: 'claude-sonnet-4-6' };
 }
 
 /**

@@ -110,10 +110,10 @@ export const EnhancedDeploymentManager: React.FC<EnhancedDeploymentManagerProps>
   const llmProviders = [
     { id: 'gpt-5', name: 'GPT-5', model: 'gpt-5-2025-08-07', cost: 'Premium', capabilities: ['Text', 'Vision', 'Function Calling'] },
     { id: 'gpt-4.1', name: 'GPT-4.1', model: 'gpt-4.1-2025-04-14', cost: 'High', capabilities: ['Text', 'Vision', 'Function Calling'] },
-    { id: 'claude-opus-4', name: 'Claude Opus 4', model: 'claude-opus-4-1-20250805', cost: 'Premium', capabilities: ['Text', 'Vision', 'Superior Reasoning'] },
-    { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', model: 'claude-sonnet-4-20250514', cost: 'High', capabilities: ['Text', 'Vision', 'High Performance'] },
+    { id: 'claude-opus-4', name: 'Claude Opus 4', model: 'claude-opus-4-6', cost: 'Premium', capabilities: ['Text', 'Vision', 'Superior Reasoning'] },
+    { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', model: 'claude-sonnet-4-6', cost: 'High', capabilities: ['Text', 'Vision', 'High Performance'] },
     { id: 'gpt-5-mini', name: 'GPT-5 Mini', model: 'gpt-5-mini-2025-08-07', cost: 'Medium', capabilities: ['Text', 'Fast Processing'] },
-    { id: 'claude-haiku', name: 'Claude Haiku', model: 'claude-3-5-haiku-20241022', cost: 'Low', capabilities: ['Text', 'Fastest Response'] }
+    { id: 'claude-haiku', name: 'Claude Haiku', model: 'claude-haiku-4-5', cost: 'Low', capabilities: ['Text', 'Fastest Response'] }
   ];
 
   const channels = [

@@ -80,11 +80,11 @@ export interface QualityMetric {
 
 export const LLM_QUALITY_BENCHMARKS: LLMQualityBenchmark[] = [
   // Claude Zone Languages
-  { language: 'English', languageCode: 'en', bestProvider: 'claude-3.5-sonnet', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'MMLU, HellaSwag', qualityScore: 95 },
-  { language: 'German', languageCode: 'de', bestProvider: 'claude-3.5-sonnet', secondBest: 'gpt-4o', avoid: ['gemini'], benchmarkSource: 'German NLU benchmarks', qualityScore: 92 },
-  { language: 'French', languageCode: 'fr', bestProvider: 'claude-3.5-sonnet', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'FrenchBench', qualityScore: 93 },
-  { language: 'Spanish', languageCode: 'es', bestProvider: 'claude-3.5-sonnet', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'BELEBELE', qualityScore: 91 },
-  { language: 'Portuguese', languageCode: 'pt', bestProvider: 'claude-3.5-sonnet', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'BELEBELE', qualityScore: 90 },
+  { language: 'English', languageCode: 'en', bestProvider: 'claude-sonnet-4-6', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'MMLU, HellaSwag', qualityScore: 95 },
+  { language: 'German', languageCode: 'de', bestProvider: 'claude-sonnet-4-6', secondBest: 'gpt-4o', avoid: ['gemini'], benchmarkSource: 'German NLU benchmarks', qualityScore: 92 },
+  { language: 'French', languageCode: 'fr', bestProvider: 'claude-sonnet-4-6', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'FrenchBench', qualityScore: 93 },
+  { language: 'Spanish', languageCode: 'es', bestProvider: 'claude-sonnet-4-6', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'BELEBELE', qualityScore: 91 },
+  { language: 'Portuguese', languageCode: 'pt', bestProvider: 'claude-sonnet-4-6', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'BELEBELE', qualityScore: 90 },
   
   // Qwen Zone Languages (CJK)
   { language: 'Chinese', languageCode: 'zh', bestProvider: 'qwen-max', secondBest: 'gpt-4o', avoid: ['claude'], benchmarkSource: 'C-Eval, CMMLU', qualityScore: 96, notes: 'Native training data advantage' },
@@ -92,7 +92,7 @@ export const LLM_QUALITY_BENCHMARKS: LLMQualityBenchmark[] = [
   { language: 'Korean', languageCode: 'ko', bestProvider: 'qwen-max', secondBest: 'gpt-4o', avoid: [], benchmarkSource: 'KoBEST', qualityScore: 93 },
   
   // GPT-4 Zone (Arabic - KEY FINDING: Qwen struggles with Arabic)
-  { language: 'Arabic', languageCode: 'ar', bestProvider: 'gpt-4o', secondBest: 'claude-3.5-sonnet', avoid: ['qwen'], benchmarkSource: 'ArabicNLU, AraBench', qualityScore: 88, notes: '⚠️ Qwen struggles with Arabic - use GPT-4o instead' },
+  { language: 'Arabic', languageCode: 'ar', bestProvider: 'gpt-4o', secondBest: 'claude-sonnet-4-6', avoid: ['qwen'], benchmarkSource: 'ArabicNLU, AraBench', qualityScore: 88, notes: '⚠️ Qwen struggles with Arabic - use GPT-4o instead' },
   
   // Gemini Zone Languages
   { language: 'Hindi', languageCode: 'hi', bestProvider: 'gemini-2.5-pro', secondBest: 'gpt-4o', avoid: ['claude'], benchmarkSource: 'IndicNLU', qualityScore: 86 },
@@ -162,7 +162,7 @@ export const TESTING_MATRIX: TestCriteria[] = [
 
 export const AB_TEST_CONFIGS: ABTestConfig[] = [
   { testName: 'GPT-4 vs Qwen for Arabic', hypothesis: 'GPT-4 quality > Qwen for Arabic business content', sampleSize: 100, duration: '2 weeks', providerA: 'gpt-4o', providerB: 'qwen-max', targetLanguage: 'ar', status: 'planned' },
-  { testName: 'Gemini vs Claude for Hindi', hypothesis: 'Gemini better for Hindi formal content', sampleSize: 100, duration: '2 weeks', providerA: 'gemini-2.5-pro', providerB: 'claude-3.5-sonnet', targetLanguage: 'hi', status: 'planned' },
+  { testName: 'Gemini vs Claude for Hindi', hypothesis: 'Gemini better for Hindi formal content', sampleSize: 100, duration: '2 weeks', providerA: 'gemini-2.5-pro', providerB: 'claude-sonnet-4-6', targetLanguage: 'hi', status: 'planned' },
   { testName: 'ElevenLabs vs Azure for Spanish', hypothesis: 'ElevenLabs premium justified for Spanish', sampleSize: 50, duration: '1 week', providerA: 'elevenlabs', providerB: 'azure-neural', targetLanguage: 'es', status: 'planned' },
   { testName: 'Qwen3-TTS vs Azure for Japanese', hypothesis: 'Qwen3-TTS native prosody preferred', sampleSize: 50, duration: '1 week', providerA: 'alibaba-qwen3-tts', providerB: 'azure-neural', targetLanguage: 'ja', status: 'planned' }
 ];
@@ -334,7 +334,7 @@ export function getProviderRecommendation(
     'qwen-max': 85,
     'azure-neural': 80,
     'gpt-4o': 60,
-    'claude-3.5-sonnet': 60,
+    'claude-sonnet-4-6': 60,
     'elevenlabs': 40,
     'alibaba-qwen3-tts': 70
   };

@@ -390,7 +390,7 @@ export const TemplateConfigurationNode: React.FC<{ id: string; data: any; select
                       <SelectContent>
                         <SelectItem value="gpt-4o">GPT-4o</SelectItem>
                         <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-                        <SelectItem value="claude-opus-4-5">Claude Opus 4.5</SelectItem>
+                        <SelectItem value="claude-opus-4-6">Claude Opus 4.6</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

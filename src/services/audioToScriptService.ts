@@ -228,7 +228,7 @@ class AudioToScriptService {
         body: {
           provider: aiProvider,
           model: aiProvider === 'gemini' ? 'gemini-2.5-flash' : 
-                 aiProvider === 'openai' ? 'gpt-4o-mini' : 'claude-3-5-haiku-20241022',
+                 aiProvider === 'openai' ? 'gpt-4o-mini' : 'claude-haiku-4-5',
           prompt: `Enhance this audio transcription for clarity and readability:
 
 TRANSCRIPTION:

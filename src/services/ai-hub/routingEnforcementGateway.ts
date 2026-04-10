@@ -112,7 +112,7 @@ const PROVIDER_MODEL_MAP: Record<string, { provider: string; model: string }> = 
   vertex_imagen3:  { provider: 'gemini',    model: 'imagen-3.0-generate-001' },
   alibaba_wanx:    { provider: 'alibaba',   model: 'wanx-v1' },
   modelslab_flux:  { provider: 'modelslab', model: 'flux-schnell' },
-  openai_dalle:    { provider: 'openai',    model: 'dall-e-3' },
+  openai_dalle:    { provider: 'openai',    model: 'gpt-image-1' },
   banana_nano:     { provider: 'gemini',    model: 'gemini-2.5-flash' },
   // Video
   vertex_veo3:     { provider: 'google',    model: 'veo-3' },
@@ -120,7 +120,7 @@ const PROVIDER_MODEL_MAP: Record<string, { provider: string; model: string }> = 
   alibaba_wan26:   { provider: 'alibaba',   model: 'wan-2.6' },
   modelslab_video: { provider: 'modelslab', model: 'animatediff' },
   // LLM
-  claude_sonnet:   { provider: 'anthropic', model: 'claude-3-5-sonnet' },
+  claude_sonnet:   { provider: 'anthropic', model: 'claude-sonnet-4-6' },
   qwen_max:        { provider: 'alibaba',   model: 'qwen-max' },
   gemini_pro:      { provider: 'google',    model: 'gemini-pro' },
   gpt_4o:          { provider: 'openai',    model: 'gpt-4o' },
@@ -246,7 +246,7 @@ function getRoutingChain(action: AIAction, zone: RegionalZone): Array<{ registry
   }
 
   // Add last resort
-  chain.push({ registryId: 'openai_dalle', provider: 'openai', model: 'dall-e-3', tier: 'last_resort' });
+  chain.push({ registryId: 'openai_dalle', provider: 'openai', model: 'gpt-image-1', tier: 'last_resort' });
   return chain;
 }
 
@@ -407,7 +407,7 @@ export const VIOLATION_PATTERNS = {
   /** Hardcoded provider strings in non-config files */
   hardcodedProvider: /provider:\s*['"](?:openai|gemini|alibaba|modelslab|elevenlabs|azure|deepgram)['"]/,
   /** Hardcoded model strings in non-config files */
-  hardcodedModel: /model:\s*['"](?:gpt-4o|gpt-4o-mini|gemini-2\.0-flash|dall-e-3|wanx-v1|flux-schnell|claude-3)['"]/,
+  hardcodedModel: /model:\s*['"](?:gpt-4o|gpt-4o-mini|gemini-2\.0-flash|gpt-image-1|wanx-v1|flux-schnell|claude-3)['"]/,
   /** Direct provider-specific edge function calls */
   directProviderFunction: /supabase\.functions\.invoke\s*\(\s*['"](?:gemini-generate|openai-tts|elevenlabs-|huggingface-)/,
 } as const;

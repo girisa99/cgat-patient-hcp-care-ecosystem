@@ -1271,7 +1271,7 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
               setAiProvider(v);
               if (v === 'gemini') setAiModel('google/gemini-3-flash-preview');
               else if (v === 'openai') setAiModel('openai/gpt-5-mini');
-              else if (v === 'anthropic') setAiModel('anthropic/claude-3-haiku');
+              else if (v === 'anthropic') setAiModel('anthropic/claude-haiku-4-5');
             }}
           >
             <SelectTrigger className="h-9 bg-background">
@@ -1306,8 +1306,8 @@ Respond in JSON format: {"title": "...", "intro": "..."}`;
               )}
               {aiProvider === 'anthropic' && (
                 <>
-                  <SelectItem value="anthropic/claude-3-haiku">Claude 3 Haiku (Fast)</SelectItem>
-                  <SelectItem value="anthropic/claude-3-5-sonnet">Claude 3.5 Sonnet</SelectItem>
+                  <SelectItem value="anthropic/claude-haiku-4-5">Claude Haiku 4.5 (Fast)</SelectItem>
+                  <SelectItem value="anthropic/claude-sonnet-4-6">Claude Sonnet 4.6</SelectItem>
                 </>
               )}
             </SelectContent>

@@ -180,10 +180,10 @@ const PROVIDER_RECOMMENDATIONS: Record<string, { provider: string; model: string
   'tl-en': { provider: 'google', model: 'Google Translate', reason: 'Good Filipino support', fallback: 'gemini' },
   
   // Healthcare/Medical - Claude primary for accuracy
-  'medical-en': { provider: 'claude', model: 'Claude 3.5 Sonnet', reason: 'Best for medical terminology', fallback: 'gemini' },
-  
+  'medical-en': { provider: 'claude', model: 'Claude Sonnet 4.6', reason: 'Best for medical terminology', fallback: 'gemini' },
+
   // Legal/Financial - Claude primary for precision
-  'legal-en': { provider: 'claude', model: 'Claude 3.5 Sonnet', reason: 'Best for legal terminology', fallback: 'openai' },
+  'legal-en': { provider: 'claude', model: 'Claude Sonnet 4.6', reason: 'Best for legal terminology', fallback: 'openai' },
   
   // Default - Gemini with multi-provider fallback chain
   'default': { provider: 'gemini', model: 'Gemini 3 Flash', reason: 'Universal - fast & accurate', fallback: 'deepl' },

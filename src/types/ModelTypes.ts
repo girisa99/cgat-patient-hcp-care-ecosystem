@@ -13,7 +13,7 @@ export interface ModelConfig {
   id: string;
   name: string;
   provider: ModelProvider;
-  modelId: string; // e.g., 'gpt-4o-mini', 'claude-3-haiku', 'microsoft/DialoGPT-small'
+  modelId: string; // e.g., 'gpt-4o-mini', 'claude-haiku-4-5', 'microsoft/DialoGPT-small'
   size: ModelSize;
   capabilities: ModelCapability[];
   maxTokens: number;

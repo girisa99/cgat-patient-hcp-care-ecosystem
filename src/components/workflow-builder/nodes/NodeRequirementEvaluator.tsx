@@ -164,7 +164,7 @@ export const NodeRequirementEvaluator = {
           field: 'model',
           label: 'Claude Model',
           description: 'Choose the Claude model version',
-          defaultValue: 'claude-3-5-sonnet-20241022'
+          defaultValue: 'claude-sonnet-4-6'
         },
         {
           id: 'temperature',

@@ -45,11 +45,9 @@ export const GenAIConfig: React.FC<GenAIConfigProps> = ({
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="claude-opus-4-20250514">🟣 Claude 4 Opus (Most Capable)</SelectItem>
-                  <SelectItem value="claude-sonnet-4-20250514">🟣 Claude 4 Sonnet (High Performance)</SelectItem>
-                  <SelectItem value="claude-3-5-haiku-20241022">🟣 Claude 3.5 Haiku (Fastest)</SelectItem>
-                  <SelectItem value="claude-3-7-sonnet-20250219">🟣 Claude 3.7 Sonnet (Extended Thinking)</SelectItem>
-                  <SelectItem value="claude-3-5-sonnet-20241022">🟣 Claude 3.5 Sonnet (Previous)</SelectItem>
-                  <SelectItem value="claude-sonnet-4-5-20250929">🟣 Claude Sonnet 4.5 (Latest)</SelectItem>
+                  <SelectItem value="claude-sonnet-4-6">🟣 Claude Sonnet 4.6 (High Performance)</SelectItem>
+                  <SelectItem value="claude-haiku-4-5">🟣 Claude Haiku 4.5 (Fastest)</SelectItem>
+                  <SelectItem value="claude-sonnet-4-6">🟣 Claude Sonnet 4.6 (Extended Thinking)</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>

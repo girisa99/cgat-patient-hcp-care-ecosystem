@@ -250,12 +250,12 @@ const LANGUAGE_PROVIDER_ROUTING: Record<string, {
   'ko': { id: 'alibaba', defaultModel: 'qwen-max', fallbacks: ['gemini', 'deepseek'], reason: 'Native Korean support' },
   
   // European Languages - Claude/DeepL primary  
-  'de': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best German nuance' },
-  'fr': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best French nuance' },
-  'es': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best Spanish nuance' },
-  'it': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best Italian nuance' },
-  'pt': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best Portuguese nuance' },
-  'nl': { id: 'claude', defaultModel: 'claude-3-5-sonnet', fallbacks: ['gemini', 'openai'], reason: 'Best Dutch nuance' },
+  'de': { id: 'claude', defaultModel: 'claude-sonnet-4-6', fallbacks: ['gemini', 'openai'], reason: 'Best German nuance' },
+  'fr': { id: 'claude', defaultModel: 'claude-sonnet-4-6', fallbacks: ['gemini', 'openai'], reason: 'Best French nuance' },
+  'es': { id: 'claude', defaultModel: 'claude-sonnet-4-6', fallbacks: ['gemini', 'openai'], reason: 'Best Spanish nuance' },
+  'it': { id: 'claude', defaultModel: 'claude-sonnet-4-6', fallbacks: ['gemini', 'openai'], reason: 'Best Italian nuance' },
+  'pt': { id: 'claude', defaultModel: 'claude-sonnet-4-6', fallbacks: ['gemini', 'openai'], reason: 'Best Portuguese nuance' },
+  'nl': { id: 'claude', defaultModel: 'claude-sonnet-4-6', fallbacks: ['gemini', 'openai'], reason: 'Best Dutch nuance' },
   
   // RTL Languages - Azure primary
   'ar': { id: 'azure', defaultModel: 'gpt-4o', fallbacks: ['gemini', 'openai'], reason: 'Best Arabic RTL handling' },

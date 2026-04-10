@@ -253,7 +253,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentConfig> = {
     name: 'Enhancer Agent',
     description: 'Applies AI enhancements: rewrite, expand, summarize, polish',
     capabilities: ['rewrite', 'expand', 'summarize', 'polish', 'transitions', 'brand_voice'],
-    defaultModel: 'claude-3-5-sonnet',
+    defaultModel: 'claude-sonnet-4-6',
     supportsStreaming: true,
     architectureType: 'agentic',
     providers: ['claude', 'gemini', 'openai', 'deepseek'],

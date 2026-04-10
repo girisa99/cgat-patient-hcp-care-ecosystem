@@ -63,11 +63,11 @@ interface RegionRoute {
  */
 const REGION_LLM_MAP: Record<string, RegionRoute> = {
   // Western zones → Claude primary
-  'nam':      { provider: 'claude', model: 'claude-sonnet-4-20250514', fallbackOrder: ['claude', 'openai', 'vertex_gemini', 'alibaba', 'deepseek'] },
-  'eu':       { provider: 'claude', model: 'claude-sonnet-4-20250514', fallbackOrder: ['claude', 'openai', 'vertex_gemini', 'alibaba', 'deepseek'] },
-  'latam':    { provider: 'claude', model: 'claude-sonnet-4-20250514', fallbackOrder: ['claude', 'openai', 'vertex_gemini', 'alibaba', 'deepseek'] },
-  'oceania':  { provider: 'claude', model: 'claude-sonnet-4-20250514', fallbackOrder: ['claude', 'openai', 'vertex_gemini', 'deepseek', 'alibaba'] },
-  'turkey':   { provider: 'claude', model: 'claude-sonnet-4-20250514', fallbackOrder: ['claude', 'openai', 'deepseek', 'vertex_gemini', 'alibaba'] },
+  'nam':      { provider: 'claude', model: 'claude-sonnet-4-6', fallbackOrder: ['claude', 'openai', 'vertex_gemini', 'alibaba', 'deepseek'] },
+  'eu':       { provider: 'claude', model: 'claude-sonnet-4-6', fallbackOrder: ['claude', 'openai', 'vertex_gemini', 'alibaba', 'deepseek'] },
+  'latam':    { provider: 'claude', model: 'claude-sonnet-4-6', fallbackOrder: ['claude', 'openai', 'vertex_gemini', 'alibaba', 'deepseek'] },
+  'oceania':  { provider: 'claude', model: 'claude-sonnet-4-6', fallbackOrder: ['claude', 'openai', 'vertex_gemini', 'deepseek', 'alibaba'] },
+  'turkey':   { provider: 'claude', model: 'claude-sonnet-4-6', fallbackOrder: ['claude', 'openai', 'deepseek', 'vertex_gemini', 'alibaba'] },
   
   // MENA/CJK → Alibaba Qwen primary
   'mena':     { provider: 'alibaba', model: 'qwen-max', fallbackOrder: ['alibaba', 'openai', 'claude', 'vertex_gemini', 'deepseek'] },
@@ -438,11 +438,11 @@ function buildRegionChain(zone: string, description: string): ProviderEntry[] {
             id: `claude_${route.provider === 'claude' ? 'sonnet4' : 'haiku'}`,
             call: () => callClaude(
               claudeKey,
-              route.provider === 'claude' ? 'claude-sonnet-4-20250514' : 'claude-3-5-haiku-20241022',
+              route.provider === 'claude' ? 'claude-sonnet-4-6' : 'claude-haiku-4-5',
               description
             ),
             provider: 'anthropic',
-            model: route.provider === 'claude' ? 'claude-sonnet-4' : 'claude-3-5-haiku',
+            model: route.provider === 'claude' ? 'claude-sonnet-4' : 'claude-haiku-4-5',
           });
         }
         break;

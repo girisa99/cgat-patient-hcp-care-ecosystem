@@ -82,7 +82,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, model = 'claude-sonnet-4-20250514', max_tokens = 4000 } = await req.json();
+    const { messages, model = 'claude-sonnet-4-6', max_tokens = 4000 } = await req.json();
 
     // Input validation
     if (!messages || !Array.isArray(messages) || messages.length === 0) {

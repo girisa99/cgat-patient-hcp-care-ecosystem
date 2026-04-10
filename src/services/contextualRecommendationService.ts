@@ -153,9 +153,8 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: numbe
   // ═══════════════════════════════════════════════════════════════════════════
   // LLMs - Tier 3 (Premium)
   // ═══════════════════════════════════════════════════════════════════════════
-  'claude-3-5-sonnet': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
-  'claude-3.5-sonnet': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
-  'claude-opus-4-5': { quality: 99, speed: 70, cost: 40, tier: 'premium' },
+  'claude-sonnet-4-6': { quality: 98, speed: 85, cost: 60, tier: 'premium' },
+  'claude-opus-4-6': { quality: 99, speed: 70, cost: 40, tier: 'premium' },
   'gpt-4o': { quality: 96, speed: 88, cost: 55, tier: 'premium' },
   'gpt-5': { quality: 99, speed: 80, cost: 45, tier: 'premium' },
   
@@ -209,16 +208,16 @@ const PROVIDER_CAPABILITY_SCORES: Record<string, { quality: number; speed: numbe
  * Industry-specific provider recommendations
  */
 const INDUSTRY_PROVIDER_SCORES: Record<string, { llm: string; confidence: number; reasoning: string; considerations: string[] }> = {
-  healthcare: { llm: 'claude-3.5-sonnet', confidence: 95, reasoning: 'HIPAA-aware with medical terminology expertise', considerations: ['HIPAA compliance', 'Medical accuracy', 'Patient safety'] },
-  pharma: { llm: 'claude-3.5-sonnet', confidence: 94, reasoning: 'Regulatory language precision for clinical trials', considerations: ['FDA compliance', 'Drug terminology', 'Clinical precision'] },
-  legal: { llm: 'claude-3.5-sonnet', confidence: 93, reasoning: 'Legal terminology with jurisdiction awareness', considerations: ['Legal precision', 'Jurisdiction terms', 'Formal register'] },
+  healthcare: { llm: 'claude-sonnet-4-6', confidence: 95, reasoning: 'HIPAA-aware with medical terminology expertise', considerations: ['HIPAA compliance', 'Medical accuracy', 'Patient safety'] },
+  pharma: { llm: 'claude-sonnet-4-6', confidence: 94, reasoning: 'Regulatory language precision for clinical trials', considerations: ['FDA compliance', 'Drug terminology', 'Clinical precision'] },
+  legal: { llm: 'claude-sonnet-4-6', confidence: 93, reasoning: 'Legal terminology with jurisdiction awareness', considerations: ['Legal precision', 'Jurisdiction terms', 'Formal register'] },
   finance: { llm: 'gpt-4o', confidence: 92, reasoning: 'Financial modeling with regulatory compliance', considerations: ['SOX compliance', 'Financial accuracy', 'Audit trails'] },
   technology: { llm: 'deepseek-v3', confidence: 90, reasoning: 'Technical documentation with code understanding', considerations: ['Technical accuracy', 'Code samples', 'API documentation'] },
   education: { llm: 'gemini-2.5-pro', confidence: 88, reasoning: 'Long-context for educational content', considerations: ['Curriculum alignment', 'Age-appropriate', 'Pedagogical'] },
-  consulting: { llm: 'claude-3.5-sonnet', confidence: 91, reasoning: 'Strategic frameworks and executive communication', considerations: ['Framework accuracy', 'Executive tone', 'Data visualization'] },
+  consulting: { llm: 'claude-sonnet-4-6', confidence: 91, reasoning: 'Strategic frameworks and executive communication', considerations: ['Framework accuracy', 'Executive tone', 'Data visualization'] },
   manufacturing: { llm: 'gpt-4o', confidence: 87, reasoning: 'Technical specifications and process documentation', considerations: ['ISO standards', 'Technical specs', 'Safety protocols'] },
   retail: { llm: 'gemini-2.5-pro', confidence: 86, reasoning: 'Consumer insights and marketing optimization', considerations: ['Consumer language', 'Brand voice', 'Conversion focus'] },
-  media: { llm: 'claude-3.5-sonnet', confidence: 89, reasoning: 'Creative content with brand consistency', considerations: ['Creative quality', 'Brand alignment', 'Engagement'] },
+  media: { llm: 'claude-sonnet-4-6', confidence: 89, reasoning: 'Creative content with brand consistency', considerations: ['Creative quality', 'Brand alignment', 'Engagement'] },
 };
 
 /**
@@ -263,9 +262,9 @@ const LANGUAGE_PROVIDER_OPTIMIZATION: Record<string, { translation: string; tts:
  */
 const OUTPUT_FORMAT_REQUIREMENTS: Record<string, { requiredCapabilities: string[]; recommendedProviders: string[]; confidence: number; reasoning: string }> = {
   // Documents
-  'pdf': { requiredCapabilities: ['llm'], recommendedProviders: ['claude-3.5-sonnet', 'gpt-4o'], confidence: 95, reasoning: 'Standard document generation' },
-  'pptx': { requiredCapabilities: ['llm', 'image_gen'], recommendedProviders: ['gpt-4o', 'claude-3.5-sonnet'], confidence: 94, reasoning: 'Presentation with visuals' },
-  'docx': { requiredCapabilities: ['llm'], recommendedProviders: ['claude-3.5-sonnet', 'gpt-4o'], confidence: 95, reasoning: 'Word document generation' },
+  'pdf': { requiredCapabilities: ['llm'], recommendedProviders: ['claude-sonnet-4-6', 'gpt-4o'], confidence: 95, reasoning: 'Standard document generation' },
+  'pptx': { requiredCapabilities: ['llm', 'image_gen'], recommendedProviders: ['gpt-4o', 'claude-sonnet-4-6'], confidence: 94, reasoning: 'Presentation with visuals' },
+  'docx': { requiredCapabilities: ['llm'], recommendedProviders: ['claude-sonnet-4-6', 'gpt-4o'], confidence: 95, reasoning: 'Word document generation' },
   
   // Video
   'mp4-standard': { requiredCapabilities: ['llm', 'tts', 'video_gen'], recommendedProviders: ['elevenlabs', 'modelslab'], confidence: 88, reasoning: 'Standard video pipeline' },
@@ -278,8 +277,8 @@ const OUTPUT_FORMAT_REQUIREMENTS: Record<string, { requiredCapabilities: string[
   'ar-overlay': { requiredCapabilities: ['llm', 'image_gen', 'ar'], recommendedProviders: ['stability'], confidence: 78, reasoning: 'AR overlay generation' },
   
   // Interactive
-  'interactive-web': { requiredCapabilities: ['llm', 'code_gen'], recommendedProviders: ['claude-3.5-sonnet', 'gpt-4o'], confidence: 90, reasoning: 'Interactive web content' },
-  'interactive-quiz': { requiredCapabilities: ['llm'], recommendedProviders: ['gpt-4o', 'claude-3.5-sonnet'], confidence: 92, reasoning: 'Quiz/assessment generation' },
+  'interactive-web': { requiredCapabilities: ['llm', 'code_gen'], recommendedProviders: ['claude-sonnet-4-6', 'gpt-4o'], confidence: 90, reasoning: 'Interactive web content' },
+  'interactive-quiz': { requiredCapabilities: ['llm'], recommendedProviders: ['gpt-4o', 'claude-sonnet-4-6'], confidence: 92, reasoning: 'Quiz/assessment generation' },
   
   // Animation
   'animation-2d': { requiredCapabilities: ['llm', 'image_gen', 'animation'], recommendedProviders: ['modelslab', 'stability'], confidence: 83, reasoning: '2D animation generation' },
@@ -471,12 +470,12 @@ export class ContextualRecommendationService {
         if (!primary.includes('gemini')) alternatives.push({ id: 'gemini-2.5-pro', confidence: 68, reasoning: 'Multimodal fallback' });
         break;
       case 'gemini':
-        if (!primary.includes('claude')) alternatives.push({ id: 'claude-3.5-sonnet', confidence: 72, reasoning: 'Premium quality fallback' });
+        if (!primary.includes('claude')) alternatives.push({ id: 'claude-sonnet-4-6', confidence: 72, reasoning: 'Premium quality fallback' });
         if (!primary.includes('deepseek')) alternatives.push({ id: 'deepseek-v3', confidence: 70, reasoning: 'Cost-efficient alternative' });
         break;
       case 'fallback':
         alternatives.push({ id: 'gemini-2.5-pro', confidence: 82, reasoning: 'Long context capability' });
-        alternatives.push({ id: 'claude-3.5-sonnet', confidence: 78, reasoning: 'Premium reasoning' });
+        alternatives.push({ id: 'claude-sonnet-4-6', confidence: 78, reasoning: 'Premium reasoning' });
         break;
     }
     
@@ -854,7 +853,7 @@ export class ContextualRecommendationService {
   // ============================================================================
 
   private getProviderTier(providerId: string): GlobalTier {
-    const premiumProviders = ['elevenlabs', 'claude-3.5-sonnet', 'gpt-4o', 'alibaba-omniavatar'];
+    const premiumProviders = ['elevenlabs', 'claude-sonnet-4-6', 'gpt-4o', 'alibaba-omniavatar'];
     const advancedProviders = ['qwen-max', 'gemini-2.5-pro', 'deepseek-v3', 'modelslab', 'alibaba-wan2'];
     
     if (premiumProviders.some(p => providerId.includes(p))) return 'premium';
@@ -869,7 +868,7 @@ export class ContextualRecommendationService {
 
   private getProviderDisplayName(providerId: string): string {
     const names: Record<string, string> = {
-      'claude-3.5-sonnet': 'Claude 3.5 Sonnet',
+      'claude-sonnet-4-6': 'Claude Sonnet 4.6',
       'gpt-4o': 'GPT-4o',
       'gemini-2.5-pro': 'Gemini 1.5 Pro',
       'gemini-pro': 'Gemini Pro',

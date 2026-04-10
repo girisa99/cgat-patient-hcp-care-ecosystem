@@ -1661,9 +1661,9 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
     // Primary: Claude (EU/LATAM/NAM), Alibaba Qwen Max (CJK/MENA), Gemini (India/SEA/Africa), GPT-4o (Pakistan)
     // DeepSeek: fallback chain only (never primary)
     const REGION_LLM_ROUTING: Record<string, { provider: string; model: string; fallback: string }> = {
-      'latam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
-      'eu': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → deepseek → gemini' },
-      'nam': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
+      'latam': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → deepseek → gemini' },
+      'eu': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → deepseek → gemini' },
+      'nam': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → gemini → deepseek' },
       'mena': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
       'india': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
       'sea': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'claude → openai/gpt-4o → deepseek' },
@@ -1671,8 +1671,8 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
       'cjk': { provider: 'alibaba', model: 'qwen-max', fallback: 'openai/gpt-4o → claude → deepseek' },
       'pakistan': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
       'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro', fallback: 'openai/gpt-4o → claude → deepseek' },
-      'turkey': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
-      'oceania': { provider: 'anthropic', model: 'claude-sonnet-4-20250514', fallback: 'openai/gpt-4o → gemini → deepseek' },
+      'turkey': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → gemini → deepseek' },
+      'oceania': { provider: 'anthropic', model: 'claude-sonnet-4-6', fallback: 'openai/gpt-4o → gemini → deepseek' },
       'caribbean': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
       'eurasia': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
       'central_asia': { provider: 'openai', model: 'gpt-4o', fallback: 'claude → gemini → deepseek' },
@@ -2501,7 +2501,7 @@ Return ONLY valid JSON: {"hook":"...","problem_statement":"...","solution":"..."
       const ttsProvider = getSubRegionTTSProvider(upperCode);
 
       const REGION_LLM_ROUTING: Record<string, { provider: string; model: string }> = {
-        'turkey': { provider: 'anthropic', model: 'claude-sonnet-4-20250514' },
+        'turkey': { provider: 'anthropic', model: 'claude-sonnet-4-6' },
         'pakistan': { provider: 'openai', model: 'gpt-4o' },
         'bangladesh': { provider: 'gemini', model: 'gemini-2.5-pro' },
       };

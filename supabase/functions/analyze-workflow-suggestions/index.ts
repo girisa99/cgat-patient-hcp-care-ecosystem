@@ -748,7 +748,7 @@ function analyzePromptForAgents(prompt: string) {
   if (prompt.toLowerCase().includes('review') || prompt.toLowerCase().includes('check')) {
     suggestions.push({
       name: 'Code Reviewer',
-      recommendedModel: 'claude-3-7-sonnet-20250219',
+      recommendedModel: 'claude-sonnet-4-6',
       systemPrompt: 'You are a code reviewer agent that analyzes code quality and suggests improvements.',
       reasoning: 'Prompt mentions review or checking tasks'
     });

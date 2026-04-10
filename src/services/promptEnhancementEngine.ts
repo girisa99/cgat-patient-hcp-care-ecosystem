@@ -1060,7 +1060,7 @@ export async function enhancePrompt(context: PromptContext): Promise<PromptEnhan
       body: {
         action: 'generate_script',
         provider: 'claude',
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         prompt: `${systemPrompt}\n\nUSER'S RAW PROMPT:\n"${context.rawPrompt}"`,
         maxTokens: 3000,
       },

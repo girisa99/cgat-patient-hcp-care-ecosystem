@@ -443,7 +443,7 @@ export class UniversalMediaAdapter {
 
   private getImageModel(provider: ImageGenProvider): string {
     const models: Record<string, string> = {
-      openai_dalle: 'dall-e-3',
+      openai_dalle: 'gpt-image-1',
       alibaba_wanx: 'wanx-v1',
       stability: 'stable-diffusion-xl',
       huggingface: 'black-forest-labs/FLUX.1-schnell',

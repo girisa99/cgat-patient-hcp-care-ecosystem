@@ -65,7 +65,7 @@ export const MODEL_TIERS: Record<string, ModelTierInfo> = {
   // Tier 2 - Enterprise/Specialized
   'anthropic/claude-opus-4': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Best nuance, 200k context', costMultiplier: 2.5, qualityScore: 97, speedScore: 70 },
   'anthropic/claude-sonnet-4': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Balanced Claude quality', costMultiplier: 1.8, qualityScore: 93, speedScore: 78 },
-  'anthropic/claude-3.5-sonnet': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Compliance-sensitive', costMultiplier: 1.5, qualityScore: 92, speedScore: 80 },
+  'anthropic/claude-sonnet-4-6': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Compliance-sensitive', costMultiplier: 1.5, qualityScore: 92, speedScore: 80 },
   'azure/gpt-4o': { tier: 2, tierName: 'Tier 2 - Enterprise', description: 'Enterprise SLA, HIPAA', costMultiplier: 2.0, qualityScore: 94, speedScore: 75 },
   // Tier 3 - Budget/Regional
   'deepseek/deepseek-chat': { tier: 3, tierName: 'Tier 3 - Budget', description: 'Best Chinese, very low cost', costMultiplier: 0.3, qualityScore: 85, speedScore: 90 },
@@ -84,7 +84,7 @@ export const MODEL_TIERS: Record<string, ModelTierInfo> = {
   // Tier 2 - Premium
   'flux-pro': { tier: 2, tierName: 'Tier 2 - Premium', description: 'High quality, fine control', costMultiplier: 1.5, qualityScore: 95, speedScore: 75 },
   'flux-schnell': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Fast generation', costMultiplier: 0.8, qualityScore: 88, speedScore: 92 },
-  'dall-e-3': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Excellent text rendering', costMultiplier: 2.0, qualityScore: 95, speedScore: 70 },
+  'gpt-image-1': { tier: 2, tierName: 'Tier 2 - Premium', description: 'Excellent text rendering', costMultiplier: 2.0, qualityScore: 95, speedScore: 70 },
   'stability': { tier: 2, tierName: 'Tier 2 - Premium', description: 'ControlNet, fine control', costMultiplier: 1.0, qualityScore: 90, speedScore: 82 },
   // Tier 3 - Budget/Open Source
   'alibaba-wanx': { tier: 3, tierName: 'Tier 3 - Regional', description: 'Asian aesthetics, low cost', costMultiplier: 0.3, qualityScore: 82, speedScore: 88 },

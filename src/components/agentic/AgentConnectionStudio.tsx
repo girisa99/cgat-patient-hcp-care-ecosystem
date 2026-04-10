@@ -91,8 +91,8 @@ const languageModels: LanguageModel[] = [
     description: 'Advanced multimodal model with vision capabilities'
   },
   {
-    id: 'claude-sonnet-4-5',
-    name: 'Claude Sonnet 4.5',
+    id: 'claude-sonnet-4-6',
+    name: 'Claude Sonnet 4.6',
     provider: 'claude',
     type: 'llm',
     capabilities: ['text', 'reasoning', 'analysis', 'healthcare'],

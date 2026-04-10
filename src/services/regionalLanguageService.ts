@@ -244,7 +244,7 @@ export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderC
   
   latam: {
     // European Excellence: ElevenLabs + DeepL - You WIN
-    textProvider: 'claude-sonnet-4-5',
+    textProvider: 'claude-sonnet-4-6',
     textFallback: 'gemini-2.5-pro',
     translationProvider: 'deepl', // You WIN with DeepL for Spanish/Portuguese
     translationFallback: 'google-translate',
@@ -259,7 +259,7 @@ export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderC
   
   europe: {
     // European Excellence: ElevenLabs + DeepL - You WIN
-    textProvider: 'claude-sonnet-4-5',
+    textProvider: 'claude-sonnet-4-6',
     textFallback: 'gemini-2.5-pro',
     translationProvider: 'deepl', // Highest accuracy for European languages
     translationFallback: 'azure-translator',
@@ -275,7 +275,7 @@ export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderC
   southeast_asia: {
     // Strategic coverage - Azure Neural for tonal languages
     textProvider: 'gemini-2.5-pro',
-    textFallback: 'claude-sonnet-4-5',
+    textFallback: 'claude-sonnet-4-6',
     translationProvider: 'google-translate',
     translationFallback: 'azure-translator',
     voiceProvider: 'azure-neural', // Best for Thai, Vietnamese, Indonesian
@@ -290,7 +290,7 @@ export const REGIONAL_PROVIDER_CONFIG: Record<RegionalCluster, RegionalProviderC
   global_english: {
     // Premium English with ElevenLabs
     textProvider: 'gemini-2.5-flash',
-    textFallback: 'claude-sonnet-4-5',
+    textFallback: 'claude-sonnet-4-6',
     translationProvider: 'deepl',
     translationFallback: 'google-translate',
     voiceProvider: 'elevenlabs', // Most natural English across US, UK, AU accents

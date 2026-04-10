@@ -159,7 +159,7 @@ export const TEXT_PROVIDERS: TextProvider[] = [
   { 
     id: 'claude-3.5', 
     name: 'Claude 3.5 Sonnet', 
-    model: 'claude-3-5-sonnet',
+    model: 'claude-sonnet-4-6',
     strengths: ['Nuanced writing', 'Safety', 'Analysis'],
     bestFor: ['healthcare', 'education', 'research']
   },

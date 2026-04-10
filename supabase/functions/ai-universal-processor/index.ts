@@ -11,6 +11,7 @@ import {
 } from "../_shared/generationContext.ts";
 import { generateImageWithRouting } from "../_shared/image-providers.ts";
 import { generateVideoWithRouting } from "../_shared/video-providers.ts";
+import { resolveModel, warmModelCache, resolveModelSync } from '../_shared/dynamic-model-resolver.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -135,37 +136,39 @@ interface AIRequest {
   userTier?: GlobalTierLevel;
 }
 
-// Universal AI supported models registry - ALL providers are primary, no Lovable-first dependency
+// Universal AI supported models — loaded dynamically from ai_model_registry DB.
+// This hardcoded version serves as fallback if DB is unreachable.
+// To update: change ai_model_registry table, NOT this code.
 const UNIVERSAL_AI_REGISTRY = {
   llm: {
     openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'gpt-4o', 'gpt-4o-mini'],
-    claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
-    gemini: ['gemini-2.5-flash', 'gemini-pro', 'gemini-1.5-pro', 'gemini-2.5-flash', 'google/gemini-3-flash-preview', 'google/gemini-2.5-pro'],
+    claude: ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5'],
+    gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.0-flash-preview'],
     alibaba: ['qwen-turbo', 'qwen-plus', 'qwen-max'],
     deepseek: ['deepseek-chat', 'deepseek-reasoner']
   },
   image: {
-    gemini: ['google/gemini-2.5-flash-image-preview', 'google/gemini-3-pro-image-preview', 'gemini-nano-banana'],
-    openai: ['dall-e-3', 'dall-e-2'],
-    alibaba: ['wan2.6-t2i', 'wanx-v1'],
+    gemini: ['gemini-2.5-flash-preview-image-generation', 'gemini-nano-banana'],
+    openai: ['gpt-image-1'],
+    alibaba: ['wan2.6-t2i', 'wanx-v2.1'],
     stability: ['stable-diffusion-xl', 'stable-diffusion-3']
   },
   video: {
-    alibaba: ['wan2.6-t2v', 'wan2.6-t2v'],
+    alibaba: ['wan2.6-t2v'],
   },
   tts: {
-    alibaba: ['qwen3-tts-flash', 'qwen3-tts-instruct-flash-realtime', 'qwen3-tts-flash-realtime'],
+    alibaba: ['qwen3-tts', 'cosyvoice-v3-flash', 'cosyvoice-v3-plus'],
     elevenlabs: ['eleven_multilingual_v2'],
-    openai: ['tts-1'],
+    openai: ['tts-1-hd'],
   },
   stt: {
-    alibaba: ['qwen3-asr-flash-realtime', 'qwen3-asr-flash', 'fun-asr'],
+    alibaba: ['paraformer'],
     openai: ['whisper-1'],
   },
   vision: {
     openai: ['gpt-4o', 'o4-mini-2025-04-16'],
-    claude: ['claude-3-5-sonnet-20241022'],
-    gemini: ['gemini-1.5-pro-latest', 'gemini-2.5-flash'],
+    claude: ['claude-sonnet-4-6'],
+    gemini: ['gemini-2.5-pro', 'gemini-2.5-flash'],
     alibaba: ['qwen-vl-plus']
   }
 };
@@ -183,6 +186,9 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Warm model cache on first request
+  await warmModelCache();
 
   const clientIP = getClientIP(req);
 
@@ -1383,7 +1389,7 @@ Return ONLY valid JSON:
           response = await callOpenAI(model || 'gpt-4o-mini', prompt, systemPrompt, temperature, maxTokens);
           break;
         case 'claude':
-          response = await callClaude(model || 'claude-3-5-haiku-20241022', prompt, systemPrompt, temperature, maxTokens);
+          response = await callClaude(model || 'claude-haiku-4-5', prompt, systemPrompt, temperature, maxTokens);
           break;
         case 'gemini':
           try {
@@ -1395,7 +1401,7 @@ Return ONLY valid JSON:
               try {
                 response = await callOpenAI('gpt-4o-mini', prompt, systemPrompt || '', temperature, maxTokens);
               } catch {
-                response = await callClaude('claude-3-5-haiku-20241022', prompt, systemPrompt || '', temperature, maxTokens);
+                response = await callClaude('claude-haiku-4-5', prompt, systemPrompt || '', temperature, maxTokens);
               }
             } else {
               throw geminiErr;
@@ -1534,8 +1540,8 @@ async function callOpenAI(model: string, prompt: string, systemPrompt?: string, 
 }
 
 /**
- * OpenAI DALL-E Image Generation
- * Uses DALL-E 3 or DALL-E 2 for image generation
+ * OpenAI Image Generation
+ * Uses gpt-image-1 (replaces retired DALL-E 3/2)
  */
 async function callOpenAIImage(model: string, prompt: string, aspectRatio?: string, style?: string) {
   const apiKey = Deno.env.get('OPENAI_API_KEY');
@@ -1543,7 +1549,7 @@ async function callOpenAIImage(model: string, prompt: string, aspectRatio?: stri
     throw new Error('OpenAI API key not configured for image generation.');
   }
 
-  // Map aspect ratio to DALL-E size
+  // Map aspect ratio to image size
   const getSize = (ar?: string): string => {
     switch (ar) {
       case '16:9': return '1792x1024';
@@ -1553,7 +1559,7 @@ async function callOpenAIImage(model: string, prompt: string, aspectRatio?: stri
     }
   };
 
-  const targetModel = model.includes('dall-e-2') ? 'dall-e-2' : 'dall-e-3';
+  const targetModel = resolveModelSync(model.includes('dall-e') ? model : 'gpt-image-1');
   const size = getSize(aspectRatio);
   const imageStyle = style === 'natural' ? 'natural' : 'vivid';
 
@@ -1570,15 +1576,15 @@ async function callOpenAIImage(model: string, prompt: string, aspectRatio?: stri
       prompt: `${prompt}. Professional, high quality. Safe for all audiences.`,
       n: 1,
       size: size,
-      quality: targetModel === 'dall-e-3' ? 'standard' : undefined,
-      style: targetModel === 'dall-e-3' ? imageStyle : undefined,
+      quality: 'standard',
+      style: imageStyle,
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`[UniversalAI-OpenAI] DALL-E error (${response.status}):`, errorText);
-    throw new Error(`DALL-E API error: ${response.status} - ${errorText}`);
+    console.error(`[UniversalAI-OpenAI] Image gen error (${response.status}):`, errorText);
+    throw new Error(`OpenAI Image API error: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -1598,33 +1604,8 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
     throw new Error('Claude API key not configured. Please add ANTHROPIC_API_KEY (or CLAUDE_API_KEY) to your Edge Function secrets.');
   }
 
-  // Normalize Claude model names to valid API model IDs
-  const normalizeModel = (m: string): string => {
-    const ml = m.toLowerCase();
-    
-    // Claude 4 models - use latest stable versions
-    if (ml.includes('claude-4-vision') || ml.includes('claude-sonnet-4') || ml.includes('claude-4')) {
-      return 'claude-sonnet-4-20250514'; // Latest Claude 4 Sonnet
-    }
-    if (ml.includes('claude-opus-4')) {
-      return 'claude-opus-4-5-20251101';
-    }
-    // Claude 3.5/3.7 models
-    if (ml.includes('haiku-fast') || ml.includes('haiku')) {
-      return 'claude-3-5-haiku-20241022';
-    }
-    if (ml === 'claude-3-5-sonnet' || ml === 'claude-3-5-sonnet-latest' || (ml.includes('sonnet') && !ml.match(/20\d{2}/))) {
-      return 'claude-sonnet-4-20250514'; // Upgrade to Claude 4
-    }
-    // Already has dated version
-    if (ml.match(/claude-.*-20\d{6}/)) {
-      return m;
-    }
-    // Default fallback
-    return 'claude-3-5-haiku-20241022';
-  };
-
-  let targetModel = normalizeModel(model);
+  // Normalize Claude model names via dynamic resolver — resolves aliases + retired IDs from DB
+  let targetModel = resolveModelSync(model);
 
   const buildBody = (mdl: string) => {
     const body: any = {
@@ -1658,9 +1639,9 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
   if (!response.ok && response.status === 404) {
     const errText = await response.text();
     console.error(`Claude API error (first attempt ${response.status}):`, errText);
-    if (targetModel !== 'claude-3-5-haiku-20241022') {
-      console.log('Retrying Claude call with fallback model: claude-3-5-haiku-20241022');
-      targetModel = 'claude-3-5-haiku-20241022';
+    if (targetModel !== 'claude-haiku-4-5') {
+      console.log('Retrying Claude call with fallback model: claude-haiku-4-5');
+      targetModel = 'claude-haiku-4-5';
       response = await makeRequest(targetModel);
     }
   }
@@ -1678,31 +1659,23 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
   };
 }
 
-// Normalize Gemini model names to valid API model IDs (updated for 2025+)
+// Normalize Gemini model names via dynamic resolver — resolves aliases + retired IDs from DB
 function normalizeGeminiModel(model: string, isImageGeneration?: boolean): string {
   const ml = model.toLowerCase();
-  
+
   // Don't normalize image generation models - they need special handling
   if (isImageGeneration || ml.includes('image')) {
     console.log(`[Gemini] Image model detected, skipping normalization: ${model}`);
     return model; // Return as-is for image generation routing
   }
-  
-  // Map to currently available Gemini models - gemini-2.5-flash is stable now
-  if (ml.includes('gemini-2.5') || ml.includes('gemini-2.0') || ml.includes('gemini-2')) {
+
+  // Use dynamic resolver for all Gemini model aliases
+  const resolved = resolveModelSync(model);
+  // If resolver returned the same string (unknown model), default to gemini-2.5-flash
+  if (resolved === model && !ml.includes('gemini-2.5') && !ml.includes('gemini-3')) {
     return 'gemini-2.5-flash';
   }
-  if (ml.includes('gemini-1.5-flash') || ml.includes('flash')) {
-    return 'gemini-2.5-flash'; // 1.5 deprecated, use 2.5
-  }
-  if (ml.includes('gemini-1.5-pro') || ml.includes('pro')) {
-    return 'gemini-2.5-flash';
-  }
-  if (ml.includes('gemini-pro')) {
-    return 'gemini-2.5-flash';
-  }
-  // Default to stable model
-  return 'gemini-2.5-flash';
+  return resolved;
 }
 
 async function callGemini(model: string, prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
@@ -1772,7 +1745,7 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
       }
       const claudeKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('CLAUDE_API_KEY');
       if (claudeKey) {
-        return await callClaude('claude-3-5-haiku-20241022', prompt, systemPrompt || '', temperature, maxTokens);
+        return await callClaude('claude-haiku-4-5', prompt, systemPrompt || '', temperature, maxTokens);
       }
       // No fallback available
       throw new Error('Gemini rate limited (429) and no fallback providers available. Please try again in a moment.');
@@ -1785,7 +1758,7 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
     console.error(`Gemini API error (first attempt ${response.status}):`, errText);
     
     // Try fallback models in order
-    const fallbackModels = ['gemini-1.5-flash-latest', 'gemini-pro'];
+    const fallbackModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
     
     for (const fallbackModel of fallbackModels) {
       console.log(`Retrying Gemini call with fallback model: ${fallbackModel}`);
@@ -1959,7 +1932,7 @@ Analyze the provided image and return a JSON object with:
     case 'openai':
       return await callOpenAIVision(model || 'gpt-4o', analysisPrompt, fullSystemPrompt, imageBase64);
     case 'claude':
-      return await callClaudeVision(model || 'claude-3-5-sonnet-20241022', analysisPrompt, fullSystemPrompt, imageBase64);
+      return await callClaudeVision(model || 'claude-sonnet-4-6', analysisPrompt, fullSystemPrompt, imageBase64);
     case 'gemini':
       return await callGeminiVision(model || 'gemini-2.5-flash', analysisPrompt, fullSystemPrompt, imageBase64);
     case 'lovable': // DEPRECATED - route to Gemini direct API
@@ -2034,7 +2007,7 @@ async function callClaudeVision(model: string, prompt: string, systemPrompt: str
     throw new Error('Claude API key not configured for vision analysis.');
   }
 
-  const normalizedModel = model.includes('sonnet') ? model : 'claude-3-5-sonnet-20241022';
+  const normalizedModel = model.includes('sonnet') ? resolveModelSync(model) : 'claude-sonnet-4-6';
 
   console.log(`[Vision-Claude] Using model: ${normalizedModel}`);
 
@@ -2294,7 +2267,7 @@ Return ONLY the translated text, no explanations.`;
   let result;
   switch (provider) {
     case 'claude':
-      result = await callClaude('claude-3-5-haiku-20241022', text, systemPrompt, 0.3, 4000);
+      result = await callClaude('claude-haiku-4-5', text, systemPrompt, 0.3, 4000);
       break;
     case 'openai':
       result = await callOpenAI('gpt-4o-mini', text, systemPrompt, 0.3, 4000);
@@ -2583,7 +2556,7 @@ Return as JSON.`;
   let result;
   switch (provider) {
     case 'claude':
-      result = await callClaude('claude-3-5-haiku-20241022', text, systemPrompt, 0.3, 4000);
+      result = await callClaude('claude-haiku-4-5', text, systemPrompt, 0.3, 4000);
       break;
     case 'openai':
       result = await callOpenAI('gpt-4o-mini', text, systemPrompt, 0.3, 4000);

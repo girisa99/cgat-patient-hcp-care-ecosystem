@@ -362,7 +362,7 @@ async function callUniversalAIVision(
     // Healthcare documents → Claude for clinical reasoning
     if (['prescription', 'rx', 'insurance', 'lab_result', 'medical_record'].some(t => docType.includes(t))) {
       provider = 'claude';
-      model = model || 'claude-sonnet-4-5';
+      model = model || 'claude-sonnet-4-6';
     }
     // Financial documents → OpenAI for structured extraction
     else if (['invoice', 'receipt', 'claim', 'billing'].some(t => docType.includes(t))) {
@@ -379,7 +379,7 @@ async function callUniversalAIVision(
   // Default model per provider
   if (!model) {
     switch (provider) {
-      case 'claude': model = 'claude-sonnet-4-5'; break;
+      case 'claude': model = 'claude-sonnet-4-6'; break;
       case 'openai': model = 'gpt-4o'; break;
       case 'gemini': 
       default: model = 'gemini-2.5-flash'; break;
@@ -431,7 +431,7 @@ async function callUniversalAIVision(
         },
         body: JSON.stringify({
           provider: 'claude',
-          model: 'claude-sonnet-4-5',
+          model: 'claude-sonnet-4-6',
           prompt: clinicalPrompt,
           action: 'analyze_scene',
           context: { image: imageBase64, analysisDepth: 'detailed' },
@@ -4356,7 +4356,7 @@ async function extractWithClaude(imageBase64: string, contentType: string, promp
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 8192,
         system: systemPrompt || 'You are an expert document analyst. Extract all relevant information accurately.',
         messages: [{

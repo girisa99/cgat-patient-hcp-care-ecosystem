@@ -68,14 +68,14 @@ const llmProviders: LLMProvider[] = [
   {
     id: 'claude-opus-4',
     name: 'Claude Opus 4',
-    model: 'claude-opus-4-1-20250805',
+    model: 'claude-opus-4-6',
     capabilities: ['Text', 'Vision', 'Superior Reasoning'],
     cost: 'Premium'
   },
   {
     id: 'claude-sonnet-4',
     name: 'Claude Sonnet 4',
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     capabilities: ['Text', 'Vision', 'High Performance'],
     cost: 'High'
   },
@@ -89,7 +89,7 @@ const llmProviders: LLMProvider[] = [
   {
     id: 'claude-haiku',
     name: 'Claude Haiku',
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     capabilities: ['Text', 'Fastest Response'],
     cost: 'Low'
   }
@@ -260,7 +260,7 @@ Let's begin with your basic information. Could you please provide your full name
     else if (id.includes('gemini')) provider = 'gemini';
 
     const selected = llmProviders.find(p => p.id === selectedLLM);
-    const model = selected?.model || (provider === 'openai' ? 'gpt-4.1-2025-04-14' : provider === 'claude' ? 'claude-sonnet-4-20250514' : 'gemini-2.5-pro');
+    const model = selected?.model || (provider === 'openai' ? 'gpt-4.1-2025-04-14' : provider === 'claude' ? 'claude-sonnet-4-6' : 'gemini-2.5-pro');
 
     const response = await generateResponse({
       prompt: userInput,

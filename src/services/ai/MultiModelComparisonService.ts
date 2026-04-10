@@ -58,7 +58,7 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   // Anthropic Claude
   'anthropic/claude-3-opus': 'Claude 3 Opus',
   'anthropic/claude-3-sonnet': 'Claude 3 Sonnet',
-  'anthropic/claude-3-haiku': 'Claude 3 Haiku',
+  'anthropic/claude-haiku-4-5': 'Claude Haiku 4.5',
   // DeepSeek
   'deepseek/deepseek-v3': 'DeepSeek V3',
   'deepseek/deepseek-coder': 'DeepSeek Coder',
@@ -94,7 +94,7 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
 const PROVIDER_CATEGORIES: Record<string, string[]> = {
   text_llm: ['google/gemini-3-flash-preview', 'google/gemini-2.5-pro', 'google/gemini-2.5-flash', 'google/gemini-2.5-flash-lite', 
              'openai/gpt-5', 'openai/gpt-5-mini', 'openai/gpt-5-nano',
-             'anthropic/claude-3-opus', 'anthropic/claude-3-sonnet', 'anthropic/claude-3-haiku',
+             'anthropic/claude-3-opus', 'anthropic/claude-3-sonnet', 'anthropic/claude-haiku-4-5',
              'deepseek/deepseek-v3', 'deepseek/deepseek-coder',
              'alibaba/qwen-max', 'alibaba/qwen-turbo',
              'azure/gpt-4o', 'azure/gpt-4o-mini',
@@ -122,7 +122,7 @@ const COST_PER_TOKEN: Record<string, { input: number; output: number }> = {
   // Anthropic Claude
   'anthropic/claude-3-opus': { input: 0.00004, output: 0.00012 },
   'anthropic/claude-3-sonnet': { input: 0.00001, output: 0.00003 },
-  'anthropic/claude-3-haiku': { input: 0.000003, output: 0.000006 },
+  'anthropic/claude-haiku-4-5': { input: 0.000003, output: 0.000006 },
   // DeepSeek
   'deepseek/deepseek-v3': { input: 0.000002, output: 0.000004 },
   'deepseek/deepseek-coder': { input: 0.000002, output: 0.000004 },
