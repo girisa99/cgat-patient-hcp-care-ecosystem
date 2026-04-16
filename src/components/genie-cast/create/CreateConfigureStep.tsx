@@ -745,7 +745,7 @@ export function CreateConfigureStep({
                 const contentFmtName = contentRegistry.formats.find(f => f.id === selectedFormatId)?.name || null;
                 const dbParentStyles = contentRegistry.visualStyles.filter(s => !s.parent_style_id);
                 const parentStyles = dbParentStyles.length > 0 ? dbParentStyles : FALLBACK_VISUAL_STYLES;
-                const { recommended, compatible, other } = partitionStylesByMatch(parentStyles, contentCatName, contentFmtName);
+                const { recommended, compatible, other } = partitionStylesByMatch(parentStyles as Array<{ category: string }>, contentCatName, contentFmtName);
 
                 const iconMap = (icon: string | undefined) =>
                   icon === 'Film' ? '\uD83C\uDFAC' : icon === 'Palette' ? '\uD83C\uDFA8' : icon === 'Camera' ? '\uD83D\uDCF7' : icon === 'Star' ? '\u2B50' : icon === 'Box' ? '\uD83D\uDCE6' : '\uD83C\uDFAD';
@@ -1043,7 +1043,7 @@ export function CreateConfigureStep({
             const selectedStyles = selectedVisualStyleIds
               .map(id => allStyles.find(s => s.id === id))
               .filter((s): s is NonNullable<typeof s> => !!s);
-            const withPreview = selectedStyles.filter(s => s.preview_image_url);
+            const withPreview = selectedStyles.filter(s => 'preview_image_url' in s && (s as any).preview_image_url);
             if (withPreview.length === 0 && selectedStyles.length > 0) return (
               <div className="space-y-2">
                 <Label className="text-xs font-medium">{'\uD83D\uDDBC\uFE0F'} Style Preview</Label>

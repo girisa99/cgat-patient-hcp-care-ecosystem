@@ -632,7 +632,7 @@ function TeaserClipsSection({ dbClips, sourceVideoUrl, castProjectId }: { dbClip
       return dbClips.map(dc => ({
         id: dc.clipId,
         category: dc.category as ClipCategory,
-        theme: dc.theme,
+        theme: dc.theme as ClipTheme,
         sourceScenes: [], // Not needed for rendering
         timestamp: dc.timestamp,
         duration: dc.duration,

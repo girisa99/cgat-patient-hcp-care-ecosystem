@@ -112,8 +112,8 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
         format: 'style_preview' as any,
         mode: 'auto',
       });
-      if (enhanced.enhancedPrompt && enhanced.enhancedPrompt !== aiPrompt) {
-        setAiPrompt(enhanced.enhancedPrompt);
+      if (enhanced.enhanced && enhanced.enhanced !== aiPrompt) {
+        setAiPrompt(enhanced.enhanced);
         toast.success('Prompt enhanced');
       } else {
         toast.info('Prompt is already well-crafted');
@@ -143,7 +143,7 @@ export const StyleCustomizationPanel: React.FC<StyleCustomizationPanelProps> = (
           format: 'style_preview' as any,
           mode: 'auto',
         });
-        if (enhanced.enhancedPrompt) enhancedText = enhanced.enhancedPrompt;
+        if (enhanced.enhanced) enhancedText = enhanced.enhanced;
       } catch { /* use original if enhancement fails */ }
       const fullPrompt = `Style preview for "${styleLabel}": ${enhancedText}. Create a visually representative sample image that showcases this visual style. The image should be IP-safe, non-photorealistic, and demonstrate the aesthetic clearly.`;
 

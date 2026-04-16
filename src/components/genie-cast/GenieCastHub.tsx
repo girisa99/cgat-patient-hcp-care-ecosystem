@@ -652,7 +652,7 @@ export const GenieCastHub: React.FC = () => {
     // Capture generation start for Label Studio training
     lsCast.captureGenerationStart({
       formatName: formatName || activeFormats?.[0],
-      provider: routing.provider?.id || 'openai',
+      provider: routing.video?.providerId || 'openai',
       region: session.selectedRegion || undefined,
       videoStyles: request.videoStyles,
       scriptLength: request.scriptContent?.length,
@@ -689,7 +689,7 @@ export const GenieCastHub: React.FC = () => {
     // Capture generation result for LS training
     lsCast.captureGenerationComplete({
       formatName: formatName || activeFormats?.[0],
-      provider: routing.provider?.id || 'openai',
+      provider: routing.video?.providerId || 'openai',
       duration: 0, // placeholder — real timing tracked by production hook
       success: !!success,
     });
@@ -697,7 +697,7 @@ export const GenieCastHub: React.FC = () => {
     if (success) {
       dispatch({ type: 'STEP_COMPLETED', stepId: 'generate' });
     }
-  }, [castSession.session, selectedVideoStyles, dispatch, production, tierGate, lsCast, routing.provider, sceneEnrichment, projectPersistence, castSession]);
+  }, [castSession.session, selectedVideoStyles, dispatch, production, tierGate, lsCast, routing.video, sceneEnrichment, projectPersistence, castSession]);
 
   const handleModeChange = useCallback((newMode: CastMode) => {
     lsCast.captureModeChange(mode, newMode);

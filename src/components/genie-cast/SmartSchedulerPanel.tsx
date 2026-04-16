@@ -173,7 +173,7 @@ export const SmartSchedulerPanel: React.FC<SmartSchedulerSessionProps> = ({
         .order('scheduled_time', { ascending: true })
         .limit(100);
       if (error) throw error;
-      return (data || []).map((row: ScheduledPostRow) => rowToItem(row));
+      return (data || []).map((row: any) => rowToItem(row as ScheduledPostRow));
     },
   });
 

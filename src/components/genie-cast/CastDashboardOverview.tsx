@@ -1126,7 +1126,7 @@ export function CastDashboardOverview({ onNavigate, onStartCreate, className }: 
                 </Button>
               </div>
               <button
-                onClick={onStartCreate}
+                onClick={() => onStartCreate()}
                 className="w-full flex items-center gap-2 px-2 py-2 rounded-lg bg-primary/5 border border-primary/15 hover:bg-primary/10 transition-colors"
               >
                 <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
