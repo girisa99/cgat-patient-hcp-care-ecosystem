@@ -1037,13 +1037,13 @@ export function CreateConfigureStep({
 
           {/* 5a-ii-b: Style Preview -- show AI-generated preview for selected styles */}
           {selectedVisualStyleIds.length > 0 && (() => {
-            const allStyles = contentRegistry.visualStyles.length > 0
+            const allStyles: any[] = contentRegistry.visualStyles.length > 0
               ? contentRegistry.visualStyles
               : FALLBACK_VISUAL_STYLES;
             const selectedStyles = selectedVisualStyleIds
               .map(id => allStyles.find(s => s.id === id))
               .filter((s): s is NonNullable<typeof s> => !!s);
-            const withPreview = selectedStyles.filter(s => 'preview_image_url' in s && (s as any).preview_image_url);
+            const withPreview = selectedStyles.filter(s => s.preview_image_url);
             if (withPreview.length === 0 && selectedStyles.length > 0) return (
               <div className="space-y-2">
                 <Label className="text-xs font-medium">{'\uD83D\uDDBC\uFE0F'} Style Preview</Label>
@@ -1073,13 +1073,13 @@ export function CreateConfigureStep({
           {/* 5a-iii: Style Customization -- B-007: Always visible (no pre-select gate) */}
           <StyleCustomizationPanel
             selectedStyles={selectedVisualStyleIds
-              .map(id => (contentRegistry.visualStyles.length > 0
+              .map(id => ((contentRegistry.visualStyles.length > 0
                 ? contentRegistry.visualStyles
-                : FALLBACK_VISUAL_STYLES).find(s => s.id === id))
+                : FALLBACK_VISUAL_STYLES) as any[]).find(s => s.id === id))
               .filter((s): s is NonNullable<typeof s> => !!s)}
-            allStyles={contentRegistry.visualStyles.length > 0
+            allStyles={(contentRegistry.visualStyles.length > 0
               ? contentRegistry.visualStyles
-              : FALLBACK_VISUAL_STYLES}
+              : FALLBACK_VISUAL_STYLES) as any[]}
             characterFramePercent={characterFramePercent}
             onCharacterFrameChange={setCharacterFramePercent}
             onStyleCreated={contentRegistry.refresh}
