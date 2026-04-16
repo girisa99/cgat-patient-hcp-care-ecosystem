@@ -152,7 +152,7 @@ export async function seedProjectFromTemplate(
           fallbackProvider: char.fallbackProvider,
           fallbackVoice: char.fallbackVoice,
         },
-      }, { onConflict: 'project_id,character_key' });
+      } as any, { onConflict: 'project_id,character_key' });
 
       if (error) console.warn(`[Seed] Character ${char.key}:`, error.message);
       await new Promise(r => setTimeout(r, 100)); // micro-delay

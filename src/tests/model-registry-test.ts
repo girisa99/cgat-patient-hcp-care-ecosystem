@@ -186,7 +186,7 @@ export async function runModelRegistryTests(): Promise<TestSummary> {
   // Check DB model count
   let dbModelCount = 0;
   if (dbConnected) {
-    const { count } = await supabase.from('ai_model_registry').select('*', { count: 'exact', head: true });
+    const { count } = await (supabase as any).from('ai_model_registry').select('*', { count: 'exact', head: true });
     dbModelCount = count ?? 0;
     console.log(`📊 DB has ${dbModelCount} models`);
   }
@@ -260,11 +260,11 @@ export async function runModelRegistryTests(): Promise<TestSummary> {
   // ── Test 5: DB Regional Routing ────────────────────────────────────
   console.log('\n━━━ TEST 5: Regional Routing (DB) ━━━');
   if (dbConnected) {
-    const { data: routes } = await supabase
+    const { data: routes } = await (supabase as any)
       .from('ai_model_regional_routing')
       .select('region, capability, primary_model_id, fallback_model_ids')
       .eq('is_active', true)
-      .eq('capability', 'llm');
+      .eq('capability', 'llm') as { data: Array<{ region: string; capability: string; primary_model_id: string; fallback_model_ids: string[] | null }> | null; error: any };
 
     if (routes) {
       for (const route of routes) {
