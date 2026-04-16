@@ -1110,7 +1110,7 @@ export const UnifiedCompositionStudio: React.FC<UnifiedCompositionStudioProps> =
               <ElementCategoryTabs
                 elements={categoryElements}
                 onElementsChange={setCategoryElements}
-                currentTier={userTier}
+                currentTier={userTier as any}
               />
             )}
 

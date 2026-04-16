@@ -346,7 +346,7 @@ export type ScenePipelineStep =
   | { type: 'ai-screen-enhance'; screenIds: string[]; scriptContext: string; enhanceMode: 'highlight' | 'stylize' | 'redraw'; focusAreas?: string[] }
   | { type: 'avatar-3d'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; style?: 'pixar-3d' | 'disney-2d' | 'hybrid-2.5d' }
   | { type: 'avatar-lipsync'; character: keyof typeof EP04_AVATAR_CONFIG['characters']; provider: 'alibaba-wan2.2' | 'alibaba-omniavatar' | 'modelslab'; scriptKey?: string }
-  | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v'; prompt: string; referenceImage?: string }
+  | { type: 'alibaba-video'; model: 'wan2.1-t2v' | 'wan2.6-t2v' | 'wan2.6-i2v' | 'wan2.1-i2v' | 'sora-2'; prompt: string; referenceImage?: string; provider?: string }
   | { type: 'alibaba-image'; model: 'wan2.6-t2i' | 'wanx-v2.1' | 'qwen-image-max'; prompt: string }
   | { type: 'music'; prompt: string; duration: number; style?: string }
   | { type: 'sfx'; prompt: string; duration?: number }
@@ -355,13 +355,13 @@ export type ScenePipelineStep =
   // ─── STORYBOOK PIPELINE STEP TYPES ─────────────────────────────────────
   | { type: 'scene-transition'; style: 'page-turn' | 'scroll-unroll' | 'iris-wipe' | 'storybook-flip' | 'chapter-card' | 'dissolve-morph'; prompt: string; duration: number }
   | { type: 'storybook-frame'; variant: 'opening' | 'closing' | 'chapter-header'; prompt: string; duration: number }
-  | { type: 'character-interaction'; characters: string[]; prompt: string; style?: 'group-shot' | 'duo-argument' | 'standup-circle' | 'farewell-wave'; provider?: string }
+  | { type: 'character-interaction'; characters: string[]; prompt: string; style?: string; provider?: string }
   | { type: 'narrator-scroll'; prompt: string; duration: number; dataContent?: string }
   // ─── STATIC ASSET — pre-existing image shown as-is (no AI generation) ──
   | { type: 'static-asset'; assetKey: string; duration: number; description?: string }
   // ─── BODY ANIMATION PIPELINE STEP TYPES ───────────────────────────────
   | { type: 'character-motion'; character: string; motionRef: string; prompt: string; duration: number }
-  | { type: 'character-animate-3d'; character: string; animationType: 'idle' | 'walk' | 'run' | 'talk' | 'custom'; prompt: string; duration: number };
+  | { type: 'character-animate-3d'; character: string; animationType: string; prompt: string; duration: number };
 
 // ─── EP04 MUSIC & SFX SCORE ──────────────────────────────────────────────────
 // Background music beds and sound effects per scene. Generated via ElevenLabs.

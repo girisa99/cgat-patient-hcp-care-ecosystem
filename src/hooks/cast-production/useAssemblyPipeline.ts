@@ -193,7 +193,7 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
           if (projectId && permanentUrl) {
             await updateFinalAssembly(projectId, permanentUrl, {
               totalDuration: data.job.duration || 0,
-              resolution,
+              resolution: resolution || '1080p',
             });
           }
           toast.success('Video assembled successfully!');
@@ -313,7 +313,7 @@ export function useAssemblyPipeline(projectId: string | null): AssemblyPipelineR
       let jobId: string | null = null;
       if (projectId) {
         jobId = await trackGenerationJob({
-          projectId, jobType: 'assembly', sceneKey: 'final', provider: 'runpod-ffmpeg', estimatedTokens: 5000,
+          projectId, jobType: 'video' as any, sceneKey: 'final', provider: 'runpod-ffmpeg', estimatedTokens: 5000,
         });
       }
 

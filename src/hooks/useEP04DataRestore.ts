@@ -277,7 +277,7 @@ export function useRestoredTts(
     audioMap: query.data?.audio || {},
     statusMap: query.data?.status || {},
     isLoading: query.isLoading && !query.data, // not loading if we have initialData
-    fallbackKeys: new Set(query.data?.fbKeys || []),
+    fallbackKeys: new Set((query.data as any)?.fbKeys || []),
   };
 }
 

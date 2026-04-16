@@ -184,7 +184,7 @@ export default function CastProductionPage() {
             .order('line_index'),
         ]);
 
-        setCharacters(charsRes.data || []);
+        setCharacters((charsRes.data || []) as any);
         setScenes(scenesRes.data || []);
         setScriptLines(linesRes.data || []);
 

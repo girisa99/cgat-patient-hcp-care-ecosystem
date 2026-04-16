@@ -520,7 +520,7 @@ export async function initializeFromDB(): Promise<void> {
 
 async function _doInitializeFromDB(): Promise<void> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('ai_model_registry')
       .select('*');
 
